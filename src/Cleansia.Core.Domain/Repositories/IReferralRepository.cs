@@ -12,19 +12,6 @@ public interface IReferralRepository : IRepository<Referral, string>
     Task<Referral?> GetByReferredUserIdAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Paged "people I invited" list for the inviter's referrals tab.
-    /// Includes the invitee user for name resolution.
-    /// </summary>
-    Task<IReadOnlyList<Referral>> GetByReferrerAsync(
-        string userId, int offset, int limit, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Total count of referrals where the given user is the referrer (for
-    /// paged-list metadata and the Rewards-tab summary stat).
-    /// </summary>
-    Task<int> CountByReferrerAsync(string userId, CancellationToken cancellationToken);
-
-    /// <summary>
     /// Per-status counts of referrals where the given user is the referrer, computed with a single
     /// grouped query over the indexed ReferrerUserId — replaces materialising every row (with the
     /// invitee included) just to count statuses in memory. Statuses with no rows are absent from the map.

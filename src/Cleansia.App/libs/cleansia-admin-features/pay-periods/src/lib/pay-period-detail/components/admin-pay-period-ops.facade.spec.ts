@@ -128,6 +128,16 @@ describe('AdminPayPeriodOpsFacade', () => {
     expect(facade.errorKey()).toBe('errors.pay_period.already_paid');
   });
 
+  it('falls back to result.title when detail is absent', () => {
+    payPeriodClient.markPaid.mockReturnValue(
+      throwError(() => ({ result: { title: 'pay_period.not_closed' } }))
+    );
+
+    facade.markPaid('period-1', jest.fn());
+
+    expect(facade.errorKey()).toBe('errors.pay_period.not_closed');
+  });
+
   it('parses the error code from a JSON response string', () => {
     payPeriodClient.markPaid.mockReturnValue(
       throwError(() => ({

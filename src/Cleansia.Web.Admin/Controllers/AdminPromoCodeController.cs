@@ -115,7 +115,7 @@ public class AdminPromoCodeController(IMediator mediator) : ApiController(mediat
         CancellationToken cancellationToken = default)
     {
         var result = await Mediator.Send(
-            new GetPromoCodeRedemptions.Query(promoCodeId, offset, limit),
+            new GetPromoCodeRedemptions.Request { PromoCodeId = promoCodeId, Offset = offset, Limit = limit },
             cancellationToken);
         return Ok(result);
     }

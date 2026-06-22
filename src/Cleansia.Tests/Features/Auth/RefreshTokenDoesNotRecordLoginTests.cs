@@ -51,8 +51,11 @@ public class RefreshTokenDoesNotRecordLoginTests
             .Setup(r => r.GetByIdAsync(customer.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(customer);
 
-        var result = await Handle(new RefreshTokenCmd.Command(
-            Token: "any", RequiredProfile: UserProfile.Customer, RequiredAudience: CustomerAudience));
+        var result = await Handle(new RefreshTokenCmd.Command("any")
+        {
+            RequiredProfile = UserProfile.Customer,
+            RequiredAudience = CustomerAudience,
+        });
 
         Assert.True(result.IsSuccess);
         Assert.Null(customer.LastLoginAt);

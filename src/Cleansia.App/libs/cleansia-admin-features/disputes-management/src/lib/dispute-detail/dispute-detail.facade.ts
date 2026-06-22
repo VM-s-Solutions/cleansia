@@ -8,18 +8,13 @@ import {
   UpdateDisputeStatusCommand,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
+import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
   DISPUTE_ERROR_KEY_MAP,
   DISPUTE_FALLBACK_ERROR_KEY,
 } from '../disputes-management/disputes-management.models';
-
-interface ApiErrorResult {
-  detail?: string;
-  title?: string;
-}
 
 const TERMINAL_STATUSES: ReadonlySet<DisputeStatus> = new Set([
   DisputeStatus.Resolved,
@@ -164,18 +159,7 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
   }
 
   private resolveErrorKey(error: unknown): string {
-    const apiError = error as { result?: ApiErrorResult; response?: string };
-    let code = apiError?.result?.detail || apiError?.result?.title;
-
-    if (!code && apiError?.response) {
-      try {
-        const parsed = JSON.parse(apiError.response) as ApiErrorResult;
-        code = parsed.detail || parsed.title;
-      } catch {
-        code = undefined;
-      }
-    }
-
+    const code = extractApiErrorCode(error);
     if (code && DISPUTE_ERROR_KEY_MAP[code]) {
       return DISPUTE_ERROR_KEY_MAP[code];
     }

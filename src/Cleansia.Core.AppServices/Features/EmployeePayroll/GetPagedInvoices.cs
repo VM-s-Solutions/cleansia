@@ -57,11 +57,11 @@ public class GetPagedInvoices
             var totalItems = await invoiceRepository.GetCountAsync(filter, cancellationToken);
             var items = await invoiceRepository
                 .GetPagedSort<EmployeeInvoiceSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
-                .AsNoTracking()
                 .Include(i => i.Employee)
                     .ThenInclude(e => e.User)
                 .Include(i => i.PayPeriod)
                 .Include(i => i.Currency)
+                .AsNoTracking()
                 .Select(invoice => invoice.MapToDto())
                 .ToListAsync(cancellationToken);
 

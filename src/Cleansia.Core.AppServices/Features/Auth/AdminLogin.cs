@@ -7,6 +7,7 @@ using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
+using System.Text.Json.Serialization;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
@@ -35,6 +36,9 @@ public class AdminLogin
         bool RememberMe)
         : ICommand<JwtTokenResponse>
     {
+        // Admin is web-only: the trusted-device marker comes from the HttpOnly refresh cookie
+        // server-side, never the body. JsonIgnore keeps it off the wire.
+        [JsonIgnore]
         public string? TrustedDeviceToken { get; init; }
     }
 
@@ -57,7 +61,7 @@ public class AdminLogin
             if (user.Profile != UserProfile.Administrator)
             {
                 return BusinessResult.Failure<JwtTokenResponse>(
-                    new Error("AdminLogin", BusinessErrorMessage.InsufficientPrivileges));
+                    new Error(nameof(Command.Email), BusinessErrorMessage.InsufficientPrivileges));
             }
 
             user.ResetLoginThrottle();

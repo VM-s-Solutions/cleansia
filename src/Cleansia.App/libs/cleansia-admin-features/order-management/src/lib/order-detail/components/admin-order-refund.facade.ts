@@ -7,7 +7,7 @@ import {
   RefundReason,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
+import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
@@ -15,11 +15,6 @@ import {
   REFUND_FALLBACK_ERROR_KEY,
   RefundLineOption,
 } from './admin-order-refund.models';
-
-interface ApiErrorResult {
-  detail?: string;
-  title?: string;
-}
 
 @Injectable()
 export class AdminOrderRefundFacade extends UnsubscribeControlDirective {
@@ -116,18 +111,7 @@ export class AdminOrderRefundFacade extends UnsubscribeControlDirective {
   }
 
   private resolveErrorKey(error: unknown): string {
-    const apiError = error as { result?: ApiErrorResult; response?: string };
-    let code = apiError?.result?.detail || apiError?.result?.title;
-
-    if (!code && apiError?.response) {
-      try {
-        const parsed = JSON.parse(apiError.response) as ApiErrorResult;
-        code = parsed.detail || parsed.title;
-      } catch {
-        code = undefined;
-      }
-    }
-
+    const code = extractApiErrorCode(error);
     if (code && REFUND_ERROR_KEY_MAP[code]) {
       return REFUND_ERROR_KEY_MAP[code];
     }

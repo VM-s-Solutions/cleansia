@@ -12,7 +12,7 @@ import {
   OrderStatus,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
+import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable, catchError, finalize, of, takeUntil } from 'rxjs';
 import {
@@ -20,11 +20,6 @@ import {
   ORDER_OPS_ERROR_KEY_MAP,
   ORDER_OPS_FALLBACK_ERROR_KEY,
 } from './admin-order-ops.models';
-
-interface ApiErrorResult {
-  detail?: string;
-  title?: string;
-}
 
 @Injectable()
 export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
@@ -188,18 +183,7 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
   }
 
   private resolveErrorKey(error: unknown): string {
-    const apiError = error as { result?: ApiErrorResult; response?: string };
-    let code = apiError?.result?.detail || apiError?.result?.title;
-
-    if (!code && apiError?.response) {
-      try {
-        const parsed = JSON.parse(apiError.response) as ApiErrorResult;
-        code = parsed.detail || parsed.title;
-      } catch {
-        code = undefined;
-      }
-    }
-
+    const code = extractApiErrorCode(error);
     if (code && ORDER_OPS_ERROR_KEY_MAP[code]) {
       return ORDER_OPS_ERROR_KEY_MAP[code];
     }

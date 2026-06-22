@@ -8,6 +8,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import cz.cleansia.core.notifications.PushTokenRepository
 import cz.cleansia.customer.MainActivity
 import cz.cleansia.customer.R
 import dagger.hilt.android.AndroidEntryPoint

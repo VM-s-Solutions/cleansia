@@ -103,7 +103,7 @@ public class LoginHandlerProfileGateTests
 
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.InsufficientPrivileges, result.Error!.Message);
-        Assert.Equal("AdminLogin", result.Error.Code);
+        Assert.Equal(nameof(AdminLogin.Command.Email), result.Error.Code);
     }
 
     [Fact]

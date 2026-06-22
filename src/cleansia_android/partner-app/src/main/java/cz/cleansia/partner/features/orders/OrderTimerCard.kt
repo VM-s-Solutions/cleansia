@@ -28,6 +28,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cz.cleansia.core.format.formatOrderDateTime
+import cz.cleansia.core.format.formatOrderTime
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.api.model.OrderStatus
@@ -131,7 +133,7 @@ fun OrderTimerCard(
                 Text(
                     text = stringResource(
                         R.string.tracker_finished_at,
-                        formatOrderDateTime(order.completedAt) ?: "—",
+                        formatOrderDateTime(order.completedAt),
                     ),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -185,7 +187,7 @@ private fun TimerPrimaryText(
 ) {
     val text: String = when (status) {
         OrderStatus._0, OrderStatus._1 ->
-            formatOrderDateTime(toIso(scheduledMillis)) ?: "—"
+            formatOrderDateTime(toIso(scheduledMillis))
         OrderStatus._2 -> {
             val remainingMs = (scheduledMillis ?: 0L) - nowMillis
             if (scheduledMillis != null && remainingMs > 0) {
@@ -194,13 +196,13 @@ private fun TimerPrimaryText(
                     formatHoursMinutesDuration(totalMinutes = (remainingMs / 60_000L).toInt()),
                 )
             } else {
-                formatOrderDateTime(toIso(scheduledMillis)) ?: "—"
+                formatOrderDateTime(toIso(scheduledMillis))
             }
         }
         OrderStatus._3 ->
             stringResource(
                 R.string.tracker_subtitle_on_the_way_arriving,
-                formatOrderTime(toIso(scheduledMillis)) ?: "—",
+                formatOrderTime(toIso(scheduledMillis)),
             )
         OrderStatus._4 ->
             formatElapsedClock(((nowMillis - (startedAtMillis ?: nowMillis)).coerceAtLeast(0L)))

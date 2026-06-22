@@ -13,7 +13,7 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
 import cz.cleansia.core.network.safeApiCall
-import cz.cleansia.customer.core.notifications.PushTokenRepository
+import cz.cleansia.core.notifications.PushTokenRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json

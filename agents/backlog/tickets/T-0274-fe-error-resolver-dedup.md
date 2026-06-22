@@ -1,7 +1,7 @@
 ---
 id: T-0274
 title: Dedup the API error-key extractor across 8 feature facades onto one shared @cleansia/services helper
-status: ready
+status: done
 size: M
 owner: —
 created: 2026-06-22
@@ -99,6 +99,41 @@ identical for each facade's representative error codes). No `security`, no `opti
   `snackbar.service.ts:117-165`. 8 facades, 6 libs. No-decision (DRY onto existing canonical home).
   `manual_steps: []`. Sized **M** (8 files, behavior-preserving under per-facade characterization nets;
   if the shared-type extraction balloons past M, stop and split the helper from the consumers).
+- 2026-06-22 — ready → review (frontend). Done serially within M; did not hit STOP-AND-SPLIT.
+  **AC2:** new `extractApiErrorCode(error): string | undefined` + the one shared `ApiErrorResult` type in
+  `libs/core/services/src/lib/services/api-error.ts`, exported from `@cleansia/services`. The pure
+  `result.detail || result.title` → `JSON.parse(response)` walk; normalizes empty/missing to `undefined`
+  (downstream `if (code && MAP[code])` is unchanged-equivalent — empty string and undefined both fall
+  through to the feature fallback, as before). `SnackbarService` now consumes it and its private
+  `ApiErrorResult` copy is deleted; its non-JSON-response literal branch is preserved (re-parse guard,
+  byte-equivalent — pinned by a new `snackbar.service.spec.ts`, 10 cases incl. `'{}'`/HTML/title/mapping).
+  **AC3:** all 8 facades now keep only their thin `resolveXxxErrorKey` (own map + fallback) delegating to
+  the shared helper; the 8 private extraction copies + 8 local `ApiErrorResult` interfaces are removed
+  (grep confirms 0 `interface ApiErrorResult` outside `api-error.ts`, 0 `JSON.parse`/`result?.detail`
+  extraction left in the 8). Maps untouched. **AC1:** added the missing `result.title`-fallback
+  characterization case to all 8 facade specs (and the missing JSON-`response` case to invoice-mgmt,
+  package-form, customer-disputes); confirmed GREEN against the un-refactored facades first, still green
+  after. **AC4:** identical key resolves for the same error — every facade error-resolution test passes
+  unchanged. **AC5:** `nx test` green for services + all 6 affected libs (facade specs); `cleansia-admin.app`
+  and `cleansia.app` (SSR) **production builds succeed**; `check-consistency.mjs` reports **0** violations in
+  any touched file (8 facades + `api-error.ts` + `snackbar.service.ts`); lint clean on every touched file.
+  Harvested the canonical rule into `patterns-frontend.md` (per-feature resolvers must delegate extraction
+  to `extractApiErrorCode`). **Deviations (not mine, pre-existing/concurrent-lane):**
+  `order-management.component.spec.ts` "No provider for _HttpClient" fails identically on the stashed tree
+  (proven by git-stash) — outside this ticket's scope (it's the list component, not the ops facade);
+  other pre-existing lint findings (`invoice-detail.facade.ts` module-boundary, a11y, non-null assertions,
+  services circular-dep) are in untouched files. **manual_steps: []** (no DTO/response-shape change → no
+  nswag-regen). Not committed/pushed.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- **Catalog harvest (please sanity-check):** added a one-line clarification to
+  `patterns-frontend.md` (§"Other (non-canonical) error-resolution paths") that per-feature
+  `resolveXxxErrorKey` resolvers must delegate code extraction to the shared `extractApiErrorCode`
+  rather than re-implement the walk inline. Small clarification to an existing rule, not a new archetype.
+- **Out-of-scope note for a follow-up (not done here):** the canonical `.models.ts` resolvers
+  (`membership-plan-list.models.ts:56-79`, `referrals-list.models.ts:56-79`,
+  `admin-user-form.models.ts`, `service-management.models.ts`, `package-management.models.ts`,
+  `currency-management.models.ts`, `admin-profile.models.ts`) STILL inline the same extraction walk —
+  the ticket explicitly scoped them out. They could now also delegate to `extractApiErrorCode` in a
+  future DRY pass; flagging so the convergence isn't forgotten.

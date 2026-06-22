@@ -9,7 +9,7 @@ import {
   UpdateInvoiceAmountsResponse,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
+import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable, catchError, finalize, of, takeUntil } from 'rxjs';
 import {
@@ -17,11 +17,6 @@ import {
   PAYROLL_OPS_ERROR_KEY_MAP,
   PAYROLL_OPS_FALLBACK_ERROR_KEY,
 } from './admin-payroll-ops.models';
-
-interface ApiErrorResult {
-  detail?: string;
-  title?: string;
-}
 
 function parseAmount(value: string): number | null {
   const trimmed = value.trim();
@@ -197,18 +192,7 @@ export class AdminPayrollOpsFacade extends UnsubscribeControlDirective {
   }
 
   private resolveErrorKey(error: unknown): string {
-    const apiError = error as { result?: ApiErrorResult; response?: string };
-    let code = apiError?.result?.detail || apiError?.result?.title;
-
-    if (!code && apiError?.response) {
-      try {
-        const parsed = JSON.parse(apiError.response) as ApiErrorResult;
-        code = parsed.detail || parsed.title;
-      } catch {
-        code = undefined;
-      }
-    }
-
+    const code = extractApiErrorCode(error);
     if (code && PAYROLL_OPS_ERROR_KEY_MAP[code]) {
       return PAYROLL_OPS_ERROR_KEY_MAP[code];
     }

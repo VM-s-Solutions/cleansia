@@ -5,5 +5,17 @@
   "prefix": "cleansia",
   "projectType": "library",
   "tags": [],
-  "targets": {}
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/cleansia-admin-features/marketing/jest.config.ts",
+        "tsConfig": "libs/cleansia-admin-features/marketing/tsconfig.spec.json"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
 }

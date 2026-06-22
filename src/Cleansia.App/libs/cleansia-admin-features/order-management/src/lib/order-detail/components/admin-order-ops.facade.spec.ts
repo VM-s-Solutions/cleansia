@@ -191,6 +191,19 @@ describe('AdminOrderOpsFacade', () => {
     expect(facade.submitting()).toBe(false);
   });
 
+  it('falls back to result.title when detail is absent', () => {
+    orderClient.overrideStatus.mockReturnValue(
+      throwError(() => ({
+        result: { title: 'order.invalid_status_transition' },
+      }))
+    );
+    facade.setTargetStatus(OrderStatus.Completed);
+
+    facade.overrideStatus('order-1', jest.fn());
+
+    expect(facade.errorKey()).toBe('errors.order.invalid_status_transition');
+  });
+
   it('parses the error code from a JSON response string', () => {
     orderClient.reassign.mockReturnValue(
       throwError(() => ({

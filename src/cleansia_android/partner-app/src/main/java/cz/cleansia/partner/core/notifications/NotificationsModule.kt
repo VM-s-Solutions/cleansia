@@ -1,8 +1,14 @@
 package cz.cleansia.partner.core.notifications
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
 import cz.cleansia.core.auth.SessionScopedCache
+import cz.cleansia.core.notifications.DeviceRegistrationClient
+import cz.cleansia.core.notifications.PushTokenDataStore
+import cz.cleansia.core.notifications.PushTokenRepository
 import cz.cleansia.partner.api.client.DeviceApi as GenDeviceApi
 import cz.cleansia.partner.core.network.AuthRetrofit
 import cz.cleansia.partner.core.notifications.db.NotificationDao
@@ -17,6 +23,8 @@ import dagger.multibindings.IntoSet
 import retrofit2.Retrofit
 import javax.inject.Singleton
 
+private val Context.pushTokenDataStore by preferencesDataStore(name = "partner_push_token_state")
+
 @Module
 @InstallIn(SingletonComponent::class)
 object NotificationsModule {
@@ -28,7 +36,10 @@ object NotificationsModule {
 
     @Provides
     @Singleton
-    fun provideDeviceApi(genDeviceApi: GenDeviceApi): DeviceApi = DeviceApi(genDeviceApi)
+    @PushTokenDataStore
+    fun providePushTokenDataStore(
+        @ApplicationContext context: Context,
+    ): DataStore<Preferences> = context.pushTokenDataStore
 
     @Provides
     @Singleton
@@ -46,13 +57,18 @@ object NotificationsModule {
 }
 
 /**
- * Joins [PushTokenRepository] to the [SessionScopedCache] multibinding so its
- * `clear()` runs on every sign-out alongside the other per-user caches.
- * Separate abstract module because @Binds can't live in an `object` module.
+ * Binds the partner [DeviceRegistrationClient] and joins [PushTokenRepository]
+ * to the [SessionScopedCache] multibinding so its `clear()` runs on every
+ * sign-out alongside the other per-user caches. Separate abstract module
+ * because @Binds can't live in an `object` module.
  */
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class NotificationsBindingsModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindDeviceRegistrationClient(impl: DeviceApiClient): DeviceRegistrationClient
 
     @Binds
     @IntoSet

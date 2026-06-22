@@ -50,14 +50,4 @@ public interface IPromoCodeRedemptionRepository : IRepository<PromoCodeRedemptio
     /// Total number of redemptions for a given promo code (admin detail view).
     /// </summary>
     Task<int> CountByPromoCodeAsync(string promoCodeId, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Paged redemption log per code with the redeeming user joined for
-    /// email rendering. Ordered most-recent first.
-    /// </summary>
-    Task<IReadOnlyList<PromoCodeRedemption>> GetPagedByPromoCodeAsync(
-        string promoCodeId,
-        int offset,
-        int limit,
-        CancellationToken cancellationToken);
 }

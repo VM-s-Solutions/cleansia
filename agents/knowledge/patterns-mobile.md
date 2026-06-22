@@ -27,7 +27,14 @@ Push/notification prose: [`../../docs/architecture/push-notifications.md`](../..
 - `:partner-app` → `cz.cleansia.partner.*`. Features split `features/<name>/screens` + `…/viewmodels`.
   Has a local Room DB for notifications (`core.notifications.db`) that customer-app does not.
 
-**Put shared code in `:core`, never duplicate it across the two apps.**
+**Put shared code in `:core`, never duplicate it across the two apps.** When the shared logic must
+reach an **app-specific generated client** (the per-app NSwag/OpenAPI Retrofit service), keep the
+logic in `:core` behind a small **per-app binding seam** — a `:core` interface that each app `@Binds`
+to its own thin impl over its generated client (e.g. `cz.cleansia.core.notifications.DeviceRegistrationClient`,
+implemented per-app by `DeviceApiClient` wrapping the app's `safeApiCall`). Parameterize per-app config
+(e.g. a DataStore name) by `@Provides`-ing the concrete value from each app's Hilt module behind a
+`:core` qualifier — never hardcode a partner-vs-customer choice in `:core`. Mirrors the existing
+`ApiResult`/`TokenStore`/`DeviceIdProvider` factoring (ADR-0011).
 
 ---
 

@@ -1,47 +1,12 @@
 package cz.cleansia.partner.features.orders
 
 import cz.cleansia.partner.api.model.OrderAddress
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Locale
 
 /**
- * Shared formatters and slug mappings used across the order-details
- * sub-components. Kept top-level (no Composable wrapping) so they can be
- * used both from previews and from non-UI code (notification builders,
- * etc.) without dragging in a composition context.
+ * Address and extra-slug helpers used across the order-details sub-components.
+ * Order date/time/money formatting is shared with the customer app via
+ * [cz.cleansia.core.format].
  */
-
-internal fun formatOrderDateTime(iso: String?): String? {
-    val raw = iso?.takeIf { it.isNotBlank() } ?: return null
-    return runCatching {
-        val instant = Instant.parse(raw)
-        val local = instant.atZone(ZoneId.systemDefault())
-        DateTimeFormatter
-            .ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
-            .withLocale(Locale.getDefault())
-            .format(local)
-    }.getOrDefault(raw)
-}
-
-internal fun formatOrderTime(iso: String?): String? {
-    val raw = iso?.takeIf { it.isNotBlank() } ?: return null
-    return runCatching {
-        val instant = Instant.parse(raw)
-        val local = instant.atZone(ZoneId.systemDefault())
-        DateTimeFormatter
-            .ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT)
-            .withLocale(Locale.getDefault())
-            .format(local)
-    }.getOrNull()
-}
-
-internal fun formatOrderMoney(amount: Double, currencyCode: String?): String {
-    val rounded = String.format(Locale.getDefault(), "%.0f", amount)
-    return if (currencyCode.isNullOrBlank()) rounded else "$rounded $currencyCode"
-}
 
 internal fun OrderAddress?.formatSingleLine(): String? {
     if (this == null) return null

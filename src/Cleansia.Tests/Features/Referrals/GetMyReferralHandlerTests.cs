@@ -54,13 +54,10 @@ public class GetMyReferralHandlerTests
         Assert.Equal(3, result.Value.AcceptedCount);
         Assert.Equal(ReferralPolicy.PointsPerSide, result.Value.PointsPerReferral);
 
-        // The over-fetch path is gone: no page-everything, no count-then-fetch.
+        // The over-fetch path is gone: the summary reads the grouped count only.
         _referralRepository.Verify(
-            r => r.GetByReferrerAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-        _referralRepository.Verify(
-            r => r.CountByReferrerAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+            r => r.GetStatusCountsByReferrerAsync(UserId, It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]

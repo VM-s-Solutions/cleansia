@@ -187,6 +187,20 @@ describe('AdminOrderRefundFacade', () => {
     expect(facade.submitting()).toBe(false);
   });
 
+  it('falls back to result.title when detail is absent', () => {
+    refundClient.partial.mockReturnValue(
+      throwError(() => ({
+        result: { title: 'refund.override_reason_required' },
+      }))
+    );
+    facade.toggleLine('service-1', true);
+    facade.setReason(RefundReason.CustomerCancellation);
+
+    facade.submit('order-1', jest.fn());
+
+    expect(facade.errorKey()).toBe('errors.refund.override_reason_required');
+  });
+
   it('parses the error code from a JSON response string', () => {
     refundClient.partial.mockReturnValue(
       throwError(() => ({

@@ -202,6 +202,32 @@ describe('DisputesFacade', () => {
       expect(facade.uploadingEvidence()).toBe(false);
     });
 
+    it('falls back to result.title when detail is absent on failure', () => {
+      disputeClient.uploadEvidence.mockReturnValue(
+        throwError(() => ({ result: { title: 'file.invalid_file_type' } }))
+      );
+
+      facade.uploadEvidence('dispute-1', validFile());
+
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
+        'api.file.invalid_file_type'
+      );
+    });
+
+    it('parses the error code from a JSON response string on failure', () => {
+      disputeClient.uploadEvidence.mockReturnValue(
+        throwError(() => ({
+          response: JSON.stringify({ detail: 'file.size_exceeded' }),
+        }))
+      );
+
+      facade.uploadEvidence('dispute-1', validFile());
+
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
+        'api.file.size_exceeded'
+      );
+    });
+
     it('falls back to the generic upload error for unknown codes', () => {
       disputeClient.uploadEvidence.mockReturnValue(
         throwError(() => ({ result: { detail: 'something.else' } }))

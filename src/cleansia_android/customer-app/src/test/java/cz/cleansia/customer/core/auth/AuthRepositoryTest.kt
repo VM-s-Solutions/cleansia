@@ -8,8 +8,8 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 
 import android.content.Context
+import cz.cleansia.core.notifications.PushTokenRepository
 import cz.cleansia.customer.R
-import cz.cleansia.customer.core.notifications.PushTokenRepository
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify

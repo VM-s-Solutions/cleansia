@@ -22,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cz.cleansia.core.format.formatOrderDateTime
+import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.partner.api.model.OrderItem
 
 /**
@@ -41,11 +43,13 @@ fun OrderMetadataRow(
     order: OrderItem,
     modifier: Modifier = Modifier,
 ) {
-    val dateLabel = formatOrderDateTime(order.cleaningDateTime)
+    val dateLabel = order.cleaningDateTime
+        ?.takeIf { it.isNotBlank() }
+        ?.let { formatOrderDateTime(it) }
     val currencyCode = order.currency?.code ?: order.currency?.symbol
     val payLabel = order.estimatedCleanerPay
         ?.takeIf { it > 0.0 }
-        ?.let { formatOrderMoney(it, currencyCode) }
+        ?.let { formatOrderPrice(it, currencyCode) }
 
     Column(
         modifier = modifier

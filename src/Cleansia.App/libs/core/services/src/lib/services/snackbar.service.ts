@@ -1,14 +1,9 @@
 import { Injectable, InjectionToken, inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
+import { extractApiErrorCode } from './api-error';
 
 const DEFAULT_SNACKBAR_DURATION = 3_000;
-
-interface ApiErrorResult {
-  detail?: string;
-  title?: string;
-  errors?: Record<string, string[]>;
-}
 
 /**
  * Map of normalized API error keys (lowercase, alpha-only) to translation keys.
@@ -123,24 +118,17 @@ export class SnackbarService {
       return fallbackMessage;
     }
 
-    const apiError = error as {
-      result?: ApiErrorResult;
-      message?: string;
-      response?: string;
-    };
+    const apiError = error as { message?: string; response?: string };
 
-    // Try to get the error detail from the result (ASP.NET Core problem details format)
-    let errorDetail = apiError.result?.detail || apiError.result?.title;
+    let errorDetail = extractApiErrorCode(error);
 
-    // If no detail in result, try parsing the response string
+    // extractApiErrorCode yields no code when the response is a non-JSON
+    // string; surface that raw string if it reads like an error message.
     if (!errorDetail && apiError.response) {
       try {
-        const parsedResponse = JSON.parse(apiError.response) as ApiErrorResult;
-        errorDetail = parsedResponse.detail || parsedResponse.title;
+        JSON.parse(apiError.response);
       } catch {
-        // Response is not JSON, use it directly if it looks like an error message
         if (
-          apiError.response &&
           !apiError.response.startsWith('<') &&
           apiError.response.length < 500
         ) {

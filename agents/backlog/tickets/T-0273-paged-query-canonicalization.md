@@ -1,9 +1,9 @@
 ---
 id: T-0273
 title: Canonicalize the 7 bespoke paged queries onto DataRangeRequest + Specification + Sort + PagedData
-status: ready
+status: done
 size: M
-owner: —
+owner: backend
 created: 2026-06-22
 updated: 2026-06-22
 depends_on: []
@@ -120,6 +120,80 @@ read path changes its query plan (it should be equivalent — same WHERE/ORDER, 
   grows past M at dispatch — e.g. a Spec/Sort turns out to need real new domain modeling — stop and
   split that group). Meta-finding folded into AC4 (no new rule; ticket the offenders + de-stale the
   audit doc).
+- 2026-06-22 — review fix (backend). VERIFY-NOT-TRUST gate caught a stale AC1/AC5 evidence claim:
+  `dotnet build src/Cleansia.Tests/Cleansia.Tests.csproj` failed with 4 × CS0103 — the two new loyalty
+  characterization files (`GetLoyaltyActivityHandlerTests.cs:60,63`, `GetUserLoyaltyActivityHandlerTests.cs:63,66`)
+  referenced `PaymentType`/`PaymentStatus` in their `OrderWith(...)` helper but imported only
+  `Cleansia.Core.Domain.Orders`; the enums live in `Cleansia.Core.Domain.Enums` (verified: `Order.Create`
+  consumes those same `Cleansia.Core.Domain.Enums` types). The prior "1538 passed / build green" was produced
+  by a `--no-build` run against a stale assembly. Fix: added `using Cleansia.Core.Domain.Enums;` to both files.
+  Re-collected evidence on a clean rebuild: `dotnet build Cleansia.Tests.csproj` → **0 errors, 0 warnings**;
+  `dotnet test Cleansia.Tests.csproj --no-build` → **1545 passed, 0 failed**; the two loyalty classes in
+  isolation → **7 passed** (3 `GetLoyaltyActivity` + 4 `GetUserLoyaltyActivity`). Behavior-preserving (test-only
+  using directive; no production code touched). Deviations: none. Manual steps: none.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+
+### Dev hand-off (backend) — 2026-06-22
+
+All 7 query files converted to the canonical archetype (`Request : DataRangeRequest` + `XxxSpecification`
++ `XxxSort` + `GetCountAsync` + `GetPagedSort<XxxSort>` + `items.MapToDto(total, request)`), behavior-preserving.
+Pre-iOS-cleanup wave — no logic change, same rows / same order / same `PagedData` envelope.
+
+**Per-query (AC1 characterization-test-first → AC2 archetype → AC3 endpoints):**
+1. `GetMyReferrals` — record Query → `Request : DataRangeRequest` (internal Handler). Added `ReferrerUserId`
+   to `ReferralSpecification.Create`. Empty-session-user short-circuit preserved. Default order `AcceptedOn desc`
+   preserved via `ResolveSort` (mirrors admin twin). New mapper `ReferralMappers.MapToMyListItem`. Controllers
+   (Customer + Mobile.Customer ReferralController) build the Request. Test: `GetMyReferralsHandlerTests` (4).
+2. `GetLoyaltyActivity` — new `LoyaltyTransactionSpecification`/`LoyaltyTransactionSort` over `LoyaltyAccountId`.
+   Account-not-found short-circuit + POST-materialization order-display-number enrichment preserved (A6 documented
+   exception). Default order `OccurredOn desc`. Controllers (Customer + Mobile.Customer LoyaltyController).
+   Test: `GetLoyaltyActivityHandlerTests` (3).
+3. `GetUserLoyaltyActivity` — shares the new Loyalty Spec/Sort. `UserId` moved to a `Request` property
+   (route param). Empty-user + account-not-found short-circuits + display-number enrichment preserved.
+   Controller (AdminLoyaltyController). Test: `GetUserLoyaltyActivityHandlerTests` (4).
+4. `GetPromoCodeRedemptions` — new `PromoCodeRedemptionSpecification`/`PromoCodeRedemptionSort` over `PromoCodeId`.
+   Empty-id short-circuit guard preserved. `User` include + new mapper `MapToRedemptionListItem`. Default order
+   `RedeemedOn desc`. Controller (AdminPromoCodeController). Test: `GetPromoCodeRedemptionsHandlerTests` (4).
+5. `GetPagedMembershipPlans` — new `MembershipPlanSpecification` (IsActive + case-insensitive code/name search,
+   behavior-equivalent to the bespoke `EF.Functions.Like` uppercase form) / `MembershipPlanSort`. `Active`+`Search`
+   moved to `Request` properties. Default order `BillingInterval, MonthlyPriceCzk` preserved via a two-key
+   `ResolveSort`. Mapping kept POST-materialization (reads computed `MonthlyEquivalentPriceCzk`, A6 exception).
+   Controller (AdminMembershipController). Test: rewritten `GetPagedMembershipPlansHandlerTests` (3, canonical harness).
+6. `GetEmployeeDocuments` — A5/A2 only. Public Handler → internal; hand-built `new PagedData` → `MapToDto`;
+   dropped the `GetPaged`/`GetPagedSort` branch (empty-sort `GetPagedSort` applies no ORDER BY, identical to the
+   old `GetPaged` no-sort path). Controller unchanged (already `[FromBody] Request`). Test: `GetEmployeeDocumentsHandlerTests` (2).
+
+**AC2 dead-method retirement (A8 — verified zero other consumers by grep before removal):**
+`GetByReferrerAsync`/`CountByReferrerAsync` (IReferralRepository + impl), `GetForAccountAsync`/`CountForAccountAsync`
+(ILoyaltyTransactionRepository + impl), `GetPagedByPromoCodeAsync` (IPromoCodeRedemptionRepository + impl — `CountByPromoCodeAsync`
+KEPT, still used by `GetPromoCodeById`), `GetPagedAdminAsync` (IMembershipPlanRepository + impl). The referral admin
+`GetPagedAdminAsync` and promo-code admin `GetPagedAdminAsync` are different methods and were NOT touched.
+`GetMyReferralHandlerTests` (singular summary) had two `Verify(...Times.Never)` lines naming the removed referral
+methods — replaced with a positive `Verify(GetStatusCountsByReferrerAsync, Times.Once)` (same intent: the over-fetch
+path is gone). Still green.
+
+**AC3 — no wire/DTO change → NO nswag-regen.** All nested response DTOs kept under their original class names
+(`GetMyReferrals.ReferralListItem`, `GetLoyaltyActivity.ActivityItem`, `GetUserLoyaltyActivity.ActivityItem`) so the
+`ProducesResponseType` refs and the generated TS clients are unchanged. Controllers still bind the same query-string
+params (`offset`/`limit`/`active`/`search`/route ids) and map them into the new `Request` internally.
+
+**AC4 — tool clean.** `node agents/tools/check-consistency.mjs --paths=src/Cleansia.Core.AppServices/Features`:
+**zero A1 and zero A5 violations** remain (verified none of the 7 files appear in output). The 33 remaining are all
+B1 (20) / B3 (13) — pre-existing baseline, explicitly out of scope. The existing A1/A5 rules DID catch all six
+offenders in the pre-conversion baseline run (proof the rules work; no new rule added per the meta-finding).
+*PM action:* update `consistency-violations.md` to mark these 7 as resolved (cleared lines:
+`GetMyReferrals.cs:11/32`, `GetLoyaltyActivity.cs:12/36`, `GetUserLoyaltyActivity.cs:17/40`,
+`GetPromoCodeRedemptions.cs:15/26`, `GetPagedMembershipPlans.cs:20/38`, `GetEmployeeDocuments.cs:59`).
+
+**AC5 — mechanical checks.** `dotnet build` green for Core.AppServices, Web.Admin, Web.Customer, Web.Mobile.Customer,
+Cleansia.Tests, Cleansia.IntegrationTests, Cleansia.HostTests. `dotnet test Cleansia.Tests --no-build`: **1545 passed,
+0 failed** (re-collected on a clean rebuild — see 2026-06-22 correction below; incl. the new characterization tests).
+IntegrationTests/HostTests compile against the new signatures (no stale refs); they need Testcontainers/Aspire infra to
+execute and were not run here (no integration coverage of these endpoints exists; behavior is pinned by the unit
+characterization nets). Baseline was green per the wave note.
+
+**Deviations:** none. **Manual steps:** none (no wire change; `manual_steps: []` unchanged).
+**Harvest:** the `ResolveSort` default-order idiom (already in `GetPagedReferrals`) is now used across the converted
+queries that needed a non-empty default ORDER BY — no catalog edit needed (it is already the established pattern).

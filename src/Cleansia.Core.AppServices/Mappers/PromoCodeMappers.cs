@@ -25,4 +25,16 @@ public static class PromoCodeMappers
             Description: promoCode.Description,
             CreatedOn: promoCode.CreatedOn);
     }
+
+    public static PromoCodeRedemptionListItem MapToRedemptionListItem(this PromoCodeRedemption redemption)
+    {
+        return new PromoCodeRedemptionListItem(
+            Id: redemption.Id,
+            PromoCodeId: redemption.PromoCodeId,
+            UserId: redemption.UserId,
+            UserEmail: redemption.User != null ? redemption.User.Email : null,
+            OrderId: redemption.OrderId,
+            AppliedDiscount: redemption.AppliedDiscount,
+            RedeemedOn: redemption.RedeemedOn);
+    }
 }

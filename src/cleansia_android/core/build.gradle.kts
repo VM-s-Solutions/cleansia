@@ -81,6 +81,12 @@ dependencies {
     // OrderFormatters uses kotlinx-datetime for Instant/LocalDateTime.
     implementation(libs.kotlinx.datetime)
 
+    // Firebase Cloud Messaging — PushTokenRepository drives the FCM token
+    // lifecycle (fetch / rotate / delete) shared by both apps. The BOM aligns
+    // transitive Firebase versions; only the messaging artifact is needed.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging.ktx)
+
     // Persistence — TokenStore uses EncryptedSharedPreferences; preferences DataStore
     // is the future-proof option some shared utilities may consume.
     implementation(libs.androidx.datastore.preferences)
@@ -110,4 +116,6 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

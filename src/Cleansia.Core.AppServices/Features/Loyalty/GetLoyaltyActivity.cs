@@ -1,15 +1,20 @@
+using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Shared.DTOs.RequestModels;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Sorting;
+using Cleansia.Core.Domain.Specifications;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using SortDefinition = Cleansia.Core.Domain.Sorting.Common.SortDefinition;
+using SortDirection = Cleansia.Core.Domain.Sorting.Common.SortDirection;
 
 namespace Cleansia.Core.AppServices.Features.Loyalty;
 
 public class GetLoyaltyActivity
 {
-    public record Query(int Offset = 0, int Limit = 20)
-        : IRequest<PagedData<ActivityItem>>;
+    public class Request : DataRangeRequest, IRequest<PagedData<ActivityItem>>;
 
     public record ActivityItem(
         LoyaltyTransactionType Type,
@@ -23,22 +28,26 @@ public class GetLoyaltyActivity
         ILoyaltyAccountRepository loyaltyAccountRepository,
         ILoyaltyTransactionRepository loyaltyTransactionRepository,
         IOrderRepository orderRepository,
-        IUserSessionProvider userSessionProvider) : IRequestHandler<Query, PagedData<ActivityItem>>
+        IUserSessionProvider userSessionProvider) : IRequestHandler<Request, PagedData<ActivityItem>>
     {
-        public async Task<PagedData<ActivityItem>> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<PagedData<ActivityItem>> Handle(Request request, CancellationToken cancellationToken)
         {
-            var pageNumber = request.Limit > 0 ? (request.Offset / request.Limit) + 1 : 1;
             var userId = userSessionProvider.GetUserId()!;
 
             var account = await loyaltyAccountRepository.GetByUserIdAsync(userId, cancellationToken);
             if (account == null)
             {
-                return new PagedData<ActivityItem>(pageNumber, request.Limit, 0, Array.Empty<ActivityItem>());
+                return Enumerable.Empty<ActivityItem>().MapToDto(0, request);
             }
 
-            var totalItems = await loyaltyTransactionRepository.CountForAccountAsync(account.Id, cancellationToken);
-            var transactions = await loyaltyTransactionRepository.GetForAccountAsync(
-                account.Id, request.Offset, request.Limit, cancellationToken);
+            var specification = LoyaltyTransactionSpecification.Create(loyaltyAccountId: account.Id);
+            var filter = specification.SatisfiedBy();
+
+            var totalItems = await loyaltyTransactionRepository.GetCountAsync(filter, cancellationToken);
+            var transactions = await loyaltyTransactionRepository
+                .GetPagedSort<LoyaltyTransactionSort>(request.Offset, request.Limit, filter, ResolveSort(request))
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
 
             var orderIds = transactions
                 .Where(t => !string.IsNullOrEmpty(t.OrderId))
@@ -66,7 +75,17 @@ public class GetLoyaltyActivity
                     OccurredOn: t.OccurredOn))
                 .ToList();
 
-            return new PagedData<ActivityItem>(pageNumber, request.Limit, totalItems, items);
+            return items.MapToDto(totalItems, request);
+        }
+
+        // Preserves the historical newest-first default: the bespoke repo ordered by
+        // OccurredOn desc, and the empty-sort GetPagedSort path applies no ordering.
+        private static IEnumerable<SortDefinition> ResolveSort(Request request)
+        {
+            var sort = request.Sort.MapToDomain().ToList();
+            return sort.Count > 0
+                ? sort
+                : [new SortDefinition { Field = nameof(LoyaltyTransaction.OccurredOn), Direction = SortDirection.Descending }];
         }
     }
 }

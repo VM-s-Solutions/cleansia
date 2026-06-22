@@ -1,7 +1,7 @@
 ---
 id: T-0272
 title: Shrink the auth wire contract — trustedDeviceToken mobile-only + drop RefreshToken server-only fields
-status: ready
+status: done
 size: M
 owner: —
 created: 2026-06-22
@@ -159,5 +159,109 @@ surface). **`reviewer` in parallel.** **`qa`:** suite-green + AC↔test mapping.
   no existing open ticket covers the trustedDeviceToken split (T-0233 added the bypass, did not split
   the contract).
 
+- 2026-06-22 — ready → review (backend). Implemented the wire shrink, behavior-preserving.
+
+  **RefreshToken seam (AC4/AC5).** `RefreshToken.Command` constructor is now `(string Token)`; the
+  per-host pins `RequiredProfile`/`RequiredAudience` became `[JsonIgnore]` server-set `init`
+  properties (not constructor params). All 5 controllers still set them via `command with { ... }`
+  exactly as before, and the handler still reads `command.RequiredProfile`/`command.RequiredAudience`
+  unchanged — only the wire projection shrank. `[JsonIgnore]` excludes them from both serialization
+  and body-binding (proven by `AuthWireContractTests`), so they disappear from every generated client
+  and cannot be forged from the body. ADR-0001 per-host gate untouched.
+
+  **trustedDeviceToken split (AC2/AC3).** Chose architect option (a). Web `Login`/`PartnerLogin`/
+  `AdminLogin` keep `TrustedDeviceToken` as a `[JsonIgnore]` server-set property (the web controllers
+  still fill it from the HttpOnly refresh cookie via `RefreshTokenFromCookieOrBody` — simplified to
+  pass `string.Empty` since the body never carries it now), so it leaves the web wire. New
+  `MobileLogin`/`MobilePartnerLogin` commands carry `TrustedDeviceToken` on the wire (constructor
+  param); `Web.Mobile.Customer`/`Web.Mobile.Partner` `Login` now dispatch them. Validators reuse the
+  shared `LoginValidator<TCommand>` (selector reads the token server-side, bypass semantics identical).
+  Handlers mirror the web `Login`/`PartnerLogin` handlers byte-for-byte (permissive / Employee+Admin).
+
+  **Characterization (AC1).** Pre-change: `Cleansia.Tests` auth subset green (121). Post-change the
+  same suites pass unchanged (the existing `TrustedDeviceLockoutBypassTests`, `LoginLockoutValidatorTests`,
+  `RefreshTokenControllerProfileEnrichmentTests`, `RefreshTokenProfileGateHandlerTests` all still green
+  — call sites that used the dropped constructor named-args were mechanically moved to object-initializer
+  syntax; assertions/outcomes unchanged). Added: `AuthWireContractTests` (8, pins the on/off-wire
+  projection — the regen driver), `MobileLoginTrustedDeviceBypassTests` (4, mobile body-token bypass),
+  `MobileLoginDispatchTests` (2, mobile hosts dispatch the mobile command carrying the body token).
+  Auth subset now 136 passed / 0 failed. `EveryCommandHasValidatorTests` green (new commands' validators
+  auto-registered via assembly scan).
+
+  **Evidence.** `dotnet build` green for: Core.AppServices, all 5 web hosts, Cleansia.Tests,
+  Cleansia.IntegrationTests, Cleansia.HostTests. Auth unit subset 136/136. IntegrationTests +
+  HostTests compile (Postgres-gated suites not executed in this lane; logic unchanged). Consistency:
+  `Features/Auth` shows only the pre-existing `B3` (login validators inherit the deliberately-shared
+  `LoginValidator<TCommand>`) and `B1` (Logout/Register raw-scalar) patterns; the two new B3s on
+  `MobileLogin`/`MobilePartnerLogin` replicate the accepted sibling idiom (`Login`/`PartnerLogin`/
+  `AdminLogin`), not a new class of deviation.
+
+  **Deviations.** Used the `[JsonIgnore]` server-set-property seam (the ticket's stated alternative to
+  a per-host provider) rather than an `IRefreshContextProvider`: the integration/handler tests drive the
+  handler with arbitrary `(RequiredProfile, RequiredAudience)` pairs through MediatR, which a DI-injected
+  per-host provider would have frozen to the single registered pair — the property seam keeps that test
+  flexibility and leaves the handler 100% unchanged. AdminLogin.cs line 60 error-code (`nameof(Command.Email)`
+  vs `"AdminLogin"`) was changed by a concurrent lane, not by this ticket; left as-is.
+
+  **MANUAL_STEP: nswag-regen** (owner, NOT run here). Web clients lose: `trustedDeviceToken` from
+  customer/partner/admin Login bodies; `requiredProfile`/`requiredAudience` from the RefreshToken body
+  on all hosts. Mobile clients gain the new `MobileLogin`/`MobilePartnerLogin` command shapes carrying
+  `trustedDeviceToken`. Regen all affected clients (customer/partner/admin web + mobile customer/partner),
+  then build all three FE apps. T-0280 (FE auth-service comment cleanup) stays held until the regen lands.
+
+- 2026-06-22 — review (backend, re-review fix). Resolved Reviewer MUST FIX (1): dropped the
+  `(T-0233 ...)` parenthetical ticket-id reference from the three new comments, keeping the reason
+  prose intact:
+  - `Features/Auth/MobileLogin.cs:15` — now `... so the trusted-device lockout-bypass marker is
+    carried in the request body instead.`
+  - `Features/Auth/MobilePartnerLogin.cs:16` — same edit.
+  - `Tests/Features/Auth/MobileLoginTrustedDeviceBypassTests.cs:16` — now `/// The trusted-device
+    lockout bypass for the mobile login commands.`
+  Comment-only XML-doc edits — no IL/behavior change. The other two `T-0233` references found in the
+  tree (`LoginLockoutValidatorTests.cs:38`, `TrustedDeviceLockoutBypassTests.cs:16`) are pre-existing,
+  belong to the T-0233 lane (not new in T-0272), and are out of this finding's scope — left untouched.
+  **Evidence.** `dotnet build` Core.AppServices green (0 warn / 0 err). Auth unit slice
+  (`--filter FullyQualifiedName~Features.Auth`) **128 passed / 0 failed**. Cleansia.Tests's full
+  compile is blocked only by another lane's two untracked, currently-broken Loyalty test files
+  (`GetUserLoyaltyActivityHandlerTests.cs`, `GetLoyaltyActivityHandlerTests.cs` — `PaymentType`/
+  `PaymentStatus` not in context); parked non-destructively to run the auth slice, then restored
+  byte-identical (md5 confirmed, both remain `??` untracked). No new manual steps; the prior
+  `MANUAL_STEP: nswag-regen` is unaffected (comment-only change does not alter any DTO/wire shape).
+
 ## Review
 <!-- reviewer / security / qa write verdicts here; PM reconciles before advancing state -->
+
+### Reviewer — CHANGES REQUESTED (2026-06-22)
+
+Verified, not trusted: production builds green for Core.AppServices + all 5 web hosts; auth/mobile
+unit slice **214 passed / 0 failed** (ran with the other lane's two untracked, currently-broken
+Loyalty test files non-destructively parked then restored byte-identical — hashes confirmed, files
+remain `??` untracked). `check-consistency.mjs --paths=Features/Auth` shows no NEW class of deviation;
+the two new `B3`s (`MobileLogin`/`MobilePartnerLogin`) replicate the accepted shared-`LoginValidator
+<TCommand>` sibling idiom of `Login`/`PartnerLogin`/`AdminLogin`. Behavior-preserving confirmed:
+RefreshToken handler logic byte-unchanged, 5 controllers still pin both profile+audience, web Login
+still sources the trusted-device marker from the HttpOnly cookie (`RefreshTokenFromCookieOrBody(
+string.Empty)` is equivalent now that the body field is `[JsonIgnore]` and can no longer bind). AC1–AC5,
+AC7, AC8 met. AC6 = Security's formal gate (auth surface; no server-authoritative field became
+client-settable — proven by the deserialize tests). MANUAL_STEP nswag-regen correctly recorded, not run.
+
+**MUST FIX (1) — ticket-id in source comments (hard fail: conventions.md "Comments" + wave rule "NO
+ticket IDs in source").** Three new comments reference `T-0233`:
+- `Features/Auth/MobileLogin.cs:15` — `/// trusted-device marker (T-0233 lockout bypass) ...`
+- `Features/Auth/MobilePartnerLogin.cs:16` — same `(T-0233 lockout bypass)`
+- `Tests/Features/Auth/MobileLoginTrustedDeviceBypassTests.cs:16` — `/// The trusted-device lockout
+  bypass (T-0233) ...`
+Fix: drop the `(T-0233 ...)` parenthetical in all three; keep the *reason* prose ("the trusted-device
+lockout bypass"). The traceability belongs in the commit message/ticket, not in source.
+
+Re-review needed only on the comment edit; everything else is approved on the merits. The auth-surface
+change still requires the Security reviewer's formal sign-off (AC6) before the PM advances.
+
+Notes (not blocking):
+- Out-of-lane churn observed inside a T-0272 file: `AdminLogin.cs:64` error code `"AdminLogin"` →
+  `nameof(Command.Email)` (+ matching `LoginHandlerProfileGateTests.cs:106`) — dev attributes it to a
+  concurrent lane and left it. It is internally consistent (prod+test moved together) and only changes
+  the `Error.Code`, not the message or pass/fail; the suite is green. Flagging for PM awareness only.
+- IntegrationTests/HostTests compile and the RefreshToken test edits are the faithful mechanical
+  ctor→object-initializer rewrite, but their Postgres/Testcontainers-gated suites were not executed
+  in this lane — PM/QA should run them on the merged tree before release.

@@ -33,6 +33,30 @@ remove before PROD.
 - **Rule:** A1, A2, A3, A5. **Fix:** convert to `class Request : DataRangeRequest, IRequest<PagedData<T>>`
   + `XxxSpecification` + `GetPagedSort<XxxSort>` + `MapToDto(total, request)`.
 - **Proposed ticket:** `Canonicalize GetPagedPromoCodes + GetPagedReferrals to the paged-query pattern` · M · [backend]
+- **STATUS:** GetPagedPromoCodes + GetPagedReferrals **canonicalized** in Wave 5 (T-0248). **F1 reopened
+  at Wave-8 intake (2026-06-22):** see F1b below — the F1-shape (`record Query` / hand-built `PagedData`)
+  recurs in a **further 6 paged offenders** that `check-consistency.mjs` flags (A1/A5) but were never
+  ticketed. The "sweep complete" claim in the Summary banner was **stale** for these.
+
+### F1b — RESIDUAL F1-shape paged offenders the tool flags but were never ticketed [major] [type: spaghetti] — **Wave-8 T-0273**
+- **Meta-finding (the lesson):** `check-consistency.mjs` already catches every one of these via the
+  **existing** A1/A5 rules — the gap was never a missing rule, it was that the findings were never
+  converted to tickets, and this doc claimed the backend paged sweep complete. No new rule is needed
+  (adding one would duplicate A1/A5); the fix is to **ticket the offenders + de-stale this doc**.
+- **Where (verified on master 2026-06-22 via `check-consistency.mjs --paths=src/Cleansia.Core.AppServices/Features`):**
+  - `Features/Referrals/GetMyReferrals.cs:11,32` — A1, A5 (admin twin `Admin/GetPagedReferrals.cs` is canonical)
+  - `Features/Loyalty/GetLoyaltyActivity.cs:12,36` — A1, A5 (no Spec/Sort yet)
+  - `Features/Loyalty/Admin/GetUserLoyaltyActivity.cs:17,40` — A1, A5 (shares the loyalty repo method)
+  - `Features/PromoCodes/Admin/GetPromoCodeRedemptions.cs:15,26` — A1, A5 (no Spec/Sort yet)
+  - `Features/Memberships/Admin/GetPagedMembershipPlans.cs:20,38` — A1, A5 **(missed by AUDIT-2026-06-22; caught by the tool)**
+  - `Features/EmployeeDocuments/GetEmployeeDocuments.cs:59` — A5 only (canonical spec path, hand-built `PagedData`)
+- **Not an offender (reconciled):** `Features/Disputes/GetPagedDisputes.cs` is **canonical A1–A8** —
+  do NOT touch it (the earlier quick-classify that flagged it is refuted; tool + re-read confirm clean).
+- **Rule:** A1, A5 (A2 public-Handler on some). **Fix:** convert each to
+  `class Request : DataRangeRequest` + `XxxSpecification` + `GetPagedSort<XxxSort>` + `MapToDto(total, request)`.
+- **Ticket:** **T-0273** (Wave 8) — 7 live query files (the 6 lines above = 7 queries since the loyalty
+  pair shares one new Spec/Sort). **DISPOSITION: ticketed; this doc will be marked resolved when T-0273
+  lands and the tool reports zero A1/A5 for these files.**
 
 ### F2 — `Filter { get; set; }` instead of `init` [minor] [type: spaghetti]
 - **Where:** `Features/PayConfig/GetPagedPayConfigs.cs:19`

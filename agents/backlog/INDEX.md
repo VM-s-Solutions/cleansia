@@ -10,6 +10,44 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## 🟢 WAVE 8 IN PROGRESS — Pre-iOS Cleanup (planned 2026-06-22) — backlog only, not yet dispatched
+> **The audit-driven program (Waves 0–7) is closed + merged. Wave 8 is a discrete pre-iOS cleanup wave.**
+> Scope = `audits/AUDIT-2026-06-22-pre-ios-cleanup.md` (13 findings) + owner points P1–P4. **10 tickets
+> filed (T-0272…T-0281).** Full plan — wave table, dependency-ordered batches, lanes, the owner
+> manual-steps bundle, the reconciliation notes: **`status/sprint-10.md`**. No code, no commits yet.
+>
+> **Reconciliation headlines (honest):** `GetPagedDisputes` **REFUTED** as a paged offender (it is
+> canonical A1–A8). `GetPagedMembershipPlans` **IS** an offender the audit MISSED but the tool flags →
+> added to T-0273; net genuine paged offenders = **7 live** (not 6). P4's "add an A* rule" → **already
+> satisfied** by the existing A1/A5 rules; the real gap was the offenders were never ticketed +
+> `consistency-violations.md` was stale (the **meta-finding**, now recorded in F1b). Findings #12→T-0273,
+> #13→T-0275 folded. Nothing else refuted.
+>
+> **Reviewer-per-developer on every ticket. Security gate on T-0272 only. QA on all.** No `L` tickets.
+>
+> | ID | Title | Size | Status | Batch | depends_on | Layers | sec | manual_step |
+> |----|-------|------|--------|-------|-----------|--------|-----|-------------|
+> | **T-0272** | Auth wire-contract shrink — `trustedDeviceToken` mobile-only + drop `RefreshToken` server fields (P1 + #9) | M | **ready** | **8A FIRST/ALONE** | — | architect, backend | **yes** | **nswag-regen** (all clients) |
+> | **T-0273** | Canonicalize 7 bespoke paged queries → DataRangeRequest+Spec+Sort+PagedData (P4, #4/#5/#6/#12 + missed GetPagedMembershipPlans) | M | **ready** | 8B | — | backend | no | — |
+> | **T-0274** | Dedup API error-key extractor across 8 facades → shared `@cleansia/services` helper (#1) | M | **ready** | 8B | — | frontend | no | — |
+> | **T-0275** | Delete dead paged dups (GetAllEmployees, GetUserByEmail) + LOW drift cluster (#7/#8/#13) | S | **ready** | 8B | — | backend | no | — |
+> | **T-0276** | Extract `SitewidePushFormFacade` → generated client + UnsubscribeControlDirective (#10) | S | **ready** | 8B | — | frontend | no | — |
+> | **T-0277** | Hoist partner-app order formatters onto `:core` (#2) | S | **ready** | 8B (`:core` lane) | — | android | no | — |
+> | **T-0278** | Hoist push-token cluster into `:core` behind `DeviceRegistrationClient` (#3) | M | **ready** | 8B (`:core` lane) | — | android | no | — |
+> | **T-0279** | admin-pay-config.service → generated `AdminPayConfigClient` (#11) | S | **blocked** (IMP-3 regen) | — (not runnable) | — | frontend | no | **nswag-regen** (rides IMP-3) |
+> | **T-0280** | Strip comment noise (FE auth services + audit pockets) (P2) | S | **ready** | 8C | **T-0272** | frontend, backend | no | — |
+> | **T-0281** | E2E sibling smokes — partner accept-job + admin login-and-land (P3) | M | **ready** | 8C | **T-0271** | frontend, backend | no | — |
+>
+> **Lanes/serialization:** **8A (T-0272) lands FIRST/alone** — it shrinks the wire contract; the regen
+> ripples to FE auth-service consumers other tickets touch. **8B fans out concurrently with 8A** (disjoint
+> from `Features/Auth/*`, no regen dependency); **serialize T-0277 ↔ T-0278 on `:core`**. **8C waits**:
+> T-0280 on T-0272+regen, T-0281 on T-0271. **Owner manual-steps BUNDLE B1** (run once, after 8A): regen
+> admin+partner+customer (+mobile if the surface changes), then all-three prod builds, then release T-0280.
+> **T-0279 is held on the separate IMP-3 regen** and does NOT gate Wave-8 close. **T-0271** (customer E2E
+> smoke) stays `ready` from sprint 8 and is the foundation T-0281 reuses.
+>
+> --- (Waves 0–7 close banner below, kept for traceability) ---
+>
 > ## 🏁 ALL WAVES (0–7) COMPLETE — the entire audit-driven program backlog is DONE (2026-06-21)
 > **Every ticketed wave is closed.** Waves 0–6 + the T-0197 mobile slice + T-0264/T-0265 are merged to
 > `master` (tip `b9e91cd8`, PR #81). **Wave 7 (Android consistency debt) is now COMPLETE** — 4 tickets

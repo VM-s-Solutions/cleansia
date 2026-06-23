@@ -40,7 +40,11 @@ public class DeleteRecurringBooking
         private async Task<bool> BeOwnedByCallerAsync(string id, CancellationToken cancellationToken)
         {
             var userId = _userSessionProvider.GetUserId();
-            if (string.IsNullOrEmpty(userId)) return false;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return false;
+            }
+
             var template = await _templateRepository.GetByIdAsync(id, cancellationToken);
             return template != null && template.UserId == userId;
         }

@@ -41,7 +41,7 @@ public class UpdateRecurringBooking
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(ExistsAsync)
+                .MustAsync(_templateRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.RecurringTemplateNotFound)
                 .MustAsync(BeOwnedByCallerAsync)
                 .WithMessage(BusinessErrorMessage.RecurringTemplateNotOwnedByUser);
@@ -79,11 +79,6 @@ public class UpdateRecurringBooking
                     .Must(c => c.EndsOn!.Value > c.StartsOn)
                     .WithMessage(BusinessErrorMessage.RecurringTemplateEndsOnBeforeStart);
             });
-        }
-
-        private async Task<bool> ExistsAsync(string id, CancellationToken cancellationToken)
-        {
-            return await _templateRepository.GetByIdAsync(id, cancellationToken) != null;
         }
 
         private async Task<bool> BeOwnedByCallerAsync(string id, CancellationToken cancellationToken)

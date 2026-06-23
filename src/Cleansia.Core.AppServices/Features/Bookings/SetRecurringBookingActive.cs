@@ -26,15 +26,10 @@ public class SetRecurringBookingActive
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(ExistsAsync)
+                .MustAsync(_templateRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.RecurringTemplateNotFound)
                 .MustAsync(BeOwnedByCallerAsync)
                 .WithMessage(BusinessErrorMessage.RecurringTemplateNotOwnedByUser);
-        }
-
-        private async Task<bool> ExistsAsync(string id, CancellationToken cancellationToken)
-        {
-            return await _templateRepository.GetByIdAsync(id, cancellationToken) != null;
         }
 
         private async Task<bool> BeOwnedByCallerAsync(string id, CancellationToken cancellationToken)
@@ -52,7 +47,15 @@ public class SetRecurringBookingActive
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
             var template = (await templateRepository.GetByIdAsync(command.TemplateId, cancellationToken))!;
-            if (command.IsActive) template.Resume(); else template.Pause();
+            if (command.IsActive)
+            {
+                template.Resume();
+            }
+            else
+            {
+                template.Pause();
+            }
+
             return BusinessResult.Success();
         }
     }

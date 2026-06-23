@@ -9,7 +9,6 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
 namespace Cleansia.Core.AppServices.Features.Dashboard;

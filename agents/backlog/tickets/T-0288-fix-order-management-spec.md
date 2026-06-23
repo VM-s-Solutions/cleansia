@@ -1,11 +1,11 @@
 ---
 id: T-0288
 title: Fix latent broken order-management.component.spec.ts (HttpClient inject — no test provider)
-status: ready
+status: done
 size: S
-owner: —
+owner: frontend
 created: 2026-06-22
-updated: 2026-06-22
+updated: 2026-06-23
 depends_on: []
 blocks: []
 stories: []
@@ -66,6 +66,22 @@ the harness only. `nx test` + admin prod-build are the evidence.
   `layers: [frontend]`; `security_touching: false`; `manual_steps: []`; archetype = a working
   standalone-component admin spec. No panel — one-line no-decision note (pre-existing broken spec,
   mechanical fix). Independent — runs concurrently with the audit-log chain.
+- 2026-06-23 — ready → review (frontend). Characterization fix landed in the spec harness only;
+  no production component/facade change.
+  **Before (red, proven on `master` version of the spec):** `OrderManagementComponent › should create`
+  threw `NullInjectorError: R3InjectorError(Standalone[OrderManagementComponent])[AdminClient ->
+  AdminClient -> _HttpClient -> _HttpClient]: No provider for _HttpClient!` — `nx test order-management`
+  = **1 failed / 42 passed** (4 sibling suites stayed green; only the no-provider smoke failed).
+  **Fix:** added the canonical standalone-component test providers to
+  `order-management.component.spec.ts` — `provideHttpClient()` + `provideHttpClientTesting()` (satisfies
+  the `root`-scoped `AdminClient → HttpClient` chain the facade injects), `provideRouter([])` (component
+  injects `Router`), `MessageService` (PrimeNG `ToastModule`), and `TranslateModule.forRoot()`
+  (`TranslateService`). Idiom mirrors the project's standard standalone-component spec setup.
+  **After (green):** `nx test order-management` = **5 suites / 43 tests passed**.
+  AC4: `cleansia-admin.app --configuration=production` build = **Successfully ran target build** (only
+  pre-existing unrelated warnings — `EmployeeDetailComponent` template, bundle-budget); `check-
+  consistency.mjs` = **0 violations in the touched dir** (`cleansia-admin-features/order-management`).
+  No production code touched, no new test coverage added (out of scope), `manual_steps` still empty.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

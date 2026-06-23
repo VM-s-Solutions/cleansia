@@ -1,11 +1,11 @@
 ---
 id: T-0282
 title: AdminActionAudit entity + EF config (TenantId + global filter + 4 indexes) + migration
-status: ready
+status: review
 size: M
-owner: —
+owner: db
 created: 2026-06-22
-updated: 2026-06-22
+updated: 2026-06-23
 depends_on: []
 blocks: [T-0283, T-0285]
 stories: []
@@ -76,6 +76,25 @@ tests are written test-first against this ticket). Owner-only: **ef-migration** 
   [ef-migration]` (table + 4 indexes — Wave-9 bundle); `security_touching: false` (schema only — the
   gate fires on the behavior/query); archetype = `RefundEntityConfiguration` (config) + `Auditable`-vs-
   `BaseEntity` choice frozen in D1. No panel (ADR-0012 is the accepted decision; this is its consumer).
+- 2026-06-23 — ready → review (db). Implemented entity `AdminActionAudit : BaseEntity, ITenantEntity`
+  (sealed, init-only, no mutators) in `Cleansia.Core.Domain/Auditing/AdminActionAudit.cs` with the exact
+  D1 field set; `AdminActionAuditConfiguration : BaseEntityConfiguration<…>` explicitly maps `TenantId`
+  (`HasMaxLength(26)`, `IsRequired(false)`), `BeforeJson`/`AfterJson` as `jsonb`, and the four D6 indexes
+  (`(TenantId,OccurredOn DESC)`, `(ResourceType,ResourceId)`, `(ActorId,OccurredOn DESC)`,
+  `(Action,OccurredOn DESC)`). The global query filter is the generic `ITenantEntity` one in
+  `CleansiaDbContext.ApplyTenantQueryFilters` (verified present on the entity type). `DbSet` registered
+  on `CleansiaDbContext`; config auto-discovered via `ApplyConfigurationsFromAssembly`. **AC1–AC4, AC6
+  met.** `Cleansia.Infra.Database` (and transitively `Core.Domain`) build with 0 errors. TDD:
+  `Cleansia.Tests/Features/Auditing/AdminActionAuditModelMetadataTests.cs` — 27/27 green (entity shape /
+  append-only init-only / sealed / no-mutator / table / tenant-filter / nullable jsonb / required cols /
+  exactly-4-indexes). **AC5 — migration NOT run (owner-only):** `AdminActionAudit` is absent from every
+  migration and the model snapshot (current snapshot `20260620160737_Initial.cs`) → genuinely pending;
+  `manual_step: ef-migration` stands (CREATE TABLE `AdminActionAudits` + the 4 indexes). Ticket does not
+  reach `done` until the owner applies it and the bundled IntegrationTests/HostTests pending-model check
+  runs green post-migration. Note for the orchestrator: an untracked **other-lane** file
+  (`src/Cleansia.Tests/Dispatch/PruneOutboxHandlerTests.cs`, T-0287) currently fails to compile against
+  `CleansiaDbContext` (references a not-yet-added `ProcessedMessages` DbSet) — **not this ticket**; my
+  tests were run with that one file excluded via a build-scoped targets file (no source touched).
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

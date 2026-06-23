@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Configuration;
@@ -298,4 +299,5 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<Refund> Refunds { get; set; }
     public virtual DbSet<DeadLetter> DeadLetters { get; set; }
     public virtual DbSet<OutboxMessage> OutboxMessages { get; set; }
+    public virtual DbSet<AdminActionAudit> AdminActionAudits { get; set; }
 }

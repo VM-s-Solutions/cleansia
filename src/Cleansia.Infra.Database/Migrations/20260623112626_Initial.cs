@@ -16,6 +16,32 @@ namespace Cleansia.Infra.Database.Migrations
                 .Annotation("Npgsql:PostgresExtension:pg_trgm", ",,");
 
             migrationBuilder.CreateTable(
+                name: "AdminActionAudits",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    ActorId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    ActorEmail = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    ActorProfile = table.Column<int>(type: "integer", nullable: false),
+                    Action = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    ResourceType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    ResourceId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    Success = table.Column<bool>(type: "boolean", nullable: false),
+                    ErrorCode = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    OccurredOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    BeforeJson = table.Column<string>(type: "jsonb", nullable: true),
+                    AfterJson = table.Column<string>(type: "jsonb", nullable: true),
+                    CorrelationId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AdminActionAudits", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CampaignProgresses",
                 columns: table => new
                 {
@@ -2154,6 +2180,29 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AdminActionAudits_Action_OccurredOn",
+                table: "AdminActionAudits",
+                columns: new[] { "Action", "OccurredOn" },
+                descending: new[] { false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AdminActionAudits_ActorId_OccurredOn",
+                table: "AdminActionAudits",
+                columns: new[] { "ActorId", "OccurredOn" },
+                descending: new[] { false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AdminActionAudits_ResourceType_ResourceId",
+                table: "AdminActionAudits",
+                columns: new[] { "ResourceType", "ResourceId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AdminActionAudits_TenantId_OccurredOn",
+                table: "AdminActionAudits",
+                columns: new[] { "TenantId", "OccurredOn" },
+                descending: new[] { false, true });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CampaignProgresses_CampaignId",
                 table: "CampaignProgresses",
                 column: "CampaignId",
@@ -3225,6 +3274,9 @@ namespace Cleansia.Infra.Database.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AdminActionAudits");
+
             migrationBuilder.DropTable(
                 name: "CampaignProgresses");
 

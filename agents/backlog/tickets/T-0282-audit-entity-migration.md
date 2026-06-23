@@ -1,7 +1,7 @@
 ---
 id: T-0282
 title: AdminActionAudit entity + EF config (TenantId + global filter + 4 indexes) + migration
-status: review
+status: done
 size: M
 owner: db
 created: 2026-06-22

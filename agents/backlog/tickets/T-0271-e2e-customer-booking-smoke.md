@@ -1,7 +1,7 @@
 ---
 id: T-0271
 title: Phase-0 E2E smoke — customer booking → checkout-intent critical path (real browser, seeded CI)
-status: review
+status: done
 size: M
 owner: frontend
 created: 2026-06-21
@@ -220,5 +220,23 @@ developer; **QA** confirms AC↔evidence and the ≥3-run determinism (AC4). No 
     NX  Successfully ran target e2e-ci for project cleansia.app-e2e
   ```
 
+- 2026-06-23 — review → done (pm). All 6 AC satisfied with evidence in the status log above.
+  **Reviewer + QA reconciled green;** the owner re-ran the customer smoke independently
+  (`1 passed, 42.1s`) and read 2 of the 3 specs in full. AC1 (wizard advances on rendered UI) /
+  AC2 (create-order POST + Stripe handoff, no real charge) / AC4 (≥3-run determinism, no
+  `waitForTimeout`) / AC5 (one spec replaces the `example.spec.ts` scaffold) / AC6 (seam decisions
+  recorded) all evidenced. AC3 — the new **`e2e-smoke`** job in `frontend-ci.yml` (own job, NOT
+  Nx-affected-gated) runs `cleansia.app-e2e:e2e-ci` green. **Seam reconciliation (honest):** the
+  implementer chose the **network-stub seam at the `/api/**` boundary** rather than the ticket's
+  originally-assumed live-seeded-Postgres path — the app still boots its real SSR server and the
+  REAL wizard UI is driven, so the dead-CTA / broken-step / won't-advance bug class (the whole point
+  of this ticket) is fully covered; `insert_seed_data.sql` was therefore not needed. `manual_steps:
+  []` held — **no Stripe test-mode CI secret was required.** Foundation for T-0281. Last open Wave-8
+  quality-foundation item alongside T-0281.
+
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+**PM reconciliation (2026-06-23):** developer diff (one Playwright spec + `e2e-smoke` CI job) and
+the reviewer/QA verdict converge; owner-verified re-run green. Network-stub-at-`/api/**` seam
+accepted as the deterministic equivalent of the seeded-stack AC (rendered-UI coverage preserved).
+No `security` gate (`security_touching: false`). → `done`.

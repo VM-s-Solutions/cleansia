@@ -1,7 +1,7 @@
 ---
 id: T-0281
 title: E2E sibling smokes — partner accept-job + admin login-and-land (reuse the T-0271 harness)
-status: review
+status: done
 size: M
 owner: frontend
 created: 2026-06-22
@@ -166,5 +166,28 @@ existing surfaces, adds no endpoint/authz/DTO). `optimizer` N/A.
   $ npx nx run cleansia-partner.app-e2e:e2e  → NX Successfully ran target e2e
   ```
 
+- 2026-06-23 — review → done (pm). Two sibling smokes land, each replacing its `example.spec.ts`
+  scaffold and driving the REAL login form → real route-guard → authed landing (partner
+  `login-jobs.smoke.spec.ts` → `/orders` + both job-section headings; admin
+  `login-dashboard.smoke.spec.ts` → `/employee-management` + heading + sidebar). Reuses T-0271's
+  network-stub seam (AC3) and the existing `e2e-smoke` CI job, extended with sequential partner +
+  admin steps (the three apps' `webServer` all bind :4200, so they run sequentially). AC4
+  determinism (≥3 runs each, green), AC5 (scaffolds replaced), AC6 (seams recorded, `manual_steps:
+  []`, no CI secret) all evidenced. Reviewer + QA reconciled green; owner read the spec set.
+  **SCOPE RECONCILIATION (honest — accepted, recorded):** under the network-stub seam the partner
+  and admin lists render **empty**, so the dev narrowed both smokes to **login-and-land**: the
+  partner smoke does **NOT** accept a job and the admin smoke does **NOT** assert a seeded data row.
+  This means **AC1's "accept-job state transition"** and **AC2's "≥1 rendered data row"** are
+  **NOT** asserted as originally written — the delivered slice is "real login → real guard → authed
+  landing renders" for both apps. The dev flagged this for PM/QA in the status log; **PM accepts the
+  narrowed slice** (it still covers the highest-value bug class — a broken login/guard/landing — and
+  matches the owner's "keep each thin" directive), and **carries the un-asserted job-accept + seeded-
+  data-row depth as an explicit follow-up** (T-0293, filed at this close) rather than silently
+  marking AC1/AC2 satisfied. No `security` gate (`security_touching: false`).
+
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+**PM reconciliation (2026-06-23):** developer diff (2 specs + CI extension) and reviewer/QA verdict
+converge. **AC1/AC2 delivered as a narrowed login-and-land slice, not the full job-accept /
+seeded-row assertions** — accepted under the stub seam + the owner's thin-smoke directive, with the
+depth carried to **T-0293** so the gap is tracked, not buried. → `done`.

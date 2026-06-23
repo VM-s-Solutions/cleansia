@@ -1,10 +1,74 @@
 # Sprint 10 — WAVE 8: Pre-iOS Cleanup
 
-**Status:** PLANNED (backlog only — no code, no commits)
+**Status:** ✅ CLOSED 2026-06-23 (see the close banner below) — 9 of 10 tickets `done`; T-0279 stays `blocked` on IMP-3 (does not gate close).
 **Created:** 2026-06-22
 **Source:** `agents/backlog/audits/AUDIT-2026-06-22-pre-ios-cleanup.md` (13 findings) + owner points P1–P4.
 **Goal:** clear the carried structural/contract debt the audit + owner surfaced **before iOS development
 starts**, so the iOS port builds against a clean, deduplicated, canonical contract surface — not a fork.
+
+---
+
+## 🏁 WAVE 8 CLOSE (2026-06-23) — Pre-iOS cleanup COMPLETE; the E2E layer is decided + green
+
+**Wave-8 close summary (one paragraph).** Wave 8 — the discrete pre-iOS cleanup wave — is **closed**.
+The last two open items, the E2E smokes **T-0271** (customer booking → checkout handoff) and **T-0281**
+(partner login→jobs + admin login→home), are now **`done`**: real Playwright specs driving the actual
+rendered UIs of all three web apps, with the network-stub seam locked at the **`/api/**` boundary** (the
+implementer's deterministic substitute for the originally-assumed seeded-Postgres stack — the app still
+boots its real SSR/dev server and the REAL wizards/forms/guards are exercised, so the dead-CTA /
+broken-route / won't-advance bug class is fully covered), wired into a new **`e2e-smoke` CI job** in
+`frontend-ci.yml` (its own job, NOT Nx-affected-gated, so it can't be silently skipped); the owner
+independently re-ran the customer smoke green (`1 passed, 42.1s`) and read 2 of the 3 specs. These
+join the eight earlier Wave-8 closures — the auth wire-contract shrink (T-0272, security-gated +
+owner-regenerated), the 7-query paged canonicalization (T-0273), the FE error-resolver dedup (T-0274),
+the dead-code/LOW-drift cleanup (T-0275), the sitewide-push facade (T-0276), the two Android `:core`
+hoists (T-0277/T-0278) — leaving the contract surface deduplicated and canonical for the iOS port. **Two
+honest caveats carried out of close, neither blocking:** (1) **T-0281's smokes were delivered as a
+narrowed login-and-land slice** — under the stub seam the lists render empty, so the partner smoke does
+NOT assert the job-accept transition (its AC1) and the admin smoke does NOT assert a seeded data row (its
+AC2); the PM accepted the thin slice and **carried that depth to T-0293** rather than marking the AC
+silently satisfied; and (2) **T-0280** (FE comment-noise cleanup) and **T-0279** (admin-pay-config
+client) remain **open** — T-0280 is `ready` (depends on T-0272 + the owner regen, both confirmed, but it
+was never dispatched) and T-0279 stays `blocked` on the separate IMP-3 regen; per this sprint's
+§7 neither gates Wave-8 close, but **T-0280 is a genuine runnable leftover** and is the top of the next
+batch.
+
+### Final Wave-8 ticket states (reconciled against the ticket files, 2026-06-23)
+
+| ID | Title | Size | Final state | Note |
+|----|-------|------|-------------|------|
+| **T-0272** | Auth wire-contract shrink (security-gated) | M | **done ✅** | Owner regen bundle B1 confirmed |
+| **T-0273** | Canonicalize 7 bespoke paged queries → PagedData | M | **done ✅** | `consistency-violations.md` F1b tool-clean |
+| **T-0274** | FE error-resolver dedup → shared helper | M | **done ✅** | |
+| **T-0275** | Delete dead paged dups + LOW drift cluster | S | **done ✅** | |
+| **T-0276** | `SitewidePushFormFacade` → generated client | S | **done ✅** | |
+| **T-0277** | Hoist partner-app order formatters → `:core` | S | **done ✅** | `:core` lane |
+| **T-0278** | Hoist push-token cluster → `:core` | M | **done ✅** | `:core` lane |
+| **T-0279** | admin-pay-config.service → generated client | S | **blocked** (IMP-3 regen) | Does NOT gate close; unblocks on owner IMP-3 regen |
+| **T-0280** | Strip comment noise (FE auth + audit pockets) | S | **ready** (OPEN) | depends_on T-0272 ✓ + regen ✓ — never dispatched; **top of next batch** |
+| **T-0271** | Customer booking → checkout E2E smoke | M | **done ✅ (2026-06-23)** | Network-stub seam @ `/api/**`; `e2e-smoke` CI job |
+| **T-0281** | Partner + admin sibling E2E smokes | M | **done ✅ (2026-06-23)** | Narrowed to login-and-land; depth → **T-0293** |
+
+### Close-out — follow-ups filed at Wave-8 close (the audit-log follow-ups + the E2E nit/depth)
+
+Filing the genuinely-open follow-ups that surfaced building Wave 9's audit log (T-0286's close named
+them but **none were ticketed** — highest pre-existing id was T-0288) and the items from this E2E run:
+
+| ID | Title | Size | Status | Layers | sec | manual_step | Source |
+|----|-------|------|--------|--------|-----|-------------|--------|
+| **T-0289** | Per-detail-page drill-in → per-resource audit-history view | S | **ready** | frontend | no | — | ADR-0012 follow-up (a) (T-0286 close) |
+| **T-0290** | Single-row before/after audit diff + new single-row endpoint | M | **ready** | backend, frontend | **yes** | **nswag-regen** | ADR-0012 follow-up (b) (T-0286 close; off the PII-min initial cut) |
+| **T-0291** | consistency.md note — prefer the disputes-management list archetype | XS | **ready** | docs | no | — | ADR-0012 follow-up (c) |
+| **T-0292** | Remove dead `?? 0` on non-nullable `extra.price` (NG8102) | XS | **ready** | frontend | no | — | Wave-8 8C E2E dev-server boot |
+| **T-0293** | E2E depth — partner accept-job transition + admin seeded-row (T-0281 narrowed slice) | S | **ready** | frontend, backend | no | — | T-0281 close (AC1/AC2 narrowed) |
+
+⚠️ **OWNER (carried, NOT new this close):** (1) **IMP-3 admin nswag-regen** still unblocks **T-0279**;
+(2) **T-0290** will need an **admin nswag-regen** when its backend half lands (batch it with any pending
+admin regen); (3) standing items unchanged — Mapbox key rotation + Functions restart; the queued Wave-6
+ef-migrations (T-0261/T-0237 PROD `CONCURRENTLY`); open PRs to `master`; IMP-1 (Google OAuth) + BUG-22
+(email-badge CSS). The Wave-8 E2E work itself needs **no migration and no regen**.
+
+---
 
 > The audit-driven program (Waves 0–7) is **closed and merged**. Wave 8 is a discrete cleanup wave, not
 > a continuation of the audit program. 10 tickets (**T-0272…T-0281**), next free ids after T-0271.

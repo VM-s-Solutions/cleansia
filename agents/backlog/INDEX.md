@@ -50,11 +50,29 @@ One row per ticket. Source of truth for "what's the team doing right now".
 >
 > --- (Wave-8 banner below) ---
 >
-> ## 🟢 WAVE 8 IN PROGRESS — Pre-iOS Cleanup (planned 2026-06-22) — backlog only, not yet dispatched
+> ## ✅ WAVE 8 CLOSED — Pre-iOS Cleanup (closed 2026-06-23) — 9/10 done; T-0280 + T-0279 carried
+> **The E2E layer is decided + green; the pre-iOS contract surface is deduplicated + canonical.** The
+> last two open items — **T-0271** (customer booking→checkout smoke) + **T-0281** (partner/admin sibling
+> smokes) — are now **`done`** (real Playwright specs driving the actual UIs, network-stub seam @ the
+> `/api/**` boundary, new `e2e-smoke` job in `frontend-ci.yml`; owner re-ran the customer smoke green
+> `1 passed, 42.1s`). They join T-0272–T-0278 (8 earlier closures). **Honest caveats (non-blocking):**
+> **T-0281's smokes were narrowed to login-and-land** — the partner job-accept transition (its AC1) and
+> the admin seeded-row (its AC2) were not asserted under the empty-list stub → depth carried to **T-0293**,
+> not silently passed. **T-0280** (FE comment cleanup, `ready`, deps satisfied) was **never dispatched** —
+> it is a genuine open Wave-8 leftover and the **top of the next batch**. **T-0279** stays `blocked` on the
+> separate IMP-3 regen. Per `status/sprint-10.md` §7 neither gates close. Full close summary +
+> reconciled final states + the close-out follow-ups: **`status/sprint-10.md` 🏁 WAVE 8 CLOSE**.
+>
+> **Close-out follow-ups filed 2026-06-23 (the un-ticketed audit-log follow-ups + the E2E nit/depth):**
+> **T-0289** (audit drill-in entry points, S, ready) · **T-0290** (single-row before/after audit diff +
+> new endpoint, M, **sec**, **nswag-regen**, ready) · **T-0291** (consistency.md disputes-archetype note,
+> XS, docs, ready) · **T-0292** (NG8102 dead `?? 0` cleanup, XS, ready) · **T-0293** (E2E partner
+> accept-job + admin seeded-row depth, S, ready). Rows in the close-out table below this banner.
+>
 > **The audit-driven program (Waves 0–7) is closed + merged. Wave 8 is a discrete pre-iOS cleanup wave.**
 > Scope = `audits/AUDIT-2026-06-22-pre-ios-cleanup.md` (13 findings) + owner points P1–P4. **10 tickets
 > filed (T-0272…T-0281).** Full plan — wave table, dependency-ordered batches, lanes, the owner
-> manual-steps bundle, the reconciliation notes: **`status/sprint-10.md`**. No code, no commits yet.
+> manual-steps bundle, the reconciliation notes: **`status/sprint-10.md`**.
 >
 > **Reconciliation headlines (honest):** `GetPagedDisputes` **REFUTED** as a paged offender (it is
 > canonical A1–A8). `GetPagedMembershipPlans` **IS** an offender the audit MISSED but the tool flags →
@@ -67,24 +85,35 @@ One row per ticket. Source of truth for "what's the team doing right now".
 >
 > | ID | Title | Size | Status | Batch | depends_on | Layers | sec | manual_step |
 > |----|-------|------|--------|-------|-----------|--------|-----|-------------|
-> | **T-0272** | Auth wire-contract shrink — `trustedDeviceToken` mobile-only + drop `RefreshToken` server fields (P1 + #9) | M | **ready** | **8A FIRST/ALONE** | — | architect, backend | **yes** | **nswag-regen** (all clients) |
-> | **T-0273** | Canonicalize 7 bespoke paged queries → DataRangeRequest+Spec+Sort+PagedData (P4, #4/#5/#6/#12 + missed GetPagedMembershipPlans) | M | **ready** | 8B | — | backend | no | — |
-> | **T-0274** | Dedup API error-key extractor across 8 facades → shared `@cleansia/services` helper (#1) | M | **ready** | 8B | — | frontend | no | — |
-> | **T-0275** | Delete dead paged dups (GetAllEmployees, GetUserByEmail) + LOW drift cluster (#7/#8/#13) | S | **ready** | 8B | — | backend | no | — |
-> | **T-0276** | Extract `SitewidePushFormFacade` → generated client + UnsubscribeControlDirective (#10) | S | **ready** | 8B | — | frontend | no | — |
-> | **T-0277** | Hoist partner-app order formatters onto `:core` (#2) | S | **ready** | 8B (`:core` lane) | — | android | no | — |
-> | **T-0278** | Hoist push-token cluster into `:core` behind `DeviceRegistrationClient` (#3) | M | **ready** | 8B (`:core` lane) | — | android | no | — |
-> | **T-0279** | admin-pay-config.service → generated `AdminPayConfigClient` (#11) | S | **blocked** (IMP-3 regen) | — (not runnable) | — | frontend | no | **nswag-regen** (rides IMP-3) |
-> | **T-0280** | Strip comment noise (FE auth services + audit pockets) (P2) | S | **ready** | 8C | **T-0272** | frontend, backend | no | — |
-> | **T-0281** | E2E sibling smokes — partner accept-job + admin login-and-land (P3) | M | **ready** | 8C | **T-0271** | frontend, backend | no | — |
+> | **T-0272** | Auth wire-contract shrink — `trustedDeviceToken` mobile-only + drop `RefreshToken` server fields (P1 + #9) | M | **done ✅** | **8A FIRST/ALONE** | — | architect, backend | **yes** | **nswag-regen** (all clients) ✓ |
+> | **T-0273** | Canonicalize 7 bespoke paged queries → DataRangeRequest+Spec+Sort+PagedData (P4, #4/#5/#6/#12 + missed GetPagedMembershipPlans) | M | **done ✅** | 8B | — | backend | no | — |
+> | **T-0274** | Dedup API error-key extractor across 8 facades → shared `@cleansia/services` helper (#1) | M | **done ✅** | 8B | — | frontend | no | — |
+> | **T-0275** | Delete dead paged dups (GetAllEmployees, GetUserByEmail) + LOW drift cluster (#7/#8/#13) | S | **done ✅** | 8B | — | backend | no | — |
+> | **T-0276** | Extract `SitewidePushFormFacade` → generated client + UnsubscribeControlDirective (#10) | S | **done ✅** | 8B | — | frontend | no | — |
+> | **T-0277** | Hoist partner-app order formatters onto `:core` (#2) | S | **done ✅** | 8B (`:core` lane) | — | android | no | — |
+> | **T-0278** | Hoist push-token cluster into `:core` behind `DeviceRegistrationClient` (#3) | M | **done ✅** | 8B (`:core` lane) | — | android | no | — |
+> | **T-0279** | admin-pay-config.service → generated `AdminPayConfigClient` (#11) | S | **blocked** (IMP-3 regen) — CARRIED | — (not runnable) | — | frontend | no | **nswag-regen** (rides IMP-3) |
+> | **T-0280** | Strip comment noise (FE auth services + audit pockets) (P2) | S | **ready** (OPEN — never dispatched; **top of next batch**) | 8C | **T-0272** ✓ + regen ✓ | frontend, backend | no | — |
+> | **T-0281** | E2E sibling smokes — partner accept-job + admin login-and-land (P3) | M | **done ✅** (narrowed → T-0293) | 8C | **T-0271** ✓ | frontend, backend | no | — |
 >
-> **Lanes/serialization:** **8A (T-0272) lands FIRST/alone** — it shrinks the wire contract; the regen
-> ripples to FE auth-service consumers other tickets touch. **8B fans out concurrently with 8A** (disjoint
-> from `Features/Auth/*`, no regen dependency); **serialize T-0277 ↔ T-0278 on `:core`**. **8C waits**:
-> T-0280 on T-0272+regen, T-0281 on T-0271. **Owner manual-steps BUNDLE B1** (run once, after 8A): regen
-> admin+partner+customer (+mobile if the surface changes), then all-three prod builds, then release T-0280.
-> **T-0279 is held on the separate IMP-3 regen** and does NOT gate Wave-8 close. **T-0271** (customer E2E
-> smoke) stays `ready` from sprint 8 and is the foundation T-0281 reuses.
+> **Lanes/serialization:** **8A (T-0272) landed FIRST/alone** — shrank the wire contract; the owner regen
+> bundle B1 was confirmed. **8B fanned out concurrently** (T-0273–T-0278, all `done`; T-0277↔T-0278
+> serialized on `:core`). **8C:** **T-0281 `done`** (on T-0271); **T-0280 stayed `ready` and was never
+> dispatched** (its T-0272+regen deps are satisfied — it is the runnable Wave-8 leftover, top of the next
+> batch). **T-0279 stays `blocked`** on the separate IMP-3 regen — does NOT gate Wave-8 close. **T-0271**
+> (customer E2E smoke) is the foundation T-0281 reused; both `done` 2026-06-23.
+>
+> **Wave-8 CLOSE-OUT follow-ups (filed 2026-06-23) — the ADR-0012 audit-log follow-ups that surfaced
+> building Wave 9 but were NEVER ticketed (T-0286's close named them; highest pre-existing id was T-0288),
+> plus the E2E nit + the carried T-0281 depth. All `ready` (T-0290 held-on-regen for its FE half).**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+> |----|-------|------|--------|-----------|--------|-----|-------------|--------|
+> | **T-0289** | Per-detail-page drill-in → per-resource audit-history view (additive wiring of T-0286's shipped route) | S | **ready** | T-0286✓ | frontend | no | — | ADR-0012 follow-up (a) (T-0286 close) |
+> | **T-0290** | Single-row before/after audit diff view + **new single-row backend endpoint** (snapshots off the PII-min list cut) | M | **ready** (FE half held on regen) | T-0284✓, T-0285✓, T-0286✓ | backend, frontend | **yes** | **nswag-regen (admin)** | ADR-0012 follow-up (b) (T-0286 close; ADR-0012 D4.1) |
+> | **T-0291** | consistency.md note — prefer the disputes-management list archetype for new admin lists | XS | **ready** | — | docs | no | — | ADR-0012 follow-up (c) |
+> | **T-0292** | Remove dead `?? 0` on non-nullable `extra.price` in `wizard-summary-step` (NG8102) | XS | **ready** | — | frontend | no | — | Wave-8 8C E2E dev-server boot |
+> | **T-0293** | E2E depth — partner accept-job transition + admin seeded-row (the T-0281 narrowed slice) | S | **ready** | T-0281✓ | frontend, backend | no | — | T-0281 close (AC1/AC2 narrowed) |
 >
 > --- (Waves 0–7 close banner below, kept for traceability) ---
 >

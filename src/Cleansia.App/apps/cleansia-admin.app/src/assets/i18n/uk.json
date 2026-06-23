@@ -40,6 +40,8 @@
       "order_details": "Деталі замовлення",
       "invoices": "Рахунки",
       "invoice_details": "Деталі рахунку",
+      "audit_log": "Журнал дій",
+      "audit_log_history": "Історія ресурсу",
       "reports": "Звіти",
       "services": "Послуги",
       "service_create": "Створити послугу",
@@ -232,6 +234,7 @@
     "disputes": "Суперечки",
     "memberships": "Членство",
     "data_protection": "Захист даних",
+    "audit_log": "Журнал дій",
     "profile": "Мій профіль"
   },
   "pages": {
@@ -676,6 +679,45 @@
         "retry_pdf_success": "Генерацію PDF рахунку успішно запущено повторно"
       },
       "retry_pdf": "Повторити генерацію PDF"
+    },
+    "audit_log": {
+      "title": "Журнал дій",
+      "description": "Переглядайте слід дій адміністраторів — хто що зробив, з яким ресурсом, коли та з яким результатом.",
+      "no_audits": "Записів не знайдено",
+      "load_error": "Не вдалося завантажити журнал дій",
+      "columns": {
+        "occurred_on": "Коли",
+        "actor": "Виконавець",
+        "action": "Дія",
+        "resource": "Ресурс",
+        "outcome": "Результат"
+      },
+      "outcome": {
+        "success": "Успіх",
+        "failure": "Невдача"
+      },
+      "filters": {
+        "title": "Фільтри",
+        "actor": "Виконавець",
+        "actor_id": "ID виконавця",
+        "actor_email": "Email виконавця",
+        "action": "Дія",
+        "resource": "Ресурс",
+        "resource_type": "Тип ресурсу",
+        "resource_id": "ID ресурсу",
+        "outcome": "Результат",
+        "date_range": "Діапазон дат",
+        "date_from": "Від",
+        "date_to": "До",
+        "reset": "Скинути фільтри",
+        "clear_all": "Очистити все"
+      },
+      "history": {
+        "title": "Історія ресурсу",
+        "description": "Усе, що сталося з цим ресурсом:",
+        "no_audits": "Для цього ресурсу немає записів",
+        "back": "Назад до журналу дій"
+      }
     },
     "pay_config_management": {
       "title": "Глобальні ставки",

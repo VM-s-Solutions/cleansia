@@ -148,6 +148,12 @@ export class AppComponent implements OnInit {
       ],
     },
     {
+      label: 'sidebar.audit_log',
+      icon: 'pi pi-history',
+      route: '/audit-log',
+      permission: Policy.CanViewAuditLog,
+    },
+    {
       label: 'sidebar.profile',
       icon: 'pi pi-user',
       route: '/profile',

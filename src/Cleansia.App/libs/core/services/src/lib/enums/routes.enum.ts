@@ -35,6 +35,7 @@ export enum CleansiaAdminRoute {
   PAY_CONFIG_MANAGEMENT = 'pay-config-management',
   MEMBERSHIP_PLAN_MANAGEMENT = 'membership-plan-management',
   DATA_PROTECTION = 'data-protection',
+  AUDIT_LOG = 'audit-log',
   PROFILE = 'profile',
 }
 

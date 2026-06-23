@@ -40,6 +40,8 @@
       "order_details": "Order Details",
       "invoices": "Invoices",
       "invoice_details": "Invoice Details",
+      "audit_log": "Audit Log",
+      "audit_log_history": "Resource History",
       "reports": "Reports",
       "services": "Services",
       "service_create": "Create Service",
@@ -232,6 +234,7 @@
     "disputes": "Disputes",
     "memberships": "Memberships",
     "data_protection": "Data Protection",
+    "audit_log": "Audit Log",
     "profile": "My Profile"
   },
   "pages": {
@@ -676,6 +679,45 @@
         "retry_pdf_success": "Invoice PDF generation retried successfully"
       },
       "retry_pdf": "Retry PDF Generation"
+    },
+    "audit_log": {
+      "title": "Audit Log",
+      "description": "Review the trail of admin actions — who did what, to which resource, when, and with what outcome.",
+      "no_audits": "No audit entries found",
+      "load_error": "Failed to load the audit log",
+      "columns": {
+        "occurred_on": "When",
+        "actor": "Actor",
+        "action": "Action",
+        "resource": "Resource",
+        "outcome": "Outcome"
+      },
+      "outcome": {
+        "success": "Success",
+        "failure": "Failure"
+      },
+      "filters": {
+        "title": "Filters",
+        "actor": "Actor",
+        "actor_id": "Actor ID",
+        "actor_email": "Actor Email",
+        "action": "Action",
+        "resource": "Resource",
+        "resource_type": "Resource Type",
+        "resource_id": "Resource ID",
+        "outcome": "Outcome",
+        "date_range": "Date Range",
+        "date_from": "From",
+        "date_to": "To",
+        "reset": "Reset Filters",
+        "clear_all": "Clear All"
+      },
+      "history": {
+        "title": "Resource History",
+        "description": "Everything that happened to this resource:",
+        "no_audits": "No audit entries for this resource",
+        "back": "Back to Audit Log"
+      }
     },
     "pay_config_management": {
       "title": "Global Rates",

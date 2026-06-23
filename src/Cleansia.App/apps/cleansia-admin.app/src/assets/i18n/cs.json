@@ -40,6 +40,8 @@
       "order_details": "Detail objednávky",
       "invoices": "Faktury",
       "invoice_details": "Detail faktury",
+      "audit_log": "Protokol akcí",
+      "audit_log_history": "Historie zdroje",
       "reports": "Přehledy",
       "services": "Služby",
       "service_create": "Vytvořit službu",
@@ -232,6 +234,7 @@
     "disputes": "Spory",
     "memberships": "Členství",
     "data_protection": "Ochrana údajů",
+    "audit_log": "Protokol akcí",
     "profile": "Můj profil"
   },
   "pages": {
@@ -676,6 +679,45 @@
         "retry_pdf_success": "Generování PDF faktury bylo úspěšně spuštěno znovu"
       },
       "retry_pdf": "Opakovat generování PDF"
+    },
+    "audit_log": {
+      "title": "Protokol akcí",
+      "description": "Procházejte stopu akcí administrátorů — kdo co provedl, s jakým zdrojem, kdy a s jakým výsledkem.",
+      "no_audits": "Nebyly nalezeny žádné záznamy",
+      "load_error": "Nepodařilo se načíst protokol akcí",
+      "columns": {
+        "occurred_on": "Kdy",
+        "actor": "Aktér",
+        "action": "Akce",
+        "resource": "Zdroj",
+        "outcome": "Výsledek"
+      },
+      "outcome": {
+        "success": "Úspěch",
+        "failure": "Selhání"
+      },
+      "filters": {
+        "title": "Filtry",
+        "actor": "Aktér",
+        "actor_id": "ID aktéra",
+        "actor_email": "E-mail aktéra",
+        "action": "Akce",
+        "resource": "Zdroj",
+        "resource_type": "Typ zdroje",
+        "resource_id": "ID zdroje",
+        "outcome": "Výsledek",
+        "date_range": "Časové období",
+        "date_from": "Od",
+        "date_to": "Do",
+        "reset": "Obnovit filtry",
+        "clear_all": "Vymazat vše"
+      },
+      "history": {
+        "title": "Historie zdroje",
+        "description": "Vše, co se s tímto zdrojem stalo:",
+        "no_audits": "Pro tento zdroj nejsou žádné záznamy",
+        "back": "Zpět na protokol akcí"
+      }
     },
     "invoice_detail": {
       "title": "Detail faktury",

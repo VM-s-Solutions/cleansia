@@ -1,11 +1,11 @@
 ---
 id: T-0286
 title: Admin audit-log feature lib (facade + signals + cleansia-table, filters, 5 locales, per-resource history)
-status: ready
+status: done
 size: M
 owner: —
 created: 2026-06-22
-updated: 2026-06-22
+updated: 2026-06-23
 depends_on: [T-0285]
 blocks: []
 stories: []
@@ -70,6 +70,27 @@ archetype — same three-data-state + filter shape. The generated client lands a
 Owner-only: **nswag-regen (admin)** — shared with T-0285 in the Wave-9 bundle; this ticket is held on it.
 
 ## Status log
+- 2026-06-23 — ready → review (frontend). Wave-9 admin nswag-regen confirmed present (`AdminAuditLogClient`
+  + `AdminActionAuditDto` + `PagedDataOfAdminActionAuditDto` on the admin client). Built the new
+  `audit-log` admin feature lib (`libs/cleansia-admin-features/audit-log/`) mirroring the
+  disputes-management archetype: facade extends `UnsubscribeControlDirective`, injects the dedicated
+  generated `AdminAuditLogClient` (not raw HttpClient), signal state with the three explicit data states
+  (loading / error via `hasError` / loaded-with-data / loaded-empty). Two views: (1) filterable **list**
+  with actor-id/email, action, resource type/id, date-range, and outcome filters via `<cleansia-*>` /
+  PrimeNG controls + `cleansia-table`; (2) per-resource **history** at
+  `audit-log/resource/:resourceType/:resourceId` reusing the same facade/table with a pinned resource
+  lock (filters cannot widen it). Routed under `adminGuard` + gated nav item with
+  `Policy.CanViewAuditLog` (added to the FE `Policy`/`POLICY_MAP` mirror + backend confirms
+  `CanViewAuditLog → AdminOnly`). All 42 user-visible strings via `TranslatePipe` in **all 5** admin
+  locales. **TDD:** facade spec written first (8 specs: load, 3 data states, error-clear-on-reload, full
+  filter arg-mapping, offset reset, page change, resource-lock pin) — green. Gates: `nx test audit-log`
+  **8 passed**; `nx lint audit-log` **clean**; `nx build cleansia-admin.app --configuration=production`
+  **SUCCESS** (only pre-existing unrelated employee-detail + bundle-budget warnings); 5 admin locale
+  JSONs validated-parse. Follow-ups flagged (not in scope): (a) embedding the per-resource history entry
+  point into existing order/dispute/user detail pages (deep-link route + facade are ready, drill-in is
+  one nav call); (b) a row drill-down for the before/after JSON diff — the list/history projection omits
+  `BeforeJson`/`AfterJson` for PII-minimization per ADR-0012 D4.1, so a diff view needs a new
+  single-row backend endpoint (own ticket).
 - 2026-06-22 — draft → ready (created by pm). Wave-9 piece 5/5 (ADR-0012 D7 frontend). `depends_on:
   [T-0285]` (the query DTO) **and the admin nswag-regen** (Wave-9 bundle) — promoted `ready` so the
   facade/spec can be authored test-first, but **held from `done`** until the regen lands + the admin

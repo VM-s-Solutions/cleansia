@@ -40,6 +40,8 @@
       "order_details": "Детали заказа",
       "invoices": "Счета",
       "invoice_details": "Детали счёта",
+      "audit_log": "Журнал действий",
+      "audit_log_history": "История ресурса",
       "reports": "Отчёты",
       "services": "Услуги",
       "service_create": "Создать услугу",
@@ -232,6 +234,7 @@
     "disputes": "Споры",
     "memberships": "Членство",
     "data_protection": "Защита данных",
+    "audit_log": "Журнал действий",
     "profile": "Мой профиль"
   },
   "pages": {
@@ -676,6 +679,45 @@
         "retry_pdf_success": "Генерация PDF счёта успешно запущена повторно"
       },
       "retry_pdf": "Повторить генерацию PDF"
+    },
+    "audit_log": {
+      "title": "Журнал действий",
+      "description": "Просматривайте след действий администраторов — кто что сделал, с каким ресурсом, когда и с каким результатом.",
+      "no_audits": "Записи не найдены",
+      "load_error": "Не удалось загрузить журнал действий",
+      "columns": {
+        "occurred_on": "Когда",
+        "actor": "Исполнитель",
+        "action": "Действие",
+        "resource": "Ресурс",
+        "outcome": "Результат"
+      },
+      "outcome": {
+        "success": "Успех",
+        "failure": "Неудача"
+      },
+      "filters": {
+        "title": "Фильтры",
+        "actor": "Исполнитель",
+        "actor_id": "ID исполнителя",
+        "actor_email": "Email исполнителя",
+        "action": "Действие",
+        "resource": "Ресурс",
+        "resource_type": "Тип ресурса",
+        "resource_id": "ID ресурса",
+        "outcome": "Результат",
+        "date_range": "Диапазон дат",
+        "date_from": "С",
+        "date_to": "По",
+        "reset": "Сбросить фильтры",
+        "clear_all": "Очистить всё"
+      },
+      "history": {
+        "title": "История ресурса",
+        "description": "Всё, что произошло с этим ресурсом:",
+        "no_audits": "Для этого ресурса нет записей",
+        "back": "Назад к журналу действий"
+      }
     },
     "pay_config_management": {
       "title": "Глобальные ставки",

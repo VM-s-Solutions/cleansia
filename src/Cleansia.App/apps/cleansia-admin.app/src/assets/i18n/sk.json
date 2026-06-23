@@ -40,6 +40,8 @@
       "order_details": "Detail objednávky",
       "invoices": "Faktúry",
       "invoice_details": "Detail faktúry",
+      "audit_log": "Protokol akcií",
+      "audit_log_history": "História zdroja",
       "reports": "Reporty",
       "services": "Služby",
       "service_create": "Vytvoriť službu",
@@ -232,6 +234,7 @@
     "disputes": "Reklamácie",
     "memberships": "Členstvá",
     "data_protection": "Ochrana údajov",
+    "audit_log": "Protokol akcií",
     "profile": "Môj profil"
   },
   "pages": {
@@ -676,6 +679,45 @@
         "retry_pdf_success": "Generovanie PDF faktúry bolo úspešne spustené znova"
       },
       "retry_pdf": "Zopakovať generovanie PDF"
+    },
+    "audit_log": {
+      "title": "Protokol akcií",
+      "description": "Prezerajte stopu akcií administrátorov — kto čo vykonal, s akým zdrojom, kedy a s akým výsledkom.",
+      "no_audits": "Nenašli sa žiadne záznamy",
+      "load_error": "Nepodarilo sa načítať protokol akcií",
+      "columns": {
+        "occurred_on": "Kedy",
+        "actor": "Aktér",
+        "action": "Akcia",
+        "resource": "Zdroj",
+        "outcome": "Výsledok"
+      },
+      "outcome": {
+        "success": "Úspech",
+        "failure": "Zlyhanie"
+      },
+      "filters": {
+        "title": "Filtre",
+        "actor": "Aktér",
+        "actor_id": "ID aktéra",
+        "actor_email": "E-mail aktéra",
+        "action": "Akcia",
+        "resource": "Zdroj",
+        "resource_type": "Typ zdroja",
+        "resource_id": "ID zdroja",
+        "outcome": "Výsledok",
+        "date_range": "Časové obdobie",
+        "date_from": "Od",
+        "date_to": "Do",
+        "reset": "Obnoviť filtre",
+        "clear_all": "Vymazať všetko"
+      },
+      "history": {
+        "title": "História zdroja",
+        "description": "Všetko, čo sa s týmto zdrojom stalo:",
+        "no_audits": "Pre tento zdroj nie sú žiadne záznamy",
+        "back": "Späť na protokol akcií"
+      }
     },
     "pay_config_management": {
       "title": "Globálne sadzby",

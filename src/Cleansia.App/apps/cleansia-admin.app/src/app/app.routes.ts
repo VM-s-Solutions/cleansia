@@ -208,6 +208,14 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'audit-log',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/audit-log').then(
+        (m) => m.auditLogRoutes
+      ),
+  },
+  {
     path: 'profile',
     canActivate: [adminGuard],
     loadChildren: () =>

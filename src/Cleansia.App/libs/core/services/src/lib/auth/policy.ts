@@ -181,6 +181,9 @@ export const Policy = {
   CanCreateMembershipPlan: 'CanCreateMembershipPlan',
   CanUpdateMembershipPlan: 'CanUpdateMembershipPlan',
   CanDeactivateMembershipPlan: 'CanDeactivateMembershipPlan',
+
+  // Admin Action Audit Log
+  CanViewAuditLog: 'CanViewAuditLog',
 } as const;
 
 export type PolicyName = (typeof Policy)[keyof typeof Policy];
@@ -342,6 +345,8 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanCreateMembershipPlan: PhysicalPolicy.AdminOnly,
   CanUpdateMembershipPlan: PhysicalPolicy.AdminOnly,
   CanDeactivateMembershipPlan: PhysicalPolicy.AdminOnly,
+
+  CanViewAuditLog: PhysicalPolicy.AdminOnly,
 };
 
 export function resolvePhysicalPolicy(policy: PolicyName | string): PhysicalPolicy {

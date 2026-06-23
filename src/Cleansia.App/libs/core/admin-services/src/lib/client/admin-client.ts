@@ -14,6 +14,170 @@ import { HttpClient, HttpHeaders, HttpResponse, HttpResponseBase } from '@angula
 
 export const ADMINAPIBASEURL = new InjectionToken<string>('ADMINAPIBASEURL');
 
+export interface IAdminAuditLogClient {
+    /**
+     * @param actorId (optional) 
+     * @param actorEmail (optional) 
+     * @param action (optional) 
+     * @param resourceType (optional) 
+     * @param resourceId (optional) 
+     * @param occurredFrom (optional) 
+     * @param occurredTo (optional) 
+     * @param success (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getPaged(actorId?: string | undefined, actorEmail?: string | undefined, action?: string | undefined, resourceType?: string | undefined, resourceId?: string | undefined, occurredFrom?: Date | undefined, occurredTo?: Date | undefined, success?: boolean | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfAdminActionAuditDto>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AdminAuditLogClient implements IAdminAuditLogClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param actorId (optional) 
+     * @param actorEmail (optional) 
+     * @param action (optional) 
+     * @param resourceType (optional) 
+     * @param resourceId (optional) 
+     * @param occurredFrom (optional) 
+     * @param occurredTo (optional) 
+     * @param success (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getPaged(actorId?: string | undefined, actorEmail?: string | undefined, action?: string | undefined, resourceType?: string | undefined, resourceId?: string | undefined, occurredFrom?: Date | undefined, occurredTo?: Date | undefined, success?: boolean | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfAdminActionAuditDto> {
+        let url = this.baseUrl + "/api/AdminAuditLog/get-paged?";
+        if (actorId === null)
+            throw new globalThis.Error("The parameter 'actorId' cannot be null.");
+        else if (actorId !== undefined)
+            url += "Filter.ActorId=" + encodeURIComponent("" + actorId) + "&";
+        if (actorEmail === null)
+            throw new globalThis.Error("The parameter 'actorEmail' cannot be null.");
+        else if (actorEmail !== undefined)
+            url += "Filter.ActorEmail=" + encodeURIComponent("" + actorEmail) + "&";
+        if (action === null)
+            throw new globalThis.Error("The parameter 'action' cannot be null.");
+        else if (action !== undefined)
+            url += "Filter.Action=" + encodeURIComponent("" + action) + "&";
+        if (resourceType === null)
+            throw new globalThis.Error("The parameter 'resourceType' cannot be null.");
+        else if (resourceType !== undefined)
+            url += "Filter.ResourceType=" + encodeURIComponent("" + resourceType) + "&";
+        if (resourceId === null)
+            throw new globalThis.Error("The parameter 'resourceId' cannot be null.");
+        else if (resourceId !== undefined)
+            url += "Filter.ResourceId=" + encodeURIComponent("" + resourceId) + "&";
+        if (occurredFrom === null)
+            throw new globalThis.Error("The parameter 'occurredFrom' cannot be null.");
+        else if (occurredFrom !== undefined)
+            url += "Filter.OccurredFrom=" + encodeURIComponent(occurredFrom ? "" + occurredFrom.toISOString() : "") + "&";
+        if (occurredTo === null)
+            throw new globalThis.Error("The parameter 'occurredTo' cannot be null.");
+        else if (occurredTo !== undefined)
+            url += "Filter.OccurredTo=" + encodeURIComponent(occurredTo ? "" + occurredTo.toISOString() : "") + "&";
+        if (success === null)
+            throw new globalThis.Error("The parameter 'success' cannot be null.");
+        else if (success !== undefined)
+            url += "Filter.Success=" + encodeURIComponent("" + success) + "&";
+        if (sort === null)
+            throw new globalThis.Error("The parameter 'sort' cannot be null.");
+        else if (sort !== undefined)
+            sort && sort.forEach((item, index) => {
+                for (const attr in item)
+        			if (item.hasOwnProperty(attr)) {
+        				url += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
+        			}
+            });
+        if (offset === null)
+            throw new globalThis.Error("The parameter 'offset' cannot be null.");
+        else if (offset !== undefined)
+            url += "Offset=" + encodeURIComponent("" + offset) + "&";
+        if (limit === null)
+            throw new globalThis.Error("The parameter 'limit' cannot be null.");
+        else if (limit !== undefined)
+            url += "Limit=" + encodeURIComponent("" + limit) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetPaged(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetPaged(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<PagedDataOfAdminActionAuditDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<PagedDataOfAdminActionAuditDto>;
+        }));
+    }
+
+    protected processGetPaged(response: HttpResponseBase): Observable<PagedDataOfAdminActionAuditDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = PagedDataOfAdminActionAuditDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IAdminAuthClient {
     /**
      * @param body (optional) 
@@ -13584,6 +13748,86 @@ export interface IAddDisputeMessageCommand {
     isStaffMessage: boolean;
 }
 
+export class AdminActionAuditDto implements IAdminActionAuditDto {
+    id!: string | undefined;
+    actorId!: string | undefined;
+    actorEmail!: string | undefined;
+    actorProfile!: UserProfile;
+    action!: string | undefined;
+    resourceType!: string | undefined;
+    resourceId!: string | undefined;
+    success!: boolean;
+    errorCode!: string | undefined;
+    occurredOn!: Date;
+    reason!: string | undefined;
+    correlationId!: string | undefined;
+
+    constructor(data?: IAdminActionAuditDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.actorId = Data["actorId"];
+            this.actorEmail = Data["actorEmail"];
+            this.actorProfile = Data["actorProfile"];
+            this.action = Data["action"];
+            this.resourceType = Data["resourceType"];
+            this.resourceId = Data["resourceId"];
+            this.success = Data["success"];
+            this.errorCode = Data["errorCode"];
+            this.occurredOn = Data["occurredOn"] ? new Date(Data["occurredOn"].toString()) : undefined as any;
+            this.reason = Data["reason"];
+            this.correlationId = Data["correlationId"];
+        }
+    }
+
+    static fromJS(data: any): AdminActionAuditDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminActionAuditDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["actorId"] = this.actorId;
+        data["actorEmail"] = this.actorEmail;
+        data["actorProfile"] = this.actorProfile;
+        data["action"] = this.action;
+        data["resourceType"] = this.resourceType;
+        data["resourceId"] = this.resourceId;
+        data["success"] = this.success;
+        data["errorCode"] = this.errorCode;
+        data["occurredOn"] = this.occurredOn ? this.occurredOn.toISOString() : undefined as any;
+        data["reason"] = this.reason;
+        data["correlationId"] = this.correlationId;
+        return data;
+    }
+}
+
+export interface IAdminActionAuditDto {
+    id: string | undefined;
+    actorId: string | undefined;
+    actorEmail: string | undefined;
+    actorProfile: UserProfile;
+    action: string | undefined;
+    resourceType: string | undefined;
+    resourceId: string | undefined;
+    success: boolean;
+    errorCode: string | undefined;
+    occurredOn: Date;
+    reason: string | undefined;
+    correlationId: string | undefined;
+}
+
 export class AdminCancelOrderCommand implements IAdminCancelOrderCommand {
     orderId!: string | undefined;
     reason!: string | undefined;
@@ -23085,6 +23329,62 @@ export interface IPackageServiceSummary {
     translations: { [key: string]: Translation; } | undefined;
 }
 
+export class PagedDataOfAdminActionAuditDto implements IPagedDataOfAdminActionAuditDto {
+    pageNumber!: number;
+    pageSize!: number;
+    total!: number;
+    data!: AdminActionAuditDto[] | undefined;
+
+    constructor(data?: IPagedDataOfAdminActionAuditDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.pageNumber = Data["pageNumber"];
+            this.pageSize = Data["pageSize"];
+            this.total = Data["total"];
+            if (Array.isArray(Data["data"])) {
+                this.data = [] as any;
+                for (let item of Data["data"])
+                    this.data!.push(AdminActionAuditDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): PagedDataOfAdminActionAuditDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new PagedDataOfAdminActionAuditDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["pageNumber"] = this.pageNumber;
+        data["pageSize"] = this.pageSize;
+        data["total"] = this.total;
+        if (Array.isArray(this.data)) {
+            data["data"] = [];
+            for (let item of this.data)
+                data["data"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IPagedDataOfAdminActionAuditDto {
+    pageNumber: number;
+    pageSize: number;
+    total: number;
+    data: AdminActionAuditDto[] | undefined;
+}
+
 export class PagedDataOfAdminEmployeeListItem implements IPagedDataOfAdminEmployeeListItem {
     pageNumber!: number;
     pageSize!: number;
@@ -28088,6 +28388,12 @@ export interface IUserConsentDto {
     grantedAt: Date | undefined;
     withdrawnAt: Date | undefined;
     createdOn: Date;
+}
+
+export enum UserProfile {
+    Customer = 1,
+    Employee = 2,
+    Administrator = 100,
 }
 
 function formatDate(d: Date) {

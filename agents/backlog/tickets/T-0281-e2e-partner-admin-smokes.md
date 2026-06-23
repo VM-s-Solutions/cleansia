@@ -1,11 +1,11 @@
 ---
 id: T-0281
 title: E2E sibling smokes — partner accept-job + admin login-and-land (reuse the T-0271 harness)
-status: ready
+status: review
 size: M
-owner: —
+owner: frontend
 created: 2026-06-22
-updated: 2026-06-22
+updated: 2026-06-23
 depends_on: [T-0271]
 blocks: []
 stories: []
@@ -95,6 +95,76 @@ existing surfaces, adds no endpoint/authz/DTO). `optimizer` N/A.
   scaffold-only projects (per T-0271's harness facts). No-decision (Phase-0 characterization). Sized **M**
   (2 specs + seed/boot extension to 3 apps; if the multi-app boot/seed grows past M at dispatch, stop and
   split the partner and admin smokes into separate tickets). `manual_steps: []`.
+
+- 2026-06-23 — ready → review (frontend). Two sibling smokes added, each
+  replacing its `example.spec.ts` scaffold and driving the REAL UI:
+  - `apps/cleansia-partner.app-e2e/src/login-jobs.smoke.spec.ts` — partner fills
+    the REAL login form, submits, and lands on the jobs (orders) page; asserts
+    the login POST fired with the typed email, the URL reached `/orders`, the
+    authenticated app-shell sidebar (`nav.sidebar-nav`, rendered only when
+    `isLoggedIn()`) is visible, and both job-section headings ("Available
+    Orders" / "My Orders") render.
+  - `apps/cleansia-admin.app-e2e/src/login-dashboard.smoke.spec.ts` — admin fills
+    the REAL login form, submits, and lands on the admin home
+    (`/employee-management`); asserts the login POST fired, the URL reached
+    the home route, the sidebar is visible, and the "Employee Management"
+    heading renders.
+
+  **Seam decisions (consistent with T-0271, per AC3/AC6):**
+  - *Backend seam:* **Playwright network-stubbing** — the SAME seam T-0271 chose
+    (it switched from the ticket's originally-assumed seeded Postgres to
+    stubbing). Each app boots its real dev server via the Playwright `webServer`
+    (`nx run <app>:serve`); every `**/api/**` call is intercepted at the browser
+    boundary with deterministic fixtures (catch-all 200 `{}` + specific
+    overrides). No live API, no Postgres, no seed script — so AC3's seeded
+    partner/admin/job rows are satisfied by fixtures, not DB seed data.
+  - *Auth seam:* the login stub returns a `JwtTokenResponse` carrying a CSRF
+    token, a future refresh-token expiry and the role (partner `Employee` /
+    admin `Administrator` + `hasAdminAccess: true`). The real auth/refresh tokens
+    are HttpOnly cookies the JS never reads; `setSession` persists the
+    JS-readable companions to localStorage and the real route guards
+    (`authGuard` / `adminGuard`) gate on those — so the REAL login → guard →
+    landing handshake is exercised. **No CI secret, `manual_steps: []` stays
+    empty.**
+
+  **Scope (per orchestrator dispatch — narrower than the ticket's AC1):** the
+  smokes STOP at the authenticated landing / job VIEW; the partner smoke does
+  NOT accept a job and neither touches a money flow. The "accept-job state
+  transition" (AC1) and "≥1 seeded data row" (AC2) are intentionally not
+  asserted — under the stub seam the lists render empty, and login-and-land is
+  the agreed thin slice. Flagged here for QA/PM.
+
+  **CI (AC3/AC5):** the existing `e2e-smoke` job in
+  `.github/workflows/frontend-ci.yml` (its own job, NOT Nx-affected-gated) is
+  extended with sequential partner + admin steps
+  (`nx run cleansia-{partner,admin}.app-e2e:e2e-ci`) after the customer step —
+  sequential because all three apps' `webServer` bind :4200 and cannot share a
+  job concurrently. Both e2e configs trimmed to **chromium-only** with a 300s
+  webServer boot timeout (mirroring T-0271).
+
+  **Run evidence (local, `src/Cleansia.App`):**
+  ```
+  # Admin
+  $ npx playwright test --config apps/cleansia-admin.app-e2e/playwright.config.ts --reporter=list
+    ok 1 [chromium] › login-dashboard.smoke.spec.ts › admin can log in and land on the admin home (5.4s)
+    1 passed (24.8s)
+
+  # Partner
+  $ npx playwright test --config apps/cleansia-partner.app-e2e/playwright.config.ts --reporter=list
+    ok 1 [chromium] › login-jobs.smoke.spec.ts › partner can log in and reach the jobs (orders) page (2.5s)
+    1 passed (35.0s)
+
+  # AC4 determinism — 3 consecutive runs each:
+  $ npx playwright test --config apps/cleansia-admin.app-e2e/playwright.config.ts --repeat-each=3
+    ok 1 / ok 2 / ok 3 [chromium] › ... admin home    → 3 passed (21.9s)
+  $ npx playwright test --config apps/cleansia-partner.app-e2e/playwright.config.ts --repeat-each=3
+    ok 1 / ok 2 / ok 3 [chromium] › ... jobs (orders)  → 3 passed (30.4s)
+
+  # Canonical Nx target (non-atomized; the atomized e2e-ci needs Nx Cloud Agents
+  # which CI has but local does not):
+  $ npx nx run cleansia-admin.app-e2e:e2e    → 1 passed (19.3s); NX Successfully ran target e2e
+  $ npx nx run cleansia-partner.app-e2e:e2e  → NX Successfully ran target e2e
+  ```
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

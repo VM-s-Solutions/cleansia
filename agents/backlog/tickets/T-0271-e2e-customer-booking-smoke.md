@@ -1,11 +1,11 @@
 ---
 id: T-0271
 title: Phase-0 E2E smoke — customer booking → checkout-intent critical path (real browser, seeded CI)
-status: ready
+status: review
 size: M
-owner: —
+owner: frontend
 created: 2026-06-21
-updated: 2026-06-21
+updated: 2026-06-23
 depends_on: []
 blocks: []
 stories: []
@@ -172,6 +172,53 @@ developer; **QA** confirms AC↔evidence and the ≥3-run determinism (AC4). No 
   (AC6). Deferred to implementer: Stripe seam (recommend (a) drive-to-handoff) + seed mechanism
   (prefer existing `insert_seed_data.sql` or a test-only seed). No `depends_on` (all program waves
   0–7 closed).
+
+- 2026-06-23 — ready → review (frontend). One spec
+  `apps/cleansia.app-e2e/src/booking-checkout.smoke.spec.ts` replaces the
+  `example.spec.ts` scaffold. Lands on the customer app, clicks the real
+  "Book a Cleaning" hero CTA, and drives the REAL order wizard through all five
+  steps (services → contact/address via a Mapbox pick → date/time → payment →
+  summary), then places the order and asserts the create-order POST + the Stripe
+  handoff navigation — stopping before any card charge.
+
+  **Seam decisions (AC6):**
+  - *Backend seam:* **Playwright network-stubbing** (not a live seeded Customer
+    API). Chosen because (a) the address step REQUIRES a Mapbox geocode pick
+    (lat/lng) — a real Mapbox call needs a server-side token proxy and is
+    non-deterministic, and (b) it removes the Postgres/seed-script dependency
+    entirely, making the smoke deterministic with zero external services. The
+    app still boots its real SSR server (Playwright `webServer`) and the REAL
+    wizard UI is driven — only the `**/api/**` boundary is faked, so the
+    dead-CTA / broken-step bug class is fully covered. `sql-scripts/
+    insert_seed_data.sql` was therefore NOT needed.
+  - *Stripe seam:* **drive-to-handoff + stub** (the ticket's recommended (a),
+    realised via (c) at the network boundary). `Payment/CreateOrder` returns a
+    synthetic `stripeSessionId` pointing at a same-origin stub URL; the smoke
+    asserts the POST fired and the browser reached the handoff URL. **No Stripe
+    test-mode key, no CI secret → `manual_steps: []` stays empty.**
+
+  **CI (AC3):** new **`e2e-smoke`** job in `.github/workflows/frontend-ci.yml`
+  (its own job, NOT Nx-affected-gated, so it can't be silently skipped). Installs
+  `chromium` only and runs `nx run cleansia.app-e2e:e2e-ci`. The e2e config is
+  trimmed to **chromium-only** (a smoke needs one browser) and given a 300s
+  webServer boot timeout for the SSR dev build.
+
+  **Run evidence (local, `src/Cleansia.App`):**
+  ```
+  $ npx playwright test --config apps/cleansia.app-e2e/playwright.config.ts --reporter=list
+    ok 1 [chromium] › booking-checkout.smoke.spec.ts › customer can drive the booking wizard to the checkout handoff (19.6s)
+    1 passed (22.9s)
+
+  # AC4 determinism — 3 consecutive runs:
+  $ npx playwright test ... --repeat-each=3
+    ok 1 / ok 2 / ok 3 [chromium] › ... checkout handoff
+    3 passed (19.3s)
+
+  # CI-shaped target:
+  $ npx nx run cleansia.app-e2e:e2e-ci
+    1 passed (19.8s)
+    NX  Successfully ran target e2e-ci for project cleansia.app-e2e
+  ```
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -36,8 +37,10 @@ public class ResolveDisputeRefundSeamTests
         _session.Setup(s => s.GetUserId()).Returns(ActorId);
     }
 
+    private readonly AuditContext _auditContext = new();
+
     private ResolveDispute.Handler CreateHandler() =>
-        new(_disputeRepository.Object, _session.Object, _refundService.Object, _pending.Object);
+        new(_disputeRepository.Object, _session.Object, _refundService.Object, _pending.Object, _auditContext);
 
     private static Dispute NewPendingDispute() =>
         new(

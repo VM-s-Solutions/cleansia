@@ -38,6 +38,13 @@ Every controller method has exactly one of:
 A new endpoint with **none** of these is a hole: the default policy requires authentication, but a
 missing policy attribute lets *any* authenticated user (any role, any tenant) hit it.
 
+**Accountability (ADR-0012).** Every admin mutation (a `Command` run by an `Administrator`) leaves an
+append-only `AdminActionAudit` row, captured generically by `AuditLogBehavior` — you write no audit
+code. An admin mutation with **no** row, a behavior that **computes** before/after (it must only drain
+the handler's `IAuditContext` snapshot), a snapshot carrying **raw subject PII**, or a non-atomic /
+best-effort *success*-audit are ADR-0012 violations (the success row must ride the action's commit;
+only *failures* are written out-of-band and must never re-throw into the caller's error).
+
 ## S3 — Resource-by-id endpoints must check ownership
 
 Anything that takes a resource id and operates on it must verify the caller owns the resource —

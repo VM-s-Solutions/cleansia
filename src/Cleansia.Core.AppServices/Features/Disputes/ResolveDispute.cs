@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -11,8 +12,14 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Disputes;
 
+[AuditAction("dispute.resolve", Sensitive = true, ResourceType = "Dispute")]
 public class ResolveDispute
 {
+    public record ResolutionSnapshot(
+        string DisputeId,
+        DisputeStatus Status,
+        decimal? RefundAmount);
+
     public class Validator : AbstractValidator<Command>
     {
         public Validator()
@@ -45,7 +52,8 @@ public class ResolveDispute
         IDisputeRepository disputeRepository,
         IUserSessionProvider userSessionProvider,
         IRefundService refundService,
-        IPendingDispatch pending) : ICommandHandler<Command>
+        IPendingDispatch pending,
+        IAuditContext auditContext) : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
         {
@@ -55,6 +63,9 @@ public class ResolveDispute
             {
                 return BusinessResult.Failure(new Error(nameof(request.DisputeId), BusinessErrorMessage.DisputeNotFound));
             }
+
+            var statusBefore = dispute.Status;
+            var refundBefore = dispute.RefundAmount;
 
             // A terminal dispute (Resolved/Closed) is never re-resolved: a second Resolve would overwrite
             // the recorded RefundAmount/notes of the settled dispute. Resolve owns the Resolved state and
@@ -70,6 +81,12 @@ public class ResolveDispute
                 refundAmount: request.RefundAmount,
                 resolutionNotes: request.ResolutionNotes
             );
+
+            auditContext.RecordChange(
+                "Dispute",
+                dispute.Id,
+                new ResolutionSnapshot(dispute.Id, statusBefore, refundBefore),
+                new ResolutionSnapshot(dispute.Id, dispute.Status, dispute.RefundAmount));
 
             if (request.RefundAmount is > 0m)
             {

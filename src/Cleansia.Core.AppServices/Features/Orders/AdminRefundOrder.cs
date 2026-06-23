@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -13,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
+[AuditAction("order.refund.full", Sensitive = true, ResourceType = "Order")]
 public class AdminRefundOrder
 {
     public record Command(
@@ -24,6 +26,12 @@ public class AdminRefundOrder
         decimal RefundAmount,
         PaymentStatus PaymentStatus,
         bool RefundInitiated);
+
+    public record RefundSnapshot(
+        string OrderId,
+        decimal OrderTotal,
+        decimal ConsumedRefund,
+        PaymentStatus PaymentStatus);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -43,7 +51,8 @@ public class AdminRefundOrder
         IRefundRepository refundRepository,
         IRefundService refundService,
         IUserSessionProvider userSessionProvider,
-        IPendingDispatch pending
+        IPendingDispatch pending,
+        IAuditContext auditContext
     ) : ICommandHandler<Command, Response>
     {
         // Stable full-refund purpose for the deterministic RefundKey (refund:{OrderId}:admin:full). One
@@ -76,6 +85,9 @@ public class AdminRefundOrder
                     BusinessErrorMessage.RefundOrderNotRefundable));
             }
 
+            var consumedBefore = await refundRepository.GetSucceededRefundTotalForOrderAsync(
+                order.Id, cancellationToken);
+
             var refund = await refundService.IssueRefundAsync(
                 new RefundRequest(
                     order.Id,
@@ -96,6 +108,12 @@ public class AdminRefundOrder
             var paymentStatus = consumed >= order.TotalPrice
                 ? PaymentStatus.Refunded
                 : PaymentStatus.PartiallyRefunded;
+
+            auditContext.RecordChange(
+                "Order",
+                order.Id,
+                new RefundSnapshot(order.Id, order.TotalPrice, consumedBefore, order.PaymentStatus),
+                new RefundSnapshot(order.Id, order.TotalPrice, consumed, paymentStatus));
 
             if (!string.IsNullOrEmpty(order.UserId))
             {

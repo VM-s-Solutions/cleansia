@@ -202,6 +202,24 @@ the validator/handler that detects the failure: `UserRepository.RecordFailedLogi
 `TryCharge*CodeAttemptAsync`. The entity keeps only the read side (`IsLockedOut(now)`) and the
 success-path resets.
 
+**Admin-action audit is automatic — do NOT hand-write audit rows (ADR-0012).** Every admin mutation
+(a `Command` run by an `Administrator` role claim) is captured by `AuditLogBehavior`, registered
+**inner to `UnitOfWorkPipelineBehavior`** (the line after the UoW registration in
+`FluentValidationExtensions`), so the success row rides the action's single `SaveChangesAsync` and is
+atomic. Outcome on failure is written out-of-band by `IAuditFailureSink` in its own scope (best-effort,
+never re-thrown): a handler-returned business failure is caught by the inner `AuditLogBehavior`, while
+the two shapes it structurally cannot see — a **validation reject** (short-circuited outer to it) and a
+**commit-throw** (raised after it returned its success-add) — are caught by the **outermost**
+`AuditFailureCaptureBehavior`. The two share one scoped `IAuditContext` latch
+(`TryClaimFailureRecording`) so a failure is recorded exactly once. A failed/blocked admin attempt is
+therefore never trail-less. To capture an admin action you write **no audit code**:
+the type name is the label by default, or freeze it with `[AuditAction("admin.user.create",
+ResourceType="AdminUser")]` on the `Command` record (rename-proof; `Sensitive=true` for the
+before/after subset; `Audited=false` to opt a noisy command out). The five sensitive money/state
+handlers additionally push a typed, pre-redacted snapshot to scoped `IAuditContext.RecordChange(...)` —
+the behavior never computes a diff or references a domain type (T-0284). Never set an
+`AdminActionAudit` to `Modified`/`Deleted` (append-only, init-only).
+
 ## Entities (from `Core.Domain/Common/`)
 
 - `IEntity` = `{ object Id; bool IsActive; }`; `IEntity<T>` narrows `Id`/`IsActive`. IDs are strings.

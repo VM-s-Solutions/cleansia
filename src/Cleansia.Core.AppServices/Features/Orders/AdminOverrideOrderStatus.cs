@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -9,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
+[AuditAction("order.status.override", Sensitive = true, ResourceType = "Order")]
 public class AdminOverrideOrderStatus
 {
     public record Command(
@@ -19,6 +21,8 @@ public class AdminOverrideOrderStatus
     public record Response(
         string OrderId,
         OrderStatus Status);
+
+    public record StatusSnapshot(string OrderId, OrderStatus? Status);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -39,7 +43,8 @@ public class AdminOverrideOrderStatus
 
     public class Handler(
         IOrderRepository orderRepository,
-        IUserSessionProvider userSessionProvider
+        IUserSessionProvider userSessionProvider,
+        IAuditContext auditContext
     ) : ICommandHandler<Command, Response>
     {
         // The forward-only lifecycle the override may walk. Cancelled is intentionally absent —
@@ -100,6 +105,12 @@ public class AdminOverrideOrderStatus
             }
 
             order.AddOrderStatus(OrderStatusTrack.Create(command.TargetStatus, order));
+
+            auditContext.RecordChange(
+                "Order",
+                order.Id,
+                new StatusSnapshot(order.Id, currentStatus),
+                new StatusSnapshot(order.Id, command.TargetStatus));
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

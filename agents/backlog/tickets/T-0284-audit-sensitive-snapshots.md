@@ -1,11 +1,11 @@
 ---
 id: T-0284
 title: Sensitive-five before/after snapshots via IAuditContext (typed, pre-redacted, no raw subject PII)
-status: ready
+status: done
 size: M
 owner: —
 created: 2026-06-22
-updated: 2026-06-22
+updated: 2026-06-23
 depends_on: [T-0283]
 blocks: []
 stories: []
@@ -83,6 +83,32 @@ exist from T-0282, the snapshot is JSON into existing jsonb columns).
   (PII-minimization — security gate mandatory); `manual_steps: []`; archetype = `IPendingDispatch`
   producer pattern. No panel (ADR-0012 accepted; sensitive set frozen by owner decision (a)). NOTE for
   dispatch: serialize against any concurrent in-flight edits to the five handler files (one writer per file).
+- 2026-06-23 — ready → review (backend). TEST-FIRST per testing.md. Each of the six sensitive handlers now
+  emits ONE `auditContext.RecordChange(before, after)` with a TYPED, producer-redacted snapshot record
+  nested in its own feature class (reviewable at the type level): `IssuePartialRefund.PartialRefundSnapshot`,
+  `AdminRefundOrder.RefundSnapshot`, `AdminOverrideOrderStatus.StatusSnapshot`,
+  `ResolveDispute.ResolutionSnapshot`, `UpdatePayConfig.PayRatesSnapshot`,
+  `GrantPointsManually/RevokePointsManually.PointsSnapshot`, `AdminDeleteUserAccount.GdprActionSnapshot`.
+  Each command carries `[AuditAction("<frozen-label>", Sensitive = true, ResourceType = "<type>")]`
+  (D5 — rename-proof + sensitive-subset identifiable). Payloads are money/state fields + ids ONLY: refund
+  = order total / consumed-before→after + amount; status = before→after `OrderStatus` + OrderId;
+  pay-config = old→new rates + EmployeeId/ServiceId/PackageId; loyalty = signed delta + subject UserId;
+  dispute = before→after status + RefundAmount + DisputeId (resolution **notes excluded** — admin free-text
+  could carry subject PII); GDPR delete = scope + subject id ONLY (NOT the exported personal data).
+  Snapshot emitted on the SUCCESS path only (AC6). `AdminExportUserData` is an `IQuery` (never audited by the
+  `Command`-gated behavior) — its own audit-row-first `GdprRequest` trail stands; the auditable GDPR member
+  is the `AdminDeleteUserAccount` Command. Made `AdminDeleteUserAccount.Handler` public to match every other
+  handler (was the lone `internal` one; needed for the unit test, no `InternalsVisibleTo`).
+  **Tests (red-first):** `AuditSensitiveSnapshotTests` (TC-AUDIT-SNAPSHOT — one per action asserting the typed
+  payload + no raw subject PII + AC6 no-snapshot-on-failure), `SensitiveActionAuditLabelTests` (TC-AUDIT-LABEL
+  — frozen label/ResourceType/Sensitive per command), and the real-Postgres
+  `GdprDeleteAuditSurvivesErasureTests` (AC3 — the GDPR-delete audit row rides the same SaveChangesAsync as the
+  action, then SURVIVES a hard-delete of the subject with scope+ids only and no PII in the persisted jsonb).
+  Updated the existing characterization tests whose `CreateHandler()`/reflective ctor changed arity
+  (IssuePartialRefund/PartialRefundFeeRounding/AdminRefundOrder/AdminOverrideOrderStatus/ResolveDispute/
+  RevokePointsManually + GdprDeletionReasonConstants). **Green:** Cleansia.Tests 1645/0, IntegrationTests 91/0,
+  HostTests 55/0; AppServices builds clean. `manual_steps: []` (no schema/DTO change — the jsonb columns exist
+  from T-0282). Ready for security gate (AC7 — typed-snapshot PII review) + reviewer check #4/#5.
 
 ## Review
 <!-- reviewer / security / qa write verdicts here; PM reconciles before advancing state -->

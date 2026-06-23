@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Refunds;
 
+[AuditAction("order.refund.partial", Sensitive = true, ResourceType = "Order")]
 public class IssuePartialRefund
 {
     /// <summary>
@@ -34,6 +36,14 @@ public class IssuePartialRefund
         PaymentStatus PaymentStatus,
         bool RefundInitiated,
         bool WindowOverridden);
+
+    public record PartialRefundSnapshot(
+        string OrderId,
+        decimal OrderTotal,
+        decimal ConsumedRefund,
+        decimal RefundAmount,
+        decimal RefundVat,
+        PaymentStatus PaymentStatus);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -70,6 +80,7 @@ public class IssuePartialRefund
         IRefundService refundService,
         ILoyaltyService loyaltyService,
         IUserSessionProvider userSessionProvider,
+        IAuditContext auditContext,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -81,6 +92,9 @@ public class IssuePartialRefund
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
             }
+
+            var consumedBefore = await refundRepository.GetSucceededRefundTotalForOrderAsync(
+                order.Id, cancellationToken);
 
             var windowOpen = RefundPolicy.IsWithinWindow(order.CompletedAt, DateTime.UtcNow);
             var windowOverridden = false;
@@ -151,7 +165,20 @@ public class IssuePartialRefund
             await loyaltyService.RevokeForPartialRefundAsync(
                 order.Id, refundNet < 0m ? 0m : refundNet, result.RefundKey, actorId, cancellationToken);
 
-            var paymentStatus = await ResolvePaymentStatusAsync(order, cancellationToken);
+            var consumedAfter = await refundRepository.GetSucceededRefundTotalForOrderAsync(
+                order.Id, cancellationToken);
+            var paymentStatus = consumedAfter >= order.TotalPrice
+                ? PaymentStatus.Refunded
+                : PaymentStatus.PartiallyRefunded;
+
+            auditContext.RecordChange(
+                "Order",
+                order.Id,
+                new PartialRefundSnapshot(
+                    order.Id, order.TotalPrice, consumedBefore, RefundAmount: 0m, RefundVat: 0m, order.PaymentStatus),
+                new PartialRefundSnapshot(
+                    order.Id, order.TotalPrice, consumedAfter, result.Amount, refundVat, paymentStatus),
+                command.OverrideReason);
 
             logger.LogInformation(
                 "Admin partial refund issued for order {OrderId}: {Amount} {Currency} ({Reason}); windowOverridden={WindowOverridden}.",
@@ -164,12 +191,6 @@ public class IssuePartialRefund
                 PaymentStatus: paymentStatus,
                 RefundInitiated: true,
                 WindowOverridden: windowOverridden));
-        }
-
-        private async Task<PaymentStatus> ResolvePaymentStatusAsync(Order order, CancellationToken cancellationToken)
-        {
-            var consumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken);
-            return consumed >= order.TotalPrice ? PaymentStatus.Refunded : PaymentStatus.PartiallyRefunded;
         }
 
         // ADR-0009 D3 — fee bearer. The platform absorbs the non-refundable Stripe fee on

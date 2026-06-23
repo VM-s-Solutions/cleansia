@@ -1,4 +1,5 @@
 using System.Reflection;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
@@ -13,7 +14,8 @@ namespace Cleansia.Tests.Features.Gdpr;
 /// <see cref="GdprAuditReasons"/> constants. Pins the persisted reason strings byte-identical so the
 /// extraction is behavior-preserving: self-delete forwards "GDPR_DELETION", admin-delete forwards
 /// "GDPR_ADMIN_DELETION", and a missing admin email falls back to actor "admin". The handlers are
-/// internal, so they're invoked through reflection (mirrors the device handler tests).
+/// invoked through reflection (mirrors the device handler tests), resolving each constructor's
+/// dependencies by type so a handler gaining a dependency does not break the probe.
 /// </summary>
 public class GdprDeletionReasonConstantsTests
 {
@@ -49,8 +51,19 @@ public class GdprDeletionReasonConstantsTests
     {
         var handlerType = featureType.GetNestedType("Handler", BindingFlags.NonPublic | BindingFlags.Public);
         Assert.NotNull(handlerType);
-        var handler = Activator.CreateInstance(handlerType!, _session.Object, _gdprService.Object)!;
-        var handleMethod = handlerType!.GetMethod("Handle");
+        var dependencies = new Dictionary<Type, object>
+        {
+            [typeof(IUserSessionProvider)] = _session.Object,
+            [typeof(IGdprDeletionService)] = _gdprService.Object,
+            [typeof(IAuditContext)] = new AuditContext()
+        };
+        var constructorArgs = handlerType!
+            .GetConstructors().Single()
+            .GetParameters()
+            .Select(p => dependencies[p.ParameterType])
+            .ToArray();
+        var handler = Activator.CreateInstance(handlerType, constructorArgs)!;
+        var handleMethod = handlerType.GetMethod("Handle");
         Assert.NotNull(handleMethod);
         var task = (Task<BusinessResult>)handleMethod!.Invoke(handler, [command, CancellationToken.None])!;
         return await task;

@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -11,6 +12,7 @@ namespace Cleansia.Core.AppServices.Features.AdminUsers;
 
 public class UpdateAdminUser
 {
+    [AuditAction("admin.user.update", ResourceType = "AdminUser")]
     public record Command(
         string UserId,
         string FirstName,

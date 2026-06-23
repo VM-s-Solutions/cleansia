@@ -253,4 +253,7 @@ public class Policy
 
     // Refunds (admin-issued partial refund — money-out + privileged)
     public const string CanIssueRefund = nameof(CanIssueRefund); // Admin
+
+    // Admin Action Audit Log (read surface — ADR-0012 D7)
+    public const string CanViewAuditLog = nameof(CanViewAuditLog); // Admin
 }

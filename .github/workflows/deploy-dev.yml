@@ -1,9 +1,32 @@
 name: Deploy to DEV
 
+# Bicep-gated DEV deployment (ADR-0015 + ADR-0017).
+#
+# Flow per region (region is a one-element matrix today — [weu] — so a second region is one more list
+# entry, never a workflow restructure; ADR-0017 D5):
+#   build-dotnet / build-angular  ──▶  provision (Bicep)  ──┐
+#                                      migrate-database  ───┴─▶  deploy 5 APIs + SSR + Functions + 2 SPAs
+#
+# - provision: `az deployment group what-if` on PR (a reviewable, non-mutating preview), `az deployment
+#   group create` on push to master. Scoped to the GitHub Environment `dev-weu`.
+# - OIDC (azure/login@v2 + id-token: write) and the EF-migration bundle (committed migrations applied
+#   BEFORE any API deploy) are preserved (ADR-0015 D5).
+# - On B2 the app deploys fan out: every API/SSR/Functions deploy depends on [provision, migrate-database]
+#   only, not on each other. The ordering that matters (migrate-before-deploy) is held by the needs edge.
+# - All FIVE API hosts are deployed, including api-cleansia-customer-mobile-weu-dev (the host the old
+#   four-host YAML omitted — the iOS customer app's dev API).
+# - Per-Environment secrets are referenced by NAME only; no secret value is in this file (ADR-0015 D4).
+
 on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'deploy/bicep/**'
+      - '.github/workflows/deploy-dev.yml'
 
 permissions:
   id-token: write
@@ -13,7 +36,14 @@ concurrency:
   group: deploy-dev
   cancel-in-progress: true
 
+env:
+  REGION: weu
+
 jobs:
+  # ===========================================================================================
+  # Build — produce the deployable artifacts (no Azure access needed)
+  # ===========================================================================================
+
   build-dotnet:
     name: Build .NET APIs
     runs-on: ubuntu-latest
@@ -39,7 +69,7 @@ jobs:
         working-directory: ./src
 
       - name: Publish Partner API
-        run: dotnet publish Cleansia.Web/Cleansia.Web.Partner.csproj --configuration Release --no-restore --output ./publish/partner-api
+        run: dotnet publish Cleansia.Web.Partner/Cleansia.Web.Partner.csproj --configuration Release --no-restore --output ./publish/partner-api
         working-directory: ./src
 
       - name: Publish Admin API
@@ -50,8 +80,12 @@ jobs:
         run: dotnet publish Cleansia.Web.Customer/Cleansia.Web.Customer.csproj --configuration Release --no-restore --output ./publish/customer-api
         working-directory: ./src
 
-      - name: Publish Mobile API
-        run: dotnet publish Cleansia.Web.Mobile/Cleansia.Web.Mobile.csproj --configuration Release --no-restore --output ./publish/mobile-api
+      - name: Publish Partner-Mobile API
+        run: dotnet publish Cleansia.Web.Mobile.Partner/Cleansia.Web.Mobile.Partner.csproj --configuration Release --no-restore --output ./publish/partner-mobile-api
+        working-directory: ./src
+
+      - name: Publish Customer-Mobile API
+        run: dotnet publish Cleansia.Web.Mobile.Customer/Cleansia.Web.Mobile.Customer.csproj --configuration Release --no-restore --output ./publish/customer-mobile-api
         working-directory: ./src
 
       - name: Upload Partner API artifact
@@ -72,11 +106,17 @@ jobs:
           name: customer-api
           path: ./src/publish/customer-api
 
-      - name: Upload Mobile API artifact
+      - name: Upload Partner-Mobile API artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mobile-api
-          path: ./src/publish/mobile-api
+          name: partner-mobile-api
+          path: ./src/publish/partner-mobile-api
+
+      - name: Upload Customer-Mobile API artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: customer-mobile-api
+          path: ./src/publish/customer-mobile-api
 
   build-angular:
     name: Build Angular Apps
@@ -131,14 +171,73 @@ jobs:
           name: admin-app
           path: ./src/Cleansia.App/dist/apps/cleansia-admin.app/browser
 
-  # =============================================
-  # Run EF migrations before any API deploys
-  # =============================================
+  # ===========================================================================================
+  # Provision — Bicep gate (ADR-0015 D5). what-if on PR, create on push to master.
+  # Region matrix (ADR-0017 D5): one leg today ([weu]); a second region is one more list entry.
+  # ===========================================================================================
+
+  provision:
+    name: Provision (Bicep)
+    needs: [build-dotnet, build-angular]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        region: [weu]
+    environment: dev-${{ matrix.region }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Bicep what-if (PR preview — non-mutating)
+        if: github.event_name == 'pull_request'
+        run: |
+          az deployment group what-if \
+            --resource-group rg-cleansia-${{ matrix.region }}-dev \
+            --template-file deploy/bicep/main.bicep \
+            --parameters deploy/bicep/${{ matrix.region }}.dev.bicepparam \
+            --parameters postgresAdministratorPassword="$POSTGRES_ADMIN_PASSWORD" \
+                         adminIpAddress="$ADMIN_IP_ADDRESS" \
+                         ciPrincipalId="$CI_PRINCIPAL_ID"
+        env:
+          POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+          ADMIN_IP_ADDRESS: ${{ secrets.ADMIN_IP_ADDRESS }}
+          CI_PRINCIPAL_ID: ${{ secrets.CI_PRINCIPAL_ID }}
+
+      - name: Bicep deploy (push to master — provision/update)
+        if: github.event_name == 'push'
+        run: |
+          az deployment group create \
+            --resource-group rg-cleansia-${{ matrix.region }}-dev \
+            --template-file deploy/bicep/main.bicep \
+            --parameters deploy/bicep/${{ matrix.region }}.dev.bicepparam \
+            --parameters postgresAdministratorPassword="$POSTGRES_ADMIN_PASSWORD" \
+                         adminIpAddress="$ADMIN_IP_ADDRESS" \
+                         ciPrincipalId="$CI_PRINCIPAL_ID"
+        env:
+          POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+          ADMIN_IP_ADDRESS: ${{ secrets.ADMIN_IP_ADDRESS }}
+          CI_PRINCIPAL_ID: ${{ secrets.CI_PRINCIPAL_ID }}
+
+  # ===========================================================================================
+  # Migrate — committed EF migrations applied BEFORE any deploy (ADR-0015 D5). Runs after provision
+  # so the DB exists; gates every API/SSR deploy via the needs edge.
+  # ===========================================================================================
 
   migrate-database:
     name: Run DB Migrations
-    needs: build-dotnet
+    needs: [build-dotnet, provision]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        region: [weu]
+    environment: dev-${{ matrix.region }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -159,7 +258,7 @@ jobs:
         run: |
           dotnet ef migrations bundle \
             --project Cleansia.Infra.Database/Cleansia.Infra.Database.csproj \
-            --startup-project Cleansia.Web/Cleansia.Web.Partner.csproj \
+            --startup-project Cleansia.Web.Partner/Cleansia.Web.Partner.csproj \
             --configuration Release \
             --output ./efbundle \
             --force
@@ -174,20 +273,24 @@ jobs:
 
       - name: Apply migrations
         env:
-          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING_DEV }}
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
         run: |
           chmod +x ./src/efbundle
           ./src/efbundle --connection "$DB_CONNECTION_STRING"
 
-  # =============================================
-  # Deploy step-by-step (sequential to avoid
-  # overloading the B1 App Service Plan)
-  # =============================================
+  # ===========================================================================================
+  # Deploy — the five API hosts. Parallel: each needs [provision, migrate-database] only (ADR-0015 D5,
+  # B2 relaxes the old B1 serial chain). The migrate-before-deploy ordering is held by the needs edge.
+  # ===========================================================================================
 
   deploy-partner-api:
-    name: 1/7 — Partner API
-    needs: [build-dotnet, migrate-database]
+    name: Deploy Partner API
+    needs: [build-dotnet, provision, migrate-database]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        region: [weu]
+    environment: dev-${{ matrix.region }}
     steps:
       - name: Login to Azure
         uses: azure/login@v2
@@ -205,18 +308,17 @@ jobs:
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: api-cleansia-partner-dev
+          app-name: api-cleansia-partner-${{ matrix.region }}-dev
           package: ./partner-api
 
-      - name: Force container refresh
-        run: |
-          az webapp stop --name api-cleansia-partner-dev --resource-group rg-cleansia-dev
-          az webapp start --name api-cleansia-partner-dev --resource-group rg-cleansia-dev
-
   deploy-admin-api:
-    name: 2/7 — Admin API
-    needs: [build-dotnet, migrate-database, deploy-partner-api]
+    name: Deploy Admin API
+    needs: [build-dotnet, provision, migrate-database]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        region: [weu]
+    environment: dev-${{ matrix.region }}
     steps:
       - name: Login to Azure
         uses: azure/login@v2
@@ -234,18 +336,17 @@ jobs:
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: api-cleansia-admin-dev
+          app-name: api-cleansia-admin-${{ matrix.region }}-dev
           package: ./admin-api
 
-      - name: Force container refresh
-        run: |
-          az webapp stop --name api-cleansia-admin-dev --resource-group rg-cleansia-dev
-          az webapp start --name api-cleansia-admin-dev --resource-group rg-cleansia-dev
-
   deploy-customer-api:
-    name: 3/7 — Customer API
-    needs: [build-dotnet, migrate-database, deploy-admin-api]
+    name: Deploy Customer API
+    needs: [build-dotnet, provision, migrate-database]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        region: [weu]
+    environment: dev-${{ matrix.region }}
     steps:
       - name: Login to Azure
         uses: azure/login@v2
@@ -263,18 +364,17 @@ jobs:
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: api-cleansia-customer-dev
+          app-name: api-cleansia-customer-${{ matrix.region }}-dev
           package: ./customer-api
 
-      - name: Force container refresh
-        run: |
-          az webapp stop --name api-cleansia-customer-dev --resource-group rg-cleansia-dev
-          az webapp start --name api-cleansia-customer-dev --resource-group rg-cleansia-dev
-
-  deploy-mobile-api:
-    name: 4/7 — Mobile API
-    needs: [build-dotnet, migrate-database, deploy-customer-api]
+  deploy-partner-mobile-api:
+    name: Deploy Partner-Mobile API
+    needs: [build-dotnet, provision, migrate-database]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        region: [weu]
+    environment: dev-${{ matrix.region }}
     steps:
       - name: Login to Azure
         uses: azure/login@v2
@@ -286,24 +386,55 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: mobile-api
-          path: ./mobile-api
+          name: partner-mobile-api
+          path: ./partner-mobile-api
 
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: api-cleansia-mobile-dev
-          package: ./mobile-api
+          app-name: api-cleansia-partner-mobile-${{ matrix.region }}-dev
+          package: ./partner-mobile-api
 
-      - name: Force container refresh
-        run: |
-          az webapp stop --name api-cleansia-mobile-dev --resource-group rg-cleansia-dev
-          az webapp start --name api-cleansia-mobile-dev --resource-group rg-cleansia-dev
+  deploy-customer-mobile-api:
+    name: Deploy Customer-Mobile API
+    needs: [build-dotnet, provision, migrate-database]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        region: [weu]
+    environment: dev-${{ matrix.region }}
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: customer-mobile-api
+          path: ./customer-mobile-api
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: api-cleansia-customer-mobile-${{ matrix.region }}-dev
+          package: ./customer-mobile-api
+
+  # ===========================================================================================
+  # Functions — container via ACR (ADR-0015 D2; QuestPDF native deps mandate the container).
+  # ===========================================================================================
 
   build-and-deploy-functions:
-    name: 5/8 — Functions
-    needs: [build-dotnet, migrate-database]
+    name: Deploy Functions
+    needs: [build-dotnet, provision, migrate-database]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        region: [weu]
+    environment: dev-${{ matrix.region }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -326,18 +457,26 @@ jobs:
       - name: Deploy to Azure Functions
         run: |
           az functionapp config container set \
-            --name func-cleansia-dev \
-            --resource-group rg-cleansia-dev \
+            --name func-cleansia-${{ matrix.region }}-dev \
+            --resource-group rg-cleansia-${{ matrix.region }}-dev \
             --image "${{ secrets.ACR_NAME }}.azurecr.io/cleansia-functions:${{ github.sha }}"
 
       - name: Restart Functions App
         run: |
-          az functionapp restart --name func-cleansia-dev --resource-group rg-cleansia-dev
+          az functionapp restart --name func-cleansia-${{ matrix.region }}-dev --resource-group rg-cleansia-${{ matrix.region }}-dev
+
+  # ===========================================================================================
+  # Customer SSR — Node App Service. Parallel with the APIs (build-angular + provision + migrate).
+  # ===========================================================================================
 
   deploy-customer-ssr:
-    name: 6/8 — Customer SSR
-    needs: [build-angular, deploy-mobile-api]
+    name: Deploy Customer SSR
+    needs: [build-angular, provision, migrate-database]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        region: [weu]
+    environment: dev-${{ matrix.region }}
     steps:
       - name: Login to Azure
         uses: azure/login@v2
@@ -353,23 +492,27 @@ jobs:
           path: ./customer-app
 
       - name: Configure startup command
-        run: az webapp config set --name web-cleansia-customer-dev --resource-group rg-cleansia-dev --startup-file "node server/server.mjs"
+        run: az webapp config set --name web-cleansia-customer-${{ matrix.region }}-dev --resource-group rg-cleansia-${{ matrix.region }}-dev --startup-file "node server/server.mjs"
 
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: web-cleansia-customer-dev
+          app-name: web-cleansia-customer-${{ matrix.region }}-dev
           package: ./customer-app
 
-      - name: Force container refresh
-        run: |
-          az webapp stop --name web-cleansia-customer-dev --resource-group rg-cleansia-dev
-          az webapp start --name web-cleansia-customer-dev --resource-group rg-cleansia-dev
+  # ===========================================================================================
+  # SPAs — partner + admin Static Web Apps. Parallel; need build-angular + provision (no DB).
+  # Per-Environment SWA tokens referenced by NAME only.
+  # ===========================================================================================
 
   deploy-partner-spa:
-    name: 7/8 — Partner SPA
-    needs: [build-angular, deploy-customer-ssr]
+    name: Deploy Partner SPA
+    needs: [build-angular, provision]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        region: [weu]
+    environment: dev-${{ matrix.region }}
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -380,16 +523,20 @@ jobs:
       - name: Deploy to Azure Static Web App
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER_DEV }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER }}
           action: upload
           app_location: ./partner-app
           skip_app_build: true
           skip_api_build: true
 
   deploy-admin-spa:
-    name: 8/8 — Admin SPA
-    needs: [build-angular, deploy-partner-spa]
+    name: Deploy Admin SPA
+    needs: [build-angular, provision]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        region: [weu]
+    environment: dev-${{ matrix.region }}
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -400,7 +547,7 @@ jobs:
       - name: Deploy to Azure Static Web App
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN_DEV }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN }}
           action: upload
           app_location: ./admin-app
           skip_app_build: true

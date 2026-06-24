@@ -15,8 +15,11 @@ public static class DbContextBindingExtensions
     public static IServiceCollection AddDbContextBindings(this IServiceCollection services, IConfiguration configuration, IHostEnvironment env)
     {
         services.AddSingleton<IDatabaseConnectionString, DatabaseConnectionString>();
+        services.AddSingleton<IRegionConnectionStringResolver, RegionConnectionStringResolver>();
 
-        var connectionString = configuration.GetConnectionString("ConnectionString");
+        // Resolve the DB connection string through the one region seam (ADR-0017 / T-0330). Today every
+        // region returns the single shared West-Europe database, so this is behaviour-preserving.
+        var connectionString = new RegionConnectionStringResolver(configuration).ResolveDefault();
 
         var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
         dataSourceBuilder.EnableDynamicJson();

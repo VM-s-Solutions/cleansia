@@ -42,6 +42,7 @@
       "invoice_details": "Detail faktúry",
       "audit_log": "Protokol akcií",
       "audit_log_history": "História zdroja",
+      "audit_log_entry": "Záznam auditu",
       "reports": "Reporty",
       "services": "Služby",
       "service_create": "Vytvoriť službu",
@@ -717,6 +718,19 @@
         "description": "Všetko, čo sa s týmto zdrojom stalo:",
         "no_audits": "Pre tento zdroj nie sú žiadne záznamy",
         "back": "Späť na protokol akcií"
+      },
+      "entry": {
+        "title": "Záznam auditu",
+        "description": "Snímka stavu pred a po tejto akcii. Zmenené polia sú zvýraznené.",
+        "view": "Zobraziť detail",
+        "back": "Späť",
+        "load_error": "Nepodarilo sa načítať záznam auditu",
+        "changes_title": "Zmeny",
+        "field": "Pole",
+        "before": "Pred",
+        "after": "Po",
+        "no_value": "—",
+        "no_changes": "Neboli zaznamenané žiadne zmeny"
       },
       "drill_in": {
         "view_history": "Zobraziť históriu auditu"

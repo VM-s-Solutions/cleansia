@@ -1,6 +1,10 @@
 import { TemplateRef } from '@angular/core';
 import { AdminActionAuditDto } from '@cleansia/admin-services';
-import { ICleansiaSelectOption, TableColumn } from '@cleansia/components';
+import {
+  ICleansiaSelectOption,
+  TableAction,
+  TableColumn,
+} from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getAuditLogTableColumns(
@@ -45,6 +49,21 @@ export function getAuditLogTableColumns(
       header: translate.instant('pages.audit_log.columns.outcome'),
       width: '12%',
       customTemplate: outcomeTemplate,
+    },
+  ];
+}
+
+export function getAuditLogTableActions(
+  translate: TranslateService,
+  onView: (row: AdminActionAuditDto) => void
+): TableAction<AdminActionAuditDto>[] {
+  return [
+    {
+      icon: 'pi pi-eye',
+      color: 'primary',
+      tooltip: translate.instant('pages.audit_log.entry.view'),
+      visible: (row: AdminActionAuditDto) => !!row.id,
+      onClick: onView,
     },
   ];
 }

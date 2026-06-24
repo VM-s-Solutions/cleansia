@@ -42,6 +42,7 @@
       "invoice_details": "Detail faktury",
       "audit_log": "Protokol akcí",
       "audit_log_history": "Historie zdroje",
+      "audit_log_entry": "Záznam auditu",
       "reports": "Přehledy",
       "services": "Služby",
       "service_create": "Vytvořit službu",
@@ -717,6 +718,19 @@
         "description": "Vše, co se s tímto zdrojem stalo:",
         "no_audits": "Pro tento zdroj nejsou žádné záznamy",
         "back": "Zpět na protokol akcí"
+      },
+      "entry": {
+        "title": "Záznam auditu",
+        "description": "Snímek stavu před a po této akci. Změněná pole jsou zvýrazněna.",
+        "view": "Zobrazit detail",
+        "back": "Zpět",
+        "load_error": "Nepodařilo se načíst záznam auditu",
+        "changes_title": "Změny",
+        "field": "Pole",
+        "before": "Před",
+        "after": "Po",
+        "no_value": "—",
+        "no_changes": "Nebyly zaznamenány žádné změny"
       },
       "drill_in": {
         "view_history": "Zobrazit historii auditu"

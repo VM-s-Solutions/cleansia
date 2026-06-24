@@ -42,6 +42,7 @@
       "invoice_details": "Invoice Details",
       "audit_log": "Audit Log",
       "audit_log_history": "Resource History",
+      "audit_log_entry": "Audit Entry",
       "reports": "Reports",
       "services": "Services",
       "service_create": "Create Service",
@@ -717,6 +718,19 @@
         "description": "Everything that happened to this resource:",
         "no_audits": "No audit entries for this resource",
         "back": "Back to Audit Log"
+      },
+      "entry": {
+        "title": "Audit Entry",
+        "description": "The before and after snapshot recorded for this action. Changed fields are highlighted.",
+        "view": "View details",
+        "back": "Back",
+        "load_error": "Failed to load the audit entry",
+        "changes_title": "Changes",
+        "field": "Field",
+        "before": "Before",
+        "after": "After",
+        "no_value": "—",
+        "no_changes": "No changes recorded"
       },
       "drill_in": {
         "view_history": "View audit history"

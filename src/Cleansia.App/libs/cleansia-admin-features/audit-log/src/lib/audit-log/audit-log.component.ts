@@ -29,6 +29,7 @@ import {
   CleansiaTitleComponent,
   ICleansiaSelectOption,
   PaginationState,
+  TableAction,
   TableColumn,
 } from '@cleansia/components';
 import { CleansiaAdminRoute } from '@cleansia/services';
@@ -37,6 +38,7 @@ import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { AuditLogFacade } from './audit-log.facade';
 import {
   buildOutcomeOptions,
+  getAuditLogTableActions,
   getAuditLogTableColumns,
   getOutcomeClass,
   getOutcomeLabelKey,
@@ -74,6 +76,7 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
     viewChild<TemplateRef<AdminActionAuditDto>>('outcomeTemplate');
 
   auditColumns!: TableColumn<AdminActionAuditDto>[];
+  auditActions!: TableAction<AdminActionAuditDto>[];
   outcomeOptions: ICleansiaSelectOption[] = [];
 
   private lastSortField: string | null = null;
@@ -134,6 +137,9 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
       this.translate,
       this.outcomeTemplate()
     );
+    this.auditActions = getAuditLogTableActions(this.translate, (audit) =>
+      this.viewEntry(audit)
+    );
   }
 
   private rebuildFilterOptions(): void {
@@ -156,6 +162,11 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
       audit.resourceType,
       audit.resourceId,
     ]);
+  }
+
+  viewEntry(audit: AdminActionAuditDto): void {
+    if (!audit.id) return;
+    this.router.navigate([CleansiaAdminRoute.AUDIT_LOG, 'entry', audit.id]);
   }
 
   applyFilters(): void {

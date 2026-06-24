@@ -30,6 +30,10 @@ export interface IAdminAuditLogClient {
      * @return OK
      */
     getPaged(actorId?: string | undefined, actorEmail?: string | undefined, action?: string | undefined, resourceType?: string | undefined, resourceId?: string | undefined, occurredFrom?: Date | undefined, occurredTo?: Date | undefined, success?: boolean | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfAdminActionAuditDto>;
+    /**
+     * @return OK
+     */
+    getById(auditId: string): Observable<AdminActionAuditDetailDto>;
 }
 
 @Injectable({
@@ -146,6 +150,81 @@ export class AdminAuditLogClient implements IAdminAuditLogClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = PagedDataOfAdminActionAuditDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getById(auditId: string): Observable<AdminActionAuditDetailDto> {
+        let url = this.baseUrl + "/api/AdminAuditLog/get-by-id/{auditId}";
+        if (auditId === undefined || auditId === null)
+            throw new globalThis.Error("The parameter 'auditId' must be defined.");
+        url = url.replace("{auditId}", encodeURIComponent("" + auditId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetById(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetById(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<AdminActionAuditDetailDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<AdminActionAuditDetailDto>;
+        }));
+    }
+
+    protected processGetById(response: HttpResponseBase): Observable<AdminActionAuditDetailDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = AdminActionAuditDetailDto.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -13746,6 +13825,94 @@ export interface IAddDisputeMessageCommand {
     disputeId: string | undefined;
     message: string | undefined;
     isStaffMessage: boolean;
+}
+
+export class AdminActionAuditDetailDto implements IAdminActionAuditDetailDto {
+    id!: string | undefined;
+    actorId!: string | undefined;
+    actorEmail!: string | undefined;
+    actorProfile!: UserProfile;
+    action!: string | undefined;
+    resourceType!: string | undefined;
+    resourceId!: string | undefined;
+    success!: boolean;
+    errorCode!: string | undefined;
+    occurredOn!: Date;
+    reason!: string | undefined;
+    correlationId!: string | undefined;
+    beforeJson!: string | undefined;
+    afterJson!: string | undefined;
+
+    constructor(data?: IAdminActionAuditDetailDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.actorId = Data["actorId"];
+            this.actorEmail = Data["actorEmail"];
+            this.actorProfile = Data["actorProfile"];
+            this.action = Data["action"];
+            this.resourceType = Data["resourceType"];
+            this.resourceId = Data["resourceId"];
+            this.success = Data["success"];
+            this.errorCode = Data["errorCode"];
+            this.occurredOn = Data["occurredOn"] ? new Date(Data["occurredOn"].toString()) : undefined as any;
+            this.reason = Data["reason"];
+            this.correlationId = Data["correlationId"];
+            this.beforeJson = Data["beforeJson"];
+            this.afterJson = Data["afterJson"];
+        }
+    }
+
+    static fromJS(data: any): AdminActionAuditDetailDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminActionAuditDetailDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["actorId"] = this.actorId;
+        data["actorEmail"] = this.actorEmail;
+        data["actorProfile"] = this.actorProfile;
+        data["action"] = this.action;
+        data["resourceType"] = this.resourceType;
+        data["resourceId"] = this.resourceId;
+        data["success"] = this.success;
+        data["errorCode"] = this.errorCode;
+        data["occurredOn"] = this.occurredOn ? this.occurredOn.toISOString() : undefined as any;
+        data["reason"] = this.reason;
+        data["correlationId"] = this.correlationId;
+        data["beforeJson"] = this.beforeJson;
+        data["afterJson"] = this.afterJson;
+        return data;
+    }
+}
+
+export interface IAdminActionAuditDetailDto {
+    id: string | undefined;
+    actorId: string | undefined;
+    actorEmail: string | undefined;
+    actorProfile: UserProfile;
+    action: string | undefined;
+    resourceType: string | undefined;
+    resourceId: string | undefined;
+    success: boolean;
+    errorCode: string | undefined;
+    occurredOn: Date;
+    reason: string | undefined;
+    correlationId: string | undefined;
+    beforeJson: string | undefined;
+    afterJson: string | undefined;
 }
 
 export class AdminActionAuditDto implements IAdminActionAuditDto {

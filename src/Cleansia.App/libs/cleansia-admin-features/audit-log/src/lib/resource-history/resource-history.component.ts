@@ -23,6 +23,7 @@ import {
   CleansiaTableComponent,
   CleansiaTitleComponent,
   PaginationState,
+  TableAction,
   TableColumn,
 } from '@cleansia/components';
 import { CleansiaAdminRoute } from '@cleansia/services';
@@ -30,6 +31,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subject, takeUntil } from 'rxjs';
 import { AuditLogFacade } from '../audit-log/audit-log.facade';
 import {
+  getAuditLogTableActions,
   getAuditLogTableColumns,
   getOutcomeClass,
   getOutcomeLabelKey,
@@ -65,6 +67,7 @@ export class ResourceHistoryComponent implements AfterViewInit, OnDestroy {
   readonly resourceId = signal<string>('');
 
   auditColumns!: TableColumn<AdminActionAuditDto>[];
+  auditActions!: TableAction<AdminActionAuditDto>[];
 
   private lastSortField: string | null = null;
   private lastSortOrder: number | null = null;
@@ -102,6 +105,14 @@ export class ResourceHistoryComponent implements AfterViewInit, OnDestroy {
       this.translate,
       this.outcomeTemplate()
     );
+    this.auditActions = getAuditLogTableActions(this.translate, (audit) =>
+      this.viewEntry(audit)
+    );
+  }
+
+  viewEntry(audit: AdminActionAuditDto): void {
+    if (!audit.id) return;
+    this.router.navigate([CleansiaAdminRoute.AUDIT_LOG, 'entry', audit.id]);
   }
 
   getOutcomeClass(audit: AdminActionAuditDto): string {

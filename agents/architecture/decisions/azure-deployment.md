@@ -114,6 +114,33 @@ runs `migrations add` (that stays owner-authored + reviewed).
 - Custom domain **deferred for dev** (default hostnames are stable; Q-INFRA-01). The iOS base-URL is
   env-switched config, so a later custom domain is config, not code.
 
+## The region seam (ADR-0017 — folded into this deployment, BUILD single-region only)
+
+ADR-0017 (multi-region expansion) adds a **region seam** to this deployment. **Driver = market expansion, NOT
+residency/latency** → the model is **one shared region + DB now**; the heavier region-pinned model is one
+**named trigger** (a residency-regulated market or a latency SLA) away. **Tenancy stays APP-level** (the
+row-scoped `TenantId` filter, unchanged); **region is INFRA/config** and orthogonal. See
+`multi-tenancy-and-region.md` for the composition.
+
+**What this deployment lays now (naming/param only — free at clean-slate; N-region NOT built):**
+- **A region token (`weu`) in every resource/RG/Key-Vault name from day one** — Azure names are immutable, so
+  the token must be present now or a second region forces a recreate. Names become
+  `api-cleansia-<audience>-weu-dev`, `rg-cleansia-weu-dev`, `pg-cleansia-weu-dev`, `kv-cleansia-weu-dev`, …
+- **A `region` Bicep parameter** (default `weu`) threaded through the modules (no per-region forks); param files
+  are **`<region>.<stage>.bicepparam`** (`weu.dev.bicepparam`, `weu.prod.bicepparam`).
+- **GitHub Environments `dev-weu` / `prod-weu`** (the `<stage>-<region>` scheme) — a second region is
+  `dev-eus`/`prod-eus`, additive.
+- **A one-element `strategy.matrix.region: [weu]`** in the workflows (no-op today; add a value tomorrow).
+- **A connection-string resolver indirection** (T-0330) — one place the DB connection string is chosen, today
+  returning the single shared West-Europe DB. This is the data-layer seam that makes per-region DBs later a
+  resolver change, not an app rewrite. **The `CountryConfiguration.HomeRegion` column is DEFERRED** to
+  first-second-region work (a schema change → owner ef-migration); only the resolver indirection is laid now, so
+  this wave stays **migration-free**.
+
+**Forward-compat assertion:** a second region = a new param value + a matrix entry + an owner `HomeRegion`
+column-migration — NOT a rename/recreate of any live `weu` resource, a workflow restructure, or a tenancy-filter
+change. Subscriptions stay **one** until a quota/billing-legal/blast-radius trigger (Q-REGION-03).
+
 ## Trade-off space (what was weighed — ADR-0015 §Alternatives + the Challenge trail)
 
 - **Bicep vs imperative YAML / portal.** Bicep — the teardown proved portal/imperative state is unrecoverable.

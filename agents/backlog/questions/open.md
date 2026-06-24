@@ -428,5 +428,68 @@ _No open Wave-1 *planning* questions remain._
 - Default taken (non-blocking, to keep planning moving): **assume a backend `appleauth` endpoint is needed** (the
   safe, `googleauth`-mirroring assumption), sized as a backend + iOS pair, gated on the owner confirming the
   backend appetite. The rest of the iOS plan does not wait on this — only T-0326 (the SIWA ticket) does.
-- Answer: _(owner fills in — confirm a backend `appleauth` endpoint, or specify an alternative SIWA→backend
-  mechanism)_
+- Answer (RELAYED 2026-06-23 — proceed on the default; NOT yet owner-direct-confirmed): the coordinator relayed
+  that the owner chose **SIWA via a backend `appleauth` endpoint** — i.e. the default above. The planning
+  proceeds on this (T-0326 sized as a backend `appleauth` endpoint + spec-regen + the iOS SIWA UI). **Caveat:**
+  this is a coordinator-relayed answer, not a direct owner message, so it carries no user authority — the owner
+  should confirm directly before T-0326 (and the backend `appleauth` ticket) advances to `done`; the auth-contract
+  change + spec-regen remain owner-gated regardless. Treated as RESOLVED-for-planning, open-for-direct-ratification.
+
+---
+
+## Multi-region expansion questions (2026-06-23) — raised by ADR-0017 (INFRA-REGION-ADR)
+
+> All three are **non-blocking for the single-region West-Europe dev build** (sprint-13 ships single-region +
+> the minimal seam). They are gated on a **second region** actually being on the table, which this pass does not
+> build. ADR-0017 recommends the **lightest model** (one shared region + DB now; tenancy already separates
+> tenants logically) with the seam left clean — these questions decide when/how the heavier region-pinned model
+> is adopted.
+
+### Q-REGION-01 — [blocking: no — gated on a second region] The residency trigger (which market, if any, is residency-regulated)
+- Raised by: architect (INFRA-REGION-ADR / ADR-0017 D1/D6)
+- Owner: owner
+- Resolve-by: post-prod (becomes pre-prod for the specific market if a residency-regulated one is launched)
+- Date: 2026-06-23
+- Question: Is any planned market **residency-regulated** such that its data must **physically stay in-region**
+  (a legal requirement, not just presence/latency)? This is the named **trigger** that flips the model from
+  one-shared-DB to **region-pinned DBs**.
+- Why it matters: the owner's stated driver is **market expansion, not residency**, so the shared model ships.
+  But launching a residency-regulated market on a shared DB would be a **compliance incident** — the trigger must
+  be caught **before** that market goes live, not after.
+- Default taken (non-blocking): **none yet** — the current EU-centric markets (CZ/SK/PL/…) keep data in **West
+  Europe**, which is *in* the EU (GDPR's cross-border concern is transfers *out* of the EU; a single EU region
+  does not trigger it). A residency-regulated or non-EU market is the trigger to revisit (a new ADR for the
+  region-pinned model).
+- Answer: _(owner fills in — confirm no residency requirement for the planned markets, or name the market(s)
+  that force region-pinned DBs and when they launch)_
+
+### Q-REGION-02 — [blocking: no — gated on a second region] Tenant→region assignment + reassignment policy
+- Raised by: architect (INFRA-REGION-ADR / ADR-0017 D3)
+- Owner: owner
+- Resolve-by: post-prod
+- Date: 2026-06-23
+- Question: Confirm **country→region** as the assignment granularity (a tenant inherits its country's home
+  region; a tenant has exactly **one** home region and never spans regions). And: if a tenant is ever
+  **reassigned** to a new region, what is the data-migration story?
+- Why it matters: the granularity decides the shape of the future tenant→region map (one row per country vs per
+  tenant) and the `CountryConfiguration.HomeRegion` field. Reassignment is a data-migration concern only relevant
+  once a second region exists.
+- Default taken (non-blocking): **country-driven, one home region per tenant, no reassignment story built** until
+  a second region is real. A multi-market legal entity = **two tenants** (one per region), not one tenant
+  spanning two.
+- Answer: _(owner fills in — confirm country→region granularity; defer reassignment until a second region)_
+
+### Q-REGION-03 — [blocking: no] Per-region subscriptions, or one subscription with region in RG/naming?
+- Raised by: architect (INFRA-REGION-ADR / ADR-0017 D6)
+- Owner: owner
+- Resolve-by: post-prod
+- Date: 2026-06-23
+- Question: When a second region is added, should each region get its **own Azure subscription**, or stay **one
+  subscription** with the region carried in the RG + resource naming (`rg-cleansia-<region>-<stage>`)?
+- Why it matters: Azure regions are a resource *location*, not a subscription boundary — one subscription holds
+  many regions' RGs. A per-region subscription adds governance/billing overhead and is only warranted by a real
+  trigger (a subscription-level quota hit, a billing/legal boundary, or a blast-radius/compliance requirement).
+- Default taken (non-blocking): **one subscription** (region in RG/naming) until a quota / billing-legal /
+  blast-radius trigger fires. The Bicep is RG-scoped, so a later per-region subscription is a deployment-target
+  parameter, not a rewrite.
+- Answer: _(owner fills in — confirm one subscription until a trigger, or require per-region subscriptions)_

@@ -1,4 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { AdminAuthService } from '@cleansia/admin-services';
+import { SnackbarService } from '@cleansia/services';
+import { provideMockStore } from '@ngrx/store/testing';
+import { TranslateModule } from '@ngx-translate/core';
 import { AdminLoginComponent } from './admin-login.component';
 
 describe('AdminLoginComponent', () => {
@@ -7,7 +12,23 @@ describe('AdminLoginComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AdminLoginComponent],
+      imports: [AdminLoginComponent, TranslateModule.forRoot()],
+      providers: [
+        provideMockStore({ initialState: { loading: { loading: false } } }),
+        provideRouter([]),
+        {
+          provide: AdminAuthService,
+          useValue: { login: jest.fn(), isLoggedIn: jest.fn() },
+        },
+        {
+          provide: SnackbarService,
+          useValue: {
+            showSuccess: jest.fn(),
+            showError: jest.fn(),
+            showApiError: jest.fn(),
+          },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AdminLoginComponent);

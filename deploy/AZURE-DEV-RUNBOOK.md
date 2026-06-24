@@ -59,9 +59,14 @@ The deployment also creates: 5 blob containers (`order-photos`, `employee-docume
 
 - [ ] **Azure subscription** with **Owner** or **Contributor + User Access Administrator** on it
       (you need to create role assignments, which Contributor alone can't do).
-- [ ] **Azure CLI** installed locally (`az version` ≥ 2.60) with the Bicep extension (`az bicep version`).
+- [ ] **Azure CLI** with the Bicep extension. **Azure Cloud Shell** (the `>_` bash in the portal) already
+      has both — you can run every `az` command in this runbook from there, no local install needed.
 - [ ] **GitHub repo admin** rights (to create Environments + secrets).
-- [ ] Your **public IP** (for the Postgres admin firewall rule): `curl -s ifconfig.me`.
+- [ ] Your **own machine's public IP** — for the Postgres admin firewall rule (direct `psql`/SQL access).
+      Get it from a normal browser ("what is my IP") or `curl ifconfig.me` **on your laptop**.
+      ⚠️ **Do NOT use the IP of Azure Cloud Shell** — its container IP changes every session, so the rule
+      would immediately go stale. This rule is only for *you* connecting to the DB directly; the app and
+      the CI migration use other paths (CI opens a temporary per-run rule for the GitHub runner — see §7).
 - [ ] Decide the **Postgres admin password** (strong; you'll store it as a GitHub secret, never in code).
 
 ---
@@ -124,12 +129,19 @@ Add these **environment secrets** to `dev-weu` (Settings → Environments → de
 | `AZURE_TENANT_ID` | tenant id | `azure/login` |
 | `AZURE_SUBSCRIPTION_ID` | subscription id | `azure/login` |
 | `POSTGRES_ADMIN_PASSWORD` | your chosen Postgres password | the Bicep `@secure()` param |
-| `ADMIN_IP_ADDRESS` | your public IP | the Postgres firewall rule |
-| `ACR_NAME` | `acrcleansiaweudev` | the Functions `az acr build` step |
+| `ADMIN_IP_ADDRESS` | **your laptop's** public IP (not Cloud Shell's — see §1) | the Postgres admin firewall rule |
+| `ACR_NAME` | `acrcleansiaweudev` (see note ↓) | the Functions `az acr build` step |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER` | (filled after step 6 — the SWA deploy token) | partner SPA deploy |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN` | (filled after step 6) | admin SPA deploy |
 
-> The two SWA tokens don't exist until the Static Web Apps are created (step 6), so add placeholders now
+> **`ACR_NAME` — where it comes from:** the Bicep *creates* the registry and names it itself —
+> `acrcleansia<region><env>` (no separators; Azure registry names are alphanumeric-only). For dev that is
+> deterministically **`acrcleansiaweudev`** — set the secret to exactly that string (no `.azurecr.io`
+> suffix; the workflow appends it). It only needs to exist before the *Functions build* step (which runs
+> on a deploy, after the registry is provisioned), so setting it upfront is fine. To read it back instead:
+> `az acr list -g rg-cleansia-weu-dev --query "[0].name" -o tsv`.
+>
+> The two **SWA tokens** don't exist until the Static Web Apps are created (step 6), so add placeholders now
 > and fill them after the first provision. Migrate any old flat `*_DEV` secrets into this scope and delete
 > the flat copies.
 
@@ -208,14 +220,18 @@ for h in partner admin customer partner-mobile customer-mobile; do
 ## 7. Apply database migrations
 
 The CI pipeline applies committed migrations via the EF bundle on every deploy (the `migrate-database`
-job). For the **very first** deploy, the same bundle runs before the app deploys — no manual step needed,
-**provided your admin IP is in the Postgres firewall** (it is, from step 5's `adminIpAddress`). If you
-ever need to apply manually:
+job), before the app deploys — no manual step needed. The runner's IP is **not** your admin IP and is
+**not** an Azure service, so the `migrate-database` job **opens a temporary, per-run Postgres firewall
+rule for the runner's own IP, applies the migration, then always removes the rule** (even on failure).
+You don't manage that — it's automatic.
+
+If you ever need to apply migrations **manually** (e.g. from Cloud Shell or your laptop — whose IP must
+be in the firewall, the `ADMIN_IP_ADDRESS` rule):
 
 ```bash
 dotnet ef migrations bundle \
   --project src/Cleansia.Infra.Database/Cleansia.Infra.Database.csproj \
-  --startup-project src/Cleansia.Web/Cleansia.Web.Partner.csproj \
+  --startup-project src/Cleansia.Web.Partner/Cleansia.Web.Partner.csproj \
   --configuration Release --output ./efbundle --force
 ./efbundle --connection "$DB_CONN"
 ```

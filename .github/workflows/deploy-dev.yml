@@ -287,12 +287,35 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      # The GitHub-hosted runner has a dynamic public IP that neither firewall rule covers
+      # (it is not an "Azure service", and it is not the static admin IP). Open a temporary,
+      # uniquely-named firewall rule for THIS runner's IP just for the migration, and always
+      # remove it afterwards (even on failure). This avoids both a self-hosted runner and an
+      # open-to-the-world 0.0.0.0/0 rule.
+      - name: Open Postgres firewall for the runner
+        run: |
+          RUNNER_IP="$(curl -s https://api.ipify.org)"
+          echo "RUNNER_IP=$RUNNER_IP" >> "$GITHUB_ENV"
+          az postgres flexible-server firewall-rule create \
+            --resource-group rg-cleansia-${{ matrix.region }}-dev \
+            --name pg-cleansia-${{ matrix.region }}-dev \
+            --rule-name "ci-migrate-${{ github.run_id }}" \
+            --start-ip-address "$RUNNER_IP" --end-ip-address "$RUNNER_IP"
+
       - name: Apply migrations
         env:
           DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
         run: |
           chmod +x ./src/efbundle
           ./src/efbundle --connection "$DB_CONNECTION_STRING"
+
+      - name: Remove the runner firewall rule
+        if: always()
+        run: |
+          az postgres flexible-server firewall-rule delete --yes \
+            --resource-group rg-cleansia-${{ matrix.region }}-dev \
+            --name pg-cleansia-${{ matrix.region }}-dev \
+            --rule-name "ci-migrate-${{ github.run_id }}" || true
 
   # ===========================================================================================
   # Deploy — the five API hosts. Parallel: each needs [provision, migrate-database] only (ADR-0015 D5,

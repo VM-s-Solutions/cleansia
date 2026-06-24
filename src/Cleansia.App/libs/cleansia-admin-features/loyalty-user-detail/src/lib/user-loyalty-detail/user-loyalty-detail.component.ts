@@ -168,8 +168,6 @@ export class UserLoyaltyDetailComponent
     this.facade.ngOnDestroy();
   }
 
-  // ---- Display helpers ----
-
   tierKey(tier: LoyaltyTier): string {
     switch (tier) {
       case LoyaltyTier.BronzeCleaner:
@@ -214,8 +212,6 @@ export class UserLoyaltyDetailComponent
   formatPoints(value: number): string {
     return value > 0 ? `+${value}` : `${value}`;
   }
-
-  // ---- Activity table ----
 
   private rebuildActivityColumns(): void {
     const t = this.translate;
@@ -374,8 +370,6 @@ export class UserLoyaltyDetailComponent
         return '';
     }
   }
-
-  // ---- Actions ----
 
   onActivityPageChange(event: PaginationState): void {
     this.facade.onActivityPageChange(event.first, event.rows);

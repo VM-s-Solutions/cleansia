@@ -1,10 +1,10 @@
 import { expect, Page, Route, test } from '@playwright/test';
 
 /**
- * T-0281 — Phase-0 admin login -> dashboard (employee-management home) smoke.
+ * Phase-0 admin login -> seeded-row landing smoke.
  *
- * SEAM: Playwright network-stubbing, identical to the seam T-0271 chose for the
- * customer booking smoke. The admin app boots itself via the Playwright
+ * SEAM: Playwright network-stubbing, identical to the seam the sibling smokes
+ * use. The admin app boots itself via the Playwright
  * `webServer` (`nx run cleansia-admin.app:serve`) and every `**\/api/**` call is
  * intercepted at the browser boundary and answered with deterministic fixtures.
  * We stub rather than boot a live seeded Admin API because it removes the
@@ -12,10 +12,10 @@ import { expect, Page, Route, test } from '@playwright/test';
  * deterministic with zero external services.
  *
  * The REAL login form + the REAL admin home (employee-management, the `''` route
- * target) are driven through the UI — only the network is faked, so the
- * dead-CTA / broken-route / guard-misconfig class of bug is still caught. The
- * smoke stops at the authenticated landing; it manages nothing and touches no
- * money flow.
+ * target) are driven through the UI — only the network is faked. The landing
+ * oversight surface is seeded with ONE deterministic employee row, so the smoke
+ * asserts a real rendered data row, not just an authed-but-empty landing. It
+ * manages nothing and touches no money flow.
  *
  * AUTH MODEL: the real auth/refresh tokens are HttpOnly cookies; the JS layer
  * only persists `csrfToken`, `refreshTokenExp` and `role` to localStorage, and
@@ -40,7 +40,33 @@ const LOGIN_FIXTURE = {
   role: 'Administrator',
 };
 
-const EMPTY_PAGE = { data: [], total: 0, pageNumber: 1, pageSize: 20 };
+const SEEDED_EMPLOYEE_NAME = 'Jan Novak';
+const SEEDED_EMPLOYEE_EMAIL = 'jan.novak@example.com';
+
+// One seeded employee so the landing oversight surface (the employee-management
+// table) renders a real data row, not the empty state. `contractStatus` is the
+// enum NAME string (the admin list DTO serialises it as a string); 'Approved'
+// maps to a translated badge label via the contract-status helper.
+const SEEDED_EMPLOYEE = {
+  id: '77777777-7777-7777-7777-777777777777',
+  firstName: 'Jan',
+  lastName: 'Novak',
+  email: SEEDED_EMPLOYEE_EMAIL,
+  phoneNumber: '+420123456789',
+  contractStatus: 'Approved',
+  averageRating: 4.8,
+  complaintsCount: 0,
+  nationalityName: 'Czech',
+  createdAt: new Date('2026-01-15T10:00:00.000Z').toISOString(),
+  isProfileComplete: true,
+};
+
+const SEEDED_EMPLOYEE_PAGE = {
+  data: [SEEDED_EMPLOYEE],
+  total: 1,
+  pageNumber: 1,
+  pageSize: 20,
+};
 
 function json(route: Route, body: unknown): Promise<void> {
   return route.fulfill({
@@ -58,7 +84,7 @@ async function stubBackend(page: Page): Promise<void> {
 
   await page.route('**/api/AdminAuth/Login', (route) => json(route, LOGIN_FIXTURE));
   await page.route('**/api/AdminEmployee/get-paged**', (route) =>
-    json(route, EMPTY_PAGE)
+    json(route, SEEDED_EMPLOYEE_PAGE)
   );
 }
 
@@ -70,7 +96,9 @@ test.beforeEach(async ({ page, context }) => {
   await stubBackend(page);
 });
 
-test('admin can log in and land on the admin home', async ({ page }) => {
+test('admin can log in and land on the admin home with a seeded data row', async ({
+  page,
+}) => {
   // ── Land on the login screen ──
   await page.goto('/login');
   const emailInput = page.locator('input[type="email"]').first();
@@ -95,9 +123,18 @@ test('admin can log in and land on the admin home', async ({ page }) => {
   await expect.poll(() => page.url()).toContain('/employee-management');
   await expect(page.locator('nav.sidebar-nav')).toBeVisible();
 
-  // The real admin home renders its heading — the admin dashboard/home is
-  // reached, not a blank route, the /unauthorized bounce, or a login loop.
+  // The real admin home renders its heading — the oversight surface is reached,
+  // not a blank route, the /unauthorized bounce, or a login loop.
   await expect(
     page.getByRole('heading', { name: 'Employee Management' })
   ).toBeVisible();
+
+  // ── Seeded-row assertion: the employee-management table renders
+  //    a REAL data row with the seeded employee's name + email (web-first wait),
+  //    not the empty state. The name cell joins firstName + lastName. ──
+  const seededRow = page.locator('tr.table__row', {
+    hasText: SEEDED_EMPLOYEE_NAME,
+  });
+  await expect(seededRow).toBeVisible();
+  await expect(seededRow).toContainText(SEEDED_EMPLOYEE_EMAIL);
 });

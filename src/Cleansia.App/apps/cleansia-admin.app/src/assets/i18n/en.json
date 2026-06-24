@@ -717,6 +717,9 @@
         "description": "Everything that happened to this resource:",
         "no_audits": "No audit entries for this resource",
         "back": "Back to Audit Log"
+      },
+      "drill_in": {
+        "view_history": "View audit history"
       }
     },
     "pay_config_management": {

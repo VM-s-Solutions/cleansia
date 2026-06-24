@@ -717,6 +717,9 @@
         "description": "Vše, co se s tímto zdrojem stalo:",
         "no_audits": "Pro tento zdroj nejsou žádné záznamy",
         "back": "Zpět na protokol akcí"
+      },
+      "drill_in": {
+        "view_history": "Zobrazit historii auditu"
       }
     },
     "invoice_detail": {

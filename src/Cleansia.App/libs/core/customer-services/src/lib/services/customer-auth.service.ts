@@ -204,9 +204,6 @@ export class CustomerAuthService {
   setSession(authResult: JwtTokenResponse): void {
     // Auth + refresh tokens land as HttpOnly cookies via Set-Cookie; we only
     // persist the JS-readable companions (role, csrf, refresh exp).
-    // NOTE: imports JwtTokenResponse from @cleansia/partner-services (legacy
-    // cross-app DTO source). That client hasn't been regenerated with the
-    // new Role field yet — defensive cast stays until partner regen runs.
     const role = (authResult as unknown as { role?: string }).role;
     if (role) {
       setLocalStorageValueByKey(this.cookieKeys.role, role);

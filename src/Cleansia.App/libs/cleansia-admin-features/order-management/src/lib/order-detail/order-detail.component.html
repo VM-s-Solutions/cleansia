@@ -9,6 +9,16 @@
         [outlined]="true"
       />
       <cleansia-title [title]="'pages.order_detail.title' | translate" />
+      <cleansia-button
+        *cleansiaPermission="Policy.CanViewAuditLog"
+        class="cleansia-order-detail__audit-link"
+        icon="pi pi-history"
+        severity="secondary"
+        [outlined]="true"
+        [label]="'pages.audit_log.drill_in.view_history' | translate"
+        [disabled]="!facade.order()?.id"
+        (onClick)="viewAuditHistory()"
+      />
     </div>
 
     @if (facade.loading()) {

@@ -1,9 +1,9 @@
 import { expect, Page, Route, test } from '@playwright/test';
 
 /**
- * T-0271 — Phase-0 customer booking -> checkout-intent smoke.
+ * Phase-0 customer booking -> checkout-intent smoke.
  *
- * SEAM (AC6): Playwright network-stubbing. The customer app boots itself via the
+ * SEAM: Playwright network-stubbing. The customer app boots itself via the
  * Playwright `webServer` (`nx run cleansia.app:serve`) and every `**\/api/**`
  * call is intercepted at the browser boundary and answered with deterministic
  * fixtures. We chose stubbing over a live seeded Customer API because:

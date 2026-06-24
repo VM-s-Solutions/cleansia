@@ -116,7 +116,6 @@ describe('OrderWizardComponent (a11y)', () => {
     fixture.detectChanges();
   }
 
-  // ─── AC1 + AC2 — stepper ────────────────────────────────────
   describe('stepper (AC1, AC2)', () => {
     it('renders completed stepper items as focusable native buttons', async () => {
       await setup();
@@ -150,7 +149,6 @@ describe('OrderWizardComponent (a11y)', () => {
     });
   });
 
-  // ─── AC1 + AC2 — service / package cards ────────────────────
   describe('selection cards (AC1, AC2)', () => {
     it('renders service cards as focusable buttons with aria-pressed reflecting selection', async () => {
       await setup();
@@ -178,7 +176,6 @@ describe('OrderWizardComponent (a11y)', () => {
     });
   });
 
-  // ─── AC5 — counter buttons ──────────────────────────────────
   describe('room/bathroom counters (AC5)', () => {
     it('gives every counter button an aria-label', async () => {
       await setup();
@@ -190,7 +187,6 @@ describe('OrderWizardComponent (a11y)', () => {
     });
   });
 
-  // ─── AC3 + AC4 — contact fields ─────────────────────────────
   describe('contact step labels + errors (AC3, AC4)', () => {
     it('associates each contact label with its input via for/id', async () => {
       await setup();
@@ -231,7 +227,6 @@ describe('OrderWizardComponent (a11y)', () => {
     });
   });
 
-  // ─── AC1 + AC2 — saved address rows ─────────────────────────
   describe('saved address rows (AC1, AC2)', () => {
     it('renders saved address rows as focusable buttons with aria-pressed', async () => {
       await setup();
@@ -247,7 +242,6 @@ describe('OrderWizardComponent (a11y)', () => {
     });
   });
 
-  // ─── AC1 + AC2 — payment cards ──────────────────────────────
   describe('payment cards (AC1, AC2)', () => {
     it('renders payment cards as focusable buttons with aria-pressed reflecting the chosen method', async () => {
       await setup();
@@ -263,7 +257,6 @@ describe('OrderWizardComponent (a11y)', () => {
     });
   });
 
-  // ─── AC1 — mobile price header ──────────────────────────────
   describe('mobile price header (AC1)', () => {
     it('renders the mobile price header as a focusable button with aria-expanded', async () => {
       await setup();

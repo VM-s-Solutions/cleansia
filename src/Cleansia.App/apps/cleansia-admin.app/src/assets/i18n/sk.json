@@ -717,6 +717,9 @@
         "description": "Všetko, čo sa s týmto zdrojom stalo:",
         "no_audits": "Pre tento zdroj nie sú žiadne záznamy",
         "back": "Späť na protokol akcií"
+      },
+      "drill_in": {
+        "view_history": "Zobraziť históriu auditu"
       }
     },
     "pay_config_management": {

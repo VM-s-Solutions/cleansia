@@ -64,9 +64,9 @@ jobs:
 
   # ── Phase-0 E2E smokes (T-0271 customer + T-0281 partner & admin) ──
   # Runs the three Playwright critical-path smokes through the REAL UIs:
-  #   - T-0271 customer: booking wizard → Stripe checkout handoff (apps/cleansia.app-e2e)
-  #   - T-0281 partner:  login → jobs (orders) landing            (apps/cleansia-partner.app-e2e)
-  #   - T-0281 admin:    login → admin home (employee-management) (apps/cleansia-admin.app-e2e)
+  #   - customer: booking wizard → Stripe checkout handoff       (apps/cleansia.app-e2e)
+  #   - partner:  login → accept job → Available→My transition    (apps/cleansia-partner.app-e2e)
+  #   - admin:    login → employee-management seeded data row     (apps/cleansia-admin.app-e2e)
   # Backend seam for ALL THREE: Playwright network-stubbing (no live API / Postgres)
   # — documented in each spec header. This is its OWN job (NOT Nx-affected gated) so
   # a change anywhere that breaks a critical path can't silently skip it.
@@ -105,11 +105,11 @@ jobs:
         run: npx nx run cleansia.app-e2e:e2e-ci
         working-directory: ./src/Cleansia.App
 
-      - name: Run partner login → jobs smoke
+      - name: Run partner accept-job smoke
         run: npx nx run cleansia-partner.app-e2e:e2e-ci
         working-directory: ./src/Cleansia.App
 
-      - name: Run admin login → home smoke
+      - name: Run admin seeded-row smoke
         run: npx nx run cleansia-admin.app-e2e:e2e-ci
         working-directory: ./src/Cleansia.App
 

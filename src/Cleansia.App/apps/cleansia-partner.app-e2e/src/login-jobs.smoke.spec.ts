@@ -1,21 +1,31 @@
 import { expect, Page, Route, test } from '@playwright/test';
 
 /**
- * T-0281 — Phase-0 partner login -> jobs (orders) landing smoke.
+ * Phase-0 partner login -> accept-job state-transition smoke.
  *
- * SEAM: Playwright network-stubbing, identical to the seam T-0271 chose for the
- * customer booking smoke. The partner app boots itself via the Playwright
+ * SEAM: Playwright network-stubbing, identical to the seam the sibling smokes
+ * use. The partner app boots itself via the Playwright
  * `webServer` (`nx run cleansia-partner.app:serve`) and every `**\/api/**` call
  * is intercepted at the browser boundary and answered with deterministic
  * fixtures. We stub rather than boot a live seeded Partner API because it removes
- * the Postgres/seed-script dependency entirely and makes the auth handshake
- * deterministic with zero external services.
+ * the Postgres/seed-script dependency entirely and makes the auth + accept
+ * handshake deterministic with zero external services.
  *
- * The REAL login form + the REAL orders ("jobs") page are driven through the UI —
- * only the network is faked, so the dead-CTA / broken-route / guard-misconfig
- * class of bug is still caught. The smoke stops at the authenticated jobs landing
- * (the partner-app critical entry path); it accepts/takes no job and touches no
+ * The REAL login form, the REAL orders ("jobs") page, and the REAL take-order
+ * action are driven through the UI — only the network is faked. The smoke drives
+ * one accept and asserts the rendered state transition (the job leaves
+ * "Available Orders" and appears in "My Orders"); it stops there and touches no
  * money flow.
+ *
+ * TRANSITION FIXTURE: the orders page loads two lists from the SAME
+ * `/api/Order/GetPaged` endpoint, distinguished by query: the "my" list carries
+ * `Filter.EmployeeId=<id>`, the "available" list carries
+ * `Filter.ExcludeEmployeeId=<id>` (and no `Filter.EmployeeId`). A mutable
+ * `accepted` flag flips when the real `TakeOrder` POST fires — before accept the
+ * available list returns the seeded job and the my list is empty; after accept
+ * the available list is empty and the my list returns the now-assigned job. This
+ * mirrors the real backend: taking an order assigns it to the employee, so it
+ * leaves the available pool and enters the partner's own list.
  *
  * AUTH MODEL: the real auth/refresh tokens are HttpOnly cookies; the JS layer
  * only persists `csrfToken`, `refreshTokenExp` and `role` to localStorage, and
@@ -27,6 +37,9 @@ import { expect, Page, Route, test } from '@playwright/test';
 
 const EMPLOYEE_ID = '99999999-9999-9999-9999-999999999999';
 const FUTURE_EXP = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+const SEEDED_ORDER_ID = '11111111-1111-1111-1111-111111111111';
+const SEEDED_ORDER_NUMBER = 'AVAIL-0001';
 
 const LOGIN_FIXTURE = {
   token: 'stub-access-token',
@@ -60,7 +73,33 @@ const CURRENT_EMPLOYEE_FIXTURE = {
   email: 'cleaner@example.com',
 };
 
-const EMPTY_PAGE = { data: [], total: 0, pageNumber: 1, pageSize: 20 };
+// One seeded available job. `orderStatus.value = 2` (Confirmed) + `availableSpots
+// > 0` is exactly the take-order action's visibility predicate, so the green
+// "Take Order" (`pi pi-check`) action renders on the row.
+const SEEDED_AVAILABLE_ORDER = {
+  id: SEEDED_ORDER_ID,
+  displayOrderNumber: SEEDED_ORDER_NUMBER,
+  customerName: 'Petra Customer',
+  customerPhone: '+420123456789',
+  customerAddress: 'Václavské náměstí 1, Praha',
+  cleaningDateTime: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+  totalPrice: 1500,
+  currency: { id: 'czk', code: 'CZK', symbol: 'Kč' },
+  paymentStatus: { type: 'PaymentStatus', name: 'Paid', value: 1 },
+  orderStatus: { type: 'OrderStatus', name: 'Confirmed', value: 2 },
+  requiredEmployees: 1,
+  maxEmployees: 1,
+  availableSpots: 1,
+  assignedEmployeesCount: 0,
+  hasAvailableSpots: true,
+};
+
+const pageOf = (data: unknown[]) => ({
+  data,
+  total: data.length,
+  pageNumber: 1,
+  pageSize: 20,
+});
 
 function json(route: Route, body: unknown): Promise<void> {
   return route.fulfill({
@@ -71,6 +110,11 @@ function json(route: Route, body: unknown): Promise<void> {
 }
 
 async function stubBackend(page: Page): Promise<void> {
+  // The accept transition is a single mutable flag flipped by the real TakeOrder
+  // POST. Both order lists are derived from it, so the rendered move from
+  // Available -> My is driven by the actual accept request, not a timer.
+  let accepted = false;
+
   // Playwright matches routes in REVERSE registration order: the catch-all is
   // registered FIRST and specific fixtures override it. The catch-all means an
   // un-stubbed read returns 200 `{}` (never a 401) so the error interceptor's
@@ -84,7 +128,31 @@ async function stubBackend(page: Page): Promise<void> {
   await page.route('**/api/Employee/GetCurrentEmployee**', (route) =>
     json(route, CURRENT_EMPLOYEE_FIXTURE)
   );
-  await page.route('**/api/Order/GetPaged**', (route) => json(route, EMPTY_PAGE));
+
+  // Both lists come off the same endpoint; the query string tells them apart.
+  // `Filter.EmployeeId=` => the partner's own ("my") list; otherwise it is the
+  // available pool (it carries `Filter.ExcludeEmployeeId=`, which does NOT
+  // contain the substring `Filter.EmployeeId=`).
+  await page.route('**/api/Order/GetPaged**', (route) => {
+    const isMyList = route.request().url().includes('Filter.EmployeeId=');
+    if (isMyList) {
+      return json(route, pageOf(accepted ? [SEEDED_AVAILABLE_ORDER] : []));
+    }
+    return json(route, pageOf(accepted ? [] : [SEEDED_AVAILABLE_ORDER]));
+  });
+
+  await page.route('**/api/Order/TakeOrder', (route) => {
+    accepted = true;
+    return json(route, { orderId: SEEDED_ORDER_ID, employeeId: EMPLOYEE_ID });
+  });
+}
+
+// Scopes a locator to the `cleansia-section` that contains the given heading,
+// so "Available Orders" / "My Orders" row queries never cross-contaminate.
+function sectionByHeading(page: Page, heading: RegExp) {
+  return page.locator('cleansia-section', {
+    has: page.getByRole('heading', { name: heading }),
+  });
 }
 
 test.beforeEach(async ({ page, context }) => {
@@ -95,7 +163,9 @@ test.beforeEach(async ({ page, context }) => {
   await stubBackend(page);
 });
 
-test('partner can log in and reach the jobs (orders) page', async ({ page }) => {
+test('partner can log in, accept an available job, and see it move to My Orders', async ({
+  page,
+}) => {
   // ── Land on the login screen ──
   await page.goto('/login');
   const emailInput = page.locator('input[type="email"]').first();
@@ -120,15 +190,27 @@ test('partner can log in and reach the jobs (orders) page', async ({ page }) => 
   await expect.poll(() => page.url()).toContain('/orders');
   await expect(page.locator('nav.sidebar-nav')).toBeVisible();
 
-  // The real jobs page renders its section headings — the partner-app main
-  // authenticated screen is reached, not a blank route or a bounce to login.
-  // Scoped to the `heading` role (the `<h2>` section titles, which also carry a
-  // count badge) so the locator never collides with the empty-state table cell
-  // ("No available orders").
-  await expect(
-    page.getByRole('heading', { name: /Available Orders/ })
-  ).toBeVisible();
-  await expect(
-    page.getByRole('heading', { name: /My Orders/ })
-  ).toBeVisible();
+  const availableSection = sectionByHeading(page, /Available Orders/);
+  const mySection = sectionByHeading(page, /My Orders/);
+  const seededRow = (scope: ReturnType<typeof sectionByHeading>) =>
+    scope.locator('tr.table__row', { hasText: SEEDED_ORDER_NUMBER });
+
+  // ── Pre-accept: the seeded job is rendered in Available, absent from My ──
+  await expect(seededRow(availableSection)).toBeVisible();
+  await expect(seededRow(mySection)).toHaveCount(0);
+
+  // ── Accept it via the REAL take-order action; assert the POST actually fires
+  //    (it is what flips the fixture, so the transition is request-driven) ──
+  const takeRequest = page.waitForRequest(
+    (req) =>
+      req.url().includes('/api/Order/TakeOrder') && req.method() === 'POST'
+  );
+  await seededRow(availableSection).locator('button.action-btn').click();
+  const take = await takeRequest;
+  expect(take.postDataJSON()).toMatchObject({ orderId: SEEDED_ORDER_ID });
+
+  // ── Post-accept transition (rendered UI, web-first waits): the job leaves the
+  //    Available pool and appears in the partner's My Orders list ──
+  await expect(seededRow(mySection)).toBeVisible();
+  await expect(seededRow(availableSection)).toHaveCount(0);
 });

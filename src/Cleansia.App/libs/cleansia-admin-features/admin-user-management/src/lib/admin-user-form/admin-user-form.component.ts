@@ -25,7 +25,14 @@ import {
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
-import { CleansiaAdminRoute, CustomValidators } from '@cleansia/services';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
+import {
+  AuditResourceType,
+  buildAuditResourceHistoryRoute,
+  CleansiaAdminRoute,
+  CustomValidators,
+  Policy,
+} from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AdminUserFormData, AdminUserFormFacade } from './admin-user-form.facade';
 
@@ -44,6 +51,7 @@ import { AdminUserFormData, AdminUserFormFacade } from './admin-user-form.facade
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaTitleComponent,
+    CleansiaPermissionDirective,
   ],
   templateUrl: './admin-user-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -57,6 +65,8 @@ export class AdminUserFormComponent implements OnInit, OnDestroy {
   protected readonly facade = inject(AdminUserFormFacade);
 
   private readonly mode = signal<'create' | 'edit'>('create');
+
+  protected readonly Policy = Policy;
 
   readonly isEditMode = computed(() => this.mode() === 'edit');
   readonly pageTitle = computed(() =>
@@ -163,5 +173,13 @@ export class AdminUserFormComponent implements OnInit, OnDestroy {
 
   onCancel(): void {
     this.facade.navigateBack();
+  }
+
+  viewAuditHistory(): void {
+    const userId = this.route.snapshot.paramMap.get('userId');
+    if (!userId) return;
+    this.router.navigate(
+      buildAuditResourceHistoryRoute(AuditResourceType.AdminUser, userId)
+    );
   }
 }

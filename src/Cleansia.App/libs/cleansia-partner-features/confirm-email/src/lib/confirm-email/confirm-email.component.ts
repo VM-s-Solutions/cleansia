@@ -54,7 +54,6 @@ export class ConfirmEmailComponent implements OnInit {
 
   ngOnInit(): void {
     if (!this.route.snapshot.queryParamMap.get('email')) {
-      // this.router.navigate([CleansiaPartnerRoute.HOME]);
       return;
     }
 

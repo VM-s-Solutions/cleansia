@@ -288,3 +288,53 @@ _No open Wave-1 *planning* questions remain._
 > subject's erasure as a legal-basis exception). Baked into Wave-9 tickets T-0282 / T-0284 / T-0287. The
 > **pre-prod ratification** of the exact retention window + redaction list is a **pre-PROD readiness
 > checklist** item (owner/legal), not an open question. No open Wave-9 / audit-log questions remain.
+
+---
+
+## iOS port questions (2026-06-23) — raised by ADR-0013 (IOS-ADR)
+
+> All three are **non-blocking** with defensible defaults taken; the iOS plan proceeds on the defaults.
+> The **one hard blocker** for the iOS feature waves is NOT a question — it is the owner **mobile-spec
+> regen** (`manual_step: mobile-spec-regen`, owner-only), a regen of the *existing* contract (not a
+> contract change), which gates only the generated-client tickets. The Phase-0 foundation runs without it.
+
+### Q-IOS-01 — [blocking: no] iOS minimum deployment target
+- Raised by: architect (IOS-ADR / ADR-0013 D2)
+- Owner: owner
+- Resolve-by: post-prod
+- Date: 2026-06-23
+- Question: What is the iOS **minimum deployment target**? The architecture assumes **iOS 17** (enables
+  Observation `@Observable` for the state parity and the SwiftUI `Map` for the MapKit default).
+- Why it matters: it sets device reach. It does **not** change the architecture — a lower floor would only
+  force an `ObservableObject`/`@Published` fallback for state and a `UIViewRepresentable` MapKit wrapper.
+- Default taken (non-blocking): **iOS 17** — the modern-platform-floor posture matching Android `minSdk 26`.
+- Answer: _(owner fills in — confirm iOS 17, or set a lower floor and accept the state/map fallbacks)_
+
+### Q-IOS-02 — [blocking: no] Hard brand requirement that the iOS map be Mapbox-identical?
+- Raised by: architect (IOS-ADR / ADR-0013 D6)
+- Owner: owner
+- Resolve-by: post-prod
+- Date: 2026-06-23
+- Question: Is there a **hard brand/design requirement** that the iOS map look pixel-identical to the
+  Mapbox-styled Android map (the `MapStyles.kt` custom style)? The default is **MapKit** (Apple-native,
+  free, no token), with the Mapbox iOS SDK kept as a **scoped fallback behind the `MapProvider` protocol**.
+- Why it matters: a "yes" flips the **default provider** (imports the paid Mapbox SDK + a token to rotate);
+  the **seam is unchanged** either way, so this is a provider choice, not an architecture change.
+- Default taken (non-blocking): **No** — MapKit by default; Mapbox only if a specific parity gap (custom
+  style, service-area polygon overlay, a sheet UX MapKit can't match) forces one surface onto it.
+- Answer: _(owner fills in — confirm MapKit default, or require Mapbox-identical → flip the default provider)_
+
+### Q-IOS-03 — [blocking: no] Add trusted-device to the mobile clients (iOS + Android)?
+- Raised by: architect (IOS-ADR / ADR-0013 D10)
+- Owner: owner
+- Resolve-by: post-prod
+- Date: 2026-06-23
+- Question: Should the **trusted-device** flow (`trustedDeviceToken`, currently optional/null on
+  `MobileLogin`/`MobilePartnerLogin` and **not sent by Android**) be built for the mobile clients?
+- Why it matters: it is net-new with **no Android reference**; an iOS-only build creates a security-path
+  **divergence** with no cross-client contract to anchor it. The ADR-0011 posture is "one contract, all
+  clients" — if wanted, design it once and ship Android + iOS together.
+- Default taken (non-blocking): **omit from iOS v1 to match Android** (the field is optional, so omitting
+  it is fully supported).
+- Answer: _(owner fills in — omit to match Android, or commission a one-design trusted-device flow for both
+  mobile clients)_

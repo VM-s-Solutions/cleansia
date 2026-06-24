@@ -24,4 +24,16 @@ public class AdminAuditLogController(IMediator mediator) : ApiController(mediato
         var result = await Mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("get-by-id/{auditId}")]
+    [Permission(Policy.CanViewAuditLog)]
+    [ProducesResponseType(typeof(AdminActionAuditDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetAdminActionAuditById(string auditId, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new GetAdminActionAuditById.Query(auditId), cancellationToken);
+        return HandleResult<AdminActionAuditDetailDto>(result);
+    }
 }

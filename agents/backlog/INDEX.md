@@ -103,15 +103,22 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > batch). **T-0279 stays `blocked`** on the separate IMP-3 regen — does NOT gate Wave-8 close. **T-0271**
 > (customer E2E smoke) is the foundation T-0281 reused; both `done` 2026-06-23.
 >
-> **Wave-8 CLOSE-OUT follow-ups — BATCH CLOSED 2026-06-23 (2 commits on `feature/wave8-pre-ios-cleanup`,
-> pushed; orchestrator-verified on the combined tree). 5 of 6 `done`; T-0290 backend-half done+verified +
-> security PASS, its FE half HELD on owner admin nswag-regen (mirrors how T-0286 was held). 2 carry-forward
-> follow-ups filed (T-0294, T-0295) + a parallel-shared-file process lesson recorded.**
+> **Wave-8 CLOSE-OUT follow-ups — POST-ADMIN-REGEN BATCH CLOSED 2026-06-23 (2 more commits on
+> `feature/wave8-pre-ios-cleanup`: `093ed944` FE + `7097d837` BE, pushed; orchestrator-verified on the
+> combined tree). T-0290 is now FULLY `done` — BOTH halves end-to-end (the FE before/after diff view
+> shipped against the regenerated `AdminAuditLogClient.getById`; `nx build cleansia-admin.app` prod clean,
+> `nx test audit-log` 24/24, `nx build cleansia-partner.app` clean — **ADR-0012 follow-up (b) CLOSED**).
+> T-0294 `done`. T-0295 BACKEND half `done`+verified (additive `AdminEmployeeDetail.UserId` + mapper +
+> test 2/2); its FE half (employee-page drill-in) is HELD on a **2nd** owner admin nswag-regen for the new
+> `UserId` field (mirrors how T-0286 / T-0290-FE were held). All six close-out follow-ups (T-0289…T-0293)
+> `done`; of the two batch-close follow-ups T-0294 `done`, T-0295 `in_review`. A StructuredOutput-vs-on-disk
+> process lesson recorded in `quality-gates.md` (a failed final-report call ≠ failed work — gate the tree
+> by hand; keep buildEvidence concise).**
 >
 > | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
 > |----|-------|------|--------|-----------|--------|-----|-------------|--------|
 > | **T-0289** | Per-detail-page drill-in → per-resource audit-history view (additive wiring of T-0286's shipped route) | S | **done ✅** `916014cb` | T-0286✓ | frontend | no | — | ADR-0012 follow-up (a) (T-0286 close) |
-> | **T-0290** | Single-row before/after audit diff view + **new single-row backend endpoint** (snapshots off the PII-min list cut) | M | **in_review** (BACKEND done+verified, sec **PASS**; **FE half HELD on admin regen**) | T-0284✓, T-0285✓, T-0286✓ | backend, frontend | **yes** | **nswag-regen (admin) — PENDING ON OWNER** | ADR-0012 follow-up (b) (T-0286 close; ADR-0012 D4.1) |
+> | **T-0290** | Single-row before/after audit diff view + **new single-row backend endpoint** (snapshots off the PII-min list cut) | M | **done ✅** `093ed944` (BE `516e71c9` + FE `093ed944`; both halves, sec **PASS**) | T-0284✓, T-0285✓, T-0286✓ | backend, frontend | **yes** | **nswag-regen (admin) — DONE ✓** | ADR-0012 follow-up (b) (T-0286 close; ADR-0012 D4.1) — **CLOSED** |
 > | **T-0291** | consistency.md note — prefer the disputes-management list archetype for new admin lists | XS | **done ✅** `916014cb` | — | docs | no | — | ADR-0012 follow-up (c) |
 > | **T-0292** | Remove dead `?? 0` on non-nullable `extra.price` in `wizard-summary-step` (NG8102) | XS | **done ✅** `916014cb` | — | frontend | no | — | Wave-8 8C E2E dev-server boot |
 > | **T-0293** | E2E depth — partner accept-job transition + admin seeded-row (the T-0281 narrowed slice) | S | **done ✅** `916014cb` | T-0281✓ | frontend, backend | no | — | T-0281 close (AC1/AC2 narrowed) |
@@ -120,8 +127,8 @@ One row per ticket. Source of truth for "what's the team doing right now".
 >
 > | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
 > |----|-------|------|--------|-----------|--------|-----|-------------|--------|
-> | **T-0294** | Remove now-unused `private readonly router` + `Router` import in `confirm-email.component.ts` (lint doesn't flag unused private members) | XS | **ready** | T-0280✓ | frontend | no | — | T-0280 latent smell (comment removal orphaned the injection) |
-> | **T-0295** | Add `UserId` to `AdminEmployeeDetail` → enable the User-typed audit drill-in from the employee page | XS | **ready** | T-0289✓ | backend, frontend | no | **nswag-regen (admin)** | T-0289 deviation (employee page exposes `Employee.Id`, audit keys on `User.Id`) |
+> | **T-0294** | Remove now-unused `private readonly router` + `Router` import in `confirm-email.component.ts` (lint doesn't flag unused private members) | XS | **done ✅** `093ed944` | T-0280✓ | frontend | no | — | T-0280 latent smell (comment removal orphaned the injection) |
+> | **T-0295** | Add `UserId` to `AdminEmployeeDetail` → enable the User-typed audit drill-in from the employee page | XS | **in_review** (BACKEND done+verified `7097d837`; **FE half HELD on a 2nd admin regen**) | T-0289✓ | backend, frontend | no | **nswag-regen (admin) — PENDING ON OWNER (2nd regen, for `AdminEmployeeDetail.UserId`)** | T-0289 deviation (employee page exposes `Employee.Id`, audit keys on `User.Id`) |
 >
 > **Parallel-shared-file lesson recorded** (`quality-gates.md` §"Serialize shared-file lanes …" + cross-ref
 > in `routing.md` rule 3): in this batch T-0291 + T-0289 both edited `consistency.md` in parallel and
@@ -129,10 +136,13 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > hand). Future batches **serialize shared-file lanes** (`consistency.md`, `INDEX.md`, i18n bundles,
 > `Policy.cs`/`PolicyBuilder.cs`) and **ban shared-file `git restore` in parallel agents**.
 >
-> ⚠️ **OWNER — admin nswag-regen now PENDING** (batch these two together): **(1) T-0290** (new
-> `AdminActionAuditDetailDto` + `GetAdminActionAuditById` endpoint → releases T-0290's FE half) and
-> **(2) T-0295** (new `AdminEmployeeDetail.UserId` field). After the regen run all three web prod-builds
-> per quality-gates §after-regen. Separately, **T-0279** still waits on the unrelated **IMP-3** admin regen.
+> ⚠️ **OWNER — admin nswag-regen PENDING (1 left):** the **T-0290** regen (the
+> `AdminActionAuditDetailDto` + `GetAdminActionAuditById` endpoint) **LANDED** and released T-0290's FE
+> half (now `done`). What remains is a **2nd admin nswag-regen for T-0295** — the new
+> `AdminEmployeeDetail.UserId` field (added in the later backend commit `7097d837`, after the first regen)
+> → it releases T-0295's FE half (the employee-page audit drill-in). After the regen run all three web
+> prod-builds per quality-gates §after-regen. **Separately, `T-0279` still waits on the unrelated IMP-3
+> admin regen** (a distinct, pre-existing owner item — not the same as the T-0295 regen).
 >
 > --- (Waves 0–7 close banner below, kept for traceability) ---
 >

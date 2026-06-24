@@ -1,7 +1,7 @@
 ---
 id: T-0290
 title: Single-row before/after audit diff view + new single-row backend endpoint (off the initial PII-min cut)
-status: in_review
+status: done
 size: M
 owner: frontend
 created: 2026-06-23
@@ -42,28 +42,28 @@ narrow, `AdminOnly`-gated **single-row** endpoint returning one audit row *with*
 
 ## Acceptance criteria
 
-- [ ] **AC1 — New single-row endpoint, gated by the existing audit view policy.** A
+- [x] **AC1 — New single-row endpoint, gated by the existing audit view policy.** A
   `GetAdminActionAuditById` query (canonical handler/validator) returns **one** `AdminActionAudit` by
   id, **including** its `BeforeJson` / `AfterJson` snapshot fields, gated by the **same** `AdminOnly`
   view policy T-0285 added (e.g. `CanViewAuditLog` → `AdminOnly`). Tenant-scoped (global filter
   applies; a row from another tenant returns not-found). No new policy is introduced.
-- [ ] **AC2 — Snapshots returned ONLY on the single-row read.** The paged `GetPagedAdminActionAudits`
+- [x] **AC2 — Snapshots returned ONLY on the single-row read.** The paged `GetPagedAdminActionAudits`
   query stays **unchanged** — it still omits the snapshot blobs. Only this single-row endpoint returns
   them, so a bulk list never streams snapshot payloads (the ADR-0012 D4.1 projection discipline holds).
   A test asserts the paged DTO has no `before/after` and the single-row DTO does.
-- [ ] **AC3 — No new redaction / no raw subject PII.** The endpoint returns the **already-pre-redacted**
+- [x] **AC3 — No new redaction / no raw subject PII.** The endpoint returns the **already-pre-redacted**
   snapshots T-0284 stored (ids + changed fields only); it performs no new PII handling and exposes no
   field the write-side didn't already minimize. A reviewer/security check confirms the DTO carries only
   what T-0284 persisted — the GDPR-survives-erasure rows still show actor + scope + subject id, never
   the erased subject's personal data.
-- [ ] **AC4 — Read-only admin diff UI.** From the audit-log list/history (T-0286), an admin opens a
+- [x] **AC4 — Read-only admin diff UI.** From the audit-log list/history (T-0286), an admin opens a
   single row and sees a **read-only before/after field diff** (changed fields highlighted), rendered in
   the existing `audit-log` admin feature lib via the generated client (never raw `http.*`, never a
   hand-edited NSwag client). Three explicit data states (loading / loaded / empty-or-error). OnPush,
   no `any`.
-- [ ] **AC5 — i18n ×5.** Every user-visible string (the diff headings, "no changes recorded" empty
+- [x] **AC5 — i18n ×5.** Every user-visible string (the diff headings, "no changes recorded" empty
   state, field labels where applicable) uses `TranslatePipe` with keys in **all 5** admin locales.
-- [ ] **AC6 — Gates green incl. real-DB + security.** Backend: `GetAdminActionAuditById` handler +
+- [x] **AC6 — Gates green incl. real-DB + security.** Backend: `GetAdminActionAuditById` handler +
   validator unit tests + an **authz-rejection integration test** (non-admin / cross-tenant → rejected/
   not-found) against real Postgres (`IntegrationTests`/`HostTests`, not just the unit suite). Frontend:
   `nx test audit-log` + `nx build cleansia-admin.app --configuration=production` clean (against the
@@ -128,6 +128,19 @@ projection assertion (AC2). No `optimizer` (single-row read).
   + endpoint (batch with any other pending admin regen; after regen run all three web prod-builds per
   quality-gates §after-regen). The ticket is **held from `done`** until the regen lands + the admin
   prod-build is clean — the same gate T-0286 used. **Ticket stays `in_review` (not `done`).**
+- 2026-06-23 — in_review → **done** (FRONTEND HALF complete + orchestrator-verified; commit `093ed944`
+  on `feature/wave8-pre-ios-cleanup`, pushed). **AC4/AC5 SATISFIED → all six AC green.** The 2nd owner
+  admin nswag-regen this ticket was held on **LANDED**: the regenerated `AdminAuditLogClient.getById`
+  exposes the new single-row snapshot DTO. The FE shipped the **read-only before/after diff view** in the
+  `audit-log` admin feature lib: facade + signals + OnPush, three explicit data states, **defensive
+  snapshot-JSON parsing** (undefined / empty / malformed → safe empty state), drill-in from the list +
+  per-resource history, route `entry/:auditId`, `entry.*` strings in **ALL 5** admin locales, new unit
+  specs. **Run evidence (orchestrator's own re-run on the combined tree): `nx build cleansia-admin.app
+  --configuration=production` CLEAN; `nx test audit-log` 24/24 (incl. the new diff specs);
+  `nx build cleansia-partner.app` clean (no untouched-consumer drift from the regen).** No security
+  re-gate needed — the snapshot-exposure seam was already signed off **PASS** on the backend half
+  (`516e71c9`); the FE half adds no new surface, only renders the already-gated read. **ADR-0012
+  follow-up (b) is now fully CLOSED — both halves done end-to-end.**
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

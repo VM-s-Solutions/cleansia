@@ -215,6 +215,17 @@ shared file silently wipes a *sibling ticket's* committed deliverable.
 > shared-file `git restore` in parallel agents.** If an agent believes a shared file is contaminated, it
 > **reports it to the PM** (leaves a note), it does **not** revert the file itself.
 
+### A final-report (StructuredOutput) failure ≠ a work failure — gate the working tree by hand
+A dev agent's **final StructuredOutput / report call can error** (retry cap exceeded) while its actual
+work **completed on disk**. Observed 2026-06-23 (Wave-8 close-out, T-0290 FE half): the agent had already
+written the new audit-entry component/facade/models + specs, all 5 i18n locales, with a clean prod-build
+and 24/24 tests — but its final report call failed (likely an oversized / escaping-heavy `buildEvidence`
+string tripping schema serialization). The work was fine; only the *report* failed. Rules: **(1)** a
+StructuredOutput/final-report failure does **not** mean the work failed — the orchestrator **inspects the
+working tree and gates the on-disk result by hand** (here it passed: build clean, tests green). **(2)**
+keep `buildEvidence` **concise** to avoid the schema-serialization failure (don't pack the whole diff /
+log into one giant escaped string).
+
 ---
 
 ## How a reviewer writes a verdict

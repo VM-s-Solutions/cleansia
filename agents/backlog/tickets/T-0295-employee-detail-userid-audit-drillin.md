@@ -1,9 +1,9 @@
 ---
 id: T-0295
 title: Add UserId to AdminEmployeeDetail → enable the User-typed audit drill-in from the employee page (T-0289 deviation)
-status: ready
+status: in_review
 size: XS
-owner: —
+owner: backend
 created: 2026-06-23
 updated: 2026-06-23
 depends_on: [T-0289]
@@ -37,7 +37,7 @@ T-0286).
 
 ## Acceptance criteria
 
-- [ ] **AC1 — `UserId` exposed on `AdminEmployeeDetail`.** The admin employee-detail DTO gains a
+- [x] **AC1 — `UserId` exposed on `AdminEmployeeDetail`.** The admin employee-detail DTO gains a
   `UserId` field (the audited `User.Id` for the employee), populated by its mapper/query. Additive,
   backward-compatible — no existing field changes. A backend test asserts it is populated.
 - [ ] **AC2 — Employee-page drill-in using the existing helper.** The employee-detail page gains the same
@@ -84,6 +84,20 @@ detail surface; adds no endpoint/authz; the route it links to is already gated).
   from `done` until confirmed, same gate as T-0290/T-0286). Archetype = the T-0289 drill-in pattern +
   the canonical admin DTO/mapper. No panel (ADR-0012 accepted; additive wiring). **Owner manual step:**
   admin nswag-regen for the `AdminEmployeeDetail.UserId` field — batch with the T-0290 admin regen.
+- 2026-06-23 — ready → in_progress → **in_review (BACKEND HALF DONE + VERIFIED; FRONTEND HALF HELD ON A
+  2nd OWNER ADMIN NSWAG-REGEN)** (backend + reviewer, parallel; commit `7097d837` on
+  `feature/wave8-pre-ios-cleanup`, pushed). **AC1 SATISFIED.** Added the **additive** `UserId` field to
+  `AdminEmployeeDetail` (the audited `User.Id` for the employee) + its mapper population; additive +
+  backward-compatible (no existing field changed). **Run evidence (orchestrator combined-tree re-run):
+  the new mapper test asserting `UserId` is populated passes (2 passing); `dotnet build` + the backend
+  suites green.**
+  **FRONTEND HALF (AC2 employee-page drill-in wiring + AC3 non-empty history + AC4 i18n reuse) NOT
+  STARTED — HELD.** It needs the regenerated admin client to gain `AdminEmployeeDetail.UserId` before the
+  drill-in can read it. **⚠️ MANUAL STEP NOW PENDING ON THE OWNER: a 2nd `nswag-regen (admin)` for the
+  new `AdminEmployeeDetail.UserId` field** (this is **separate** from the T-0290 regen, which already
+  landed — this field was added in the later backend commit; after the regen run all three web prod-builds
+  per quality-gates §after-regen). The ticket is **held from `done`** until the regen lands + the admin
+  prod-build is clean — the same gate T-0290/T-0286 used. **Ticket stays `in_review` (not `done`).**
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

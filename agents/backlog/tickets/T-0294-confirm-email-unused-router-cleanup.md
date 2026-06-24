@@ -1,9 +1,9 @@
 ---
 id: T-0294
 title: Remove now-unused `private readonly router` + `Router` import in confirm-email.component.ts (T-0280 residue)
-status: ready
+status: done
 size: XS
-owner: —
+owner: frontend
 created: 2026-06-23
 updated: 2026-06-23
 depends_on: [T-0280]
@@ -32,13 +32,13 @@ ticket.
 
 ## Acceptance criteria
 
-- [ ] **AC1 — Unused field + import removed.** The `private readonly router: Router` injection in
+- [x] **AC1 — Unused field + import removed.** The `private readonly router: Router` injection in
   `confirm-email.component.ts` is removed, along with the now-unused `import { Router } ...`, **only if**
   the dev confirms there is **no** remaining `this.router.*` reference anywhere in the component (template
   included). If any reference remains, the dev **stops** and notes it — the field stays.
-- [ ] **AC2 — Zero behavior change.** The component compiles and behaves identically (the removed field
+- [x] **AC2 — Zero behavior change.** The component compiles and behaves identically (the removed field
   had no live consumer post-T-0280). No other field, import, or statement changes.
-- [ ] **AC3 — Mechanical checks green.** `nx build` for the affected app + `nx affected -t test` (the
+- [x] **AC3 — Mechanical checks green.** `nx build` for the affected app + `nx affected -t test` (the
   confirm-email component's suite) pass; `check-consistency.mjs` no new violation.
 
 ## Out of scope
@@ -62,6 +62,14 @@ one dev + one reviewer; do not over-fan-out (mechanical XS).
   INDEX/`audits/`. DoR met: AC observable; sized **XS** (one field + one import in one file);
   `depends_on: [T-0280]` (`done` — this cleans its residue); `layers: [frontend]`;
   `security_touching: false`; `manual_steps: []`. One-line no-decision note, no panel.
+- 2026-06-23 — ready → **done** (commit `093ed944` on `feature/wave8-pre-ios-cleanup`, pushed; landed in
+  the same FE commit as T-0290's frontend half). **AC1/AC2/AC3 SATISFIED.** Removed the now-unused
+  `private readonly router: Router` field **and** its `Router` import from `confirm-email.component.ts`
+  (the last `this.router.*` consumer was the commented-out `router.navigate` T-0280 deleted; dev confirmed
+  zero remaining references, template included). Zero behavior change — no other field/import/statement
+  touched. **Run evidence (orchestrator combined-tree re-run): `nx build cleansia-app` (customer, SSR)
+  clean; the confirm-email component suite unchanged + green; `check-consistency.mjs` no new violation.**
+  Reviewer + qa confirmed genuinely-unused + behavior-preserving. No security/optimizer (mechanical XS).
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

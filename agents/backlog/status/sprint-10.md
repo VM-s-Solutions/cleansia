@@ -1,6 +1,6 @@
 # Sprint 10 — WAVE 8: Pre-iOS Cleanup
 
-**Status:** ✅ CLOSED 2026-06-23 (see the close banner below) — 9 of 10 tickets `done`; T-0279 stays `blocked` on IMP-3 (does not gate close). **Close-out follow-up batch (T-0289…T-0293) also RAN + CLOSED 2026-06-23** — 5/6 `done`, T-0290 backend-half done+verified (FE half held on owner admin regen); see the "🏁 CLOSE-OUT FOLLOW-UP BATCH" section.
+**Status:** ✅ CLOSED 2026-06-23 (see the close banner below) — 9 of 10 tickets `done`; T-0279 stays `blocked` on IMP-3 (does not gate close). **Close-out follow-up batch (T-0289…T-0293) RAN + CLOSED 2026-06-23.** **POST-ADMIN-REGEN batch ALSO RAN + CLOSED 2026-06-23** (commits `093ed944` FE + `7097d837` BE): T-0290 now FULLY `done` (both halves — ADR-0012 follow-up (b) closed), T-0294 `done`, T-0295 backend-half `done`+verified (FE half held on a 2nd admin regen). See the "🏁 CLOSE-OUT FOLLOW-UP BATCH" + "POST-ADMIN-REGEN BATCH" sections.
 **Created:** 2026-06-22
 **Source:** `agents/backlog/audits/AUDIT-2026-06-22-pre-ios-cleanup.md` (13 findings) + owner points P1–P4.
 **Goal:** clear the carried structural/contract debt the audit + owner surfaced **before iOS development
@@ -95,7 +95,7 @@ comment-noise sweep, 7 files).
 |----|-------|------|
 | **T-0280** | **done ✅** `916014cb` | 7-file comment sweep; comments-only diff; latent smell → **T-0294** |
 | **T-0289** | **done ✅** `916014cb` | 4 pages wired; **employee page deviation** → **T-0295** |
-| **T-0290** | **in_review** | BACKEND done+verified + sec **PASS**; **FE half HELD on owner admin nswag-regen** (mirrors T-0286). Manual step **PENDING ON OWNER** |
+| **T-0290** | **done ✅** `093ed944` (FE) + `516e71c9`/BE | BACKEND done+verified + sec **PASS**; FE diff view shipped post-regen — **both halves done, ADR-0012 follow-up (b) CLOSED** (see POST-ADMIN-REGEN section) |
 | **T-0291** | **done ✅** `916014cb` | disputes-archetype note (survived the restore incident — restored by hand) |
 | **T-0292** | **done ✅** `916014cb` | NG8102 cleared (its fix-agent caused the restore incident) |
 | **T-0293** | **done ✅** `916014cb` | T-0281 AC1/AC2 depth closed |
@@ -121,17 +121,61 @@ comment-noise sweep, 7 files).
    lane**, and parallel agents **may never `git restore` a shared file** (report contamination to the PM
    instead).
 
-### ⚠️ OWNER — admin nswag-regen now PENDING (batch together)
-1. **T-0290** — new `AdminActionAuditDetailDto` + `GetAdminActionAuditById` endpoint → **releases T-0290's
-   held FE half** (AC4 diff view + AC5 i18n). After regen, run all three web prod-builds (quality-gates
-   §after-regen) before pushing.
-2. **T-0295** — new `AdminEmployeeDetail.UserId` field → unblocks the employee-page drill-in's FE half.
+### ⚠️ OWNER — admin nswag-regen (history)
+1. **T-0290 regen — DONE ✓.** The new `AdminActionAuditDetailDto` + `GetAdminActionAuditById` endpoint was
+   regenerated; it **released T-0290's FE half** (now `done`, commit `093ed944`).
+2. **T-0295 regen — STILL PENDING (the only one of this batch left).** The new `AdminEmployeeDetail.UserId`
+   field was added in the **later** backend commit `7097d837` (after the first regen), so it needs a
+   **2nd** admin nswag-regen → unblocks the employee-page drill-in's FE half. After regen, run all three
+   web prod-builds (quality-gates §after-regen) before pushing.
 
 Separately and **unrelated to this batch:** the **IMP-3** admin regen still unblocks **T-0279**.
 
-**Open-and-ready board for what's next** (deps satisfied, runnable now): **T-0294** (XS, frontend — needs
-no regen). **Blocked-on-owner-regen:** **T-0290-FE half** + **T-0295** (the pending admin regen above) and
-**T-0279** (the separate IMP-3 regen). E2E-depth (T-0293) and the audit follow-ups are now closed.
+---
+
+## 🏁 POST-ADMIN-REGEN BATCH RAN + CLOSED (2026-06-23) — T-0290-FE / T-0294 / T-0295-BE
+
+After the owner ran the **first** admin nswag-regen (T-0290's `AdminAuditLogClient.getById` surface), this
+batch landed + was orchestrator-verified on the combined tree — **2 commits on
+`feature/wave8-pre-ios-cleanup`, pushed**.
+
+**FE commit `093ed944`:** **T-0290 FRONTEND HALF (AC4/AC5)** — the read-only before/after audit diff view
+in the `audit-log` admin feature lib against the regenerated `AdminAuditLogClient.getById`: facade +
+signals + OnPush, three data states, **defensive snapshot-JSON parsing** (undefined / empty / malformed →
+safe empty state), drill-in from the list + per-resource history, route `entry/:auditId`, `entry.*` strings
+in **all 5** admin locales, new unit specs. **+ T-0294** — removed the dead `private readonly router` field
++ `Router` import in `confirm-email.component.ts`. **Run evidence (orchestrator's own re-run):
+`nx build cleansia-admin.app --configuration=production` CLEAN; `nx test audit-log` **24/24** (incl. the new
+diff specs); `nx build cleansia-partner.app` clean (no regen drift).**
+
+**BE commit `7097d837`:** **T-0295 BACKEND HALF** — additive `UserId` on `AdminEmployeeDetail` + mapper +
+test (**2 passing**). The FE half (employee-page drill-in wiring, AC2/AC3) is **NOT done** — it needs a
+**2nd** owner admin nswag-regen so the generated client gains `AdminEmployeeDetail.UserId`.
+
+### Post-regen batch states
+| ID | State | Note |
+|----|-------|------|
+| **T-0290** | **done ✅** `093ed944` | BOTH halves complete + verified; **ADR-0012 follow-up (b) CLOSED** |
+| **T-0294** | **done ✅** `093ed944` | dead `router` field + `Router` import removed; comments-only-residue cleanup |
+| **T-0295** | **in_review** | BACKEND done+verified (`+UserId` + mapper + test 2/2); **FE half HELD on a 2nd admin nswag-regen** (mirrors T-0290/T-0286) — manual step **PENDING ON OWNER** |
+
+### Process lesson recorded (tooling)
+The **T-0290-FE dev agent COMPLETED its work on disk** (new audit-entry component/facade/models + specs,
+all 5 i18n locales, build clean, 24 tests green) but its **workflow agent ERRORED on the final
+StructuredOutput call** (retry cap exceeded — likely an oversized / escaping-heavy `buildEvidence` string).
+**Lesson:** a StructuredOutput/final-report failure does **NOT** mean the work failed — the orchestrator
+inspects the working tree and gates the on-disk result by hand (which is what happened here; it passed).
+And: keep `buildEvidence` concise to avoid the schema-serialization failure. Recorded in
+**`agents/process/quality-gates.md` §"A final-report (StructuredOutput) failure ≠ a work failure"**.
+
+### Open-and-ready board for what's next
+- **Nothing non-owner-gated remains open in the Wave-8 close-out.** All runnable close-out follow-ups
+  (T-0289…T-0294) are `done`. T-0293 (E2E depth) closed.
+- **Waits on the owner (the only remaining close-out items):**
+  - **2nd admin nswag-regen → releases T-0295-FE** (the `AdminEmployeeDetail.UserId` employee-page drill-in).
+  - **IMP-3 admin regen → releases T-0279** (the separate, pre-existing admin-pay-config client item).
+- Both are **owner-gated regens**, not engineering work. After each regen the owner runs all three web
+  prod-builds (quality-gates §after-regen).
 
 ---
 

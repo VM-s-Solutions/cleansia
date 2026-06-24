@@ -133,7 +133,8 @@ public static class EmployeeMappers
             ApprovedAt: employee.ApprovedAt,
             RejectedByUserId: employee.RejectedByUserId,
             RejectedAt: employee.RejectedAt,
-            MissingFields: employee.GetMissingProfileFields()
+            MissingFields: employee.GetMissingProfileFields(),
+            UserId: employee.UserId
         );
     }
 

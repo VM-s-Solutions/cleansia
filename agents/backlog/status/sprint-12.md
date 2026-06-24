@@ -110,6 +110,14 @@ concentrators and **must be split into child tickets by the PM before dispatch**
 in-flight). Indicative splits are in §6. Every ticket carries **reviewer-per-developer**; the auth spine
 (T-0300) and the booking+payment + GDPR-delete surfaces (T-0313, T-0314) carry a **security gate**.
 
+**Design-parity note (Gate-DP, ADR-0018) — binds the SCREEN tickets:** the first vertical **T-0303** and
+**every** feature-wave screen ticket (**T-0304, T-0305, T-0306, T-0307, T-0308, T-0309, T-0310, T-0312,
+T-0313, T-0314**) must satisfy **Gate-DP** — the screen's **layout/flow/branding match the cited Android
+Compose screen**, built with **native SwiftUI components** (no Material re-impl), and any Android↔iOS
+**conflict resolved iOS-native + noted** (component only, never layout/flow). Each such ticket **cites its
+Android Compose counterpart**. The pure-infra tickets (T-0296/0298/0300/0301/0302/0311/0323) are **N/A**.
+See §10.6 + §G of `ios-app-review-checklist.md`.
+
 ---
 
 ## 4. The three effort-dominating areas (called out + sized)
@@ -287,7 +295,21 @@ ATT/`AppTrackingTransparency`. **#16** purpose strings present + accurate ×5, n
 **#18** SIWA on the customer sign-in (when Q-IOS-04 lands). **#19** no IAP for cleaning services; Stripe
 external; the 3.1.3/3.1.5 citation on file. **#20** standard floor (no private API/hidden feature/placeholder;
 demo account; functional+crash-free) + HIG/accessibility. **#21 (Gate-AR)** the ticket carried its own
-purpose-string/manifest/locale compliance in-ticket.
+purpose-string/manifest/locale compliance in-ticket. **#22 (Gate-DP, ADR-0018)** on every iOS **screen**
+ticket: layout/flow/branding match the **cited** Android Compose screen (AR-DP-1); native SwiftUI components,
+no Material re-impl, standard iOS patterns + affordances (AR-DP-2); Android↔iOS conflicts resolved
+iOS-native, noted in-ticket, touching only the component (AR-DP-3).
+
+### 10.6 Gate-DP — the standing per-screen design-parity gate (ADR-0018)
+
+In addition to Gate-AR (§10.3), **Gate-DP** runs on **every iOS screen/feature ticket** (reviewer + ios
+charters). The principle (ADR-0018, refining ADR-0013's "parity port"): **same layout/flow/branding as the
+Android Compose apps, built with NATIVE SwiftUI components, and iOS convention WINS on a genuine component
+conflict** (the "iOS component improvements" the owner asked for). The three checks are AR-DP-1/2/3, recorded
+in §G of `ios-app-review-checklist.md`. **Pure-infra tickets are N/A** (T-0296 workspace, T-0298 DI, T-0300
+auth, T-0301 spec, T-0302 codegen, T-0311 push-plumbing, T-0323 lint) — Gate-DP applies to the **screen**
+tickets (T-0303, T-0304, T-0305, T-0306, T-0307, T-0308, T-0309, T-0310, T-0312, T-0313, T-0314). Each such
+ticket **cites its Android Compose counterpart** and notes any iOS-native divergence.
 
 ### 10.5 Open question (ADR-0016)
 

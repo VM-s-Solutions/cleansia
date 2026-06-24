@@ -75,6 +75,34 @@ floor. Columns: ☐ Partner · ☐ Customer (mark N/A where an item is one-app-o
       hit-target sizes; no clipped layouts; 5-locale completeness, no hardcoded strings (ADR-0013 D11).
       *(both apps)*
 
+## G. Design parity — Gate-DP (the standing per-screen design gate — ADR-0018)
+
+> Runs on **every iOS screen/feature ticket** (reviewer + ios charters), beside **Gate-AR** (§A–E, ADR-0016)
+> and the **SwiftLint/SwiftFormat** gate (AR-LINT-1). The principle (ADR-0018): **same layout/flow/branding as
+> the Android Compose apps, built with NATIVE SwiftUI components, and iOS convention WINS on a genuine
+> component conflict.** Pure-infra tickets (codegen, auth layer, DI root) are **N/A**.
+
+- [ ] **AR-DP-1 — Layout/flow/branding parity (Android cited).** The screen's **layout, flow, and branding
+      match the corresponding Android Compose screen** — and the ticket **cites it** (`<path/Screen.kt>`). Same
+      region arrangement, same flow position, same field set + order, same brand (colors/logo/type/spacing/icon
+      meaning). A moved flow / dropped/added/merged screen or field / re-brand is a **blocking** finding. *(both apps)*
+- [ ] **AR-DP-2 — Native SwiftUI components, standard iOS pattern.** Every control is a **native SwiftUI
+      component** — **no Material re-implementation** (no faux Material text field/sheet/ripple). The standard
+      iOS pattern is used for nav (`NavigationStack`/`TabView`), pickers (`DatePicker`/`Picker`/`Menu`), sheets
+      (`.sheet`/`.presentationDetents`/`.confirmationDialog`/`.alert`), lists (`List`/`Form`/`swipeActions`),
+      back (swipe-back + nav-bar back), images (`AsyncImage`). Platform affordances present where applicable:
+      **SF Symbols** mapping the Android icon's meaning, **haptics**, **pull-to-refresh**, swipe-back. A
+      faux-Material control or a missing standard affordance is a finding. *(both apps)*
+- [ ] **AR-DP-3 — Conflicts resolved iOS-native + noted.** Where an Android and an iOS convention genuinely
+      conflicted, the **iOS-native** pattern was chosen, the divergence is **noted in the ticket** (one line:
+      "Android X → iOS-native Y, iOS convention"), and the divergence touches **only the component** — never
+      layout/flow/branding. Canonical mappings (ADR-0018 D3): Compose bottom-nav → `TabView`; `ModalBottomSheet`
+      → `.sheet`+`.presentationDetents`; Material `DatePicker` → native `DatePicker`; Material `TextField` →
+      native `TextField`/`SecureField` (same labels + error strings ×5); Android system-back → swipe-back +
+      `NavigationStack` back; Coil `AsyncImage` → SwiftUI `AsyncImage`/Kingfisher; Material `Snackbar` → native
+      toast on the same `SnackbarController` bus; Material `AlertDialog` → `.alert`/`.confirmationDialog`. An
+      **undocumented** divergence, or one that **moves layout/flow**, is a **blocking** finding. *(both apps)*
+
 ## F. App Store Connect submission prerequisites (owner — the ASC half)
 
 - [ ] **App Privacy answers** completed in ASC, matching AR-PRIV-1/2.

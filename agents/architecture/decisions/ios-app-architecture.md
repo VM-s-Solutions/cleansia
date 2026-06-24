@@ -18,7 +18,10 @@ state mechanism (`@Observable` is iOS-17-only → `ObservableObject`/`@Published
 MapKit variant; everything else in ADR-0013 holds unchanged on the floor.
 
 iOS is a **parity port** of the Kotlin/Compose customer + partner apps onto the **same Mobile API
-contract** — not a new product. The structure mirrors the proven Android `:core`+2-apps shape:
+contract** — not a new product. **What "parity port" means visually is fixed by ADR-0018 (the
+design-parity principle): same layout/flow/branding as Android, built with NATIVE SwiftUI components, and
+iOS convention wins on a genuine component conflict** — see the *Design parity* section below. The
+structure mirrors the proven Android `:core`+2-apps shape:
 
 ```
 src/cleansia_ios/                         (greenfield — created on the first iOS ticket)
@@ -48,6 +51,46 @@ src/cleansia_ios/                         (greenfield — created on the first i
 | Lead app | **PARTNER** (read-only Dashboard proves the architecture first) | — |
 | trusted-device | **omit v1 to match Android** | not sent by Android |
 | i18n | 5 locales (en/cs/sk/uk/ru) via **String Catalog** `.xcstrings` | `values-*/strings.xml` |
+| **Design parity** (ADR-0018) | **same layout/flow/branding as Android, NATIVE SwiftUI components, iOS-wins-on-conflict** (Gate-DP per screen) | the Android Compose screens are the cited source of truth |
+
+## Design parity — same layout/flow/branding, native components, iOS-wins-on-conflict (ADR-0018)
+
+ADR-0013 said "parity port"; **ADR-0018 fixes what that means visually**, so no screen ticket drifts into
+pixel-cloning Material or into an iOS redesign:
+
+- **Held identical to Android (parity, non-negotiable):** the **screen inventory + per-screen content**, the
+  **navigation structure + user flow** (partner Take→OnTheWay→Start→Complete, customer Services→WhenWhere→
+  Confirm, the same tabs/back-stack), the **branding** (colors/logo/type/spacing/icon-meaning/mascot), and the
+  **layout arrangement** (same regions, same field set + order). The Android Compose screens are the source of
+  truth — **every iOS screen ticket cites its counterpart**.
+- **Upgraded to native iOS (the "component improvements"):** every control is a **native SwiftUI component**
+  (no Material re-implementation); the `Cleansia*` shared components are **brand-skins over native controls**
+  (the SwiftUI analogue of how `:core` skins Compose's Material controls — here skinning *native iOS* instead);
+  platform affordances expected (SF Symbols mapping the Android icon's meaning, swipe-back, haptics, detents,
+  pull-to-refresh).
+- **Conflict rule: iOS-native WINS on a genuine component conflict** — keep layout/flow/branding identical,
+  upgrade the component, **note the divergence** in the ticket. iOS wins on the **component only**, **never**
+  on layout/flow/branding (the rule's boundary).
+
+**Canonical Android → iOS-native component mappings (ADR-0018 D3 — the set the reviewer checks against):**
+
+| Android (Compose / Material) | iOS-native | identical (parity) |
+|---|---|---|
+| bottom `NavigationBar` | `TabView` | same tabs, same order |
+| `ModalBottomSheet` / AnchoredDraggable booking sheet | `.sheet` + `.presentationDetents` | same 3 steps + content + snap intent |
+| Material `DatePicker`/`TimePicker` | native `DatePicker` (`.graphical`/`.wheel`/`.compact`) | same field + label + placement |
+| Material `TextField` | native `TextField`/`SecureField` | same fields/labels/error strings ×5 |
+| Android system-back + Material top-bar back | swipe-back gesture + `NavigationStack` nav-bar back | same back-stack/destination |
+| Coil `AsyncImage` | SwiftUI `AsyncImage` (or Kingfisher) | same frame/aspect/placeholder layout |
+| Material `Snackbar` | native toast on the same `SnackbarController` bus | same message, one-per-failure |
+| Material `AlertDialog` | `.alert` / `.confirmationDialog` | same title/body/actions/destructive semantics |
+
+**Gate-DP** (standing per-screen reviewer gate) checks three assertions (AR-DP-1/2/3): cite-the-Android-screen
+layout/flow/branding parity; native-components-only; conflicts-iOS-native-and-noted-touching-only-the-component.
+Recorded in §G of `agents/backlog/ios-app-review-checklist.md` + sprint-12 §10.6 + reviewer-check #22; it runs
+beside Gate-AR (ADR-0016) and the SwiftLint/SwiftFormat gate on every iOS **screen** ticket (infra tickets
+N/A). A **new** control mapping a feature surfaces is folded back into the table above (living-doc note) so the
+set converges; a new *rule about the principle itself* would be a superseding ADR.
 
 ## The load-bearing seam: auth/session/headers (the part that breaks silently)
 

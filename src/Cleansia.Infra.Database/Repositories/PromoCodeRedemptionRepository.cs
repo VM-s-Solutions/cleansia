@@ -106,20 +106,4 @@ public class PromoCodeRedemptionRepository(
         return GetDbSet()
             .CountAsync(r => r.PromoCodeId == promoCodeId, cancellationToken);
     }
-
-    public async Task<IReadOnlyList<PromoCodeRedemption>> GetPagedByPromoCodeAsync(
-        string promoCodeId,
-        int offset,
-        int limit,
-        CancellationToken cancellationToken)
-    {
-        return await GetDbSet()
-            .AsNoTracking()
-            .Where(r => r.PromoCodeId == promoCodeId)
-            .OrderByDescending(r => r.RedeemedOn)
-            .Skip(offset)
-            .Take(limit)
-            .Include(r => r.User)
-            .ToListAsync(cancellationToken);
-    }
 }

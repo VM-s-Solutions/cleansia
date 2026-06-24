@@ -61,3 +61,64 @@ jobs:
       - name: Build Admin App
         run: npm run build:cleansia-admin
         working-directory: ./src/Cleansia.App
+
+  # ── Phase-0 E2E smokes (T-0271 customer + T-0281 partner & admin) ──
+  # Runs the three Playwright critical-path smokes through the REAL UIs:
+  #   - customer: booking wizard → Stripe checkout handoff       (apps/cleansia.app-e2e)
+  #   - partner:  login → accept job → Available→My transition    (apps/cleansia-partner.app-e2e)
+  #   - admin:    login → employee-management seeded data row     (apps/cleansia-admin.app-e2e)
+  # Backend seam for ALL THREE: Playwright network-stubbing (no live API / Postgres)
+  # — documented in each spec header. This is its OWN job (NOT Nx-affected gated) so
+  # a change anywhere that breaks a critical path can't silently skip it.
+  #
+  # The three smokes run as SEQUENTIAL steps, not in parallel: each app's Playwright
+  # `webServer` boots `nx run <app>:serve` on the same :4200, so they cannot share a
+  # job concurrently — each step boots and tears down its own app server in turn.
+  e2e-smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: ./src/Cleansia.App/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./src/Cleansia.App
+
+      # A single browser is enough for a smoke; every e2e config is chromium-only.
+      - name: Install Playwright chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: ./src/Cleansia.App
+
+      # The plain `e2e` target runs `playwright test` directly — its webServer boots
+      # `nx run <app>:serve` and waits (up to the config's 300s) for the dev server
+      # before the spec runs. (NOT `e2e-ci`: that atomizes the spec set into per-file
+      # tasks that REQUIRE Nx Cloud Agents to distribute — without Nx Agents it errors
+      # "should only be run with Nx Agents". The smoke is one spec per app, so the plain
+      # `e2e` target is the correct, agent-free entry.)
+      - name: Run customer booking smoke
+        run: npx nx run cleansia.app-e2e:e2e
+        working-directory: ./src/Cleansia.App
+
+      - name: Run partner accept-job smoke
+        run: npx nx run cleansia-partner.app-e2e:e2e
+        working-directory: ./src/Cleansia.App
+
+      - name: Run admin seeded-row smoke
+        run: npx nx run cleansia-admin.app-e2e:e2e
+        working-directory: ./src/Cleansia.App
+
+      - name: Upload Playwright reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: ./src/Cleansia.App/dist/.playwright/apps/*-e2e/playwright-report
+          retention-days: 7

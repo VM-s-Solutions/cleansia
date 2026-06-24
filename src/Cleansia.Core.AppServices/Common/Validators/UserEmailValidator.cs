@@ -72,14 +72,4 @@ public abstract class BaseUserValidator<TRequest> : AbstractValidator<TRequest>
     {
         RuleFor(passwordExpression).ValidatePassword();
     }
-
-    private static string GetPropertyName<T, TProperty>(Expression<Func<T, TProperty>> expression)
-    {
-        if (expression.Body is MemberExpression member)
-        {
-            return member.Member.Name;
-        }
-
-        throw new ArgumentException("Invalid property expression", nameof(expression));
-    }
 }

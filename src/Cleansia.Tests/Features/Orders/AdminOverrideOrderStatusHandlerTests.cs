@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
@@ -29,8 +30,10 @@ public class AdminOverrideOrderStatusHandlerTests
         _session.Setup(s => s.GetUserId()).Returns(AdminUserId);
     }
 
+    private readonly AuditContext _auditContext = new();
+
     private AdminOverrideOrderStatus.Handler CreateHandler() =>
-        new(_orderRepository.Object, _session.Object);
+        new(_orderRepository.Object, _session.Object, _auditContext);
 
     private Order ArrangeOrder(params OrderStatus[] history)
     {

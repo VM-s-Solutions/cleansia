@@ -13,6 +13,7 @@ using System.Security.Claims;
 using System.Text;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
+using System.Text.Json.Serialization;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
@@ -29,7 +30,18 @@ public class RefreshToken
         }
     }
 
-    public record Command(string Token, UserProfile? RequiredProfile = null, string? RequiredAudience = null) : ICommand<JwtTokenResponse>;
+    // RequiredProfile/RequiredAudience are the host's per-host refresh pin (ADR-0001). They are
+    // server-authoritative: each AuthController sets them from its own host identity and a
+    // client-sent value would be discarded. JsonIgnore keeps them off the wire so they never appear
+    // in a generated client and can never be supplied by a caller — only Token crosses the wire.
+    public record Command(string Token) : ICommand<JwtTokenResponse>
+    {
+        [JsonIgnore]
+        public UserProfile? RequiredProfile { get; init; }
+
+        [JsonIgnore]
+        public string? RequiredAudience { get; init; }
+    }
 
     internal class Handler(
         IRefreshTokenService refreshTokenService,

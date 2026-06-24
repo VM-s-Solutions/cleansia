@@ -1,14 +1,20 @@
+using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Shared.DTOs.RequestModels;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Sorting;
+using Cleansia.Core.Domain.Specifications;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using SortDefinition = Cleansia.Core.Domain.Sorting.Common.SortDefinition;
+using SortDirection = Cleansia.Core.Domain.Sorting.Common.SortDirection;
 
 namespace Cleansia.Core.AppServices.Features.Referrals;
 
 public class GetMyReferrals
 {
-    public record Query(int Offset = 0, int Limit = 20)
-        : IRequest<PagedData<ReferralListItem>>;
+    public class Request : DataRangeRequest, IRequest<PagedData<ReferralListItem>>;
 
     public record ReferralListItem(
         string Id,
@@ -20,33 +26,39 @@ public class GetMyReferrals
 
     internal class Handler(
         IReferralRepository referralRepository,
-        IUserSessionProvider userSessionProvider) : IRequestHandler<Query, PagedData<ReferralListItem>>
+        IUserSessionProvider userSessionProvider) : IRequestHandler<Request, PagedData<ReferralListItem>>
     {
-        public async Task<PagedData<ReferralListItem>> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<PagedData<ReferralListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
-            var pageNumber = request.Limit > 0 ? (request.Offset / request.Limit) + 1 : 1;
             var userId = userSessionProvider.GetUserId();
 
             if (string.IsNullOrEmpty(userId))
             {
-                return new PagedData<ReferralListItem>(pageNumber, request.Limit, 0, Array.Empty<ReferralListItem>());
+                return Enumerable.Empty<ReferralListItem>().MapToDto(0, request);
             }
 
-            var totalItems = await referralRepository.CountByReferrerAsync(userId, cancellationToken);
-            var referrals = await referralRepository.GetByReferrerAsync(
-                userId, request.Offset, request.Limit, cancellationToken);
+            var specification = ReferralSpecification.Create(referrerUserId: userId);
+            var filter = specification.SatisfiedBy();
 
-            var items = referrals
-                .Select(r => new ReferralListItem(
-                    Id: r.Id,
-                    ReferredFirstName: r.Referred?.FirstName ?? string.Empty,
-                    Status: r.Status,
-                    AcceptedOn: r.AcceptedOn,
-                    FirstQualifyingOrderOn: r.FirstQualifyingOrderOn,
-                    PointsAwardedToReferrer: r.PointsAwardedToReferrer))
-                .ToList();
+            var totalItems = await referralRepository.GetCountAsync(filter, cancellationToken);
+            var items = await referralRepository
+                .GetPagedSort<ReferralSort>(request.Offset, request.Limit, filter, ResolveSort(request))
+                .Include(r => r.Referred)
+                .AsNoTracking()
+                .Select(referral => referral.MapToMyListItem())
+                .ToListAsync(cancellationToken);
 
-            return new PagedData<ReferralListItem>(pageNumber, request.Limit, totalItems, items);
+            return items.MapToDto(totalItems, request);
+        }
+
+        // Preserves the historical newest-first default: the bespoke repo ordered by
+        // AcceptedOn desc, and the empty-sort GetPagedSort path applies no ordering.
+        private static IEnumerable<SortDefinition> ResolveSort(Request request)
+        {
+            var sort = request.Sort.MapToDomain().ToList();
+            return sort.Count > 0
+                ? sort
+                : [new SortDefinition { Field = nameof(Referral.AcceptedOn), Direction = SortDirection.Descending }];
         }
     }
 }

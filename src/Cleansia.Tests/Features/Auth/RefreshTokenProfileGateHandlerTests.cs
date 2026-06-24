@@ -71,8 +71,11 @@ public class RefreshTokenProfileGateHandlerTests
         var demoted = UserMockFactory.Generate(new UserMockFactory.UserPartial { Profile = UserProfile.Employee });
         ArrangeRotation(demoted);
 
-        var result = await Handle(new RefreshTokenCmd.Command(
-            Token: "any", RequiredProfile: UserProfile.Customer, RequiredAudience: CustomerAudience));
+        var result = await Handle(new RefreshTokenCmd.Command("any")
+        {
+            RequiredProfile = UserProfile.Customer,
+            RequiredAudience = CustomerAudience,
+        });
 
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.InvalidRefreshToken, result.Error!.Message);
@@ -84,8 +87,11 @@ public class RefreshTokenProfileGateHandlerTests
         var customer = UserMockFactory.Generate(new UserMockFactory.UserPartial { Profile = UserProfile.Customer });
         ArrangeRotation(customer);
 
-        var result = await Handle(new RefreshTokenCmd.Command(
-            Token: "any", RequiredProfile: UserProfile.Customer, RequiredAudience: CustomerAudience));
+        var result = await Handle(new RefreshTokenCmd.Command("any")
+        {
+            RequiredProfile = UserProfile.Customer,
+            RequiredAudience = CustomerAudience,
+        });
 
         Assert.True(result.IsSuccess);
         Assert.False(string.IsNullOrEmpty(result.Value.Token));

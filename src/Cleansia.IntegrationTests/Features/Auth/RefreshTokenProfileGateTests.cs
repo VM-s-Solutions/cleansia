@@ -120,10 +120,11 @@ public class RefreshTokenProfileGateTests(PostgresContainerFixture fixture) : Ba
             act: async provider =>
             {
                 var mediator = provider.GetRequiredService<IMediator>();
-                return await mediator.Send(new RefreshTokenCmd.Command(
-                    Token: rawToken,
-                    RequiredProfile: requiredProfile,
-                    RequiredAudience: requiredAudience));
+                return await mediator.Send(new RefreshTokenCmd.Command(rawToken)
+                {
+                    RequiredProfile = requiredProfile,
+                    RequiredAudience = requiredAudience,
+                });
             },
             assert: async (CleansiaDbContext context, BusinessResult<JwtTokenResponse> result) =>
             {
@@ -147,10 +148,11 @@ public class RefreshTokenProfileGateTests(PostgresContainerFixture fixture) : Ba
             act: async provider =>
             {
                 var mediator = provider.GetRequiredService<IMediator>();
-                return await mediator.Send(new RefreshTokenCmd.Command(
-                    Token: rawToken,
-                    RequiredProfile: requiredProfile,
-                    RequiredAudience: requiredAudience));
+                return await mediator.Send(new RefreshTokenCmd.Command(rawToken)
+                {
+                    RequiredProfile = requiredProfile,
+                    RequiredAudience = requiredAudience,
+                });
             },
             assert: async (CleansiaDbContext context, BusinessResult<JwtTokenResponse> result) =>
             {

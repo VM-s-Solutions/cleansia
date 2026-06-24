@@ -9,7 +9,7 @@ using TestConstants = Cleansia.TestUtilities.Constants;
 namespace Cleansia.IntegrationTests.Features.Users;
 
 /// <summary>
-/// PERF-IDA-08: the read-only user surfaces (GetUser, GetCurrentUser, GetUserByEmail) now read through
+/// PERF-IDA-08: the read-only user surfaces (GetUser, GetCurrentUser) now read through
 /// dedicated no-tracking variants, while the tracked <c>GetByEmailAsync</c>/<c>GetByIdAsync</c> stay
 /// untouched for the mutation paths that share them. These pin that (a) the no-tracking variants return
 /// the SAME row and do NOT enrol it in the change tracker, and (b) the tracked variants still track —

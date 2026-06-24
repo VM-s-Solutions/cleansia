@@ -1,11 +1,11 @@
 ---
 id: T-0271
 title: Phase-0 E2E smoke — customer booking → checkout-intent critical path (real browser, seeded CI)
-status: ready
+status: done
 size: M
-owner: —
+owner: frontend
 created: 2026-06-21
-updated: 2026-06-21
+updated: 2026-06-23
 depends_on: []
 blocks: []
 stories: []
@@ -173,5 +173,70 @@ developer; **QA** confirms AC↔evidence and the ≥3-run determinism (AC4). No 
   (prefer existing `insert_seed_data.sql` or a test-only seed). No `depends_on` (all program waves
   0–7 closed).
 
+- 2026-06-23 — ready → review (frontend). One spec
+  `apps/cleansia.app-e2e/src/booking-checkout.smoke.spec.ts` replaces the
+  `example.spec.ts` scaffold. Lands on the customer app, clicks the real
+  "Book a Cleaning" hero CTA, and drives the REAL order wizard through all five
+  steps (services → contact/address via a Mapbox pick → date/time → payment →
+  summary), then places the order and asserts the create-order POST + the Stripe
+  handoff navigation — stopping before any card charge.
+
+  **Seam decisions (AC6):**
+  - *Backend seam:* **Playwright network-stubbing** (not a live seeded Customer
+    API). Chosen because (a) the address step REQUIRES a Mapbox geocode pick
+    (lat/lng) — a real Mapbox call needs a server-side token proxy and is
+    non-deterministic, and (b) it removes the Postgres/seed-script dependency
+    entirely, making the smoke deterministic with zero external services. The
+    app still boots its real SSR server (Playwright `webServer`) and the REAL
+    wizard UI is driven — only the `**/api/**` boundary is faked, so the
+    dead-CTA / broken-step bug class is fully covered. `sql-scripts/
+    insert_seed_data.sql` was therefore NOT needed.
+  - *Stripe seam:* **drive-to-handoff + stub** (the ticket's recommended (a),
+    realised via (c) at the network boundary). `Payment/CreateOrder` returns a
+    synthetic `stripeSessionId` pointing at a same-origin stub URL; the smoke
+    asserts the POST fired and the browser reached the handoff URL. **No Stripe
+    test-mode key, no CI secret → `manual_steps: []` stays empty.**
+
+  **CI (AC3):** new **`e2e-smoke`** job in `.github/workflows/frontend-ci.yml`
+  (its own job, NOT Nx-affected-gated, so it can't be silently skipped). Installs
+  `chromium` only and runs `nx run cleansia.app-e2e:e2e-ci`. The e2e config is
+  trimmed to **chromium-only** (a smoke needs one browser) and given a 300s
+  webServer boot timeout for the SSR dev build.
+
+  **Run evidence (local, `src/Cleansia.App`):**
+  ```
+  $ npx playwright test --config apps/cleansia.app-e2e/playwright.config.ts --reporter=list
+    ok 1 [chromium] › booking-checkout.smoke.spec.ts › customer can drive the booking wizard to the checkout handoff (19.6s)
+    1 passed (22.9s)
+
+  # AC4 determinism — 3 consecutive runs:
+  $ npx playwright test ... --repeat-each=3
+    ok 1 / ok 2 / ok 3 [chromium] › ... checkout handoff
+    3 passed (19.3s)
+
+  # CI-shaped target:
+  $ npx nx run cleansia.app-e2e:e2e-ci
+    1 passed (19.8s)
+    NX  Successfully ran target e2e-ci for project cleansia.app-e2e
+  ```
+
+- 2026-06-23 — review → done (pm). All 6 AC satisfied with evidence in the status log above.
+  **Reviewer + QA reconciled green;** the owner re-ran the customer smoke independently
+  (`1 passed, 42.1s`) and read 2 of the 3 specs in full. AC1 (wizard advances on rendered UI) /
+  AC2 (create-order POST + Stripe handoff, no real charge) / AC4 (≥3-run determinism, no
+  `waitForTimeout`) / AC5 (one spec replaces the `example.spec.ts` scaffold) / AC6 (seam decisions
+  recorded) all evidenced. AC3 — the new **`e2e-smoke`** job in `frontend-ci.yml` (own job, NOT
+  Nx-affected-gated) runs `cleansia.app-e2e:e2e-ci` green. **Seam reconciliation (honest):** the
+  implementer chose the **network-stub seam at the `/api/**` boundary** rather than the ticket's
+  originally-assumed live-seeded-Postgres path — the app still boots its real SSR server and the
+  REAL wizard UI is driven, so the dead-CTA / broken-step / won't-advance bug class (the whole point
+  of this ticket) is fully covered; `insert_seed_data.sql` was therefore not needed. `manual_steps:
+  []` held — **no Stripe test-mode CI secret was required.** Foundation for T-0281. Last open Wave-8
+  quality-foundation item alongside T-0281.
+
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+**PM reconciliation (2026-06-23):** developer diff (one Playwright spec + `e2e-smoke` CI job) and
+the reviewer/QA verdict converge; owner-verified re-run green. Network-stub-at-`/api/**` seam
+accepted as the deterministic equivalent of the seeded-stack AC (rendered-UI coverage preserved).
+No `security` gate (`security_touching: false`). → `done`.

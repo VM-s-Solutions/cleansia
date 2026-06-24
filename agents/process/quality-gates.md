@@ -193,6 +193,56 @@ checks is faster and cheaper than dispatching a dev+reviewer — and avoids the 
 cost of pushing parallelism past what the task needs. Heuristic: **fan out for breadth or risk; act
 directly for mechanical certainty.**
 
+### Serialize shared-file lanes — and NEVER `git restore` a shared file in a parallel batch
+When a batch fans out in parallel, tickets that touch the **same shared file** must be **serialized**
+(one writer at a time), not run concurrently. The shared-file clusters that bite are:
+`agents/knowledge/consistency.md`, `agents/backlog/INDEX.md`, the per-app **i18n bundles** (the 5
+`{en,cs,sk,uk,ru}.json` per app), and the `Policy.cs` / `PolicyBuilder.cs` authz cluster (these two
+must move together or `AssertComplete` fails boot). The PM sequences these into a single lane the same
+way `:core` (T-0277/T-0278) and the Policy cluster (T-0285) were serialized — never two instances
+editing one of them at once.
+
+When true parallelism on adjacent (not identical) regions is unavoidable, each agent is told to **edit
+only its own hunks** and is **forbidden from running `git restore` (or `git checkout --`, or a
+wholesale revert) on a shared file** — even to "clean scope contamination." A blanket restore of a
+shared file silently wipes a *sibling ticket's* committed deliverable.
+
+> **Why this rule exists (a real incident, 2026-06-23 Wave-8 close-out batch):** T-0291 and T-0289 both
+> edited `consistency.md` in one parallel batch; a third ticket's (**T-0292**) fix-agent ran
+> `git restore consistency.md` to clean what it read as contamination — which **wiped T-0291's
+> deliverable** (the disputes-archetype note). The orchestrator's combined-tree re-verify caught it and
+> the note was restored by hand. The fix is structural: **serialize the shared-file lane, and ban
+> shared-file `git restore` in parallel agents.** If an agent believes a shared file is contaminated, it
+> **reports it to the PM** (leaves a note), it does **not** revert the file itself.
+
+### A final-report (StructuredOutput) failure ≠ a work failure — gate the working tree by hand
+A dev agent's **final StructuredOutput / report call can error** (retry cap exceeded) while its actual
+work **completed on disk**. Observed 2026-06-23 (Wave-8 close-out, T-0290 FE half): the agent had already
+written the new audit-entry component/facade/models + specs, all 5 i18n locales, with a clean prod-build
+and 24/24 tests — but its final report call failed (likely an oversized / escaping-heavy `buildEvidence`
+string tripping schema serialization). The work was fine; only the *report* failed. Rules: **(1)** a
+StructuredOutput/final-report failure does **not** mean the work failed — the orchestrator **inspects the
+working tree and gates the on-disk result by hand** (here it passed: build clean, tests green). **(2)**
+keep `buildEvidence` **concise** to avoid the schema-serialization failure (don't pack the whole diff /
+log into one giant escaped string).
+
+> **Recurrence confirms the pattern (2026-06-23, Wave-11 Azure-infra, commit `38a10375`): same failure on
+> 3 tickets across 2 runs.** The final-report tool failed on the **T-0319** (rewritten `deploy-dev.yml`)
+> and **T-0330** (region connection-string resolver) dev agents — and earlier on **T-0290 FE** — while in
+> every case the work landed on disk. The orchestrator gated T-0319 + T-0330 **by hand** (read the
+> resolver + the CI; built `Cleansia.Config` 0 errors; secret-scanned; confirmed the tenancy filter
+> untouched + all five hosts + OIDC/migration/provision gate) and both are verified-done **even though
+> their in-workflow reviewer didn't run**. Three independent occurrences across two waves make this a
+> standing operating rule, not a one-off: **a StructuredOutput retry-cap failure is NOT a work failure —
+> always inspect the working tree and gate the on-disk result by hand.**
+>
+> **Mitigation (acts on the likely trigger): keep the schema's `buildEvidence` / `verifyEvidence` fields
+> SHORT.** The common thread across all three failures is an **oversized, escaping-heavy evidence string**
+> (a whole build log / diff packed into one field) tripping the schema serialization at the retry cap.
+> Cap these fields to a terse summary (counts + a one-line verdict + the key file:line), never the raw
+> log. The authoritative evidence lives in the ticket status log and the working tree anyway — the report
+> field is a pointer, not the artifact.
+
 ---
 
 ## How a reviewer writes a verdict

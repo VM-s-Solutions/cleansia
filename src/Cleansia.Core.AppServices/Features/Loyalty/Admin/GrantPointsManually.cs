@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Loyalty;
@@ -8,6 +9,7 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Loyalty.Admin;
 
+[AuditAction("loyalty.points.grant", Sensitive = true, ResourceType = "LoyaltyAccount")]
 public class GrantPointsManually
 {
     /// <summary>
@@ -27,6 +29,8 @@ public class GrantPointsManually
         string RequestId) : ICommand<Response>;
 
     public record Response(string UserId, int Points);
+
+    public record PointsSnapshot(string UserId, int PointsDelta);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -66,7 +70,8 @@ public class GrantPointsManually
 
     public class Handler(
         ILoyaltyService loyaltyService,
-        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, Response>
+        IUserSessionProvider userSessionProvider,
+        IAuditContext auditContext) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -82,6 +87,13 @@ public class GrantPointsManually
                 // collapses onto one ledger row. The service returns the same success either way.
                 requestId: command.RequestId,
                 cancellationToken: cancellationToken);
+
+            auditContext.RecordChange(
+                "LoyaltyAccount",
+                command.UserId,
+                new PointsSnapshot(command.UserId, PointsDelta: 0),
+                new PointsSnapshot(command.UserId, command.Points),
+                command.Reason);
 
             return BusinessResult.Success(new Response(command.UserId, command.Points));
         }

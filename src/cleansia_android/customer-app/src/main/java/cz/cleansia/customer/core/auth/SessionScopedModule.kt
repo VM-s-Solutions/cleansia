@@ -6,7 +6,7 @@ import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.disputes.DisputeRepository
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import cz.cleansia.customer.core.memberships.MembershipRepository
-import cz.cleansia.customer.core.notifications.PushTokenRepository
+import cz.cleansia.core.notifications.PushTokenRepository
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import cz.cleansia.customer.core.referral.ReferralRepository

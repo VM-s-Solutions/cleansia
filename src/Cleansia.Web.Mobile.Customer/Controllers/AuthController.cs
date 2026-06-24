@@ -13,8 +13,8 @@ namespace Cleansia.Web.Mobile.Customer.Controllers;
 
 /// <summary>
 /// Customer Mobile API auth endpoints. Mirrors the Customer Web AuthController
-/// in the commands it dispatches (<see cref="Login.Command"/> permissive for
-/// customer users; <see cref="PartnerLogin.Command"/> would reject them), but
+/// in the commands it dispatches (<see cref="MobileLogin.Command"/> permissive for
+/// customer users; <see cref="MobilePartnerLogin.Command"/> would reject them), but
 /// returns the body tokens directly without going through the HttpOnly cookie
 /// / CSRF flow that the web hosts use — native clients (Android, iOS) can't
 /// read HttpOnly cookies and need the token in the JSON response to store in
@@ -41,7 +41,7 @@ public class AuthController(IMediator mediator) : CustomerMobileApiController(me
     [ProducesResponseType(typeof(JwtTokenResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Login([FromBody] Login.Command command)
+    public async Task<IActionResult> Login([FromBody] MobileLogin.Command command)
     {
         var result = await Mediator.Send(command);
         return HandleResult<JwtTokenResponse>(result);

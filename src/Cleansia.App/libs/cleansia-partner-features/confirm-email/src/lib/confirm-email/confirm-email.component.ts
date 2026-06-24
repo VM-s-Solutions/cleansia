@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import {
   CleansiaBrandNameComponent,
   CleansiaButtonComponent,
@@ -37,7 +37,6 @@ import { ConfirmEmailFacade } from './confirm-email.facade';
 export class ConfirmEmailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly store = inject(Store);
-  private readonly router = inject(Router);
   protected readonly facade = inject(ConfirmEmailFacade);
 
   protected readonly loading = toSignal(this.store.select(selectLoading));
@@ -54,7 +53,6 @@ export class ConfirmEmailComponent implements OnInit {
 
   ngOnInit(): void {
     if (!this.route.snapshot.queryParamMap.get('email')) {
-      // this.router.navigate([CleansiaPartnerRoute.HOME]);
       return;
     }
 

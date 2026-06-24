@@ -21,7 +21,16 @@ each gets a line on the pre-PROD readiness checklist.
 
 ### Pre-prod blocking index (the only questions that block go-live)
 <!-- PM keeps this list in sync: one line per OPEN question whose Resolve-by is `pre-prod`. -->
-- _(none currently open — Q-REFUND-01 is `pre-prod` but scoped to DE/AT/ES go-live only, not the CZ/SK/PL launch)_
+- _(Q-REFUND-01 is `pre-prod` but scoped to DE/AT/ES go-live only, not the CZ/SK/PL launch)_
+- _(Q-AUDIT-01 — RESOLVED 2026-06-22: owner adopted the append-only / no-auto-delete / PII-minimized
+  **default**; moved to `answered.md`. The pre-prod **ratification** of the exact retention window +
+  redaction list is now a **pre-PROD readiness-checklist item**, not an open question.)_
+- **Q-INFRA-01** (`pre-prod` for PROD only; non-blocking for the DEV provision) — custom domain for the
+  environments? Default: no custom domain for dev (stable `*.azurewebsites.net`).
+- **Q-INFRA-03** (`pre-prod` for PROD hardening; non-blocking for the DEV provision) — prod VNet/private-endpoint
+  + Postgres-MI auth? Default for dev: public-endpoint + firewall + MI-to-KeyVault/Storage.
+- **Q-IOS-04** (`pre-submission` — gates only the SIWA iOS ticket T-0326; non-blocking for the rest of the iOS
+  plan) — the Sign-in-with-Apple backend integration mechanism (likely a backend `appleauth` endpoint).
 
 Format:
 
@@ -274,3 +283,213 @@ _No open Wave-1 *planning* questions remain._
   resolve copy does NOT over-promise ("submitted", not "refunded"; Stripe may-remain-pending disclaimer).
 - Status: **owner/security confirmation pending** (carried at Wave-3 close, sprint-5 §8.3 item 5).
 - Answer: _(owner fills in)_
+
+---
+
+## Admin action audit log question (2026-06-22) — raised by ADR-0012 (AUD-AUDITLOG)
+
+> **Q-AUDIT-01 RESOLVED 2026-06-22 — moved to `answered.md`.** The owner adopted the **default**
+> (append-only / no-auto-delete / PII-minimized: snapshots store ids + changed fields only, never raw
+> subject PII; the GDPR-delete audit keeps actor + scope + subject id and legitimately survives the
+> subject's erasure as a legal-basis exception). Baked into Wave-9 tickets T-0282 / T-0284 / T-0287. The
+> **pre-prod ratification** of the exact retention window + redaction list is a **pre-PROD readiness
+> checklist** item (owner/legal), not an open question. No open Wave-9 / audit-log questions remain.
+
+---
+
+## iOS port questions (2026-06-23) — raised by ADR-0013 (IOS-ADR)
+
+> **Q-IOS-01 RESOLVED 2026-06-23 — owner answered iOS 16** (recorded in superseding ADR-0014). Q-IOS-02 /
+> Q-IOS-03 remain non-blocking with their defaults; the iOS plan proceeds on them. The **one hard blocker**
+> for the iOS feature waves is NOT a question — it is the owner **mobile-spec regen**
+> (`manual_step: mobile-spec-regen`, owner-only), a regen of the *existing* contract (not a contract
+> change), which gates only the generated-client tickets. The Phase-0 foundation runs without it.
+
+### Q-IOS-01 — [RESOLVED 2026-06-23 — answered: iOS 16] iOS minimum deployment target
+- Raised by: architect (IOS-ADR / ADR-0013 D2)
+- Owner: owner
+- Resolve-by: post-prod
+- Date: 2026-06-23
+- Question: What is the iOS **minimum deployment target**? The (original) architecture assumed **iOS 17**
+  (enables Observation `@Observable` for the state parity and the SwiftUI `Map` for the MapKit default).
+- Why it matters: it sets device reach. It does **not** change the architecture — a lower floor only forces
+  an `ObservableObject`/`@Published` state mechanism and a `UIViewRepresentable` MapKit variant.
+- Default taken (non-blocking, original): **iOS 17** — the modern-platform-floor posture matching Android
+  `minSdk 26`.
+- **Answer (owner, 2026-06-23): iOS 16.** Rationale = **old-device reach**: iOS 16 runs on **iPhone 8 /
+  8 Plus / X (2017+)**, which the iOS-17 floor (XS/XR, 2018+) excluded. Reach was the deciding factor; the
+  cost (a more verbose `ObservableObject`/`@Published` state mechanism + the iOS-16 MapKit API variant) is
+  accepted. **Recorded in superseding ADR-0014** (`adr/0014-ios-deployment-target-ios16-and-state-mechanism.md`),
+  which partially supersedes ADR-0013 D2 + the deployment-target assumption — all other ADR-0013 decisions
+  stand. The sealed `UiState`/`ActionState` enums + the facade/state parity are **unchanged** (only the
+  observation wrapper changed). sprint-12 tickets updated in parallel. **RESOLVED.**
+
+### Q-IOS-02 — [blocking: no] Hard brand requirement that the iOS map be Mapbox-identical?
+- Raised by: architect (IOS-ADR / ADR-0013 D6)
+- Owner: owner
+- Resolve-by: post-prod
+- Date: 2026-06-23
+- Question: Is there a **hard brand/design requirement** that the iOS map look pixel-identical to the
+  Mapbox-styled Android map (the `MapStyles.kt` custom style)? The default is **MapKit** (Apple-native,
+  free, no token), with the Mapbox iOS SDK kept as a **scoped fallback behind the `MapProvider` protocol**.
+- Why it matters: a "yes" flips the **default provider** (imports the paid Mapbox SDK + a token to rotate);
+  the **seam is unchanged** either way, so this is a provider choice, not an architecture change.
+- Default taken (non-blocking): **No** — MapKit by default; Mapbox only if a specific parity gap (custom
+  style, service-area polygon overlay, a sheet UX MapKit can't match) forces one surface onto it.
+- Answer: _(owner fills in — confirm MapKit default, or require Mapbox-identical → flip the default provider)_
+
+### Q-IOS-03 — [blocking: no] Add trusted-device to the mobile clients (iOS + Android)?
+- Raised by: architect (IOS-ADR / ADR-0013 D10)
+- Owner: owner
+- Resolve-by: post-prod
+- Date: 2026-06-23
+- Question: Should the **trusted-device** flow (`trustedDeviceToken`, currently optional/null on
+  `MobileLogin`/`MobilePartnerLogin` and **not sent by Android**) be built for the mobile clients?
+- Why it matters: it is net-new with **no Android reference**; an iOS-only build creates a security-path
+  **divergence** with no cross-client contract to anchor it. The ADR-0011 posture is "one contract, all
+  clients" — if wanted, design it once and ship Android + iOS together.
+- Default taken (non-blocking): **omit from iOS v1 to match Android** (the field is optional, so omitting
+  it is fully supported).
+- Answer: _(owner fills in — omit to match Android, or commission a one-design trusted-device flow for both
+  mobile clients)_
+
+---
+
+## Azure DEV deployment questions (2026-06-23) — raised by ADR-0015 (INFRA-ADR)
+
+> All three are **non-blocking for the DEV provision** (sprint-13 proceeds on the defaults). Q-INFRA-01 and
+> Q-INFRA-03 are `pre-prod` *for the prod side only* — they do not gate dev. The DEV provision's real
+> prerequisites are **owner manual steps** (GitHub Environments + reviewers, secret migration, Key Vault value
+> population, running/approving the first `az deployment group create`), not these questions.
+
+### Q-INFRA-01 — [blocking: no — pre-prod for PROD only] Custom domain for the environments?
+- Raised by: architect (INFRA-ADR / ADR-0015 D6)
+- Owner: owner
+- Resolve-by: pre-prod (prod side); non-blocking for dev
+- Date: 2026-06-23
+- Question: Should the environments use a **custom domain** (`*.cleansia.cz`) instead of the default Azure
+  hostnames (`*.azurewebsites.net` / `*.azurestaticapps.net`)? This needs an owner DNS step + TLS binding.
+- Why it matters: the iOS apps + the SPAs point at host URLs; a custom domain is a branding/prod concern. Getting
+  it wrong is cosmetic for dev but a real prod readiness item.
+- Default taken (non-blocking for dev): **No for dev** — the default `*.azurewebsites.net` hostnames are stable +
+  TLS-terminated, sufficient for the Mac-points-at-dev goal. The iOS base-URL is env-switched **config**, so
+  adding a custom domain later is config, not code.
+- Answer: _(owner fills in — confirm default hostnames for dev; decide custom domain for prod before go-live)_
+
+### Q-INFRA-02 — [blocking: no] Two subscriptions, or one subscription + two resource groups?
+- Raised by: architect (INFRA-ADR / ADR-0015 D1)
+- Owner: owner
+- Resolve-by: post-prod
+- Date: 2026-06-23
+- Question: Should dev and prod live in **separate Azure subscriptions** (hard billing/policy isolation) or in
+  **one subscription with two resource groups** (`rg-cleansia-dev` / `rg-cleansia-prod`)?
+- Why it matters: subscription split gives the strongest billing/governance isolation but doubles
+  subscription-level overhead. RG split gives clean blast-radius isolation (a `dev` apply cannot touch prod; the
+  protected `prod` Environment gates prod deploys) at far less overhead.
+- Default taken (non-blocking): **one subscription, two RGs.** The Bicep is RG-scoped, so a later move to two
+  subscriptions is a parameter change, not a rewrite — the seam is preserved.
+- Answer: _(owner fills in — confirm one-sub/two-RGs, or require separate subscriptions)_
+
+### Q-INFRA-03 — [blocking: no — pre-prod for PROD hardening] Prod network/auth hardening: VNet + private endpoints + Postgres-MI auth?
+- Raised by: architect (INFRA-ADR / ADR-0015 D3/D4)
+- Owner: owner
+- Resolve-by: pre-prod (prod side); non-blocking for dev
+- Date: 2026-06-23
+- Question: For **prod**, should Postgres/Storage be reached over **VNet + private endpoints** (no public
+  endpoint) and should Postgres use **AAD/managed-identity auth** instead of a connection-string secret?
+- Why it matters: the system holds PII + payment data; prod should be hardened beyond the dev-pragmatic
+  public-endpoint + firewall posture. Postgres-MI auth removes the connection-string secret entirely but needs
+  Npgsql token plumbing (a code change).
+- Default taken (non-blocking for dev): **dev = public-endpoint + firewall (Azure-services + admin IP) + TLS +
+  MI-to-KeyVault/Storage + connection-string-in-Key-Vault for Postgres.** The prod Bicep leaves the seam (a
+  module flag) to flip VNet/private-endpoint + Postgres-MI on before prod go-live.
+- Answer: _(owner fills in — confirm dev posture; decide prod VNet/private-endpoint + Postgres-MI before prod)_
+
+---
+
+## Apple App Review / iOS compliance questions (2026-06-23) — raised by ADR-0016 (IOS-COMPLIANCE-ADR)
+
+> **Framing recorded in ADR-0016:** there is NO "AI-written-code detector" and App Review cannot brick hardware
+> — both FALSE. The real risk is rejection vs the published guidelines. The only owner question is the SIWA
+> backend mechanism; it gates **only** the SIWA ticket, not the iOS plan.
+
+### Q-IOS-04 — [blocking: no — gates only the SIWA ticket T-0326] Sign-in-with-Apple backend integration mechanism
+- Raised by: architect (IOS-COMPLIANCE-ADR / ADR-0016 D2/AR-ACCT-2)
+- Owner: owner (+ architect for the technical shape)
+- Resolve-by: pre-submission
+- Date: 2026-06-23
+- Question: The **Sign-in-with-Apple obligation is CONFIRMED** (the customer app offers Google Sign-In, so
+  Guideline 4.8 requires SIWA on the customer app). **How** should SIWA authenticate against the backend — a new
+  backend **`appleauth`** anon endpoint (analogous to the existing `googleauth`: validate the Apple identity
+  token → issue the mobile JWT, a backend ticket + a spec-regen), or an existing token-exchange path?
+- Why it matters: it touches the **auth contract** (a new anon endpoint + the allow-list + a spec-regen feeding
+  all three clients), so it is owner-ratified, not a unilateral technical default. The **obligation** is not in
+  question — only the mechanism.
+- Default taken (non-blocking, to keep planning moving): **assume a backend `appleauth` endpoint is needed** (the
+  safe, `googleauth`-mirroring assumption), sized as a backend + iOS pair, gated on the owner confirming the
+  backend appetite. The rest of the iOS plan does not wait on this — only T-0326 (the SIWA ticket) does.
+- Answer (RELAYED 2026-06-23 — proceed on the default; NOT yet owner-direct-confirmed): the coordinator relayed
+  that the owner chose **SIWA via a backend `appleauth` endpoint** — i.e. the default above. The planning
+  proceeds on this (T-0326 sized as a backend `appleauth` endpoint + spec-regen + the iOS SIWA UI). **Caveat:**
+  this is a coordinator-relayed answer, not a direct owner message, so it carries no user authority — the owner
+  should confirm directly before T-0326 (and the backend `appleauth` ticket) advances to `done`; the auth-contract
+  change + spec-regen remain owner-gated regardless. Treated as RESOLVED-for-planning, open-for-direct-ratification.
+
+---
+
+## Multi-region expansion questions (2026-06-23) — raised by ADR-0017 (INFRA-REGION-ADR)
+
+> All three are **non-blocking for the single-region West-Europe dev build** (sprint-13 ships single-region +
+> the minimal seam). They are gated on a **second region** actually being on the table, which this pass does not
+> build. ADR-0017 recommends the **lightest model** (one shared region + DB now; tenancy already separates
+> tenants logically) with the seam left clean — these questions decide when/how the heavier region-pinned model
+> is adopted.
+
+### Q-REGION-01 — [blocking: no — gated on a second region] The residency trigger (which market, if any, is residency-regulated)
+- Raised by: architect (INFRA-REGION-ADR / ADR-0017 D1/D6)
+- Owner: owner
+- Resolve-by: post-prod (becomes pre-prod for the specific market if a residency-regulated one is launched)
+- Date: 2026-06-23
+- Question: Is any planned market **residency-regulated** such that its data must **physically stay in-region**
+  (a legal requirement, not just presence/latency)? This is the named **trigger** that flips the model from
+  one-shared-DB to **region-pinned DBs**.
+- Why it matters: the owner's stated driver is **market expansion, not residency**, so the shared model ships.
+  But launching a residency-regulated market on a shared DB would be a **compliance incident** — the trigger must
+  be caught **before** that market goes live, not after.
+- Default taken (non-blocking): **none yet** — the current EU-centric markets (CZ/SK/PL/…) keep data in **West
+  Europe**, which is *in* the EU (GDPR's cross-border concern is transfers *out* of the EU; a single EU region
+  does not trigger it). A residency-regulated or non-EU market is the trigger to revisit (a new ADR for the
+  region-pinned model).
+- Answer: _(owner fills in — confirm no residency requirement for the planned markets, or name the market(s)
+  that force region-pinned DBs and when they launch)_
+
+### Q-REGION-02 — [blocking: no — gated on a second region] Tenant→region assignment + reassignment policy
+- Raised by: architect (INFRA-REGION-ADR / ADR-0017 D3)
+- Owner: owner
+- Resolve-by: post-prod
+- Date: 2026-06-23
+- Question: Confirm **country→region** as the assignment granularity (a tenant inherits its country's home
+  region; a tenant has exactly **one** home region and never spans regions). And: if a tenant is ever
+  **reassigned** to a new region, what is the data-migration story?
+- Why it matters: the granularity decides the shape of the future tenant→region map (one row per country vs per
+  tenant) and the `CountryConfiguration.HomeRegion` field. Reassignment is a data-migration concern only relevant
+  once a second region exists.
+- Default taken (non-blocking): **country-driven, one home region per tenant, no reassignment story built** until
+  a second region is real. A multi-market legal entity = **two tenants** (one per region), not one tenant
+  spanning two.
+- Answer: _(owner fills in — confirm country→region granularity; defer reassignment until a second region)_
+
+### Q-REGION-03 — [blocking: no] Per-region subscriptions, or one subscription with region in RG/naming?
+- Raised by: architect (INFRA-REGION-ADR / ADR-0017 D6)
+- Owner: owner
+- Resolve-by: post-prod
+- Date: 2026-06-23
+- Question: When a second region is added, should each region get its **own Azure subscription**, or stay **one
+  subscription** with the region carried in the RG + resource naming (`rg-cleansia-<region>-<stage>`)?
+- Why it matters: Azure regions are a resource *location*, not a subscription boundary — one subscription holds
+  many regions' RGs. A per-region subscription adds governance/billing overhead and is only warranted by a real
+  trigger (a subscription-level quota hit, a billing/legal boundary, or a blast-radius/compliance requirement).
+- Default taken (non-blocking): **one subscription** (region in RG/naming) until a quota / billing-legal /
+  blast-radius trigger fires. The Bicep is RG-scoped, so a later per-region subscription is a deployment-target
+  parameter, not a rewrite.
+- Answer: _(owner fills in — confirm one subscription until a trigger, or require per-region subscriptions)_

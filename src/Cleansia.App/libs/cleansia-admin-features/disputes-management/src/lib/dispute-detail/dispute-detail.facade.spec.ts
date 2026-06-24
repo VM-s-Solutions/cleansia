@@ -118,6 +118,18 @@ describe('DisputeDetailFacade', () => {
     expect(facade.resolving()).toBe(false);
   });
 
+  it('falls back to result.title when detail is absent on resolve failure', () => {
+    disputeClient.resolve.mockReturnValue(
+      throwError(() => ({ result: { title: 'dispute.already_resolved' } }))
+    );
+
+    facade.resolve('dispute-1', 100, 'notes');
+
+    expect(snackbar.showError).toHaveBeenCalledWith(
+      'errors.dispute.already_resolved'
+    );
+  });
+
   it('maps refund.failed to its translation key on resolve failure', () => {
     disputeClient.resolve.mockReturnValue(
       throwError(() => ({ response: JSON.stringify({ detail: 'refund.failed' }) }))

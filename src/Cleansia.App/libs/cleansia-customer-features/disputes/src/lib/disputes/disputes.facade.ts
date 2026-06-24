@@ -27,7 +27,7 @@ import {
   selectCustomerDisputeLoading,
   selectCustomerOrders,
 } from '@cleansia/customer-stores';
-import { SnackbarService } from '@cleansia/services';
+import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { catchError, finalize, map, of, takeUntil } from 'rxjs';
 import {
@@ -41,11 +41,6 @@ import {
 
 const LAST_VIEWED_STORAGE_KEY = 'cleansia.customer.disputes.last_viewed';
 const STAFF_ACTIVITY_STORAGE_KEY = 'cleansia.customer.disputes.staff_activity';
-
-interface ApiErrorResult {
-  detail?: string;
-  title?: string;
-}
 
 @Injectable()
 export class DisputesFacade extends UnsubscribeControlDirective {
@@ -257,18 +252,7 @@ export class DisputesFacade extends UnsubscribeControlDirective {
   }
 
   private resolveUploadErrorKey(error: unknown): string {
-    const apiError = error as { result?: ApiErrorResult; response?: string };
-    let code = apiError?.result?.detail || apiError?.result?.title;
-
-    if (!code && apiError?.response) {
-      try {
-        const parsed = JSON.parse(apiError.response) as ApiErrorResult;
-        code = parsed.detail || parsed.title;
-      } catch {
-        code = undefined;
-      }
-    }
-
+    const code = extractApiErrorCode(error);
     if (code && DISPUTE_UPLOAD_ERROR_KEY_MAP[code]) {
       return DISPUTE_UPLOAD_ERROR_KEY_MAP[code];
     }

@@ -1,0 +1,162 @@
+.cleansia-audit-log,
+.cleansia-audit-resource-history,
+.cleansia-audit-entry {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  max-width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+
+  &__container {
+    background: var(--cleansia-white);
+    border-radius: 12px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 1400px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  &__header {
+    text-align: center;
+  }
+
+  &__description {
+    color: var(--cleansia-text-secondary);
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  &__resource {
+    font-weight: 600;
+    color: var(--cleansia-text-primary);
+  }
+
+  &__state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 3rem 1rem;
+    color: var(--cleansia-text-secondary);
+
+    i {
+      font-size: 2rem;
+      color: #b45309;
+    }
+  }
+}
+
+.audit-outcome-badge {
+  display: inline-block;
+  padding: 0.375rem 0.875rem;
+  border-radius: 16px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+  text-align: center;
+  line-height: 1;
+  white-space: nowrap;
+  min-width: 80px;
+
+  &.outcome-success {
+    background-color: rgba(34, 197, 94, 0.15);
+    color: #14532d;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+  }
+
+  &.outcome-failure {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #991b1b;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+}
+
+cleansia-admin-audit-log,
+cleansia-admin-audit-resource-history,
+cleansia-admin-audit-entry {
+  display: flex;
+  flex-direction: column;
+  background: var(--cleansia-primary-0);
+  min-height: 100vh;
+  gap: 1rem;
+}
+
+.cleansia-audit-entry {
+  &__meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin: 0 0 1.5rem;
+  }
+
+  &__meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    dt {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--cleansia-text-secondary);
+    }
+
+    dd {
+      margin: 0;
+      font-weight: 600;
+      color: var(--cleansia-text-primary);
+      word-break: break-word;
+    }
+  }
+
+  &__section-title {
+    margin: 0 0 0.75rem;
+    font-size: 1.0625rem;
+    color: var(--cleansia-text-primary);
+  }
+
+  &__diff {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+
+    thead th {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      background: var(--cleansia-primary-0);
+      color: var(--cleansia-text-secondary);
+      font-weight: 600;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    tbody td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      vertical-align: top;
+      word-break: break-word;
+    }
+
+    tbody tr.changed {
+      background-color: rgba(234, 179, 8, 0.1);
+
+      .cleansia-audit-entry__after span {
+        color: #14532d;
+        font-weight: 600;
+      }
+    }
+  }
+
+  &__field {
+    font-weight: 600;
+    color: var(--cleansia-text-primary);
+  }
+
+  &__empty-value {
+    color: var(--cleansia-text-secondary);
+    font-style: italic;
+  }
+}

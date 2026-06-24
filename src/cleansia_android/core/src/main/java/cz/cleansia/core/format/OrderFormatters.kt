@@ -47,6 +47,22 @@ fun formatOrderDateTime(iso: String?, locale: Locale = Locale.getDefault()): Str
 }
 
 /**
+ * Parse an ISO-8601 UTC instant and format just its time-of-day ("10:00")
+ * in the device timezone. Returns "—" if null/blank, or the raw input if
+ * parsing fails.
+ */
+fun formatOrderTime(iso: String?, locale: Locale = Locale.getDefault()): String {
+    if (iso.isNullOrBlank()) return "—"
+    return try {
+        val instant = Instant.parse(iso)
+        val local = instant.toLocalDateTime(TimeZone.currentSystemDefault()).toJavaLocalDateTime()
+        local.format(timeFormatter(locale))
+    } catch (_: Throwable) {
+        iso
+    }
+}
+
+/**
  * Format an arrival window: "Apr 22 · 10:00–12:00".
  * Falls back to [formatOrderDateTime] if the end time can't be derived.
  */

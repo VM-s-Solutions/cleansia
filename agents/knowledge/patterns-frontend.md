@@ -237,6 +237,11 @@ reuse the interceptor `api.*` path instead (EP-3 root cause was the proliferatio
    the code).
 2. A few features keep an explicit `XXX_ERROR_KEY_MAP` + `resolveXxxErrorKey(error)` in their
    `*.models.ts` (see `membership-plan-list.models.ts`, `referrals-list.models.ts`, disputes upload).
+   Such a resolver must **delegate the code extraction** to the single shared
+   `extractApiErrorCode(error): string | undefined` from `@cleansia/services` (the `result.detail ||
+   result.title` → `JSON.parse(response)` walk, typed with the one shared `ApiErrorResult`) and keep
+   only its own `code → key` map + fallback — never re-implement the extraction inline. The same helper
+   backs `SnackbarService.extractApiErrorMessage`.
 
 ## What to mirror, not invent
 

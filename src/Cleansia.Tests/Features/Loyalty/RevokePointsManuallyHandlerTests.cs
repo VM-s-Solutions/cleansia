@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Features.Loyalty.Admin;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Loyalty;
@@ -29,8 +30,10 @@ public class RevokePointsManuallyHandlerTests
         _session.Setup(s => s.GetUserId()).Returns(ActorId);
     }
 
+    private readonly AuditContext _auditContext = new();
+
     private RevokePointsManually.Handler CreateHandler() =>
-        new(_loyaltyService.Object, _session.Object);
+        new(_loyaltyService.Object, _session.Object, _auditContext);
 
     private static RevokePointsManually.Command ValidCommand() =>
         new(UserId, Points, Reason, RequestId);

@@ -37,7 +37,7 @@ public class ReferralController(IMediator mediator) : CustomerMobileApiControlle
         [FromQuery] int limit = 20,
         CancellationToken cancellationToken = default)
     {
-        return await Mediator.Send(new GetMyReferrals.Query(offset, limit), cancellationToken);
+        return await Mediator.Send(new GetMyReferrals.Request { Offset = offset, Limit = limit }, cancellationToken);
     }
 
     [AllowAnonymous]

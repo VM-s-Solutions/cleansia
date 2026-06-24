@@ -22,12 +22,11 @@ public class GetExtraOverview
         {
             // Soft-deleted extras (IsActive=false) stay referenceable by
             // historical orders but never surface in the catalog.
-            var extras = await extraRepository.GetAll()
+            return await extraRepository.GetAll()
                 .Where(e => e.IsActive)
                 .OrderBy(e => e.DisplayOrder)
+                .Select(extra => extra.MapToDto())
                 .ToListAsync(cancellationToken);
-
-            return extras.Select(extra => extra.MapToDto());
         }
     }
 }

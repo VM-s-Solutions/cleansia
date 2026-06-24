@@ -8,7 +8,7 @@ public interface IUserRepository : IRepository<User, string>
 
     /// <summary>
     /// No-tracking variant of <see cref="GetByEmailAsync"/> for read-only profile surfaces
-    /// (GetCurrentUser, GetUserByEmail). Returns the SAME row + includes as the tracked variant; it
+    /// (GetCurrentUser). Returns the SAME row + includes as the tracked variant; it
     /// just doesn't enrol the entity in the change tracker. The tracked variant stays the one shared
     /// with the mutation paths (Login/Register/ChangePassword), so do not flip it.
     /// </summary>

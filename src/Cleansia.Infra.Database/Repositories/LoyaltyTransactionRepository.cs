@@ -7,25 +7,6 @@ namespace Cleansia.Infra.Database.Repositories;
 public class LoyaltyTransactionRepository(CleansiaDbContext context)
     : BaseRepository<LoyaltyTransaction>(context), ILoyaltyTransactionRepository
 {
-    public async Task<IReadOnlyList<LoyaltyTransaction>> GetForAccountAsync(
-        string accountId, int offset, int limit, CancellationToken cancellationToken)
-    {
-        return await GetDbSet()
-            .Where(t => t.LoyaltyAccountId == accountId)
-            .OrderByDescending(t => t.OccurredOn)
-            .Skip(offset)
-            .Take(limit)
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-    }
-
-    public Task<int> CountForAccountAsync(string accountId, CancellationToken cancellationToken)
-    {
-        return GetDbSet()
-            .Where(t => t.LoyaltyAccountId == accountId)
-            .CountAsync(cancellationToken);
-    }
-
     public Task<LoyaltyTransaction?> GetLatestForOrderSourceAsync(
         string orderId, LoyaltyEarnSource source, CancellationToken cancellationToken)
     {

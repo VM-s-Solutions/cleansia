@@ -1,6 +1,6 @@
 # ADR-0010 — Durable consumer idempotency: DB-backed `IIdempotencyGuard` and `ICampaignProgressStore` (the in-memory backings made durable, no interface change)
 
-- **Status:** proposed   <!-- proposed | accepted | superseded | rejected -->
+- **Status:** accepted   <!-- proposed | accepted | superseded | rejected -->
 - **Date:** 2026-06-09
 - **Supersedes:** —
 - **Superseded by:** —

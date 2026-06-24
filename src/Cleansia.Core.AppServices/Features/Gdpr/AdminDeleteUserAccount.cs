@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -10,9 +11,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Gdpr;
 
+[AuditAction("gdpr.user.delete", Sensitive = true, ResourceType = "User")]
 public static class AdminDeleteUserAccount
 {
     public record Command(string UserId) : ICommand;
+
+    // ADR-0012 D4.1 — scope + subject id ONLY. NEVER the subject's personal data, so the
+    // accountability row is lawful to retain past the subject's erasure (it holds the actor's
+    // identity + the subject's id + the scope, not the erased PII).
+    public record GdprActionSnapshot(string SubjectUserId, string Scope);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -40,20 +47,31 @@ public static class AdminDeleteUserAccount
         }
     }
 
-    internal class Handler(
+    public class Handler(
         IUserSessionProvider userSessionProvider,
-        IGdprDeletionService gdprDeletionService)
+        IGdprDeletionService gdprDeletionService,
+        IAuditContext auditContext)
         : ICommandHandler<Command>
     {
-        public Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
+        private const string DeletionScope = "Deletion";
+
+        public async Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
         {
             var adminEmail = userSessionProvider.GetUserEmail() ?? GdprAuditReasons.FallbackAdminActor;
 
-            return gdprDeletionService.DeleteUserAccountAsync(
+            var result = await gdprDeletionService.DeleteUserAccountAsync(
                 request.UserId,
                 deactivationReason: GdprAuditReasons.AdminDeletion,
                 resolveAuditActor: _ => (adminEmail, $"Admin deletion by {adminEmail}"),
                 cancellationToken);
+
+            if (result.IsSuccess)
+            {
+                var snapshot = new GdprActionSnapshot(request.UserId, DeletionScope);
+                auditContext.RecordChange("User", request.UserId, snapshot, snapshot);
+            }
+
+            return result;
         }
     }
 }

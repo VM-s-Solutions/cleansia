@@ -29,7 +29,11 @@ specialist(s) — and a reviewer alongside each developer. This table is the dec
    `reviewer` instance reading the same ticket. The PM reconciles both before moving state.
 3. **Fan out independent tickets.** Multiple instances of the same charter run concurrently on
    *different* tickets (e.g. two `backend` instances on two unrelated features). Never two instances
-   editing the same files at once — the PM serializes those.
+   editing the same files at once — the PM serializes those. This applies especially to the **shared-file
+   clusters** (`consistency.md`, `INDEX.md`, the per-app i18n bundles, the `Policy.cs`/`PolicyBuilder.cs`
+   pair): they get a **single serialized lane**, and parallel agents must **edit only their own hunks and
+   never `git restore` a shared file** (a blanket revert wipes a sibling ticket's work — see
+   `quality-gates.md` §"Serialize shared-file lanes …" for the 2026-06-23 incident).
 4. **Platforms parallel.** `android` and `ios` run together off the same locked contract.
 5. **Gates last.** `security` / `optimizer` / `qa` run after implementation + review converge,
    before merge.

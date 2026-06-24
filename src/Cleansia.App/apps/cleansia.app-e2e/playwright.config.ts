@@ -22,47 +22,24 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
   },
-  /* Run your local dev server before starting the tests */
+  /* Run your local dev server before starting the tests. The customer app is
+     SSR — its first dev build can take a few minutes, so the boot timeout is
+     generous. `reuseExistingServer` lets a warm `nx serve` be reused. */
   webServer: {
     command: 'npx nx run cleansia.app:serve',
     url: 'http://localhost:4200',
     reuseExistingServer: true,
+    timeout: 300_000,
     cwd: workspaceRoot,
   },
+  /* Chromium-only by design: this is a single critical-path smoke (T-0271), not
+     a cross-browser matrix. One browser keeps CI fast and the boot deterministic
+     (`npx playwright install --with-deps chromium`). Add firefox/webkit here if
+     the suite grows into a regression pack. */
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-
-    // Uncomment for mobile browsers support
-    /* {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-    }, */
-
-    // Uncomment for branded browsers
-    /* {
-      name: 'Microsoft Edge',
-      use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    },
-    {
-      name: 'Google Chrome',
-      use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    } */
   ],
 });

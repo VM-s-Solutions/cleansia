@@ -202,6 +202,24 @@ the validator/handler that detects the failure: `UserRepository.RecordFailedLogi
 `TryCharge*CodeAttemptAsync`. The entity keeps only the read side (`IsLockedOut(now)`) and the
 success-path resets.
 
+**Admin-action audit is automatic — do NOT hand-write audit rows (ADR-0012).** Every admin mutation
+(a `Command` run by an `Administrator` role claim) is captured by `AuditLogBehavior`, registered
+**inner to `UnitOfWorkPipelineBehavior`** (the line after the UoW registration in
+`FluentValidationExtensions`), so the success row rides the action's single `SaveChangesAsync` and is
+atomic. Outcome on failure is written out-of-band by `IAuditFailureSink` in its own scope (best-effort,
+never re-thrown): a handler-returned business failure is caught by the inner `AuditLogBehavior`, while
+the two shapes it structurally cannot see — a **validation reject** (short-circuited outer to it) and a
+**commit-throw** (raised after it returned its success-add) — are caught by the **outermost**
+`AuditFailureCaptureBehavior`. The two share one scoped `IAuditContext` latch
+(`TryClaimFailureRecording`) so a failure is recorded exactly once. A failed/blocked admin attempt is
+therefore never trail-less. To capture an admin action you write **no audit code**:
+the type name is the label by default, or freeze it with `[AuditAction("admin.user.create",
+ResourceType="AdminUser")]` on the `Command` record (rename-proof; `Sensitive=true` for the
+before/after subset; `Audited=false` to opt a noisy command out). The five sensitive money/state
+handlers additionally push a typed, pre-redacted snapshot to scoped `IAuditContext.RecordChange(...)` —
+the behavior never computes a diff or references a domain type (T-0284). Never set an
+`AdminActionAudit` to `Modified`/`Deleted` (append-only, init-only).
+
 ## Entities (from `Core.Domain/Common/`)
 
 - `IEntity` = `{ object Id; bool IsActive; }`; `IEntity<T>` narrows `Id`/`IsActive`. IDs are strings.
@@ -338,3 +356,74 @@ A refund is the one side effect with both money and fiscal consequences, so it h
   A bundled service's gross comes from the `PackageService.PriceWeight` split of `Package.Price`.
 - **Partial loyalty clawback** uses the per-refund-keyed `ILoyaltyService.RevokeForPartialRefundAsync`
   (cumulative-capped, `UserId==null` skip), **not** the one-shot `RevokeForCancelledOrderAsync` mirror.
+
+## Tenancy is APP; region is INFRA — they are orthogonal (ADR-0017)
+
+Two isolation axes meet in this codebase, and they live in **different layers** — keep them there.
+
+- **Tenancy = an APP concern, and it already exists.** Tenant rows are isolated **logically** by the
+  global query filter in `CleansiaDbContext.ApplyTenantQueryFilters` (applied to every
+  `ITenantEntity` — `{ string? TenantId }`), driven by the `tenant_id` JWT claim resolved by
+  `TenantProvider`. The filter body is exactly
+  `tenantProvider == null || (currentTenantId == null && e.TenantId == null) || e.TenantId == currentTenantId`
+  — design-time bypass, the single-tenant `null/null` middle clause, then the multi-tenant happy path.
+  Cross-tenant work (background jobs, anonymous webhooks) is **explicit**: `tenantProvider.SetTenantOverride(...)`
+  or `IgnoreQueryFilters` (see the webhook/`IgnoreQueryFilters` memory notes). **This is the proven path;
+  do not move tenancy to infra (DB-per-tenant / schema-per-tenant) and do not touch the filter.**
+- **Region = an INFRA/config concern, and it is net-new.** Region answers *"which physical
+  deployment/DB does this request hit?"* — it never answers *"whose rows is this?"* There is **no
+  region concept in the domain or data model** (the only geography is `CountryConfiguration`, the
+  per-**market** seam). Region lives entirely in the Bicep/pipeline (a `region` parameter, the
+  `weu` name token) and, on the data side, in **one** connection-string resolver (T-0330) — today a
+  constant returning the single shared West-Europe DB.
+
+**The two compose, they do not conflict.** A tenant's rows are isolated by the filter **regardless**
+of which region's DB they sit in; a tenant has **exactly one home region** (its rows live in one
+region's DB), so `e.TenantId == currentTenantId` is sufficient *within* that DB and region selects
+*which DB*, not *which rows*.
+
+**Hard rules a reviewer enforces (ADR-0017):**
+- **Never add a region clause to the tenancy filter.** `ApplyTenantQueryFilters` stays `TenantId`-only.
+  `e.TenantId == tenant && e.Region == region` is a **conflation finding** — region is resolved
+  *before* the query (the connection-string resolver), never *inside* it.
+- **Never branch on a region code in a handler** — the same rule as "never branch on a country code in
+  a handler." Region (like country) is read from config / the resolver, never hard-coded. The CQRS
+  handlers, fiscal modes, the pay formula, and the per-audience hosts **do not change** for region;
+  they operate on whatever DB the resolver hands them.
+- **The DB connection string is chosen in exactly one place** (the resolver indirection, T-0330) — the
+  analogue of the `DeviceIdProvider` single-source rule. No handler/repo hard-codes a region or reaches
+  a second connection string. That single seam is what makes per-region DBs *later* a resolver change,
+  not an app rewrite.
+- The `CountryConfiguration.HomeRegion` **column is deferred** (a schema change → owner ef-migration,
+  gated on the first real second region); only the resolver indirection is laid now, keeping this wave
+  migration-free.
+
+## Deployment / IaC — Bicep, Key Vault refs + managed identity (ADR-0015)
+
+Deployment is **orthogonal to the domain** — no handler, config key, or connection-string slot changes
+for it — but every backend agent should know the shape so it never hard-codes what infra supplies:
+
+- **Bicep is the source of truth, in `deploy/bicep/`** (`main.bicep` + per-resource `modules/*.bicep`
+  + per-env `<region>.<stage>.bicepparam`, e.g. `weu.dev.bicepparam`). One reusable `appService` module
+  is instantiated **six times** — the **five** API hosts (partner, admin, customer, partner-mobile,
+  **customer-mobile** — the five-not-four correction; the old YAML omitted `Cleansia.Web.Mobile.Customer`)
+  plus the customer SSR. Adding a host/country/region is a new module instantiation + a param value, not
+  a bespoke block.
+- **Config flows as App Service settings that are Key Vault references** (`@Microsoft.KeyVault(SecretUri=...)`),
+  resolved at runtime by each host's **system-assigned managed identity** (Key Vault Secrets User; CI =
+  Secrets Officer). The App Service `__` → `:` mapping means the app reads its **existing** config keys
+  (`ConnectionStrings:ConnectionString`, `Stripe:SecretKey`, `SendGrid:ApiKey`, `Sentry:Dsn`, the two
+  storage slots) with **no code change** — do not add new config plumbing for this.
+- **Functions is a container from ACR** (mandatory — QuestPDF needs native `libfontconfig1`/`libfreetype6`;
+  a code/zip deploy fails PDF generation at runtime). **Storage is mandatory** (blob + queue + the
+  Functions runtime store).
+- **CI keeps OIDC + the migrate-before-deploy EF bundle.** The pipeline only *applies* an
+  already-committed migration; it never runs `migrations add` (schema authoring stays owner-gated —
+  `manual_step: ef-migration`). GitHub Environments are `dev-weu` (auto on merge) / `prod-weu` (protected:
+  required reviewers + manual approval).
+- **No real secret is ever committed** — see [`conventions.md`](./conventions.md). Bicep/param/YAML carry
+  Key Vault secret **names** only; values are owner/CI-populated into Key Vault.
+
+The living, evolving home for the topology diagram + dev/prod SKU table + resource→secret map is
+`agents/architecture/decisions/azure-deployment.md`; the tenancy↔region composition note is
+`agents/architecture/decisions/multi-tenancy-and-region.md`.

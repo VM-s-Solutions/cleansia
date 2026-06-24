@@ -64,7 +64,8 @@ public record AdminEmployeeDetail(
     DateTimeOffset? ApprovedAt,
     string? RejectedByUserId,
     DateTimeOffset? RejectedAt,
-    List<string> MissingFields
+    List<string> MissingFields,
+    string UserId
 );
 
 public record TimeRange(string Start, string End);

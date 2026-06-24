@@ -35,7 +35,7 @@ public class LoyaltyController(IMediator mediator) : CustomerMobileApiController
         [FromQuery] int limit = 20,
         CancellationToken cancellationToken = default)
     {
-        return await Mediator.Send(new GetLoyaltyActivity.Query(offset, limit), cancellationToken);
+        return await Mediator.Send(new GetLoyaltyActivity.Request { Offset = offset, Limit = limit }, cancellationToken);
     }
 
     [HttpGet("GetTiers")]

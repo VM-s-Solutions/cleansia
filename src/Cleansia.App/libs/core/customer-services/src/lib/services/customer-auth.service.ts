@@ -14,7 +14,6 @@ import {
   LogoutCommand,
   RefreshTokenCommand,
   RegisterCommand,
-  UserProfile,
 } from '../client/customer-client';
 import { setLocalStorageValueByKey } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
@@ -43,10 +42,7 @@ export class CustomerAuthService {
     rememberMe = false
   ): Observable<JwtTokenResponse> {
     return this.customerClient.authClient.login(
-      // trustedDeviceToken stays undefined: the trusted-device lockout bypass
-      // reads the raw refresh token server-side from the HttpOnly cookie
-      // (cookie wins, never JS-readable) — the browser must not supply it.
-      new LoginCommand({ email, password, rememberMe, trustedDeviceToken: undefined })
+      new LoginCommand({ email, password, rememberMe })
     );
   }
 
@@ -152,13 +148,7 @@ export class CustomerAuthService {
    */
   refreshSession(): Observable<boolean> {
     return this.customerClient.authClient
-      .refreshToken(
-        new RefreshTokenCommand({
-          token: '',
-          requiredProfile: UserProfile.Customer,
-          requiredAudience: undefined,
-        })
-      )
+      .refreshToken(new RefreshTokenCommand({ token: '' }))
       .pipe(
         tap((authResult) => this.setSession(authResult)),
         map(() => true)
@@ -214,9 +204,6 @@ export class CustomerAuthService {
   setSession(authResult: JwtTokenResponse): void {
     // Auth + refresh tokens land as HttpOnly cookies via Set-Cookie; we only
     // persist the JS-readable companions (role, csrf, refresh exp).
-    // NOTE: imports JwtTokenResponse from @cleansia/partner-services (legacy
-    // cross-app DTO source). That client hasn't been regenerated with the
-    // new Role field yet — defensive cast stays until partner regen runs.
     const role = (authResult as unknown as { role?: string }).role;
     if (role) {
       setLocalStorageValueByKey(this.cookieKeys.role, role);

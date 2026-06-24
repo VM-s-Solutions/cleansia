@@ -1,0 +1,55 @@
+<div class="cleansia-audit-resource-history">
+  <div class="cleansia-audit-resource-history__container page-wrapper">
+    <div class="cleansia-audit-resource-history__header">
+      <cleansia-button
+        [label]="'pages.audit_log.history.back' | translate"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="goBack()"
+      />
+      <cleansia-title [title]="'pages.audit_log.history.title' | translate" />
+      <p class="cleansia-audit-resource-history__description">
+        {{ 'pages.audit_log.history.description' | translate }}
+        <span class="cleansia-audit-resource-history__resource">
+          {{ resourceType() }} · {{ resourceId() }}
+        </span>
+      </p>
+    </div>
+
+    <cleansia-section>
+      @if (facade.initialLoading()) {
+      <cleansia-loader />
+      } @else if (facade.hasError()) {
+      <div class="cleansia-audit-resource-history__state">
+        <i class="pi pi-exclamation-triangle"></i>
+        <p>{{ 'pages.audit_log.load_error' | translate }}</p>
+      </div>
+      } @else {
+      <cleansia-table
+        [data]="facade.audits()"
+        [columns]="auditColumns"
+        [actions]="auditActions"
+        [config]="{
+          paginator: true,
+          rows: 20,
+          lazy: true,
+          totalRecords: facade.totalRecords(),
+          emptyMessage: 'pages.audit_log.history.no_audits',
+          hover: true
+        }"
+        [loading]="facade.loading()"
+        (pageChange)="onPageChange($event)"
+        (sortChange)="onSortChange($event)"
+      >
+      </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<ng-template #outcomeTemplate let-item>
+  <span [class]="getOutcomeClass(item)">
+    {{ getOutcomeLabelKey(item) | translate }}
+  </span>
+</ng-template>

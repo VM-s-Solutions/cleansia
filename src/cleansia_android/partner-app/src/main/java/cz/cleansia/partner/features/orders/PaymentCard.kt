@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
 
@@ -60,14 +61,14 @@ fun PaymentCard(
         if (hasBreakdown) {
             PaymentRow(
                 label = stringResource(R.string.payment_subtotal),
-                value = formatOrderMoney(subtotal!!, currencyCode),
+                value = formatOrderPrice(subtotal!!, currencyCode),
                 emphasis = false,
             )
             order.tierDiscountAmount?.takeIf { it > 0 }?.let {
                 Spacer(Modifier.height(4.dp))
                 PaymentRow(
                     label = stringResource(R.string.payment_tier_discount),
-                    value = "-${formatOrderMoney(it, currencyCode)}",
+                    value = "-${formatOrderPrice(it, currencyCode)}",
                     emphasis = false,
                     valueColor = MaterialTheme.colorScheme.primary,
                 )
@@ -76,7 +77,7 @@ fun PaymentCard(
                 Spacer(Modifier.height(4.dp))
                 PaymentRow(
                     label = stringResource(R.string.payment_membership_discount),
-                    value = "-${formatOrderMoney(it, currencyCode)}",
+                    value = "-${formatOrderPrice(it, currencyCode)}",
                     emphasis = false,
                     valueColor = MaterialTheme.colorScheme.primary,
                 )
@@ -85,7 +86,7 @@ fun PaymentCard(
                 Spacer(Modifier.height(4.dp))
                 PaymentRow(
                     label = stringResource(R.string.payment_promo_discount),
-                    value = "-${formatOrderMoney(it, currencyCode)}",
+                    value = "-${formatOrderPrice(it, currencyCode)}",
                     emphasis = false,
                     valueColor = MaterialTheme.colorScheme.primary,
                 )
@@ -98,7 +99,7 @@ fun PaymentCard(
         total?.let {
             PaymentRow(
                 label = stringResource(R.string.payment_total),
-                value = formatOrderMoney(it, currencyCode),
+                value = formatOrderPrice(it, currencyCode),
                 emphasis = true,
             )
         }

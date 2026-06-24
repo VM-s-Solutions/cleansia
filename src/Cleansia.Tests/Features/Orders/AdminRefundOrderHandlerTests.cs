@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -38,13 +39,16 @@ public class AdminRefundOrderHandlerTests
         _session.Setup(s => s.GetUserId()).Returns(AdminUserId);
     }
 
+    private readonly AuditContext _auditContext = new();
+
     private AdminRefundOrder.Handler CreateHandler() =>
         new(
             _orderRepository.Object,
             _refundRepository.Object,
             _refundService.Object,
             _session.Object,
-            _pending.Object);
+            _pending.Object,
+            _auditContext);
 
     private Order ArrangeOrder(
         OrderStatus latestStatus = OrderStatus.Confirmed,

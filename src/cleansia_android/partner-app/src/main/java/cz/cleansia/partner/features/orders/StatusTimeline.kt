@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.api.model.OrderStatus
@@ -60,7 +61,7 @@ fun StatusTimeline(
                 val isLast = index == history.lastIndex
                 TimelineRow(
                     label = labelForStatusName(entry.status?.name, entry.status?.value),
-                    timestamp = formatOrderDateTime(entry.createdOn) ?: "—",
+                    timestamp = formatOrderDateTime(entry.createdOn),
                     isCurrent = isLast,
                     isLastInList = isLast,
                 )

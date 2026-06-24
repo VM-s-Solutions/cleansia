@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Refunds;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -40,6 +41,8 @@ public class PartialRefundFeeRoundingTests
         _session.Setup(s => s.GetUserId()).Returns(AdminId);
     }
 
+    private readonly AuditContext _auditContext = new();
+
     private IssuePartialRefund.Handler CreateHandler() =>
         new(
             _orderRepository.Object,
@@ -48,6 +51,7 @@ public class PartialRefundFeeRoundingTests
             _refundService,
             _loyaltyService,
             _session.Object,
+            _auditContext,
             NullLogger<IssuePartialRefund.Handler>.Instance);
 
     private void ArrangeCountryFee(decimal? rate, decimal? fixedFee)

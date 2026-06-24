@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
 
@@ -79,7 +80,7 @@ fun ScopeCard(
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 services.forEach { name -> ScopeLineItem(label = name, value = null) }
                 packages.forEach { pkg ->
-                    val priceLabel = pkg.price?.let { formatOrderMoney(it, currencyCode) }
+                    val priceLabel = pkg.price?.let { formatOrderPrice(it, currencyCode) }
                     ScopeLineItem(
                         label = pkg.name?.takeIf { it.isNotBlank() } ?: "—",
                         value = priceLabel,

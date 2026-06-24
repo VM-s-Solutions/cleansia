@@ -1,8 +1,14 @@
+using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Shared.DTOs.RequestModels;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Sorting;
+using Cleansia.Core.Domain.Specifications;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using SortDefinition = Cleansia.Core.Domain.Sorting.Common.SortDefinition;
+using SortDirection = Cleansia.Core.Domain.Sorting.Common.SortDirection;
 
 namespace Cleansia.Core.AppServices.Features.Loyalty.Admin;
 
@@ -13,8 +19,10 @@ namespace Cleansia.Core.AppServices.Features.Loyalty.Admin;
 /// </summary>
 public class GetUserLoyaltyActivity
 {
-    public record Query(string UserId, int Offset = 0, int Limit = 20)
-        : IRequest<PagedData<ActivityItem>>;
+    public class Request : DataRangeRequest, IRequest<PagedData<ActivityItem>>
+    {
+        public string UserId { get; init; } = default!;
+    }
 
     public record ActivityItem(
         string Id,
@@ -29,26 +37,29 @@ public class GetUserLoyaltyActivity
     internal class Handler(
         ILoyaltyAccountRepository loyaltyAccountRepository,
         ILoyaltyTransactionRepository loyaltyTransactionRepository,
-        IOrderRepository orderRepository) : IRequestHandler<Query, PagedData<ActivityItem>>
+        IOrderRepository orderRepository) : IRequestHandler<Request, PagedData<ActivityItem>>
     {
-        public async Task<PagedData<ActivityItem>> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<PagedData<ActivityItem>> Handle(Request request, CancellationToken cancellationToken)
         {
-            var pageNumber = request.Limit > 0 ? (request.Offset / request.Limit) + 1 : 1;
-
             if (string.IsNullOrEmpty(request.UserId))
             {
-                return new PagedData<ActivityItem>(pageNumber, request.Limit, 0, Array.Empty<ActivityItem>());
+                return Enumerable.Empty<ActivityItem>().MapToDto(0, request);
             }
 
             var account = await loyaltyAccountRepository.GetByUserIdAsync(request.UserId, cancellationToken);
             if (account == null)
             {
-                return new PagedData<ActivityItem>(pageNumber, request.Limit, 0, Array.Empty<ActivityItem>());
+                return Enumerable.Empty<ActivityItem>().MapToDto(0, request);
             }
 
-            var total = await loyaltyTransactionRepository.CountForAccountAsync(account.Id, cancellationToken);
-            var txs = await loyaltyTransactionRepository.GetForAccountAsync(
-                account.Id, request.Offset, request.Limit, cancellationToken);
+            var specification = LoyaltyTransactionSpecification.Create(loyaltyAccountId: account.Id);
+            var filter = specification.SatisfiedBy();
+
+            var total = await loyaltyTransactionRepository.GetCountAsync(filter, cancellationToken);
+            var txs = await loyaltyTransactionRepository
+                .GetPagedSort<LoyaltyTransactionSort>(request.Offset, request.Limit, filter, ResolveSort(request))
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
 
             var orderIds = txs
                 .Where(t => !string.IsNullOrEmpty(t.OrderId))
@@ -76,7 +87,17 @@ public class GetUserLoyaltyActivity
                     OccurredOn: t.OccurredOn))
                 .ToList();
 
-            return new PagedData<ActivityItem>(pageNumber, request.Limit, total, items);
+            return items.MapToDto(total, request);
+        }
+
+        // Preserves the historical newest-first default: the bespoke repo ordered by
+        // OccurredOn desc, and the empty-sort GetPagedSort path applies no ordering.
+        private static IEnumerable<SortDefinition> ResolveSort(Request request)
+        {
+            var sort = request.Sort.MapToDomain().ToList();
+            return sort.Count > 0
+                ? sort
+                : [new SortDefinition { Field = nameof(LoyaltyTransaction.OccurredOn), Direction = SortDirection.Descending }];
         }
     }
 }

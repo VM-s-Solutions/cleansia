@@ -20,6 +20,9 @@ public static class ConfigurationExtensions
         // Outbox drainer tunables (batch size / retry ceiling / backoff base),
         // bound from the "OutboxDrainer" section.
         services.AddSingleton<IOutboxDrainerConfig, OutboxDrainerConfig>();
+        // Outbox retention-prune tunables (toggle + retention windows + batch size),
+        // bound from the "OutboxRetention" section.
+        services.AddSingleton<IOutboxRetentionConfig, OutboxRetentionConfig>();
 
         return services;
     }

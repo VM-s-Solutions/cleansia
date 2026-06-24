@@ -150,6 +150,31 @@ guardrails against catalog bloat — the same "earns its place" test as any abst
 > `request.GetType().Name.EndsWith("Command")`. Misname a command record (e.g. `.Request`) and the
 > row is **silently not saved**. Always end command record types with `Command`.
 
+### Deployment / infra naming (ADR-0015 + ADR-0017)
+
+Azure resource names are **immutable** — getting the seam in at clean-slate is free; retrofitting it
+later forces a recreate of live resources. So from day one:
+
+- **A region token in every resource / RG / Key Vault name.** Names carry `weu` (the default region):
+  `api-cleansia-<audience>-weu-dev`, `web-cleansia-customer-weu-dev`, `rg-cleansia-weu-dev`,
+  `pg-cleansia-weu-dev`, `kv-cleansia-weu-dev`, … A name **without** a region token is a finding — it
+  cannot coexist with a second region without a rename. A second region is then a new token *value*
+  (`eus`, `neu`, …), not a rename of the live `weu` resources.
+- **`region` is a Bicep parameter** (default `weu`), threaded through every module that emits a name or
+  an Azure `location` — the modules are otherwise unchanged (no per-region forks). `env` (`dev`/`prod`)
+  is the other axis; they compose. Param files are named **`<region>.<stage>.bicepparam`**
+  (e.g. `weu.dev.bicepparam`).
+- **GitHub Environments are `<stage>-<region>`** — `dev-weu` (auto on merge) / `prod-weu` (protected:
+  required reviewers + manual approval), never bare `dev` / `prod`. A second region is `dev-eus` /
+  `prod-eus`, additive. Each Environment carries its own per-region secrets + protection.
+- **The deploy workflows fan out via a one-element `strategy.matrix.region: [weu]`** — a no-op today,
+  but adding a region becomes a one-line list change, not a workflow restructure.
+
+The litmus test: *would adding a second region rename/recreate any live `weu` resource, restructure the
+workflow, or change the tenancy filter?* The answer must be **no** — only a new param value + a matrix
+entry + an owner `HomeRegion` column-migration. Region is INFRA/config; tenancy stays the unchanged
+app-level `TenantId` filter (see [`patterns-backend.md`](./patterns-backend.md)).
+
 ## Owner-only steps (agents flag, never run)
 
 - **EF Core migrations** — flag `manual_step: ef-migration`, describe the schema delta.
@@ -157,7 +182,13 @@ guardrails against catalog bloat — the same "earns its place" test as any abst
   changes; hold dependent frontend/mobile work until the owner confirms.
 - **DB seed edits** (`sql-scripts/insert_seed_data.sql`) — seeds carry tenant/user ids matched to
   dev tooling; don't touch without explicit owner approval.
-- **Real secrets** — never in `appsettings*.json`. User-secrets on dev, env vars on prod.
+- **Real secrets** — never in `appsettings*.json`, **and never in Bicep, a `.bicepparam`, or a workflow
+  YAML** (ADR-0015). Infra-as-code carries Key Vault secret **names** + reference URIs
+  (`@Microsoft.KeyVault(SecretUri=...)`) only; the **values** are owner/CI-populated into Key Vault (the
+  Postgres admin *password* and every KV-backed secret are supplied at deploy time via `getSecret` / a
+  CI secret, never a literal). The Postgres admin *login name* and SKUs/regions are non-secret and may
+  sit in the param file. A literal secret in any of these is a blocking finding. User-secrets on dev,
+  env vars / Key Vault on prod.
 - **Committing / pushing** — leave changes uncommitted unless the owner explicitly asks.
 
 ## Localization (5 languages)

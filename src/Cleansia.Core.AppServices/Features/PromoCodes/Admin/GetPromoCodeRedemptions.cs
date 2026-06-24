@@ -1,7 +1,15 @@
 using Cleansia.Core.AppServices.Features.PromoCodes.Admin.DTOs;
+using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Shared.DTOs.RequestModels;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Sorting;
+using Cleansia.Core.Domain.Specifications;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using SortDefinition = Cleansia.Core.Domain.Sorting.Common.SortDefinition;
+using SortDirection = Cleansia.Core.Domain.Sorting.Common.SortDirection;
 
 namespace Cleansia.Core.AppServices.Features.PromoCodes.Admin;
 
@@ -11,38 +19,43 @@ namespace Cleansia.Core.AppServices.Features.PromoCodes.Admin;
 /// </summary>
 public class GetPromoCodeRedemptions
 {
-    public record Query(string PromoCodeId, int Offset = 0, int Limit = 20)
-        : IRequest<PagedData<PromoCodeRedemptionListItem>>;
+    public class Request : DataRangeRequest, IRequest<PagedData<PromoCodeRedemptionListItem>>
+    {
+        public string PromoCodeId { get; init; } = default!;
+    }
 
     internal class Handler(IPromoCodeRedemptionRepository redemptionRepository)
-        : IRequestHandler<Query, PagedData<PromoCodeRedemptionListItem>>
+        : IRequestHandler<Request, PagedData<PromoCodeRedemptionListItem>>
     {
-        public async Task<PagedData<PromoCodeRedemptionListItem>> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<PagedData<PromoCodeRedemptionListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
-            var pageNumber = request.Limit > 0 ? (request.Offset / request.Limit) + 1 : 1;
-
             if (string.IsNullOrEmpty(request.PromoCodeId))
             {
-                return new PagedData<PromoCodeRedemptionListItem>(
-                    pageNumber, request.Limit, 0, Array.Empty<PromoCodeRedemptionListItem>());
+                return Enumerable.Empty<PromoCodeRedemptionListItem>().MapToDto(0, request);
             }
 
-            var total = await redemptionRepository.CountByPromoCodeAsync(request.PromoCodeId, cancellationToken);
-            var items = await redemptionRepository.GetPagedByPromoCodeAsync(
-                request.PromoCodeId, request.Offset, request.Limit, cancellationToken);
+            var specification = PromoCodeRedemptionSpecification.Create(promoCodeId: request.PromoCodeId);
+            var filter = specification.SatisfiedBy();
 
-            var data = items
-                .Select(r => new PromoCodeRedemptionListItem(
-                    Id: r.Id,
-                    PromoCodeId: r.PromoCodeId,
-                    UserId: r.UserId,
-                    UserEmail: r.User?.Email,
-                    OrderId: r.OrderId,
-                    AppliedDiscount: r.AppliedDiscount,
-                    RedeemedOn: r.RedeemedOn))
-                .ToList();
+            var total = await redemptionRepository.GetCountAsync(filter, cancellationToken);
+            var data = await redemptionRepository
+                .GetPagedSort<PromoCodeRedemptionSort>(request.Offset, request.Limit, filter, ResolveSort(request))
+                .Include(r => r.User)
+                .AsNoTracking()
+                .Select(redemption => redemption.MapToRedemptionListItem())
+                .ToListAsync(cancellationToken);
 
-            return new PagedData<PromoCodeRedemptionListItem>(pageNumber, request.Limit, total, data);
+            return data.MapToDto(total, request);
+        }
+
+        // Preserves the historical newest-first default: the bespoke repo ordered by
+        // RedeemedOn desc, and the empty-sort GetPagedSort path applies no ordering.
+        private static IEnumerable<SortDefinition> ResolveSort(Request request)
+        {
+            var sort = request.Sort.MapToDomain().ToList();
+            return sort.Count > 0
+                ? sort
+                : [new SortDefinition { Field = nameof(PromoCodeRedemption.RedeemedOn), Direction = SortDirection.Descending }];
         }
     }
 }

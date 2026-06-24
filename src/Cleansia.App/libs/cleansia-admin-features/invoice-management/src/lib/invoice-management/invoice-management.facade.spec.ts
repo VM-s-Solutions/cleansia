@@ -123,6 +123,30 @@ describe('InvoiceManagementFacade', () => {
     expect(facade.retryingPdf()).toBe(false);
   });
 
+  it('falls back to result.title when detail is absent on retry failure', () => {
+    invoiceClient.regeneratePdf.mockReturnValue(
+      throwError(() => ({ result: { title: 'payroll.invoice.not_found' } }))
+    );
+
+    facade.retryPdf(invoice);
+
+    expect(snackbar.showError).toHaveBeenCalledWith(
+      'errors.payroll.invoice.not_found'
+    );
+  });
+
+  it('parses the error code from a JSON response string on retry failure', () => {
+    invoiceClient.regeneratePdf.mockReturnValue(
+      throwError(() => ({
+        response: JSON.stringify({ detail: 'company.not_found' }),
+      }))
+    );
+
+    facade.retryPdf(invoice);
+
+    expect(snackbar.showError).toHaveBeenCalledWith('errors.company.not_found');
+  });
+
   it('falls back to a generic error for unknown retry failures', () => {
     invoiceClient.regeneratePdf.mockReturnValue(
       throwError(() => ({ result: { detail: 'something.unexpected' } }))

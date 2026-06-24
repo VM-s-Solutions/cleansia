@@ -28,7 +28,7 @@ public class AdminMembershipController(IMediator mediator) : ApiController(media
         CancellationToken cancellationToken = default)
     {
         var result = await Mediator.Send(
-            new GetPagedMembershipPlans.Query(active, search, offset, limit),
+            new GetPagedMembershipPlans.Request { Active = active, Search = search, Offset = offset, Limit = limit },
             cancellationToken);
         return Ok(result);
     }

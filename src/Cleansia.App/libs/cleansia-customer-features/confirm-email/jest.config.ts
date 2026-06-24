@@ -1,8 +1,8 @@
 export default {
   displayName: 'cleansia-customer-confirm-email',
-  preset: '../../../../jest.preset.js',
-  setupFilesAfterSetup: ['<rootDir>/src/test-setup.ts'],
-  coverageDirectory: '../../../../coverage/libs/cleansia-customer-features/confirm-email',
+  preset: '../../../jest.preset.js',
+  setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+  coverageDirectory: '../../../coverage/libs/cleansia-customer-features/confirm-email',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [
       'jest-preset-angular',

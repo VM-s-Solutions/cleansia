@@ -10,6 +10,195 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## 🟦 WAVE 11 — Azure DEV deployment: Bicep IaC + region seam (ADR-0015/0017) — AGENT AUTHORING DONE; OWNER PROVISIONING PENDING (2026-06-23)
+> **The agent-authorable half of Wave 11 is DONE, reviewed/verified, committed + pushed (`38a10375` on
+> `feature/wave8-pre-ios-cleanup`).** The whole platform now has a clean-slate Bicep source-of-truth at
+> `deploy/bicep/` (the iOS-pivot enabler — a stable dev API the Mac points at instead of running all five
+> hosts + Functions + Postgres + Azurite locally). **6 tickets `done`** (T-0315, T-0316, T-0319, T-0321,
+> T-0322, T-0330); **3 OWNER-provisioning tickets `blocked`** on the owner (T-0317, T-0318, T-0320). Full
+> plan + the agent-vs-owner split + the OWNER PROVISIONING CHECKLIST: **`status/sprint-13.md`**.
+>
+> **What shipped (`38a10375`):** `main.bicep` (386 lines) + **10 modules** (appServicePlan B2 Linux,
+> reusable appService, staticWebApp, functionApp container/ACR, acr, postgres B1ms, storage LRS, keyVault
+> RBAC, roleAssignments, appInsights + Log Analytics) — **FIVE** API hosts incl.
+> `api-cleansia-customer-mobile-weu-dev` (the host the old YAML omitted, the iOS customer app needs); **no
+> secret value committed** (Key Vault refs + a `@secure()` Postgres password from a CI secret);
+> least-priv MI (KV Secrets User / Storage data roles / AcrPull; CI = Secrets Officer); HTTPS-only +
+> firewalled Postgres + mobile-host CORS closed; the **ADR-0017 region seam** (`region` param default
+> `weu`, the `weu` token in every name, a region→location map). `weu.dev.bicepparam` + `weu.prod.bicepparam`
+> (**prod authored, NOT deployed**). `deploy-dev.yml` rewritten (Bicep provision gate: what-if on PR /
+> create on push; OIDC + the EF-migration bundle preserved; parallelized deploys behind the migrate edge;
+> `matrix.region:[weu]`; `dev-weu` Environment; all five hosts). The **T-0330** region connection-string
+> resolver (`IRegionConnectionStringResolver` + `RegionConnectionStringResolver`, the ADR-0017 data seam —
+> one resolution point, behavior-preserving, **tenancy filter untouched**, no schema change).
+>
+> **Security gate PASSED on the module set (T-0315).** Reviewer-per-developer held — **except** the
+> in-workflow StructuredOutput report tool failed (retry cap) on the **T-0319** and **T-0330** dev agents;
+> that is a **REPORTING** failure, not a work failure (the work landed on disk), so the orchestrator
+> **gated those two BY HAND** (read the resolver + CI; built `Cleansia.Config` 0 errors; secret-scanned;
+> confirmed tenancy untouched + 5 hosts + OIDC/migration/provision gate). T-0319 + T-0330 are
+> **verified-done** despite their in-workflow reviewer not running. Process lesson reinforced in
+> `quality-gates.md` (3 occurrences across 2 waves now → standing rule + keep `buildEvidence`/`verifyEvidence` SHORT).
+>
+> | ID | Title | Size | Status | Phase | depends_on | Layers | sec | manual_step |
+> |----|-------|------|--------|-------|-----------|--------|-----|-------------|
+> | **T-0315** | Bicep skeleton + 10 reusable modules (`main.bicep`; five hosts incl. customer-mobile; KV-ref only; region-token names) | M (filed L→split) | **done ✅** `38a10375` | 0 FIRST | — | infra, backend, db | **yes** (PASS) | — |
+> | **T-0316** | `weu.dev.bicepparam` + region/env-param wiring (five host names, dev SKUs, CORS, firewall) | M | **done ✅** `38a10375` (PASS-WITH-NOTES) | 0 | T-0315✓ | infra | no | — |
+> | **T-0317** | **OWNER** — GitHub Environments (`dev-weu`/`prod-weu`) + flat-secret migration into per-env scopes | S | **blocked** (OWNER) | 1 | — | infra, docs | yes | **gh-environments + secret-migration** |
+> | **T-0318** | **OWNER** — Key Vault values + RBAC grants + run/approve the first dev `az deployment` | M | **blocked** (OWNER) | 2 | T-0315✓, T-0316✓, T-0317 | infra | yes | **kv-secret-values + rbac-grants + az-deployment** |
+> | **T-0319** | Rewrite `deploy-dev.yml` — Bicep-gated, OIDC + EF-bundle preserved, parallelized, 5 hosts, `dev-weu` | M | **done ✅** `38a10375` (**hand-gated** — SO report failed) | 2 | T-0315✓, T-0316✓ | infra, backend | no | — |
+> | **T-0320** | Dev smoke + verification (5 APIs + SSR + 2 SPAs + Functions; queue→Functions live) — **needs the env up** | M | **blocked** (on T-0318 owner) | 2 | T-0318, T-0319✓ | infra, backend, qa | no | — |
+> | **T-0321** | Catalog + living-doc edits (deployment/IaC pattern + tenancy=app/region=infra orthogonality) | S | **done ✅** `38a10375` | 2 | T-0315✓ | docs, architect | no | — |
+> | **T-0322** | Author prod Bicep — `weu.prod.bicepparam` — **NOT DEPLOYED** | M | **done ✅** `38a10375` (authored, not deployed) | 3 | T-0315✓, T-0316✓ | infra, db | no | — |
+> | **T-0330** | Connection-string resolver indirection (ADR-0017 data seam — one place, behavior-preserving, tenancy untouched) | S | **done ✅** `38a10375` (**hand-gated** — SO report failed) | 0 ∥ | — | backend | no | — |
+>
+> **Owner provisioning prerequisites (the path to a live dev env):** **T-0317** (create the `dev-weu`
+> auto + `prod-weu` protected Environments, migrate the flat `*_DEV`/`*_PRO` secrets) → **T-0318**
+> (populate the Key Vault values, grant CI = Secrets Officer + the MI roles, run the dev
+> `az deployment group create`) → **T-0320** runs once the env is live (the smoke that confirms the five
+> `api-cleansia-*-weu-dev` hosts are up — the iOS-pivot enabler). The agent **never** runs these — the
+> exact ordered owner steps are on the OWNER PROVISIONING CHECKLIST (`status/sprint-13.md` §7 + the PM's
+> checkpoint relay). **Q-INFRA-01/02/03 + Q-REGION-01/02/03 are all non-blocking for the dev provision**
+> (tracked with their defaults in `questions/open.md`); prod (T-0322) is authored-not-deployed.
+>
+> --- (Wave-9 banner below) ---
+>
+> ## 🟣 WAVE 9 PLANNED — Admin Action Audit Log (ADR-0012, planned 2026-06-22) — backlog only, not yet dispatched
+> **ADR-0012 (`adr/0012-admin-action-audit-log.md`) is `accepted`.** Owner approved building the **full**
+> audit-log feature now (backend + admin UI + tests). **7 tickets filed (T-0282…T-0288).** Full plan —
+> wave table, the 6-piece→5-ticket mapping, dependency-ordered batches, lanes (the Policy.cs/PolicyBuilder
+> cluster = one writer), the owner manual-steps bundle B1, and the Q-AUDIT-01 default resolution:
+> **`status/sprint-11.md`**. No code, no commits yet.
+>
+> **Q-AUDIT-01 RESOLVED (owner's "default now, ratify before prod"):** retention = **keep audit rows
+> indefinitely, no auto-prune** (a window is a separate pre-prod call); PII = snapshots store **ids +
+> changed fields only, never raw subject PII**; the GDPR-delete audit keeps **actor + scope + subject id**
+> and **legitimately survives** the subject's erasure (legal-basis exception). Moved open→answered; the
+> exact window + redaction list is a **pre-PROD readiness-checklist** ratification, not a blocker. Baked
+> into T-0282 / T-0284 / T-0287.
+>
+> **Reviewer-per-developer on every ticket. Security gate on T-0283 / T-0284 / T-0285** (the compliance/
+> authz seam). QA on all. No `L` tickets (the ADR's 6-piece outline → 5 feature tickets; the test bundle
+> is test-first inside each per the ADR test list).
+>
+> | ID | Title | Size | Status | Batch | depends_on | Layers | sec | manual_step |
+> |----|-------|------|--------|-------|-----------|--------|-----|-------------|
+> | **T-0282** | `AdminActionAudit` entity + EF config (TenantId + global filter + 4 indexes) + migration | M | **ready** | **9A FIRST/ALONE** | — | db, backend | no | **ef-migration** |
+> | **T-0283** | `AuditLogBehavior` (inner-to-UoW, atomic) + `IAuditContext` + `IAuditFailureSink` + `[AuditAction]` + generic capture | M | **ready** | 9B | **T-0282** | backend | **yes** | — |
+> | **T-0284** | Sensitive-five before/after snapshots via `IAuditContext` (typed, pre-redacted, no raw subject PII) | M | **ready** | 9C | **T-0283** | backend | **yes** | — |
+> | **T-0285** | `GetPagedAdminActionAudits` query (canonical `PagedData`) + new `AdminOnly` view policy (**owns Policy.cs/PolicyBuilder**) | M | **ready** | 9B | **T-0282** | backend | **yes** | **nswag-regen** |
+> | **T-0286** | Admin `audit-log` feature lib (facade+signals+`cleansia-table`, filters, 5 locales, per-resource history) | M | **ready** (held on regen) | 9D | **T-0285** + regen | frontend | no | **nswag-regen** |
+> | **T-0287** | Outbox retention-prune timer — Dispatched `OutboxMessage` + old `ProcessedMessage` rows (config-driven) | S | **ready** | independent | — | backend | no | — |
+> | **T-0288** | Fix latent broken `order-management.component.spec.ts` (HttpClient inject — no test provider) | S | **ready** | independent | — | frontend | no | — |
+>
+> **Lanes/serialization:** **9A (T-0282) lands FIRST/ALONE** on the schema — the `AdminActionAudit` table
+> is the spine; hold 9B/9C/9D until the owner confirms the migration. **9B = T-0283 ∥ T-0285** (disjoint
+> files — behavior vs query+policy). **9C = T-0284** after T-0283 (serialize per sensitive-handler file,
+> one writer each). **9D = T-0286** after T-0285 **and** the owner admin nswag-regen (facade authored
+> test-first, held from `done` until regen + admin prod-build clean). **T-0285 is the SOLE writer of
+> Policy.cs/PolicyBuilder.cs this wave** (both move together or `AssertComplete` fails boot). **T-0287 +
+> T-0288 are independent** — fan out from day 1. **Owner manual-steps BUNDLE B1** (run once): the T-0282
+> ef-migration (table + 4 indexes; PROD = `CONCURRENTLY`), then the T-0285 admin nswag-regen + all-three
+> prod-builds → releases T-0286. **T-0281 (E2E sibling smokes) stays in Wave 8's close, NOT this wave.**
+>
+> --- (Wave-8 banner below) ---
+>
+> ## ✅ WAVE 8 CLOSED — Pre-iOS Cleanup (closed 2026-06-23) — 9/10 done; T-0280 + T-0279 carried
+> **The E2E layer is decided + green; the pre-iOS contract surface is deduplicated + canonical.** The
+> last two open items — **T-0271** (customer booking→checkout smoke) + **T-0281** (partner/admin sibling
+> smokes) — are now **`done`** (real Playwright specs driving the actual UIs, network-stub seam @ the
+> `/api/**` boundary, new `e2e-smoke` job in `frontend-ci.yml`; owner re-ran the customer smoke green
+> `1 passed, 42.1s`). They join T-0272–T-0278 (8 earlier closures). **Honest caveats (non-blocking):**
+> **T-0281's smokes were narrowed to login-and-land** — the partner job-accept transition (its AC1) and
+> the admin seeded-row (its AC2) were not asserted under the empty-list stub → depth carried to **T-0293**,
+> not silently passed. **T-0280** (FE comment cleanup, `ready`, deps satisfied) was **never dispatched** —
+> it is a genuine open Wave-8 leftover and the **top of the next batch**. **T-0279** stays `blocked` on the
+> separate IMP-3 regen. Per `status/sprint-10.md` §7 neither gates close. Full close summary +
+> reconciled final states + the close-out follow-ups: **`status/sprint-10.md` 🏁 WAVE 8 CLOSE**.
+>
+> **Close-out follow-ups filed 2026-06-23 (the un-ticketed audit-log follow-ups + the E2E nit/depth):**
+> **T-0289** (audit drill-in entry points, S, ready) · **T-0290** (single-row before/after audit diff +
+> new endpoint, M, **sec**, **nswag-regen**, ready) · **T-0291** (consistency.md disputes-archetype note,
+> XS, docs, ready) · **T-0292** (NG8102 dead `?? 0` cleanup, XS, ready) · **T-0293** (E2E partner
+> accept-job + admin seeded-row depth, S, ready). Rows in the close-out table below this banner.
+>
+> **The audit-driven program (Waves 0–7) is closed + merged. Wave 8 is a discrete pre-iOS cleanup wave.**
+> Scope = `audits/AUDIT-2026-06-22-pre-ios-cleanup.md` (13 findings) + owner points P1–P4. **10 tickets
+> filed (T-0272…T-0281).** Full plan — wave table, dependency-ordered batches, lanes, the owner
+> manual-steps bundle, the reconciliation notes: **`status/sprint-10.md`**.
+>
+> **Reconciliation headlines (honest):** `GetPagedDisputes` **REFUTED** as a paged offender (it is
+> canonical A1–A8). `GetPagedMembershipPlans` **IS** an offender the audit MISSED but the tool flags →
+> added to T-0273; net genuine paged offenders = **7 live** (not 6). P4's "add an A* rule" → **already
+> satisfied** by the existing A1/A5 rules; the real gap was the offenders were never ticketed +
+> `consistency-violations.md` was stale (the **meta-finding**, now recorded in F1b). Findings #12→T-0273,
+> #13→T-0275 folded. Nothing else refuted.
+>
+> **Reviewer-per-developer on every ticket. Security gate on T-0272 only. QA on all.** No `L` tickets.
+>
+> | ID | Title | Size | Status | Batch | depends_on | Layers | sec | manual_step |
+> |----|-------|------|--------|-------|-----------|--------|-----|-------------|
+> | **T-0272** | Auth wire-contract shrink — `trustedDeviceToken` mobile-only + drop `RefreshToken` server fields (P1 + #9) | M | **done ✅** | **8A FIRST/ALONE** | — | architect, backend | **yes** | **nswag-regen** (all clients) ✓ |
+> | **T-0273** | Canonicalize 7 bespoke paged queries → DataRangeRequest+Spec+Sort+PagedData (P4, #4/#5/#6/#12 + missed GetPagedMembershipPlans) | M | **done ✅** | 8B | — | backend | no | — |
+> | **T-0274** | Dedup API error-key extractor across 8 facades → shared `@cleansia/services` helper (#1) | M | **done ✅** | 8B | — | frontend | no | — |
+> | **T-0275** | Delete dead paged dups (GetAllEmployees, GetUserByEmail) + LOW drift cluster (#7/#8/#13) | S | **done ✅** | 8B | — | backend | no | — |
+> | **T-0276** | Extract `SitewidePushFormFacade` → generated client + UnsubscribeControlDirective (#10) | S | **done ✅** | 8B | — | frontend | no | — |
+> | **T-0277** | Hoist partner-app order formatters onto `:core` (#2) | S | **done ✅** | 8B (`:core` lane) | — | android | no | — |
+> | **T-0278** | Hoist push-token cluster into `:core` behind `DeviceRegistrationClient` (#3) | M | **done ✅** | 8B (`:core` lane) | — | android | no | — |
+> | **T-0279** | admin-pay-config.service → generated `AdminPayConfigClient` (#11) | S | **blocked** (IMP-3 regen) — CARRIED | — (not runnable) | — | frontend | no | **nswag-regen** (rides IMP-3) |
+> | **T-0280** | Strip comment noise (FE auth services + audit pockets) (P2) | S | **ready** (OPEN — never dispatched; **top of next batch**) | 8C | **T-0272** ✓ + regen ✓ | frontend, backend | no | — |
+> | **T-0281** | E2E sibling smokes — partner accept-job + admin login-and-land (P3) | M | **done ✅** (narrowed → T-0293) | 8C | **T-0271** ✓ | frontend, backend | no | — |
+>
+> **Lanes/serialization:** **8A (T-0272) landed FIRST/alone** — shrank the wire contract; the owner regen
+> bundle B1 was confirmed. **8B fanned out concurrently** (T-0273–T-0278, all `done`; T-0277↔T-0278
+> serialized on `:core`). **8C:** **T-0281 `done`** (on T-0271); **T-0280 stayed `ready` and was never
+> dispatched** (its T-0272+regen deps are satisfied — it is the runnable Wave-8 leftover, top of the next
+> batch). **T-0279 stays `blocked`** on the separate IMP-3 regen — does NOT gate Wave-8 close. **T-0271**
+> (customer E2E smoke) is the foundation T-0281 reused; both `done` 2026-06-23.
+>
+> **Wave-8 CLOSE-OUT follow-ups — POST-ADMIN-REGEN BATCH CLOSED 2026-06-23 (2 more commits on
+> `feature/wave8-pre-ios-cleanup`: `093ed944` FE + `7097d837` BE, pushed; orchestrator-verified on the
+> combined tree). T-0290 is now FULLY `done` — BOTH halves end-to-end (the FE before/after diff view
+> shipped against the regenerated `AdminAuditLogClient.getById`; `nx build cleansia-admin.app` prod clean,
+> `nx test audit-log` 24/24, `nx build cleansia-partner.app` clean — **ADR-0012 follow-up (b) CLOSED**).
+> T-0294 `done`. T-0295 BACKEND half `done`+verified (additive `AdminEmployeeDetail.UserId` + mapper +
+> test 2/2); its FE half (employee-page drill-in) is HELD on a **2nd** owner admin nswag-regen for the new
+> `UserId` field (mirrors how T-0286 / T-0290-FE were held). All six close-out follow-ups (T-0289…T-0293)
+> `done`; of the two batch-close follow-ups T-0294 `done`, T-0295 `in_review`. A StructuredOutput-vs-on-disk
+> process lesson recorded in `quality-gates.md` (a failed final-report call ≠ failed work — gate the tree
+> by hand; keep buildEvidence concise).**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+> |----|-------|------|--------|-----------|--------|-----|-------------|--------|
+> | **T-0289** | Per-detail-page drill-in → per-resource audit-history view (additive wiring of T-0286's shipped route) | S | **done ✅** `916014cb` | T-0286✓ | frontend | no | — | ADR-0012 follow-up (a) (T-0286 close) |
+> | **T-0290** | Single-row before/after audit diff view + **new single-row backend endpoint** (snapshots off the PII-min list cut) | M | **done ✅** `093ed944` (BE `516e71c9` + FE `093ed944`; both halves, sec **PASS**) | T-0284✓, T-0285✓, T-0286✓ | backend, frontend | **yes** | **nswag-regen (admin) — DONE ✓** | ADR-0012 follow-up (b) (T-0286 close; ADR-0012 D4.1) — **CLOSED** |
+> | **T-0291** | consistency.md note — prefer the disputes-management list archetype for new admin lists | XS | **done ✅** `916014cb` | — | docs | no | — | ADR-0012 follow-up (c) |
+> | **T-0292** | Remove dead `?? 0` on non-nullable `extra.price` in `wizard-summary-step` (NG8102) | XS | **done ✅** `916014cb` | — | frontend | no | — | Wave-8 8C E2E dev-server boot |
+> | **T-0293** | E2E depth — partner accept-job transition + admin seeded-row (the T-0281 narrowed slice) | S | **done ✅** `916014cb` | T-0281✓ | frontend, backend | no | — | T-0281 close (AC1/AC2 narrowed) |
+>
+> **Batch-close follow-ups (filed 2026-06-23):**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+> |----|-------|------|--------|-----------|--------|-----|-------------|--------|
+> | **T-0294** | Remove now-unused `private readonly router` + `Router` import in `confirm-email.component.ts` (lint doesn't flag unused private members) | XS | **done ✅** `093ed944` | T-0280✓ | frontend | no | — | T-0280 latent smell (comment removal orphaned the injection) |
+> | **T-0295** | Add `UserId` to `AdminEmployeeDetail` → enable the User-typed audit drill-in from the employee page | XS | **in_review** (BACKEND done+verified `7097d837`; **FE half HELD on a 2nd admin regen**) | T-0289✓ | backend, frontend | no | **nswag-regen (admin) — PENDING ON OWNER (2nd regen, for `AdminEmployeeDetail.UserId`)** | T-0289 deviation (employee page exposes `Employee.Id`, audit keys on `User.Id`) |
+>
+> **Parallel-shared-file lesson recorded** (`quality-gates.md` §"Serialize shared-file lanes …" + cross-ref
+> in `routing.md` rule 3): in this batch T-0291 + T-0289 both edited `consistency.md` in parallel and
+> T-0292's fix-agent ran `git restore consistency.md`, wiping T-0291's note (orchestrator restored it by
+> hand). Future batches **serialize shared-file lanes** (`consistency.md`, `INDEX.md`, i18n bundles,
+> `Policy.cs`/`PolicyBuilder.cs`) and **ban shared-file `git restore` in parallel agents**.
+>
+> ⚠️ **OWNER — admin nswag-regen PENDING (1 left):** the **T-0290** regen (the
+> `AdminActionAuditDetailDto` + `GetAdminActionAuditById` endpoint) **LANDED** and released T-0290's FE
+> half (now `done`). What remains is a **2nd admin nswag-regen for T-0295** — the new
+> `AdminEmployeeDetail.UserId` field (added in the later backend commit `7097d837`, after the first regen)
+> → it releases T-0295's FE half (the employee-page audit drill-in). After the regen run all three web
+> prod-builds per quality-gates §after-regen. **Separately, `T-0279` still waits on the unrelated IMP-3
+> admin regen** (a distinct, pre-existing owner item — not the same as the T-0295 regen).
+>
+> --- (Waves 0–7 close banner below, kept for traceability) ---
+>
 > ## 🏁 ALL WAVES (0–7) COMPLETE — the entire audit-driven program backlog is DONE (2026-06-21)
 > **Every ticketed wave is closed.** Waves 0–6 + the T-0197 mobile slice + T-0264/T-0265 are merged to
 > `master` (tip `b9e91cd8`, PR #81). **Wave 7 (Android consistency debt) is now COMPLETE** — 4 tickets

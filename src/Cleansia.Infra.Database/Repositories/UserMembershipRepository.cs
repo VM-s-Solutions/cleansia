@@ -62,40 +62,4 @@ public class MembershipPlanRepository(CleansiaDbContext context)
             .ThenBy(p => p.MonthlyPriceCzk)
             .ToListAsync(cancellationToken);
     }
-
-    public async Task<(IReadOnlyList<MembershipPlan> Items, int Total)> GetPagedAdminAsync(
-        bool? active,
-        string? search,
-        int offset,
-        int limit,
-        CancellationToken cancellationToken)
-    {
-        var query = GetDbSet().AsNoTracking();
-
-        if (active.HasValue)
-        {
-            query = active.Value
-                ? query.Where(p => p.IsActive)
-                : query.Where(p => !p.IsActive);
-        }
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var needle = search.Trim().ToUpperInvariant();
-            query = query.Where(p =>
-                EF.Functions.Like(p.Code, $"%{needle}%")
-                || EF.Functions.Like(p.Name.ToUpper(), $"%{needle}%"));
-        }
-
-        var total = await query.CountAsync(cancellationToken);
-
-        var items = await query
-            .OrderBy(p => p.BillingInterval)
-            .ThenBy(p => p.MonthlyPriceCzk)
-            .Skip(offset)
-            .Take(limit)
-            .ToListAsync(cancellationToken);
-
-        return (items, total);
-    }
 }

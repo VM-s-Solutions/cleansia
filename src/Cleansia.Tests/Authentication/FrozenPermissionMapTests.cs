@@ -244,6 +244,9 @@ public class FrozenPermissionMapTests
 
         // Refunds (admin-issued partial refund)
         [Policy.CanIssueRefund] = PhysicalPolicy.AdminOnly,
+
+        // Admin Action Audit Log read surface (additive — ADR-0012 D7 / T-0285)
+        [Policy.CanViewAuditLog] = PhysicalPolicy.AdminOnly,
     };
 
     private static IReadOnlyDictionary<string, string> ActualMap()

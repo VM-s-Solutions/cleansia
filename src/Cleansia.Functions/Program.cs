@@ -66,6 +66,9 @@ var host = new HostBuilder()
         // (the [TimerTrigger] singleton shell is OutboxDrainerFunction); the host still keeps the
         // post-commit dispatch behavior so an in-Function command writes a durable row.
         services.AddScoped<OutboxDrainerTimerHandler>();
+        // The outbox retention prune body (deletes already-terminal Dispatched outbox / old processed-inbox
+        // rows; the [TimerTrigger] shell is PruneOutboxFunction). Pure table-growth hygiene.
+        services.AddScoped<PruneOutboxTimerHandler>();
         services.AddScoped<AutoCancelStaleRecurringOrdersHandler>();
         services.AddScoped<CleanupStalePendingOrdersHandler>();
         services.AddScoped<MaterializeRecurringBookingsHandler>();

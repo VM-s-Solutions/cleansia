@@ -19,7 +19,12 @@ import {
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
-import { CleansiaAdminRoute, Policy } from '@cleansia/services';
+import {
+  AuditResourceType,
+  buildAuditResourceHistoryRoute,
+  CleansiaAdminRoute,
+  Policy,
+} from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DisputeDetailFacade } from './dispute-detail.facade';
 import {
@@ -81,6 +86,13 @@ export class DisputeDetailComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate([CleansiaAdminRoute.DISPUTE_MANAGEMENT]);
+  }
+
+  viewAuditHistory(): void {
+    if (!this.disputeId) return;
+    this.router.navigate(
+      buildAuditResourceHistoryRoute(AuditResourceType.Dispute, this.disputeId)
+    );
   }
 
   hasRefundAmount(): boolean {

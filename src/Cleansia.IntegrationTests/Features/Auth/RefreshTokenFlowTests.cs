@@ -179,9 +179,10 @@ public class RefreshTokenFlowTests(PostgresContainerFixture fixture) : BaseInteg
                 var loginResult = await Login(mediator);
                 var refreshToken = loginResult.Value.RefreshToken!;
 
-                return await mediator.Send(new RefreshTokenCmd.Command(
-                    Token: refreshToken,
-                    RequiredAudience: JwtAudiences.Admin));
+                return await mediator.Send(new RefreshTokenCmd.Command(refreshToken)
+                {
+                    RequiredAudience = JwtAudiences.Admin,
+                });
             },
             assert: (CleansiaDbContext _, BusinessResult<JwtTokenResponse> result) =>
             {
@@ -202,9 +203,10 @@ public class RefreshTokenFlowTests(PostgresContainerFixture fixture) : BaseInteg
                 var mediator = provider.GetRequiredService<IMediator>();
                 var loginResult = await Login(mediator);
                 var firstRefresh = loginResult.Value.RefreshToken!;
-                return await mediator.Send(new RefreshTokenCmd.Command(
-                    Token: firstRefresh,
-                    RequiredAudience: JwtAudiences.Customer));
+                return await mediator.Send(new RefreshTokenCmd.Command(firstRefresh)
+                {
+                    RequiredAudience = JwtAudiences.Customer,
+                });
             },
             assert: async (CleansiaDbContext context, BusinessResult<JwtTokenResponse> result) =>
             {

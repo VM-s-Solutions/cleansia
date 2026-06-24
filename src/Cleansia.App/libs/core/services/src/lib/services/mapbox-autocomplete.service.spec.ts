@@ -72,7 +72,6 @@ describe('MapboxAutocompleteService (T-0159 token-out-of-URL)', () => {
     return requests[0];
   }
 
-  // --- AC1: token not in the outgoing URL / query string -------------------
   it('AC1: does not put access_token anywhere in the request URL or query', () => {
     const { service, httpMock } = setup();
 
@@ -101,7 +100,6 @@ describe('MapboxAutocompleteService (T-0159 token-out-of-URL)', () => {
     req.flush({ features: [] });
   });
 
-  // --- AC2: token supplied via the chosen mechanism (same-origin proxy) -----
   it('AC2: routes the call through the same-origin proxy path (no token in app code path)', () => {
     const { service, httpMock } = setup();
 
@@ -116,7 +114,6 @@ describe('MapboxAutocompleteService (T-0159 token-out-of-URL)', () => {
     req.flush({ features: [] });
   });
 
-  // --- AC3: no token in logged URL / headers / traces ----------------------
   it('AC3: sends no Authorization header and no token-bearing header', () => {
     const { service, httpMock } = setup();
 
@@ -147,7 +144,6 @@ describe('MapboxAutocompleteService (T-0159 token-out-of-URL)', () => {
     req.flush({ features: [] });
   });
 
-  // --- AC5: no geocoding regression — params + parsing preserved ------------
   it('AC5: preserves country / language / types / autocomplete / limit params', () => {
     const { service, httpMock } = setup({ countries: ['cz', 'sk'], lang: 'sk' });
 
@@ -218,7 +214,6 @@ describe('MapboxAutocompleteService (T-0159 token-out-of-URL)', () => {
     expect(result).toEqual([]);
   });
 
-  // --- AC5: no-token-hides-UI behavior preserved (isConfigured) ------------
   it('AC5: isConfigured reflects the enabled flag and issues no request when disabled', () => {
     const { service, httpMock } = setup({ enabled: false });
 

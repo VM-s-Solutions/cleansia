@@ -6,6 +6,7 @@ namespace Cleansia.Core.Domain.Specifications;
 
 public class ReferralSpecification : BaseSpecification<string?>, ISpecification<Referral>
 {
+    public string? ReferrerUserId { get; set; }
     public ReferralStatus? Status { get; set; }
     public DateTimeOffset? AcceptedFrom { get; set; }
     public DateTimeOffset? AcceptedTo { get; set; }
@@ -22,6 +23,11 @@ public class ReferralSpecification : BaseSpecification<string?>, ISpecification<
         if (IsActive.HasValue)
         {
             specification &= new DirectSpecification<Referral>(x => x.IsActive == IsActive.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(ReferrerUserId))
+        {
+            specification &= new DirectSpecification<Referral>(x => x.ReferrerUserId == ReferrerUserId);
         }
 
         if (Status.HasValue)
@@ -43,11 +49,13 @@ public class ReferralSpecification : BaseSpecification<string?>, ISpecification<
     }
 
     public static ReferralSpecification Create(
+        string? referrerUserId = null,
         ReferralStatus? status = null,
         DateTimeOffset? acceptedFrom = null,
         DateTimeOffset? acceptedTo = null) =>
         new()
         {
+            ReferrerUserId = referrerUserId,
             Status = status,
             AcceptedFrom = acceptedFrom,
             AcceptedTo = acceptedTo

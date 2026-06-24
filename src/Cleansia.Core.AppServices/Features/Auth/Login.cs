@@ -6,6 +6,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
+using System.Text.Json.Serialization;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
@@ -29,6 +30,10 @@ public class Login
         bool RememberMe)
         : ICommand<JwtTokenResponse>
     {
+        // Web hosts derive the trusted-device marker from the HttpOnly refresh cookie server-side
+        // (the body never carries it), so JsonIgnore keeps it off the wire. The mobile login path
+        // (MobileLogin/MobilePartnerLogin) carries it in the body instead.
+        [JsonIgnore]
         public string? TrustedDeviceToken { get; init; }
     }
 

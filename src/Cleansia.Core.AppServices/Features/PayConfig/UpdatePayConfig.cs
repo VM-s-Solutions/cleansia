@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Domain.Repositories;
@@ -7,6 +8,7 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.PayConfig;
 
+[AuditAction("payconfig.update", Sensitive = true, ResourceType = "EmployeePayConfig")]
 public class UpdatePayConfig
 {
     public record Command(
@@ -20,6 +22,18 @@ public class UpdatePayConfig
         string? Description) : ICommand<Response>;
 
     public record Response(string PayConfigId);
+
+    public record PayRatesSnapshot(
+        string PayConfigId,
+        string? EmployeeId,
+        string? ServiceId,
+        string? PackageId,
+        decimal BasePay,
+        decimal ExtraPerRoom,
+        decimal ExtraPerBathroom,
+        decimal DistanceRatePerKm,
+        decimal MinimumPay,
+        decimal MaximumPay);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -70,12 +84,15 @@ public class UpdatePayConfig
     }
 
     public class Handler(
-        IEmployeePayConfigRepository payConfigRepository)
+        IEmployeePayConfigRepository payConfigRepository,
+        IAuditContext auditContext)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var payConfig = await payConfigRepository.GetByIdAsync(command.PayConfigId, cancellationToken);
+
+            var before = Snapshot(payConfig!);
 
             payConfig!.UpdatePayRates(
                 command.BasePay,
@@ -85,7 +102,26 @@ public class UpdatePayConfig
 
             payConfig.SetPayLimits(command.MinimumPay, command.MaximumPay);
 
+            auditContext.RecordChange(
+                "EmployeePayConfig",
+                payConfig.Id,
+                before,
+                Snapshot(payConfig));
+
             return BusinessResult.Success(new Response(payConfig.Id));
         }
+
+        private static PayRatesSnapshot Snapshot(Domain.EmployeePayroll.EmployeePayConfig config) =>
+            new(
+                config.Id,
+                config.EmployeeId,
+                config.ServiceId,
+                config.PackageId,
+                config.BasePay,
+                config.ExtraPerRoom,
+                config.ExtraPerBathroom,
+                config.DistanceRatePerKm,
+                config.MinimumPay,
+                config.MaximumPay);
     }
 }

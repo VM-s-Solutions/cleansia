@@ -128,6 +128,11 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   feature's list state lives in its facade's signals — **don't** mix `store.dispatch`/`store.select`
   into a feature facade that could be plain signals (✗ partner `orders`, customer `disputes` mix both).
 
+> **Reference archetype.** For a new admin paged list, **mirror the `disputes-management` list
+> feature** — it is the canonical C1–C8 implementation (facade + signals + `cleansia-table` +
+> server-side paging + `*cleansiaPermission` gating). The Wave-9 audit-log lib (ADR-0012) was built
+> by copying it; copy it for the next one too rather than re-deriving the shape.
+
 ## D. Frontend — form features
 
 - **D1.** Facade extends `UnsubscribeControlDirective`, exposes `loading` + `saving` signals, has
@@ -140,6 +145,15 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   needs nullable controls, isolate it and comment why.
 - **D3.** Inputs are **`cleansia-*` bound by `formControlName`**; field errors via **`ErrorPipe`**; API
   errors via `SnackbarService.showApiError`. No raw PrimeNG/`ngModel` for form fields.
+- **D4 — audit drill-in.** An admin detail/edit page for an **audited** resource exposes a gated
+  *"View audit history"* `<cleansia-button>` (`*cleansiaPermission="Policy.CanViewAuditLog"`) that
+  navigates via the shared helper **`buildAuditResourceHistoryRoute(AuditResourceType.X, id)`** from
+  `@cleansia/services` — **never** a hand-built URL or a duplicated resource-type string literal. The
+  `AuditResourceType.X` constant **must equal the backend `[AuditAction(ResourceType="…")]` literal**
+  for that entity (Order/Dispute/AdminUser/EmployeePayConfig), and the `id` you pass must be the **same
+  id the backend records** — a page whose DTO only exposes a *different* id (e.g. employee-detail
+  exposes the employee id, not the audited `User` id) must **not** wire a drill-in until the DTO carries
+  the recorded id, otherwise the history view filters to nothing.
 
 ## E. Mobile — ViewModels, Screens, Repositories
 

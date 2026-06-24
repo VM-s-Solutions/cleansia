@@ -146,6 +146,30 @@ describe('PackageFormFacade', () => {
     expect(facade.saving()).toBe(false);
   });
 
+  it('falls back to result.title when detail is absent', () => {
+    updateMock.mockReturnValue(
+      throwError(() => ({ result: { title: 'package.invalid_weight' } }))
+    );
+    facade.syncWeightRows([{ id: 'svc-a', name: 'A' }]);
+
+    facade.updatePackage('pkg-1', formData);
+
+    expect(facade.errorKey()).toBe('errors.package.invalid_weight');
+  });
+
+  it('parses the error code from a JSON response string', () => {
+    updateMock.mockReturnValue(
+      throwError(() => ({
+        response: JSON.stringify({ detail: 'package.in_use' }),
+      }))
+    );
+    facade.syncWeightRows([{ id: 'svc-a', name: 'A' }]);
+
+    facade.updatePackage('pkg-1', formData);
+
+    expect(facade.errorKey()).toBe('errors.package.in_use');
+  });
+
   it('falls back to the generic update error for unknown codes', () => {
     updateMock.mockReturnValue(
       throwError(() => ({ result: { detail: 'something.unexpected' } }))

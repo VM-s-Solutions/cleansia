@@ -208,6 +208,17 @@ describe('AdminPayrollOpsFacade', () => {
     expect(facade.submitting()).toBe(false);
   });
 
+  it('falls back to result.title when detail is absent', () => {
+    payrollClient.updateInvoiceAmounts.mockReturnValue(
+      throwError(() => ({ result: { title: 'payroll.invoice.already_paid' } }))
+    );
+    facade.openAdjustPanel(10, 0);
+
+    facade.adjustAmounts('invoice-1', jest.fn());
+
+    expect(facade.errorKey()).toBe('errors.payroll.invoice.already_paid');
+  });
+
   it('parses the error code from a JSON response string', () => {
     payrollClient.disputeInvoice.mockReturnValue(
       throwError(() => ({

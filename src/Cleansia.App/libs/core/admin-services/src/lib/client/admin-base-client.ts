@@ -14,6 +14,7 @@ import {
   AdminLanguageClient,
   AdminLoyaltyClient,
   AdminLoyaltyTierClient,
+  AdminMarketingClient,
   AdminOrderClient,
   AdminPackageClient,
   AdminPayConfigClient,
@@ -37,6 +38,7 @@ import {
   IAdminLanguageClient,
   IAdminLoyaltyClient,
   IAdminLoyaltyTierClient,
+  IAdminMarketingClient,
   IAdminOrderClient,
   IAdminPackageClient,
   IAdminPayConfigClient,
@@ -75,6 +77,7 @@ interface IAdminClient {
   adminPromoCodeClient: IAdminPromoCodeClient;
   adminLoyaltyTierClient: IAdminLoyaltyTierClient;
   adminLoyaltyClient: IAdminLoyaltyClient;
+  adminMarketingClient: IAdminMarketingClient;
   adminReferralClient: IAdminReferralClient;
   // The kitchen-sink generated client — hosts service-city CRUD + any
   // future endpoints that don't have their own dedicated controller.
@@ -170,6 +173,10 @@ export class AdminClient implements IAdminClient {
     this.apiBaseUrl
   );
   adminLoyaltyClient: IAdminLoyaltyClient = new AdminLoyaltyClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminMarketingClient: IAdminMarketingClient = new AdminMarketingClient(
     this.httpClient,
     this.apiBaseUrl
   );

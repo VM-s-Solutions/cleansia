@@ -15,7 +15,13 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CleansiaAdminRoute } from '@cleansia/services';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
+import {
+  AuditResourceType,
+  buildAuditResourceHistoryRoute,
+  CleansiaAdminRoute,
+  Policy,
+} from '@cleansia/services';
 import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
@@ -44,6 +50,7 @@ import { AdminPayConfigService } from '../admin-pay-config.service';
     CleansiaSectionComponent,
     CleansiaSelectComponent,
     CleansiaTitleComponent,
+    CleansiaPermissionDirective,
   ],
   templateUrl: './pay-config-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -57,6 +64,8 @@ export class PayConfigFormComponent implements OnInit, OnDestroy {
   protected readonly facade = inject(PayConfigFormFacade);
 
   private readonly mode = signal<'create' | 'edit'>('create');
+
+  protected readonly Policy = Policy;
 
   readonly isEditMode = computed(() => this.mode() === 'edit');
   readonly pageTitle = computed(() =>
@@ -165,5 +174,16 @@ export class PayConfigFormComponent implements OnInit, OnDestroy {
 
   onCancel(): void {
     this.facade.navigateBack();
+  }
+
+  viewAuditHistory(): void {
+    const payConfigId = this.route.snapshot.paramMap.get('payConfigId');
+    if (!payConfigId) return;
+    this.router.navigate(
+      buildAuditResourceHistoryRoute(
+        AuditResourceType.EmployeePayConfig,
+        payConfigId
+      )
+    );
   }
 }

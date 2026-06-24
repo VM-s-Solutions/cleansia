@@ -355,4 +355,7 @@ public static class BusinessErrorMessage
     public const string ReferralNotQualified = "referral.not_qualified";
     public const string ReferralNotAccepted = "referral.not_accepted";
     public const string ReferralReasonRequired = "referral.reason_required";
+
+    // Admin action audit log
+    public const string AuditNotFound = "audit.not_found";
 }

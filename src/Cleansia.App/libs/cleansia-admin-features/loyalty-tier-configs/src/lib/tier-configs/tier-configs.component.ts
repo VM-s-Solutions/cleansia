@@ -113,7 +113,6 @@ export class TierConfigsComponent implements OnInit, OnDestroy {
     this.translate
   );
 
-  // ---- Edit form (per-tier modal) ----
   readonly editForm = this.fb.group({
     threshold: this.fb.control<number>(0, {
       nonNullable: true,
@@ -129,7 +128,6 @@ export class TierConfigsComponent implements OnInit, OnDestroy {
     perksJson: this.fb.control<string>('', { nonNullable: true }),
   });
 
-  // ---- Preview form (cross-tier thresholds) ----
   readonly previewForm = this.fb.group({
     bronzeThreshold: this.fb.control<number>(0, {
       nonNullable: true,
@@ -164,8 +162,6 @@ export class TierConfigsComponent implements OnInit, OnDestroy {
     this.facade.ngOnDestroy();
   }
 
-  // ---- Display helpers ----
-
   tierKey(tier: LoyaltyTier): string {
     switch (tier) {
       case LoyaltyTier.BronzeCleaner:
@@ -197,8 +193,6 @@ export class TierConfigsComponent implements OnInit, OnDestroy {
   formatPerksCount(count: number): string {
     return this.translate.instant('pages.loyalty_tiers.perks_count', { count });
   }
-
-  // ---- Edit modal ----
 
   openEdit(row: TierRow): void {
     this.editingTier.set(row);
@@ -237,8 +231,6 @@ export class TierConfigsComponent implements OnInit, OnDestroy {
       () => this.closeEdit()
     );
   }
-
-  // ---- Preview modal ----
 
   openPreview(): void {
     const rows = this.tierRows();
@@ -291,8 +283,6 @@ export class TierConfigsComponent implements OnInit, OnDestroy {
   formatDelta(delta: number): string {
     return delta >= 0 ? `+${delta}` : `${delta}`;
   }
-
-  // ---- Perks JSON helpers ----
 
   /** Empty is treated as valid (= no perks). */
   private isValidPerksJson(raw: string | null | undefined): boolean {

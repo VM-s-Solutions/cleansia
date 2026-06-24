@@ -24,9 +24,9 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
+import cz.cleansia.core.notifications.PushTokenSessionObserver
 import cz.cleansia.core.snackbar.GlobalSnackbarHost
 import cz.cleansia.partner.core.notifications.NotificationDeepLink
-import cz.cleansia.partner.core.notifications.PushTokenSessionObserver
 import cz.cleansia.partner.core.settings.AppSettings
 import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.core.settings.ThemePreference

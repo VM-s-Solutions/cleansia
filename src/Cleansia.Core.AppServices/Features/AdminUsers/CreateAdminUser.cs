@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -12,6 +13,7 @@ namespace Cleansia.Core.AppServices.Features.AdminUsers;
 
 public class CreateAdminUser
 {
+    [AuditAction("admin.user.create", ResourceType = "AdminUser")]
     public record Command(
         string Email,
         string Password,

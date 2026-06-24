@@ -8,7 +8,13 @@ import {
   CleansiaSectionComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
-import { CleansiaAdminRoute } from '@cleansia/services';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
+import {
+  AuditResourceType,
+  buildAuditResourceHistoryRoute,
+  CleansiaAdminRoute,
+  Policy,
+} from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import {
   AdminOrderOpsComponent,
@@ -30,6 +36,7 @@ import { OrderDetailFacade } from './order-detail.facade';
     AdminOrderOpsComponent,
     AdminOrderPhotosComponent,
     AdminOrderRefundComponent,
+    CleansiaPermissionDirective,
   ],
   templateUrl: './order-detail.component.html',
   providers: [OrderDetailFacade],
@@ -40,6 +47,8 @@ export class OrderDetailComponent implements OnInit {
   private readonly router = inject(Router);
   protected readonly facade = inject(OrderDetailFacade);
 
+  protected readonly Policy = Policy;
+
   ngOnInit(): void {
     const orderId = this.route.snapshot.paramMap.get('orderId');
     if (orderId) {
@@ -49,6 +58,14 @@ export class OrderDetailComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate([CleansiaAdminRoute.ORDER_MANAGEMENT]);
+  }
+
+  viewAuditHistory(): void {
+    const orderId = this.facade.order()?.id;
+    if (!orderId) return;
+    this.router.navigate(
+      buildAuditResourceHistoryRoute(AuditResourceType.Order, orderId)
+    );
   }
 
   onRefunded(): void {

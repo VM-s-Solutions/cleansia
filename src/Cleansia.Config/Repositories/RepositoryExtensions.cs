@@ -1,7 +1,10 @@
 ﻿using Cleansia.Config.Extensions;
+using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Database;
+using Cleansia.Infra.Database.Auditing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cleansia.Config.Repositories;
@@ -36,6 +39,16 @@ public static class RepositoryExtensions
         // its own CommitAsync so the claim/cursor flush is independent of any later business commit.
         services.AddScoped<IIdempotencyGuard, DbIdempotencyGuard>();
         services.AddScoped<ICampaignProgressStore, DbCampaignProgressStore>();
+
+        // ADR-0012 — the admin-action audit seams. IAuditContext is the scoped per-request snapshot
+        // buffer (mirrors IPendingDispatch); IAuditWriter adds the success row to the pipeline's scoped
+        // DbContext so it rides the UoW commit (atomic); IAuditFailureSink writes the failure row in its
+        // OWN short-lived scope (the action transaction is rolled back / doomed). AuditEntryFactory
+        // assembles the row generically (actor/action/resource/correlation) for both paths.
+        services.AddScoped<IAuditContext, AuditContext>();
+        services.AddScoped<IAuditWriter, DbContextAuditWriter>();
+        services.AddScoped<IAuditFailureSink, OutOfBandAuditFailureSink>();
+        services.AddScoped<AuditEntryFactory>();
 
         return services.RegisterFromAssemblies([AssemblyReference.Assembly], type => type.GetInterfaces().Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRepository<,>)));
     }

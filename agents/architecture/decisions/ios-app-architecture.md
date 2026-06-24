@@ -146,3 +146,44 @@ confirm-email gate, **not** a session.
   with ADR-0011 D4's `ApiError` case set (recorded against ADR-0011, not forked).
 - When the first iOS generated client is produced, confirm the Swift `ApiError` case set still matches the
   Kotlin one one-to-one (ADR-0011 invariant #2 — a per-client case is drift).
+
+## Apple App Review compliance + the quality bar (ADR-0016, accepted 2026-06-23)
+
+> Companion section for **ADR-0016** (`agents/backlog/adr/0016-apple-app-review-compliance-and-ios-quality-bar.md`).
+> The iOS apps are held to a **submission-passing** bar (higher than the rest of the platform). Tickets
+> T-0323…T-0329 in `status/sprint-12.md §10`; the pre-submission audit artifact is
+> `agents/backlog/ios-app-review-checklist.md`.
+
+**The myth, corrected (so it never re-enters the record):** there is **NO "AI-written-code detector"** in App
+Review and review **cannot brick/disable hardware** — both **FALSE**. The real risk is **rejection vs the
+published App Store Review Guidelines** + account-level consequences for **concealed functionality / abuse**.
+The bar is engineered for the **knowable, reviewer-verifiable** checklist.
+
+**The bar in one table:**
+
+| Area | The bar | Where verified |
+|---|---|---|
+| Code quality | **STRICT SwiftLint + SwiftFormat, BLOCKING** the iOS CI (`force_unwrapping`/`force_try`/`force_cast` = error; generated dir excluded) — the delta from FE's non-blocking lint (greenfield = no debt to grandfather) | T-0323; check #14 |
+| Privacy manifest | `PrivacyInfo.xcprivacy` per target: required-reason APIs, data types, **tracking=false** | T-0324; check #15 |
+| Tracking / ATT | **No tracking, no ATT prompt** — the apps operate the service, they don't track for ads | T-0324; check #15 |
+| Purpose strings | location (MapKit pickers), camera + photo library (partner photos T-0308 + customer dispute T-0314), localized ×5; **push = `aps-environment` entitlement + runtime request, NOT an Info.plist key** | T-0325; check #16 |
+| Account deletion | **In-app (5.1.1(v))** — customer Settings → Delete reaches the `GdprDeletionService` account+data deletion | T-0327; check #17 |
+| Sign in with Apple | **REQUIRED on the customer app (4.8)** because it offers Google Sign-In; partner app = none | T-0326; check #18; Q-IOS-04 (mechanism) |
+| Payments | **External Stripe is ALLOWED, IAP NOT required (3.1.3/3.1.5)** — cleaning is a real-world service; documented so a reviewer doesn't wrongly demand IAP | T-0328; check #19 |
+| Standard floor | no private API / no hidden feature / complete metadata + demo account / functional + crash-free / no placeholder | T-0329; check #20 |
+| HIG / a11y | VoiceOver, Dynamic Type, contrast, hit targets, 5-locale completeness | per-ticket; check #20 |
+
+**Gate-AR (continuous):** on **every** iOS ticket, the reviewer + ios charters check the blocking lint is
+green, any new capability carries its **purpose string + manifest entry + locale strings in-ticket** (not
+deferred), no hidden feature / private API / placeholder, and VoiceOver/Dynamic Type on new controls — so the
+pre-submission audit **confirms** an already-compliant app rather than retrofitting one.
+
+**Per-app difference (recorded so the bar isn't over-applied):** SIWA (4.8), in-app account deletion (5.1.1(v)),
+and Google Sign-In are **customer-only**; the **partner** app has no social login and no account-creation-tied
+delete obligation beyond the standard floor. Both apps carry the privacy-manifest / purpose-string / lint /
+standard-floor items.
+
+**The one open input:** **Q-IOS-04** (SIWA backend mechanism — likely a backend `appleauth` endpoint + a
+spec-regen, mirroring `googleauth`). It gates **only** the SIWA ticket (T-0326); the rest of the iOS + the
+compliance plan proceeds. Watch-items: `SubscribePlus` must stay a real-world-service benefit (not a digital
+good → IAP); adding any tracking SDK flips AR-PRIV-3 (tracking + ATT become mandatory).

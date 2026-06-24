@@ -25,6 +25,12 @@ each gets a line on the pre-PROD readiness checklist.
 - _(Q-AUDIT-01 — RESOLVED 2026-06-22: owner adopted the append-only / no-auto-delete / PII-minimized
   **default**; moved to `answered.md`. The pre-prod **ratification** of the exact retention window +
   redaction list is now a **pre-PROD readiness-checklist item**, not an open question.)_
+- **Q-INFRA-01** (`pre-prod` for PROD only; non-blocking for the DEV provision) — custom domain for the
+  environments? Default: no custom domain for dev (stable `*.azurewebsites.net`).
+- **Q-INFRA-03** (`pre-prod` for PROD hardening; non-blocking for the DEV provision) — prod VNet/private-endpoint
+  + Postgres-MI auth? Default for dev: public-endpoint + firewall + MI-to-KeyVault/Storage.
+- **Q-IOS-04** (`pre-submission` — gates only the SIWA iOS ticket T-0326; non-blocking for the rest of the iOS
+  plan) — the Sign-in-with-Apple backend integration mechanism (likely a backend `appleauth` endpoint).
 
 Format:
 
@@ -346,3 +352,81 @@ _No open Wave-1 *planning* questions remain._
   it is fully supported).
 - Answer: _(owner fills in — omit to match Android, or commission a one-design trusted-device flow for both
   mobile clients)_
+
+---
+
+## Azure DEV deployment questions (2026-06-23) — raised by ADR-0015 (INFRA-ADR)
+
+> All three are **non-blocking for the DEV provision** (sprint-13 proceeds on the defaults). Q-INFRA-01 and
+> Q-INFRA-03 are `pre-prod` *for the prod side only* — they do not gate dev. The DEV provision's real
+> prerequisites are **owner manual steps** (GitHub Environments + reviewers, secret migration, Key Vault value
+> population, running/approving the first `az deployment group create`), not these questions.
+
+### Q-INFRA-01 — [blocking: no — pre-prod for PROD only] Custom domain for the environments?
+- Raised by: architect (INFRA-ADR / ADR-0015 D6)
+- Owner: owner
+- Resolve-by: pre-prod (prod side); non-blocking for dev
+- Date: 2026-06-23
+- Question: Should the environments use a **custom domain** (`*.cleansia.cz`) instead of the default Azure
+  hostnames (`*.azurewebsites.net` / `*.azurestaticapps.net`)? This needs an owner DNS step + TLS binding.
+- Why it matters: the iOS apps + the SPAs point at host URLs; a custom domain is a branding/prod concern. Getting
+  it wrong is cosmetic for dev but a real prod readiness item.
+- Default taken (non-blocking for dev): **No for dev** — the default `*.azurewebsites.net` hostnames are stable +
+  TLS-terminated, sufficient for the Mac-points-at-dev goal. The iOS base-URL is env-switched **config**, so
+  adding a custom domain later is config, not code.
+- Answer: _(owner fills in — confirm default hostnames for dev; decide custom domain for prod before go-live)_
+
+### Q-INFRA-02 — [blocking: no] Two subscriptions, or one subscription + two resource groups?
+- Raised by: architect (INFRA-ADR / ADR-0015 D1)
+- Owner: owner
+- Resolve-by: post-prod
+- Date: 2026-06-23
+- Question: Should dev and prod live in **separate Azure subscriptions** (hard billing/policy isolation) or in
+  **one subscription with two resource groups** (`rg-cleansia-dev` / `rg-cleansia-prod`)?
+- Why it matters: subscription split gives the strongest billing/governance isolation but doubles
+  subscription-level overhead. RG split gives clean blast-radius isolation (a `dev` apply cannot touch prod; the
+  protected `prod` Environment gates prod deploys) at far less overhead.
+- Default taken (non-blocking): **one subscription, two RGs.** The Bicep is RG-scoped, so a later move to two
+  subscriptions is a parameter change, not a rewrite — the seam is preserved.
+- Answer: _(owner fills in — confirm one-sub/two-RGs, or require separate subscriptions)_
+
+### Q-INFRA-03 — [blocking: no — pre-prod for PROD hardening] Prod network/auth hardening: VNet + private endpoints + Postgres-MI auth?
+- Raised by: architect (INFRA-ADR / ADR-0015 D3/D4)
+- Owner: owner
+- Resolve-by: pre-prod (prod side); non-blocking for dev
+- Date: 2026-06-23
+- Question: For **prod**, should Postgres/Storage be reached over **VNet + private endpoints** (no public
+  endpoint) and should Postgres use **AAD/managed-identity auth** instead of a connection-string secret?
+- Why it matters: the system holds PII + payment data; prod should be hardened beyond the dev-pragmatic
+  public-endpoint + firewall posture. Postgres-MI auth removes the connection-string secret entirely but needs
+  Npgsql token plumbing (a code change).
+- Default taken (non-blocking for dev): **dev = public-endpoint + firewall (Azure-services + admin IP) + TLS +
+  MI-to-KeyVault/Storage + connection-string-in-Key-Vault for Postgres.** The prod Bicep leaves the seam (a
+  module flag) to flip VNet/private-endpoint + Postgres-MI on before prod go-live.
+- Answer: _(owner fills in — confirm dev posture; decide prod VNet/private-endpoint + Postgres-MI before prod)_
+
+---
+
+## Apple App Review / iOS compliance questions (2026-06-23) — raised by ADR-0016 (IOS-COMPLIANCE-ADR)
+
+> **Framing recorded in ADR-0016:** there is NO "AI-written-code detector" and App Review cannot brick hardware
+> — both FALSE. The real risk is rejection vs the published guidelines. The only owner question is the SIWA
+> backend mechanism; it gates **only** the SIWA ticket, not the iOS plan.
+
+### Q-IOS-04 — [blocking: no — gates only the SIWA ticket T-0326] Sign-in-with-Apple backend integration mechanism
+- Raised by: architect (IOS-COMPLIANCE-ADR / ADR-0016 D2/AR-ACCT-2)
+- Owner: owner (+ architect for the technical shape)
+- Resolve-by: pre-submission
+- Date: 2026-06-23
+- Question: The **Sign-in-with-Apple obligation is CONFIRMED** (the customer app offers Google Sign-In, so
+  Guideline 4.8 requires SIWA on the customer app). **How** should SIWA authenticate against the backend — a new
+  backend **`appleauth`** anon endpoint (analogous to the existing `googleauth`: validate the Apple identity
+  token → issue the mobile JWT, a backend ticket + a spec-regen), or an existing token-exchange path?
+- Why it matters: it touches the **auth contract** (a new anon endpoint + the allow-list + a spec-regen feeding
+  all three clients), so it is owner-ratified, not a unilateral technical default. The **obligation** is not in
+  question — only the mechanism.
+- Default taken (non-blocking, to keep planning moving): **assume a backend `appleauth` endpoint is needed** (the
+  safe, `googleauth`-mirroring assumption), sized as a backend + iOS pair, gated on the owner confirming the
+  backend appetite. The rest of the iOS plan does not wait on this — only T-0326 (the SIWA ticket) does.
+- Answer: _(owner fills in — confirm a backend `appleauth` endpoint, or specify an alternative SIWA→backend
+  mechanism)_

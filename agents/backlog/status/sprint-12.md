@@ -223,3 +223,77 @@ Phase-2+ feature ticket has an owner, a current state, satisfied-or-blocked deps
 ADR-0013 reviewer checks green, and a status-log line per transition. INDEX.md + this doc match reality.
 The three non-blocking owner questions (Q-IOS-01/02/03) are tracked with their defaults; the
 mobile-spec-regen is confirmed before any generated-client ticket advances to `done`.
+
+---
+
+## 10. APPLE APP REVIEW COMPLIANCE + the iOS quality bar (ADR-0016, added 2026-06-23)
+
+**Source:** **ADR-0016** (`adr/0016-apple-app-review-compliance-and-ios-quality-bar.md`, **accepted**
+2026-06-23). The owner wants the iOS apps held to a **submission-passing** bar (much higher than the rest of the
+platform). **Framing (stated so the myth dies): there is NO "AI-written-code detector" and App Review cannot
+brick hardware — both FALSE.** The real risk is **rejection vs the published App Store Review Guidelines** +
+account-level consequences for concealment/abuse. This section engineers for the **knowable checklist**.
+
+**Ticket ids T-0323…T-0329** (continuing after the iOS port tickets; the Azure wave, sprint-13, takes
+T-0315…T-0322 — see the numbering note in sprint-13 §intro).
+
+### 10.1 The real obligations (traced — ADR-0016 D2)
+
+- **Sign in with Apple is REQUIRED on the customer app (Guideline 4.8)** because the customer app offers
+  **Google Sign-In** (`customer-app/.../auth/AuthModule.kt`, `SignUpScreen.kt`). The **partner** app has no
+  social login → **no SIWA obligation.** The *integration mechanism* (a backend `appleauth` endpoint?) is
+  **Q-IOS-04** (owner), which gates only the SIWA ticket.
+- **In-app account deletion is REQUIRED on the customer app (Guideline 5.1.1(v))** — the existing GDPR/
+  `GdprDeletionService` delete flow must be reachable **in-app** from Settings and actually delete account+data.
+- **External Stripe payment is ALLOWED and IAP must NOT be used (3.1.3/3.1.5)** — cleaning is a **real-world
+  service**; documented so a reviewer back-and-forth does not wrongly demand IAP. (`SubscribePlus` watch-item.)
+- **Privacy cluster:** `PrivacyInfo.xcprivacy` manifest per target (required-reason APIs, data types,
+  **tracking=false**); App Privacy nutrition label matching it; **no ATT prompt** (the apps don't track for
+  ads); Info.plist **purpose strings** (location for the MapKit pickers; camera + photo library for partner
+  photos T-0308 + customer dispute evidence T-0314) localized ×5. **Push uses the `aps-environment` entitlement
+  + the runtime `UNUserNotificationCenter` request — NOT an Info.plist key** (no `NSUserNotificationsUsageDescription`).
+- **Standard floor + quality:** no private APIs, no hidden/disabled features, complete metadata + a demo
+  account, functional + crash-free, no placeholder content; HIG/accessibility (VoiceOver, Dynamic Type,
+  contrast).
+
+### 10.2 Compliance ticket table (ADR-0016 D3)
+
+| ID | Title | Size | Status | Layers | depends_on | manual_step | When (rel. to the iOS phases) |
+|----|-------|------|--------|--------|-----------|-------------|-------------------------------|
+| **T-0323** | **SwiftLint + SwiftFormat BLOCKING iOS CI gate** — `src/cleansia_ios/.swiftlint.yml` + `.swiftformat` (STRICT: `force_unwrapping`/`force_try`/`force_cast` = **error**), a **required** CI job that **fails the build** on a violation (unlike FE's non-blocking lint), generated-client dir excluded, all hand-written code in scope | S | **proposed** | ios | T-0296 | — | **Phase 0** (early — gates every iOS ticket after) |
+| **T-0324** | **Privacy manifest** — `PrivacyInfo.xcprivacy` per app target: required-reason-API audit (Keychain/auth/generated-client/UserDefaults), collected data types, **tracking=false**; assert no `AppTrackingTransparency`/ATT prompt anywhere | M | **proposed** | ios | T-0296, T-0300 | — | Phase 2 (after the auth/network surface exists to audit) |
+| **T-0325** | **Purpose strings + Info.plist + entitlements** — `NSLocationWhenInUseUsageDescription`, `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`(+Add) localized ×5; the **`aps-environment`** push entitlement; **no orphan permissions**, **no phantom push Info.plist key** | S | **proposed** | ios | T-0296 | — | Phase 2 (before the photo/map/push tickets ship their capability) |
+| **T-0326** | **Sign in with Apple (customer app, 4.8)** — present SIWA alongside Google + email on the customer sign-in surface; working authenticated session | M | **proposed** (**gated on Q-IOS-04**) | ios | T-0312 | **Q-IOS-04 (owner): SIWA backend mechanism** — likely a backend `appleauth` endpoint + spec-regen | Phase 2 (customer; rides T-0312) |
+| **T-0327** | **In-app account-deletion reachability (customer, 5.1.1(v))** — verify Settings → Delete Account reaches the `GdprDeletionService` account+data deletion **in-app** (not a web link/email/deactivation) | S | **proposed** | ios | T-0314 | — | Phase 2 (customer; verifies the T-0314 GDPR-delete surface) |
+| **T-0328** | **External-payment / no-IAP documentation (3.1.3/3.1.5)** — record the citation that cleaning = real-world service → Stripe external payment is compliant + IAP must NOT be used; `SubscribePlus` framed as a real-world-service benefit; metadata framing note | S | **proposed** | ios, docs | T-0313 | — | Phase 2 (alongside the booking+Stripe ticket) |
+| **T-0329** | **Pre-submission audit** — create + run `agents/backlog/ios-app-review-checklist.md`: every AR-* item per app (partner/customer) + the App-Store-Connect prerequisites (App Privacy answers, demo account, export-compliance, screenshots, age rating). **Release gate** — the first submission waits on it green | M | **proposed** | ios, qa, docs | T-0323..T-0328 | **owner: ASC submission prerequisites** (App Privacy, demo account, export-compliance, screenshots, signing) | **Pre-submission** (the final gate) |
+
+### 10.3 Gate-AR — the standing per-ticket compliance gate (ADR-0016 D3)
+
+In addition to the specific tickets above, **Gate-AR** runs on **EVERY** iOS ticket (reviewer + ios charters),
+the way the ADR-0013/0014 reviewer checks #1–#13 do: (i) the **blocking lint/format gate is green**; (ii) any
+**capability the ticket introduces carries its purpose string + privacy-manifest entry + locale strings in the
+same ticket** (e.g. T-0308 photos adds the camera/photo purpose strings + manifest types in-ticket —
+compliance is **not** deferred to T-0329); (iii) **no hidden feature / no private API / no placeholder** in the
+ticket's surface; (iv) **VoiceOver/Dynamic Type** on new controls. This makes compliance **continuous** — the
+pre-submission audit (T-0329) **confirms** an already-compliant app, it does not retrofit one.
+
+### 10.4 Reviewer-check additions (ADR-0016 §"How a reviewer verifies", added to the iOS checks)
+
+**#14** blocking SwiftLint/SwiftFormat gate exists + is green (`force_unwrapping`/`force_try`/`force_cast` =
+error; generated dir excluded). **#15** privacy manifest per target (tracking=false; types match behavior); no
+ATT/`AppTrackingTransparency`. **#16** purpose strings present + accurate ×5, no orphan permission, push =
+`aps-environment` entitlement (no Info.plist push key). **#17** in-app account deletion reachable (customer).
+**#18** SIWA on the customer sign-in (when Q-IOS-04 lands). **#19** no IAP for cleaning services; Stripe
+external; the 3.1.3/3.1.5 citation on file. **#20** standard floor (no private API/hidden feature/placeholder;
+demo account; functional+crash-free) + HIG/accessibility. **#21 (Gate-AR)** the ticket carried its own
+purpose-string/manifest/locale compliance in-ticket.
+
+### 10.5 Open question (ADR-0016)
+
+- **Q-IOS-04** (`pre-submission` — gates **only** the SIWA ticket T-0326; owner + architect) — the **SIWA
+  backend integration mechanism**. The 4.8 obligation is **confirmed**; the open input is whether SIWA needs a
+  new backend **`appleauth`** anon endpoint (analogous to `googleauth` — a backend ticket + a spec-regen) or an
+  existing exchange. **Default: assume a backend `appleauth` endpoint is needed** (the safe, `googleauth`-mirror
+  assumption), gated on the owner confirming the backend appetite (it touches the auth contract). Does **not**
+  block the rest of the iOS plan.

@@ -1,7 +1,38 @@
 # Sprint 13 — Wave 11: AZURE DEV (re)DEPLOYMENT — Bicep IaC + GitHub Environments (the iOS-pivot enabler)
 
-**Status:** PLANNED (backlog only — no Bicep, no YAML, no commits)
+**Status:** AGENT AUTHORING DONE — OWNER PROVISIONING PENDING (Bicep + region seam + rewired CI shipped
+in commit `38a10375` on `feature/wave8-pre-ios-cleanup`; the dev env is not yet provisioned — that is
+the owner's T-0317 → T-0318 → T-0320 path)
 **Created:** 2026-06-23
+**Updated:** 2026-06-23
+
+> ## 🟦 WAVE-11 AUTHORING LANDED (2026-06-23, commit `38a10375`) — 6 done, 3 owner-blocked
+>
+> **The agent-authorable half is DONE, reviewed/verified, committed + pushed.** What shipped: `main.bicep`
+> + 10 modules (FIVE API hosts incl. customer-mobile; no secret committed — KV refs + a `@secure()`
+> Postgres password from a CI secret; least-priv MI; HTTPS-only + firewalled Postgres + mobile CORS
+> closed; the ADR-0017 region seam — `region` param + `weu` token in every name + a region→location map);
+> `weu.dev.bicepparam` + `weu.prod.bicepparam` (prod **authored, NOT deployed**); a rewritten
+> `deploy-dev.yml` (Bicep provision gate, OIDC + EF-bundle preserved, parallelized, `matrix.region:[weu]`,
+> `dev-weu` Environment, all five hosts); the T-0330 region connection-string resolver (one resolution
+> point, behavior-preserving, **tenancy filter untouched**, no schema change); the catalog/living-doc edits.
+>
+> **Ticket states:** **DONE (6):** T-0315, T-0316, T-0319, T-0321, T-0322, T-0330. **BLOCKED on OWNER
+> (3):** T-0317 (GH Environments + secret migration), T-0318 (KV values + RBAC + run the dev apply), T-0320
+> (dev smoke — needs the env up; depends on T-0318 + T-0319).
+>
+> **Security gate PASSED on the module set (T-0315).** **Reporting-vs-work caveat:** the in-workflow
+> StructuredOutput report tool failed (retry cap) on the **T-0319** and **T-0330** dev agents — a
+> REPORTING failure, not a work failure (the work landed on disk). The orchestrator **gated those two BY
+> HAND** (read the resolver + CI; built `Cleansia.Config` 0 errors; secret-scanned; confirmed tenancy
+> untouched + 5 hosts + OIDC/migration/provision gate) → both **verified-done** even though their
+> in-workflow reviewer didn't run. **3rd occurrence of the StructuredOutput failure across 2 waves**
+> (T-0290 FE earlier) → reinforced as a standing rule in `quality-gates.md` + a mitigation (keep
+> `buildEvidence`/`verifyEvidence` SHORT — the oversized log strings are the likely trigger).
+>
+> **OWNER PROVISIONING CHECKLIST (the exact ordered steps to get dev live) — §7 below.** Prod is
+> authored-not-deployed (T-0322). Q-INFRA-01/02/03 + Q-REGION-01/02/03 are all non-blocking for the dev
+> provision (tracked with defaults in `questions/open.md`).
 **Source:** **ADR-0015** (`adr/0015-azure-dev-deployment-bicep-and-github-environments.md`, **accepted**
 2026-06-23) **+ ADR-0017** (`adr/0017-multi-region-expansion-seam-and-its-composition-with-app-level-tenancy.md`,
 **accepted** 2026-06-23 — the **region seam** folded into this wave's naming/param/Environment/matrix; **N-region
@@ -98,15 +129,15 @@ P3  PROD BICEP authored (prod.bicepparam + prod-only module flags) ── NOT DE
 
 | ID | Title | Size | Status | Layers | depends_on | manual_step | Phase |
 |----|-------|------|--------|--------|-----------|-------------|-------|
-| **T-0315** | **Bicep skeleton + the reusable modules** — `deploy/bicep/main.bicep` + `modules/{appServicePlan(B2 Linux),appService(reusable),staticWebApp,functionApp(container/ACR),acr,postgres(B1ms),storage(LRS: blob containers + queues + Functions store),keyVault(RBAC),appInsights(+Log Analytics),roleAssignments}.bicep`. **No secret values** — Key Vault secret *names* only. **ADR-0017 seam: a `region` parameter (default `weu`) threaded through every module that emits a name/`location`; resources/RG/Key-Vault names carry the `weu` token from day one** (`api-cleansia-<audience>-weu-dev`, `rg-cleansia-weu-dev`, `pg-cleansia-weu-dev`, …). | **L → split** | **proposed** | infra, backend, db | — (ADR-0015/0017) | — (authoring) | **0 FIRST** |
-| **T-0316** | **`weu.dev.bicepparam` + the region/env-param wiring** — region='weu', env='dev', the five API host names (`api-cleansia-{partner,admin,customer,partner-mobile,customer-mobile}-weu-dev`) + `web-cleansia-customer-weu-dev` SSR + 2 SWAs, B2/B1ms/Free/LRS SKUs, West Europe, CORS=dev SPA/SSR origins per host, HTTPS-only, Postgres firewall (Azure services + admin IP). **Param-file naming = `<region>.<stage>.bicepparam`** (ADR-0017). | M | **proposed** | infra | T-0315 | — | 0 |
-| **T-0317** | **OWNER: GitHub Environments + secret migration** — create **`dev-weu`** (auto on merge) + **`prod-weu`** (**protected**: required reviewers + manual approval) — the **`<stage>-<region>`** naming (ADR-0017) so a second region is `dev-eus`/`prod-eus` additively; migrate flat `*_DEV`/`*_PRO` (OIDC ids, `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER/_ADMIN`, `ACR_NAME`, bootstrap `DB_CONNECTION_STRING`) into the per-env scopes. | S | **proposed** | infra, docs | — | **owner: GH Environments + secret migration** | 1 |
-| **T-0318** | **OWNER: Key Vault values + RBAC + first dev provision** — populate KV secrets (DB conn, `Jwt--Key`, Stripe **test** keys, SendGrid, Sentry, Storage conn, Mapbox); grant CI = Secrets Officer + the MI role assignments the Bicep declares; **run/approve `az deployment group create --resource-group rg-cleansia-weu-dev --parameters weu.dev.bicepparam`**. | M | **proposed** | infra | T-0315, T-0316, T-0317 | **owner: subscription/RBAC + KV secret values + run the apply** | 2 (the provision) |
-| **T-0319** | **Rewrite `deploy-dev.yml`** — a one-element **`strategy.matrix.region: [weu]`** (ADR-0017, no-op today/additive tomorrow) → per-leg Bicep `provision` job (`az deployment group create` on push; `what-if` on PR) → **`migrate-database`** EF-bundle (kept, before deploys) → **parallelized** API/SSR deploys (`needs:[provision,migrate-database]`, not each other) → Functions container (ACR) → 2 SWAs. **OIDC kept**, GH-Environment **`dev-weu`** scoped, the missing **customer-mobile** host added. | M | **proposed** | infra, backend | T-0315, T-0316 | — (authoring; runs after T-0318) | 2 |
-| **T-0320** | **Dev smoke + verification** — SMOKE-API (all 5 `api-cleansia-*-weu-dev` healthy + a partner-mobile + customer-mobile login issues a token), SMOKE-STORAGE (photo→blob; payment→`generate-receipt`→Functions→`generated-receipts` PDF), SMOKE-WEB (SSR renders, 2 SPAs load + reach APIs, CORS correct), SMOKE-MIGRATE (committed migrations applied pre-deploy). | M | **proposed** | infra, backend, qa | T-0318, T-0319 | — | 2 |
-| **T-0321** | **Catalog + living-doc edits (ADR-0015/0017 pattern-evolution loop)** — `patterns-backend.md` Deployment/IaC note **+ the tenancy=app / region=infra orthogonality + "never branch on a region code in a handler"**; `conventions.md` "no secret in Bicep/param/YAML" **+ the region-token-in-names / `region`-param / `<stage>-<region>`-Environment convention**; create `architecture/decisions/azure-deployment.md` (topology + region parameterization + SKU table + resource→secret map) **+ `multi-tenancy-and-region.md`** (the composition note). | S | **proposed** | docs, architect | T-0315 | — | 2 (parallel doc) |
-| **T-0322** | **Author prod Bicep — NOT DEPLOYED** — `weu.prod.bicepparam` (region='weu', env='prod', S1 plan, GP D2s_v3 Postgres, Standard SWAs, the `-weu-prod` names) + any prod-only module flags (the VNet/private-endpoint + Postgres-MI seam left togglable per Q-INFRA-03). Reviewed; **not applied**. | M | **proposed** | infra, db | T-0315, T-0316 | — (authoring only; NOT deployed) | **3 (authored, not deployed)** |
-| **T-0330** | **Connection-string resolver indirection (ADR-0017 region seam — the data-layer seam)** — introduce **one place** the DB connection string is resolved (a `region → connection-string` resolver), today returning the **single shared** West-Europe DB. Makes per-region DBs later a **resolver change, not an app rewrite**. **No schema change** (the `CountryConfiguration.HomeRegion` column is DEFERRED to first-second-region work). Reviewer check: the connection string is chosen in exactly one place; no handler/repo hard-codes a region or reaches a second connection string; the **tenancy filter is untouched**. | S | **proposed** | backend | — | — (no ef-migration; code seam only) | 0 (parallel; no Azure) |
+| **T-0315** | **Bicep skeleton + the reusable modules** — `deploy/bicep/main.bicep` + `modules/{appServicePlan(B2 Linux),appService(reusable),staticWebApp,functionApp(container/ACR),acr,postgres(B1ms),storage(LRS: blob containers + queues + Functions store),keyVault(RBAC),appInsights(+Log Analytics),roleAssignments}.bicep`. **No secret values** — Key Vault secret *names* only. **ADR-0017 seam: a `region` parameter (default `weu`) threaded through every module that emits a name/`location`; resources/RG/Key-Vault names carry the `weu` token from day one** (`api-cleansia-<audience>-weu-dev`, `rg-cleansia-weu-dev`, `pg-cleansia-weu-dev`, …). | M (filed L→split) | **done ✅** `38a10375` (security **PASS**) | infra, backend, db | — (ADR-0015/0017) | — (authoring) | **0 FIRST** |
+| **T-0316** | **`weu.dev.bicepparam` + the region/env-param wiring** — region='weu', env='dev', the five API host names (`api-cleansia-{partner,admin,customer,partner-mobile,customer-mobile}-weu-dev`) + `web-cleansia-customer-weu-dev` SSR + 2 SWAs, B2/B1ms/Free/LRS SKUs, West Europe, CORS=dev SPA/SSR origins per host, HTTPS-only, Postgres firewall (Azure services + admin IP). **Param-file naming = `<region>.<stage>.bicepparam`** (ADR-0017). | M | **done ✅** `38a10375` (PASS-WITH-NOTES) | infra | T-0315✓ | — | 0 |
+| **T-0317** | **OWNER: GitHub Environments + secret migration** — create **`dev-weu`** (auto on merge) + **`prod-weu`** (**protected**: required reviewers + manual approval) — the **`<stage>-<region>`** naming (ADR-0017) so a second region is `dev-eus`/`prod-eus` additively; migrate flat `*_DEV`/`*_PRO` (OIDC ids, `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER/_ADMIN`, `ACR_NAME`, bootstrap `DB_CONNECTION_STRING`) into the per-env scopes. | S | **blocked (OWNER)** | infra, docs | — | **owner: GH Environments + secret migration** | 1 |
+| **T-0318** | **OWNER: Key Vault values + RBAC + first dev provision** — populate KV secrets (DB conn, `Jwt--Key`, Stripe **test** keys, SendGrid, Sentry, Storage conn, Mapbox); grant CI = Secrets Officer + the MI role assignments the Bicep declares; **run/approve `az deployment group create --resource-group rg-cleansia-weu-dev --parameters weu.dev.bicepparam`**. | M | **blocked (OWNER)** | infra | T-0315✓, T-0316✓, T-0317 | **owner: subscription/RBAC + KV secret values + run the apply** | 2 (the provision) |
+| **T-0319** | **Rewrite `deploy-dev.yml`** — a one-element **`strategy.matrix.region: [weu]`** (ADR-0017, no-op today/additive tomorrow) → per-leg Bicep `provision` job (`az deployment group create` on push; `what-if` on PR) → **`migrate-database`** EF-bundle (kept, before deploys) → **parallelized** API/SSR deploys (`needs:[provision,migrate-database]`, not each other) → Functions container (ACR) → 2 SWAs. **OIDC kept**, GH-Environment **`dev-weu`** scoped, the missing **customer-mobile** host added. | M | **done ✅** `38a10375` (**hand-gated** — SO report failed) | infra, backend | T-0315✓, T-0316✓ | — (authoring; runs after T-0318) | 2 |
+| **T-0320** | **Dev smoke + verification** — SMOKE-API (all 5 `api-cleansia-*-weu-dev` healthy + a partner-mobile + customer-mobile login issues a token), SMOKE-STORAGE (photo→blob; payment→`generate-receipt`→Functions→`generated-receipts` PDF), SMOKE-WEB (SSR renders, 2 SPAs load + reach APIs, CORS correct), SMOKE-MIGRATE (committed migrations applied pre-deploy). | M | **blocked** (on T-0318 owner; T-0319✓) | infra, backend, qa | T-0318, T-0319✓ | — | 2 |
+| **T-0321** | **Catalog + living-doc edits (ADR-0015/0017 pattern-evolution loop)** — `patterns-backend.md` Deployment/IaC note **+ the tenancy=app / region=infra orthogonality + "never branch on a region code in a handler"**; `conventions.md` "no secret in Bicep/param/YAML" **+ the region-token-in-names / `region`-param / `<stage>-<region>`-Environment convention**; create `architecture/decisions/azure-deployment.md` (topology + region parameterization + SKU table + resource→secret map) **+ `multi-tenancy-and-region.md`** (the composition note). | S | **done ✅** `38a10375` | docs, architect | T-0315✓ | — | 2 (parallel doc) |
+| **T-0322** | **Author prod Bicep — NOT DEPLOYED** — `weu.prod.bicepparam` (region='weu', env='prod', S1 plan, GP D2s_v3 Postgres, Standard SWAs, the `-weu-prod` names) + any prod-only module flags (the VNet/private-endpoint + Postgres-MI seam left togglable per Q-INFRA-03). Reviewed; **not applied**. | M | **done ✅** `38a10375` (authored, **NOT deployed**) | infra, db | T-0315✓, T-0316✓ | — (authoring only; NOT deployed) | **3 (authored, not deployed)** |
+| **T-0330** | **Connection-string resolver indirection (ADR-0017 region seam — the data-layer seam)** — introduce **one place** the DB connection string is resolved (a `region → connection-string` resolver), today returning the **single shared** West-Europe DB. Makes per-region DBs later a **resolver change, not an app rewrite**. **No schema change** (the `CountryConfiguration.HomeRegion` column is DEFERRED to first-second-region work). Reviewer check: the connection string is chosen in exactly one place; no handler/repo hard-codes a region or reaches a second connection string; the **tenancy filter is untouched**. | S | **done ✅** `38a10375` (**hand-gated** — SO report failed; tenancy untouched) | backend | — | — (no ef-migration; code seam only) | 0 (parallel; no Azure) |
 
 **Sizing note:** **T-0315** is `L → split` (the module set is the effort concentrator) — split by module cluster
 before dispatch (see §6). No `L` in-flight (the catalog bans it). **T-0330** is a small backend code seam
@@ -165,17 +196,73 @@ P2  T-0320 (dev SMOKE) ◀── needs T-0318 (env up) + T-0319 (workflow)
 
 ---
 
-## 7. Owner manual-steps & provisioning (NOT the agents) — the prerequisites
+## 7. OWNER PROVISIONING CHECKLIST (NOT the agents) — the exact ordered steps to get dev live
 
-1. **Subscription access + the two RGs** (`rg-cleansia-dev`, `rg-cleansia-prod`) — owner.
-2. **GitHub Environments** `dev` (auto on merge) + `prod` (required reviewers + manual approval) — owner (T-0317).
-3. **Secret migration** flat `*_DEV`/`*_PRO` → per-env scopes — owner (T-0317).
-4. **Key Vault secret values** (DB conn, JWT key, Stripe **test** keys, SendGrid key, Sentry DSN, Storage conn,
-   Mapbox token) + **CI = Secrets Officer** + the MI role grants — owner (T-0318).
-5. **Run/approve the first dev `az deployment group create`** — owner (T-0318).
-6. **No new app code, no new ef-migration in this wave** — the config keys + connection-string slots + blob/
-   queue usage all stay (MI-vs-connection-string is a config choice the existing code already supports). The CI
-   EF-bundle applies **already-committed** migrations only (never `migrations add`).
+> All agent-authorable artifacts are **done + on disk** (`38a10375`). The dev environment is NOT yet
+> provisioned — the steps below are the **owner's** (the agent never creates an Environment, never
+> populates a secret value, never runs `az deployment`). Run them in order. After step 3 the dev env is
+> live and the iOS apps can point at the five `api-cleansia-*-weu-dev.azurewebsites.net` hosts.
+
+**STEP 0 — Subscription + RGs (prereq).** Ensure subscription access and the resource group
+`rg-cleansia-weu-dev` (the dev deployment is RG-scoped; create it or let the deployment create it at the
+target scope). `rg-cleansia-weu-prod` can wait — prod is authored-not-deployed.
+
+**STEP 1 — GitHub Environments + secret migration (ticket T-0317).**
+1. Create Environment **`dev-weu`** — auto-deploy on merge to master, **no** required reviewer.
+2. Create Environment **`prod-weu`** — **protected**: required reviewers + manual approval (it stays
+   empty/unused this wave, but the protected gate must exist).
+3. Migrate the flat secrets into the per-env scopes (and delete the flat repo-level copies):
+   - OIDC: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`
+   - SWA deploy tokens: `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER`, `…_ADMIN`
+   - `ACR_NAME`
+   - bootstrap `DB_CONNECTION_STRING` (the migrate-bundle's connection)
+   - the Postgres admin password the Bicep takes as `@secure()` (e.g. `POSTGRES_ADMIN_PASSWORD`)
+   → put the **dev** values in `dev-weu`, the **prod** values in `prod-weu`.
+
+**STEP 2 — Key Vault secret VALUES + RBAC grants (ticket T-0318).** In the dev Key Vault
+`kv-cleansia-weu-dev`, populate the secret **values** the Bicep references by **name** (no value is in
+the repo). The set:
+- `DB connection string` (the app's Postgres connection)
+- `Jwt--Key` (the JWT signing key)
+- Stripe **TEST** keys (publishable + secret + webhook signing) — **never live keys for dev**
+- SendGrid API key
+- Sentry DSN
+- Storage account connection string
+- Mapbox token
+
+Then grant RBAC:
+- **CI principal = Key Vault Secrets Officer** (so the deployment can apply the MI grants).
+- The **MI role assignments the Bicep declares**: each host's system-assigned MI = Key Vault **Secrets
+  User**; the Storage **data roles**; **AcrPull** (these are in `roleAssignments.bicep` — granting CI
+  Secrets Officer lets the deployment apply them).
+
+**STEP 3 — Run/approve the first dev provision (ticket T-0318).** Run (or let the workflow's `provision`
+job run on push to master):
+```
+az deployment group create \
+  --resource-group rg-cleansia-weu-dev \
+  --template-file deploy/bicep/main.bicep \
+  --parameters deploy/bicep/weu.dev.bicepparam \
+  --parameters postgresAdminPassword=$POSTGRES_ADMIN_PASSWORD
+```
+(On a PR the same `provision` job runs `az deployment group what-if` — a non-mutating preview — instead
+of `create`.) When it completes, the five API hosts + SSR + 2 SWAs + Functions(ACR) + Postgres + Storage
++ Key Vault + App Insights exist in `rg-cleansia-weu-dev`.
+
+**STEP 4 — Dev smoke (ticket T-0320, runs once the env is live).** With the env up, the T-0320 smoke
+confirms: all 5 `api-cleansia-*-weu-dev` healthy + a partner-mobile **and** customer-mobile login issues
+a token; photo→blob + payment→`generate-receipt`→Functions→`generated-receipts` PDF (queue→Functions
+live); SSR renders + 2 SPAs load + reach APIs + CORS correct; committed migrations applied pre-deploy.
+**Green smoke = the dev env is the stable API the Mac/iOS point at — the wave's outcome (ADR-0015 D6).**
+
+**Notes for the owner:**
+- **No new app code, no new ef-migration in this wave.** The config keys + connection-string slots +
+  blob/queue usage all already exist (MI-vs-connection-string is a config choice the existing code
+  supports). The CI EF-bundle applies **already-committed** migrations only (never `migrations add`).
+- **Prod is authored, NOT deployed** (T-0322). Deploying prod is a separate future decision once
+  Q-INFRA-01 (custom domain) + Q-INFRA-03 (VNet/private-endpoint + Postgres-MI hardening) are answered.
+- All Q-INFRA-* + Q-REGION-* questions are **non-blocking** for this dev provision (defaults in
+  `questions/open.md`).
 
 ---
 

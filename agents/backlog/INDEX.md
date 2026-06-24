@@ -10,6 +10,59 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## 🟦 WAVE 11 — Azure DEV deployment: Bicep IaC + region seam (ADR-0015/0017) — AGENT AUTHORING DONE; OWNER PROVISIONING PENDING (2026-06-23)
+> **The agent-authorable half of Wave 11 is DONE, reviewed/verified, committed + pushed (`38a10375` on
+> `feature/wave8-pre-ios-cleanup`).** The whole platform now has a clean-slate Bicep source-of-truth at
+> `deploy/bicep/` (the iOS-pivot enabler — a stable dev API the Mac points at instead of running all five
+> hosts + Functions + Postgres + Azurite locally). **6 tickets `done`** (T-0315, T-0316, T-0319, T-0321,
+> T-0322, T-0330); **3 OWNER-provisioning tickets `blocked`** on the owner (T-0317, T-0318, T-0320). Full
+> plan + the agent-vs-owner split + the OWNER PROVISIONING CHECKLIST: **`status/sprint-13.md`**.
+>
+> **What shipped (`38a10375`):** `main.bicep` (386 lines) + **10 modules** (appServicePlan B2 Linux,
+> reusable appService, staticWebApp, functionApp container/ACR, acr, postgres B1ms, storage LRS, keyVault
+> RBAC, roleAssignments, appInsights + Log Analytics) — **FIVE** API hosts incl.
+> `api-cleansia-customer-mobile-weu-dev` (the host the old YAML omitted, the iOS customer app needs); **no
+> secret value committed** (Key Vault refs + a `@secure()` Postgres password from a CI secret);
+> least-priv MI (KV Secrets User / Storage data roles / AcrPull; CI = Secrets Officer); HTTPS-only +
+> firewalled Postgres + mobile-host CORS closed; the **ADR-0017 region seam** (`region` param default
+> `weu`, the `weu` token in every name, a region→location map). `weu.dev.bicepparam` + `weu.prod.bicepparam`
+> (**prod authored, NOT deployed**). `deploy-dev.yml` rewritten (Bicep provision gate: what-if on PR /
+> create on push; OIDC + the EF-migration bundle preserved; parallelized deploys behind the migrate edge;
+> `matrix.region:[weu]`; `dev-weu` Environment; all five hosts). The **T-0330** region connection-string
+> resolver (`IRegionConnectionStringResolver` + `RegionConnectionStringResolver`, the ADR-0017 data seam —
+> one resolution point, behavior-preserving, **tenancy filter untouched**, no schema change).
+>
+> **Security gate PASSED on the module set (T-0315).** Reviewer-per-developer held — **except** the
+> in-workflow StructuredOutput report tool failed (retry cap) on the **T-0319** and **T-0330** dev agents;
+> that is a **REPORTING** failure, not a work failure (the work landed on disk), so the orchestrator
+> **gated those two BY HAND** (read the resolver + CI; built `Cleansia.Config` 0 errors; secret-scanned;
+> confirmed tenancy untouched + 5 hosts + OIDC/migration/provision gate). T-0319 + T-0330 are
+> **verified-done** despite their in-workflow reviewer not running. Process lesson reinforced in
+> `quality-gates.md` (3 occurrences across 2 waves now → standing rule + keep `buildEvidence`/`verifyEvidence` SHORT).
+>
+> | ID | Title | Size | Status | Phase | depends_on | Layers | sec | manual_step |
+> |----|-------|------|--------|-------|-----------|--------|-----|-------------|
+> | **T-0315** | Bicep skeleton + 10 reusable modules (`main.bicep`; five hosts incl. customer-mobile; KV-ref only; region-token names) | M (filed L→split) | **done ✅** `38a10375` | 0 FIRST | — | infra, backend, db | **yes** (PASS) | — |
+> | **T-0316** | `weu.dev.bicepparam` + region/env-param wiring (five host names, dev SKUs, CORS, firewall) | M | **done ✅** `38a10375` (PASS-WITH-NOTES) | 0 | T-0315✓ | infra | no | — |
+> | **T-0317** | **OWNER** — GitHub Environments (`dev-weu`/`prod-weu`) + flat-secret migration into per-env scopes | S | **blocked** (OWNER) | 1 | — | infra, docs | yes | **gh-environments + secret-migration** |
+> | **T-0318** | **OWNER** — Key Vault values + RBAC grants + run/approve the first dev `az deployment` | M | **blocked** (OWNER) | 2 | T-0315✓, T-0316✓, T-0317 | infra | yes | **kv-secret-values + rbac-grants + az-deployment** |
+> | **T-0319** | Rewrite `deploy-dev.yml` — Bicep-gated, OIDC + EF-bundle preserved, parallelized, 5 hosts, `dev-weu` | M | **done ✅** `38a10375` (**hand-gated** — SO report failed) | 2 | T-0315✓, T-0316✓ | infra, backend | no | — |
+> | **T-0320** | Dev smoke + verification (5 APIs + SSR + 2 SPAs + Functions; queue→Functions live) — **needs the env up** | M | **blocked** (on T-0318 owner) | 2 | T-0318, T-0319✓ | infra, backend, qa | no | — |
+> | **T-0321** | Catalog + living-doc edits (deployment/IaC pattern + tenancy=app/region=infra orthogonality) | S | **done ✅** `38a10375` | 2 | T-0315✓ | docs, architect | no | — |
+> | **T-0322** | Author prod Bicep — `weu.prod.bicepparam` — **NOT DEPLOYED** | M | **done ✅** `38a10375` (authored, not deployed) | 3 | T-0315✓, T-0316✓ | infra, db | no | — |
+> | **T-0330** | Connection-string resolver indirection (ADR-0017 data seam — one place, behavior-preserving, tenancy untouched) | S | **done ✅** `38a10375` (**hand-gated** — SO report failed) | 0 ∥ | — | backend | no | — |
+>
+> **Owner provisioning prerequisites (the path to a live dev env):** **T-0317** (create the `dev-weu`
+> auto + `prod-weu` protected Environments, migrate the flat `*_DEV`/`*_PRO` secrets) → **T-0318**
+> (populate the Key Vault values, grant CI = Secrets Officer + the MI roles, run the dev
+> `az deployment group create`) → **T-0320** runs once the env is live (the smoke that confirms the five
+> `api-cleansia-*-weu-dev` hosts are up — the iOS-pivot enabler). The agent **never** runs these — the
+> exact ordered owner steps are on the OWNER PROVISIONING CHECKLIST (`status/sprint-13.md` §7 + the PM's
+> checkpoint relay). **Q-INFRA-01/02/03 + Q-REGION-01/02/03 are all non-blocking for the dev provision**
+> (tracked with their defaults in `questions/open.md`); prod (T-0322) is authored-not-deployed.
+>
+> --- (Wave-9 banner below) ---
+>
 > ## 🟣 WAVE 9 PLANNED — Admin Action Audit Log (ADR-0012, planned 2026-06-22) — backlog only, not yet dispatched
 > **ADR-0012 (`adr/0012-admin-action-audit-log.md`) is `accepted`.** Owner approved building the **full**
 > audit-log feature now (backend + admin UI + tests). **7 tickets filed (T-0282…T-0288).** Full plan —

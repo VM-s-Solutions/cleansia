@@ -226,6 +226,23 @@ working tree and gates the on-disk result by hand** (here it passed: build clean
 keep `buildEvidence` **concise** to avoid the schema-serialization failure (don't pack the whole diff /
 log into one giant escaped string).
 
+> **Recurrence confirms the pattern (2026-06-23, Wave-11 Azure-infra, commit `38a10375`): same failure on
+> 3 tickets across 2 runs.** The final-report tool failed on the **T-0319** (rewritten `deploy-dev.yml`)
+> and **T-0330** (region connection-string resolver) dev agents — and earlier on **T-0290 FE** — while in
+> every case the work landed on disk. The orchestrator gated T-0319 + T-0330 **by hand** (read the
+> resolver + the CI; built `Cleansia.Config` 0 errors; secret-scanned; confirmed the tenancy filter
+> untouched + all five hosts + OIDC/migration/provision gate) and both are verified-done **even though
+> their in-workflow reviewer didn't run**. Three independent occurrences across two waves make this a
+> standing operating rule, not a one-off: **a StructuredOutput retry-cap failure is NOT a work failure —
+> always inspect the working tree and gate the on-disk result by hand.**
+>
+> **Mitigation (acts on the likely trigger): keep the schema's `buildEvidence` / `verifyEvidence` fields
+> SHORT.** The common thread across all three failures is an **oversized, escaping-heavy evidence string**
+> (a whole build log / diff packed into one field) tripping the schema serialization at the retry cap.
+> Cap these fields to a terse summary (counts + a one-line verdict + the key file:line), never the raw
+> log. The authoritative evidence lives in the ticket status log and the working tree anyway — the report
+> field is a pointer, not the artifact.
+
 ---
 
 ## How a reviewer writes a verdict

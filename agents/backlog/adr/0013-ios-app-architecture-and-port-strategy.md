@@ -3,7 +3,11 @@
 - **Status:** accepted   <!-- proposed | accepted | superseded | rejected -->
 - **Date:** 2026-06-23
 - **Supersedes:** —
-- **Superseded by:** —
+- **Superseded by:** ADR-0014 **partially** (2026-06-23) — only **D2** (the view-model observation
+  mechanism: `@Observable` → `ObservableObject`/`@Published`) and the **deployment-target assumption**
+  (Q-IOS-01: iOS 17 → **iOS 16**, for old-device reach). **All other decisions here (D1, D3–D12) remain in
+  force.** Read this ADR *with* ADR-0014's D2′/D6′ overrides applied. The immutable text below is left
+  unedited per the ADR rule; the floor-affected parts are superseded, not deleted.
 - **Applies to:** ios | mobile (cross-client contract) | cross-cutting
 - **Extends:** ADR-0011 (the born-canonical iOS `ApiResult<T> = Result<T, ApiError>` repository contract, D4 — this ADR consumes it, does not re-decide it). Mirrors the mobile API contract audit (security, 2026-06-22) and the Android parity map (analyst, 2026-06-22) as its evidence base.
 - **Ticket:** IOS-ADR (this ADR) · **Consumers:** the Phase-0 foundation tickets (workspace + shared package + codegen toolchain + auth/session/header middleware + DI + error center), then the partner Phase-1 vertical, then the parity feature waves (see the ticketed plan in `status/sprint-12.md`).

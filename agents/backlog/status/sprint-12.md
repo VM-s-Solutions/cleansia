@@ -2,11 +2,21 @@
 
 **Status:** PLANNED (backlog only — no code, no commits)
 **Created:** 2026-06-23
-**Source:** **ADR-0013** (`adr/0013-ios-app-architecture-and-port-strategy.md`, **accepted** 2026-06-23) —
-the frozen architecture + port strategy; companion living doc
+**Source:** **ADR-0013** (`adr/0013-ios-app-architecture-and-port-strategy.md`, **accepted** 2026-06-23) +
+**ADR-0014** (`adr/0014-ios-deployment-target-ios16-and-state-mechanism.md`, **accepted** 2026-06-23 —
+partially supersedes ADR-0013: **iOS-16 floor** + `ObservableObject`/`@Published` state + the iOS-16 MapKit
+variant; all other ADR-0013 decisions stand). Companion living doc
 `architecture/decisions/ios-app-architecture.md`. Evidence base: the **Mobile API contract audit**
 (security, 2026-06-22) + the **Android parity map** (analyst, 2026-06-22). ADR-0011 D4 supplies the
 born-canonical Swift `ApiResult<T>` contract.
+
+> **Owner revision applied 2026-06-23 (Q-IOS-01 answered = iOS 16, recorded in ADR-0014):** lower the floor
+> from iOS 17 to **iOS 16** for old-device reach (iPhone 8/8 Plus/X, 2017+). Real impacts: state mechanism →
+> **`ObservableObject`/`@Published`** (`@Observable` is iOS-17-only; the `UiState`/`ActionState` **enums +
+> facade parity are unchanged**); maps use the **iOS-16 MapKit variant** (`Map(coordinateRegion:)` +
+> `MKMapView` `UIViewRepresentable` for the full-bleed/overlay surfaces — the SwiftUI `Map {...}` API is
+> iOS-17-only). **No new/removed tickets, no structural change** — only the per-ticket notes + the
+> deployment-target + the reviewer checks (#11/#12) below. Everything else in this plan is unchanged.
 **Goal:** port the Kotlin/Compose customer + partner apps to **Swift/SwiftUI** as **parity** apps sharing
 the **same Mobile API contract**, on a `CleansiaCore` SPM package + 2 app targets, **partner-first**, with
 a hand-written auth/session/header layer to the exact Android contract. iOS code lives at
@@ -18,10 +28,13 @@ a hand-written auth/session/header layer to the exact Android contract. iOS code
 
 ---
 
-## 1. Owner decisions this wave builds to (ADR-0013)
+## 1. Owner decisions this wave builds to (ADR-0013 + ADR-0014)
 
-- **PLAN FIRST** — this is the design (ADR-0013) + this proposed backlog; **no Swift code, no commits**
-  until the owner approves.
+- **Deployment target = iOS 16** (ADR-0014 / Q-IOS-01 answered — old-device reach iPhone 8/X 2017+). Set on
+  both app targets + `CleansiaCore`'s `Package.swift` (`platforms: [.iOS(.v16)]`, T-0296). State VMs use
+  **`ObservableObject` + `@Published`** (not `@Observable`); maps use the **iOS-16 MapKit variant**.
+- **PLAN FIRST** — this is the design (ADR-0013 + ADR-0014) + this proposed backlog; **no Swift code, no
+  commits** until the owner approves.
 - **THE ARCHITECT DECIDES THE LEAD APP** — decided: **PARTNER** (D9). First vertical = partner login →
   **read-only Dashboard**, proving auth/session/headers/codegen/state with **zero** Mapbox/Stripe/Google/
   photo dependencies. The shared package is **designed from the customer app's mature `:core` shape**
@@ -32,9 +45,9 @@ a hand-written auth/session/header layer to the exact Android contract. iOS code
   **missing** `Device/Mine` + `Device/{id}` revoke + `EmployeePayroll/GetPeriodPays`). **iOS codegen MUST
   NOT run against them.** A regen of the *existing* contract (not a contract change) feeds web (NSwag),
   Android (openapi-generator kotlin), and iOS (openapi-generator swift5) from the same spec.
-- **Three non-blocking owner questions** (defaults taken — `questions/open.md`): **Q-IOS-01** (target =
-  iOS 17), **Q-IOS-02** (no Mapbox brand requirement → MapKit default), **Q-IOS-03** (omit trusted-device
-  to match Android).
+- **Owner questions:** **Q-IOS-01 ANSWERED — iOS 16** (ADR-0014, above). **Q-IOS-02** (no Mapbox brand
+  requirement → MapKit default) + **Q-IOS-03** (omit trusted-device to match Android) remain non-blocking
+  with their defaults — `questions/open.md`.
 - **Maps: MapKit by default behind a `MapProvider` protocol** (D6). **Stripe: `stripe-ios` PaymentSheet**
   (D7). **Push: APNs → existing `/api/Device/*`, `Platform="ios"`** (D8). **i18n: 5 locales via String
   Catalog** (D11). **trusted-device: omit v1** (D10).
@@ -72,8 +85,8 @@ PHASE 2+ PARITY FEATURE WAVES ── ordered by complexity; the 3 hard areas cal
 
 | ID | Title | Size | Status | Layers | depends_on | manual_step | Phase / batch |
 |----|-------|------|--------|--------|-----------|-------------|---------------|
-| **T-0296** | Xcode workspace + `CleansiaCore` SPM package skeleton + 2 app targets (`CleansiaPartner`/`CleansiaCustomer`), bundle ids, signing placeholders | M | **proposed** | ios | — | — | **0 FIRST/ALONE** |
-| **T-0297** | Design tokens (colors/spacing/shape/type) + the `Cleansia*` SwiftUI component parity (Button/TextField/Dropdown/Dialog/Checkbox/CodeInput) in `CleansiaCore` | M | **proposed** | ios | T-0296 | — | 0 |
+| **T-0296** | Xcode workspace + `CleansiaCore` SPM package skeleton + 2 app targets (`CleansiaPartner`/`CleansiaCustomer`), bundle ids, signing placeholders. **Deployment target = iOS 16** on both targets + `Package.swift` `platforms: [.iOS(.v16)]` (ADR-0014) | M | **proposed** | ios | — | — | **0 FIRST/ALONE** |
+| **T-0297** | Design tokens (colors/spacing/shape/type) + the `Cleansia*` SwiftUI component parity (Button/TextField/Dropdown/Dialog/Checkbox/CodeInput) in `CleansiaCore`. **VM pattern = `ObservableObject`/`@Published`** (iOS-16, not `@Observable`); sealed `UiState`/`ActionState` enums unchanged (ADR-0014 D2′) | M | **proposed** | ios | T-0296 | — | 0 |
 | **T-0298** | DI composition root (`AppContainer` per app, initializer injection; the lazy no-auth refresh-session boundary) | S | **proposed** | ios | T-0296 | — | 0 |
 | **T-0299** | Global snackbar bus + error center (`SnackbarController` parity + the app-local `ApiError→String` localizer seam) | S | **proposed** | ios | T-0296 | — | 0 |
 | **T-0300** | **The auth/session/header middleware (hand-written, load-bearing)** — Keychain `TokenStore`, hand-written `AuthClient` + no-auth refresh session, `actor SessionRefresher` single-flight 401-refresh, `DeviceIdProvider` (one source), `HeaderAdapter` (X-Device-Id/Label/Time-Zone + no-Bearer-on-anon allow-list), `SessionManager`/ForcedSignOut + session-scoped cache registry | **L → split** | **proposed** | ios | T-0296, T-0298 | — | 0 (the spine) |
@@ -82,7 +95,7 @@ PHASE 2+ PARITY FEATURE WAVES ── ordered by complexity; the 3 hard areas cal
 | **T-0303** | **Phase-1 partner lead vertical** — partner login (hand-written auth, empty-token gate) → **read-only Dashboard** (generated partner client + `UiState`), proving auth/session/headers/codegen/state end-to-end | M | **proposed** (**held on regen**) | ios | T-0300, T-0302 | rides T-0302 regen | **1 (the proving vertical)** |
 | **T-0304** | Partner shell (Dashboard·Orders·Invoices·Profile tabs) + RegistrationLock gate (fails CLOSED) + SplashGate | M | **proposed** | ios | T-0303 | — | 2 (partner) |
 | **T-0305** | Partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding chain | M | **proposed** | ios | T-0303 | — | 2 (partner) |
-| **T-0306** | **Map seam + MapKit default** — `MapProvider`/`GeocodingService` protocol in `CleansiaCore` + `MapKitMapProvider` + the partner `AddressPicker` (first map surface) | M | **proposed** | ios | T-0300 | — | 2 (**HARD AREA #2 — first half**) |
+| **T-0306** | **Map seam + MapKit default** — `MapProvider`/`GeocodingService` protocol in `CleansiaCore` + `MapKitMapProvider` + the partner `AddressPicker` (first map surface). **iOS-16 variant (ADR-0014 D6′):** `Map(coordinateRegion:annotationItems:)` for the picker; `MKMapView` via `UIViewRepresentable` for the full-bleed map + polygon overlays — NO iOS-17-only `Map {...}`/`Marker`/`MapPolygon` | M | **proposed** | ios | T-0300 | — | 2 (**HARD AREA #2 — first half**) |
 | **T-0307** | **Partner order work-loop** — OrdersList + OrderDetail (full-bleed map + 3-snap sheet) + the **OnTheWay** lifecycle (Take→NotifyOnTheWay→Start→Complete) + checklist/notes/issues/timeline | **L → split** | **proposed** | ios | T-0304, T-0306 | — | 2 (**HARD AREA #3**) |
 | **T-0308** | **Partner photo upload** — camera capture → **JSON base64** photos (partner shape) on OrderDetail | M | **proposed** | ios | T-0307 | — | 2 (HARD AREA #3 cont.) |
 | **T-0309** | Partner earnings + invoices + PeriodPay (`EmployeePayroll/GetPeriodPays` — a regen'd-spec endpoint) | M | **proposed** | ios | T-0304 | — | 2 (partner) |
@@ -186,12 +199,16 @@ is already iOS-ready. The only owner contract step is the **regen of the existin
 - **TDD on the auth spine:** TC-IOS-AUTH-401 (single-flight), TC-IOS-ANON (no-Bearer-on-anon),
   TC-IOS-DEVICEID (header==Device/Register id), TC-IOS-EMPTYTOKEN (200+empty→confirm gate), TC-IOS-STATE
   (the three UiState cases) — **red-first**.
-- **Reviewer compliance checks (ADR-0013 §"How a reviewer verifies"):** #1 no hand-edited generated client
-  · #2 auth NOT generated · #3 X-Device-Id single source · #4 anon allow-list complete (incl. customer
-  host) · #5 refresh token replaced every refresh · #6 single no-auth session + single-flight · #7 maps
-  behind `MapProvider` (no direct MapKit/Mapbox import in features) · #8 one `ApiResult`/`ApiError` in
-  `CleansiaCore` (ADR-0011 D4) · #9 OnTheWay lifecycle parity (mirror the code) · #10 i18n 5-locale
-  completeness, no hardcoded strings.
+- **Reviewer compliance checks (ADR-0013 + ADR-0014 §"How a reviewer verifies"):** #1 no hand-edited
+  generated client · #2 auth NOT generated · #3 X-Device-Id single source · #4 anon allow-list complete
+  (incl. customer host) · #5 refresh token replaced every refresh · #6 single no-auth session +
+  single-flight · #7 maps behind `MapProvider` (no direct MapKit/Mapbox import in features) · #8 one
+  `ApiResult`/`ApiError` in `CleansiaCore` (ADR-0011 D4) · #9 OnTheWay lifecycle parity (mirror the code) ·
+  #10 i18n 5-locale completeness, no hardcoded strings · **#11 (ADR-0014) deployment target = iOS 16; no
+  `import Observation`/`@Observable`/`@available(iOS 17)` always-on path — VMs conform to `ObservableObject`
+  with `@Published` state, `@StateObject` for owned VMs vs `@ObservedObject` for injected (the foot-gun)** ·
+  **#12 (ADR-0014) no iOS-17-only SwiftUI MapKit API (`Map {...}` content builder / `Marker`/`MapPolygon`/
+  `MapCameraPosition`) — rich-map surfaces via `MKMapView` inside `MapKitMapProvider`**.
 - **Mechanical:** the Xcode workspace builds; `CleansiaCore` + both app targets compile; the codegen step
   produces the client from the on-disk spec (no hand-edit); the Swift test suites run.
 

@@ -293,22 +293,30 @@ _No open Wave-1 *planning* questions remain._
 
 ## iOS port questions (2026-06-23) — raised by ADR-0013 (IOS-ADR)
 
-> All three are **non-blocking** with defensible defaults taken; the iOS plan proceeds on the defaults.
-> The **one hard blocker** for the iOS feature waves is NOT a question — it is the owner **mobile-spec
-> regen** (`manual_step: mobile-spec-regen`, owner-only), a regen of the *existing* contract (not a
-> contract change), which gates only the generated-client tickets. The Phase-0 foundation runs without it.
+> **Q-IOS-01 RESOLVED 2026-06-23 — owner answered iOS 16** (recorded in superseding ADR-0014). Q-IOS-02 /
+> Q-IOS-03 remain non-blocking with their defaults; the iOS plan proceeds on them. The **one hard blocker**
+> for the iOS feature waves is NOT a question — it is the owner **mobile-spec regen**
+> (`manual_step: mobile-spec-regen`, owner-only), a regen of the *existing* contract (not a contract
+> change), which gates only the generated-client tickets. The Phase-0 foundation runs without it.
 
-### Q-IOS-01 — [blocking: no] iOS minimum deployment target
+### Q-IOS-01 — [RESOLVED 2026-06-23 — answered: iOS 16] iOS minimum deployment target
 - Raised by: architect (IOS-ADR / ADR-0013 D2)
 - Owner: owner
 - Resolve-by: post-prod
 - Date: 2026-06-23
-- Question: What is the iOS **minimum deployment target**? The architecture assumes **iOS 17** (enables
-  Observation `@Observable` for the state parity and the SwiftUI `Map` for the MapKit default).
-- Why it matters: it sets device reach. It does **not** change the architecture — a lower floor would only
-  force an `ObservableObject`/`@Published` fallback for state and a `UIViewRepresentable` MapKit wrapper.
-- Default taken (non-blocking): **iOS 17** — the modern-platform-floor posture matching Android `minSdk 26`.
-- Answer: _(owner fills in — confirm iOS 17, or set a lower floor and accept the state/map fallbacks)_
+- Question: What is the iOS **minimum deployment target**? The (original) architecture assumed **iOS 17**
+  (enables Observation `@Observable` for the state parity and the SwiftUI `Map` for the MapKit default).
+- Why it matters: it sets device reach. It does **not** change the architecture — a lower floor only forces
+  an `ObservableObject`/`@Published` state mechanism and a `UIViewRepresentable` MapKit variant.
+- Default taken (non-blocking, original): **iOS 17** — the modern-platform-floor posture matching Android
+  `minSdk 26`.
+- **Answer (owner, 2026-06-23): iOS 16.** Rationale = **old-device reach**: iOS 16 runs on **iPhone 8 /
+  8 Plus / X (2017+)**, which the iOS-17 floor (XS/XR, 2018+) excluded. Reach was the deciding factor; the
+  cost (a more verbose `ObservableObject`/`@Published` state mechanism + the iOS-16 MapKit API variant) is
+  accepted. **Recorded in superseding ADR-0014** (`adr/0014-ios-deployment-target-ios16-and-state-mechanism.md`),
+  which partially supersedes ADR-0013 D2 + the deployment-target assumption — all other ADR-0013 decisions
+  stand. The sealed `UiState`/`ActionState` enums + the facade/state parity are **unchanged** (only the
+  observation wrapper changed). sprint-12 tickets updated in parallel. **RESOLVED.**
 
 ### Q-IOS-02 — [blocking: no] Hard brand requirement that the iOS map be Mapbox-identical?
 - Raised by: architect (IOS-ADR / ADR-0013 D6)

@@ -202,10 +202,15 @@ dotnet ef migrations bundle \
 
 ## 8. Build the Functions container + first app deploy
 
-The rewritten [`deploy-dev.yml`](../.github/workflows/deploy-dev.yml) does all of this on a push to
-`master`: provision (idempotent) → migrate → build+push the Functions image to ACR → deploy the 5 APIs +
-SSR (parallel) + the 2 SPAs. **To trigger the first full deploy, merge to `master`** (or run the workflow
-manually). The SWA deploy tokens (step 4) must be filled first — get them after step 5:
+The [`deploy-dev.yml`](../.github/workflows/deploy-dev.yml) workflow is **manual-only** (`workflow_dispatch`)
+— it never runs on a PR or automatically on push. Trigger it from **GitHub → Actions → "Deploy to DEV" →
+Run workflow**, choosing the **mode**:
+- **`deploy`** — provision/update via Bicep → migrate → build+push the Functions image → deploy the 5 APIs
+  + SSR (parallel) + the 2 SPAs.
+- **`what-if`** — a non-mutating Bicep preview only (no migrate, no deploy) — safe to run any time to see
+  what a deploy would change.
+
+The SWA deploy tokens (step 4) must be filled first — get them after step 5:
 
 ```bash
 az staticwebapp secrets list -g rg-cleansia-weu-dev -n swa-cleansia-partner-weu-dev --query properties.apiKey -o tsv

@@ -97,20 +97,22 @@ jobs:
         run: npx playwright install --with-deps chromium
         working-directory: ./src/Cleansia.App
 
-      # `e2e-ci` is Nx's canonical CI entry: it runs `playwright test`, whose
-      # webServer boots `nx run <app>:serve` and waits (up to the config's 300s)
-      # for the dev server before the spec runs. (`npm test` → `nx e2e cleansia.app-e2e`
-      # runs the identical customer spec for local use.)
+      # The plain `e2e` target runs `playwright test` directly — its webServer boots
+      # `nx run <app>:serve` and waits (up to the config's 300s) for the dev server
+      # before the spec runs. (NOT `e2e-ci`: that atomizes the spec set into per-file
+      # tasks that REQUIRE Nx Cloud Agents to distribute — without Nx Agents it errors
+      # "should only be run with Nx Agents". The smoke is one spec per app, so the plain
+      # `e2e` target is the correct, agent-free entry.)
       - name: Run customer booking smoke
-        run: npx nx run cleansia.app-e2e:e2e-ci
+        run: npx nx run cleansia.app-e2e:e2e
         working-directory: ./src/Cleansia.App
 
       - name: Run partner accept-job smoke
-        run: npx nx run cleansia-partner.app-e2e:e2e-ci
+        run: npx nx run cleansia-partner.app-e2e:e2e
         working-directory: ./src/Cleansia.App
 
       - name: Run admin seeded-row smoke
-        run: npx nx run cleansia-admin.app-e2e:e2e-ci
+        run: npx nx run cleansia-admin.app-e2e:e2e
         working-directory: ./src/Cleansia.App
 
       - name: Upload Playwright reports

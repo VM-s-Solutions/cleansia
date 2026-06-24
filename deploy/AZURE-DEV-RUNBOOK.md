@@ -31,6 +31,28 @@ The deployment also creates: 5 blob containers (`order-photos`, `employee-docume
 `generated-receipts`, `generated-invoices`, `user-files`), 12 queues (6 base + 6 `-poison`), the
 `Cleansia` database, the Postgres firewall rules, and the managed-identity role grants.
 
+> ### ⓘ Naming rule: the name encodes the REGION, not the COUNTRY/market (ADR-0017)
+>
+> Every resource + GitHub Environment is named `…-<region>-<stage>` (e.g. `…-weu-dev`, env `dev-weu`).
+> The token is the **Azure region** (`weu` = West Europe), **NOT** a country/market.
+>
+> **Multiple markets (CZ, SK, …) running in the same region SHARE one deployment** — one set of
+> `*-weu-dev` resources, one Postgres, one `dev-weu` Environment. They are *not* separate deployments and
+> must *not* get `cz`/`sk` in any resource or environment name. The difference between markets —
+> currency, language, VAT/fiscal rules, payment gateway, tax-id formats — is **application data**
+> (`CountryConfiguration` rows + the `tenant_id` JWT claim + the row-scoped `TenantId` filter), never
+> infrastructure. This is the deliberate **tenancy = app / region = infra** separation from ADR-0017.
+>
+> **So:** CZ + SK both in West Europe → correctly share `dev-weu`. ✅ Putting a country in the name would
+> conflate "where the servers physically are" with "which market a customer belongs to" — the exact
+> mistake the seam prevents.
+>
+> **When a new name *is* needed:** only if a market must run in a **physically different Azure region**
+> (e.g. a future market with a data-residency law requiring its own datacenter). Then you add a *second*
+> region — say `dev-neu` (North Europe) — by changing the `region` Bicep param + adding a one-line matrix
+> entry + a `dev-neu`/`prod-neu` Environment, and `CountryConfiguration.HomeRegion` routes that market's
+> tenant there. The existing `weu` resources are never renamed. (See `agents/architecture/decisions/multi-tenancy-and-region.md`.)
+
 ---
 
 ## 1. Prerequisites (one-time, before anything else)

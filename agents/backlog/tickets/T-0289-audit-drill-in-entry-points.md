@@ -1,9 +1,9 @@
 ---
 id: T-0289
 title: Per-detail-page drill-in entry points → the per-resource audit-history view
-status: ready
+status: done
 size: S
-owner: —
+owner: frontend
 created: 2026-06-23
 updated: 2026-06-23
 depends_on: [T-0286]
@@ -88,6 +88,25 @@ page with the correct rows + the gate hides it without the policy. No `security`
   `layers: [frontend]`; `security_touching: false`; `manual_steps: []`; archetype = the T-0286
   audit-log feature + the existing `<cleansia-button>` + `*cleansiaPermission` detail-page pattern.
   No panel (ADR-0012 accepted; purely additive wiring).
+- 2026-06-23 — ready → in_progress → in_review → done (frontend + reviewer, parallel). Added the
+  **"View audit history"** drill-in to the **order**, **dispute**, **admin-user**, and **pay-config**
+  detail pages via a new `buildAuditResourceHistoryRoute(resourceType, resourceId)` helper (no
+  hand-built URL strings), gated by `*cleansiaPermission="Policy.CanViewAuditLog"` (mirrors the T-0286
+  nav gate), `<cleansia-button>` only, i18n key in **all 5** admin locales. `resourceType` literals
+  verified against the T-0283/T-0284 recorded types so the history filters to real rows. Mechanical:
+  `nx test` (touched libs + audit-log) green; `nx build cleansia-admin.app --configuration=production`
+  clean; `check-consistency.mjs` no new violation; `consistency.md` D4 note recorded. Shipped on
+  `feature/wave8-pre-ios-cleanup` (commit `916014cb`); orchestrator re-verified the combined tree green.
+  **DEVIATION (deliberate, recorded — NOT a missed page):** the **employee-detail** page was *not* wired
+  for a drill-in. `AdminEmployeeDetail` exposes **`Employee.Id`**, but the audit behavior records the
+  audited subject as the **`User.Id`** (the sensitive-five snapshots key on the User). Passing
+  `Employee.Id` as the `resourceId` would filter the history to **nothing** (empty view = AC3 "mismatched
+  type yields empty history is a defect"). The four pages above all expose the correctly-audited id, so
+  AC1's "order/dispute/user/pay-config" set is fully satisfied; the employee page is the one audited
+  surface whose detail DTO lacks the audited id. A User-typed drill-in *from the employee page* is a
+  **future enhancement** that needs a **backend DTO change** (add `UserId` to `AdminEmployeeDetail`) →
+  **owner nswag-regen (admin)** → then one nav call. Filed as a known follow-up: **T-0295** (XS,
+  backend+frontend, `manual_steps: [nswag-regen]`, `ready`).
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

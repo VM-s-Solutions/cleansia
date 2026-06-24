@@ -1,6 +1,6 @@
 # Sprint 10 — WAVE 8: Pre-iOS Cleanup
 
-**Status:** ✅ CLOSED 2026-06-23 (see the close banner below) — 9 of 10 tickets `done`; T-0279 stays `blocked` on IMP-3 (does not gate close).
+**Status:** ✅ CLOSED 2026-06-23 (see the close banner below) — 9 of 10 tickets `done`; T-0279 stays `blocked` on IMP-3 (does not gate close). **Close-out follow-up batch (T-0289…T-0293) also RAN + CLOSED 2026-06-23** — 5/6 `done`, T-0290 backend-half done+verified (FE half held on owner admin regen); see the "🏁 CLOSE-OUT FOLLOW-UP BATCH" section.
 **Created:** 2026-06-22
 **Source:** `agents/backlog/audits/AUDIT-2026-06-22-pre-ios-cleanup.md` (13 findings) + owner points P1–P4.
 **Goal:** clear the carried structural/contract debt the audit + owner surfaced **before iOS development
@@ -67,6 +67,71 @@ them but **none were ticketed** — highest pre-existing id was T-0288) and the 
 admin regen); (3) standing items unchanged — Mapbox key rotation + Functions restart; the queued Wave-6
 ef-migrations (T-0261/T-0237 PROD `CONCURRENTLY`); open PRs to `master`; IMP-1 (Google OAuth) + BUG-22
 (email-badge CSS). The Wave-8 E2E work itself needs **no migration and no regen**.
+
+---
+
+## 🏁 CLOSE-OUT FOLLOW-UP BATCH RAN + CLOSED (2026-06-23) — T-0289…T-0293
+
+The close-out follow-up batch above (the 5 ADR-0012/E2E follow-ups) **ran and closed** — **2 commits on
+`feature/wave8-pre-ios-cleanup`, pushed**, orchestrator-verified on the combined tree. Reviewer-per-dev on
+every ticket; security gate on T-0290's backend seam.
+
+**Backend commit — T-0290 BACKEND HALF (done + verified):** `GetAdminActionAuditById` single-row audit
+read returning `BeforeJson`/`AfterJson` via a new `AdminActionAuditDetailDto`, gated by the **existing**
+`Policy.CanViewAuditLog` (**no new policy**), tenant-scoped, paged query **unchanged** (still omits the
+blobs — AC2). **Run evidence (orchestrator's own re-run): 8 unit + 2 real-Postgres integration
+(tenant-scope) + 5 host authz-rejection — ALL GREEN. Security gate: PASS** (snapshot-exposure seam signed
+off — ids + changed fields only, `AdminOnly`-gated + tenant-scoped, list cut still withholds the blobs).
+
+**FE/docs/e2e commit `916014cb`:** **T-0289** (audit drill-in entry points on order/dispute/admin-user/
+pay-config detail pages + `buildAuditResourceHistoryRoute` helper + i18n×5 + `consistency.md` D4 note;
+employee-detail deliberately NOT wired — see deviation below) · **T-0293** (E2E depth: partner accept-job
+transition + admin seeded-row, re-run green — T-0281's narrowed AC1/AC2 now closed) · **T-0291**
+(`consistency.md` disputes-archetype note) · **T-0292** (NG8102 dead `?? 0` removed) · **T-0280** (FE
+comment-noise sweep, 7 files).
+
+### Final batch states
+| ID | State | Note |
+|----|-------|------|
+| **T-0280** | **done ✅** `916014cb` | 7-file comment sweep; comments-only diff; latent smell → **T-0294** |
+| **T-0289** | **done ✅** `916014cb` | 4 pages wired; **employee page deviation** → **T-0295** |
+| **T-0290** | **in_review** | BACKEND done+verified + sec **PASS**; **FE half HELD on owner admin nswag-regen** (mirrors T-0286). Manual step **PENDING ON OWNER** |
+| **T-0291** | **done ✅** `916014cb` | disputes-archetype note (survived the restore incident — restored by hand) |
+| **T-0292** | **done ✅** `916014cb` | NG8102 cleared (its fix-agent caused the restore incident) |
+| **T-0293** | **done ✅** `916014cb` | T-0281 AC1/AC2 depth closed |
+
+### Three carry-forward notes
+1. **T-0289 deviation (recorded, deliberate).** The **employee-detail** page was *not* wired for a
+   drill-in: `AdminEmployeeDetail` exposes `Employee.Id`, but the audit keys on the **`User.Id`** — wiring
+   `Employee.Id` would filter the history to nothing (T-0289 AC3 defect). The other four audited pages
+   expose the correct id and are fully wired. A User-typed employee-page drill-in needs a backend DTO
+   change (`+UserId` on `AdminEmployeeDetail`) → owner nswag-regen → **filed as T-0295 (XS, backend+
+   frontend, ready, manual_step nswag-regen).**
+2. **T-0280 latent smell (NOT a comment).** Removing the commented-out `router.navigate` in
+   `confirm-email.component.ts` left the injected `private readonly router` field + its `Router` import
+   **unused** (lint doesn't flag unused private members). Tiny dead-code cleanup → **filed as T-0294 (XS,
+   frontend, ready).**
+3. **Parallel-shared-file process lesson (recorded in process docs).** In this parallel batch T-0291 +
+   T-0289 both edited `agents/knowledge/consistency.md`, and T-0292's fix-agent ran
+   `git restore consistency.md` to clean perceived scope contamination — **wiping T-0291's deliverable**
+   (the orchestrator caught it on the combined-tree re-verify and restored it by hand). Lesson recorded in
+   **`agents/process/quality-gates.md` §"Serialize shared-file lanes — and NEVER `git restore` a shared
+   file in a parallel batch"** + cross-ref in **`agents/process/routing.md` rule 3**: same-shared-file
+   tickets (`consistency.md`, `INDEX.md`, i18n bundles, `Policy.cs`/`PolicyBuilder.cs`) **serialize into one
+   lane**, and parallel agents **may never `git restore` a shared file** (report contamination to the PM
+   instead).
+
+### ⚠️ OWNER — admin nswag-regen now PENDING (batch together)
+1. **T-0290** — new `AdminActionAuditDetailDto` + `GetAdminActionAuditById` endpoint → **releases T-0290's
+   held FE half** (AC4 diff view + AC5 i18n). After regen, run all three web prod-builds (quality-gates
+   §after-regen) before pushing.
+2. **T-0295** — new `AdminEmployeeDetail.UserId` field → unblocks the employee-page drill-in's FE half.
+
+Separately and **unrelated to this batch:** the **IMP-3** admin regen still unblocks **T-0279**.
+
+**Open-and-ready board for what's next** (deps satisfied, runnable now): **T-0294** (XS, frontend — needs
+no regen). **Blocked-on-owner-regen:** **T-0290-FE half** + **T-0295** (the pending admin regen above) and
+**T-0279** (the separate IMP-3 regen). E2E-depth (T-0293) and the audit follow-ups are now closed.
 
 ---
 

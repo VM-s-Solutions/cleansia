@@ -1,9 +1,9 @@
 ---
 id: T-0293
 title: E2E depth — partner accept-job state transition + admin seeded-row assertion (the T-0281 narrowed slice)
-status: ready
+status: done
 size: S
-owner: —
+owner: frontend
 created: 2026-06-23
 updated: 2026-06-23
 depends_on: [T-0281]
@@ -83,6 +83,15 @@ the asserted transition matches real behavior). `reviewer`-per-dev. `qa` confirm
   (`done` — the specs + CI job this extends); `layers: [frontend, backend]`; `security_touching:
   false`; `manual_steps: []`. Phase-0 characterization → one-line no-decision note, no panel. Follow-up
   batch candidate; lower priority than the audit-log follow-ups (it deepens an already-passing smoke).
+- 2026-06-23 — ready → in_progress → in_review → done (frontend + reviewer, parallel; backend confirmed
+  the accept-job request/response shape the stub mimics). Restored T-0281's narrowed depth: added an
+  **available-job fixture** (specific `/api/**` stub override, not the catch-all `{}`) so the partner
+  smoke accepts a job and asserts the **rendered state transition** (AC1), and a **populated admin
+  landing fixture** so the admin smoke asserts **≥1 rendered row** (AC2) — both on the existing
+  T-0271/T-0281 network-stub seam (no live Postgres, no new framework). Web-first assertions / no
+  arbitrary `waitForTimeout`; stable across the re-run. The `e2e-smoke` job in `frontend-ci.yml` runs the
+  extended specs green. **Orchestrator re-ran the batch green** on the combined tree. Shipped on
+  `feature/wave8-pre-ios-cleanup` (commit `916014cb`). T-0281's AC1/AC2 carry-out is now closed.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

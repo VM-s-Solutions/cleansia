@@ -1,9 +1,9 @@
 ---
 id: T-0292
 title: Remove dead `?? 0` on non-nullable extra.price in wizard-summary-step (NG8102)
-status: ready
+status: done
 size: XS
-owner: —
+owner: frontend
 created: 2026-06-23
 updated: 2026-06-23
 depends_on: []
@@ -63,6 +63,18 @@ customer-app build clean + order-wizard Jest unchanged. No `security`, no `optim
   met: AC observable; sized **XS** (one token in one template line); `depends_on: []`; `layers:
   [frontend]`; `security_touching: false`; `manual_steps: []`. One-line no-decision note, no panel.
   Follow-up-batch candidate.
+- 2026-06-23 — ready → in_progress → in_review → done (frontend + reviewer, parallel). Removed the dead
+  `?? 0` → `{{ formatPriceFn(extra.price) }}` (`extra.price` confirmed non-nullable). NG8102 gone on the
+  customer-app boot, no new template diagnostic; `nx build cleansia.app --configuration=production`
+  clean; order-wizard Jest unchanged. Shipped on `feature/wave8-pre-ios-cleanup` (commit `916014cb`).
+  **⚠️ Process incident this ticket's fix-agent caused (recorded, fully recovered):** to clear what it
+  read as scope contamination, this ticket's fix-agent ran **`git restore agents/knowledge/consistency.md`**
+  on a shared file it had no business reverting — that wiped **T-0291's** deliverable (the
+  disputes-archetype note) which had landed in the same parallel batch. The orchestrator caught it on the
+  combined-tree re-verify and restored T-0291's note by hand; the final tree is correct. This ticket's own
+  one-line change is unaffected. **Lesson recorded** in `agents/process/quality-gates.md`
+  (§"Serialize shared-file lanes …") + cross-ref in `agents/process/routing.md` rule 3: parallel-batch
+  agents must never `git restore` a shared file, and same-shared-file tickets serialize.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

@@ -1,9 +1,9 @@
 ---
 id: T-0290
 title: Single-row before/after audit diff view + new single-row backend endpoint (off the initial PII-min cut)
-status: ready
+status: in_review
 size: M
-owner: —
+owner: frontend
 created: 2026-06-23
 updated: 2026-06-23
 depends_on: [T-0284, T-0285, T-0286]
@@ -106,6 +106,28 @@ projection assertion (AC2). No `optimizer` (single-row read).
   ADR-0012/Q-AUDIT-01-ratified; this is the deferred read of an already-decided contract. **Owner
   manual step:** admin nswag-regen for the new single-row snapshot DTO (batch with any other pending
   admin regen).
+- 2026-06-23 — ready → in_progress → in_review **(BACKEND HALF DONE + VERIFIED; FRONTEND HALF HELD ON
+  OWNER ADMIN NSWAG-REGEN — mirrors T-0286's held-on-regen gate)** (backend + reviewer + security,
+  parallel). **AC1/AC2/AC3/AC6-backend SATISFIED.** Shipped the `GetAdminActionAuditById` single-row
+  query (canonical handler + validator + new `AdminActionAuditDetailDto` carrying `BeforeJson`/`AfterJson`),
+  gated by the **existing** `Policy.CanViewAuditLog` (→ `AdminOnly`) — **no new policy introduced**;
+  tenant-scoped (global filter → a cross-tenant id returns not-found); the paged
+  `GetPagedAdminActionAudits` query is **unchanged** and still omits the snapshot blobs (AC2 — a test
+  asserts the paged DTO has no before/after and the single-row DTO does). No new redaction — it renders
+  the already-pre-redacted T-0284 snapshots (AC3); GDPR-survives-erasure rows still show actor + scope +
+  subject id only.
+  **Run evidence (orchestrator's own re-run on the combined tree — not trusting per-agent PASS): 8 unit +
+  2 real-Postgres integration (tenant-scope: same-tenant id resolves, cross-tenant id → not-found) + 5
+  host authz-rejection (non-admin / missing policy → rejected) — ALL GREEN.** `check-consistency.mjs` no
+  new violation (the query passes A1/A5). **SECURITY GATE: PASS** — the snapshot-exposure seam signed off:
+  the single-row DTO carries only what T-0284 persisted (ids + changed fields, no raw subject PII), the
+  exposure is `AdminOnly`-gated + tenant-scoped, and the list cut still withholds the blobs.
+  **FRONTEND HALF (AC4 read-only diff view + AC5 i18n×5) NOT STARTED — HELD.** It needs the new
+  `AdminActionAuditDetailDto` + get-by-id endpoint on the regenerated admin client before it can build.
+  **⚠️ MANUAL STEP NOW PENDING ON THE OWNER:** `nswag-regen (admin)` for the new single-row snapshot DTO
+  + endpoint (batch with any other pending admin regen; after regen run all three web prod-builds per
+  quality-gates §after-regen). The ticket is **held from `done`** until the regen lands + the admin
+  prod-build is clean — the same gate T-0286 used. **Ticket stays `in_review` (not `done`).**
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

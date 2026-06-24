@@ -1,9 +1,9 @@
 ---
 id: T-0291
 title: consistency.md note — prefer the disputes-management list archetype for new admin lists
-status: ready
+status: done
 size: XS
-owner: —
+owner: docs
 created: 2026-06-23
 updated: 2026-06-23
 depends_on: []
@@ -70,6 +70,19 @@ exemplar) and docs-only. No `qa` test plan (documentation), no `security`, no `o
   (one knowledge-doc note); `depends_on: []`; `layers: [docs]`; `security_touching: false`;
   `manual_steps: []`. Pure mechanical consistency-doc edit recording an already-observed convention →
   one-line no-decision note, no panel.
+- 2026-06-23 — ready → in_progress → in_review → done (docs + reviewer, parallel). Added the
+  disputes-management-archetype note to `agents/knowledge/consistency.md` §C (named the real
+  `cleansia-admin-features/.../dispute-management` path, tied to the existing C1–C8 rules with no
+  renumbering, cross-referenced that T-0286's audit-log lib already followed it so the exemplar is
+  proven). Reviewer confirmed the named path exists and is a genuine C1–C8 list. Docs-only. Shipped on
+  `feature/wave8-pre-ios-cleanup` (commit `916014cb`). **⚠️ Parallel-batch incident (recorded for the
+  process, not a defect in this ticket):** this ticket and **T-0289** both edited
+  `agents/knowledge/consistency.md` in the same parallel batch, and **T-0292's** fix-agent ran
+  `git restore consistency.md` to clean what it read as scope contamination — which **wiped this
+  ticket's deliverable**. The orchestrator caught it on the combined-tree re-verify and restored the
+  note by hand. AC1–AC3 are satisfied in the final tree. The serialization lesson is recorded in
+  `agents/process/quality-gates.md` (§"Serialize shared-file lanes …") + cross-ref in
+  `agents/process/routing.md` rule 3.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

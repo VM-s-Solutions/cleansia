@@ -193,6 +193,28 @@ checks is faster and cheaper than dispatching a dev+reviewer — and avoids the 
 cost of pushing parallelism past what the task needs. Heuristic: **fan out for breadth or risk; act
 directly for mechanical certainty.**
 
+### Serialize shared-file lanes — and NEVER `git restore` a shared file in a parallel batch
+When a batch fans out in parallel, tickets that touch the **same shared file** must be **serialized**
+(one writer at a time), not run concurrently. The shared-file clusters that bite are:
+`agents/knowledge/consistency.md`, `agents/backlog/INDEX.md`, the per-app **i18n bundles** (the 5
+`{en,cs,sk,uk,ru}.json` per app), and the `Policy.cs` / `PolicyBuilder.cs` authz cluster (these two
+must move together or `AssertComplete` fails boot). The PM sequences these into a single lane the same
+way `:core` (T-0277/T-0278) and the Policy cluster (T-0285) were serialized — never two instances
+editing one of them at once.
+
+When true parallelism on adjacent (not identical) regions is unavoidable, each agent is told to **edit
+only its own hunks** and is **forbidden from running `git restore` (or `git checkout --`, or a
+wholesale revert) on a shared file** — even to "clean scope contamination." A blanket restore of a
+shared file silently wipes a *sibling ticket's* committed deliverable.
+
+> **Why this rule exists (a real incident, 2026-06-23 Wave-8 close-out batch):** T-0291 and T-0289 both
+> edited `consistency.md` in one parallel batch; a third ticket's (**T-0292**) fix-agent ran
+> `git restore consistency.md` to clean what it read as contamination — which **wiped T-0291's
+> deliverable** (the disputes-archetype note). The orchestrator's combined-tree re-verify caught it and
+> the note was restored by hand. The fix is structural: **serialize the shared-file lane, and ban
+> shared-file `git restore` in parallel agents.** If an agent believes a shared file is contaminated, it
+> **reports it to the PM** (leaves a note), it does **not** revert the file itself.
+
 ---
 
 ## How a reviewer writes a verdict

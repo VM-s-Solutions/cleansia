@@ -76,12 +76,26 @@ public static class Extensions
 
     /// <summary>
     /// Configures Sentry error monitoring on the web host.
-    /// Reads DSN from configuration key "Sentry:Dsn". If not set, Sentry runs in disabled mode.
+    /// Reads DSN from configuration key "Sentry:Dsn". If the DSN is absent OR blank, Sentry is left
+    /// completely uninitialized (disabled) — an EMPTY DSN is treated the same as a missing one, because
+    /// the Sentry SDK rejects an empty/whitespace DSN and would otherwise fail startup. (Dev runs with no
+    /// DSN; prod sets the real one.)
     /// </summary>
     public static IWebHostBuilder UseSentryMonitoring(this IWebHostBuilder webBuilder)
     {
-        webBuilder.UseSentry(options =>
+        webBuilder.UseSentry((context, options) =>
         {
+            var dsn = context.Configuration["Sentry:Dsn"];
+            if (string.IsNullOrWhiteSpace(dsn))
+            {
+                // No usable DSN → leave Sentry disabled. Clearing the DSN keeps the SDK from attempting
+                // to initialize with an invalid value (which throws on startup).
+                options.Dsn = string.Empty;
+                options.AutoSessionTracking = false;
+                return;
+            }
+
+            options.Dsn = dsn;
             options.SendDefaultPii = false;
             options.AttachStacktrace = true;
             options.AutoSessionTracking = true;

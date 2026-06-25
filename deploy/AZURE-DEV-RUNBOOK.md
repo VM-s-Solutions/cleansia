@@ -68,6 +68,10 @@ The deployment also creates: 5 blob containers (`order-photos`, `employee-docume
       would immediately go stale. This rule is only for *you* connecting to the DB directly; the app and
       the CI migration use other paths (CI opens a temporary per-run rule for the GitHub runner — see §7).
 - [ ] Decide the **Postgres admin password** (strong; you'll store it as a GitHub secret, never in code).
+      ⚠️ **Use letters + digits ONLY — no `;` `&` `]` `=` or other special characters.** The password goes
+      into an Npgsql connection string where `;` is the key/value delimiter and `=` separates key from
+      value, so a special char in the password corrupts parsing (`Couldn't set …;ssl mode`). Generate a
+      safe one in Cloud Shell: `LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32`.
 
 ---
 
@@ -217,9 +221,10 @@ KV_ID=$(az keyvault show -n kv-cleansia-weu-dev -g rg-cleansia-weu-dev --query i
 az role assignment create --assignee "$ME" --role "Key Vault Secrets Officer" --scope "$KV_ID"
 
 # 6.2 — Build the Postgres connection string from the deployment output
+# NOTE: the password must be letters+digits only (see §1) — a ; or = in it breaks Npgsql parsing.
 PG_FQDN=$(az postgres flexible-server show -g rg-cleansia-weu-dev -n pg-cleansia-weu-dev \
   --query fullyQualifiedDomainName -o tsv)
-DB_CONN="Host=$PG_FQDN;Database=Cleansia;Username=<admin-login>;Password=<your-postgres-password>;Ssl Mode=Require;Trust Server Certificate=true"
+DB_CONN="Host=$PG_FQDN;Database=Cleansia;Username=cleansia_admin;Password=<your-postgres-password>;Ssl Mode=Require;Trust Server Certificate=true"
 
 # 6.3 — Storage connection string
 ST_CONN=$(az storage account show-connection-string -g rg-cleansia-weu-dev \
@@ -241,6 +246,19 @@ az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Mapbox--Geocodin
 > The managed-identity role grants (each host → Secrets User, Storage data roles, AcrPull) are created
 > **by the Bicep** in step 5 — you don't grant those manually. Only the human Secrets-Officer grant (6.1)
 > and the SP grants (step 2) are manual.
+
+> **If migrate fails with `Couldn't set …;ssl mode` (or similar):** your Postgres password contains a
+> special char (`;` `=` `&` …) that corrupts the connection string. **Reset to an alphanumeric password**
+> and update it in THREE places that must match:
+> ```bash
+> NEW_PW=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32); echo "$NEW_PW"
+> az postgres flexible-server update -g rg-cleansia-weu-dev -n pg-cleansia-weu-dev --admin-password "$NEW_PW"
+> # then set, all to the new value:
+> #  1) GitHub dev-weu secret  POSTGRES_ADMIN_PASSWORD   = $NEW_PW
+> #  2) GitHub dev-weu secret  DB_CONNECTION_STRING      = the full Host=…;Password=$NEW_PW;Ssl Mode=Require;… string
+> #  3) Key Vault secret       ConnectionStrings--cleansia-db = the same full string
+> ```
+> Then re-run the deploy.
 
 After setting values, restart the API hosts so they pick up the Key Vault references:
 ```bash

@@ -266,6 +266,16 @@ az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Mapbox--Geocodin
 > **by the Bicep** in step 5 — you don't grant those manually. Only the human Secrets-Officer grant (6.1)
 > and the SP grants (step 2) are manual.
 
+> **If an API won't boot with `ForwardedHeaders trust is unset or over-broad (ADR-0003 D3)`:** the app
+> fail-closes in non-Development unless told which proxy network to trust for X-Forwarded-For. The Bicep
+> now sets `ForwardedHeaders__KnownNetworks = 100.64.0.0/10` (the App Service internal range) +
+> `ForwardedHeaders__ForwardLimit = 1` on all 5 API hosts. If a host still fails, confirm those two app
+> settings are present (a redeploy applies them). If client-IP resolution later looks wrong (rate-limit
+> bucketing off), the KnownNetworks range is the one value to adjust to the live App Service ingress.
+>
+> **If an API won't boot referencing Sentry / an empty DSN:** an empty `Sentry--Dsn` is fixed in code
+> (empty = disabled); leave the dev secret empty. If you see it, redeploy to pick up the fix.
+>
 > **If App Service Key-Vault references show red ❌ even though the secrets EXIST in the vault** (e.g.
 > some hosts green, others red): two causes. (1) **Stale cache** — App Service caches reference
 > resolution; secrets added after the app started aren't re-read until a **restart**:

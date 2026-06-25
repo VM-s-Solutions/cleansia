@@ -209,10 +209,29 @@ az deployment group show -g rg-cleansia-weu-dev -n main --query properties.outpu
 
 ---
 
-## 6. Populate Key Vault secret values  *(ticket T-0318, part 2)*
+## 6. Key Vault secrets — mostly automated now  *(ticket T-0318, part 2)*
 
-The Bicep created `kv-cleansia-weu-dev` with **no values**. The App Services reference these by name and
-will not start healthy until they're set. Grant yourself access, then set each value.
+You no longer hand-populate all 10 secrets. The deploy automates most of it:
+
+- **4 DERIVED by the Bicep** (`derivedSecrets` module — nothing for you to do): `Storage--ConnectionString`,
+  `ConnectionStrings--cleansia-db`, `Jwt--Issuer`, `Jwt--Audience`.
+- **6 EXTERNAL pushed by CI from GitHub-Environment secrets** — set these **6 secrets once** in the
+  `dev-weu` GitHub Environment and every deploy syncs them into Key Vault:
+
+  | GitHub `dev-weu` secret | → Key Vault secret | Value |
+  |---|---|---|
+  | `JWT_KEY` | `Jwt--Key` | a strong random 256-bit key |
+  | `STRIPE_SECRET_KEY` | `Stripe--SecretKey` | `sk_test_…` (TEST, never live) |
+  | `STRIPE_WEBHOOK_SECRET` | `Stripe--WebhookSecret` | `whsec_…` |
+  | `SENDGRID_API_KEY` | `SendGrid--ApiKey` | `SG.…` |
+  | `SENTRY_DSN` | `Sentry--Dsn` | `https://…@sentry.io/…` |
+  | `MAPBOX_TOKEN` | `Mapbox--GeocodingAccessToken` | `pk.…` (rotate the exposed one first) |
+
+  That's the whole owner Key-Vault step now. After the next deploy, all 10 secrets are populated and the
+  App Service Key-Vault references resolve green. (A missing optional GitHub secret is skipped, not fatal.)
+
+The manual `az keyvault secret set` block below is now only a **fallback** (e.g. setting a value out of
+band before the first CI deploy). Grant yourself access first, then set whatever you need.
 
 ```bash
 # 6.1 — Give yourself Secrets Officer on the vault (so you can write values)

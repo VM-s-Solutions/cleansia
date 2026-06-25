@@ -1,9 +1,9 @@
 export const environment = {
-  apiHost: 'api-cleansia-admin-dev.azurewebsites.net',
+  apiHost: 'api-cleansia-admin-weu-dev.azurewebsites.net',
   apiPort: '443',
   apiProtocol: 'https',
-  apiBaseUrl: 'https://api-cleansia-admin-dev.azurewebsites.net',
-  authApiBaseUrl: 'https://api-cleansia-partner-dev.azurewebsites.net',
+  apiBaseUrl: 'https://api-cleansia-admin-weu-dev.azurewebsites.net',
+  authApiBaseUrl: 'https://api-cleansia-partner-weu-dev.azurewebsites.net',
   blobStorageUrl: '',
   googleClientId: '',
   betaGateEnabled: false,

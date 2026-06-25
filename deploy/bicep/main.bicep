@@ -349,6 +349,22 @@ module roleAssignments 'modules/roleAssignments.bicep' = {
   }
 }
 
+// Bicep-DERIVABLE Key Vault secrets — values computed from resources this deployment creates (the
+// storage key, the Postgres FQDN + password param, deterministic JWT issuer/audience), so the owner
+// no longer hand-populates them. The 6 EXTERNAL secrets (Jwt--Key, Stripe--*, SendGrid, Sentry, Mapbox)
+// are NOT here — a CI step pushes those from the dev-weu GitHub-Environment secrets (ADR-0015 D4).
+module derivedSecrets 'modules/derivedSecrets.bicep' = {
+  name: 'derivedSecrets'
+  params: {
+    keyVaultName: keyVault.outputs.keyVaultName
+    storageAccountName: storage.outputs.storageAccountName
+    postgresFqdn: postgres.outputs.fullyQualifiedDomainName
+    postgresAdministratorLogin: postgresAdministratorLogin
+    postgresAdministratorPassword: postgresAdministratorPassword
+    jwtIssuer: 'https://${apiAppServices[0].outputs.defaultHostName}'
+  }
+}
+
 // ---------------------------------------------------------------------------------------------------
 // Outputs — the stable default hostnames the iOS base URLs + the dev smoke consume (ADR-0015 D6).
 // ---------------------------------------------------------------------------------------------------

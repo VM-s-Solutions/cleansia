@@ -264,6 +264,39 @@ jobs:
           ADMIN_IP_ADDRESS: ${{ secrets.ADMIN_IP_ADDRESS }}
           CI_PRINCIPAL_ID: ${{ secrets.CI_PRINCIPAL_ID }}
 
+      # Push the EXTERNAL secrets (the ones Bicep can't derive) from the dev-weu GitHub-Environment
+      # secrets into Key Vault. The DERIVABLE ones (Storage/DB conn strings, Jwt issuer/audience) are
+      # written by the Bicep derivedSecrets module — not here. Set these 6 GitHub secrets ONCE; every
+      # deploy syncs them, so they're never hand-set per-API. Each push is skipped if its GitHub secret
+      # is empty (so a missing optional secret doesn't fail the deploy). The CI principal needs Key Vault
+      # Secrets Officer — granted by the Bicep when ciPrincipalId is passed.
+      - name: Push external secrets to Key Vault
+        if: needs.resolve.outputs.mode == 'deploy'
+        env:
+          KV: kv-cleansia-${{ matrix.region }}-dev
+          JWT_KEY: ${{ secrets.JWT_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
+        run: |
+          set_secret() {
+            # $1 = Key Vault secret name, $2 = value; skip silently if the value is empty.
+            if [ -n "$2" ]; then
+              az keyvault secret set --vault-name "$KV" --name "$1" --value "$2" --output none
+              echo "set $1"
+            else
+              echo "skipped $1 (GitHub secret empty)"
+            fi
+          }
+          set_secret "Jwt--Key"                     "$JWT_KEY"
+          set_secret "Stripe--SecretKey"            "$STRIPE_SECRET_KEY"
+          set_secret "Stripe--WebhookSecret"        "$STRIPE_WEBHOOK_SECRET"
+          set_secret "SendGrid--ApiKey"             "$SENDGRID_API_KEY"
+          set_secret "Sentry--Dsn"                  "$SENTRY_DSN"
+          set_secret "Mapbox--GeocodingAccessToken" "$MAPBOX_TOKEN"
+
   # ===========================================================================================
   # Migrate — committed EF migrations applied BEFORE any deploy (ADR-0015 D5). Runs after provision
   # so the DB exists; gates every API/SSR deploy via the needs edge.

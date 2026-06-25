@@ -266,6 +266,22 @@ az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Mapbox--Geocodin
 > **by the Bicep** in step 5 — you don't grant those manually. Only the human Secrets-Officer grant (6.1)
 > and the SP grants (step 2) are manual.
 
+> **If App Service Key-Vault references show red ❌ even though the secrets EXIST in the vault** (e.g.
+> some hosts green, others red): two causes. (1) **Stale cache** — App Service caches reference
+> resolution; secrets added after the app started aren't re-read until a **restart**:
+> ```bash
+> for h in partner admin customer partner-mobile customer-mobile; do
+>   az webapp restart -g rg-cleansia-weu-dev -n "api-cleansia-$h-weu-dev"; done
+> ```
+> (2) **Missing MI grant** — each host's managed identity needs `Key Vault Secrets User`. Verify per host:
+> ```bash
+> KV_ID=$(az keyvault show -n kv-cleansia-weu-dev -g rg-cleansia-weu-dev --query id -o tsv)
+> for h in partner admin customer partner-mobile customer-mobile; do
+>   MI=$(az webapp identity show -g rg-cleansia-weu-dev -n "api-cleansia-$h-weu-dev" --query principalId -o tsv)
+>   echo "$h: $(az role assignment list --assignee "$MI" --scope "$KV_ID" --query "length([?roleDefinitionName=='Key Vault Secrets User'])" -o tsv)"
+> done   # each should print 1; if 0, re-run the deploy (the Bicep grants it) or grant manually.
+> ```
+>
 > **If migrate fails with `extension "citext" is not allow-listed`:** Azure Postgres blocks
 > `CREATE EXTENSION` unless the extension is in the server's `azure.extensions` parameter. The Bicep now
 > sets `azure.extensions = CITEXT,PG_TRGM` (postgres module), applied by the `provision` job before

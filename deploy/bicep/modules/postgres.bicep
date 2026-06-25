@@ -94,6 +94,21 @@ resource requireSecureTransport 'Microsoft.DBforPostgreSQL/flexibleServers/confi
   }
 }
 
+// Azure Database for PostgreSQL Flexible Server blocks CREATE EXTENSION unless the extension is
+// allow-listed in the `azure.extensions` server parameter. The first migration runs
+// `CREATE EXTENSION citext` + `pg_trgm` (CleansiaDbContext.HasPostgresExtension), so both must be listed
+// here or migrate fails with "extension ... is not allow-listed". (depends-on requireSecureTransport so
+// the two config writes serialize — Postgres applies parameter changes one at a time.)
+resource allowedExtensions 'Microsoft.DBforPostgreSQL/flexibleServers/configurations@2024-08-01' = {
+  parent: postgres
+  name: 'azure.extensions'
+  dependsOn: [requireSecureTransport]
+  properties: {
+    value: 'CITEXT,PG_TRGM'
+    source: 'user-override'
+  }
+}
+
 // Firewall: allow other Azure services (the App Services + Functions reach the server). The
 // 0.0.0.0 sentinel rule is Azure's "allow Azure-internal traffic" switch, NOT an open-to-internet
 // rule — it does not expose the server to arbitrary public IPs.

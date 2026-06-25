@@ -1,0 +1,65 @@
+included:
+  - CleansiaCore/Sources
+  - CleansiaCore/Tests
+  - CleansiaPartner/Sources
+  - CleansiaCustomer/Sources
+
+excluded:
+  - "**/Generated"
+  - "**/.build"
+  - "**/DerivedData"
+
+opt_in_rules:
+  - empty_count
+  - closure_spacing
+  - unused_import
+  - redundant_nil_coalescing
+  - redundant_type_annotation
+  - explicit_init
+  - first_where
+  - contains_over_first_not_nil
+  - sorted_first_last
+  - toggle_bool
+  - force_unwrapping
+
+force_unwrapping:
+  severity: error
+force_cast:
+  severity: error
+force_try:
+  severity: error
+
+line_length:
+  warning: 120
+  error: 160
+  ignores_comments: true
+  ignores_urls: true
+
+file_length:
+  warning: 400
+  error: 600
+
+type_body_length:
+  warning: 300
+  error: 400
+
+function_body_length:
+  warning: 60
+  error: 100
+
+cyclomatic_complexity:
+  warning: 10
+  error: 15
+
+identifier_name:
+  excluded:
+    - id
+    - vm
+    - to
+    - s
+    - m
+    - l
+    - xs
+    - xl
+
+reporter: "xcode"

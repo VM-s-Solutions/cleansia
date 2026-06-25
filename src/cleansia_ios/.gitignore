@@ -1,0 +1,18 @@
+# Xcode / SPM build artifacts
+.build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+.swiftpm/
+
+# XcodeGen-generated projects (regenerate with `xcodegen generate`)
+CleansiaPartner/CleansiaPartner.xcodeproj/
+CleansiaCustomer/CleansiaCustomer.xcodeproj/
+
+# openapi-generator output — machine-owned, never committed, never hand-edited
+# (regenerate with `scripts/generate-api-clients.sh`; see openapi/README.md)
+CleansiaPartnerApi/
+CleansiaCustomerApi/
+
+# macOS
+.DS_Store

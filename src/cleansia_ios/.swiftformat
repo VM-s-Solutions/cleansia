@@ -1,0 +1,29 @@
+# SwiftFormat strict config for the Cleansia iOS apps (ADR-0016).
+# Runs in --lint mode in CI (blocking); developers run it in write mode locally.
+
+--swiftversion 5.9
+
+--exclude **/Generated,**/.build,**/DerivedData
+
+# Rules
+--enable isEmpty
+--enable blankLinesAtStartOfScope
+--enable blankLinesAtEndOfScope
+--enable redundantSelf
+--enable redundantReturn
+--enable sortedImports
+--enable trailingCommas
+--enable wrapMultilineStatementBraces
+
+# Options
+--self remove
+--importgrouping testable-bottom
+--commas inline
+--trimwhitespace always
+--indent 4
+--maxwidth 120
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--decimalgrouping 3,6
+--semicolons never

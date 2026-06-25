@@ -1,0 +1,23 @@
+generatorName: swift5
+inputSpec: ../../cleansia_android/openapi/partner-mobile-api.json
+outputDir: ../CleansiaPartnerApi
+library: urlsession
+generateAliasAsModel: false
+enablePostProcessFile: false
+
+additionalProperties:
+  projectName: CleansiaPartnerApi
+  swiftPackagePath: .
+  podSource: SPM
+  useSPMFileStructure: true
+  responseAs: AsyncAwait
+  useClasses: false
+  hashableModels: true
+  apiNamePrefix: Partner
+  validatable: false
+
+globalProperties:
+  apiTests: "false"
+  apiDocs: "false"
+  modelTests: "false"
+  modelDocs: "false"

@@ -1,0 +1,46 @@
+name: CleansiaPartner
+
+options:
+  bundleIdPrefix: cz.cleansia
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.9"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+
+packages:
+  CleansiaCore:
+    path: ../CleansiaCore
+  # Generated swift5 business client (machine-owned, gitignored). It does not
+  # exist until the first `scripts/generate-api-clients.sh partner` run, which is
+  # owner-gated on manual_step: mobile-spec-regen. Uncomment this entry and the
+  # matching dependency below, then `xcodegen generate`, after the first gen.
+  # CleansiaPartnerApi:
+  #   path: ../CleansiaPartnerApi
+
+targets:
+  CleansiaPartner:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: Sources
+      - path: Resources
+    info:
+      path: Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cz.cleansia.partner
+        PRODUCT_NAME: CleansiaPartner
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1"
+        API_BASE_URL: https:/$()/api-cleansia-partner-mobile-weu-dev.azurewebsites.net
+    dependencies:
+      - package: CleansiaCore
+      # - package: CleansiaPartnerApi   # uncomment after the first generation (see packages above)

@@ -1,0 +1,8 @@
+"snackbar.dismiss" = "Dismiss";
+
+"error.unauthorized" = "Your session has expired. Please sign in again.";
+"error.not_found" = "We couldn't find what you were looking for.";
+"error.request" = "Something about that request wasn't right.";
+"error.server" = "Something went wrong on our side. Please try again.";
+"error.unreachable" = "Can't reach the server. Check your connection.";
+"error.generic" = "Something went wrong. Please try again.";

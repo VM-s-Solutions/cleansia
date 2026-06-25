@@ -1,0 +1,23 @@
+generatorName: swift5
+inputSpec: ../../cleansia_android/openapi/customer-mobile-api.json
+outputDir: ../CleansiaCustomerApi
+library: urlsession
+generateAliasAsModel: false
+enablePostProcessFile: false
+
+additionalProperties:
+  projectName: CleansiaCustomerApi
+  swiftPackagePath: .
+  podSource: SPM
+  useSPMFileStructure: true
+  responseAs: AsyncAwait
+  useClasses: false
+  hashableModels: true
+  apiNamePrefix: Customer
+  validatable: false
+
+globalProperties:
+  apiTests: "false"
+  apiDocs: "false"
+  modelTests: "false"
+  modelDocs: "false"

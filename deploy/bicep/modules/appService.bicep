@@ -33,6 +33,9 @@ param httpsOnly bool = true
 @description('Always-On. True keeps the host warm; off (default) suits dev cost on B2.')
 param alwaysOn bool = false
 
+@description('Health-check path Azure pings to gauge instance health. The .NET hosts expose /health (all checks) + /alive (liveness only) via MapDefaultEndpoints. Empty string disables the probe (the SSR/Node host passes "").')
+param healthCheckPath string = '/health'
+
 @description('Resource tags applied to the host.')
 param tags object = {}
 
@@ -60,6 +63,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
       http20Enabled: true
+      healthCheckPath: empty(healthCheckPath) ? null : healthCheckPath
       appSettings: appSettingsArray
       cors: {
         allowedOrigins: corsAllowedOrigins

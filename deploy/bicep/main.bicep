@@ -278,6 +278,8 @@ module ssr 'modules/appService.bicep' = {
     corsAllowedOrigins: []
     httpsOnly: true
     alwaysOn: false
+    // The Angular SSR (Node) host has no /health endpoint — disable the probe so Azure doesn't recycle it.
+    healthCheckPath: ''
     tags: commonTags
   }
 }

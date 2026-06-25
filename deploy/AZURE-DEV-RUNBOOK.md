@@ -247,6 +247,16 @@ az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Mapbox--Geocodin
 > **by the Bicep** in step 5 — you don't grant those manually. Only the human Secrets-Officer grant (6.1)
 > and the SP grants (step 2) are manual.
 
+> **If migrate fails with `extension "citext" is not allow-listed`:** Azure Postgres blocks
+> `CREATE EXTENSION` unless the extension is in the server's `azure.extensions` parameter. The Bicep now
+> sets `azure.extensions = CITEXT,PG_TRGM` (postgres module), applied by the `provision` job before
+> migrate. If the server was provisioned *before* that Bicep change, set it once on the live server, then
+> re-run the deploy:
+> ```bash
+> az postgres flexible-server parameter set -g rg-cleansia-weu-dev -s pg-cleansia-weu-dev \
+>   --name azure.extensions --value CITEXT,PG_TRGM
+> ```
+>
 > **If migrate fails with `Couldn't set …;ssl mode` (or similar):** your Postgres password contains a
 > special char (`;` `=` `&` …) that corrupts the connection string. **Reset to an alphanumeric password**
 > and update it in THREE places that must match:

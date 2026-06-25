@@ -31,15 +31,42 @@ The deployment also creates: 5 blob containers (`order-photos`, `employee-docume
 `generated-receipts`, `generated-invoices`, `user-files`), 12 queues (6 base + 6 `-poison`), the
 `Cleansia` database, the Postgres firewall rules, and the managed-identity role grants.
 
+> ### ⓘ Naming rule: the name encodes the REGION, not the COUNTRY/market (ADR-0017)
+>
+> Every resource + GitHub Environment is named `…-<region>-<stage>` (e.g. `…-weu-dev`, env `dev-weu`).
+> The token is the **Azure region** (`weu` = West Europe), **NOT** a country/market.
+>
+> **Multiple markets (CZ, SK, …) running in the same region SHARE one deployment** — one set of
+> `*-weu-dev` resources, one Postgres, one `dev-weu` Environment. They are *not* separate deployments and
+> must *not* get `cz`/`sk` in any resource or environment name. The difference between markets —
+> currency, language, VAT/fiscal rules, payment gateway, tax-id formats — is **application data**
+> (`CountryConfiguration` rows + the `tenant_id` JWT claim + the row-scoped `TenantId` filter), never
+> infrastructure. This is the deliberate **tenancy = app / region = infra** separation from ADR-0017.
+>
+> **So:** CZ + SK both in West Europe → correctly share `dev-weu`. ✅ Putting a country in the name would
+> conflate "where the servers physically are" with "which market a customer belongs to" — the exact
+> mistake the seam prevents.
+>
+> **When a new name *is* needed:** only if a market must run in a **physically different Azure region**
+> (e.g. a future market with a data-residency law requiring its own datacenter). Then you add a *second*
+> region — say `dev-neu` (North Europe) — by changing the `region` Bicep param + adding a one-line matrix
+> entry + a `dev-neu`/`prod-neu` Environment, and `CountryConfiguration.HomeRegion` routes that market's
+> tenant there. The existing `weu` resources are never renamed. (See `agents/architecture/decisions/multi-tenancy-and-region.md`.)
+
 ---
 
 ## 1. Prerequisites (one-time, before anything else)
 
 - [ ] **Azure subscription** with **Owner** or **Contributor + User Access Administrator** on it
       (you need to create role assignments, which Contributor alone can't do).
-- [ ] **Azure CLI** installed locally (`az version` ≥ 2.60) with the Bicep extension (`az bicep version`).
+- [ ] **Azure CLI** with the Bicep extension. **Azure Cloud Shell** (the `>_` bash in the portal) already
+      has both — you can run every `az` command in this runbook from there, no local install needed.
 - [ ] **GitHub repo admin** rights (to create Environments + secrets).
-- [ ] Your **public IP** (for the Postgres admin firewall rule): `curl -s ifconfig.me`.
+- [ ] Your **own machine's public IP** — for the Postgres admin firewall rule (direct `psql`/SQL access).
+      Get it from a normal browser ("what is my IP") or `curl ifconfig.me` **on your laptop**.
+      ⚠️ **Do NOT use the IP of Azure Cloud Shell** — its container IP changes every session, so the rule
+      would immediately go stale. This rule is only for *you* connecting to the DB directly; the app and
+      the CI migration use other paths (CI opens a temporary per-run rule for the GitHub runner — see §7).
 - [ ] Decide the **Postgres admin password** (strong; you'll store it as a GitHub secret, never in code).
 
 ---
@@ -102,33 +129,73 @@ Add these **environment secrets** to `dev-weu` (Settings → Environments → de
 | `AZURE_TENANT_ID` | tenant id | `azure/login` |
 | `AZURE_SUBSCRIPTION_ID` | subscription id | `azure/login` |
 | `POSTGRES_ADMIN_PASSWORD` | your chosen Postgres password | the Bicep `@secure()` param |
-| `ADMIN_IP_ADDRESS` | your public IP | the Postgres firewall rule |
-| `ACR_NAME` | `acrcleansiaweudev` | the Functions `az acr build` step |
+| `ADMIN_IP_ADDRESS` | **your laptop's** public IP (not Cloud Shell's — see §1) | the Postgres admin firewall rule |
+| `ACR_NAME` | `acrcleansiaweudev` (see note ↓) | the Functions `az acr build` step |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER` | (filled after step 6 — the SWA deploy token) | partner SPA deploy |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN` | (filled after step 6) | admin SPA deploy |
 
-> The two SWA tokens don't exist until the Static Web Apps are created (step 6), so add placeholders now
+> **`ACR_NAME` — where it comes from:** the Bicep *creates* the registry and names it itself —
+> `acrcleansia<region><env>` (no separators; Azure registry names are alphanumeric-only). For dev that is
+> deterministically **`acrcleansiaweudev`** — set the secret to exactly that string (no `.azurecr.io`
+> suffix; the workflow appends it). It only needs to exist before the *Functions build* step (which runs
+> on a deploy, after the registry is provisioned), so setting it upfront is fine. To read it back instead:
+> `az acr list -g rg-cleansia-weu-dev --query "[0].name" -o tsv`.
+>
+> The two **SWA tokens** don't exist until the Static Web Apps are created (step 6), so add placeholders now
 > and fill them after the first provision. Migrate any old flat `*_DEV` secrets into this scope and delete
 > the flat copies.
 
 ---
 
-## 5. First provision — create the infrastructure  *(ticket T-0318, part 1)*
+## 4b. Where do you run steps 5–7? (Azure Cloud Shell — clone the repo first)
 
-Run the Bicep once from your machine (this is the only manual `az deployment`; afterwards CI does it).
-The Key Vault is created here **empty** — you fill the secret values in step 6.
+You can run **everything from this point in Azure Cloud Shell** (the `>_` bash icon in the portal). It
+already has `az` + bicep authenticated as you — no local install needed. But two of the commands read the
+**repo's Bicep files** (`deploy/bicep/...`), so **clone the repo into Cloud Shell once**:
 
 ```bash
+# In Azure Cloud Shell — clone the repo (into your Cloud Shell home / clouddrive)
+git clone https://github.com/VM-s-Solutions/cleansia.git
+cd cleansia
+# (private repo → use a GitHub Personal Access Token as the password when prompted,
+#  or `gh auth login` if the GitHub CLI is available.)
+```
+
+**Which commands need the repo vs run anywhere:**
+
+| Step | Command | Needs the repo? | Run in Cloud Shell? |
+|---|---|---|---|
+| 5 | `az deployment group create --template-file deploy/bicep/...` | **Yes** (Bicep files) | ✅ from inside the cloned `cleansia/` |
+| 5 | `az deployment group show ... outputs` | No (pure `az`) | ✅ |
+| 6 | All the Key Vault / `az keyvault secret set` / `az webapp restart` | No (pure `az`) | ✅ from anywhere |
+| 7 | The **manual** EF-bundle (`dotnet ef ...`) | **Yes** + needs the **.NET 10 SDK** | ⚠️ see §7 (CI does this automatically — you rarely run it by hand) |
+| 8 | The deploy itself | n/a — runs in **GitHub Actions**, not your shell | — (trigger from the Actions tab) |
+
+So: `cd cleansia` first, then run step 5; steps 6 are plain `az` you can paste anywhere; step 8 is a
+button in GitHub, not a shell command.
+
+---
+
+## 5. First provision — create the infrastructure  *(ticket T-0318, part 1)*
+
+Run the Bicep once (the only manual `az deployment`; afterwards GitHub Actions does it). **Run this from
+inside the cloned `cleansia/` directory in Cloud Shell** (§4b) — the `--template-file` path is relative to
+the repo root. The Key Vault is created here **empty** — you fill the secret values in step 6.
+
+```bash
+# adminIpAddress = YOUR LAPTOP's public IP (get it from a browser "what is my IP", or
+# `curl ifconfig.me` ON YOUR LAPTOP). Do NOT use $(curl ifconfig.me) here if you're in
+# Cloud Shell — that returns Cloud Shell's ephemeral IP, which goes stale.
 az deployment group create \
   --resource-group rg-cleansia-weu-dev \
   --template-file deploy/bicep/main.bicep \
   --parameters deploy/bicep/weu.dev.bicepparam \
   --parameters postgresAdministratorPassword="<your-postgres-password>" \
-               adminIpAddress="$(curl -s ifconfig.me)"
+               adminIpAddress="<your-laptop-public-ip>"
 ```
 
-> **Tip:** run `az deployment group what-if` with the same args first — it shows exactly what will be
-> created and changes nothing. (This is also what CI runs on a PR.)
+> **Tip:** run the same command with `what-if` first — `az deployment group what-if --resource-group … --template-file … --parameters …`
+> — it shows exactly what will be created and changes nothing.
 
 When it finishes, capture the outputs (you'll need the SWA names + the API hostnames):
 
@@ -186,14 +253,20 @@ for h in partner admin customer partner-mobile customer-mobile; do
 ## 7. Apply database migrations
 
 The CI pipeline applies committed migrations via the EF bundle on every deploy (the `migrate-database`
-job). For the **very first** deploy, the same bundle runs before the app deploys — no manual step needed,
-**provided your admin IP is in the Postgres firewall** (it is, from step 5's `adminIpAddress`). If you
-ever need to apply manually:
+job), before the app deploys — no manual step needed. The runner's IP is **not** your admin IP and is
+**not** an Azure service, so the `migrate-database` job **opens a temporary, per-run Postgres firewall
+rule for the runner's own IP, applies the migration, then always removes the rule** (even on failure).
+You don't manage that — it's automatic.
+
+**You normally never run migrations by hand** — the CI deploy does it. The command below is only a
+fallback, and unlike steps 5–6 it needs the **.NET 10 SDK** (bare Cloud Shell does **not** have it — you'd
+`dotnet tool install --global dotnet-ef` first, or run it on your laptop). The connecting machine's IP must
+be in the firewall (your `ADMIN_IP_ADDRESS` rule). From inside the cloned `cleansia/` repo:
 
 ```bash
 dotnet ef migrations bundle \
   --project src/Cleansia.Infra.Database/Cleansia.Infra.Database.csproj \
-  --startup-project src/Cleansia.Web/Cleansia.Web.Partner.csproj \
+  --startup-project src/Cleansia.Web.Partner/Cleansia.Web.Partner.csproj \
   --configuration Release --output ./efbundle --force
 ./efbundle --connection "$DB_CONN"
 ```
@@ -202,13 +275,18 @@ dotnet ef migrations bundle \
 
 ## 8. Build the Functions container + first app deploy
 
-The [`deploy-dev.yml`](../.github/workflows/deploy-dev.yml) workflow is **manual-only** (`workflow_dispatch`)
-— it never runs on a PR or automatically on push. Trigger it from **GitHub → Actions → "Deploy to DEV" →
-Run workflow**, choosing the **mode**:
-- **`deploy`** — provision/update via Bicep → migrate → build+push the Functions image → deploy the 5 APIs
-  + SSR (parallel) + the 2 SPAs.
-- **`what-if`** — a non-mutating Bicep preview only (no migrate, no deploy) — safe to run any time to see
-  what a deploy would change.
+The [`deploy-dev.yml`](../.github/workflows/deploy-dev.yml) trigger is **hybrid** (dev tracks master):
+- **Auto** — **every push/merge to `master` auto-deploys to dev** (always a full `deploy`). So after the
+  first manual provision below, you normally don't deploy by hand — merging keeps dev current.
+- **Manual** — the **Run workflow** button is still there (**GitHub → Actions → "Deploy to DEV" → Run
+  workflow**) with a **mode** choice: `deploy` (full provision + migrate + deploy) or `what-if` (a
+  non-mutating Bicep preview — no migrate, no deploy — to see what a deploy would change).
+
+It **never** runs inside a PR. (Prod — `deploy-pro.yml` — stays manual-with-confirmation and never
+auto-deploys.)
+
+For the **first** deploy specifically, fill the 2 SWA deploy tokens (below) first, then either merge to
+master or click Run workflow.
 
 The SWA deploy tokens (step 4) must be filled first — get them after step 5:
 
@@ -237,14 +315,18 @@ When green: the five `api-cleansia-*-weu-dev.azurewebsites.net` hosts are the st
 ## 10. Owner checklist (tick-through)
 
 ```
-[ ] 1.  Prereqs: subscription Owner, az CLI + bicep, GitHub admin, public IP, Postgres password
+[ ] 1.  Prereqs: subscription Owner, GitHub admin, your LAPTOP's public IP, Postgres password
+        (use Azure Cloud Shell — it already has az + bicep; no local install needed)
 [ ] 2.  OIDC app registration + federate to dev-weu + grant Contributor + User Access Administrator
 [ ] 3.  az group create rg-cleansia-weu-dev (westeurope)
 [ ] 4.  GitHub Environments dev-weu (open) + prod-weu (protected); add the dev-weu secrets
-[ ] 5.  First provision: az deployment group create (creates all 11 resources + KV empty)
-[ ] 6.  Grant self Secrets Officer; set every Key Vault secret value; restart API hosts
-[ ] 7.  (Migrations apply automatically on first CI deploy; manual bundle only if needed)
-[ ] 8.  Fill the 2 SWA deploy tokens; merge to master to run the full deploy
+        (ACR_NAME = acrcleansiaweudev ; ADMIN_IP_ADDRESS = your laptop IP)
+[ ] 4b. In Cloud Shell: git clone the repo, cd cleansia  (steps 5 + the manual EF bundle need the files)
+[ ] 5.  First provision: az deployment group create (from inside cleansia/) → all 11 resources + KV empty
+[ ] 6.  Grant self Secrets Officer; set every Key Vault secret value; restart API hosts  (plain az, anywhere)
+[ ] 7.  (Migrations apply automatically on the CI deploy; manual bundle needs the .NET SDK — rarely)
+[ ] 8.  Fill the 2 SWA deploy tokens; first deploy = merge to master (auto) OR Actions → Run workflow.
+        Thereafter every merge to master auto-deploys dev; the manual button stays for re-runs / what-if.
 [ ] 9.  Smoke: 5 APIs + both mobile tokens + SSR + 2 SPAs + the Functions PDF pipeline
 [ ] 10. Green → tell Claude → iOS Phase 0 points at dev
 ```

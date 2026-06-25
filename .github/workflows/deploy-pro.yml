@@ -30,7 +30,7 @@ jobs:
     name: Build .NET APIs
     needs: validate
     runs-on: ubuntu-latest
-    environment: production
+    environment: prod-weu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -154,7 +154,7 @@ jobs:
     name: Run DB Migrations
     needs: build-dotnet
     runs-on: ubuntu-latest
-    environment: production
+    environment: prod-weu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -204,7 +204,7 @@ jobs:
     name: 1/7 — Partner API
     needs: [build-dotnet, migrate-database]
     runs-on: ubuntu-latest
-    environment: production
+    environment: prod-weu
     steps:
       - name: Login to Azure
         uses: azure/login@v2
@@ -234,7 +234,7 @@ jobs:
     name: 2/7 — Admin API
     needs: [build-dotnet, migrate-database, deploy-partner-api]
     runs-on: ubuntu-latest
-    environment: production
+    environment: prod-weu
     steps:
       - name: Login to Azure
         uses: azure/login@v2
@@ -264,7 +264,7 @@ jobs:
     name: 3/7 — Customer API
     needs: [build-dotnet, migrate-database, deploy-admin-api]
     runs-on: ubuntu-latest
-    environment: production
+    environment: prod-weu
     steps:
       - name: Login to Azure
         uses: azure/login@v2
@@ -294,7 +294,7 @@ jobs:
     name: 4/7 — Mobile API
     needs: [build-dotnet, migrate-database, deploy-customer-api]
     runs-on: ubuntu-latest
-    environment: production
+    environment: prod-weu
     steps:
       - name: Login to Azure
         uses: azure/login@v2
@@ -324,7 +324,7 @@ jobs:
     name: 5/8 — Functions
     needs: [build-dotnet, migrate-database]
     runs-on: ubuntu-latest
-    environment: production
+    environment: prod-weu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -359,7 +359,7 @@ jobs:
     name: 6/8 — Customer SSR
     needs: [build-angular, deploy-mobile-api]
     runs-on: ubuntu-latest
-    environment: production
+    environment: prod-weu
     steps:
       - name: Login to Azure
         uses: azure/login@v2
@@ -392,7 +392,7 @@ jobs:
     name: 7/8 — Partner SPA
     needs: [build-angular, deploy-customer-ssr]
     runs-on: ubuntu-latest
-    environment: production
+    environment: prod-weu
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -413,7 +413,7 @@ jobs:
     name: 8/8 — Admin SPA
     needs: [build-angular, deploy-partner-spa]
     runs-on: ubuntu-latest
-    environment: production
+    environment: prod-weu
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4

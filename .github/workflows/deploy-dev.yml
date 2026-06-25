@@ -268,12 +268,17 @@ jobs:
       # secrets into Key Vault. The DERIVABLE ones (Storage/DB conn strings, Jwt issuer/audience) are
       # written by the Bicep derivedSecrets module — not here. Set these 6 GitHub secrets ONCE; every
       # deploy syncs them, so they're never hand-set per-API. Each push is skipped if its GitHub secret
-      # is empty (so a missing optional secret doesn't fail the deploy). The CI principal needs Key Vault
-      # Secrets Officer — granted by the Bicep when ciPrincipalId is passed.
+      # is empty (so a missing optional secret doesn't fail the deploy).
+      #
+      # This step is self-sufficient on RBAC: it grants the CI principal Key Vault Secrets Officer if not
+      # already assigned (instead of depending on the ciPrincipalId param being set in the Bicep), then
+      # waits for RBAC propagation and retries the writes (a fresh role assignment isn't effective
+      # instantly). Idempotent — `az role assignment create` is a no-op when the assignment exists.
       - name: Push external secrets to Key Vault
         if: needs.resolve.outputs.mode == 'deploy'
         env:
           KV: kv-cleansia-${{ matrix.region }}-dev
+          RG: rg-cleansia-${{ matrix.region }}-dev
           JWT_KEY: ${{ secrets.JWT_KEY }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
@@ -281,14 +286,28 @@ jobs:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
         run: |
+          # Grant the CI principal (this OIDC app's service principal) Secrets Officer on the vault.
+          CI_OID="$(az ad signed-in-user show --query id -o tsv 2>/dev/null || true)"
+          if [ -z "$CI_OID" ]; then
+            CI_OID="$(az account show --query user.name -o tsv)"   # OIDC: user.name is the app/client id
+            CI_OID="$(az ad sp show --id "$CI_OID" --query id -o tsv)"
+          fi
+          KV_ID="$(az keyvault show -n "$KV" -g "$RG" --query id -o tsv)"
+          az role assignment create --assignee-object-id "$CI_OID" --assignee-principal-type ServicePrincipal \
+            --role "Key Vault Secrets Officer" --scope "$KV_ID" --output none 2>/dev/null || true
+
           set_secret() {
-            # $1 = Key Vault secret name, $2 = value; skip silently if the value is empty.
-            if [ -n "$2" ]; then
-              az keyvault secret set --vault-name "$KV" --name "$1" --value "$2" --output none
-              echo "set $1"
-            else
-              echo "skipped $1 (GitHub secret empty)"
-            fi
+            # $1 = Key Vault secret name, $2 = value; skip if empty. Retry a few times to ride out
+            # RBAC propagation on a freshly-granted assignment.
+            if [ -z "$2" ]; then echo "skipped $1 (GitHub secret empty)"; return 0; fi
+            for attempt in 1 2 3 4 5 6; do
+              if az keyvault secret set --vault-name "$KV" --name "$1" --value "$2" --output none 2>/dev/null; then
+                echo "set $1"; return 0
+              fi
+              echo "  $1 not authorized yet (attempt $attempt) — waiting 20s for RBAC propagation…"
+              sleep 20
+            done
+            echo "::error::failed to set $1 after retries (check the CI principal's Key Vault RBAC)"; return 1
           }
           set_secret "Jwt--Key"                     "$JWT_KEY"
           set_secret "Stripe--SecretKey"            "$STRIPE_SECRET_KEY"

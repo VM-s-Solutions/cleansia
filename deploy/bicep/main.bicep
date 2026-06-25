@@ -222,6 +222,12 @@ var apiBaseSettings = {
   Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
   Mapbox__GeocodingAccessToken: kvRef(keyVaultUri, 'Mapbox--GeocodingAccessToken')
   APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.outputs.connectionString
+  // ADR-0003 D3: the app refuses to boot in non-Development unless it's told which proxy network to
+  // trust for X-Forwarded-For. Behind App Service the only hop is the App Service front end, which
+  // forwards from its internal range — 100.64.0.0/10 (carrier-grade NAT, what App Service uses). The /10
+  // satisfies the "no /0–/8 supernet" guard: it trusts the App Service front end, not the public net.
+  ForwardedHeaders__KnownNetworks: '100.64.0.0/10'
+  ForwardedHeaders__ForwardLimit: '1'
 }
 
 var stripeSettings = {

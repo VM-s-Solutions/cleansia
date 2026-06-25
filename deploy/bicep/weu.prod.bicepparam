@@ -9,29 +9,16 @@
 // region is a new param value + a matrix entry, never a rename of a live resource.
 //
 // SECRET DISCIPLINE (ADR-0015 D4, the standing rule): NO real secret value lives in this file. The
-// Postgres administrator PASSWORD is sourced at deploy time from a BOOTSTRAP Key Vault the owner
-// created out of band (`kv-cleansia-bootstrap-weu-prod`) via `getSecret` — Bicep resolves the value
-// from Key Vault during the deployment and never writes it to source, a parameter output, or a log.
-// The application's own Key Vault (`kv-cleansia-weu-prod`) is created BY this deployment, so it cannot
-// be the source of a deploy-time param (chicken-and-egg); the bootstrap vault breaks that cycle. The
-// owner may instead supply the password as a CI secure parameter — in neither case is it a literal.
+// Postgres administrator PASSWORD is NOT assigned here — it is a @secure() param the prod CI/owner
+// supplies at deploy time on the command line:
+//     --parameters postgresAdministratorPassword=$POSTGRES_ADMIN_PASSWORD
+// (a CLI --parameters value satisfies a param this file leaves unset), sourced from the protected
+// `prod-weu` GitHub Environment secret. It never appears in source, the compiled template, or a log.
 //
 // adminIpAddress + ciPrincipalId are PROD PLACEHOLDERS the owner replaces at prod-provision time
 // (a real owner egress IP / the prod CI principal object id). They are config, not secrets.
 
 using './main.bicep'
-
-// ---------------------------------------------------------------------------------------------------
-// Bootstrap Key Vault holding ONLY the deploy-time Postgres admin password. Owner-created out of band
-// before any prod apply; referenced read-only here so `getSecret` can resolve the value without ever
-// committing it. This is NOT the application secret vault (that one is provisioned by main.bicep).
-// ---------------------------------------------------------------------------------------------------
-
-resource bootstrapKeyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-  // Owner replaces this resource-group with the prod bootstrap RG at provision time.
-  scope: resourceGroup('rg-cleansia-bootstrap-weu-prod')
-  name: 'kv-cleansia-bootstrap-weu-prod'
-}
 
 // ---------------------------------------------------------------------------------------------------
 // Region + stage (ADR-0017 region seam).
@@ -51,12 +38,10 @@ param postgresSkuTier = 'GeneralPurpose'
 param storageSku = 'Standard_ZRS'
 
 // ---------------------------------------------------------------------------------------------------
-// Postgres admin identity. The login NAME is not a secret; the PASSWORD is resolved from the bootstrap
-// Key Vault via getSecret — never a literal (ADR-0015 D4).
+// Postgres admin LOGIN (non-secret). The PASSWORD is supplied on the CLI at deploy time (see header).
 // ---------------------------------------------------------------------------------------------------
 
 param postgresAdministratorLogin = 'cleansia_admin'
-param postgresAdministratorPassword = bootstrapKeyVault.getSecret('Postgres--AdministratorPassword')
 
 // ---------------------------------------------------------------------------------------------------
 // Owner-supplied PROD placeholders — replaced at provision time (config, not secrets).

@@ -330,10 +330,10 @@ module functionApp 'modules/functionApp.bicep' = {
 // every host's managed-identity principal id.
 // ---------------------------------------------------------------------------------------------------
 
-var appPrincipalIds = concat(
-  [for i in range(0, length(apiHosts)): apiAppServices[i].outputs.principalId],
-  [ssr.outputs.principalId]
-)
+// A for-expression is a valid VARIABLE value (BCP138 only fires when it's nested inside a function call
+// like concat(...)), so collect the API host principal ids into their own var first, then append the SSR.
+var apiPrincipalIds = [for i in range(0, length(apiHosts)): apiAppServices[i].outputs.principalId]
+var appPrincipalIds = concat(apiPrincipalIds, [ssr.outputs.principalId])
 
 module roleAssignments 'modules/roleAssignments.bicep' = {
   name: 'roleAssignments'
@@ -351,12 +351,18 @@ module roleAssignments 'modules/roleAssignments.bicep' = {
 // Outputs — the stable default hostnames the iOS base URLs + the dev smoke consume (ADR-0015 D6).
 // ---------------------------------------------------------------------------------------------------
 
+// Collect {audience, host} pairs in a for-expression var first (BCP247: a lambda passed to toObject
+// can't index the apiAppServices MODULE array, but a for-expression var CAN). Then toObject over the
+// plain object array, keying by the audience field — no module indexing inside the lambdas.
+var apiHostPairs = [
+  for i in range(0, length(apiHosts)): {
+    audience: apiHosts[i].audience
+    host: apiAppServices[i].outputs.defaultHostName
+  }
+]
+
 @description('The five api-cleansia-<audience>-<region>-<env> default hostnames, keyed by audience.')
-output apiHostNames object = toObject(
-  range(0, length(apiHosts)),
-  i => apiHosts[i].audience,
-  i => apiAppServices[i].outputs.defaultHostName
-)
+output apiHostNames object = toObject(apiHostPairs, pair => pair.audience, pair => pair.host)
 
 @description('iOS partner app base host (Cleansia.Web.Mobile.Partner) — ADR-0015 D6.')
 output partnerMobileApiHostName string = apiAppServices[3].outputs.defaultHostName

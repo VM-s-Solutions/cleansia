@@ -318,15 +318,18 @@ jobs:
       # uniquely-named firewall rule for THIS runner's IP just for the migration, and always
       # remove it afterwards (even on failure). This avoids both a self-hosted runner and an
       # open-to-the-world 0.0.0.0/0 rule.
+      # Open a temporary firewall rule for THIS runner's IP via the ARM REST API (az rest) rather than the
+      # `az postgres flexible-server firewall-rule` command — the latter's flag names (--name vs
+      # --server-name vs --rule-name) differ across azure-cli versions on the runner and kept failing.
+      # The REST PUT is version-independent. The rule is removed afterwards (always(), best-effort).
       - name: Open Postgres firewall for the runner
         run: |
           RUNNER_IP="$(curl -s https://api.ipify.org)"
           echo "RUNNER_IP=$RUNNER_IP" >> "$GITHUB_ENV"
-          az postgres flexible-server firewall-rule create \
-            --resource-group rg-cleansia-${{ matrix.region }}-dev \
-            --server-name pg-cleansia-${{ matrix.region }}-dev \
-            --rule-name "ci-migrate-${{ github.run_id }}" \
-            --start-ip-address "$RUNNER_IP" --end-ip-address "$RUNNER_IP"
+          SUB_ID="$(az account show --query id -o tsv)"
+          az rest --method put \
+            --url "https://management.azure.com/subscriptions/${SUB_ID}/resourceGroups/rg-cleansia-${{ matrix.region }}-dev/providers/Microsoft.DBforPostgreSQL/flexibleServers/pg-cleansia-${{ matrix.region }}-dev/firewallRules/ci-migrate-${{ github.run_id }}?api-version=2024-08-01" \
+            --body "{\"properties\":{\"startIpAddress\":\"${RUNNER_IP}\",\"endIpAddress\":\"${RUNNER_IP}\"}}"
 
       - name: Apply migrations
         env:
@@ -338,10 +341,9 @@ jobs:
       - name: Remove the runner firewall rule
         if: always()
         run: |
-          az postgres flexible-server firewall-rule delete --yes \
-            --resource-group rg-cleansia-${{ matrix.region }}-dev \
-            --server-name pg-cleansia-${{ matrix.region }}-dev \
-            --rule-name "ci-migrate-${{ github.run_id }}" || true
+          SUB_ID="$(az account show --query id -o tsv)"
+          az rest --method delete \
+            --url "https://management.azure.com/subscriptions/${SUB_ID}/resourceGroups/rg-cleansia-${{ matrix.region }}-dev/providers/Microsoft.DBforPostgreSQL/flexibleServers/pg-cleansia-${{ matrix.region }}-dev/firewallRules/ci-migrate-${{ github.run_id }}?api-version=2024-08-01" || true
 
   # ===========================================================================================
   # Deploy — the five API hosts. Parallel: each needs [provision, migrate-database] only (ADR-0015 D5,

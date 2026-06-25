@@ -14,8 +14,11 @@ param storageAccountId string
 @description('Resource id of the Container Registry the Functions host pulls its image from.')
 param acrId string
 
-@description('System-assigned managed-identity principal ids of the app hosts (5 APIs + SSR) that read Key Vault + Storage.')
+@description('System-assigned managed-identity principal ids of the 5 API hosts that read Key Vault + Storage.')
 param appPrincipalIds array
+
+@description('System-assigned managed-identity principal id of the customer SSR host. Empty string skips it.')
+param ssrPrincipalId string = ''
 
 @description('System-assigned managed-identity principal id of the Functions host (Key Vault + Storage + ACR Pull). Empty string skips it.')
 param functionsPrincipalId string = ''
@@ -32,11 +35,11 @@ var roleIds = {
   acrPull: '7f951dda-4ed3-4680-a7ca-43fe172d538d'
 }
 
-// Every host MI that consumes Key Vault + Storage. The Functions MI is appended when supplied so it
-// gets the same Secrets-User + Storage data roles as the web hosts (plus AcrPull below).
-var storageAndVaultPrincipals = empty(functionsPrincipalId) ? appPrincipalIds : concat(appPrincipalIds, [
-  functionsPrincipalId
-])
+// Every host MI that consumes Key Vault + Storage: the 5 API hosts, plus the SSR + Functions MIs when
+// supplied (they get the same Secrets-User + Storage data roles; Functions also gets AcrPull below).
+// The optional ids are filtered out when empty so no empty principalId reaches a role assignment.
+var optionalPrincipals = filter([ssrPrincipalId, functionsPrincipalId], id => !empty(id))
+var storageAndVaultPrincipals = concat(appPrincipalIds, optionalPrincipals)
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: last(split(keyVaultId, '/'))

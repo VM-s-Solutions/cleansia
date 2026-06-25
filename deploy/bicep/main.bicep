@@ -62,9 +62,9 @@ param storageSku string = 'Standard_LRS'
 @description('PostgreSQL administrator login name. NOT a secret (the password is).')
 param postgresAdministratorLogin string
 
-@description('PostgreSQL administrator password. Supplied at deploy time from a GitHub-Environment secret (the .bicepparam uses getSecret) — NEVER a literal in source.')
+@description('PostgreSQL administrator password. Supplied at deploy time on the CLI (--parameters postgresAdministratorPassword=$POSTGRES_ADMIN_PASSWORD) from the GitHub-Environment secret — NEVER a literal in source. The empty default lets the .bicepparam omit it (the CLI override always provides the real value).')
 @secure()
-param postgresAdministratorPassword string
+param postgresAdministratorPassword string = ''
 
 @description('Owner/admin public IP allowed through the Postgres firewall for the EF-bundle apply + manual access.')
 param adminIpAddress string
@@ -214,19 +214,19 @@ var browserCorsOrigins = [
 // references, plus the (non-secret) App Insights connection string. The `__` -> `:` App Service
 // mapping means the app reads its existing config keys with no code change (ADR-0015 D4).
 var apiBaseSettings = {
-  'ConnectionStrings__ConnectionString': kvRef(keyVaultUri, 'ConnectionStrings--cleansia-db')
-  'ConnectionStrings__BlobContainerConfigurationConnectionString': kvRef(keyVaultUri, 'Storage--ConnectionString')
-  'ConnectionStrings__QueueStorageConnectionString': kvRef(keyVaultUri, 'Storage--ConnectionString')
-  'JwtSettings__Secret': kvRef(keyVaultUri, 'Jwt--Key')
-  'SendGrid__ApiKey': kvRef(keyVaultUri, 'SendGrid--ApiKey')
-  'Sentry__Dsn': kvRef(keyVaultUri, 'Sentry--Dsn')
-  'Mapbox__GeocodingAccessToken': kvRef(keyVaultUri, 'Mapbox--GeocodingAccessToken')
+  ConnectionStrings__ConnectionString: kvRef(keyVaultUri, 'ConnectionStrings--cleansia-db')
+  ConnectionStrings__BlobContainerConfigurationConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
+  ConnectionStrings__QueueStorageConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
+  JwtSettings__Secret: kvRef(keyVaultUri, 'Jwt--Key')
+  SendGrid__ApiKey: kvRef(keyVaultUri, 'SendGrid--ApiKey')
+  Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
+  Mapbox__GeocodingAccessToken: kvRef(keyVaultUri, 'Mapbox--GeocodingAccessToken')
   APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.outputs.connectionString
 }
 
 var stripeSettings = {
-  'Stripe__SecretKey': kvRef(keyVaultUri, 'Stripe--SecretKey')
-  'Stripe__WebhookSecret': kvRef(keyVaultUri, 'Stripe--WebhookSecret')
+  Stripe__SecretKey: kvRef(keyVaultUri, 'Stripe--SecretKey')
+  Stripe__WebhookSecret: kvRef(keyVaultUri, 'Stripe--WebhookSecret')
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -330,18 +330,18 @@ module functionApp 'modules/functionApp.bicep' = {
 // every host's managed-identity principal id.
 // ---------------------------------------------------------------------------------------------------
 
-// A for-expression is a valid VARIABLE value (BCP138 only fires when it's nested inside a function call
-// like concat(...)), so collect the API host principal ids into their own var first, then append the SSR.
-var apiPrincipalIds = [for i in range(0, length(apiHosts)): apiAppServices[i].outputs.principalId]
-var appPrincipalIds = concat(apiPrincipalIds, [ssr.outputs.principalId])
-
+// Module OUTPUTS (.outputs.principalId) are only known AFTER deployment, so they can NOT be collected
+// into a `var` (BCP182: var for-bodies must compute at deployment start). A for-expression IS allowed as
+// a DIRECT module property value, so the 5 API principal ids are passed inline; the SSR + Functions ids
+// go as their own params (the module concats them) — no for-expression nested inside a function call.
 module roleAssignments 'modules/roleAssignments.bicep' = {
   name: 'roleAssignments'
   params: {
     keyVaultId: keyVault.outputs.keyVaultId
     storageAccountId: storage.outputs.storageAccountId
     acrId: acr.outputs.registryId
-    appPrincipalIds: appPrincipalIds
+    appPrincipalIds: [for i in range(0, length(apiHosts)): apiAppServices[i].outputs.principalId]
+    ssrPrincipalId: ssr.outputs.principalId
     functionsPrincipalId: functionApp.outputs.principalId
     ciPrincipalId: ciPrincipalId
   }
@@ -351,18 +351,16 @@ module roleAssignments 'modules/roleAssignments.bicep' = {
 // Outputs — the stable default hostnames the iOS base URLs + the dev smoke consume (ADR-0015 D6).
 // ---------------------------------------------------------------------------------------------------
 
-// Collect {audience, host} pairs in a for-expression var first (BCP247: a lambda passed to toObject
-// can't index the apiAppServices MODULE array, but a for-expression var CAN). Then toObject over the
-// plain object array, keying by the audience field — no module indexing inside the lambdas.
-var apiHostPairs = [
+// A for-expression is only valid as the DIRECT value of an output (BCP138 fires if it's wrapped in a
+// function like toObject(...)), so emit the {audience, host} pairs as an ARRAY rather than a keyed map —
+// the consumer (smoke / iOS config) reads it by the audience field.
+@description('The five API hosts as {audience, host} pairs (audience = partner|admin|customer|partner-mobile|customer-mobile).')
+output apiHostList array = [
   for i in range(0, length(apiHosts)): {
     audience: apiHosts[i].audience
     host: apiAppServices[i].outputs.defaultHostName
   }
 ]
-
-@description('The five api-cleansia-<audience>-<region>-<env> default hostnames, keyed by audience.')
-output apiHostNames object = toObject(apiHostPairs, pair => pair.audience, pair => pair.host)
 
 @description('iOS partner app base host (Cleansia.Web.Mobile.Partner) — ADR-0015 D6.')
 output partnerMobileApiHostName string = apiAppServices[3].outputs.defaultHostName

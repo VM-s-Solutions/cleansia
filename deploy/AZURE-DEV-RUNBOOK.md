@@ -275,13 +275,18 @@ dotnet ef migrations bundle \
 
 ## 8. Build the Functions container + first app deploy
 
-The [`deploy-dev.yml`](../.github/workflows/deploy-dev.yml) workflow is **manual-only** (`workflow_dispatch`)
-— it never runs on a PR or automatically on push. Trigger it from **GitHub → Actions → "Deploy to DEV" →
-Run workflow**, choosing the **mode**:
-- **`deploy`** — provision/update via Bicep → migrate → build+push the Functions image → deploy the 5 APIs
-  + SSR (parallel) + the 2 SPAs.
-- **`what-if`** — a non-mutating Bicep preview only (no migrate, no deploy) — safe to run any time to see
-  what a deploy would change.
+The [`deploy-dev.yml`](../.github/workflows/deploy-dev.yml) trigger is **hybrid** (dev tracks master):
+- **Auto** — **every push/merge to `master` auto-deploys to dev** (always a full `deploy`). So after the
+  first manual provision below, you normally don't deploy by hand — merging keeps dev current.
+- **Manual** — the **Run workflow** button is still there (**GitHub → Actions → "Deploy to DEV" → Run
+  workflow**) with a **mode** choice: `deploy` (full provision + migrate + deploy) or `what-if` (a
+  non-mutating Bicep preview — no migrate, no deploy — to see what a deploy would change).
+
+It **never** runs inside a PR. (Prod — `deploy-pro.yml` — stays manual-with-confirmation and never
+auto-deploys.)
+
+For the **first** deploy specifically, fill the 2 SWA deploy tokens (below) first, then either merge to
+master or click Run workflow.
 
 The SWA deploy tokens (step 4) must be filled first — get them after step 5:
 
@@ -320,7 +325,8 @@ When green: the five `api-cleansia-*-weu-dev.azurewebsites.net` hosts are the st
 [ ] 5.  First provision: az deployment group create (from inside cleansia/) → all 11 resources + KV empty
 [ ] 6.  Grant self Secrets Officer; set every Key Vault secret value; restart API hosts  (plain az, anywhere)
 [ ] 7.  (Migrations apply automatically on the CI deploy; manual bundle needs the .NET SDK — rarely)
-[ ] 8.  Fill the 2 SWA deploy tokens; run the deploy: GitHub → Actions → "Deploy to DEV" → Run workflow (mode=deploy)
+[ ] 8.  Fill the 2 SWA deploy tokens; first deploy = merge to master (auto) OR Actions → Run workflow.
+        Thereafter every merge to master auto-deploys dev; the manual button stays for re-runs / what-if.
 [ ] 9.  Smoke: 5 APIs + both mobile tokens + SSR + 2 SPAs + the Functions PDF pipeline
 [ ] 10. Green → tell Claude → iOS Phase 0 points at dev
 ```

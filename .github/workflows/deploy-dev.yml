@@ -7,10 +7,13 @@ name: Deploy to DEV
 #   build-dotnet / build-angular  ──▶  provision (Bicep)  ──┐
 #                                      migrate-database  ───┴─▶  deploy 5 APIs + SSR + Functions + 2 SPAs
 #
-# - MANUAL execution only (workflow_dispatch). Deploying is a deliberate owner action — it never runs on
-#   a PR or automatically on a push to master. Trigger it from the Actions tab ("Deploy to DEV" → Run
-#   workflow), optionally choosing the mode (`deploy` = provision/update + deploy; `what-if` = a
-#   non-mutating Bicep preview that changes nothing).
+# - DEV trigger is HYBRID: auto-deploys on every push to master (dev tracks master), AND a manual
+#   "Run workflow" button (Actions tab) with a mode choice (`deploy` = provision/update + deploy;
+#   `what-if` = a non-mutating Bicep preview that changes nothing). It NEVER runs inside a PR.
+#   A push to master always means `deploy`; only the manual dispatch can pick `what-if`.
+#   (Prod — deploy-pro.yml — stays manual-with-confirmation; it never auto-deploys.)
+# - The effective mode is computed once in the `resolve` job (push → deploy; dispatch → the chosen input)
+#   and every gated job reads `needs.resolve.outputs.mode`.
 # - provision: `az deployment group create` (mode=deploy) or `az deployment group what-if` (mode=what-if).
 #   Scoped to the GitHub Environment `dev-weu`.
 # - OIDC (azure/login@v2 + id-token: write) and the EF-migration bundle (committed migrations applied
@@ -22,6 +25,9 @@ name: Deploy to DEV
 # - Per-Environment secrets are referenced by NAME only; no secret value is in this file (ADR-0015 D4).
 
 on:
+  push:
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       mode:
@@ -45,6 +51,26 @@ env:
   REGION: weu
 
 jobs:
+  # ===========================================================================================
+  # Resolve the effective mode ONCE: a push to master is always a real `deploy`; a manual dispatch
+  # uses the chosen input. Every gated job reads `needs.resolve.outputs.mode` so the deploy/what-if
+  # logic is identical for both triggers.
+  # ===========================================================================================
+
+  resolve:
+    name: Resolve mode
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.mode.outputs.mode }}
+    steps:
+      - id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mode=${{ github.event.inputs.mode }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=deploy" >> "$GITHUB_OUTPUT"
+          fi
+
   # ===========================================================================================
   # Build — produce the deployable artifacts (no Azure access needed)
   # ===========================================================================================
@@ -191,7 +217,7 @@ jobs:
 
   provision:
     name: Provision (Bicep)
-    needs: [build-dotnet, build-angular]
+    needs: [resolve, build-dotnet, build-angular]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -209,7 +235,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Bicep what-if (non-mutating preview)
-        if: inputs.mode == 'what-if'
+        if: needs.resolve.outputs.mode == 'what-if'
         run: |
           az deployment group what-if \
             --resource-group rg-cleansia-${{ matrix.region }}-dev \
@@ -224,7 +250,7 @@ jobs:
           CI_PRINCIPAL_ID: ${{ secrets.CI_PRINCIPAL_ID }}
 
       - name: Bicep deploy (provision/update)
-        if: inputs.mode == 'deploy'
+        if: needs.resolve.outputs.mode == 'deploy'
         run: |
           az deployment group create \
             --resource-group rg-cleansia-${{ matrix.region }}-dev \
@@ -245,10 +271,10 @@ jobs:
 
   migrate-database:
     name: Run DB Migrations
-    needs: [build-dotnet, provision]
+    needs: [resolve, build-dotnet, provision]
     # what-if is a preview only: no migrations, no deploys. Skipping this job propagates the skip to
     # every deploy job (they all `need` migrate-database).
-    if: inputs.mode == 'deploy'
+    if: needs.resolve.outputs.mode == 'deploy'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -546,10 +572,10 @@ jobs:
 
   deploy-partner-spa:
     name: Deploy Partner SPA
-    needs: [build-angular, provision]
+    needs: [resolve, build-angular, provision]
     # SPAs don't need the DB, so they don't `need` migrate-database — guard them directly so a what-if
     # preview never deploys.
-    if: inputs.mode == 'deploy'
+    if: needs.resolve.outputs.mode == 'deploy'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -573,9 +599,9 @@ jobs:
 
   deploy-admin-spa:
     name: Deploy Admin SPA
-    needs: [build-angular, provision]
+    needs: [resolve, build-angular, provision]
     # See deploy-partner-spa: guarded directly because the SPAs don't depend on migrate-database.
-    if: inputs.mode == 'deploy'
+    if: needs.resolve.outputs.mode == 'deploy'
     runs-on: ubuntu-latest
     strategy:
       matrix:

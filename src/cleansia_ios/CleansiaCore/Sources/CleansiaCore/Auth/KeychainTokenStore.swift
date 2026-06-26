@@ -69,7 +69,14 @@ public final class KeychainTokenStore: TokenStore, @unchecked Sendable {
     }
 }
 
-struct KeychainStore {
+protocol KeychainStoring: Sendable {
+    func read(account: String) -> Data?
+    @discardableResult
+    func write(_ data: Data, account: String) -> OSStatus
+    func delete(account: String)
+}
+
+struct KeychainStore: KeychainStoring {
     let service: String
     let accessGroup: String?
 
@@ -96,19 +103,20 @@ struct KeychainStore {
         return item as? Data
     }
 
-    func write(_ data: Data, account: String) {
+    @discardableResult
+    func write(_ data: Data, account: String) -> OSStatus {
         let query = baseQuery(account: account)
         let attributes: [String: Any] = [
             kSecValueData as String: data,
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         ]
 
-        let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
-        if status == errSecItemNotFound {
-            var insert = query
-            insert.merge(attributes) { _, new in new }
-            SecItemAdd(insert as CFDictionary, nil)
-        }
+        let updateStatus = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+        guard updateStatus == errSecItemNotFound else { return updateStatus }
+
+        var insert = query
+        insert.merge(attributes) { _, new in new }
+        return SecItemAdd(insert as CFDictionary, nil)
     }
 
     func delete(account: String) {

@@ -1,6 +1,6 @@
 # Sprint 12 — iOS PORT (Wave 10): parity Swift/SwiftUI customer + partner apps
 
-**Status:** PHASE 0 FOUNDATION DONE + MAC-VERIFIED + MERGED (2026-06-26) · **PHASE 1 (T-0303) DONE** — proving vertical green on `phase/ios-phase1` (both owner blockers CLEARED) · Phase 2+ proposed
+**Status:** PHASE 0 FOUNDATION DONE + MAC-VERIFIED + MERGED (2026-06-26) · **PHASE 1 (T-0303) DONE** — proving vertical green on `phase/ios-phase1` · **PHASE 2 STARTED — T-0304 (partner shell + RegistrationLock + SplashGate) DONE** on `phase/ios-phase2` (3 commits; reviewer + security/Gate-DP ALL APPROVE) · Phase 2+ tail proposed
 **Created:** 2026-06-23
 **Updated:** 2026-06-26
 **Source:** **ADR-0013** (`adr/0013-ios-app-architecture-and-port-strategy.md`, **accepted** 2026-06-23) +
@@ -58,6 +58,37 @@ born-canonical Swift `ApiResult<T>` contract.
 > (**T-0304/0307/0310**). Two security forward-notes recorded for the later authed waves (§7.3). Resulting
 > transition: **T-0303 → `done`** (§3 + INDEX Wave-10 roster). The owner commits these backlog edits to
 > `phase/ios-phase1` (the PM does not commit). Phase 2+ stays **proposed**.
+
+> **STATUS-LOG 2026-06-26 — PHASE 2 STARTED: T-0304 (partner shell + RegistrationLock + SplashGate)
+> `proposed` → `done`.** Implemented + reviewed + committed on `phase/ios-phase2` in **3 commits** —
+> `55b39aa` (ADR-0020 docs: the partner router pattern), `c269360` (Slice A: the fail-closed gate), `df71181`
+> (Slice B: the shell). Built through the agent workflow in **two slices**, each through reviewer + the
+> applicable security/Gate-DP gate; **ALL APPROVE**. **Slice A — the gate:** a `SplashGate` decision tree +
+> a fail-closed `RegistrationLock`. The predicate is the **AND** of `hasCompletedProfile &&
+> areDocumentsUploaded && (contractStatus == .approved(4) || .active(2))`; **any nil/unknown → LOCKED**;
+> **availability is NOT a clause**. **BOTH error paths fail CLOSED:** SplashGate `.failure` → lock (never the
+> shell); the lock VM's `.failure` **preserves** last-known/Missing and **never** unlocks. **Reviewer #24 +
+> TC-IOS-REGLOCK green; security APPROVE** (traced the backend: `CheckCurrentEmployee` is **token-scoped +
+> `[Permission]`-guarded, no client id**). The **ADR-0020 router** (reviewer #23) **reseeded `.dashboard` →
+> `.splash`**, which **CLOSED a latent T-0303 fail-OPEN** the architect caught (an authed-but-incomplete
+> partner previously landed straight on the authed area). The closed **14-token `missingFields` vocabulary**
+> (`Employee.GetMissingProfileFields`) is **localized ×5**. **Slice B — the shell:** a native SwiftUI
+> `TabView` (ADR-0018 D3) with the **4 tabs in Android `MainTab` order** (Dashboard·Orders·Invoices·Profile);
+> the `.dashboard` tab hosts the **T-0303 dashboard**; the dashboard's `onOpenOrders` **switches to the Orders
+> tab**; the 3 other tabs are **shared placeholders**. **Gate-DP APPROVE** (the native `TabView` divergence
+> from the Android floating-island pill is the **sanctioned ADR-0018 D3 component swap**, noted). **Gates
+> green** (§8): `swiftformat --lint` + `swiftlint --strict` clean; **CleansiaCore 93 + CleansiaPartner 61**
+> tests pass on the iPhone 17 simulator. **§7.4 choices confirmed (developer):** (a) the Rejected-row
+> contact-support affordance shipped **INERT** (no `mailto:` — the §7.4 inert option; the
+> `registration_lock_action_contact_support` translation is carried for **T-0310**); (b) the lock's
+> **silent-stale caching is DEFERRED** — plain load-on-appear + Retry + `.refreshable` (the §7.4-sanctioned
+> option; the `STALE_WINDOW` caching lands later alongside the dashboard's deferred cache). **Deferrals homed
+> (§7.4):** the lock "Fix" CTAs are inert → **T-0310** (profile-section chain); the SplashGate onboarding
+> branch is deferred → **T-0305**; the pre-existing hardcoded "Verify your email — coming in T-0305"
+> placeholder string (`PlaceholderVerifyEmailView`, from T-0303) localizes when **T-0305** builds the real
+> ConfirmEmail screen. Resulting transition: **T-0304 → `done`** (§3 + INDEX Wave-10 roster); next runnable =
+> **T-0305**. The owner commits these backlog edits to `phase/ios-phase2` (the PM does not commit). Phase 2+
+> tail stays **proposed**.
 **Goal:** port the Kotlin/Compose customer + partner apps to **Swift/SwiftUI** as **parity** apps sharing
 the **same Mobile API contract**, on a `CleansiaCore` SPM package + 2 app targets, **partner-first**, with
 a hand-written auth/session/header layer to the exact Android contract. iOS code lives at
@@ -134,7 +165,7 @@ PHASE 2+ PARITY FEATURE WAVES ── ordered by complexity; the 3 hard areas cal
 | **T-0301** | **Header-parity spec document** — the invisible out-of-band contract written down for the iOS dev (X-Device-Id==Device/Register id invariant, the full anon allow-list incl. customer host, X-Time-Zone, replace-refresh-on-refresh, empty-token gate) | S | **done ✅ (verified)** `c1009c6` (`src/cleansia_ios/docs/header-parity-contract.md`) | ios, docs | — | — | 0 (no-decision doc) |
 | **T-0302** | Swift codegen toolchain — openapi-generator **swift5 + urlsession**, wired into the build (script/SPM plugin, the `dependsOn(openApiGenerate)` parity), reading the **shared** mobile spec; never-hand-edit discipline | M | **WIRING done ✅ (verified)** `c1009c6` — `generate-api-clients.sh` runs Homebrew `openapi-generator`; generated 159 Swift files from the committed spec as a toolchain check, throwaway output removed. **FIRST REAL GEN `blocked` on mobile-spec-regen** | ios | T-0296✓ | **mobile-spec-regen (owner)** | 0 → first real gen **BLOCKED on regen** |
 | **T-0303** | **Phase-1 partner lead vertical** — partner login (hand-written auth, empty-token gate) → **read-only Dashboard** (`dashboardGetStats` via the **ADR-0019 Core-spine-backed `RequestBuilderFactory`** + `UiState`), proving auth/session/headers/codegen/state end-to-end. **Acceptance scope fixed in §7.2** (greeting + stats-driven cards + 3-state hero + inert nav closures; caching / pull-to-refresh / notifications / live order feeds DEFERRED to T-0304/0307/0310) | M | **done ✅** `8996df9`+`2a57f70` (`phase/ios-phase1`; both §7.1 blockers CLEARED — dev API live + regen `9232335`; #13-gen + TC-IOS-GEN green; CleansiaCore 93 + CleansiaPartner 17 pass; reviewer **AND** security APPROVE both slices — §7.3 fwd-notes) | ios | T-0300✓, T-0302✓ (first real gen via `8d4cfe3`) | rides T-0302 regen + dev-API-live ✓ | **1 (the proving vertical)** |
-| **T-0304** | Partner shell (Dashboard·Orders·Invoices·Profile tabs) + RegistrationLock gate (fails CLOSED) + SplashGate. **Acceptance scope + the 3 Understand-pass rulings fixed in §7.4**: Decision 1 (fail-closed gate placement + AND predicate + both error paths CLOSED — confirms the Android gate, reviewer #24 + **TC-IOS-REGLOCK**), Decision 2 (the flat-enum `PartnerRootView` router gated by `.splash` — **ADR-0020**, reviewer #23), Decision 3 (the deferral map — "Fix" CTAs + onboarding branch INERT/deferred to T-0305/T-0310, the §7.2 inert-nav precedent) | M | **proposed** | ios | T-0303 | — | 2 (partner) |
+| **T-0304** | Partner shell (Dashboard·Orders·Invoices·Profile tabs) + RegistrationLock gate (fails CLOSED) + SplashGate. **Acceptance scope + the 3 Understand-pass rulings fixed in §7.4**: Decision 1 (fail-closed gate placement + AND predicate + both error paths CLOSED — confirms the Android gate, reviewer #24 + **TC-IOS-REGLOCK**), Decision 2 (the flat-enum `PartnerRootView` router gated by `.splash` — **ADR-0020**, reviewer #23), Decision 3 (the deferral map — "Fix" CTAs + onboarding branch INERT/deferred to T-0305/T-0310, the §7.2 inert-nav precedent) | M | **done ✅** `55b39aa`+`c269360`+`df71181` (`phase/ios-phase2`; Slice A gate: AND predicate, any nil→LOCKED, availability not a clause, BOTH error paths fail closed — reviewer #24 + **TC-IOS-REGLOCK** green, **security APPROVE**; ADR-0020 router #23 reseeded `.dashboard`→`.splash`, closing a latent T-0303 fail-OPEN; 14-token `missingFields` localized ×5. Slice B shell: native SwiftUI `TabView`, 4 tabs in Android `MainTab` order, dashboard tab hosts T-0303, `onOpenOrders`→Orders tab, 3 placeholders — **Gate-DP APPROVE** (D3 component swap noted). swiftformat/swiftlint clean; **CleansiaCore 93 + CleansiaPartner 61** pass on iPhone 17 sim. §7.4 (a) contact-support INERT, (b) silent-stale cache DEFERRED. Deferrals: Fix CTAs→T-0310, onboarding branch→T-0305) | ios | T-0303✓ | — | 2 (partner) |
 | **T-0305** | Partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding chain | M | **proposed** | ios | T-0303 | — | 2 (partner) |
 | **T-0306** | **Map seam + MapKit default** — `MapProvider`/`GeocodingService` protocol in `CleansiaCore` + `MapKitMapProvider` + the partner `AddressPicker` (first map surface). **iOS-16 variant (ADR-0014 D6′):** `Map(coordinateRegion:annotationItems:)` for the picker; `MKMapView` via `UIViewRepresentable` for the full-bleed map + polygon overlays — NO iOS-17-only `Map {...}`/`Marker`/`MapPolygon` | M | **proposed** | ios | T-0300 | — | 2 (**HARD AREA #2 — first half**) |
 | **T-0307** | **Partner order work-loop** — OrdersList + OrderDetail (full-bleed map + 3-snap sheet) + the **OnTheWay** lifecycle (Take→NotifyOnTheWay→Start→Complete) + checklist/notes/issues/timeline | **L → split** | **proposed** | ios | T-0304, T-0306 | — | 2 (**HARD AREA #3**) |
@@ -375,6 +406,46 @@ commit).
 
 ### 7.4 T-0304 (Phase-2 partner shell + SplashGate + RegistrationLock) — acceptance scope + the three Understand-pass rulings (recorded 2026-06-26, architect)
 
+> **CONFIRMED-AS-SHIPPED + CLOSED 2026-06-26 — T-0304 is `done`** (§3 / status-log;
+> `55b39aa`+`c269360`+`df71181` on `phase/ios-phase2`). What shipped matches this scope record exactly.
+> **Acceptance evidence (AC ↔ proof):**
+> - **Slice A (the fail-closed gate, `c269360`)** — a `SplashGate` decision tree + a fail-closed
+>   `RegistrationLock`. Decision 1 is honored end-to-end: the predicate is the **AND** of
+>   `hasCompletedProfile && areDocumentsUploaded && (contractStatus == .approved(4) || .active(2))`, **any
+>   nil/unknown/other → LOCKED**, **availability NOT read as a clause**; **BOTH error paths fail CLOSED** —
+>   SplashGate `.failure` → lock (never the shell), and the lock VM's `.failure` **preserves** the
+>   last-known/Missing state and **never** unlocks (the success-only "complete" watermark unlocks).
+>   **Reviewer #24 + TC-IOS-REGLOCK green; security APPROVE** — security traced the backend and confirmed
+>   `CheckCurrentEmployee` is **token-scoped + `[Permission]`-guarded with no client-supplied id**. The
+>   **ADR-0020 router** (Decision 2, reviewer #23) **reseeded `.dashboard` → `.splash`**, which **CLOSED a
+>   latent T-0303 fail-OPEN** the architect caught (an authed-but-incomplete partner previously landed
+>   straight on the authed area). The closed **14-token `missingFields` vocabulary**
+>   (`Employee.GetMissingProfileFields`) is **localized ×5**.
+> - **Slice B (the shell, `df71181`)** — a native SwiftUI `TabView` (ADR-0018 D3) with the **4 tabs in the
+>   Android `MainTab` order** (Dashboard·Orders·Invoices·Profile); the `.dashboard` tab hosts the **T-0303
+>   `DashboardView`** (now a tab); the dashboard's **`onOpenOrders` switches to the Orders tab**; the 3 other
+>   tabs are **shared placeholders**. **Gate-DP APPROVE** — the native `TabView` divergence from the Android
+>   floating-island pill is the **sanctioned ADR-0018 D3 component swap** (component-only, noted; layout/flow
+>   unchanged).
+> - **ADR-0020 docs (`55b39aa`)** — the partner router pattern canonicalized so T-0305+ don't reinvent it.
+> - **Gates green** — `swiftformat --lint` + `swiftlint --strict` clean; **CleansiaCore 93 + CleansiaPartner
+>   61** tests pass on the **iPhone 17 simulator**; **reviewer + the applicable security/Gate-DP gate ALL
+>   APPROVE** on both slices.
+>
+> **The two §7.4-open choices — RESOLVED (developer-confirmed):**
+> - **(a) The Rejected-row contact-support affordance shipped INERT** (no `mailto:`) — the §7.4 inert option
+>   below. The `registration_lock_action_contact_support` translation is **carried in the catalog** for when
+>   **T-0310** wires it.
+> - **(b) The lock's silent-stale caching was DEFERRED** — plain **load-on-appear + Retry + `.refreshable`**
+>   (the §7.4-sanctioned "OR defer" option below); the `STALE_WINDOW` caching lands later alongside the
+>   dashboard's deferred cache.
+>
+> **Deferrals (all homed, confirmed deferrals not cuts):** the lock "Fix" CTAs are **inert → T-0310**
+> (profile-section chain); the SplashGate **onboarding branch is deferred → T-0305**; the pre-existing
+> hardcoded "Verify your email — coming in T-0305" placeholder string (`PlaceholderVerifyEmailView`, from
+> T-0303) **localizes when T-0305** builds the real ConfirmEmail screen. Resulting transition: **T-0304 →
+> `done`; next runnable = T-0305.**
+
 T-0304 builds the partner **authenticated shell** (a SwiftUI `TabView`: Dashboard·Orders·Invoices·Profile —
 Android `MainScaffold.kt:44-49` parity) **gated by a SplashGate + a RegistrationLock that FAILS CLOSED**.
 The Understand pass surfaced three decisions; all three are ruled below. **Two are records (no new
@@ -545,7 +616,11 @@ honestly deferring the destinations that don't exist yet.
   profile+docs+Approved(4)|Active(2) → UNLOCKED), **TC-IOS-ROUTER-SEED** (`.splash` when `hasValidSession`
   else `.login` — never `.dashboard`), **TC-IOS-ROUTER-BOUNCE** (verified login → `.splash`; unverified →
   `.verifyEmail` — the extended §7.2 gate), **TC-IOS-SPLASH-RESOLVE** (complete → `.dashboard`, incomplete/
-  `.failure` → `.registrationLock`, no-session → `.login`) — **red-first**.
+  `.failure` → `.registrationLock`, no-session → `.login`) — **red-first**. **✅ GREEN in T-0304 (`c269360`):**
+  **TC-IOS-REGLOCK** passes — the AND predicate with any-nil→LOCKED (availability not a clause) and BOTH
+  fail-closed error paths (SplashGate `.failure`→lock; lock-VM `.failure` preserves last-known and never
+  unlocks). `swiftformat --lint` + `swiftlint --strict` clean; **CleansiaCore 93 + CleansiaPartner 61** tests
+  pass on the iPhone 17 simulator.
 - **Reviewer compliance checks (ADR-0013 + ADR-0014 §"How a reviewer verifies"):** #1 no hand-edited
   generated client · #2 auth NOT generated · #3 X-Device-Id single source · #4 anon allow-list complete
   (incl. customer host) · #5 refresh token replaced every refresh · #6 single no-auth session +
@@ -566,18 +641,28 @@ honestly deferring the destinations that don't exist yet.
   root-switch gated by `.splash`** — the audience is a closed `enum` switch (not a pushed
   `NavigationPath`); seeded `hasValidSession ? .splash : .login` (NOT `.dashboard`); a verified login bounces
   through `.splash` (NOT straight to `.dashboard`); there is **no** login→shell path bypassing `.splash`;
-  `NavigationStack` is the **intra-audience** push container only · **#24 (§7.4 Decision 1, T-0304+ —
+  `NavigationStack` is the **intra-audience** push container only. **✅ #23 PASS in T-0304 (reviewer,
+  `c269360`)** — the flat-enum `PartnerRootView` root-switch reseeded `.dashboard`→`.splash`, closing a
+  latent T-0303 fail-OPEN (authed-but-incomplete partner no longer lands on the authed area); ADR-0020
+  canonicalized in `55b39aa`. · **#24 (§7.4 Decision 1, T-0304+ —
   SECURITY) the partner registration gate is fail-closed end-to-end** — the predicate is the **AND** of
   profile + documents + contract∈{Approved(4),Active(2)} with **every** nil/unknown/other → LOCKED (no
   permissive optional default; availability is NOT a clause); the SplashGate routes a status-API `.failure`
   to the lock **never** the shell; the lock VM's `.failure` **preserves** the cached status and **never**
   unlocks (only the success "complete" watermark unlocks). A permissive nil default, a `.failure` reaching
-  the shell, or a `.failure` clearing/unlocking is a **blocking** finding.
+  the shell, or a `.failure` clearing/unlocking is a **blocking** finding. **✅ #24 PASS in T-0304 (reviewer
+  + security APPROVE, `c269360`)** — the AND predicate with every nil/unknown→LOCKED (availability not read);
+  SplashGate `.failure`→lock; lock-VM `.failure` preserves the cached status and never unlocks; **TC-IOS-REGLOCK
+  green**. Security traced the backend: `CheckCurrentEmployee` is **token-scoped + `[Permission]`-guarded, no
+  client-supplied id** (§7.3 fwd-note #2 holds — any server-derived id round-trip is safe only by the
+  server-side override).
 - **Mechanical:** the Xcode workspace builds; `CleansiaCore` + both app targets compile; the codegen step
   produces the client from the on-disk spec (no hand-edit); the Swift test suites run. **✅ T-0303 evidence:**
   `swiftformat --lint` + `swiftlint --strict` clean; **CleansiaCore 93 + CleansiaPartner 17** tests pass on
   the iPhone 17 simulator; the T-0302 first real generation (`8d4cfe3`) produced the client from the
-  regenerated on-disk spec (`9232335`), no hand-edit.
+  regenerated on-disk spec (`9232335`), no hand-edit. **✅ T-0304 evidence (`55b39aa`+`c269360`+`df71181`):**
+  `swiftformat --lint` + `swiftlint --strict` clean; **CleansiaCore 93 + CleansiaPartner 61** tests pass on
+  the iPhone 17 simulator (the partner suite grew 17→61 with the gate/router/shell tests incl. TC-IOS-REGLOCK).
 
 ---
 

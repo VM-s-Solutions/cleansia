@@ -10,7 +10,7 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
-> ## 🍎 WAVE 10 — iOS PORT (sprint-12): PHASE 0 DONE + MERGED · **PHASE 1 (T-0303) DONE** (2026-06-26)
+> ## 🍎 WAVE 10 — iOS PORT (sprint-12): PHASE 0 DONE + MERGED · **PHASE 1 (T-0303) DONE** · **PHASE 2 STARTED — T-0304 DONE** (2026-06-26)
 > **iOS PHASE 1 IS DONE — the proving vertical (T-0303) is green on `phase/ios-phase1`.** Both owner
 > blockers that held T-0303 are **CLEARED**: the dev mobile API is **live** and the owner ran the
 > **mobile-spec-regen** (post-T-0272 specs committed `9232335`), so the T-0302 first real generation ran
@@ -60,6 +60,7 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > | **T-0302** | Swift codegen toolchain (openapi-generator swift5+urlsession) | M | **done ✅** wiring `c1009c6` / first real gen `8d4cfe3` (regen `9232335`) | T-0296✓ | ios | no | **mobile-spec-regen (owner) ✓** |
 > | **T-0323** | SwiftLint + SwiftFormat **BLOCKING** iOS CI gate (macOS) | S | **done ✅ (via CI)** `8220f4c` (**#90**) | T-0296✓ | ios | no | — |
 > | **T-0303** | Phase-1 partner login → read-only Dashboard (the proving vertical) | M | **done ✅** `8996df9`+`2a57f70` (`phase/ios-phase1`; both owner blockers CLEARED; #13-gen + TC-IOS-GEN green; CleansiaCore 93 + Partner 17 pass; reviewer+security APPROVE both slices) | T-0300✓, T-0302✓ | ios | no | rides regen ✓ + dev-API-live ✓ |
+> | **T-0304** | Phase-2 partner shell (`TabView` Dashboard·Orders·Invoices·Profile) + RegistrationLock (fails CLOSED) + SplashGate + ADR-0020 router | M | **done ✅** `55b39aa`+`c269360`+`df71181` (`phase/ios-phase2`; Slice A gate AND-predicate any-nil→LOCKED + BOTH error paths fail closed — reviewer #24 + TC-IOS-REGLOCK green, security APPROVE; ADR-0020 router #23 reseed `.dashboard`→`.splash` closed a latent T-0303 fail-OPEN; 14-token `missingFields` localized ×5. Slice B native `TabView` Gate-DP APPROVE. CleansiaCore 93 + Partner 61 pass on iPhone 17 sim. §7.4: contact-support INERT, silent-stale cache DEFERRED; Fix CTAs→T-0310, onboarding→T-0305) | T-0303✓ | ios | no | — |
 >
 > **T-0303's two owner blockers are now BOTH CLEARED** (they previously held T-0303 + every generated-client
 > ticket): (1) the owner ran the **mobile-spec-regen** — the formerly-stale committed
@@ -71,10 +72,16 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > the **ADR-0019 generated-client auth seam is proven** for the later authed waves to copy (sprint-12 §7.3
 > records two security forward-notes: the customer wave installs its OWN host-specific factory + allow-list;
 > the server-derived `employeeId` round-trip is safe only because the backend overrides the client
-> `EmployeeId` for non-admin callers). **Phase 2+ (T-0304…T-0314, and compliance T-0324…T-0329) remain
-> `proposed`** in `status/sprint-12.md`; **T-0304** (partner shell, depends on T-0303✓) is the next runnable
-> ticket. The Phase-0 audit's 2 deferred findings (**T-0331** unblocked + next, **T-0332** booking
-> checkpoint) are in the audit banner directly below.
+> `EmployeeId` for non-admin callers). **PHASE 2 STARTED — T-0304 (partner shell + RegistrationLock +
+> SplashGate) is `done`** on `phase/ios-phase2` (3 commits — `55b39aa` ADR-0020 docs, `c269360` Slice A
+> fail-closed gate, `df71181` Slice B shell; reviewer #23 + #24 + TC-IOS-REGLOCK green, security + Gate-DP
+> APPROVE; CleansiaCore 93 + CleansiaPartner 61 pass on the iPhone 17 sim). The ADR-0020 router reseed
+> (`.dashboard`→`.splash`) **closed a latent T-0303 fail-OPEN** (an authed-but-incomplete partner no longer
+> lands on the authed area). §7.4 choices: contact-support INERT, silent-stale cache DEFERRED; Fix
+> CTAs→T-0310, onboarding branch→T-0305. **The rest of Phase 2+ (T-0305…T-0314, and compliance
+> T-0324…T-0329) remain `proposed`** in `status/sprint-12.md`; **T-0305** (partner auth completeness, depends
+> on T-0303✓) is the next runnable ticket. The Phase-0 audit's 2 deferred findings (**T-0331** unblocked +
+> next, **T-0332** booking checkpoint) are in the audit banner directly below.
 >
 > --- (iOS Phase-0 audit banner below) ---
 >

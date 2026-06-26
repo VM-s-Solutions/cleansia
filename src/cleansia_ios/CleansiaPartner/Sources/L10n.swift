@@ -237,6 +237,28 @@ enum L10n {
         }
     }
 
+    enum Shell {
+        static var dashboard: String {
+            localized("dashboard")
+        }
+
+        static var orders: String {
+            localized("orders")
+        }
+
+        static var invoices: String {
+            localized("invoices")
+        }
+
+        static var profile: String {
+            localized("profile")
+        }
+
+        static func placeholderComingSoon(_ name: String, _ ticket: String) -> String {
+            format("shell_tab_placeholder", name, ticket)
+        }
+    }
+
     private static func localized(_ key: String) -> String {
         String(localized: String.LocalizationValue(key))
     }

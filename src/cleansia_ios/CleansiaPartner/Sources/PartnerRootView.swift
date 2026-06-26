@@ -47,7 +47,7 @@ struct PartnerRootView: View {
                 onSignedOut: { route = .login }
             )
         case .dashboard:
-            DashboardView(client: container.dashboardClient)
+            PartnerShellView(container: container)
         case .verifyEmail:
             PlaceholderVerifyEmailView()
         }
@@ -81,24 +81,5 @@ struct PartnerRootView: View {
 private struct PlaceholderVerifyEmailView: View {
     var body: some View {
         PlaceholderDestination(systemImage: "envelope.badge", text: "Verify your email — coming in T-0305")
-    }
-}
-
-private struct PlaceholderDestination: View {
-    let systemImage: String
-    let text: String
-
-    var body: some View {
-        VStack(spacing: Spacing.xs) {
-            Image(systemName: systemImage)
-                .font(.system(size: 48))
-                .foregroundColor(CleansiaColors.primary)
-            Text(verbatim: text)
-                .font(CleansiaTypography.titleMedium)
-                .foregroundColor(CleansiaColors.onBackground)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(CleansiaColors.background.ignoresSafeArea())
     }
 }

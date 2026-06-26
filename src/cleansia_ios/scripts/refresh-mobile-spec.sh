@@ -25,17 +25,21 @@ set -euo pipefail
 IOS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SPEC_DIR="${IOS_ROOT}/../cleansia_android/openapi"
 
-declare -A default_url=(
-  [partner]="http://localhost:5002/swagger/v1/swagger.json"
-  [customer]="http://localhost:5004/swagger/v1/swagger.json"
-)
+# macOS ships Bash 3.2, which has no associative arrays (declare -A) — resolve
+# the per-app default URL with a function instead.
+default_url_for() {
+  case "$1" in
+    partner) echo "http://localhost:5002/swagger/v1/swagger.json" ;;
+    customer) echo "http://localhost:5004/swagger/v1/swagger.json" ;;
+  esac
+}
 
 app="${1:-all}"
 override_url="${2:-}"
 
 refresh_one() {
   local name="$1"
-  local url="${override_url:-${default_url[$name]}}"
+  local url="${override_url:-$(default_url_for "$name")}"
   local out="${SPEC_DIR}/${name}-mobile-api.json"
 
   echo "Fetching ${name} spec from ${url} ..."

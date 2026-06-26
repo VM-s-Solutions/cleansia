@@ -29,10 +29,10 @@ public enum CleansiaFont {
 
     private static func suffix(for weight: Font.Weight) -> String {
         switch weight {
-        case .bold, .heavy, .black: return "Bold"
-        case .semibold: return "SemiBold"
-        case .medium: return "Medium"
-        default: return "Regular"
+        case .bold, .heavy, .black: "Bold"
+        case .semibold: "SemiBold"
+        case .medium: "Medium"
+        default: "Regular"
         }
     }
 }
@@ -41,7 +41,7 @@ public extension CleansiaFont {
     static func registerBundledFonts(in bundle: Bundle) {
         let names = [
             "Poppins-Medium", "Poppins-SemiBold", "Poppins-Bold",
-            "Nunito-Regular", "Nunito-SemiBold", "Nunito-Bold",
+            "Nunito-Regular", "Nunito-SemiBold", "Nunito-Bold"
         ]
         for name in names {
             guard let url = bundle.url(forResource: name, withExtension: "ttf") else { continue }

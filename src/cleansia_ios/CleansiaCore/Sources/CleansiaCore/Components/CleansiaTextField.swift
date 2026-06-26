@@ -33,8 +33,13 @@ public struct CleansiaTextField: View {
         self.transparentContainer = transparentContainer
     }
 
-    private var isError: Bool { errorText != nil }
-    private var floating: Bool { focused || !value.isEmpty }
+    private var isError: Bool {
+        errorText != nil
+    }
+
+    private var floating: Bool {
+        focused || !value.isEmpty
+    }
 
     private var borderColor: Color {
         if isError { return CleansiaColors.error }
@@ -92,7 +97,7 @@ public struct CleansiaTextField: View {
         transparentContainer ? .clear : CleansiaColors.surface
     }
 
-    @ViewBuilder private var field: some View {
+    private var field: some View {
         Group {
             if isPassword, !passwordVisible {
                 SecureField("", text: $value)
@@ -111,16 +116,16 @@ public struct CleansiaTextField: View {
 }
 
 #if DEBUG
-struct CleansiaTextField_Previews: PreviewProvider {
-    static var previews: some View {
-        StatefulPreviewWrapper("") { binding in
-            VStack(spacing: Spacing.m) {
-                CleansiaTextField(value: binding, label: "Email", keyboardType: .emailAddress)
-                CleansiaTextField(value: .constant("secret"), label: "Password", isPassword: true)
-                CleansiaTextField(value: .constant("bad"), label: "Code", errorText: "Invalid code")
+    struct CleansiaTextField_Previews: PreviewProvider {
+        static var previews: some View {
+            StatefulPreviewWrapper("") { binding in
+                VStack(spacing: Spacing.m) {
+                    CleansiaTextField(value: binding, label: "Email", keyboardType: .emailAddress)
+                    CleansiaTextField(value: .constant("secret"), label: "Password", isPassword: true)
+                    CleansiaTextField(value: .constant("bad"), label: "Code", errorText: "Invalid code")
+                }
+                .padding()
             }
-            .padding()
         }
     }
-}
 #endif

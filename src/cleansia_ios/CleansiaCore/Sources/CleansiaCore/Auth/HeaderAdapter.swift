@@ -1,6 +1,6 @@
 import Foundation
 #if canImport(UIKit)
-import UIKit
+    import UIKit
 #endif
 
 public struct HeaderAdapter: Sendable {
@@ -46,10 +46,10 @@ public struct HeaderAdapter: Sendable {
 
     public static func systemDeviceLabel() -> String {
         #if canImport(UIKit)
-        let device = UIDevice.current
-        return "\(device.model) - \(device.systemName) \(device.systemVersion)"
+            let device = UIDevice.current
+            return "\(device.model) - \(device.systemName) \(device.systemVersion)"
         #else
-        return "Apple Device"
+            return "Apple Device"
         #endif
     }
 

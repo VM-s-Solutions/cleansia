@@ -3,12 +3,11 @@ import Foundation
 public enum JwtDecoder {
     public static func expiry(of jwt: String) -> Date? {
         guard let exp = payload(of: jwt)?["exp"] else { return nil }
-        let seconds: Double?
-        switch exp {
-        case let value as Double: seconds = value
-        case let value as Int: seconds = Double(value)
-        case let value as NSNumber: seconds = value.doubleValue
-        default: seconds = nil
+        let seconds: Double? = switch exp {
+        case let value as Double: value
+        case let value as Int: Double(value)
+        case let value as NSNumber: value.doubleValue
+        default: nil
         }
         guard let seconds, seconds > 0 else { return nil }
         return Date(timeIntervalSince1970: seconds)
@@ -27,7 +26,7 @@ public enum JwtDecoder {
             keys: [
                 "sub",
                 "nameid",
-                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
+                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
             ]
         )
     }

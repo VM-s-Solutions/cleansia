@@ -44,13 +44,13 @@ public struct MascotEmptyState: View {
 }
 
 #if DEBUG
-struct MascotEmptyState_Previews: PreviewProvider {
-    static var previews: some View {
-        MascotEmptyState(
-            image: Image(systemName: "tray"),
-            text: "No orders yet",
-            verticallyCentered: true
-        )
+    struct MascotEmptyState_Previews: PreviewProvider {
+        static var previews: some View {
+            MascotEmptyState(
+                image: Image(systemName: "tray"),
+                text: "No orders yet",
+                verticallyCentered: true
+            )
+        }
     }
-}
 #endif

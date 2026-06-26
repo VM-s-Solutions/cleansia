@@ -22,7 +22,7 @@ public struct AnonymousAllowList: Sendable {
         "/api/auth/forgotpassword",
         "/api/auth/refreshtoken",
         "/api/user/requestpasswordchange",
-        "/api/user/changepassword",
+        "/api/user/changepassword"
     ]
 
     private static let customerGuestBooking = [
@@ -35,7 +35,7 @@ public struct AnonymousAllowList: Sendable {
         "/api/order/lookup",
         "/api/order/lookupbatch",
         "/api/payment/createorder",
-        "/api/referral/validate",
+        "/api/referral/validate"
     ]
 
     public static let partner = AnonymousAllowList(paths: sharedAuth)

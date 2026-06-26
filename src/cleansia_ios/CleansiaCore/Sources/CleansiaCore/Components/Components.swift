@@ -64,15 +64,15 @@ public struct LabelledDivider: View {
 }
 
 #if DEBUG
-struct Components_Previews: PreviewProvider {
-    static var previews: some View {
-        StatefulPreviewWrapper("secret") { binding in
-            VStack(spacing: Spacing.m) {
-                CleansiaSecureField(value: binding, label: "Password")
-                LabelledDivider("OR")
+    struct Components_Previews: PreviewProvider {
+        static var previews: some View {
+            StatefulPreviewWrapper("secret") { binding in
+                VStack(spacing: Spacing.m) {
+                    CleansiaSecureField(value: binding, label: "Password")
+                    LabelledDivider("OR")
+                }
+                .padding()
             }
-            .padding()
         }
     }
-}
 #endif

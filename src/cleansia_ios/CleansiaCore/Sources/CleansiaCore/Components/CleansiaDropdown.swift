@@ -42,8 +42,13 @@ public struct CleansiaDropdown: View {
         self.searchable = searchable
     }
 
-    private var isError: Bool { errorText != nil }
-    private var selected: CleansiaDropdownOption? { options.first { $0.id == selectedId } }
+    private var isError: Bool {
+        errorText != nil
+    }
+
+    private var selected: CleansiaDropdownOption? {
+        options.first { $0.id == selectedId }
+    }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
@@ -132,7 +137,8 @@ private struct DropdownSheet: View {
                         Text(option.label)
                             .font(CleansiaTypography.bodyLarge)
                             .fontWeight(option.id == selectedId ? .semibold : .regular)
-                            .foregroundColor(option.id == selectedId ? CleansiaColors.primary : CleansiaColors.onSurface)
+                            .foregroundColor(option.id == selectedId ? CleansiaColors.primary : CleansiaColors
+                                .onSurface)
                         Spacer()
                         if option.id == selectedId {
                             Image(systemName: "checkmark").foregroundColor(CleansiaColors.primary)
@@ -162,20 +168,20 @@ private struct SearchableIfNeeded: ViewModifier {
 }
 
 #if DEBUG
-struct CleansiaDropdown_Previews: PreviewProvider {
-    static var previews: some View {
-        StatefulPreviewWrapper(String?.some("cz")) { binding in
-            CleansiaDropdown(
-                selectedId: binding,
-                options: [
-                    .init(id: "cz", label: "Czechia"),
-                    .init(id: "sk", label: "Slovakia"),
-                ],
-                label: "Country",
-                searchable: true
-            )
-            .padding()
+    struct CleansiaDropdown_Previews: PreviewProvider {
+        static var previews: some View {
+            StatefulPreviewWrapper(String?.some("cz")) { binding in
+                CleansiaDropdown(
+                    selectedId: binding,
+                    options: [
+                        .init(id: "cz", label: "Czechia"),
+                        .init(id: "sk", label: "Slovakia")
+                    ],
+                    label: "Country",
+                    searchable: true
+                )
+                .padding()
+            }
         }
     }
-}
 #endif

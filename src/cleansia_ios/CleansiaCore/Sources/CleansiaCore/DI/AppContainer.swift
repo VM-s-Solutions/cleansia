@@ -53,8 +53,13 @@ public final class BaseAppContainer: AppContainer {
         AuthSpineSeams(apiBaseURL: apiBaseURL, snackbar: snackbar, sessionScopedCaches: sessionScopedCaches)
     )
 
-    public var authClient: AuthClient { authSpine }
-    public var refreshClient: RefreshClient { authSpine }
+    public var authClient: AuthClient {
+        authSpine
+    }
+
+    public var refreshClient: RefreshClient {
+        authSpine
+    }
 
     public lazy var sessionRefresher = SessionRefresher(
         tokenStore: tokenStore,
@@ -72,5 +77,7 @@ public final class BaseAppContainer: AppContainer {
         )
     )
 
-    private var tokenStore: TokenStore { authSpine.tokenStore }
+    private var tokenStore: TokenStore {
+        authSpine.tokenStore
+    }
 }

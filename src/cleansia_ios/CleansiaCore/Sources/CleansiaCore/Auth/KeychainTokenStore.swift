@@ -77,7 +77,7 @@ struct KeychainStore {
         var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
+            kSecAttrAccount as String: account
         ]
         if let accessGroup {
             query[kSecAttrAccessGroup as String] = accessGroup
@@ -100,7 +100,7 @@ struct KeychainStore {
         let query = baseQuery(account: account)
         let attributes: [String: Any] = [
             kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         ]
 
         let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)

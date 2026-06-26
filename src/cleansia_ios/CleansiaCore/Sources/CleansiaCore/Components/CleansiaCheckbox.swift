@@ -28,12 +28,12 @@ public struct CleansiaCheckbox: View {
 }
 
 #if DEBUG
-struct CleansiaCheckbox_Previews: PreviewProvider {
-    static var previews: some View {
-        StatefulPreviewWrapper(true) { binding in
-            CleansiaCheckbox(checked: binding, label: "I agree to the terms")
-                .padding()
+    struct CleansiaCheckbox_Previews: PreviewProvider {
+        static var previews: some View {
+            StatefulPreviewWrapper(true) { binding in
+                CleansiaCheckbox(checked: binding, label: "I agree to the terms")
+                    .padding()
+            }
         }
     }
-}
 #endif

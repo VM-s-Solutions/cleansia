@@ -51,10 +51,13 @@ cd src/cleansia_ios/CleansiaCustomer && xcodegen generate
 open src/cleansia_ios/Cleansia.xcworkspace
 ```
 
-The package builds and tests independently of Xcode:
+The package builds and tests on an iOS simulator. `CleansiaCore` is iOS-only (`platforms: [.iOS(.v16)]`),
+so a bare `swift build` host-builds for macOS and fails the iOS-only SwiftUI availability checks — use an
+iOS-simulator destination instead:
 
 ```sh
-cd src/cleansia_ios/CleansiaCore && swift build && swift test
+cd src/cleansia_ios/CleansiaCore
+xcodebuild -scheme CleansiaCore -destination 'platform=iOS Simulator,name=iPhone 17' build test
 ```
 
 ## Generated business API client (swift5 + URLSession)
@@ -64,7 +67,7 @@ that Android also reads (`src/cleansia_android/openapi/{partner,customer}-mobile
 backend contract, three clients (web NSwag, Android kotlin, iOS swift5), so the platforms can't drift.
 
 - Config + the never-hand-edit discipline: `openapi/README.md` and `openapi/openapi-generator-config.*.yaml`.
-- Regenerate: `scripts/generate-api-clients.sh [partner|customer]` (needs `openapi-generator-cli` 7.x).
+- Regenerate: `scripts/generate-api-clients.sh [partner|customer]` (needs `openapi-generator` 7.x).
 - Output (`CleansiaPartnerApi/`, `CleansiaCustomerApi/`) is **gitignored and machine-owned** — change the
   spec or the config and regenerate; never hand-edit it.
 - The **auth/session/header spine is hand-written** (`CleansiaCore/Auth`) and **excluded from codegen** —

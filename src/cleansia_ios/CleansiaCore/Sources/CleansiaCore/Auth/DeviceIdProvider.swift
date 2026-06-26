@@ -1,7 +1,7 @@
 import Foundation
 import Security
 #if canImport(UIKit)
-import UIKit
+    import UIKit
 #endif
 
 public protocol DeviceIdProviding: Sendable {
@@ -33,7 +33,8 @@ public final class DeviceIdProvider: DeviceIdProviding, @unchecked Sendable {
 
         if let data = keychain.read(account: account),
            let existing = String(data: data, encoding: .utf8),
-           !existing.isEmpty {
+           !existing.isEmpty
+        {
             cached = existing
             return existing
         }
@@ -46,11 +47,11 @@ public final class DeviceIdProvider: DeviceIdProviding, @unchecked Sendable {
         return generated
     }
 
-    static func vendorIdentifier() -> String? {
+    public static func vendorIdentifier() -> String? {
         #if canImport(UIKit)
-        return UIDevice.current.identifierForVendor?.uuidString
+            return UIDevice.current.identifierForVendor?.uuidString
         #else
-        return nil
+            return nil
         #endif
     }
 }

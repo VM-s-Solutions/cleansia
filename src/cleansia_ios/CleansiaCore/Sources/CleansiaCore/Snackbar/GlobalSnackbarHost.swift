@@ -68,36 +68,44 @@ enum SnackbarPalette {
     static func palette(for severity: SnackbarSeverity) -> Palette {
         switch severity {
         case .error:
-            return Palette(background: Color(red: 0.996, green: 0.886, blue: 0.886),
-                           foreground: Color(red: 0.725, green: 0.110, blue: 0.110),
-                           symbol: "exclamationmark.circle")
+            Palette(
+                background: Color(red: 0.996, green: 0.886, blue: 0.886),
+                foreground: Color(red: 0.725, green: 0.110, blue: 0.110),
+                symbol: "exclamationmark.circle"
+            )
         case .success:
-            return Palette(background: Color(red: 0.863, green: 0.988, blue: 0.906),
-                           foreground: Color(red: 0.082, green: 0.502, blue: 0.239),
-                           symbol: "checkmark.circle")
+            Palette(
+                background: Color(red: 0.863, green: 0.988, blue: 0.906),
+                foreground: Color(red: 0.082, green: 0.502, blue: 0.239),
+                symbol: "checkmark.circle"
+            )
         case .info:
-            return Palette(background: Color(red: 0.878, green: 0.949, blue: 0.996),
-                           foreground: Color(red: 0.012, green: 0.412, blue: 0.631),
-                           symbol: "info.circle")
+            Palette(
+                background: Color(red: 0.878, green: 0.949, blue: 0.996),
+                foreground: Color(red: 0.012, green: 0.412, blue: 0.631),
+                symbol: "info.circle"
+            )
         case .warning:
-            return Palette(background: Color(red: 0.996, green: 0.953, blue: 0.780),
-                           foreground: Color(red: 0.706, green: 0.325, blue: 0.035),
-                           symbol: "exclamationmark.triangle")
+            Palette(
+                background: Color(red: 0.996, green: 0.953, blue: 0.780),
+                foreground: Color(red: 0.706, green: 0.325, blue: 0.035),
+                symbol: "exclamationmark.triangle"
+            )
         }
     }
 }
 
 #if DEBUG
-struct SnackbarPill_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: 12) {
-            SnackbarPill(message: SnackbarMessage(text: "Order could not be cancelled", severity: .error)) {}
-            SnackbarPill(message: SnackbarMessage(text: "Saved", severity: .success)) {}
-            SnackbarPill(message: SnackbarMessage(text: "Heads up", severity: .info)) {}
-            SnackbarPill(message: SnackbarMessage(text: "Careful now", severity: .warning)) {}
+    struct SnackbarPill_Previews: PreviewProvider {
+        static var previews: some View {
+            VStack(spacing: 12) {
+                SnackbarPill(message: SnackbarMessage(text: "Order could not be cancelled", severity: .error)) {}
+                SnackbarPill(message: SnackbarMessage(text: "Saved", severity: .success)) {}
+                SnackbarPill(message: SnackbarMessage(text: "Heads up", severity: .info)) {}
+                SnackbarPill(message: SnackbarMessage(text: "Careful now", severity: .warning)) {}
+            }
+            .padding()
+            .previewLayout(.sizeThatFits)
         }
-        .padding()
-        .previewLayout(.sizeThatFits)
     }
-}
 #endif

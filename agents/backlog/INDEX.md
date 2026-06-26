@@ -10,6 +10,50 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## 🍎 WAVE 10 — iOS PORT (sprint-12): PHASE 0 FOUNDATION DONE + MAC-VERIFIED + MERGED (2026-06-26)
+> **iOS Phase 0 (the foundation behind T-0296…T-0301 + the T-0302 codegen *wiring*) is implemented,
+> committed, and MAC-VERIFIED this session, and the iOS CI gate (T-0323) is merged.** The foundation was
+> authored earlier on Windows; this session **compile-verified + fixed it on a Mac** (Xcode 26.3, iOS-16
+> simulator): **CleansiaCore builds + all 68 unit tests pass on the simulator; both app schemes
+> (`CleansiaPartner`/`CleansiaCustomer`) build AND launch in the simulator; `swiftlint --strict` +
+> `swiftformat --lint` are both clean.** A launch-crash blocker (`API_BASE_URL` never reaching
+> `Info.plist` → `fatalError`) was **found, fixed, and proven by launching the app** — NOT tracked open
+> (audit `audits/AUDIT-2026-06-26-ios-phase0-foundation.md`). **Merged:** `8220f4c` "ci: add iOS
+> build/test/lint workflow (macOS runner) (#90)" + `6628172` "Fix/ios phase0 verification (#91)"
+> (foundation commit `c1009c6`). Full plan + the §3 ticket table + the §7.1 blocker detail:
+> **`status/sprint-12.md`** (top banner reconciled 2026-06-26).
+>
+> **Done + verified (6):** T-0296 (workspace+package+2 targets), T-0297 (tokens+components), T-0298 (DI
+> root), T-0299 (snackbar/error center), T-0300 (auth/session/header spine — 68 CleansiaCore tests green),
+> T-0301 (header-parity spec doc). **T-0323 done via CI** (`.github/workflows/ios-ci.yml`, **#90** —
+> macOS, path-filtered `src/cleansia_ios/**`, **BLOCKING** `swiftformat --lint` + `swiftlint lint
+> --strict`, then build+test CleansiaCore + both schemes on a simulator). **T-0302 WIRING done** (the
+> codegen toolchain ran — Homebrew `openapi-generator` generated 159 Swift files from the committed spec
+> as a check, throwaway output removed) **/ FIRST REAL GEN `blocked` on the owner mobile-spec-regen.**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step |
+> |----|-------|------|--------|-----------|--------|-----|-------------|
+> | **T-0296** | Xcode workspace + `CleansiaCore` SPM package + 2 app targets (iOS-16 floor) | M | **done ✅ (verified)** `c1009c6` | — | ios | no | — |
+> | **T-0297** | Design tokens + `Cleansia*` SwiftUI components (`ObservableObject`/`@Published`) | M | **done ✅ (verified)** `c1009c6` | T-0296✓ | ios | no | — |
+> | **T-0298** | DI composition root (`AppContainer` per app) | S | **done ✅ (verified)** `c1009c6` | T-0296✓ | ios | no | — |
+> | **T-0299** | Global snackbar bus + error center (`ApiError→String` seam) | S | **done ✅ (verified)** `c1009c6` | T-0296✓ | ios | no | — |
+> | **T-0300** | Auth/session/header spine (Keychain, single-flight 401-refresh, header adapter, anon allow-list) | L→split | **done ✅ (verified)** `c1009c6` (68 tests; 2 dormant findings → T-0331/T-0332) | T-0296✓, T-0298✓ | ios | no | — |
+> | **T-0301** | Header-parity spec document (`docs/header-parity-contract.md`) | S | **done ✅ (verified)** `c1009c6` | — | ios, docs | no | — |
+> | **T-0302** | Swift codegen toolchain (openapi-generator swift5+urlsession) | M | **WIRING done ✅** `c1009c6` / **first real gen `blocked`** | T-0296✓ | ios | no | **mobile-spec-regen (owner)** |
+> | **T-0323** | SwiftLint + SwiftFormat **BLOCKING** iOS CI gate (macOS) | S | **done ✅ (via CI)** `8220f4c` (**#90**) | T-0296✓ | ios | no | — |
+> | **T-0303** | Phase-1 partner login → read-only Dashboard (the proving vertical) | M | **blocked** (2 owner items: mobile-spec-regen + dev mobile-API live) | T-0300✓, T-0302 (wiring✓/gen blocked) | ios | no | rides regen + dev-API-live |
+>
+> **T-0303 + every generated-client ticket (T-0303 onward) stay `blocked`** until the owner BOTH (1) runs
+> the **mobile-spec-regen** — the committed `src/cleansia_android/openapi/{partner,customer}-mobile-api.json`
+> are **stale (2026-05-31, `1d15484`, pre-T-0272)**; iOS codegen must not run against them — AND (2) brings
+> up the **dev mobile-API hosts** (curl to the `-partner-mobile-weu-dev` + `-customer-mobile-weu-dev`
+> azurewebsites hosts both returned **HTTP 000 / not live** on 2026-06-26; rides Wave-11 provisioning
+> T-0317/T-0318/T-0320). **Phase 2+ (T-0304…T-0314, and compliance T-0324…T-0329) remain `proposed`** in
+> `status/sprint-12.md`. The Phase-0 audit's 2 deferred findings (**T-0331** unblocked + next, **T-0332**
+> booking checkpoint) are in the audit banner directly below.
+>
+> --- (iOS Phase-0 audit banner below) ---
+>
 > ## 🍎 iOS PHASE 0 FOUNDATION AUDIT — 2 deferred findings logged (2026-06-26) — NOT dispatched
 > **The now-compiling iOS Phase 0 foundation (`CleansiaCore` + both app targets) passed an
 > adversarially-verified multi-agent audit (analyst author + 2 adversarial verifiers), run 2026-06-26.**

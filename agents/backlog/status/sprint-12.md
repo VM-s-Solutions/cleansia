@@ -1,7 +1,8 @@
 # Sprint 12 — iOS PORT (Wave 10): parity Swift/SwiftUI customer + partner apps
 
-**Status:** PLANNED (backlog only — no code, no commits)
+**Status:** PHASE 0 FOUNDATION DONE + MAC-VERIFIED + MERGED (2026-06-26) · PHASE 1 (T-0303) HELD on owner (mobile-spec-regen + dev-API-live) · Phase 2+ proposed
 **Created:** 2026-06-23
+**Updated:** 2026-06-26
 **Source:** **ADR-0013** (`adr/0013-ios-app-architecture-and-port-strategy.md`, **accepted** 2026-06-23) +
 **ADR-0014** (`adr/0014-ios-deployment-target-ios16-and-state-mechanism.md`, **accepted** 2026-06-23 —
 partially supersedes ADR-0013: **iOS-16 floor** + `ObservableObject`/`@Published` state + the iOS-16 MapKit
@@ -17,6 +18,20 @@ born-canonical Swift `ApiResult<T>` contract.
 > `MKMapView` `UIViewRepresentable` for the full-bleed/overlay surfaces — the SwiftUI `Map {...}` API is
 > iOS-17-only). **No new/removed tickets, no structural change** — only the per-ticket notes + the
 > deployment-target + the reviewer checks (#11/#12) below. Everything else in this plan is unchanged.
+
+> **STATUS-LOG 2026-06-26 — PHASE 0 BUILT + MAC-VERIFIED + MERGED; CI gate landed:** the Phase-0
+> foundation (authored earlier on Windows) was **compile-verified, fixed, and proven on a Mac this session**
+> (Xcode 26.3, iOS-16 simulator) and is now on `master`. **CleansiaCore builds + all 68 unit tests pass on
+> the iOS simulator; both app schemes (`CleansiaPartner`, `CleansiaCustomer`) build AND launch in the
+> simulator; `swiftlint --strict` + `swiftformat --lint` are both clean.** A launch-crash blocker
+> (`API_BASE_URL` never reaching `Info.plist` → `fatalError`) was **found, fixed, and proven by launching the
+> app** (audit-verified — `audits/AUDIT-2026-06-26-ios-phase0-foundation.md`; that blocker is NOT tracked
+> open). **Merged PRs:** `8220f4c` "ci: add iOS build/test/lint workflow (macOS runner) (#90)" +
+> `6628172` "Fix/ios phase0 verification (#91)" (foundation commit `c1009c6`). Resulting transitions (see §3):
+> **T-0296…T-0301 → `done` (verified)**; **T-0302 → wiring `done` / FIRST REAL GEN `blocked` on regen**;
+> **T-0323 → `done` via CI (#90)**; **T-0303 → `blocked` on TWO owner-side items** (mobile-spec-regen +
+> the dev mobile-API hosts being live — see §7.1). The Phase-0 audit logged **2 dormant deferred findings**
+> (`T-0331` unblocked, next; `T-0332` booking-checkpoint) — INDEX banner. Phase 2+ stays **proposed**.
 **Goal:** port the Kotlin/Compose customer + partner apps to **Swift/SwiftUI** as **parity** apps sharing
 the **same Mobile API contract**, on a `CleansiaCore` SPM package + 2 app targets, **partner-first**, with
 a hand-written auth/session/header layer to the exact Android contract. iOS code lives at
@@ -85,14 +100,14 @@ PHASE 2+ PARITY FEATURE WAVES ── ordered by complexity; the 3 hard areas cal
 
 | ID | Title | Size | Status | Layers | depends_on | manual_step | Phase / batch |
 |----|-------|------|--------|--------|-----------|-------------|---------------|
-| **T-0296** | Xcode workspace + `CleansiaCore` SPM package skeleton + 2 app targets (`CleansiaPartner`/`CleansiaCustomer`), bundle ids, signing placeholders. **Deployment target = iOS 16** on both targets + `Package.swift` `platforms: [.iOS(.v16)]` (ADR-0014) | M | **proposed** | ios | — | — | **0 FIRST/ALONE** |
-| **T-0297** | Design tokens (colors/spacing/shape/type) + the `Cleansia*` SwiftUI component parity (Button/TextField/Dropdown/Dialog/Checkbox/CodeInput) in `CleansiaCore`. **VM pattern = `ObservableObject`/`@Published`** (iOS-16, not `@Observable`); sealed `UiState`/`ActionState` enums unchanged (ADR-0014 D2′) | M | **proposed** | ios | T-0296 | — | 0 |
-| **T-0298** | DI composition root (`AppContainer` per app, initializer injection; the lazy no-auth refresh-session boundary) | S | **proposed** | ios | T-0296 | — | 0 |
-| **T-0299** | Global snackbar bus + error center (`SnackbarController` parity + the app-local `ApiError→String` localizer seam) | S | **proposed** | ios | T-0296 | — | 0 |
-| **T-0300** | **The auth/session/header middleware (hand-written, load-bearing)** — Keychain `TokenStore`, hand-written `AuthClient` + no-auth refresh session, `actor SessionRefresher` single-flight 401-refresh, `DeviceIdProvider` (one source), `HeaderAdapter` (X-Device-Id/Label/Time-Zone + no-Bearer-on-anon allow-list), `SessionManager`/ForcedSignOut + session-scoped cache registry | **L → split** | **proposed** | ios | T-0296, T-0298 | — | 0 (the spine) |
-| **T-0301** | **Header-parity spec document** — the invisible out-of-band contract written down for the iOS dev (X-Device-Id==Device/Register id invariant, the full anon allow-list incl. customer host, X-Time-Zone, replace-refresh-on-refresh, empty-token gate) | S | **proposed** | ios, docs | — | — | 0 (no-decision doc) |
-| **T-0302** | Swift codegen toolchain — openapi-generator **swift5 + urlsession**, wired into the build (script/SPM plugin, the `dependsOn(openApiGenerate)` parity), reading the **shared** mobile spec; never-hand-edit discipline | M | **proposed** (**held on regen**) | ios | T-0296 | **mobile-spec-regen (owner)** | 0 → first real gen **BLOCKED on regen** |
-| **T-0303** | **Phase-1 partner lead vertical** — partner login (hand-written auth, empty-token gate) → **read-only Dashboard** (generated partner client + `UiState`), proving auth/session/headers/codegen/state end-to-end | M | **proposed** (**held on regen**) | ios | T-0300, T-0302 | rides T-0302 regen | **1 (the proving vertical)** |
+| **T-0296** | Xcode workspace + `CleansiaCore` SPM package skeleton + 2 app targets (`CleansiaPartner`/`CleansiaCustomer`), bundle ids, signing placeholders. **Deployment target = iOS 16** on both targets + `Package.swift` `platforms: [.iOS(.v16)]` (ADR-0014) | M | **done ✅ (verified)** `c1009c6` | ios | — | — | **0 FIRST/ALONE** |
+| **T-0297** | Design tokens (colors/spacing/shape/type) + the `Cleansia*` SwiftUI component parity (Button/TextField/Dropdown/Dialog/Checkbox/CodeInput) in `CleansiaCore`. **VM pattern = `ObservableObject`/`@Published`** (iOS-16, not `@Observable`); sealed `UiState`/`ActionState` enums unchanged (ADR-0014 D2′) | M | **done ✅ (verified)** `c1009c6` | ios | T-0296✓ | — | 0 |
+| **T-0298** | DI composition root (`AppContainer` per app, initializer injection; the lazy no-auth refresh-session boundary) | S | **done ✅ (verified)** `c1009c6` | ios | T-0296✓ | — | 0 |
+| **T-0299** | Global snackbar bus + error center (`SnackbarController` parity + the app-local `ApiError→String` localizer seam) | S | **done ✅ (verified)** `c1009c6` | ios | T-0296✓ | — | 0 |
+| **T-0300** | **The auth/session/header middleware (hand-written, load-bearing)** — Keychain `TokenStore`, hand-written `AuthClient` + no-auth refresh session, `actor SessionRefresher` single-flight 401-refresh, `DeviceIdProvider` (one source), `HeaderAdapter` (X-Device-Id/Label/Time-Zone + no-Bearer-on-anon allow-list), `SessionManager`/ForcedSignOut + session-scoped cache registry | **L → split** | **done ✅ (verified)** `c1009c6` — 68 CleansiaCore tests green; **2 dormant audit findings → T-0331/T-0332** | ios | T-0296✓, T-0298✓ | — | 0 (the spine) |
+| **T-0301** | **Header-parity spec document** — the invisible out-of-band contract written down for the iOS dev (X-Device-Id==Device/Register id invariant, the full anon allow-list incl. customer host, X-Time-Zone, replace-refresh-on-refresh, empty-token gate) | S | **done ✅ (verified)** `c1009c6` (`src/cleansia_ios/docs/header-parity-contract.md`) | ios, docs | — | — | 0 (no-decision doc) |
+| **T-0302** | Swift codegen toolchain — openapi-generator **swift5 + urlsession**, wired into the build (script/SPM plugin, the `dependsOn(openApiGenerate)` parity), reading the **shared** mobile spec; never-hand-edit discipline | M | **WIRING done ✅ (verified)** `c1009c6` — `generate-api-clients.sh` runs Homebrew `openapi-generator`; generated 159 Swift files from the committed spec as a toolchain check, throwaway output removed. **FIRST REAL GEN `blocked` on mobile-spec-regen** | ios | T-0296✓ | **mobile-spec-regen (owner)** | 0 → first real gen **BLOCKED on regen** |
+| **T-0303** | **Phase-1 partner lead vertical** — partner login (hand-written auth, empty-token gate) → **read-only Dashboard** (generated partner client + `UiState`), proving auth/session/headers/codegen/state end-to-end | M | **blocked** (TWO owner items — see §7.1: **mobile-spec-regen** + **dev mobile-API hosts live**) | ios | T-0300✓, T-0302 (wiring✓ / gen blocked) | rides T-0302 regen + dev-API-live | **1 (the proving vertical)** |
 | **T-0304** | Partner shell (Dashboard·Orders·Invoices·Profile tabs) + RegistrationLock gate (fails CLOSED) + SplashGate | M | **proposed** | ios | T-0303 | — | 2 (partner) |
 | **T-0305** | Partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding chain | M | **proposed** | ios | T-0303 | — | 2 (partner) |
 | **T-0306** | **Map seam + MapKit default** — `MapProvider`/`GeocodingService` protocol in `CleansiaCore` + `MapKitMapProvider` + the partner `AddressPicker` (first map surface). **iOS-16 variant (ADR-0014 D6′):** `Map(coordinateRegion:annotationItems:)` for the picker; `MKMapView` via `UIViewRepresentable` for the full-bleed map + polygon overlays — NO iOS-17-only `Map {...}`/`Marker`/`MapPolygon` | M | **proposed** | ios | T-0300 | — | 2 (**HARD AREA #2 — first half**) |
@@ -196,6 +211,26 @@ PHASE 2+ (after Phase 1 proves the architecture)
 **No ef-migration, no backend code change** in this wave — iOS is a client of the existing contract; push
 is already iOS-ready. The only owner contract step is the **regen of the existing spec**.
 
+### 7.1 T-0303 (Phase-1 partner vertical) — the TWO owner-side blockers (recorded 2026-06-26)
+
+**T-0303 and every generated-client ticket (T-0303 onward) are `blocked` until BOTH clear:**
+
+1. **mobile-spec-regen (owner-only).** The committed specs
+   `src/cleansia_android/openapi/{partner,customer}-mobile-api.json` are **stale** — last touched
+   **2026-05-31** (commit `1d15484`), **pre-T-0272**. **iOS codegen MUST NOT run against them.** The
+   T-0302 wiring is proven (it generated 159 Swift files from the committed spec as a toolchain check,
+   then the throwaway output was removed) — but the *first real generation* waits on this regen so the iOS
+   client is built from the current post-T-0272 contract (same regen also re-feeds web NSwag + Android
+   openapi-generator).
+2. **Dev mobile-API hosts unreachable.** On **2026-06-26** a `curl` to
+   `https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net` **and** the `-customer-` host both
+   returned **HTTP 000 (not live)**. The Phase-1 vertical proves auth/session/headers end-to-end against a
+   live dev API; it cannot run until the owner brings the dev mobile API up (Wave-11 provisioning —
+   T-0317/T-0318/T-0320, `status/sprint-13.md` §7).
+
+Until the owner runs the regen **and** the dev mobile-API hosts are live, **T-0303 stays `blocked`** and no
+generated-client ticket advances.
+
 ---
 
 ## 8. Gates & verification (per `agents/process/quality-gates.md`)
@@ -268,7 +303,7 @@ T-0315…T-0322 — see the numbering note in sprint-13 §intro).
 
 | ID | Title | Size | Status | Layers | depends_on | manual_step | When (rel. to the iOS phases) |
 |----|-------|------|--------|--------|-----------|-------------|-------------------------------|
-| **T-0323** | **SwiftLint + SwiftFormat BLOCKING iOS CI gate** — `src/cleansia_ios/.swiftlint.yml` + `.swiftformat` (STRICT: `force_unwrapping`/`force_try`/`force_cast` = **error**), a **required** CI job that **fails the build** on a violation (unlike FE's non-blocking lint), generated-client dir excluded, all hand-written code in scope | S | **proposed** | ios | T-0296 | — | **Phase 0** (early — gates every iOS ticket after) |
+| **T-0323** | **SwiftLint + SwiftFormat BLOCKING iOS CI gate** — `src/cleansia_ios/.swiftlint.yml` + `.swiftformat` (STRICT: `force_unwrapping`/`force_try`/`force_cast` = **error**), a **required** CI job that **fails the build** on a violation (unlike FE's non-blocking lint), generated-client dir excluded, all hand-written code in scope | S | **done ✅ (via CI)** `8220f4c` (**#90**) — `.github/workflows/ios-ci.yml`: macOS, path-filtered to `src/cleansia_ios/**`, regenerates the Xcode projects, runs `swiftformat --lint` + `swiftlint lint --strict` as **BLOCKING** steps, then builds+tests CleansiaCore + both app schemes on a simulator | ios | T-0296✓ | — | **Phase 0** (early — gates every iOS ticket after) |
 | **T-0324** | **Privacy manifest** — `PrivacyInfo.xcprivacy` per app target: required-reason-API audit (Keychain/auth/generated-client/UserDefaults), collected data types, **tracking=false**; assert no `AppTrackingTransparency`/ATT prompt anywhere | M | **proposed** | ios | T-0296, T-0300 | — | Phase 2 (after the auth/network surface exists to audit) |
 | **T-0325** | **Purpose strings + Info.plist + entitlements** — `NSLocationWhenInUseUsageDescription`, `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`(+Add) localized ×5; the **`aps-environment`** push entitlement; **no orphan permissions**, **no phantom push Info.plist key** | S | **proposed** | ios | T-0296 | — | Phase 2 (before the photo/map/push tickets ship their capability) |
 | **T-0326** | **Sign in with Apple (customer app, 4.8)** — present SIWA alongside Google + email on the customer sign-in surface; working authenticated session | M | **proposed** (**gated on Q-IOS-04**) | ios | T-0312 | **Q-IOS-04 (owner): SIWA backend mechanism** — likely a backend `appleauth` endpoint + spec-regen | Phase 2 (customer; rides T-0312) |

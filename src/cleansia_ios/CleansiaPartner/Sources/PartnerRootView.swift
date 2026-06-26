@@ -8,7 +8,7 @@ struct PartnerRootView: View {
 
     init(container: PartnerAppContainer) {
         self.container = container
-        _route = State(initialValue: container.hasValidSession ? .dashboard : .login)
+        _route = State(initialValue: Route.seed(hasValidSession: container.hasValidSession))
     }
 
     var body: some View {
@@ -32,6 +32,20 @@ struct PartnerRootView: View {
             ) { success in
                 route = Route.afterLogin(success)
             }
+        case .splash:
+            SplashGateView(
+                hasValidSession: container.hasValidSession,
+                client: container.registrationClient
+            ) { outcome in
+                route = Route.afterSplash(outcome)
+            }
+        case .registrationLock:
+            RegistrationLockView(
+                client: container.registrationClient,
+                authClient: container.authClient,
+                onCompleted: { route = .dashboard },
+                onSignedOut: { route = .login }
+            )
         case .dashboard:
             DashboardView(client: container.dashboardClient)
         case .verifyEmail:
@@ -40,12 +54,26 @@ struct PartnerRootView: View {
     }
 
     enum Route: Equatable {
+        case splash
         case login
-        case dashboard
         case verifyEmail
+        case registrationLock
+        case dashboard
+
+        static func seed(hasValidSession: Bool) -> Route {
+            hasValidSession ? .splash : .login
+        }
 
         static func afterLogin(_ success: LoginSuccess) -> Route {
-            success.requiresEmailConfirmation ? .verifyEmail : .dashboard
+            success.requiresEmailConfirmation ? .verifyEmail : .splash
+        }
+
+        static func afterSplash(_ outcome: SplashOutcome) -> Route {
+            switch outcome {
+            case .authenticated: .dashboard
+            case .needsRegistrationLock: .registrationLock
+            case .unauthenticated: .login
+            }
         }
     }
 }

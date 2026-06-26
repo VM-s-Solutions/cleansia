@@ -46,6 +46,7 @@ final class PartnerAppContainer: AppContainer {
     }
 
     let dashboardClient: PartnerDashboardClient = LivePartnerDashboardClient()
+    let registrationClient: PartnerRegistrationClient = LivePartnerRegistrationClient()
 
     private let authStack: PartnerAuthStack
 

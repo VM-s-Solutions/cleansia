@@ -113,7 +113,7 @@ private struct HeroCard: View {
                 label: nil,
                 title: title,
                 subtitle: subtitle,
-                systemImage: "figure.walk",
+                mascot: .cleaning,
                 onClick: onOpenOrders
             )
         case let .availableWork(jobCount, potentialEarnings):
@@ -123,7 +123,7 @@ private struct HeroCard: View {
                 subtitle: potentialEarnings > 0
                     ? L10n.Dashboard.earnUpTo(DashboardFormat.money(potentialEarnings, currencyCode: currencyCode))
                     : nil,
-                systemImage: "sparkles",
+                mascot: .ready,
                 onClick: onOpenOrders
             )
         case .empty:
@@ -158,15 +158,15 @@ private struct HeroRowCard: View {
     let label: String?
     let title: String
     let subtitle: String?
-    let systemImage: String
+    let mascot: Mascot
     let onClick: () -> Void
 
     var body: some View {
         Button(action: onClick) {
             HStack(spacing: Spacing.s) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 36))
-                    .foregroundColor(CleansiaColors.primary)
+                mascot.image
+                    .resizable()
+                    .scaledToFit()
                     .frame(width: 56, height: 56)
                 VStack(alignment: .leading, spacing: 2) {
                     if let label {

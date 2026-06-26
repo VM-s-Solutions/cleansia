@@ -125,7 +125,55 @@ doesn't re-derive it.
 **Empty-token special case:** an unconfirmed-email login returns **200 with an empty Token** → route to the
 confirm-email gate, **not** a session.
 
-## Trade-off space (what was weighed — see ADR-0013/ADR-0014 §Alternatives + the Challenge trails)
+### Generated-client authentication — via the Core-spine-backed `RequestBuilderFactory` (ADR-0019)
+
+The hand-written spine above authenticates the **hand-written** `/api/Auth/*` calls. The **generated** business
+client (`PartnerDashboardAPI` &c.) does **not** authenticate itself: its APIs are static, read the global
+`CleansiaPartnerApiAPI` config, apply **only** the static `customHeaders` (no Bearer, no device/time-zone
+headers, no 401-refresh), and every business endpoint is generated `requiresAuthentication: false` — so without
+an adapter the calls go out tokenless and 401. **ADR-0019 fixes the one way it authenticates:**
+
+- The `AppContainer` installs a **custom `RequestBuilderFactory`** into `CleansiaPartnerApiAPI.requestBuilderFactory`
+  (per host) whose `RequestBuilder` subclass routes **every** generated request through the **same** spine:
+  the `HeaderAdapter` (Bearer-iff-not-anon + `X-Device-Id`/`X-Device-Label`/`X-Time-Zone`) and the
+  `actor SessionRefresher` (single-flight 401→refresh→retry). Uses only the generator's `open`/overridable
+  points (`requestBuilderFactory`, `execute`, `createURLRequest`) → survives regeneration; lives in
+  hand-written code (the generated files are never edited).
+- **One token source, no per-call duplication (the invariant):** the app-side generated-client wrapper and
+  call sites **never** read `TokenStore`, set a Bearer, write a Bearer into `customHeaders`, or stamp a device
+  header — those happen **only** in the `HeaderAdapter` reached through the factory. The generated
+  `requiresAuthentication: false` flag is **not** the authority; the injected `AnonymousAllowList` is.
+- **First proven on T-0303** (the partner proving vertical) and **copied by every later authed wave**
+  (T-0307/0309/0310 partner, T-0312/0313/0314 customer) — install the same factory per host, write no auth
+  code. **Reviewer check #13-gen** (composes with #1–#12): generated client authenticates only via the factory;
+  no second token source; no per-call header duplication; the allow-list (not the flag) governs.
+  **Tests:** TC-IOS-GEN-AUTH (Bearer+device headers present despite the flag), TC-IOS-GEN-401 (one refresh under
+  N concurrent generated 401s — the same `SessionRefresher`), TC-IOS-GEN-DEVICEID (one device id).
+
+### Session-presence on the public app surface — `hasValidSession` only (single mutation path = the spine)
+
+The concrete `TokenStore` (Keychain; exposes `save` / `clear` / `current`) is the spine's **mutation** surface
+and stays **`internal` to `CleansiaCore`** — it is **not** exposed on the public `AppContainer` protocol. The
+**only** session detail the app layer (e.g. a root view deciding login-vs-shell presence) may read is a
+**presence-only, read-only** accessor:
+
+```swift
+// On the AppContainer protocol + BaseAppContainer; partner/customer containers forward it.
+var hasValidSession: Bool { get }   // delegates to the spine: tokenStore.current()?.accessToken present & non-empty
+```
+
+- **Why presence-only.** Putting `save()`/`clear()` (or the raw token) on the public surface creates a **second
+  place the session can be mutated** — exactly the single-token-source invariant ADR-0013 D4 and ADR-0019 D2
+  ("the Bearer is set in exactly one place… the spine") exist to prevent. `hasValidSession` is a pure read; all
+  session mutation (login save, refresh-rotate, forced-sign-out clear) stays inside the spine
+  (`AuthApiClient` / `SessionRefresher` / `SessionManager`). The app reads presence; it never writes session.
+- **Scope guard.** This is the **minimal** presence bool — **not** a richer session abstraction (current-user,
+  expiry, refresh-needed). The fuller session/splash gating is **T-0304's SplashGate** concern; do not grow
+  `hasValidSession` into it. This is an **application of ADR-0013 D4 / ADR-0019, not a new ADR** (no new
+  trade-off — it just keeps the public surface read-only).
+- **Reviewer angle (a #13-gen sibling).** The public `AppContainer` surface exposes **no** `TokenStore`,
+  **no** `save`/`clear`, **no** raw token — only `hasValidSession`. A `TokenStore` (or its mutators) reaching the
+  app layer is a finding: it forks the mutation path the spine owns.
 
 - **Deployment target: iOS 16 vs iOS 17 (ADR-0014).** Chose **iOS 16** — the owner prioritised old-device
   reach (iPhone 8/8 Plus/X, 2017+), which iOS 17 (XS/XR, 2018+) excluded. The cost is the state mechanism
@@ -166,6 +214,7 @@ confirm-email gate, **not** a session.
 |---|---|---|
 | ADR (architecture + strategy) | — | **accepted** (ADR-0013) |
 | ADR (iOS-16 floor + `ObservableObject` state + iOS-16 MapKit variant) | — | **accepted** (ADR-0014, partially supersedes ADR-0013 D2 + target) |
+| ADR (generated client authenticates via the Core-spine-backed `RequestBuilderFactory`) | — | **accepted** (ADR-0019, refines ADR-0013 D4/D5 — the one way; reviewer #13-gen) |
 | Owner Q-IOS-01 (deployment target) | — | **ANSWERED — iOS 16** (old-device reach) |
 | Owner **mobile-spec regen** (the one hard blocker) | pre-Phase-2 | **PENDING — owner-only** (`manual_step: mobile-spec-regen`) |
 | Workspace + `CleansiaCore` skeleton + design tokens + DI + snackbar/error center | 0 | planned (runnable on approval) |

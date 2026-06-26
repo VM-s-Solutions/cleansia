@@ -5,6 +5,14 @@ options:
   deploymentTarget:
     iOS: "16.0"
   createIntermediateGroups: true
+  developmentLanguage: en
+
+knownRegions:
+  - en
+  - cs
+  - sk
+  - uk
+  - ru
 
 settings:
   base:
@@ -44,3 +52,28 @@ targets:
     dependencies:
       - package: CleansiaCore
       - package: CleansiaPartnerApi
+
+  CleansiaPartnerTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: Tests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cz.cleansia.partner.tests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: CleansiaPartner
+      - package: CleansiaCore
+
+schemes:
+  CleansiaPartner:
+    build:
+      targets:
+        CleansiaPartner: all
+        CleansiaPartnerTests: [test]
+    test:
+      targets:
+        - CleansiaPartnerTests
+      gatherCoverageData: false

@@ -1,7 +1,114 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-
+    "dont_have_account" : {
+      "localizations" : {
+        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Nemáte účet?" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Don't have an account?" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Нет аккаунта?" } },
+        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Nemáte účet?" } },
+        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Немає облікового запису?" } }
+      }
+    },
+    "email" : {
+      "localizations" : {
+        "cs" : { "stringUnit" : { "state" : "translated", "value" : "E-mail" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Email" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Электронная почта" } },
+        "sk" : { "stringUnit" : { "state" : "translated", "value" : "E-mail" } },
+        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Електронна пошта" } }
+      }
+    },
+    "forgot_password" : {
+      "localizations" : {
+        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Zapomněli jste heslo?" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Forgot Password?" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Забыли пароль?" } },
+        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Zabudli ste heslo?" } },
+        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Забули пароль?" } }
+      }
+    },
+    "login" : {
+      "localizations" : {
+        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Přihlásit se" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sign In" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Войти" } },
+        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Prihlásiť sa" } },
+        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Увійти" } }
+      }
+    },
+    "login_error_email_invalid" : {
+      "localizations" : {
+        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Zadejte prosím platný e-mail" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Please enter a valid email" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Введите действительный адрес электронной почты" } },
+        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Zadajte platný e-mail" } },
+        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Будь ласка, введіть дійсну електронну адресу" } }
+      }
+    },
+    "login_error_email_required" : {
+      "localizations" : {
+        "cs" : { "stringUnit" : { "state" : "translated", "value" : "E-mail je povinný" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Email is required" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Электронная почта обязательна" } },
+        "sk" : { "stringUnit" : { "state" : "translated", "value" : "E-mail je povinný" } },
+        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Електронна пошта обов'язкова" } }
+      }
+    },
+    "login_error_password_required" : {
+      "localizations" : {
+        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Heslo je povinné" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Password is required" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Пароль обязателен" } },
+        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Heslo je povinné" } },
+        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Пароль обов'язковий" } }
+      }
+    },
+    "login_subtitle" : {
+      "localizations" : {
+        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Přihlaste se pro pokračování do svého účtu" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sign in to continue to your account" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Войдите, чтобы продолжить работу с аккаунтом" } },
+        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Prihláste sa pre pokračovanie do svojho účtu" } },
+        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Увійдіть, щоб продовжити роботу з обліковим записом" } }
+      }
+    },
+    "password" : {
+      "localizations" : {
+        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Heslo" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Password" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Пароль" } },
+        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Heslo" } },
+        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Пароль" } }
+      }
+    },
+    "remember_me" : {
+      "localizations" : {
+        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Zapamatovat si mě" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Remember me" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Запомнить меня" } },
+        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Zapamätať si ma" } },
+        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Запам'ятати мене" } }
+      }
+    },
+    "sign_up_here" : {
+      "localizations" : {
+        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Zaregistrujte se zde" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sign up here" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Зарегистрируйтесь здесь" } },
+        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Zaregistrujte sa tu" } },
+        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Зареєструйтеся тут" } }
+      }
+    },
+    "welcome_back" : {
+      "localizations" : {
+        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Vítejte zpět!" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Welcome back!" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "С возвращением!" } },
+        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Vitajte späť!" } },
+        "uk" : { "stringUnit" : { "state" : "translated", "value" : "З поверненням!" } }
+      }
+    }
   },
   "version" : "1.0"
 }

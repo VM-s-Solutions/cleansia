@@ -1,0 +1,7 @@
+import Foundation
+
+public extension String {
+    var isBlank: Bool {
+        trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+}

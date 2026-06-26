@@ -5,9 +5,13 @@ public protocol AuthClient: AnyObject {
     func logout() async
 }
 
+public protocol LoginClient: AnyObject {
+    func login(email: String, password: String, rememberMe: Bool) async -> ApiResult<LoginOutcome>
+}
+
 public protocol RefreshClient: AnyObject, AuthRefreshing {}
 
-public protocol AuthSpine: AuthClient, RefreshClient {
+public protocol AuthSpine: AuthClient, LoginClient, RefreshClient {
     var tokenStore: TokenStore { get }
 }
 

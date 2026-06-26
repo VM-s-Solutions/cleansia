@@ -25,12 +25,20 @@ final class CustomerAppContainer: AppContainer {
         base.authClient
     }
 
+    var loginClient: LoginClient {
+        base.loginClient
+    }
+
     var refreshClient: RefreshClient {
         base.refreshClient
     }
 
     var sessionRefresher: SessionRefresher {
         base.sessionRefresher
+    }
+
+    var hasValidSession: Bool {
+        base.hasValidSession
     }
 
     var apiClient: MobileApiClient {

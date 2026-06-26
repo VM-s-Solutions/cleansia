@@ -16,7 +16,6 @@ import cz.cleansia.customer.api.model.PaymentType
 import cz.cleansia.customer.api.model.PhotoType
 import cz.cleansia.customer.api.model.ReferralStatus
 import cz.cleansia.customer.api.model.SortDirection
-import cz.cleansia.customer.api.model.UserProfile
 import kotlinx.serialization.modules.SerializersModule
 
 /**
@@ -106,10 +105,5 @@ val IntEnumSerializersModule = SerializersModule {
         "SortDirection",
         { it.value },
         { raw -> SortDirection.entries.firstOrNull { it.value == raw } },
-    ))
-    contextual(UserProfile::class, IntValueEnumSerializer(
-        "UserProfile",
-        { it.value },
-        { raw -> UserProfile.entries.firstOrNull { it.value == raw } },
     ))
 }

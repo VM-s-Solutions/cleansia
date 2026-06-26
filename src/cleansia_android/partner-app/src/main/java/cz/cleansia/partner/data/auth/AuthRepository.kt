@@ -8,7 +8,7 @@ import cz.cleansia.partner.api.client.EmployeeApi
 import cz.cleansia.partner.api.model.ConfirmUserEmailCommand
 import cz.cleansia.partner.api.model.JwtTokenResponse
 import cz.cleansia.partner.api.model.LogoutCommand
-import cz.cleansia.partner.api.model.PartnerLoginCommand
+import cz.cleansia.partner.api.model.MobilePartnerLoginCommand
 import cz.cleansia.partner.api.model.RegisterEmployeeCommand
 import cz.cleansia.partner.api.model.RequestPasswordChangeCommand
 import cz.cleansia.partner.api.model.ResendConfirmationEmailCommand
@@ -80,7 +80,7 @@ class AuthRepositoryImpl @Inject constructor(
     ): ApiResult<LoginOutcome> {
         val result = safeApiCall(json) {
             authApi.authLogin(
-                PartnerLoginCommand(email = email, password = password, rememberMe = rememberMe),
+                MobilePartnerLoginCommand(email = email, password = password, rememberMe = rememberMe),
             )
         }
 

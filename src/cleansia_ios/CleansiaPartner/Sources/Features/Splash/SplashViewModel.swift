@@ -6,16 +6,18 @@ final class SplashViewModel: ViewModel {
     @Published private(set) var outcome: SplashOutcome?
 
     private let hasValidSession: Bool
+    private let settings: AppSettingsStore
     private let client: PartnerRegistrationClient
 
-    init(hasValidSession: Bool, client: PartnerRegistrationClient) {
+    init(hasValidSession: Bool, settings: AppSettingsStore, client: PartnerRegistrationClient) {
         self.hasValidSession = hasValidSession
+        self.settings = settings
         self.client = client
     }
 
     func resolve() async {
         guard hasValidSession else {
-            outcome = .unauthenticated
+            outcome = settings.hasSeenOnboarding ? .unauthenticated : .needsOnboarding
             return
         }
 

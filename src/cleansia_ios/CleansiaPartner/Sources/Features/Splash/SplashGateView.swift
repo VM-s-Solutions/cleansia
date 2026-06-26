@@ -7,10 +7,15 @@ struct SplashGateView: View {
 
     init(
         hasValidSession: Bool,
+        settings: AppSettingsStore,
         client: PartnerRegistrationClient,
         onResolved: @escaping (SplashOutcome) -> Void
     ) {
-        _vm = StateObject(wrappedValue: SplashViewModel(hasValidSession: hasValidSession, client: client))
+        _vm = StateObject(wrappedValue: SplashViewModel(
+            hasValidSession: hasValidSession,
+            settings: settings,
+            client: client
+        ))
         self.onResolved = onResolved
     }
 

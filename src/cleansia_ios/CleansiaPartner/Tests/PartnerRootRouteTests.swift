@@ -23,17 +23,14 @@ final class PartnerRootRouteTests: XCTestCase {
         XCTAssertEqual(route, .verifyEmail(email: nil))
     }
 
-    func testSeedWithValidSessionIsSplash() {
-        XCTAssertEqual(PartnerRootView.Route.seed(hasValidSession: true), .splash)
-    }
-
-    func testSeedWithoutValidSessionIsLogin() {
-        XCTAssertEqual(PartnerRootView.Route.seed(hasValidSession: false), .login)
+    func testSeedIsAlwaysSplash() {
+        XCTAssertEqual(PartnerRootView.Route.seed(), .splash)
     }
 
     func testSplashOutcomeRouting() {
         XCTAssertEqual(PartnerRootView.Route.afterSplash(.authenticated), .dashboard)
         XCTAssertEqual(PartnerRootView.Route.afterSplash(.needsRegistrationLock), .registrationLock)
+        XCTAssertEqual(PartnerRootView.Route.afterSplash(.needsOnboarding), .onboarding)
         XCTAssertEqual(PartnerRootView.Route.afterSplash(.unauthenticated), .login)
     }
 
@@ -41,5 +38,11 @@ final class PartnerRootRouteTests: XCTestCase {
         XCTAssertNotEqual(PartnerRootView.Route.register, .login)
         XCTAssertNotEqual(PartnerRootView.Route.register, .splash)
         XCTAssertEqual(PartnerRootView.Route.register, .register)
+    }
+
+    func testForgotPasswordAndOnboardingAreDistinctTopLevelAudiences() {
+        XCTAssertNotEqual(PartnerRootView.Route.forgotPassword, .login)
+        XCTAssertNotEqual(PartnerRootView.Route.onboarding, .login)
+        XCTAssertNotEqual(PartnerRootView.Route.forgotPassword, .onboarding)
     }
 }

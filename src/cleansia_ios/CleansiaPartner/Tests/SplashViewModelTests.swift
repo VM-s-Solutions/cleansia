@@ -15,11 +15,29 @@ final class SplashViewModelTests: XCTestCase {
         }
     }
 
+    private final class FakeSettings: AppSettingsStore {
+        var hasSeenOnboarding: Bool
+        init(hasSeenOnboarding: Bool) {
+            self.hasSeenOnboarding = hasSeenOnboarding
+        }
+
+        func markOnboardingSeen() {
+            hasSeenOnboarding = true
+        }
+
+        var languageTag = "en"
+    }
+
     private func makeViewModel(
         hasValidSession: Bool,
-        client: FakeRegistrationClient
+        client: FakeRegistrationClient,
+        hasSeenOnboarding: Bool = true
     ) -> SplashViewModel {
-        SplashViewModel(hasValidSession: hasValidSession, client: client)
+        SplashViewModel(
+            hasValidSession: hasValidSession,
+            settings: FakeSettings(hasSeenOnboarding: hasSeenOnboarding),
+            client: client
+        )
     }
 
     private func completeStatus() -> RegistrationCompletionStatus {
@@ -35,13 +53,23 @@ final class SplashViewModelTests: XCTestCase {
         XCTAssertNil(vm.outcome)
     }
 
-    func testNoSessionResolvesUnauthenticatedWithoutCallingClient() async {
+    func testNoSessionWithOnboardingSeenResolvesUnauthenticatedWithoutCallingClient() async {
         let client = FakeRegistrationClient()
-        let vm = makeViewModel(hasValidSession: false, client: client)
+        let vm = makeViewModel(hasValidSession: false, client: client, hasSeenOnboarding: true)
 
         await vm.resolve()
 
         XCTAssertEqual(vm.outcome, .unauthenticated)
+        XCTAssertEqual(client.callCount, 0)
+    }
+
+    func testNoSessionWithoutOnboardingSeenResolvesNeedsOnboardingWithoutCallingClient() async {
+        let client = FakeRegistrationClient()
+        let vm = makeViewModel(hasValidSession: false, client: client, hasSeenOnboarding: false)
+
+        await vm.resolve()
+
+        XCTAssertEqual(vm.outcome, .needsOnboarding)
         XCTAssertEqual(client.callCount, 0)
     }
 

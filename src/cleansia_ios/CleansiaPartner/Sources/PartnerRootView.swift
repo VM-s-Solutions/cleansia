@@ -8,7 +8,7 @@ struct PartnerRootView: View {
 
     init(container: PartnerAppContainer) {
         self.container = container
-        _route = State(initialValue: Route.seed(hasValidSession: container.hasValidSession))
+        _route = State(initialValue: Route.seed())
     }
 
     var body: some View {
@@ -29,6 +29,7 @@ struct PartnerRootView: View {
             LoginView(
                 loginClient: container.loginClient,
                 snackbar: container.snackbar,
+                onForgotPassword: { route = .forgotPassword },
                 onSignUp: { route = .register },
                 onLoginSuccess: { success in route = Route.afterLogin(success) }
             )
@@ -40,9 +41,23 @@ struct PartnerRootView: View {
                 onSignIn: { route = .login },
                 onRegistered: { route = .login }
             )
+        case .forgotPassword:
+            ForgotPasswordView(
+                client: container.passwordResetClient,
+                settings: container.appSettings,
+                snackbar: container.snackbar,
+                onBack: { route = .login },
+                onRequested: { route = .login }
+            )
+        case .onboarding:
+            OnboardingView(
+                settings: container.appSettings,
+                onFinished: { route = .login }
+            )
         case .splash:
             SplashGateView(
                 hasValidSession: container.hasValidSession,
+                settings: container.appSettings,
                 client: container.registrationClient
             ) { outcome in
                 route = Route.afterSplash(outcome)
@@ -72,12 +87,14 @@ struct PartnerRootView: View {
         case splash
         case login
         case register
+        case forgotPassword
+        case onboarding
         case verifyEmail(email: String?)
         case registrationLock
         case dashboard
 
-        static func seed(hasValidSession: Bool) -> Route {
-            hasValidSession ? .splash : .login
+        static func seed() -> Route {
+            .splash
         }
 
         static func afterLogin(_ success: LoginSuccess) -> Route {
@@ -88,6 +105,7 @@ struct PartnerRootView: View {
             switch outcome {
             case .authenticated: .dashboard
             case .needsRegistrationLock: .registrationLock
+            case .needsOnboarding: .onboarding
             case .unauthenticated: .login
             }
         }

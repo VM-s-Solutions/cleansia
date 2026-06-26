@@ -1191,6 +1191,74 @@
         }
       }
     },
+    "forgot_password_subtitle": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadejte svou e-mailovou adresu a my vám pošleme odkaz pro obnovení hesla"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your email address and we'll send you a link to reset your password"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Введите адрес электронной почты, и мы отправим вам ссылку для сброса пароля"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadajte svoju e-mailovú adresu a pošleme vám odkaz na obnovenie hesla"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Введіть Вашу електронну адресу, і ми надішлемо Вам посилання для відновлення пароля"
+          }
+        }
+      }
+    },
+    "forgot_password_title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapomenuté heslo"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forgot Password"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Забыли пароль"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zabudnuté heslo"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Забутий пароль"
+          }
+        }
+      }
+    },
     "good_afternoon": {
       "localizations": {
         "cs": {
@@ -1629,6 +1697,244 @@
           "stringUnit": {
             "state": "translated",
             "value": "Увійдіть, щоб продовжити роботу з обліковим записом"
+          }
+        }
+      }
+    },
+    "onboarding_get_started": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Začít"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get Started"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Начать"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Začať"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Розпочати"
+          }
+        }
+      }
+    },
+    "onboarding_next": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Další"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Далее"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ďalej"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Далі"
+          }
+        }
+      }
+    },
+    "onboarding_ready_body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přihlaste se nebo si vytvořte účet a uvidíte dostupné zakázky ve vašem okolí."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in or create an account to see available jobs near you."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Войдите или создайте аккаунт, чтобы увидеть доступные заказы рядом с вами."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prihláste sa alebo si vytvorte účet a uvidíte dostupné zákazky vo vašom okolí."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Увійдіть або створіть обліковий запис, щоб побачити доступні замовлення поряд із вами."
+          }
+        }
+      }
+    },
+    "onboarding_ready_title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Připraveni začít?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready to clean?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готовы начать?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pripravení začať?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готові розпочати?"
+          }
+        }
+      }
+    },
+    "onboarding_skip": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přeskočit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пропустить"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preskočiť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пропустити"
+          }
+        }
+      }
+    },
+    "onboarding_welcome_body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spravujte své úklidové zakázky, sledujte výdělky a rozšiřujte svou klientskou základnu — vše na jednom místě."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage your cleaning jobs, track your earnings, and grow your client base — all in one place."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Управляйте заказами на уборку, отслеживайте заработок и расширяйте клиентскую базу — всё в одном месте."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spravujte svoje upratovacie zákazky, sledujte zárobky a rozširujte si klientelu — všetko na jednom mieste."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Керуйте замовленнями на прибирання, відстежуйте заробіток і розширюйте клієнтську базу — все в одному місці."
+          }
+        }
+      }
+    },
+    "onboarding_welcome_title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vítejte v Cleansia Partner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welcome to Cleansia Partner"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добро пожаловать в Cleansia Partner"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vitajte v Cleansia Partner"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ласкаво просимо до Cleansia Partner"
           }
         }
       }
@@ -3295,6 +3601,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Надіслати повторно"
+          }
+        }
+      }
+    },
+    "reset": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obnovit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сбросить"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obnoviť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скинути"
           }
         }
       }

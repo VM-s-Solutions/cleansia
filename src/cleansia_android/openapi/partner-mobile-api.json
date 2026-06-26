@@ -193,17 +193,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PartnerLogin_Command"
+                "$ref": "#/components/schemas/MobilePartnerLogin_Command"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/PartnerLogin_Command"
+                "$ref": "#/components/schemas/MobilePartnerLogin_Command"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/PartnerLogin_Command"
+                "$ref": "#/components/schemas/MobilePartnerLogin_Command"
               }
             }
           }
@@ -1385,7 +1385,6 @@
           {
             "name": "EmployeeId",
             "in": "query",
-            "required": true,
             "schema": {
               "type": "string"
             }
@@ -1503,7 +1502,6 @@
           {
             "name": "EmployeeId",
             "in": "query",
-            "required": true,
             "schema": {
               "type": "string"
             }
@@ -1621,7 +1619,6 @@
           {
             "name": "EmployeeId",
             "in": "query",
-            "required": true,
             "schema": {
               "type": "string"
             }
@@ -1832,6 +1829,154 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnregisterDevice_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Device/Mine": {
+      "get": {
+        "tags": [
+          "Device"
+        ],
+        "operationId": "Device_Mine",
+        "parameters": [
+          {
+            "name": "currentDeviceId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Device/{deviceRowId}": {
+      "delete": {
+        "tags": [
+          "Device"
+        ],
+        "operationId": "Device_Revoke",
+        "parameters": [
+          {
+            "name": "deviceRowId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeDevice_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeDevice_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeDevice_Response"
                 }
               }
             }
@@ -3047,6 +3192,112 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EmployeeInvoiceDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/EmployeePayroll/GetPeriodPays": {
+      "get": {
+        "tags": [
+          "EmployeePayroll"
+        ],
+        "operationId": "EmployeePayroll_GetPeriodPays",
+        "parameters": [
+          {
+            "name": "EmployeeId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PayPeriodId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeriodPaySummaryDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeriodPaySummaryDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeriodPaySummaryDto"
                 }
               }
             }
@@ -5981,6 +6232,31 @@
         },
         "additionalProperties": false
       },
+      "DeviceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "platform": {
+            "type": "string",
+            "nullable": true
+          },
+          "deviceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastActiveAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "isCurrent": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "DocumentStatus": {
         "enum": [
           1,
@@ -6169,6 +6445,13 @@
             "type": "string",
             "nullable": true
           },
+          "pdfGenerationFailed": {
+            "type": "boolean"
+          },
+          "pdfGenerationError": {
+            "type": "string",
+            "nullable": true
+          },
           "generatedAt": {
             "type": "string",
             "format": "date-time"
@@ -6268,6 +6551,13 @@
             "$ref": "#/components/schemas/EmployeeInvoiceStatus"
           },
           "pdfBlobName": {
+            "type": "string",
+            "nullable": true
+          },
+          "pdfGenerationFailed": {
+            "type": "boolean"
+          },
+          "pdfGenerationError": {
             "type": "string",
             "nullable": true
           },
@@ -6977,6 +7267,27 @@
         },
         "additionalProperties": false
       },
+      "MobilePartnerLogin_Command": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          },
+          "rememberMe": {
+            "type": "boolean"
+          },
+          "trustedDeviceToken": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "MonthlyEarning": {
         "type": "object",
         "properties": {
@@ -7665,6 +7976,13 @@
               "type": "string"
             },
             "nullable": true
+          },
+          "includedServiceItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackageServiceRef"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7700,6 +8018,20 @@
             "items": {
               "$ref": "#/components/schemas/PackageServiceSummary"
             },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PackageServiceRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -7772,30 +8104,14 @@
         },
         "additionalProperties": false
       },
-      "PartnerLogin_Command": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "nullable": true
-          },
-          "password": {
-            "type": "string",
-            "nullable": true
-          },
-          "rememberMe": {
-            "type": "boolean"
-          }
-        },
-        "additionalProperties": false
-      },
       "PaymentStatus": {
         "enum": [
           1,
           2,
           3,
           4,
-          5
+          5,
+          6
         ],
         "type": "integer",
         "format": "int32",
@@ -7804,7 +8120,8 @@
           "Paid",
           "Failed",
           "Refunded",
-          "Disputed"
+          "Disputed",
+          "PartiallyRefunded"
         ]
       },
       "PaymentType": {
@@ -7818,6 +8135,70 @@
           "Cash",
           "Card"
         ]
+      },
+      "PeriodPaySummaryDto": {
+        "type": "object",
+        "properties": {
+          "payPeriodId": {
+            "type": "string",
+            "nullable": true
+          },
+          "payPeriodLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "employeeId": {
+            "type": "string",
+            "nullable": true
+          },
+          "employeeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalOrders": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalBasePay": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalExtrasPay": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalExpensesPay": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalBonusPay": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalDeductionPay": {
+            "type": "number",
+            "format": "double"
+          },
+          "grandTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "hasInvoice": {
+            "type": "boolean"
+          },
+          "invoiceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderPays": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderEmployeePayDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "PersonalBests": {
         "type": "object",
@@ -7925,13 +8306,6 @@
         "type": "object",
         "properties": {
           "token": {
-            "type": "string",
-            "nullable": true
-          },
-          "requiredProfile": {
-            "$ref": "#/components/schemas/UserProfile"
-          },
-          "requiredAudience": {
             "type": "string",
             "nullable": true
           }
@@ -8107,6 +8481,15 @@
           "language": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RevokeDevice_Response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -9046,20 +9429,6 @@
           }
         },
         "additionalProperties": false
-      },
-      "UserProfile": {
-        "enum": [
-          1,
-          2,
-          100
-        ],
-        "type": "integer",
-        "format": "int32",
-        "x-enumNames": [
-          "Customer",
-          "Employee",
-          "Administrator"
-        ]
       },
       "WeeklyOrderCount": {
         "type": "object",

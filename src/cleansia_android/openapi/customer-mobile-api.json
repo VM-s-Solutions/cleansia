@@ -104,17 +104,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Login_Command"
+                "$ref": "#/components/schemas/MobileLogin_Command"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/Login_Command"
+                "$ref": "#/components/schemas/MobileLogin_Command"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/Login_Command"
+                "$ref": "#/components/schemas/MobileLogin_Command"
               }
             }
           }
@@ -839,6 +839,154 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnregisterDevice_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Device/Mine": {
+      "get": {
+        "tags": [
+          "Device"
+        ],
+        "operationId": "Device_Mine",
+        "parameters": [
+          {
+            "name": "currentDeviceId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Device/{deviceRowId}": {
+      "delete": {
+        "tags": [
+          "Device"
+        ],
+        "operationId": "Device_Revoke",
+        "parameters": [
+          {
+            "name": "deviceRowId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeDevice_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeDevice_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeDevice_Response"
                 }
               }
             }
@@ -6217,6 +6365,10 @@
           },
           "paymentMethodConfirmed": {
             "type": "boolean"
+          },
+          "idempotencyToken": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6509,6 +6661,31 @@
         },
         "additionalProperties": false
       },
+      "DeviceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "platform": {
+            "type": "string",
+            "nullable": true
+          },
+          "deviceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastActiveAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "isCurrent": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "DisputeDetails": {
         "type": "object",
         "properties": {
@@ -6695,7 +6872,8 @@
           4,
           5,
           6,
-          7
+          7,
+          8
         ],
         "type": "integer",
         "format": "int32",
@@ -6706,7 +6884,8 @@
           "DamagedProperty",
           "UnauthorizedCharge",
           "IncorrectAmount",
-          "Other"
+          "Other",
+          "Chargeback"
         ]
       },
       "EmployeeEntityType": {
@@ -7575,23 +7754,6 @@
         },
         "additionalProperties": false
       },
-      "Login_Command": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "nullable": true
-          },
-          "password": {
-            "type": "string",
-            "nullable": true
-          },
-          "rememberMe": {
-            "type": "boolean"
-          }
-        },
-        "additionalProperties": false
-      },
       "Logout_Command": {
         "type": "object",
         "properties": {
@@ -7718,7 +7880,9 @@
           1,
           2,
           3,
-          4
+          4,
+          5,
+          6
         ],
         "type": "integer",
         "format": "int32",
@@ -7726,7 +7890,9 @@
           "OrderCompleted",
           "OrderCancelled",
           "Referral",
-          "ManualGrant"
+          "ManualGrant",
+          "OrderPartiallyRefunded",
+          "ManualRevoke"
         ]
       },
       "LoyaltyTier": {
@@ -7771,6 +7937,27 @@
           "Cancelled",
           "Paused"
         ]
+      },
+      "MobileLogin_Command": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          },
+          "rememberMe": {
+            "type": "boolean"
+          },
+          "trustedDeviceToken": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "MyProfileDto": {
         "type": "object",
@@ -8392,6 +8579,13 @@
               "type": "string"
             },
             "nullable": true
+          },
+          "includedServiceItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackageServiceRef"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8427,6 +8621,20 @@
             "items": {
               "$ref": "#/components/schemas/PackageServiceSummary"
             },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PackageServiceRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -8555,7 +8763,8 @@
           2,
           3,
           4,
-          5
+          5,
+          6
         ],
         "type": "integer",
         "format": "int32",
@@ -8564,7 +8773,8 @@
           "Paid",
           "Failed",
           "Refunded",
-          "Disputed"
+          "Disputed",
+          "PartiallyRefunded"
         ]
       },
       "PaymentType": {
@@ -8806,27 +9016,22 @@
         "enum": [
           1,
           2,
-          3
+          3,
+          4
         ],
         "type": "integer",
         "format": "int32",
         "x-enumNames": [
           "Accepted",
           "Qualified",
-          "Expired"
+          "Expired",
+          "Reversed"
         ]
       },
       "RefreshToken_Command": {
         "type": "object",
         "properties": {
           "token": {
-            "type": "string",
-            "nullable": true
-          },
-          "requiredProfile": {
-            "$ref": "#/components/schemas/UserProfile"
-          },
-          "requiredAudience": {
             "type": "string",
             "nullable": true
           }
@@ -8947,6 +9152,15 @@
           "language": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RevokeDevice_Response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -9443,20 +9657,6 @@
           }
         },
         "additionalProperties": false
-      },
-      "UserProfile": {
-        "enum": [
-          1,
-          2,
-          100
-        ],
-        "type": "integer",
-        "format": "int32",
-        "x-enumNames": [
-          "Customer",
-          "Employee",
-          "Administrator"
-        ]
       },
       "ValidatePromoCode_Command": {
         "type": "object",

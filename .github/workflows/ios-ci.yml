@@ -1,0 +1,77 @@
+name: iOS CI
+
+# macOS runners bill at a higher rate than Linux, so only run this when the iOS
+# sources (or this workflow) actually change — backend/frontend PRs skip it.
+on:
+  pull_request:
+    branches:
+      - '*'
+    paths:
+      - 'src/cleansia_ios/**'
+      - '.github/workflows/ios-ci.yml'
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    defaults:
+      run:
+        working-directory: ./src/cleansia_ios
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # xcodegen + swiftformat + xcbeautify are not on the runner image (swiftlint
+      # usually is); installing them keeps CI independent of image drift.
+      - name: Install toolchain
+        run: brew install xcodegen swiftlint swiftformat xcbeautify
+
+      # The .xcodeproj files are gitignored — regenerate them from the project.yml
+      # specs, exactly like a fresh dev checkout does.
+      - name: Generate Xcode projects
+        run: |
+          (cd CleansiaPartner  && xcodegen generate)
+          (cd CleansiaCustomer && xcodegen generate)
+
+      # ADR-0016 blocking quality gate — same bar developers run locally.
+      - name: SwiftFormat (lint)
+        run: swiftformat --lint .
+
+      - name: SwiftLint (strict)
+        run: swiftlint lint --strict
+
+      # Pick whichever iPhone simulator this runner's Xcode actually ships, so the
+      # destination doesn't break when the image's device list changes.
+      - name: Select a simulator
+        id: sim
+        run: |
+          NAME=$(xcrun simctl list devices available \
+            | grep -Eo 'iPhone [0-9]+( Pro( Max)?| Plus)?' | head -1)
+          echo "Using simulator: $NAME"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
+      # CleansiaCore is iOS-only: a bare `swift build` host-builds for macOS and
+      # fails the SwiftUI availability checks, so build/test on the simulator.
+      - name: Build & test CleansiaCore
+        working-directory: ./src/cleansia_ios/CleansiaCore
+        run: |
+          set -o pipefail
+          xcodebuild -scheme CleansiaCore \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
+            build test | xcbeautify
+
+      - name: Build both app schemes
+        run: |
+          set -o pipefail
+          for scheme in CleansiaPartner CleansiaCustomer; do
+            xcodebuild -workspace Cleansia.xcworkspace -scheme "$scheme" \
+              -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
+              build | xcbeautify
+          done
+
+      # NOTE: the generated business API client (CleansiaPartnerApi / CleansiaCustomerApi)
+      # is gitignored and its project.yml entries are commented out, so CI builds the
+      # hand-written CleansiaCore + apps without it. Once the owner enables codegen
+      # (manual_step: mobile-spec-regen) and uncomments those deps, add a step that runs
+      # ./scripts/generate-api-clients.sh before "Generate Xcode projects".

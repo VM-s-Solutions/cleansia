@@ -11,6 +11,7 @@ struct CleansiaPartnerApp: App {
         let snackbar = SnackbarController()
         _snackbar = StateObject(wrappedValue: snackbar)
         let container = PartnerAppContainer(snackbar: snackbar)
+        container.installGeneratedClientAuth()
         _sessionManager = StateObject(wrappedValue: container.sessionManager)
         self.container = container
     }

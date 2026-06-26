@@ -33,7 +33,7 @@ struct PartnerRootView: View {
                 route = Route.afterLogin(success)
             }
         case .dashboard:
-            PlaceholderDashboardView()
+            DashboardView(client: container.dashboardClient)
         case .verifyEmail:
             PlaceholderVerifyEmailView()
         }
@@ -47,12 +47,6 @@ struct PartnerRootView: View {
         static func afterLogin(_ success: LoginSuccess) -> Route {
             success.requiresEmailConfirmation ? .verifyEmail : .dashboard
         }
-    }
-}
-
-private struct PlaceholderDashboardView: View {
-    var body: some View {
-        PlaceholderDestination(systemImage: "square.grid.2x2", text: "Dashboard — Slice B")
     }
 }
 

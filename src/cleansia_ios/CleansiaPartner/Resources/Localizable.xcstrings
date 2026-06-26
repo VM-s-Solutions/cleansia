@@ -1,114 +1,1434 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "dont_have_account" : {
-      "localizations" : {
-        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Nemáte účet?" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Don't have an account?" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Нет аккаунта?" } },
-        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Nemáte účet?" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Немає облікового запису?" } }
+  "sourceLanguage": "en",
+  "strings": {
+    "dash_available_now_count": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d volných zakázek"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d jobs available"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d свободных заказов"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d voľných zákaziek"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d вільних замовлень"
+          }
+        }
       }
     },
-    "email" : {
-      "localizations" : {
-        "cs" : { "stringUnit" : { "state" : "translated", "value" : "E-mail" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Email" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Электронная почта" } },
-        "sk" : { "stringUnit" : { "state" : "translated", "value" : "E-mail" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Електронна пошта" } }
+    "dash_available_work_label": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostupné zakázky"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available work"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступные заказы"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostupné zákazky"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступні замовлення"
+          }
+        }
       }
     },
-    "forgot_password" : {
-      "localizations" : {
-        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Zapomněli jste heslo?" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Forgot Password?" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Забыли пароль?" } },
-        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Zabudli ste heslo?" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Забули пароль?" } }
+    "dash_avg_per_job": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prům./zakázka"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avg/job"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сред./заказ"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Priem./zákazka"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Серед./замовл."
+          }
+        }
       }
     },
-    "login" : {
-      "localizations" : {
-        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Přihlásit se" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sign In" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Войти" } },
-        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Prihlásiť sa" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Увійти" } }
+    "dash_current_period": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktuální období"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This pay period"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Текущий период"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktuálne obdobie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поточний період"
+          }
+        }
       }
     },
-    "login_error_email_invalid" : {
-      "localizations" : {
-        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Zadejte prosím platný e-mail" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Please enter a valid email" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Введите действительный адрес электронной почты" } },
-        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Zadajte platný e-mail" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Будь ласка, введіть дійсну електронну адресу" } }
+    "dash_earn_up_to": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyděláte až %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Earn up to %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заработаете до %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zarobíte až %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заробите до %1$@"
+          }
+        }
       }
     },
-    "login_error_email_required" : {
-      "localizations" : {
-        "cs" : { "stringUnit" : { "state" : "translated", "value" : "E-mail je povinný" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Email is required" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Электронная почта обязательна" } },
-        "sk" : { "stringUnit" : { "state" : "translated", "value" : "E-mail je povinný" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Електронна пошта обов'язкова" } }
+    "dash_earnings_today": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dnes"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сегодня"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dnes"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сьогодні"
+          }
+        }
       }
     },
-    "login_error_password_required" : {
-      "localizations" : {
-        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Heslo je povinné" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Password is required" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Пароль обязателен" } },
-        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Heslo je povinné" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Пароль обов'язковий" } }
+    "dash_earnings_view_details": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobrazit detaily"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View details"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подробнее"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobraziť detaily"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Деталі"
+          }
+        }
       }
     },
-    "login_subtitle" : {
-      "localizations" : {
-        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Přihlaste se pro pokračování do svého účtu" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sign in to continue to your account" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Войдите, чтобы продолжить работу с аккаунтом" } },
-        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Prihláste sa pre pokračovanie do svojho účtu" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Увійдіть, щоб продовжити роботу з обліковим записом" } }
+    "dash_earnings_week": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento týden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На этой неделе"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento týždeň"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цього тижня"
+          }
+        }
       }
     },
-    "password" : {
-      "localizations" : {
-        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Heslo" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Password" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Пароль" } },
-        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Heslo" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Пароль" } }
+    "dash_jobs_done_count": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d hotových"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d jobs done"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d выполнено"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d hotových"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d виконано"
+          }
+        }
       }
     },
-    "remember_me" : {
-      "localizations" : {
-        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Zapamatovat si mě" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Remember me" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Запомнить меня" } },
-        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Zapamätať si ma" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Запам'ятати мене" } }
+    "dash_last_month_earnings": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyděláno"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Earned"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заработано"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zarobené"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заробили"
+          }
+        }
       }
     },
-    "sign_up_here" : {
-      "localizations" : {
-        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Zaregistrujte se zde" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sign up here" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Зарегистрируйтесь здесь" } },
-        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Zaregistrujte sa tu" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Зареєструйтеся тут" } }
+    "dash_last_month_jobs": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokončeno"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выполнено"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokončené"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виконано"
+          }
+        }
       }
     },
-    "welcome_back" : {
-      "localizations" : {
-        "cs" : { "stringUnit" : { "state" : "translated", "value" : "Vítejte zpět!" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Welcome back!" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "С возвращением!" } },
-        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Vitajte späť!" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "З поверненням!" } }
+    "dash_last_month_section": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minulý měsíc"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last month"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прошлый месяц"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minulý mesiac"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Минулого місяця"
+          }
+        }
+      }
+    },
+    "dash_next_payout": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Další výplata: %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next payout: %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Следующая выплата: %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ďalšia výplata: %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наступна виплата: %1$@"
+          }
+        }
+      }
+    },
+    "dash_no_completed_yet": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatím žádné dokončené zakázky"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No completed jobs yet"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пока нет выполненных заказов"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatiaľ žiadne dokončené zákazky"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поки що немає виконаних замовлень"
+          }
+        }
+      }
+    },
+    "dash_no_jobs_today_short": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dnes žádné zakázky"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No jobs today"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сегодня без заказов"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dnes žiadne zákazky"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сьогодні без замовлень"
+          }
+        }
+      }
+    },
+    "dash_no_jobs_yet_subtitle": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zkontrolujte volné zakázky nebo upravte dostupnost"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check available work or update your availability"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверьте доступные заказы или обновите расписание"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skontrolujte voľné zákazky alebo upravte dostupnosť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перегляньте доступні замовлення або оновіть доступність"
+          }
+        }
+      }
+    },
+    "dash_no_jobs_yet_title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatím žádné zakázky"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No jobs yet"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пока нет заказов"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatiaľ žiadne zákazky"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поки що немає замовлень"
+          }
+        }
+      }
+    },
+    "dash_no_rating_yet": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatím žádná hodnocení"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No ratings yet"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пока нет оценок"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatiaľ žiadne hodnotenia"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поки що немає оцінок"
+          }
+        }
+      }
+    },
+    "dash_pay_period_progress": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Den %1$d z %2$d"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Day %1$d of %2$d"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "День %1$d из %2$d"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deň %1$d z %2$d"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "День %1$d з %2$d"
+          }
+        }
+      }
+    },
+    "dash_rating_count": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z %1$d hodnocení"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From %1$d reviews"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Из %1$d оценок"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z %1$d hodnotení"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "З %1$d оцінок"
+          }
+        }
+      }
+    },
+    "dash_state_free_today": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dnes máte volno"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're free today"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сегодня вы свободны"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dnes máte voľno"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сьогодні ви вільні"
+          }
+        }
+      }
+    },
+    "dash_state_many_today": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d zakázek dnes"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d jobs today"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d заказов сегодня"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d zákaziek dnes"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d замовлень сьогодні"
+          }
+        }
+      }
+    },
+    "dash_state_one_today": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 zakázka dnes"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 job today"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 заказ сегодня"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 zákazka dnes"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 замовлення сьогодні"
+          }
+        }
+      }
+    },
+    "dont_have_account": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nemáte účet?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Don't have an account?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нет аккаунта?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nemáte účet?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Немає облікового запису?"
+          }
+        }
+      }
+    },
+    "email": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-mail"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Электронная почта"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-mail"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Електронна пошта"
+          }
+        }
+      }
+    },
+    "forgot_password": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapomněli jste heslo?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forgot Password?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Забыли пароль?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zabudli ste heslo?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Забули пароль?"
+          }
+        }
+      }
+    },
+    "good_afternoon": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dobré odpoledne!"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Good afternoon!"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добрый день!"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dobré popoludnie!"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доброго дня!"
+          }
+        }
+      }
+    },
+    "good_afternoon_name": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dobré odpoledne, %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Good afternoon, %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добрый день, %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dobré popoludnie, %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доброго дня, %1$@"
+          }
+        }
+      }
+    },
+    "good_evening": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dobrý večer!"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Good evening!"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добрый вечер!"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dobrý večer!"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доброго вечора!"
+          }
+        }
+      }
+    },
+    "good_evening_name": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dobrý večer, %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Good evening, %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добрый вечер, %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dobrý večer, %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доброго вечора, %1$@"
+          }
+        }
+      }
+    },
+    "good_morning": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dobré ráno!"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Good morning!"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доброе утро!"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dobré ráno!"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доброго ранку!"
+          }
+        }
+      }
+    },
+    "good_morning_name": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dobré ráno, %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Good morning, %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доброе утро, %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dobré ráno, %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доброго ранку, %1$@"
+          }
+        }
+      }
+    },
+    "login": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přihlásit se"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign In"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Войти"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prihlásiť sa"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Увійти"
+          }
+        }
+      }
+    },
+    "login_error_email_invalid": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadejte prosím platný e-mail"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please enter a valid email"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Введите действительный адрес электронной почты"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadajte platný e-mail"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Будь ласка, введіть дійсну електронну адресу"
+          }
+        }
+      }
+    },
+    "login_error_email_required": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-mail je povinný"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email is required"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Электронная почта обязательна"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-mail je povinný"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Електронна пошта обов'язкова"
+          }
+        }
+      }
+    },
+    "login_error_password_required": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heslo je povinné"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password is required"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пароль обязателен"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heslo je povinné"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пароль обов'язковий"
+          }
+        }
+      }
+    },
+    "login_subtitle": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přihlaste se pro pokračování do svého účtu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to continue to your account"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Войдите, чтобы продолжить работу с аккаунтом"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prihláste sa pre pokračovanie do svojho účtu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Увійдіть, щоб продовжити роботу з обліковим записом"
+          }
+        }
+      }
+    },
+    "password": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heslo"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пароль"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heslo"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пароль"
+          }
+        }
+      }
+    },
+    "remember_me": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapamatovat si mě"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remember me"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запомнить меня"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapamätať si ma"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запам'ятати мене"
+          }
+        }
+      }
+    },
+    "retry": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zkusit znovu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повторить"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skúsiť znova"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повторити"
+          }
+        }
+      }
+    },
+    "sign_up_here": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaregistrujte se zde"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign up here"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зарегистрируйтесь здесь"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaregistrujte sa tu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зареєструйтеся тут"
+          }
+        }
+      }
+    },
+    "welcome_back": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vítejte zpět!"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welcome back!"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "С возвращением!"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vitajte späť!"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "З поверненням!"
+          }
+        }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

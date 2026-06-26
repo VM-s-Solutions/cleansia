@@ -1,18 +1,23 @@
 import CleansiaCore
 import Foundation
 
+struct PartnerAuthStack {
+    let spine: AuthApiClient
+    let headerAdapter: HeaderAdapter
+}
+
 enum PartnerAuthSpine {
     static func make(
         apiBaseURL: URL,
         sessionScopedCaches: SessionScopedCacheRegistry
-    ) -> AuthApiClient {
+    ) -> PartnerAuthStack {
         let tokenStore = KeychainTokenStore(service: "cz.cleansia.partner.tokens")
         let deviceIdProvider = DeviceIdProvider(service: "cz.cleansia.partner.device")
         let headerAdapter = HeaderAdapter(
             deviceIdProvider: deviceIdProvider,
             anonymousAllowList: .partner
         )
-        return AuthApiClient(
+        let spine = AuthApiClient(
             apiBaseURL: apiBaseURL,
             tokenStore: tokenStore,
             headerAdapter: headerAdapter,
@@ -20,6 +25,7 @@ enum PartnerAuthSpine {
             authedSession: URLSession(configuration: .default),
             noAuthSession: URLSession(configuration: .ephemeral)
         )
+        return PartnerAuthStack(spine: spine, headerAdapter: headerAdapter)
     }
 }
 

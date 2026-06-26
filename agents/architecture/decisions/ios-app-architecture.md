@@ -200,6 +200,11 @@ _route = State(initialValue: container.hasValidSession ? .splash : .login)   // 
   registration gate is re-applied to every fresh login; the T-0303 §7.2 `verifyEmail` gate is **preserved**
   (unverified → `.verifyEmail`). The seed change `.dashboard → .splash` **closes a T-0303 fail-open** (the old
   seed landed an authed-but-incomplete partner straight on the shell).
+- **T-0305 seed refinement (refines, not contradicts, D2 — sprint-12 §7.5):** the launch seed is now
+  **UNCONDITIONALLY `.splash`** (was `hasValidSession ? .splash : .login`) so the SplashGate is the **sole**
+  launch resolver — required for the onboarding-vs-login decision on an un-authed first run. The fail-closed
+  registration gate (#24) is **byte-unchanged and no bypass is introduced**: the no-session branch resolves
+  only to `.unauthenticated`/`.needsOnboarding` (via `hasSeenOnboarding`), **never** `.authenticated`.
 - **Mirror the Android *decision tree*, not its *mechanism*** — Android is a path-based `NavHost`; iOS mirrors
   the `Splash → {shell | lock | login}` tree with a root-`enum` (the same "parity is of behavior, not
   vendor/mechanism" logic ADR-0013 D6 used for MapKit-vs-Mapbox). Rejected: a literal `NavigationStack` audience

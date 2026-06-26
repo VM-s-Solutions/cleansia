@@ -8,7 +8,7 @@ struct PartnerRootView: View {
 
     init(container: PartnerAppContainer) {
         self.container = container
-        _route = State(initialValue: container.hasValidSession ? .dashboard : .login)
+        _route = State(initialValue: Route.seed())
     }
 
     var body: some View {
@@ -28,49 +28,86 @@ struct PartnerRootView: View {
         case .login:
             LoginView(
                 loginClient: container.loginClient,
-                snackbar: container.snackbar
-            ) { success in
-                route = Route.afterLogin(success)
+                snackbar: container.snackbar,
+                onForgotPassword: { route = .forgotPassword },
+                onSignUp: { route = .register },
+                onLoginSuccess: { success in route = Route.afterLogin(success) }
+            )
+        case .register:
+            RegisterView(
+                client: container.registrationAuthClient,
+                settings: container.appSettings,
+                snackbar: container.snackbar,
+                onSignIn: { route = .login },
+                onRegistered: { route = .login }
+            )
+        case .forgotPassword:
+            ForgotPasswordView(
+                client: container.passwordResetClient,
+                settings: container.appSettings,
+                snackbar: container.snackbar,
+                onBack: { route = .login },
+                onRequested: { route = .login }
+            )
+        case .onboarding:
+            OnboardingView(
+                settings: container.appSettings,
+                onFinished: { route = .login }
+            )
+        case .splash:
+            SplashGateView(
+                hasValidSession: container.hasValidSession,
+                settings: container.appSettings,
+                client: container.registrationClient
+            ) { outcome in
+                route = Route.afterSplash(outcome)
             }
+        case .registrationLock:
+            RegistrationLockView(
+                client: container.registrationClient,
+                authClient: container.authClient,
+                onCompleted: { route = .dashboard },
+                onSignedOut: { route = .login }
+            )
         case .dashboard:
-            DashboardView(client: container.dashboardClient)
-        case .verifyEmail:
-            PlaceholderVerifyEmailView()
+            PartnerShellView(container: container)
+        case let .verifyEmail(email):
+            ConfirmEmailView(
+                email: email,
+                client: container.emailConfirmationClient,
+                settings: container.appSettings,
+                snackbar: container.snackbar,
+                onBack: { route = .login },
+                onConfirmed: { route = .splash }
+            )
         }
     }
 
     enum Route: Equatable {
+        case splash
         case login
+        case register
+        case forgotPassword
+        case onboarding
+        case verifyEmail(email: String?)
+        case registrationLock
         case dashboard
-        case verifyEmail
+
+        static func seed() -> Route {
+            .splash
+        }
 
         static func afterLogin(_ success: LoginSuccess) -> Route {
-            success.requiresEmailConfirmation ? .verifyEmail : .dashboard
+            success.requiresEmailConfirmation ? .verifyEmail(email: success.email) : .splash
         }
-    }
-}
 
-private struct PlaceholderVerifyEmailView: View {
-    var body: some View {
-        PlaceholderDestination(systemImage: "envelope.badge", text: "Verify your email — coming in T-0305")
-    }
-}
-
-private struct PlaceholderDestination: View {
-    let systemImage: String
-    let text: String
-
-    var body: some View {
-        VStack(spacing: Spacing.xs) {
-            Image(systemName: systemImage)
-                .font(.system(size: 48))
-                .foregroundColor(CleansiaColors.primary)
-            Text(verbatim: text)
-                .font(CleansiaTypography.titleMedium)
-                .foregroundColor(CleansiaColors.onBackground)
-                .multilineTextAlignment(.center)
+        static func afterSplash(_ outcome: SplashOutcome) -> Route {
+            switch outcome {
+            case .authenticated: .dashboard
+            case .needsRegistrationLock: .registrationLock
+            case .needsOnboarding: .onboarding
+            case .unauthenticated: .login
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(CleansiaColors.background.ignoresSafeArea())
     }
 }

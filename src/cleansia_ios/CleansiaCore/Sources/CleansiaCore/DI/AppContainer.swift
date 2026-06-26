@@ -8,8 +8,12 @@ public protocol AppContainer: AnyObject {
     var sessionManager: SessionManager { get }
     var authClient: AuthClient { get }
     var loginClient: LoginClient { get }
+    var registrationAuthClient: RegistrationAuthClient { get }
+    var emailConfirmationClient: EmailConfirmationClient { get }
+    var passwordResetClient: PasswordResetClient { get }
     var refreshClient: RefreshClient { get }
     var sessionRefresher: SessionRefresher { get }
+    var appSettings: AppSettingsStore { get }
     var hasValidSession: Bool { get }
 }
 
@@ -40,12 +44,14 @@ public final class BaseAppContainer: AppContainer {
         apiBaseURL: URL,
         snackbar: SnackbarController,
         sessionScopedCaches: SessionScopedCacheRegistry = SessionScopedCacheRegistry(),
+        appSettings: AppSettingsStore = UserDefaultsAppSettingsStore(),
         makeAuthSpine: @escaping (AuthSpineSeams) -> AuthSpine,
         makeApiClient: @escaping (ContainerSeams) -> MobileApiClient
     ) {
         self.apiBaseURL = apiBaseURL
         self.snackbar = snackbar
         self.sessionScopedCaches = sessionScopedCaches
+        self.appSettings = appSettings
         sessionManager = SessionManager(sessionScopedCaches: sessionScopedCaches)
         self.makeAuthSpine = makeAuthSpine
         self.makeApiClient = makeApiClient
@@ -63,9 +69,23 @@ public final class BaseAppContainer: AppContainer {
         authSpine
     }
 
+    public var registrationAuthClient: RegistrationAuthClient {
+        authSpine
+    }
+
+    public var emailConfirmationClient: EmailConfirmationClient {
+        authSpine
+    }
+
+    public var passwordResetClient: PasswordResetClient {
+        authSpine
+    }
+
     public var refreshClient: RefreshClient {
         authSpine
     }
+
+    public let appSettings: AppSettingsStore
 
     public lazy var sessionRefresher = SessionRefresher(
         tokenStore: tokenStore,

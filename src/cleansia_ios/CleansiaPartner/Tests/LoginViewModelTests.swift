@@ -86,7 +86,7 @@ final class LoginViewModelTests: XCTestCase {
         XCTAssertEqual(client.lastArgs?.rememberMe, true)
     }
 
-    func testUnverifiedEmailLoginFlagsRequiresEmailConfirmation() async {
+    func testUnverifiedEmailLoginFlagsRequiresEmailConfirmationAndCarriesEmail() async {
         client.result = .success(.unverifiedEmail(email: "a@b.com", hasToken: false))
         let vm = makeViewModel()
         vm.onEmailChange("a@b.com")
@@ -100,6 +100,7 @@ final class LoginViewModelTests: XCTestCase {
         await vm.login()
 
         XCTAssertEqual(received?.requiresEmailConfirmation, true)
+        XCTAssertEqual(received?.email, "a@b.com")
     }
 
     func testLoginFailureSnackbarsAndReturnsToIdleWithoutSuccessEffect() async {

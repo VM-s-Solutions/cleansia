@@ -171,11 +171,99 @@ enum L10n {
         }
     }
 
-    private static func localized(_ key: String) -> String {
+    enum RegistrationLock {
+        static var title: String {
+            localized("registration_lock_title")
+        }
+
+        static var subtitle: String {
+            localized("registration_lock_subtitle")
+        }
+
+        static func progress(_ completed: Int, _ total: Int) -> String {
+            format("registration_lock_progress", completed, total)
+        }
+
+        static var stepComplete: String {
+            localized("registration_lock_step_complete")
+        }
+
+        static var signOut: String {
+            localized("registration_lock_sign_out")
+        }
+
+        static var categoryProfile: String {
+            localized("registration_lock_category_profile")
+        }
+
+        static var categoryDocuments: String {
+            localized("registration_lock_category_documents")
+        }
+
+        static var categoryApproval: String {
+            localized("registration_lock_category_approval")
+        }
+
+        static var actionCompleteProfile: String {
+            localized("registration_lock_action_complete_profile")
+        }
+
+        static var actionUploadDocuments: String {
+            localized("registration_lock_action_upload_documents")
+        }
+
+        static var documentsRequired: String {
+            localized("registration_lock_documents_required")
+        }
+
+        static var approvalAwaitingReview: String {
+            localized("registration_lock_approval_awaiting_review")
+        }
+
+        static var approvalCompleteProfileFirst: String {
+            localized("registration_lock_approval_complete_profile_first")
+        }
+
+        static var approvalRejected: String {
+            localized("registration_lock_approval_rejected")
+        }
+
+        static var retry: String {
+            localized("registration_lock_retry")
+        }
+
+        static func missingField(_ token: String) -> String {
+            localized(token.replacingOccurrences(of: ".", with: "_"))
+        }
+    }
+
+    enum Shell {
+        static var dashboard: String {
+            localized("dashboard")
+        }
+
+        static var orders: String {
+            localized("orders")
+        }
+
+        static var invoices: String {
+            localized("invoices")
+        }
+
+        static var profile: String {
+            localized("profile")
+        }
+
+        static func placeholderComingSoon(_ name: String, _ ticket: String) -> String {
+            format("shell_tab_placeholder", name, ticket)
+        }
+    }
+
+    static func localized(_ key: String) -> String {
         String(localized: String.LocalizationValue(key))
     }
 
-    private static func format(_ key: String, _ args: CVarArg...) -> String {
+    static func format(_ key: String, _ args: CVarArg...) -> String {
         String(format: localized(key), arguments: args)
     }
 }

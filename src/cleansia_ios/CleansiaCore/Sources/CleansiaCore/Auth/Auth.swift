@@ -36,6 +36,28 @@ public struct LogoutRequest: Encodable, Sendable {
     }
 }
 
+public struct RegisterEmployeeRequest: Encodable, Sendable {
+    public let email: String
+    public let password: String
+    public let firstName: String
+    public let lastName: String
+    public let language: String
+}
+
+public struct ConfirmUserEmailRequest: Encodable, Sendable {
+    public let code: String
+}
+
+public struct ResendConfirmationEmailRequest: Encodable, Sendable {
+    public let email: String
+    public let language: String
+}
+
+public struct ForgotPasswordRequest: Encodable, Sendable {
+    public let email: String
+    public let language: String
+}
+
 public enum LoginOutcome: Equatable, Sendable {
     case authenticated
     case unverifiedEmail(email: String, hasToken: Bool)
@@ -80,15 +102,79 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         case let .failure(error):
             return .failure(error)
         case let .success(dto):
-            guard let token = dto.token, !token.isEmpty else {
-                return .success(.unverifiedEmail(email: email, hasToken: false))
-            }
-            persist(dto, fallbackRefreshLifetime: rememberMe ? .longLived : .shortLived)
-            if dto.isEmailConfirmed != true {
-                return .success(.unverifiedEmail(email: email, hasToken: true))
-            }
-            return .success(.authenticated)
+            return .success(resolveEmailGate(
+                dto,
+                fallbackEmail: email,
+                refreshLifetime: rememberMe ? .longLived : .shortLived
+            ))
         }
+    }
+
+    public func register(
+        email: String,
+        password: String,
+        firstName: String,
+        lastName: String,
+        language: String
+    ) async -> ApiResult<Bool> {
+        let body = RegisterEmployeeRequest(
+            email: email,
+            password: password,
+            firstName: firstName,
+            lastName: lastName,
+            language: language
+        )
+        return await post(path: "api/Auth/RegisterEmployee", body: body, useNoAuthSession: true)
+    }
+
+    public func confirmEmail(code: String) async -> ApiResult<LoginOutcome> {
+        let result: ApiResult<JwtTokenResponseDto> = await post(
+            path: "api/Auth/ConfirmUserEmail",
+            body: ConfirmUserEmailRequest(code: code),
+            useNoAuthSession: false,
+            method: .put
+        )
+        switch result {
+        case let .failure(error):
+            return .failure(error)
+        case let .success(dto):
+            return .success(resolveEmailGate(dto, fallbackEmail: dto.email ?? "", refreshLifetime: .shortLived))
+        }
+    }
+
+    public func resendConfirmation(email: String, language: String) async -> ApiResult<Bool> {
+        let body = ResendConfirmationEmailRequest(email: email, language: language)
+        return await post(
+            path: "api/Auth/ResendConfirmationEmail",
+            body: body,
+            useNoAuthSession: true
+        )
+    }
+
+    public func forgotPassword(email: String, language: String) async -> ApiResult<Void> {
+        let body = ForgotPasswordRequest(email: email, language: language)
+        let result = await send(path: "api/Auth/ForgotPassword", body: body, useNoAuthSession: true, method: .post)
+        switch result {
+        case let .failure(error):
+            return .failure(error)
+        case .success:
+            return .success(())
+        }
+    }
+
+    private func resolveEmailGate(
+        _ dto: JwtTokenResponseDto,
+        fallbackEmail: String,
+        refreshLifetime: RefreshLifetime
+    ) -> LoginOutcome {
+        guard let token = dto.token, !token.isEmpty else {
+            return .unverifiedEmail(email: fallbackEmail, hasToken: false)
+        }
+        persist(dto, fallbackRefreshLifetime: refreshLifetime)
+        if dto.isEmailConfirmed != true {
+            return .unverifiedEmail(email: fallbackEmail, hasToken: true)
+        }
+        return .authenticated
     }
 
     public func logout() async {
@@ -126,9 +212,10 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
     private func post<Response: Decodable>(
         path: String,
         body: some Encodable,
-        useNoAuthSession: Bool
+        useNoAuthSession: Bool,
+        method: HttpMethod = .post
     ) async -> ApiResult<Response> {
-        let result = await send(path: path, body: body, useNoAuthSession: useNoAuthSession)
+        let result = await send(path: path, body: body, useNoAuthSession: useNoAuthSession, method: method)
         switch result {
         case let .failure(error):
             return .failure(error)
@@ -142,19 +229,20 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
     }
 
     private func postExpectingNoBody(path: String, body: some Encodable) async {
-        _ = await send(path: path, body: body, useNoAuthSession: false)
+        _ = await send(path: path, body: body, useNoAuthSession: false, method: .post)
     }
 
     private func send(
         path: String,
         body: some Encodable,
-        useNoAuthSession: Bool
+        useNoAuthSession: Bool,
+        method: HttpMethod
     ) async -> Result<(data: Data, status: Int), ApiError> {
         guard let url = URL(string: path, relativeTo: apiBaseURL) else {
             return .failure(ApiError(code: "network.invalid_url"))
         }
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
@@ -209,6 +297,11 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
             return parsed
         }
         return Date().addingTimeInterval(lifetime.seconds)
+    }
+
+    private enum HttpMethod: String {
+        case post = "POST"
+        case put = "PUT"
     }
 
     private enum RefreshLifetime {

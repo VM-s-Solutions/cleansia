@@ -10,8 +10,9 @@ struct LoginFormState: Equatable {
     var passwordError: String?
 }
 
-struct LoginSuccess {
+struct LoginSuccess: Equatable {
     let requiresEmailConfirmation: Bool
+    let email: String?
 }
 
 @MainActor
@@ -57,10 +58,17 @@ final class LoginViewModel: ViewModel {
 
         switch result {
         case let .success(outcome):
-            loginSuccess.send(LoginSuccess(requiresEmailConfirmation: isUnverified(outcome)))
+            loginSuccess.send(makeSuccess(outcome))
         case let .failure(error):
             snackbar.showApiError(error)
         }
+    }
+
+    private func makeSuccess(_ outcome: LoginOutcome) -> LoginSuccess {
+        if case let .unverifiedEmail(email, _) = outcome {
+            return LoginSuccess(requiresEmailConfirmation: true, email: email)
+        }
+        return LoginSuccess(requiresEmailConfirmation: false, email: nil)
     }
 
     private func validate() -> Bool {
@@ -77,11 +85,6 @@ final class LoginViewModel: ViewModel {
             valid = false
         }
         return valid
-    }
-
-    private func isUnverified(_ outcome: LoginOutcome) -> Bool {
-        if case .unverifiedEmail = outcome { return true }
-        return false
     }
 }
 

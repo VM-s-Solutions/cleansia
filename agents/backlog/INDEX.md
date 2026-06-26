@@ -10,7 +10,7 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
-> ## 🍎 WAVE 10 — iOS PORT (sprint-12): PHASE 0 DONE + MERGED · **PHASE 1 (T-0303) DONE** (2026-06-26)
+> ## 🍎 WAVE 10 — iOS PORT (sprint-12): PHASE 0 DONE + MERGED · **PHASE 1 (T-0303) DONE** · **PHASE 2 — T-0304 + T-0305 DONE** (2026-06-26)
 > **iOS PHASE 1 IS DONE — the proving vertical (T-0303) is green on `phase/ios-phase1`.** Both owner
 > blockers that held T-0303 are **CLEARED**: the dev mobile API is **live** and the owner ran the
 > **mobile-spec-regen** (post-T-0272 specs committed `9232335`), so the T-0302 first real generation ran
@@ -60,6 +60,8 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > | **T-0302** | Swift codegen toolchain (openapi-generator swift5+urlsession) | M | **done ✅** wiring `c1009c6` / first real gen `8d4cfe3` (regen `9232335`) | T-0296✓ | ios | no | **mobile-spec-regen (owner) ✓** |
 > | **T-0323** | SwiftLint + SwiftFormat **BLOCKING** iOS CI gate (macOS) | S | **done ✅ (via CI)** `8220f4c` (**#90**) | T-0296✓ | ios | no | — |
 > | **T-0303** | Phase-1 partner login → read-only Dashboard (the proving vertical) | M | **done ✅** `8996df9`+`2a57f70` (`phase/ios-phase1`; both owner blockers CLEARED; #13-gen + TC-IOS-GEN green; CleansiaCore 93 + Partner 17 pass; reviewer+security APPROVE both slices) | T-0300✓, T-0302✓ | ios | no | rides regen ✓ + dev-API-live ✓ |
+> | **T-0304** | Phase-2 partner shell (`TabView` Dashboard·Orders·Invoices·Profile) + RegistrationLock (fails CLOSED) + SplashGate + ADR-0020 router | M | **done ✅** `55b39aa`+`c269360`+`df71181` (`phase/ios-phase2`; Slice A gate AND-predicate any-nil→LOCKED + BOTH error paths fail closed — reviewer #24 + TC-IOS-REGLOCK green, security APPROVE; ADR-0020 router #23 reseed `.dashboard`→`.splash` closed a latent T-0303 fail-OPEN; 14-token `missingFields` localized ×5. Slice B native `TabView` Gate-DP APPROVE. CleansiaCore 93 + Partner 61 pass on iPhone 17 sim. §7.4: contact-support INERT, silent-stale cache DEFERRED; Fix CTAs→T-0310, onboarding→T-0305) | T-0303✓ | ios | no | — |
+> | **T-0305** | Phase-2 partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding chain (+ Core `AppSettingsStore` + `PasswordPolicy`/`PasswordRuleList`) | M | **done ✅** `ccd25cd`+`e232147`+`3e70cdb`+`84d38bc` (`phase/ios-phase2`; 4 slices — §7.5 docs / A ConfirmEmail / B Register / C+D Forgot+Onboarding; every slice reviewer-APPROVE, Slice A also security-APPROVE — traced backend `ConfirmUserEmail` (CODE-resolved → anon double-skip SAFE), C+D gate-safety SAFE. ConfirmEmail replaces the placeholder + reuses the LIVE empty-token gate; #25: `send()` gained `httpMethod:` (ConfirmUserEmail PUT, no silent 405), no new anon entry, Logout authed, positive-control proves the double-skip non-tautological; `.verifyEmail(email:)` carries the email (no `UserProfileStore`); F1 iOS localizes ×5, Android bug NOT replicated → follow-up **T-0333**. Seed now UNCONDITIONALLY `.splash` (ADR-0020 living-doc fold-in — refines D2; gate #24 byte-unchanged, no bypass). CleansiaCore 114 + Partner 96 pass on iPhone 17 sim) | T-0303✓, T-0304✓ | ios | no | — |
 >
 > **T-0303's two owner blockers are now BOTH CLEARED** (they previously held T-0303 + every generated-client
 > ticket): (1) the owner ran the **mobile-spec-regen** — the formerly-stale committed
@@ -71,10 +73,35 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > the **ADR-0019 generated-client auth seam is proven** for the later authed waves to copy (sprint-12 §7.3
 > records two security forward-notes: the customer wave installs its OWN host-specific factory + allow-list;
 > the server-derived `employeeId` round-trip is safe only because the backend overrides the client
-> `EmployeeId` for non-admin callers). **Phase 2+ (T-0304…T-0314, and compliance T-0324…T-0329) remain
-> `proposed`** in `status/sprint-12.md`; **T-0304** (partner shell, depends on T-0303✓) is the next runnable
-> ticket. The Phase-0 audit's 2 deferred findings (**T-0331** unblocked + next, **T-0332** booking
-> checkpoint) are in the audit banner directly below.
+> `EmployeeId` for non-admin callers). **PHASE 2 — T-0304 (partner shell + RegistrationLock + SplashGate)
+> AND T-0305 (partner auth completeness) are both `done`** on `phase/ios-phase2`. **T-0304** (3 commits —
+> `55b39aa` ADR-0020 docs, `c269360` Slice A fail-closed gate, `df71181` Slice B shell; reviewer #23 + #24 +
+> TC-IOS-REGLOCK green, security + Gate-DP APPROVE; CleansiaCore 93 + CleansiaPartner 61 pass). The ADR-0020
+> router reseed (`.dashboard`→`.splash`) **closed a latent T-0303 fail-OPEN** (an authed-but-incomplete
+> partner no longer lands on the authed area). **T-0305** (4 commits — `ccd25cd` §7.5 docs, `e232147` Slice A
+> ConfirmEmail, `3e70cdb` Slice B Register, `84d38bc` Slices C+D Forgot+Onboarding; every slice
+> reviewer-APPROVE, **Slice A also security-APPROVE** — security traced the backend `ConfirmUserEmail`
+> handler, which resolves the user from the confirmation **CODE alone**, so the anon **double-skip** (Bearer
+> withheld on the confirm path even with a token stored) is **SAFE**; Slices C+D got an explicit gate-safety
+> review — **SAFE**). All four flows shipped: **Register** (+ Core `PasswordPolicy`/`PasswordRuleList`),
+> **Forgot** (single-phase), **ConfirmEmail** (replaces the placeholder, **reuses the LIVE empty-token gate**:
+> 200+empty → no app entry, 200+token → authenticated), **Onboarding** (2-page pre-auth intro + the SplashGate
+> onboarding branch + `hasSeenOnboarding` in the new Core `AppSettingsStore`). #25: `send()` gained an
+> `httpMethod:` param (ConfirmUserEmail **PUT**, no silent 405); **no new anon allow-list entry; Logout stays
+> authed**; a positive-control test proves the double-skip is non-tautological. `.verifyEmail(email:)` carries
+> the email (**no `UserProfileStore`**). **F1:** iOS **localizes ×5** the validation strings the Android
+> partner Register/Forgot VMs hardcode in English — **iOS does it right; the Android bug is NOT replicated** —
+> the android fix is the **PM-filed follow-up T-0333** (independent of the iOS wave). **Seed refinement:** the
+> `PartnerRootView` launch seed is now **UNCONDITIONALLY `.splash`** (was `hasValidSession ? .splash : .login`)
+> so the SplashGate is the sole launch resolver — recorded as an **ADR-0020 living-doc fold-in** (refines D2;
+> the fail-closed gate #24 is byte-unchanged, no bypass — the no-session branch resolves only to
+> `.unauthenticated`/`.needsOnboarding`, never `.authenticated`). `swiftformat`/`swiftlint` clean;
+> **CleansiaCore 114 + CleansiaPartner 96** pass on the iPhone 17 sim. **The rest of Phase 2+ (T-0306…T-0314,
+> and compliance T-0324…T-0329) remain `proposed`** in `status/sprint-12.md`; the next runnable tickets are
+> **T-0306** (map seam + MapKit, deps T-0300✓), **T-0309** (earnings/invoices, deps T-0304✓), and **T-0310**
+> (profile/devices, deps T-0304✓ + T-0306). The Phase-0 audit's 2 deferred findings (**T-0331** unblocked,
+> **T-0332** booking checkpoint) are in the audit banner directly below; the **android F1 follow-up T-0333**
+> (partner Register/Forgot VM validation i18n, `ready`, independent) is filed in `tickets/`.
 >
 > --- (iOS Phase-0 audit banner below) ---
 >

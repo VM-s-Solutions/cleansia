@@ -9,9 +9,31 @@ public protocol LoginClient: AnyObject {
     func login(email: String, password: String, rememberMe: Bool) async -> ApiResult<LoginOutcome>
 }
 
+public protocol RegistrationAuthClient: AnyObject {
+    func register(
+        email: String,
+        password: String,
+        firstName: String,
+        lastName: String,
+        language: String
+    ) async -> ApiResult<Bool>
+}
+
+public protocol EmailConfirmationClient: AnyObject {
+    func confirmEmail(code: String) async -> ApiResult<LoginOutcome>
+    func resendConfirmation(email: String, language: String) async -> ApiResult<Bool>
+}
+
+public protocol PasswordResetClient: AnyObject {
+    func forgotPassword(email: String, language: String) async -> ApiResult<Void>
+}
+
 public protocol RefreshClient: AnyObject, AuthRefreshing {}
 
-public protocol AuthSpine: AuthClient, LoginClient, RefreshClient {
+public typealias AuthApiClients = AuthClient & EmailConfirmationClient & LoginClient
+    & PasswordResetClient & RegistrationAuthClient
+
+public protocol AuthSpine: AuthApiClients, RefreshClient {
     var tokenStore: TokenStore { get }
 }
 

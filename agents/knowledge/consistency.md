@@ -191,8 +191,16 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   `<Name>Screen.kt` **inline** (the customer-app convention), singular naming. ✗ partner-app's
   `features/<name>/{screens,viewmodels}/` split and `Details` plural drift → align to the inline
   singular convention for new code; existing is a tracked move.
-- **E8.** All user-facing text via `stringResource(R.string.x)` / `appContext.getString(...)` — already
-  consistent; keep it.
+- **E8.** All user-facing text via `stringResource(R.string.x)` / `appContext.getString(...)` — mostly
+  consistent; keep it. ✗ **Parity deviation (F1, sprint-12 §7.5 Decision 5):** the partner
+  `features/auth/RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set their **validation**
+  error strings as **hardcoded English literals** (these VMs don't inject `@ApplicationContext Context`), so
+  the register/forgot field errors render English in all 5 locales. **The iOS port does this correctly**
+  (`Localizable.xcstrings` keys ×5, ADR-0013 D11) — iOS is the right reference; **do NOT replicate the Android
+  literals on iOS.** Android fix = inject `@ApplicationContext Context` + move the strings to `R.string.*`
+  (mirror `OrderDetailViewModel.kt:80`); a PM-filed **android follow-up ticket** (small, mechanical i18n),
+  not part of the iOS wave. (This is the canonical case for the `patterns-mobile.md` Parity rule:
+  Android-wrong → diverge correctly on iOS + raise an Android finding, don't silently copy.)
 
 ---
 

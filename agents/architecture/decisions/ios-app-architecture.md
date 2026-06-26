@@ -175,6 +175,122 @@ var hasValidSession: Bool { get }   // delegates to the spine: tokenStore.curren
   **no** `save`/`clear`, **no** raw token — only `hasValidSession`. A `TokenStore` (or its mutators) reaching the
   app layer is a finding: it forks the mutation path the spine owns.
 
+### Partner router shape — a flat-enum `PartnerRootView` root-switch gated by `.splash` (ADR-0020)
+
+The partner app routes its **top-level audience** (logged-out / resolving / locked / in-shell) with the
+**flat-enum `PartnerRootView` root-switch** T-0303 shipped — **not** a path-based `NavigationStack` audience
+router. ADR-0020 (accepted 2026-06-26, surfaced by the T-0304 Understand pass) canonicalizes it so the later
+partner waves (T-0305/0307/0309/0310) extend one router instead of each re-deciding the shape:
+
+```swift
+// PartnerRootView.Route — extended in T-0304 from T-0303's { login, dashboard, verifyEmail }.
+enum Route { case splash; case login; case verifyEmail; case registrationLock; case dashboard /* = the shell */ }
+_route = State(initialValue: container.hasValidSession ? .splash : .login)   // seed: .splash, NOT .dashboard
+// Route.afterLogin: requiresEmailConfirmation ? .verifyEmail : .splash       // verified login BOUNCES through .splash
+```
+
+- **The audience is a closed `enum` the root view `switch`es over** (compiler-exhaustive, replace-semantics —
+  setting `route` swaps the whole root, no audience back-stack to swipe-back into a stale/logged-out state).
+  **`NavigationStack` stays the *intra-audience* push container** (OrderDetail, ProfileSection, the
+  onboarding-chain sections) — **not** the audience selector. (Reconciles the `patterns-mobile` `navigation.Routes`
+  row, now split-scoped: top-level audience = root-`enum`; intra-audience push = `NavigationStack`+typed route.)
+- **`.splash` is the SplashGate decision state** (the `SplashViewModel` parity, `PartnerNavHost.kt:478-509`):
+  resolves the registration gate **once** on appear → `.dashboard`-shell vs `.registrationLock` vs `.login`.
+  A verified **login bounces through `.splash`** (the Android idiom, `PartnerNavHost.kt:118-124`) so the
+  registration gate is re-applied to every fresh login; the T-0303 §7.2 `verifyEmail` gate is **preserved**
+  (unverified → `.verifyEmail`). The seed change `.dashboard → .splash` **closes a T-0303 fail-open** (the old
+  seed landed an authed-but-incomplete partner straight on the shell).
+- **T-0305 seed refinement (refines, not contradicts, D2 — sprint-12 §7.5):** the launch seed is now
+  **UNCONDITIONALLY `.splash`** (was `hasValidSession ? .splash : .login`) so the SplashGate is the **sole**
+  launch resolver — required for the onboarding-vs-login decision on an un-authed first run. The fail-closed
+  registration gate (#24) is **byte-unchanged and no bypass is introduced**: the no-session branch resolves
+  only to `.unauthenticated`/`.needsOnboarding` (via `hasSeenOnboarding`), **never** `.authenticated`.
+- **Mirror the Android *decision tree*, not its *mechanism*** — Android is a path-based `NavHost`; iOS mirrors
+  the `Splash → {shell | lock | login}` tree with a root-`enum` (the same "parity is of behavior, not
+  vendor/mechanism" logic ADR-0013 D6 used for MapKit-vs-Mapbox). Rejected: a literal `NavigationStack` audience
+  router (discards the working root-switch + §7.2 test; models replace-semantics audience hops as awkward path
+  push-then-clear). **Reviewer #23** enforces it; the customer app (T-0312+) copies the *pattern* with its own
+  root view + audience states.
+
+### Partner registration gate — fail-closed, between login and the shell (sprint-12 §7.4 Decision 1; SECURITY)
+
+The **standing gate every later partner wave sits behind** (the iOS sibling of the partner-gate rule), a
+confirmation of the Android gate (ADR-0013 "mirror the code") — recorded in sprint-12 §7.4, **not** a new ADR:
+
+- **Between login and the authed shell.** The shell (Orders/etc.) is **unreachable** until
+  `isRegistrationComplete == true`; ADR-0020 enforces it structurally (`.splash` resolves before `.dashboard`
+  renders — no login→shell path bypasses the gate).
+- **The predicate is an AND** (`RegistrationLockViewModel.kt:103-109`): `hasCompletedProfile == true &&
+  areDocumentsUploaded == true && (contractStatus == .approved(4) || .active(2))`. **Any nil/unknown/other →
+  LOCKED.** Availability is **not** a clause (backend always reports it true). `ContractStatus`:
+  Pending=1/Active=2/Terminated=3/Approved=4/Rejected=5.
+- **Both error paths fail CLOSED:** the **SplashGate** routes a status-API `.failure` → `.registrationLock`,
+  **never** the shell (`PartnerNavHost.kt:506`); the **lock VM's `.failure`** preserves the cached status and
+  **never** unlocks (`RegistrationLockViewModel.kt:197-211` — the Error branch must not touch `status`). The
+  **only** unlock is the success "complete" watermark (`RegistrationLockScreen.kt:112-114`).
+- **Reviewer #24** + **TC-IOS-REGLOCK** (sprint-12 §7.4 / §8) enforce it. **Forward-note:** later partner
+  waves (T-0307/0309/0310) render *inside* the shell (reached only past this gate) — they must not add a
+  second, weaker status check or a permissive nil default that re-opens it.
+
+### Device-local settings — the GENERAL `AppSettingsStore` in `CleansiaCore` (UserDefaults-backed) (sprint-12 §7.5 Decision 1)
+
+**The one way to do device-local settings on iOS** (the `AppSettingsRepository.kt` parity), surfaced by the
+T-0305 Understand pass — **not** a new ADR (an application of ADR-0013 D1 + the existing
+`CleansiaCore/Validation/EmailValidator.swift` Core-utility precedent):
+
+- A **single, general** `AppSettingsStore` in `CleansiaCore` (a small key/value façade) — **not** a
+  single-purpose `OnboardingStateStore` + a separate language helper — so T-0307+ / the customer wave add a
+  property here instead of standing up a new store each time. T-0305 needs two: `hasSeenOnboarding`
+  (get + `markSeen()`, `AppSettingsRepository.kt:25-33`) and a **resolved language tag** ∈ `{en,cs,sk,uk,ru}`
+  (`:24`/`:41-43`): persisted-tag-if-in-set → else `Locale.current.language.languageCode`-if-in-set → else
+  `"en"` (the Android `?: "en"` fallback, `RegisterViewModel.kt:89`).
+- **Backed by `UserDefaults`, NOT Keychain** — deliberate parity with Android DataStore's **wiped-on-uninstall**
+  semantics (`partner_app_settings`, `AppSettingsRepository.kt:13`). The Keychain spine (header-parity §2/§6)
+  holds the security-load-bearing device id + the session; onboarding-seen + a UI language preference are not
+  secrets and **must** reset on reinstall. A secret reaching `AppSettingsStore` (or a settings value in the
+  Keychain) is a reviewer finding (#26a). CRC: `ios-app-settings-store`.
+
+### ConfirmEmail email threading — via the `.verifyEmail(email:)` Route associated value, NOT a `UserProfileStore` (sprint-12 §7.5 Decision 2 — ADR-0020 fold-in)
+
+iOS has **no `UserProfileStore`** (T-0303 used a one-shot `employeeGetCurrentEmployee`, §7.2). The
+ConfirmEmail **resend** needs the email; Android reads it from `UserProfileStore`
+(`AuthRepository.kt:104-105`/`:182-183`). iOS threads it through the **Route associated value** instead — the
+existing ADR-0020 `.verifyEmail` case gains a payload: `case verifyEmail(email: String?)`. This is an
+**ADR-0020 living-doc fold-in** (D5: "a future audience state is a new `enum` case under this ADR" — here an
+existing case merely carries a payload), lighter than and aligned with "the audience enum carries the state";
+**not** a superseding ADR.
+
+- The unverified login already **has** the email — `LoginOutcome.unverifiedEmail(email:hasToken:)` (the
+  Android parity, `AuthRepository.kt:99-114`/`:277`); `LoginSuccess`/`Route.afterLogin` currently **drop** it.
+  T-0305: `LoginSuccess` carries the email, `afterLogin` seeds `.verifyEmail(email:)`, the verify screen's
+  resend uses it. The confirm **code** post needs no email (`confirmEmail(code:)`, `AuthRepository.kt:168-171`).
+- **Cold-start-mid-confirm-with-no-email** degrades to Android's blank-email guard: `.verifyEmail(nil)` →
+  **disable resend + show `error_generic`** (the `UnverifiedEmail(email="",hasToken=false)` parity,
+  `AuthRepository.kt:175-180`); the code entry still works. The `requiresEmailConfirmation==true → .verifyEmail`
+  gate (T-0303 §7.2 / ADR-0020 D3) is **preserved** — the associated value is additive. A NEW `UserProfileStore`
+  built just to carry the email is a reviewer finding (#26b). The `ios-partner-root-router` CRC is unchanged in
+  responsibility — it lands the state; the state now carries a payload it does not interpret.
+
+### Client-side password policy — a Core `PasswordPolicy` + `PasswordRuleList` (sprint-12 §7.5 Decision 4)
+
+The Android register password rule (≥8 && ≥1 letter && ≥1 digit, `RegisterViewModel.kt:37-39`, consumed `:73`)
+is extracted to **`CleansiaCore/Validation/PasswordPolicy`** (the same predicate, lifted out of the VM — Android
+left the `passwordHas*` getters in `RegisterUiState`; iOS fixes that so partner + customer share one source),
+feeding a native-SwiftUI **`PasswordRuleList`** Core component (the parity of the already-shared `:core`
+`PasswordRuleList.kt`, used by partner `RegisterScreen` + customer `SignUpScreen.kt:182,200`). **Client-side
+UX only — the backend `BaseAuthValidator` is authoritative.** Reused by the customer wave (T-0312+) at the
+second call site with no re-decision. A VM-local copy of the predicate or a per-app widget is a finding (#26c).
+CRC: `ios-password-policy`. (An application of ADR-0013 D1 + a catalog harvest, not a new ADR.)
+
+### F1 parity deviation — Android partner Register/Forgot hardcode English validation strings; iOS localizes (sprint-12 §7.5 Decision 5)
+
+`RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set validation errors as **raw English
+literals** (these VMs don't inject `@ApplicationContext Context`) — they never localize across the 5 locales.
+**iOS does it right** (`Localizable.xcstrings` keys ×5, ADR-0013 D11 / reviewer #10), the one intentional
+Android-divergence on T-0305 (the `patterns-mobile` Parity rule's "Android is wrong → raise a finding, don't
+copy"). Recorded as a `consistency.md` **E8** deviation; the android partner-VM i18n fix is a PM-filed
+follow-up (small, mechanical), **not** part of the iOS wave.
+
 - **Deployment target: iOS 16 vs iOS 17 (ADR-0014).** Chose **iOS 16** — the owner prioritised old-device
   reach (iPhone 8/8 Plus/X, 2017+), which iOS 17 (XS/XR, 2018+) excluded. The cost is the state mechanism
   (`@Observable` is iOS-17-only) and a couple of MapKit API variants; both are accepted trade-offs, recorded
@@ -215,6 +331,8 @@ var hasValidSession: Bool { get }   // delegates to the spine: tokenStore.curren
 | ADR (architecture + strategy) | — | **accepted** (ADR-0013) |
 | ADR (iOS-16 floor + `ObservableObject` state + iOS-16 MapKit variant) | — | **accepted** (ADR-0014, partially supersedes ADR-0013 D2 + target) |
 | ADR (generated client authenticates via the Core-spine-backed `RequestBuilderFactory`) | — | **accepted** (ADR-0019, refines ADR-0013 D4/D5 — the one way; reviewer #13-gen) |
+| ADR (partner router = flat-enum `PartnerRootView` root-switch gated by `.splash`) | — | **accepted** (ADR-0020, refines ADR-0013 D2/D9 — the canonical partner router; reviewer #23; T-0304 builds it) |
+| Partner auth completeness rulings (settings store / ConfirmEmail email via Route assoc-value / PasswordPolicy / PUT+empty-token / F1) | — | **recorded** (sprint-12 §7.5, **no new ADR** — applies ADR-0013/0019/0020 + the header-parity-contract; reviewer #25/#26; T-0305 builds it) |
 | Owner Q-IOS-01 (deployment target) | — | **ANSWERED — iOS 16** (old-device reach) |
 | Owner **mobile-spec regen** (the one hard blocker) | pre-Phase-2 | **PENDING — owner-only** (`manual_step: mobile-spec-regen`) |
 | Workspace + `CleansiaCore` skeleton + design tokens + DI + snackbar/error center | 0 | planned (runnable on approval) |

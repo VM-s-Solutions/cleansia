@@ -10,6 +10,36 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## 🍎 iOS PHASE 0 FOUNDATION AUDIT — 2 deferred findings logged (2026-06-26) — NOT dispatched
+> **The now-compiling iOS Phase 0 foundation (`CleansiaCore` + both app targets) passed an
+> adversarially-verified multi-agent audit (analyst author + 2 adversarial verifiers), run 2026-06-26.**
+> Build / tests / lint are **green**. The audit's **one blocker** — `API_BASE_URL` never reaching
+> `Info.plist` → launch `fatalError` — was **already fixed + verified by launching the app in the
+> simulator**, so it is NOT tracked here. The **two remaining findings** below are **low / latent severity
+> and fully dormant** (no shipping screen exercises the affected code yet — only the auth spine + its tests
+> reference it). **Logged ONLY — not for implementation now;** each is folded into its natural suggested-home
+> ticket on the upcoming auth + booking waves, to be fixed via the normal workflow. Full audit:
+> **`audits/AUDIT-2026-06-26-ios-phase0-foundation.md`** (F1/F2).
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source / suggested home |
+> |----|-------|------|--------|-----------|--------|-----|-------------|-------------------------|
+> | **T-0331** | iOS `DeviceIdProvider` — persist own generated UUID (IDFV as seed only) + verify Keychain write `OSStatus` before caching | S | **draft** (deferred — not dispatched) | T-0300 (proposed) | ios | no | — | AUDIT-2026-06-26 **F1** → auth spine **T-0300** / partner-login **T-0303** |
+> | **T-0332** | iOS booking-flow design checkpoint — send `Bearer` on dual-use `Order`/`Payment` endpoints when a session exists (withhold only for true guest) | S | **draft** (deferred — design checkpoint, not dispatched) | T-0313 (proposed) | ios | no | — | AUDIT-2026-06-26 **F2** (DISPUTED→checkpoint) → booking-wizard **T-0313** (ADR-0013 §D4.4 / header-parity §3) |
+>
+> **F1 (T-0331):** `DeviceIdProvider.swift:42` persists IDFV as the `X-Device-Id` value (contract §2 says
+> persist your **own** UUID, IDFV is "optional seed" only — "the single most breakable rule"), and
+> `KeychainStore.write` (`KeychainTokenStore.swift:99-112`) discards the `SecItemAdd`/`SecItemUpdate`
+> `OSStatus` so a pre-first-unlock write failure caches a value that diverges on the next launch — both
+> break the `X-Device-Id` == `Device/Register` `deviceId` revoke invariant. **F2 (T-0332):** the customer
+> `AnonymousAllowList` (`:28-39`) correctly no-Bearers the **guest**-booking surface, but those `Order`/
+> `Payment` endpoints are **dual-use** — a signed-in customer's in-app booking would be sent with no Bearer
+> (`HeaderAdapter.swift:29`) and the server (`CreateOrder` reads `GetUserId() ?? string.Empty`) would
+> silently create a guest/empty-`UserId` order. **DISPUTED** in the audit → a booking-port **design
+> checkpoint** (send Bearer iff a session exists; withhold only for true guests), attached as an AC on
+> T-0313. **Both ids next-free after T-0330; both `draft`, dormant, awaiting their suggested-home wave.**
+>
+> --- (Wave-11 banner below) ---
+>
 > ## 🟦 WAVE 11 — Azure DEV deployment: Bicep IaC + region seam (ADR-0015/0017) — AGENT AUTHORING DONE; OWNER PROVISIONING PENDING (2026-06-23)
 > **The agent-authorable half of Wave 11 is DONE, reviewed/verified, committed + pushed (`38a10375` on
 > `feature/wave8-pre-ios-cleanup`).** The whole platform now has a clean-slate Bicep source-of-truth at

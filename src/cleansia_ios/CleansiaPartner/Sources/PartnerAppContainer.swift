@@ -29,12 +29,28 @@ final class PartnerAppContainer: AppContainer {
         base.loginClient
     }
 
+    var registrationAuthClient: RegistrationAuthClient {
+        base.registrationAuthClient
+    }
+
+    var emailConfirmationClient: EmailConfirmationClient {
+        base.emailConfirmationClient
+    }
+
+    var passwordResetClient: PasswordResetClient {
+        base.passwordResetClient
+    }
+
     var refreshClient: RefreshClient {
         base.refreshClient
     }
 
     var sessionRefresher: SessionRefresher {
         base.sessionRefresher
+    }
+
+    var appSettings: AppSettingsStore {
+        base.appSettings
     }
 
     var hasValidSession: Bool {

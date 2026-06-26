@@ -49,8 +49,12 @@ final class AppEnvironmentTests: XCTestCase {
         let sessionManager: SessionManager
         let authClient: AuthClient
         let loginClient: LoginClient
+        let registrationAuthClient: RegistrationAuthClient
+        let emailConfirmationClient: EmailConfirmationClient
+        let passwordResetClient: PasswordResetClient
         let refreshClient: RefreshClient
         let sessionRefresher: SessionRefresher
+        let appSettings: AppSettingsStore = UserDefaultsAppSettingsStore()
         var hasValidSession = false
 
         init(
@@ -59,7 +63,8 @@ final class AppEnvironmentTests: XCTestCase {
             sessionScopedCaches: SessionScopedCacheRegistry,
             authClient: AuthClient,
             loginClient: LoginClient,
-            refreshClient: RefreshClient
+            refreshClient: RefreshClient,
+            authSpine: StubAuthSpine = StubAuthSpine()
         ) {
             self.apiBaseURL = apiBaseURL
             self.snackbar = snackbar
@@ -67,6 +72,9 @@ final class AppEnvironmentTests: XCTestCase {
             sessionManager = SessionManager(sessionScopedCaches: sessionScopedCaches)
             self.authClient = authClient
             self.loginClient = loginClient
+            registrationAuthClient = authSpine
+            emailConfirmationClient = authSpine
+            passwordResetClient = authSpine
             self.refreshClient = refreshClient
             sessionRefresher = SessionRefresher(
                 tokenStore: StubTokenStore(),
@@ -224,6 +232,28 @@ private final class StubAuthSpine: AuthSpine, @unchecked Sendable {
     func logout() async {}
     func login(email _: String, password _: String, rememberMe _: Bool) async -> ApiResult<LoginOutcome> {
         .success(.authenticated)
+    }
+
+    func register(
+        email _: String,
+        password _: String,
+        firstName _: String,
+        lastName _: String,
+        language _: String
+    ) async -> ApiResult<Bool> {
+        .success(true)
+    }
+
+    func confirmEmail(code _: String) async -> ApiResult<LoginOutcome> {
+        .success(.authenticated)
+    }
+
+    func resendConfirmation(email _: String, language _: String) async -> ApiResult<Bool> {
+        .success(true)
+    }
+
+    func forgotPassword(email _: String, language _: String) async -> ApiResult<Void> {
+        .success(())
     }
 
     func refresh(refreshToken _: String) async -> RefreshedTokens? {

@@ -237,6 +237,36 @@ enum L10n {
         }
     }
 
+    enum ConfirmEmail {
+        static var title: String {
+            localized("verify_email")
+        }
+
+        static var subtitle: String {
+            localized("verify_email_subtitle")
+        }
+
+        static var verify: String {
+            localized("verify")
+        }
+
+        static var resendCode: String {
+            localized("resend_code")
+        }
+
+        static var resendSent: String {
+            localized("confirm_email_subtitle")
+        }
+
+        static var errorGeneric: String {
+            localized("error_generic")
+        }
+
+        static var back: String {
+            localized("back")
+        }
+    }
+
     enum Shell {
         static var dashboard: String {
             localized("dashboard")

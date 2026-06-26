@@ -48,15 +48,22 @@ struct PartnerRootView: View {
             )
         case .dashboard:
             PartnerShellView(container: container)
-        case .verifyEmail:
-            PlaceholderVerifyEmailView()
+        case let .verifyEmail(email):
+            ConfirmEmailView(
+                email: email,
+                client: container.emailConfirmationClient,
+                settings: container.appSettings,
+                snackbar: container.snackbar,
+                onBack: { route = .login },
+                onConfirmed: { route = .splash }
+            )
         }
     }
 
     enum Route: Equatable {
         case splash
         case login
-        case verifyEmail
+        case verifyEmail(email: String?)
         case registrationLock
         case dashboard
 
@@ -65,7 +72,7 @@ struct PartnerRootView: View {
         }
 
         static func afterLogin(_ success: LoginSuccess) -> Route {
-            success.requiresEmailConfirmation ? .verifyEmail : .splash
+            success.requiresEmailConfirmation ? .verifyEmail(email: success.email) : .splash
         }
 
         static func afterSplash(_ outcome: SplashOutcome) -> Route {
@@ -75,11 +82,5 @@ struct PartnerRootView: View {
             case .unauthenticated: .login
             }
         }
-    }
-}
-
-private struct PlaceholderVerifyEmailView: View {
-    var body: some View {
-        PlaceholderDestination(systemImage: "envelope.badge", text: "Verify your email — coming in T-0305")
     }
 }

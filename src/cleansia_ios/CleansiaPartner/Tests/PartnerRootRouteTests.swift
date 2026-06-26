@@ -3,13 +3,24 @@ import XCTest
 
 final class PartnerRootRouteTests: XCTestCase {
     func testVerifiedLoginRoutesToSplash() {
-        let route = PartnerRootView.Route.afterLogin(LoginSuccess(requiresEmailConfirmation: false))
+        let route = PartnerRootView.Route.afterLogin(
+            LoginSuccess(requiresEmailConfirmation: false, email: nil)
+        )
         XCTAssertEqual(route, .splash)
     }
 
-    func testUnverifiedLoginRoutesToVerifyEmail() {
-        let route = PartnerRootView.Route.afterLogin(LoginSuccess(requiresEmailConfirmation: true))
-        XCTAssertEqual(route, .verifyEmail)
+    func testUnverifiedLoginRoutesToVerifyEmailCarryingTheEmail() {
+        let route = PartnerRootView.Route.afterLogin(
+            LoginSuccess(requiresEmailConfirmation: true, email: "a@b.cz")
+        )
+        XCTAssertEqual(route, .verifyEmail(email: "a@b.cz"))
+    }
+
+    func testUnverifiedLoginWithoutEmailRoutesToVerifyEmailNil() {
+        let route = PartnerRootView.Route.afterLogin(
+            LoginSuccess(requiresEmailConfirmation: true, email: nil)
+        )
+        XCTAssertEqual(route, .verifyEmail(email: nil))
     }
 
     func testSeedWithValidSessionIsSplash() {

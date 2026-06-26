@@ -2,8 +2,14 @@ import XCTest
 @testable import CleansiaCore
 
 final class AuthApiClientTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        MockURLProtocol.recorder.reset()
+    }
+
     override func tearDown() {
         MockURLProtocol.handler = nil
+        MockURLProtocol.recorder.reset()
         super.tearDown()
     }
 
@@ -140,6 +146,142 @@ final class AuthApiClientTests: XCTestCase {
         XCTAssertNil(store.current())
         XCTAssertEqual(cache.count, 1)
     }
+
+    func testConfirmEmailIsSentAsPut() async throws {
+        let store = MemTokenStore()
+        let client = try makeClient(store: store)
+        let access = JwtFactory.make(exp: 9_999_999_999)
+        MockURLProtocol.handler = { _ in
+            (200, Data(#"{"token":"\#(access)","isEmailConfirmed":true,"refreshToken":"r1"}"#.utf8))
+        }
+
+        _ = await client.confirmEmail(code: "123456")
+
+        let confirm = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "ConfirmUserEmail"))
+        XCTAssertEqual(confirm.httpMethod, "PUT")
+    }
+
+    func testOtherAuthPathsStayPost() async throws {
+        let store = MemTokenStore()
+        let client = try makeClient(store: store)
+        MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
+
+        _ = await client.register(email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en")
+        _ = await client.resendConfirmation(email: "a@b.cz", language: "en")
+
+        MockURLProtocol.handler = { _ in (204, Data()) }
+        _ = await client.forgotPassword(email: "a@b.cz", language: "en")
+
+        for path in ["RegisterEmployee", "ResendConfirmationEmail", "ForgotPassword"] {
+            let request = try XCTUnwrap(MockURLProtocol.recorder.last(matching: path))
+            XCTAssertEqual(request.httpMethod, "POST", "\(path) must be POST")
+        }
+    }
+
+    func testConfirmEmailEmptyTokenIsUnverifiedNoTokenAndStoresNothing() async throws {
+        let store = MemTokenStore()
+        let client = try makeClient(store: store)
+        MockURLProtocol.handler = { _ in
+            (200, Data(#"{"token":"","isEmailConfirmed":false,"email":"a@b.cz"}"#.utf8))
+        }
+
+        let result = await client.confirmEmail(code: "123456")
+
+        guard case let .success(.unverifiedEmail(_, hasToken)) = result else {
+            return XCTFail("expected unverifiedEmail")
+        }
+        XCTAssertFalse(hasToken)
+        XCTAssertNil(store.current())
+    }
+
+    func testConfirmEmailWithTokenPersistsAndAuthenticates() async throws {
+        let store = MemTokenStore()
+        let client = try makeClient(store: store)
+        let access = JwtFactory.make(exp: 9_999_999_999)
+        MockURLProtocol.handler = { _ in
+            (200, Data(#"{"token":"\#(access)","isEmailConfirmed":true,"refreshToken":"r9"}"#.utf8))
+        }
+
+        let result = await client.confirmEmail(code: "123456")
+
+        guard case .success(.authenticated) = result else { return XCTFail("expected authenticated") }
+        XCTAssertEqual(store.current()?.accessToken, access)
+        XCTAssertEqual(store.current()?.refreshToken, "r9")
+    }
+
+    func testConfirmEmailDoesNotAttachBearerEvenWithStoredToken() async throws {
+        let store = MemTokenStore()
+        store.save(.init(
+            accessToken: "stored-access",
+            accessTokenExpiresAt: Date(timeIntervalSinceNow: 900),
+            refreshToken: "r1",
+            refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
+        ))
+        let client = try makeClient(store: store)
+        MockURLProtocol.handler = { _ in (200, Data(#"{"token":"","isEmailConfirmed":false}"#.utf8)) }
+
+        _ = await client.confirmEmail(code: "123456")
+
+        let confirm = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "ConfirmUserEmail"))
+        XCTAssertNil(confirm.value(forHTTPHeaderField: "Authorization"))
+        XCTAssertEqual(confirm.value(forHTTPHeaderField: "X-Device-Id"), "device-1")
+        XCTAssertEqual(confirm.value(forHTTPHeaderField: "X-Time-Zone"), "Europe/Prague")
+    }
+
+    func testAnonAuthPathsNeverCarryBearer() async throws {
+        let store = MemTokenStore()
+        store.save(.init(
+            accessToken: "stored-access",
+            accessTokenExpiresAt: Date(timeIntervalSinceNow: 900),
+            refreshToken: "r1",
+            refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
+        ))
+        let client = try makeClient(store: store)
+        MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
+
+        _ = await client.register(email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en")
+        _ = await client.resendConfirmation(email: "a@b.cz", language: "en")
+        MockURLProtocol.handler = { _ in (204, Data()) }
+        _ = await client.forgotPassword(email: "a@b.cz", language: "en")
+
+        for path in ["RegisterEmployee", "ResendConfirmationEmail", "ForgotPassword"] {
+            let request = try XCTUnwrap(MockURLProtocol.recorder.last(matching: path))
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"), "\(path) must not carry a Bearer")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "X-Device-Id"), "device-1")
+        }
+    }
+
+    func testRegisterTargetsRegisterEmployeePath() async throws {
+        let client = try makeClient(store: MemTokenStore())
+        MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
+
+        let result = await client.register(
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en"
+        )
+
+        guard case let .success(value) = result else { return XCTFail("expected success") }
+        XCTAssertTrue(value)
+        let request = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "RegisterEmployee"))
+        XCTAssertTrue(request.url?.path.contains("/api/Auth/RegisterEmployee") == true)
+    }
+
+    func testAuthedNonAnonPathCarriesBearerPositiveControl() async throws {
+        let store = MemTokenStore()
+        store.save(.init(
+            accessToken: "stored-access",
+            accessTokenExpiresAt: Date(timeIntervalSinceNow: 900),
+            refreshToken: "r1",
+            refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
+        ))
+        let client = try makeClient(store: store)
+        MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
+
+        await client.logout()
+
+        let logout = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "Logout"))
+        XCTAssertEqual(logout.value(forHTTPHeaderField: "Authorization"), "Bearer stored-access")
+        XCTAssertEqual(logout.value(forHTTPHeaderField: "X-Device-Id"), "device-1")
+    }
 }
 
 private struct FixedDeviceId: DeviceIdProviding {
@@ -184,53 +326,4 @@ private final class CountingCache: SessionScopedCache, @unchecked Sendable {
         calls += 1
         lock.unlock()
     }
-}
-
-enum JwtFactory {
-    static func make(exp: Int) -> String {
-        let header = base64URL(Data(#"{"alg":"HS256","typ":"JWT"}"#.utf8))
-        let payload = base64URL(Data(#"{"exp":\#(exp)}"#.utf8))
-        return "\(header).\(payload).sig"
-    }
-
-    private static func base64URL(_ data: Data) -> String {
-        data.base64EncodedString()
-            .replacingOccurrences(of: "+", with: "-")
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=", with: "")
-    }
-}
-
-final class MockURLProtocol: URLProtocol {
-    static var handler: ((URLRequest) -> (Int, Data))?
-
-    override static func canInit(with _: URLRequest) -> Bool {
-        true
-    }
-
-    override static func canonicalRequest(for request: URLRequest) -> URLRequest {
-        request
-    }
-
-    override func startLoading() {
-        guard let handler = MockURLProtocol.handler, let url = request.url else {
-            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
-            return
-        }
-        let (status, data) = handler(request)
-        guard let response = HTTPURLResponse(
-            url: url,
-            statusCode: status,
-            httpVersion: nil,
-            headerFields: ["Content-Type": "application/json"]
-        ) else {
-            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
-            return
-        }
-        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: data)
-        client?.urlProtocolDidFinishLoading(self)
-    }
-
-    override func stopLoading() {}
 }

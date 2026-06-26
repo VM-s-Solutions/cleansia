@@ -15,6 +15,11 @@ public final class AuthNetworkBoundary<RefreshSession, AuthedSession> {
         self.makeAuthedSession = makeAuthedSession
     }
 
-    public var refreshSession: RefreshSession { _refreshSession }
-    public var authedSession: AuthedSession { _authedSession }
+    public var refreshSession: RefreshSession {
+        _refreshSession
+    }
+
+    public var authedSession: AuthedSession {
+        _authedSession
+    }
 }

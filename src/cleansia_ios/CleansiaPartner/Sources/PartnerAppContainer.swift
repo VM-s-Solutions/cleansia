@@ -5,14 +5,37 @@ import Foundation
 final class PartnerAppContainer: AppContainer {
     private let base: BaseAppContainer
 
-    var apiBaseURL: URL { base.apiBaseURL }
-    var snackbar: SnackbarController { base.snackbar }
-    var sessionScopedCaches: SessionScopedCacheRegistry { base.sessionScopedCaches }
-    var sessionManager: SessionManager { base.sessionManager }
-    var authClient: AuthClient { base.authClient }
-    var refreshClient: RefreshClient { base.refreshClient }
-    var sessionRefresher: SessionRefresher { base.sessionRefresher }
-    var apiClient: MobileApiClient { base.apiClient }
+    var apiBaseURL: URL {
+        base.apiBaseURL
+    }
+
+    var snackbar: SnackbarController {
+        base.snackbar
+    }
+
+    var sessionScopedCaches: SessionScopedCacheRegistry {
+        base.sessionScopedCaches
+    }
+
+    var sessionManager: SessionManager {
+        base.sessionManager
+    }
+
+    var authClient: AuthClient {
+        base.authClient
+    }
+
+    var refreshClient: RefreshClient {
+        base.refreshClient
+    }
+
+    var sessionRefresher: SessionRefresher {
+        base.sessionRefresher
+    }
+
+    var apiClient: MobileApiClient {
+        base.apiClient
+    }
 
     init(
         snackbar: SnackbarController,

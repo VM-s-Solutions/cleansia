@@ -12,7 +12,7 @@ final class AnonymousAllowListTests: XCTestCase {
         "/api/Auth/ForgotPassword",
         "/api/Auth/RefreshToken",
         "/api/User/RequestPasswordChange",
-        "/api/User/ChangePassword",
+        "/api/User/ChangePassword"
     ]
 
     private let customerGuestPaths = [
@@ -25,7 +25,7 @@ final class AnonymousAllowListTests: XCTestCase {
         "/api/Order/Lookup",
         "/api/Order/LookupBatch",
         "/api/Payment/CreateOrder",
-        "/api/Referral/Validate",
+        "/api/Referral/Validate"
     ]
 
     func testPartnerAllowsSharedAuthPaths() {

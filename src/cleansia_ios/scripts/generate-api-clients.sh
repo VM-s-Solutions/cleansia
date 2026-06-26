@@ -24,7 +24,7 @@
 #   ./scripts/generate-api-clients.sh partner    # one app
 #   ./scripts/generate-api-clients.sh customer
 #
-# Requires `openapi-generator-cli` 7.x on PATH (brew install openapi-generator).
+# Requires `openapi-generator` 7.x on PATH (brew install openapi-generator).
 
 set -euo pipefail
 
@@ -37,8 +37,8 @@ if [[ $# -gt 0 ]]; then
   apps=("$@")
 fi
 
-if ! command -v openapi-generator-cli >/dev/null 2>&1; then
-  echo "error: openapi-generator-cli not found on PATH." >&2
+if ! command -v openapi-generator >/dev/null 2>&1; then
+  echo "error: openapi-generator not found on PATH." >&2
   echo "       Install it with: brew install openapi-generator" >&2
   exit 1
 fi
@@ -62,8 +62,10 @@ for app in "${apps[@]}"; do
     exit 1
   fi
 
-  echo "Generating Cleansia${app^}Api from ${app}-mobile-api.json ..."
-  ( cd "$CONFIG_DIR" && openapi-generator-cli generate -c "$config" )
+  # Capitalize the first letter portably (macOS ships Bash 3.2, no ${app^}).
+  cap="$(printf '%s' "${app:0:1}" | tr 'a-z' 'A-Z')${app:1}"
+  echo "Generating Cleansia${cap}Api from ${app}-mobile-api.json ..."
+  ( cd "$CONFIG_DIR" && openapi-generator generate -c "$config" )
 done
 
 echo "Done. Generated clients live under CleansiaPartnerApi/ and CleansiaCustomerApi/ (gitignored)."

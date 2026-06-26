@@ -31,7 +31,9 @@ final class AuthApiClientTests: XCTestCase {
         let access = JwtFactory.make(exp: 9_999_999_999)
         MockURLProtocol.handler = { _ in
             let body = """
-            {"token":"\(access)","isEmailConfirmed":true,"refreshToken":"r1","refreshTokenExpiresAt":"2099-01-01T00:00:00Z"}
+            {"token":"\(
+                access
+            )","isEmailConfirmed":true,"refreshToken":"r1","refreshTokenExpiresAt":"2099-01-01T00:00:00Z"}
             """
             return (200, Data(body.utf8))
         }
@@ -49,7 +51,9 @@ final class AuthApiClientTests: XCTestCase {
         let access = JwtFactory.make(exp: 9_999_999_999)
         MockURLProtocol.handler = { _ in
             let body = """
-            {"token":"\(access)","isEmailConfirmed":false,"refreshToken":"r1","refreshTokenExpiresAt":"2099-01-01T00:00:00Z"}
+            {"token":"\(
+                access
+            )","isEmailConfirmed":false,"refreshToken":"r1","refreshTokenExpiresAt":"2099-01-01T00:00:00Z"}
             """
             return (200, Data(body.utf8))
         }
@@ -84,7 +88,9 @@ final class AuthApiClientTests: XCTestCase {
         let access = JwtFactory.make(exp: 9_999_999_999)
         MockURLProtocol.handler = { _ in
             let body = """
-            {"token":"\(access)","isEmailConfirmed":true,"refreshToken":"r2","refreshTokenExpiresAt":"2099-01-01T00:00:00Z"}
+            {"token":"\(
+                access
+            )","isEmailConfirmed":true,"refreshToken":"r2","refreshTokenExpiresAt":"2099-01-01T00:00:00Z"}
             """
             return (200, Data(body.utf8))
         }
@@ -111,7 +117,7 @@ final class AuthApiClientTests: XCTestCase {
             accessToken: "a",
             accessTokenExpiresAt: Date(timeIntervalSinceNow: 900),
             refreshToken: "r1",
-            refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9_999)
+            refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
         ))
         let registry = SessionScopedCacheRegistry()
         let cache = CountingCache()
@@ -137,22 +143,47 @@ final class AuthApiClientTests: XCTestCase {
 }
 
 private struct FixedDeviceId: DeviceIdProviding {
-    var deviceId: String { "device-1" }
+    var deviceId: String {
+        "device-1"
+    }
 }
 
 private final class MemTokenStore: TokenStore, @unchecked Sendable {
     private let lock = NSLock()
     private var stored: AuthTokens?
-    func current() -> AuthTokens? { lock.lock(); defer { lock.unlock() }; return stored }
-    func save(_ tokens: AuthTokens) { lock.lock(); stored = tokens; lock.unlock() }
-    func clear() { lock.lock(); stored = nil; lock.unlock() }
+    func current() -> AuthTokens? {
+        lock.lock()
+        defer { lock.unlock() }
+        return stored
+    }
+
+    func save(_ tokens: AuthTokens) {
+        lock.lock()
+        stored = tokens
+        lock.unlock()
+    }
+
+    func clear() {
+        lock.lock()
+        stored = nil
+        lock.unlock()
+    }
 }
 
 private final class CountingCache: SessionScopedCache, @unchecked Sendable {
     private let lock = NSLock()
     private var calls = 0
-    var count: Int { lock.lock(); defer { lock.unlock() }; return calls }
-    func clear() async { lock.lock(); calls += 1; lock.unlock() }
+    var count: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return calls
+    }
+
+    func clear() async {
+        lock.lock()
+        calls += 1
+        lock.unlock()
+    }
 }
 
 enum JwtFactory {
@@ -173,8 +204,13 @@ enum JwtFactory {
 final class MockURLProtocol: URLProtocol {
     static var handler: ((URLRequest) -> (Int, Data))?
 
-    override class func canInit(with _: URLRequest) -> Bool { true }
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override static func canInit(with _: URLRequest) -> Bool {
+        true
+    }
+
+    override static func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
 
     override func startLoading() {
         guard let handler = MockURLProtocol.handler, let url = request.url else {

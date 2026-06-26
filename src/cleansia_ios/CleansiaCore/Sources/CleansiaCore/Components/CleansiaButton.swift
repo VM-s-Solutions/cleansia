@@ -7,17 +7,17 @@ public enum CleansiaButtonSize {
 
     var minHeight: CGFloat {
         switch self {
-        case .small: return 40
-        case .medium: return 48
-        case .large: return 56
+        case .small: 40
+        case .medium: 48
+        case .large: 56
         }
     }
 
     var horizontalPadding: CGFloat {
         switch self {
-        case .small: return 16
-        case .medium: return 24
-        case .large: return 32
+        case .small: 16
+        case .medium: 24
+        case .large: 32
         }
     }
 }
@@ -137,16 +137,16 @@ public struct CleansiaTextLink: View {
 }
 
 #if DEBUG
-struct CleansiaButton_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: Spacing.m) {
-            CleansiaPrimaryButton("Continue", trailingIcon: "arrow.right") {}
-            CleansiaPrimaryButton("Loading", loading: true) {}
-            CleansiaPrimaryButton("Disabled", enabled: false) {}
-            CleansiaOutlinedButton("Continue with Google", leadingIcon: "globe") {}
-            CleansiaTextLink("Forgot password?") {}
+    struct CleansiaButton_Previews: PreviewProvider {
+        static var previews: some View {
+            VStack(spacing: Spacing.m) {
+                CleansiaPrimaryButton("Continue", trailingIcon: "arrow.right") {}
+                CleansiaPrimaryButton("Loading", loading: true) {}
+                CleansiaPrimaryButton("Disabled", enabled: false) {}
+                CleansiaOutlinedButton("Continue with Google", leadingIcon: "globe") {}
+                CleansiaTextLink("Forgot password?") {}
+            }
+            .padding()
         }
-        .padding()
     }
-}
 #endif

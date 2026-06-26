@@ -15,10 +15,10 @@ final class AuthTokensTests: XCTestCase {
     }
 
     func testAccessExpiredWhenNowAtOrPastExpiry() {
-        let now = Date(timeIntervalSince1970: 1_000)
+        let now = Date(timeIntervalSince1970: 1000)
         let expired = tokens(
-            accessExpiry: Date(timeIntervalSince1970: 1_000),
-            refreshExpiry: Date(timeIntervalSince1970: 5_000)
+            accessExpiry: Date(timeIntervalSince1970: 1000),
+            refreshExpiry: Date(timeIntervalSince1970: 5000)
         )
         XCTAssertTrue(expired.isAccessExpired(now: now))
     }
@@ -26,17 +26,17 @@ final class AuthTokensTests: XCTestCase {
     func testAccessNotExpiredBeforeExpiry() {
         let now = Date(timeIntervalSince1970: 999)
         let live = tokens(
-            accessExpiry: Date(timeIntervalSince1970: 1_000),
-            refreshExpiry: Date(timeIntervalSince1970: 5_000)
+            accessExpiry: Date(timeIntervalSince1970: 1000),
+            refreshExpiry: Date(timeIntervalSince1970: 5000)
         )
         XCTAssertFalse(live.isAccessExpired(now: now))
     }
 
     func testRefreshExpiredWhenNowPastRefreshExpiry() {
-        let now = Date(timeIntervalSince1970: 6_000)
+        let now = Date(timeIntervalSince1970: 6000)
         let dead = tokens(
-            accessExpiry: Date(timeIntervalSince1970: 1_000),
-            refreshExpiry: Date(timeIntervalSince1970: 5_000)
+            accessExpiry: Date(timeIntervalSince1970: 1000),
+            refreshExpiry: Date(timeIntervalSince1970: 5000)
         )
         XCTAssertTrue(dead.isRefreshExpired(now: now))
     }
@@ -104,7 +104,7 @@ final class HeaderAdapterTests: XCTestCase {
             "/api/Auth/RefreshToken",
             "/api/Auth/GoogleAuth",
             "/api/Auth/ConfirmUserEmail",
-            "/api/Auth/ResendConfirmationEmail",
+            "/api/Auth/ResendConfirmationEmail"
         ]
         for path in paths {
             var request = try URLRequest(url: XCTUnwrap(URL(string: "https://api.test\(path)")))
@@ -129,7 +129,7 @@ final class HeaderAdapterTests: XCTestCase {
 
         let stamped = request.value(forHTTPHeaderField: "X-Device-Id") ?? ""
         XCTAssertLessThanOrEqual(stamped.count, 64)
-        XCTAssertTrue(stamped.allSatisfy { $0.isASCII })
+        XCTAssertTrue(stamped.allSatisfy(\.isASCII))
         XCTAssertFalse(stamped.contains("\u{00A0}"))
     }
 }
@@ -141,14 +141,14 @@ final class SessionRefresherTests: XCTestCase {
             accessToken: "old",
             accessTokenExpiresAt: Date(timeIntervalSince1970: 0),
             refreshToken: "r0",
-            refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9_999)
+            refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
         ))
         let client = CountingRefreshClient(
             result: RefreshedTokens(
                 accessToken: "new",
                 accessTokenExpiresAt: Date(timeIntervalSinceNow: 900),
                 refreshToken: "r1",
-                refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9_999)
+                refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
             )
         )
         let sessionManager = await SessionManager()
@@ -159,13 +159,15 @@ final class SessionRefresherTests: XCTestCase {
             sessionScopedCaches: SessionScopedCacheRegistry()
         )
 
-        async let a = refresher.refresh(triggeredBy: "old")
-        async let b = refresher.refresh(triggeredBy: "old")
-        async let c = refresher.refresh(triggeredBy: "old")
-        let results = await [a, b, c]
+        async let first = refresher.refresh(triggeredBy: "old")
+        async let second = refresher.refresh(triggeredBy: "old")
+        async let third = refresher.refresh(triggeredBy: "old")
+        let results = await [first, second, third]
 
         XCTAssertEqual(client.callCount, 1)
-        XCTAssertTrue(results.allSatisfy { if case .refreshed = $0 { return true }; return false })
+        XCTAssertTrue(results.allSatisfy { if case .refreshed = $0 { return true }
+            return false
+        })
         XCTAssertEqual(store.current()?.accessToken, "new")
         XCTAssertEqual(store.current()?.refreshToken, "r1")
     }
@@ -176,7 +178,7 @@ final class SessionRefresherTests: XCTestCase {
             accessToken: "current",
             accessTokenExpiresAt: Date(timeIntervalSinceNow: 900),
             refreshToken: "r1",
-            refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9_999)
+            refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
         ))
         let client = CountingRefreshClient(result: nil)
         let sessionManager = await SessionManager()
@@ -202,7 +204,7 @@ final class SessionRefresherTests: XCTestCase {
             accessToken: "old",
             accessTokenExpiresAt: Date(timeIntervalSince1970: 0),
             refreshToken: "r0",
-            refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9_999)
+            refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
         ))
         let client = CountingRefreshClient(result: nil)
         let sessionManager = await SessionManager()
@@ -277,17 +279,20 @@ private final class InMemoryTokenStore: TokenStore, @unchecked Sendable {
     private var stored: AuthTokens?
 
     func current() -> AuthTokens? {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         return stored
     }
 
     func save(_ tokens: AuthTokens) {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         stored = tokens
     }
 
     func clear() {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         stored = nil
     }
 }
@@ -297,15 +302,20 @@ private final class CountingRefreshClient: AuthRefreshing, @unchecked Sendable {
     private let result: RefreshedTokens?
     private var calls = 0
 
-    init(result: RefreshedTokens?) { self.result = result }
+    init(result: RefreshedTokens?) {
+        self.result = result
+    }
 
     var callCount: Int {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         return calls
     }
 
     func refresh(refreshToken _: String) async -> RefreshedTokens? {
-        lock.lock(); calls += 1; lock.unlock()
+        lock.lock()
+        calls += 1
+        lock.unlock()
         try? await Task.sleep(nanoseconds: 5_000_000)
         return result
     }
@@ -315,11 +325,14 @@ private final class SpyCache: SessionScopedCache, @unchecked Sendable {
     private let lock = NSLock()
     private var count = 0
     var clearCount: Int {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         return count
     }
 
     func clear() async {
-        lock.lock(); count += 1; lock.unlock()
+        lock.lock()
+        count += 1
+        lock.unlock()
     }
 }

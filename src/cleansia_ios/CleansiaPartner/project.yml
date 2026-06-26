@@ -34,6 +34,8 @@ targets:
       - path: Resources
     info:
       path: Info.plist
+      properties:
+        API_BASE_URL: $(API_BASE_URL)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cz.cleansia.partner

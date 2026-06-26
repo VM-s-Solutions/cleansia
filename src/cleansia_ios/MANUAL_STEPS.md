@@ -21,8 +21,12 @@ package resolves.
 
 ## 3. Verify the package on the command line
 
+`CleansiaCore` is an iOS-only package (`platforms: [.iOS(.v16)]`), so a bare `swift build` compiles for
+the macOS host and fails the iOS-only SwiftUI availability checks. Verify against an iOS simulator:
+
 ```sh
-cd src/cleansia_ios/CleansiaCore && swift build && swift test
+cd src/cleansia_ios/CleansiaCore
+xcodebuild -scheme CleansiaCore -destination 'platform=iOS Simulator,name=iPhone 17' build test
 ```
 
 ## 4. Signing & provisioning (Apple Developer)

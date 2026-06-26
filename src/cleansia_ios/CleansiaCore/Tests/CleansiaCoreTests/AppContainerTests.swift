@@ -4,20 +4,22 @@ import XCTest
 final class SessionScopedCacheRegistryTests: XCTestCase {
     private final class SpyCache: SessionScopedCache {
         private(set) var clearCount = 0
-        func clear() async { clearCount += 1 }
+        func clear() async {
+            clearCount += 1
+        }
     }
 
     func testClearAllFlushesEveryRegisteredCache() async {
         let registry = SessionScopedCacheRegistry()
-        let a = SpyCache()
-        let b = SpyCache()
-        registry.register(a)
-        registry.register(b)
+        let firstCache = SpyCache()
+        let secondCache = SpyCache()
+        registry.register(firstCache)
+        registry.register(secondCache)
 
         await registry.clearAll()
 
-        XCTAssertEqual(a.clearCount, 1)
-        XCTAssertEqual(b.clearCount, 1)
+        XCTAssertEqual(firstCache.clearCount, 1)
+        XCTAssertEqual(secondCache.clearCount, 1)
     }
 
     func testEmptyRegistryClearsWithoutError() async {
@@ -142,8 +144,12 @@ final class BaseAppContainerTests: XCTestCase {
         return BaseAppContainer(
             apiBaseURL: url,
             snackbar: SnackbarController(),
-            makeAuthSpine: { _ in spineBuilds(); return StubAuthSpine() },
-            makeApiClient: { seams in apiBuilds(); return StubApiClient(baseURL: seams.apiBaseURL) }
+            makeAuthSpine: { _ in spineBuilds()
+                return StubAuthSpine()
+            },
+            makeApiClient: { seams in apiBuilds()
+                return StubApiClient(baseURL: seams.apiBaseURL)
+            }
         )
     }
 
@@ -188,11 +194,16 @@ private final class StubAuthSpine: AuthSpine, @unchecked Sendable {
     let tokenStore: TokenStore = StubTokenStore()
     func signOutLocal() async {}
     func logout() async {}
-    func refresh(refreshToken _: String) async -> RefreshedTokens? { nil }
+    func refresh(refreshToken _: String) async -> RefreshedTokens? {
+        nil
+    }
 }
 
 private final class StubTokenStore: TokenStore, @unchecked Sendable {
-    func current() -> AuthTokens? { nil }
+    func current() -> AuthTokens? {
+        nil
+    }
+
     func save(_: AuthTokens) {}
     func clear() {}
 }
@@ -203,10 +214,14 @@ private final class StubAuthClient: AuthClient {
 }
 
 private final class StubRefreshClient: RefreshClient {
-    func refresh(refreshToken _: String) async -> RefreshedTokens? { nil }
+    func refresh(refreshToken _: String) async -> RefreshedTokens? {
+        nil
+    }
 }
 
 private final class StubApiClient: MobileApiClient {
     let baseURL: URL
-    init(baseURL: URL) { self.baseURL = baseURL }
+    init(baseURL: URL) {
+        self.baseURL = baseURL
+    }
 }

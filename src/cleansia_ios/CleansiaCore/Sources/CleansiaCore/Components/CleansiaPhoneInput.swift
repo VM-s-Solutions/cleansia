@@ -26,8 +26,13 @@ public struct CleansiaPhoneInput: View {
         self.transparentContainer = transparentContainer
     }
 
-    private var isError: Bool { errorText != nil }
-    private var floating: Bool { focused || !value.isEmpty }
+    private var isError: Bool {
+        errorText != nil
+    }
+
+    private var floating: Bool {
+        focused || !value.isEmpty
+    }
 
     private var borderColor: Color {
         if isError { return CleansiaColors.error }
@@ -102,12 +107,12 @@ enum PhoneNumberFormatter {
 }
 
 #if DEBUG
-struct CleansiaPhoneInput_Previews: PreviewProvider {
-    static var previews: some View {
-        StatefulPreviewWrapper("+420728089247") { binding in
-            CleansiaPhoneInput(value: binding, label: "Phone")
-                .padding()
+    struct CleansiaPhoneInput_Previews: PreviewProvider {
+        static var previews: some View {
+            StatefulPreviewWrapper("+420728089247") { binding in
+                CleansiaPhoneInput(value: binding, label: "Phone")
+                    .padding()
+            }
         }
     }
-}
 #endif

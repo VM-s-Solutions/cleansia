@@ -11,7 +11,7 @@
 --enable blankLinesAtEndOfScope
 --enable redundantSelf
 --enable redundantReturn
---enable sortedImports
+--enable sortImports
 --enable trailingCommas
 --enable wrapMultilineStatementBraces
 

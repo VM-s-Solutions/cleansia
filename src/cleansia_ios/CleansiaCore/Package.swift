@@ -6,7 +6,7 @@ let package = Package(
     defaultLocalization: "en",
     platforms: [.iOS(.v16)],
     products: [
-        .library(name: "CleansiaCore", targets: ["CleansiaCore"]),
+        .library(name: "CleansiaCore", targets: ["CleansiaCore"])
     ],
     targets: [
         .target(
@@ -18,6 +18,6 @@ let package = Package(
             name: "CleansiaCoreTests",
             dependencies: ["CleansiaCore"],
             path: "Tests/CleansiaCoreTests"
-        ),
+        )
     ]
 )

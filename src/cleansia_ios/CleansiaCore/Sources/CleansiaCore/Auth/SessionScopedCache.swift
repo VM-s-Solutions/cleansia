@@ -11,16 +11,19 @@ public final class SessionScopedCacheRegistry: @unchecked Sendable {
     public init() {}
 
     public func register(_ cache: SessionScopedCache) {
-        lock.lock()
-        defer { lock.unlock() }
-        caches.append(WeakBox(cache))
+        lock.withLock {
+            caches.append(WeakBox(cache))
+        }
     }
 
     public func clearAll() async {
-        lock.lock()
-        let live = caches.compactMap(\.value)
-        caches.removeAll { $0.value == nil }
-        lock.unlock()
+        // Snapshot under the lock, then clear outside it — withLock keeps the
+        // critical section synchronous (NSLock.lock/unlock are noasync).
+        let live = lock.withLock {
+            let snapshot = caches.compactMap(\.value)
+            caches.removeAll { $0.value == nil }
+            return snapshot
+        }
 
         for cache in live {
             await cache.clear()
@@ -29,6 +32,8 @@ public final class SessionScopedCacheRegistry: @unchecked Sendable {
 
     private final class WeakBox {
         weak var value: SessionScopedCache?
-        init(_ value: SessionScopedCache) { self.value = value }
+        init(_ value: SessionScopedCache) {
+            self.value = value
+        }
     }
 }

@@ -44,14 +44,14 @@ public struct CleansiaSectionHeader: View {
 }
 
 #if DEBUG
-struct CleansiaSectionHeader_Previews: PreviewProvider {
-    static var previews: some View {
-        CleansiaSectionHeader(
-            title: "Your orders",
-            badge: "Active",
-            subtitle: "Jobs in progress right now"
-        )
-        .padding()
+    struct CleansiaSectionHeader_Previews: PreviewProvider {
+        static var previews: some View {
+            CleansiaSectionHeader(
+                title: "Your orders",
+                badge: "Active",
+                subtitle: "Jobs in progress right now"
+            )
+            .padding()
+        }
     }
-}
 #endif

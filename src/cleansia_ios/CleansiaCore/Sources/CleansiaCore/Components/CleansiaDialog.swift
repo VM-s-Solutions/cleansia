@@ -50,7 +50,8 @@ public struct CleansiaDialog<Content: View>: View {
                             .frame(width: 56, height: 56)
                         Image(systemName: icon)
                             .font(.system(size: 28))
-                            .foregroundColor(destructive ? CleansiaColors.onErrorContainer : CleansiaColors.onPrimaryContainer)
+                            .foregroundColor(destructive ? CleansiaColors.onErrorContainer : CleansiaColors
+                                .onPrimaryContainer)
                     }
                     .padding(.bottom, Spacing.m)
                 }
@@ -150,18 +151,18 @@ private struct DialogButton: View {
 }
 
 #if DEBUG
-struct CleansiaDialog_Previews: PreviewProvider {
-    static var previews: some View {
-        CleansiaDialog(
-            title: "Delete account?",
-            confirmLabel: "Delete",
-            onConfirm: {},
-            onDismiss: {},
-            message: "This permanently removes your account and data.",
-            dismissLabel: "Cancel",
-            icon: "trash",
-            destructive: true
-        )
+    struct CleansiaDialog_Previews: PreviewProvider {
+        static var previews: some View {
+            CleansiaDialog(
+                title: "Delete account?",
+                confirmLabel: "Delete",
+                onConfirm: {},
+                onDismiss: {},
+                message: "This permanently removes your account and data.",
+                dismissLabel: "Cancel",
+                icon: "trash",
+                destructive: true
+            )
+        }
     }
-}
 #endif

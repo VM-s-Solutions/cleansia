@@ -24,12 +24,16 @@ public struct LoginRequest: Encodable, Sendable {
 
 public struct RefreshTokenRequest: Encodable, Sendable {
     public let token: String
-    public init(token: String) { self.token = token }
+    public init(token: String) {
+        self.token = token
+    }
 }
 
 public struct LogoutRequest: Encodable, Sendable {
     public let token: String
-    public init(token: String) { self.token = token }
+    public init(token: String) {
+        self.token = token
+    }
 }
 
 public enum LoginOutcome: Equatable, Sendable {
@@ -107,7 +111,8 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
             useNoAuthSession: true
         )
         guard case let .success(dto) = result, let access = dto.token, !access.isEmpty,
-              let rotatedRefresh = dto.refreshToken, !rotatedRefresh.isEmpty else {
+              let rotatedRefresh = dto.refreshToken, !rotatedRefresh.isEmpty
+        else {
             return nil
         }
         return RefreshedTokens(
@@ -118,9 +123,9 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         )
     }
 
-    private func post<Body: Encodable, Response: Decodable>(
+    private func post<Response: Decodable>(
         path: String,
-        body: Body,
+        body: some Encodable,
         useNoAuthSession: Bool
     ) async -> ApiResult<Response> {
         let result = await send(path: path, body: body, useNoAuthSession: useNoAuthSession)
@@ -129,7 +134,7 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
             return .failure(error)
         case let .success(payload):
             do {
-                return .success(try decoder.decode(Response.self, from: payload.data))
+                return try .success(decoder.decode(Response.self, from: payload.data))
             } catch {
                 return .failure(ApiError(code: "network.decoding_failed", httpStatus: payload.status))
             }
@@ -212,8 +217,8 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
 
         var seconds: TimeInterval {
             switch self {
-            case .shortLived: return 24 * 60 * 60
-            case .longLived: return 30 * 24 * 60 * 60
+            case .shortLived: 24 * 60 * 60
+            case .longLived: 30 * 24 * 60 * 60
             }
         }
     }

@@ -56,12 +56,12 @@ public struct CodeInput: View {
 }
 
 #if DEBUG
-struct CodeInput_Previews: PreviewProvider {
-    static var previews: some View {
-        StatefulPreviewWrapper("123") { binding in
-            CodeInput(code: binding)
-                .padding()
+    struct CodeInput_Previews: PreviewProvider {
+        static var previews: some View {
+            StatefulPreviewWrapper("123") { binding in
+                CodeInput(code: binding)
+                    .padding()
+            }
         }
     }
-}
 #endif

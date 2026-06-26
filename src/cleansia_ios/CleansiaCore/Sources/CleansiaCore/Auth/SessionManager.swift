@@ -45,5 +45,7 @@ public final class SessionManager: ObservableObject {
 }
 
 extension SessionManager {
-    var lastReasonForTest: ForcedSignOutReason? { lastForcedSignOut }
+    var lastReasonForTest: ForcedSignOutReason? {
+        lastForcedSignOut
+    }
 }

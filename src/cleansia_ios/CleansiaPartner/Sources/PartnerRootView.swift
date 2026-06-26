@@ -28,10 +28,18 @@ struct PartnerRootView: View {
         case .login:
             LoginView(
                 loginClient: container.loginClient,
-                snackbar: container.snackbar
-            ) { success in
-                route = Route.afterLogin(success)
-            }
+                snackbar: container.snackbar,
+                onSignUp: { route = .register },
+                onLoginSuccess: { success in route = Route.afterLogin(success) }
+            )
+        case .register:
+            RegisterView(
+                client: container.registrationAuthClient,
+                settings: container.appSettings,
+                snackbar: container.snackbar,
+                onSignIn: { route = .login },
+                onRegistered: { route = .login }
+            )
         case .splash:
             SplashGateView(
                 hasValidSession: container.hasValidSession,
@@ -63,6 +71,7 @@ struct PartnerRootView: View {
     enum Route: Equatable {
         case splash
         case login
+        case register
         case verifyEmail(email: String?)
         case registrationLock
         case dashboard

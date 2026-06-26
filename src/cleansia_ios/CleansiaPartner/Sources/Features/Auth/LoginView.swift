@@ -3,10 +3,17 @@ import SwiftUI
 
 struct LoginView: View {
     @StateObject private var vm: LoginViewModel
+    let onSignUp: () -> Void
     let onLoginSuccess: (LoginSuccess) -> Void
 
-    init(loginClient: LoginClient, snackbar: SnackbarController, onLoginSuccess: @escaping (LoginSuccess) -> Void) {
+    init(
+        loginClient: LoginClient,
+        snackbar: SnackbarController,
+        onSignUp: @escaping () -> Void,
+        onLoginSuccess: @escaping (LoginSuccess) -> Void
+    ) {
         _vm = StateObject(wrappedValue: LoginViewModel(loginClient: loginClient, snackbar: snackbar))
+        self.onSignUp = onSignUp
         self.onLoginSuccess = onLoginSuccess
     }
 
@@ -18,7 +25,7 @@ struct LoginView: View {
             onPasswordChange: vm.onPasswordChange,
             onRememberMeChange: vm.onRememberMeChange,
             onForgotPassword: {},
-            onSignUp: {},
+            onSignUp: onSignUp,
             onSubmit: { Task { await vm.login() } }
         )
         .onReceive(vm.loginSuccess) { onLoginSuccess($0) }

@@ -36,4 +36,10 @@ final class PartnerRootRouteTests: XCTestCase {
         XCTAssertEqual(PartnerRootView.Route.afterSplash(.needsRegistrationLock), .registrationLock)
         XCTAssertEqual(PartnerRootView.Route.afterSplash(.unauthenticated), .login)
     }
+
+    func testRegisterIsADistinctTopLevelAudience() {
+        XCTAssertNotEqual(PartnerRootView.Route.register, .login)
+        XCTAssertNotEqual(PartnerRootView.Route.register, .splash)
+        XCTAssertEqual(PartnerRootView.Route.register, .register)
+    }
 }

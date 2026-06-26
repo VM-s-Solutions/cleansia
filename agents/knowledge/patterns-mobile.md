@@ -230,6 +230,9 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | `navigation.Routes` (`@Serializable`) — **intra-audience push** (OrderDetail, ProfileSection, onboarding-chain sections) | `NavigationStack` + typed route enum (the push container **within** a root audience state, NOT the audience selector) |
 | per-app `openApiGenerate { generatorName=kotlin }` reading `openapi/{partner,customer}-mobile-api.json` | per-app `openapi-generator` **swift5 + urlsession** (`responseAs: AsyncAwait`) reading the **same shared committed specs**; config in `cleansia_ios/openapi/openapi-generator-config.*.yaml`, run via `scripts/generate-api-clients.sh`, emitting `Cleansia{Partner,Customer}Api` SPM packages. Generated output is **gitignored + never hand-edited** (change the spec or config, regenerate). The **auth/session/header spine is hand-written** in `Core/Auth` and **excluded from codegen**. First real generation is owner-gated (`manual_step: mobile-spec-regen`) — the specs are stale pre-T-0272 |
 | Android's generated Retrofit service authed by the OkHttp `AuthInterceptor`/`AuthAuthenticator` already installed in the client | **the generated swift5 client authenticates ONLY via a custom `RequestBuilderFactory` installed into the generated global config** (`Cleansia{Partner,Customer}ApiAPI.requestBuilderFactory`) — its `RequestBuilder` subclass routes **every** generated request through the **same** `Core/Auth` spine (`HeaderAdapter` for Bearer-iff-not-anon + `X-Device-Id`/`X-Device-Label`/`X-Time-Zone`, `actor SessionRefresher` for single-flight 401→refresh→retry), using only the generator's `open` points so it survives regeneration (**ADR-0019**). The generated APIs are static, apply only the static `customHeaders`, and are all `requiresAuthentication: false` — so without this they 401 tokenless |
+| `core/settings/AppSettingsRepository.kt` (DataStore `partner_app_settings`: `onboarding_seen`, `language`, `theme`) | a single general **`AppSettingsStore`** in `CleansiaCore`, **`UserDefaults`-backed** (DataStore's wiped-on-uninstall parity — NOT Keychain): `hasSeenOnboarding`/`markSeen()` + a resolved language tag ∈ {en,cs,sk,uk,ru} (sprint-12 §7.5 D1, reviewer #26a) |
+| `core/validation/EmailValidator.kt` + the `passwordHas*` getters in `RegisterUiState` | `CleansiaCore/Validation/EmailValidator.swift` (already hoisted) + a Core **`PasswordPolicy`** (≥8 && letter && digit — the predicate lifted OUT of the VM) feeding a Core **`PasswordRuleList`** view (`:core` `PasswordRuleList.kt` parity) — shared by partner + customer (sprint-12 §7.5 D4, reviewer #26c) |
+| hand-written `AuthApi.kt` Retrofit verbs (`@POST`/`@PUT` per endpoint) | the hand-written `Auth.swift` spine `send()` takes an **`httpMethod:` param defaulting `.post`**; `ConfirmUserEmail` passes `.put` (header-parity §3 — hardcoding POST is a silent 405). All four T-0305 paths (Register/ConfirmUserEmail/ResendConfirmationEmail/ForgotPassword) are already in `AnonymousAllowList.sharedAuth`; `Logout` stays authed (sprint-12 §7.5 D3, reviewer #25) |
 
 **Generated-client auth — the ONE way (ADR-0019, reviewer #13-gen):** authenticate the generated business
 client **only** through the Core-spine-backed `RequestBuilderFactory` (above). **Deviations a reviewer
@@ -261,6 +264,42 @@ the lock VM's `.failure` preserves the cached status and never unlocks (only the
 unlocks). **Deviations a reviewer rejects:** a permissive optional default (`?? true`) on any gate field; a
 `.failure` reaching the shell; a `.failure` clearing/unlocking the gate. Later partner waves render inside the
 shell (past the gate) and must not add a second, weaker status check.
+
+**Device-local settings — the ONE way (sprint-12 §7.5 Decision 1, reviewer #26a):** all device-local
+(wiped-on-uninstall) preferences go through a **single, general `AppSettingsStore` in `CleansiaCore`,
+backed by `UserDefaults`** (the `AppSettingsRepository.kt` DataStore parity — `partner_app_settings`,
+`onboarding_seen`, `language`). It exposes `hasSeenOnboarding` (get + `markSeen()`) + a resolved language tag
+∈ `{en,cs,sk,uk,ru}` (persisted-if-in-set → `Locale.current.language.languageCode`-if-in-set → `"en"`).
+**Deviations a reviewer rejects:** a single-purpose `OnboardingStateStore` (or per-pref stores) instead of the
+one general store; **secrets (token, device id) in `AppSettingsStore`** or **settings (onboarding-seen,
+language) in the Keychain** — the Keychain holds only the security-load-bearing device id + the session
+(header-parity §2/§6), `UserDefaults` holds non-secret prefs that must reset on reinstall (DataStore parity).
+
+**Top-level audience state may carry a payload (ADR-0020 fold-in, sprint-12 §7.5 Decision 2, reviewer #26b):**
+a flat-enum `Route` case may take an associated value when a nav input must reach the destination — e.g.
+`case verifyEmail(email: String?)` threads the ConfirmEmail resend email (the iOS analogue of Android reading
+it from `UserProfileStore`, which iOS does **not** build). **Do NOT** stand up a `UserProfileStore` to carry a
+single nav input; the associated value is the seam. The router still only *lands* the state — it does not
+interpret the payload. A cold-start into a payload-less case (`.verifyEmail(nil)`) degrades gracefully
+(disable the action needing it + show `error_generic`); the existing `requiresEmailConfirmation==true →
+.verifyEmail` gate is preserved (the payload is additive).
+
+**Client-side password policy — the ONE way (sprint-12 §7.5 Decision 4, reviewer #26c):** the register/sign-up
+password rule (**≥8 && ≥1 letter && ≥1 digit** — `RegisterViewModel.kt:37-39`) is a Core
+**`PasswordPolicy`** validator in `CleansiaCore/Validation` (the `EmailValidator` factoring), rendered by a
+Core **`PasswordRuleList`** component (the already-shared `:core` `PasswordRuleList.kt` parity — neutral /
+green-check / red-cross rows + a `hasInput` flag). Partner (now) and customer (T-0312+) import both from Core.
+**Client-side UX only — the backend `BaseAuthValidator` is authoritative.** **Deviations a reviewer rejects:**
+a VM-local copy of the predicate (the Android `RegisterUiState`-getter smell, lifted to Core on iOS); a
+per-app password-rule widget instead of the Core component.
+
+**Parity deviation (Android is wrong, iOS is right) — auth validation strings:** the Android partner
+`RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set validation errors as **hardcoded English
+literals** (no `@ApplicationContext Context`, no `R.string.*`) → they never localize across the 5 locales (a
+violation of `consistency.md` E8 — see the deviation recorded there). **iOS uses `Localizable.xcstrings` keys
+×5** (ADR-0013 D11 / reviewer #10) — the correct behavior; **do NOT copy the Android literals.** The Android
+fix (move to `R.string.*`) is a PM-filed android follow-up, not part of the iOS wave. This is the canonical
+application of the Parity rule below (Android-wrong → raise a finding, diverge on iOS, fix Android separately).
 
 **Parity rule:** reproduce the Android feature's states, empty/loading/error handling, and API calls
 exactly. A behavior difference is a bug unless the ticket calls for it. If the Android behavior is

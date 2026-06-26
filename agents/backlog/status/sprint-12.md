@@ -166,7 +166,7 @@ PHASE 2+ PARITY FEATURE WAVES ── ordered by complexity; the 3 hard areas cal
 | **T-0302** | Swift codegen toolchain — openapi-generator **swift5 + urlsession**, wired into the build (script/SPM plugin, the `dependsOn(openApiGenerate)` parity), reading the **shared** mobile spec; never-hand-edit discipline | M | **WIRING done ✅ (verified)** `c1009c6` — `generate-api-clients.sh` runs Homebrew `openapi-generator`; generated 159 Swift files from the committed spec as a toolchain check, throwaway output removed. **FIRST REAL GEN `blocked` on mobile-spec-regen** | ios | T-0296✓ | **mobile-spec-regen (owner)** | 0 → first real gen **BLOCKED on regen** |
 | **T-0303** | **Phase-1 partner lead vertical** — partner login (hand-written auth, empty-token gate) → **read-only Dashboard** (`dashboardGetStats` via the **ADR-0019 Core-spine-backed `RequestBuilderFactory`** + `UiState`), proving auth/session/headers/codegen/state end-to-end. **Acceptance scope fixed in §7.2** (greeting + stats-driven cards + 3-state hero + inert nav closures; caching / pull-to-refresh / notifications / live order feeds DEFERRED to T-0304/0307/0310) | M | **done ✅** `8996df9`+`2a57f70` (`phase/ios-phase1`; both §7.1 blockers CLEARED — dev API live + regen `9232335`; #13-gen + TC-IOS-GEN green; CleansiaCore 93 + CleansiaPartner 17 pass; reviewer **AND** security APPROVE both slices — §7.3 fwd-notes) | ios | T-0300✓, T-0302✓ (first real gen via `8d4cfe3`) | rides T-0302 regen + dev-API-live ✓ | **1 (the proving vertical)** |
 | **T-0304** | Partner shell (Dashboard·Orders·Invoices·Profile tabs) + RegistrationLock gate (fails CLOSED) + SplashGate. **Acceptance scope + the 3 Understand-pass rulings fixed in §7.4**: Decision 1 (fail-closed gate placement + AND predicate + both error paths CLOSED — confirms the Android gate, reviewer #24 + **TC-IOS-REGLOCK**), Decision 2 (the flat-enum `PartnerRootView` router gated by `.splash` — **ADR-0020**, reviewer #23), Decision 3 (the deferral map — "Fix" CTAs + onboarding branch INERT/deferred to T-0305/T-0310, the §7.2 inert-nav precedent) | M | **done ✅** `55b39aa`+`c269360`+`df71181` (`phase/ios-phase2`; Slice A gate: AND predicate, any nil→LOCKED, availability not a clause, BOTH error paths fail closed — reviewer #24 + **TC-IOS-REGLOCK** green, **security APPROVE**; ADR-0020 router #23 reseeded `.dashboard`→`.splash`, closing a latent T-0303 fail-OPEN; 14-token `missingFields` localized ×5. Slice B shell: native SwiftUI `TabView`, 4 tabs in Android `MainTab` order, dashboard tab hosts T-0303, `onOpenOrders`→Orders tab, 3 placeholders — **Gate-DP APPROVE** (D3 component swap noted). swiftformat/swiftlint clean; **CleansiaCore 93 + CleansiaPartner 61** pass on iPhone 17 sim. §7.4 (a) contact-support INERT, (b) silent-stale cache DEFERRED. Deferrals: Fix CTAs→T-0310, onboarding branch→T-0305) | ios | T-0303✓ | — | 2 (partner) |
-| **T-0305** | Partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding chain | M | **proposed** | ios | T-0303 | — | 2 (partner) |
+| **T-0305** | Partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding chain. **Acceptance scope + the 5 Understand-pass rulings fixed in §7.5**: D1 (a GENERAL `AppSettingsStore` in Core, UserDefaults-backed — onboarding-seen + the 5-locale language tag, `AppSettingsRepository.kt` parity), D2 (ConfirmEmail email via the `.verifyEmail(email:)` Route associated value, NOT a `UserProfileStore` — ADR-0020 fold-in), D3 (SECURITY: no new anon entry, Logout authed, `ConfirmUserEmail` is **PUT** + the spine `send()` gains an `httpMethod:` param, the double-skip + empty-token-gate reuse — reviewer #25), D4 (a Core `PasswordPolicy` + `PasswordRuleList`, ≥8&&letter&&digit — `RegisterViewModel.kt:37-39` parity), D5 (the F1 deviation: Android partner Register/Forgot VMs hardcode English validation strings — iOS localizes ×5; android fix is a follow-up). Reviewer #25/#26 + TC-IOS-CONFIRM-PUT / -SETTINGS / -PASSWORD-POLICY / -VERIFY-EMAIL-ARG + the extended TC-IOS-ANON/-EMPTYTOKEN | M | **proposed** | ios | T-0303, T-0304 | — | 2 (partner) |
 | **T-0306** | **Map seam + MapKit default** — `MapProvider`/`GeocodingService` protocol in `CleansiaCore` + `MapKitMapProvider` + the partner `AddressPicker` (first map surface). **iOS-16 variant (ADR-0014 D6′):** `Map(coordinateRegion:annotationItems:)` for the picker; `MKMapView` via `UIViewRepresentable` for the full-bleed map + polygon overlays — NO iOS-17-only `Map {...}`/`Marker`/`MapPolygon` | M | **proposed** | ios | T-0300 | — | 2 (**HARD AREA #2 — first half**) |
 | **T-0307** | **Partner order work-loop** — OrdersList + OrderDetail (full-bleed map + 3-snap sheet) + the **OnTheWay** lifecycle (Take→NotifyOnTheWay→Start→Complete) + checklist/notes/issues/timeline | **L → split** | **proposed** | ios | T-0304, T-0306 | — | 2 (**HARD AREA #3**) |
 | **T-0308** | **Partner photo upload** — camera capture → **JSON base64** photos (partner shape) on OrderDetail | M | **proposed** | ios | T-0307 | — | 2 (HARD AREA #3 cont.) |
@@ -590,6 +590,204 @@ T-0310 profile chain) exist — reached by **copying** the ADR-0020 router seam 
 re-deciding them. Rendering them inert (the §7.2 precedent) keeps the locked screen visually at parity while
 honestly deferring the destinations that don't exist yet.
 
+### 7.5 T-0305 (Phase-2 partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding) — acceptance scope + the five Understand-pass rulings (recorded 2026-06-26, architect)
+
+T-0305 completes the partner auth surface: **Register**, **Forgot password**, **ConfirmEmail** (+ resend),
+and the **first-launch Onboarding** branch the §7.4 deferral map homed here. All four auth paths are
+**hand-written, anonymous, excluded from codegen** per the header-parity-contract (`Auth.swift` spine — the
+existing login/refresh/logout get register/confirmEmail/resendConfirmation/forgotPassword added). The four
+paths are **already** in `AnonymousAllowList.sharedAuth` (header-parity-contract §3). **Gate-DP applies** —
+each screen cites its Android Compose counterpart (`RegisterScreen.kt`, `ForgotPasswordScreen.kt`,
+`ConfirmEmailScreen.kt`, `OnboardingScreen.kt`) and is built native-SwiftUI, iOS-wins-on-component-conflict.
+The five rulings below **compose the accepted ADRs** (0013 port, 0014 floor/state, 0018 Gate-DP, 0019
+generated-client auth, 0020 partner router) + the header-parity-contract — **no new ADR is opened** (none
+introduces a genuinely new trade-off; each is an application of an accepted decision, recorded here + in the
+living doc + `patterns-mobile.md`). Android parity sources (verified): the auth VMs
+`features/auth/{RegisterViewModel,ForgotPasswordViewModel}.kt`; the auth repo (login/confirm/register/resend/
+forgot signatures + outcomes) `data/auth/AuthRepository.kt`; the router confirm/onboarding wiring
+`navigation/PartnerNavHost.kt`; the settings store `core/settings/AppSettingsRepository.kt`; the shared
+`:core` password-rule widget `core/ui/components/PasswordRuleList.kt`.
+
+#### Decision 1 — iOS device-local settings store: a GENERAL `AppSettingsStore` in `CleansiaCore` (UserDefaults-backed)
+
+**RULING: introduce a minimal, GENERAL `AppSettingsStore` in `CleansiaCore` (UserDefaults-backed), NOT a
+single-purpose `OnboardingStateStore` + a separate language helper. No new ADR** — this is an application of
+ADR-0013 D1 (CleansiaCore is the `:core` parity, the home for shared device-local infra) + the existing
+`CleansiaCore/Validation` precedent (e.g. `EmailValidator.swift` already hoisted to Core), recorded here +
+`patterns-mobile.md` + the living doc as **"the one way to do device-local settings on iOS."**
+
+- **Surface (parity with Android `AppSettingsRepository.kt`):** `hasSeenOnboarding` (a get + `markSeen()` —
+  the `hasSeenOnboarding()`/`markOnboardingSeen()` parity, `AppSettingsRepository.kt:28-33`,
+  `booleanPreferencesKey("onboarding_seen")` `:25`) + a **resolved language tag** ∈ `{en,cs,sk,uk,ru}`
+  (the `LANGUAGE` setting parity, `AppSettingsRepository.kt:24`/`:41-43`). The resolver: read the persisted
+  tag if present and in-set; else **seed from `Locale.current.language.languageCode`** if in-set; else
+  **default `"en"`** (the Android `?: "en"` fallback, `RegisterViewModel.kt:89` / `ForgotPasswordViewModel.kt:56`).
+- **Storage = `UserDefaults`, NOT Keychain.** This is the deliberate parity with Android's DataStore
+  **wiped-on-uninstall** semantics (`partner_app_settings`, `AppSettingsRepository.kt:13`). The
+  device-id/token Keychain (header-parity-contract §2/§6) is for the security-load-bearing per-install id +
+  the session — onboarding-seen + a UI language preference are **not** secrets and must reset on reinstall,
+  exactly like DataStore. (Putting them in Keychain would make "seen onboarding" survive an uninstall, the
+  wrong behavior, and pollute the secret store.)
+- **General, so T-0307+ / customer reuse it.** The store is a small key/value façade (not onboarding-only) so
+  later device-local prefs (theme, the dashboard `STALE_WINDOW` cache flags, customer prefs in T-0312+) add a
+  property here instead of standing up a new store each time. Theme is **out of T-0305 scope** (no theme
+  picker yet) but the store is shaped to take it without a redesign.
+- **What T-0305 consumes it for:** (a) the SplashGate **onboarding branch** reads `hasSeenOnboarding` to
+  resolve no-session → `.onboarding` vs `.login` (Android `SplashViewModel`, `PartnerNavHost.kt:487`); the
+  OnboardingScreen calls `markSeen()` on finish (Android `OnboardingScreen` "mark as seen" effect,
+  `PartnerNavHost.kt:99-107`); (b) Register/Forgot/Resend read the **language tag** to send the email-locale
+  `language` field (Android `RegisterViewModel.kt:89`, `ForgotPasswordViewModel.kt:56`, the repo
+  `register(...,language)` / `forgotPassword(email,language)` / `resendConfirmation(email,language)`,
+  `AuthRepository.kt:37-52`). **CRC:** new `ios-app-settings-store` role (below).
+
+#### Decision 2 — ConfirmEmail email threading: through the Route ASSOCIATION VALUE (`.verifyEmail(email:)`), NOT a `UserProfileStore`
+
+**RULING: thread the email through the Route associated value — `case verifyEmail(email: String?)` — NOT by
+building an iOS `UserProfileStore`. No new ADR** — ADR-0020 D5 explicitly sanctions "a future top-level
+audience state is a new `enum` case under this ADR (a living-doc fold-in)"; here the existing `.verifyEmail`
+case merely **gains an associated value**, which is lighter than and aligned with the ADR-0020 "the audience
+enum carries the state" posture. Recorded as an ADR-0020 **living-doc fold-in** (the `patterns-mobile`
+`navigation.Routes` top-level-audience row + the living doc note), **not** a superseding ADR.
+
+- **Why not a `UserProfileStore`.** Android reads the resend email from `UserProfileStore` (persisted by
+  login even on the unconfirmed path — `AuthRepository.kt:104-105`/`:120-137`, and by confirm `:182-183`).
+  iOS has **no `UserProfileStore`** (T-0303 deliberately used a one-shot `employeeGetCurrentEmployee`,
+  §7.2, to avoid standing one up). Building a whole profile store **just** to carry one email to the verify
+  screen is over-build; the email is a single nav input, which is exactly what an associated value is for.
+- **What changes (minimal):** the empty-token/unverified login already **has** the email —
+  `LoginOutcome.unverifiedEmail(email:hasToken:)` (the Android `LoginOutcome.UnverifiedEmail(email,hasToken)`
+  parity, `AuthRepository.kt:99-102`/`:110-114`/`:277`). The iOS `LoginSuccess`/`afterLogin` currently
+  **drops** it (`Route.afterLogin` branches on `requiresEmailConfirmation` only). T-0305: (a) `LoginSuccess`
+  carries the email; (b) `Route.afterLogin` seeds `.verifyEmail(email:)` from it; (c) the verify screen's
+  resend uses that email. **Confirm-code itself needs no email** — `confirmEmail(code:)` posts only the code
+  (Android `AuthRepository.confirmEmail(code)` → `ConfirmUserEmailCommand(code)`, `:168-171`); the email is
+  needed **only** for resend.
+- **The cold-start-mid-confirm-with-no-email case degrades to Android's behavior.** If the app is killed and
+  relaunched directly into `.verifyEmail` with **no** email in hand (the associated value is `nil` — hence
+  `email: String?`), resend has no address: **disable/guard resend and show `error_generic`**, mirroring
+  Android's `UnverifiedEmail(email = "", hasToken = false)` blank-email guard
+  (`AuthRepository.kt:99-102`/`:175-180`). The user can still enter the code (which doesn't need the email),
+  or back out to Login and re-trigger. **CRC:** the `ios-partner-root-router` (ADR-0020) is unchanged in
+  responsibility — it still just *lands the state*; the state now carries a payload (the email) it does not
+  interpret.
+- **Reviewer angle:** no `UserProfileStore` appears in `CleansiaCore` or the partner target for T-0305; the
+  email rides `.verifyEmail(email:)`; the `requiresEmailConfirmation == true → .verifyEmail` gate (T-0303
+  §7.2 / ADR-0020 D3) is **preserved** — the associated value is additive, the gate predicate unchanged.
+
+#### Decision 3 — Auth endpoint/allow-list + the PUT method (SECURITY confirmation + a small plumbing rule)
+
+**RULING: CONFIRMED on all four points. This confirms the header-parity-contract §3/§5 and the
+already-built `AnonymousAllowList.sharedAuth` — no new allow-list entry, one small spine change (the PUT).**
+
+1. **No new anon allow-list entry is needed.** All four T-0305 paths — `/api/Auth/Register`,
+   `/api/Auth/ConfirmUserEmail`, `/api/Auth/ResendConfirmationEmail`, `/api/Auth/ForgotPassword` — are
+   **already** in `AnonymousAllowList.sharedAuth` (header-parity-contract §3 table; T-0300 `AnonymousAllowList.swift`).
+   The **partner host stays auth-only** (the guest-booking surface is customer-host-only). ✓
+2. **`/api/Auth/Logout` stays AUTHED (unchanged).** It is `[Authorize]` on both hosts and carries the refresh
+   token in the body to revoke (header-parity-contract §3 note); it is **not** added to the allow-list. ✓
+3. **`ConfirmUserEmail` is PUT — the spine's `send()` must gain an HTTP-method param (default `.post`).**
+   The header-parity-contract §3 table lists `ConfirmUserEmail` as **PUT** (and `ForgotPassword`/`Register`/
+   `ResendConfirmationEmail` as POST). The current hand-written `send()` hardcodes POST — **missing the
+   method param is a silent 405**. T-0305 adds an `httpMethod:` parameter to the spine's request builder
+   (default `.post`, so login/refresh/register/resend/forgot are unchanged) and confirmEmail passes `.put`.
+   This is a one-parameter plumbing change to the hand-written spine, **not** a contract or codegen change. ✓
+4. **Confirm rides the AUTHED session, but the Bearer is correctly SKIPPED by `HeaderAdapter` (the
+   "double-skip") — verified correct per header-parity-contract §3.** Login persisted a Bearer on the
+   unverified path (the token-present branch, `AuthRepository.kt:104-114` parity), so a stored Bearer exists;
+   but `/api/Auth/ConfirmUserEmail` is on the anon allow-list, so the **`HeaderAdapter` withholds the
+   `Authorization` header** even though a token is stored (the §3 path-skip rule: "skip the Authorization
+   header entirely when the path matches an anon endpoint — even if a stale/revoked access token is
+   stored"). The device/tz headers (§1) are **still** sent. This double-skip (token present + path anon →
+   no Bearer) is **intended**: the server's confirm endpoint is `[AllowAnonymous]` and the gate is the
+   6-digit code, not the session.
+5. **`confirmEmail` reuses the existing empty-token gate (header-parity-contract §5, the T-0303
+   `LoginOutcome`/`TC-IOS-EMPTYTOKEN` machinery — NOT a new gate).** On the confirm `200` body:
+   `200 + empty/blank Token` → `LoginOutcome.unverifiedEmail(hasToken: false)` (Android's
+   `UnverifiedEmail(email, hasToken=false)`, `AuthRepository.kt:175-180`) → **no app entry**, show
+   `error_generic` and re-prompt; `200 + non-empty Token` → persist the token bundle + route as
+   `authenticated` → the verified login bounces through `.splash` (ADR-0020 D3) → registration gate. The
+   confirm path uses the **same** empty-token gate the login path already uses (§5 "Login **and**
+   ConfirmUserEmail" — the gate is shared); it does **not** add a parallel confirm-specific gate.
+
+**SECURITY forward-note (for the T-0305 security gate on the auth slice):** the security agent verifies, on
+the slice, (i) the **allow-list predicate** is unchanged + complete + host-correct (no new partner anon
+entry; Logout still authed) — reviewer #4 / TC-IOS-ANON sibling; (ii) the **PUT** is wired for confirm (no
+silent 405) and the method param defaults `.post` so no other path flipped method; (iii) the **double-skip**
+holds — a stored Bearer is **not** attached on the four anon paths (TC-IOS-ANON covers it; confirm is the
+sharpest case because a token *is* present); (iv) the **empty-token gate is reused** (200+empty →
+unverified, no session; 200+token → authenticated) — TC-IOS-EMPTYTOKEN extended to the confirm path. This is
+not a full security-gate ticket (the spine T-0300 carried that); it is a **slice check** that T-0305 didn't
+regress the spine's anon/PUT/empty-token contract.
+
+#### Decision 4 — Password policy: a Core `PasswordPolicy` validator (≥8 && ≥1 letter && ≥1 digit) feeding a Core `PasswordRuleList`
+
+**RULING: extract a `PasswordPolicy` validator into `CleansiaCore/Validation` (the exact Android predicate),
++ a `PasswordRuleList` Core component driven by it; harvest into `patterns-mobile.md`. No new ADR** — this is
+an application of ADR-0013 D1 (shared mobile logic lives in CleansiaCore) + the existing
+`CleansiaCore/Validation/EmailValidator.swift` precedent, and a **catalog harvest** (per the
+pattern-evolution loop) of two artifacts Android already shares in `:core`.
+
+- **The exact predicate (Android `RegisterViewModel.kt:37-39`, consumed `:73`):** `password.count >= 8 &&
+  password.contains(where: \.isLetter) && password.contains(where: \.isNumber)`. iOS reuses the **same**
+  predicate verbatim — a behavior difference here would be a parity bug. Backend (`BaseAuthValidator.cs` /
+  `Register.cs` / `RegisterEmployee.cs`) is **authoritative**; this is **client-side UX only** (live rule
+  feedback + a pre-submit guard), never the security boundary.
+- **Two Core artifacts, mirroring Android's `:core` factoring:** (a) `PasswordPolicy` — a pure validator in
+  `CleansiaCore/Validation` exposing the three individual rule booleans (`hasMinLength`/`hasLetter`/`hasNumber`)
+  + an `isValid` aggregate, the parity of the `passwordHas*` getters **lifted out of the VM** (Android left
+  them in `RegisterUiState` — iOS fixes that by putting them in Core so partner + customer share one source);
+  (b) `PasswordRuleList` — a native-SwiftUI Core component (the parity of the **already-shared** `:core`
+  `PasswordRuleList.kt`, which Android moved out of customer-app's SignUpScreen so partner-app reuses it —
+  `PasswordRuleList.kt:38-54`, consumed by partner `RegisterScreen.kt` + customer `SignUpScreen.kt:182,200`).
+  The component takes `(label, isValid)` rows + a `hasInput` flag (neutral / green-check / red-cross per
+  `PasswordRuleList.kt:56-62`) — same three-state row semantics, native SF-Symbol icons (Gate-DP component swap).
+- **Reused by customer (T-0312+) without re-deciding.** Customer SignUp (`SignUpScreen.kt`) uses the
+  identical password rule today on Android; the iOS customer wave imports the same `PasswordPolicy` +
+  `PasswordRuleList` from Core — the harvest pays off immediately at the second call site. **CRC:** new
+  `ios-password-policy` role (below).
+
+#### Decision 5 — Record the F1 parity defect: Android partner Register/Forgot VMs HARDCODE English validation strings (iOS does it right)
+
+**RULING: record an Android-behavior-is-wrong parity DEVIATION (iOS does it correctly) + a follow-up note
+for the android agent — do NOT replicate the bug.** This is the sanctioned `patterns-mobile.md` **Parity
+rule** path ("If the Android behavior is itself wrong, raise a finding — don't silently diverge on iOS only")
+and a violation of `consistency.md` **E8** (all user text via `R.string`/`getString`).
+
+- **The defect (verified):** `RegisterViewModel.kt:64-84` and `ForgotPasswordViewModel.kt:45-52` set
+  validation error strings as **raw English literals** — `"First name is required"`, `"Please enter a valid
+  email"`, `"Password must be at least 8 characters with a letter and a number"`, `"Passwords do not
+  match"`, `"You must accept the terms"`, `"Email is required"` — **not** `appContext.getString(R.string.*)`.
+  These VMs do **not** inject `@ApplicationContext Context`, so the validation messages **never localize**
+  (they render English in all 5 locales). This violates E8 ("All user-facing text via `stringResource`/
+  `getString` — already consistent; keep it") — E8's "already consistent" claim is **wrong** for these two
+  partner auth VMs.
+- **iOS does it right (the deviation):** the iOS Register/Forgot/Confirm VMs use proper
+  `Localizable.xcstrings` keys ×5 (en/cs/sk/uk/ru) for every validation message (ADR-0013 D11 / reviewer #10
+  i18n completeness — no hardcoded strings). iOS is the **correct** reference here; **do not** copy the
+  Android literals. This is the one place T-0305 **intentionally diverges** from Android behavior, and it is
+  the *right* divergence (the catalog's Parity rule names exactly this case).
+- **Follow-up for the android agent (recorded, not blocking T-0305):** the Android partner
+  `RegisterViewModel`/`ForgotPasswordViewModel` should move their validation strings to `R.string.*`
+  (inject `@ApplicationContext Context`, mirror how `OrderDetailViewModel.kt:80` already does
+  `appContext.getString(...)`), so all 5 locales render. Recorded as a parity-deviation in
+  `consistency.md` E8 + this note; the PM files the android fix-ticket from here (small, mechanical i18n fix
+  — not part of the iOS wave).
+
+#### New CRC roles (added with the T-0305 wiring)
+
+- **`ios-app-settings-store`** — `AppSettingsStore` (in `CleansiaCore`, UserDefaults-backed):
+  *responsibility:* be the **single** device-local (wiped-on-uninstall) preference store — `hasSeenOnboarding`
+  (get/`markSeen`) + the resolved 5-locale `language` tag (the `AppSettingsRepository.kt` parity).
+  *Collaborators:* `UserDefaults`, `Locale.current` (the language seed). *Does NOT know:* the session/token
+  (that is the Keychain `TokenStore`'s — secrets never live here), any business payload, or how a screen
+  renders. **If a secret (token, device id) is ever stored here, the responsibility is wrong — it goes in the
+  Keychain spine.**
+- **`ios-password-policy`** — `PasswordPolicy` (in `CleansiaCore/Validation`): *responsibility:* be the
+  **single client-side** password-rule predicate (≥8 && ≥1 letter && ≥1 digit) the partner + customer
+  register screens share, the `RegisterViewModel.kt:37-39` parity lifted to Core. *Collaborators:* the
+  `PasswordRuleList` component (renders its rule booleans), the register/sign-up VMs. *Does NOT know:* it is
+  the **authoritative** check (it is not — the backend `BaseAuthValidator` is); any UI styling; the network.
+
 ---
 
 ## 8. Gates & verification (per `agents/process/quality-gates.md`)
@@ -621,6 +819,20 @@ honestly deferring the destinations that don't exist yet.
   fail-closed error paths (SplashGate `.failure`→lock; lock-VM `.failure` preserves last-known and never
   unlocks). `swiftformat --lint` + `swiftlint --strict` clean; **CleansiaCore 93 + CleansiaPartner 61** tests
   pass on the iPhone 17 simulator.
+- **TDD on the partner auth completeness (T-0305, §7.5):** **TC-IOS-CONFIRM-PUT** (the spine sends
+  `ConfirmUserEmail` as **PUT** — a method param defaulting `.post`; a request asserting the verb is PUT, and
+  that no other auth path's verb changed) ; **TC-IOS-ANON** extended to the **confirm double-skip** (a stored
+  Bearer is NOT attached on `ConfirmUserEmail`/`Register`/`ResendConfirmationEmail`/`ForgotPassword`; the
+  device/tz headers ARE) ; **TC-IOS-EMPTYTOKEN** extended to the **confirm path** (confirm `200`+empty Token →
+  `unverifiedEmail(hasToken:false)` → no session / `error_generic`; `200`+token → authenticated → bounce
+  through `.splash`) ; **TC-IOS-SETTINGS** (`hasSeenOnboarding` get/`markSeen` round-trips via UserDefaults and
+  resets on a fresh store; the language resolver returns the persisted in-set tag, else the `Locale.current`
+  seed if in-set, else `"en"`) ; **TC-IOS-PASSWORD-POLICY** (`PasswordPolicy` is exactly ≥8 && ≥1 letter && ≥1
+  digit — the `RegisterViewModel.kt:37-39` parity: rejects `"short1"`, `"12345678"` (no letter),
+  `"abcdefgh"` (no digit); accepts `"abcdefg1"`) ; **TC-IOS-VERIFY-EMAIL-ARG** (`Route.afterLogin` seeds
+  `.verifyEmail(email:)` from the unverified-login email; a cold-start `.verifyEmail(nil)` disables resend +
+  shows `error_generic`, and the `requiresEmailConfirmation==true → .verifyEmail` gate is preserved) —
+  **red-first**.
 - **Reviewer compliance checks (ADR-0013 + ADR-0014 §"How a reviewer verifies"):** #1 no hand-edited
   generated client · #2 auth NOT generated · #3 X-Device-Id single source · #4 anon allow-list complete
   (incl. customer host) · #5 refresh token replaced every refresh · #6 single no-auth session +
@@ -656,6 +868,25 @@ honestly deferring the destinations that don't exist yet.
   green**. Security traced the backend: `CheckCurrentEmployee` is **token-scoped + `[Permission]`-guarded, no
   client-supplied id** (§7.3 fwd-note #2 holds — any server-derived id round-trip is safe only by the
   server-side override).
+  · **#25 (§7.5 Decision 3, T-0305+ — SECURITY/plumbing) the auth-completeness slice preserves the spine's
+  anon/PUT/empty-token contract:** (a) **no new partner anon allow-list entry** — the four T-0305 paths are
+  already in `AnonymousAllowList.sharedAuth`; the partner host stays auth-only; `Logout` stays AUTHED (not on
+  the list); (b) **`ConfirmUserEmail` is sent as PUT** via a `send()` HTTP-method param defaulting `.post`
+  (no silent 405; no other path's verb changed); (c) the **double-skip** holds — a stored Bearer is NOT
+  attached on any of the four anon paths (confirm is the sharpest case: a token IS present post-login), while
+  `X-Device-Id`/`X-Device-Label`/`X-Time-Zone` ARE sent; (d) **confirm reuses the empty-token gate**
+  (200+empty → `unverifiedEmail(hasToken:false)`, no session; 200+token → authenticated). A Bearer leaking
+  onto an anon path, a hardcoded-POST 405 on confirm, a parallel confirm-specific gate, or a 200+empty-token
+  confirm entering the app is a **blocking** finding. · **#26 (§7.5 Decisions 1/2/4, T-0305+) the
+  auth-completeness seams are the canonical ones:** (a) device-local prefs (onboarding-seen, language tag)
+  read/write the single **`AppSettingsStore`** in `CleansiaCore` (UserDefaults-backed, NOT Keychain) — a
+  second settings store, or onboarding-seen/language in the Keychain, is a finding; (b) the ConfirmEmail
+  resend email rides the **`.verifyEmail(email:)`** Route associated value — a NEW `UserProfileStore` built
+  to carry it is a finding (the email is a nav input, not a profile store); the cold-start `.verifyEmail(nil)`
+  path disables resend + shows `error_generic`; (c) the password rule is the Core **`PasswordPolicy`**
+  (≥8 && ≥1 letter && ≥1 digit) feeding the Core **`PasswordRuleList`** — a VM-local copy of the predicate
+  (the Android `RegisterUiState` smell) or a per-app password widget is a finding; (d) every validation
+  message is an `.xcstrings` key ×5 (the F1 fix — NO hardcoded validation strings; reviewer #10 i18n).
 - **Mechanical:** the Xcode workspace builds; `CleansiaCore` + both app targets compile; the codegen step
   produces the client from the on-disk spec (no hand-edit); the Swift test suites run. **✅ T-0303 evidence:**
   `swiftformat --lint` + `swiftlint --strict` clean; **CleansiaCore 93 + CleansiaPartner 17** tests pass on

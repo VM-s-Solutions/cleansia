@@ -66,6 +66,23 @@ for app in "${apps[@]}"; do
   cap="$(printf '%s' "${app:0:1}" | tr 'a-z' 'A-Z')${app:1}"
   echo "Generating Cleansia${cap}Api from ${app}-mobile-api.json ..."
   ( cd "$CONFIG_DIR" && openapi-generator generate -c "$config" )
+
+  # openapi-generator (swift5) emits encodeToJSON() calls on AnyCodable free-form
+  # parameters but omits AnyCodable's own JSONEncodable conformance, so the
+  # generated client does not compile. Append it — deterministic, re-applied on
+  # every run (the output is gitignored/machine-owned and never hand-edited).
+  ext="$(find "${CONFIG_DIR}/../Cleansia${cap}Api" -name Extensions.swift | head -1)"
+  if [[ -n "$ext" ]] && ! grep -q "extension AnyCodable: JSONEncodable" "$ext"; then
+    cat >> "$ext" <<'SWIFT'
+
+#if canImport(AnyCodable)
+extension AnyCodable: JSONEncodable {
+    func encodeToJSON() -> Any { value }
+}
+#endif
+SWIFT
+    echo "  + added AnyCodable JSONEncodable conformance"
+  fi
 done
 
 echo "Done. Generated clients live under CleansiaPartnerApi/ and CleansiaCustomerApi/ (gitignored)."

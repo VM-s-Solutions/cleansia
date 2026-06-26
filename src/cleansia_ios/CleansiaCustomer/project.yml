@@ -17,12 +17,10 @@ settings:
 packages:
   CleansiaCore:
     path: ../CleansiaCore
-  # Generated swift5 business client (machine-owned, gitignored). It does not
-  # exist until the first `scripts/generate-api-clients.sh customer` run, which is
-  # owner-gated on manual_step: mobile-spec-regen. Uncomment this entry and the
-  # matching dependency below, then `xcodegen generate`, after the first gen.
-  # CleansiaCustomerApi:
-  #   path: ../CleansiaCustomerApi
+  # Generated swift5 business client (machine-owned, gitignored). Regenerate via
+  # scripts/generate-api-clients.sh after a mobile-spec refresh; never hand-edit.
+  CleansiaCustomerApi:
+    path: ../CleansiaCustomerApi
 
 targets:
   CleansiaCustomer:
@@ -45,4 +43,4 @@ targets:
         API_BASE_URL: https:/$()/api-cleansia-customer-mobile-weu-dev.azurewebsites.net
     dependencies:
       - package: CleansiaCore
-      # - package: CleansiaCustomerApi   # uncomment after the first generation (see packages above)
+      - package: CleansiaCustomerApi

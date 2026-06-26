@@ -25,7 +25,13 @@ jobs:
       # xcodegen + swiftformat + xcbeautify are not on the runner image (swiftlint
       # usually is); installing them keeps CI independent of image drift.
       - name: Install toolchain
-        run: brew install xcodegen swiftlint swiftformat xcbeautify
+        run: brew install xcodegen swiftlint swiftformat xcbeautify openapi-generator
+
+      # The generated business client (CleansiaPartnerApi / CleansiaCustomerApi) is
+      # gitignored and machine-owned — regenerate it from the committed mobile specs
+      # before xcodegen, since both project.yml files now depend on it.
+      - name: Generate API clients
+        run: ./scripts/generate-api-clients.sh
 
       # The .xcodeproj files are gitignored — regenerate them from the project.yml
       # specs, exactly like a fresh dev checkout does.
@@ -69,9 +75,3 @@ jobs:
               -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
               build | xcbeautify
           done
-
-      # NOTE: the generated business API client (CleansiaPartnerApi / CleansiaCustomerApi)
-      # is gitignored and its project.yml entries are commented out, so CI builds the
-      # hand-written CleansiaCore + apps without it. Once the owner enables codegen
-      # (manual_step: mobile-spec-regen) and uncomments those deps, add a step that runs
-      # ./scripts/generate-api-clients.sh before "Generate Xcode projects".

@@ -233,6 +233,9 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | `core/settings/AppSettingsRepository.kt` (DataStore `partner_app_settings`: `onboarding_seen`, `language`, `theme`) | a single general **`AppSettingsStore`** in `CleansiaCore`, **`UserDefaults`-backed** (DataStore's wiped-on-uninstall parity — NOT Keychain): `hasSeenOnboarding`/`markSeen()` + a resolved language tag ∈ {en,cs,sk,uk,ru} (sprint-12 §7.5 D1, reviewer #26a) |
 | `core/validation/EmailValidator.kt` + the `passwordHas*` getters in `RegisterUiState` | `CleansiaCore/Validation/EmailValidator.swift` (already hoisted) + a Core **`PasswordPolicy`** (≥8 && letter && digit — the predicate lifted OUT of the VM) feeding a Core **`PasswordRuleList`** view (`:core` `PasswordRuleList.kt` parity) — shared by partner + customer (sprint-12 §7.5 D4, reviewer #26c) |
 | hand-written `AuthApi.kt` Retrofit verbs (`@POST`/`@PUT` per endpoint) | the hand-written `Auth.swift` spine `send()` takes an **`httpMethod:` param defaulting `.post`**; `ConfirmUserEmail` passes `.put` (header-parity §3 — hardcoding POST is a silent 405). All four T-0305 paths (Register/ConfirmUserEmail/ResendConfirmationEmail/ForgotPassword) are already in `AnonymousAllowList.sharedAuth`; `Logout` stays authed (sprint-12 §7.5 D3, reviewer #25) |
+| `core/location/ReverseGeocodingService.kt` (Mapbox Geocoding v5 over OkHttp; `accessToken` from BuildConfig) | `CleansiaCore/Location` **`GeocodingService`** protocol + **`CLGeocoderGeocodingService`** default impl — a 1:1 port (`reverseGeocode`/`forwardGeocode` → `GeocodedAddress?`/`[GeocodedAddress]`) **minus the Mapbox token + the OkHttp/network args** (MapKit = system framework, **no token**). Best-effort: nil/`[]` on error, **cancel the in-flight geocode before re-firing** (`kCLErrorGeocodeCanceled` swallowed) — the `runCatching{}.getOrNull()` parity. Debounce ports VERBATIM: **300ms forward / 500ms reverse** (`AddressPickerScreen.kt:188,171` — also the `CLGeocoder` rate-limit guard) (sprint-12 §7.6 D1/D3, reviewer #27) |
+| `core/location/{GeocodedAddress,UserLocation}.kt` + `MapStyles.kt` (Mapbox style URIs) | `Coordinate` + `GeocodedAddress` plain value types in `CleansiaCore/Location` (the `GeocodedAddress.kt` field parity). **`MapStyles.kt` is NOT ported** — the stock MapKit standard style is the parity baseline; a custom Mapbox Studio style returns only if Q-IOS-02 flips to "yes" (sprint-12 §7.6 D4) |
+| Mapbox `MapboxMap` + center-pin overlay + my-location FAB (`AddressPickerScreen.kt`) | **`MapProvider`** picker-map factory (a `Map(coordinateRegion:annotationItems:[])` + SwiftUI overlay pin the map pans under — iOS-16 variant, NO `Map{Marker}`/`onMapCameraChange`, reviewer #12) in `CleansiaCore/Location`, the **only** sanctioned MapKit consumer. **Current-location/the my-location FAB + the `LocationProvider` (`CLLocationManager`) seam are DEFERRED to T-0310** (needs T-0325's `NSLocationWhenInUseUsageDescription` plist key — owner); T-0306 centers on the **Prague default** + ships pan+search parity. Full-bleed `OrderDetail` map + service-area polygon overlay added **additively** later (`MKMapView`/`UIViewRepresentable`, ADR-0014 D6′). The AddressPicker has **NO `UiState`/`ActionState`** — plain `@Published` state + a one-shot `onConfirmed(GeocodedAddress)` callback (sprint-12 §7.6 D1/D2/D3) |
 
 **Generated-client auth — the ONE way (ADR-0019, reviewer #13-gen):** authenticate the generated business
 client **only** through the Core-spine-backed `RequestBuilderFactory` (above). **Deviations a reviewer
@@ -292,6 +295,33 @@ green-check / red-cross rows + a `hasInput` flag). Partner (now) and customer (T
 **Client-side UX only — the backend `BaseAuthValidator` is authoritative.** **Deviations a reviewer rejects:**
 a VM-local copy of the predicate (the Android `RegisterUiState`-getter smell, lifted to Core on iOS); a
 per-app password-rule widget instead of the Core component.
+
+**iOS maps — the ONE way (sprint-12 §7.6, T-0306; ADR-0013 D6 + ADR-0014 D6′ + ADR-0018 Gate-DP, reviewer
+#7/#12/#27):** all map + geocode use goes through `CleansiaCore/Location`'s **`MapProvider`** /
+**`GeocodingService`** protocols; the **only** sanctioned MapKit/CoreLocation consumers are the
+`MapKitMapProvider`-produced view + `CLGeocoderGeocodingService` — **feature/VM code imports neither MapKit
+nor CoreLocation** (reviewer #7/#27). The seam ships **minimally and grows additively:** T-0306 ships the
+**picker-map factory only** (iOS-16 `Map(coordinateRegion:annotationItems:[])` + a SwiftUI overlay pin the
+map pans under — NO `Map{Marker}`/`onMapCameraChange`, reviewer #12); T-0307's full-bleed `OrderDetail` map +
+service-area polygon overlay are an **additive method** later (`MKMapView`/`UIViewRepresentable`), **not**
+designed ahead. `GeocodingService` is a 1:1 `ReverseGeocodingService.kt` port **minus the Mapbox token +
+network args** — **best-effort** (nil/`[]` on error, **cancel-before-refire** for `kCLErrorGeocodeCanceled`,
+never block the confirm/crash — the `runCatching{}.getOrNull()` parity), debounce **300ms forward / 500ms
+reverse** ported VERBATIM (the `CLGeocoder` rate-limit guard; iOS-16 reverse-on-idle is a VM-owned
+Combine/`Task` debounce, not a map callback). The **AddressPicker has NO `UiState<T>`/`ActionState`** — it is
+an interactive map with plain `@Published` state + a one-shot `onConfirmed(GeocodedAddress)` callback, neither
+an E1 load-fetch nor an E2 mutation screen — so the **sealed-state absence is correct, not a finding**
+(reviewer #27). **Current-location/the my-location FAB are DEFERRED out of T-0306** (the `LocationProvider`/
+`CLLocationManager` seam + the FAB home to T-0310, gated on T-0325's `NSLocationWhenInUseUsageDescription`
+plist key — owner); T-0306 centers on the **Prague default** + ships **pan-to-place + search at full parity**.
+This is the recorded **Gate-DP divergence** (iOS omits current-location pending T-0325; pan/search parity full;
+the divergence touches a deferred affordance, **not** layout/flow/branding). **No Mapbox token, no map SDK, no
+`Package.swift` change** — a **net reduction** in secret surface vs Android's `MAPBOX_ACCESS_TOKEN` BuildConfig;
+`MapStyles.kt` is NOT ported (stock MapKit style is the baseline; Q-IOS-02 stays "No"). **Deviations a reviewer
+rejects:** a feature/VM `import MapKit`/`import CoreLocation`; a second MapKit consumer outside the providers;
+the iOS-17-only `Map{Marker}`/`MapPolygon`/`onMapCameraChange` API (#12); a hand-rolled per-feature geocode/
+debounce instead of the Core `GeocodingService`; building the my-location FAB before T-0325's plist key exists
+(a dead control); flagging the missing `UiState`/`ActionState` on the picker.
 
 **Parity deviation (Android is wrong, iOS is right) — auth validation strings:** the Android partner
 `RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set validation errors as **hardcoded English

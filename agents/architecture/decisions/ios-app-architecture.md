@@ -291,6 +291,79 @@ Android-divergence on T-0305 (the `patterns-mobile` Parity rule's "Android is wr
 copy"). Recorded as a `consistency.md` **E8** deviation; the android partner-VM i18n fix is a PM-filed
 follow-up (small, mechanical), **not** part of the iOS wave.
 
+### iOS maps behind `MapProvider`/`GeocodingService` — the one way (sprint-12 §7.6 / T-0306)
+
+The first concrete shape of the ADR-0013 D6 / ADR-0014 D6′ map seam, surfaced by the T-0306 Understand pass.
+**Four rulings, all APPLYING accepted ADRs — no new ADR.** The Android source the iOS port mirrors:
+`partner-app/.../features/profile/AddressPickerScreen.kt` (+ `AddressPickerViewModel.kt`) and
+`core/.../location/{ReverseGeocodingService,GeocodedAddress,LocationService,MapStyles}.kt`.
+
+**Decision 1 — `MapProvider` protocol shape: a minimal picker factory NOW, T-0307's full-bleed surface added
+ADDITIVELY later.** `MapProvider` (in `CleansiaCore/Location`) ships only what T-0306 needs — a picker-map
+factory producing a SwiftUI view bound to a region + a static center-pin overlay (the iOS-16 variant: a
+`Map(coordinateRegion:interactionModes:showsUserLocation:annotationItems:)` with `annotationItems: []` + a
+SwiftUI overlay pin the map pans under — NOT `Map{Marker}`/`onMapCameraChange`, reviewer #12). T-0307's
+full-bleed `OrderDetail` map + 3-snap sheet + the service-area polygon overlay are added **later as an
+additive method** on the same protocol (the `MKMapView`-via-`UIViewRepresentable` surface, ADR-0014 D6′) —
+**not** designed ahead. Rationale: designing the rich surface now means guessing T-0307's camera/overlay/
+gesture needs before they exist; additive protocol methods don't break the picker call site, so deferring
+costs nothing and avoids a speculative-shape rewrite. **`GeocodingService` is a clean 1:1 port of
+`ReverseGeocodingService.kt`** (`reverseGeocode(lat,lng) → GeocodedAddress?`, `forwardGeocode(query,
+countryIsoCodes) → [GeocodedAddress]`) **minus the Mapbox token + the OkHttp/network args** — under the
+MapKit default it is `CLGeocoder`/`MKLocalSearch`, no token, no HTTP client. `Coordinate` + `GeocodedAddress`
+are plain value types in `CleansiaCore/Location` (the `GeocodedAddress.kt` parity: lat/lng/street/city/
+zipCode/country/countryIsoCode/formatted). **The only sanctioned MapKit/CoreLocation consumer is the
+`MapKitMapProvider`-produced view + `CLGeocoderGeocodingService`** — feature/VM code imports neither
+(reviewer #7 + the new #27 below). Reused by T-0307/0310/0314 by adding the next additive method, not
+re-deciding the seam.
+
+**Decision 2 — current-location / permission DEFERRED out of T-0306** (the one flow-touching Gate-DP
+divergence). The Android picker auto-centers on the FusedLocation fix + shows a my-location FAB
+(`AddressPickerScreen.kt:131-161,272-295` via `LocationService.kt`). iOS **omits** that for T-0306: the
+picker centers on the **Prague default** (`DEFAULT_CENTER = 14.4378, 50.0755`, zoom 15 — the
+`AddressPickerScreen.kt:90-91` parity) and ships **pan-to-place + search at full parity** (both work without
+any location fix). The `LocationProvider` seam (`CLLocationManager`) + the my-location FAB are homed to
+**T-0310** (when the picker is wired into the AddressSection and **T-0325** has added the
+`NSLocationWhenInUseUsageDescription` plist key — owner ticket; without it the iOS permission prompt never
+appears, so building the FAB now would ship a dead control). **This is the recorded Gate-DP divergence**
+(ADR-0018 D3): *iOS picker omits current-location pending T-0325; pan/search parity is full; the divergence
+touches a deferred affordance, not layout/flow/branding* — architect sign-off, the T-0307 inert-nav/§7.4
+contact-support-inert precedent. **Not a new trade-off:** it is the same "defer the affordance whose
+dependency isn't live yet, home it, note it" call §7.2/§7.4 already made.
+
+**Decision 3 — geocoding error/throttle + NO `UiState`.** (a) `CLGeocoder` is best-effort: **cancel the
+in-flight geocode before re-firing** (`kCLErrorGeocodeCanceled` is expected, swallowed), return `nil`/`[]`
+on any error, **never block the confirm or crash** — the `runCatching{}.getOrNull()` /
+`.getOrDefault(emptyList())` parity (`ReverseGeocodingService.kt:41,79`). (b) The debounce timings port
+**VERBATIM**: **300ms forward** (`AddressPickerScreen.kt:188`), **500ms reverse-on-idle**
+(`AddressPickerScreen.kt:171`) — they double as Apple's `CLGeocoder` rate-limit guard. iOS-16 has **no
+idle callback**, so reverse-geocode-on-idle is a **VM-owned Combine/`Task` debounce** off the region binding
+(not a map callback). (c) **The AddressPicker correctly has NO `UiState<T>`/`ActionState`** — it is an
+interactive map with plain `@Published` state (`resolved: GeocodedAddress?`, `lookingUp`, `searchQuery`,
+`searchResults`, `searching` — the `remember{mutableStateOf}` set, `AddressPickerScreen.kt:117-122`) + a
+**one-shot confirm event** (the `onConfirmed(GeocodedAddress)` callback, not a mutation result). It is
+neither a load-fetch screen (E1) nor a mutation screen (E2), so the sealed-state expectation is **correctly
+scoped OUT** — a reviewer must NOT flag the absence of `UiState`/`ActionState` here. **Reviewer note #27**
+(see sprint-12 §7.6 / §8).
+
+**Decision 4 — NO Mapbox token / security (net reduction in secret-management surface).** Under the MapKit
+default there is **ZERO map token, ZERO map SDK dependency, ZERO `Package.swift` change** — MapKit +
+CoreLocation are **system frameworks**, no SPM entry. This **contrasts Android's `MAPBOX_ACCESS_TOKEN`
+BuildConfig** (`ReverseGeocodingService.kt:21` takes the token; the Hilt module feeds it from BuildConfig).
+**No owner provisioning step for maps** (the §7 owner-steps map row already says "Mapbox token ONLY IF
+Q-IOS-02 flips the default"). **Net effect: iOS removes a secret Android carries** — one fewer token to
+rotate, one fewer leak surface. **Q-IOS-02 stays defaulted "No"** (MapKit standard style; `MapStyles.kt`'s
+custom Mapbox Studio style is **NOT ported** — the stock MapKit style is the parity baseline; a hard brand
+requirement is the only input that flips it, behind the unchanged seam). Recorded as the no-token **security
+note** (sprint-12 §7.6).
+
+**New CRC (added with the T-0306 wiring):** `ios-geocoding-service` — `GeocodingService` (protocol) +
+`CLGeocoderGeocodingService` (the default impl in `CleansiaCore/Location`): *responsibility:* forward/reverse
+geocode text↔`GeocodedAddress`, best-effort (nil/`[]` on error, cancel-before-refire), no token. *Collaborators:*
+`CLGeocoder`/`MKLocalSearch`, `Coordinate`/`GeocodedAddress` value types. *Does NOT know:* the Mapbox token
+(there isn't one), the network client (system framework), which feature/VM consumes it, or how the picker
+renders. (The `ios-map-provider` CRC from ADR-0013 is unchanged — `MapKitMapProvider` is its default impl.)
+
 - **Deployment target: iOS 16 vs iOS 17 (ADR-0014).** Chose **iOS 16** — the owner prioritised old-device
   reach (iPhone 8/8 Plus/X, 2017+), which iOS 17 (XS/XR, 2018+) excluded. The cost is the state mechanism
   (`@Observable` is iOS-17-only) and a couple of MapKit API variants; both are accepted trade-offs, recorded
@@ -333,6 +406,7 @@ follow-up (small, mechanical), **not** part of the iOS wave.
 | ADR (generated client authenticates via the Core-spine-backed `RequestBuilderFactory`) | — | **accepted** (ADR-0019, refines ADR-0013 D4/D5 — the one way; reviewer #13-gen) |
 | ADR (partner router = flat-enum `PartnerRootView` root-switch gated by `.splash`) | — | **accepted** (ADR-0020, refines ADR-0013 D2/D9 — the canonical partner router; reviewer #23; T-0304 builds it) |
 | Partner auth completeness rulings (settings store / ConfirmEmail email via Route assoc-value / PasswordPolicy / PUT+empty-token / F1) | — | **recorded** (sprint-12 §7.5, **no new ADR** — applies ADR-0013/0019/0020 + the header-parity-contract; reviewer #25/#26; T-0305 builds it) |
+| Map-seam rulings (minimal `MapProvider` picker factory + additive-later / current-location DEFERRED to T-0310+T-0325 / geocoding best-effort + no-`UiState` / no-Mapbox-token security) | — | **recorded** (sprint-12 §7.6, **no new ADR** — applies ADR-0013 D6 + ADR-0014 D6′ + ADR-0018 Gate-DP; reviewer #27; T-0306 builds it) |
 | Owner Q-IOS-01 (deployment target) | — | **ANSWERED — iOS 16** (old-device reach) |
 | Owner **mobile-spec regen** (the one hard blocker) | pre-Phase-2 | **PENDING — owner-only** (`manual_step: mobile-spec-regen`) |
 | Workspace + `CleansiaCore` skeleton + design tokens + DI + snackbar/error center | 0 | planned (runnable on approval) |

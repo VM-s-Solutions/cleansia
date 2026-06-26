@@ -1,6 +1,6 @@
 # Sprint 12 — iOS PORT (Wave 10): parity Swift/SwiftUI customer + partner apps
 
-**Status:** PHASE 0 FOUNDATION DONE + MAC-VERIFIED + MERGED (2026-06-26) · **PHASE 1 (T-0303) DONE** — proving vertical green on `phase/ios-phase1` · **PHASE 2 — T-0304 (partner shell + RegistrationLock + SplashGate) DONE + T-0305 (partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding) DONE** on `phase/ios-phase2` (T-0305 = 4 slices; every slice reviewer-APPROVE; Slice A also security-APPROVE; Slices C+D gate-safety-SAFE) · Phase 2+ tail proposed · android F1 follow-up **T-0333** filed
+**Status:** PHASE 0 FOUNDATION DONE + MAC-VERIFIED + MERGED (2026-06-26) · **PHASE 1 (T-0303) DONE** — proving vertical green on `phase/ios-phase1` · **PHASE 2 — T-0304 (partner shell + RegistrationLock + SplashGate) DONE + T-0305 (partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding) DONE** on `phase/ios-phase2` (T-0305 = 4 slices; every slice reviewer-APPROVE; Slice A also security-APPROVE; Slices C+D gate-safety-SAFE) · **T-0306 (map seam + MapKit + partner AddressPicker) — 4 Understand-pass rulings RECORDED (§7.6, no new ADR; reviewer #27), ready to build on `phase/ios-phase3`** · Phase 2+ tail proposed · android F1 follow-up **T-0333** filed
 **Created:** 2026-06-23
 **Updated:** 2026-06-26
 **Source:** **ADR-0013** (`adr/0013-ios-app-architecture-and-port-strategy.md`, **accepted** 2026-06-23) +
@@ -203,7 +203,7 @@ PHASE 2+ PARITY FEATURE WAVES ── ordered by complexity; the 3 hard areas cal
 | **T-0303** | **Phase-1 partner lead vertical** — partner login (hand-written auth, empty-token gate) → **read-only Dashboard** (`dashboardGetStats` via the **ADR-0019 Core-spine-backed `RequestBuilderFactory`** + `UiState`), proving auth/session/headers/codegen/state end-to-end. **Acceptance scope fixed in §7.2** (greeting + stats-driven cards + 3-state hero + inert nav closures; caching / pull-to-refresh / notifications / live order feeds DEFERRED to T-0304/0307/0310) | M | **done ✅** `8996df9`+`2a57f70` (`phase/ios-phase1`; both §7.1 blockers CLEARED — dev API live + regen `9232335`; #13-gen + TC-IOS-GEN green; CleansiaCore 93 + CleansiaPartner 17 pass; reviewer **AND** security APPROVE both slices — §7.3 fwd-notes) | ios | T-0300✓, T-0302✓ (first real gen via `8d4cfe3`) | rides T-0302 regen + dev-API-live ✓ | **1 (the proving vertical)** |
 | **T-0304** | Partner shell (Dashboard·Orders·Invoices·Profile tabs) + RegistrationLock gate (fails CLOSED) + SplashGate. **Acceptance scope + the 3 Understand-pass rulings fixed in §7.4**: Decision 1 (fail-closed gate placement + AND predicate + both error paths CLOSED — confirms the Android gate, reviewer #24 + **TC-IOS-REGLOCK**), Decision 2 (the flat-enum `PartnerRootView` router gated by `.splash` — **ADR-0020**, reviewer #23), Decision 3 (the deferral map — "Fix" CTAs + onboarding branch INERT/deferred to T-0305/T-0310, the §7.2 inert-nav precedent) | M | **done ✅** `55b39aa`+`c269360`+`df71181` (`phase/ios-phase2`; Slice A gate: AND predicate, any nil→LOCKED, availability not a clause, BOTH error paths fail closed — reviewer #24 + **TC-IOS-REGLOCK** green, **security APPROVE**; ADR-0020 router #23 reseeded `.dashboard`→`.splash`, closing a latent T-0303 fail-OPEN; 14-token `missingFields` localized ×5. Slice B shell: native SwiftUI `TabView`, 4 tabs in Android `MainTab` order, dashboard tab hosts T-0303, `onOpenOrders`→Orders tab, 3 placeholders — **Gate-DP APPROVE** (D3 component swap noted). swiftformat/swiftlint clean; **CleansiaCore 93 + CleansiaPartner 61** pass on iPhone 17 sim. §7.4 (a) contact-support INERT, (b) silent-stale cache DEFERRED. Deferrals: Fix CTAs→T-0310, onboarding branch→T-0305) | ios | T-0303✓ | — | 2 (partner) |
 | **T-0305** | Partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding chain. **Acceptance scope + the 5 Understand-pass rulings fixed in §7.5**: D1 (a GENERAL `AppSettingsStore` in Core, UserDefaults-backed — onboarding-seen + the 5-locale language tag, `AppSettingsRepository.kt` parity), D2 (ConfirmEmail email via the `.verifyEmail(email:)` Route associated value, NOT a `UserProfileStore` — ADR-0020 fold-in), D3 (SECURITY: no new anon entry, Logout authed, `ConfirmUserEmail` is **PUT** + the spine `send()` gains an `httpMethod:` param, the double-skip + empty-token-gate reuse — reviewer #25), D4 (a Core `PasswordPolicy` + `PasswordRuleList`, ≥8&&letter&&digit — `RegisterViewModel.kt:37-39` parity), D5 (the F1 deviation: Android partner Register/Forgot VMs hardcode English validation strings — iOS localizes ×5; android fix is a follow-up). Reviewer #25/#26 + TC-IOS-CONFIRM-PUT / -SETTINGS / -PASSWORD-POLICY / -VERIFY-EMAIL-ARG + the extended TC-IOS-ANON/-EMPTYTOKEN | M | **done ✅** `ccd25cd`+`e232147`+`3e70cdb`+`84d38bc` (`phase/ios-phase2`; 4 slices — §7.5 docs / Slice A ConfirmEmail / Slice B Register / Slices C+D Forgot+Onboarding; every slice reviewer-APPROVE, Slice A also security-APPROVE — traced the backend `ConfirmUserEmail` (CODE-resolved, no session needed → the anon double-skip is SAFE), Slices C+D gate-safety SAFE. All 4 flows shipped: Register + Core `PasswordPolicy`/`PasswordRuleList`; Forgot single-phase; ConfirmEmail replaces the placeholder + reuses the LIVE empty-token gate; Onboarding 2-page intro + SplashGate branch + `hasSeenOnboarding` in the new Core `AppSettingsStore`. #25: `send()` gained `httpMethod:` (ConfirmUserEmail PUT, no silent 405); no new anon entry, Logout authed; positive-control proves the double-skip non-tautological. `.verifyEmail(email:)` carries the email (no `UserProfileStore`). F1: iOS localizes the validation strings ×5, the Android bug NOT replicated → android follow-up **T-0333**. Seed now UNCONDITIONALLY `.splash` (ADR-0020 living-doc fold-in — refines D2; gate #24 byte-unchanged, no bypass). swiftformat/swiftlint clean; **CleansiaCore 114 + CleansiaPartner 96** pass on iPhone 17 sim) | ios | T-0303✓, T-0304✓ | — | 2 (partner) |
-| **T-0306** | **Map seam + MapKit default** — `MapProvider`/`GeocodingService` protocol in `CleansiaCore` + `MapKitMapProvider` + the partner `AddressPicker` (first map surface). **iOS-16 variant (ADR-0014 D6′):** `Map(coordinateRegion:annotationItems:)` for the picker; `MKMapView` via `UIViewRepresentable` for the full-bleed map + polygon overlays — NO iOS-17-only `Map {...}`/`Marker`/`MapPolygon` | M | **proposed** | ios | T-0300 | — | 2 (**HARD AREA #2 — first half**) |
+| **T-0306** | **Map seam + MapKit default** — `MapProvider`/`GeocodingService` protocol + `Coordinate`/`GeocodedAddress` value types in `CleansiaCore` + `MapKitMapProvider`/`CLGeocoderGeocodingService` + the partner `AddressPickerView`/`VM` (first map surface; returns `GeocodedAddress` via callback — NOT wired into AddressSection, that's T-0310). **Acceptance scope + the 4 Understand-pass rulings fixed in §7.6**: D1 (a MINIMAL `MapProvider` picker factory now; T-0307's full-bleed/overlay surface added ADDITIVELY later — "the one way iOS does maps behind the seam"; `GeocodingService` = 1:1 `ReverseGeocodingService.kt` port minus the Mapbox token/network args), D2 (current-location/my-location FAB/`LocationProvider` seam DEFERRED → T-0310 gated on T-0325's `NSLocationWhenInUseUsageDescription`; ship pan+search parity on the Prague default — the recorded **Gate-DP divergence**, architect sign-off), D3 (geocoding best-effort: cancel-before-refire, nil/`[]` on error, never block the confirm; 300ms fwd / 500ms reverse debounce VERBATIM; the picker has **NO `UiState`/`ActionState`** — reviewer note #27), D4 (NO Mapbox token / map SDK / `Package.swift` change — net secret-surface reduction; Q-IOS-02 stays "No", `MapStyles.kt` NOT ported). **iOS-16 variant (ADR-0014 D6′):** `Map(coordinateRegion:annotationItems:[])` + SwiftUI overlay pin for the picker; `MKMapView`/`UIViewRepresentable` for the (additive, T-0307) full-bleed map + polygon overlays — NO iOS-17-only `Map {...}`/`Marker`/`MapPolygon`/`onMapCameraChange`. Reviewer #7/#12/#27 + Gate-DP. **Android parity: `AddressPickerScreen.kt` + `AddressPickerViewModel.kt` + `core/location/{ReverseGeocodingService,GeocodedAddress,LocationService,MapStyles}.kt`** | M | **proposed** | ios | T-0300 | — | 2 (**HARD AREA #2 — first half**) |
 | **T-0307** | **Partner order work-loop** — OrdersList + OrderDetail (full-bleed map + 3-snap sheet) + the **OnTheWay** lifecycle (Take→NotifyOnTheWay→Start→Complete) + checklist/notes/issues/timeline | **L → split** | **proposed** | ios | T-0304, T-0306 | — | 2 (**HARD AREA #3**) |
 | **T-0308** | **Partner photo upload** — camera capture → **JSON base64** photos (partner shape) on OrderDetail | M | **proposed** | ios | T-0307 | — | 2 (HARD AREA #3 cont.) |
 | **T-0309** | Partner earnings + invoices + PeriodPay (`EmployeePayroll/GetPeriodPays` — a regen'd-spec endpoint) | M | **proposed** | ios | T-0304 | — | 2 (partner) |
@@ -866,6 +866,151 @@ and a violation of `consistency.md` **E8** (all user text via `R.string`/`getStr
 
 ---
 
+### 7.6 T-0306 (Phase-2 map seam + MapKit + partner AddressPicker) — acceptance scope + the four Understand-pass rulings (recorded 2026-06-26, architect)
+
+T-0306 ships the **first concrete shape of the ADR-0013 D6 / ADR-0014 D6′ map seam**: (a) the Core
+`MapProvider`/`GeocodingService` protocols + the `Coordinate`/`GeocodedAddress` value types, (b)
+`MapKitMapProvider` + `CLGeocoderGeocodingService`, (c) the partner `AddressPickerView`/`VM` that returns a
+`GeocodedAddress` via callback (it does **NOT** wire into the AddressSection — that is **T-0310**). The
+Understand pass surfaced four decisions; **all four APPLY accepted ADRs — no new ADR** (the §7.2/§7.4/§7.5
+"record, not ADR" precedent: the trade-offs are owned by ADR-0013 D6, ADR-0014 D6′, and ADR-0018 Gate-DP,
+plus the analogous defer-the-affordance call §7.2/§7.4 already made). **Android parity source (the iOS port
+mirrors it):** `partner-app/.../features/profile/AddressPickerScreen.kt` (full-bleed map + a STATIC center-pin
+overlay the map pans under + search + reverse-geocode-on-idle 500ms + forward-search 300ms + a confirm card)
++ `AddressPickerViewModel.kt` (a thin DI seam, no state of its own) + `core/.../location/{ReverseGeocoding
+Service,GeocodedAddress,LocationService,MapStyles}.kt`. **Gate-DP applies** (T-0306 is a screen ticket): the
+picker cites `AddressPickerScreen.kt`; native SwiftUI; iOS-wins-on-conflict + the one noted divergence (D2).
+
+**IN — T-0306 acceptance scope:**
+- **Core seam:** `MapProvider` (picker-map factory) + `GeocodingService` protocols + `Coordinate` +
+  `GeocodedAddress` value types in `CleansiaCore/Location`; **`MapKitMapProvider`** + **`CLGeocoderGeocoding
+  Service`** as the default impls (the **only** sanctioned MapKit/CoreLocation consumers — feature/VM import
+  neither, reviewer #7/#27).
+- **Partner `AddressPickerView`/`VM`:** full-bleed picker map (iOS-16 `Map(coordinateRegion:interactionModes:
+  showsUserLocation:annotationItems:[])` + a SwiftUI overlay **center pin** the map pans under — NO
+  `Map{Marker}`/`onMapCameraChange`, reviewer #12) + search field + dropdown (forward-geocode) + the confirm
+  card; **returns `GeocodedAddress` via `onConfirmed` callback**. The VM owns the reverse-geocode-on-idle
+  debounce (Combine/`Task`, since iOS-16 has no idle callback) and the forward-search debounce.
+- **Geocoding contract:** best-effort (nil/`[]` on error, cancel-before-refire); **300ms forward / 500ms
+  reverse** ported VERBATIM from Android.
+- **Centers on the Prague default** (`14.4378, 50.0755`, zoom 15 — the `AddressPickerScreen.kt:90-91` parity);
+  **pan-to-place + search at full parity** (both usable with no location fix).
+
+**DEFERRED — explicitly out of T-0306, with the ticket each lands in:**
+- **Current-location auto-center + the my-location FAB + the `LocationProvider`/`CLLocationManager` seam** →
+  **T-0310** (picker→AddressSection wiring), gated on **T-0325**'s `NSLocationWhenInUseUsageDescription` plist
+  key (owner). **The recorded Gate-DP divergence** (Decision 2 below).
+- **The full-bleed `OrderDetail` map + the 3-snap sheet + the service-area polygon overlay** (the `MKMapView`/
+  `UIViewRepresentable` surface, ADR-0014 D6′) → **T-0307**, added as an **additive `MapProvider` method**
+  (Decision 1 below) — not designed ahead.
+- **Wiring the picker into the AddressSection + persisting via `UpdateAddressInfo`** → **T-0310** (the picker
+  hands `GeocodedAddress` back via callback; it persists nothing itself — the `AddressPickerScreen.kt:96-101`
+  parity).
+- **A custom Mapbox-Studio map style** (`MapStyles.kt`) → NOT ported (Decision 4; Q-IOS-02 stays "No").
+
+#### Decision 1 — `MapProvider` protocol shape: a MINIMAL picker factory NOW, T-0307's full-bleed surface added ADDITIVELY later (the one canonical seam)
+
+**RULING: minimal picker factory now; the full-bleed/overlay surface is an additive method later — record as
+"the one way iOS does maps behind the seam". An application of ADR-0013 D6's `MapProvider` seam — no new ADR.**
+
+- **What ships now:** `MapProvider` exposes only the **picker-map factory** T-0306 needs — a producer of a
+  SwiftUI view bound to a region + the static center-pin overlay (iOS-16 variant). The exact Swift surface is
+  the dev's (sketch: a `func pickerMap(region:showsUserLocation:) -> some View`/`AnyView`); the **contract** is
+  what's fixed: the feature gets a region-bound picker view, never a vendor type.
+- **What's added LATER, additively:** T-0307's full-bleed `OrderDetail` map + 3-snap sheet + service-area
+  polygon overlay is a **new additive method** on the same protocol (e.g. `fullBleedMap(region:overlays:
+  annotations:)`), implemented `MKMapView`-via-`UIViewRepresentable` inside `MapKitMapProvider` (ADR-0014 D6′).
+  Additive methods don't break the picker call site, so deferring is **free** — vs designing the rich surface
+  now, which would guess T-0307's camera/overlay/gesture needs before they exist (a speculative shape that gets
+  rewritten). The alternative — **a richer designed-ahead `MapProvider`** — was **rejected**: it front-loads
+  T-0307/0310/0314's unknown needs into T-0306, and the seam's whole point (ADR-0013 D6) is that the
+  *contract*, not the *surface area*, is what protects features.
+- **`GeocodingService` is a clean 1:1 port of `ReverseGeocodingService.kt`** (`reverseGeocode(lat,lng) →
+  GeocodedAddress?`, `forwardGeocode(query,countryIsoCodes) → [GeocodedAddress]`) **minus the Mapbox token +
+  the OkHttp/network args** — under MapKit it is `CLGeocoder`/`MKLocalSearch`, no token, no HTTP client.
+  `GeocodedAddress` mirrors the Kotlin fields (lat/lng/street/city/zipCode/country/countryIsoCode/formatted).
+- **The one sanctioned consumer:** the `MapKitMapProvider`-produced view + `CLGeocoderGeocodingService` are the
+  **only** code importing MapKit/CoreLocation; **feature/VM code imports neither** (reviewer #7 + #27).
+- Reused by **T-0307/T-0310/T-0314** by adding the next additive method, not re-deciding the seam.
+
+#### Decision 2 — current-location / permission: DEFERRED out of T-0306 (the one flow-touching Gate-DP divergence — architect sign-off)
+
+**RULING: DEFER current-location + the my-location FAB + the `LocationProvider` seam out of T-0306; ship
+pan+search parity centered on the Prague default; home them to T-0310 (gated on T-0325). This is the recorded
+Gate-DP divergence with architect sign-off — not a new trade-off** (the same defer-the-affordance-whose-
+dependency-isn't-live call §7.2 and §7.4 already made; ADR-0018 D3 component/affordance divergence).
+
+- **What Android does:** the picker auto-centers on the FusedLocation fix on open + shows a my-location FAB
+  (`AddressPickerScreen.kt:131-161` auto-center / permission launch, `:272-295` the FAB; via `LocationService.kt`).
+- **Why defer:** the iOS prompt needs `NSLocationWhenInUseUsageDescription` in the app `Info.plist`, which is
+  **owner ticket T-0325** (purpose strings). **Without that key the iOS permission prompt never appears** — so
+  a my-location FAB built in T-0306 would be a **dead control**. The picker is **fully usable without it**:
+  pan-to-place + search both work and reach full parity; it just **centers on the Prague default**
+  (`14.4378, 50.0755` — the `AddressPickerScreen.kt:90-91` parity) instead of the device fix.
+- **Home:** T-0310 (when the picker is wired into the AddressSection and T-0325's plist key exists) introduces
+  the `LocationProvider` seam (`CLLocationManager`, behind a Core protocol like `MapProvider`/`GeocodingService`
+  so the feature never imports CoreLocation) + the my-location FAB.
+- **The recorded Gate-DP divergence (architect sign-off):** *"iOS picker omits current-location pending T-0325;
+  pan/search parity is full; the divergence touches a deferred affordance, not layout/flow/branding."* This is
+  an ADR-0018 D3-shaped divergence (a component/affordance gap, **never** a layout/flow/branding change) — it
+  passes Gate-DP assertion #3 (noted in-ticket, touches only the affordance). **The alternative — parity now —**
+  would grow T-0306 by the `LocationProvider` seam **and** add a hard `manual_step:
+  NSLocationWhenInUseUsageDescription (T-0325, owner)` dependency onto a seam ticket; **rejected** — it couples
+  the map-seam delivery to an owner plist step for an affordance the picker doesn't need to be usable.
+
+#### Decision 3 — geocoding error/throttle + the NO-`UiState` ruling (reviewer note #27)
+
+**RULING: CONFIRMED as briefed — best-effort geocoding + verbatim debounce + NO sealed state on the picker.
+A confirmation of the Android behavior (ADR-0013 "mirror the code") + the catalog's E1/E2-scoping rule — no
+new ADR.**
+
+- **(a) `CLGeocoder` is best-effort.** Cancel the in-flight geocode before re-firing (`kCLErrorGeocodeCanceled`
+  is expected and swallowed); return `nil`/`[]` on any error; **never block the confirm or crash** — the
+  `runCatching{}.getOrNull()` / `.getOrDefault(emptyList())` parity (`ReverseGeocodingService.kt:41,79`). A
+  failed reverse-geocode leaves `resolved == nil` (the confirm button stays disabled — `AddressPickerScreen.kt:374`
+  parity), a failed forward-search shows the empty-results row.
+- **(b) Debounce timings port VERBATIM.** **300ms forward** (`AddressPickerScreen.kt:188`), **500ms
+  reverse-on-idle** (`:171`). They double as Apple's `CLGeocoder` rate-limit guard. **iOS-16 has no map idle
+  callback**, so reverse-geocode-on-idle is a **VM-owned Combine/`Task` debounce** off the region binding (the
+  VM observes the region and debounces 500ms before reverse-geocoding) — not a map delegate callback.
+- **(c) The AddressPicker correctly has NO `UiState<T>`/`ActionState`.** It is an **interactive map** with
+  plain `@Published` state (`resolved: GeocodedAddress?`, `lookingUp`, `searchQuery`, `searchResults`,
+  `searching` — the `remember{mutableStateOf}` set, `AddressPickerScreen.kt:117-122`) + a **one-shot confirm
+  event** (`onConfirmed(GeocodedAddress)`, a callback, not a mutation result). It is **neither** an E1
+  load-fetch screen (no `loading/error/loaded` fetch lifecycle) **nor** an E2 mutation screen (no
+  `idle/submitting/error` submit). So the sealed-state archetypes are **correctly scoped OUT** — and a reviewer
+  must **NOT** flag the absence of `UiState`/`ActionState` here as a consistency gap (it would be wrong to add
+  them). **Reviewer note #27** records this so the scoping is intentional, not an oversight.
+
+#### Decision 4 — NO Mapbox token / security (net reduction in secret-management surface vs Android)
+
+**RULING: CONFIRMED — zero map token, zero map SDK, zero `Package.swift` change; a net REDUCTION in secret
+surface vs Android. Q-IOS-02 stays defaulted "No". Recorded as the no-token security note — no new ADR**
+(it confirms ADR-0013 D6's "MapKit = free, native, no token" and Q-IOS-02's default).
+
+- **Under the MapKit default there is ZERO map token, ZERO map SDK dependency, ZERO `Package.swift` change** —
+  **MapKit + CoreLocation are system frameworks** (no SPM entry, no binary added).
+- **Contrast Android:** `ReverseGeocodingService.kt:21` takes a `MAPBOX_ACCESS_TOKEN` (fed from BuildConfig by
+  the Hilt location module); the token is a rotated secret + a leak surface. **iOS removes it entirely** — one
+  fewer secret to provision/rotate. **No owner provisioning step for maps** (the §7 owner-steps row already
+  reads "Mapbox token ONLY IF Q-IOS-02 flips the default — not needed under MapKit").
+- **Q-IOS-02 (Mapbox-brand) stays defaulted "No"** (MapKit standard style). `MapStyles.kt`'s custom Mapbox
+  Studio style is **NOT ported** — the stock MapKit style is the parity baseline; a hard brand requirement is
+  the only input that flips it, behind the **unchanged** `MapProvider` seam (a provider swap, not an
+  architecture change). The Q-IOS-02 record in `questions/open.md` is unchanged (still "No / default").
+
+#### New CRC role (added with the T-0306 wiring)
+
+- **`ios-geocoding-service`** — `GeocodingService` (protocol) + `CLGeocoderGeocodingService` (default impl, in
+  `CleansiaCore/Location`): *responsibility:* forward/reverse geocode text↔`GeocodedAddress`, **best-effort**
+  (nil/`[]` on error, cancel-before-refire), with **no token**. *Collaborators:* `CLGeocoder`/`MKLocalSearch`,
+  the `Coordinate`/`GeocodedAddress` value types. *Does NOT know:* the Mapbox token (there isn't one), the
+  network client (it's a system framework), which feature/VM consumes it, or how the picker renders. (The
+  ADR-0013 `ios-map-provider` CRC is unchanged — `MapKitMapProvider` is its default impl; T-0306 adds the
+  picker factory, T-0307 adds the full-bleed method.)
+
+---
+
 ## 8. Gates & verification (per `agents/process/quality-gates.md`)
 
 - **Reviewer-per-developer** on every ticket (concurrent).
@@ -985,6 +1130,22 @@ and a violation of `consistency.md` **E8** (all user text via `R.string`/`getStr
   `error_generic`; (c) the Core `PasswordPolicy` (≥8 && letter && digit) feeds the Core `PasswordRuleList`,
   shared partner+customer, no VM-local copy; (d) every validation message is an `.xcstrings` key ×5 (the F1
   divergence — Android's hardcoded literals NOT replicated; android fix filed as **T-0333**).
+  · **#27 (§7.6, T-0306+ — maps) the map seam is the canonical one** (composes with #7/#12): (a) all map +
+  geocode use goes through the Core **`MapProvider`/`GeocodingService`** protocols — **no feature/VM
+  `import MapKit` or `import CoreLocation`**; the `MapKitMapProvider`-produced view + `CLGeocoderGeocoding
+  Service` are the **only** MapKit/CoreLocation consumers (a second consumer is a finding); (b) the seam ships
+  **minimal** — the picker factory only; T-0307's full-bleed/overlay surface is an **additive** method (a
+  designed-ahead richer `MapProvider` is the rejected shape); (c) **NO iOS-17-only `Map{Marker}`/`MapPolygon`/
+  `onMapCameraChange`** (#12) — the picker uses `Map(coordinateRegion:annotationItems:[])` + a SwiftUI overlay
+  pin; (d) geocoding is **best-effort** (nil/`[]` on error, **cancel-before-refire** for
+  `kCLErrorGeocodeCanceled`, never blocks the confirm/crashes), debounce **300ms forward / 500ms reverse**
+  ported VERBATIM (reverse-on-idle is a VM Combine/`Task` debounce, not a map callback); (e) the AddressPicker
+  has **NO `UiState`/`ActionState`** — plain `@Published` + a one-shot `onConfirmed` callback; **the
+  sealed-state absence is correct — do NOT flag it**; (f) **current-location/the my-location FAB are NOT in
+  T-0306** (deferred to T-0310 + T-0325's plist key) — building the FAB now (a dead control without the plist
+  key) is a finding; the recorded **Gate-DP divergence** (iOS omits current-location pending T-0325; pan/search
+  parity full; touches the affordance, not layout/flow/branding) is noted in-ticket; (g) **NO Mapbox token /
+  map SDK / `Package.swift` map entry** — a stray token or `MapStyles.kt` port (Q-IOS-02 is "No") is a finding.
 - **Mechanical:** the Xcode workspace builds; `CleansiaCore` + both app targets compile; the codegen step
   produces the client from the on-disk spec (no hand-edit); the Swift test suites run. **✅ T-0303 evidence:**
   `swiftformat --lint` + `swiftlint --strict` clean; **CleansiaCore 93 + CleansiaPartner 17** tests pass on

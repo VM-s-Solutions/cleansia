@@ -226,7 +226,8 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | Android `SnackbarInsetState` global inset flow | the `bottomInset:` parameter on `.snackbarHost` (iOS-native, view-local — set by screens with bottom chrome) |
 | `ApiErrorParser.parseToUserMessage` | an app-injectable `ApiErrorLocalizing` seam (`ApiErrorLocalizer`); server message wins, else status→localized fallback |
 | `stringResource(R.string.x)` | `String(localized:)` / `Localizable.strings` |
-| `navigation.Routes` (`@Serializable`) | `NavigationStack` + typed route enum |
+| `navigation.Routes` (`@Serializable`) — **top-level audience hops** (Splash/Login/Lock/Main via `popUpTo{inclusive}`) | **the flat-enum root-switch** (`PartnerRootView` over a closed `enum Route`: `.splash`/`.login`/`.verifyEmail`/`.registrationLock`/`.dashboard`-shell), seeded `hasValidSession ? .splash : .login`, a verified login bounces through `.splash` which re-resolves shell-vs-lock (**ADR-0020**, reviewer #23). A top-level audience state modeled as a pushed `NavigationPath` is a deviation |
+| `navigation.Routes` (`@Serializable`) — **intra-audience push** (OrderDetail, ProfileSection, onboarding-chain sections) | `NavigationStack` + typed route enum (the push container **within** a root audience state, NOT the audience selector) |
 | per-app `openApiGenerate { generatorName=kotlin }` reading `openapi/{partner,customer}-mobile-api.json` | per-app `openapi-generator` **swift5 + urlsession** (`responseAs: AsyncAwait`) reading the **same shared committed specs**; config in `cleansia_ios/openapi/openapi-generator-config.*.yaml`, run via `scripts/generate-api-clients.sh`, emitting `Cleansia{Partner,Customer}Api` SPM packages. Generated output is **gitignored + never hand-edited** (change the spec or config, regenerate). The **auth/session/header spine is hand-written** in `Core/Auth` and **excluded from codegen**. First real generation is owner-gated (`manual_step: mobile-spec-regen`) — the specs are stale pre-T-0272 |
 | Android's generated Retrofit service authed by the OkHttp `AuthInterceptor`/`AuthAuthenticator` already installed in the client | **the generated swift5 client authenticates ONLY via a custom `RequestBuilderFactory` installed into the generated global config** (`Cleansia{Partner,Customer}ApiAPI.requestBuilderFactory`) — its `RequestBuilder` subclass routes **every** generated request through the **same** `Core/Auth` spine (`HeaderAdapter` for Bearer-iff-not-anon + `X-Device-Id`/`X-Device-Label`/`X-Time-Zone`, `actor SessionRefresher` for single-flight 401→refresh→retry), using only the generator's `open` points so it survives regeneration (**ADR-0019**). The generated APIs are static, apply only the static `customHeaders`, and are all `requiresAuthentication: false` — so without this they 401 tokenless |
 
@@ -240,6 +241,26 @@ handling** — a call site catching a 401 and refreshing itself (the single-flig
 once, for all). Authentication is decided by the injected `AnonymousAllowList`, **not** the generated
 `requiresAuthentication` flag. T-0303 proves it; every later authed wave installs the same factory per host and
 writes no auth code.
+
+**Partner router — the ONE way (ADR-0020, reviewer #23):** the partner app's **top-level audience** (logged-out
+/ resolving / locked / in-shell) is the **flat-enum `PartnerRootView` root-switch** — a closed `enum Route`
+(`.splash`/`.login`/`.verifyEmail`/`.registrationLock`/`.dashboard`-shell) the root view `switch`es over,
+seeded `hasValidSession ? .splash : .login`, where a **verified login bounces through `.splash`** (which
+re-resolves shell-vs-lock — the Android `PartnerNavHost.kt:118-124` idiom). `NavigationStack` is the
+**intra-audience** push container, NOT the audience selector. **Deviations a reviewer rejects:** a top-level
+audience state modeled as a pushed `NavigationPath`; a seed of `.dashboard` (the fail-open hole — must be
+`.splash`); a verified login routing straight to `.dashboard` (bypassing the gate). The customer app copies
+the *pattern* (its own root view + audience states), not the partner enum.
+
+**Partner registration gate — fail-closed (sprint-12 §7.4 Decision 1, reviewer #24, SECURITY):** the gate sits
+**between login and the shell** (the shell is unreachable until complete). The predicate is the **AND** of
+`hasCompletedProfile == true && areDocumentsUploaded == true && contractStatus ∈ {Approved(4), Active(2)}`
+(`RegistrationLockViewModel.kt:103-109`) — **any nil/unknown/other → LOCKED**; availability is NOT a clause.
+**Both error paths fail CLOSED:** the SplashGate routes a status-API `.failure` to the lock (never the shell);
+the lock VM's `.failure` preserves the cached status and never unlocks (only the success "complete" watermark
+unlocks). **Deviations a reviewer rejects:** a permissive optional default (`?? true`) on any gate field; a
+`.failure` reaching the shell; a `.failure` clearing/unlocking the gate. Later partner waves render inside the
+shell (past the gate) and must not add a second, weaker status check.
 
 **Parity rule:** reproduce the Android feature's states, empty/loading/error handling, and API calls
 exactly. A behavior difference is a bug unless the ticket calls for it. If the Android behavior is

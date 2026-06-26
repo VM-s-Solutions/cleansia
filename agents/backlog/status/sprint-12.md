@@ -134,7 +134,7 @@ PHASE 2+ PARITY FEATURE WAVES ── ordered by complexity; the 3 hard areas cal
 | **T-0301** | **Header-parity spec document** — the invisible out-of-band contract written down for the iOS dev (X-Device-Id==Device/Register id invariant, the full anon allow-list incl. customer host, X-Time-Zone, replace-refresh-on-refresh, empty-token gate) | S | **done ✅ (verified)** `c1009c6` (`src/cleansia_ios/docs/header-parity-contract.md`) | ios, docs | — | — | 0 (no-decision doc) |
 | **T-0302** | Swift codegen toolchain — openapi-generator **swift5 + urlsession**, wired into the build (script/SPM plugin, the `dependsOn(openApiGenerate)` parity), reading the **shared** mobile spec; never-hand-edit discipline | M | **WIRING done ✅ (verified)** `c1009c6` — `generate-api-clients.sh` runs Homebrew `openapi-generator`; generated 159 Swift files from the committed spec as a toolchain check, throwaway output removed. **FIRST REAL GEN `blocked` on mobile-spec-regen** | ios | T-0296✓ | **mobile-spec-regen (owner)** | 0 → first real gen **BLOCKED on regen** |
 | **T-0303** | **Phase-1 partner lead vertical** — partner login (hand-written auth, empty-token gate) → **read-only Dashboard** (`dashboardGetStats` via the **ADR-0019 Core-spine-backed `RequestBuilderFactory`** + `UiState`), proving auth/session/headers/codegen/state end-to-end. **Acceptance scope fixed in §7.2** (greeting + stats-driven cards + 3-state hero + inert nav closures; caching / pull-to-refresh / notifications / live order feeds DEFERRED to T-0304/0307/0310) | M | **done ✅** `8996df9`+`2a57f70` (`phase/ios-phase1`; both §7.1 blockers CLEARED — dev API live + regen `9232335`; #13-gen + TC-IOS-GEN green; CleansiaCore 93 + CleansiaPartner 17 pass; reviewer **AND** security APPROVE both slices — §7.3 fwd-notes) | ios | T-0300✓, T-0302✓ (first real gen via `8d4cfe3`) | rides T-0302 regen + dev-API-live ✓ | **1 (the proving vertical)** |
-| **T-0304** | Partner shell (Dashboard·Orders·Invoices·Profile tabs) + RegistrationLock gate (fails CLOSED) + SplashGate | M | **proposed** | ios | T-0303 | — | 2 (partner) |
+| **T-0304** | Partner shell (Dashboard·Orders·Invoices·Profile tabs) + RegistrationLock gate (fails CLOSED) + SplashGate. **Acceptance scope + the 3 Understand-pass rulings fixed in §7.4**: Decision 1 (fail-closed gate placement + AND predicate + both error paths CLOSED — confirms the Android gate, reviewer #24 + **TC-IOS-REGLOCK**), Decision 2 (the flat-enum `PartnerRootView` router gated by `.splash` — **ADR-0020**, reviewer #23), Decision 3 (the deferral map — "Fix" CTAs + onboarding branch INERT/deferred to T-0305/T-0310, the §7.2 inert-nav precedent) | M | **proposed** | ios | T-0303 | — | 2 (partner) |
 | **T-0305** | Partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding chain | M | **proposed** | ios | T-0303 | — | 2 (partner) |
 | **T-0306** | **Map seam + MapKit default** — `MapProvider`/`GeocodingService` protocol in `CleansiaCore` + `MapKitMapProvider` + the partner `AddressPicker` (first map surface). **iOS-16 variant (ADR-0014 D6′):** `Map(coordinateRegion:annotationItems:)` for the picker; `MKMapView` via `UIViewRepresentable` for the full-bleed map + polygon overlays — NO iOS-17-only `Map {...}`/`Marker`/`MapPolygon` | M | **proposed** | ios | T-0300 | — | 2 (**HARD AREA #2 — first half**) |
 | **T-0307** | **Partner order work-loop** — OrdersList + OrderDetail (full-bleed map + 3-snap sheet) + the **OnTheWay** lifecycle (Take→NotifyOnTheWay→Start→Complete) + checklist/notes/issues/timeline | **L → split** | **proposed** | ios | T-0304, T-0306 | — | 2 (**HARD AREA #3**) |
@@ -373,6 +373,152 @@ commit).
    server-derived id must rely on the same server-side override (never trust the client-supplied id for
    authz scoping).
 
+### 7.4 T-0304 (Phase-2 partner shell + SplashGate + RegistrationLock) — acceptance scope + the three Understand-pass rulings (recorded 2026-06-26, architect)
+
+T-0304 builds the partner **authenticated shell** (a SwiftUI `TabView`: Dashboard·Orders·Invoices·Profile —
+Android `MainScaffold.kt:44-49` parity) **gated by a SplashGate + a RegistrationLock that FAILS CLOSED**.
+The Understand pass surfaced three decisions; all three are ruled below. **Two are records (no new
+trade-off): Decision 1 (the gate placement + fail-closed semantics) confirms the Android partner gate, and
+Decision 3 (scope vs Android) applies the T-0303 inert-nav precedent + ADR-0013 parity. Decision 2 (the
+router shape) is a genuine judgment call canonicalized as ADR-0020** (the partner router pattern, so
+T-0305+ don't reinvent it). Android parity sources (verified): the shell `MainScaffold.kt`; the SplashGate
+decision tree `navigation/PartnerNavHost.kt:74-97` + `:448-509` (`SplashViewModel`); the fail-closed
+predicate `features/orders/RegistrationLockViewModel.kt:103-109` + the fail-closed-on-error preservation
+`:197-211`; `RegistrationLockScreen.kt` (the locked screen). Status read via
+`PartnerEmployeeAPI.employeeCheckCurrentEmployee()` → `RegistrationCompletionStatus`, through the ADR-0019
+Core-spine generated-client seam (already installed).
+
+#### Decision 1 — RegistrationLock placement + fail-closed semantics (SECURITY — the standing gate every later partner wave sits behind)
+
+**RULING: CONFIRMED as briefed. This is a confirmation of the Android partner gate (ADR-0013 "mirror the
+code") — no new ADR.** Verified against the Android source:
+
+- **The gate sits BETWEEN login and the authed shell.** The shell (Orders/etc.) is **unreachable** until
+  `isRegistrationComplete == true`. Structurally enforced by ADR-0020: the router resolves `.splash` (the
+  gate) **before** rendering `.dashboard` (the shell); there is no login→shell path bypassing `.splash`.
+  (Android: `startDestination = Splash`, `PartnerNavHost.kt:72`; the shell `Main` is reached **only** from
+  `Authenticated` or the lock's `onCompleted`, `:74-97` / `:197-201`.)
+- **The predicate is an AND, mirroring Android** (`RegistrationLockViewModel.kt:103-109`, `isRegistrationComplete()`):
+  `hasCompletedProfile == true && areDocumentsUploaded == true && (contractStatus == .approved(4) ||
+  contractStatus == .active(2))`. **Any nil/unknown/other → false → LOCKED** (the Kotlin `== true` on the
+  nullable booleans gives nil → false; `ContractStatus`: Pending=1/Active=2/Terminated=3/Approved=4/Rejected=5).
+  **Availability is NOT a gate clause** — backend always reports it true; the iOS predicate must not read it
+  (the Android comment at `:106-107` makes this explicit).
+- **BOTH error paths fail CLOSED:**
+  - **(i) SplashGate** — a registration-status API **`.failure` routes to RegistrationLock, never to the
+    shell** (the `SplashViewModel` `ApiResult.Error → NeedsRegistrationLock` parity, `PartnerNavHost.kt:506`).
+  - **(ii) The lock VM's `.failure` PRESERVES the last-known/Missing state and never flips to unlocked** —
+    the Error branch must **not** touch the cached `status`, so the last-known categories (or all-Missing on
+    a first-attempt failure) stay rendered and the gate stays locked (the Android Error branch at
+    `RegistrationLockViewModel.kt:197-211` does exactly this; the comment "never accidentally unlock a
+    half-onboarded cleaner on a transient network blip" is the load-bearing intent). **The success-only
+    unlock** is when the "complete" watermark fires (Android `RegistrationLockScreen.kt:112-114`,
+    `LaunchedEffect(status){ if isRegistrationComplete -> onCompleted }`).
+
+**Reviewer check (the iOS sibling of the partner-gate rule) — #24:** the partner registration gate is
+**fail-closed end-to-end**: (a) the predicate is the **AND** of profile + documents + contract∈{Approved,
+Active}, with **every** nil/unknown/other → LOCKED (no `??true`, no optional-defaulting-to-permissive); (b)
+the SplashGate routes a status-API `.failure` to the lock, **never** the shell; (c) the lock VM's `.failure`
+**preserves** the cached status (does not clear it) and **never** transitions to unlocked — the only unlock is
+the success-path "complete" watermark; (d) availability is **not** read as a gate clause. A permissive default
+on any nil field, a `.failure` reaching the shell, or a `.failure` clearing/unlocking the gate is a
+**blocking security finding**.
+
+**SECURITY forward-note (carry to every later partner wave):** the RegistrationLock is the **standing gate
+every later partner wave sits behind** (T-0307 orders, T-0309 pay, T-0310 profile). Those waves render
+**inside** `.dashboard` (the shell), which is reached **only** past this gate — so they inherit the gate and
+must **not** add a second, weaker status check or a permissive default that could re-open it. The gate's
+status call rides the **ADR-0019** generated-client seam (and the §7.3 forward-note #2 applies: any
+server-derived id round-trip is safe only because the backend overrides it for non-admin callers).
+
+**Required test contract — TC-IOS-REGLOCK (red-first, T-0304):**
+- **empty/nil status → LOCKED** (an all-nil `RegistrationCompletionStatus` is not complete);
+- **each single-wrong field → LOCKED** — profile false (others ok) → locked; docs false → locked;
+  contract Pending(1)/Terminated(3)/Rejected(5)/nil → locked (only Approved(4) or Active(2) passes);
+- **`.failure` → LOCKED** — SplashGate: a status-API `.failure` resolves to `.registrationLock` (not
+  `.dashboard`); the lock VM: a refresh `.failure` preserves the prior `status` and stays locked;
+- **only profile+docs+Approved|Active → UNLOCKED** — the complete state (and only it) fires the watermark →
+  `.dashboard`.
+(The SplashGate `.failure`/no-session/complete/incomplete cases are shared with **TC-IOS-SPLASH-RESOLVE**,
+ADR-0020.)
+
+#### Decision 2 — Router shape: the flat-enum `PartnerRootView` root-switch, gated by `.splash` (→ ADR-0020)
+
+**RULING: the flat-enum `PartnerRootView` approach is the SANCTIONED iOS partner router — RECORDED AS
+ADR-0020** (a genuine judgment call: two valid readings — flat-enum root-switch vs path-based
+`NavigationStack` audience router — and the proving vertical already chose one; T-0305+ would each
+re-decide it otherwise). The decision (full trade-off + alternatives + reviewer #23 in the ADR):
+- Extend the T-0303 `enum Route` with **`.splash`** (the decision state) and **`.registrationLock`**; the
+  `.dashboard` case becomes the **shell** (the `TabView`).
+- **Seed `hasValidSession ? .splash : .login`** (NOT `.dashboard` — the T-0303 seed is a fail-OPEN hole once
+  the gate exists; this closes it, Android `startDestination = Splash`).
+- **A verified login routes to `.splash`** (the Android "bounce through Splash so registration re-checks",
+  `PartnerNavHost.kt:118-124`), which **re-resolves** to `.dashboard`-shell vs `.registrationLock` vs
+  `.login`. **`.verifyEmail` is preserved** for the `requiresEmailConfirmation == true` branch (the T-0303
+  §7.2 router-gate test is **extended, not broken**).
+- **`NavigationStack` stays the intra-audience push container** (OrderDetail, ProfileSection, the
+  onboarding-chain sections), **not** the audience selector.
+- **Rejected:** a path-based `NavigationStack` audience router (discards the working T-0303 root-switch +
+  §7.2 gate test; models replace-semantics audience hops as awkward path push-then-clear; the audience is a
+  small **closed** set an `enum` checks exhaustively). See ADR-0020 Alternatives.
+
+**Reviewer check #23 (ADR-0020)** applies to T-0304: the top-level audience is the flat-enum root-switch
+seeded `.splash`/bounced-through-`.splash`; no top-level audience state modeled as a pushed path; no
+login→shell path bypassing `.splash`.
+
+#### Decision 3 — T-0304 scope vs Android (parity judgment): the deferral map
+
+**RULING: CONFIRMED — T-0304 ports the gate + predicate + locked screen + sign-out + pull-to-refresh/Retry;
+the "Fix" CTAs and the onboarding branch are INERT/deferred (the T-0303 inert-nav precedent, §7.2).** No new
+trade-off (ADR-0013 parity + the §7.2 inert-closure precedent own the call) — a **scope record**, not an ADR.
+
+**IN — T-0304 acceptance scope:**
+- **The partner shell** — the SwiftUI `TabView` (Dashboard·Orders·Invoices·Profile), Android `MainScaffold.kt:44-49`
+  parity. **The Dashboard tab reuses the T-0303 `DashboardView`** (now a tab, not the bare root); **the other
+  three tabs may be minimal/placeholder** (their real content is T-0307 orders / T-0309 invoices / T-0310
+  profile — see the deferral map). Gate-DP applies (cite `MainScaffold.kt`, native SwiftUI `TabView`,
+  iOS-wins-on-conflict per ADR-0018: Compose `NavigationBar` → `TabView`, same tabs/order).
+- **The router** — `PartnerRootView` extended per **ADR-0020** (`.splash`/`.registrationLock` cases, the
+  `.splash`-seed + login-bounce, the shell as `.dashboard`).
+- **The SplashGate** — a `SplashGateViewModel` (the `SplashViewModel` parity, `PartnerNavHost.kt:478-509`)
+  resolving the gate **once** on appear → `.dashboard`/`.registrationLock`/`.login`, **fail-closed on
+  `.failure`** (Decision 1). For T-0304 the splash resolves the **authed** branch; the
+  `NeedsOnboarding` branch is deferred (below).
+- **The RegistrationLock screen** — the hero lock + **3 category rows (Profile / Documents / Approval) +
+  progress bar** (Android `RegistrationLockScreen.kt`), **sign-out**, and **pull-to-refresh + Retry banner**
+  (the `userRefresh` path, `RegistrationLockViewModel.kt:143-144` + the error banner). The **fail-closed
+  predicate + semantics** (Decision 1) + **TC-IOS-REGLOCK**.
+- **The silent-stale caching** of the lock's status (the `STALE_WINDOW_MS`/`ensureFreshOrCachedAsync` path,
+  `RegistrationLockViewModel.kt:164-168`) — port at parity, OR defer to T-0307 alongside the dashboard's
+  silent-stale caching that §7.2 deferred to T-0304 — **the dev/reviewer picks one and notes it in-ticket**;
+  the *user-pull/Retry* path (which drives the visible indicator) is IN regardless.
+
+**DEFERRED — explicitly out of T-0304, with the ticket each lands in (the deferral map):**
+- **The lock's "Fix" CTAs** (the per-row chevrons routing into the profile-section editors —
+  `RegistrationLockViewModel.kt:279-293` `fixDestination`) → render the rows + chevrons but the CTAs are
+  **INERT closures** (the T-0303 inert-nav precedent, §7.2): present and visible, route nowhere yet. The
+  **profile-section onboarding chain** they target lands in **T-0310** (profile section editors +
+  onboarding-chain) — the Profile-row CTA — and the Documents-row CTA also homes to **T-0310** (`ProfileDocuments`).
+  The **Rejected-approval `mailto:` support** affordance (`RegistrationLockScreen.kt:419-428`) may ship inert
+  or as a simple mail link in T-0304 (it has no in-app destination); note the choice in-ticket.
+- **The SplashGate `NeedsOnboarding` branch** (Android's 4th `SplashOutcome`,
+  `PartnerNavHost.kt:86-90`/`:486-491` — first-launch onboarding for a session-less, not-yet-onboarded user)
+  → **T-0305** (partner auth completeness — Register/Forgot/ConfirmEmail/**Onboarding** chain). For T-0304
+  the splash's no-session branch resolves to `.login` (onboarding-vs-login is T-0305's split); ADR-0020 D5
+  records this.
+- **The lock-complete onboarding-chain re-fetch loop** (Android's `nextOnboardingDestination` chaining,
+  `RegistrationLockViewModel.kt:338-348`, that walks the cleaner section-by-section without bouncing through
+  the lock) → **T-0310** (the profile chain that owns the section editors). T-0304's lock unlocks on the
+  watermark (success path) but does not drive the forward chain.
+
+**Why this is right (not under-scoping):** T-0304's job is the **standing gate + the shell scaffold** — the
+security boundary every later partner wave sits behind. It must prove **login → splash → fail-closed
+gate → shell-vs-lock** end-to-end with the predicate + both fail-closed paths correct. The "Fix" CTAs and
+the onboarding branch are **additive parity** that land when their destination screens (T-0305 onboarding,
+T-0310 profile chain) exist — reached by **copying** the ADR-0020 router seam + the §7.4 gate, not
+re-deciding them. Rendering them inert (the §7.2 precedent) keeps the locked screen visually at parity while
+honestly deferring the destinations that don't exist yet.
+
 ---
 
 ## 8. Gates & verification (per `agents/process/quality-gates.md`)
@@ -393,6 +539,13 @@ commit).
   carries Bearer + `X-Device-Id`/`X-Device-Label`/`X-Time-Zone` despite `requiresAuthentication:false`, and a
   401 drives a single-flight refresh + **exactly one** retry with the rotated token (§7.3). Required §7.2
   router-gate test (`requiresEmailConfirmation==true` → `verifyEmail`) also present + green.
+- **TDD on the partner shell + gate (T-0304, §7.4 + ADR-0020):** **TC-IOS-REGLOCK** (empty/nil status →
+  LOCKED; each single-wrong field → LOCKED — profile/docs false, contract Pending(1)/Terminated(3)/
+  Rejected(5)/nil; `.failure` → LOCKED on **both** the SplashGate and the lock-VM paths; only
+  profile+docs+Approved(4)|Active(2) → UNLOCKED), **TC-IOS-ROUTER-SEED** (`.splash` when `hasValidSession`
+  else `.login` — never `.dashboard`), **TC-IOS-ROUTER-BOUNCE** (verified login → `.splash`; unverified →
+  `.verifyEmail` — the extended §7.2 gate), **TC-IOS-SPLASH-RESOLVE** (complete → `.dashboard`, incomplete/
+  `.failure` → `.registrationLock`, no-session → `.login`) — **red-first**.
 - **Reviewer compliance checks (ADR-0013 + ADR-0014 §"How a reviewer verifies"):** #1 no hand-edited
   generated client · #2 auth NOT generated · #3 X-Device-Id single source · #4 anon allow-list complete
   (incl. customer host) · #5 refresh token replaced every refresh · #6 single no-auth session +
@@ -408,7 +561,18 @@ commit).
   reading `TokenStore`, setting `Authorization`/`Bearer`, or writing a Bearer into `customHeaders`), NO per-call
   header duplication, NO per-call 401 handling; the injected `AnonymousAllowList` (not the generated
   `requiresAuthentication` flag) governs**. **✅ #13-gen PASS in T-0303 (reviewer, both slices)** — single
-  token source; no per-call header/token code outside `HeaderAdapter`; no hand-edited generated client.
+  token source; no per-call header/token code outside `HeaderAdapter`; no hand-edited generated client. ·
+  **#23 (ADR-0020, T-0304+) partner top-level audience routing is the flat-enum `PartnerRootView`
+  root-switch gated by `.splash`** — the audience is a closed `enum` switch (not a pushed
+  `NavigationPath`); seeded `hasValidSession ? .splash : .login` (NOT `.dashboard`); a verified login bounces
+  through `.splash` (NOT straight to `.dashboard`); there is **no** login→shell path bypassing `.splash`;
+  `NavigationStack` is the **intra-audience** push container only · **#24 (§7.4 Decision 1, T-0304+ —
+  SECURITY) the partner registration gate is fail-closed end-to-end** — the predicate is the **AND** of
+  profile + documents + contract∈{Approved(4),Active(2)} with **every** nil/unknown/other → LOCKED (no
+  permissive optional default; availability is NOT a clause); the SplashGate routes a status-API `.failure`
+  to the lock **never** the shell; the lock VM's `.failure` **preserves** the cached status and **never**
+  unlocks (only the success "complete" watermark unlocks). A permissive nil default, a `.failure` reaching
+  the shell, or a `.failure` clearing/unlocking is a **blocking** finding.
 - **Mechanical:** the Xcode workspace builds; `CleansiaCore` + both app targets compile; the codegen step
   produces the client from the on-disk spec (no hand-edit); the Swift test suites run. **✅ T-0303 evidence:**
   `swiftformat --lint` + `swiftlint --strict` clean; **CleansiaCore 93 + CleansiaPartner 17** tests pass on

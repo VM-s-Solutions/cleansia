@@ -175,6 +175,58 @@ var hasValidSession: Bool { get }   // delegates to the spine: tokenStore.curren
   **no** `save`/`clear`, **no** raw token — only `hasValidSession`. A `TokenStore` (or its mutators) reaching the
   app layer is a finding: it forks the mutation path the spine owns.
 
+### Partner router shape — a flat-enum `PartnerRootView` root-switch gated by `.splash` (ADR-0020)
+
+The partner app routes its **top-level audience** (logged-out / resolving / locked / in-shell) with the
+**flat-enum `PartnerRootView` root-switch** T-0303 shipped — **not** a path-based `NavigationStack` audience
+router. ADR-0020 (accepted 2026-06-26, surfaced by the T-0304 Understand pass) canonicalizes it so the later
+partner waves (T-0305/0307/0309/0310) extend one router instead of each re-deciding the shape:
+
+```swift
+// PartnerRootView.Route — extended in T-0304 from T-0303's { login, dashboard, verifyEmail }.
+enum Route { case splash; case login; case verifyEmail; case registrationLock; case dashboard /* = the shell */ }
+_route = State(initialValue: container.hasValidSession ? .splash : .login)   // seed: .splash, NOT .dashboard
+// Route.afterLogin: requiresEmailConfirmation ? .verifyEmail : .splash       // verified login BOUNCES through .splash
+```
+
+- **The audience is a closed `enum` the root view `switch`es over** (compiler-exhaustive, replace-semantics —
+  setting `route` swaps the whole root, no audience back-stack to swipe-back into a stale/logged-out state).
+  **`NavigationStack` stays the *intra-audience* push container** (OrderDetail, ProfileSection, the
+  onboarding-chain sections) — **not** the audience selector. (Reconciles the `patterns-mobile` `navigation.Routes`
+  row, now split-scoped: top-level audience = root-`enum`; intra-audience push = `NavigationStack`+typed route.)
+- **`.splash` is the SplashGate decision state** (the `SplashViewModel` parity, `PartnerNavHost.kt:478-509`):
+  resolves the registration gate **once** on appear → `.dashboard`-shell vs `.registrationLock` vs `.login`.
+  A verified **login bounces through `.splash`** (the Android idiom, `PartnerNavHost.kt:118-124`) so the
+  registration gate is re-applied to every fresh login; the T-0303 §7.2 `verifyEmail` gate is **preserved**
+  (unverified → `.verifyEmail`). The seed change `.dashboard → .splash` **closes a T-0303 fail-open** (the old
+  seed landed an authed-but-incomplete partner straight on the shell).
+- **Mirror the Android *decision tree*, not its *mechanism*** — Android is a path-based `NavHost`; iOS mirrors
+  the `Splash → {shell | lock | login}` tree with a root-`enum` (the same "parity is of behavior, not
+  vendor/mechanism" logic ADR-0013 D6 used for MapKit-vs-Mapbox). Rejected: a literal `NavigationStack` audience
+  router (discards the working root-switch + §7.2 test; models replace-semantics audience hops as awkward path
+  push-then-clear). **Reviewer #23** enforces it; the customer app (T-0312+) copies the *pattern* with its own
+  root view + audience states.
+
+### Partner registration gate — fail-closed, between login and the shell (sprint-12 §7.4 Decision 1; SECURITY)
+
+The **standing gate every later partner wave sits behind** (the iOS sibling of the partner-gate rule), a
+confirmation of the Android gate (ADR-0013 "mirror the code") — recorded in sprint-12 §7.4, **not** a new ADR:
+
+- **Between login and the authed shell.** The shell (Orders/etc.) is **unreachable** until
+  `isRegistrationComplete == true`; ADR-0020 enforces it structurally (`.splash` resolves before `.dashboard`
+  renders — no login→shell path bypasses the gate).
+- **The predicate is an AND** (`RegistrationLockViewModel.kt:103-109`): `hasCompletedProfile == true &&
+  areDocumentsUploaded == true && (contractStatus == .approved(4) || .active(2))`. **Any nil/unknown/other →
+  LOCKED.** Availability is **not** a clause (backend always reports it true). `ContractStatus`:
+  Pending=1/Active=2/Terminated=3/Approved=4/Rejected=5.
+- **Both error paths fail CLOSED:** the **SplashGate** routes a status-API `.failure` → `.registrationLock`,
+  **never** the shell (`PartnerNavHost.kt:506`); the **lock VM's `.failure`** preserves the cached status and
+  **never** unlocks (`RegistrationLockViewModel.kt:197-211` — the Error branch must not touch `status`). The
+  **only** unlock is the success "complete" watermark (`RegistrationLockScreen.kt:112-114`).
+- **Reviewer #24** + **TC-IOS-REGLOCK** (sprint-12 §7.4 / §8) enforce it. **Forward-note:** later partner
+  waves (T-0307/0309/0310) render *inside* the shell (reached only past this gate) — they must not add a
+  second, weaker status check or a permissive nil default that re-opens it.
+
 - **Deployment target: iOS 16 vs iOS 17 (ADR-0014).** Chose **iOS 16** — the owner prioritised old-device
   reach (iPhone 8/8 Plus/X, 2017+), which iOS 17 (XS/XR, 2018+) excluded. The cost is the state mechanism
   (`@Observable` is iOS-17-only) and a couple of MapKit API variants; both are accepted trade-offs, recorded
@@ -215,6 +267,7 @@ var hasValidSession: Bool { get }   // delegates to the spine: tokenStore.curren
 | ADR (architecture + strategy) | — | **accepted** (ADR-0013) |
 | ADR (iOS-16 floor + `ObservableObject` state + iOS-16 MapKit variant) | — | **accepted** (ADR-0014, partially supersedes ADR-0013 D2 + target) |
 | ADR (generated client authenticates via the Core-spine-backed `RequestBuilderFactory`) | — | **accepted** (ADR-0019, refines ADR-0013 D4/D5 — the one way; reviewer #13-gen) |
+| ADR (partner router = flat-enum `PartnerRootView` root-switch gated by `.splash`) | — | **accepted** (ADR-0020, refines ADR-0013 D2/D9 — the canonical partner router; reviewer #23; T-0304 builds it) |
 | Owner Q-IOS-01 (deployment target) | — | **ANSWERED — iOS 16** (old-device reach) |
 | Owner **mobile-spec regen** (the one hard blocker) | pre-Phase-2 | **PENDING — owner-only** (`manual_step: mobile-spec-regen`) |
 | Workspace + `CleansiaCore` skeleton + design tokens + DI + snackbar/error center | 0 | planned (runnable on approval) |

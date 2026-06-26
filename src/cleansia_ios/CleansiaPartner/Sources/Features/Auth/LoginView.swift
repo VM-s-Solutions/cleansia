@@ -54,9 +54,9 @@ private struct LoginContent: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                Image(systemName: "hand.wave.fill")
-                    .font(.system(size: 96))
-                    .foregroundColor(CleansiaColors.primary)
+                Mascot.waving.image
+                    .resizable()
+                    .scaledToFit()
                     .frame(width: 160, height: 160)
 
                 Spacer().frame(height: Spacing.l)

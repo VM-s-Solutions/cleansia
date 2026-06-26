@@ -34,6 +34,13 @@ targets:
       path: Info.plist
       properties:
         API_BASE_URL: $(API_BASE_URL)
+        UIAppFonts:
+          - Poppins-Medium.ttf
+          - Poppins-SemiBold.ttf
+          - Poppins-Bold.ttf
+          - Nunito-Regular.ttf
+          - Nunito-SemiBold.ttf
+          - Nunito-Bold.ttf
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cz.cleansia.customer

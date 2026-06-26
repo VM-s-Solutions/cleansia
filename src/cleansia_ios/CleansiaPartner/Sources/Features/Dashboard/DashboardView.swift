@@ -83,9 +83,9 @@ private struct GreetingBar: View {
 
     var body: some View {
         HStack(spacing: Spacing.s) {
-            Image(systemName: "hand.wave.fill")
-                .font(.system(size: 28))
-                .foregroundColor(CleansiaColors.primary)
+            Mascot.waving.image
+                .resizable()
+                .scaledToFit()
                 .frame(width: 40, height: 40)
             VStack(alignment: .leading, spacing: 2) {
                 Text(DashboardGreeting.text(firstName: firstName))
@@ -129,9 +129,10 @@ private struct HeroCard: View {
         case .empty:
             Button(action: onOpenOrders) {
                 HStack(spacing: Spacing.m) {
-                    Image(systemName: "hand.wave")
-                        .font(.system(size: 40))
-                        .foregroundColor(CleansiaColors.primary)
+                    Mascot.leaning.image
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 64, height: 64)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(L10n.Dashboard.noJobsYetTitle)
                             .font(CleansiaTypography.titleMedium)

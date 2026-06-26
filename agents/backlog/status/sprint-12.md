@@ -1,6 +1,6 @@
 # Sprint 12 — iOS PORT (Wave 10): parity Swift/SwiftUI customer + partner apps
 
-**Status:** PHASE 0 FOUNDATION DONE + MAC-VERIFIED + MERGED (2026-06-26) · PHASE 1 (T-0303) HELD on owner (mobile-spec-regen + dev-API-live) · Phase 2+ proposed
+**Status:** PHASE 0 FOUNDATION DONE + MAC-VERIFIED + MERGED (2026-06-26) · **PHASE 1 (T-0303) DONE** — proving vertical green on `phase/ios-phase1` (both owner blockers CLEARED) · Phase 2+ proposed
 **Created:** 2026-06-23
 **Updated:** 2026-06-26
 **Source:** **ADR-0013** (`adr/0013-ios-app-architecture-and-port-strategy.md`, **accepted** 2026-06-23) +
@@ -35,6 +35,29 @@ born-canonical Swift `ApiResult<T>` contract.
 > **T-0323 → `done` via CI (#90)**; **T-0303 → `blocked` on TWO owner-side items** (mobile-spec-regen +
 > the dev mobile-API hosts being live — see §7.1). The Phase-0 audit logged **2 dormant deferred findings**
 > (`T-0331` unblocked, next; `T-0332` booking-checkpoint) — INDEX banner. Phase 2+ stays **proposed**.
+
+> **STATUS-LOG 2026-06-26 — PHASE 1 (T-0303) `blocked` → `done`; the proving vertical is GREEN on
+> `phase/ios-phase1`.** Both owner blockers that held T-0303 (§7.1) are **CLEARED**: the dev mobile API is
+> **live**, and the owner ran the **mobile-spec-regen** (the post-T-0272 specs are committed — `9232335`).
+> T-0303 is implemented + reviewed + committed on `phase/ios-phase1` in **2 commits** — `8996df9` (Slice A:
+> partner login spine) + `2a57f70` (Slice B: read-only Dashboard) — preceded by `d965c5b` (ADR-0019 + the
+> §7.2 scope record) and `8d4cfe3` (the T-0302 codegen toolchain first real generation). **The proving
+> vertical works end-to-end:** partner login (hand-written `AuthClient`, empty-token/unverified gate, router
+> gates verified→dashboard vs unverified→`verifyEmail` placeholder) → authed **read-only Dashboard** (greeting
+> + Weekly-earnings / Pay-period / Last-month stats cards + the 3-state hero) via the generated
+> `dashboardGetStats` going out **through the ADR-0019 Core-spine-backed `RequestBuilderFactory`**. **Gates
+> all green** (see §8 evidence): reviewer **#13-gen PASS** (single token source; no per-call header/token code
+> outside `HeaderAdapter`; no hand-edited generated client) + **TC-IOS-GEN** passes (a generated call carries
+> Bearer + `X-Device-Id`/`X-Device-Label`/`X-Time-Zone` despite the generated `requiresAuthentication:false`,
+> and a 401 drives a single-flight refresh + **exactly one** retry with the rotated token); the required
+> **router-gate test** (`requiresEmailConfirmation==true` → `verifyEmail`, §7.2) is present; `swiftformat
+> --lint` + `swiftlint --strict` clean; **CleansiaCore 93 tests + CleansiaPartner 17 tests** pass on the
+> iPhone 17 simulator; **reviewer AND security APPROVE on both slices.** Deferrals confirmed unchanged (§7.2):
+> the hero's 3 states are IMPLEMENTED, live non-empty data lands in **T-0307**; greeting "jobs today" line,
+> notifications bell, quick-actions grid, and silent-stale cache / pull-to-refresh defer to their named homes
+> (**T-0304/0307/0310**). Two security forward-notes recorded for the later authed waves (§7.3). Resulting
+> transition: **T-0303 → `done`** (§3 + INDEX Wave-10 roster). The owner commits these backlog edits to
+> `phase/ios-phase1` (the PM does not commit). Phase 2+ stays **proposed**.
 **Goal:** port the Kotlin/Compose customer + partner apps to **Swift/SwiftUI** as **parity** apps sharing
 the **same Mobile API contract**, on a `CleansiaCore` SPM package + 2 app targets, **partner-first**, with
 a hand-written auth/session/header layer to the exact Android contract. iOS code lives at
@@ -110,7 +133,7 @@ PHASE 2+ PARITY FEATURE WAVES ── ordered by complexity; the 3 hard areas cal
 | **T-0300** | **The auth/session/header middleware (hand-written, load-bearing)** — Keychain `TokenStore`, hand-written `AuthClient` + no-auth refresh session, `actor SessionRefresher` single-flight 401-refresh, `DeviceIdProvider` (one source), `HeaderAdapter` (X-Device-Id/Label/Time-Zone + no-Bearer-on-anon allow-list), `SessionManager`/ForcedSignOut + session-scoped cache registry | **L → split** | **done ✅ (verified)** `c1009c6` — 68 CleansiaCore tests green; **2 dormant audit findings → T-0331/T-0332** | ios | T-0296✓, T-0298✓ | — | 0 (the spine) |
 | **T-0301** | **Header-parity spec document** — the invisible out-of-band contract written down for the iOS dev (X-Device-Id==Device/Register id invariant, the full anon allow-list incl. customer host, X-Time-Zone, replace-refresh-on-refresh, empty-token gate) | S | **done ✅ (verified)** `c1009c6` (`src/cleansia_ios/docs/header-parity-contract.md`) | ios, docs | — | — | 0 (no-decision doc) |
 | **T-0302** | Swift codegen toolchain — openapi-generator **swift5 + urlsession**, wired into the build (script/SPM plugin, the `dependsOn(openApiGenerate)` parity), reading the **shared** mobile spec; never-hand-edit discipline | M | **WIRING done ✅ (verified)** `c1009c6` — `generate-api-clients.sh` runs Homebrew `openapi-generator`; generated 159 Swift files from the committed spec as a toolchain check, throwaway output removed. **FIRST REAL GEN `blocked` on mobile-spec-regen** | ios | T-0296✓ | **mobile-spec-regen (owner)** | 0 → first real gen **BLOCKED on regen** |
-| **T-0303** | **Phase-1 partner lead vertical** — partner login (hand-written auth, empty-token gate) → **read-only Dashboard** (`dashboardGetStats` via the **ADR-0019 Core-spine-backed `RequestBuilderFactory`** + `UiState`), proving auth/session/headers/codegen/state end-to-end. **Acceptance scope fixed in §7.2** (greeting + stats-driven cards + 3-state hero + inert nav closures; caching / pull-to-refresh / notifications / live order feeds DEFERRED to T-0304/0307/0310) | M | **blocked** (TWO owner items — see §7.1: **mobile-spec-regen** + **dev mobile-API hosts live**) | ios | T-0300✓, T-0302 (wiring✓ / gen blocked) | rides T-0302 regen + dev-API-live | **1 (the proving vertical)** |
+| **T-0303** | **Phase-1 partner lead vertical** — partner login (hand-written auth, empty-token gate) → **read-only Dashboard** (`dashboardGetStats` via the **ADR-0019 Core-spine-backed `RequestBuilderFactory`** + `UiState`), proving auth/session/headers/codegen/state end-to-end. **Acceptance scope fixed in §7.2** (greeting + stats-driven cards + 3-state hero + inert nav closures; caching / pull-to-refresh / notifications / live order feeds DEFERRED to T-0304/0307/0310) | M | **done ✅** `8996df9`+`2a57f70` (`phase/ios-phase1`; both §7.1 blockers CLEARED — dev API live + regen `9232335`; #13-gen + TC-IOS-GEN green; CleansiaCore 93 + CleansiaPartner 17 pass; reviewer **AND** security APPROVE both slices — §7.3 fwd-notes) | ios | T-0300✓, T-0302✓ (first real gen via `8d4cfe3`) | rides T-0302 regen + dev-API-live ✓ | **1 (the proving vertical)** |
 | **T-0304** | Partner shell (Dashboard·Orders·Invoices·Profile tabs) + RegistrationLock gate (fails CLOSED) + SplashGate | M | **proposed** | ios | T-0303 | — | 2 (partner) |
 | **T-0305** | Partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding chain | M | **proposed** | ios | T-0303 | — | 2 (partner) |
 | **T-0306** | **Map seam + MapKit default** — `MapProvider`/`GeocodingService` protocol in `CleansiaCore` + `MapKitMapProvider` + the partner `AddressPicker` (first map surface). **iOS-16 variant (ADR-0014 D6′):** `Map(coordinateRegion:annotationItems:)` for the picker; `MKMapView` via `UIViewRepresentable` for the full-bleed map + polygon overlays — NO iOS-17-only `Map {...}`/`Marker`/`MapPolygon` | M | **proposed** | ios | T-0300 | — | 2 (**HARD AREA #2 — first half**) |
@@ -214,27 +237,41 @@ PHASE 2+ (after Phase 1 proves the architecture)
 **No ef-migration, no backend code change** in this wave — iOS is a client of the existing contract; push
 is already iOS-ready. The only owner contract step is the **regen of the existing spec**.
 
-### 7.1 T-0303 (Phase-1 partner vertical) — the TWO owner-side blockers (recorded 2026-06-26)
+### 7.1 T-0303 (Phase-1 partner vertical) — the TWO owner-side blockers (recorded 2026-06-26; **BOTH CLEARED 2026-06-26**)
 
-**T-0303 and every generated-client ticket (T-0303 onward) are `blocked` until BOTH clear:**
+> **CLEARED 2026-06-26 — T-0303 is now `done` (§3 / status-log).** Both owner-side items below have been
+> resolved: **(1)** the owner ran the **mobile-spec-regen** — the post-T-0272 specs are regenerated and
+> committed (`9232335`), so the T-0302 first real generation ran against the current contract (`8d4cfe3`);
+> **(2)** the **dev mobile-API hosts are live** — the Phase-1 vertical proved auth/session/headers end-to-end
+> against the live dev API. The historical record of the two blockers is kept below for traceability.
 
-1. **mobile-spec-regen (owner-only).** The committed specs
+**T-0303 and every generated-client ticket (T-0303 onward) were `blocked` until BOTH cleared (now both clear):**
+
+1. **mobile-spec-regen (owner-only) — ✅ DONE (`9232335`).** The committed specs
    `src/cleansia_android/openapi/{partner,customer}-mobile-api.json` are **stale** — last touched
    **2026-05-31** (commit `1d15484`), **pre-T-0272**. **iOS codegen MUST NOT run against them.** The
    T-0302 wiring is proven (it generated 159 Swift files from the committed spec as a toolchain check,
    then the throwaway output was removed) — but the *first real generation* waits on this regen so the iOS
    client is built from the current post-T-0272 contract (same regen also re-feeds web NSwag + Android
    openapi-generator).
-2. **Dev mobile-API hosts unreachable.** On **2026-06-26** a `curl` to
+2. **Dev mobile-API hosts unreachable — ✅ NOW LIVE.** On **2026-06-26** an earlier `curl` to
    `https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net` **and** the `-customer-` host both
    returned **HTTP 000 (not live)**. The Phase-1 vertical proves auth/session/headers end-to-end against a
-   live dev API; it cannot run until the owner brings the dev mobile API up (Wave-11 provisioning —
-   T-0317/T-0318/T-0320, `status/sprint-13.md` §7).
+   live dev API; it could not run until the owner brought the dev mobile API up (Wave-11 provisioning —
+   T-0317/T-0318/T-0320, `status/sprint-13.md` §7). The owner has since brought the dev mobile API up, and
+   the Phase-1 vertical proved the spine against it (T-0303 `done`).
 
-Until the owner runs the regen **and** the dev mobile-API hosts are live, **T-0303 stays `blocked`** and no
-generated-client ticket advances.
+Both items are now cleared — **T-0303 is `done`** (the `8996df9`+`2a57f70` proving vertical on
+`phase/ios-phase1`), and the generated-client seam (ADR-0019) is proven for the later authed waves to copy.
 
 ### 7.2 T-0303 — acceptance scope of the read-only Dashboard proving vertical (recorded 2026-06-26, architect)
+
+> **CONFIRMED-AS-SHIPPED 2026-06-26 (reviewer ask).** What shipped in T-0303 matches this scope record
+> exactly. **Hero phrasing confirmed unambiguous:** the **3 hero states are IMPLEMENTED** (next-job /
+> available-work / empty), driven by `dashboardGetStats`-derivable data; the **live non-empty data lands in
+> T-0307** (the partner order work-loop, where OrdersList + the upcoming/available-jobs feeds exist). The IN
+> and DEFERRED bullets below were tightened so "implemented states vs deferred live data" reads cleanly. All
+> other deferrals below are **confirmed deferrals, not cuts** — each to its named home (T-0304/0307/0310).
 
 T-0303 is the **proving vertical** (ADR-0013 D9): its job is to prove **auth/session/headers/codegen/state
 end-to-end**, *not* to reach Android dashboard parity. The full Android partner dashboard
@@ -267,8 +304,10 @@ the Understand brief):**
   `UserProfileStore` yet — that is T-0304's shell concern; the one-shot avoids standing up a profile store in
   the proving vertical).
 - **The stats-driven cards**: greeting bar + **Weekly earnings** + **Pay period** (with its progress
-  bar) + **Last month** + the **hero in its 3 states** (next-job / available-work / empty), driven by
-  `dashboardGetStats`. Gate-DP applies — cites `DashboardScreen.kt`, native SwiftUI, iOS-wins-on-conflict.
+  bar) + **Last month** + the **hero with all 3 states IMPLEMENTED** (next-job / available-work / empty),
+  driven by `dashboardGetStats`-derivable data. **The 3 hero states themselves are in T-0303 scope and
+  shipped; the live non-empty next-job/available-work *data* feeds land in T-0307** (see DEFERRED below).
+  Gate-DP applies — cites `DashboardScreen.kt`, native SwiftUI, iOS-wins-on-conflict.
 - **Explicit `UiState` rendering**: `loading` / `loaded` / `error` (the three E1 states, ADR-0014 D2′) with
   `ObservableObject`/`@Published`.
 - **Simple load-on-appear**; **navigation actions wired as INERT closures** (the cards are present and tappable
@@ -276,8 +315,10 @@ the Understand brief):**
 
 **DEFERRED — explicitly out of T-0303, with the ticket each lands in:**
 - **Upcoming-orders + available-jobs-preview endpoints** (the 2 non-critical dashboard sub-calls) and the
-  **real next-job hero data** → the hero ships its 3 states from `dashboardGetStats`-derivable data in T-0303;
-  the live upcoming/preview feeds land with **T-0307** (partner order work-loop) where OrdersList exists.
+  **live non-empty next-job hero data** → the hero **states** ship in T-0303 (all 3, from
+  `dashboardGetStats`-derivable data); only the **live upcoming/preview *data* feeds** land with **T-0307**
+  (partner order work-loop) where OrdersList exists. (To be explicit for the reviewer: states = T-0303,
+  live data = T-0307.)
 - **Silent-stale 60s caching + the dedup mutex + the singleton snapshot repo** (`DashboardRepository`'s caching
   layer) → **T-0304** (the shell, where tab-survival caching first matters) — T-0303 does a plain load-on-appear.
 - **Pull-to-refresh** (the suds indicator + user-pull vs background-refresh routing) → **T-0304**.
@@ -296,6 +337,42 @@ ADR-0019 factory does exactly that. Everything deferred is *additive parity* tha
 lands — and is reached by **copying** the ADR-0019 seam, not re-deciding it. This is a **scope record, not an
 ADR** (no new decision/trade-off beyond ADR-0013 D9 + ADR-0019, which own the calls).
 
+### 7.3 T-0303 — acceptance evidence + security forward-notes (recorded 2026-06-26, on close)
+
+**Commits (`phase/ios-phase1`):** `8996df9` (Slice A — partner login spine) + `2a57f70` (Slice B —
+read-only Dashboard), preceded by `d965c5b` (ADR-0019 + the §7.2 scope record) and `8d4cfe3` (the T-0302
+codegen toolchain first real generation). Owner commits these backlog edits to the phase branch (PM does not
+commit).
+
+**Acceptance evidence (AC ↔ proof):**
+- **The proving vertical works end-to-end** — partner login via the hand-written `AuthClient`
+  (empty-token / unverified-email gate; router gates **verified → dashboard** vs **unverified →
+  `verifyEmail` placeholder**) → an authed **read-only Dashboard** (greeting + Weekly-earnings / Pay-period /
+  Last-month stats cards + the **3-state hero**) driven by the generated `dashboardGetStats`.
+- **ADR-0019 generated-client auth adapter implemented + proven** — reviewer **check #13-gen PASS** (single
+  token source; no per-call header/token code outside `HeaderAdapter`; no hand-edited generated client) and
+  the **TC-IOS-GEN** test passes: a generated call carries **Bearer + `X-Device-Id` / `X-Device-Label` /
+  `X-Time-Zone`** despite the generated `requiresAuthentication:false`, and a **401 drives a single-flight
+  refresh + exactly one retry** with the rotated token.
+- **The required router-gate test is present** — the §7.2 router acceptance item:
+  `requiresEmailConfirmation == true` → `verifyEmail` (the sibling of **TC-IOS-EMPTYTOKEN**, §8).
+- **Gates green** — `swiftformat --lint` + `swiftlint --strict` clean; **CleansiaCore 93 tests +
+  CleansiaPartner 17 tests** pass on the **iPhone 17 simulator**; **reviewer AND security APPROVE on both
+  slices**.
+
+**Security forward-notes — for the later authed waves that copy the ADR-0019 seam (record + carry):**
+1. **Customer-wave factory is host-specific.** When the **CUSTOMER** wave copies the generated-client auth
+   seam, it must install its **OWN** `RequestBuilderFactory` into `CleansiaCustomerApiAPI` with the
+   **CUSTOMER allow-list** — the 401 detector currently lives in the **partner** factory; the bridge itself
+   is **host-agnostic**, but the factory install + allow-list are per-host. (Carries to **T-0312** customer
+   shell+auth; relates to the dual-use `Order`/`Payment` allow-list checkpoint **T-0332**.)
+2. **`employeeId` round-trip is safe only because the backend overrides it.** The iOS client round-trips its
+   own **server-derived** `employeeId` to `dashboardGetStats`; this is safe **ONLY** because the backend
+   `GetDashboardStats` handler **overrides the client `EmployeeId` for non-admin callers**. Record this as a
+   **standing dependency** for later authed waves — any wave that copies the seam and round-trips a
+   server-derived id must rely on the same server-side override (never trust the client-supplied id for
+   authz scoping).
+
 ---
 
 ## 8. Gates & verification (per `agents/process/quality-gates.md`)
@@ -312,7 +389,10 @@ ADR** (no new decision/trade-off beyond ADR-0013 D9 + ADR-0019, which own the ca
   `requiresAuthentication: false` — the factory, not the flag, governs), TC-IOS-GEN-401 (N concurrent generated
   401s → exactly one refresh via the same `SessionRefresher`; queued callers retry with the rotated token),
   TC-IOS-GEN-DEVICEID (the generated call's `X-Device-Id` == the `Device/Register` deviceId — one source) —
-  **red-first**.
+  **red-first**. **✅ GREEN in T-0303 (`2a57f70`):** the **TC-IOS-GEN** bridge suite passes — a generated call
+  carries Bearer + `X-Device-Id`/`X-Device-Label`/`X-Time-Zone` despite `requiresAuthentication:false`, and a
+  401 drives a single-flight refresh + **exactly one** retry with the rotated token (§7.3). Required §7.2
+  router-gate test (`requiresEmailConfirmation==true` → `verifyEmail`) also present + green.
 - **Reviewer compliance checks (ADR-0013 + ADR-0014 §"How a reviewer verifies"):** #1 no hand-edited
   generated client · #2 auth NOT generated · #3 X-Device-Id single source · #4 anon allow-list complete
   (incl. customer host) · #5 refresh token replaced every refresh · #6 single no-auth session +
@@ -327,9 +407,13 @@ ADR** (no new decision/trade-off beyond ADR-0013 D9 + ADR-0019, which own the ca
   `RequestBuilderFactory` installed into the generated config — NO second token source (no wrapper/call-site
   reading `TokenStore`, setting `Authorization`/`Bearer`, or writing a Bearer into `customHeaders`), NO per-call
   header duplication, NO per-call 401 handling; the injected `AnonymousAllowList` (not the generated
-  `requiresAuthentication` flag) governs**.
+  `requiresAuthentication` flag) governs**. **✅ #13-gen PASS in T-0303 (reviewer, both slices)** — single
+  token source; no per-call header/token code outside `HeaderAdapter`; no hand-edited generated client.
 - **Mechanical:** the Xcode workspace builds; `CleansiaCore` + both app targets compile; the codegen step
-  produces the client from the on-disk spec (no hand-edit); the Swift test suites run.
+  produces the client from the on-disk spec (no hand-edit); the Swift test suites run. **✅ T-0303 evidence:**
+  `swiftformat --lint` + `swiftlint --strict` clean; **CleansiaCore 93 + CleansiaPartner 17** tests pass on
+  the iPhone 17 simulator; the T-0302 first real generation (`8d4cfe3`) produced the client from the
+  regenerated on-disk spec (`9232335`), no hand-edit.
 
 ---
 
@@ -337,7 +421,9 @@ ADR** (no new decision/trade-off beyond ADR-0013 D9 + ADR-0019, which own the ca
 
 Phase 0 done = the workspace + `CleansiaCore` + the auth/session/header spine + DI + snackbar/error +
 the codegen toolchain all build, with the auth contract tests green. Phase 1 done = partner login →
-read-only Dashboard works end-to-end against the **regenerated** client, proving the architecture. Each
+read-only Dashboard works end-to-end against the **regenerated** client, proving the architecture —
+**✅ SATISFIED 2026-06-26: T-0303 `done` (`8996df9`+`2a57f70` on `phase/ios-phase1`); the spec was
+regenerated (`9232335`) and the dev mobile API is live (the two §7.1 blockers cleared).** Each
 Phase-2+ feature ticket has an owner, a current state, satisfied-or-blocked deps, AC↔evidence, the
 ADR-0013 reviewer checks green, and a status-log line per transition. INDEX.md + this doc match reality.
 The three non-blocking owner questions (Q-IOS-01/02/03) are tracked with their defaults; the

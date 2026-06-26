@@ -7,8 +7,10 @@ public protocol AppContainer: AnyObject {
     var sessionScopedCaches: SessionScopedCacheRegistry { get }
     var sessionManager: SessionManager { get }
     var authClient: AuthClient { get }
+    var loginClient: LoginClient { get }
     var refreshClient: RefreshClient { get }
     var sessionRefresher: SessionRefresher { get }
+    var hasValidSession: Bool { get }
 }
 
 public struct ContainerSeams {
@@ -57,6 +59,10 @@ public final class BaseAppContainer: AppContainer {
         authSpine
     }
 
+    public var loginClient: LoginClient {
+        authSpine
+    }
+
     public var refreshClient: RefreshClient {
         authSpine
     }
@@ -76,6 +82,11 @@ public final class BaseAppContainer: AppContainer {
             refreshClient: authSpine
         )
     )
+
+    public var hasValidSession: Bool {
+        guard let accessToken = tokenStore.current()?.accessToken else { return false }
+        return !accessToken.isEmpty
+    }
 
     private var tokenStore: TokenStore {
         authSpine.tokenStore

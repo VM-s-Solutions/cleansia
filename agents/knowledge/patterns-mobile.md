@@ -228,6 +228,18 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | `stringResource(R.string.x)` | `String(localized:)` / `Localizable.strings` |
 | `navigation.Routes` (`@Serializable`) | `NavigationStack` + typed route enum |
 | per-app `openApiGenerate { generatorName=kotlin }` reading `openapi/{partner,customer}-mobile-api.json` | per-app `openapi-generator` **swift5 + urlsession** (`responseAs: AsyncAwait`) reading the **same shared committed specs**; config in `cleansia_ios/openapi/openapi-generator-config.*.yaml`, run via `scripts/generate-api-clients.sh`, emitting `Cleansia{Partner,Customer}Api` SPM packages. Generated output is **gitignored + never hand-edited** (change the spec or config, regenerate). The **auth/session/header spine is hand-written** in `Core/Auth` and **excluded from codegen**. First real generation is owner-gated (`manual_step: mobile-spec-regen`) — the specs are stale pre-T-0272 |
+| Android's generated Retrofit service authed by the OkHttp `AuthInterceptor`/`AuthAuthenticator` already installed in the client | **the generated swift5 client authenticates ONLY via a custom `RequestBuilderFactory` installed into the generated global config** (`Cleansia{Partner,Customer}ApiAPI.requestBuilderFactory`) — its `RequestBuilder` subclass routes **every** generated request through the **same** `Core/Auth` spine (`HeaderAdapter` for Bearer-iff-not-anon + `X-Device-Id`/`X-Device-Label`/`X-Time-Zone`, `actor SessionRefresher` for single-flight 401→refresh→retry), using only the generator's `open` points so it survives regeneration (**ADR-0019**). The generated APIs are static, apply only the static `customHeaders`, and are all `requiresAuthentication: false` — so without this they 401 tokenless |
+
+**Generated-client auth — the ONE way (ADR-0019, reviewer #13-gen):** authenticate the generated business
+client **only** through the Core-spine-backed `RequestBuilderFactory` (above). **Deviations a reviewer
+rejects:** (a) a **second token source** — the app-side generated wrapper or a call site reading `TokenStore`,
+setting `Authorization`/`Bearer`, or writing a Bearer into `customHeaders` (the Bearer is set in **exactly
+one** place, the `HeaderAdapter`); (b) **per-call header injection** — `.addHeader(...)` for auth/device
+headers at a call site/wrapper (headers are stamped uniformly by the `HeaderAdapter`); (c) **per-call 401
+handling** — a call site catching a 401 and refreshing itself (the single-flight refresh is the factory's,
+once, for all). Authentication is decided by the injected `AnonymousAllowList`, **not** the generated
+`requiresAuthentication` flag. T-0303 proves it; every later authed wave installs the same factory per host and
+writes no auth code.
 
 **Parity rule:** reproduce the Android feature's states, empty/loading/error handling, and API calls
 exactly. A behavior difference is a bug unless the ticket calls for it. If the Android behavior is

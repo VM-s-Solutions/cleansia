@@ -48,14 +48,17 @@ final class AppEnvironmentTests: XCTestCase {
         let sessionScopedCaches: SessionScopedCacheRegistry
         let sessionManager: SessionManager
         let authClient: AuthClient
+        let loginClient: LoginClient
         let refreshClient: RefreshClient
         let sessionRefresher: SessionRefresher
+        var hasValidSession = false
 
         init(
             apiBaseURL: URL,
             snackbar: SnackbarController,
             sessionScopedCaches: SessionScopedCacheRegistry,
             authClient: AuthClient,
+            loginClient: LoginClient,
             refreshClient: RefreshClient
         ) {
             self.apiBaseURL = apiBaseURL
@@ -63,6 +66,7 @@ final class AppEnvironmentTests: XCTestCase {
             self.sessionScopedCaches = sessionScopedCaches
             sessionManager = SessionManager(sessionScopedCaches: sessionScopedCaches)
             self.authClient = authClient
+            self.loginClient = loginClient
             self.refreshClient = refreshClient
             sessionRefresher = SessionRefresher(
                 tokenStore: StubTokenStore(),
@@ -78,12 +82,14 @@ final class AppEnvironmentTests: XCTestCase {
         let snackbar = SnackbarController()
         let registry = SessionScopedCacheRegistry()
         let auth = StubAuthClient()
+        let login = StubLoginClient()
         let refresh = StubRefreshClient()
         let container = StubContainer(
             apiBaseURL: url,
             snackbar: snackbar,
             sessionScopedCaches: registry,
             authClient: auth,
+            loginClient: login,
             refreshClient: refresh
         )
 
@@ -91,6 +97,7 @@ final class AppEnvironmentTests: XCTestCase {
         XCTAssertTrue(container.snackbar === snackbar)
         XCTAssertTrue(container.sessionScopedCaches === registry)
         XCTAssertTrue(container.authClient === auth)
+        XCTAssertTrue(container.loginClient === login)
         XCTAssertTrue(container.refreshClient === refresh)
     }
 }
@@ -137,6 +144,7 @@ final class LazyRefreshSessionBoundaryTests: XCTestCase {
 @MainActor
 final class BaseAppContainerTests: XCTestCase {
     private func makeContainer(
+        accessToken: String? = nil,
         spineBuilds: @escaping () -> Void = {},
         apiBuilds: @escaping () -> Void = {}
     ) throws -> BaseAppContainer {
@@ -145,7 +153,7 @@ final class BaseAppContainerTests: XCTestCase {
             apiBaseURL: url,
             snackbar: SnackbarController(),
             makeAuthSpine: { _ in spineBuilds()
-                return StubAuthSpine()
+                return StubAuthSpine(accessToken: accessToken)
             },
             makeApiClient: { seams in apiBuilds()
                 return StubApiClient(baseURL: seams.apiBaseURL)
@@ -188,20 +196,57 @@ final class BaseAppContainerTests: XCTestCase {
         let container = try makeContainer()
         XCTAssertEqual(container.apiClient.baseURL, container.apiBaseURL)
     }
+
+    func testHasValidSessionIsFalseWithoutAToken() throws {
+        let container = try makeContainer(accessToken: nil)
+        XCTAssertFalse(container.hasValidSession)
+    }
+
+    func testHasValidSessionIsFalseWithAnEmptyToken() throws {
+        let container = try makeContainer(accessToken: "")
+        XCTAssertFalse(container.hasValidSession)
+    }
+
+    func testHasValidSessionIsTrueWithANonEmptyToken() throws {
+        let container = try makeContainer(accessToken: "header.payload.signature")
+        XCTAssertTrue(container.hasValidSession)
+    }
 }
 
 private final class StubAuthSpine: AuthSpine, @unchecked Sendable {
-    let tokenStore: TokenStore = StubTokenStore()
+    let tokenStore: TokenStore
+
+    init(accessToken: String? = nil) {
+        tokenStore = StubTokenStore(accessToken: accessToken)
+    }
+
     func signOutLocal() async {}
     func logout() async {}
+    func login(email _: String, password _: String, rememberMe _: Bool) async -> ApiResult<LoginOutcome> {
+        .success(.authenticated)
+    }
+
     func refresh(refreshToken _: String) async -> RefreshedTokens? {
         nil
     }
 }
 
 private final class StubTokenStore: TokenStore, @unchecked Sendable {
+    private let accessToken: String?
+
+    init(accessToken: String? = nil) {
+        self.accessToken = accessToken
+    }
+
     func current() -> AuthTokens? {
-        nil
+        guard let accessToken else { return nil }
+        let future = Date().addingTimeInterval(3600)
+        return AuthTokens(
+            accessToken: accessToken,
+            accessTokenExpiresAt: future,
+            refreshToken: "refresh",
+            refreshTokenExpiresAt: future
+        )
     }
 
     func save(_: AuthTokens) {}
@@ -211,6 +256,12 @@ private final class StubTokenStore: TokenStore, @unchecked Sendable {
 private final class StubAuthClient: AuthClient {
     func signOutLocal() async {}
     func logout() async {}
+}
+
+private final class StubLoginClient: LoginClient {
+    func login(email _: String, password _: String, rememberMe _: Bool) async -> ApiResult<LoginOutcome> {
+        .success(.authenticated)
+    }
 }
 
 private final class StubRefreshClient: RefreshClient {

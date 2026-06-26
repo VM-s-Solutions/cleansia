@@ -25,6 +25,10 @@ final class PartnerAppContainer: AppContainer {
         base.authClient
     }
 
+    var loginClient: LoginClient {
+        base.loginClient
+    }
+
     var refreshClient: RefreshClient {
         base.refreshClient
     }
@@ -33,24 +37,44 @@ final class PartnerAppContainer: AppContainer {
         base.sessionRefresher
     }
 
+    var hasValidSession: Bool {
+        base.hasValidSession
+    }
+
     var apiClient: MobileApiClient {
         base.apiClient
     }
+
+    let dashboardClient: PartnerDashboardClient = LivePartnerDashboardClient()
+
+    private let authStack: PartnerAuthStack
 
     init(
         snackbar: SnackbarController,
         apiBaseURL: URL = AppConfig.apiBaseURL
     ) {
+        let sessionScopedCaches = SessionScopedCacheRegistry()
+        let authStack = PartnerAuthSpine.make(
+            apiBaseURL: apiBaseURL,
+            sessionScopedCaches: sessionScopedCaches
+        )
+        self.authStack = authStack
         base = BaseAppContainer(
             apiBaseURL: apiBaseURL,
             snackbar: snackbar,
-            makeAuthSpine: { seams in
-                PartnerAuthSpine.make(
-                    apiBaseURL: seams.apiBaseURL,
-                    sessionScopedCaches: seams.sessionScopedCaches
-                )
-            },
+            sessionScopedCaches: sessionScopedCaches,
+            makeAuthSpine: { _ in authStack.spine },
             makeApiClient: { seams in PartnerMobileApiClient(baseURL: seams.apiBaseURL) }
         )
+    }
+
+    func installGeneratedClientAuth() {
+        let bridge = GeneratedClientAuthBridge(
+            headerAdapter: authStack.headerAdapter,
+            tokenStore: authStack.spine.tokenStore,
+            sessionRefresher: base.sessionRefresher,
+            session: URLSession(configuration: .default)
+        )
+        PartnerGeneratedAuth.install(bridge: bridge, basePath: apiBaseURL.absoluteString)
     }
 }

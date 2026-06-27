@@ -31,20 +31,21 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 [Collection("PostgresCollection")]
 public class GetPagedOrdersScopeIntegrationTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
 {
-    private const string CurrencyId = "currency-czk-getpaged-scope";
-    private const string CountryId = "country-cz-getpaged-scope";
+    // Entity Ids are varchar(26) (ULID length) — every seeded Id must be <= 26 chars.
+    private const string CurrencyId = "currency-czk-gpscope";
+    private const string CountryId = "country-cz-gpscope";
 
-    private const string EmployeeAId = "employee-a-getpaged-scope";
-    private const string EmployeeBId = "employee-b-getpaged-scope";
-    private const string UserAId = "user-a-getpaged-scope";
-    private const string UserBId = "user-b-getpaged-scope";
+    private const string EmployeeAId = "employee-a-gpscope";
+    private const string EmployeeBId = "employee-b-gpscope";
+    private const string UserAId = "user-a-gpscope";
+    private const string UserBId = "user-b-gpscope";
 
     private const string EmployeeAEmail = "employee-a-getpaged@cleansia.test";
     private const string EmployeeBEmail = "employee-b-getpaged@cleansia.test";
 
-    private const string AssignedToBOrderId = "order-assigned-b-getpaged-scope";
-    private const string AssignedToAOrderId = "order-assigned-a-getpaged-scope";
-    private const string AvailableOrderId = "order-available-getpaged-scope";
+    private const string AssignedToBOrderId = "order-assigned-b-gpscope";
+    private const string AssignedToAOrderId = "order-assigned-a-gpscope";
+    private const string AvailableOrderId = "order-available-gpscope";
 
     private const string ConfidentialConfirmationCode = "B-SECRET-9999";
     private const double SecretLatitude = 50.073658;

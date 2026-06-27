@@ -96,6 +96,7 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
 > |----|-------|------|--------|-----------|--------|-----|-------------|--------|
 > | **T-0334** | iOS `ServiceAreaProvider` Core seam + the advisory `ServiceAreaRow` (+ forward-geocode country-bias) | M | **draft** | T-0310✓, T-0306✓ | ios | no | — | sprint-12 §7.7 D3 (architect) |
+> | **T-0325** | **OWNER TASK** — iOS location-permission purpose string `NSLocationWhenInUseUsageDescription` ×5 (do-it-later; proposed copy in the ticket; agent does the mechanical `project.yml` add once the wording is approved) | S | **proposed** (owner) | — | ios | no | **owner: approve copy ×5** | T-0306 §7.6 D2 + T-0310 §7.7 Scope A |
 > | **T-0335** | iOS `LocationProvider` Core seam + the my-location FAB + picker auto-center — **gated on owner T-0325** (`NSLocationWhenInUseUsageDescription`) | M | **draft** (gated) | T-0310✓, **T-0325 (owner, `proposed`)** | ios | no | **T-0325 plist key (owner)** | sprint-12 §7.6 D2 + §7.7 Scope A |
 > | **T-0336** | SPIKE — iOS partner in-app notifications feed (persistence choice + push-receipt contract + bell badge) | S | **draft** (spike) | T-0311 | ios, analyst | no | — | sprint-12 §7.7 Scope B |
 > | **T-0337** | Android partner profile VMs — flag-bag `UiState`→sealed (E1) + hardcoded validation/error strings→`R.string.*` (E8) | S | **draft** | — | android | no | — | sprint-12 §7.7 D5 (consistency.md E1/E8) |

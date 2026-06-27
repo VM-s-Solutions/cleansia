@@ -113,6 +113,20 @@ final class OrderDetailViewModelTests: XCTestCase {
         XCTAssertEqual(vm.primaryAction, .completeBlocked)
     }
 
+    // TC-IOS-PHOTOS-GATE: after an after-photo upload, the photos VM fires
+    // `mutated` → the parent re-fetches → the server-recomputed hasAfterPhotos
+    // flips completeBlocked → complete.
+    func testCompleteUnblocksAfterRefetchWithAfterPhotos() async {
+        client.byIdResult = .success(loadedItem(status: 4, isMine: true, hasAfterPhotos: false))
+        let vm = makeVM()
+        await vm.load()
+        XCTAssertEqual(vm.primaryAction, .completeBlocked)
+
+        client.byIdResult = .success(loadedItem(status: 4, isMine: true, hasAfterPhotos: true))
+        await vm.load() // the re-fetch the photos `mutated` triggers
+        XCTAssertEqual(vm.primaryAction, .complete)
+    }
+
     // MARK: runAction lifecycle
 
     func testStartActionIdleToIdleOnSuccessAndRefetches() async {

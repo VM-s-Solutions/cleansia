@@ -35,6 +35,37 @@ protocol PartnerOrderClient: AnyObject {
     func reportIssue(orderId: String, description: String) async -> ApiResult<Void>
     func updateIssue(orderId: String, issueId: String, description: String) async -> ApiResult<Void>
     func deleteIssue(orderId: String, issueId: String) async -> ApiResult<Void>
+
+    func getPhotos(orderId: String) async -> ApiResult<[OrderPhoto]>
+    func savePhoto(
+        orderId: String,
+        photoType: PhotoType,
+        base64Content: String,
+        fileName: String,
+        contentType: String
+    ) async -> ApiResult<Void>
+    func deletePhoto(photoId: String) async -> ApiResult<Void>
+}
+
+/// Domain photo mapped from `GetOrderPhotosOrderPhotoDto` — the rail list reads
+/// these; `blobUrl` is rendered via `AsyncImage`.
+struct OrderPhoto: Equatable, Identifiable {
+    let id: String
+    let photoType: PhotoType?
+    let blobUrl: String?
+
+    init(id: String, photoType: PhotoType?, blobUrl: String?) {
+        self.id = id
+        self.photoType = photoType
+        self.blobUrl = blobUrl
+    }
+
+    init?(_ dto: GetOrderPhotosOrderPhotoDto) {
+        guard let id = dto.id, !id.isEmpty else { return nil }
+        self.id = id
+        photoType = dto.photoType
+        blobUrl = dto.blobUrl
+    }
 }
 
 final class LivePartnerOrderClient: PartnerOrderClient {
@@ -151,6 +182,46 @@ final class LivePartnerOrderClient: PartnerOrderClient {
     func deleteIssue(orderId: String, issueId: String) async -> ApiResult<Void> {
         await apiResult(mapError: ApiError.fromGenerated) {
             _ = try await PartnerOrderAPI.orderDeleteIssue(orderId: orderId, issueId: issueId)
+        }
+    }
+
+    func getPhotos(orderId: String) async -> ApiResult<[OrderPhoto]> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            let response = try await PartnerOrderAPI.orderGetPhotos(orderId: orderId)
+            return (response.photos ?? []).compactMap(OrderPhoto.init)
+        }
+    }
+
+    func savePhoto(
+        orderId: String,
+        photoType: PhotoType,
+        base64Content: String,
+        fileName: String,
+        contentType: String
+    ) async -> ApiResult<Void> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            _ = try await PartnerOrderAPI.orderSavePhotos(
+                saveOrderPhotosCommand: SaveOrderPhotosCommand(
+                    orderId: orderId,
+                    photos: [
+                        SaveOrderPhotosPhotoToSave(
+                            photoType: photoType,
+                            file: BlobFileDto(
+                                fileName: fileName,
+                                base64Content: base64Content,
+                                contentType: contentType
+                            ),
+                            notes: nil
+                        )
+                    ]
+                )
+            )
+        }
+    }
+
+    func deletePhoto(photoId: String) async -> ApiResult<Void> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            _ = try await PartnerOrderAPI.orderDeletePhoto(photoId: photoId)
         }
     }
 }

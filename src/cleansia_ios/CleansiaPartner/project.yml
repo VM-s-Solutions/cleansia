@@ -38,10 +38,13 @@ targets:
     sources:
       - path: Sources
       - path: Resources
+      - path: PrivacyInfo.xcprivacy
     info:
       path: Info.plist
       properties:
         API_BASE_URL: $(API_BASE_URL)
+        NSCameraUsageDescription: Cleansia uses the camera to capture before and after photos of your cleaning jobs.
+        NSPhotoLibraryUsageDescription: Cleansia needs access to your photos so you can attach before and after photos to your jobs.
         UIAppFonts:
           - Poppins-Medium.ttf
           - Poppins-SemiBold.ttf

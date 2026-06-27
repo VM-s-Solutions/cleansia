@@ -322,21 +322,3 @@ private struct PaymentStatusPill: View {
             .background(tint.opacity(0.12), in: Capsule())
     }
 }
-
-/// Disabled stand-in for the Photos rails — rendered so the Complete-blocked
-/// hint reads correctly once the lifecycle slice lands; capture arrives with
-/// photo upload.
-struct PhotosPlaceholderSection: View {
-    var body: some View {
-        OrderSectionCard(title: L10n.Orders.photosSectionTitle, systemImage: "camera") {
-            HStack(spacing: Spacing.xs) {
-                Image(systemName: "photo.on.rectangle")
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-                Text(L10n.Orders.photosNoneRecorded)
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-            }
-            .opacity(0.6)
-        }
-    }
-}

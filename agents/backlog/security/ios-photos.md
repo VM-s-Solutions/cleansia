@@ -260,3 +260,72 @@ shipped.
 3. **(Optional hardening)** server-side EXIF scrub on upload as defense-in-depth behind the client P3
    strip (so a non-iOS/legacy client can't store GPS-bearing blobs). Low priority — the partner clients
    are the only writers and both are under our control.
+
+## 2026-06-27 — T-0308 Slice B BUILD-TIME VERIFICATION (Gate-SEC, security reviewer) — PASS (verified-against-code)
+
+**Verdict: PASS.** The uncommitted Slice B code on `phase/ios-phase4` satisfies every binding rule
+(P1–P5), the required test (TC-IOS-PHOTOS-OWNERSHIP) exists and passes, and the AR-PRIV plist keys are
+present. This is the build-time confirmation of the 2026-06-27 PASS-the-design ruling above —
+verified against the actual code, not the design. No code edits made (audit-only).
+
+**Files verified (uncommitted; `git status` = modified + untracked):**
+`Sources/Features/Orders/OrderPhotosViewModel.swift` (new), `Sources/Features/Orders/PhotosSection.swift`
+(new), `Sources/Data/PartnerOrderClient.swift` (modified), `Tests/OrderPhotosViewModelTests.swift` (new),
+`Tests/FakePartnerOrderClient.swift` (modified), `Info.plist` + `project.yml` (modified), the 5
+`Resources/{en,cs,sk,uk,ru}.lproj/InfoPlist.strings` (new), plus the Slice A chokepoint
+`CleansiaCore/Sources/CleansiaCore/Media/ImageCompressor.swift` and
+`CleansiaCore/Sources/CleansiaCore/Components/CameraOrLibraryPicker.swift`.
+
+- **P1 (no client actor on write surface) — PASS.** `PartnerOrderClient.savePhoto(orderId, photoType,
+  base64Content, fileName, contentType)` and `deletePhoto(photoId)` carry NO employeeId/userId/actor
+  (`PartnerOrderClient.swift:40-47`). `LivePartnerOrderClient.savePhoto` builds `SaveOrderPhotosCommand{
+  orderId, photos:[{photoType, BlobFileDto{fileName,base64Content,contentType}, notes:nil}]}` ONLY
+  (`:202-220`); `deletePhoto` sends only `photoId` (`:222-226`). VM comment + construction confirm
+  (`OrderPhotosViewModel.swift:67-74`). Grep of the photo path for employeeId/capturedBy/userId/actor =
+  no actor on any photo surface (the only `employeeId` hits are the unrelated "mine"-pane query filter).
+  The actor is server-stamped (`capturedByEmployeeId`, backend VERIFIED in the design ruling above).
+- **P2 (no id-echo) — PASS.** VM uploads/reads ONLY its constructed `private let orderId`
+  (`OrderPhotosViewModel.swift:26,41,68`), which `OrderDetailView` hands it from the route-opened id
+  (`OrderDetailView.swift:13,35` — same id as the detail VM, checklist VM, notes VM; no synthesis).
+  `delete(photoId:)` takes an id the UI drew from a loaded `getPhotos` row (`PhotosSection.swift:133`
+  `onDelete(photo.id)` over the loaded `ForEach(photos)`). No free-form/UUID-literal/cross-screen id.
+  Pinned by TC-IOS-PHOTOS-OWNERSHIP: `testSavePhotoCarriesOnlyConstructedOrderIdNoEmployeeId`
+  (asserts orderId == "order-xyz", one command) + `testDeleteActsOnlyOnAPhotoIdFromItsOwnGetPhotos`
+  (asserts the deleted id traces to the loaded row "owned-photo").
+- **P3 (EXIF strip, integration reaffirmed) — PASS.** Upload routes the captured `UIImage` through
+  `ImageCompressor.encode` (`OrderPhotosViewModel.swift:57-59`) and base64s ONLY that output
+  (`:71`). Grep of the ENTIRE iOS tree for `jpegData`/`pngData` = only inside `ImageCompressor.swift`
+  itself (`:35,75`, its own ImageIO helper) — no raw `UIImage.jpegData`/original-bytes fallback
+  anywhere on the photo path. The encoder strips metadata by construction (fresh CGContext redraw +
+  ImageIO destination with an empty properties dict, only `kCGImageDestinationLossyCompressionQuality`
+  — `ImageCompressor.swift:47-86`). Slice A's TC-IOS-PHOTOS-EXIF-STRIP asserts no
+  `kCGImagePropertyGPSDictionary` on the output (`ImageCompressorTests.swift:59-77`).
+- **P4 (permission-denial UX) — PASS.** Camera denial is reachable and degrades cleanly:
+  `requestCamera()` switches on `AVCaptureDevice.authorizationStatus`; `.denied/.restricted` and a
+  declined `requestAccess` both set `showPermissionAlert` (`PhotosSection.swift:140-153`), whose alert
+  offers a Settings deep-link via `UIApplication.openSettingsURLString` (`:114-119,155-158`) — not a
+  silent dead control. L10n keys present (`L10n+Orders.swift:264,268,272`).
+- **P5 (off-main compress + re-entry guard) — PASS.** Compress runs off the main actor via
+  `Task.detached(priority:.userInitiated)` (`OrderPhotosViewModel.swift:57-59`). Upload guarded by
+  `guard !mutation.isUploading` (`:53`); delete guarded by `guard mutation.deletingId == nil` (`:80`).
+  Both verified by the FakePartnerOrderClient suspension-gate tests
+  (`testReentryGuardDropsSecondUploadWhileSubmitting`, `testReentryGuardDropsSecondDeleteWhileSubmitting`)
+  asserting the in-flight command count stays at 1.
+
+**Required test — TC-IOS-PHOTOS-OWNERSHIP: EXISTS AND PASSES.** Ran
+`xcodebuild test -only-testing:CleansiaPartnerTests/OrderPhotosViewModelTests` on iOS 26.2 sim
+(2026-06-27): **Executed 11 tests, 0 failures** — TEST SUCCEEDED. Includes both ownership tests + both
+re-entry-guard tests + upload/delete success/failure + categorization. (TC-IOS-PHOTOS-EXIF-STRIP lives
+in CleansiaCoreTests, Slice A.)
+
+**AR-PRIV plist keys — PRESENT.** `NSCameraUsageDescription` + `NSPhotoLibraryUsageDescription` in
+`Info.plist:23-26` AND in `project.yml:45-46` (generated build carries them), plus localized in all 5
+languages under `Resources/{en,cs,sk,uk,ru}.lproj/InfoPlist.strings`.
+
+**ADR-0019 spine — PASS.** Photo calls ride the generated `PartnerOrderAPI.orderSavePhotos /
+orderDeletePhoto / orderGetPhotos` via the shared `apiResult(mapError:)` seam — no new
+token/header/401 path. Server remains authoritative on ownership + the 10 MB/photo cap + `auth`
+rate-limit (backend §7.10 verification unchanged by this client slice). The two LOW/latent owner
+follow-ups (DeletePhoto authorship on shared jobs; photos-per-request cap) remain open and unchanged.
+
+**Gaps: NONE that block.** Slice B ships clean against the binding gate.

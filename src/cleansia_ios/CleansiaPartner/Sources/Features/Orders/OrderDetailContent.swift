@@ -9,6 +9,7 @@ struct OrderDetailContent: View {
     var onConfirm: (OrderPrimaryAction) -> Void = { _ in }
     @ObservedObject var checklistVM: CleaningChecklistViewModel
     @ObservedObject var notesVM: OrderNotesViewModel
+    @ObservedObject var photosVM: OrderPhotosViewModel
 
     private var showAccessCard: Bool {
         order.isAssignedToCurrentUser
@@ -40,6 +41,16 @@ struct OrderDetailContent: View {
     /// Adds for notes/issues are allowed once the cleaner is OnTheWay/InProgress.
     private var canAddNotes: Bool {
         order.status == ._3 || order.status == ._4
+    }
+
+    /// Before photos upload once OnTheWay/InProgress; after photos only once
+    /// InProgress (OrderDetailScreen.kt:530-532 parity).
+    private var canUploadBefore: Bool {
+        order.status == ._3 || order.status == ._4
+    }
+
+    private var canUploadAfter: Bool {
+        order.status == ._4
     }
 
     var body: some View {
@@ -75,9 +86,11 @@ struct OrderDetailContent: View {
                         )
                     }
                     if showWorkSections {
-                        // Disabled Photos placeholder so the Complete-blocked
-                        // hint is meaningful; capture arrives with photo upload.
-                        PhotosPlaceholderSection()
+                        PhotosSection(
+                            vm: photosVM,
+                            canUploadBefore: canUploadBefore,
+                            canUploadAfter: canUploadAfter
+                        )
                     }
                     PaymentCard(order: order)
                     StatusTimelineView(history: order.statusHistory)
@@ -230,7 +243,8 @@ private struct OrderMetadataRow: View {
             OrderDetailContent(
                 order: .preview,
                 checklistVM: .preview,
-                notesVM: .preview
+                notesVM: .preview,
+                photosVM: .preview
             )
             .background(CleansiaColors.surface)
         }

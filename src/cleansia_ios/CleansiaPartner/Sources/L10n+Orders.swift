@@ -233,6 +233,46 @@ extension L10n {
             localized("photos_none_recorded")
         }
 
+        static var photosBefore: String {
+            localized("before")
+        }
+
+        static var photosAfter: String {
+            localized("after")
+        }
+
+        static var addPhoto: String {
+            localized("add_photo")
+        }
+
+        static var deletePhoto: String {
+            localized("delete_photo")
+        }
+
+        static var takePhoto: String {
+            localized("take_photo")
+        }
+
+        static var chooseFromLibrary: String {
+            localized("choose_from_library")
+        }
+
+        static var photoEncodeFailed: String {
+            localized("photo_encode_failed")
+        }
+
+        static var cameraPermissionTitle: String {
+            localized("camera_permission_title")
+        }
+
+        static var cameraPermissionMessage: String {
+            localized("camera_permission_message")
+        }
+
+        static var openSettings: String {
+            localized("open_settings")
+        }
+
         static func statusLabel(_ status: OrderStatus?) -> String {
             switch status {
             case ._0: localized("status_new")

@@ -5,6 +5,7 @@ struct OrderDetailView: View {
     @StateObject private var vm: OrderDetailViewModel
     @StateObject private var checklistVM: CleaningChecklistViewModel
     @StateObject private var notesVM: OrderNotesViewModel
+    @StateObject private var photosVM: OrderPhotosViewModel
     @State private var snapAnchor: SnapAnchor = .peek
     private let mapProvider: MapProvider
 
@@ -30,6 +31,9 @@ struct OrderDetailView: View {
         _notesVM = StateObject(
             wrappedValue: OrderNotesViewModel(orderId: orderId, client: client, snackbar: snackbar)
         )
+        _photosVM = StateObject(
+            wrappedValue: OrderPhotosViewModel(orderId: orderId, client: client, snackbar: snackbar)
+        )
         self.mapProvider = mapProvider
     }
 
@@ -37,7 +41,9 @@ struct OrderDetailView: View {
         content
             .navigationBarTitleDisplayMode(.inline)
             .task { await vm.load() }
+            .task { await photosVM.load() }
             .onReceive(notesVM.mutated) { Task { await vm.load() } }
+            .onReceive(photosVM.mutated) { Task { await vm.load() } }
     }
 
     @ViewBuilder
@@ -64,7 +70,8 @@ struct OrderDetailView: View {
                 inFlightAction: vm.inFlightAction,
                 onConfirm: { action in Task { await vm.dispatch(action) } },
                 checklistVM: checklistVM,
-                notesVM: notesVM
+                notesVM: notesVM,
+                photosVM: photosVM
             )
         }
         .ignoresSafeArea(edges: .top)
@@ -111,8 +118,13 @@ private struct OrderDetailErrorView: View {
             Group {
                 stateView(.loading).previewDisplayName("Loading")
                 stateView(.error(ApiError(httpStatus: 500))).previewDisplayName("Error")
-                OrderDetailContent(order: .preview, checklistVM: .preview, notesVM: .preview)
-                    .previewDisplayName("Loaded content")
+                OrderDetailContent(
+                    order: .preview,
+                    checklistVM: .preview,
+                    notesVM: .preview,
+                    photosVM: .preview
+                )
+                .previewDisplayName("Loaded content")
             }
         }
 

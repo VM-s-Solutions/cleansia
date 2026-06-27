@@ -171,5 +171,23 @@ final class OrderNotesViewModel: ViewModel {
         func deleteIssue(orderId _: String, issueId _: String) async -> ApiResult<Void> {
             .success(())
         }
+
+        func getPhotos(orderId _: String) async -> ApiResult<[OrderPhoto]> {
+            .success([])
+        }
+
+        func savePhoto(
+            orderId _: String,
+            photoType _: PhotoType,
+            base64Content _: String,
+            fileName _: String,
+            contentType _: String
+        ) async -> ApiResult<Void> {
+            .success(())
+        }
+
+        func deletePhoto(photoId _: String) async -> ApiResult<Void> {
+            .success(())
+        }
     }
 #endif

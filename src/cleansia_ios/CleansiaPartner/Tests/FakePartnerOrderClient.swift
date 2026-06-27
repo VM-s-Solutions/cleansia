@@ -22,6 +22,19 @@ final class FakePartnerOrderClient: PartnerOrderClient {
     /// Note/issue mutations appended here for the notes-section tests.
     private(set) var noteCommands: [(name: String, id: String?, content: String?)] = []
 
+    var getPhotosResult: ApiResult<[OrderPhoto]> = .success([])
+    private(set) var getPhotosCallCount = 0
+
+    /// Each photo mutation appends `(name, orderId, photoId, photoType, hasBase64)`
+    /// — the ownership test asserts the carried ids + that no employeeId leaks.
+    private(set) var photoCommands: [(
+        name: String,
+        orderId: String?,
+        photoId: String?,
+        photoType: PhotoType?,
+        hasBase64: Bool
+    )] = []
+
     /// When set, the next command suspends until `resumeCommand()` so a test can
     /// hold one mutation mid-flight and fire a second (re-entry guard).
     var suspendCommands = false
@@ -103,6 +116,39 @@ final class FakePartnerOrderClient: PartnerOrderClient {
 
     func deleteIssue(orderId _: String, issueId: String) async -> ApiResult<Void> {
         await recordNote("deleteIssue", id: issueId, content: nil)
+    }
+
+    func getPhotos(orderId _: String) async -> ApiResult<[OrderPhoto]> {
+        getPhotosCallCount += 1
+        return getPhotosResult
+    }
+
+    func savePhoto(
+        orderId: String,
+        photoType: PhotoType,
+        base64Content: String,
+        fileName _: String,
+        contentType _: String
+    ) async -> ApiResult<Void> {
+        photoCommands.append((
+            name: "savePhoto",
+            orderId: orderId,
+            photoId: nil,
+            photoType: photoType,
+            hasBase64: !base64Content.isEmpty
+        ))
+        return await gated()
+    }
+
+    func deletePhoto(photoId: String) async -> ApiResult<Void> {
+        photoCommands.append((
+            name: "deletePhoto",
+            orderId: nil,
+            photoId: photoId,
+            photoType: nil,
+            hasBase64: false
+        ))
+        return await gated()
     }
 }
 

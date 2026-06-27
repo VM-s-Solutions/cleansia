@@ -10,7 +10,31 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
-> ## 🍎 WAVE 10 — iOS PORT (sprint-12): PHASE 0 DONE + MERGED · **PHASE 1 (T-0303) DONE** · **PHASE 2 — T-0304 + T-0305 DONE** · **PHASE 3 — T-0306 + T-0310 DONE (PR drafted)** (2026-06-27)
+> ## 🍎 WAVE 10 — iOS PORT (sprint-12): PHASE 0 DONE + MERGED · **PHASE 1 (T-0303) DONE** · **PHASE 2 — T-0304 + T-0305 DONE** · **PHASE 3 — T-0306 + T-0310 DONE (PR drafted)** · **PHASE 4 — T-0307 + T-0308 DONE (PR drafted)** (2026-06-27)
+> **iOS PHASE 4 IS DONE — `phase/ios-phase4` (9 commits, pushed); the Phase-4 PR is drafted.** Both tickets
+> passed the full workflow (ios dev → reviewer/Gate-DP + security on the touching slices). **T-0307 (partner order
+> work-loop — OrdersList + OrderDetail + the OnTheWay lifecycle + checklist/notes/issues/timeline; `L → split` into
+> 5 slices; HARD AREA #3) → `done`** (`4cb76ef`+`94050ae`+`3d0bf0d`+`7fca473`+`3c44356`+`42bb402`): **A** = Core
+> `SnapSheet` (**ADR-0021** non-modal 3-snap) + `fullBleedMap(coordinate:)` (single-pin `MKMapView`); **B** = the
+> 3-pane OrdersList (sealed per-pane `UiState` + `RefreshPhase` + the ported staleness cache + the Code→OrderStatus
+> one-mapper; **security O3** own-id-only); **C** = the OrderDetail shell (SnapSheet over fullBleedMap + content
+> cards); **D** = the lifecycle actions + the shared **pure `OrderPrimaryAction` machine** (**SECURITY PASS
+> O1/O2/O4**, TC-IOS-ORDERS-OWNERSHIP); **E** = checklist (local store) / author-scoped notes+issues / status
+> timeline. Reviewer **APPROVE** on all 5; security **PASS** — the one backend `GetPaged` D2b gap → **T-0339**
+> (iOS proceeded in parallel). **T-0308 (partner photo upload — camera/library → base64-over-JSON; 2 slices) →
+> `done`** (`c216392`+`cf6ea6d`+`a2a2184`): **A** = Core `CameraOrLibraryPicker` (the repo's first
+> `UIViewControllerRepresentable`) + `ImageCompressor` (1920/0.7, **EXPLICIT EXIF strip**, TC-IOS-PHOTOS-EXIF-STRIP);
+> **B** = the `PhotosSection` (before/after rails, capture → upload) + the upload/delete VM + the Complete-unblock +
+> the bootstrapped `PrivacyInfo.xcprivacy` + the NSCamera/NSPhotoLibrary usage strings ×5. Reviewer **APPROVE**;
+> **SECURITY PASS** (P1–P5, TC-IOS-PHOTOS-OWNERSHIP — backend SavePhotos/DeletePhoto/GetPhotos ownership VERIFIED
+> safe, no backend change). Tests: **CleansiaCore 163 + CleansiaPartner 320** (iPhone 17); swiftformat + swiftlint
+> --strict clean. **REQUIRED backend follow-up T-0339** (GetPagedOrders employeeId over-read — SECURITY, high, gates
+> the GetPaged contract for go-live). **Owner items:** the camera/photo plist WORDING sign-off ×5 (T-0308 shipped en
+> + cs/sk/uk/ru); T-0325 location string (owner, unused by Phase 4). Next runnable = **T-0309** (earnings/invoices,
+> deps T-0304✓) ∥ **T-0311** (APNs push) ∥ the customer batch (T-0312…T-0314). Full plan + the §3 ticket table +
+> the Phase-4 status-log: **`status/sprint-12.md`** (top banner reconciled 2026-06-27).
+>
+> **--- (Phase-3 banner — kept for traceability) ---**
 > **iOS PHASE 3 IS DONE — `phase/ios-phase3` (7 commits, pushed); the Phase-3 PR is drafted.** Both tickets
 > passed the full workflow (ios dev → reviewer/Gate-DP, + security on Devices). **T-0306 (iOS map seam + MapKit +
 > partner AddressPicker) → `done`** (`480f5c4`+`03a00f3`+`199916b`): Slice A = the Core `MapProvider`/
@@ -90,8 +114,10 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > | **T-0305** | Phase-2 partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding chain (+ Core `AppSettingsStore` + `PasswordPolicy`/`PasswordRuleList`) | M | **done ✅** `ccd25cd`+`e232147`+`3e70cdb`+`84d38bc` (`phase/ios-phase2`; 4 slices — §7.5 docs / A ConfirmEmail / B Register / C+D Forgot+Onboarding; every slice reviewer-APPROVE, Slice A also security-APPROVE — traced backend `ConfirmUserEmail` (CODE-resolved → anon double-skip SAFE), C+D gate-safety SAFE. ConfirmEmail replaces the placeholder + reuses the LIVE empty-token gate; #25: `send()` gained `httpMethod:` (ConfirmUserEmail PUT, no silent 405), no new anon entry, Logout authed, positive-control proves the double-skip non-tautological; `.verifyEmail(email:)` carries the email (no `UserProfileStore`); F1 iOS localizes ×5, Android bug NOT replicated → follow-up **T-0333**. Seed now UNCONDITIONALLY `.splash` (ADR-0020 living-doc fold-in — refines D2; gate #24 byte-unchanged, no bypass). CleansiaCore 114 + Partner 96 pass on iPhone 17 sim) | T-0303✓, T-0304✓ | ios | no | — |
 > | **T-0306** | **Phase-3** map seam + MapKit default — Core `MapProvider`/`GeocodingService` seam + `Coordinate`/`GeocodedAddress` + `CLGeocoderGeocodingService` + iOS-16 `MapKitMapProvider` + the partner `AddressPickerView`/`VM` (returns `GeocodedAddress`; not wired into AddressSection — that's T-0310) | M | **done ✅** `480f5c4`+`03a00f3`+`199916b` (`phase/ios-phase3`; Slice A Core seam + iOS-16 MapKit — 125 CleansiaCore tests; Slice B partner AddressPicker pan+search, full-bleed map + static center-pin, 300/500ms debounce verbatim, best-effort geocode, NO `UiState`/`ActionState` (reviewer #27). D2 current-location FAB DEFERRED → T-0335 (recorded Gate-DP divergence). Reviewer **APPROVE**; swiftformat/swiftlint clean) | T-0300✓ | ios | no | — |
 > | **T-0310** | **Phase-3** partner Profile tab (hub + 6 section editors + onboarding chain + the now-live RegistrationLock Fix-CTAs) + **Devices** (Device/Mine list + revoke, SECURITY-ruled D6–D8) + **Preferences** (Language/Theme) over a new `PartnerProfileClient` (ADR-0019 spine) | M | **done ✅** `ce6c5fc`+`ee2f044`+`2cdaf93`+`6c6155c` (`phase/ios-phase3`; 3 slices. A = hub + 6 editors + onboarding chain + Fix-CTAs (the lock owns its OWN `NavigationStack`+chain VM, pushes the SHARED section set `onboarding==true`, fail-CLOSED, gate #24 byte-unchanged + verified). B = Devices — **SECURITY PASS** (D6 single device-id source, D7a hide-on-current + D7b defensive self-revoke sign-out, D8 server-scoped revoke verified vs backend; TC-IOS-DEVICES-SELF-REVOKE green). C = Preferences (language [+ System/follow-device row] + theme via `.preferredColorScheme`, the first runtime in-app language switch). D3 `ServiceAreaRow`→T-0334; D5 sealed-state, Android E1 NOT replicated→T-0337; current-location FAB→T-0335; Notifications DROPPED→T-0336. Reviewer-MINOR (Slice C Core i18n)→T-0338. Reviewer **APPROVE** (incl. System-row re-review); 185 CleansiaPartner tests; swiftformat/swiftlint clean) | T-0304✓, T-0306✓ | ios | **sec** (Devices D6–D8 PASS) | — |
+> | **T-0307** | **Phase-4** partner order work-loop (`L → split` into 5 slices, HARD AREA #3) — OrdersList (3-pane sealed per-pane `UiState`+`RefreshPhase`+ported staleness cache) + OrderDetail (SnapSheet over fullBleedMap + content cards) + the OnTheWay lifecycle (Take→NotifyOnTheWay→Start→Complete) via the shared pure `OrderPrimaryAction` machine + checklist/notes/issues/timeline + **ADR-0021** non-modal 3-snap sheet + the additive `MapProvider.fullBleedMap` | L→split | **done ✅** `4cb76ef`+`94050ae`+`3d0bf0d`+`7fca473`+`3c44356`+`42bb402` (`phase/ios-phase4`; **5 slices A–E**, reviewer **APPROVE** all 5; **SECURITY PASS** §7.8 O1–O4, TC-IOS-ORDERS-OWNERSHIP — the one backend `GetPaged` D2b gap → **T-0339** (pre-existing, iOS proceeds in parallel). E1 flag-bag NOT replicated→T-0337; SlideToCommit→native confirm Gate-DP swap; deferred checklist stable-id→T-0340; current-location FAB→T-0335. CleansiaCore 163 + CleansiaPartner 320 pass on iPhone 17 sim; swiftformat/swiftlint --strict clean) | T-0304✓, T-0306✓ | ios | **sec** (O1–O4 PASS) | — |
+> | **T-0308** | **Phase-4** partner photo upload (2 slices) — Core `CameraOrLibraryPicker` (first `UIViewControllerRepresentable`) + `ImageCompressor` (1920/0.7, EXPLICIT EXIF strip) + the `PhotosSection` (before/after rails, capture→upload) + the upload/delete VM + the Complete-unblock + the bootstrapped `PrivacyInfo.xcprivacy` + NSCamera/NSPhotoLibrary usage strings ×5 | M | **done ✅** `c216392`+`cf6ea6d`+`a2a2184` (`phase/ios-phase4`; **2 slices A–B**, reviewer **APPROVE**; **SECURITY PASS** §7.10 P1–P5, TC-IOS-PHOTOS-OWNERSHIP + TC-IOS-PHOTOS-EXIF-STRIP — backend SavePhotos/DeletePhoto/GetPhotos ownership VERIFIED safe, no backend change. Owner sign-off pending on the camera/photo plist WORDING ×5) | T-0307✓ | ios | **sec** (P1–P5 PASS) | **owner: camera/photo plist WORDING sign-off ×5** |
 >
-> **Phase-3 follow-up tickets (filed 2026-06-26/27) — all `draft`, deferred out of T-0306/T-0310; not dispatched:**
+> **Phase-3/4 follow-up tickets (filed 2026-06-26/27) — all `draft`/`proposed`, deferred out of T-0306/T-0307/T-0308/T-0310; not dispatched:**
 >
 > | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
 > |----|-------|------|--------|-----------|--------|-----|-------------|--------|
@@ -102,6 +128,7 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > | **T-0337** | Android partner profile VMs — flag-bag `UiState`→sealed (E1) + hardcoded validation/error strings→`R.string.*` (E8) | S | **draft** | — | android | no | — | sprint-12 §7.7 D5 (consistency.md E1/E8) |
 > | **T-0338** | Localize the CleansiaCore catalog ×5 + route Core localization through a swappable bundle (the Slice-C reviewer MINOR) | S | **draft** | T-0310✓ | ios | no | — | T-0310 Slice C reviewer MINOR |
 > | **T-0339** | **SECURITY (backend)** — scope `GetPagedOrders` "mine" views to the JWT caller (client `Filter.EmployeeId` over-read leaks foreign-assigned order coords/codes/pay). Reachable today, MEDIUM; pre-existing, gates the GetPaged contract for go-live | S | **proposed** (high) | — | backend | **yes** | — | T-0307 security gate §7.8 (`security/ios-orders.md` D2b) |
+> | **T-0340** | Order-detail parity nits — iOS checklist stable-id keying (vs positional index) + Android status-label casing convergence ("On the way"/"In progress") + the stale placeholder-preview literal sweep | S | **proposed** | T-0307✓ | ios, android | no | — | T-0307 Slice E reviewer (Findings 2 + 3) |
 >
 > **The standing latent backend SECURITY item — TRACKED, not new:** the multi-tenant asymmetry in
 > `RefreshTokenService.RevokeByDeviceAsync` / `RefreshTokenRepository.GetActiveByUserIdAsync` that the iOS remote

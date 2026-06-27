@@ -1525,6 +1525,71 @@ tenant filter applies on top of the explicit `UserId` scope (**S8**, latent mult
 
 ---
 
+### 7.10 T-0308 (Phase-4 partner photo upload/delete on OrderDetail) — SECURITY gate ruling (recorded 2026-06-27, security reviewer; Gate-SEC)
+
+> **STATUS-LOG 2026-06-27 — T-0308 SECURITY GATE: partner photo upload/delete/read surface —
+> `security_touching: YES`; verdict = PASS-the-iOS-design (binding client rules P1-P5) + ONE design
+> requirement (P3 explicit EXIF strip). The backend SavePhotos/DeletePhoto/GetPhotos ownership scoping
+> is VERIFIED safe on the reachable backend — NO backend CHANGES. Photo analogue of the T-0307
+> order-action gate (§7.8). Full S1-S10 walk + binding rules in `security/ios-photos.md`.**
+>
+> **Greenfield client, like T-0307/Devices:** `phase/ios-phase4` carries T-0307 order code + the
+> **generated** photo DTOs (`CleansiaPartnerApi/Models/SaveOrderPhotos*.swift`,
+> `DeleteOrderPhotoResponse.swift`, `GetOrderPhotos*.swift`, `PhotoType.swift`) but **no iOS
+> capture/image-picker/UIImage/camera code on disk** (tree grep clean). So P1-P5 are rules the
+> developer builds to, not findings against shipped iOS code. The **backend photo surface was traced on
+> this Mac** (same discipline as T-0307 §7.8 / Devices D8).
+>
+> **D2 — upload/delete/read ownership (S1/S2/S3) — VERIFIED SAFE (no backend gap, unlike GetPaged).**
+> Actor is JWT-derived (`OrderAccessService.GetCallerEmployeeIdAsync`; commands carry NO client
+> employeeId — SavePhotos=`{orderId,photos[]}`, DeletePhoto=`{photoId}` only; `capturedByEmployeeId` +
+> `capturedAt` are server-stamped, `SaveOrderPhotos.cs:139`/`OrderPhoto.cs:82`). **SavePhotos** scopes
+> by `order.AssignedEmployees.Any(oe=>oe.EmployeeId==employeeId)` (`SaveOrderPhotos.cs:101-104`;
+> `UploadOrderPhoto.cs:90-93`). **DeletePhoto resolves ownership SERVER-SIDE** photoId→order→caller
+> (`GetByIdAsync(photoId)` → load `photo.OrderId`'s order → assignment check;
+> `DeleteOrderPhoto.cs:39,51-59`) — the client cannot name the owner; foreign-order delete →
+> `EmployeeNotAssignedToOrder`. **GetPhotos** gates the whole read on `CanBrowseOrderAsync`
+> (`GetOrderPhotos.cs:57-62`; assigned/customer/admin/available-spots) — no photoId-keyed read, no
+> guess-a-photoId path; foreign no-spots order → `OrderNotFound` (existence hidden). All VERIFIED.
+>
+> **D3 — EXIF/GPS (S4-adjacent) — DESIGN REQUIREMENT P3.** The backend stores uploaded bytes verbatim
+> to blob (no server EXIF scrub, `SaveOrderPhotos.cs:123-127`), so camera GPS/EXIF survives unless the
+> CLIENT strips it. `UIImage.jpegData` drops EXIF as a *side effect* — but that incidental coupling is
+> fragile (a future metadata-preserving encode silently re-leaks the cleaner's/customer's precise GPS).
+> **RULING: EXIF/GPS strip must be an EXPLICIT, asserted invariant of the upload boundary, not an
+> incidental side-effect** — single re-encode chokepoint + a test asserting the produced JPEG has no
+> `kCGImagePropertyGPSDictionary`. The photo analogue of "never upload the raw camera asset."
+>
+> **D4 — permission-denial UX + bounds — PASS.** Denied camera/library degrades cleanly (clear message
+> + Settings deep-link, never a silent dead control; `Info.plist` declares
+> `NSCameraUsageDescription`/`NSPhotoLibraryUsageDescription` — manifest manual step). **Size cap
+> (S5):** server enforces 10 MB/photo (`SaveOrderPhotos.cs:37,60-64`) so a 50 MB body is rejected;
+> client downscales before encode (P5). **Rate limit (S5):** SavePhotos/UploadPhoto/DeletePhoto carry
+> `[EnableRateLimiting("auth")]` (partitioned per-JWT-sub, `OrderController.cs:112,125,150`). **SAS
+> (S4) non-enumerable:** GetPhotos returns per-blob, 1h-expiry, Read-only SAS URLs
+> (`BlobContainerClient.cs:86-113`) over blob names with a random GUID — a partner cannot guess/forge
+> another order's photos (and never gets a foreign list). **S6/S8/S10 PASS** (no PII logged; `OrderPhoto
+> : ITenantEntity` global-filtered through `GetDbSet`; hard-delete, no soft-delete leak). **S9 N/A** (no
+> schema/DTO change — DTOs already generated; T-0308 = client capture code only).
+>
+> **Binding client rules (reviewer enforces):** **P1** no client actor field on SavePhotos/DeletePhoto
+> (orderId/photoId only; actor=JWT). **P2** no-id-echo — upload only to the loaded `orderId`, delete
+> only a `photoId` from this order's own `getPhotos` response. **P3** explicit, asserted EXIF/GPS strip.
+> **P4** clean permission-denial + Info.plist usage strings. **P5** client downscale before encode +
+> re-entry-guard the upload while a call is in flight (no double-tap duplicate). Client rail-gating
+> (canUpload by status) is UI-only — the server is authority (the `completeBlocked` precedent).
+> **Required tests:** **TC-IOS-PHOTOS-OWNERSHIP** (client VM: SavePhotos from own orderId only +
+> DeletePhoto from a loaded photoId only + clean reject/refresh + upload re-entry guard) +
+> **TC-IOS-PHOTOS-EXIF-STRIP** (assert the encoded JPEG has no GPS dictionary — gates P3).
+>
+> **Owner follow-ups (NONE block T-0308; all LOW/latent):** (1) DeletePhoto authorship — any assigned
+> cleaner can delete another's photo on shared jobs (`MaxEmployees>1`); add `capturedByEmployeeId`
+> author check before shared jobs, dormant today. (2) cap photos-per-SavePhotos-request (e.g. ≤10) so
+> the 10 MB/photo cap can't be multiplied. (3) optional server-side EXIF scrub as defense-in-depth
+> behind the client P3 strip.
+
+---
+
 ### 7.9 T-0307 (Phase-4 partner order work-loop — OrdersList + OrderDetail + lifecycle + checklist/notes/issues/timeline) — acceptance scope + the five Understand-pass rulings (recorded 2026-06-27, architect)
 
 > **The order-action OWNERSHIP gate is ruled by SECURITY in §7.8 (`security/ios-orders.md`, O1–O4) — this
@@ -1821,6 +1886,309 @@ extension Code {
   `hasAfterPhotos`, surface success/error via the `SnackbarController`. *Collaborators:* `ios-orders-cache`,
   `ios-order-primary-action` (for the footer's action), `SnackbarController`, the orders client. *Does NOT know:* the
   sheet's snap mechanics (`ios-snap-sheet`), MapKit (`fullBleedMap`), or photo capture (T-0308).
+
+---
+
+### 7.10 T-0308 (Phase-4 partner order PHOTOS — camera/library capture → base64-over-JSON upload, read-back, delete, Complete-unblock) — acceptance scope + the four Understand-pass rulings (recorded 2026-06-27, architect)
+
+> **The photo-upload OWNERSHIP / EXIF-gate is ruled by SECURITY in parallel (`security/ios-orders.md`) — this
+> architect record stays OUT of it.** The decisions below rule only the *capture seam shape*, the *compression
+> target*, the *read-back/image-loading component*, and the *plist scope* — never who may upload to which order,
+> nor metadata stripping. T-0307's §7.9 (d) already CONFIRMED the photo precursor seam (the reserved Photos slot +
+> the `hasAfterPhotos` consumer); T-0308 makes the producer real.
+
+T-0308 (`L → split`, `phase/ios-phase4`, depends_on T-0307) fills the disabled Photos placeholder T-0307 left in
+the OrderDetail sheet (gated behind `showWorkSections`), via camera/library capture → **base64-over-JSON** upload —
+the **partner** shape: `PartnerOrderAPI.orderSavePhotos(SaveOrderPhotosCommand{orderId, photos:[SaveOrderPhotos
+PhotoToSave{photoType, file: BlobFileDto{fileName, base64Content, contentType}, notes}]})`; read-back via
+`orderGetPhotos(orderId) → GetOrderPhotosResponse{photos:[GetOrderPhotosOrderPhotoDto{id, blobUrl, photoType…}]}`;
+delete via `orderDeletePhoto(photoId)`. `PhotoType._1 = Before`, `._2 = After`. The after-photo flips
+`OrderPrimaryAction.completeBlocked → .complete` via the server-recomputed `OrderItem.hasAfterPhotos` (T-0307 §7.9
+(c) built the consumer; T-0308 makes the producer real). **2 slices (§6):** A = the capture seam + the base64/
+compression util (Core); B = `PhotosSection` + the upload/delete VM + the Complete-unblock wiring.
+
+**Android parity source (the iOS port mirrors it):** `partner-app/.../features/orders/PhotosSection.kt` (two rails
+Before/After, each an Add tile + thumbnail strip + per-tile delete), `OrderPhotosViewModel.kt` (the
+`OrderPhotosUiState` Loading/Error/Loaded + the `PhotoMutationState{isUploading, deletingId}` + the
+`mutationVersion` monotonic counter → parent refresh), `OrderDetailScreen.kt` (the `PhotosSection` wiring +
+`canUploadBefore/After` windows + `canComplete = order.hasAfterPhotos == true`, `:530-558`), and
+`data/orders/OrdersRepository.kt` (`getPhotos`/`uploadPhoto`/`deletePhoto`, the single-photo `orderSavePhotos`
+batch-of-one, `:261-297`). **Gate-DP applies** (T-0308 is a screen ticket): the Photos section cites
+`PhotosSection.kt`; native SwiftUI; iOS-wins-on-conflict + the noted divergences (camera-vs-gallery, the
+1920/0.7 compression, Coil → `AsyncImage`).
+
+**This is a "record, not ADR" ruling — the §7.2/§7.4/§7.5/§7.6/§7.7/§7.9 precedent.** All four decisions **APPLY
+accepted ADRs**: decision (a) applies ADR-0018 D2 (native-SwiftUI brand-skin component) + D3/Gate-DP (the noted
+camera enhancement divergence); (b) applies the Parity rule + ADR-0018 D3 (a recorded pixel-dimension divergence
+for a perf reason) — a bounded pure helper, no optimizer pass needed; (c) applies ADR-0018 D3 (the Coil → SwiftUI
+`AsyncImage` mapping, already in the table) + ADR-0013 parity (trust the re-fetched `hasAfterPhotos`); (d) applies
+ADR-0016 AR-PRIV-4 (purpose strings in-ticket, the API_BASE_URL/fonts `info.properties` precedent). **No new
+trade-off rises to ADR-0021's bar** (a decision that could move the deployment floor, or that sets a wholly new
+canonical archetype with rejected alternatives that must be defended on the record). The **`UIViewController
+Representable` idiom is genuinely the repo's first** — but it is a *direct application* of ADR-0018 D2 (wrap a
+platform control as a native-SwiftUI brand-skin seam), not a new principle; it is harvested into `patterns-mobile`
+as a canonical idiom, the same living-doc fold-in CH-5 of ADR-0018 reserves for "a new control mapping a feature
+surfaces."
+
+**IN — T-0308 acceptance scope:**
+- **Slice A:** the **`CameraOrLibraryPicker`** `UIViewControllerRepresentable` in `CleansiaCore/Components` (a
+  camera-capable `UIImagePickerController` behind a SwiftUI seam — decision (a)) + a **pure `ImageCompressor`** Core
+  helper (downscale longest-side → 1920px aspect-preserved + JPEG quality 0.7 → `Data` + `contentType` "image/jpeg",
+  encoded OFF the main thread — decision (b)).
+- **Slice B:** the **`PhotosSection`** view (two rails Before/After, the Add tile → an action sheet Take Photo /
+  Choose from Library — decision (a)) + the **`OrderPhotosViewModel`** (the `OrderPhotosUiState` Loading/Error/Loaded
+  + the per-rail mutation substate + the `mutationVersion`-style parent-refresh bump) over the photo methods on the
+  orders repo (via the ADR-0019 spine), reading back with SwiftUI **`AsyncImage`** (decision (c)), and the
+  Complete-unblock wiring trusting the **re-fetched `OrderItem.hasAfterPhotos`** (decision (c)).
+- **The two plist keys** (`NSCameraUsageDescription` + `NSPhotoLibraryUsageDescription`) added IN-TICKET to the
+  **partner** `project.yml` `info.properties` + localized ×5 via `InfoPlist.strings` (decision (d)).
+
+**DEFERRED — explicitly out of T-0308, with the ticket each lands in:**
+- **The customer app's camera plist keys** → **T-0314** (decision (d): the Customer app carries its own
+  `NSCameraUsageDescription`/`NSPhotoLibraryUsageDescription` when T-0314's dispute-evidence capture lands — pre-adding
+  them to the customer `project.yml` now ships a declared-but-unused capability, an AR-PRIV-4 "no purpose string for a
+  capability the app does NOT use" risk).
+- **The photo-upload ownership / EXIF-strip gate** → **SECURITY** (`security/ios-orders.md`, ruled in parallel — out
+  of this record).
+
+#### Decision (a) — THE CAPTURE SEAM: a camera-capable `UIImagePickerController` behind a NEW `CleansiaCore/Components` `UIViewControllerRepresentable` (the repo's FIRST — make it the canonical "imperative-UIKit-controller-behind-a-SwiftUI-seam" idiom); the Add tile opens an action sheet Take Photo / Choose from Library (APPLIES ADR-0018 D2/D3 — no new ADR)
+
+**RULING: build a `UIViewControllerRepresentable` wrapping a camera-capable `UIImagePickerController` in
+`CleansiaCore/Components` (sketch name `CameraOrLibraryPicker`; the exact Swift surface is the dev's, the contract is
+fixed: it presents a `sourceType` picker and returns ONE picked `UIImage`/`Data` via a callback, dismissing itself).
+This is the repo's FIRST `UIViewControllerRepresentable` — make it the CANONICAL "imperative-UIKit-controller-behind-
+a-SwiftUI-seam" idiom and HARVEST it into `patterns-mobile.md`. The single Add tile (the Android single-affordance
+rail layout) opens a NATIVE `.confirmationDialog` action sheet — `Take Photo` (`.camera`) / `Choose from Library`
+(`.photoLibrary`) / `Cancel` — which then presents the representable with the chosen `sourceType`.**
+
+- **Why a `UIImagePickerController` representable (vs the rejected alternatives):**
+  - **PHPicker (library-only)** — REJECTED: `PHPickerViewController` is the modern library picker but has **no
+    camera source**; the T-0308 ticket requires **camera capture**, so PHPicker fails the requirement outright.
+  - **AVFoundation (custom capture pipeline)** — REJECTED: a bespoke `AVCaptureSession` camera UI is **over-engineered**
+    for "take/pick one photo of a cleaning job" — it re-builds the system camera (preview layer, orientation, flash,
+    permissions UX) that `UIImagePickerController` provides for free, adds large surface to test, and diverges from
+    "native, no extra framework" (ADR-0018 D2). Reserved only for a future requirement the system camera can't meet
+    (none here).
+  - **`UIImagePickerController` representable** — CHOSEN: it is the one native control that does **both** camera and
+    library from a single API (`sourceType = .camera | .photoLibrary`), maps cleanly to the Android single-Add-tile
+    rail (one affordance → an action-sheet source choice), and is wrapped as a `CleansiaCore` brand-skin seam (ADR-0018
+    D2 — the `Cleansia*` brand-skin-over-native posture). It is `UIImagePickerController`-deprecation-tolerant for the
+    floor (it is **not** deprecated on iOS 16; it remains the canonical camera-source picker).
+- **Why a `UIViewControllerRepresentable` (and why it earns its place in the catalog):** SwiftUI has **no** native
+  camera/photo-source control on the iOS-16 floor — the platform answer is to wrap the UIKit controller in a
+  `UIViewControllerRepresentable` (the controller analogue of the `UIViewRepresentable`/`MKMapView` map seam ADR-0014
+  D6′ already established for the *view* case). This is the repo's **first** `UIViewControllerRepresentable`; homing it
+  in `CleansiaCore/Components` and harvesting the idiom makes the **next** imperative-UIKit-controller need (a future
+  document/share/contact picker) cheaper and consistent — it earns its place on the "makes future changes cheaper"
+  bar. It does **not** introduce a new principle: it is ADR-0018 D2 applied to the *controller* case (the existing
+  `UIViewRepresentable` MapKit seam is the *view* sibling), folded into the catalog per ADR-0018 CH-5 (a new control
+  pattern a feature surfaces is a living-doc/catalog fold-in, not a superseding ADR).
+- **THE CATALOG CORRECTION (the false precedent):** any claim that the `AddressPicker` (T-0306) established a
+  `UIViewControllerRepresentable` precedent is **FALSE** — the `AddressPicker` is **pure MapKit/SwiftUI** (the iOS-16
+  `Map(coordinateRegion:annotationItems:[])` SwiftUI view + a SwiftUI overlay pin + `CLGeocoder`/`MKLocalSearch`); it
+  uses **neither** a `UIViewControllerRepresentable` **nor** a `UIViewRepresentable` (the `MKMapView`/
+  `UIViewRepresentable` surface is `fullBleedMap` in T-0307, a *view* representable, not a *controller* one).
+  `CameraOrLibraryPicker` is therefore genuinely the **first `UIViewControllerRepresentable`** in the repo. (Verified:
+  §7.6/§7.9 + `patterns-mobile` describe the AddressPicker as SwiftUI `Map(coordinateRegion:)` + `CLGeocoder`; no
+  representable claim exists in the catalog today, so the correction is a guard against the claim re-entering — see the
+  `patterns-mobile` harvest below.)
+- **The Gate-DP camera-vs-gallery divergence (architect sign-off — decision (a) half):** the Android partner
+  `PhotosSection.kt` Add tile launches **`ActivityResultContracts.GetContent()` with `"image/*"`** — **GALLERY-ONLY**
+  (`:146-161,200`); it has **no camera path**. The T-0308 ticket calls for **camera capture**, so iOS ships **camera +
+  library** (the action sheet) — an explicit, recorded **iOS ENHANCEMENT** over Android's gallery-only. This is a
+  Gate-DP **divergence with architect sign-off**: *"Android Add tile = gallery-only (`GetContent`); iOS Add tile =
+  Take Photo / Choose from Library (camera + library), the ticket's camera requirement; the divergence ADDS a source
+  affordance, it does NOT move layout/flow/branding (same single Add tile, same two rails, same thumbnail strip)."* It
+  passes Gate-DP #3 (component-only, layout/flow/branding identical). **The Android gallery-only is itself a small gap**
+  (a partner can't shoot a job photo in-app on Android) → a PM-filed Android follow-up may add a camera source there
+  (the Parity rule's "Android is thin → iOS does it right, file the Android catch-up"), independent of the iOS wave.
+
+#### Decision (b) — THE BASE64 COMPRESSION TARGET: downscale longest-side → 1920px (aspect-preserved) + JPEG quality 0.7 + contentType "image/jpeg", encoded OFF the main thread — a PURE Core helper (strict TDD); a recorded iOS pixel-dimension divergence for the perf reason (APPLIES the Parity rule + ADR-0018 D3 — no new ADR, no optimizer pass)
+
+**RULING: the iOS upload downscales to a max longest-side dimension of 1920px (aspect-preserved, never upscale) +
+JPEG quality 0.7, `contentType = "image/jpeg"`, encoded OFF the main thread (a background `Task`/queue), as a PURE
+`CleansiaCore` helper (`ImageCompressor`) built strict-TDD. This is an iOS-only DIVERGENCE — Android ships RAW camera
+bytes uncompressed (`PhotosSection.kt:155-159`: `readBytes()` → `Base64.encodeToString(bytes, NO_WRAP)`, comment
+acknowledging "Base64 encoding can be slow for multi-MB images") so a 3–8MB image is base64-inflated ~33% over the
+JSON body + held in memory. The iOS downscale+JPEG changes pixel dimensions vs Android — recorded as a deliberate
+divergence with the perf rationale. It is a bounded pure helper, so the architect ruling SUFFICES — no optimizer pass.**
+
+- **The numbers (confirm + rationale):** **1920px longest side** (aspect-preserved, never upscale a smaller image) +
+  **JPEG quality 0.7** + **`contentType = "image/jpeg"`** + **`fileName`** carried through as `"<uuid>.jpg"` (the
+  Android-derived-filename parity, simplified — Android derives it from the gallery URI's last path segment; an iOS
+  camera capture has no URI, so a generated `.jpg` name is the clean iOS equivalent). 1920px is a sensible
+  "job-evidence" resolution (full-HD long edge — legible detail, ~0.2–0.5MB JPEG vs 3–8MB raw); 0.7 is the standard
+  "visually lossless enough for a photo record" quality. These are confirmed as the target; the dev tunes nothing
+  outside this without a re-record.
+- **Why iOS diverges from Android's raw bytes (the perf call):** the transport is **base64-over-JSON**, which inflates
+  the payload **~33%** AND materializes the whole encoded string in memory (the `SaveOrderPhotosCommand` body). Android
+  ships raw multi-MB bytes through that path and even comments on the cost; iOS **does it right** — a 1920/0.7 JPEG is
+  ~10–30× smaller, so the base64 body + the in-memory string are bounded, the upload is faster, and the OOM risk on
+  older 2017 floor devices (iPhone 8/X, the ADR-0014 reach) is removed. This is the canonical Parity-rule shape
+  (*Android is wasteful → iOS does it right, record the divergence, the Android perf fix is a separate catch-up*).
+- **Recorded as a Gate-DP-adjacent divergence (it changes pixels, not layout):** *"Android uploads raw camera bytes
+  (no downscale); iOS downscales to 1920px longest-side + JPEG 0.7 before base64 — a deliberate iOS perf divergence
+  (smaller base64-over-JSON body + bounded memory), changing the uploaded pixel dimensions, not the
+  layout/flow/branding."* (Strictly this is a *behavior/perf* divergence under the Parity rule rather than a Gate-DP
+  *component* swap — recorded in both registers so a reviewer doesn't flag the dimension difference as a parity bug.)
+  The Android raw-bytes perf fix (add a downscale before base64) is a PM-filed Android follow-up, independent of the
+  iOS wave.
+- **It is a PURE helper → strict TDD, no optimizer pass (the architect's call, as briefed):** `ImageCompressor` takes
+  a `UIImage` (or `Data`) → returns `(Data, contentType: String)`; it is a deterministic, side-effect-free transform
+  (the off-main-thread *call site* is the VM's, the helper itself is pure). Its bounds make it ideal for red-first unit
+  tests (a >1920 image scales to ≤1920 longest side aspect-preserved; a ≤1920 image is NOT upscaled; output is JPEG;
+  output bytes < input for a large image). It is **bounded** (one transform, no allocation strategy / streaming /
+  threading policy to optimize), so the architect ruling SUFFICES — **no optimizer pass** is warranted (an optimizer
+  pass is for an unbounded hot path / allocation profile; a single bounded downscale is not one).
+
+#### Decision (c) — READ-BACK + IMAGE LOADING: read via `orderGetPhotos → GetOrderPhotosOrderPhotoDto.blobUrl`, render with iOS-16 SwiftUI `AsyncImage` (the Coil `SubcomposeAsyncImage` → `AsyncImage` Gate-DP component swap, no 3rd-party dep); the Complete gate trusts the RE-FETCHED `OrderItem.hasAfterPhotos`, NOT `GetOrderPhotosResponse.afterPhotoCount` (APPLIES ADR-0018 D3 + ADR-0013 parity — no new ADR)
+
+**RULING (CONFIRMED as briefed): read back via `orderGetPhotos(orderId) → GetOrderPhotosResponse.photos`, each a
+`GetOrderPhotosOrderPhotoDto` carrying `blobUrl`; render each thumbnail with the iOS-16 SwiftUI `AsyncImage`
+(`init(url:content:placeholder:)`, with a loading placeholder + a visible failure state). This is the ADR-0018 D3
+canonical **Coil `SubcomposeAsyncImage` → SwiftUI `AsyncImage`** component swap (already in the mapping table) — a
+consistent Gate-DP component swap like the prior MapKit/native-confirm swaps, with NO 3rd-party dependency (no
+Kingfisher needed; `blobUrl` is a fresh SAS URL per fetch). AND: the Complete gate trusts the RE-FETCHED
+`OrderItem.hasAfterPhotos` (the loaded order's server-recomputed flag) — it does NOT short-circuit off
+`GetOrderPhotosResponse.afterPhotoCount`.**
+
+- **The image-loading swap (confirm):** Android renders thumbnails with Coil `SubcomposeAsyncImage` (distinct loading
+  / error states, `PhotosSection.kt:235-272`). iOS uses SwiftUI **`AsyncImage`** — the ADR-0018 D3 table's
+  `Coil AsyncImage → SwiftUI AsyncImage` row (verified present in the catalog) — with `AsyncImage`'s `phase`-based
+  content closure giving the same loading-spinner / broken-image-fallback the Android `SubcomposeAsyncImage` shows
+  (same frame/aspect/placeholder layout — the Gate-DP "what stays identical" column). **No Kingfisher / no 3rd-party
+  dep** (ADR-0018 D2 / ADR-0014 no-extra-framework): the partner `blobUrl` is a per-fetch SAS URL, so cross-fetch
+  caching parity is not load-bearing here; if a *future* surface needs disk-cache parity, Kingfisher is the
+  table-sanctioned fallback (a scoped dependency + a living-doc note), not now. **Recorded Gate-DP divergence:**
+  *"Coil `SubcomposeAsyncImage` → SwiftUI `AsyncImage`; same thumbnail frame/aspect + loading/broken-image states;
+  component-only, no layout/flow/branding change, no 3rd-party dep."*
+- **The Complete gate trusts the re-fetched `hasAfterPhotos` (confirm — the parity, verified in source):** Android's
+  Complete footer reads **`canComplete = order.hasAfterPhotos == true`** (`OrderDetailScreen.kt:558`) — the
+  **re-fetched `OrderItem.hasAfterPhotos`** (the server-recomputed flag on the loaded order), kept live by the
+  `PhotosSection` `onPhotosChanged` bump → the parent's `onContentMutated` refresh (`:133`, the `mutationVersion`
+  parity). It does **NOT** count `GetOrderPhotosResponse.afterPhotoCount` to decide Complete. iOS mirrors this:
+  decision (c) of §7.9 (the `OrderPrimaryAction` `.complete`/`.completeBlocked` split) consumes
+  `hasAfterPhotos` derived from the **re-fetched** `OrderItem`; after a successful upload/delete, the photos VM bumps a
+  parent-refresh signal (the `mutationVersion` analogue) so the OrderDetail VM re-fetches the order and
+  `hasAfterPhotos` flips, unblocking Complete. **Deviation a reviewer rejects:** the Complete gate computed from
+  `GetOrderPhotosResponse.afterPhotoCount` (or any client-side photo count) instead of the re-fetched
+  `OrderItem.hasAfterPhotos` — that forks the gate's source-of-truth from the server flag the backend validator also
+  enforces (the `AfterPhotosRequired` safety net stays authoritative; `.completeBlocked` is the client soft hint).
+- **The mutation/refresh shape (parity):** the iOS `OrderPhotosViewModel` mirrors `OrderPhotosViewModel.kt` — sealed
+  `OrderPhotosUiState` (Loading/Error/Loaded), a per-rail mutation substate (`isUploading` drives the Add-tile spinner;
+  `deletingId` drives the specific tile's spinner), a `mutationVersion`-style monotonic bump that the parent observes
+  to refresh the surrounding order (keeping `hasAfterPhotos` live). Single-photo upload via the **batch-of-one**
+  `orderSavePhotos` (one `SaveOrderPhotosPhotoToSave` in the `photos` array — the `OrdersRepository.kt:264-291`
+  parity); delete via `orderDeletePhoto(photoId)` then the VM invalidates its own orderId (the delete contract carries
+  only `photoId`). Upload windows port verbatim: `canUploadBefore = status ∈ {_3 OnTheWay, _4 InProgress}`,
+  `canUploadAfter = status == _4 InProgress` (`OrderDetailScreen.kt:530-532`); terminal orders (Completed/Cancelled)
+  render read-only (no Add tile, no delete).
+
+#### Decision (d) — PLIST SCOPE: the two `NS*UsageDescription` keys added IN-TICKET to the PARTNER `project.yml` `info.properties` (the API_BASE_URL/fonts precedent), localized ×5 via `InfoPlist.strings`; Customer carries its own at T-0314 (APPLIES ADR-0016 AR-PRIV-4 — no new ADR; the owner approves the WORDING async, non-blocking)
+
+**RULING: `NSCameraUsageDescription` + `NSPhotoLibraryUsageDescription` are added IN-TICKET to the PARTNER app's
+`CleansiaPartner/project.yml` `targets.CleansiaPartner.info.properties` (the same mechanical add as the existing
+`API_BASE_URL` + `UIAppFonts` keys, `:43-51`), localized ×5 via `InfoPlist.strings` — NOT deferred to an owner
+manual_step. SCOPE = PARTNER-ONLY NOW; the Customer app carries its own two keys at T-0314 (its dispute-evidence
+capture). The owner approves the WORDING async (non-blocking — the keys land in-ticket; the strings can be revised
+without re-touching the structure).**
+
+- **In-ticket, not a deferred manual_step (the precedent):** the partner `project.yml` already declares
+  `info.properties` keys mechanically (`API_BASE_URL`, `UIAppFonts`, `:43-51`); adding two `NS*UsageDescription` keys
+  is the **same XcodeGen-`info.properties`** edit, fully in the ios dev's hands — there is no owner-only step (unlike
+  the `mobile-spec-regen` or signing). ADR-0016 **AR-PRIV-4** already anticipates exactly these keys "for partner
+  photos (T-0308)" and requires they ship **with the capability, in-ticket** (Gate-AR: "any new capability carries its
+  purpose string + manifest entry + locale strings in-ticket, not deferred"). Deferring them would ship a camera that
+  prompts with an empty/missing purpose string → an instant crash-on-first-use + an App Review rejection.
+- **Localized ×5 via `InfoPlist.strings` (AR-QUAL-1 / reviewer #10):** the two purpose strings are NOT raw literals in
+  `project.yml` — they are `InfoPlist.strings` keys with en/cs/sk/uk/ru values (the i18n-completeness rule). The
+  strings describe the REAL use ("Take photos of the job's before/after state") — no generic/empty string (AR-PRIV-4).
+- **Partner-only now; Customer at T-0314 (the scope call):** pre-adding the two keys to the Customer app's
+  `project.yml` now would declare a camera/photo-library capability the **Customer app does not yet exercise** — an
+  AR-PRIV-4 "**no purpose string for a capability the app does NOT use**" risk (a reviewer flags a declared-but-unused
+  capability). T-0314 (customer dispute-evidence capture) adds the Customer keys **with** that capability, the same
+  in-ticket discipline. **Recommendation taken: Partner-only now.**
+- **The PrivacyInfo manifest (AR-PRIV-1) carries the photos data-type:** if the partner `PrivacyInfo.xcprivacy`
+  doesn't already declare the **photos** collected-data type + any required-reason API the capture/encode touches, this
+  ticket adds it (the manifest is the AR-PRIV-1 sibling of the purpose string — both ship with the capability). A
+  declared-but-not-present, or present-but-not-declared, photos type is an AR-PRIV-1 finding.
+
+#### The recorded Gate-DP / Parity divergences (T-0308 — all component-or-behavior, none touch layout/flow/branding)
+
+1. **Add tile: Android gallery-only (`GetContent("image/*")`) → iOS camera + library (action sheet Take Photo /
+   Choose from Library)** — decision (a). An iOS ENHANCEMENT (the ticket's camera requirement); the divergence ADDS a
+   source affordance, keeping the single Add tile + two rails + thumbnail-strip layout. Architect sign-off; Android
+   camera-source catch-up is a PM-filed follow-up.
+2. **Upload bytes: Android raw camera bytes (no downscale) → iOS downscale 1920px longest-side + JPEG 0.7 before
+   base64** — decision (b). A deliberate iOS PERF divergence (smaller base64-over-JSON body + bounded memory on the
+   2017 floor); changes uploaded pixel dimensions, not layout/flow/branding. Recorded so a reviewer doesn't flag the
+   dimension difference; Android perf catch-up is a PM-filed follow-up.
+3. **Thumbnail loading: Coil `SubcomposeAsyncImage` → SwiftUI `AsyncImage`** — decision (c). The ADR-0018 D3 table
+   mapping; same frame/aspect + loading/broken-image states; component-only, no 3rd-party dep.
+
+#### Reviewer-check addition (T-0308+)
+
+- **#32 (§7.10 (a)/(b)/(c)/(d)) — the partner photo flow is the canonical shape.** **(a) capture seam** — photo
+  capture goes through the Core **`UIViewControllerRepresentable`** (`CameraOrLibraryPicker`) wrapping a camera-capable
+  `UIImagePickerController`; the single Add tile opens a native action sheet (Take Photo / Choose from Library); the
+  camera+library enhancement over Android's gallery-only is the noted Gate-DP divergence. **Findings:** a feature/VM
+  hand-rolling `UIImagePickerController` (or AVFoundation) outside the Core seam; a PHPicker-only (no-camera) picker
+  (fails the requirement); a representable that imports UIKit into a feature/VM rather than living in
+  `CleansiaCore/Components`. **(b) compression** — the upload runs through the pure Core **`ImageCompressor`** (1920px
+  longest-side aspect-preserved + JPEG 0.7 + `image/jpeg`, off the main thread); the divergence from Android's raw
+  bytes is noted. **Findings:** raw/un-downscaled bytes base64'd (the Android shape copied — the un-approved perf
+  divergence); main-thread base64 encode; an arbitrary dimension/quality not 1920/0.7 without a re-record. **(c)
+  read-back + gate** — thumbnails render via SwiftUI **`AsyncImage`** (no 3rd-party dep); the Complete gate consumes
+  the **re-fetched `OrderItem.hasAfterPhotos`** (kept live by the post-mutation parent refresh), NOT
+  `GetOrderPhotosResponse.afterPhotoCount` / any client photo count. **Findings:** a 3rd-party image lib for the
+  partner thumbnails; the Complete gate computed off `afterPhotoCount`; an upload/delete that doesn't bump the parent
+  order refresh (so `hasAfterPhotos` goes stale). **(d) plist** — the two `NS*UsageDescription` keys are in the
+  PARTNER `project.yml` `info.properties` **in-ticket**, localized ×5 via `InfoPlist.strings`, describing the real use;
+  the `PrivacyInfo.xcprivacy` photos type is declared (AR-PRIV-1). **Findings:** a deferred/owner-manual plist key; a
+  missing/generic/empty purpose string; a non-localized purpose string; the keys pre-added to the **Customer**
+  `project.yml` before T-0314 (a declared-but-unused-capability AR-PRIV-4 risk). (Composes with the §7.9 #31 action
+  table — `.complete`/`.completeBlocked` consume `hasAfterPhotos`; this check governs how `hasAfterPhotos` is produced
+  + kept live.) **The photo-upload ownership / EXIF gate is SECURITY's** (`security/ios-orders.md`) — out of #32.
+
+#### New CRC roles (added with the T-0308 wiring)
+
+- **`ios-camera-library-picker`** (new, `CleansiaCore/Components`) — the `CameraOrLibraryPicker`
+  `UIViewControllerRepresentable` wrapping `UIImagePickerController` (decision (a); the repo's FIRST
+  `UIViewControllerRepresentable`): *responsibility:* present a camera- or library-source system picker and return ONE
+  picked image (as `UIImage`/`Data`) via a callback, then dismiss itself. *Collaborators:* `UIImagePickerController`,
+  the SwiftUI host that presents it (after the Take-Photo/Choose-from-Library action sheet). *Does NOT know:* the order
+  / photo type / upload contract, base64 or compression (that's `ImageCompressor` + the VM), or who may upload
+  (SECURITY). The canonical imperative-UIKit-controller-behind-a-SwiftUI-seam idiom (harvested to `patterns-mobile`).
+- **`ios-image-compressor`** (new, `CleansiaCore`) — the pure `ImageCompressor` helper (decision (b)):
+  *responsibility:* downscale a source image to ≤1920px longest side (aspect-preserved, never upscale) + JPEG-encode
+  at quality 0.7, returning `(Data, contentType: "image/jpeg")`. *Collaborators:* none (a pure deterministic
+  transform; the off-main-thread call is the VM's). *Does NOT know:* the upload contract, base64 encoding (the
+  transport layer's), the order/photo type, or threading policy (the caller schedules it off-main).
+- **`ios-order-photos-vm`** (new, partner orders feature) — the `OrderPhotosViewModel` (the `OrderPhotosViewModel.kt`
+  parity, decision (c)): *responsibility:* load/refresh the order's photos (sealed `OrderPhotosUiState`
+  Loading/Error/Loaded), upload (compress → base64 → `orderSavePhotos` batch-of-one) and delete
+  (`orderDeletePhoto`) with per-rail mutation substate (`isUploading`/`deletingId`), and bump a parent-refresh signal
+  (the `mutationVersion` analogue) so the OrderDetail order re-fetches and `hasAfterPhotos` stays live; surface errors
+  via the `SnackbarController`. *Collaborators:* the orders repo's photo methods (via the ADR-0019 spine),
+  `ios-image-compressor`, `CameraOrLibraryPicker` (via the section view), `SnackbarController`. *Does NOT know:* the
+  representable's UIKit internals, who owns the order (SECURITY §"ios-orders" O1–O4 — the server is authoritative), the
+  OrderDetail sheet's snap mechanics, or how the Complete footer renders the action (`ios-order-primary-action`).
+
+#### Test contract (T-0308 — red-first)
+
+- **TC-IOS-IMG-COMPRESS** (the pure `ImageCompressor` — strict TDD): a >1920px image scales to ≤1920px longest side
+  **aspect-preserved**; a ≤1920px image is **NOT upscaled** (dimensions unchanged); the output is **JPEG**
+  (`contentType == "image/jpeg"`); the output byte count is **< input** for a large image. (Pure function, no
+  threading in the unit.)
+- **TC-IOS-PHOTOS-GATE** (the Complete-unblock parity): after a successful After-photo upload the photos VM bumps the
+  parent-refresh signal → the OrderDetail re-fetch flips `OrderItem.hasAfterPhotos` true → `OrderPrimaryAction.action`
+  returns `.complete` (was `.completeBlocked`); the gate reads the **re-fetched `hasAfterPhotos`**, NOT
+  `GetOrderPhotosResponse.afterPhotoCount` (a test that an `afterPhotoCount > 0` with `hasAfterPhotos == false` still
+  yields `.completeBlocked` — the server flag is the source of truth).
+- **TC-IOS-PHOTOS-UPLOAD** (the upload shape): `upload(type, image)` compresses (via `ImageCompressor`) → base64 →
+  `orderSavePhotos` **batch-of-one** (one `SaveOrderPhotosPhotoToSave` carrying `BlobFileDto{fileName, base64Content,
+  contentType: "image/jpeg"}`); the `PhotoType` maps `_1=Before`/`_2=After`; a failure snackbars + clears `isUploading`
+  without bumping the parent (the `OrderPhotosViewModel.kt:104-107` parity).
 
 ---
 

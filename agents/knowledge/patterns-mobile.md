@@ -241,6 +241,8 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | Composable `OrderPrimaryAction` inlining `when(status){…}` (status×ownership×photos → action, `OrderPrimaryAction.kt:54-126`) | a **pure shared `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:) -> OrderPrimaryAction` sealed enum** (`.take/.notifyOnTheWay/.start/.complete/.completeBlocked/.none`), one tested function for the **three** call sites (detail footer, list inline row, panes) — NOT three inline switches. Presentational; consumes `isMine`/`hasAfterPhotos` (ownership trust = SECURITY §7.8 O1–O4). Canonicalizes the Android inlined table (sprint-12 §7.9 (c), reviewer #31) |
 | `Code?.toOrderStatus()` matching `Code.value` against `OrderStatus.values()` (`OrderStatusPill.kt:40-42`) | one `extension Code { func toOrderStatus() -> OrderStatus? { value.flatMap(OrderStatus.init(rawValue:)) } }` — the read-path DTOs (`OrderItem`/`OrderListItem`.`orderStatus`) carry the **`Code` envelope** `{type,name,value:Int?}` (the action responses carry the typed `OrderStatus`); `OrderStatus: Int` rawValues 0…6 = the backend ints (0 New·1 Pending·2 Confirmed·3 OnTheWay·4 InProgress·5 Completed·6 Cancelled). Mapped in **one** place — no raw-`Int` `.value` compares, no second mapper (sprint-12 §7.9, reviewer #31) |
 | `@Singleton OrdersRepository` per-pane (~30s) + per-order `Staleness` watermarks + `invalidatePanesFor(mutation)` (the silent-stale resume + `OrdersListUiState` flag-bag, `OrdersRepository.kt:159-192` / `OrdersListViewModel.kt:89-120`) | the cache is **PORTED** (an actor/class with the same per-pane/per-order watermarks + mutation→panes map, registered in the `SessionScopedCacheRegistry`) — load-bearing for no-flash resume; **NOT** simplified to load-on-appear+`.refreshable` (that's an un-approved behavior divergence). The list state is **sealed per-pane `UiState<[OrderListItem]>` + a `RefreshPhase` enum** (`idle`/`userRefreshing`/`backgroundRefreshing`; PTR binds `==.userRefreshing` only — the silent-stale parity), **NOT** the E1 flag-bag (Android E1 fix → T-0337). Inline commit = iOS-native confirm/`swipeActions`, the **`SlideToCommit`→native** Gate-DP swap (sprint-12 §7.9 (e), reviewer #30) |
+| `ActivityResultContracts.GetContent()` system image picker (gallery-only, `pickImage.launch("image/*")`, `PhotosSection.kt:146-161,200`) — Compose has no native camera/photo-source control either | the Core **`CameraOrLibraryPicker` `UIViewControllerRepresentable`** (`CleansiaCore/Components`) wrapping a camera-capable `UIImagePickerController` — **the repo's FIRST `UIViewControllerRepresentable`** + the canonical "imperative-UIKit-controller-behind-a-SwiftUI-seam" idiom (the *controller* analogue of the `MKMapView`/`UIViewRepresentable` *view* seam, ADR-0014 D6′; both ADR-0018 D2 brand-skin-over-native seams). The single Add tile opens a native `.confirmationDialog` action sheet → Take Photo (`.camera`) / Choose from Library (`.photoLibrary`). **Gate-DP camera-vs-gallery divergence (architect sign-off):** iOS adds **camera + library** over Android's **gallery-only** — the T-0308 ticket's camera requirement, an enhancement that ADDS a source affordance, not a layout/flow/branding change. Rejected: **PHPicker** (library-only — no camera), **AVFoundation** (over-engineered — rebuilds the system camera). NOT a feature/VM hand-rolled `UIImagePickerController` (sprint-12 §7.10 (a), reviewer #32) |
+| Coil `SubcomposeAsyncImage(model = ImageRequest(blobUrl)…)` with loading/error states (`PhotosSection.kt:235-272`) + raw camera bytes base64'd uncompressed (`:155-159` — Android comments base64 is slow for multi-MB images) | SwiftUI **`AsyncImage(url:content:placeholder:)`** (the ADR-0018 D3 Coil→`AsyncImage` row — same frame/aspect + loading/broken-image states, **NO 3rd-party dep**; `blobUrl` is a per-fetch SAS URL so disk-cache parity isn't load-bearing — Kingfisher is the scoped fallback only if a future surface needs it) **+** a pure Core **`ImageCompressor`** (downscale longest-side ≤1920px aspect-preserved + JPEG **0.7** + `contentType "image/jpeg"`, OFF the main thread) before base64 — an iOS PERF divergence from Android's raw bytes (smaller base64-over-JSON body + bounded memory on the 2017 floor), changing pixels not layout. Single-photo upload via the **batch-of-one** `orderSavePhotos(SaveOrderPhotosCommand{orderId, photos:[{photoType, BlobFileDto{fileName, base64Content, contentType}, notes}]})` (`OrdersRepository.kt:264-291`); read `orderGetPhotos`; delete `orderDeletePhoto(photoId)`. **The Complete gate trusts the RE-FETCHED `OrderItem.hasAfterPhotos`** (`OrderDetailScreen.kt:558`), kept live by the post-mutation parent refresh (the `mutationVersion`→`onContentMutated` parity) — **NOT** `GetOrderPhotosResponse.afterPhotoCount` (sprint-12 §7.10 (b)/(c), reviewer #32) |
 
 **Generated-client auth — the ONE way (ADR-0019, reviewer #13-gen):** authenticate the generated business
 client **only** through the Core-spine-backed `RequestBuilderFactory` (above). **Deviations a reviewer
@@ -387,6 +389,42 @@ ADR-0018 D3 + §7.6 D1 + §7.7 D5 + the Parity rule; reviewer #29/#30/#31):**
   2-anchor collapse without the noted+re-approved ADR-0021 fallback; a `fullBleedMap` overlay/polygon param with no
   data; a ported `OrdersListUiState` flag-bag; PTR on background refresh; dropping the staleness cache un-approved;
   an inline per-site action switch; a raw `orderStatus.value == N` compare; a feature `import MapKit`.
+
+**iOS partner photos — the ONE way (sprint-12 §7.10, T-0308; ADR-0018 D2/D3 + ADR-0016 AR-PRIV-4 + ADR-0013 parity +
+the Parity rule; reviewer #32):** the partner order Photos surface (camera/library capture → base64-over-JSON upload,
+read-back, delete, the After-photo Complete-unblock) fills the §7.9 (d) precursor slot.
+- **Capture seam:** photo capture goes through the Core **`CameraOrLibraryPicker` `UIViewControllerRepresentable`**
+  (`CleansiaCore/Components`) wrapping a camera-capable `UIImagePickerController` — **the repo's FIRST
+  `UIViewControllerRepresentable`** + the canonical "imperative-UIKit-controller-behind-a-SwiftUI-seam" idiom (the
+  *controller* analogue of the `MKMapView`/`UIViewRepresentable` *view* seam; both ADR-0018 D2 brand-skins). The single
+  Add tile → a native `.confirmationDialog` (Take Photo / Choose from Library). iOS adds **camera + library** over
+  Android's **gallery-only** (`GetContent`) — the recorded Gate-DP enhancement divergence.
+- **Compression:** the upload runs through a pure Core **`ImageCompressor`** (downscale longest-side ≤1920px
+  aspect-preserved + JPEG **0.7** + `image/jpeg`, OFF the main thread) before base64 — an iOS PERF divergence from
+  Android's raw bytes (`PhotosSection.kt:155-159`). A bounded pure helper → strict TDD, no optimizer pass.
+- **Read-back + gate:** thumbnails render with SwiftUI **`AsyncImage`** (the Coil→`AsyncImage` swap, no 3rd-party
+  dep); the Complete gate consumes the **RE-FETCHED `OrderItem.hasAfterPhotos`** (`OrderDetailScreen.kt:558`), kept
+  live by the post-mutation parent refresh (the `mutationVersion`→`onContentMutated` parity) — **NOT**
+  `GetOrderPhotosResponse.afterPhotoCount`. Single-photo upload via the batch-of-one `orderSavePhotos`; delete via
+  `orderDeletePhoto(photoId)`. Upload windows: `canUploadBefore = status ∈ {_3,_4}`, `canUploadAfter = status == _4`;
+  terminal orders read-only. `PhotoType._1 = Before`, `._2 = After`.
+- **Plist:** `NSCameraUsageDescription` + `NSPhotoLibraryUsageDescription` land **in-ticket** in the **PARTNER**
+  `project.yml` `info.properties` (the `API_BASE_URL`/`UIAppFonts` precedent), localized ×5 via `InfoPlist.strings`,
+  describing the real use (AR-PRIV-4). **Partner-only now; the Customer app carries its own at T-0314.** The
+  `PrivacyInfo.xcprivacy` photos data-type is declared (AR-PRIV-1).
+- **Deviations a reviewer rejects:** a feature/VM hand-rolling `UIImagePickerController`/AVFoundation outside the Core
+  seam; a PHPicker-only (no-camera) picker; raw/un-downscaled bytes base64'd (the Android shape copied — the
+  un-approved perf divergence); main-thread base64 encode; a 3rd-party image lib for the partner thumbnails; the
+  Complete gate computed off `afterPhotoCount`/any client photo count instead of the re-fetched `hasAfterPhotos`; an
+  upload/delete that doesn't bump the parent order refresh (so `hasAfterPhotos` goes stale); a deferred/owner-manual
+  plist key, a missing/generic/non-localized purpose string, or the keys pre-added to the Customer `project.yml` before
+  T-0314. **The photo-upload OWNERSHIP / EXIF-strip gate is SECURITY's (`security/ios-orders.md`) — not this rule.**
+- **Catalog correction (the false `UIViewControllerRepresentable` precedent):** the **AddressPicker (T-0306) is pure
+  MapKit/SwiftUI** — `Map(coordinateRegion:annotationItems:[])` + a SwiftUI overlay pin + `CLGeocoder`/`MKLocalSearch`
+  — and uses **neither** a `UIViewControllerRepresentable` **nor** a `UIViewRepresentable`. Any claim it established a
+  representable precedent is **FALSE**; `CameraOrLibraryPicker` (T-0308) is the repo's **first**
+  `UIViewControllerRepresentable` (the `MKMapView`/`UIViewRepresentable` `fullBleedMap`, T-0307, is the first *view*
+  representable). Do not cite the AddressPicker as a controller-representable precedent.
 
 **Parity deviation (Android is wrong, iOS is right) — auth validation strings:** the Android partner
 `RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set validation errors as **hardcoded English

@@ -102,3 +102,59 @@ receive from its own `deviceMine()` response.**
 - **None new for T-0310.** The only backend item is the **standing latent S8** in `auth-sessions.md`
   (RefreshToken tenant stamping/read asymmetry on `GetActiveByUserIdAsync`) — already filed; flag it as the
   multi-tenant gate the device-revoke kill rides on. Re-verify it is closed before onboarding any non-null-tenant user.
+
+## 2026-06-27 — T-0310 Slice B build-time VERIFICATION (Gate-SEC, security reviewer) — verified-against-code
+
+**Verdict: PASS on all binding rules (D6, D7a, D7b, D8) + S4/S7/S10.** This verifies the *uncommitted*
+Slice B Devices code on `phase/ios-phase3` against the APPROVE-the-design rules above. The design as
+built matches the rules; no new binding gaps. All 10 Devices tests run **green** on the simulator
+(`xcodebuild test`, iPhone 17, 0 failures) — including the required TC-IOS-DEVICES-SELF-REVOKE.
+
+Files verified (uncommitted): `CleansiaPartner/Sources/Data/PartnerDevicesClient.swift`;
+`Features/Devices/{DevicesView,DevicesViewModel}.swift`; the changed `PartnerClients.swift`,
+`PartnerAppContainer.swift`, `Features/Shell/PartnerShellView.swift`, `Features/Profile/ProfileView.swift`;
+tests `Tests/{PartnerDevicesClientTests,DevicesViewModelTests,FakePartnerDevicesClient}.swift`.
+
+- **D6 (device-id invariant) — PASS (load-bearing).** The only `deviceMine` call site is
+  `PartnerDevicesClient.swift:36`, passing `currentDeviceId` → `deviceIdProvider.deviceId`
+  (`:30-32`). Tree grep: no `UUID()`/`identifierForVendor`/literal feeds `deviceMine` (the 4 other
+  `UUID()` uses are SwiftUI ids / stream keys / snackbar ids; `DeviceIdProvider.swift:46` is the
+  one mint-once source, Keychain-backed). **Same-instance proven:** `PartnerAuthSpine.make`
+  constructs ONE `DeviceIdProvider` (`PartnerClients.swift:19`), hands it to the `HeaderAdapter`
+  (`:20-21`, stamped as `X-Device-Id` at `HeaderAdapter.swift:25,40`) AND surfaces it on
+  `PartnerAuthStack.deviceIdProvider` (`:32`); `PartnerAppContainer.swift:85` injects that exact
+  instance into `LivePartnerDevicesClient`. One provider, three consumers (header, Register persist,
+  deviceMine arg). Test `PartnerDevicesClientTests.testCurrentDeviceIdComesFromInjectedProvider`
+  pins value == injected provider id (green).
+- **D7a (hide-on-current) — PASS.** `DevicesView.swift:139` renders the trash `if !device.isCurrent`
+  only; the current row shows `CurrentDeviceChip` (`:126-128`). No code path shows the trash on the
+  current row.
+- **D7b (defensive sign-out) — PASS.** `DevicesViewModel.revoke` (`:45-48`) emits `signedOut` when
+  `isCurrentDevice(device)` is true; detection (`:58-63`) = `deviceId == client.currentDeviceId`
+  (primary) OR `device.isCurrent` (secondary). `DevicesView.swift:36-41` `.onReceive(signedOut)` →
+  `authClient.logout()` + `onSignedOut()`; `onSignedOut` routes to `.login` root
+  (`PartnerRootView.swift:74,77`). `authClient` is the live container spine (`base.authClient` →
+  `Auth.swift:180`), not a stub. Tests: `testSelfRevokeEmitsSignedOut` (TC-IOS-DEVICES-SELF-REVOKE,
+  green), `testSelfRevokeByIsCurrentFlagWhenDeviceIdMissing` (fallback, green),
+  `testRevokingOtherDeviceDoesNotEmitSignedOut` (negative, green). A self-revoke cannot leave a
+  revoked-but-logged-in session.
+- **D8 (server-scoping, no client check) — PASS.** The View only ever passes a `UserDevice` from the
+  loaded `myDevices()` list (`DevicesView.swift:97` `onRevokeRequested(device)` over `ForEach(devices)`);
+  `revoke` sends `device.id` (the server rowId), no synthesized/echoed external id. No client-side
+  ownership/cross-user check — backend caller-scoping (verified above) is trusted.
+- **S4 (no DTO leak) — PASS.** Generated `DeviceDto` = `id, platform, deviceId, lastActiveAt,
+  isCurrent` only; `UserDevice` mirrors exactly (`PartnerDevicesClient.swift:5-11,50-60`). No
+  `UserId`/`TenantId`/`DeviceToken` surfaced. `RevokeDeviceResponse` = `success: Bool?` only.
+- **S7 (idempotent revoke client-side) — PASS.** Success drops the row from `state`
+  (`DevicesViewModel.swift:49-51`); the re-entry `.submitting` guard (`:38`) blocks double-tap
+  (test `testRevokeIsReentryGuardedWhileSubmitting`, green). Re-revoke of a server-already-revoked
+  row → backend `DeviceNotFound` (verified above), safe.
+- **S10 (soft-delete) — PASS (server-enforced).** Backend filters `IsActive`; the iOS list drops the
+  revoked row on success so deactivated rows are not shown.
+- **No new auth path (ADR-0019) — PASS.** The slice's only auth call is `AuthApiClient.logout()`
+  via the existing spine; no new token/header/401 handling introduced.
+
+**Standing item (unchanged):** the latent multi-tenant S8 in `auth-sessions.md` (RefreshToken
+tenant read asymmetry on `GetActiveByUserIdAsync`) that the remote-revoke session-kill rides on —
+dormant in null-TenantId prod, must close before onboarding any non-null-tenant user. Not a T-0310
+regression.

@@ -9,6 +9,8 @@ struct ProfileView: View {
     @State private var showLogoutDialog = false
 
     private let client: PartnerProfileClient
+    private let devicesClient: PartnerDevicesClient
+    private let authClient: AuthClient
     private let snackbar: SnackbarController
     private let geocoding: GeocodingService
     private let mapProvider: MapProvider
@@ -16,6 +18,7 @@ struct ProfileView: View {
 
     init(
         client: PartnerProfileClient,
+        devicesClient: PartnerDevicesClient,
         authClient: AuthClient,
         snackbar: SnackbarController,
         geocoding: GeocodingService,
@@ -29,6 +32,8 @@ struct ProfileView: View {
         ))
         _chainVM = StateObject(wrappedValue: OnboardingChainViewModel(client: client))
         self.client = client
+        self.devicesClient = devicesClient
+        self.authClient = authClient
         self.snackbar = snackbar
         self.geocoding = geocoding
         self.mapProvider = mapProvider
@@ -110,8 +115,15 @@ struct ProfileView: View {
             )
         case .documents:
             DocumentsSectionView(client: client, snackbar: snackbar)
-        case .language, .theme, .devices:
-            // Preferences group lands in Slice B/C — not reachable from this hub yet.
+        case .devices:
+            DevicesView(
+                client: devicesClient,
+                authClient: authClient,
+                snackbar: snackbar,
+                onSignedOut: onSignedOut
+            )
+        case .language, .theme:
+            // Preferences pickers land in Slice C — not reachable from this hub yet.
             EmptyView()
         }
     }

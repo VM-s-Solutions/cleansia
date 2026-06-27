@@ -64,6 +64,7 @@ final class PartnerAppContainer: AppContainer {
     let dashboardClient: PartnerDashboardClient = LivePartnerDashboardClient()
     let registrationClient: PartnerRegistrationClient = LivePartnerRegistrationClient()
     let profileClient: PartnerProfileClient = LivePartnerProfileClient()
+    let devicesClient: PartnerDevicesClient
     let geocodingService: GeocodingService = CLGeocoderGeocodingService()
     let mapProvider: MapProvider = MapKitMapProvider()
 
@@ -79,6 +80,10 @@ final class PartnerAppContainer: AppContainer {
             sessionScopedCaches: sessionScopedCaches
         )
         self.authStack = authStack
+        // D6: the Devices client gets the ONE device-id source — the same
+        // DeviceIdProvider the HeaderAdapter stamps as X-Device-Id.
+        let devicesClient = LivePartnerDevicesClient(deviceIdProvider: authStack.deviceIdProvider)
+        self.devicesClient = devicesClient
         base = BaseAppContainer(
             apiBaseURL: apiBaseURL,
             snackbar: snackbar,
@@ -87,6 +92,9 @@ final class PartnerAppContainer: AppContainer {
             makeApiClient: { seams in PartnerMobileApiClient(baseURL: seams.apiBaseURL) }
         )
         if let cache = profileClient as? SessionScopedCache {
+            sessionScopedCaches.register(cache)
+        }
+        if let cache = devicesClient as? SessionScopedCache {
             sessionScopedCaches.register(cache)
         }
     }

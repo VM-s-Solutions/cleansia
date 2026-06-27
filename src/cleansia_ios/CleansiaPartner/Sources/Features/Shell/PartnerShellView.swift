@@ -37,6 +37,7 @@ struct PartnerShellView: View {
 
             ProfileView(
                 client: container.profileClient,
+                devicesClient: container.devicesClient,
                 authClient: container.authClient,
                 snackbar: container.snackbar,
                 geocoding: container.geocodingService,

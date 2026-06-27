@@ -2233,6 +2233,406 @@ without re-touching the structure).**
   contentType: "image/jpeg"}`); the `PhotoType` maps `_1=Before`/`_2=After`; a failure snackbars + clears `isUploading`
   without bumping the parent (the `OrderPhotosViewModel.kt:104-107` parity).
 
+### 7.11 T-0309 (Phase-5 partner EARNINGS / Invoices / PeriodPay — read-only over EmployeePayroll: getPeriodPays + getPagedInvoices + getInvoiceById + downloadInvoice→PDF) — SECURITY read-scoping gate (recorded 2026-06-27, security reviewer)
+
+> **SECURITY sub-note (the read-side analogue of the §7.8 / T-0339 `GetPagedOrders` gate).** Full S1–S10
+> walk + the binding iOS client rules (E1–E4) + the required test + the PDF-PII handling rule live in
+> `agents/backlog/security/ios-earnings.md`. This is the index pointer + the headline ruling.
+
+**security_touching: YES** (own-data financial read; the invoice PDF carries bank/payment PII —
+`VariableSymbol`/`SpecificSymbol`/`PaymentReference`/`BankTransferNote`). **Verdict: PASS-the-design.**
+
+**The headline (the T-0339 contrast):** UNLIKE `GetPagedOrders` (which trusted the client
+`Filter.EmployeeId` → T-0339 filed), **all four payroll handlers ALREADY pin to the JWT caller** for
+non-admins — there is **NO** T-0339-class over-read here and **NO backend read-scoping follow-up
+ticket is needed.** Traced on this Mac + the existing `GetPeriodPaysOwnershipTests` ran **green (4/4)**:
+- `GetPeriodPays.cs:52-61` — non-admin foreign `employeeId` → `EmployeeNotFound` before any read.
+- `GetPagedInvoices.cs:33-43` — non-admin: the handler **overwrites** `employeeIdFilter` with the
+  server-resolved caller id and **ignores `Filter.EmployeeId`** (empty page if unresolvable). This is
+  exactly the pin T-0339 had to ADD to `GetPagedOrders` — payroll already has it.
+- `GetInvoiceById.cs:57-66` / `DownloadInvoice.cs:49-58` — non-admin `invoice.EmployeeId != caller`
+  → `InvoiceNotFound` (NotFound, not Forbidden); the blob is never fetched/streamed for a foreign id.
+
+**S4 (DTO leak) — PASS.** DTOs carry only the caller's OWN fields; `EmployeeInvoice` (`ITenantEntity`)
+has **no IBAN / raw bank-account number**; no `TenantId`/`UserId`/Stripe id/hash; no other-employee
+PII. **S5 (rate limit) — LATENT GAP, folded into BSP-4d:** `EmployeePayrollController`'s 4 routes carry
+**no** `[EnableRateLimiting]` while every sibling on the host does, and the global limiter is a
+no-limiter for authenticated callers — so the payroll reads are unthrottled (read-only enumeration
+surface; LOW/latent; **iOS cannot fix — backend hardening**, not a T-0309 blocker).
+
+**Binding iOS client rules (E1–E4):** E1 own-server-derived id only (`currentEmployeeId()`, the §7.7
+O3 precedent — never screen input); E2 no foreign-id echo; E3 download own invoices only (`invoiceId`
+from the caller's OWN list); E4 the downloaded PDF is **deleted from cache/temp after the preview is
+dismissed** (no PII-bearing PDF left resident in `Caches/`). **PrivacyInfo:** **NO** new
+`NSPrivacyCollectedDataType` entry for the download (a round-trip of the caller's OWN record is not
+App-Store "collection"; contrast T-0308's camera/library *capability* purpose strings) — it inherits
+the standing AR-PRIV-1 required-reason-API audit only.
+
+**Required test:** **TC-IOS-EARNINGS-OWNERSHIP** — the facade/VM building the requests asserts the
+outgoing id always equals the caller's own `currentEmployeeId()` even if a foreign id is injected into
+screen state, and `downloadInvoice` runs only with an `invoiceId` from the caller's own fetched list;
+PDF-cleanup (E4) covered by a remove-on-dismiss unit test (or folded into the architect's QuickLook
+coordinator test). Backend ownership already proven by `GetPeriodPaysOwnershipTests` (green here).
+
+**The architect rules nav / PDF preview mechanism / number-format in parallel — SECURITY stays out of
+those; it owns only the read-scoping + the PDF-PII-cleanup-is-mandatory rule.** Cross-ref:
+`agents/backlog/security/ios-earnings.md`.
+
+---
+
+### 7.12 T-0309 (Phase-5 partner earnings + invoices + PeriodPay) — acceptance scope + the four Understand-pass rulings (recorded 2026-06-27, architect)
+
+> **The read-scoping / PII gate (who may read which employee's earnings/invoices/PeriodPay, the own-id-only rule, the
+> mandatory post-preview PDF cache-cleanup) is ruled by SECURITY in parallel in §7.11 (`security/ios-earnings.md`,
+> E1–E4 + TC-IOS-EARNINGS-OWNERSHIP) — this architect record stays OUT of it.** The decisions below rule only the
+> *nav shape*, the *PDF-viewing seam*, the *money/date formatting*, and the *stats source* — never who may read whose
+> payroll. SECURITY's E4 (delete the previewed PDF from cache on dismiss) composes with this record's `QuickLookPreview`
+> coordinator (decision (b)); SECURITY's E1 (own-server-derived id only) composes with the no-`UserProfileStore` fact
+> (§7.5 D2) — iOS sources the caller-own id the iOS way, which SECURITY rules. Both records cover the same ticket from
+> their two mandates; neither contradicts the other.
+
+T-0309 (`M`, `phase/ios-phase5`, depends_on T-0304✓) builds the partner **earnings / invoices / PeriodPay** surface
+over the generated `PartnerEmployeePayrollAPI` — all four operations ride the **ADR-0019 spine** (the Core-spine-backed
+`RequestBuilderFactory`; no auth code): `employeePayrollGetPeriodPays` / `employeePayrollGetPagedInvoices` /
+`employeePayrollGetInvoiceById` / `employeePayrollDownloadInvoice`. **The spec is already regen'd** (the regen'd
+`partner-mobile-api.json` carries `EmployeePayroll_{GetPagedInvoices,GetInvoiceById,GetPeriodPays,DownloadInvoice}` —
+verified `:2977/:3162/:3262/:3368`), so **there is NO owner codegen step** for T-0309. It **replaces** the partner
+shell's 3rd tab placeholder (`PartnerShellView` `.invoices` = `PlaceholderTab(ticket:"T-0309")`) and wires the
+Dashboard's currently-inert `onOpenEarnings`. **2 slices (§6):** A = Earnings summary + PeriodPay; B = invoices list +
+detail + PDF.
+
+**This is a "record, not ADR" ruling — the §7.2/§7.4/§7.5/§7.6/§7.7/§7.9/§7.10 precedent.** All four decisions
+**APPLY accepted ADRs + prior records**: (a) applies **ADR-0020** (the intra-audience push is a `NavigationStack`
+WITHIN an audience; the audience tab is the surface) + the §7.7 D1 in-tab-`NavigationStack` precedent + ADR-0018
+Gate-DP (the recorded nav divergence form); (b) applies the **T-0308 §7.10 D1 Core-seam precedent** (a UIKit
+controller behind a `CleansiaCore/Components` seam, harvested) + ADR-0018 D2 (brand-skin-over-native) — `QuickLookPreview`
+is the *next* application of that idiom, not a new principle; (c) applies the §7.5 D4 / §7.7 D4 Core-utility-helper
+precedent (the `EmailValidator`/`PasswordPolicy`/`AppSettingsStore` "lift the duplicated thing to a small typed Core
+helper" pattern) + the `patterns-mobile` harvest-on-3+-call-sites rule; (d) applies **ADR-0013** parity + Core/DRY
+(reuse the existing `PartnerDashboardClient.getStats`, the Android `EarningsSummaryViewModel` parity exactly).
+**No new trade-off rises to an ADR's bar** (a decision that could move the deployment floor, or that sets a wholly new
+canonical archetype with rejected alternatives that must be defended on the immutable record). The PDF-viewing call is
+a **seam choice among three options** — but it is *the same shape* as the §7.10 D1 capture-seam decision (a system
+UIKit controller wrapped as a Core `CleansiaCore/Components` representable), so it is a §7.12 line + a `patterns-mobile`
+harvest, not an ADR.
+
+**Android parity source (the iOS port mirrors it):** `partner-app/.../features/earnings/` (`EarningsSummaryScreen.kt`/
+`EarningsSummaryViewModel.kt`), `features/invoices/` (`InvoicesListScreen.kt`/`InvoicesListViewModel.kt`,
+`InvoiceDetailScreen.kt`/`InvoiceDetailViewModel.kt`, `InvoiceStatusBadge.kt`), `features/payroll/`
+(`PeriodPayScreen.kt`/`PeriodPayViewModel.kt`) + `data/invoices/InvoicesRepository.kt` + `data/payroll/{PeriodPayApi,
+PeriodPayRepository}.kt`; nav `navigation/PartnerNavHost.kt:160-289` (the Earnings **push** + Invoices **tab** +
+InvoiceDetail/PeriodPay pushes). **Gate-DP applies** (T-0309 is a screen ticket): the screens cite their Compose
+counterparts; native SwiftUI; iOS-wins-on-conflict + the noted divergences (the push+tab → single-tab+stack nav swap;
+the Android FileProvider/`ACTION_VIEW` → iOS QuickLook PDF swap; the Coil-family card visual language → native).
+
+**IN — T-0309 acceptance scope:**
+- **Slice A:** the **Earnings summary** screen (the `EarningsSummaryScreen.kt` parity — headline current-period card +
+  Today/Week/Last-month breakdown + pay-period progress + the "View all invoices" entry row) driven by
+  `PartnerDashboardClient.getStats` (decision (d)) over a sealed `UiState<DashboardStatsDto>`; the **PeriodPay** detail
+  (`PeriodPayScreen.kt` parity — the per-order pay rollup for one pay period) over the generated
+  `employeePayrollGetPeriodPays`, a sealed `UiState<PeriodPaySummary>`. **The `.invoices` tab roots an in-tab
+  `NavigationStack` over a typed `EarningsRoute` enum** (decision (a)), **landing on the Earnings summary**.
+- **Slice B:** the **invoices list** (`InvoicesListScreen.kt` parity — lifetime-total hero + per-invoice cards) over
+  `employeePayrollGetPagedInvoices`, a sealed per-list `UiState<[EmployeeInvoiceDto]>` + a `RefreshPhase` enum (the
+  §7.9 (e) list-state convention — **NOT** the Android E1 flag-bag, see the divergence below) **+** the PORTED
+  my-invoices staleness watermark (the `InvoicesRepository.getMyInvoicesStaleness()`/`invalidateMyInvoices()` parity —
+  the silent-stale resume the tab needs); the **invoice detail** (`InvoiceDetailScreen.kt` parity — hero/breakdown/
+  period/references/notes cards + the "Open PDF" affordance) over `employeePayrollGetInvoiceById`; **PDF viewing** via
+  the new Core **`QuickLookPreview`** seam (decision (b)) over the generated `employeePayrollDownloadInvoice`'s local
+  file URL. The detail's "View period pay" row pushes `.periodPay(payPeriodId, currencyCode)` (decision (a)).
+
+**DEFERRED / NOT replicated — explicitly out of T-0309, with the ticket each lands in:**
+- **The Android E1 invoices flag-bag is NOT replicated** → **T-0337** (the standing Android-partner-E1 home). The
+  Android `InvoicesListUiState` is the same `isUserRefreshing`/`isBackgroundRefreshing`/`hasLoadedOnce`/`invoices`
+  flag-bag (`InvoicesListScreen.kt:125,132-148,150` reads them) the §7.9 (e) / §7.7 D5 ruling diverges from; iOS is
+  born sealed-state. (Recorded Gate-DP/Parity divergence — see below.)
+- **The read-scoping / PII gate** → **SECURITY §7.11** (`security/ios-earnings.md`, ruled in parallel — out of this
+  record).
+- **No `FileDownload` Core seam is built** (decision (b)): the generated client already downloads the PDF (writes the
+  body to disk, returns a local file URL); the VM only **surfaces** that URL via a one-shot event — there is nothing to
+  download-orchestrate, so a download seam would be dead abstraction.
+
+#### Decision (a) — NAV SHAPE: the `.invoices` TAB *is* the surface — it roots an in-tab `NavigationStack` over a typed `EarningsRoute` enum landing on the **Earnings summary**; the Dashboard's `onOpenEarnings` sets `ShellModel.selection = .invoices` (mirrors `selectOrders()`), NOT a push (APPLIES ADR-0020 + §7.7 D1 + ADR-0018 Gate-DP — no new ADR)
+
+**RULING: the partner shell's 3rd tab (`.invoices`, the slot T-0304 committed to) IS the earnings/invoices surface. It
+roots an in-tab `NavigationStack` over a typed `enum EarningsRoute { case summary; case invoices; case invoiceDetail(id:
+String); case periodPay(payPeriodId: String, currencyCode: String?) }` — the ADR-0020 D4 / §7.7 D1 intra-audience push
+(the root `PartnerRootView` enum stays the audience selector; the tab-local `NavigationStack` is the push container
+WITHIN the `.dashboard` shell, exactly as the Profile tab does). The Dashboard's `onOpenEarnings` sets
+`ShellModel.selection = .invoices` (the `selectOrders()` parity the dashboard already uses for `onOpenOrders` →
+T-0304's `onOpenOrders` → Orders tab) — a TAB SWITCH, **not** a push. THE TAB LANDING IS THE EARNINGS SUMMARY (the
+recommended option) — Android's Earnings screen exists specifically to avoid landing on an empty invoices list for a
+cleaner with no closed pay period yet. This canonicalizes the Android push+tab two-surface shape onto iOS's single-tab
++ in-tab-stack — the same Gate-DP class as the T-0304 TabView swap. Record, no new ADR.**
+
+- **The Android shape (verified — push + tab, two entry surfaces).** Android has **two** payroll surfaces:
+  `NavRoute.Earnings` is a **PUSHED** destination (`PartnerNavHost.kt:168` `onOpenEarnings = navigate(NavRoute.Earnings)`,
+  rendered `:260-278`), AND `NavRoute.Invoices` is a **bottom-nav TAB** inside `MainScaffold` (`:279-289` — "the
+  main-graph deep-link target… the Invoices bottom-nav tab"). The Earnings screen's "View all invoices" does **not**
+  push the list — it sets `MainTab.Invoices.ordinal` and pops Earnings so `MainScaffold` animates the pager to the
+  Invoices tab (`:264-275`). `InvoiceDetail` (`:247-255`) and `PeriodPay` (`:256-258`) are pushed; PeriodPay receives
+  `(payPeriodId, currencyCode)` (`:251`).
+- **Why iOS collapses push+tab into one tab + an in-tab stack (the ruling).** iOS already **committed** (T-0304) to the
+  `.invoices` shell tab — the shell is the native `TabView` (Dashboard·Orders·Invoices·Profile, the §7.4 Slice-B shape).
+  The Android "Earnings (pushed) + Invoices (tab)" split is a Compose-NavHost artifact (a pushed screen that hops to a
+  tab via an ordinal key + pop). On iOS the **native** shape is: the tab owns a `NavigationStack`, the summary is the
+  stack root, and the list is **one push** off the summary (the §7.7 D1 Profile-tab idiom — the tab hosts an in-tab
+  `NavigationStack` over a typed route enum). This is the **same Gate-DP component class as the T-0304 TabView swap**
+  (Android `MainScaffold` floating-island pill → SwiftUI `TabView`): the navigation *structure* (Earnings → Invoices →
+  Detail → PeriodPay, same back-stack order) and content are identical; only the *mechanism* (a NavHost push-to-tab vs a
+  tab-local stack) changes. **Layout/flow/branding are unchanged** — Gate-DP #3 passes.
+- **`onOpenEarnings` is a tab SWITCH, not a push (the load-bearing parity).** The Dashboard's earnings card must land on
+  the `.invoices` tab's summary root, not push a screen onto the Dashboard tab's stack — exactly as T-0304 already wired
+  `onOpenOrders` to switch to the Orders tab (the `selectOrders()` shape). So `onOpenEarnings` sets
+  `ShellModel.selection = .invoices`. (If the tab's stack is non-empty from a prior visit, switching to it shows
+  whatever was on top; a `.popToRoot` on tab-reselect is a reasonable native polish but not required for parity — record
+  it as the dev's call, defaulting to the native "remember the tab's stack" behavior, which matches Android's tab state
+  retention.)
+- **The tab landing = the Earnings SUMMARY (recommended), not the invoices list (the discriminator + why).** Android
+  built `EarningsSummaryScreen` **specifically** to avoid the empty-list landing: its own docstring —
+  *"the old flow jumped straight to InvoicesListScreen, which is empty for any cleaner whose first pay period hasn't
+  closed yet — confusing and unhelpful. This screen always has meaningful content (today/week/month earnings, jobs done,
+  pay-period progress, next payout) and offers 'View all invoices' as a deliberate drill-down"*
+  (`EarningsSummaryScreen.kt:56-66`). So the tab root is `.summary`; `.invoices` (the list) is a push off it (the
+  "View all invoices" entry row, `EarningsSummaryScreen.kt:127,332-368`). **Rejected: land the tab on the invoices
+  list** — it reproduces the exact empty-landing UX Android deliberately moved away from, and it drops the Earnings
+  summary (the today/week/month + pay-period card a cleaner with no invoices yet still sees). Landing on the summary is
+  the Android-parity-and-better-UX choice.
+- **Recorded Gate-DP divergence (architect sign-off):** *"Android = Earnings (pushed screen) + Invoices (bottom-nav tab),
+  with Earnings→Invoices a pop+tab-ordinal hop; iOS = the single `.invoices` shell tab rooting an in-tab `NavigationStack`
+  over a typed `EarningsRoute` enum (summary root → invoices list → detail → periodPay), `onOpenEarnings` a tab switch;
+  same nav structure/content/back-stack order, the mechanism is native — the same class as the T-0304 `MainScaffold`→
+  `TabView` swap; touches the component/mechanism, not layout/flow/branding."*
+
+#### Decision (b) — INVOICE PDF VIEWING: present the generated `downloadInvoice` local file URL via a NEW Core `CleansiaCore/Components` `QuickLookPreview` (`QLPreviewController` `UIViewControllerRepresentable`), guarded on the DTO's `pdfGenerationFailed`; NO `FileDownload` seam (the generated client already downloads → the VM surfaces the URL via a one-shot event) (APPLIES the §7.10 D1 Core-seam precedent + ADR-0018 D2 — no new ADR; HARVEST to `patterns-mobile`)
+
+**RULING: present the invoice PDF via QuickLook (`QLPreviewController`) wrapped as a NEW Core seam **`QuickLookPreview`**
+— a `UIViewControllerRepresentable` in `CleansiaCore/Components` (the second member of the `CameraOrLibraryPicker`
+family established by §7.10 D1: a system UIKit controller behind a `CleansiaCore/Components` SwiftUI brand-skin seam).
+The generated `employeePayrollDownloadInvoice` (a `format: binary` response, verified `:3388-3398`) is mapped by the
+swift5+urlsession generator to a **local file URL already written to the caches dir** (the URLSession layer streams the
+body to disk) — so the VM holds that URL and surfaces it via a ONE-SHOT effect (a `PassthroughSubject`/async-stream
+event, the §7.10 D3 `mutationVersion`-style one-shot, NOT a navigation route) that the screen consumes by presenting
+`QuickLookPreview` over the URL. **NO `FileDownload` Core seam is built** — the generated client IS the download; a
+download-orchestration seam would be dead abstraction. The "Open PDF" affordance is **guarded on the DTO's
+`pdfGenerationFailed`** (the boolean on `EmployeeInvoiceDto`/`EmployeeInvoiceDetailDto`, verified spec `:6448/:6557`):
+when `true`, the affordance is disabled/hidden (no point downloading a PDF that failed server-side generation).
+HARVEST `QuickLookPreview` into `patterns-mobile` as the canonical "preview a downloaded document" seam. Record, no
+new ADR (it is the §7.10 D1 idiom's next application). **The mandatory post-preview cache cleanup of the PII-bearing PDF
+is SECURITY's E4 (§7.11) — the `QuickLookPreview` coordinator hosts that cleanup; this record fixes the seam shape, not
+the cleanup mandate.**
+
+- **Why QuickLook wrapped as a Core seam (vs the rejected alternatives):**
+  - **A partner-local representable** — REJECTED: the **customer app (T-0314) reuses this** (its disputes/invoices
+    surface previews PDFs/evidence), so a partner-local `QLPreviewController` wrapper would be duplicated into the
+    customer target — the exact "put shared code in `:core`/`Core`, never duplicate across the two apps"
+    `patterns-mobile` rule. It homes in `CleansiaCore/Components` beside `CameraOrLibraryPicker` (the §7.10 D1 precedent:
+    the imperative-UIKit-controller-behind-a-SwiftUI-seam idiom lives in Core).
+  - **A share-sheet (`UIActivityViewController`) / `SafariView`** — REJECTED: a share sheet is a *share/export*
+    affordance, not an in-app *viewer* (it forces the user out to another app to read their own invoice — a worse
+    parity than Android's in-app `ACTION_VIEW` system PDF viewer); `SafariView`/`SFSafariViewController` is for **web
+    URLs**, not a local file URL (it cannot reliably render a `file://` PDF). QuickLook is the iOS-native **in-app
+    document preview** — the right native analogue of Android handing the FileProvider URI to the system PDF viewer.
+  - **`QuickLookPreview` (`QLPreviewController` representable)** — CHOSEN: it is the one native control that previews a
+    local document in-app (PDF/images/docs), maps cleanly to Android's "system PDF viewer over the downloaded file"
+    (`InvoiceDetailViewModel.kt:81-108` streams to cache → `InvoiceDetailScreen.kt:94-104` hands the FileProvider URI to
+    `Intent.ACTION_VIEW`), and is the second instance of the §7.10 D1 Core-seam idiom — so harvesting it makes the next
+    document-preview need (customer T-0314) free.
+- **The Android → iOS PDF swap (the recorded Gate-DP divergence).** Android: the VM **streams the `ResponseBody` to the
+  cache dir itself** then builds a `FileProvider` URI for `Intent.ACTION_VIEW` (`InvoiceDetailViewModel.kt:81-108`;
+  `InvoiceDetailScreen.kt:91-104`), with a `notifyNoPdfViewer()` fallback if no PDF app is installed. iOS: the generated
+  swift5 client **already wrote the body to disk** (the URLSession binary-response handler), so the VM holds the local
+  file URL directly — **no stream-to-cache step** — and presents `QuickLookPreview` (always available, no "no viewer
+  installed" branch needed — QuickLook is a system framework). **Recorded divergence:** *"Android = VM streams
+  `ResponseBody` → cache → `FileProvider` URI → `Intent.ACTION_VIEW` (system PDF viewer, with a no-viewer fallback);
+  iOS = the generated client writes the body to disk → the VM surfaces the local file URL via a one-shot event → the
+  screen presents the Core `QuickLookPreview` (`QLPreviewController`); same in-app PDF viewing, the mechanism is native;
+  no stream-to-cache step (the codegen does it), no FileProvider, no no-viewer fallback; touches the component/mechanism,
+  not layout/flow/branding."*
+- **The `pdfGenerationFailed` guard (the affordance gate).** The invoice DTOs carry `pdfGenerationFailed: boolean`
+  (+ `pdfGenerationError`, verified spec `:6448-6454/:6557`). The "Open PDF" affordance is **disabled (or hidden)** when
+  `pdfGenerationFailed == true` — downloading a server-side-failed PDF returns nothing useful. (Android renders the
+  Open-PDF button unconditionally in `InvoiceDetailScreen.kt:170-176` and relies on the download failing into a
+  snackbar — iOS does it *better* by gating the affordance off the flag the server already exposes; a small
+  Parity-rule "iOS does it right" improvement, not a flow change. The download-failure snackbar path stays as the
+  belt-and-braces fallback for a non-`pdfGenerationFailed` download error.)
+- **No `FileDownload` seam (the scope guard).** The generated `employeePayrollDownloadInvoice` IS the download (binary
+  response → local file URL). The VM's only job is to call it and surface the URL via a one-shot event; there is no
+  retry/resume/progress/storage-permission orchestration to abstract (unlike Android's manual cache-stream, which the
+  codegen subsumes). A `FileDownload` Core protocol here would be an empty seam — **not built**. (If a *future* surface
+  needs true download orchestration — large files, progress, resume — that earns its own seam then, on evidence.)
+
+#### Decision (c) — MONEY / FORMAT: a small Core `EarningsFormat` (decimal money `%,.2f` + a whole-currency `%,.0f` headline variant + ISO→local date helpers) reusing the shared currency-symbol resolution; do NOT overload `DashboardFormat.money` (which is `%.0f`); HARVEST the currency-symbol resolution to Core if it is now in 3+ places (APPLIES the §7.5 D4 / §7.7 D4 Core-utility-helper precedent + the Parity rule — no new ADR)
+
+**RULING: introduce a small Core **`EarningsFormat`** helper (in `CleansiaCore`, the `EmailValidator`/`PasswordPolicy`
+factoring) carrying: (1) **decimal money** `formatMoney(_:symbol:)` → `%,.2f` for PeriodPay rows + invoices (the
+`InvoiceDetailScreen.kt:624-627`/`InvoicesListScreen.kt:477-480`/PeriodPay `%,.2f` parity); (2) a **whole-currency
+headline** variant `formatMoneyWhole(_:symbol:)` → `%,.0f` for the earnings headline + breakdown numbers (the
+`EarningsSummaryScreen.kt:420-423` parity); (3) **ISO→local date** helpers (`d MMM` / `d MMM yyyy`, the
+`formatDate`/`parseIsoDate`/`formatShort` parity duplicated across all four Android screens). It reuses the **shared
+currency-symbol resolution** (the `Currency.getInstance(code).getSymbol(Locale)` → `code` fallback, duplicated VERBATIM
+in `EarningsSummaryScreen.kt:413-418` + `InvoiceDetailScreen.kt:617-622` + `InvoicesListScreen.kt:470-475`). **Do NOT
+overload `DashboardFormat.money`** — it is `%.0f` (whole-currency, no thousands grouping) and is the dashboard hero's
+contract; the earnings surface needs BOTH `%,.2f` (decimal, grouped) and `%,.0f` (grouped) — overloading the dashboard
+helper would either break the dashboard or fork its meaning. Record, no new ADR.**
+
+- **The two precisions are real and load-bearing (verified — the reason NOT to overload one helper).** The Android
+  earnings surface deliberately uses **two** money precisions: `%,.0f` for the **earnings headline + breakdown**
+  (`EarningsSummaryScreen.kt:421` — "$1,234 Kč", whole currency, the hero framing) and `%,.2f` for **invoices +
+  PeriodPay** (`InvoiceDetailScreen.kt:625` / `InvoicesListScreen.kt:478` / PeriodPay — "$1,234.56 Kč", exact money on
+  a billing document). Both **group thousands** (`%,`). `DashboardFormat.money` is `%.0f` (whole, **un**grouped) and is
+  the dashboard hero's own contract — it is neither of the two earnings formats. `EarningsFormat` carries both grouped
+  variants; the dashboard helper is left alone.
+- **Why a small Core helper (the "earns its place" bar).** The currency-symbol resolution + the date parse/format are
+  **duplicated verbatim across three (symbol: Earnings + InvoiceDetail + InvoicesList) and four (date) Android screens**
+  — copy-paste private functions per screen. On iOS, lifting them into one tested `EarningsFormat` (the §7.5 D4
+  `PasswordPolicy` / §7.7 D4 `AppSettingsStore` "the one way, in Core" factoring) makes the four screens consistent and
+  the *future* format change (a 5th surface, a currency-display tweak) cheaper — it earns its place. **Rejected: per-screen
+  private `formatMoney`/`currencySymbol`/`formatDate` copies** (the Android copy-paste shape — four drifting copies).
+- **HARVEST the currency-symbol resolution to Core (the 3+-call-sites rule).** The `currencySymbol(code)` resolution is
+  now used in **≥3 places** on iOS (Earnings, InvoiceDetail, InvoicesList — and PeriodPay threads a `currencyCode`).
+  Per the `patterns-mobile` "harvest a pattern used in 3+ places" rule, it is hoisted into Core (as part of
+  `EarningsFormat`, or a tiny `CurrencyFormatting` Core utility `EarningsFormat` uses). The iOS resolution is a
+  `NumberFormatter(.currency)` / `Locale` symbol lookup with the **ISO-code fallback** when unknown (the
+  `runCatching{...}.getOrNull() ?: code` parity — never crash, fall back to the raw code). **Client-side display only**
+  — the server amounts/currency are authoritative.
+- **The PeriodPay currency comes from the nav route, not the DTO (verified parity, threads decision (a)).** The
+  `PeriodPaySummary` DTO **carries no currency** — Android threads `currencyCode` through the nav route from the
+  launching invoice (`PeriodPayViewModel.kt:43-44` "the summary DTO carries no currency"; `:251` passes it). The iOS
+  `EarningsRoute.periodPay(payPeriodId:currencyCode:)` carries it (decision (a)); `EarningsFormat` formats the PeriodPay
+  rows with that threaded code's symbol. A PeriodPay reached with a nil `currencyCode` degrades to the
+  symbol-less/raw-code format (the empty-symbol branch — `formatMoney` returns the bare number).
+
+#### Decision (d) — STATS SOURCE for the Earnings summary: REUSE `PartnerDashboardClient.getStats` (the same `DashboardStatsDto` the Dashboard hero renders); do NOT duplicate onto the payroll client / call `GetPeriodPays` for the summary (APPLIES ADR-0013 parity + Core/DRY — no new ADR)
+
+**RULING (CONFIRMED as recommended): the Earnings summary screen REUSES `PartnerDashboardClient.getStats` — the same
+`dashboardGetStats` call returning the same `DashboardStatsDto` the T-0303 Dashboard hero already renders — NOT a
+duplicate stats fetch on the payroll client, and NOT `employeePayrollGetPeriodPays` (which is the per-period rollup, a
+different shape for a different screen). This mirrors the Android `EarningsSummaryViewModel` EXACTLY, which injects
+`DashboardRepository` and calls `dashboardRepository.getStats(employeeId = null)` (`EarningsSummaryViewModel.kt:9,31-32,49`).
+The Earnings summary VM is a thin sealed `UiState<DashboardStatsDto>` (Loading/Error/Loaded) over that one call.
+Record, no new ADR.**
+
+- **The Android parity is exact (verified).** `EarningsSummaryViewModel` reuses `DashboardRepository.getStats` — its own
+  docstring: *"Re-uses [DashboardRepository.getStats] — same data the dashboard hero cards already render, just on its
+  own dedicated surface"* (`EarningsSummaryViewModel.kt:23-29`). It does **not** call `GetPeriodPays`. The summary
+  screen renders `DashboardStatsDto` fields (`currentPeriodEarnings`, `today/week/lastMonth` earnings + counts,
+  `currentPayPeriodStart/End`, `nextPayoutDate`, `latestInvoiceStatus` — `EarningsSummaryScreen.kt:137-325`).
+- **Why reuse (the call).** `PartnerDashboardClient.getStats` already exists and is proven (T-0303, through the ADR-0019
+  spine). Duplicating the stats fetch onto the payroll client (or computing the summary from `GetPeriodPays`) would fork
+  the source-of-truth for the same numbers the dashboard hero shows — a Core/DRY + parity violation. The Earnings
+  summary and the Dashboard hero render the *same stats* by design; one client, one DTO. **Rejected: a payroll-client
+  stats duplicate / a `GetPeriodPays`-derived summary** — two sources for one set of numbers, drift, and extra surface.
+- **The `employeeId = null` parity (the own-stats read).** Android calls `getStats(employeeId = null)` — the server
+  scopes to the caller's own employee from the session (the partner-host `[Permission]`-guarded, token-scoped read the
+  T-0303 dashboard proved). iOS passes the same (no client employeeId). **How the caller-own scope is trusted on the
+  wire is SECURITY's §7.11 read-scoping ruling** (E1, composing with the no-`UserProfileStore` fact, §7.5 D2 — iOS does
+  NOT resolve the caller's `employeeId` from a client store; the server derives it). This decision rules only that the
+  summary's stats SOURCE is the reused dashboard client.
+
+#### The recorded Gate-DP / Parity divergences (T-0309 — all component/mechanism or "iOS does it right", none touch layout/flow/branding)
+
+1. **Nav: Android Earnings (pushed) + Invoices (bottom-nav tab) with a pop+tab-ordinal hop → iOS single `.invoices`
+   shell tab rooting an in-tab `NavigationStack` over a typed `EarningsRoute` enum; `onOpenEarnings` = a tab switch
+   (`ShellModel.selection = .invoices`)** — decision (a). Same nav structure/content/back-stack order; the mechanism is
+   native (the same class as the T-0304 `MainScaffold`→`TabView` swap).
+2. **PDF: Android VM streams `ResponseBody` → cache → `FileProvider` URI → `Intent.ACTION_VIEW` (with a no-viewer
+   fallback) → iOS the generated client writes the body to disk → the VM surfaces the local file URL → the Core
+   `QuickLookPreview` (`QLPreviewController`)** — decision (b). Same in-app PDF viewing; the mechanism is native; no
+   stream-to-cache (codegen does it), no FileProvider, no no-viewer branch.
+3. **List state: the Android `InvoicesListUiState` E1 flag-bag → iOS a sealed per-list `UiState<[EmployeeInvoiceDto]>` +
+   a `RefreshPhase` enum (the §7.9 (e) convention)** — NOT replicated; the per-list staleness watermark is PORTED. The
+   Android E1 fix is filed at **T-0337** (the standing partner-E1 home).
+4. **Open-PDF gate: Android renders the Open-PDF button unconditionally and relies on the download failing into a
+   snackbar → iOS gates the affordance off the DTO's `pdfGenerationFailed` flag** — decision (b). A Parity-rule "iOS does
+   it right" improvement (the server already exposes the flag); the download-error snackbar stays as the fallback for a
+   non-flag failure. (The Android catch-up — gate the button off `pdfGenerationFailed` — is a PM-filed follow-up,
+   independent of the iOS wave.)
+5. **PeriodPay endpoint: Android hand-wrote a `PeriodPayApi` Retrofit interface (because the checked-in spec didn't
+   carry `GetPeriodPays` at the time — `PeriodPayApi.kt:8-18`) → iOS uses the GENERATED `employeePayrollGetPeriodPays`
+   (the regen'd spec now carries it, verified `:3262`)** — a mechanism divergence with zero behavior change; iOS rides
+   the ADR-0019 spine like every other generated call, no hand-written Retrofit/verb. (The Android catch-up — drop the
+   hand-written `PeriodPayApi` for the generated one once its spec is refreshed — is a PM-filed follow-up.)
+
+#### Reviewer-check addition (T-0309+)
+
+- **#33 (§7.12 (a)/(b)/(c)/(d)) — the partner earnings/invoices/PeriodPay surface is the canonical shape.**
+  **(a) nav** — the `.invoices` shell tab roots an in-tab `NavigationStack` over a typed `EarningsRoute` enum
+  (`.summary`/`.invoices`/`.invoiceDetail(id)`/`.periodPay(payPeriodId,currencyCode)`), landing on `.summary`;
+  `onOpenEarnings` sets `ShellModel.selection = .invoices` (a tab switch, the `selectOrders()`/`onOpenOrders` parity),
+  NOT a push; `.periodPay` carries `currencyCode` (the DTO has none). **Findings:** the earnings surface modeled as a
+  pushed screen off the Dashboard tab (an ADR-0020 audience-vs-intra-audience confusion); the tab landing on the
+  invoices list (the empty-landing UX Android removed); a top-level audience hop (the audience stays the `PartnerRootView`
+  enum — #23). **(b) PDF** — viewing goes through the Core **`QuickLookPreview`** (`QLPreviewController`
+  `UIViewControllerRepresentable` in `CleansiaCore/Components`) over the generated `downloadInvoice` local file URL,
+  surfaced by a one-shot VM event; the Open-PDF affordance is gated on `pdfGenerationFailed`. **Findings:** a
+  partner-local `QLPreviewController` wrapper (it must be the Core seam — the customer app T-0314 reuses it); a
+  share-sheet/`SafariView` substituted for the in-app viewer; a built `FileDownload` seam (the generated client IS the
+  download); an Open-PDF affordance not gated on `pdfGenerationFailed`; a VM re-streaming the body to disk (the codegen
+  already did). **(c) format** — money/date go through the Core **`EarningsFormat`** (decimal `%,.2f` for invoices/
+  PeriodPay + whole `%,.0f` for the earnings headline + ISO→local dates); the currency-symbol resolution is the Core
+  utility (3+ call sites harvested); `DashboardFormat.money` (`%.0f`) is NOT overloaded. **Findings:** per-screen
+  private `formatMoney`/`currencySymbol`/`formatDate` copies; the dashboard helper overloaded for the earnings precisions;
+  a single `%,.2f`/`%,.0f` collapse losing the headline-vs-document distinction. **(d) stats** — the Earnings summary
+  reuses `PartnerDashboardClient.getStats` (the `DashboardStatsDto` the Dashboard hero renders), NOT a payroll-client
+  duplicate or a `GetPeriodPays`-derived summary. **Findings:** a second stats fetch on the payroll client; the summary
+  computed from `GetPeriodPays`. (Composes with #13-gen — every payroll call rides the ADR-0019 spine.) **The
+  read-scoping / PII gate (incl. the post-preview PDF cache-cleanup) is SECURITY's §7.11** — out of #33.
+
+#### New CRC roles (added with the T-0309 wiring)
+
+- **`ios-quicklook-preview`** (new, `CleansiaCore/Components`) — the `QuickLookPreview` `UIViewControllerRepresentable`
+  wrapping `QLPreviewController` (decision (b); the second member of the §7.10 D1 UIKit-controller-behind-a-SwiftUI-seam
+  family): *responsibility:* present a system in-app preview of ONE local document (a `file://` URL) and dismiss itself
+  (its coordinator hosts SECURITY's E4 post-dismiss cache cleanup). *Collaborators:* `QLPreviewController`, the SwiftUI
+  host that presents it (on the VM's one-shot URL event). *Does NOT know:* the invoice/payroll contract, how the file
+  was downloaded (the generated client), who may read it (SECURITY), or anything about the document's content. The
+  canonical "preview a downloaded document" seam (harvested to `patterns-mobile`), reused by the customer app (T-0314).
+- **`ios-earnings-format`** (new, `CleansiaCore`) — the `EarningsFormat` pure helper (decision (c)): *responsibility:*
+  format money (decimal `%,.2f` + whole `%,.0f`, grouped, with a currency symbol) and ISO→local dates for the
+  earnings/invoices/PeriodPay surface, reusing the Core currency-symbol resolution. *Collaborators:* the Core
+  currency-symbol utility (`NumberFormatter`/`Locale`); none else (pure deterministic transforms). *Does NOT know:* the
+  DTOs, which screen consumes it, the dashboard's `DashboardFormat.money` (a separate `%.0f` helper it does NOT
+  overload), or the server amounts' authority.
+- **`ios-earnings-summary-vm`** (new, partner earnings feature) — the `EarningsSummaryViewModel.kt` parity (decision (d)):
+  *responsibility:* load the earnings summary (a sealed `UiState<DashboardStatsDto>`) by REUSING
+  `PartnerDashboardClient.getStats`; surface errors via the `SnackbarController`. *Collaborators:* `PartnerDashboardClient`
+  (via the ADR-0019 spine), `SnackbarController`, `EarningsFormat` (in the view). *Does NOT know:* the payroll client,
+  `GetPeriodPays`, the invoices list, or who the caller is (the server scopes the own-stats read — SECURITY §7.11).
+- **`ios-invoices-vm`** (new, partner invoices feature) — the `InvoicesListViewModel.kt`/`InvoiceDetailViewModel.kt`
+  parity (decisions (a)/(b)): *responsibility:* load the invoices list (sealed per-list `UiState<[EmployeeInvoiceDto]>`
+  + a `RefreshPhase` enum + the ported staleness watermark) and one invoice detail (sealed `UiState`); on "Open PDF",
+  call the generated `downloadInvoice` and surface the returned local file URL via a ONE-SHOT event (guarded on
+  `pdfGenerationFailed`). *Collaborators:* the payroll generated client (via the ADR-0019 spine), `SnackbarController`,
+  `QuickLookPreview` (via the screen), `EarningsFormat` (in the view). *Does NOT know:* the `QLPreviewController`
+  internals, how the file was written (the codegen), who may read the invoice (SECURITY §7.11), or the audience router
+  (it pushes within the `.invoices` tab's stack — the `EarningsRoute` enum).
+- **`ios-periodpay-vm`** (new, partner payroll feature) — the `PeriodPayViewModel.kt` parity (decisions (a)/(c)):
+  *responsibility:* load one period's pay rollup (a sealed `UiState<PeriodPaySummary>`) via the generated
+  `employeePayrollGetPeriodPays`; format rows with the route-threaded `currencyCode` via `EarningsFormat`. *Collaborators:*
+  the payroll generated client (via the ADR-0019 spine), `SnackbarController`, `EarningsFormat`. *Does NOT know:* the
+  invoices list/detail, how the caller's own `employeeId` is trusted on the wire (SECURITY §7.11 E1 — iOS has no
+  `UserProfileStore`, the server scopes the read), or the audience router.
+
+#### Test contract (T-0309 — red-first)
+
+- **TC-IOS-EARNINGS-NAV** (decision (a)): `onOpenEarnings` sets `ShellModel.selection = .invoices` (a tab switch, NOT a
+  push onto the Dashboard tab's stack); the `.invoices` tab's `NavigationStack` is seeded with `EarningsRoute.summary`
+  (the root), and "View all invoices" pushes `.invoices`, an invoice card pushes `.invoiceDetail(id)`, "View period pay"
+  pushes `.periodPay(payPeriodId, currencyCode)` (the currencyCode threaded from the invoice).
+- **TC-IOS-PDF-GATE** (decision (b)): an invoice with `pdfGenerationFailed == true` renders the Open-PDF affordance
+  disabled/hidden; with `pdfGenerationFailed == false`, tapping Open-PDF calls `downloadInvoice` and emits a one-shot
+  URL event (the screen presents `QuickLookPreview` over it); a download error (non-flag) snackbars and does NOT present.
+- **TC-IOS-EARNINGS-FORMAT** (decision (c), pure): `EarningsFormat` formats `1234.5` as `1,234.50 <sym>` (decimal) and
+  `1234.5` as `1,235 <sym>` (whole, the `%,.0f` rounding); an unknown currency code falls back to the raw code (never
+  crashes); a nil symbol yields the bare grouped number.
+- **TC-IOS-EARNINGS-STATS** (decision (d)): the Earnings summary VM loads via `PartnerDashboardClient.getStats`
+  (asserted — NOT the payroll client, NOT `GetPeriodPays`); a `.success` → `.loaded(DashboardStatsDto)`, a `.failure` →
+  `.error` + snackbar (the `EarningsSummaryViewModel.kt:44-59` parity).
+
+(The SECURITY ownership test **TC-IOS-EARNINGS-OWNERSHIP** + the E4 PDF-cleanup test are §7.11's — they compose with
+TC-IOS-PDF-GATE: the same `QuickLookPreview` coordinator that this record shapes is where E4's remove-on-dismiss runs.)
+
 ---
 
 ## 8. Gates & verification (per `agents/process/quality-gates.md`)

@@ -31,6 +31,10 @@ final class RegistrationLockViewModel: ViewModel {
 
     private var lastStatus: RegistrationCompletionStatus?
 
+    var missingFields: [String] {
+        lastStatus?.missingFields ?? []
+    }
+
     init(client: PartnerRegistrationClient, authClient: AuthClient) {
         self.client = client
         self.authClient = authClient

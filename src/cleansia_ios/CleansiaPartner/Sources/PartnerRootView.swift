@@ -66,11 +66,15 @@ struct PartnerRootView: View {
             RegistrationLockView(
                 client: container.registrationClient,
                 authClient: container.authClient,
+                profileClient: container.profileClient,
+                snackbar: container.snackbar,
+                geocoding: container.geocodingService,
+                mapProvider: container.mapProvider,
                 onCompleted: { route = .dashboard },
                 onSignedOut: { route = .login }
             )
         case .dashboard:
-            PartnerShellView(container: container)
+            PartnerShellView(container: container, onSignedOut: { route = .login })
         case let .verifyEmail(email):
             ConfirmEmailView(
                 email: email,

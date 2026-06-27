@@ -63,6 +63,9 @@ final class PartnerAppContainer: AppContainer {
 
     let dashboardClient: PartnerDashboardClient = LivePartnerDashboardClient()
     let registrationClient: PartnerRegistrationClient = LivePartnerRegistrationClient()
+    let profileClient: PartnerProfileClient = LivePartnerProfileClient()
+    let geocodingService: GeocodingService = CLGeocoderGeocodingService()
+    let mapProvider: MapProvider = MapKitMapProvider()
 
     private let authStack: PartnerAuthStack
 
@@ -83,6 +86,9 @@ final class PartnerAppContainer: AppContainer {
             makeAuthSpine: { _ in authStack.spine },
             makeApiClient: { seams in PartnerMobileApiClient(baseURL: seams.apiBaseURL) }
         )
+        if let cache = profileClient as? SessionScopedCache {
+            sessionScopedCaches.register(cache)
+        }
     }
 
     func installGeneratedClientAuth() {

@@ -13,9 +13,11 @@ final class ShellModel: ViewModel {
 struct PartnerShellView: View {
     @StateObject private var model = ShellModel()
     private let container: PartnerAppContainer
+    private let onSignedOut: () -> Void
 
-    init(container: PartnerAppContainer) {
+    init(container: PartnerAppContainer, onSignedOut: @escaping () -> Void) {
         self.container = container
+        self.onSignedOut = onSignedOut
     }
 
     var body: some View {
@@ -33,8 +35,16 @@ struct PartnerShellView: View {
             PlaceholderTab(tab: .invoices, ticket: "T-0309")
                 .tag(ShellTab.invoices)
 
-            PlaceholderTab(tab: .profile, ticket: "T-0310")
-                .tag(ShellTab.profile)
+            ProfileView(
+                client: container.profileClient,
+                authClient: container.authClient,
+                snackbar: container.snackbar,
+                geocoding: container.geocodingService,
+                mapProvider: container.mapProvider,
+                onSignedOut: onSignedOut
+            )
+            .tabItem { Label(ShellTab.profile.label, systemImage: ShellTab.profile.systemImage) }
+            .tag(ShellTab.profile)
         }
         .tint(CleansiaColors.primary)
     }

@@ -60,6 +60,16 @@ public class GetPagedOrders
                 cleaningDateFrom = DateTime.UtcNow.AddHours(-2);
             }
 
+            // A non-admin cannot filter by a FOREIGN employee. When the client
+            // supplies an EmployeeId (the "mine" panes) we pin it to the JWT
+            // caller; an empty value (the Available pane) stays unscoped here.
+            // RestrictToEmployeeId then constrains the base query to
+            // assigned-to-caller OR still-takeable rows, so a foreign-assigned,
+            // no-spot row is never returned. Admin keeps the broad filter.
+            var employeeIdFilter = isAdmin
+                ? request.Filter?.EmployeeId
+                : string.IsNullOrEmpty(request.Filter?.EmployeeId) ? null : callerEmployeeId;
+
             var specification = OrderSpecification.Create(
                 request.Filter?.Id,
                 request.Filter?.IsActive,
@@ -67,7 +77,7 @@ public class GetPagedOrders
                 isAdmin ? request.Filter?.CustomerEmail : null,
                 isAdmin ? request.Filter?.CustomerPhone : null,
                 request.Filter?.DisplayOrderNumber,
-                request.Filter?.EmployeeId,
+                employeeIdFilter,
                 cleaningDateFrom,
                 request.Filter?.CleaningDateTo,
                 request.Filter?.PaymentStatuses,
@@ -77,7 +87,8 @@ public class GetPagedOrders
                 request.Filter?.OrderStatuses,
                 request.Filter?.HasAvailableSpots,
                 request.Filter?.IsUnassigned,
-                request.Filter?.ExcludeEmployeeId);
+                request.Filter?.ExcludeEmployeeId,
+                restrictToEmployeeId: isAdmin ? null : callerEmployeeId);
 
             var filter = specification.SatisfiedBy();
 
@@ -176,12 +187,20 @@ public class GetPagedOrders
                     continue;
                 }
 
+                // Non-assigned (= a still-takeable row the caller is browsing).
+                // Full PII, the exact geocoded coordinates, and the
+                // confirmation code stay hidden until the caller takes the job;
+                // only the coarse CustomerAddressApproximate + pay estimate (the
+                // documented pre-accept signals) remain.
                 items.Add(dto with
                 {
                     CustomerName = string.Empty,
                     CustomerEmail = string.Empty,
                     CustomerPhone = string.Empty,
                     CustomerAddress = string.Empty,
+                    ConfirmationCode = string.Empty,
+                    CustomerAddressLatitude = null,
+                    CustomerAddressLongitude = null,
                 });
             }
 

@@ -301,6 +301,10 @@ private struct ConfirmCard: View {
         func pickerMap(region _: Binding<MKCoordinateRegion>, showsUserLocation _: Bool) -> AnyView {
             AnyView(CleansiaColors.surfaceVariant)
         }
+
+        func fullBleedMap(coordinate _: Coordinate) -> AnyView {
+            AnyView(CleansiaColors.surfaceVariant)
+        }
     }
 
     private func previewAddress() -> GeocodedAddress {

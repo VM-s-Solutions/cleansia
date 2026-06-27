@@ -1,6 +1,6 @@
 # Sprint 12 — iOS PORT (Wave 10): parity Swift/SwiftUI customer + partner apps
 
-**Status:** PHASE 0 FOUNDATION DONE + MAC-VERIFIED + MERGED (2026-06-26) · **PHASE 1 (T-0303) DONE** — proving vertical green on `phase/ios-phase1` · **PHASE 2 — T-0304 + T-0305 DONE** on `phase/ios-phase2` · **PHASE 3 — T-0306 (map seam + MapKit + partner AddressPicker) DONE + T-0310 (partner Profile + Devices + Preferences) DONE** on `phase/ios-phase3` (2026-06-27; 7 commits, pushed). **T-0306:** Slice A Core `MapProvider`/`GeocodingService` seam + `CLGeocoder` + iOS-16 `MapKitMapProvider` (125 Core tests) / Slice B partner `AddressPicker` (pan+search, returns `GeocodedAddress`); reviewer APPROVE. **T-0310:** Slice A profile hub + 6 section editors + onboarding chain + the now-live RegistrationLock Fix-CTAs (fail-closed gate #24 verified) / Slice B Devices list+revoke (**SECURITY PASS** on D6/D7/D8) / Slice C Preferences (language [+ System/follow-device row] + theme via `.preferredColorScheme`, the first runtime in-app language switch); reviewer APPROVE; 185 Partner tests. **Phase 3 PR drafted.** · Phase 2+ tail (T-0307/0308/0309/0311/0312/0313/0314 + compliance T-0324…T-0329) proposed · follow-ups filed: **T-0334** (iOS ServiceAreaRow) / **T-0335** (iOS current-location FAB, gated on owner T-0325) / **T-0336** (iOS notifications-feed spike) / **T-0337** (Android partner profile sealed-state + i18n) / **T-0338** (Core catalog i18n ×5 + swappable bundle); android i18n **T-0333** (Register/Forgot) prior · standing latent backend S8 (RefreshToken tenant read asymmetry the device-revoke kill rides on) tracked by **T-0236** (`done`) + `security/auth-sessions.md` + `security/ios-devices.md` — re-verify before any non-null-TenantId onboarding
+**Status:** PHASE 0 FOUNDATION DONE + MAC-VERIFIED + MERGED (2026-06-26) · **PHASE 1 (T-0303) DONE** — proving vertical green on `phase/ios-phase1` · **PHASE 2 — T-0304 + T-0305 DONE** on `phase/ios-phase2` · **PHASE 3 — T-0306 + T-0310 DONE** on `phase/ios-phase3` (PR drafted) · **PHASE 4 — T-0307 (partner order work-loop, L→split, HARD AREA #3) + T-0308 (partner photo upload) DONE** on `phase/ios-phase4` (2026-06-27; **9 commits, pushed; Phase-4 PR drafted**). **T-0307:** 5 slices — A Core `SnapSheet` (ADR-0021 non-modal 3-snap) + `fullBleedMap` single-pin / B 3-pane OrdersList (sealed per-pane state + ported staleness cache) / C OrderDetail shell / D the OnTheWay lifecycle + the shared pure `OrderPrimaryAction` machine (**SECURITY PASS O1/O2/O4**) / E checklist/notes/issues/timeline; reviewer **APPROVE** all 5; security **PASS**. **T-0308:** 2 slices — A Core `CameraOrLibraryPicker` (first `UIViewControllerRepresentable`) + `ImageCompressor` (1920/0.7, EXPLICIT EXIF strip) / B `PhotosSection` (before/after rails, capture→upload) + Complete-unblock + bootstrapped `PrivacyInfo.xcprivacy` + camera/photo usage strings ×5; reviewer **APPROVE**; security **PASS** (P1–P5). Tests: **CleansiaCore 163 + CleansiaPartner 320** (iPhone 17); swiftformat + swiftlint --strict clean. **REQUIRED backend follow-up T-0339** (GetPagedOrders employeeId over-read — SECURITY, high, gates the GetPaged contract for go-live; iOS proceeded in parallel). · Phase 2+ tail (T-0309/0311/0312/0313/0314 + compliance T-0324…T-0329) proposed · follow-ups: **T-0334** (iOS ServiceAreaRow) / **T-0335** (iOS current-location FAB, gated on owner T-0325) / **T-0336** (iOS notifications-feed spike) / **T-0337** (Android partner profile sealed-state + i18n) / **T-0338** (Core catalog i18n ×5 + swappable bundle) / **T-0339** (backend GetPaged read-scoping — SECURITY) / **T-0340** (order-detail parity nits: checklist stable-id + Android status-label casing + placeholder-preview sweep); android i18n **T-0333** (Register/Forgot) prior · **owner items:** the camera/photo plist WORDING sign-off ×5 (T-0308 shipped en+cs/sk/uk/ru); T-0325 location string (owner, unused by Phase 4) · standing latent backend S8 (RefreshToken tenant read asymmetry the device-revoke kill rides on) tracked by **T-0236** (`done`) + `security/auth-sessions.md` + `security/ios-devices.md` — re-verify before any non-null-TenantId onboarding
 **Created:** 2026-06-23
 **Updated:** 2026-06-27
 **Source:** **ADR-0013** (`adr/0013-ios-app-architecture-and-port-strategy.md`, **accepted** 2026-06-23) +
@@ -192,6 +192,49 @@ born-canonical Swift `ApiResult<T>` contract.
 > Resulting transitions: **T-0306 → `done`, T-0310 → `done`** (§3 + INDEX Wave-10 roster). Next runnable = **T-0307**
 > (partner order work-loop, deps T-0304✓+T-0306✓) ∥ **T-0309** (earnings/invoices, deps T-0304✓). The owner commits
 > these backlog edits + opens the Phase-3 PR (the PM does not commit). Phase 2+ tail stays **proposed**.
+
+> **STATUS-LOG 2026-06-27 — PHASE 4 COMPLETE: T-0307 + T-0308 `proposed` → `done` on `phase/ios-phase4`
+> (9 commits, pushed); Phase-4 PR drafted.** Both tickets passed the full workflow (ios dev → reviewer/Gate-DP
+> + security on the touching slices). **T-0307 (partner order work-loop — OrdersList + OrderDetail + the OnTheWay
+> lifecycle + checklist/notes/issues/timeline; `L → split` into 5 slices; HARD AREA #3) → `done`** —
+> `4cb76ef` (ADR-0021 + the §7.8/§7.9 records) + `94050ae`+`3d0bf0d`+`7fca473`+`3c44356`+`42bb402`:
+> **Slice A** = the Core `SnapSheet` (the **ADR-0021 non-modal 3-snap** custom `GeometryReader`+drag container, 16.0
+> floor — NOT a modal `.sheet`) + the additive `MapProvider.fullBleedMap(coordinate:)` (single-pin `MKMapView`,
+> camera-padded, no polygon param — §7.6 D1 additive seam); **Slice B** = the **3-pane OrdersList** (sealed
+> per-pane `UiState<[OrderListItem]>` + a `RefreshPhase` enum + the **PORTED** per-pane staleness cache +
+> the **Code→OrderStatus one-mapper** convention; Android E1 flag-bag NOT replicated → **T-0337**; SlideToCommit →
+> native inline-confirm Gate-DP swap; **security O3** — the "mine" tab sends only the caller's own id, relies on the
+> server for isolation); **Slice C** = the **OrderDetail shell** (the SnapSheet over the fullBleedMap + content
+> cards); **Slice D** = the **OnTheWay lifecycle actions** (Take→NotifyOnTheWay→Start→Complete) + the **shared pure
+> `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:)` machine** (3 call sites, NOT inline switches) —
+> **SECURITY PASS O1/O2/O4** (no client employeeId on any command; no-id-echo; clean reject + refresh + in-flight
+> re-entry guard), **TC-IOS-ORDERS-OWNERSHIP** green; **Slice E** = the **checklist** (local checklist store) /
+> **author-scoped notes + issues** / the **status timeline**. **Reviewer APPROVE on all 5 slices**; the SECURITY
+> gate (§7.8, `security/ios-orders.md`, O1–O4) is **PASS** — the 10 state-changing/authorship-scoped backend
+> command paths were traced on this Mac and are VERIFIED server-scoped + safe; the **one** gap is the **`GetPaged`
+> read** (`GetPagedOrders.cs` trusts the client `Filter.EmployeeId` → leaks foreign-assigned coords/codes/pay,
+> MEDIUM, reachable today) — a **pre-existing backend behavior**, NOT an iOS regression, filed as the **REQUIRED
+> backend follow-up T-0339** (the iOS UI consumes the contract and proceeded in parallel). Deferred parity nits
+> (checklist stable-id keying + Android status-label casing + the placeholder-preview literal sweep) → **T-0340**.
+> **T-0308 (partner photo upload — camera/library capture → base64-over-JSON; 2 slices) → `done`** —
+> `c216392` (the §7.10 photo records) + `cf6ea6d`+`a2a2184`: **Slice A** = the Core **`CameraOrLibraryPicker`**
+> (the repo's **first `UIViewControllerRepresentable`**) + the **`ImageCompressor`** (downscale to 1920px / JPEG
+> 0.7, with an **EXPLICIT, asserted EXIF/GPS strip** — the §7.10 D3/P3 design requirement, **TC-IOS-PHOTOS-EXIF-STRIP**
+> green); **Slice B** = the **`PhotosSection`** (before/after rails, capture → upload) + the upload/delete VM +
+> the **Complete-unblock** (after-photos gate the Complete action) + the bootstrapped **`PrivacyInfo.xcprivacy`**
+> privacy manifest + the **NSCamera/NSPhotoLibrary usage strings ×5** (en + cs/sk/uk/ru). **Reviewer APPROVE**;
+> the SECURITY gate (§7.10, `security/ios-photos.md`, P1–P5) is **PASS** — SavePhotos/DeletePhoto/GetPhotos
+> ownership is VERIFIED safe on the reachable backend (**no backend change**: actor JWT-derived, DeletePhoto
+> resolves ownership server-side photoId→order→caller, GetPhotos gates the whole read on `CanBrowseOrderAsync`,
+> SAS URLs non-enumerable), **TC-IOS-PHOTOS-OWNERSHIP** green. **Tests:** **CleansiaCore 163 + CleansiaPartner 320**
+> pass on the iPhone 17 simulator; **swiftformat + swiftlint --strict clean**; the **ios-ci** workflow (macOS,
+> path-filtered) is the CI gate. **Owner items (PM never runs these):** (1) the **REQUIRED backend fix T-0339**
+> (GetPaged read-scoping; gates the GetPaged contract for go-live); (2) the **camera/photo plist WORDING sign-off
+> ×5** (T-0308 shipped en + cs/sk/uk/ru — owner may tweak the copy); (3) **T-0325** (the deferred location-permission
+> purpose string ×5) remains owner-pending but is **unused by Phase 4** (the current-location FAB is deferred →
+> T-0335). Resulting transitions: **T-0307 → `done`, T-0308 → `done`** (§3 + INDEX Wave-10 roster). The owner commits
+> these backlog edits + opens the Phase-4 PR (the PM does not commit). Phase 2+ tail stays **proposed**.
+
 **Goal:** port the Kotlin/Compose customer + partner apps to **Swift/SwiftUI** as **parity** apps sharing
 the **same Mobile API contract**, on a `CleansiaCore` SPM package + 2 app targets, **partner-first**, with
 a hand-written auth/session/header layer to the exact Android contract. iOS code lives at
@@ -271,8 +314,8 @@ PHASE 2+ PARITY FEATURE WAVES ── ordered by complexity; the 3 hard areas cal
 | **T-0304** | Partner shell (Dashboard·Orders·Invoices·Profile tabs) + RegistrationLock gate (fails CLOSED) + SplashGate. **Acceptance scope + the 3 Understand-pass rulings fixed in §7.4**: Decision 1 (fail-closed gate placement + AND predicate + both error paths CLOSED — confirms the Android gate, reviewer #24 + **TC-IOS-REGLOCK**), Decision 2 (the flat-enum `PartnerRootView` router gated by `.splash` — **ADR-0020**, reviewer #23), Decision 3 (the deferral map — "Fix" CTAs + onboarding branch INERT/deferred to T-0305/T-0310, the §7.2 inert-nav precedent) | M | **done ✅** `55b39aa`+`c269360`+`df71181` (`phase/ios-phase2`; Slice A gate: AND predicate, any nil→LOCKED, availability not a clause, BOTH error paths fail closed — reviewer #24 + **TC-IOS-REGLOCK** green, **security APPROVE**; ADR-0020 router #23 reseeded `.dashboard`→`.splash`, closing a latent T-0303 fail-OPEN; 14-token `missingFields` localized ×5. Slice B shell: native SwiftUI `TabView`, 4 tabs in Android `MainTab` order, dashboard tab hosts T-0303, `onOpenOrders`→Orders tab, 3 placeholders — **Gate-DP APPROVE** (D3 component swap noted). swiftformat/swiftlint clean; **CleansiaCore 93 + CleansiaPartner 61** pass on iPhone 17 sim. §7.4 (a) contact-support INERT, (b) silent-stale cache DEFERRED. Deferrals: Fix CTAs→T-0310, onboarding branch→T-0305) | ios | T-0303✓ | — | 2 (partner) |
 | **T-0305** | Partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding chain. **Acceptance scope + the 5 Understand-pass rulings fixed in §7.5**: D1 (a GENERAL `AppSettingsStore` in Core, UserDefaults-backed — onboarding-seen + the 5-locale language tag, `AppSettingsRepository.kt` parity), D2 (ConfirmEmail email via the `.verifyEmail(email:)` Route associated value, NOT a `UserProfileStore` — ADR-0020 fold-in), D3 (SECURITY: no new anon entry, Logout authed, `ConfirmUserEmail` is **PUT** + the spine `send()` gains an `httpMethod:` param, the double-skip + empty-token-gate reuse — reviewer #25), D4 (a Core `PasswordPolicy` + `PasswordRuleList`, ≥8&&letter&&digit — `RegisterViewModel.kt:37-39` parity), D5 (the F1 deviation: Android partner Register/Forgot VMs hardcode English validation strings — iOS localizes ×5; android fix is a follow-up). Reviewer #25/#26 + TC-IOS-CONFIRM-PUT / -SETTINGS / -PASSWORD-POLICY / -VERIFY-EMAIL-ARG + the extended TC-IOS-ANON/-EMPTYTOKEN | M | **done ✅** `ccd25cd`+`e232147`+`3e70cdb`+`84d38bc` (`phase/ios-phase2`; 4 slices — §7.5 docs / Slice A ConfirmEmail / Slice B Register / Slices C+D Forgot+Onboarding; every slice reviewer-APPROVE, Slice A also security-APPROVE — traced the backend `ConfirmUserEmail` (CODE-resolved, no session needed → the anon double-skip is SAFE), Slices C+D gate-safety SAFE. All 4 flows shipped: Register + Core `PasswordPolicy`/`PasswordRuleList`; Forgot single-phase; ConfirmEmail replaces the placeholder + reuses the LIVE empty-token gate; Onboarding 2-page intro + SplashGate branch + `hasSeenOnboarding` in the new Core `AppSettingsStore`. #25: `send()` gained `httpMethod:` (ConfirmUserEmail PUT, no silent 405); no new anon entry, Logout authed; positive-control proves the double-skip non-tautological. `.verifyEmail(email:)` carries the email (no `UserProfileStore`). F1: iOS localizes the validation strings ×5, the Android bug NOT replicated → android follow-up **T-0333**. Seed now UNCONDITIONALLY `.splash` (ADR-0020 living-doc fold-in — refines D2; gate #24 byte-unchanged, no bypass). swiftformat/swiftlint clean; **CleansiaCore 114 + CleansiaPartner 96** pass on iPhone 17 sim) | ios | T-0303✓, T-0304✓ | — | 2 (partner) |
 | **T-0306** | **Map seam + MapKit default** — `MapProvider`/`GeocodingService` protocol + `Coordinate`/`GeocodedAddress` value types in `CleansiaCore` + `MapKitMapProvider`/`CLGeocoderGeocodingService` + the partner `AddressPickerView`/`VM` (first map surface; returns `GeocodedAddress` via callback — NOT wired into AddressSection, that's T-0310). **Acceptance scope + the 4 Understand-pass rulings fixed in §7.6**: D1 (a MINIMAL `MapProvider` picker factory now; T-0307's full-bleed/overlay surface added ADDITIVELY later — "the one way iOS does maps behind the seam"; `GeocodingService` = 1:1 `ReverseGeocodingService.kt` port minus the Mapbox token/network args), D2 (current-location/my-location FAB/`LocationProvider` seam DEFERRED → T-0310 gated on T-0325's `NSLocationWhenInUseUsageDescription`; ship pan+search parity on the Prague default — the recorded **Gate-DP divergence**, architect sign-off), D3 (geocoding best-effort: cancel-before-refire, nil/`[]` on error, never block the confirm; 300ms fwd / 500ms reverse debounce VERBATIM; the picker has **NO `UiState`/`ActionState`** — reviewer note #27), D4 (NO Mapbox token / map SDK / `Package.swift` change — net secret-surface reduction; Q-IOS-02 stays "No", `MapStyles.kt` NOT ported). **iOS-16 variant (ADR-0014 D6′):** `Map(coordinateRegion:annotationItems:[])` + SwiftUI overlay pin for the picker; `MKMapView`/`UIViewRepresentable` for the (additive, T-0307) full-bleed map + polygon overlays — NO iOS-17-only `Map {...}`/`Marker`/`MapPolygon`/`onMapCameraChange`. Reviewer #7/#12/#27 + Gate-DP. **Android parity: `AddressPickerScreen.kt` + `AddressPickerViewModel.kt` + `core/location/{ReverseGeocodingService,GeocodedAddress,LocationService,MapStyles}.kt`** | M | **done ✅** `480f5c4`+`03a00f3`+`199916b` (`phase/ios-phase3`; Slice A = Core `MapProvider`/`GeocodingService` seam + `Coordinate`/`GeocodedAddress` value types + `CLGeocoderGeocodingService` + the iOS-16 `MapKitMapProvider` — **125 CleansiaCore tests**; Slice B = the partner `AddressPickerView`/`VM`: pan + search, full-bleed map + static center-pin overlay, 300ms fwd / 500ms reverse-on-idle debounce verbatim, best-effort geocode, NO `UiState`/`ActionState` (reviewer #27), returns `GeocodedAddress` via `onConfirmed`. D2 current-location FAB DEFERRED → T-0335 (the recorded Gate-DP divergence). Reviewer **APPROVE**; swiftformat/swiftlint clean) | ios | T-0300✓ | — | 2 (**HARD AREA #2 — first half**) |
-| **T-0307** | **Partner order work-loop** — OrdersList + OrderDetail (full-bleed map + 3-snap sheet) + the **OnTheWay** lifecycle (Take→NotifyOnTheWay→Start→Complete) + checklist/notes/issues/timeline | **L → split** | **proposed** | ios | T-0304, T-0306 | — | 2 (**HARD AREA #3**) |
-| **T-0308** | **Partner photo upload** — camera capture → **JSON base64** photos (partner shape) on OrderDetail | M | **proposed** | ios | T-0307 | — | 2 (HARD AREA #3 cont.) |
+| **T-0307** | **Partner order work-loop** — OrdersList + OrderDetail (full-bleed map + 3-snap sheet) + the **OnTheWay** lifecycle (Take→NotifyOnTheWay→Start→Complete) + checklist/notes/issues/timeline. **Acceptance scope + the 5 Understand-pass rulings fixed in §7.9 (architect) + the SECURITY order-action gate in §7.8:** (a) the additive `MapProvider.fullBleedMap(coordinate:)` — single pin, camera-padded, NO polygon param (no polygon data in spec; §7.6 D1 additive seam); (b) the **non-modal `SnapSheet` 16.0-floor sheet = ADR-0021** (custom `GeometryReader`+drag container, NOT a modal `.sheet`; the floor stays 16.0); (c) the pure shared `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:)` machine (3 call sites, NOT inline switches; ownership trust = §7.8); (d) the T-0308 photo precursor seam (disabled/placeholder Photos slot + `hasAfterPhotos` consumer; capture additive in T-0308); (e) sealed per-pane `UiState<[OrderListItem]>` + a `RefreshPhase` enum + **PORTED** per-pane staleness cache (Android E1 flag-bag NOT replicated→T-0337; SlideToCommit→native confirm Gate-DP swap). + the Code→OrderStatus one-mapper convention. Reviewer #29/#30/#31 + Gate-DP + TC-IOS-SNAP/-ORDER-ACTION; **SECURITY gate** (§7.8, O1–O4 + the backend GetPaged read-scoping fix). **Android parity: `partner-app/.../features/orders/{OrdersListScreen,OrdersListViewModel,OrderDetailScreen,OrderDetailViewModel,OrderPrimaryAction,CleaningChecklist,StatusTimeline,OrderStatusPill,PhotosSection}.kt` + `data/orders/OrdersRepository.kt`** | **L → split** | **done ✅** `4cb76ef`+`94050ae`+`3d0bf0d`+`7fca473`+`3c44356`+`42bb402` (`phase/ios-phase4`; **5 slices** — A Core `SnapSheet` (ADR-0021 non-modal 3-snap) + `fullBleedMap(coordinate:)` single-pin `MKMapView`; B 3-pane OrdersList (sealed per-pane `UiState`+`RefreshPhase`+ported staleness cache + Code→OrderStatus one-mapper; security O3 own-id-only); C OrderDetail shell (SnapSheet over fullBleedMap + content cards); D the OnTheWay lifecycle actions + the shared pure `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:)` machine — **SECURITY PASS O1/O2/O4**, TC-IOS-ORDERS-OWNERSHIP; E checklist (local store)/notes+issues (author-scoped)/timeline. Reviewer **APPROVE** all 5; **SECURITY PASS** (§7.8 O1–O4; the one backend GetPaged D2b gap → **T-0339**, iOS proceeds in parallel). E1 flag-bag NOT replicated→T-0337; SlideToCommit→native confirm Gate-DP swap; deferred checklist stable-id→T-0340; current-location FAB→T-0335. CleansiaCore 163 + CleansiaPartner 320 pass on iPhone 17 sim; swiftformat/swiftlint --strict clean) | ios | T-0304✓, T-0306✓ | — | 4 (**HARD AREA #3**; `phase/ios-phase4`) |
+| **T-0308** | **Partner photo upload** — camera capture → **JSON base64** photos (partner shape) on OrderDetail | M | **done ✅** `c216392`+`cf6ea6d`+`a2a2184` (`phase/ios-phase4`; **2 slices** — A Core `CameraOrLibraryPicker` (the repo's first `UIViewControllerRepresentable`) + `ImageCompressor` (1920/0.7, **EXPLICIT EXIF strip**, TC-IOS-PHOTOS-EXIF-STRIP); B the `PhotosSection` (before/after rails, capture→upload) + the upload/delete VM + the Complete-unblock + the bootstrapped `PrivacyInfo.xcprivacy` + the NSCamera/NSPhotoLibrary usage strings ×5. Reviewer **APPROVE**; **SECURITY PASS** (§7.10 P1–P5, TC-IOS-PHOTOS-OWNERSHIP — backend SavePhotos/DeletePhoto/GetPhotos ownership VERIFIED safe, no backend change). Owner sign-off pending on the camera/photo plist WORDING ×5) | ios | T-0307✓ | **owner: camera/photo plist WORDING sign-off ×5** | 4 (HARD AREA #3 cont.; `phase/ios-phase4`) |
 | **T-0309** | Partner earnings + invoices + PeriodPay (`EmployeePayroll/GetPeriodPays` — a regen'd-spec endpoint) | M | **proposed** | ios | T-0304 | — | 2 (partner) |
 | **T-0310** | Partner **Profile tab** (replaces `PartnerShellView.swift:36` `PlaceholderTab`) — the hub (hero + contract-status chip + section-group rows + logout) + **6 section editors** (Personal/Address/Identification/Bank/Emergency/Documents) over a new `PartnerProfileClient` (ADR-0019 spine) + the **onboarding chain** + **Devices** (Device/Mine list + revoke — **SECURITY-ruled, decisions 6–8**) + **Preferences** (Language/Theme). **Acceptance scope + the 5 Understand-pass rulings fixed in §7.7:** D1 (in-tab `NavigationStack` over a typed `ProfileRoute` enum — ADR-0020 intra-audience push, reviewer #28a), D2 (**the load-bearing call** — the RegistrationLock owns its OWN local `NavigationStack` + chain VM and pushes the SHARED section set over itself with `onboarding == true`; fail-closed, no cross-audience shell routing — reviewer #28b + TC-IOS-LOCK-CHAIN, composes with #24), D3 (`ServiceAreaRow` DEFERRED → T-0334, a Gate-DP divergence; Address ships pan/search/save at parity), D4 (EXTEND the one `AppSettingsStore` with writable language + a Theme enum + setters; honor theme via `.preferredColorScheme` now — reviewer #28c), D5 (born sealed-state canonical — Android E1 flag-bags NOT replicated; android fix → T-0337; reviewer #28d). **Scope cuts (PM to record):** current-location FAB + `LocationProvider` seam DEFERRED → T-0335 (gated on T-0325); **"Notifications" DROPPED** (no Android prefs surface / no backend prefs API / no client; the in-app feed is a separate spike → T-0336). Reviewer #28 + TC-IOS-PROFILE-ROUTE/-LOCK-CHAIN/-SECTION-SHARED/-SETTINGS-THEME/-PROFILE-STATE. Gate-DP. **Android parity: `partner-app/.../features/profile/` (`ProfileScreen.kt`/`ProfileViewModel.kt`, the `*Section*` set, `OnboardingChainHeader.kt`, `SectionScaffold.kt`, `AddressSectionScreen.kt`) + `features/orders/{RegistrationLockViewModel,OnboardingChainViewModel}.kt` + `core/settings/AppSettingsRepository.kt`** | M | **done ✅** `ce6c5fc`+`ee2f044`+`2cdaf93`+`6c6155c` (`phase/ios-phase3`; 3 slices. Slice A = the profile hub + 6 section editors (Personal/Address/Identification/Bank/Emergency/Documents) + onboarding chain + the now-live RegistrationLock Fix-CTAs (D2: the lock owns its OWN `NavigationStack`+chain VM, pushes the SHARED section set with `onboarding==true`, fail-CLOSED — gate #24 byte-unchanged, verified). Slice B = Devices (Device/Mine list + revoke) — **SECURITY PASS** on all binding rules (D6 single device-id source, D7a hide-on-current + D7b defensive self-revoke sign-out, D8 server-scoped revoke verified vs the backend; TC-IOS-DEVICES-SELF-REVOKE green). Slice C = Preferences (language [+ a System/follow-device row] + theme pickers; theme honored via `.preferredColorScheme`; the first runtime in-app language switch). D3 `ServiceAreaRow` DEFERRED → T-0334; D5 born sealed-state, Android E1 flag-bags NOT replicated → T-0337; current-location FAB → T-0335; Notifications DROPPED → T-0336. Reviewer **APPROVE** (incl. a re-review of the System-row fix); **185 CleansiaPartner tests**; swiftformat/swiftlint clean) | ios | T-0304✓, T-0306✓ | — | 2 (partner) |
 | **T-0311** | **Push (APNs)** — register for remote notifications → APNs token + `Platform="ios"` + same `X-Device-Id` to `/api/Device/*`; re-register on login, clear on logout (the `:core` push parity) | M | **proposed** | ios | T-0300 | **owner: APNs auth key/cert** | 2 (cross-app) |
@@ -343,8 +386,12 @@ PHASE 2+ (after Phase 1 proves the architecture)
   `AuthClient` + no-auth refresh session + empty-token gate; (c) `actor SessionRefresher` single-flight +
   ForcedSignOut + session-scoped-cache registry; (d) `HeaderAdapter` (X-Device-Id/Label/Time-Zone + anon
   allow-list). Each child red-first against the TC-IOS-AUTH-401 / ANON / DEVICEID / EMPTYTOKEN contract.
-- **T-0307 (partner order-loop) →** (a) OrdersList; (b) OrderDetail map+3-snap sheet shell;
-  (c) the OnTheWay→Start→Complete lifecycle + actions; (d) checklist/notes/issues/timeline.
+- **T-0307 (partner order-loop) →** (the §7.9 slices) **A** the additive Core `fullBleedMap(coordinate:)`
+  `MapProvider` method (single pin); **B** OrdersList (3 panes, sealed per-pane `UiState`+`RefreshPhase`, ported
+  staleness cache, native inline-confirm); **C** OrderDetail shell (the `fullBleedMap` + the non-modal `SnapSheet`
+  3-snap container — **ADR-0021**); **D** the OnTheWay lifecycle + the pure `OrderPrimaryAction.action(…)` machine;
+  **E** checklist/notes/issues/timeline + the T-0308 photo-precursor seam (disabled Photos slot). Each slice
+  red-first; D carries the **SECURITY** order-action gate (§7.8 O1–O4).
 - **T-0313 (booking+Stripe) →** (a) the anchored 3-step sheet scaffold + step nav; (b) Services step +
   client-side pricing; (c) WhenWhere step (map seam); (d) Confirm + cash→success vs card→PaymentSheet.
 - **T-0314 (customer tail) →** split by feature cluster (Home/Orders · Rewards/Membership/Recurring ·
@@ -1458,6 +1505,733 @@ revoked (deactivated) row drops from the list; re-revoking an already-revoked ro
 filtered out) — the screen simply no longer shows it (the `DevicesViewModel.kt:73-75` filter-out-on-success parity).
 Safe and idempotent on the already-revoked path. **`Device` implements `ITenantEntity`** (`Device.cs:6`) — the global
 tenant filter applies on top of the explicit `UserId` scope (**S8**, latent multi-tenant safety; today single-tenant).
+
+---
+
+### 7.8 T-0307 (Phase-4 partner order work-loop) — SECURITY gate ruling (recorded 2026-06-27, security reviewer; Gate-SEC)
+
+> **STATUS-LOG 2026-06-27 — T-0307 SECURITY GATE: order-action / ownership surface — `security_touching: YES`;
+> verdict = CHANGES on ONE backend invariant + APPROVE-the-iOS-design (binding client rules). The partner-mobile
+> analogue of the Devices D6-D8 ruling (§7.7). Full S1-S10 walk + binding rules in `security/ios-orders.md`.**
+>
+> **Greenfield, like Devices:** `phase/ios-phase4` carries **zero** committed diff (`git diff master...HEAD` = 0
+> files) — no iOS order code on disk yet. So these are rules the developer builds to and the reviewer enforces,
+> not findings against shipped iOS code. The **backend Order surface was traced on this Mac** (same discipline as
+> Devices D8): the 10 state-changing / authorship-scoped command paths are **VERIFIED server-scoped + safe**; the
+> **one gap is the `GetPaged` read** (pre-existing backend behavior T-0307 consumes — a backend fix, NOT an iOS
+> regression).
+>
+> **D2 — action ownership scoping (S1/S2/S3) — VERIFIED safe.** Actor is JWT-derived everywhere
+> (`OrderAccessService.GetCallerEmployeeIdAsync`; no command carries a client `employeeId`). Take gates on
+> exists+`HasAvailableSpots`+Approved+not-already-mine (`TakeOrder.cs`); Notify/Start/Complete gate on
+> `EmployeeIsAssignedToOrderAsync` + correct status (`NotifyOnTheWay.cs:73`, `StartOrder.cs:89`,
+> `CompleteOrder.cs:106`). **Note/issue update·delete are AUTHOR-scoped** (`n.EmployeeId == employeeId` /
+> `i.ReportedByEmployeeId == employeeId` — `UpdateOrderNote.cs:71`, `DeleteOrderNote.cs:59`, `UpdateOrderIssue.cs:68`,
+> `DeleteOrderIssue.cs:59`): a second cleaner on a shared job cannot edit another's note/issue. (Action-path
+> rejections surface `EmployeeNotAssignedToOrder`, not 404 — weaker than RevokeDevice's existence-hiding but
+> acceptable: action denied, no customer data leaked. Logged as low-sev hardening.)
+>
+> **D2b — `GetPaged` read-scoping (S3/S4) — CHANGES REQUESTED (the one real gap, MEDIUM, reachable today).**
+> `GetPagedOrders.Handler` builds the query purely from the **client-supplied** `Filter.EmployeeId`
+> (`GetPagedOrders.cs:70` → `OrderSpecification.cs:67-70`) with **no server override pinning it to the JWT caller**
+> and no "row must be mine OR available" predicate. The per-row blank (`:179-186`) hides full PII but **leaks exact
+> coords / approximate address / confirmation code / the victim's pay** for non-assigned rows. **Exploit:** an
+> Approved partner calls `Order/GetPaged` with `Filter.EmployeeId=<victim>` + `OrderStatuses=[Confirmed,InProgress,
+> Completed]` and reads another employee's assigned-order coordinates + confirmation codes + earnings. Reachable
+> because the legitimate client convention (Android `OrdersListViewModel.kt:244,249`, which iOS T-0307 mirrors) is
+> "send my own id" and the backend trusts it — **the client is not authority** (Devices D8). **REQUIRED backend
+> fix:** for non-admin callers force server `callerEmployeeId` on "mine" views + constrain Available to
+> `HasAvailableSpots || assigned`, and blank coords/approx/confirmation-code/pay on non-assigned rows — mirror the
+> existing `isAdmin ? filter.CustomerName : null` "client can't widen scope" pattern (`GetPagedOrders.cs:66-68`).
+> **Backend ticket; gates the GetPaged contract for go-live. iOS UI work proceeds in parallel.**
+>
+> **D3 — S5/S7/S8/S10 — PASS.** All side-effecting routes carry `[EnableRateLimiting("auth")]`
+> (`OrderController.cs`). Lifecycle is idempotent via status-precondition validators (stale double-action → clean
+> business rejection, never crash/double-assign); Complete's money fan-out is ledger/status/idempotency-key guarded
+> (Loyalty/Referral/`MessageKeys.Pay`/`MessageKeys.Receipt`). **S7a latent:** TakeOrder is a check-then-act on
+> `HasAvailableSpots` with no atomic claim — TOCTOU only when shared jobs (`MaxEmployees>1`) ship; dormant today
+> (single-cleaner). S8 PASS (Order tenant-filtered, envelopes carry `TenantId`). S10 PASS (`IsActive` filter).
+>
+> **Binding client rules (reviewer enforces):** **O1** no client employeeId on any command (orderId/noteId/issueId
+> only; actor=JWT). **O2** no-client-id-echo — never send an id the client didn't receive from its own
+> list/detail response (Devices D8 analogue). **O3** GetPaged "mine" is server-truth — the client may pass its own
+> id as a hint but exposes no foreign-employee filter and relies on the server for isolation. **O4** on a backend
+> rejection, show a clean message + refresh; re-entry-guard the action while in flight.
+> **Required tests:** **TC-IOS-ORDERS-OWNERSHIP** (client VM: foreign-order action not initiated / clean reject +
+> refresh; ids only from loaded models; My-tab sends only own id) + **TC-BE-ORDERS-GETPAGED-SCOPE** (backend
+> integration, red-first, gates the D2b fix: caller A with `Filter.EmployeeId=B` gets zero of B's exclusive rows
+> and no coords/confirmation-code/pay on non-assigned rows).
+>
+> **Owner follow-ups:** (1) the GetPaged read-scoping fix (REQUIRED, backend ticket); (2) TakeOrder TOCTOU atomic
+> claim before shared jobs (LATENT, low pri); (3) optional NotFound-not-EmployeeNotAssigned hardening on action
+> paths. The standing RefreshToken multi-tenant note (`auth-sessions.md`) is unrelated to the order surface.
+
+---
+
+### 7.10 T-0308 (Phase-4 partner photo upload/delete on OrderDetail) — SECURITY gate ruling (recorded 2026-06-27, security reviewer; Gate-SEC)
+
+> **STATUS-LOG 2026-06-27 — T-0308 SECURITY GATE: partner photo upload/delete/read surface —
+> `security_touching: YES`; verdict = PASS-the-iOS-design (binding client rules P1-P5) + ONE design
+> requirement (P3 explicit EXIF strip). The backend SavePhotos/DeletePhoto/GetPhotos ownership scoping
+> is VERIFIED safe on the reachable backend — NO backend CHANGES. Photo analogue of the T-0307
+> order-action gate (§7.8). Full S1-S10 walk + binding rules in `security/ios-photos.md`.**
+>
+> **Greenfield client, like T-0307/Devices:** `phase/ios-phase4` carries T-0307 order code + the
+> **generated** photo DTOs (`CleansiaPartnerApi/Models/SaveOrderPhotos*.swift`,
+> `DeleteOrderPhotoResponse.swift`, `GetOrderPhotos*.swift`, `PhotoType.swift`) but **no iOS
+> capture/image-picker/UIImage/camera code on disk** (tree grep clean). So P1-P5 are rules the
+> developer builds to, not findings against shipped iOS code. The **backend photo surface was traced on
+> this Mac** (same discipline as T-0307 §7.8 / Devices D8).
+>
+> **D2 — upload/delete/read ownership (S1/S2/S3) — VERIFIED SAFE (no backend gap, unlike GetPaged).**
+> Actor is JWT-derived (`OrderAccessService.GetCallerEmployeeIdAsync`; commands carry NO client
+> employeeId — SavePhotos=`{orderId,photos[]}`, DeletePhoto=`{photoId}` only; `capturedByEmployeeId` +
+> `capturedAt` are server-stamped, `SaveOrderPhotos.cs:139`/`OrderPhoto.cs:82`). **SavePhotos** scopes
+> by `order.AssignedEmployees.Any(oe=>oe.EmployeeId==employeeId)` (`SaveOrderPhotos.cs:101-104`;
+> `UploadOrderPhoto.cs:90-93`). **DeletePhoto resolves ownership SERVER-SIDE** photoId→order→caller
+> (`GetByIdAsync(photoId)` → load `photo.OrderId`'s order → assignment check;
+> `DeleteOrderPhoto.cs:39,51-59`) — the client cannot name the owner; foreign-order delete →
+> `EmployeeNotAssignedToOrder`. **GetPhotos** gates the whole read on `CanBrowseOrderAsync`
+> (`GetOrderPhotos.cs:57-62`; assigned/customer/admin/available-spots) — no photoId-keyed read, no
+> guess-a-photoId path; foreign no-spots order → `OrderNotFound` (existence hidden). All VERIFIED.
+>
+> **D3 — EXIF/GPS (S4-adjacent) — DESIGN REQUIREMENT P3.** The backend stores uploaded bytes verbatim
+> to blob (no server EXIF scrub, `SaveOrderPhotos.cs:123-127`), so camera GPS/EXIF survives unless the
+> CLIENT strips it. `UIImage.jpegData` drops EXIF as a *side effect* — but that incidental coupling is
+> fragile (a future metadata-preserving encode silently re-leaks the cleaner's/customer's precise GPS).
+> **RULING: EXIF/GPS strip must be an EXPLICIT, asserted invariant of the upload boundary, not an
+> incidental side-effect** — single re-encode chokepoint + a test asserting the produced JPEG has no
+> `kCGImagePropertyGPSDictionary`. The photo analogue of "never upload the raw camera asset."
+>
+> **D4 — permission-denial UX + bounds — PASS.** Denied camera/library degrades cleanly (clear message
+> + Settings deep-link, never a silent dead control; `Info.plist` declares
+> `NSCameraUsageDescription`/`NSPhotoLibraryUsageDescription` — manifest manual step). **Size cap
+> (S5):** server enforces 10 MB/photo (`SaveOrderPhotos.cs:37,60-64`) so a 50 MB body is rejected;
+> client downscales before encode (P5). **Rate limit (S5):** SavePhotos/UploadPhoto/DeletePhoto carry
+> `[EnableRateLimiting("auth")]` (partitioned per-JWT-sub, `OrderController.cs:112,125,150`). **SAS
+> (S4) non-enumerable:** GetPhotos returns per-blob, 1h-expiry, Read-only SAS URLs
+> (`BlobContainerClient.cs:86-113`) over blob names with a random GUID — a partner cannot guess/forge
+> another order's photos (and never gets a foreign list). **S6/S8/S10 PASS** (no PII logged; `OrderPhoto
+> : ITenantEntity` global-filtered through `GetDbSet`; hard-delete, no soft-delete leak). **S9 N/A** (no
+> schema/DTO change — DTOs already generated; T-0308 = client capture code only).
+>
+> **Binding client rules (reviewer enforces):** **P1** no client actor field on SavePhotos/DeletePhoto
+> (orderId/photoId only; actor=JWT). **P2** no-id-echo — upload only to the loaded `orderId`, delete
+> only a `photoId` from this order's own `getPhotos` response. **P3** explicit, asserted EXIF/GPS strip.
+> **P4** clean permission-denial + Info.plist usage strings. **P5** client downscale before encode +
+> re-entry-guard the upload while a call is in flight (no double-tap duplicate). Client rail-gating
+> (canUpload by status) is UI-only — the server is authority (the `completeBlocked` precedent).
+> **Required tests:** **TC-IOS-PHOTOS-OWNERSHIP** (client VM: SavePhotos from own orderId only +
+> DeletePhoto from a loaded photoId only + clean reject/refresh + upload re-entry guard) +
+> **TC-IOS-PHOTOS-EXIF-STRIP** (assert the encoded JPEG has no GPS dictionary — gates P3).
+>
+> **Owner follow-ups (NONE block T-0308; all LOW/latent):** (1) DeletePhoto authorship — any assigned
+> cleaner can delete another's photo on shared jobs (`MaxEmployees>1`); add `capturedByEmployeeId`
+> author check before shared jobs, dormant today. (2) cap photos-per-SavePhotos-request (e.g. ≤10) so
+> the 10 MB/photo cap can't be multiplied. (3) optional server-side EXIF scrub as defense-in-depth
+> behind the client P3 strip.
+
+---
+
+### 7.9 T-0307 (Phase-4 partner order work-loop — OrdersList + OrderDetail + lifecycle + checklist/notes/issues/timeline) — acceptance scope + the five Understand-pass rulings (recorded 2026-06-27, architect)
+
+> **The order-action OWNERSHIP gate is ruled by SECURITY in §7.8 (`security/ios-orders.md`, O1–O4) — this
+> architect record stays OUT of it.** Decision (c) below rules only the *shape* of the presentational primary-action
+> function and consumes `isMine`/`hasAfterPhotos` as inputs; how `isMine` is trusted, the no-client-id-echo rule,
+> GetPaged server-truth, and the clean-reject+refresh+re-entry-guard are §7.8's O1–O4 (which this record honors).
+
+T-0307 (`L → split`, HARD AREA #3, `phase/ios-phase4`, depends_on T-0304✓+T-0306✓) ports the partner **order
+work-loop**: the 3-pane OrdersList board, the OrderDetail shell (full-bleed map + the always-present 3-snap sheet), the
+**OnTheWay** lifecycle (Take → NotifyOnTheWay → Start → Complete), and checklist/notes/issues/timeline. **Slices (§6):**
+A = the additive `fullBleedMap` `MapProvider` method (Core); B = OrdersList (3 panes); C = OrderDetail shell (the map +
+the 3-snap sheet); D = lifecycle actions + state machine; E = checklist/notes/issues/timeline (incl. the T-0308 photo
+precursor seam). The Understand pass surfaced **five** decisions. **Four APPLY accepted ADRs — no new ADR** (the
+§7.2/§7.4/§7.5/§7.6/§7.7 "record, not ADR" precedent): ADR-0013 D6 + §7.6 D1 own the additive map seam (a); ADR-0013
+"mirror the code" + DRY own the state machine (c); ADR-0013 parity + T-0308's home own the photo precursor (d);
+ADR-0014 D2′ + §7.7 D5 + the Parity rule + the T-0310 D5 precedent own the list-state divergence (e). **ONE is a
+genuine new trade-off → ADR-0021** (decision (b): the non-modal 3-snap sheet on the 16.0 floor — it could have moved the
+deployment floor and it sets "the one way iOS does a non-modal map sheet," so it is an ADR, not a §7.9 line).
+**Android parity source (the iOS port mirrors it):** `partner-app/.../features/orders/` —
+`OrdersListScreen.kt`/`OrdersListViewModel.kt` (the 3 panes + silent-stale), `OrderDetailScreen.kt`/`OrderDetailViewModel.kt`
+(the map + 3-snap sheet + the sealed `OrderDetailUiState`/`ActionState`/`OrderAction?`), `OrderPrimaryAction.kt` (the
+status×ownership×photos → action), `CleaningChecklist.kt`/`…ViewModel.kt`, `StatusTimeline.kt`, `OrderStatusPill.kt`
+(the `Code?.toOrderStatus()` mapping), `PhotosSection.kt` (the T-0308 precursor) + `data/orders/OrdersRepository.kt`
+(the singleton per-pane/per-order staleness cache). **Gate-DP applies** (T-0307 is a screen ticket): the screens cite
+their Compose counterparts; native SwiftUI; iOS-wins-on-conflict + the noted divergences (the SnapSheet-vs-`.sheet`
+component swap, the SlideToCommit → native-confirm swap, the no-polygon confirmation).
+
+**IN — T-0307 acceptance scope:**
+- **Slice A:** ONE additive `MapProvider` method — `fullBleedMap(coordinate:)` (decision (a)) — implemented
+  `MKMapView`-via-`UIViewRepresentable` inside `MapKitMapProvider` (ADR-0014 D6′; the only MapKit consumer).
+- **Slice B:** the OrdersList — three panes (Available / MyActive / MyCompleted, the `OrdersTab` parity) over a sealed
+  per-pane `UiState<[OrderListItem]>` + a 3-case refresh-phase enum, PORTING the silent-stale staleness cache
+  (decision (e)); inline Active/Available row actions via an iOS-native confirm affordance (the SlideToCommit divergence).
+- **Slice C:** the OrderDetail shell — the **custom non-modal 3-snap `SnapSheet`** over `fullBleedMap(coordinate:)`
+  (**ADR-0021**), with the compact header always-visible drag handle + the sheet content sections.
+- **Slice D:** the lifecycle — a pure `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:) -> OrderPrimaryAction`
+  sealed enum (decision (c)) shared by the detail footer, the list inline row, and the list panes; the OrderDetail VM is
+  the sealed `OrderDetailUiState` (Loading/Error/Loaded) + `ActionState` + an `OrderAction?` in-flight discriminator
+  (already canonical on Android — ported 1:1).
+- **Slice E:** CleaningChecklist + NotesAndIssues + StatusTimeline, and the **T-0308 photo precursor seam**
+  (decision (d)) — a DISABLED/placeholder Photos section so the Complete-blocked hint is meaningful; capture is T-0308.
+
+**DEFERRED — explicitly out of T-0307, with the ticket each lands in:**
+- **Photo CAPTURE** (camera → JSON base64 upload) → **T-0308** (decision (d): T-0307 leaves the seam — the
+  `hasAfterPhotos` consumer + the reserved Photos slot — T-0308 fills capture additively, no OrderDetail re-layout).
+- **The current-location FAB on any order map** → **T-0335** (gated on T-0325, the §7.6 D2 / §7.7 Scope-A line — not
+  re-litigated here; the OrderDetail map is a fixed-address backdrop, no current-location needed).
+- **The service-area polygon overlay** → **T-0334** (decision (a): there is **no polygon data** in the partner spec —
+  add overlay support to `fullBleedMap` **additively** IF a service-area surface ever has geometry; designing it now
+  repeats the speculative shape §7.6 D1 rejected).
+
+#### Decision (a) — the additive `fullBleedMap` `MapProvider` method: `fullBleedMap(coordinate:)` — a SINGLE address pin, camera-padded for the sheet peek; NO overlay/polygon param (APPLIES ADR-0013 D6 + ADR-0014 D6′ + §7.6 D1 — no new ADR)
+
+**RULING: the additive method is `fullBleedMap(coordinate:) -> some View` (the dev's exact Swift return type; the
+contract is fixed) — it produces a full-bleed `MKMapView`-via-`UIViewRepresentable` map (ADR-0014 D6′) with ONE
+annotation (the order's address pin), camera-padded at the bottom for the always-present sheet peek so the pin stays in
+the visible upper sliver. NO `overlays:`/`polygon:`/`annotations:[…]` parameter. This is the §7.6 D1 "minimal-now,
+additive-later" seam reaching its homed ticket (T-0306 explicitly homed the full-bleed surface to T-0307 as an additive
+method) — an application of the `MapProvider` seam, no new ADR.**
+
+- **The KEY FINDING (verified in source):** there is **NO service-area polygon data in the partner spec** — `ServiceCityDto`
+  carries only `zipPrefix`, **no geometry** — and the Android `OrderDetail` renders **NO polygon**: `MapBackdrop`
+  (`OrderDetailScreen.kt:256-299`) draws a **single pin** at `order.address.latitude/longitude` (a Mapbox `ViewAnnotation`,
+  anchor BOTTOM, zoom 15) over the tile, nothing else. So the additive method needs **region + ONE pin**, not
+  overlays/polygon.
+- **The exact additive signature ruled:** `func fullBleedMap(coordinate: Coordinate) -> some View` (one address
+  coordinate in; a region-bound full-bleed map view out). The **camera bottom-padding** for the sheet peek is the
+  `MapBackdrop` `EdgeInsets(0,0,sheetPeekPx,0)` parity (`:273-281`) — passed from the `SnapSheet` container (ADR-0021 D1)
+  so the pin sits in the unobscured upper portion. Zoom-15 default (the `:277` parity).
+- **Why NO overlay/polygon now:** adding `overlays:`/`polygon:` would design `T-0334`'s (possible) service-area surface
+  before any geometry exists — the **exact speculative shape §7.6 D1 rejected** for the picker. If a service-area surface
+  ever has data, add overlay support **additively** then (a new method or an additive param), behind the **unchanged**
+  `MapProvider` seam — one provider grows, no call site breaks.
+- **The one sanctioned consumer:** the `fullBleedMap`-produced view is inside `MapKitMapProvider` (the only MapKit
+  consumer alongside the §7.6 picker factory); **feature/VM code imports neither MapKit nor the view's internals**
+  (reviewer #7/#12). The `SnapSheet` (ADR-0021) composes the map under the sheet; the OrderDetail feature sees only
+  `fullBleedMap(coordinate:)` + `SnapSheet`, never MapKit.
+
+#### Decision (b) — THE 3-SNAP SHEET ON THE iOS-16.0 FLOOR → a CUSTOM non-modal `SnapSheet` container in `CleansiaCore`; the floor STAYS 16.0 (the ADR-worthy one → **ADR-0021**)
+
+**RULING: build a CUSTOM non-modal 3-snap container (`SnapSheet`) in `CleansiaCore` — a `GeometryReader` +
+drag-gesture container with three snap offsets (map-focus / peek≈0.75 / expanded), layered over the always-present
+full-bleed map, 16.0-safe (no `.presentationDetents`). The ADR-0014 deployment floor STAYS 16.0 (NOT bumped). Native
+`.sheet`+`.presentationDetents` remain the way for MODAL sheets (the customer booking sheet). This is decision (b),
+option (ii). Because it could have moved the deployment floor and it sets "the one way iOS does a non-modal map sheet,"
+it is recorded as a genuine decision → ADR-0021 (extends ADR-0014 D6′ + refines ADR-0018 D3). The lower-risk fallback
+(option iii — a 2-detent native modal) is recorded in ADR-0021 as the EXPLICITLY-approved-only fallback, never a silent
+collapse.**
+
+- **The trade-off (full detail + alternatives + why-not):** see **ADR-0021** — it weighs (i) bump the floor to 16.4
+  (rejected: re-opens the owner's 2017-device-reach decision; and even at 16.4 a `.sheet` is **modal** — still can't be
+  the always-present-over-a-live-map layer), (ii) the custom non-modal container (CHOSEN: 16.0-safe AND full layout
+  parity), and (iii) collapse to a 2-detent modal (rejected as the answer — it is an ADR-0018 D1/Gate-DP **layout**
+  divergence, kept only as the noted+re-approved fallback). **Why an ADR and not a §7.9 line:** unlike (a)/(c)/(d)/(e),
+  this does not apply an accepted ADR — it is a new trade-off that could move the floor (ADR-0018 CH-5's bar for a
+  superseding/extending ADR).
+- **What ADR-0021 fixes for the dev:** the OrderDetail sheet is `SnapSheet` (the Wolt/Foodora always-present-over-map
+  layer, `OrderDetailScreen.kt:172-245` parity — `skipHiddenState=true`, 0.75 peek, 3 anchors), **never** a modal
+  `.sheet`; the floor stays `[.iOS(.v16)]`; the modal/non-modal discriminator (D3) keeps native `.sheet` the default
+  for modal sheets. **Blocks Slice C.**
+
+#### Decision (c) — the lifecycle STATE MACHINE: a PURE, tested `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:) -> OrderPrimaryAction` sealed enum, shared by all THREE call sites (CANONICALIZES the Android inlined `when` — "the one way" — applies ADR-0013 "mirror the code" + DRY; no new ADR)
+
+**RULING: a PURE function `OrderPrimaryAction.action(for status: OrderStatus?, isMine: Bool, hasAfterPhotos: Bool) ->
+OrderPrimaryAction` returning a sealed enum, shared by the THREE call sites (the detail footer, the list Active-row
+inline action, and the list panes) — NOT an inline switch per site. This canonicalizes the Android shape (which
+INLINES the same `when (status)` inside the `OrderPrimaryAction` Composable, `OrderPrimaryAction.kt:54-126`, so three
+iOS sites would each re-inline it) into one tested pure function — "the one way." It mirrors the Android CODE's
+decision table exactly (ADR-0013 D9 "mirror the code") + DRY. Record, no new ADR. The ownership trust (§7.8 O1–O4) is
+SECURITY's — this rules only the function's SHAPE.**
+
+- **The canonical table (mirrors `OrderPrimaryAction.kt` exactly — verified; status int map in the Code→OrderStatus
+  convention below):**
+
+  | status (typed enum, via the mapping below) | isMine | → action |
+  |---|---|---|
+  | `_0` New / `_2` Confirmed, **not** mine | false | **`.take`** (the `!isAssignedToCurrentUser` branch, `:55-64`) |
+  | `_2` Confirmed, mine | true | **`.notifyOnTheWay`** (`:65-79`) |
+  | `_3` OnTheWay, mine | true | **`.start`** (`:84-98`) |
+  | `_4` InProgress, mine, `hasAfterPhotos == true` | true | **`.complete`** (`:106-113`) |
+  | `_4` InProgress, mine, `hasAfterPhotos == false` | true | **`.completeBlocked`** (the soft hint, `:114-122`) |
+  | `_0` New, mine / `_5` Completed / `_6` Cancelled / `nil` / anything else | — | **`.none`** (no footer — `:80-83,125`) |
+
+  The sealed enum: `enum OrderPrimaryAction { case take, notifyOnTheWay, start, complete, completeBlocked, none }`.
+- **Why a shared pure function (the canonicalization, on the "earns its place" bar):** Android inlines the table in a
+  Composable, so the list's inline-action path and the detail footer each re-derive "what action is valid for this row's
+  status×ownership." On iOS, three call sites re-inlining the table is a drift risk (a rule change must touch three
+  switches). One **pure, tested** function makes the codebase **more consistent** and the *future* lifecycle change
+  (e.g. a new state) **cheaper** (one edit, one test) — it earns its place. **Rejected: an inline switch per site** —
+  three copies of a lifecycle decision table.
+- **`hasAfterPhotos` is the seam to decision (d):** the `.complete` vs `.completeBlocked` split consumes
+  `hasAfterPhotos`, which T-0307 wires (the placeholder Photos section / the loaded order's photos report it) and T-0308
+  makes real — the `canComplete` parity (`OrderPrimaryAction.kt:51,106`). The **backend validator stays the safety net**
+  (the `AfterPhotosRequired` guard); `.completeBlocked` is a client-side soft hint, not the gate.
+- **Scope boundary (SECURITY owns the gate, this owns the SHAPE):** whether `isMine` may be trusted, how it is derived,
+  the no-client-id-echo rule, and server-side enforcement are **§7.8 (security) O1–O4** — this function consumes
+  `isMine`/`hasAfterPhotos` as inputs and is purely presentational (which footer to show). The server is authoritative
+  on every transition; the function never decides authority.
+
+#### Decision (d) — the T-0308 PHOTO PRECURSOR seam: T-0307 renders a DISABLED/placeholder Photos section + the `hasAfterPhotos` consumer; T-0308 fills capture ADDITIVELY (CONFIRM the seam — applies ADR-0013 parity + T-0308's home; no new ADR)
+
+**RULING: CONFIRMED as briefed. T-0307 leaves the photo seam so the Complete-blocked hint is meaningful, but does NOT
+build capture: (1) the `OrderPrimaryAction` `.complete`/`.completeBlocked` split already consumes `hasAfterPhotos`
+(decision (c)); (2) the OrderDetail sheet RESERVES the Photos slot, rendered as a DISABLED/placeholder section. T-0308
+fills photo CAPTURE additively — no OrderDetail re-layout. Confirm the seam, no new ADR (Android's `PhotosSection`
+sits in the OrderDetail sheet and gates Complete via `hasAfterPhotos` — the parity is the seam; T-0308 owns capture).**
+
+- **The seam shape (verified):** Android's `PhotosSection.kt` sits in the OrderDetail sheet and the Complete action
+  gates on after-photos presence (`OrderPrimaryAction.kt:106` `canComplete`). T-0307 ports the **slot + the consumer**:
+  the sheet renders a Photos section in its Android position (so the layout is final — Gate-DP parity), in a
+  **disabled/placeholder** state (e.g. "Photos — added in T-0308" or a non-interactive thumbnail strip), and the detail
+  VM derives `hasAfterPhotos` (from the loaded order's photos, which the read DTO already carries) to feed decision (c)'s
+  `.complete` vs `.completeBlocked`.
+- **Why this is the right seam (not under-scoping, not over-reaching):** the Complete-blocked hint is meaningless
+  without the photo concept, so T-0307 must know `hasAfterPhotos`; but **capture** (camera, JSON base64 upload,
+  `SaveOrderPhotosCommand`) is a self-contained slice with its own home (T-0308) and its own size. Reserving the slot +
+  wiring the consumer means T-0308 is **purely additive** — it drops the capture UI into the reserved section and the
+  upload into the existing repo, with **no OrderDetail re-layout** (the §7.2/§7.3 "inert-now, additive-later" precedent).
+- **The low-stakes note (recorded):** if the placeholder is interactive-looking, it risks an ADR-0016 "no dead/placeholder
+  control" finding — so the placeholder must be **visibly disabled** (no tappable affordance that no-ops), the same
+  inert-not-dead discipline §7.4(a)'s contact-support row took.
+
+#### Decision (e) — the LIST STATE SHAPE: a sealed per-pane `UiState<[OrderListItem]>` + a 3-case refresh-phase enum (NOT the Android E1 flag-bag), PORTING the per-pane staleness cache; record the SlideToCommit → native-confirm divergence (applies ADR-0014 D2′ + §7.7 D5 + the Parity rule + the T-0310 D5 precedent; no new ADR)
+
+**RULING: the iOS list is born sealed-state canonical — a sealed `UiState<[OrderListItem]>` per pane (the initial-load
+lifecycle) PLUS a small explicit refresh-phase enum (`idle`/`userRefreshing`/`backgroundRefreshing`) that preserves the
+silent-stale "PTR-only-on-user-pull" behavior — NOT the Android boolean flag-bag. AND: the per-pane staleness/cache
+singleton (the ~30s watermarks + `invalidatePanesFor` mutation→panes mapping) is PORTED (it is load-bearing for the
+no-flash resume UX) — NOT simplified to load-on-appear + `.refreshable`. The inline-action component diverges (Android
+`SlideToCommit` → an iOS-native confirm affordance) — a recorded Gate-DP component swap. This applies §7.7 D5 (Android
+E1 flag-bags NOT replicated on iOS) + the T-0310 D5 precedent + the Parity rule. Record, no new ADR.**
+
+- **The Android E1 flag-bag (confirmed in source).** `OrdersListUiState` (`OrdersListViewModel.kt:89-120`) is a single
+  `data class` with `isInitialLoad` + `isUserRefreshing` + `isBackgroundRefreshing` + `hasLoadedOnce` +
+  `inFlightActionOrderId` + `error` + filter state — the **E1** smell (`consistency.md` E1: "never a single flag-bag
+  with `isLoading`/`error` booleans"), permitting impossible states (`isInitialLoad && hasLoadedOnce`). Exactly the case
+  §7.7 D5 / T-0310 D5 ruled "don't replicate; diverge correctly; file the Android fix."
+- **The iOS-canonical shape (the load-bearing nuance — the silent-stale behavior must survive the refactor).** Per
+  ADR-0014 D2′ + `consistency.md` E1: the pane's data-load lifecycle is a sealed `UiState<[OrderListItem]>`
+  (`.loading` / `.error(canRetry:)` / `.loaded([OrderListItem])`). But the silent-stale pattern needs a SECOND axis the
+  E1 enum doesn't carry — *which kind of refresh is in flight* — because the chunky pull indicator (PTR) must fire
+  **only** on a user pull, never on auto/background refresh (`OrdersListViewModel.kt:73-88,222-230` — the whole point of
+  splitting the flags). So the iOS shape is the sealed `UiState` **plus** a small explicit
+  `enum RefreshPhase { case idle, userRefreshing, backgroundRefreshing }`: PTR binds to `== .userRefreshing` (the
+  `isUserRefreshing` parity), `.backgroundRefreshing` is invisible (no chunky indicator — the silent-stale resume), and
+  `.loaded` content stays mounted through a background refresh (no spinner flash). **Two orthogonal sealed states**,
+  not a flag-bag — preserving the behavior while removing the impossible states. (Per-pane: each of the three panes
+  carries its own `UiState` + `RefreshPhase`, the independent-pane parity.)
+- **The per-pane staleness cache is PORTED (the parity rule — a behavior divergence must be explicitly approved, and
+  this one is NOT approved to drop).** `OrdersRepository` is a `@Singleton` with **three independent per-pane `Staleness`
+  watermarks** (default 30s) + a per-order watermark + `invalidatePanesFor(mutation)` mapping each mutation to the panes
+  it changes (Take/NotifyOnTheWay → Available+Active; Start → Active; Complete → Active+History; the third pane stays
+  warm — `OrdersRepository.kt:159-192`). This is **load-bearing for the no-flash resume UX**: returning from OrderDetail
+  after a take/start/complete refreshes silently (warm cache = no-op; stale = background fetch, no chunky indicator) and
+  a mutation invalidates exactly the affected panes. **It is PORTED to iOS** — an actor/class with the same per-pane/
+  per-order watermarks + the same mutation→panes map, registered in the `SessionScopedCacheRegistry` (cleared on
+  sign-out). **Simplifying to load-on-appear + `.refreshable` for v1 is a behavior divergence (flash-on-resume, lost
+  cross-pane invalidation) — REJECTED, not silently dropped** (the Parity rule: a behavior difference must be
+  ticket-called-for and approved; this one is explicitly NOT approved). The §7.2/§7.4 dashboard-cache deferral does
+  **not** apply here — that was the proving vertical with no resume loop; the order work-loop's resume-after-mutation
+  **is** the cache's reason to exist.
+- **The recorded Gate-DP divergence (architect sign-off) — SlideToCommit → native confirm affordance.** Android's
+  inline + footer commit gesture is a custom `SlideToCommit` slider (`SlideToCommit.kt`). iOS uses an **iOS-native
+  confirm affordance** for the same commit (a native button + `.confirmationDialog`/haptic; the list inline =
+  `swipeActions` row action) — the ADR-0018 D3 component swap (custom gesture → native control), keeping the same action
+  set, the same in-flight spinner semantics (`inFlightActionOrderId` parity), the same one-action-at-a-time guard
+  (`OrdersListViewModel.kt:329`, the §7.8 O4 re-entry guard). **Noted divergence:** *"Android SlideToCommit → iOS-native
+  confirm affordance; same commit actions/in-flight/guard; the divergence touches the component, not
+  layout/flow/branding"* — passes Gate-DP #3.
+- **Android E1 fix filed:** the `OrdersListUiState` flag-bag fix folds into the existing partner state-cleanup
+  follow-up **T-0337** (the §7.7 D5 home for Android partner E1 flag-bags) — one android cleanup ticket, independent of
+  the iOS wave.
+
+#### The Code→OrderStatus mapping convention (the read-path DTO envelope — a small canonical rule across the orders surface)
+
+**RULING (recorded as a convention, harvested to `patterns-mobile`):** the generated read-path DTOs (`OrderItem.orderStatus`,
+`OrderListItem.orderStatus`) carry a **`Code` envelope** (`{type, name, value: Int?}`), NOT the typed `OrderStatus`
+enum (the generated action responses — `StartOrderResponse.newStatus`, `CompleteOrderResponse.newStatus`,
+`NotifyOnTheWayResponse.newStatus` — DO carry the typed `OrderStatus`). Map the envelope to the typed enum in
+**exactly one** place — a Core (or orders-feature) extension:
+
+```swift
+// The Code envelope → typed OrderStatus, the ONE mapping. OrderStatus is `: Int` with rawValues 0...6
+// matching the backend ints (OrderStatus.swift). The Android `Code?.toOrderStatus()` parity (OrderStatusPill.kt:40-42).
+extension Code {
+    func toOrderStatus() -> OrderStatus? { value.flatMap(OrderStatus.init(rawValue:)) }
+}
+// Backend int map (OrderStatusPill.kt:36-37, the UI single source of truth):
+// 0 New · 1 Pending · 2 Confirmed · 3 OnTheWay · 4 InProgress · 5 Completed · 6 Cancelled
+```
+
+- **Why one place:** every status read (the pill, the timeline, decision (c)'s action table, the pane filters) needs the
+  typed enum; re-deriving `Code.value` → enum at each site is drift (and a nil-`value` foot-gun). One extension is "the
+  one way," tested once. **Deviation a reviewer rejects:** a call site reading `orderStatus.value` and comparing the raw
+  `Int` (e.g. `== 4`) instead of mapping to `OrderStatus._4`, or a second `Code→OrderStatus` mapper.
+- **The pane filters use the typed enum for the query** (the `OrdersListViewModel.kt:235-251` parity: Available =
+  `[_0,_2]` + `isUnassigned`; MyActive = `[_2,_3,_4]` + employeeId; MyCompleted = `[_5]` + employeeId) — sent as the
+  `filterOrderStatuses` ints, mirroring Android (the employeeId is a hint; the server is truth — §7.8 O3).
+
+#### The recorded Gate-DP divergences (T-0307 — all component-only, none touch layout/flow/branding)
+
+1. **The OrderDetail sheet: Compose `BottomSheetScaffold` (non-modal 3-snap) → the custom `SnapSheet` Core container**
+   (NOT a modal `.sheet`) — the iOS-16.0-floor decision, **ADR-0021** (the detent decision). Same
+   always-present-over-map layout, 3 anchors, 0.75 peek.
+2. **Commit gesture: `SlideToCommit` slider → iOS-native confirm affordance** (button + confirmation/haptic; list inline
+   = `swipeActions`) — decision (e). Same actions, in-flight, guard.
+3. **No service-area polygon** (and no polygon param on `fullBleedMap`) — decision (a): there is no polygon data in the
+   partner spec and Android renders none; overlay support is additive IF T-0334 ever has geometry. (Recorded so a
+   reviewer does not flag the absence — Android has none either.)
+
+#### Reviewer-check additions (T-0307+)
+
+- **#29 (ADR-0021) — the OrderDetail sheet is the custom non-modal `SnapSheet`, not a modal `.sheet`.** Layered over the
+  always-present full-bleed map, 3 snap offsets (map-focus/peek≈0.75/expanded) via drag, no `.sheet`/dismiss state
+  (`skipHiddenState=true` parity), map camera bottom-padded by the sheet offset. **Findings:** a modal `.sheet` for
+  OrderDetail (an ADR-0018 D1/Gate-DP layout divergence); a 2-anchor collapse without the noted+re-approved fallback; a
+  `SnapSheet` used for a genuinely modal sheet (D3 boundary); any `@available(iOS 16.4)` that lifts the floor (the floor
+  stays 16.0). **Test: TC-IOS-SNAP** (the pure snap-offset resolver — see ADR-0021).
+- **#30 (§7.9 (a)/(e)) — the order map + list state are the canonical shapes.** (a) `fullBleedMap(coordinate:)` is one
+  additive `MapProvider` method (single pin, no polygon param) inside `MapKitMapProvider`; feature/VM import no MapKit
+  (composes with #7/#12). (e) the list is a sealed per-pane `UiState<[OrderListItem]>` + a `RefreshPhase` enum (NOT a
+  flag-bag struct), the per-pane/per-order staleness cache is PORTED (not load-on-appear), and the commit affordance is
+  iOS-native (the SlideToCommit divergence, noted). **Findings:** a ported `OrdersListUiState` flag-bag; PTR firing on
+  background refresh; dropping the staleness cache without explicit approval; a `fullBleedMap` overlay/polygon param
+  with no data; a feature `import MapKit`.
+- **#31 (§7.9 (c)/Code-convention) — the lifecycle action + status mapping are the one way.** (c) the primary action is
+  the pure shared `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:)` (not three inline switches); the function is
+  presentational and consumes `isMine`/`hasAfterPhotos` (ownership trust = §7.8 O1–O4). Code→OrderStatus is mapped in
+  exactly one `Code.toOrderStatus()` extension (no raw-`Int` `.value` comparisons; no second mapper). **Findings:** an
+  inline per-site action switch; a raw `orderStatus.value == N` comparison; a second status mapper. **Test:
+  TC-IOS-ORDER-ACTION** (the pure action table — every row of the decision (c) table, incl. `nil`/Completed/Cancelled →
+  `.none` and `_4`+mine+!photos → `.completeBlocked`).
+
+#### New / updated CRC roles (added with the T-0307 wiring)
+
+- **`ios-snap-sheet`** (new, `CleansiaCore/Components`) — the `SnapSheet` non-modal 3-snap container (ADR-0021):
+  *responsibility:* render content over a full-bleed backdrop parked at one of three drag-driven snap offsets
+  (map-focus/peek/expanded) and report its current offset for backdrop camera-padding. *Collaborators:* the host view
+  (which supplies the backdrop + content), `GeometryReader`/`DragGesture`. *Does NOT know:* what's in the content or the
+  backdrop (order data, MapKit), whether it's an order or a future map screen, or any feature/VM logic.
+- **`ios-order-primary-action`** (new, partner orders feature) — the pure `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:)`
+  table (decision (c)): *responsibility:* map status×ownership×after-photos → the one valid primary action (a sealed
+  enum), mirroring `OrderPrimaryAction.kt`. *Collaborators:* none (pure function over value inputs). *Does NOT know:*
+  how `isMine`/`hasAfterPhotos` are trusted (SECURITY §7.8 owns the ownership gate; the server is authoritative), how
+  the action is rendered (footer vs swipe), or how it is dispatched.
+- **`ios-orders-cache`** (new, the `OrdersRepository` staleness parity) — *responsibility:* hold the per-pane (~30s) +
+  per-order freshness watermarks, answer `isPaneStale`/`isOrderStale`, and `invalidatePanesFor(mutation)` mapping each
+  mutation to the panes it changes. *Collaborators:* the orders generated client (via the ADR-0019 spine), the
+  `SessionScopedCacheRegistry` (cleared on sign-out). *Does NOT know:* the UI refresh-phase (that's the VM's
+  `RefreshPhase`), which pane is on screen, or the token/device id (the Keychain spine).
+- **`ios-order-detail-vm`** (new) — the sealed `OrderDetailUiState` (Loading/Error/Loaded) + `ActionState` +
+  `OrderAction?` in-flight (the `OrderDetailViewModel.kt` parity — already canonical on Android, ported 1:1):
+  *responsibility:* load/refresh the order (silent-stale via `ios-orders-cache`), run lifecycle actions, derive
+  `hasAfterPhotos`, surface success/error via the `SnackbarController`. *Collaborators:* `ios-orders-cache`,
+  `ios-order-primary-action` (for the footer's action), `SnackbarController`, the orders client. *Does NOT know:* the
+  sheet's snap mechanics (`ios-snap-sheet`), MapKit (`fullBleedMap`), or photo capture (T-0308).
+
+---
+
+### 7.10 T-0308 (Phase-4 partner order PHOTOS — camera/library capture → base64-over-JSON upload, read-back, delete, Complete-unblock) — acceptance scope + the four Understand-pass rulings (recorded 2026-06-27, architect)
+
+> **The photo-upload OWNERSHIP / EXIF-gate is ruled by SECURITY in parallel (`security/ios-orders.md`) — this
+> architect record stays OUT of it.** The decisions below rule only the *capture seam shape*, the *compression
+> target*, the *read-back/image-loading component*, and the *plist scope* — never who may upload to which order,
+> nor metadata stripping. T-0307's §7.9 (d) already CONFIRMED the photo precursor seam (the reserved Photos slot +
+> the `hasAfterPhotos` consumer); T-0308 makes the producer real.
+
+T-0308 (`L → split`, `phase/ios-phase4`, depends_on T-0307) fills the disabled Photos placeholder T-0307 left in
+the OrderDetail sheet (gated behind `showWorkSections`), via camera/library capture → **base64-over-JSON** upload —
+the **partner** shape: `PartnerOrderAPI.orderSavePhotos(SaveOrderPhotosCommand{orderId, photos:[SaveOrderPhotos
+PhotoToSave{photoType, file: BlobFileDto{fileName, base64Content, contentType}, notes}]})`; read-back via
+`orderGetPhotos(orderId) → GetOrderPhotosResponse{photos:[GetOrderPhotosOrderPhotoDto{id, blobUrl, photoType…}]}`;
+delete via `orderDeletePhoto(photoId)`. `PhotoType._1 = Before`, `._2 = After`. The after-photo flips
+`OrderPrimaryAction.completeBlocked → .complete` via the server-recomputed `OrderItem.hasAfterPhotos` (T-0307 §7.9
+(c) built the consumer; T-0308 makes the producer real). **2 slices (§6):** A = the capture seam + the base64/
+compression util (Core); B = `PhotosSection` + the upload/delete VM + the Complete-unblock wiring.
+
+**Android parity source (the iOS port mirrors it):** `partner-app/.../features/orders/PhotosSection.kt` (two rails
+Before/After, each an Add tile + thumbnail strip + per-tile delete), `OrderPhotosViewModel.kt` (the
+`OrderPhotosUiState` Loading/Error/Loaded + the `PhotoMutationState{isUploading, deletingId}` + the
+`mutationVersion` monotonic counter → parent refresh), `OrderDetailScreen.kt` (the `PhotosSection` wiring +
+`canUploadBefore/After` windows + `canComplete = order.hasAfterPhotos == true`, `:530-558`), and
+`data/orders/OrdersRepository.kt` (`getPhotos`/`uploadPhoto`/`deletePhoto`, the single-photo `orderSavePhotos`
+batch-of-one, `:261-297`). **Gate-DP applies** (T-0308 is a screen ticket): the Photos section cites
+`PhotosSection.kt`; native SwiftUI; iOS-wins-on-conflict + the noted divergences (camera-vs-gallery, the
+1920/0.7 compression, Coil → `AsyncImage`).
+
+**This is a "record, not ADR" ruling — the §7.2/§7.4/§7.5/§7.6/§7.7/§7.9 precedent.** All four decisions **APPLY
+accepted ADRs**: decision (a) applies ADR-0018 D2 (native-SwiftUI brand-skin component) + D3/Gate-DP (the noted
+camera enhancement divergence); (b) applies the Parity rule + ADR-0018 D3 (a recorded pixel-dimension divergence
+for a perf reason) — a bounded pure helper, no optimizer pass needed; (c) applies ADR-0018 D3 (the Coil → SwiftUI
+`AsyncImage` mapping, already in the table) + ADR-0013 parity (trust the re-fetched `hasAfterPhotos`); (d) applies
+ADR-0016 AR-PRIV-4 (purpose strings in-ticket, the API_BASE_URL/fonts `info.properties` precedent). **No new
+trade-off rises to ADR-0021's bar** (a decision that could move the deployment floor, or that sets a wholly new
+canonical archetype with rejected alternatives that must be defended on the record). The **`UIViewController
+Representable` idiom is genuinely the repo's first** — but it is a *direct application* of ADR-0018 D2 (wrap a
+platform control as a native-SwiftUI brand-skin seam), not a new principle; it is harvested into `patterns-mobile`
+as a canonical idiom, the same living-doc fold-in CH-5 of ADR-0018 reserves for "a new control mapping a feature
+surfaces."
+
+**IN — T-0308 acceptance scope:**
+- **Slice A:** the **`CameraOrLibraryPicker`** `UIViewControllerRepresentable` in `CleansiaCore/Components` (a
+  camera-capable `UIImagePickerController` behind a SwiftUI seam — decision (a)) + a **pure `ImageCompressor`** Core
+  helper (downscale longest-side → 1920px aspect-preserved + JPEG quality 0.7 → `Data` + `contentType` "image/jpeg",
+  encoded OFF the main thread — decision (b)).
+- **Slice B:** the **`PhotosSection`** view (two rails Before/After, the Add tile → an action sheet Take Photo /
+  Choose from Library — decision (a)) + the **`OrderPhotosViewModel`** (the `OrderPhotosUiState` Loading/Error/Loaded
+  + the per-rail mutation substate + the `mutationVersion`-style parent-refresh bump) over the photo methods on the
+  orders repo (via the ADR-0019 spine), reading back with SwiftUI **`AsyncImage`** (decision (c)), and the
+  Complete-unblock wiring trusting the **re-fetched `OrderItem.hasAfterPhotos`** (decision (c)).
+- **The two plist keys** (`NSCameraUsageDescription` + `NSPhotoLibraryUsageDescription`) added IN-TICKET to the
+  **partner** `project.yml` `info.properties` + localized ×5 via `InfoPlist.strings` (decision (d)).
+
+**DEFERRED — explicitly out of T-0308, with the ticket each lands in:**
+- **The customer app's camera plist keys** → **T-0314** (decision (d): the Customer app carries its own
+  `NSCameraUsageDescription`/`NSPhotoLibraryUsageDescription` when T-0314's dispute-evidence capture lands — pre-adding
+  them to the customer `project.yml` now ships a declared-but-unused capability, an AR-PRIV-4 "no purpose string for a
+  capability the app does NOT use" risk).
+- **The photo-upload ownership / EXIF-strip gate** → **SECURITY** (`security/ios-orders.md`, ruled in parallel — out
+  of this record).
+
+#### Decision (a) — THE CAPTURE SEAM: a camera-capable `UIImagePickerController` behind a NEW `CleansiaCore/Components` `UIViewControllerRepresentable` (the repo's FIRST — make it the canonical "imperative-UIKit-controller-behind-a-SwiftUI-seam" idiom); the Add tile opens an action sheet Take Photo / Choose from Library (APPLIES ADR-0018 D2/D3 — no new ADR)
+
+**RULING: build a `UIViewControllerRepresentable` wrapping a camera-capable `UIImagePickerController` in
+`CleansiaCore/Components` (sketch name `CameraOrLibraryPicker`; the exact Swift surface is the dev's, the contract is
+fixed: it presents a `sourceType` picker and returns ONE picked `UIImage`/`Data` via a callback, dismissing itself).
+This is the repo's FIRST `UIViewControllerRepresentable` — make it the CANONICAL "imperative-UIKit-controller-behind-
+a-SwiftUI-seam" idiom and HARVEST it into `patterns-mobile.md`. The single Add tile (the Android single-affordance
+rail layout) opens a NATIVE `.confirmationDialog` action sheet — `Take Photo` (`.camera`) / `Choose from Library`
+(`.photoLibrary`) / `Cancel` — which then presents the representable with the chosen `sourceType`.**
+
+- **Why a `UIImagePickerController` representable (vs the rejected alternatives):**
+  - **PHPicker (library-only)** — REJECTED: `PHPickerViewController` is the modern library picker but has **no
+    camera source**; the T-0308 ticket requires **camera capture**, so PHPicker fails the requirement outright.
+  - **AVFoundation (custom capture pipeline)** — REJECTED: a bespoke `AVCaptureSession` camera UI is **over-engineered**
+    for "take/pick one photo of a cleaning job" — it re-builds the system camera (preview layer, orientation, flash,
+    permissions UX) that `UIImagePickerController` provides for free, adds large surface to test, and diverges from
+    "native, no extra framework" (ADR-0018 D2). Reserved only for a future requirement the system camera can't meet
+    (none here).
+  - **`UIImagePickerController` representable** — CHOSEN: it is the one native control that does **both** camera and
+    library from a single API (`sourceType = .camera | .photoLibrary`), maps cleanly to the Android single-Add-tile
+    rail (one affordance → an action-sheet source choice), and is wrapped as a `CleansiaCore` brand-skin seam (ADR-0018
+    D2 — the `Cleansia*` brand-skin-over-native posture). It is `UIImagePickerController`-deprecation-tolerant for the
+    floor (it is **not** deprecated on iOS 16; it remains the canonical camera-source picker).
+- **Why a `UIViewControllerRepresentable` (and why it earns its place in the catalog):** SwiftUI has **no** native
+  camera/photo-source control on the iOS-16 floor — the platform answer is to wrap the UIKit controller in a
+  `UIViewControllerRepresentable` (the controller analogue of the `UIViewRepresentable`/`MKMapView` map seam ADR-0014
+  D6′ already established for the *view* case). This is the repo's **first** `UIViewControllerRepresentable`; homing it
+  in `CleansiaCore/Components` and harvesting the idiom makes the **next** imperative-UIKit-controller need (a future
+  document/share/contact picker) cheaper and consistent — it earns its place on the "makes future changes cheaper"
+  bar. It does **not** introduce a new principle: it is ADR-0018 D2 applied to the *controller* case (the existing
+  `UIViewRepresentable` MapKit seam is the *view* sibling), folded into the catalog per ADR-0018 CH-5 (a new control
+  pattern a feature surfaces is a living-doc/catalog fold-in, not a superseding ADR).
+- **THE CATALOG CORRECTION (the false precedent):** any claim that the `AddressPicker` (T-0306) established a
+  `UIViewControllerRepresentable` precedent is **FALSE** — the `AddressPicker` is **pure MapKit/SwiftUI** (the iOS-16
+  `Map(coordinateRegion:annotationItems:[])` SwiftUI view + a SwiftUI overlay pin + `CLGeocoder`/`MKLocalSearch`); it
+  uses **neither** a `UIViewControllerRepresentable` **nor** a `UIViewRepresentable` (the `MKMapView`/
+  `UIViewRepresentable` surface is `fullBleedMap` in T-0307, a *view* representable, not a *controller* one).
+  `CameraOrLibraryPicker` is therefore genuinely the **first `UIViewControllerRepresentable`** in the repo. (Verified:
+  §7.6/§7.9 + `patterns-mobile` describe the AddressPicker as SwiftUI `Map(coordinateRegion:)` + `CLGeocoder`; no
+  representable claim exists in the catalog today, so the correction is a guard against the claim re-entering — see the
+  `patterns-mobile` harvest below.)
+- **The Gate-DP camera-vs-gallery divergence (architect sign-off — decision (a) half):** the Android partner
+  `PhotosSection.kt` Add tile launches **`ActivityResultContracts.GetContent()` with `"image/*"`** — **GALLERY-ONLY**
+  (`:146-161,200`); it has **no camera path**. The T-0308 ticket calls for **camera capture**, so iOS ships **camera +
+  library** (the action sheet) — an explicit, recorded **iOS ENHANCEMENT** over Android's gallery-only. This is a
+  Gate-DP **divergence with architect sign-off**: *"Android Add tile = gallery-only (`GetContent`); iOS Add tile =
+  Take Photo / Choose from Library (camera + library), the ticket's camera requirement; the divergence ADDS a source
+  affordance, it does NOT move layout/flow/branding (same single Add tile, same two rails, same thumbnail strip)."* It
+  passes Gate-DP #3 (component-only, layout/flow/branding identical). **The Android gallery-only is itself a small gap**
+  (a partner can't shoot a job photo in-app on Android) → a PM-filed Android follow-up may add a camera source there
+  (the Parity rule's "Android is thin → iOS does it right, file the Android catch-up"), independent of the iOS wave.
+
+#### Decision (b) — THE BASE64 COMPRESSION TARGET: downscale longest-side → 1920px (aspect-preserved) + JPEG quality 0.7 + contentType "image/jpeg", encoded OFF the main thread — a PURE Core helper (strict TDD); a recorded iOS pixel-dimension divergence for the perf reason (APPLIES the Parity rule + ADR-0018 D3 — no new ADR, no optimizer pass)
+
+**RULING: the iOS upload downscales to a max longest-side dimension of 1920px (aspect-preserved, never upscale) +
+JPEG quality 0.7, `contentType = "image/jpeg"`, encoded OFF the main thread (a background `Task`/queue), as a PURE
+`CleansiaCore` helper (`ImageCompressor`) built strict-TDD. This is an iOS-only DIVERGENCE — Android ships RAW camera
+bytes uncompressed (`PhotosSection.kt:155-159`: `readBytes()` → `Base64.encodeToString(bytes, NO_WRAP)`, comment
+acknowledging "Base64 encoding can be slow for multi-MB images") so a 3–8MB image is base64-inflated ~33% over the
+JSON body + held in memory. The iOS downscale+JPEG changes pixel dimensions vs Android — recorded as a deliberate
+divergence with the perf rationale. It is a bounded pure helper, so the architect ruling SUFFICES — no optimizer pass.**
+
+- **The numbers (confirm + rationale):** **1920px longest side** (aspect-preserved, never upscale a smaller image) +
+  **JPEG quality 0.7** + **`contentType = "image/jpeg"`** + **`fileName`** carried through as `"<uuid>.jpg"` (the
+  Android-derived-filename parity, simplified — Android derives it from the gallery URI's last path segment; an iOS
+  camera capture has no URI, so a generated `.jpg` name is the clean iOS equivalent). 1920px is a sensible
+  "job-evidence" resolution (full-HD long edge — legible detail, ~0.2–0.5MB JPEG vs 3–8MB raw); 0.7 is the standard
+  "visually lossless enough for a photo record" quality. These are confirmed as the target; the dev tunes nothing
+  outside this without a re-record.
+- **Why iOS diverges from Android's raw bytes (the perf call):** the transport is **base64-over-JSON**, which inflates
+  the payload **~33%** AND materializes the whole encoded string in memory (the `SaveOrderPhotosCommand` body). Android
+  ships raw multi-MB bytes through that path and even comments on the cost; iOS **does it right** — a 1920/0.7 JPEG is
+  ~10–30× smaller, so the base64 body + the in-memory string are bounded, the upload is faster, and the OOM risk on
+  older 2017 floor devices (iPhone 8/X, the ADR-0014 reach) is removed. This is the canonical Parity-rule shape
+  (*Android is wasteful → iOS does it right, record the divergence, the Android perf fix is a separate catch-up*).
+- **Recorded as a Gate-DP-adjacent divergence (it changes pixels, not layout):** *"Android uploads raw camera bytes
+  (no downscale); iOS downscales to 1920px longest-side + JPEG 0.7 before base64 — a deliberate iOS perf divergence
+  (smaller base64-over-JSON body + bounded memory), changing the uploaded pixel dimensions, not the
+  layout/flow/branding."* (Strictly this is a *behavior/perf* divergence under the Parity rule rather than a Gate-DP
+  *component* swap — recorded in both registers so a reviewer doesn't flag the dimension difference as a parity bug.)
+  The Android raw-bytes perf fix (add a downscale before base64) is a PM-filed Android follow-up, independent of the
+  iOS wave.
+- **It is a PURE helper → strict TDD, no optimizer pass (the architect's call, as briefed):** `ImageCompressor` takes
+  a `UIImage` (or `Data`) → returns `(Data, contentType: String)`; it is a deterministic, side-effect-free transform
+  (the off-main-thread *call site* is the VM's, the helper itself is pure). Its bounds make it ideal for red-first unit
+  tests (a >1920 image scales to ≤1920 longest side aspect-preserved; a ≤1920 image is NOT upscaled; output is JPEG;
+  output bytes < input for a large image). It is **bounded** (one transform, no allocation strategy / streaming /
+  threading policy to optimize), so the architect ruling SUFFICES — **no optimizer pass** is warranted (an optimizer
+  pass is for an unbounded hot path / allocation profile; a single bounded downscale is not one).
+
+#### Decision (c) — READ-BACK + IMAGE LOADING: read via `orderGetPhotos → GetOrderPhotosOrderPhotoDto.blobUrl`, render with iOS-16 SwiftUI `AsyncImage` (the Coil `SubcomposeAsyncImage` → `AsyncImage` Gate-DP component swap, no 3rd-party dep); the Complete gate trusts the RE-FETCHED `OrderItem.hasAfterPhotos`, NOT `GetOrderPhotosResponse.afterPhotoCount` (APPLIES ADR-0018 D3 + ADR-0013 parity — no new ADR)
+
+**RULING (CONFIRMED as briefed): read back via `orderGetPhotos(orderId) → GetOrderPhotosResponse.photos`, each a
+`GetOrderPhotosOrderPhotoDto` carrying `blobUrl`; render each thumbnail with the iOS-16 SwiftUI `AsyncImage`
+(`init(url:content:placeholder:)`, with a loading placeholder + a visible failure state). This is the ADR-0018 D3
+canonical **Coil `SubcomposeAsyncImage` → SwiftUI `AsyncImage`** component swap (already in the mapping table) — a
+consistent Gate-DP component swap like the prior MapKit/native-confirm swaps, with NO 3rd-party dependency (no
+Kingfisher needed; `blobUrl` is a fresh SAS URL per fetch). AND: the Complete gate trusts the RE-FETCHED
+`OrderItem.hasAfterPhotos` (the loaded order's server-recomputed flag) — it does NOT short-circuit off
+`GetOrderPhotosResponse.afterPhotoCount`.**
+
+- **The image-loading swap (confirm):** Android renders thumbnails with Coil `SubcomposeAsyncImage` (distinct loading
+  / error states, `PhotosSection.kt:235-272`). iOS uses SwiftUI **`AsyncImage`** — the ADR-0018 D3 table's
+  `Coil AsyncImage → SwiftUI AsyncImage` row (verified present in the catalog) — with `AsyncImage`'s `phase`-based
+  content closure giving the same loading-spinner / broken-image-fallback the Android `SubcomposeAsyncImage` shows
+  (same frame/aspect/placeholder layout — the Gate-DP "what stays identical" column). **No Kingfisher / no 3rd-party
+  dep** (ADR-0018 D2 / ADR-0014 no-extra-framework): the partner `blobUrl` is a per-fetch SAS URL, so cross-fetch
+  caching parity is not load-bearing here; if a *future* surface needs disk-cache parity, Kingfisher is the
+  table-sanctioned fallback (a scoped dependency + a living-doc note), not now. **Recorded Gate-DP divergence:**
+  *"Coil `SubcomposeAsyncImage` → SwiftUI `AsyncImage`; same thumbnail frame/aspect + loading/broken-image states;
+  component-only, no layout/flow/branding change, no 3rd-party dep."*
+- **The Complete gate trusts the re-fetched `hasAfterPhotos` (confirm — the parity, verified in source):** Android's
+  Complete footer reads **`canComplete = order.hasAfterPhotos == true`** (`OrderDetailScreen.kt:558`) — the
+  **re-fetched `OrderItem.hasAfterPhotos`** (the server-recomputed flag on the loaded order), kept live by the
+  `PhotosSection` `onPhotosChanged` bump → the parent's `onContentMutated` refresh (`:133`, the `mutationVersion`
+  parity). It does **NOT** count `GetOrderPhotosResponse.afterPhotoCount` to decide Complete. iOS mirrors this:
+  decision (c) of §7.9 (the `OrderPrimaryAction` `.complete`/`.completeBlocked` split) consumes
+  `hasAfterPhotos` derived from the **re-fetched** `OrderItem`; after a successful upload/delete, the photos VM bumps a
+  parent-refresh signal (the `mutationVersion` analogue) so the OrderDetail VM re-fetches the order and
+  `hasAfterPhotos` flips, unblocking Complete. **Deviation a reviewer rejects:** the Complete gate computed from
+  `GetOrderPhotosResponse.afterPhotoCount` (or any client-side photo count) instead of the re-fetched
+  `OrderItem.hasAfterPhotos` — that forks the gate's source-of-truth from the server flag the backend validator also
+  enforces (the `AfterPhotosRequired` safety net stays authoritative; `.completeBlocked` is the client soft hint).
+- **The mutation/refresh shape (parity):** the iOS `OrderPhotosViewModel` mirrors `OrderPhotosViewModel.kt` — sealed
+  `OrderPhotosUiState` (Loading/Error/Loaded), a per-rail mutation substate (`isUploading` drives the Add-tile spinner;
+  `deletingId` drives the specific tile's spinner), a `mutationVersion`-style monotonic bump that the parent observes
+  to refresh the surrounding order (keeping `hasAfterPhotos` live). Single-photo upload via the **batch-of-one**
+  `orderSavePhotos` (one `SaveOrderPhotosPhotoToSave` in the `photos` array — the `OrdersRepository.kt:264-291`
+  parity); delete via `orderDeletePhoto(photoId)` then the VM invalidates its own orderId (the delete contract carries
+  only `photoId`). Upload windows port verbatim: `canUploadBefore = status ∈ {_3 OnTheWay, _4 InProgress}`,
+  `canUploadAfter = status == _4 InProgress` (`OrderDetailScreen.kt:530-532`); terminal orders (Completed/Cancelled)
+  render read-only (no Add tile, no delete).
+
+#### Decision (d) — PLIST SCOPE: the two `NS*UsageDescription` keys added IN-TICKET to the PARTNER `project.yml` `info.properties` (the API_BASE_URL/fonts precedent), localized ×5 via `InfoPlist.strings`; Customer carries its own at T-0314 (APPLIES ADR-0016 AR-PRIV-4 — no new ADR; the owner approves the WORDING async, non-blocking)
+
+**RULING: `NSCameraUsageDescription` + `NSPhotoLibraryUsageDescription` are added IN-TICKET to the PARTNER app's
+`CleansiaPartner/project.yml` `targets.CleansiaPartner.info.properties` (the same mechanical add as the existing
+`API_BASE_URL` + `UIAppFonts` keys, `:43-51`), localized ×5 via `InfoPlist.strings` — NOT deferred to an owner
+manual_step. SCOPE = PARTNER-ONLY NOW; the Customer app carries its own two keys at T-0314 (its dispute-evidence
+capture). The owner approves the WORDING async (non-blocking — the keys land in-ticket; the strings can be revised
+without re-touching the structure).**
+
+- **In-ticket, not a deferred manual_step (the precedent):** the partner `project.yml` already declares
+  `info.properties` keys mechanically (`API_BASE_URL`, `UIAppFonts`, `:43-51`); adding two `NS*UsageDescription` keys
+  is the **same XcodeGen-`info.properties`** edit, fully in the ios dev's hands — there is no owner-only step (unlike
+  the `mobile-spec-regen` or signing). ADR-0016 **AR-PRIV-4** already anticipates exactly these keys "for partner
+  photos (T-0308)" and requires they ship **with the capability, in-ticket** (Gate-AR: "any new capability carries its
+  purpose string + manifest entry + locale strings in-ticket, not deferred"). Deferring them would ship a camera that
+  prompts with an empty/missing purpose string → an instant crash-on-first-use + an App Review rejection.
+- **Localized ×5 via `InfoPlist.strings` (AR-QUAL-1 / reviewer #10):** the two purpose strings are NOT raw literals in
+  `project.yml` — they are `InfoPlist.strings` keys with en/cs/sk/uk/ru values (the i18n-completeness rule). The
+  strings describe the REAL use ("Take photos of the job's before/after state") — no generic/empty string (AR-PRIV-4).
+- **Partner-only now; Customer at T-0314 (the scope call):** pre-adding the two keys to the Customer app's
+  `project.yml` now would declare a camera/photo-library capability the **Customer app does not yet exercise** — an
+  AR-PRIV-4 "**no purpose string for a capability the app does NOT use**" risk (a reviewer flags a declared-but-unused
+  capability). T-0314 (customer dispute-evidence capture) adds the Customer keys **with** that capability, the same
+  in-ticket discipline. **Recommendation taken: Partner-only now.**
+- **The PrivacyInfo manifest (AR-PRIV-1) carries the photos data-type:** if the partner `PrivacyInfo.xcprivacy`
+  doesn't already declare the **photos** collected-data type + any required-reason API the capture/encode touches, this
+  ticket adds it (the manifest is the AR-PRIV-1 sibling of the purpose string — both ship with the capability). A
+  declared-but-not-present, or present-but-not-declared, photos type is an AR-PRIV-1 finding.
+
+#### The recorded Gate-DP / Parity divergences (T-0308 — all component-or-behavior, none touch layout/flow/branding)
+
+1. **Add tile: Android gallery-only (`GetContent("image/*")`) → iOS camera + library (action sheet Take Photo /
+   Choose from Library)** — decision (a). An iOS ENHANCEMENT (the ticket's camera requirement); the divergence ADDS a
+   source affordance, keeping the single Add tile + two rails + thumbnail-strip layout. Architect sign-off; Android
+   camera-source catch-up is a PM-filed follow-up.
+2. **Upload bytes: Android raw camera bytes (no downscale) → iOS downscale 1920px longest-side + JPEG 0.7 before
+   base64** — decision (b). A deliberate iOS PERF divergence (smaller base64-over-JSON body + bounded memory on the
+   2017 floor); changes uploaded pixel dimensions, not layout/flow/branding. Recorded so a reviewer doesn't flag the
+   dimension difference; Android perf catch-up is a PM-filed follow-up.
+3. **Thumbnail loading: Coil `SubcomposeAsyncImage` → SwiftUI `AsyncImage`** — decision (c). The ADR-0018 D3 table
+   mapping; same frame/aspect + loading/broken-image states; component-only, no 3rd-party dep.
+
+#### Reviewer-check addition (T-0308+)
+
+- **#32 (§7.10 (a)/(b)/(c)/(d)) — the partner photo flow is the canonical shape.** **(a) capture seam** — photo
+  capture goes through the Core **`UIViewControllerRepresentable`** (`CameraOrLibraryPicker`) wrapping a camera-capable
+  `UIImagePickerController`; the single Add tile opens a native action sheet (Take Photo / Choose from Library); the
+  camera+library enhancement over Android's gallery-only is the noted Gate-DP divergence. **Findings:** a feature/VM
+  hand-rolling `UIImagePickerController` (or AVFoundation) outside the Core seam; a PHPicker-only (no-camera) picker
+  (fails the requirement); a representable that imports UIKit into a feature/VM rather than living in
+  `CleansiaCore/Components`. **(b) compression** — the upload runs through the pure Core **`ImageCompressor`** (1920px
+  longest-side aspect-preserved + JPEG 0.7 + `image/jpeg`, off the main thread); the divergence from Android's raw
+  bytes is noted. **Findings:** raw/un-downscaled bytes base64'd (the Android shape copied — the un-approved perf
+  divergence); main-thread base64 encode; an arbitrary dimension/quality not 1920/0.7 without a re-record. **(c)
+  read-back + gate** — thumbnails render via SwiftUI **`AsyncImage`** (no 3rd-party dep); the Complete gate consumes
+  the **re-fetched `OrderItem.hasAfterPhotos`** (kept live by the post-mutation parent refresh), NOT
+  `GetOrderPhotosResponse.afterPhotoCount` / any client photo count. **Findings:** a 3rd-party image lib for the
+  partner thumbnails; the Complete gate computed off `afterPhotoCount`; an upload/delete that doesn't bump the parent
+  order refresh (so `hasAfterPhotos` goes stale). **(d) plist** — the two `NS*UsageDescription` keys are in the
+  PARTNER `project.yml` `info.properties` **in-ticket**, localized ×5 via `InfoPlist.strings`, describing the real use;
+  the `PrivacyInfo.xcprivacy` photos type is declared (AR-PRIV-1). **Findings:** a deferred/owner-manual plist key; a
+  missing/generic/empty purpose string; a non-localized purpose string; the keys pre-added to the **Customer**
+  `project.yml` before T-0314 (a declared-but-unused-capability AR-PRIV-4 risk). (Composes with the §7.9 #31 action
+  table — `.complete`/`.completeBlocked` consume `hasAfterPhotos`; this check governs how `hasAfterPhotos` is produced
+  + kept live.) **The photo-upload ownership / EXIF gate is SECURITY's** (`security/ios-orders.md`) — out of #32.
+
+#### New CRC roles (added with the T-0308 wiring)
+
+- **`ios-camera-library-picker`** (new, `CleansiaCore/Components`) — the `CameraOrLibraryPicker`
+  `UIViewControllerRepresentable` wrapping `UIImagePickerController` (decision (a); the repo's FIRST
+  `UIViewControllerRepresentable`): *responsibility:* present a camera- or library-source system picker and return ONE
+  picked image (as `UIImage`/`Data`) via a callback, then dismiss itself. *Collaborators:* `UIImagePickerController`,
+  the SwiftUI host that presents it (after the Take-Photo/Choose-from-Library action sheet). *Does NOT know:* the order
+  / photo type / upload contract, base64 or compression (that's `ImageCompressor` + the VM), or who may upload
+  (SECURITY). The canonical imperative-UIKit-controller-behind-a-SwiftUI-seam idiom (harvested to `patterns-mobile`).
+- **`ios-image-compressor`** (new, `CleansiaCore`) — the pure `ImageCompressor` helper (decision (b)):
+  *responsibility:* downscale a source image to ≤1920px longest side (aspect-preserved, never upscale) + JPEG-encode
+  at quality 0.7, returning `(Data, contentType: "image/jpeg")`. *Collaborators:* none (a pure deterministic
+  transform; the off-main-thread call is the VM's). *Does NOT know:* the upload contract, base64 encoding (the
+  transport layer's), the order/photo type, or threading policy (the caller schedules it off-main).
+- **`ios-order-photos-vm`** (new, partner orders feature) — the `OrderPhotosViewModel` (the `OrderPhotosViewModel.kt`
+  parity, decision (c)): *responsibility:* load/refresh the order's photos (sealed `OrderPhotosUiState`
+  Loading/Error/Loaded), upload (compress → base64 → `orderSavePhotos` batch-of-one) and delete
+  (`orderDeletePhoto`) with per-rail mutation substate (`isUploading`/`deletingId`), and bump a parent-refresh signal
+  (the `mutationVersion` analogue) so the OrderDetail order re-fetches and `hasAfterPhotos` stays live; surface errors
+  via the `SnackbarController`. *Collaborators:* the orders repo's photo methods (via the ADR-0019 spine),
+  `ios-image-compressor`, `CameraOrLibraryPicker` (via the section view), `SnackbarController`. *Does NOT know:* the
+  representable's UIKit internals, who owns the order (SECURITY §"ios-orders" O1–O4 — the server is authoritative), the
+  OrderDetail sheet's snap mechanics, or how the Complete footer renders the action (`ios-order-primary-action`).
+
+#### Test contract (T-0308 — red-first)
+
+- **TC-IOS-IMG-COMPRESS** (the pure `ImageCompressor` — strict TDD): a >1920px image scales to ≤1920px longest side
+  **aspect-preserved**; a ≤1920px image is **NOT upscaled** (dimensions unchanged); the output is **JPEG**
+  (`contentType == "image/jpeg"`); the output byte count is **< input** for a large image. (Pure function, no
+  threading in the unit.)
+- **TC-IOS-PHOTOS-GATE** (the Complete-unblock parity): after a successful After-photo upload the photos VM bumps the
+  parent-refresh signal → the OrderDetail re-fetch flips `OrderItem.hasAfterPhotos` true → `OrderPrimaryAction.action`
+  returns `.complete` (was `.completeBlocked`); the gate reads the **re-fetched `hasAfterPhotos`**, NOT
+  `GetOrderPhotosResponse.afterPhotoCount` (a test that an `afterPhotoCount > 0` with `hasAfterPhotos == false` still
+  yields `.completeBlocked` — the server flag is the source of truth).
+- **TC-IOS-PHOTOS-UPLOAD** (the upload shape): `upload(type, image)` compresses (via `ImageCompressor`) → base64 →
+  `orderSavePhotos` **batch-of-one** (one `SaveOrderPhotosPhotoToSave` carrying `BlobFileDto{fileName, base64Content,
+  contentType: "image/jpeg"}`); the `PhotoType` maps `_1=Before`/`_2=After`; a failure snackbars + clears `isUploading`
+  without bumping the parent (the `OrderPhotosViewModel.kt:104-107` parity).
 
 ---
 

@@ -35,8 +35,15 @@ struct PartnerShellView: View {
             .tabItem { Label(ShellTab.dashboard.label, systemImage: ShellTab.dashboard.systemImage) }
             .tag(ShellTab.dashboard)
 
-            PlaceholderTab(tab: .orders, ticket: "T-0307")
-                .tag(ShellTab.orders)
+            OrdersRootView(
+                client: container.orderClient,
+                staleness: container.ordersStaleness,
+                checklistStore: container.cleaningChecklistStore,
+                snackbar: container.snackbar,
+                mapProvider: container.mapProvider
+            )
+            .tabItem { Label(ShellTab.orders.label, systemImage: ShellTab.orders.systemImage) }
+            .tag(ShellTab.orders)
 
             PlaceholderTab(tab: .invoices, ticket: "T-0309")
                 .tag(ShellTab.invoices)
@@ -77,7 +84,7 @@ private struct PlaceholderTab: View {
             TabView {
                 PlaceholderDestination(systemImage: ShellTab.dashboard.systemImage, text: "Dashboard")
                     .tabItem { Label(ShellTab.dashboard.label, systemImage: ShellTab.dashboard.systemImage) }
-                PlaceholderDestination(systemImage: ShellTab.orders.systemImage, text: "Orders — coming in T-0307")
+                PlaceholderDestination(systemImage: ShellTab.orders.systemImage, text: "Orders")
                     .tabItem { Label(ShellTab.orders.label, systemImage: ShellTab.orders.systemImage) }
                 PlaceholderDestination(systemImage: ShellTab.invoices.systemImage, text: "Invoices — coming in T-0309")
                     .tabItem { Label(ShellTab.invoices.label, systemImage: ShellTab.invoices.systemImage) }

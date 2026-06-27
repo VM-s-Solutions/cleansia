@@ -3,4 +3,5 @@ import SwiftUI
 
 public protocol MapProvider {
     func pickerMap(region: Binding<MKCoordinateRegion>, showsUserLocation: Bool) -> AnyView
+    func fullBleedMap(coordinate: Coordinate) -> AnyView
 }

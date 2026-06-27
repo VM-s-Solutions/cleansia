@@ -25,6 +25,13 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
     public bool? IsUnassigned { get; set; }
     public string? ExcludeEmployeeId { get; set; }
 
+    // Server-pinned scope for a non-admin caller: results are restricted to
+    // rows the caller is assigned to OR rows that still have an open spot the
+    // caller could take. A non-admin can never read another employee's
+    // exclusive (assigned, no-spot) rows, regardless of the client-supplied
+    // EmployeeId filter. Null = no restriction (admin / unscoped).
+    public string? RestrictToEmployeeId { get; set; }
+
     public Expression<Func<Order, bool>> SatisfiedBy()
     {
         Specification<Order> specification = new TrueSpecification<Order>();
@@ -119,6 +126,13 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             specification &= new DirectSpecification<Order>(x => x.AssignedEmployees.All(ae => ae.EmployeeId != ExcludeEmployeeId));
         }
 
+        if (!string.IsNullOrEmpty(RestrictToEmployeeId))
+        {
+            specification &= new DirectSpecification<Order>(x =>
+                x.AssignedEmployees.Any(ae => ae.EmployeeId == RestrictToEmployeeId)
+                || x.AssignedEmployees.Count < x.MaxEmployees);
+        }
+
         return specification.SatisfiedBy();
     }
 
@@ -128,7 +142,7 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
         DateTime? cleaningDateTo = null, IEnumerable<PaymentStatus>? paymentStatuses = null, IEnumerable<PaymentType>? paymentTypes = null,
         decimal? minTotalPrice = null, decimal? maxTotalPrice = null, IEnumerable<OrderStatus>? orderStatuses = null,
         bool? hasAvailableSpots = null, bool? isUnassigned = null, string? excludeEmployeeId = null,
-        string? userId = null) =>
+        string? userId = null, string? restrictToEmployeeId = null) =>
         new()
         {
             Id = id,
@@ -148,6 +162,7 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             OrderStatuses = orderStatuses,
             HasAvailableSpots = hasAvailableSpots,
             IsUnassigned = isUnassigned,
-            ExcludeEmployeeId = excludeEmployeeId
+            ExcludeEmployeeId = excludeEmployeeId,
+            RestrictToEmployeeId = restrictToEmployeeId
         };
 }

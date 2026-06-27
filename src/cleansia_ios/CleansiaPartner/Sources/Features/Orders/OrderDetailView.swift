@@ -3,6 +3,8 @@ import SwiftUI
 
 struct OrderDetailView: View {
     @StateObject private var vm: OrderDetailViewModel
+    @StateObject private var checklistVM: CleaningChecklistViewModel
+    @StateObject private var notesVM: OrderNotesViewModel
     @State private var snapAnchor: SnapAnchor = .peek
     private let mapProvider: MapProvider
 
@@ -10,6 +12,7 @@ struct OrderDetailView: View {
         orderId: String,
         client: PartnerOrderClient,
         staleness: OrdersStaleness,
+        checklistStore: CleaningChecklistStore,
         snackbar: SnackbarController,
         mapProvider: MapProvider
     ) {
@@ -21,6 +24,12 @@ struct OrderDetailView: View {
                 snackbar: snackbar
             )
         )
+        _checklistVM = StateObject(
+            wrappedValue: CleaningChecklistViewModel(orderId: orderId, store: checklistStore)
+        )
+        _notesVM = StateObject(
+            wrappedValue: OrderNotesViewModel(orderId: orderId, client: client, snackbar: snackbar)
+        )
         self.mapProvider = mapProvider
     }
 
@@ -28,6 +37,7 @@ struct OrderDetailView: View {
         content
             .navigationBarTitleDisplayMode(.inline)
             .task { await vm.load() }
+            .onReceive(notesVM.mutated) { Task { await vm.load() } }
     }
 
     @ViewBuilder
@@ -52,7 +62,9 @@ struct OrderDetailView: View {
                 order: order,
                 primaryAction: vm.primaryAction,
                 inFlightAction: vm.inFlightAction,
-                onConfirm: { action in Task { await vm.dispatch(action) } }
+                onConfirm: { action in Task { await vm.dispatch(action) } },
+                checklistVM: checklistVM,
+                notesVM: notesVM
             )
         }
         .ignoresSafeArea(edges: .top)
@@ -99,7 +111,7 @@ private struct OrderDetailErrorView: View {
             Group {
                 stateView(.loading).previewDisplayName("Loading")
                 stateView(.error(ApiError(httpStatus: 500))).previewDisplayName("Error")
-                OrderDetailContent(order: .preview)
+                OrderDetailContent(order: .preview, checklistVM: .preview, notesVM: .preview)
                     .previewDisplayName("Loaded content")
             }
         }

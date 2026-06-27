@@ -19,6 +19,9 @@ final class FakePartnerOrderClient: PartnerOrderClient {
     /// asserts the carried id is the acted-on id and nothing else (O1/O2).
     private(set) var commands: [(name: String, orderId: String)] = []
 
+    /// Note/issue mutations appended here for the notes-section tests.
+    private(set) var noteCommands: [(name: String, id: String?, content: String?)] = []
+
     /// When set, the next command suspends until `resumeCommand()` so a test can
     /// hold one mutation mid-flight and fire a second (re-entry guard).
     var suspendCommands = false
@@ -47,6 +50,15 @@ final class FakePartnerOrderClient: PartnerOrderClient {
 
     private func record(_ name: String, _ orderId: String) async -> ApiResult<Void> {
         commands.append((name, orderId))
+        return await gated()
+    }
+
+    private func recordNote(_ name: String, id: String?, content: String?) async -> ApiResult<Void> {
+        noteCommands.append((name: name, id: id, content: content))
+        return await gated()
+    }
+
+    private func gated() async -> ApiResult<Void> {
         if suspendCommands {
             await withCheckedContinuation { commandGate = $0 }
         }
@@ -69,28 +81,28 @@ final class FakePartnerOrderClient: PartnerOrderClient {
         await record("complete", orderId)
     }
 
-    func addNote(orderId _: String, content _: String) async -> ApiResult<Void> {
-        commandResult
+    func addNote(orderId _: String, content: String) async -> ApiResult<Void> {
+        await recordNote("addNote", id: nil, content: content)
     }
 
-    func updateNote(orderId _: String, noteId _: String, content _: String) async -> ApiResult<Void> {
-        commandResult
+    func updateNote(orderId _: String, noteId: String, content: String) async -> ApiResult<Void> {
+        await recordNote("updateNote", id: noteId, content: content)
     }
 
-    func deleteNote(orderId _: String, noteId _: String) async -> ApiResult<Void> {
-        commandResult
+    func deleteNote(orderId _: String, noteId: String) async -> ApiResult<Void> {
+        await recordNote("deleteNote", id: noteId, content: nil)
     }
 
-    func reportIssue(orderId _: String, description _: String) async -> ApiResult<Void> {
-        commandResult
+    func reportIssue(orderId _: String, description: String) async -> ApiResult<Void> {
+        await recordNote("reportIssue", id: nil, content: description)
     }
 
-    func updateIssue(orderId _: String, issueId _: String, description _: String) async -> ApiResult<Void> {
-        commandResult
+    func updateIssue(orderId _: String, issueId: String, description: String) async -> ApiResult<Void> {
+        await recordNote("updateIssue", id: issueId, content: description)
     }
 
-    func deleteIssue(orderId _: String, issueId _: String) async -> ApiResult<Void> {
-        commandResult
+    func deleteIssue(orderId _: String, issueId: String) async -> ApiResult<Void> {
+        await recordNote("deleteIssue", id: issueId, content: nil)
     }
 }
 

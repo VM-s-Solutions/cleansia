@@ -31,7 +31,6 @@ struct OrderDetail: Equatable {
     let isAssignedToCurrentUser: Bool
     let hasAfterPhotos: Bool
 
-    // Rendered by a later slice; mapped now so the model is complete.
     let orderNotes: [OrderNoteDto]
     let orderIssues: [OrderIssueDto]
     let statusHistory: [OrderStatusTrackDto]

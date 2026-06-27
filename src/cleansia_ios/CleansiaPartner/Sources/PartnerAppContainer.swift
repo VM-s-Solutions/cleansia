@@ -67,6 +67,7 @@ final class PartnerAppContainer: AppContainer {
     let devicesClient: PartnerDevicesClient
     let orderClient: PartnerOrderClient = LivePartnerOrderClient()
     let ordersStaleness = OrdersStaleness()
+    let cleaningChecklistStore: CleaningChecklistStore = UserDefaultsCleaningChecklistStore()
     let geocodingService: GeocodingService = CLGeocoderGeocodingService()
     let mapProvider: MapProvider = MapKitMapProvider()
 

@@ -7,12 +7,14 @@ struct OrdersRootView: View {
     @State private var path: [OrderRoute] = []
     private let client: PartnerOrderClient
     private let staleness: OrdersStaleness
+    private let checklistStore: CleaningChecklistStore
     private let snackbar: SnackbarController
     private let mapProvider: MapProvider
 
     init(
         client: PartnerOrderClient,
         staleness: OrdersStaleness,
+        checklistStore: CleaningChecklistStore,
         snackbar: SnackbarController,
         mapProvider: MapProvider
     ) {
@@ -21,6 +23,7 @@ struct OrdersRootView: View {
         )
         self.client = client
         self.staleness = staleness
+        self.checklistStore = checklistStore
         self.snackbar = snackbar
         self.mapProvider = mapProvider
     }
@@ -35,6 +38,7 @@ struct OrdersRootView: View {
                             orderId: orderId,
                             client: client,
                             staleness: staleness,
+                            checklistStore: checklistStore,
                             snackbar: snackbar,
                             mapProvider: mapProvider
                         )

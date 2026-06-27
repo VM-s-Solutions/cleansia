@@ -7,6 +7,8 @@ struct OrderDetailContent: View {
     var primaryAction: OrderPrimaryAction = .none
     var inFlightAction: OrderAction?
     var onConfirm: (OrderPrimaryAction) -> Void = { _ in }
+    @ObservedObject var checklistVM: CleaningChecklistViewModel
+    @ObservedObject var notesVM: OrderNotesViewModel
 
     private var showAccessCard: Bool {
         order.isAssignedToCurrentUser
@@ -17,6 +19,27 @@ struct OrderDetailContent: View {
     private var showFromCustomerCard: Bool {
         !(order.customerNotes ?? "").trimmingCharacters(in: .whitespaces).isEmpty
             || !(order.specialInstructions ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    /// Work tools (checklist) show for the assignee while the order is active
+    /// (Confirmed / OnTheWay / InProgress); the checklist is interactive only
+    /// once InProgress.
+    private var showWorkSections: Bool {
+        order.isAssignedToCurrentUser
+            && (order.status == ._2 || order.status == ._3 || order.status == ._4)
+    }
+
+    private var checklistInteractive: Bool {
+        order.status == ._4
+    }
+
+    private var isTerminal: Bool {
+        order.status == ._5 || order.status == ._6
+    }
+
+    /// Adds for notes/issues are allowed once the cleaner is OnTheWay/InProgress.
+    private var canAddNotes: Bool {
+        order.status == ._3 || order.status == ._4
     }
 
     var body: some View {
@@ -34,13 +57,30 @@ struct OrderDetailContent: View {
                     if showFromCustomerCard {
                         FromCustomerNotesCard(order: order)
                     }
-                    // Disabled Photos placeholder so the Complete-blocked hint is
-                    // meaningful once the lifecycle slice lands; capture arrives
-                    // with photo upload.
-                    PhotosPlaceholderSection()
+                    if showWorkSections {
+                        CleaningChecklistView(
+                            order: order,
+                            checkedIds: checklistVM.checkedIds,
+                            interactive: checklistInteractive,
+                            onToggle: checklistVM.setChecked
+                        )
+                    }
+                    if order.isAssignedToCurrentUser {
+                        NotesAndIssuesSection(
+                            notes: order.orderNotes,
+                            issues: order.orderIssues,
+                            canAdd: canAddNotes,
+                            isReadOnly: isTerminal,
+                            vm: notesVM
+                        )
+                    }
+                    if showWorkSections {
+                        // Disabled Photos placeholder so the Complete-blocked
+                        // hint is meaningful; capture arrives with photo upload.
+                        PhotosPlaceholderSection()
+                    }
                     PaymentCard(order: order)
-                    // Checklist, notes/issues, and status timeline land in a
-                    // later slice — their slots are here.
+                    StatusTimelineView(history: order.statusHistory)
                 }
                 .padding(.horizontal, Spacing.m)
                 .padding(.vertical, Spacing.m)
@@ -187,8 +227,12 @@ private struct OrderMetadataRow: View {
 
     struct OrderDetailContent_Previews: PreviewProvider {
         static var previews: some View {
-            OrderDetailContent(order: .preview)
-                .background(CleansiaColors.surface)
+            OrderDetailContent(
+                order: .preview,
+                checklistVM: .preview,
+                notesVM: .preview
+            )
+            .background(CleansiaColors.surface)
         }
     }
 #endif

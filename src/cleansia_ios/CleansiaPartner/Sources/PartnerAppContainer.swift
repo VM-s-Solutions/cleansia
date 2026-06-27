@@ -62,6 +62,7 @@ final class PartnerAppContainer: AppContainer {
     }
 
     let dashboardClient: PartnerDashboardClient = LivePartnerDashboardClient()
+    let payrollClient: PartnerPayrollClient = LivePartnerPayrollClient()
     let registrationClient: PartnerRegistrationClient = LivePartnerRegistrationClient()
     let profileClient: PartnerProfileClient = LivePartnerProfileClient()
     let devicesClient: PartnerDevicesClient

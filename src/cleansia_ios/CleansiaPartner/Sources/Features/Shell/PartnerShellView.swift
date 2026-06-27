@@ -8,6 +8,10 @@ final class ShellModel: ViewModel {
     func selectOrders() {
         selection = .orders
     }
+
+    func selectEarnings() {
+        selection = .invoices
+    }
 }
 
 struct PartnerShellView: View {
@@ -30,6 +34,7 @@ struct PartnerShellView: View {
         TabView(selection: $model.selection) {
             DashboardView(
                 client: container.dashboardClient,
+                onOpenEarnings: { model.selectEarnings() },
                 onOpenOrders: { model.selectOrders() }
             )
             .tabItem { Label(ShellTab.dashboard.label, systemImage: ShellTab.dashboard.systemImage) }
@@ -45,8 +50,13 @@ struct PartnerShellView: View {
             .tabItem { Label(ShellTab.orders.label, systemImage: ShellTab.orders.systemImage) }
             .tag(ShellTab.orders)
 
-            PlaceholderTab(tab: .invoices, ticket: "T-0309")
-                .tag(ShellTab.invoices)
+            EarningsView(
+                dashboardClient: container.dashboardClient,
+                payrollClient: container.payrollClient,
+                snackbar: container.snackbar
+            )
+            .tabItem { Label(ShellTab.invoices.label, systemImage: ShellTab.invoices.systemImage) }
+            .tag(ShellTab.invoices)
 
             ProfileView(
                 client: container.profileClient,
@@ -65,19 +75,6 @@ struct PartnerShellView: View {
     }
 }
 
-private struct PlaceholderTab: View {
-    let tab: ShellTab
-    let ticket: String
-
-    var body: some View {
-        PlaceholderDestination(
-            systemImage: tab.systemImage,
-            text: L10n.Shell.placeholderComingSoon(tab.label, ticket)
-        )
-        .tabItem { Label(tab.label, systemImage: tab.systemImage) }
-    }
-}
-
 #if DEBUG
     struct PartnerShellView_Previews: PreviewProvider {
         static var previews: some View {
@@ -86,9 +83,9 @@ private struct PlaceholderTab: View {
                     .tabItem { Label(ShellTab.dashboard.label, systemImage: ShellTab.dashboard.systemImage) }
                 PlaceholderDestination(systemImage: ShellTab.orders.systemImage, text: "Orders")
                     .tabItem { Label(ShellTab.orders.label, systemImage: ShellTab.orders.systemImage) }
-                PlaceholderDestination(systemImage: ShellTab.invoices.systemImage, text: "Invoices — coming in T-0309")
+                PlaceholderDestination(systemImage: ShellTab.invoices.systemImage, text: "Earnings")
                     .tabItem { Label(ShellTab.invoices.label, systemImage: ShellTab.invoices.systemImage) }
-                PlaceholderDestination(systemImage: ShellTab.profile.systemImage, text: "Profile — coming in T-0310")
+                PlaceholderDestination(systemImage: ShellTab.profile.systemImage, text: "Profile")
                     .tabItem { Label(ShellTab.profile.label, systemImage: ShellTab.profile.systemImage) }
             }
             .tint(CleansiaColors.primary)

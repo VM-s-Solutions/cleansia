@@ -316,3 +316,91 @@ NotFound-vs-EmployeeNotAssigned hardening (follow-up #3) are likewise unchanged.
 04753F32-…) — `Executed 71 tests, with 0 failures`; the 5 named ownership/guard/reject tests re-run
 in isolation → `** TEST SUCCEEDED **`. Verdict: **PASS — Slice D order-action gate clears O1/O2/O4 +
 TC-IOS-ORDERS-OWNERSHIP.** No code edits made (audit-only).
+
+---
+
+## 2026-06-27 — T-0339 GetPaged read-scoping fix BUILD-TIME VERIFICATION (Gate-SEC, security reviewer) — PASS → DECISION-2b RESOLVED-pending-CI
+
+**Verdict: PASS. The fix CLOSES sprint-12 §7.8 D2b (the `GetPaged` foreign-`employeeId` over-read).**
+Verified by careful reading of the **uncommitted** code on `phase/ios-phase4` (no dotnet on this Mac —
+the executable check is CI's `Cleansia.IntegrationTests` over real Postgres; the new test is staged for
+it). I own the authz/leak verdict; the reviewer owns CQRS-convention + compile-correctness in parallel.
+Files changed (audit-only, no edits by me): `Cleansia.Core.AppServices/Features/Orders/GetPagedOrders.cs`,
+`Cleansia.Core.Domain/Specifications/OrderSpecification.cs`, +
+`Cleansia.IntegrationTests/Features/Orders/GetPagedOrdersScopeIntegrationTests.cs` (new).
+
+### 1 — THE LEAK IS CLOSED (the D2b exploit no longer returns foreign data) — PASS
+- **callerEmployeeId is JWT-derived, not a client field.** `GetPagedOrders.cs:50`
+  `orderAccessService.GetCallerEmployeeIdAsync` → `OrderAccessService.ResolveCallerEmployeeIdAsync`
+  (`OrderAccessService.cs:88-104`: `employee_id` claim → fallback `GetByUserEmailAsync(jwt email)`) — the
+  SAME authz source the Take/Notify/Start/Complete validators use (T-0307 gate, this file above).
+- **Foreign client `Filter.EmployeeId` is OVERRIDDEN, not honored, for non-admins.** `GetPagedOrders.cs:69-71`:
+  `employeeIdFilter = isAdmin ? client.EmployeeId : (string.IsNullOrEmpty(client.EmployeeId) ? null : callerEmployeeId)`.
+  A non-admin who sends ANY EmployeeId (incl. a foreign id) gets the SERVER `callerEmployeeId` substituted;
+  an empty value (Available pane) stays null. The client can never widen scope (the same rule already
+  applied to CustomerName/Email/Phone at `:76-78`).
+- **The base query is bounded so a crafted filter/status combo still can't reach foreign rows.**
+  `GetPagedOrders.cs:91` passes `restrictToEmployeeId: isAdmin ? null : callerEmployeeId` →
+  `OrderSpecification.cs:129-134` ANDs `AssignedEmployees.Any(ae => ae.EmployeeId == RestrictToEmployeeId)
+  || AssignedEmployees.Count < MaxEmployees` onto the base query. A foreign-assigned, no-spot row
+  (the victim's exclusive row) satisfies NEITHER disjunct → never returned, regardless of
+  OrderStatuses/IsUnassigned/etc. Defense-in-depth on top of the id override.
+
+### 2 — ADMIN PRESERVED — PASS
+`GetPagedOrders.cs:69-70` keeps the client EmployeeId for `isAdmin`; `:91` passes
+`restrictToEmployeeId: null` for admin. The restrict clause is inert when null (`:129` guard). Admin
+cross-employee reads unchanged — no over-restriction. (Test `Admin_PassingEmployeeId_StillReceivesThatEmployeesAssignedRows`
+confirms admin still resolves B's row WITH coords + confirmation code.)
+
+### 3 — NO LEGITIMATE PANE REGRESSES — PASS
+- **"mine" (EmployeeId=self):** override is a no-op (caller's own id → own id); the `EmployeeId` clause
+  (`:74-77`) + the restrict clause's `Any(... == self)` disjunct both pass → own assigned rows return.
+- **"available" (IsUnassigned/no EmployeeId):** `employeeIdFilter` stays null (no `EmployeeId` clause);
+  the restrict clause's `|| Count < MaxEmployees` disjunct lets takeable/unassigned rows through. The
+  `IsUnassigned`/`HasAvailableSpots` clauses (`:114-122`) further narrow as before. No regression.
+
+### 4 — DEFENSE-IN-DEPTH BLANK is correct + NOT over-blanking — PASS
+On a browse-able (non-assigned) row `GetPagedOrders.cs:195-204` now also nulls
+`CustomerAddressLatitude`/`Longitude` and blanks `ConfirmationCode`, in addition to the prior
+name/email/phone/street blank. **Pre-accept signals are kept:** `CustomerAddressApproximate` is built
+independently from City + 3-digit ZIP prefix (`OrderMappers.BuildApproximateAddress`, `:218-236`) —
+NOT from lat/lng — so nulling coords does not break it; the pay estimate is the **caller's OWN**
+estimate (`:170-173`, keyed `callerEmployeeId`), never the foreign assignee's. **No residual precise-
+location/PII field on `OrderListItem`:** the remaining fields (rooms, dates, price, status, currency,
+DisplayOrderNumber, AssignedEmployees=OrderEmployee row ids, coarse approximate area) carry no exact
+location and no non-self customer PII. The "assignee's pay" leak channel from D2b is gone (the row
+itself can no longer return for a foreign exclusive order, and any shared-spot row shows the caller's
+own pay).
+
+### 5 — TC-BE-ORDERS-GETPAGED-SCOPE genuinely pins the exploit — PASS (real-Postgres harness)
+`GetPagedOrdersScopeIntegrationTests.cs` runs end-to-end through `IMediator.Send(GetPagedOrders.Request)`
+→ real `OrderSpecification` → real repo over real Postgres (Testcontainers + migrations + Respawn,
+`BaseIntegrationTest`). It REPLACES `IUserSessionProvider` with an Employee/`employee_id`-claim session
+(`:205-213`), so the real `OrderAccessService` JWT path is exercised (not a shortcut).
+- Exploit pinned: `NonAdmin_PassingForeignEmployeeId_DoesNotReceiveForeignAssignedRows` — A sends
+  `Filter.EmployeeId=B` + Confirmed/InProgress/Completed; asserts B's exclusive row absent AND no row
+  carries B's confirmation code or coords AND A still sees A's own row (override proof).
+- No-regression: `NonAdmin_RequestingOwnEmployeeId_StillReceivesOwnAssignedRows` (mine) +
+  `NonAdmin_BrowsingAvailable_ReturnsTakeableRow_NotForeignAssigned` (available; also asserts coords
+  null + confirmation blank + approximate KEPT on the takeable row — and seeds real coords so the
+  null proves the handler BLANKED a real value, `:275-282`).
+- Admin-preserved: `Admin_PassingEmployeeId_StillReceivesThatEmployeesAssignedRows`.
+The four facts I required (exploit / mine / available / admin) are each covered.
+
+### 6 — NO new gap; S9 clean; standing items unaffected
+- **No DTO/contract shape change** — `OrderListItem` shape is identical (the fix sets existing fields to
+  blank/null values; the spec gains an internal property + an optional `Create` param). **S9: no nswag/
+  spec regen forced.** All other `OrderSpecification.Create` callers (`GetCustomerOrders.cs:46` via
+  `userId:`, `DashboardSpecifications.cs` all-named) use named args and stop before the new trailing
+  optional param → no positional shift, no behavior change, compile-safe (reviewer owns the build gate).
+- **No new authz gap:** the override + restrict clause only NARROW non-admin scope; customer reads
+  (`GetCustomerOrders`, scoped by `UserId`) and admin reads are untouched.
+- The standing **S8 / T-0236** item is unrelated (not the order read path) and unaffected; the TakeOrder
+  TOCTOU (S7a) and NotFound-vs-EmployeeNotAssigned hardening remain open, unchanged by this read-scoping fix.
+
+### Status
+**DECISION-2b (§7.8 D2b) — RESOLVED-pending-CI (2026-06-27, verified-by-reading).** The exploit is
+closed as written: a non-admin can no longer read a foreign employee's assigned-order data (rows, exact
+coords, confirmation code, or pay) via `Filter.EmployeeId`. **CI `Cleansia.IntegrationTests` (real
+Postgres) is the executable gate** that must go green on the PR before this flips to fully RESOLVED —
+the integration test is staged but not yet run on this Mac (no dotnet). No code edits made (audit-only).

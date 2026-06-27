@@ -5,6 +5,7 @@ import SwiftUI
 struct ProfileView: View {
     @StateObject private var vm: ProfileViewModel
     @StateObject private var chainVM: OnboardingChainViewModel
+    @ObservedObject private var preferences: PreferencesModel
     @State private var path: [ProfileRoute] = []
     @State private var showLogoutDialog = false
 
@@ -23,6 +24,7 @@ struct ProfileView: View {
         snackbar: SnackbarController,
         geocoding: GeocodingService,
         mapProvider: MapProvider,
+        preferences: PreferencesModel,
         onSignedOut: @escaping () -> Void
     ) {
         _vm = StateObject(wrappedValue: ProfileViewModel(
@@ -31,6 +33,7 @@ struct ProfileView: View {
             snackbar: snackbar
         ))
         _chainVM = StateObject(wrappedValue: OnboardingChainViewModel(client: client))
+        self.preferences = preferences
         self.client = client
         self.devicesClient = devicesClient
         self.authClient = authClient
@@ -64,6 +67,11 @@ struct ProfileView: View {
         case let .loaded(data):
             ProfileHubContent(
                 data: data,
+                languageSummary: PreferencesLabels.languageSummary(
+                    isFollowingSystem: preferences.isFollowingSystemLanguage,
+                    tag: preferences.languageTag
+                ),
+                themeSummary: PreferencesLabels.themeLabel(preferences.theme),
                 onOpen: { route in path.append(route) },
                 onLogout: { showLogoutDialog = true }
             )
@@ -107,12 +115,16 @@ struct ProfileView: View {
                 onboarding: onboarding,
                 onSaved: { popOrAdvance(onboarding: onboarding) }
             )
+        default:
+            secondaryDestination(route)
+        }
+    }
+
+    @ViewBuilder
+    private func secondaryDestination(_ route: ProfileRoute) -> some View {
+        switch route {
         case .emergency:
-            EmergencySectionView(
-                client: client,
-                snackbar: snackbar,
-                onSaved: { popLast() }
-            )
+            EmergencySectionView(client: client, snackbar: snackbar, onSaved: { popLast() })
         case .documents:
             DocumentsSectionView(client: client, snackbar: snackbar)
         case .devices:
@@ -122,8 +134,11 @@ struct ProfileView: View {
                 snackbar: snackbar,
                 onSignedOut: onSignedOut
             )
-        case .language, .theme:
-            // Preferences pickers land in Slice C — not reachable from this hub yet.
+        case .language:
+            LanguagePickerView(preferences: preferences, onSelected: { popLast() })
+        case .theme:
+            ThemePickerView(preferences: preferences, onSelected: { popLast() })
+        default:
             EmptyView()
         }
     }

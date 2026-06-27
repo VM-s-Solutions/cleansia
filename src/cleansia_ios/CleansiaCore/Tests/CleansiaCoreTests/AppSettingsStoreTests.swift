@@ -68,4 +68,57 @@ final class AppSettingsStoreTests: XCTestCase {
         let store = makeStore(locale: nil)
         XCTAssertEqual(store.languageTag, "en")
     }
+
+    func testSetLanguageRoundTripsAndPersists() {
+        makeStore(locale: "en").setLanguage("uk")
+        let reopened = makeStore(locale: "en")
+        XCTAssertEqual(reopened.languageTag, "uk")
+    }
+
+    func testSetLanguageClampsUnsupportedTagAndFallsBackToLocale() {
+        let store = makeStore(locale: "cs")
+        store.setLanguage("sk")
+        XCTAssertEqual(store.languageTag, "sk")
+        store.setLanguage("de")
+        // Unsupported tag clears the stored value → resolves via locale ("cs").
+        XCTAssertEqual(store.languageTag, "cs")
+    }
+
+    func testPersistedLanguageTagNilWhenFollowingSystem() {
+        let store = makeStore(locale: "uk")
+        XCTAssertNil(store.persistedLanguageTag)
+        XCTAssertEqual(store.languageTag, "uk")
+    }
+
+    func testPersistedLanguageTagSetAfterExplicitChoice() {
+        let store = makeStore(locale: "uk")
+        store.setLanguage("sk")
+        XCTAssertEqual(store.persistedLanguageTag, "sk")
+    }
+
+    func testClearLanguageReturnsToFollowingSystem() {
+        let store = makeStore(locale: "uk")
+        store.setLanguage("sk")
+        XCTAssertEqual(store.persistedLanguageTag, "sk")
+        store.clearLanguage()
+        XCTAssertNil(store.persistedLanguageTag)
+        XCTAssertEqual(store.languageTag, "uk")
+    }
+
+    func testThemeDefaultsToSystem() {
+        XCTAssertEqual(makeStore(locale: "en").theme, .system)
+    }
+
+    func testSetThemePersistsAndSurvivesReinit() {
+        makeStore(locale: "en").setTheme(.dark)
+        XCTAssertEqual(makeStore(locale: "en").theme, .dark)
+    }
+
+    func testSetThemeRoundTripsEachCase() {
+        let store = makeStore(locale: "en")
+        for theme in Theme.allCases {
+            store.setTheme(theme)
+            XCTAssertEqual(store.theme, theme)
+        }
+    }
 }

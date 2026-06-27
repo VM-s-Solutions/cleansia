@@ -12,11 +12,17 @@ final class ShellModel: ViewModel {
 
 struct PartnerShellView: View {
     @StateObject private var model = ShellModel()
+    @ObservedObject private var preferences: PreferencesModel
     private let container: PartnerAppContainer
     private let onSignedOut: () -> Void
 
-    init(container: PartnerAppContainer, onSignedOut: @escaping () -> Void) {
+    init(
+        container: PartnerAppContainer,
+        preferences: PreferencesModel,
+        onSignedOut: @escaping () -> Void
+    ) {
         self.container = container
+        self.preferences = preferences
         self.onSignedOut = onSignedOut
     }
 
@@ -42,6 +48,7 @@ struct PartnerShellView: View {
                 snackbar: container.snackbar,
                 geocoding: container.geocodingService,
                 mapProvider: container.mapProvider,
+                preferences: preferences,
                 onSignedOut: onSignedOut
             )
             .tabItem { Label(ShellTab.profile.label, systemImage: ShellTab.profile.systemImage) }

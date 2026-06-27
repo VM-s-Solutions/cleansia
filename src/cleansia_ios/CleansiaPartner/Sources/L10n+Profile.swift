@@ -14,6 +14,38 @@ extension L10n {
             localized("profile_group_work_legal")
         }
 
+        static var groupPreferences: String {
+            localized("profile_group_preferences")
+        }
+
+        static var language: String {
+            localized("language")
+        }
+
+        static var languageSystem: String {
+            localized("language_system")
+        }
+
+        static var theme: String {
+            localized("theme")
+        }
+
+        static var themeSystem: String {
+            localized("theme_system")
+        }
+
+        static var themeLight: String {
+            localized("theme_light")
+        }
+
+        static var themeDark: String {
+            localized("theme_dark")
+        }
+
+        static var devicesSummary: String {
+            localized("profile_devices_summary")
+        }
+
         static var personal: String {
             localized("personal")
         }

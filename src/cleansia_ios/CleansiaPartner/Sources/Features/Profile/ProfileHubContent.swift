@@ -4,6 +4,8 @@ import SwiftUI
 
 struct ProfileHubContent: View {
     let data: ProfileData
+    let languageSummary: String
+    let themeSummary: String
     let onOpen: (ProfileRoute) -> Void
     let onLogout: () -> Void
 
@@ -59,6 +61,29 @@ struct ProfileHubContent: View {
                         title: L10n.Profile.myDocuments,
                         summary: L10n.Profile.documentsSummary,
                         onTap: { onOpen(.documents) }
+                    )
+                }
+
+                SectionGroup(title: L10n.Profile.groupPreferences) {
+                    ProfileSectionRow(
+                        icon: "globe",
+                        title: L10n.Profile.language,
+                        summary: languageSummary,
+                        onTap: { onOpen(.language) }
+                    )
+                    RowDivider()
+                    ProfileSectionRow(
+                        icon: "moon",
+                        title: L10n.Profile.theme,
+                        summary: themeSummary,
+                        onTap: { onOpen(.theme) }
+                    )
+                    RowDivider()
+                    ProfileSectionRow(
+                        icon: "laptopcomputer.and.iphone",
+                        title: L10n.Devices.title,
+                        summary: L10n.Profile.devicesSummary,
+                        onTap: { onOpen(.devices) }
                     )
                 }
 
@@ -303,6 +328,8 @@ private extension String? {
                     ),
                     contractStatus: .approved
                 ),
+                languageSummary: "Čeština",
+                themeSummary: "Follow system",
                 onOpen: { _ in },
                 onLogout: {}
             )

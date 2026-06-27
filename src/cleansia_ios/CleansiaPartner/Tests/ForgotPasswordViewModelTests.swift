@@ -24,6 +24,22 @@ final class ForgotPasswordViewModelTests: XCTestCase {
         }
 
         var languageTag = "cs"
+
+        var persistedLanguageTag: String?
+
+        func setLanguage(_ tag: String) {
+            languageTag = tag
+            persistedLanguageTag = tag
+        }
+
+        func clearLanguage() {
+            persistedLanguageTag = nil
+        }
+
+        var theme: Theme = .system
+        func setTheme(_ theme: Theme) {
+            self.theme = theme
+        }
     }
 
     private var client: FakeResetClient!

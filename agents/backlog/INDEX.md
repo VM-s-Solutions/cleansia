@@ -10,7 +10,33 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
-> ## 🍎 WAVE 10 — iOS PORT (sprint-12): PHASE 0 DONE + MERGED · **PHASE 1 (T-0303) DONE** · **PHASE 2 — T-0304 + T-0305 DONE** (2026-06-26)
+> ## 🍎 WAVE 10 — iOS PORT (sprint-12): PHASE 0 DONE + MERGED · **PHASE 1 (T-0303) DONE** · **PHASE 2 — T-0304 + T-0305 DONE** · **PHASE 3 — T-0306 + T-0310 DONE (PR drafted)** (2026-06-27)
+> **iOS PHASE 3 IS DONE — `phase/ios-phase3` (7 commits, pushed); the Phase-3 PR is drafted.** Both tickets
+> passed the full workflow (ios dev → reviewer/Gate-DP, + security on Devices). **T-0306 (iOS map seam + MapKit +
+> partner AddressPicker) → `done`** (`480f5c4`+`03a00f3`+`199916b`): Slice A = the Core `MapProvider`/
+> `GeocodingService` seam + `Coordinate`/`GeocodedAddress` + `CLGeocoderGeocodingService` + the **iOS-16
+> `MapKitMapProvider`** (125 CleansiaCore tests); Slice B = the partner `AddressPickerView`/`VM` (pan + search,
+> full-bleed map + static center-pin, 300/500ms debounce verbatim, NO `UiState`/`ActionState` — reviewer #27,
+> returns `GeocodedAddress`). D2 current-location FAB DEFERRED → **T-0335** (recorded Gate-DP divergence).
+> Reviewer **APPROVE**. **T-0310 (iOS partner Profile + Devices + Preferences) → `done`**
+> (`ce6c5fc`+`ee2f044`+`2cdaf93`+`6c6155c`, 3 slices): Slice A = the profile hub + 6 section editors + onboarding
+> chain + the now-live RegistrationLock Fix-CTAs (the lock owns its OWN stack, **fail-closed gate #24 byte-unchanged
+> + verified**); Slice B = Devices (list + revoke) — **SECURITY PASS on all binding rules** (D6 single device-id
+> source, D7a hide-on-current + D7b defensive self-revoke sign-out, D8 server-scoped revoke verified vs the backend;
+> TC-IOS-DEVICES-SELF-REVOKE green); Slice C = Preferences (language [+ a System/follow-device row] + theme via
+> `.preferredColorScheme`, the **first runtime in-app language switch**). D3 `ServiceAreaRow`→**T-0334**, D5
+> sealed-state (Android E1 NOT replicated)→**T-0337**, Notifications DROPPED→spike **T-0336**. Reviewer **APPROVE**
+> (incl. a re-review of the System-row fix); **CleansiaCore 125 + CleansiaPartner 185** tests pass. **Reviewer Slice-C
+> MINOR → new follow-up T-0338** (CleansiaCore-owned strings ship en-only behind `bundle: .module` + Core
+> `defaultLocalization: en`, so the in-app language switch doesn't reach the Core toasts — localize ×5 + a swappable
+> Core bundle). **Standing latent SECURITY item (NOT a Phase-3 regression):** the multi-tenant asymmetry in
+> `RefreshTokenService.RevokeByDeviceAsync`/`GetActiveByUserIdAsync` the device-revoke kill rides on
+> (`security/auth-sessions.md`) is tracked by **T-0236** (`done` `b8f89202` — the read-side `IgnoreQueryFilters` fix
+> covers it) + carried in `security/ios-devices.md`; dormant in single-tenant prod, **re-verify before onboarding any
+> non-null-`TenantId` user**. Next runnable = **T-0307** (partner order work-loop) ∥ **T-0309** (earnings/invoices).
+> Full plan + the §3 ticket table + the Phase-3 status-log: **`status/sprint-12.md`** (top banner reconciled 2026-06-27).
+>
+> **--- (Phase-1/2 banner — kept for traceability) ---**
 > **iOS PHASE 1 IS DONE — the proving vertical (T-0303) is green on `phase/ios-phase1`.** Both owner
 > blockers that held T-0303 are **CLEARED**: the dev mobile API is **live** and the owner ran the
 > **mobile-spec-regen** (post-T-0272 specs committed `9232335`), so the T-0302 first real generation ran
@@ -62,6 +88,28 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > | **T-0303** | Phase-1 partner login → read-only Dashboard (the proving vertical) | M | **done ✅** `8996df9`+`2a57f70` (`phase/ios-phase1`; both owner blockers CLEARED; #13-gen + TC-IOS-GEN green; CleansiaCore 93 + Partner 17 pass; reviewer+security APPROVE both slices) | T-0300✓, T-0302✓ | ios | no | rides regen ✓ + dev-API-live ✓ |
 > | **T-0304** | Phase-2 partner shell (`TabView` Dashboard·Orders·Invoices·Profile) + RegistrationLock (fails CLOSED) + SplashGate + ADR-0020 router | M | **done ✅** `55b39aa`+`c269360`+`df71181` (`phase/ios-phase2`; Slice A gate AND-predicate any-nil→LOCKED + BOTH error paths fail closed — reviewer #24 + TC-IOS-REGLOCK green, security APPROVE; ADR-0020 router #23 reseed `.dashboard`→`.splash` closed a latent T-0303 fail-OPEN; 14-token `missingFields` localized ×5. Slice B native `TabView` Gate-DP APPROVE. CleansiaCore 93 + Partner 61 pass on iPhone 17 sim. §7.4: contact-support INERT, silent-stale cache DEFERRED; Fix CTAs→T-0310, onboarding→T-0305) | T-0303✓ | ios | no | — |
 > | **T-0305** | Phase-2 partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding chain (+ Core `AppSettingsStore` + `PasswordPolicy`/`PasswordRuleList`) | M | **done ✅** `ccd25cd`+`e232147`+`3e70cdb`+`84d38bc` (`phase/ios-phase2`; 4 slices — §7.5 docs / A ConfirmEmail / B Register / C+D Forgot+Onboarding; every slice reviewer-APPROVE, Slice A also security-APPROVE — traced backend `ConfirmUserEmail` (CODE-resolved → anon double-skip SAFE), C+D gate-safety SAFE. ConfirmEmail replaces the placeholder + reuses the LIVE empty-token gate; #25: `send()` gained `httpMethod:` (ConfirmUserEmail PUT, no silent 405), no new anon entry, Logout authed, positive-control proves the double-skip non-tautological; `.verifyEmail(email:)` carries the email (no `UserProfileStore`); F1 iOS localizes ×5, Android bug NOT replicated → follow-up **T-0333**. Seed now UNCONDITIONALLY `.splash` (ADR-0020 living-doc fold-in — refines D2; gate #24 byte-unchanged, no bypass). CleansiaCore 114 + Partner 96 pass on iPhone 17 sim) | T-0303✓, T-0304✓ | ios | no | — |
+> | **T-0306** | **Phase-3** map seam + MapKit default — Core `MapProvider`/`GeocodingService` seam + `Coordinate`/`GeocodedAddress` + `CLGeocoderGeocodingService` + iOS-16 `MapKitMapProvider` + the partner `AddressPickerView`/`VM` (returns `GeocodedAddress`; not wired into AddressSection — that's T-0310) | M | **done ✅** `480f5c4`+`03a00f3`+`199916b` (`phase/ios-phase3`; Slice A Core seam + iOS-16 MapKit — 125 CleansiaCore tests; Slice B partner AddressPicker pan+search, full-bleed map + static center-pin, 300/500ms debounce verbatim, best-effort geocode, NO `UiState`/`ActionState` (reviewer #27). D2 current-location FAB DEFERRED → T-0335 (recorded Gate-DP divergence). Reviewer **APPROVE**; swiftformat/swiftlint clean) | T-0300✓ | ios | no | — |
+> | **T-0310** | **Phase-3** partner Profile tab (hub + 6 section editors + onboarding chain + the now-live RegistrationLock Fix-CTAs) + **Devices** (Device/Mine list + revoke, SECURITY-ruled D6–D8) + **Preferences** (Language/Theme) over a new `PartnerProfileClient` (ADR-0019 spine) | M | **done ✅** `ce6c5fc`+`ee2f044`+`2cdaf93`+`6c6155c` (`phase/ios-phase3`; 3 slices. A = hub + 6 editors + onboarding chain + Fix-CTAs (the lock owns its OWN `NavigationStack`+chain VM, pushes the SHARED section set `onboarding==true`, fail-CLOSED, gate #24 byte-unchanged + verified). B = Devices — **SECURITY PASS** (D6 single device-id source, D7a hide-on-current + D7b defensive self-revoke sign-out, D8 server-scoped revoke verified vs backend; TC-IOS-DEVICES-SELF-REVOKE green). C = Preferences (language [+ System/follow-device row] + theme via `.preferredColorScheme`, the first runtime in-app language switch). D3 `ServiceAreaRow`→T-0334; D5 sealed-state, Android E1 NOT replicated→T-0337; current-location FAB→T-0335; Notifications DROPPED→T-0336. Reviewer-MINOR (Slice C Core i18n)→T-0338. Reviewer **APPROVE** (incl. System-row re-review); 185 CleansiaPartner tests; swiftformat/swiftlint clean) | T-0304✓, T-0306✓ | ios | **sec** (Devices D6–D8 PASS) | — |
+>
+> **Phase-3 follow-up tickets (filed 2026-06-26/27) — all `draft`, deferred out of T-0306/T-0310; not dispatched:**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+> |----|-------|------|--------|-----------|--------|-----|-------------|--------|
+> | **T-0334** | iOS `ServiceAreaProvider` Core seam + the advisory `ServiceAreaRow` (+ forward-geocode country-bias) | M | **draft** | T-0310✓, T-0306✓ | ios | no | — | sprint-12 §7.7 D3 (architect) |
+> | **T-0335** | iOS `LocationProvider` Core seam + the my-location FAB + picker auto-center — **gated on owner T-0325** (`NSLocationWhenInUseUsageDescription`) | M | **draft** (gated) | T-0310✓, **T-0325 (owner, `proposed`)** | ios | no | **T-0325 plist key (owner)** | sprint-12 §7.6 D2 + §7.7 Scope A |
+> | **T-0336** | SPIKE — iOS partner in-app notifications feed (persistence choice + push-receipt contract + bell badge) | S | **draft** (spike) | T-0311 | ios, analyst | no | — | sprint-12 §7.7 Scope B |
+> | **T-0337** | Android partner profile VMs — flag-bag `UiState`→sealed (E1) + hardcoded validation/error strings→`R.string.*` (E8) | S | **draft** | — | android | no | — | sprint-12 §7.7 D5 (consistency.md E1/E8) |
+> | **T-0338** | Localize the CleansiaCore catalog ×5 + route Core localization through a swappable bundle (the Slice-C reviewer MINOR) | S | **draft** | T-0310✓ | ios | no | — | T-0310 Slice C reviewer MINOR |
+>
+> **The standing latent backend SECURITY item — TRACKED, not new:** the multi-tenant asymmetry in
+> `RefreshTokenService.RevokeByDeviceAsync` / `RefreshTokenRepository.GetActiveByUserIdAsync` that the iOS remote
+> device-revoke session-kill (T-0310 Slice B) rides on (`security/auth-sessions.md` 2026-06-10) is **owned by
+> T-0236** (`done ✅` `b8f89202`, Wave-6 6A — the read-side `IgnoreQueryFilters()` fix that covers
+> `GetActiveByUserIdAsync` + `GetByTokenHashAsync` + `RevokeChainAsync`). It is **NOT a Phase-3 regression** —
+> pre-existing class, correct in today's null-`TenantId` single-tenant mode. The T-0310 Devices Gate-SEC carries it
+> as the standing dependency (`security/ios-devices.md` S8). **Standing gate: re-verify T-0236's fix before
+> onboarding any non-null-`TenantId` user**, alongside the sibling go-live blockers T-0245 (Stripe webhook tenant
+> scope, `done`) and the multi-tenant readiness checklist.
 >
 > **T-0303's two owner blockers are now BOTH CLEARED** (they previously held T-0303 + every generated-client
 > ticket): (1) the owner ran the **mobile-spec-regen** — the formerly-stale committed

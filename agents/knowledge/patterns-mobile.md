@@ -227,12 +227,15 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | `ApiErrorParser.parseToUserMessage` | an app-injectable `ApiErrorLocalizing` seam (`ApiErrorLocalizer`); server message wins, else status→localized fallback |
 | `stringResource(R.string.x)` | `String(localized:)` / `Localizable.strings` |
 | `navigation.Routes` (`@Serializable`) — **top-level audience hops** (Splash/Login/Lock/Main via `popUpTo{inclusive}`) | **the flat-enum root-switch** (`PartnerRootView` over a closed `enum Route`: `.splash`/`.login`/`.verifyEmail`/`.registrationLock`/`.dashboard`-shell), seeded `hasValidSession ? .splash : .login`, a verified login bounces through `.splash` which re-resolves shell-vs-lock (**ADR-0020**, reviewer #23). A top-level audience state modeled as a pushed `NavigationPath` is a deviation |
-| `navigation.Routes` (`@Serializable`) — **intra-audience push** (OrderDetail, ProfileSection, onboarding-chain sections) | `NavigationStack` + typed route enum (the push container **within** a root audience state, NOT the audience selector) |
+| `navigation.Routes` (`@Serializable`) — **intra-audience push** (OrderDetail, ProfileSection, onboarding-chain sections) | `NavigationStack` + typed route enum (the push container **within** a root audience state, NOT the audience selector). **Concrete (T-0310, §7.7):** the Profile tab hosts an in-tab `NavigationStack` over a typed `ProfileRoute` enum; the RegistrationLock (a root audience state) owns its OWN local `NavigationStack` over the same gate-section routes and pushes the **shared** section set over itself with `onboarding == true` — fail-closed, no cross-audience routing into the shell |
 | per-app `openApiGenerate { generatorName=kotlin }` reading `openapi/{partner,customer}-mobile-api.json` | per-app `openapi-generator` **swift5 + urlsession** (`responseAs: AsyncAwait`) reading the **same shared committed specs**; config in `cleansia_ios/openapi/openapi-generator-config.*.yaml`, run via `scripts/generate-api-clients.sh`, emitting `Cleansia{Partner,Customer}Api` SPM packages. Generated output is **gitignored + never hand-edited** (change the spec or config, regenerate). The **auth/session/header spine is hand-written** in `Core/Auth` and **excluded from codegen**. First real generation is owner-gated (`manual_step: mobile-spec-regen`) — the specs are stale pre-T-0272 |
 | Android's generated Retrofit service authed by the OkHttp `AuthInterceptor`/`AuthAuthenticator` already installed in the client | **the generated swift5 client authenticates ONLY via a custom `RequestBuilderFactory` installed into the generated global config** (`Cleansia{Partner,Customer}ApiAPI.requestBuilderFactory`) — its `RequestBuilder` subclass routes **every** generated request through the **same** `Core/Auth` spine (`HeaderAdapter` for Bearer-iff-not-anon + `X-Device-Id`/`X-Device-Label`/`X-Time-Zone`, `actor SessionRefresher` for single-flight 401→refresh→retry), using only the generator's `open` points so it survives regeneration (**ADR-0019**). The generated APIs are static, apply only the static `customHeaders`, and are all `requiresAuthentication: false` — so without this they 401 tokenless |
 | `core/settings/AppSettingsRepository.kt` (DataStore `partner_app_settings`: `onboarding_seen`, `language`, `theme`) | a single general **`AppSettingsStore`** in `CleansiaCore`, **`UserDefaults`-backed** (DataStore's wiped-on-uninstall parity — NOT Keychain): `hasSeenOnboarding`/`markSeen()` + a resolved language tag ∈ {en,cs,sk,uk,ru} (sprint-12 §7.5 D1, reviewer #26a) |
 | `core/validation/EmailValidator.kt` + the `passwordHas*` getters in `RegisterUiState` | `CleansiaCore/Validation/EmailValidator.swift` (already hoisted) + a Core **`PasswordPolicy`** (≥8 && letter && digit — the predicate lifted OUT of the VM) feeding a Core **`PasswordRuleList`** view (`:core` `PasswordRuleList.kt` parity) — shared by partner + customer (sprint-12 §7.5 D4, reviewer #26c) |
 | hand-written `AuthApi.kt` Retrofit verbs (`@POST`/`@PUT` per endpoint) | the hand-written `Auth.swift` spine `send()` takes an **`httpMethod:` param defaulting `.post`**; `ConfirmUserEmail` passes `.put` (header-parity §3 — hardcoding POST is a silent 405). All four T-0305 paths (Register/ConfirmUserEmail/ResendConfirmationEmail/ForgotPassword) are already in `AnonymousAllowList.sharedAuth`; `Logout` stays authed (sprint-12 §7.5 D3, reviewer #25) |
+| `core/location/ReverseGeocodingService.kt` (Mapbox Geocoding v5 over OkHttp; `accessToken` from BuildConfig) | `CleansiaCore/Location` **`GeocodingService`** protocol + **`CLGeocoderGeocodingService`** default impl — a 1:1 port (`reverseGeocode`/`forwardGeocode` → `GeocodedAddress?`/`[GeocodedAddress]`) **minus the Mapbox token + the OkHttp/network args** (MapKit = system framework, **no token**). Best-effort: nil/`[]` on error, **cancel the in-flight geocode before re-firing** (`kCLErrorGeocodeCanceled` swallowed) — the `runCatching{}.getOrNull()` parity. Debounce ports VERBATIM: **300ms forward / 500ms reverse** (`AddressPickerScreen.kt:188,171` — also the `CLGeocoder` rate-limit guard) (sprint-12 §7.6 D1/D3, reviewer #27) |
+| `core/location/{GeocodedAddress,UserLocation}.kt` + `MapStyles.kt` (Mapbox style URIs) | `Coordinate` + `GeocodedAddress` plain value types in `CleansiaCore/Location` (the `GeocodedAddress.kt` field parity). **`MapStyles.kt` is NOT ported** — the stock MapKit standard style is the parity baseline; a custom Mapbox Studio style returns only if Q-IOS-02 flips to "yes" (sprint-12 §7.6 D4) |
+| Mapbox `MapboxMap` + center-pin overlay + my-location FAB (`AddressPickerScreen.kt`) | **`MapProvider`** picker-map factory (a `Map(coordinateRegion:annotationItems:[])` + SwiftUI overlay pin the map pans under — iOS-16 variant, NO `Map{Marker}`/`onMapCameraChange`, reviewer #12) in `CleansiaCore/Location`, the **only** sanctioned MapKit consumer. **Current-location/the my-location FAB + the `LocationProvider` (`CLLocationManager`) seam are DEFERRED to T-0310** (needs T-0325's `NSLocationWhenInUseUsageDescription` plist key — owner); T-0306 centers on the **Prague default** + ships pan+search parity. Full-bleed `OrderDetail` map + service-area polygon overlay added **additively** later (`MKMapView`/`UIViewRepresentable`, ADR-0014 D6′). The AddressPicker has **NO `UiState`/`ActionState`** — plain `@Published` state + a one-shot `onConfirmed(GeocodedAddress)` callback (sprint-12 §7.6 D1/D2/D3) |
 
 **Generated-client auth — the ONE way (ADR-0019, reviewer #13-gen):** authenticate the generated business
 client **only** through the Core-spine-backed `RequestBuilderFactory` (above). **Deviations a reviewer
@@ -292,6 +295,61 @@ green-check / red-cross rows + a `hasInput` flag). Partner (now) and customer (T
 **Client-side UX only — the backend `BaseAuthValidator` is authoritative.** **Deviations a reviewer rejects:**
 a VM-local copy of the predicate (the Android `RegisterUiState`-getter smell, lifted to Core on iOS); a
 per-app password-rule widget instead of the Core component.
+
+**iOS maps — the ONE way (sprint-12 §7.6, T-0306; ADR-0013 D6 + ADR-0014 D6′ + ADR-0018 Gate-DP, reviewer
+#7/#12/#27):** all map + geocode use goes through `CleansiaCore/Location`'s **`MapProvider`** /
+**`GeocodingService`** protocols; the **only** sanctioned MapKit/CoreLocation consumers are the
+`MapKitMapProvider`-produced view + `CLGeocoderGeocodingService` — **feature/VM code imports neither MapKit
+nor CoreLocation** (reviewer #7/#27). The seam ships **minimally and grows additively:** T-0306 ships the
+**picker-map factory only** (iOS-16 `Map(coordinateRegion:annotationItems:[])` + a SwiftUI overlay pin the
+map pans under — NO `Map{Marker}`/`onMapCameraChange`, reviewer #12); T-0307's full-bleed `OrderDetail` map +
+service-area polygon overlay are an **additive method** later (`MKMapView`/`UIViewRepresentable`), **not**
+designed ahead. `GeocodingService` is a 1:1 `ReverseGeocodingService.kt` port **minus the Mapbox token +
+network args** — **best-effort** (nil/`[]` on error, **cancel-before-refire** for `kCLErrorGeocodeCanceled`,
+never block the confirm/crash — the `runCatching{}.getOrNull()` parity), debounce **300ms forward / 500ms
+reverse** ported VERBATIM (the `CLGeocoder` rate-limit guard; iOS-16 reverse-on-idle is a VM-owned
+Combine/`Task` debounce, not a map callback). The **AddressPicker has NO `UiState<T>`/`ActionState`** — it is
+an interactive map with plain `@Published` state + a one-shot `onConfirmed(GeocodedAddress)` callback, neither
+an E1 load-fetch nor an E2 mutation screen — so the **sealed-state absence is correct, not a finding**
+(reviewer #27). **Current-location/the my-location FAB are DEFERRED out of T-0306** (the `LocationProvider`/
+`CLLocationManager` seam + the FAB home to T-0310, gated on T-0325's `NSLocationWhenInUseUsageDescription`
+plist key — owner); T-0306 centers on the **Prague default** + ships **pan-to-place + search at full parity**.
+This is the recorded **Gate-DP divergence** (iOS omits current-location pending T-0325; pan/search parity full;
+the divergence touches a deferred affordance, **not** layout/flow/branding). **No Mapbox token, no map SDK, no
+`Package.swift` change** — a **net reduction** in secret surface vs Android's `MAPBOX_ACCESS_TOKEN` BuildConfig;
+`MapStyles.kt` is NOT ported (stock MapKit style is the baseline; Q-IOS-02 stays "No"). **Deviations a reviewer
+rejects:** a feature/VM `import MapKit`/`import CoreLocation`; a second MapKit consumer outside the providers;
+the iOS-17-only `Map{Marker}`/`MapPolygon`/`onMapCameraChange` API (#12); a hand-rolled per-feature geocode/
+debounce instead of the Core `GeocodingService`; building the my-location FAB before T-0325's plist key exists
+(a dead control); flagging the missing `UiState`/`ActionState` on the picker.
+
+**iOS partner Profile tab — the ONE way (sprint-12 §7.7, T-0310; ADR-0020 + §7.5 D1 + §7.6 D2 + ADR-0018 Gate-DP +
+the Parity rule, reviewer #28):** the Profile tab hosts an **in-tab `NavigationStack` over a typed `ProfileRoute`
+enum INSIDE the `.dashboard` shell** — the ADR-0020 **intra-audience push** (the root `enum` stays the audience
+selector). `ProfileRoute` = the `NavRoutes.kt:54-91` push routes minus the audience cases; the four **gate** sections
+(`.personal/.address/.identification/.bank`) carry an `onboarding: Bool` payload, Emergency/Documents do not; the
+AddressPicker is a `.sheet`/`.fullScreenCover` return-value flow (`onConfirmed`), **not** a route. **The RegistrationLock
+(a ROOT audience state, NOT in the shell) owns its OWN local `NavigationStack` + onboarding-chain VM and pushes the
+SHARED section set over ITSELF with `onboarding == true`** (the Android `popUpTo(RegistrationLock){inclusive=false}` +
+`ON_RESUME` re-resolve parity, `OnboardingChainViewModel.kt:86-121`); on pop the lock re-resolves and **only** the
+success watermark flips the root to `.dashboard` — **fail-CLOSED, no cross-audience routing into the shell's Profile
+tab** (composes with the registration-gate #24). **Section screens are ONE set of Views/VMs hosted by TWO stacks**
+(Profile tab = maintenance edits, `onboarding == false` → pop on save; lock = onboarding chain, `onboarding == true` →
+chain forward), the `onboarding` flag the **only** switch. **Device-local settings** read/write the one `AppSettingsStore`
+(extended with writable `setLanguage` + a `Theme` enum + `setTheme`, the `AppSettingsRepository.kt:37-51` parity —
+UserDefaults, NOT Keychain, #26a); the **theme is honored via `.preferredColorScheme` on the root** (`.system`→`nil`).
+**The Profile hub + each section load are sealed `UiState<T>`; the save is `ActionState` + a one-shot effect** — Android's
+`ProfileUiState`/`*UiState` **flag-bags (E1) are NOT replicated** (the Parity rule: Android-wrong → diverge correctly,
+raise the finding — android fix **T-0337**); every validation/error string is an `.xcstrings` key ×5 (NOT the Android
+hardcoded literals). **Deviations a reviewer rejects:** a section push modeled as an audience hop (or the audience as a
+`ProfileRoute`); a Fix CTA that renders/routes into the shell's Profile-tab stack (a fail-OPEN shell reach before
+complete); a second forked copy of a section View/VM for the lock; a second settings store (or theme/language in the
+Keychain); a ported flag-bag `…UiState` struct or a hardcoded validation string; building the my-location FAB before
+T-0325's plist key exists (DEFERRED → T-0335 — a dead control); a "Notifications" prefs row/screen in the partner
+Profile hub (DROPPED — no backend contract; the Preferences group is Language + Theme + Devices, the
+`ProfileScreen.kt:183-204` parity). **Deferred (NOT findings — recorded Gate-DP divergences):** the advisory
+`ServiceAreaRow` (→ T-0334); the current-location FAB (→ T-0335, gated on T-0325). The **Device/Mine list + revoke**
+screen is **SECURITY-ruled** (decisions 6–8), out of this rule's scope.
 
 **Parity deviation (Android is wrong, iOS is right) — auth validation strings:** the Android partner
 `RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set validation errors as **hardcoded English

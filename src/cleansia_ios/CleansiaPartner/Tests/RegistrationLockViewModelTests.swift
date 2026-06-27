@@ -146,4 +146,16 @@ final class RegistrationLockViewModelTests: XCTestCase {
         XCTAssertEqual(authClient.logoutCount, 1)
         XCTAssertFalse(vm.action.isSubmitting)
     }
+
+    func testMissingFieldsExposedForFixRouting() async {
+        client.result = .success(RegistrationCompletionStatus(
+            hasCompletedProfile: false,
+            missingFields: ["profile.fields.iban"]
+        ))
+        let vm = makeViewModel()
+
+        await vm.load()
+
+        XCTAssertEqual(vm.missingFields, ["profile.fields.iban"])
+    }
 }

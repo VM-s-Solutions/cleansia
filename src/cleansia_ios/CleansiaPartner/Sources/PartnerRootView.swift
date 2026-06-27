@@ -3,11 +3,13 @@ import SwiftUI
 
 struct PartnerRootView: View {
     private let container: PartnerAppContainer
+    @ObservedObject private var preferences: PreferencesModel
     @EnvironmentObject private var sessionManager: SessionManager
     @State private var route: Route
 
-    init(container: PartnerAppContainer) {
+    init(container: PartnerAppContainer, preferences: PreferencesModel) {
         self.container = container
+        self.preferences = preferences
         _route = State(initialValue: Route.seed())
     }
 
@@ -66,11 +68,19 @@ struct PartnerRootView: View {
             RegistrationLockView(
                 client: container.registrationClient,
                 authClient: container.authClient,
+                profileClient: container.profileClient,
+                snackbar: container.snackbar,
+                geocoding: container.geocodingService,
+                mapProvider: container.mapProvider,
                 onCompleted: { route = .dashboard },
                 onSignedOut: { route = .login }
             )
         case .dashboard:
-            PartnerShellView(container: container)
+            PartnerShellView(
+                container: container,
+                preferences: preferences,
+                onSignedOut: { route = .login }
+            )
         case let .verifyEmail(email):
             ConfirmEmailView(
                 email: email,

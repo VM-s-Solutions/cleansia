@@ -1,8 +1,8 @@
 # Sprint 12 — iOS PORT (Wave 10): parity Swift/SwiftUI customer + partner apps
 
-**Status:** PHASE 0 FOUNDATION DONE + MAC-VERIFIED + MERGED (2026-06-26) · **PHASE 1 (T-0303) DONE** — proving vertical green on `phase/ios-phase1` · **PHASE 2 — T-0304 (partner shell + RegistrationLock + SplashGate) DONE + T-0305 (partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding) DONE** on `phase/ios-phase2` (T-0305 = 4 slices; every slice reviewer-APPROVE; Slice A also security-APPROVE; Slices C+D gate-safety-SAFE) · Phase 2+ tail proposed · android F1 follow-up **T-0333** filed
+**Status:** PHASE 0 FOUNDATION DONE + MAC-VERIFIED + MERGED (2026-06-26) · **PHASE 1 (T-0303) DONE** — proving vertical green on `phase/ios-phase1` · **PHASE 2 — T-0304 + T-0305 DONE** on `phase/ios-phase2` · **PHASE 3 — T-0306 (map seam + MapKit + partner AddressPicker) DONE + T-0310 (partner Profile + Devices + Preferences) DONE** on `phase/ios-phase3` (2026-06-27; 7 commits, pushed). **T-0306:** Slice A Core `MapProvider`/`GeocodingService` seam + `CLGeocoder` + iOS-16 `MapKitMapProvider` (125 Core tests) / Slice B partner `AddressPicker` (pan+search, returns `GeocodedAddress`); reviewer APPROVE. **T-0310:** Slice A profile hub + 6 section editors + onboarding chain + the now-live RegistrationLock Fix-CTAs (fail-closed gate #24 verified) / Slice B Devices list+revoke (**SECURITY PASS** on D6/D7/D8) / Slice C Preferences (language [+ System/follow-device row] + theme via `.preferredColorScheme`, the first runtime in-app language switch); reviewer APPROVE; 185 Partner tests. **Phase 3 PR drafted.** · Phase 2+ tail (T-0307/0308/0309/0311/0312/0313/0314 + compliance T-0324…T-0329) proposed · follow-ups filed: **T-0334** (iOS ServiceAreaRow) / **T-0335** (iOS current-location FAB, gated on owner T-0325) / **T-0336** (iOS notifications-feed spike) / **T-0337** (Android partner profile sealed-state + i18n) / **T-0338** (Core catalog i18n ×5 + swappable bundle); android i18n **T-0333** (Register/Forgot) prior · standing latent backend S8 (RefreshToken tenant read asymmetry the device-revoke kill rides on) tracked by **T-0236** (`done`) + `security/auth-sessions.md` + `security/ios-devices.md` — re-verify before any non-null-TenantId onboarding
 **Created:** 2026-06-23
-**Updated:** 2026-06-26
+**Updated:** 2026-06-27
 **Source:** **ADR-0013** (`adr/0013-ios-app-architecture-and-port-strategy.md`, **accepted** 2026-06-23) +
 **ADR-0014** (`adr/0014-ios-deployment-target-ios16-and-state-mechanism.md`, **accepted** 2026-06-23 —
 partially supersedes ADR-0013: **iOS-16 floor** + `ObservableObject`/`@Published` state + the iOS-16 MapKit
@@ -125,6 +125,73 @@ born-canonical Swift `ApiResult<T>` contract.
 > runnable = **T-0306** (map seam + MapKit, deps T-0300✓) ∥ **T-0309** (earnings/invoices, deps T-0304✓) ∥
 > **T-0310** (profile/devices, deps T-0304✓+T-0306). The owner commits these backlog edits to
 > `phase/ios-phase2` (the PM does not commit). Phase 2+ tail stays **proposed**.
+
+> **STATUS-LOG 2026-06-26 — PHASE 3: T-0310 (partner Profile tab + section editors + onboarding chain + Devices
+> + Preferences) — 5 Understand-pass rulings + 2 scope items RECORDED (§7.7, no new ADR; reviewer #28; branch
+> `phase/ios-phase3`).** The architect ruled D1–D5 + scope A/B (the device-id/revoke gate — decisions 6–8 — is
+> ruled by the **security** charter in parallel and is OUT of this record). **All five APPLY accepted ADRs / confirm
+> Android parity — NO new ADR** (ADR-0020 owns the nav trade-off; §7.5 D1 owns the settings store; §7.6 D2 owns the
+> defer-the-affordance call; ADR-0018 Gate-DP owns the divergence form; the `patterns-mobile` Parity rule owns the
+> E1 divergence). **D1 (nav):** the Profile tab hosts an **in-tab `NavigationStack` over a typed `ProfileRoute` enum**
+> INSIDE the `.dashboard` shell — the ADR-0020 intra-audience push (the root enum stays the audience selector); the
+> `ProfileRoute` shape is recorded (gate sections carry the `onboarding: Bool` payload; the AddressPicker is a modal
+> return-value flow, not a route). **D2 (the load-bearing call):** the **RegistrationLock owns its OWN local
+> `NavigationStack` + onboarding-chain VM and pushes the SHARED section set over ITSELF** with `onboarding == true`;
+> on pop it re-resolves and **only** the success watermark flips the root to `.dashboard` — **fail-CLOSED, no
+> cross-audience routing into the shell's Profile tab** (the rejected alternative breaks #24). **Section screens are
+> shared as ONE set of Views/VMs hosted by TWO stacks** (Profile tab + lock), the `onboarding` flag the only switch.
+> **D3:** the advisory `ServiceAreaRow` is **DEFERRED → T-0334** (a Gate-DP divergence; advisory-only, never a save
+> gate); the Address section ships pan/search/save at full parity. **D4:** **EXTEND** the one `AppSettingsStore` with
+> writable language + a `Theme` enum + setters; **honor theme via `.preferredColorScheme` now**. **D5:** iOS is born
+> **sealed-state canonical** (`UiState<T>` load + `ActionState` save) — Android's `ProfileUiState`/`*UiState`
+> **flag-bags (E1) NOT replicated**; the android E1 + string-literal fix is filed as **T-0337**. **Scope A:** the
+> my-location FAB + `LocationProvider` seam are **DEFERRED → T-0335** (T-0325's `NSLocationWhenInUseUsageDescription`
+> is **still `proposed`** — building the FAB now ships a dead control); the `LocationProvider` protocol shape is
+> recorded regardless. **Scope B:** **"Notifications" DROPPED** from T-0310 — no Android prefs surface / no backend
+> prefs API / no client; the in-app feed is a separate spike **→ T-0336** (after T-0311 APNs). Living doc
+> (`architecture/decisions/ios-app-architecture.md`) + `patterns-mobile.md` updated in parallel; follow-up stubs
+> **T-0334/T-0335/T-0336/T-0337** filed `draft`. T-0310 stays **proposed** (ready to build on `phase/ios-phase3`);
+> the owner commits these backlog edits (the PM does not commit).
+
+> **STATUS-LOG 2026-06-27 — PHASE 3 COMPLETE: T-0306 + T-0310 `proposed` → `done` on `phase/ios-phase3`
+> (7 commits, pushed); Phase 3 PR drafted.** Both tickets passed the full workflow (ios dev → reviewer/Gate-DP,
+> + security on Devices). **T-0306 (map seam + MapKit + partner AddressPicker) → `done`** —
+> `480f5c4`+`03a00f3`+`199916b`: **Slice A** = the Core `MapProvider`/`GeocodingService` seam + `Coordinate`/
+> `GeocodedAddress` value types + `CLGeocoderGeocodingService` + the **iOS-16 `MapKitMapProvider`** (`Map(coordinateRegion:)`
+> + SwiftUI overlay pin, NO iOS-17-only `Map{Marker}` — ADR-0014 D6′; **125 CleansiaCore tests**); **Slice B** =
+> the partner `AddressPickerView`/`VM` — full-bleed map + a **static center-pin** the map pans under + search +
+> the **300ms forward / 500ms reverse-on-idle** debounce ported verbatim, best-effort `CLGeocoder` (cancel-before-refire,
+> nil/`[]` on error, never blocks confirm), **correctly NO `UiState`/`ActionState`** (reviewer note #27 — it is an
+> interactive map, not an E1/E2 screen), returns `GeocodedAddress` via `onConfirmed` (NOT wired into AddressSection —
+> that is T-0310). **D2 honored:** the current-location FAB + `LocationProvider` seam are **DEFERRED → T-0335** (the
+> recorded Gate-DP divergence; the picker is fully usable on the Prague default). **Reviewer APPROVE**; swiftformat/swiftlint
+> clean. **T-0310 (partner Profile tab + section editors + onboarding chain + Devices + Preferences) → `done`** —
+> `ce6c5fc`+`ee2f044`+`2cdaf93`+`6c6155c` across **3 slices**: **Slice A** = the profile hub (hero + contract-status
+> chip + section-group rows + logout) + the **6 section editors** (Personal/Address/Identification/Bank/Emergency/Documents)
+> over the `PartnerProfileClient` (ADR-0019 spine) + the **onboarding chain** + the **now-live RegistrationLock Fix-CTAs**
+> (D2 — the load-bearing call: the lock owns its **OWN** `NavigationStack` + chain VM and pushes the **SHARED** section
+> set over itself with `onboarding == true`; **fail-CLOSED, no cross-audience shell routing** — the §7.4 gate #24 stays
+> **byte-unchanged and verified**, only the success watermark flips the root to `.dashboard`); **Slice B** = **Devices**
+> (Device/Mine list + revoke) — **SECURITY PASS on all binding rules** (D6 single device-id source = the one
+> `DeviceIdProvider`; D7a hide-on-current + D7b defensive self-revoke → `authClient.logout()`; D8 server-scoped revoke
+> verified against the backend; **TC-IOS-DEVICES-SELF-REVOKE** green — full S1–S10 walk + the build-time verification at
+> `security/ios-devices.md` 2026-06-27); **Slice C** = **Preferences** (language picker [with a **System / follow-device**
+> row] + theme picker; theme honored via **`.preferredColorScheme`**; the **first runtime in-app language switch**).
+> **D3** advisory `ServiceAreaRow` DEFERRED → **T-0334**; **D5** iOS born **sealed-state canonical** (`UiState<T>` +
+> `ActionState`) — Android's E1 flag-bags NOT replicated → **T-0337**; the current-location FAB → **T-0335**; "Notifications"
+> DROPPED (no Android prefs surface / no backend prefs API / no client) → spike **T-0336**. **Reviewer APPROVE** (including
+> a re-review of the System-row fix); **185 CleansiaPartner tests** pass; swiftformat/swiftlint clean. **One reviewer MINOR
+> (Slice C) filed as T-0338:** the CleansiaCore-owned user-facing strings (`ApiErrorLocalizer`'s 6 error toasts +
+> `snackbar.dismiss`) ship **en-only** (Core `Package.swift defaultLocalization: en`, `bundle: .module`), so the new
+> in-app language switch does **NOT** re-localize them — pre-existing debt, surfaced by T-0310, scoped to add cs/sk/uk/ru
+> to the Core catalog + a swappable Core bundle. **Standing latent SECURITY item (NOT a Phase-3 regression):** the
+> multi-tenant asymmetry in `RefreshTokenService.RevokeByDeviceAsync`/`GetActiveByUserIdAsync` that the remote
+> device-revoke session-kill rides on (`security/auth-sessions.md`) is tracked by **T-0236** (`done` `b8f89202` — the
+> read-side `IgnoreQueryFilters` fix covers `GetActiveByUserIdAsync`) + carried as the standing dependency in
+> `security/ios-devices.md`; dormant in single-tenant prod, **re-verify before onboarding any non-null-`TenantId` user**.
+> Resulting transitions: **T-0306 → `done`, T-0310 → `done`** (§3 + INDEX Wave-10 roster). Next runnable = **T-0307**
+> (partner order work-loop, deps T-0304✓+T-0306✓) ∥ **T-0309** (earnings/invoices, deps T-0304✓). The owner commits
+> these backlog edits + opens the Phase-3 PR (the PM does not commit). Phase 2+ tail stays **proposed**.
 **Goal:** port the Kotlin/Compose customer + partner apps to **Swift/SwiftUI** as **parity** apps sharing
 the **same Mobile API contract**, on a `CleansiaCore` SPM package + 2 app targets, **partner-first**, with
 a hand-written auth/session/header layer to the exact Android contract. iOS code lives at
@@ -203,11 +270,11 @@ PHASE 2+ PARITY FEATURE WAVES ── ordered by complexity; the 3 hard areas cal
 | **T-0303** | **Phase-1 partner lead vertical** — partner login (hand-written auth, empty-token gate) → **read-only Dashboard** (`dashboardGetStats` via the **ADR-0019 Core-spine-backed `RequestBuilderFactory`** + `UiState`), proving auth/session/headers/codegen/state end-to-end. **Acceptance scope fixed in §7.2** (greeting + stats-driven cards + 3-state hero + inert nav closures; caching / pull-to-refresh / notifications / live order feeds DEFERRED to T-0304/0307/0310) | M | **done ✅** `8996df9`+`2a57f70` (`phase/ios-phase1`; both §7.1 blockers CLEARED — dev API live + regen `9232335`; #13-gen + TC-IOS-GEN green; CleansiaCore 93 + CleansiaPartner 17 pass; reviewer **AND** security APPROVE both slices — §7.3 fwd-notes) | ios | T-0300✓, T-0302✓ (first real gen via `8d4cfe3`) | rides T-0302 regen + dev-API-live ✓ | **1 (the proving vertical)** |
 | **T-0304** | Partner shell (Dashboard·Orders·Invoices·Profile tabs) + RegistrationLock gate (fails CLOSED) + SplashGate. **Acceptance scope + the 3 Understand-pass rulings fixed in §7.4**: Decision 1 (fail-closed gate placement + AND predicate + both error paths CLOSED — confirms the Android gate, reviewer #24 + **TC-IOS-REGLOCK**), Decision 2 (the flat-enum `PartnerRootView` router gated by `.splash` — **ADR-0020**, reviewer #23), Decision 3 (the deferral map — "Fix" CTAs + onboarding branch INERT/deferred to T-0305/T-0310, the §7.2 inert-nav precedent) | M | **done ✅** `55b39aa`+`c269360`+`df71181` (`phase/ios-phase2`; Slice A gate: AND predicate, any nil→LOCKED, availability not a clause, BOTH error paths fail closed — reviewer #24 + **TC-IOS-REGLOCK** green, **security APPROVE**; ADR-0020 router #23 reseeded `.dashboard`→`.splash`, closing a latent T-0303 fail-OPEN; 14-token `missingFields` localized ×5. Slice B shell: native SwiftUI `TabView`, 4 tabs in Android `MainTab` order, dashboard tab hosts T-0303, `onOpenOrders`→Orders tab, 3 placeholders — **Gate-DP APPROVE** (D3 component swap noted). swiftformat/swiftlint clean; **CleansiaCore 93 + CleansiaPartner 61** pass on iPhone 17 sim. §7.4 (a) contact-support INERT, (b) silent-stale cache DEFERRED. Deferrals: Fix CTAs→T-0310, onboarding branch→T-0305) | ios | T-0303✓ | — | 2 (partner) |
 | **T-0305** | Partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding chain. **Acceptance scope + the 5 Understand-pass rulings fixed in §7.5**: D1 (a GENERAL `AppSettingsStore` in Core, UserDefaults-backed — onboarding-seen + the 5-locale language tag, `AppSettingsRepository.kt` parity), D2 (ConfirmEmail email via the `.verifyEmail(email:)` Route associated value, NOT a `UserProfileStore` — ADR-0020 fold-in), D3 (SECURITY: no new anon entry, Logout authed, `ConfirmUserEmail` is **PUT** + the spine `send()` gains an `httpMethod:` param, the double-skip + empty-token-gate reuse — reviewer #25), D4 (a Core `PasswordPolicy` + `PasswordRuleList`, ≥8&&letter&&digit — `RegisterViewModel.kt:37-39` parity), D5 (the F1 deviation: Android partner Register/Forgot VMs hardcode English validation strings — iOS localizes ×5; android fix is a follow-up). Reviewer #25/#26 + TC-IOS-CONFIRM-PUT / -SETTINGS / -PASSWORD-POLICY / -VERIFY-EMAIL-ARG + the extended TC-IOS-ANON/-EMPTYTOKEN | M | **done ✅** `ccd25cd`+`e232147`+`3e70cdb`+`84d38bc` (`phase/ios-phase2`; 4 slices — §7.5 docs / Slice A ConfirmEmail / Slice B Register / Slices C+D Forgot+Onboarding; every slice reviewer-APPROVE, Slice A also security-APPROVE — traced the backend `ConfirmUserEmail` (CODE-resolved, no session needed → the anon double-skip is SAFE), Slices C+D gate-safety SAFE. All 4 flows shipped: Register + Core `PasswordPolicy`/`PasswordRuleList`; Forgot single-phase; ConfirmEmail replaces the placeholder + reuses the LIVE empty-token gate; Onboarding 2-page intro + SplashGate branch + `hasSeenOnboarding` in the new Core `AppSettingsStore`. #25: `send()` gained `httpMethod:` (ConfirmUserEmail PUT, no silent 405); no new anon entry, Logout authed; positive-control proves the double-skip non-tautological. `.verifyEmail(email:)` carries the email (no `UserProfileStore`). F1: iOS localizes the validation strings ×5, the Android bug NOT replicated → android follow-up **T-0333**. Seed now UNCONDITIONALLY `.splash` (ADR-0020 living-doc fold-in — refines D2; gate #24 byte-unchanged, no bypass). swiftformat/swiftlint clean; **CleansiaCore 114 + CleansiaPartner 96** pass on iPhone 17 sim) | ios | T-0303✓, T-0304✓ | — | 2 (partner) |
-| **T-0306** | **Map seam + MapKit default** — `MapProvider`/`GeocodingService` protocol in `CleansiaCore` + `MapKitMapProvider` + the partner `AddressPicker` (first map surface). **iOS-16 variant (ADR-0014 D6′):** `Map(coordinateRegion:annotationItems:)` for the picker; `MKMapView` via `UIViewRepresentable` for the full-bleed map + polygon overlays — NO iOS-17-only `Map {...}`/`Marker`/`MapPolygon` | M | **proposed** | ios | T-0300 | — | 2 (**HARD AREA #2 — first half**) |
+| **T-0306** | **Map seam + MapKit default** — `MapProvider`/`GeocodingService` protocol + `Coordinate`/`GeocodedAddress` value types in `CleansiaCore` + `MapKitMapProvider`/`CLGeocoderGeocodingService` + the partner `AddressPickerView`/`VM` (first map surface; returns `GeocodedAddress` via callback — NOT wired into AddressSection, that's T-0310). **Acceptance scope + the 4 Understand-pass rulings fixed in §7.6**: D1 (a MINIMAL `MapProvider` picker factory now; T-0307's full-bleed/overlay surface added ADDITIVELY later — "the one way iOS does maps behind the seam"; `GeocodingService` = 1:1 `ReverseGeocodingService.kt` port minus the Mapbox token/network args), D2 (current-location/my-location FAB/`LocationProvider` seam DEFERRED → T-0310 gated on T-0325's `NSLocationWhenInUseUsageDescription`; ship pan+search parity on the Prague default — the recorded **Gate-DP divergence**, architect sign-off), D3 (geocoding best-effort: cancel-before-refire, nil/`[]` on error, never block the confirm; 300ms fwd / 500ms reverse debounce VERBATIM; the picker has **NO `UiState`/`ActionState`** — reviewer note #27), D4 (NO Mapbox token / map SDK / `Package.swift` change — net secret-surface reduction; Q-IOS-02 stays "No", `MapStyles.kt` NOT ported). **iOS-16 variant (ADR-0014 D6′):** `Map(coordinateRegion:annotationItems:[])` + SwiftUI overlay pin for the picker; `MKMapView`/`UIViewRepresentable` for the (additive, T-0307) full-bleed map + polygon overlays — NO iOS-17-only `Map {...}`/`Marker`/`MapPolygon`/`onMapCameraChange`. Reviewer #7/#12/#27 + Gate-DP. **Android parity: `AddressPickerScreen.kt` + `AddressPickerViewModel.kt` + `core/location/{ReverseGeocodingService,GeocodedAddress,LocationService,MapStyles}.kt`** | M | **done ✅** `480f5c4`+`03a00f3`+`199916b` (`phase/ios-phase3`; Slice A = Core `MapProvider`/`GeocodingService` seam + `Coordinate`/`GeocodedAddress` value types + `CLGeocoderGeocodingService` + the iOS-16 `MapKitMapProvider` — **125 CleansiaCore tests**; Slice B = the partner `AddressPickerView`/`VM`: pan + search, full-bleed map + static center-pin overlay, 300ms fwd / 500ms reverse-on-idle debounce verbatim, best-effort geocode, NO `UiState`/`ActionState` (reviewer #27), returns `GeocodedAddress` via `onConfirmed`. D2 current-location FAB DEFERRED → T-0335 (the recorded Gate-DP divergence). Reviewer **APPROVE**; swiftformat/swiftlint clean) | ios | T-0300✓ | — | 2 (**HARD AREA #2 — first half**) |
 | **T-0307** | **Partner order work-loop** — OrdersList + OrderDetail (full-bleed map + 3-snap sheet) + the **OnTheWay** lifecycle (Take→NotifyOnTheWay→Start→Complete) + checklist/notes/issues/timeline | **L → split** | **proposed** | ios | T-0304, T-0306 | — | 2 (**HARD AREA #3**) |
 | **T-0308** | **Partner photo upload** — camera capture → **JSON base64** photos (partner shape) on OrderDetail | M | **proposed** | ios | T-0307 | — | 2 (HARD AREA #3 cont.) |
 | **T-0309** | Partner earnings + invoices + PeriodPay (`EmployeePayroll/GetPeriodPays` — a regen'd-spec endpoint) | M | **proposed** | ios | T-0304 | — | 2 (partner) |
-| **T-0310** | Partner profile section editors + onboarding-chain + settings + **Devices** (Device/Mine list + revoke) + Notifications | M | **proposed** | ios | T-0304, T-0306 | — | 2 (partner) |
+| **T-0310** | Partner **Profile tab** (replaces `PartnerShellView.swift:36` `PlaceholderTab`) — the hub (hero + contract-status chip + section-group rows + logout) + **6 section editors** (Personal/Address/Identification/Bank/Emergency/Documents) over a new `PartnerProfileClient` (ADR-0019 spine) + the **onboarding chain** + **Devices** (Device/Mine list + revoke — **SECURITY-ruled, decisions 6–8**) + **Preferences** (Language/Theme). **Acceptance scope + the 5 Understand-pass rulings fixed in §7.7:** D1 (in-tab `NavigationStack` over a typed `ProfileRoute` enum — ADR-0020 intra-audience push, reviewer #28a), D2 (**the load-bearing call** — the RegistrationLock owns its OWN local `NavigationStack` + chain VM and pushes the SHARED section set over itself with `onboarding == true`; fail-closed, no cross-audience shell routing — reviewer #28b + TC-IOS-LOCK-CHAIN, composes with #24), D3 (`ServiceAreaRow` DEFERRED → T-0334, a Gate-DP divergence; Address ships pan/search/save at parity), D4 (EXTEND the one `AppSettingsStore` with writable language + a Theme enum + setters; honor theme via `.preferredColorScheme` now — reviewer #28c), D5 (born sealed-state canonical — Android E1 flag-bags NOT replicated; android fix → T-0337; reviewer #28d). **Scope cuts (PM to record):** current-location FAB + `LocationProvider` seam DEFERRED → T-0335 (gated on T-0325); **"Notifications" DROPPED** (no Android prefs surface / no backend prefs API / no client; the in-app feed is a separate spike → T-0336). Reviewer #28 + TC-IOS-PROFILE-ROUTE/-LOCK-CHAIN/-SECTION-SHARED/-SETTINGS-THEME/-PROFILE-STATE. Gate-DP. **Android parity: `partner-app/.../features/profile/` (`ProfileScreen.kt`/`ProfileViewModel.kt`, the `*Section*` set, `OnboardingChainHeader.kt`, `SectionScaffold.kt`, `AddressSectionScreen.kt`) + `features/orders/{RegistrationLockViewModel,OnboardingChainViewModel}.kt` + `core/settings/AppSettingsRepository.kt`** | M | **done ✅** `ce6c5fc`+`ee2f044`+`2cdaf93`+`6c6155c` (`phase/ios-phase3`; 3 slices. Slice A = the profile hub + 6 section editors (Personal/Address/Identification/Bank/Emergency/Documents) + onboarding chain + the now-live RegistrationLock Fix-CTAs (D2: the lock owns its OWN `NavigationStack`+chain VM, pushes the SHARED section set with `onboarding==true`, fail-CLOSED — gate #24 byte-unchanged, verified). Slice B = Devices (Device/Mine list + revoke) — **SECURITY PASS** on all binding rules (D6 single device-id source, D7a hide-on-current + D7b defensive self-revoke sign-out, D8 server-scoped revoke verified vs the backend; TC-IOS-DEVICES-SELF-REVOKE green). Slice C = Preferences (language [+ a System/follow-device row] + theme pickers; theme honored via `.preferredColorScheme`; the first runtime in-app language switch). D3 `ServiceAreaRow` DEFERRED → T-0334; D5 born sealed-state, Android E1 flag-bags NOT replicated → T-0337; current-location FAB → T-0335; Notifications DROPPED → T-0336. Reviewer **APPROVE** (incl. a re-review of the System-row fix); **185 CleansiaPartner tests**; swiftformat/swiftlint clean) | ios | T-0304✓, T-0306✓ | — | 2 (partner) |
 | **T-0311** | **Push (APNs)** — register for remote notifications → APNs token + `Platform="ios"` + same `X-Device-Id` to `/api/Device/*`; re-register on login, clear on logout (the `:core` push parity) | M | **proposed** | ios | T-0300 | **owner: APNs auth key/cert** | 2 (cross-app) |
 | **T-0312** | **Customer app shell + auth** — SignIn/SignUp/EmailVerify (+ Google Sign-In, customer-only) + Main shell (Home·Orders·Rewards·Profile + center **Book FAB**) | M | **proposed** | ios | T-0302, T-0306 | rides regen | 2 (customer) |
 | **T-0313** | **Customer booking wizard + Stripe** — the 3-step Bolt-style anchored sheet (Services / WhenWhere / Confirm), client-side pricing, **cash→success vs card→`stripe-ios` PaymentSheet** | **L → split** | **proposed** | ios | T-0312 | — | 2 (**HARD AREA #1 — hardest**) |
@@ -866,6 +933,534 @@ and a violation of `consistency.md` **E8** (all user text via `R.string`/`getStr
 
 ---
 
+### 7.6 T-0306 (Phase-2 map seam + MapKit + partner AddressPicker) — acceptance scope + the four Understand-pass rulings (recorded 2026-06-26, architect)
+
+T-0306 ships the **first concrete shape of the ADR-0013 D6 / ADR-0014 D6′ map seam**: (a) the Core
+`MapProvider`/`GeocodingService` protocols + the `Coordinate`/`GeocodedAddress` value types, (b)
+`MapKitMapProvider` + `CLGeocoderGeocodingService`, (c) the partner `AddressPickerView`/`VM` that returns a
+`GeocodedAddress` via callback (it does **NOT** wire into the AddressSection — that is **T-0310**). The
+Understand pass surfaced four decisions; **all four APPLY accepted ADRs — no new ADR** (the §7.2/§7.4/§7.5
+"record, not ADR" precedent: the trade-offs are owned by ADR-0013 D6, ADR-0014 D6′, and ADR-0018 Gate-DP,
+plus the analogous defer-the-affordance call §7.2/§7.4 already made). **Android parity source (the iOS port
+mirrors it):** `partner-app/.../features/profile/AddressPickerScreen.kt` (full-bleed map + a STATIC center-pin
+overlay the map pans under + search + reverse-geocode-on-idle 500ms + forward-search 300ms + a confirm card)
++ `AddressPickerViewModel.kt` (a thin DI seam, no state of its own) + `core/.../location/{ReverseGeocoding
+Service,GeocodedAddress,LocationService,MapStyles}.kt`. **Gate-DP applies** (T-0306 is a screen ticket): the
+picker cites `AddressPickerScreen.kt`; native SwiftUI; iOS-wins-on-conflict + the one noted divergence (D2).
+
+**IN — T-0306 acceptance scope:**
+- **Core seam:** `MapProvider` (picker-map factory) + `GeocodingService` protocols + `Coordinate` +
+  `GeocodedAddress` value types in `CleansiaCore/Location`; **`MapKitMapProvider`** + **`CLGeocoderGeocoding
+  Service`** as the default impls (the **only** sanctioned MapKit/CoreLocation consumers — feature/VM import
+  neither, reviewer #7/#27).
+- **Partner `AddressPickerView`/`VM`:** full-bleed picker map (iOS-16 `Map(coordinateRegion:interactionModes:
+  showsUserLocation:annotationItems:[])` + a SwiftUI overlay **center pin** the map pans under — NO
+  `Map{Marker}`/`onMapCameraChange`, reviewer #12) + search field + dropdown (forward-geocode) + the confirm
+  card; **returns `GeocodedAddress` via `onConfirmed` callback**. The VM owns the reverse-geocode-on-idle
+  debounce (Combine/`Task`, since iOS-16 has no idle callback) and the forward-search debounce.
+- **Geocoding contract:** best-effort (nil/`[]` on error, cancel-before-refire); **300ms forward / 500ms
+  reverse** ported VERBATIM from Android.
+- **Centers on the Prague default** (`14.4378, 50.0755`, zoom 15 — the `AddressPickerScreen.kt:90-91` parity);
+  **pan-to-place + search at full parity** (both usable with no location fix).
+
+**DEFERRED — explicitly out of T-0306, with the ticket each lands in:**
+- **Current-location auto-center + the my-location FAB + the `LocationProvider`/`CLLocationManager` seam** →
+  **T-0310** (picker→AddressSection wiring), gated on **T-0325**'s `NSLocationWhenInUseUsageDescription` plist
+  key (owner). **The recorded Gate-DP divergence** (Decision 2 below).
+- **The full-bleed `OrderDetail` map + the 3-snap sheet + the service-area polygon overlay** (the `MKMapView`/
+  `UIViewRepresentable` surface, ADR-0014 D6′) → **T-0307**, added as an **additive `MapProvider` method**
+  (Decision 1 below) — not designed ahead.
+- **Wiring the picker into the AddressSection + persisting via `UpdateAddressInfo`** → **T-0310** (the picker
+  hands `GeocodedAddress` back via callback; it persists nothing itself — the `AddressPickerScreen.kt:96-101`
+  parity).
+- **A custom Mapbox-Studio map style** (`MapStyles.kt`) → NOT ported (Decision 4; Q-IOS-02 stays "No").
+
+#### Decision 1 — `MapProvider` protocol shape: a MINIMAL picker factory NOW, T-0307's full-bleed surface added ADDITIVELY later (the one canonical seam)
+
+**RULING: minimal picker factory now; the full-bleed/overlay surface is an additive method later — record as
+"the one way iOS does maps behind the seam". An application of ADR-0013 D6's `MapProvider` seam — no new ADR.**
+
+- **What ships now:** `MapProvider` exposes only the **picker-map factory** T-0306 needs — a producer of a
+  SwiftUI view bound to a region + the static center-pin overlay (iOS-16 variant). The exact Swift surface is
+  the dev's (sketch: a `func pickerMap(region:showsUserLocation:) -> some View`/`AnyView`); the **contract** is
+  what's fixed: the feature gets a region-bound picker view, never a vendor type.
+- **What's added LATER, additively:** T-0307's full-bleed `OrderDetail` map + 3-snap sheet + service-area
+  polygon overlay is a **new additive method** on the same protocol (e.g. `fullBleedMap(region:overlays:
+  annotations:)`), implemented `MKMapView`-via-`UIViewRepresentable` inside `MapKitMapProvider` (ADR-0014 D6′).
+  Additive methods don't break the picker call site, so deferring is **free** — vs designing the rich surface
+  now, which would guess T-0307's camera/overlay/gesture needs before they exist (a speculative shape that gets
+  rewritten). The alternative — **a richer designed-ahead `MapProvider`** — was **rejected**: it front-loads
+  T-0307/0310/0314's unknown needs into T-0306, and the seam's whole point (ADR-0013 D6) is that the
+  *contract*, not the *surface area*, is what protects features.
+- **`GeocodingService` is a clean 1:1 port of `ReverseGeocodingService.kt`** (`reverseGeocode(lat,lng) →
+  GeocodedAddress?`, `forwardGeocode(query,countryIsoCodes) → [GeocodedAddress]`) **minus the Mapbox token +
+  the OkHttp/network args** — under MapKit it is `CLGeocoder`/`MKLocalSearch`, no token, no HTTP client.
+  `GeocodedAddress` mirrors the Kotlin fields (lat/lng/street/city/zipCode/country/countryIsoCode/formatted).
+- **The one sanctioned consumer:** the `MapKitMapProvider`-produced view + `CLGeocoderGeocodingService` are the
+  **only** code importing MapKit/CoreLocation; **feature/VM code imports neither** (reviewer #7 + #27).
+- Reused by **T-0307/T-0310/T-0314** by adding the next additive method, not re-deciding the seam.
+
+#### Decision 2 — current-location / permission: DEFERRED out of T-0306 (the one flow-touching Gate-DP divergence — architect sign-off)
+
+**RULING: DEFER current-location + the my-location FAB + the `LocationProvider` seam out of T-0306; ship
+pan+search parity centered on the Prague default; home them to T-0310 (gated on T-0325). This is the recorded
+Gate-DP divergence with architect sign-off — not a new trade-off** (the same defer-the-affordance-whose-
+dependency-isn't-live call §7.2 and §7.4 already made; ADR-0018 D3 component/affordance divergence).
+
+- **What Android does:** the picker auto-centers on the FusedLocation fix on open + shows a my-location FAB
+  (`AddressPickerScreen.kt:131-161` auto-center / permission launch, `:272-295` the FAB; via `LocationService.kt`).
+- **Why defer:** the iOS prompt needs `NSLocationWhenInUseUsageDescription` in the app `Info.plist`, which is
+  **owner ticket T-0325** (purpose strings). **Without that key the iOS permission prompt never appears** — so
+  a my-location FAB built in T-0306 would be a **dead control**. The picker is **fully usable without it**:
+  pan-to-place + search both work and reach full parity; it just **centers on the Prague default**
+  (`14.4378, 50.0755` — the `AddressPickerScreen.kt:90-91` parity) instead of the device fix.
+- **Home:** T-0310 (when the picker is wired into the AddressSection and T-0325's plist key exists) introduces
+  the `LocationProvider` seam (`CLLocationManager`, behind a Core protocol like `MapProvider`/`GeocodingService`
+  so the feature never imports CoreLocation) + the my-location FAB.
+- **The recorded Gate-DP divergence (architect sign-off):** *"iOS picker omits current-location pending T-0325;
+  pan/search parity is full; the divergence touches a deferred affordance, not layout/flow/branding."* This is
+  an ADR-0018 D3-shaped divergence (a component/affordance gap, **never** a layout/flow/branding change) — it
+  passes Gate-DP assertion #3 (noted in-ticket, touches only the affordance). **The alternative — parity now —**
+  would grow T-0306 by the `LocationProvider` seam **and** add a hard `manual_step:
+  NSLocationWhenInUseUsageDescription (T-0325, owner)` dependency onto a seam ticket; **rejected** — it couples
+  the map-seam delivery to an owner plist step for an affordance the picker doesn't need to be usable.
+
+#### Decision 3 — geocoding error/throttle + the NO-`UiState` ruling (reviewer note #27)
+
+**RULING: CONFIRMED as briefed — best-effort geocoding + verbatim debounce + NO sealed state on the picker.
+A confirmation of the Android behavior (ADR-0013 "mirror the code") + the catalog's E1/E2-scoping rule — no
+new ADR.**
+
+- **(a) `CLGeocoder` is best-effort.** Cancel the in-flight geocode before re-firing (`kCLErrorGeocodeCanceled`
+  is expected and swallowed); return `nil`/`[]` on any error; **never block the confirm or crash** — the
+  `runCatching{}.getOrNull()` / `.getOrDefault(emptyList())` parity (`ReverseGeocodingService.kt:41,79`). A
+  failed reverse-geocode leaves `resolved == nil` (the confirm button stays disabled — `AddressPickerScreen.kt:374`
+  parity), a failed forward-search shows the empty-results row.
+- **(b) Debounce timings port VERBATIM.** **300ms forward** (`AddressPickerScreen.kt:188`), **500ms
+  reverse-on-idle** (`:171`). They double as Apple's `CLGeocoder` rate-limit guard. **iOS-16 has no map idle
+  callback**, so reverse-geocode-on-idle is a **VM-owned Combine/`Task` debounce** off the region binding (the
+  VM observes the region and debounces 500ms before reverse-geocoding) — not a map delegate callback.
+- **(c) The AddressPicker correctly has NO `UiState<T>`/`ActionState`.** It is an **interactive map** with
+  plain `@Published` state (`resolved: GeocodedAddress?`, `lookingUp`, `searchQuery`, `searchResults`,
+  `searching` — the `remember{mutableStateOf}` set, `AddressPickerScreen.kt:117-122`) + a **one-shot confirm
+  event** (`onConfirmed(GeocodedAddress)`, a callback, not a mutation result). It is **neither** an E1
+  load-fetch screen (no `loading/error/loaded` fetch lifecycle) **nor** an E2 mutation screen (no
+  `idle/submitting/error` submit). So the sealed-state archetypes are **correctly scoped OUT** — and a reviewer
+  must **NOT** flag the absence of `UiState`/`ActionState` here as a consistency gap (it would be wrong to add
+  them). **Reviewer note #27** records this so the scoping is intentional, not an oversight.
+
+#### Decision 4 — NO Mapbox token / security (net reduction in secret-management surface vs Android)
+
+**RULING: CONFIRMED — zero map token, zero map SDK, zero `Package.swift` change; a net REDUCTION in secret
+surface vs Android. Q-IOS-02 stays defaulted "No". Recorded as the no-token security note — no new ADR**
+(it confirms ADR-0013 D6's "MapKit = free, native, no token" and Q-IOS-02's default).
+
+- **Under the MapKit default there is ZERO map token, ZERO map SDK dependency, ZERO `Package.swift` change** —
+  **MapKit + CoreLocation are system frameworks** (no SPM entry, no binary added).
+- **Contrast Android:** `ReverseGeocodingService.kt:21` takes a `MAPBOX_ACCESS_TOKEN` (fed from BuildConfig by
+  the Hilt location module); the token is a rotated secret + a leak surface. **iOS removes it entirely** — one
+  fewer secret to provision/rotate. **No owner provisioning step for maps** (the §7 owner-steps row already
+  reads "Mapbox token ONLY IF Q-IOS-02 flips the default — not needed under MapKit").
+- **Q-IOS-02 (Mapbox-brand) stays defaulted "No"** (MapKit standard style). `MapStyles.kt`'s custom Mapbox
+  Studio style is **NOT ported** — the stock MapKit style is the parity baseline; a hard brand requirement is
+  the only input that flips it, behind the **unchanged** `MapProvider` seam (a provider swap, not an
+  architecture change). The Q-IOS-02 record in `questions/open.md` is unchanged (still "No / default").
+
+#### New CRC role (added with the T-0306 wiring)
+
+- **`ios-geocoding-service`** — `GeocodingService` (protocol) + `CLGeocoderGeocodingService` (default impl, in
+  `CleansiaCore/Location`): *responsibility:* forward/reverse geocode text↔`GeocodedAddress`, **best-effort**
+  (nil/`[]` on error, cancel-before-refire), with **no token**. *Collaborators:* `CLGeocoder`/`MKLocalSearch`,
+  the `Coordinate`/`GeocodedAddress` value types. *Does NOT know:* the Mapbox token (there isn't one), the
+  network client (it's a system framework), which feature/VM consumes it, or how the picker renders. (The
+  ADR-0013 `ios-map-provider` CRC is unchanged — `MapKitMapProvider` is its default impl; T-0306 adds the
+  picker factory, T-0307 adds the full-bleed method.)
+
+---
+
+### 7.7 T-0310 (Phase-2 partner Profile tab + section editors + onboarding chain + Devices + Preferences) — acceptance scope + the five Understand-pass rulings (recorded 2026-06-26, architect)
+
+T-0310 fills the partner **Profile tab** (replacing the `PlaceholderTab` in `PartnerShellView.swift:36`) with the
+**hub** (hero + contract-status chip + section-group rows + logout) + **6 section editors** (Personal / Address /
+Identification / Bank / Emergency / Documents) over a new `PartnerProfileClient`
+(`PartnerEmployeeAPI`/`PartnerCountryAPI`, generated + present, riding the **ADR-0019** spine), the **onboarding
+chain**, **Devices** (Device/Mine list + revoke — **SECURITY-owned**, decisions 6–8, ruled separately), and
+**Preferences** (Language / Theme). The Understand pass surfaced five architecture/scope decisions (D1–D5) +
+two scope items (A current-location / B notifications). **All five APPLY accepted ADRs or confirm Android parity —
+NO new ADR** (the §7.2/§7.4/§7.5/§7.6 "record, not ADR" precedent: ADR-0020 owns the navigation trade-off,
+sprint-12 §7.5 D1 owns the settings store, §7.6 D2 owns the defer-the-affordance call, ADR-0018 Gate-DP owns the
+divergence form, and the E1 divergence applies the `patterns-mobile` Parity rule). **Android parity source (the iOS
+port mirrors it):** `partner-app/.../features/profile/` — `ProfileScreen.kt` + `ProfileViewModel.kt` (the hub),
+`PersonalSectionScreen.kt`/`…ViewModel.kt` + the 5 sibling `*Section*` files (the editors), `OnboardingChainHeader.kt`
++ `SectionScaffold.kt` (the chain chrome), `AddressSectionScreen.kt`/`…ViewModel.kt` (the AddressPicker wiring);
+`features/orders/RegistrationLockViewModel.kt` + `OnboardingChainViewModel.kt` (the lock→chain routing);
+`core/settings/AppSettingsRepository.kt` (Preferences). The flat `PartnerNavHost.kt` is the navigation source;
+`navigation/NavRoutes.kt` is the typed-route inventory. **Gate-DP applies** (T-0310 is a screen ticket): every
+screen cites its Android Compose counterpart; native SwiftUI; iOS-wins-on-conflict + the noted divergences (D5, A).
+
+> **SECURITY owns decisions 6–8 (the device-id / revoke gate) — out of scope here.** This §7.7 rules only D1–D5
+> + scope A/B (navigation, lock routing, service-area scope, settings store, the E1 divergence, current-location,
+> notifications). The Device/Mine list + revoke contract, the `X-Device-Id`-match invariant on revoke, and the
+> "revoke-this-device" gate are ruled in parallel by the **security** charter; this record does not touch them.
+
+#### Decision 1 — Profile nav structure: an in-tab `NavigationStack` over a typed `ProfileRoute` enum (CONFIRMED — ADR-0020 application, no new ADR)
+
+**RULING: CONFIRM the iOS parity. The Profile tab hosts its OWN `NavigationStack` driven by a typed `ProfileRoute`
+enum, INSIDE the `.dashboard` shell's Profile tab. This is the direct application of ADR-0020 D2's split-scope —
+the root-`enum` switch (`PartnerRootView`) stays the AUDIENCE selector; `NavigationStack` + a typed route is the
+INTRA-audience push container. No new ADR (ADR-0020 already canonicalized the split; reviewer #23).**
+
+- **Why this is settled, not a new decision.** ADR-0020 D2 (`ios-app-architecture.md` §"Partner router shape" +
+  `patterns-mobile` `navigation.Routes` split rows) already fixed: *top-level audience = root-`enum`; intra-audience
+  push = `NavigationStack` + typed route enum (OrderDetail, **ProfileSection**, onboarding-chain sections explicitly
+  named there)*. The Profile tab's section pushes are exactly the "intra-audience push" the rule names. Android uses
+  **one flat `NavHost`** (`PartnerNavHost.kt`) because Compose Navigation has no nested-host idiom in play here; iOS
+  mirrors the **decision tree, not the mechanism** (ADR-0013 D6 / ADR-0020 D5) — a per-tab `NavigationStack` is the
+  native iOS shape for tab-local push (each tab owns its own back-stack; switching tabs preserves each stack).
+- **The `ProfileRoute` shape** (derived 1:1 from `NavRoutes.kt:54-91`, minus the audience-level cases the root enum
+  owns — `Splash/Login/RegistrationLock/Main` are NOT `ProfileRoute`s):
+
+  ```swift
+  // Intra-Profile-tab push routes. Hosted by the Profile tab's NavigationStack (NOT the audience root).
+  enum ProfileRoute: Hashable {
+      case personal(onboarding: Bool = false)         // NavRoutes ProfilePersonal(onboarding)
+      case address(onboarding: Bool = false)          // ProfileAddress(onboarding) — wires the T-0306 AddressPicker
+      case identification(onboarding: Bool = false)   // ProfileIdentification(onboarding)
+      case bank(onboarding: Bool = false)             // ProfileBank(onboarding)
+      case emergency                                  // ProfileEmergency (not a gate field → no onboarding flag)
+      case documents                                  // ProfileDocuments (not a gate field → no onboarding flag)
+      case preferenceLanguage                         // PreferenceLanguage
+      case preferenceTheme                            // PreferenceTheme
+      case devices                                    // Devices  (the screen is SECURITY-ruled; the ROUTE lives here)
+  }
+  ```
+
+  - **The `onboarding: Bool` associated value is load-bearing and ported verbatim** (`NavRoutes.kt:64-67`): the four
+    **gate sections** (Personal/Address/Identification/Bank) carry it; on save, `onboarding == true` chains forward to
+    the next missing section, `false` pops back (maintenance edit). Emergency + Documents are NOT gate fields, so they
+    carry **no** flag (matching `NavRoutes.kt:69-70`). This is the same "a flat-enum route case may carry a payload"
+    pattern ADR-0020 fold-in (sprint-12 §7.5 D2) already sanctioned for `.verifyEmail(email:)` — applied to an
+    intra-audience route here. The route still only *lands* the destination; the section VM interprets the flag.
+  - **`AddressPicker` is NOT a `ProfileRoute` case.** The picker (T-0306) is presented by the Address section as a
+    `.sheet`/`.fullScreenCover` returning `GeocodedAddress` via its `onConfirmed` callback (the
+    `AddressPickerScreen.kt:96-101` / `NavRoutes.kt:72-80` "writes into the previous back-stack entry + pops itself"
+    parity, done iOS-natively via the callback rather than a `SavedStateHandle` result key). It is a modal return-value
+    flow, not a tab-push — so it is not in the back-stack enum.
+- **Reviewer angle (#28a, below):** the Profile tab is an in-tab `NavigationStack` over `ProfileRoute`; audience-level
+  states (`Splash/Login/Lock/Main`) are **never** `ProfileRoute` cases (they belong to the `PartnerRootView` root enum).
+  Modeling a section push as an audience hop, or the audience as a `ProfileRoute`, is a finding (the ADR-0020 #23 split).
+
+#### Decision 2 — RegistrationLock "Fix"-CTA routing: the lock owns its OWN local `NavigationStack` + onboarding-chain VM and pushes the SHARED section screens over itself (CONFIRMED — Android parity, fail-closed; no new ADR)
+
+**RULING: lock-owns-its-own-stack. The `RegistrationLock` (a ROOT audience state — `PartnerRootView` `.registrationLock`,
+NOT in the shell) hosts its OWN local `NavigationStack` + the onboarding-chain VM, and pushes the SAME section
+Views/VMs the Profile tab uses OVER itself. On pop, the lock re-resolves its status and `onCompleted` fires. NO
+cross-audience routing into the shell's Profile tab. This is the load-bearing structural call — and it is a
+confirmation of the Android gate (ADR-0013 "mirror the code"), fail-closed (#24 preserved). No new ADR.**
+
+This is the genuinely structural decision in T-0310, so it is grounded in source line-by-line:
+
+- **Android pushes the section screens OVER the lock, in the SAME flat `NavHost`, WITHOUT unlocking the shell.**
+  `OnboardingChainViewModel.advanceOrFinish` (`OnboardingChainViewModel.kt:86-121`) navigates section→section and, on
+  finish, `navController.popBackStack()` / `navigate(next){ popUpTo(NavRoute.RegistrationLock){ inclusive = false } }`
+  — i.e. **the lock stays UNDERNEATH** (`inclusive = false`), and the lock re-resolves via its own `ON_RESUME`
+  effect (`RegistrationLockViewModel.kt:134-136` `onResume()` → `ensureFreshOrCachedAsync()`). The gate is
+  **reachable-from-lock but the shell stays unreachable** until `isRegistrationComplete()` flips
+  (`RegistrationLockViewModel.kt:103-109`). **The sections are reached from the lock, NOT through the shell's Profile
+  tab.**
+- **iOS mirrors the tree, not the single-NavHost mechanism (ADR-0020 D5).** Because iOS models the audience with the
+  **root `enum`** (not one flat NavHost), `.registrationLock` is a **distinct root case** that **owns its own local
+  `NavigationStack`** (over the same `ProfileRoute` cases — the gate sections) + its own onboarding-chain VM. The lock
+  pushes section screens onto ITS stack; on pop, the lock VM re-resolves (the `onResume`/`ensureFreshOrCached` parity),
+  and when complete it flips the root `enum` to `.dashboard` (`SplashGate` re-resolution — the existing
+  `onCompleted`/watermark path, §7.4 Decision 1, byte-unchanged). **The shell's Profile-tab stack is never entered
+  from the lock** — no cross-audience routing.
+- **HOW THE SECTION SCREENS ARE SHARED (the explicit decision asked for): ONE set of section Views + VMs, TWO hosts.**
+  The Personal/Address/Identification/Bank section `View`s and `…SectionViewModel`s are written **once** (mirroring the
+  single Android `PersonalSectionScreen.kt` &c., which both the lock chain and the Profile menu reach — the Android
+  proof that they are one set: `RegistrationLockViewModel.firstMissingProfileSection(forOnboarding=true)` and the
+  Profile hub's `onNavigateToPersonal` both resolve to the **same** `NavRoute.ProfilePersonal`, `NavRoutes.kt:64`).
+  iOS hosts that one set from **two `NavigationStack`s**: (1) the **Profile tab's** stack (maintenance edits,
+  `onboarding == false` → pop on save) and (2) the **lock's** stack (onboarding chain, `onboarding == true` → chain
+  forward on save). The `onboarding: Bool` on the `ProfileRoute` case (D1) is the **single switch** that picks
+  pop-back vs chain-forward — exactly the Android flag (`NavRoutes.kt:55-67`). **A second, forked copy of any section
+  View/VM for the lock is a finding** — the whole point of the `onboarding` flag is one section set, two entry contexts.
+- **Why lock-owns-its-own-stack beats cross-audience routing into the shell's Profile tab (the rejected alternative):**
+  routing the Fix CTA into the shell's Profile tab would require **rendering the shell** (the audience the gate exists
+  to keep unreachable) — a fail-**OPEN** hole: an incomplete partner would reach the shell's tab bar to get to a
+  section. The Android gate is explicitly fail-closed (`isRegistrationComplete()` AND-predicate; both error paths
+  preserve-lock, `RegistrationLockViewModel.kt:197-211`) and the §7.4/#24 ruling forbids any shell reach before
+  complete. Cross-audience routing **breaks #24**; lock-owns-its-own-stack keeps the shell unreachable and matches
+  Android's `popUpTo(RegistrationLock){inclusive=false}` exactly. **Rejected: cross-audience routing into the shell's
+  Profile tab** (fail-open; violates #24 + ADR-0020's replace-semantics audience switch).
+- **T-0304 deferral discharged.** T-0304 shipped the lock "Fix" CTAs **inert** (`StepRow` rendered a chevron, no
+  `onFix`, no VM routing — §7.4 Decision 3). T-0310 wires them: the `onFix` callback pushes the resolved section
+  (`firstMissingProfileSection`-parity) onto the lock's stack with `onboarding == true`. The `contact_support`
+  affordance on the Rejected row (carried inert since T-0304, `registration_lock_action_contact_support`) is wired
+  here too (the Android `mailto:`-in-row, `RegistrationLockViewModel.kt:249-255`).
+- **Reviewer angle (#28b, below):** the lock owns its own `NavigationStack` + chain VM and pushes the shared section
+  set with `onboarding == true`; on pop it re-resolves and only the success watermark flips the root to `.dashboard`;
+  **no Fix CTA renders or routes into the shell's Profile-tab stack** (a shell reach before complete is a fail-open
+  finding — composes with #24).
+
+#### Decision 3 — ServiceAreaProvider scope: DEFER the `ServiceAreaRow` to a follow-up; ship the Address section without the live indicator in T-0310 (a recorded Gate-DP divergence)
+
+**RULING: DEFER. Port the AddressSection's pan/search/save at full parity in T-0310 (wiring the T-0306 AddressPicker),
+but DEFER the live 3-state `ServiceAreaRow` advisory indicator + the `ServiceAreaProvider` Core seam to a follow-up
+(T-0334). The indicator is ADVISORY-ONLY (never a save gate), so the Address section is fully usable without it —
+this is the same defer-the-advisory-affordance call §7.6 D2 made for current-location. Recorded as a Gate-DP
+divergence with architect sign-off. No new ADR.**
+
+- **What the row is (and is not).** `AddressSectionViewModel.kt:50-55` defines a 3-state `ServiceAreaStatus`
+  (`InServicedCity` / `OutsideServicedCity` / `CountryNotServiced` / `Unknown`), refreshed fire-and-forget
+  (`:163-195`) from `core/servicearea/ServiceAreaProvider` (`ServiceAreaProvider.kt`). It is **explicitly advisory**:
+  the source comment says it *"only feeds the indicator row — failures degrade to Unknown rather than blocking save"*
+  (`:165-167`), and a cleaner home address is *"aren't blocked by city — only customer order creation is"*
+  (`:42-44`). The **save** path resolves `countryId` independently (`:213-222`) and does not read the row. So the row
+  is a *nice-to-have heads-up*, not a correctness gate.
+- **Why DEFER is right (scope, not under-delivery).** Porting the row is **real additional scope**, not a one-liner:
+  it requires the `:core` `ServiceAreaProvider` (lazy-cached countries+cities, a `Mutex`, `refresh()` on sign-in),
+  the per-app `ServiceAreaDataSource` binding seam (a new `:core` interface each app `@Binds` to its generated client
+  — `ServiceAreaProvider.kt:25-31` + `AddressSectionViewModel.kt:88`), `ServicedCity`/`ServicedCountry` value types,
+  and an ISO alpha-2↔alpha-3 reconciliation (`AddressSectionViewModel.kt:178-181`). That is a **Core seam port in its
+  own right** — and the **same provider also backs the forward-geocode country-bias** (`ServiceAreaProvider.kt:14-16`,
+  `servicedCountryIsoCodes()`), which T-0306 **also deferred** (it shipped unbiased MapKit search). Pulling the seam
+  into T-0310 would balloon it; the picker's pan/search/save all work without it.
+- **The recorded Gate-DP divergence (architect sign-off):** *"iOS T-0310 Address section ships pan/search/save at full
+  parity; the advisory `ServiceAreaRow` (3-state serviced-city indicator) is deferred to T-0334. The divergence
+  touches a deferred ADVISORY affordance, not layout/flow/branding, and never a save gate."* This passes Gate-DP
+  assertion AR-DP-3 (noted in-ticket, touches only the affordance) — identical in shape to §7.6 D2's current-location
+  divergence. **Rejected: port it now** — it front-loads the `ServiceAreaProvider` Core seam (+ its country-bias use,
+  itself deferred from T-0306) into a screen ticket for an advisory row, growing T-0310 past `M`.
+- **Follow-up filed:** **T-0334** (port `ServiceAreaProvider` Core seam + the `ServiceAreaRow` advisory indicator +
+  the forward-geocode country-bias it also backs) — `draft`, suggested home after T-0310.
+
+#### Decision 4 — `AppSettingsStore` extension: EXTEND the one general store with writable language + a theme enum + setters; HONOR theme app-wide via `.preferredColorScheme` in T-0310 (CONFIRMED — sprint-12 §7.5 D1 application, no new ADR)
+
+**RULING: EXTEND the single general `AppSettingsStore` (NOT a second store) with a writable language (`setLanguage`)
++ a `Theme` enum (System/Light/Dark) + `setTheme`; and HONOR the theme app-wide via `.preferredColorScheme` on the
+root in T-0310 (a small additive root wiring). This is the direct application of sprint-12 §7.5 Decision 1 ("one
+general store") — the store was deliberately built general so T-0307+/Preferences add a property here, not a new
+store. No new ADR.**
+
+- **Why extend, not add a store.** sprint-12 §7.5 D1 (reviewer #26a) already ruled the **one** way to do device-local
+  settings: a single general `AppSettingsStore` in `CleansiaCore`, `UserDefaults`-backed (the `AppSettingsRepository.kt`
+  DataStore parity — `partner_app_settings`), *"so T-0307+ / the customer wave add a property here instead of standing
+  up a new store each time."* Android's `AppSettingsRepository.kt:22-43` holds **all three** keys in **one** DataStore
+  (`theme`, `language`, `onboarding_seen`) with `setTheme`/`setLanguage` setters — iOS extends its one store to match.
+  A second settings store is **explicitly** a reviewer-#26a finding.
+- **The extension (the `AppSettingsRepository.kt:37-51` parity).** Add to `AppSettingsStore`: `setLanguage(tag)` making
+  the existing resolved language tag **writable** (persist the chosen tag ∈ `{en,cs,sk,uk,ru}` or a `System` sentinel
+  → the resolver already handles persisted-if-in-set → `Locale.current` → `"en"`, §7.5 D1); a `Theme` enum
+  (`.system`/`.light`/`.dark` — the `ThemePreference` parity, `ProfileScreen.kt:497-503`) with a getter + `setTheme`.
+  Both remain non-secret + wiped-on-uninstall (`UserDefaults`, NOT Keychain — #26a holds).
+- **Honor theme NOW (the small additive call).** Wire `.preferredColorScheme(appSettings.theme.colorScheme)` on the
+  partner app root (`.system` → `nil` = follow device, `.light` → `.light`, `.dark` → `.dark`) — the
+  `MainActivity`-collects-and-propagates parity (`AppSettingsRepository.kt:17-19` "Collected once in MainActivity and
+  propagated"). It is **additive root wiring** (one modifier reading one published value), not an architecture change,
+  so honoring it in T-0310 avoids shipping a Preferences row that visibly does nothing (a "dead control" of the §7.6
+  kind). **Language honoring** follows the existing `Localizable.xcstrings` + bundle-override mechanism the app already
+  uses; the Preferences row writes the tag, the app applies it on next resolution (Android applies on relaunch via the
+  same DataStore read — iOS parity is to apply the locale override the same way the app already resolves it).
+- **Reviewer angle (#28c, below):** language + theme read/write the **one** `AppSettingsStore` (UserDefaults, not
+  Keychain); no second settings store; the theme is honored via `.preferredColorScheme` on the root (no dead
+  Preferences row). A separate `ThemeStore`/`LanguageStore`, or either pref in the Keychain, is a finding (#26a sibling).
+
+#### Decision 5 — UiState divergence from Android flag-bags: iOS is born sealed-state canonical (RECORD-THE-FINDING — iOS-right divergence, NOT a parity bug; Android E1 fix filed)
+
+**RULING: RECORD as an intentional iOS-right divergence — NOT a parity bug. Android's `ProfileUiState` + the section
+`*UiState` are flag-bags (E1 violation, already noted in `consistency.md` E1 + `patterns-mobile`). iOS is born
+sealed-state canonical: load-fetch screens (the hub + each section's initial load) use `UiState<T>`
+(`.loading`/`.error`/`.loaded`); the save action uses `ActionState` (`.idle`/`.submitting`/`.error`). This is the
+canonical application of the `patterns-mobile` Parity rule ("Android is wrong → diverge correctly on iOS, raise the
+Android finding, don't copy"). The Android E1 fix is filed as T-0337. No new ADR.**
+
+- **The flag-bags (confirmed in source).** `ProfileViewModel.kt:26-36` `ProfileUiState(isLoading, employee?,
+  contractStatus?, error?, isSignedOut)` and `PersonalSectionViewModel.kt:17-30` `PersonalSectionUiState(isLoading,
+  isSaving, …field strings…, firstNameError?, lastNameError?, error?, isSaved)` are **single flag-bag `data class`es**
+  — exactly the **E1** smell (`consistency.md:160-163`: *"never a single flag-bag `data class` with
+  `isLoading`/`error`/`isXSuccessful` booleans (which permits impossible states)"*; partner is named as "mostly
+  wrong"). They mix a **load** lifecycle (`isLoading`/`employee`/`error`) and a **save** lifecycle
+  (`isSaving`/`isSaved`) in one bag, permitting impossible states (`isLoading && isSaved`).
+- **The iOS-canonical shape.** Per ADR-0014 D2′ + `consistency.md` E1/E2 + `patterns-mobile`: the **hub** and each
+  **section's data load** are E1 load-fetch → sealed `UiState<T>` (`.loading`/`.error(canRetry:)`/`.loaded(T)`); the
+  **section save** is an E2 mutation → `ActionState` (`.idle`/`.submitting`/`.error`) + a one-shot success effect
+  (the "saved → pop / chain forward" effect, not an `isSaved` flag). This is **not** the picker case (§7.6 D3, which
+  is correctly stateless) — section editors DO have both a load and a mutation lifecycle, so both archetypes apply.
+- **Why record (not silently diverge, not copy).** The `patterns-mobile` Parity rule + the F1 precedent (§7.5 D5):
+  *"If the Android behavior is itself wrong, raise a finding — don't silently diverge on iOS only."* So: iOS does it
+  right, AND the Android E1 flag-bag fix is filed as a PM follow-up (**T-0337**), independent of the iOS wave (same
+  shape as F1/T-0333). Note the section VMs **also** hardcode English validation strings (`PersonalSectionViewModel.kt:82`
+  "First name is required", `:91` "Profile not loaded yet"; `AddressSectionViewModel.kt:201,205,220`) — the **same
+  F1/E8 class** as Register/Forgot (§7.5 D5 / T-0333). iOS localizes these ×5 (reviewer #10); **T-0337 folds the
+  section-VM string-literal fix in with the E1 flag-bag fix** (one android profile-VM cleanup ticket).
+- **Reviewer angle (#28d, below):** the Profile hub + section loads are sealed `UiState<T>`; saves are `ActionState`
+  + a one-shot effect; **no flag-bag `…UiState` struct** (the Android shape) and **no hardcoded validation/error
+  strings** (every message an `.xcstrings` key ×5). A ported flag-bag or a hardcoded literal is a finding.
+
+#### Scope A — Current-location (the T-0306-deferred my-location FAB + `LocationProvider` Core seam): DEFER entirely to a follow-up gated on T-0325; record the `LocationProvider` protocol shape regardless
+
+**RULING: DEFER the current-location FAB + the `LocationProvider` seam entirely to a follow-up (T-0335) gated on
+T-0325. Ship T-0310's Address section with the AddressPicker pan/search wiring only (full T-0306 parity, Prague
+default center). Record the `LocationProvider` protocol shape now (the Core-seam design for whenever it lands). This
+is the §7.6 D2 ruling reaching its homed ticket — T-0306 explicitly homed current-location to "T-0310 IF T-0325's
+plist key exists" — and T-0325 is STILL an open `proposed` owner manual_step, so building the FAB now ships a dead
+control. No new ADR.**
+
+- **T-0325 status check (the decisive input, verified).** T-0325 (`NSLocationWhenInUseUsageDescription` + the purpose
+  strings / entitlements) is **`proposed`** in the §10.2 / §3 tables and the INDEX — i.e. the plist key is **NOT
+  landed**; it remains an open **owner manual_step** (it has no committed Info.plist/`project.yml` entry). Per §7.6
+  Decision 2 + `patterns-mobile` ("building the my-location FAB before T-0325's plist key exists … a dead control"
+  is a reviewer-rejected finding) + the §7.6/T-0331 dead-control precedent: **without the key the iOS permission
+  prompt never appears**, so the FAB would silently no-op.
+- **What ships in T-0310 (full picker parity, no FAB):** the AddressPicker wired into the Address section
+  (pan-to-place + search), centered on the **Prague default** (`14.4378, 50.0755`, zoom 15 — the
+  `AddressPickerScreen.kt:90-91` parity), returning `GeocodedAddress` via `onConfirmed`. Both pan and search are fully
+  usable with no location fix — the picker reaches **full T-0306 parity** without current-location.
+- **The `LocationProvider` protocol shape (recorded now — the Core seam design, NOT built in T-0310):** homed in
+  `CleansiaCore/Location` behind a protocol (so feature/VM code never imports CoreLocation — the #7/#27 seam rule),
+  the `LocationService.kt` parity:
+
+  ```swift
+  // CleansiaCore/Location — the one-shot current-location seam (NOT built in T-0310; lands in T-0335 gated on T-0325).
+  protocol LocationProvider {
+      // Permission state without importing CoreLocation at the call site.
+      var authorizationStatus: LocationAuthorizationStatus { get }          // notDetermined/denied/restricted/authorized
+      func requestWhenInUseAuthorization() async -> LocationAuthorizationStatus
+      // One-shot fix for "center the picker on me" — best-effort, nil on denied/unavailable (never throws to the FAB).
+      func currentLocation() async -> Coordinate?
+  }
+  // Default impl: CLLocationManagerLocationProvider (the ONLY CoreLocation consumer besides the providers).
+  enum LocationAuthorizationStatus { case notDetermined, denied, restricted, authorized }
+  ```
+
+  Recording the shape now (without building it) costs nothing and means T-0335 slots the FAB in additively — the same
+  "design the seam, defer the affordance" move §7.6 D1/D2 made for `MapProvider`'s full-bleed method.
+- **The recorded Gate-DP divergence (architect sign-off, carried from §7.6 D2 to its homed ticket):** *"iOS T-0310
+  Address section omits the my-location FAB pending T-0325; pan/search parity is full; the divergence touches a
+  deferred affordance, not layout/flow/branding."*
+- **Rejected: build the `LocationProvider` seam now + land the FAB behind T-0325.** It couples a screen ticket to an
+  open owner plist step for an affordance the picker doesn't need to be usable, and risks shipping a dead control if
+  T-0325 hasn't landed at dispatch. **Lean DEFER** confirmed by T-0325 being `proposed`.
+- **Follow-up filed:** **T-0335** (build the `LocationProvider` Core seam + the my-location FAB + auto-center; gated
+  on T-0325) — `draft`, `depends_on: [T-0310, T-0325]`.
+
+#### Scope B — Notifications-prefs: NOT buildable at parity as written; DROP from T-0310, file a separate in-app-feed spike (scope cut flagged for the PM to record)
+
+**RULING: "Notifications prefs" is NOT buildable at parity as written. The Understand pass found NO Android prefs
+surface, NO backend prefs/push-prefs API, and NO generated client for it — Android "Notifications" is an in-app push
+FEED (the dashboard bell, Room-backed), NOT a Profile-tab prefs screen. DROP "Notifications prefs" from T-0310. The
+in-app feed is a separate spike once a backend contract exists (T-0336). This is a scope cut flagged for the PM to
+record in the ticket. No new ADR.**
+
+- **The parity finding (confirmed).** Android partner "Notifications" is `NavRoute.Notifications`
+  (`NavRoutes.kt:51-52`: *"In-app push-notifications feed — reached from the dashboard bell"*), backed by the
+  partner-app-local Room DB (`core.notifications.db`, per `patterns-mobile` §"Modules": *"Has a local Room DB for
+  notifications that customer-app does not"*). There is **no preferences screen** (no per-channel toggles), **no
+  backend prefs/push-prefs endpoint**, and **no generated client** for one. So a "Notifications **prefs**" screen has
+  **nothing to port** — it would be inventing a feature with no backend contract (an ADR-0016 standard-floor "no
+  hidden/placeholder feature" risk).
+- **Two distinct deferrals, kept straight.** (1) **Notifications *prefs*** → **DROPPED** (not buildable; no contract).
+  (2) The **in-app notifications *feed*** (the bell → Room-backed list) was already homed to T-0310 by T-0303's §7.2
+  deferral map (*"The unread-notifications DB feed + the bell badge → T-0310"*). But the feed is a **richer feature**
+  (a local persistence store — the iOS Room analogue would be SwiftData/Core Data or a UserDefaults-backed cache — +
+  the bell badge + a push-receipt path that depends on T-0311 APNs). Building it inside T-0310's profile scope is a
+  mis-home. **Recommend a separate spike (T-0336)** to scope the in-app feed (the iOS persistence choice + the push
+  contract + the bell badge) once T-0311 (APNs) lands — rather than smuggling it into the profile ticket.
+- **Scope cut for the PM to record:** T-0310's title/AC should **drop "Notifications"** (both the non-existent prefs
+  screen and the mis-homed feed). The Profile tab's Preferences group is **Language + Theme + Devices** (the
+  `ProfileScreen.kt:183-204` parity is exactly those three rows — there is **no Notifications row** in the Android
+  partner Profile hub). **Follow-up filed:** **T-0336** (spike: in-app partner notifications feed — iOS persistence
+  + push contract + bell badge; after T-0311) — `draft`.
+
+#### New / updated CRC roles (added with the T-0310 wiring)
+
+- **`ios-profile-hub`** — the Profile tab's hub `View` + `ProfileViewModel` (in `CleansiaPartner`): *responsibility:*
+  load the current employee + contract status, render the hero + section-group rows + logout, and host the Profile
+  tab's `NavigationStack` over `ProfileRoute`. *Collaborators:* `PartnerProfileClient` (employee + country reads via
+  the ADR-0019 spine), the section VMs (reached by route), `AppSettingsStore` (Preferences summaries),
+  `SnackbarController`. *Does NOT know:* how the audience root (`PartnerRootView`) switches (it is INSIDE the
+  `.dashboard` shell — it never sets the root enum); how the RegistrationLock routes (the lock owns its OWN stack);
+  the device-revoke contract (SECURITY-owned); the Keychain/token.
+- **`ios-profile-section`** — one per section editor (Personal/Address/Identification/Bank/Emergency/Documents): a
+  section `View` + `…SectionViewModel` written ONCE, hosted by TWO stacks (the Profile tab + the lock). *responsibility:*
+  load the section's fields (`UiState<T>`), validate + save (`ActionState` + a one-shot effect), and — when
+  `onboarding == true` — chain forward / when `false` — pop on save. *Collaborators:* `PartnerProfileClient`, the
+  `PasswordPolicy`-style field validators (localized ×5), the Address section also collaborates with the T-0306
+  `MapProvider`/`GeocodingService` (the AddressPicker). *Does NOT know:* which stack hosts it (the `onboarding` flag is
+  the only context it reads); the `ServiceAreaProvider` (deferred, T-0334); the audience root; whether the lock or the
+  hub presented it.
+- **`ios-onboarding-chain`** — the onboarding-chain VM owned by the **lock's** stack (the `OnboardingChainViewModel.kt`
+  parity): *responsibility:* after a section saves in onboarding mode, re-fetch `RegistrationCompletionStatus`, decide
+  the next missing section (or finish), and drive the chain header ("Step 2 of 4"). *Collaborators:* the section VMs,
+  the registration-status read, the lock VM (re-resolves on pop). *Does NOT know:* the shell's Profile-tab stack (it
+  drives the LOCK's stack only); how the root flips to `.dashboard` (the lock's success watermark does that).
+- **`ios-app-settings-store`** (updated, sprint-12 §7.5 D1) — gains writable `language` (`setLanguage`) + a `Theme`
+  enum (System/Light/Dark) + `setTheme`; still `UserDefaults`-backed, still the ONE general store. *Does NOT know:*
+  (unchanged) secrets — the device id / token stay in the Keychain spine.
+
+#### Decisions 6–8 — the Devices (Device/Mine list + revoke) security gate (SECURITY-owned; recorded 2026-06-27, security reviewer)
+
+> **VERDICT: APPROVE-the-design with TWO BINDING implementation rules + ONE required test.** The architect's §7.7
+> (D1–D5 + scope A/B) defers the device-id / revoke gate to security (note above §7.7 D1); this sub-note rules it.
+> The full Gate-SEC Devices note (the S1–S10 walk + the trace evidence) lives at
+> `agents/backlog/security/ios-devices.md`. The backend Device surface was traced on this Mac and is **server-scoped
+> and safe** — DECISION 8 is **VERIFIED, not flagged**. The iOS work is greenfield (T-0310 not yet built — no
+> `deviceMine`/`deviceRevoke` call site exists on disk yet), so these are **binding rules the developer builds to and
+> the reviewer enforces**, not findings against shipped code.
+
+**DECISION 6 — the device-id invariant (BINDING). `deviceMine(currentDeviceId:)`'s argument MUST be sourced from the
+ONE `DeviceIdProvider` and nowhere else.** The `currentDeviceId:` passed to
+`PartnerDeviceAPI.deviceMine(currentDeviceId:)` MUST be `DeviceIdProvider.deviceId` — the **same** instance that the
+`HeaderAdapter` stamps as `X-Device-Id` (`HeaderAdapter.swift:40`) and the **same** id `Device/Register` persisted
+(header-parity-contract §2). One provider per app is wired in `PartnerClients.swift:15` (`DeviceIdProvider(service:
+"cz.cleansia.partner.device")`). **No second device-id source, no per-call `UUID()` mint, no `identifierForVendor`,
+no re-read from a different Keychain account** (the T-0331 mint-once invariant). *Why it is load-bearing:* the server
+sets `DeviceDto.isCurrent` by string-matching `currentDeviceId` against `Device.DeviceId` (`DeviceMapper.cs:14`); if
+the arg drifts from the stamped `X-Device-Id`, the caller's own row shows `isCurrent == false`, the revoke trash
+appears on it (DECISION 7 hides only on `isCurrent`), and the partner self-revokes a healthy session.
+*Reviewer enforcement (grep):* the only expression feeding `deviceMine`'s `currentDeviceId:` is the injected
+`DeviceIdProvider.deviceId` (via a `DevicesRepository.currentDeviceId` that returns it — the Android
+`DevicesRepository.kt:31,34` parity); a literal, a fresh `UUID`, or any non-provider source is a FAIL.
+
+**DECISION 7 — current-device-revoke → sign-out (BINDING; require BOTH). (a) Hide the revoke control on the current
+row (mirror Android), AND (b) keep a defensive sign-out branch.** (a) The revoke trash renders **only when
+`!device.isCurrent`** — the `DevicesScreen.kt:235` (`if (!device.isCurrent) { IconButton(...) }`) parity; the current
+row shows a "this device" chip instead (`:221-224`). So self-revoke is **not UI-reachable**. (b) Defense in depth: if
+a revoke **ever** targets the current device, the app MUST force `authClient.logout()` and return to the login/splash
+root — never leave a revoked-but-logged-in session. **Detection = match the revoked row's `deviceId` against
+`DeviceIdProvider.deviceId`** (the string the invariant guarantees is the current device), as the **primary** signal,
+with **`isCurrent == true` as the secondary/OR signal** (the server's own flag). Match on **either** → sign out.
+*Why both, and why the access token makes (b) non-optional:* the server revoke kills the refresh-token **chain** for
+that `DeviceId` (`RevokeDevice.cs:44` → `RefreshTokenService.RevokeByDeviceAsync`, `:120-132`), but the in-memory
+**access token keeps working until its ~15-min expiry** (`Auth.swift:292`). Without (b), a self-revoke (reachable via
+a future bug, a race where `isCurrent` is stale, or a direct API call) leaves the partner in the app on a dead
+session until the next 401 — exactly the "self-revokes a healthy session" footgun the header-parity contract warns
+about. (a) is the parity guard; (b) is the safety net that holds even if (a) is bypassed.
+*Required test (TC-IOS-DEVICES-SELF-REVOKE):* revoking a row whose `deviceId == DeviceIdProvider.deviceId` (or whose
+`isCurrent == true`) drives `authClient.logout()` + a return to the login root — a unit/VM test, red-first.
+
+**DECISION 8 — server-scoping of revoke (S2/S3 ownership) — VERIFIED on the backend (not flagged).** Traced on this
+Mac: `RevokeDevice.Handler` (`RevokeDevice.cs:33-44`) derives `userId` from the JWT via `IUserSessionProvider`
+(**S1** — no client-supplied id), then loads the row with `GetByIdAndUserAsync(request.DeviceRowId, userId, …)`
+(`DeviceRepository.cs:21-25`, filters `d.Id == id && d.UserId == userId && d.IsActive`). A cross-user row id → `device
+is null` → `DeviceNotFound` (`:38-41`) — **NotFound, not Forbidden**, so existence isn't leaked (**S3**). `GetMyDevices`
+is symmetrically scoped (`GetByUserIdAsync(userId)`, `GetMyDevices.cs:22`). Every Device endpoint carries
+`[Permission(Policy.Authenticated)]` + `[EnableRateLimiting("auth")]` (`DeviceController.cs:40-61`) (**S2/S5**). A
+partner **cannot** revoke or even see another user's device row. **iOS adds NO client-side ownership check beyond
+this** and MUST never send a `deviceRowId` it did not receive from its own `deviceMine()` response.
+
+**Also confirmed (S4/S7/S10):** the list returns **only the caller's own** devices and the DTO leaks no foreign PII —
+`DeviceDto` carries `id/platform/deviceId/lastActiveAt/isCurrent` only; **no `UserId`, no `TenantId`, no `DeviceToken`
+(the push secret)** (`DTOs/DeviceDto.cs`; the iOS `DeviceDto.swift` mirror is identical). `platform`/`lastActiveAt`
+are minimal, non-sensitive self-metadata. **S10/S7 (idempotent revoke):** all reads filter `&& d.IsActive`, so a
+revoked (deactivated) row drops from the list; re-revoking an already-revoked row returns `DeviceNotFound` (the row is
+filtered out) — the screen simply no longer shows it (the `DevicesViewModel.kt:73-75` filter-out-on-success parity).
+Safe and idempotent on the already-revoked path. **`Device` implements `ITenantEntity`** (`Device.cs:6`) — the global
+tenant filter applies on top of the explicit `UserId` scope (**S8**, latent multi-tenant safety; today single-tenant).
+
+---
+
 ## 8. Gates & verification (per `agents/process/quality-gates.md`)
 
 - **Reviewer-per-developer** on every ticket (concurrent).
@@ -985,6 +1580,55 @@ and a violation of `consistency.md` **E8** (all user text via `R.string`/`getStr
   `error_generic`; (c) the Core `PasswordPolicy` (≥8 && letter && digit) feeds the Core `PasswordRuleList`,
   shared partner+customer, no VM-local copy; (d) every validation message is an `.xcstrings` key ×5 (the F1
   divergence — Android's hardcoded literals NOT replicated; android fix filed as **T-0333**).
+  · **#27 (§7.6, T-0306+ — maps) the map seam is the canonical one** (composes with #7/#12): (a) all map +
+  geocode use goes through the Core **`MapProvider`/`GeocodingService`** protocols — **no feature/VM
+  `import MapKit` or `import CoreLocation`**; the `MapKitMapProvider`-produced view + `CLGeocoderGeocoding
+  Service` are the **only** MapKit/CoreLocation consumers (a second consumer is a finding); (b) the seam ships
+  **minimal** — the picker factory only; T-0307's full-bleed/overlay surface is an **additive** method (a
+  designed-ahead richer `MapProvider` is the rejected shape); (c) **NO iOS-17-only `Map{Marker}`/`MapPolygon`/
+  `onMapCameraChange`** (#12) — the picker uses `Map(coordinateRegion:annotationItems:[])` + a SwiftUI overlay
+  pin; (d) geocoding is **best-effort** (nil/`[]` on error, **cancel-before-refire** for
+  `kCLErrorGeocodeCanceled`, never blocks the confirm/crashes), debounce **300ms forward / 500ms reverse**
+  ported VERBATIM (reverse-on-idle is a VM Combine/`Task` debounce, not a map callback); (e) the AddressPicker
+  has **NO `UiState`/`ActionState`** — plain `@Published` + a one-shot `onConfirmed` callback; **the
+  sealed-state absence is correct — do NOT flag it**; (f) **current-location/the my-location FAB are NOT in
+  T-0306** (deferred to T-0310 + T-0325's plist key) — building the FAB now (a dead control without the plist
+  key) is a finding; the recorded **Gate-DP divergence** (iOS omits current-location pending T-0325; pan/search
+  parity full; touches the affordance, not layout/flow/branding) is noted in-ticket; (g) **NO Mapbox token /
+  map SDK / `Package.swift` map entry** — a stray token or `MapStyles.kt` port (Q-IOS-02 is "No") is a finding.
+  · **#28 (§7.7, T-0310+ — partner Profile tab) the Profile tab + lock-routing + settings + state seams are the
+  canonical ones:** **(a) nav structure (D1)** — the Profile tab is an **in-tab `NavigationStack` over a typed
+  `ProfileRoute` enum** INSIDE the `.dashboard` shell (the ADR-0020 #23 intra-audience push); audience states
+  (`Splash/Login/Lock/Main`) are **never** `ProfileRoute` cases, and a section push modeled as an audience hop (or the
+  audience as a `ProfileRoute`) is a finding; the `onboarding: Bool` payload is on the gate-section cases only
+  (Personal/Address/Identification/Bank), Emergency/Documents carry none; the AddressPicker is a `.sheet`/`.fullScreenCover`
+  return-value flow (`onConfirmed`), **not** a back-stack route. **(b) lock routing (D2 — the load-bearing call)** — the
+  `RegistrationLock` (root audience state, NOT in the shell) owns its **OWN** local `NavigationStack` + onboarding-chain
+  VM and pushes the **SHARED** section set over **itself** with `onboarding == true`; on pop it re-resolves and **only**
+  the success watermark flips the root to `.dashboard`; **no Fix CTA renders or routes into the shell's Profile-tab
+  stack** (a shell reach before complete is a fail-OPEN finding — composes with **#24**); a second forked copy of any
+  section View/VM for the lock is a finding (one set, two hosts, the `onboarding` flag is the switch). **(c) settings
+  (D4)** — language + theme read/write the **one** `AppSettingsStore` (UserDefaults, NOT Keychain — #26a sibling); a
+  second settings store or either pref in the Keychain is a finding; the theme is honored via `.preferredColorScheme`
+  on the root (no dead Preferences row). **(d) state (D5)** — the Profile hub + each section's load are sealed
+  `UiState<T>`, the save is `ActionState` + a one-shot effect; a **ported flag-bag `…UiState` struct** (the Android E1
+  shape) or a **hardcoded validation/error string** (every message an `.xcstrings` key ×5, #10) is a finding. **(e)
+  scope (A/B)** — the my-location FAB is **NOT** in T-0310 (deferred → T-0335 gated on T-0325's plist key; building it
+  now is a dead-control finding), and there is **no "Notifications" row/screen** in the partner Profile hub (the
+  Preferences group is Language + Theme + Devices — the `ProfileScreen.kt:183-204` parity); a Notifications-prefs screen
+  with no backend contract is a hidden/placeholder finding (ADR-0016 floor). The **`ServiceAreaRow`** is deferred
+  (T-0334) — its absence is the recorded **Gate-DP divergence** (advisory affordance, not a save gate), **not** a
+  finding.
+- **TDD on the partner Profile tab + lock routing (T-0310, §7.7):** **TC-IOS-PROFILE-ROUTE** (the Profile tab's
+  `NavigationStack` pushes/pops `ProfileRoute` cases; an audience state is never a `ProfileRoute`); **TC-IOS-LOCK-CHAIN**
+  (the lock pushes a section with `onboarding == true` → save chains to the next missing section; chain-finish pops back
+  to the lock; the lock re-resolves and only `isRegistrationComplete()` flips the root to `.dashboard`; **no path reaches
+  the shell's Profile-tab stack from the lock** — the fail-closed assertion, composes with TC-IOS-REGLOCK); **TC-IOS-SECTION-SHARED**
+  (the SAME section View/VM, hosted from the Profile-tab stack with `onboarding == false`, pops on save — proving one set,
+  two hosts); **TC-IOS-SETTINGS-THEME** (`setTheme`/`setLanguage` round-trip the one `AppSettingsStore` via UserDefaults;
+  `.system`→`nil` colorScheme, `.light`/`.dark` map through; resets on a fresh store); **TC-IOS-PROFILE-STATE** (the hub +
+  a section load render sealed `UiState<T>` `.loading`/`.error`/`.loaded`; a save renders `ActionState` + a one-shot
+  effect — no flag-bag) — **red-first**.
 - **Mechanical:** the Xcode workspace builds; `CleansiaCore` + both app targets compile; the codegen step
   produces the client from the on-disk spec (no hand-edit); the Swift test suites run. **✅ T-0303 evidence:**
   `swiftformat --lint` + `swiftlint --strict` clean; **CleansiaCore 93 + CleansiaPartner 17** tests pass on

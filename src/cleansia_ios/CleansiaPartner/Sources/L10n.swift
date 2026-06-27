@@ -259,8 +259,13 @@ enum L10n {
         }
     }
 
+    /// The bundle strings resolve from. Defaults to `.main`; the in-app
+    /// language switch points it at the selected language's `.lproj` so a
+    /// picker change re-localizes the UI without an app restart.
+    nonisolated(unsafe) static var bundle: Bundle = .main
+
     static func localized(_ key: String) -> String {
-        String(localized: String.LocalizationValue(key))
+        bundle.localizedString(forKey: key, value: nil, table: nil)
     }
 
     static func format(_ key: String, _ args: CVarArg...) -> String {

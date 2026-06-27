@@ -38,7 +38,8 @@ struct PartnerShellView: View {
             OrdersRootView(
                 client: container.orderClient,
                 staleness: container.ordersStaleness,
-                snackbar: container.snackbar
+                snackbar: container.snackbar,
+                mapProvider: container.mapProvider
             )
             .tabItem { Label(ShellTab.orders.label, systemImage: ShellTab.orders.systemImage) }
             .tag(ShellTab.orders)

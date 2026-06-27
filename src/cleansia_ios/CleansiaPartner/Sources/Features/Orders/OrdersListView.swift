@@ -5,11 +5,22 @@ import SwiftUI
 struct OrdersRootView: View {
     @StateObject private var vm: OrdersListViewModel
     @State private var path: [OrderRoute] = []
+    private let client: PartnerOrderClient
+    private let snackbar: SnackbarController
+    private let mapProvider: MapProvider
 
-    init(client: PartnerOrderClient, staleness: OrdersStaleness, snackbar: SnackbarController) {
+    init(
+        client: PartnerOrderClient,
+        staleness: OrdersStaleness,
+        snackbar: SnackbarController,
+        mapProvider: MapProvider
+    ) {
         _vm = StateObject(
             wrappedValue: OrdersListViewModel(client: client, staleness: staleness, snackbar: snackbar)
         )
+        self.client = client
+        self.snackbar = snackbar
+        self.mapProvider = mapProvider
     }
 
     var body: some View {
@@ -18,9 +29,12 @@ struct OrdersRootView: View {
                 .navigationDestination(for: OrderRoute.self) { route in
                     switch route {
                     case let .detail(orderId):
-                        // Placeholder detail; the real detail screen
-                        // (full-bleed map + SnapSheet) replaces this.
-                        OrderDetailPlaceholderView(orderId: orderId)
+                        OrderDetailView(
+                            orderId: orderId,
+                            client: client,
+                            snackbar: snackbar,
+                            mapProvider: mapProvider
+                        )
                     }
                 }
         }
@@ -116,25 +130,6 @@ private struct OrdersErrorView: View {
         }
         .padding(Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-/// A thin placeholder so the nav push is exercisable now; the real
-/// OrderDetailView (full-bleed map + SnapSheet) replaces this.
-struct OrderDetailPlaceholderView: View {
-    let orderId: String
-
-    var body: some View {
-        VStack(spacing: Spacing.s) {
-            Image(systemName: "doc.text.magnifyingglass")
-                .font(.system(size: 40))
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-            Text(orderId)
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(CleansiaColors.background.ignoresSafeArea())
     }
 }
 

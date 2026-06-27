@@ -160,7 +160,14 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
 - **E1.** **UiState is a `sealed interface` with `Loading` / `Error(...)` / `Loaded(...)`** — **never a
   single flag-bag `data class`** with `isLoading`/`error`/`isXSuccessful` booleans (which permits
   impossible states). ✗ partner `LoginUiState`, `OrderDetailsUiState`, `EarningsSummaryUiState`,
-  `DashboardUiState` are flag-bags → migrate to sealed states.
+  `DashboardUiState` are flag-bags → migrate to sealed states. ✗ **Also** partner `ProfileUiState`
+  (`ProfileViewModel.kt:26-36`) + the profile section `*UiState` (`PersonalSectionViewModel.kt:17-30` &c. —
+  `isLoading`/`isSaving`/`error?`/`isSaved` mixing a load + a save lifecycle in one bag) are flag-bags,
+  **and** those section VMs hardcode English validation/error strings (`PersonalSectionViewModel.kt:82,91`;
+  `AddressSectionViewModel.kt:201,205,220` — the same F1/E8 class as Register/Forgot). **The iOS port is born
+  right** (sealed `UiState<T>` load + `ActionState` save + `.xcstrings` ×5; sprint-12 §7.7 D5 — Android E1 NOT
+  replicated); the android profile-VM fix (sealed states + move the literals to `R.string.*`) is the PM-filed
+  follow-up **T-0337** (mechanical; independent of the iOS wave — same shape as F1/T-0333).
 - **E2.** **One-shot actions use the shared `sealed ActionState` (Idle/Submitting/Error)** + a
   `SharedFlow(replay=0)` for the success effect — **not** loose `_submitting: Boolean` + `_error: String?`
   StateFlows. ✗ customer `CreateDisputeViewModel`, `MembershipViewModel`, `ProfileViewModel` use loose

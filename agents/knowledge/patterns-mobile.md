@@ -227,7 +227,7 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | `ApiErrorParser.parseToUserMessage` | an app-injectable `ApiErrorLocalizing` seam (`ApiErrorLocalizer`); server message wins, else status→localized fallback |
 | `stringResource(R.string.x)` | `String(localized:)` / `Localizable.strings` |
 | `navigation.Routes` (`@Serializable`) — **top-level audience hops** (Splash/Login/Lock/Main via `popUpTo{inclusive}`) | **the flat-enum root-switch** (`PartnerRootView` over a closed `enum Route`: `.splash`/`.login`/`.verifyEmail`/`.registrationLock`/`.dashboard`-shell), seeded `hasValidSession ? .splash : .login`, a verified login bounces through `.splash` which re-resolves shell-vs-lock (**ADR-0020**, reviewer #23). A top-level audience state modeled as a pushed `NavigationPath` is a deviation |
-| `navigation.Routes` (`@Serializable`) — **intra-audience push** (OrderDetail, ProfileSection, onboarding-chain sections) | `NavigationStack` + typed route enum (the push container **within** a root audience state, NOT the audience selector) |
+| `navigation.Routes` (`@Serializable`) — **intra-audience push** (OrderDetail, ProfileSection, onboarding-chain sections) | `NavigationStack` + typed route enum (the push container **within** a root audience state, NOT the audience selector). **Concrete (T-0310, §7.7):** the Profile tab hosts an in-tab `NavigationStack` over a typed `ProfileRoute` enum; the RegistrationLock (a root audience state) owns its OWN local `NavigationStack` over the same gate-section routes and pushes the **shared** section set over itself with `onboarding == true` — fail-closed, no cross-audience routing into the shell |
 | per-app `openApiGenerate { generatorName=kotlin }` reading `openapi/{partner,customer}-mobile-api.json` | per-app `openapi-generator` **swift5 + urlsession** (`responseAs: AsyncAwait`) reading the **same shared committed specs**; config in `cleansia_ios/openapi/openapi-generator-config.*.yaml`, run via `scripts/generate-api-clients.sh`, emitting `Cleansia{Partner,Customer}Api` SPM packages. Generated output is **gitignored + never hand-edited** (change the spec or config, regenerate). The **auth/session/header spine is hand-written** in `Core/Auth` and **excluded from codegen**. First real generation is owner-gated (`manual_step: mobile-spec-regen`) — the specs are stale pre-T-0272 |
 | Android's generated Retrofit service authed by the OkHttp `AuthInterceptor`/`AuthAuthenticator` already installed in the client | **the generated swift5 client authenticates ONLY via a custom `RequestBuilderFactory` installed into the generated global config** (`Cleansia{Partner,Customer}ApiAPI.requestBuilderFactory`) — its `RequestBuilder` subclass routes **every** generated request through the **same** `Core/Auth` spine (`HeaderAdapter` for Bearer-iff-not-anon + `X-Device-Id`/`X-Device-Label`/`X-Time-Zone`, `actor SessionRefresher` for single-flight 401→refresh→retry), using only the generator's `open` points so it survives regeneration (**ADR-0019**). The generated APIs are static, apply only the static `customHeaders`, and are all `requiresAuthentication: false` — so without this they 401 tokenless |
 | `core/settings/AppSettingsRepository.kt` (DataStore `partner_app_settings`: `onboarding_seen`, `language`, `theme`) | a single general **`AppSettingsStore`** in `CleansiaCore`, **`UserDefaults`-backed** (DataStore's wiped-on-uninstall parity — NOT Keychain): `hasSeenOnboarding`/`markSeen()` + a resolved language tag ∈ {en,cs,sk,uk,ru} (sprint-12 §7.5 D1, reviewer #26a) |
@@ -322,6 +322,34 @@ rejects:** a feature/VM `import MapKit`/`import CoreLocation`; a second MapKit c
 the iOS-17-only `Map{Marker}`/`MapPolygon`/`onMapCameraChange` API (#12); a hand-rolled per-feature geocode/
 debounce instead of the Core `GeocodingService`; building the my-location FAB before T-0325's plist key exists
 (a dead control); flagging the missing `UiState`/`ActionState` on the picker.
+
+**iOS partner Profile tab — the ONE way (sprint-12 §7.7, T-0310; ADR-0020 + §7.5 D1 + §7.6 D2 + ADR-0018 Gate-DP +
+the Parity rule, reviewer #28):** the Profile tab hosts an **in-tab `NavigationStack` over a typed `ProfileRoute`
+enum INSIDE the `.dashboard` shell** — the ADR-0020 **intra-audience push** (the root `enum` stays the audience
+selector). `ProfileRoute` = the `NavRoutes.kt:54-91` push routes minus the audience cases; the four **gate** sections
+(`.personal/.address/.identification/.bank`) carry an `onboarding: Bool` payload, Emergency/Documents do not; the
+AddressPicker is a `.sheet`/`.fullScreenCover` return-value flow (`onConfirmed`), **not** a route. **The RegistrationLock
+(a ROOT audience state, NOT in the shell) owns its OWN local `NavigationStack` + onboarding-chain VM and pushes the
+SHARED section set over ITSELF with `onboarding == true`** (the Android `popUpTo(RegistrationLock){inclusive=false}` +
+`ON_RESUME` re-resolve parity, `OnboardingChainViewModel.kt:86-121`); on pop the lock re-resolves and **only** the
+success watermark flips the root to `.dashboard` — **fail-CLOSED, no cross-audience routing into the shell's Profile
+tab** (composes with the registration-gate #24). **Section screens are ONE set of Views/VMs hosted by TWO stacks**
+(Profile tab = maintenance edits, `onboarding == false` → pop on save; lock = onboarding chain, `onboarding == true` →
+chain forward), the `onboarding` flag the **only** switch. **Device-local settings** read/write the one `AppSettingsStore`
+(extended with writable `setLanguage` + a `Theme` enum + `setTheme`, the `AppSettingsRepository.kt:37-51` parity —
+UserDefaults, NOT Keychain, #26a); the **theme is honored via `.preferredColorScheme` on the root** (`.system`→`nil`).
+**The Profile hub + each section load are sealed `UiState<T>`; the save is `ActionState` + a one-shot effect** — Android's
+`ProfileUiState`/`*UiState` **flag-bags (E1) are NOT replicated** (the Parity rule: Android-wrong → diverge correctly,
+raise the finding — android fix **T-0337**); every validation/error string is an `.xcstrings` key ×5 (NOT the Android
+hardcoded literals). **Deviations a reviewer rejects:** a section push modeled as an audience hop (or the audience as a
+`ProfileRoute`); a Fix CTA that renders/routes into the shell's Profile-tab stack (a fail-OPEN shell reach before
+complete); a second forked copy of a section View/VM for the lock; a second settings store (or theme/language in the
+Keychain); a ported flag-bag `…UiState` struct or a hardcoded validation string; building the my-location FAB before
+T-0325's plist key exists (DEFERRED → T-0335 — a dead control); a "Notifications" prefs row/screen in the partner
+Profile hub (DROPPED — no backend contract; the Preferences group is Language + Theme + Devices, the
+`ProfileScreen.kt:183-204` parity). **Deferred (NOT findings — recorded Gate-DP divergences):** the advisory
+`ServiceAreaRow` (→ T-0334); the current-location FAB (→ T-0335, gated on T-0325). The **Device/Mine list + revoke**
+screen is **SECURITY-ruled** (decisions 6–8), out of this rule's scope.
 
 **Parity deviation (Android is wrong, iOS is right) — auth validation strings:** the Android partner
 `RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set validation errors as **hardcoded English

@@ -65,6 +65,8 @@ final class PartnerAppContainer: AppContainer {
     let registrationClient: PartnerRegistrationClient = LivePartnerRegistrationClient()
     let profileClient: PartnerProfileClient = LivePartnerProfileClient()
     let devicesClient: PartnerDevicesClient
+    let orderClient: PartnerOrderClient = LivePartnerOrderClient()
+    let ordersStaleness = OrdersStaleness()
     let geocodingService: GeocodingService = CLGeocoderGeocodingService()
     let mapProvider: MapProvider = MapKitMapProvider()
 
@@ -97,6 +99,7 @@ final class PartnerAppContainer: AppContainer {
         if let cache = devicesClient as? SessionScopedCache {
             sessionScopedCaches.register(cache)
         }
+        sessionScopedCaches.register(ordersStaleness)
     }
 
     func installGeneratedClientAuth() {

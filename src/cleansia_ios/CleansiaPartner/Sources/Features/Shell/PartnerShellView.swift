@@ -35,8 +35,13 @@ struct PartnerShellView: View {
             .tabItem { Label(ShellTab.dashboard.label, systemImage: ShellTab.dashboard.systemImage) }
             .tag(ShellTab.dashboard)
 
-            PlaceholderTab(tab: .orders, ticket: "T-0307")
-                .tag(ShellTab.orders)
+            OrdersRootView(
+                client: container.orderClient,
+                staleness: container.ordersStaleness,
+                snackbar: container.snackbar
+            )
+            .tabItem { Label(ShellTab.orders.label, systemImage: ShellTab.orders.systemImage) }
+            .tag(ShellTab.orders)
 
             PlaceholderTab(tab: .invoices, ticket: "T-0309")
                 .tag(ShellTab.invoices)

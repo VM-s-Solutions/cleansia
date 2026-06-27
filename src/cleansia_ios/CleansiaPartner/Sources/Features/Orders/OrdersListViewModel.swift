@@ -28,6 +28,9 @@ final class OrdersListViewModel: ViewModel {
     @Published private(set) var completedPeriod: CompletedPeriod = .thisMonth
     /// Filled by the location source later; nil for now (distance hides).
     @Published var currentLocation: Coordinate?
+    /// The order whose inline action is currently in flight — drives the per-row
+    /// spinner so the cleaner can't double-fire. Nil when no action is running.
+    @Published private(set) var inFlightActionOrderId: String?
 
     let navigateToDetail = PassthroughSubject<String, Never>()
 
@@ -93,6 +96,59 @@ final class OrdersListViewModel: ViewModel {
 
     func openDetail(_ orderId: String) {
         navigateToDetail.send(orderId)
+    }
+
+    /// The inline primary action for a list row, via the shared machine. The
+    /// Available card's `isMine` is always false (it lists unassigned offers);
+    /// the Active row's is always true (assigned-to-me). `hasAfterPhotos` isn't
+    /// on the list DTO, so an InProgress Active row resolves to `.complete` and
+    /// the server's after-photos guard is the safety net (the inline parity).
+    func inlineAction(for order: OrderListItem) -> OrderPrimaryAction {
+        let isMine = tab == .active
+        return OrderPrimaryAction.action(for: order.status, isMine: isMine, hasAfterPhotos: true)
+    }
+
+    /// Run a row's inline lifecycle action. O2: acts ONLY on `order.id` — the id
+    /// the list response carried for that row; never a synthesized/echoed id.
+    func runInlineAction(_ action: OrderPrimaryAction, on order: OrderListItem) async {
+        guard inFlightActionOrderId == nil, let orderId = order.id else { return }
+        guard let mutation = action.orderAction?.mutation else { return }
+
+        inFlightActionOrderId = orderId
+        let result = await command(for: action, orderId: orderId)
+        inFlightActionOrderId = nil
+
+        switch result {
+        case .success:
+            staleness.invalidatePanes(for: mutation)
+            staleness.invalidateOrder(orderId)
+            await refreshAffectedPanes(mutation)
+        case let .failure(error):
+            // O4: clean reject (e.g. already-taken) — surface + refresh the
+            // current pane so the stale "takeable" row corrects.
+            snackbar.showApiError(error)
+            staleness.invalidatePanes(for: mutation)
+            await fetch(tab.pane, phase: .backgroundRefreshing)
+        }
+    }
+
+    private func command(for action: OrderPrimaryAction, orderId: String) async -> ApiResult<Void> {
+        switch action {
+        case .take: await client.takeOrder(orderId: orderId)
+        case .notifyOnTheWay: await client.notifyOnTheWay(orderId: orderId)
+        case .start: await client.startOrder(orderId: orderId)
+        case .complete: await client.completeOrder(orderId: orderId, actualMinutes: nil, notes: nil)
+        case .completeBlocked, .none: .failure(ApiError(code: "orders.no_action"))
+        }
+    }
+
+    private func refreshAffectedPanes(_ mutation: OrdersMutation) async {
+        // Refresh the affected pane the cleaner is currently looking at first
+        // (silent — the row spinner already gave feedback); the others refill
+        // lazily on their next `ensureFreshOrCached`.
+        if mutation.affectedPanes.contains(tab.pane) {
+            await fetch(tab.pane, phase: .backgroundRefreshing)
+        }
     }
 
     /// Skip the network when the pane's cache is warm (no-flash resume); else a

@@ -15,11 +15,19 @@ struct OrdersPaneView: View {
                 hasSearch: !vm.searchQuery.isEmpty,
                 sort: vm.availableSort,
                 currentLocation: vm.currentLocation,
+                inFlightOrderId: vm.inFlightActionOrderId,
                 onSort: { sort in Task { await vm.setAvailableSort(sort) } },
+                onTake: { order in Task { await vm.runInlineAction(vm.inlineAction(for: order), on: order) } },
                 onOpen: onOpen
             )
         case .active:
-            ActivePane(orders: vm.visibleOrders, onOpen: onOpen)
+            ActivePane(
+                orders: vm.visibleOrders,
+                inFlightOrderId: vm.inFlightActionOrderId,
+                inlineAction: vm.inlineAction(for:),
+                onAdvance: { action, order in Task { await vm.runInlineAction(action, on: order) } },
+                onOpen: onOpen
+            )
         case .history:
             HistoryPane(
                 orders: vm.visibleOrders,
@@ -43,7 +51,9 @@ private struct AvailablePane: View {
     let hasSearch: Bool
     let sort: AvailableSort
     let currentLocation: Coordinate?
+    let inFlightOrderId: String?
     let onSort: (AvailableSort) -> Void
+    let onTake: (OrderListItem) -> Void
     let onOpen: (OrderListItem) -> Void
 
     private var hotDealPay: Double? {
@@ -68,6 +78,8 @@ private struct AvailablePane: View {
                         order: order,
                         distanceKm: order.distanceKm(from: currentLocation),
                         isHotDeal: hotDealPay.map { (order.estimatedCleanerPay ?? 0) >= $0 } ?? false,
+                        isTaking: inFlightOrderId == order.id,
+                        onTake: { onTake(order) },
                         onOpen: { onOpen(order) }
                     )
                     .ordersRow()
@@ -110,6 +122,8 @@ private struct AvailableOrderRow: View {
     let order: OrderListItem
     let distanceKm: Double?
     let isHotDeal: Bool
+    let isTaking: Bool
+    let onTake: () -> Void
     let onOpen: () -> Void
 
     private var isStartingSoon: Bool {
@@ -152,8 +166,7 @@ private struct AvailableOrderRow: View {
                         }
                     }
                 }
-                // Take CTA slot — the inline Take action is not yet wired.
-                TakeButtonSlot()
+                TakeButton(isTaking: isTaking, onTake: onTake)
             }
             .ordersCard()
         }
@@ -161,16 +174,30 @@ private struct AvailableOrderRow: View {
     }
 }
 
-/// Rendered for layout parity; the inline Take action is not yet wired, so it
-/// is disabled to avoid a no-op.
-private struct TakeButtonSlot: View {
+/// Full-width Take CTA. A scanning cleaner can grab a job without opening the
+/// detail; while taking, the label swaps for a spinner so the request landing
+/// is visible without the button resizing.
+private struct TakeButton: View {
+    let isTaking: Bool
+    let onTake: () -> Void
+
     var body: some View {
-        Text(L10n.Orders.takeOrder)
-            .font(CleansiaTypography.labelLarge)
-            .foregroundColor(CleansiaColors.onPrimary)
+        Button(action: onTake) {
+            ZStack {
+                if isTaking {
+                    ProgressView().tint(CleansiaColors.onPrimary)
+                } else {
+                    Text(L10n.Orders.takeOrder)
+                        .font(CleansiaTypography.labelLarge)
+                        .foregroundColor(CleansiaColors.onPrimary)
+                }
+            }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, Spacing.xs)
-            .background(CleansiaColors.primary.opacity(0.5), in: Capsule())
+            .padding(.vertical, Spacing.s)
+            .background(CleansiaColors.primary, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(isTaking)
     }
 }
 
@@ -178,6 +205,9 @@ private struct TakeButtonSlot: View {
 
 private struct ActivePane: View {
     let orders: [OrderListItem]
+    let inFlightOrderId: String?
+    let inlineAction: (OrderListItem) -> OrderPrimaryAction
+    let onAdvance: (OrderPrimaryAction, OrderListItem) -> Void
     let onOpen: (OrderListItem) -> Void
 
     private var grouped: [(ActiveDayBucket, [OrderListItem])] {
@@ -192,12 +222,50 @@ private struct ActivePane: View {
                 ForEach(grouped, id: \.0) { bucket, rows in
                     Section(OrdersFormat.dayBucketLabel(bucket)) {
                         ForEach(rows, id: \.id) { order in
-                            CompactOrderRow(order: order, onOpen: { onOpen(order) }).ordersRow()
+                            ActiveOrderRow(
+                                order: order,
+                                action: inlineAction(order),
+                                isBusy: inFlightOrderId == order.id,
+                                onAdvance: { onAdvance(inlineAction(order), order) },
+                                onOpen: { onOpen(order) }
+                            )
+                            .ordersRow()
                         }
                     }
                 }
             }
             .listStyle(.plain)
+        }
+    }
+}
+
+private struct ActiveOrderRow: View {
+    let order: OrderListItem
+    let action: OrderPrimaryAction
+    let isBusy: Bool
+    let onAdvance: () -> Void
+    let onOpen: () -> Void
+
+    var body: some View {
+        VStack(spacing: Spacing.s) {
+            CompactOrderRow(order: order, onOpen: onOpen)
+            if let labels = swipeLabels {
+                SlideToConfirm(
+                    idleLabel: labels.idle,
+                    busyLabel: labels.busy,
+                    isBusy: isBusy,
+                    onConfirm: onAdvance
+                )
+            }
+        }
+    }
+
+    private var swipeLabels: (idle: String, busy: String)? {
+        switch action {
+        case .notifyOnTheWay: (L10n.Orders.swipeToNotifyOnTheWay, L10n.Orders.customerNotifiedOnTheWay)
+        case .start: (L10n.Orders.swipeToStart, L10n.Orders.startingOrder)
+        case .complete: (L10n.Orders.swipeToComplete, L10n.Orders.completingOrder)
+        case .take, .completeBlocked, .none: nil
         }
     }
 }

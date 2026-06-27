@@ -245,5 +245,61 @@ extension L10n {
             case .none: "—"
             }
         }
+
+        // Lifecycle actions (detail footer)
+
+        static var slideToTake: String {
+            localized("slide_to_take")
+        }
+
+        static var takingOrder: String {
+            localized("taking_order")
+        }
+
+        static var notifyOnTheWay: String {
+            localized("notify_on_the_way")
+        }
+
+        static var slideToStart: String {
+            localized("slide_to_start")
+        }
+
+        static var startingOrder: String {
+            localized("starting_order")
+        }
+
+        static var slideToComplete: String {
+            localized("slide_to_complete")
+        }
+
+        static var completingOrder: String {
+            localized("completing_order")
+        }
+
+        static var orderCompletedToast: String {
+            localized("order_completed_toast")
+        }
+
+        static var afterPhotosRequired: String {
+            localized("error_key_order_after_photos_required")
+        }
+
+        // Lifecycle actions (Active-row swipe)
+
+        static var swipeToNotifyOnTheWay: String {
+            localized("swipe_to_notify_on_the_way")
+        }
+
+        static var customerNotifiedOnTheWay: String {
+            localized("customer_notified_on_the_way")
+        }
+
+        static var swipeToStart: String {
+            localized("swipe_to_start")
+        }
+
+        static var swipeToComplete: String {
+            localized("swipe_to_complete")
+        }
     }
 }

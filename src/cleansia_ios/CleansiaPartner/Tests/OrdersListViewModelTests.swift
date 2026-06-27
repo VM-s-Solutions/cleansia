@@ -196,4 +196,119 @@ final class OrdersListViewModelTests: XCTestCase {
         vm.openDetail("o1")
         XCTAssertEqual(captured, "o1")
     }
+
+    // MARK: inline actions (the shared machine)
+
+    func testAvailableInlineActionIsTake() async {
+        client.pagedResult = .success([.sample(id: "o1", status: ._2)])
+        let vm = makeVM()
+        await vm.onAppear()
+        XCTAssertEqual(vm.inlineAction(for: .sample(id: "o1", status: ._2)), .take)
+    }
+
+    func testActiveInlineActionsByStatus() async {
+        let vm = makeVM()
+        await vm.selectTab(.active)
+        XCTAssertEqual(vm.inlineAction(for: .sample(id: "a", status: ._2)), .notifyOnTheWay)
+        XCTAssertEqual(vm.inlineAction(for: .sample(id: "b", status: ._3)), .start)
+        XCTAssertEqual(vm.inlineAction(for: .sample(id: "c", status: ._4)), .complete)
+    }
+
+    func testRunInlineTakeSendsCommandForRowIdAndInvalidatesPanes() async {
+        client.pagedResult = .success([.sample(id: "o1", status: ._2)])
+        let vm = makeVM()
+        await vm.onAppear()
+        for pane in OrdersPane.allCases {
+            staleness.markPaneFresh(pane)
+        }
+
+        await vm.runInlineAction(.take, on: .sample(id: "o1", status: ._2))
+
+        XCTAssertEqual(client.commands.map(\.name), ["take"])
+        XCTAssertEqual(client.commands.first?.orderId, "o1")
+        // Take invalidates [available, active]; the current pane (available) is
+        // then refetched (fresh again), so only the OTHER affected pane (active)
+        // stays stale; history is untouched.
+        XCTAssertFalse(staleness.isPaneStale(.available))
+        XCTAssertTrue(staleness.isPaneStale(.active))
+        XCTAssertFalse(staleness.isPaneStale(.history))
+        XCTAssertNil(vm.inFlightActionOrderId)
+    }
+
+    func testRunInlineCompleteInvalidatesActiveAndHistory() async {
+        client.employeeIdResult = .success("emp-self")
+        let vm = makeVM()
+        await vm.selectTab(.active)
+        for pane in OrdersPane.allCases {
+            staleness.markPaneFresh(pane)
+        }
+
+        await vm.runInlineAction(.complete, on: .sample(id: "o1", status: ._4))
+
+        // Complete invalidates [active, history]; the current pane (active) is
+        // refetched (fresh again), so history stays stale; available untouched.
+        XCTAssertFalse(staleness.isPaneStale(.active))
+        XCTAssertTrue(staleness.isPaneStale(.history))
+        XCTAssertFalse(staleness.isPaneStale(.available))
+    }
+
+    func testInlineActionPerRowInFlightThenClears() async {
+        client.pagedResult = .success([.sample(id: "o1", status: ._2)])
+        client.suspendCommands = true
+        let vm = makeVM()
+        await vm.onAppear()
+
+        let task = Task { await vm.runInlineAction(.take, on: .sample(id: "o1", status: ._2)) }
+        while client.commands.isEmpty {
+            await Task.yield()
+        }
+        XCTAssertEqual(vm.inFlightActionOrderId, "o1")
+
+        client.resumeCommand()
+        await task.value
+        XCTAssertNil(vm.inFlightActionOrderId)
+    }
+
+    func testInlineActionReentryGuardDropsSecond() async {
+        client.pagedResult = .success([.sample(id: "o1", status: ._2)])
+        client.suspendCommands = true
+        let vm = makeVM()
+        await vm.onAppear()
+
+        let first = Task { await vm.runInlineAction(.take, on: .sample(id: "o1", status: ._2)) }
+        while client.commands.isEmpty {
+            await Task.yield()
+        }
+        await vm.runInlineAction(.take, on: .sample(id: "o2", status: ._2)) // dropped
+        XCTAssertEqual(client.commands.count, 1)
+
+        client.resumeCommand()
+        await first.value
+    }
+
+    func testInlineActionFailureSnackbarsAndRefreshes() async {
+        client.pagedResult = .success([.sample(id: "o1", status: ._2)])
+        let vm = makeVM()
+        await vm.onAppear()
+        client.commandResult = .failure(ApiError(httpStatus: 409)) // already-taken (O4)
+
+        await vm.runInlineAction(.take, on: .sample(id: "o1", status: ._2))
+
+        XCTAssertNotNil(snackbar.current)
+        XCTAssertNil(vm.inFlightActionOrderId)
+    }
+
+    // MARK: TC-IOS-ORDERS-OWNERSHIP (O1 / O2)
+
+    func testInlineActionActsOnlyOnRowIdNoEmployeeId() async {
+        client.pagedResult = .success([.sample(id: "row-id", status: ._2)])
+        let vm = makeVM()
+        await vm.onAppear()
+
+        await vm.runInlineAction(.take, on: .sample(id: "row-id", status: ._2))
+
+        // O1: the command surface carries only orderId. O2: the carried id is
+        // the row's own id from the list response.
+        XCTAssertEqual(client.commands.first?.orderId, "row-id")
+    }
 }

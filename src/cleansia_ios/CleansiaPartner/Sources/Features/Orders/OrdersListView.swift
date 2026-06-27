@@ -6,6 +6,7 @@ struct OrdersRootView: View {
     @StateObject private var vm: OrdersListViewModel
     @State private var path: [OrderRoute] = []
     private let client: PartnerOrderClient
+    private let staleness: OrdersStaleness
     private let snackbar: SnackbarController
     private let mapProvider: MapProvider
 
@@ -19,6 +20,7 @@ struct OrdersRootView: View {
             wrappedValue: OrdersListViewModel(client: client, staleness: staleness, snackbar: snackbar)
         )
         self.client = client
+        self.staleness = staleness
         self.snackbar = snackbar
         self.mapProvider = mapProvider
     }
@@ -32,6 +34,7 @@ struct OrdersRootView: View {
                         OrderDetailView(
                             orderId: orderId,
                             client: client,
+                            staleness: staleness,
                             snackbar: snackbar,
                             mapProvider: mapProvider
                         )

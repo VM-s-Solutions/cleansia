@@ -4,6 +4,9 @@ import SwiftUI
 
 struct OrderDetailContent: View {
     let order: OrderDetail
+    var primaryAction: OrderPrimaryAction = .none
+    var inFlightAction: OrderAction?
+    var onConfirm: (OrderPrimaryAction) -> Void = { _ in }
 
     private var showAccessCard: Bool {
         order.isAssignedToCurrentUser
@@ -36,12 +39,17 @@ struct OrderDetailContent: View {
                     // with photo upload.
                     PhotosPlaceholderSection()
                     PaymentCard(order: order)
-                    // The lifecycle action footer, checklist, notes/issues, and
-                    // status timeline land in later slices — their slots are here.
+                    // Checklist, notes/issues, and status timeline land in a
+                    // later slice — their slots are here.
                 }
                 .padding(.horizontal, Spacing.m)
                 .padding(.vertical, Spacing.m)
             }
+            StickyActionFooter(
+                action: primaryAction,
+                inFlightAction: inFlightAction,
+                onConfirm: onConfirm
+            )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }

@@ -6,9 +6,20 @@ struct OrderDetailView: View {
     @State private var snapAnchor: SnapAnchor = .peek
     private let mapProvider: MapProvider
 
-    init(orderId: String, client: PartnerOrderClient, snackbar: SnackbarController, mapProvider: MapProvider) {
+    init(
+        orderId: String,
+        client: PartnerOrderClient,
+        staleness: OrdersStaleness,
+        snackbar: SnackbarController,
+        mapProvider: MapProvider
+    ) {
         _vm = StateObject(
-            wrappedValue: OrderDetailViewModel(orderId: orderId, client: client, snackbar: snackbar)
+            wrappedValue: OrderDetailViewModel(
+                orderId: orderId,
+                client: client,
+                staleness: staleness,
+                snackbar: snackbar
+            )
         )
         self.mapProvider = mapProvider
     }
@@ -37,7 +48,12 @@ struct OrderDetailView: View {
         SnapSheet(anchor: $snapAnchor) {
             mapBackdrop(order)
         } content: {
-            OrderDetailContent(order: order)
+            OrderDetailContent(
+                order: order,
+                primaryAction: vm.primaryAction,
+                inFlightAction: vm.inFlightAction,
+                onConfirm: { action in Task { await vm.dispatch(action) } }
+            )
         }
         .ignoresSafeArea(edges: .top)
     }

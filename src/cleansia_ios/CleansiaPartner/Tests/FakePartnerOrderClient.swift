@@ -13,6 +13,16 @@ final class FakePartnerOrderClient: PartnerOrderClient {
     private(set) var queries: [OrderPageQuery] = []
     private(set) var employeeIdCallCount = 0
     private(set) var getPagedCallCount = 0
+    private(set) var getByIdCallCount = 0
+
+    /// Each lifecycle command appends `(command, orderId)` here — the test
+    /// asserts the carried id is the acted-on id and nothing else (O1/O2).
+    private(set) var commands: [(name: String, orderId: String)] = []
+
+    /// When set, the next command suspends until `resumeCommand()` so a test can
+    /// hold one mutation mid-flight and fire a second (re-entry guard).
+    var suspendCommands = false
+    private var commandGate: CheckedContinuation<Void, Never>?
 
     func currentEmployeeId() async -> ApiResult<String> {
         employeeIdCallCount += 1
@@ -26,23 +36,37 @@ final class FakePartnerOrderClient: PartnerOrderClient {
     }
 
     func getById(orderId _: String) async -> ApiResult<OrderItem> {
-        byIdResult
+        getByIdCallCount += 1
+        return byIdResult
     }
 
-    func takeOrder(orderId _: String) async -> ApiResult<Void> {
-        commandResult
+    func resumeCommand() {
+        commandGate?.resume()
+        commandGate = nil
     }
 
-    func notifyOnTheWay(orderId _: String) async -> ApiResult<Void> {
-        commandResult
+    private func record(_ name: String, _ orderId: String) async -> ApiResult<Void> {
+        commands.append((name, orderId))
+        if suspendCommands {
+            await withCheckedContinuation { commandGate = $0 }
+        }
+        return commandResult
     }
 
-    func startOrder(orderId _: String) async -> ApiResult<Void> {
-        commandResult
+    func takeOrder(orderId: String) async -> ApiResult<Void> {
+        await record("take", orderId)
     }
 
-    func completeOrder(orderId _: String, actualMinutes _: Int?, notes _: String?) async -> ApiResult<Void> {
-        commandResult
+    func notifyOnTheWay(orderId: String) async -> ApiResult<Void> {
+        await record("notifyOnTheWay", orderId)
+    }
+
+    func startOrder(orderId: String) async -> ApiResult<Void> {
+        await record("start", orderId)
+    }
+
+    func completeOrder(orderId: String, actualMinutes _: Int?, notes _: String?) async -> ApiResult<Void> {
+        await record("complete", orderId)
     }
 
     func addNote(orderId _: String, content _: String) async -> ApiResult<Void> {

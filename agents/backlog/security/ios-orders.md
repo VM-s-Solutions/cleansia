@@ -218,3 +218,101 @@ flight (the Devices `.submitting` parity).
    before shared jobs (`MaxEmployees > 1`) ship. Low priority on the single-cleaner path.
 3. **(Hardening, optional)** consider returning NotFound instead of `EmployeeNotAssignedToOrder` on the
    action paths to match the RevokeDevice existence-hiding convention. Low severity (action still denied).
+
+---
+
+## 2026-06-27 — T-0307 Slice D BUILD-TIME VERIFICATION (Gate-SEC, security reviewer) — PASS (verified against uncommitted code on `phase/ios-phase4`)
+
+**Verdict: PASS on the order-action security gate (O1/O2/O4 + TC-IOS-ORDERS-OWNERSHIP).** This is the
+build-time verification of the order-action design ruled in sprint-12 §7.8 / the binding rules above.
+The four lifecycle commands (take / notifyOnTheWay / start / complete) are now wired (detail
+`StickyActionFooter` + Available `TakeButton` + Active row `SlideToConfirm`). Verified against the
+**actual uncommitted source** (read, not assumed) and the test suite was **built and run on the
+booted iPhone-17 simulator — 71/71 selected order tests passed, including all named ownership/guard
+tests** (`xcodebuild test`, `** TEST SUCCEEDED **`, 2026-06-27 16:03).
+
+### O1 — NO CLIENT employeeId on any lifecycle command — PASS (VERIFIED, wire-level)
+- Generated command DTOs carry **only `orderId`** (Complete also `actualCompletionTimeMinutes` /
+  `completionNotes`): `CleansiaPartnerApi/Models/TakeOrderCommand.swift:13-19`,
+  `NotifyOnTheWayCommand.swift:13-19`, `StartOrderCommand.swift:13-19`,
+  `CompleteOrderCommand.swift:13-23`. `CodingKeys` on each confirm **no `employeeId` is serialized** —
+  there is no client actor field on the body at all.
+- Construction sites pass orderId only: `Data/PartnerOrderClient.swift:79` (`TakeOrderCommand(orderId:)`),
+  `:86-87` (`NotifyOnTheWayCommand(orderId:)`), `:93` (`StartOrderCommand(orderId:)`),
+  `:99-104` (`CompleteOrderCommand(orderId:, actualCompletionTimeMinutes:nil, completionNotes:nil)`).
+- Tree-wide grep: **zero** `employeeId` on any Take/Notify/Start/Complete path. The only order-surface
+  `employeeId` is the `GetPaged` read filter (O3, caller's OWN id) — `PartnerOrderClient.swift:58`,
+  resolved via `currentEmployeeId()` (`:41-49`, JWT-truth surrogate). The acting employee is the JWT,
+  server-side. CONFIRMED.
+
+### O2 — NO ID-ECHO (acts only on the client's OWN list/detail id) — PASS (VERIFIED)
+- Detail VM acts on the constructor `orderId` only (the id the detail route was opened with, itself a
+  list-row id): `OrderDetailViewModel.swift:71,75,79,84` all use `self.orderId`; the comment at `:88-90`
+  documents the O2 intent and `getById` at `:91` reuses the same id. The footer callback passes an
+  **enum action, no id** (`OrderDetailView.swift:54`, `dispatch(action)`).
+- List VM inline action acts on `order.id` from the loaded row only:
+  `OrdersListViewModel.swift:113-118` (`runInlineAction(_:on:)` → `let orderId = order.id`),
+  `:135-143` (`command(for:orderId:)`). The row `order` is bound from `ForEach(orders)` /
+  `ForEach(rows, id:\.id)` over the loaded pane (`OrdersListContent.swift:78-83` Available,
+  `:222-230` Active). Navigation to detail passes a row id (`OrdersListView.swift:34-40`).
+- Grep confirms **no** `UUID()`/`uuidString`/free-form-id-`TextField`/`generateId` on any order action
+  path — no synthesized, guessed, or cross-screen-carried id reaches a command. CONFIRMED.
+
+### O3 (carried over, client side) — PASS. The "mine" panes pass ONLY the caller's own id
+- `OrdersQueryBuilder` (`OrdersListLogic.swift:77-107`): Available → `employeeId: nil, isUnassigned:true`;
+  Active/History → `employeeId: ownEmployeeId` (the caller's own). Resolved only via
+  `resolveOwnEmployeeIdIfNeeded` → `currentEmployeeId()` (`OrdersListViewModel.swift:197-207`). **No
+  foreign-employee filter input exists anywhere in the list UI.** (Server-truth enforcement remains the
+  DECISION-2b backend fix — see follow-up #1 / T-0339; unchanged & unaffected by this slice — it is a
+  read-scoping fix, not an action.)
+
+### O4 — CLEAN REJECT + REFRESH + RE-ENTRY GUARD — PASS (VERIFIED)
+- **Clean reject + refresh, screen kept:** detail `run(...)` failure branch surfaces the API error,
+  sets `actionState=.error`, invalidates + re-fetches the detail so a stale "takeable" state
+  self-corrects (`OrderDetailViewModel.swift:124-131`); list failure branch snackbars + background-
+  refetches the current pane (`OrdersListViewModel.swift:126-132`). No crash, no client-side
+  double-assign.
+- **Exactly one mutation in flight:** detail guards on `actionState.isSubmitting`
+  (`OrderDetailViewModel.swift:107`); list guards on `inFlightActionOrderId == nil`
+  (`OrdersListViewModel.swift:114`). The `FakePartnerOrderClient` suspension gate
+  (`Tests/FakePartnerOrderClient.swift:24-25,48-54`) proves the guard **actually blocks** a concurrent
+  second action — `testReentryGuardDropsASecondActionWhileSubmitting` (detail) and
+  `testInlineActionReentryGuardDropsSecond` (list) hold one mutation mid-flight, fire a second, and
+  assert `commands.count == 1`. Both PASS.
+
+### REQUIRED TEST — TC-IOS-ORDERS-OWNERSHIP — EXISTS + PASSES
+- Detail: `OrderDetailViewModelTests.swift:206-219` `testCommandsCarryOnlyTheLoadedOrderIdNoEmployeeId`
+  (O1 + O2: command carries only the loaded order id). PASS.
+- List: `OrdersListViewModelTests.swift:303-313` `testInlineActionActsOnlyOnRowIdNoEmployeeId`
+  (O1 + O2: command carries only the row's own id). PASS.
+- Supporting O3 coverage: `testAvailablePaneSendsNoEmployeeIdUnassignedTrue` (`:50-57`),
+  `testActivePaneSendsOnlyOwnEmployeeId` (`:59-66`), `testHistoryPaneSendsOnlyOwnEmployeeId` (`:68-73`).
+  All PASS.
+- O4 coverage: detail `testActionFailureSurfacesErrorAndKeepsScreen` (`:156-167`), list
+  `testInlineActionFailureSnackbarsAndRefreshes` (`:289-299`). All PASS.
+
+### completeBlocked gate — confirmed CLIENT-UX-ONLY; the SERVER is authority
+- `OrderPrimaryAction.action(...):48-49` resolves InProgress&mine → `.complete` if `hasAfterPhotos`
+  else `.completeBlocked`; `completeBlocked.orderAction == nil` (`OrderPrimaryAction.swift:26`) so it
+  **dispatches nothing** (`OrderDetailViewModel.swift:66`, `OrdersListViewModel.swift:141`). It only
+  renders a disabled hint (`StickyActionFooter.swift:55-56,75-88`). A bypassing client that forced
+  `.complete` still hits the backend CompleteOrder ownership+status+after-photos check (verified in the
+  §7.8 backend gate above, DECISION 2 / S3). The list inline path resolves InProgress with
+  `hasAfterPhotos: true` by design (the field isn't on the list DTO) and **relies on the server guard**
+  as the safety net (`OrdersListViewModel.swift:104-109`). Acceptable — server is authority.
+
+### Spine / contract
+- **No new token/header/401/Authorization path** on the order surface (grep clean) — the commands ride
+  the shared spine (ADR-0019). CONFIRMED.
+- **S9** — no DTO contract change in this slice (commands were already generated); no nswag regen forced.
+
+### New gaps from this slice: NONE.
+The standing DECISION-2b `GetPaged` backend over-read (follow-up #1, ticket **T-0339**) is **unchanged
+and unaffected** by Slice D — it is a read-scoping fix on a different (read) path; this slice adds only
+action wiring, which is server-scoped and safe. The TakeOrder TOCTOU (S7a, follow-up #2) and the
+NotFound-vs-EmployeeNotAssigned hardening (follow-up #3) are likewise unchanged.
+
+**Build-time evidence:** `xcodebuild test -scheme CleansiaPartner` (iPhone 17 sim, id
+04753F32-…) — `Executed 71 tests, with 0 failures`; the 5 named ownership/guard/reject tests re-run
+in isolation → `** TEST SUCCEEDED **`. Verdict: **PASS — Slice D order-action gate clears O1/O2/O4 +
+TC-IOS-ORDERS-OWNERSHIP.** No code edits made (audit-only).

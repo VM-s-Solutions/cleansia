@@ -236,6 +236,11 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | `core/location/ReverseGeocodingService.kt` (Mapbox Geocoding v5 over OkHttp; `accessToken` from BuildConfig) | `CleansiaCore/Location` **`GeocodingService`** protocol + **`CLGeocoderGeocodingService`** default impl — a 1:1 port (`reverseGeocode`/`forwardGeocode` → `GeocodedAddress?`/`[GeocodedAddress]`) **minus the Mapbox token + the OkHttp/network args** (MapKit = system framework, **no token**). Best-effort: nil/`[]` on error, **cancel the in-flight geocode before re-firing** (`kCLErrorGeocodeCanceled` swallowed) — the `runCatching{}.getOrNull()` parity. Debounce ports VERBATIM: **300ms forward / 500ms reverse** (`AddressPickerScreen.kt:188,171` — also the `CLGeocoder` rate-limit guard) (sprint-12 §7.6 D1/D3, reviewer #27) |
 | `core/location/{GeocodedAddress,UserLocation}.kt` + `MapStyles.kt` (Mapbox style URIs) | `Coordinate` + `GeocodedAddress` plain value types in `CleansiaCore/Location` (the `GeocodedAddress.kt` field parity). **`MapStyles.kt` is NOT ported** — the stock MapKit standard style is the parity baseline; a custom Mapbox Studio style returns only if Q-IOS-02 flips to "yes" (sprint-12 §7.6 D4) |
 | Mapbox `MapboxMap` + center-pin overlay + my-location FAB (`AddressPickerScreen.kt`) | **`MapProvider`** picker-map factory (a `Map(coordinateRegion:annotationItems:[])` + SwiftUI overlay pin the map pans under — iOS-16 variant, NO `Map{Marker}`/`onMapCameraChange`, reviewer #12) in `CleansiaCore/Location`, the **only** sanctioned MapKit consumer. **Current-location/the my-location FAB + the `LocationProvider` (`CLLocationManager`) seam are DEFERRED to T-0310** (needs T-0325's `NSLocationWhenInUseUsageDescription` plist key — owner); T-0306 centers on the **Prague default** + ships pan+search parity. Full-bleed `OrderDetail` map + service-area polygon overlay added **additively** later (`MKMapView`/`UIViewRepresentable`, ADR-0014 D6′). The AddressPicker has **NO `UiState`/`ActionState`** — plain `@Published` state + a one-shot `onConfirmed(GeocodedAddress)` callback (sprint-12 §7.6 D1/D2/D3) |
+| Mapbox `MapBackdrop` full-bleed map (single address pin, camera-padded for the sheet — `OrderDetailScreen.kt:256-299`) | the **additive `MapProvider.fullBleedMap(coordinate:)` method** (`MKMapView`/`UIViewRepresentable` inside `MapKitMapProvider`, ADR-0014 D6′) — **ONE address pin, camera bottom-padded for the sheet peek**, NO `overlays:`/`polygon:` param (there is **no service-area polygon data** in the partner spec — `ServiceCityDto` has only `zipPrefix`; Android renders no polygon either; overlay support is additive IF T-0334 ever has geometry). The §7.6 D1 minimal-now/additive-later seam reaching T-0307; feature/VM import no MapKit (reviewer #7/#12/#30) (sprint-12 §7.9 (a)) |
+| `BottomSheetScaffold` + `rememberStandardBottomSheetState(PartiallyExpanded, skipHiddenState=true)`, full-bleed map always behind, `sheetPeekHeight=0.75·screen` (the Wolt/Foodora **non-modal** 3-snap sheet, `OrderDetailScreen.kt:172-245`) | the **custom non-modal `SnapSheet` `CleansiaCore` container** (`GeometryReader`+`DragGesture`, 3 snap offsets map-focus/peek≈0.75/expanded, layered over `fullBleedMap` — **iOS-16.0-safe, NOT `.presentationDetents`** which are `.medium`/`.large`-only on 16.0, custom 16.4+) — **ADR-0021** (the floor stays 16.0). NOT a modal `.sheet` (which would change the layout — dimmed screen behind, drag-to-dismiss, no live map). Native `.sheet`+`.presentationDetents` stays the **modal**-sheet way (the customer booking sheet, ADR-0018 D3); the discriminator = *modal-over-a-screen vs non-modal-over-a-live-backdrop* (reviewer #29) |
+| Composable `OrderPrimaryAction` inlining `when(status){…}` (status×ownership×photos → action, `OrderPrimaryAction.kt:54-126`) | a **pure shared `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:) -> OrderPrimaryAction` sealed enum** (`.take/.notifyOnTheWay/.start/.complete/.completeBlocked/.none`), one tested function for the **three** call sites (detail footer, list inline row, panes) — NOT three inline switches. Presentational; consumes `isMine`/`hasAfterPhotos` (ownership trust = SECURITY §7.8 O1–O4). Canonicalizes the Android inlined table (sprint-12 §7.9 (c), reviewer #31) |
+| `Code?.toOrderStatus()` matching `Code.value` against `OrderStatus.values()` (`OrderStatusPill.kt:40-42`) | one `extension Code { func toOrderStatus() -> OrderStatus? { value.flatMap(OrderStatus.init(rawValue:)) } }` — the read-path DTOs (`OrderItem`/`OrderListItem`.`orderStatus`) carry the **`Code` envelope** `{type,name,value:Int?}` (the action responses carry the typed `OrderStatus`); `OrderStatus: Int` rawValues 0…6 = the backend ints (0 New·1 Pending·2 Confirmed·3 OnTheWay·4 InProgress·5 Completed·6 Cancelled). Mapped in **one** place — no raw-`Int` `.value` compares, no second mapper (sprint-12 §7.9, reviewer #31) |
+| `@Singleton OrdersRepository` per-pane (~30s) + per-order `Staleness` watermarks + `invalidatePanesFor(mutation)` (the silent-stale resume + `OrdersListUiState` flag-bag, `OrdersRepository.kt:159-192` / `OrdersListViewModel.kt:89-120`) | the cache is **PORTED** (an actor/class with the same per-pane/per-order watermarks + mutation→panes map, registered in the `SessionScopedCacheRegistry`) — load-bearing for no-flash resume; **NOT** simplified to load-on-appear+`.refreshable` (that's an un-approved behavior divergence). The list state is **sealed per-pane `UiState<[OrderListItem]>` + a `RefreshPhase` enum** (`idle`/`userRefreshing`/`backgroundRefreshing`; PTR binds `==.userRefreshing` only — the silent-stale parity), **NOT** the E1 flag-bag (Android E1 fix → T-0337). Inline commit = iOS-native confirm/`swipeActions`, the **`SlideToCommit`→native** Gate-DP swap (sprint-12 §7.9 (e), reviewer #30) |
 
 **Generated-client auth — the ONE way (ADR-0019, reviewer #13-gen):** authenticate the generated business
 client **only** through the Core-spine-backed `RequestBuilderFactory` (above). **Deviations a reviewer
@@ -350,6 +355,38 @@ Profile hub (DROPPED — no backend contract; the Preferences group is Language 
 `ProfileScreen.kt:183-204` parity). **Deferred (NOT findings — recorded Gate-DP divergences):** the advisory
 `ServiceAreaRow` (→ T-0334); the current-location FAB (→ T-0335, gated on T-0325). The **Device/Mine list + revoke**
 screen is **SECURITY-ruled** (decisions 6–8), out of this rule's scope.
+
+**iOS partner order work-loop — the ONE way (sprint-12 §7.9, T-0307; ADR-0021 + ADR-0013 D6/D9 + ADR-0014 D2′/D6′ +
+ADR-0018 D3 + §7.6 D1 + §7.7 D5 + the Parity rule; reviewer #29/#30/#31):**
+- **The full-bleed `OrderDetail` map** is the **additive `MapProvider.fullBleedMap(coordinate:)` method** —
+  `MKMapView`/`UIViewRepresentable` inside `MapKitMapProvider`, **ONE address pin, camera bottom-padded for the sheet**,
+  **NO** overlay/polygon param (no polygon data in the partner spec; Android renders none; overlay is additive IF
+  T-0334 ever has geometry). The §7.6 D1 minimal-now/additive-later seam — feature/VM import no MapKit (#7/#12/#30).
+- **The OrderDetail sheet** is the **custom non-modal `SnapSheet` Core container** (`GeometryReader`+`DragGesture`, 3
+  snap offsets map-focus/peek≈0.75/expanded, layered over `fullBleedMap`) — **ADR-0021**, **16.0-safe** (no
+  `.presentationDetents`; the floor STAYS 16.0). **NOT a modal `.sheet`** (that changes the layout — Gate-DP D1 failure).
+  Native `.sheet`+`.presentationDetents` stays the way for **modal** sheets (the customer booking sheet); the
+  discriminator = *modal-over-a-screen* (native `.sheet`) vs *non-modal-over-a-live-backdrop* (`SnapSheet`) (#29).
+- **The primary lifecycle action** is the **pure shared `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:)`** sealed
+  enum (one tested function, three call sites — NOT inline switches), mirroring `OrderPrimaryAction.kt`'s table; it is
+  **presentational** and consumes `isMine`/`hasAfterPhotos` — the **ownership trust is SECURITY §7.8 (O1–O4)**, not this
+  function (#31). The OrderDetail VM is the sealed `OrderDetailUiState` + `ActionState` + an `OrderAction?` in-flight
+  (already canonical on Android — ported 1:1).
+- **`orderStatus` is a `Code` envelope** on the read-path DTOs (`OrderItem`/`OrderListItem`) — map it to the typed
+  `OrderStatus` in **one** `Code.toOrderStatus()` extension (`value.flatMap(OrderStatus.init(rawValue:))`); no raw-`Int`
+  `.value` compares, no second mapper (the action responses already carry the typed enum) (#31).
+- **The OrdersList** is **sealed per-pane `UiState<[OrderListItem]>` + a `RefreshPhase` enum** (`idle`/`userRefreshing`/
+  `backgroundRefreshing`; PTR fires `==.userRefreshing` ONLY — the silent-stale parity), **NOT** the Android
+  `OrdersListUiState` E1 flag-bag (Android fix → T-0337). The **per-pane/per-order `Staleness` cache is PORTED** (~30s
+  watermarks + `invalidatePanesFor(mutation)`, registered in the `SessionScopedCacheRegistry`) — load-bearing for
+  no-flash resume; simplifying to load-on-appear+`.refreshable` is an **un-approved** behavior divergence (#30). The
+  inline commit affordance is **iOS-native** (`SlideToCommit`→native confirm/`swipeActions` — the noted Gate-DP swap).
+- **The photo slot is a precursor seam:** T-0307 renders a **disabled/placeholder** Photos section (visibly disabled,
+  not a dead control) + derives `hasAfterPhotos` (feeding `.complete`/`.completeBlocked`); **T-0308 fills capture
+  additively** (no OrderDetail re-layout). **Deviations a reviewer rejects:** a modal `.sheet` for OrderDetail; a
+  2-anchor collapse without the noted+re-approved ADR-0021 fallback; a `fullBleedMap` overlay/polygon param with no
+  data; a ported `OrdersListUiState` flag-bag; PTR on background refresh; dropping the staleness cache un-approved;
+  an inline per-site action switch; a raw `orderStatus.value == N` compare; a feature `import MapKit`.
 
 **Parity deviation (Android is wrong, iOS is right) — auth validation strings:** the Android partner
 `RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set validation errors as **hardcoded English

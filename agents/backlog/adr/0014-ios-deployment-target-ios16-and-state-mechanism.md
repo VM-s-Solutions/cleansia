@@ -8,6 +8,10 @@
   push D8, partner-first lead app D9, trusted-device-omit D10, the 5-locale String Catalog D11). This ADR
   does **not** re-open those.
 - **Superseded by:** —
+- **Extended by:** ADR-0021 (2026-06-27) — the **sheet half of D6′**: D6′ routed the full-bleed `OrderDetail` *map*
+  through `MKMapView`/`UIViewRepresentable`; ADR-0021 decides the *sheet over it* — a **custom non-modal `SnapSheet`**
+  on the **16.0 floor** (custom `.presentationDetents` are 16.4+), and **explicitly keeps this ADR's floor at 16.0**
+  (it does not amend the deployment target). A status-block pointer; the immutable body below is unchanged.
 - **Applies to:** ios | cross-cutting
 - **Extends:** ADR-0013 (the iOS architecture & port strategy; this answers its Q-IOS-01 and re-decides its
   D2 for the lower floor), ADR-0011 (the `ApiResult<T>` Swift contract — unaffected by the floor).

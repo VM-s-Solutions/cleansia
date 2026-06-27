@@ -101,6 +101,7 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > | **T-0336** | SPIKE — iOS partner in-app notifications feed (persistence choice + push-receipt contract + bell badge) | S | **draft** (spike) | T-0311 | ios, analyst | no | — | sprint-12 §7.7 Scope B |
 > | **T-0337** | Android partner profile VMs — flag-bag `UiState`→sealed (E1) + hardcoded validation/error strings→`R.string.*` (E8) | S | **draft** | — | android | no | — | sprint-12 §7.7 D5 (consistency.md E1/E8) |
 > | **T-0338** | Localize the CleansiaCore catalog ×5 + route Core localization through a swappable bundle (the Slice-C reviewer MINOR) | S | **draft** | T-0310✓ | ios | no | — | T-0310 Slice C reviewer MINOR |
+> | **T-0339** | **SECURITY (backend)** — scope `GetPagedOrders` "mine" views to the JWT caller (client `Filter.EmployeeId` over-read leaks foreign-assigned order coords/codes/pay). Reachable today, MEDIUM; pre-existing, gates the GetPaged contract for go-live | S | **proposed** (high) | — | backend | **yes** | — | T-0307 security gate §7.8 (`security/ios-orders.md` D2b) |
 >
 > **The standing latent backend SECURITY item — TRACKED, not new:** the multi-tenant asymmetry in
 > `RefreshTokenService.RevokeByDeviceAsync` / `RefreshTokenRepository.GetActiveByUserIdAsync` that the iOS remote

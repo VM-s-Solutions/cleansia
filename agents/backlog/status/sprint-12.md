@@ -271,7 +271,7 @@ PHASE 2+ PARITY FEATURE WAVES ── ordered by complexity; the 3 hard areas cal
 | **T-0304** | Partner shell (Dashboard·Orders·Invoices·Profile tabs) + RegistrationLock gate (fails CLOSED) + SplashGate. **Acceptance scope + the 3 Understand-pass rulings fixed in §7.4**: Decision 1 (fail-closed gate placement + AND predicate + both error paths CLOSED — confirms the Android gate, reviewer #24 + **TC-IOS-REGLOCK**), Decision 2 (the flat-enum `PartnerRootView` router gated by `.splash` — **ADR-0020**, reviewer #23), Decision 3 (the deferral map — "Fix" CTAs + onboarding branch INERT/deferred to T-0305/T-0310, the §7.2 inert-nav precedent) | M | **done ✅** `55b39aa`+`c269360`+`df71181` (`phase/ios-phase2`; Slice A gate: AND predicate, any nil→LOCKED, availability not a clause, BOTH error paths fail closed — reviewer #24 + **TC-IOS-REGLOCK** green, **security APPROVE**; ADR-0020 router #23 reseeded `.dashboard`→`.splash`, closing a latent T-0303 fail-OPEN; 14-token `missingFields` localized ×5. Slice B shell: native SwiftUI `TabView`, 4 tabs in Android `MainTab` order, dashboard tab hosts T-0303, `onOpenOrders`→Orders tab, 3 placeholders — **Gate-DP APPROVE** (D3 component swap noted). swiftformat/swiftlint clean; **CleansiaCore 93 + CleansiaPartner 61** pass on iPhone 17 sim. §7.4 (a) contact-support INERT, (b) silent-stale cache DEFERRED. Deferrals: Fix CTAs→T-0310, onboarding branch→T-0305) | ios | T-0303✓ | — | 2 (partner) |
 | **T-0305** | Partner auth completeness — Register/Forgot/ConfirmEmail/Onboarding chain. **Acceptance scope + the 5 Understand-pass rulings fixed in §7.5**: D1 (a GENERAL `AppSettingsStore` in Core, UserDefaults-backed — onboarding-seen + the 5-locale language tag, `AppSettingsRepository.kt` parity), D2 (ConfirmEmail email via the `.verifyEmail(email:)` Route associated value, NOT a `UserProfileStore` — ADR-0020 fold-in), D3 (SECURITY: no new anon entry, Logout authed, `ConfirmUserEmail` is **PUT** + the spine `send()` gains an `httpMethod:` param, the double-skip + empty-token-gate reuse — reviewer #25), D4 (a Core `PasswordPolicy` + `PasswordRuleList`, ≥8&&letter&&digit — `RegisterViewModel.kt:37-39` parity), D5 (the F1 deviation: Android partner Register/Forgot VMs hardcode English validation strings — iOS localizes ×5; android fix is a follow-up). Reviewer #25/#26 + TC-IOS-CONFIRM-PUT / -SETTINGS / -PASSWORD-POLICY / -VERIFY-EMAIL-ARG + the extended TC-IOS-ANON/-EMPTYTOKEN | M | **done ✅** `ccd25cd`+`e232147`+`3e70cdb`+`84d38bc` (`phase/ios-phase2`; 4 slices — §7.5 docs / Slice A ConfirmEmail / Slice B Register / Slices C+D Forgot+Onboarding; every slice reviewer-APPROVE, Slice A also security-APPROVE — traced the backend `ConfirmUserEmail` (CODE-resolved, no session needed → the anon double-skip is SAFE), Slices C+D gate-safety SAFE. All 4 flows shipped: Register + Core `PasswordPolicy`/`PasswordRuleList`; Forgot single-phase; ConfirmEmail replaces the placeholder + reuses the LIVE empty-token gate; Onboarding 2-page intro + SplashGate branch + `hasSeenOnboarding` in the new Core `AppSettingsStore`. #25: `send()` gained `httpMethod:` (ConfirmUserEmail PUT, no silent 405); no new anon entry, Logout authed; positive-control proves the double-skip non-tautological. `.verifyEmail(email:)` carries the email (no `UserProfileStore`). F1: iOS localizes the validation strings ×5, the Android bug NOT replicated → android follow-up **T-0333**. Seed now UNCONDITIONALLY `.splash` (ADR-0020 living-doc fold-in — refines D2; gate #24 byte-unchanged, no bypass). swiftformat/swiftlint clean; **CleansiaCore 114 + CleansiaPartner 96** pass on iPhone 17 sim) | ios | T-0303✓, T-0304✓ | — | 2 (partner) |
 | **T-0306** | **Map seam + MapKit default** — `MapProvider`/`GeocodingService` protocol + `Coordinate`/`GeocodedAddress` value types in `CleansiaCore` + `MapKitMapProvider`/`CLGeocoderGeocodingService` + the partner `AddressPickerView`/`VM` (first map surface; returns `GeocodedAddress` via callback — NOT wired into AddressSection, that's T-0310). **Acceptance scope + the 4 Understand-pass rulings fixed in §7.6**: D1 (a MINIMAL `MapProvider` picker factory now; T-0307's full-bleed/overlay surface added ADDITIVELY later — "the one way iOS does maps behind the seam"; `GeocodingService` = 1:1 `ReverseGeocodingService.kt` port minus the Mapbox token/network args), D2 (current-location/my-location FAB/`LocationProvider` seam DEFERRED → T-0310 gated on T-0325's `NSLocationWhenInUseUsageDescription`; ship pan+search parity on the Prague default — the recorded **Gate-DP divergence**, architect sign-off), D3 (geocoding best-effort: cancel-before-refire, nil/`[]` on error, never block the confirm; 300ms fwd / 500ms reverse debounce VERBATIM; the picker has **NO `UiState`/`ActionState`** — reviewer note #27), D4 (NO Mapbox token / map SDK / `Package.swift` change — net secret-surface reduction; Q-IOS-02 stays "No", `MapStyles.kt` NOT ported). **iOS-16 variant (ADR-0014 D6′):** `Map(coordinateRegion:annotationItems:[])` + SwiftUI overlay pin for the picker; `MKMapView`/`UIViewRepresentable` for the (additive, T-0307) full-bleed map + polygon overlays — NO iOS-17-only `Map {...}`/`Marker`/`MapPolygon`/`onMapCameraChange`. Reviewer #7/#12/#27 + Gate-DP. **Android parity: `AddressPickerScreen.kt` + `AddressPickerViewModel.kt` + `core/location/{ReverseGeocodingService,GeocodedAddress,LocationService,MapStyles}.kt`** | M | **done ✅** `480f5c4`+`03a00f3`+`199916b` (`phase/ios-phase3`; Slice A = Core `MapProvider`/`GeocodingService` seam + `Coordinate`/`GeocodedAddress` value types + `CLGeocoderGeocodingService` + the iOS-16 `MapKitMapProvider` — **125 CleansiaCore tests**; Slice B = the partner `AddressPickerView`/`VM`: pan + search, full-bleed map + static center-pin overlay, 300ms fwd / 500ms reverse-on-idle debounce verbatim, best-effort geocode, NO `UiState`/`ActionState` (reviewer #27), returns `GeocodedAddress` via `onConfirmed`. D2 current-location FAB DEFERRED → T-0335 (the recorded Gate-DP divergence). Reviewer **APPROVE**; swiftformat/swiftlint clean) | ios | T-0300✓ | — | 2 (**HARD AREA #2 — first half**) |
-| **T-0307** | **Partner order work-loop** — OrdersList + OrderDetail (full-bleed map + 3-snap sheet) + the **OnTheWay** lifecycle (Take→NotifyOnTheWay→Start→Complete) + checklist/notes/issues/timeline | **L → split** | **proposed** | ios | T-0304, T-0306 | — | 2 (**HARD AREA #3**) |
+| **T-0307** | **Partner order work-loop** — OrdersList + OrderDetail (full-bleed map + 3-snap sheet) + the **OnTheWay** lifecycle (Take→NotifyOnTheWay→Start→Complete) + checklist/notes/issues/timeline. **Acceptance scope + the 5 Understand-pass rulings fixed in §7.9 (architect) + the SECURITY order-action gate in §7.8:** (a) the additive `MapProvider.fullBleedMap(coordinate:)` — single pin, camera-padded, NO polygon param (no polygon data in spec; §7.6 D1 additive seam); (b) the **non-modal `SnapSheet` 16.0-floor sheet = ADR-0021** (custom `GeometryReader`+drag container, NOT a modal `.sheet`; the floor stays 16.0); (c) the pure shared `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:)` machine (3 call sites, NOT inline switches; ownership trust = §7.8); (d) the T-0308 photo precursor seam (disabled/placeholder Photos slot + `hasAfterPhotos` consumer; capture additive in T-0308); (e) sealed per-pane `UiState<[OrderListItem]>` + a `RefreshPhase` enum + **PORTED** per-pane staleness cache (Android E1 flag-bag NOT replicated→T-0337; SlideToCommit→native confirm Gate-DP swap). + the Code→OrderStatus one-mapper convention. Reviewer #29/#30/#31 + Gate-DP + TC-IOS-SNAP/-ORDER-ACTION; **SECURITY gate** (§7.8, O1–O4 + the backend GetPaged read-scoping fix). **Android parity: `partner-app/.../features/orders/{OrdersListScreen,OrdersListViewModel,OrderDetailScreen,OrderDetailViewModel,OrderPrimaryAction,CleaningChecklist,StatusTimeline,OrderStatusPill,PhotosSection}.kt` + `data/orders/OrdersRepository.kt`** | **L → split** | **proposed** | ios | T-0304✓, T-0306✓ | — | 4 (**HARD AREA #3**; `phase/ios-phase4`) |
 | **T-0308** | **Partner photo upload** — camera capture → **JSON base64** photos (partner shape) on OrderDetail | M | **proposed** | ios | T-0307 | — | 2 (HARD AREA #3 cont.) |
 | **T-0309** | Partner earnings + invoices + PeriodPay (`EmployeePayroll/GetPeriodPays` — a regen'd-spec endpoint) | M | **proposed** | ios | T-0304 | — | 2 (partner) |
 | **T-0310** | Partner **Profile tab** (replaces `PartnerShellView.swift:36` `PlaceholderTab`) — the hub (hero + contract-status chip + section-group rows + logout) + **6 section editors** (Personal/Address/Identification/Bank/Emergency/Documents) over a new `PartnerProfileClient` (ADR-0019 spine) + the **onboarding chain** + **Devices** (Device/Mine list + revoke — **SECURITY-ruled, decisions 6–8**) + **Preferences** (Language/Theme). **Acceptance scope + the 5 Understand-pass rulings fixed in §7.7:** D1 (in-tab `NavigationStack` over a typed `ProfileRoute` enum — ADR-0020 intra-audience push, reviewer #28a), D2 (**the load-bearing call** — the RegistrationLock owns its OWN local `NavigationStack` + chain VM and pushes the SHARED section set over itself with `onboarding == true`; fail-closed, no cross-audience shell routing — reviewer #28b + TC-IOS-LOCK-CHAIN, composes with #24), D3 (`ServiceAreaRow` DEFERRED → T-0334, a Gate-DP divergence; Address ships pan/search/save at parity), D4 (EXTEND the one `AppSettingsStore` with writable language + a Theme enum + setters; honor theme via `.preferredColorScheme` now — reviewer #28c), D5 (born sealed-state canonical — Android E1 flag-bags NOT replicated; android fix → T-0337; reviewer #28d). **Scope cuts (PM to record):** current-location FAB + `LocationProvider` seam DEFERRED → T-0335 (gated on T-0325); **"Notifications" DROPPED** (no Android prefs surface / no backend prefs API / no client; the in-app feed is a separate spike → T-0336). Reviewer #28 + TC-IOS-PROFILE-ROUTE/-LOCK-CHAIN/-SECTION-SHARED/-SETTINGS-THEME/-PROFILE-STATE. Gate-DP. **Android parity: `partner-app/.../features/profile/` (`ProfileScreen.kt`/`ProfileViewModel.kt`, the `*Section*` set, `OnboardingChainHeader.kt`, `SectionScaffold.kt`, `AddressSectionScreen.kt`) + `features/orders/{RegistrationLockViewModel,OnboardingChainViewModel}.kt` + `core/settings/AppSettingsRepository.kt`** | M | **done ✅** `ce6c5fc`+`ee2f044`+`2cdaf93`+`6c6155c` (`phase/ios-phase3`; 3 slices. Slice A = the profile hub + 6 section editors (Personal/Address/Identification/Bank/Emergency/Documents) + onboarding chain + the now-live RegistrationLock Fix-CTAs (D2: the lock owns its OWN `NavigationStack`+chain VM, pushes the SHARED section set with `onboarding==true`, fail-CLOSED — gate #24 byte-unchanged, verified). Slice B = Devices (Device/Mine list + revoke) — **SECURITY PASS** on all binding rules (D6 single device-id source, D7a hide-on-current + D7b defensive self-revoke sign-out, D8 server-scoped revoke verified vs the backend; TC-IOS-DEVICES-SELF-REVOKE green). Slice C = Preferences (language [+ a System/follow-device row] + theme pickers; theme honored via `.preferredColorScheme`; the first runtime in-app language switch). D3 `ServiceAreaRow` DEFERRED → T-0334; D5 born sealed-state, Android E1 flag-bags NOT replicated → T-0337; current-location FAB → T-0335; Notifications DROPPED → T-0336. Reviewer **APPROVE** (incl. a re-review of the System-row fix); **185 CleansiaPartner tests**; swiftformat/swiftlint clean) | ios | T-0304✓, T-0306✓ | — | 2 (partner) |
@@ -343,8 +343,12 @@ PHASE 2+ (after Phase 1 proves the architecture)
   `AuthClient` + no-auth refresh session + empty-token gate; (c) `actor SessionRefresher` single-flight +
   ForcedSignOut + session-scoped-cache registry; (d) `HeaderAdapter` (X-Device-Id/Label/Time-Zone + anon
   allow-list). Each child red-first against the TC-IOS-AUTH-401 / ANON / DEVICEID / EMPTYTOKEN contract.
-- **T-0307 (partner order-loop) →** (a) OrdersList; (b) OrderDetail map+3-snap sheet shell;
-  (c) the OnTheWay→Start→Complete lifecycle + actions; (d) checklist/notes/issues/timeline.
+- **T-0307 (partner order-loop) →** (the §7.9 slices) **A** the additive Core `fullBleedMap(coordinate:)`
+  `MapProvider` method (single pin); **B** OrdersList (3 panes, sealed per-pane `UiState`+`RefreshPhase`, ported
+  staleness cache, native inline-confirm); **C** OrderDetail shell (the `fullBleedMap` + the non-modal `SnapSheet`
+  3-snap container — **ADR-0021**); **D** the OnTheWay lifecycle + the pure `OrderPrimaryAction.action(…)` machine;
+  **E** checklist/notes/issues/timeline + the T-0308 photo-precursor seam (disabled Photos slot). Each slice
+  red-first; D carries the **SECURITY** order-action gate (§7.8 O1–O4).
 - **T-0313 (booking+Stripe) →** (a) the anchored 3-step sheet scaffold + step nav; (b) Services step +
   client-side pricing; (c) WhenWhere step (map seam); (d) Confirm + cash→success vs card→PaymentSheet.
 - **T-0314 (customer tail) →** split by feature cluster (Home/Orders · Rewards/Membership/Recurring ·
@@ -1458,6 +1462,365 @@ revoked (deactivated) row drops from the list; re-revoking an already-revoked ro
 filtered out) — the screen simply no longer shows it (the `DevicesViewModel.kt:73-75` filter-out-on-success parity).
 Safe and idempotent on the already-revoked path. **`Device` implements `ITenantEntity`** (`Device.cs:6`) — the global
 tenant filter applies on top of the explicit `UserId` scope (**S8**, latent multi-tenant safety; today single-tenant).
+
+---
+
+### 7.8 T-0307 (Phase-4 partner order work-loop) — SECURITY gate ruling (recorded 2026-06-27, security reviewer; Gate-SEC)
+
+> **STATUS-LOG 2026-06-27 — T-0307 SECURITY GATE: order-action / ownership surface — `security_touching: YES`;
+> verdict = CHANGES on ONE backend invariant + APPROVE-the-iOS-design (binding client rules). The partner-mobile
+> analogue of the Devices D6-D8 ruling (§7.7). Full S1-S10 walk + binding rules in `security/ios-orders.md`.**
+>
+> **Greenfield, like Devices:** `phase/ios-phase4` carries **zero** committed diff (`git diff master...HEAD` = 0
+> files) — no iOS order code on disk yet. So these are rules the developer builds to and the reviewer enforces,
+> not findings against shipped iOS code. The **backend Order surface was traced on this Mac** (same discipline as
+> Devices D8): the 10 state-changing / authorship-scoped command paths are **VERIFIED server-scoped + safe**; the
+> **one gap is the `GetPaged` read** (pre-existing backend behavior T-0307 consumes — a backend fix, NOT an iOS
+> regression).
+>
+> **D2 — action ownership scoping (S1/S2/S3) — VERIFIED safe.** Actor is JWT-derived everywhere
+> (`OrderAccessService.GetCallerEmployeeIdAsync`; no command carries a client `employeeId`). Take gates on
+> exists+`HasAvailableSpots`+Approved+not-already-mine (`TakeOrder.cs`); Notify/Start/Complete gate on
+> `EmployeeIsAssignedToOrderAsync` + correct status (`NotifyOnTheWay.cs:73`, `StartOrder.cs:89`,
+> `CompleteOrder.cs:106`). **Note/issue update·delete are AUTHOR-scoped** (`n.EmployeeId == employeeId` /
+> `i.ReportedByEmployeeId == employeeId` — `UpdateOrderNote.cs:71`, `DeleteOrderNote.cs:59`, `UpdateOrderIssue.cs:68`,
+> `DeleteOrderIssue.cs:59`): a second cleaner on a shared job cannot edit another's note/issue. (Action-path
+> rejections surface `EmployeeNotAssignedToOrder`, not 404 — weaker than RevokeDevice's existence-hiding but
+> acceptable: action denied, no customer data leaked. Logged as low-sev hardening.)
+>
+> **D2b — `GetPaged` read-scoping (S3/S4) — CHANGES REQUESTED (the one real gap, MEDIUM, reachable today).**
+> `GetPagedOrders.Handler` builds the query purely from the **client-supplied** `Filter.EmployeeId`
+> (`GetPagedOrders.cs:70` → `OrderSpecification.cs:67-70`) with **no server override pinning it to the JWT caller**
+> and no "row must be mine OR available" predicate. The per-row blank (`:179-186`) hides full PII but **leaks exact
+> coords / approximate address / confirmation code / the victim's pay** for non-assigned rows. **Exploit:** an
+> Approved partner calls `Order/GetPaged` with `Filter.EmployeeId=<victim>` + `OrderStatuses=[Confirmed,InProgress,
+> Completed]` and reads another employee's assigned-order coordinates + confirmation codes + earnings. Reachable
+> because the legitimate client convention (Android `OrdersListViewModel.kt:244,249`, which iOS T-0307 mirrors) is
+> "send my own id" and the backend trusts it — **the client is not authority** (Devices D8). **REQUIRED backend
+> fix:** for non-admin callers force server `callerEmployeeId` on "mine" views + constrain Available to
+> `HasAvailableSpots || assigned`, and blank coords/approx/confirmation-code/pay on non-assigned rows — mirror the
+> existing `isAdmin ? filter.CustomerName : null` "client can't widen scope" pattern (`GetPagedOrders.cs:66-68`).
+> **Backend ticket; gates the GetPaged contract for go-live. iOS UI work proceeds in parallel.**
+>
+> **D3 — S5/S7/S8/S10 — PASS.** All side-effecting routes carry `[EnableRateLimiting("auth")]`
+> (`OrderController.cs`). Lifecycle is idempotent via status-precondition validators (stale double-action → clean
+> business rejection, never crash/double-assign); Complete's money fan-out is ledger/status/idempotency-key guarded
+> (Loyalty/Referral/`MessageKeys.Pay`/`MessageKeys.Receipt`). **S7a latent:** TakeOrder is a check-then-act on
+> `HasAvailableSpots` with no atomic claim — TOCTOU only when shared jobs (`MaxEmployees>1`) ship; dormant today
+> (single-cleaner). S8 PASS (Order tenant-filtered, envelopes carry `TenantId`). S10 PASS (`IsActive` filter).
+>
+> **Binding client rules (reviewer enforces):** **O1** no client employeeId on any command (orderId/noteId/issueId
+> only; actor=JWT). **O2** no-client-id-echo — never send an id the client didn't receive from its own
+> list/detail response (Devices D8 analogue). **O3** GetPaged "mine" is server-truth — the client may pass its own
+> id as a hint but exposes no foreign-employee filter and relies on the server for isolation. **O4** on a backend
+> rejection, show a clean message + refresh; re-entry-guard the action while in flight.
+> **Required tests:** **TC-IOS-ORDERS-OWNERSHIP** (client VM: foreign-order action not initiated / clean reject +
+> refresh; ids only from loaded models; My-tab sends only own id) + **TC-BE-ORDERS-GETPAGED-SCOPE** (backend
+> integration, red-first, gates the D2b fix: caller A with `Filter.EmployeeId=B` gets zero of B's exclusive rows
+> and no coords/confirmation-code/pay on non-assigned rows).
+>
+> **Owner follow-ups:** (1) the GetPaged read-scoping fix (REQUIRED, backend ticket); (2) TakeOrder TOCTOU atomic
+> claim before shared jobs (LATENT, low pri); (3) optional NotFound-not-EmployeeNotAssigned hardening on action
+> paths. The standing RefreshToken multi-tenant note (`auth-sessions.md`) is unrelated to the order surface.
+
+---
+
+### 7.9 T-0307 (Phase-4 partner order work-loop — OrdersList + OrderDetail + lifecycle + checklist/notes/issues/timeline) — acceptance scope + the five Understand-pass rulings (recorded 2026-06-27, architect)
+
+> **The order-action OWNERSHIP gate is ruled by SECURITY in §7.8 (`security/ios-orders.md`, O1–O4) — this
+> architect record stays OUT of it.** Decision (c) below rules only the *shape* of the presentational primary-action
+> function and consumes `isMine`/`hasAfterPhotos` as inputs; how `isMine` is trusted, the no-client-id-echo rule,
+> GetPaged server-truth, and the clean-reject+refresh+re-entry-guard are §7.8's O1–O4 (which this record honors).
+
+T-0307 (`L → split`, HARD AREA #3, `phase/ios-phase4`, depends_on T-0304✓+T-0306✓) ports the partner **order
+work-loop**: the 3-pane OrdersList board, the OrderDetail shell (full-bleed map + the always-present 3-snap sheet), the
+**OnTheWay** lifecycle (Take → NotifyOnTheWay → Start → Complete), and checklist/notes/issues/timeline. **Slices (§6):**
+A = the additive `fullBleedMap` `MapProvider` method (Core); B = OrdersList (3 panes); C = OrderDetail shell (the map +
+the 3-snap sheet); D = lifecycle actions + state machine; E = checklist/notes/issues/timeline (incl. the T-0308 photo
+precursor seam). The Understand pass surfaced **five** decisions. **Four APPLY accepted ADRs — no new ADR** (the
+§7.2/§7.4/§7.5/§7.6/§7.7 "record, not ADR" precedent): ADR-0013 D6 + §7.6 D1 own the additive map seam (a); ADR-0013
+"mirror the code" + DRY own the state machine (c); ADR-0013 parity + T-0308's home own the photo precursor (d);
+ADR-0014 D2′ + §7.7 D5 + the Parity rule + the T-0310 D5 precedent own the list-state divergence (e). **ONE is a
+genuine new trade-off → ADR-0021** (decision (b): the non-modal 3-snap sheet on the 16.0 floor — it could have moved the
+deployment floor and it sets "the one way iOS does a non-modal map sheet," so it is an ADR, not a §7.9 line).
+**Android parity source (the iOS port mirrors it):** `partner-app/.../features/orders/` —
+`OrdersListScreen.kt`/`OrdersListViewModel.kt` (the 3 panes + silent-stale), `OrderDetailScreen.kt`/`OrderDetailViewModel.kt`
+(the map + 3-snap sheet + the sealed `OrderDetailUiState`/`ActionState`/`OrderAction?`), `OrderPrimaryAction.kt` (the
+status×ownership×photos → action), `CleaningChecklist.kt`/`…ViewModel.kt`, `StatusTimeline.kt`, `OrderStatusPill.kt`
+(the `Code?.toOrderStatus()` mapping), `PhotosSection.kt` (the T-0308 precursor) + `data/orders/OrdersRepository.kt`
+(the singleton per-pane/per-order staleness cache). **Gate-DP applies** (T-0307 is a screen ticket): the screens cite
+their Compose counterparts; native SwiftUI; iOS-wins-on-conflict + the noted divergences (the SnapSheet-vs-`.sheet`
+component swap, the SlideToCommit → native-confirm swap, the no-polygon confirmation).
+
+**IN — T-0307 acceptance scope:**
+- **Slice A:** ONE additive `MapProvider` method — `fullBleedMap(coordinate:)` (decision (a)) — implemented
+  `MKMapView`-via-`UIViewRepresentable` inside `MapKitMapProvider` (ADR-0014 D6′; the only MapKit consumer).
+- **Slice B:** the OrdersList — three panes (Available / MyActive / MyCompleted, the `OrdersTab` parity) over a sealed
+  per-pane `UiState<[OrderListItem]>` + a 3-case refresh-phase enum, PORTING the silent-stale staleness cache
+  (decision (e)); inline Active/Available row actions via an iOS-native confirm affordance (the SlideToCommit divergence).
+- **Slice C:** the OrderDetail shell — the **custom non-modal 3-snap `SnapSheet`** over `fullBleedMap(coordinate:)`
+  (**ADR-0021**), with the compact header always-visible drag handle + the sheet content sections.
+- **Slice D:** the lifecycle — a pure `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:) -> OrderPrimaryAction`
+  sealed enum (decision (c)) shared by the detail footer, the list inline row, and the list panes; the OrderDetail VM is
+  the sealed `OrderDetailUiState` (Loading/Error/Loaded) + `ActionState` + an `OrderAction?` in-flight discriminator
+  (already canonical on Android — ported 1:1).
+- **Slice E:** CleaningChecklist + NotesAndIssues + StatusTimeline, and the **T-0308 photo precursor seam**
+  (decision (d)) — a DISABLED/placeholder Photos section so the Complete-blocked hint is meaningful; capture is T-0308.
+
+**DEFERRED — explicitly out of T-0307, with the ticket each lands in:**
+- **Photo CAPTURE** (camera → JSON base64 upload) → **T-0308** (decision (d): T-0307 leaves the seam — the
+  `hasAfterPhotos` consumer + the reserved Photos slot — T-0308 fills capture additively, no OrderDetail re-layout).
+- **The current-location FAB on any order map** → **T-0335** (gated on T-0325, the §7.6 D2 / §7.7 Scope-A line — not
+  re-litigated here; the OrderDetail map is a fixed-address backdrop, no current-location needed).
+- **The service-area polygon overlay** → **T-0334** (decision (a): there is **no polygon data** in the partner spec —
+  add overlay support to `fullBleedMap` **additively** IF a service-area surface ever has geometry; designing it now
+  repeats the speculative shape §7.6 D1 rejected).
+
+#### Decision (a) — the additive `fullBleedMap` `MapProvider` method: `fullBleedMap(coordinate:)` — a SINGLE address pin, camera-padded for the sheet peek; NO overlay/polygon param (APPLIES ADR-0013 D6 + ADR-0014 D6′ + §7.6 D1 — no new ADR)
+
+**RULING: the additive method is `fullBleedMap(coordinate:) -> some View` (the dev's exact Swift return type; the
+contract is fixed) — it produces a full-bleed `MKMapView`-via-`UIViewRepresentable` map (ADR-0014 D6′) with ONE
+annotation (the order's address pin), camera-padded at the bottom for the always-present sheet peek so the pin stays in
+the visible upper sliver. NO `overlays:`/`polygon:`/`annotations:[…]` parameter. This is the §7.6 D1 "minimal-now,
+additive-later" seam reaching its homed ticket (T-0306 explicitly homed the full-bleed surface to T-0307 as an additive
+method) — an application of the `MapProvider` seam, no new ADR.**
+
+- **The KEY FINDING (verified in source):** there is **NO service-area polygon data in the partner spec** — `ServiceCityDto`
+  carries only `zipPrefix`, **no geometry** — and the Android `OrderDetail` renders **NO polygon**: `MapBackdrop`
+  (`OrderDetailScreen.kt:256-299`) draws a **single pin** at `order.address.latitude/longitude` (a Mapbox `ViewAnnotation`,
+  anchor BOTTOM, zoom 15) over the tile, nothing else. So the additive method needs **region + ONE pin**, not
+  overlays/polygon.
+- **The exact additive signature ruled:** `func fullBleedMap(coordinate: Coordinate) -> some View` (one address
+  coordinate in; a region-bound full-bleed map view out). The **camera bottom-padding** for the sheet peek is the
+  `MapBackdrop` `EdgeInsets(0,0,sheetPeekPx,0)` parity (`:273-281`) — passed from the `SnapSheet` container (ADR-0021 D1)
+  so the pin sits in the unobscured upper portion. Zoom-15 default (the `:277` parity).
+- **Why NO overlay/polygon now:** adding `overlays:`/`polygon:` would design `T-0334`'s (possible) service-area surface
+  before any geometry exists — the **exact speculative shape §7.6 D1 rejected** for the picker. If a service-area surface
+  ever has data, add overlay support **additively** then (a new method or an additive param), behind the **unchanged**
+  `MapProvider` seam — one provider grows, no call site breaks.
+- **The one sanctioned consumer:** the `fullBleedMap`-produced view is inside `MapKitMapProvider` (the only MapKit
+  consumer alongside the §7.6 picker factory); **feature/VM code imports neither MapKit nor the view's internals**
+  (reviewer #7/#12). The `SnapSheet` (ADR-0021) composes the map under the sheet; the OrderDetail feature sees only
+  `fullBleedMap(coordinate:)` + `SnapSheet`, never MapKit.
+
+#### Decision (b) — THE 3-SNAP SHEET ON THE iOS-16.0 FLOOR → a CUSTOM non-modal `SnapSheet` container in `CleansiaCore`; the floor STAYS 16.0 (the ADR-worthy one → **ADR-0021**)
+
+**RULING: build a CUSTOM non-modal 3-snap container (`SnapSheet`) in `CleansiaCore` — a `GeometryReader` +
+drag-gesture container with three snap offsets (map-focus / peek≈0.75 / expanded), layered over the always-present
+full-bleed map, 16.0-safe (no `.presentationDetents`). The ADR-0014 deployment floor STAYS 16.0 (NOT bumped). Native
+`.sheet`+`.presentationDetents` remain the way for MODAL sheets (the customer booking sheet). This is decision (b),
+option (ii). Because it could have moved the deployment floor and it sets "the one way iOS does a non-modal map sheet,"
+it is recorded as a genuine decision → ADR-0021 (extends ADR-0014 D6′ + refines ADR-0018 D3). The lower-risk fallback
+(option iii — a 2-detent native modal) is recorded in ADR-0021 as the EXPLICITLY-approved-only fallback, never a silent
+collapse.**
+
+- **The trade-off (full detail + alternatives + why-not):** see **ADR-0021** — it weighs (i) bump the floor to 16.4
+  (rejected: re-opens the owner's 2017-device-reach decision; and even at 16.4 a `.sheet` is **modal** — still can't be
+  the always-present-over-a-live-map layer), (ii) the custom non-modal container (CHOSEN: 16.0-safe AND full layout
+  parity), and (iii) collapse to a 2-detent modal (rejected as the answer — it is an ADR-0018 D1/Gate-DP **layout**
+  divergence, kept only as the noted+re-approved fallback). **Why an ADR and not a §7.9 line:** unlike (a)/(c)/(d)/(e),
+  this does not apply an accepted ADR — it is a new trade-off that could move the floor (ADR-0018 CH-5's bar for a
+  superseding/extending ADR).
+- **What ADR-0021 fixes for the dev:** the OrderDetail sheet is `SnapSheet` (the Wolt/Foodora always-present-over-map
+  layer, `OrderDetailScreen.kt:172-245` parity — `skipHiddenState=true`, 0.75 peek, 3 anchors), **never** a modal
+  `.sheet`; the floor stays `[.iOS(.v16)]`; the modal/non-modal discriminator (D3) keeps native `.sheet` the default
+  for modal sheets. **Blocks Slice C.**
+
+#### Decision (c) — the lifecycle STATE MACHINE: a PURE, tested `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:) -> OrderPrimaryAction` sealed enum, shared by all THREE call sites (CANONICALIZES the Android inlined `when` — "the one way" — applies ADR-0013 "mirror the code" + DRY; no new ADR)
+
+**RULING: a PURE function `OrderPrimaryAction.action(for status: OrderStatus?, isMine: Bool, hasAfterPhotos: Bool) ->
+OrderPrimaryAction` returning a sealed enum, shared by the THREE call sites (the detail footer, the list Active-row
+inline action, and the list panes) — NOT an inline switch per site. This canonicalizes the Android shape (which
+INLINES the same `when (status)` inside the `OrderPrimaryAction` Composable, `OrderPrimaryAction.kt:54-126`, so three
+iOS sites would each re-inline it) into one tested pure function — "the one way." It mirrors the Android CODE's
+decision table exactly (ADR-0013 D9 "mirror the code") + DRY. Record, no new ADR. The ownership trust (§7.8 O1–O4) is
+SECURITY's — this rules only the function's SHAPE.**
+
+- **The canonical table (mirrors `OrderPrimaryAction.kt` exactly — verified; status int map in the Code→OrderStatus
+  convention below):**
+
+  | status (typed enum, via the mapping below) | isMine | → action |
+  |---|---|---|
+  | `_0` New / `_2` Confirmed, **not** mine | false | **`.take`** (the `!isAssignedToCurrentUser` branch, `:55-64`) |
+  | `_2` Confirmed, mine | true | **`.notifyOnTheWay`** (`:65-79`) |
+  | `_3` OnTheWay, mine | true | **`.start`** (`:84-98`) |
+  | `_4` InProgress, mine, `hasAfterPhotos == true` | true | **`.complete`** (`:106-113`) |
+  | `_4` InProgress, mine, `hasAfterPhotos == false` | true | **`.completeBlocked`** (the soft hint, `:114-122`) |
+  | `_0` New, mine / `_5` Completed / `_6` Cancelled / `nil` / anything else | — | **`.none`** (no footer — `:80-83,125`) |
+
+  The sealed enum: `enum OrderPrimaryAction { case take, notifyOnTheWay, start, complete, completeBlocked, none }`.
+- **Why a shared pure function (the canonicalization, on the "earns its place" bar):** Android inlines the table in a
+  Composable, so the list's inline-action path and the detail footer each re-derive "what action is valid for this row's
+  status×ownership." On iOS, three call sites re-inlining the table is a drift risk (a rule change must touch three
+  switches). One **pure, tested** function makes the codebase **more consistent** and the *future* lifecycle change
+  (e.g. a new state) **cheaper** (one edit, one test) — it earns its place. **Rejected: an inline switch per site** —
+  three copies of a lifecycle decision table.
+- **`hasAfterPhotos` is the seam to decision (d):** the `.complete` vs `.completeBlocked` split consumes
+  `hasAfterPhotos`, which T-0307 wires (the placeholder Photos section / the loaded order's photos report it) and T-0308
+  makes real — the `canComplete` parity (`OrderPrimaryAction.kt:51,106`). The **backend validator stays the safety net**
+  (the `AfterPhotosRequired` guard); `.completeBlocked` is a client-side soft hint, not the gate.
+- **Scope boundary (SECURITY owns the gate, this owns the SHAPE):** whether `isMine` may be trusted, how it is derived,
+  the no-client-id-echo rule, and server-side enforcement are **§7.8 (security) O1–O4** — this function consumes
+  `isMine`/`hasAfterPhotos` as inputs and is purely presentational (which footer to show). The server is authoritative
+  on every transition; the function never decides authority.
+
+#### Decision (d) — the T-0308 PHOTO PRECURSOR seam: T-0307 renders a DISABLED/placeholder Photos section + the `hasAfterPhotos` consumer; T-0308 fills capture ADDITIVELY (CONFIRM the seam — applies ADR-0013 parity + T-0308's home; no new ADR)
+
+**RULING: CONFIRMED as briefed. T-0307 leaves the photo seam so the Complete-blocked hint is meaningful, but does NOT
+build capture: (1) the `OrderPrimaryAction` `.complete`/`.completeBlocked` split already consumes `hasAfterPhotos`
+(decision (c)); (2) the OrderDetail sheet RESERVES the Photos slot, rendered as a DISABLED/placeholder section. T-0308
+fills photo CAPTURE additively — no OrderDetail re-layout. Confirm the seam, no new ADR (Android's `PhotosSection`
+sits in the OrderDetail sheet and gates Complete via `hasAfterPhotos` — the parity is the seam; T-0308 owns capture).**
+
+- **The seam shape (verified):** Android's `PhotosSection.kt` sits in the OrderDetail sheet and the Complete action
+  gates on after-photos presence (`OrderPrimaryAction.kt:106` `canComplete`). T-0307 ports the **slot + the consumer**:
+  the sheet renders a Photos section in its Android position (so the layout is final — Gate-DP parity), in a
+  **disabled/placeholder** state (e.g. "Photos — added in T-0308" or a non-interactive thumbnail strip), and the detail
+  VM derives `hasAfterPhotos` (from the loaded order's photos, which the read DTO already carries) to feed decision (c)'s
+  `.complete` vs `.completeBlocked`.
+- **Why this is the right seam (not under-scoping, not over-reaching):** the Complete-blocked hint is meaningless
+  without the photo concept, so T-0307 must know `hasAfterPhotos`; but **capture** (camera, JSON base64 upload,
+  `SaveOrderPhotosCommand`) is a self-contained slice with its own home (T-0308) and its own size. Reserving the slot +
+  wiring the consumer means T-0308 is **purely additive** — it drops the capture UI into the reserved section and the
+  upload into the existing repo, with **no OrderDetail re-layout** (the §7.2/§7.3 "inert-now, additive-later" precedent).
+- **The low-stakes note (recorded):** if the placeholder is interactive-looking, it risks an ADR-0016 "no dead/placeholder
+  control" finding — so the placeholder must be **visibly disabled** (no tappable affordance that no-ops), the same
+  inert-not-dead discipline §7.4(a)'s contact-support row took.
+
+#### Decision (e) — the LIST STATE SHAPE: a sealed per-pane `UiState<[OrderListItem]>` + a 3-case refresh-phase enum (NOT the Android E1 flag-bag), PORTING the per-pane staleness cache; record the SlideToCommit → native-confirm divergence (applies ADR-0014 D2′ + §7.7 D5 + the Parity rule + the T-0310 D5 precedent; no new ADR)
+
+**RULING: the iOS list is born sealed-state canonical — a sealed `UiState<[OrderListItem]>` per pane (the initial-load
+lifecycle) PLUS a small explicit refresh-phase enum (`idle`/`userRefreshing`/`backgroundRefreshing`) that preserves the
+silent-stale "PTR-only-on-user-pull" behavior — NOT the Android boolean flag-bag. AND: the per-pane staleness/cache
+singleton (the ~30s watermarks + `invalidatePanesFor` mutation→panes mapping) is PORTED (it is load-bearing for the
+no-flash resume UX) — NOT simplified to load-on-appear + `.refreshable`. The inline-action component diverges (Android
+`SlideToCommit` → an iOS-native confirm affordance) — a recorded Gate-DP component swap. This applies §7.7 D5 (Android
+E1 flag-bags NOT replicated on iOS) + the T-0310 D5 precedent + the Parity rule. Record, no new ADR.**
+
+- **The Android E1 flag-bag (confirmed in source).** `OrdersListUiState` (`OrdersListViewModel.kt:89-120`) is a single
+  `data class` with `isInitialLoad` + `isUserRefreshing` + `isBackgroundRefreshing` + `hasLoadedOnce` +
+  `inFlightActionOrderId` + `error` + filter state — the **E1** smell (`consistency.md` E1: "never a single flag-bag
+  with `isLoading`/`error` booleans"), permitting impossible states (`isInitialLoad && hasLoadedOnce`). Exactly the case
+  §7.7 D5 / T-0310 D5 ruled "don't replicate; diverge correctly; file the Android fix."
+- **The iOS-canonical shape (the load-bearing nuance — the silent-stale behavior must survive the refactor).** Per
+  ADR-0014 D2′ + `consistency.md` E1: the pane's data-load lifecycle is a sealed `UiState<[OrderListItem]>`
+  (`.loading` / `.error(canRetry:)` / `.loaded([OrderListItem])`). But the silent-stale pattern needs a SECOND axis the
+  E1 enum doesn't carry — *which kind of refresh is in flight* — because the chunky pull indicator (PTR) must fire
+  **only** on a user pull, never on auto/background refresh (`OrdersListViewModel.kt:73-88,222-230` — the whole point of
+  splitting the flags). So the iOS shape is the sealed `UiState` **plus** a small explicit
+  `enum RefreshPhase { case idle, userRefreshing, backgroundRefreshing }`: PTR binds to `== .userRefreshing` (the
+  `isUserRefreshing` parity), `.backgroundRefreshing` is invisible (no chunky indicator — the silent-stale resume), and
+  `.loaded` content stays mounted through a background refresh (no spinner flash). **Two orthogonal sealed states**,
+  not a flag-bag — preserving the behavior while removing the impossible states. (Per-pane: each of the three panes
+  carries its own `UiState` + `RefreshPhase`, the independent-pane parity.)
+- **The per-pane staleness cache is PORTED (the parity rule — a behavior divergence must be explicitly approved, and
+  this one is NOT approved to drop).** `OrdersRepository` is a `@Singleton` with **three independent per-pane `Staleness`
+  watermarks** (default 30s) + a per-order watermark + `invalidatePanesFor(mutation)` mapping each mutation to the panes
+  it changes (Take/NotifyOnTheWay → Available+Active; Start → Active; Complete → Active+History; the third pane stays
+  warm — `OrdersRepository.kt:159-192`). This is **load-bearing for the no-flash resume UX**: returning from OrderDetail
+  after a take/start/complete refreshes silently (warm cache = no-op; stale = background fetch, no chunky indicator) and
+  a mutation invalidates exactly the affected panes. **It is PORTED to iOS** — an actor/class with the same per-pane/
+  per-order watermarks + the same mutation→panes map, registered in the `SessionScopedCacheRegistry` (cleared on
+  sign-out). **Simplifying to load-on-appear + `.refreshable` for v1 is a behavior divergence (flash-on-resume, lost
+  cross-pane invalidation) — REJECTED, not silently dropped** (the Parity rule: a behavior difference must be
+  ticket-called-for and approved; this one is explicitly NOT approved). The §7.2/§7.4 dashboard-cache deferral does
+  **not** apply here — that was the proving vertical with no resume loop; the order work-loop's resume-after-mutation
+  **is** the cache's reason to exist.
+- **The recorded Gate-DP divergence (architect sign-off) — SlideToCommit → native confirm affordance.** Android's
+  inline + footer commit gesture is a custom `SlideToCommit` slider (`SlideToCommit.kt`). iOS uses an **iOS-native
+  confirm affordance** for the same commit (a native button + `.confirmationDialog`/haptic; the list inline =
+  `swipeActions` row action) — the ADR-0018 D3 component swap (custom gesture → native control), keeping the same action
+  set, the same in-flight spinner semantics (`inFlightActionOrderId` parity), the same one-action-at-a-time guard
+  (`OrdersListViewModel.kt:329`, the §7.8 O4 re-entry guard). **Noted divergence:** *"Android SlideToCommit → iOS-native
+  confirm affordance; same commit actions/in-flight/guard; the divergence touches the component, not
+  layout/flow/branding"* — passes Gate-DP #3.
+- **Android E1 fix filed:** the `OrdersListUiState` flag-bag fix folds into the existing partner state-cleanup
+  follow-up **T-0337** (the §7.7 D5 home for Android partner E1 flag-bags) — one android cleanup ticket, independent of
+  the iOS wave.
+
+#### The Code→OrderStatus mapping convention (the read-path DTO envelope — a small canonical rule across the orders surface)
+
+**RULING (recorded as a convention, harvested to `patterns-mobile`):** the generated read-path DTOs (`OrderItem.orderStatus`,
+`OrderListItem.orderStatus`) carry a **`Code` envelope** (`{type, name, value: Int?}`), NOT the typed `OrderStatus`
+enum (the generated action responses — `StartOrderResponse.newStatus`, `CompleteOrderResponse.newStatus`,
+`NotifyOnTheWayResponse.newStatus` — DO carry the typed `OrderStatus`). Map the envelope to the typed enum in
+**exactly one** place — a Core (or orders-feature) extension:
+
+```swift
+// The Code envelope → typed OrderStatus, the ONE mapping. OrderStatus is `: Int` with rawValues 0...6
+// matching the backend ints (OrderStatus.swift). The Android `Code?.toOrderStatus()` parity (OrderStatusPill.kt:40-42).
+extension Code {
+    func toOrderStatus() -> OrderStatus? { value.flatMap(OrderStatus.init(rawValue:)) }
+}
+// Backend int map (OrderStatusPill.kt:36-37, the UI single source of truth):
+// 0 New · 1 Pending · 2 Confirmed · 3 OnTheWay · 4 InProgress · 5 Completed · 6 Cancelled
+```
+
+- **Why one place:** every status read (the pill, the timeline, decision (c)'s action table, the pane filters) needs the
+  typed enum; re-deriving `Code.value` → enum at each site is drift (and a nil-`value` foot-gun). One extension is "the
+  one way," tested once. **Deviation a reviewer rejects:** a call site reading `orderStatus.value` and comparing the raw
+  `Int` (e.g. `== 4`) instead of mapping to `OrderStatus._4`, or a second `Code→OrderStatus` mapper.
+- **The pane filters use the typed enum for the query** (the `OrdersListViewModel.kt:235-251` parity: Available =
+  `[_0,_2]` + `isUnassigned`; MyActive = `[_2,_3,_4]` + employeeId; MyCompleted = `[_5]` + employeeId) — sent as the
+  `filterOrderStatuses` ints, mirroring Android (the employeeId is a hint; the server is truth — §7.8 O3).
+
+#### The recorded Gate-DP divergences (T-0307 — all component-only, none touch layout/flow/branding)
+
+1. **The OrderDetail sheet: Compose `BottomSheetScaffold` (non-modal 3-snap) → the custom `SnapSheet` Core container**
+   (NOT a modal `.sheet`) — the iOS-16.0-floor decision, **ADR-0021** (the detent decision). Same
+   always-present-over-map layout, 3 anchors, 0.75 peek.
+2. **Commit gesture: `SlideToCommit` slider → iOS-native confirm affordance** (button + confirmation/haptic; list inline
+   = `swipeActions`) — decision (e). Same actions, in-flight, guard.
+3. **No service-area polygon** (and no polygon param on `fullBleedMap`) — decision (a): there is no polygon data in the
+   partner spec and Android renders none; overlay support is additive IF T-0334 ever has geometry. (Recorded so a
+   reviewer does not flag the absence — Android has none either.)
+
+#### Reviewer-check additions (T-0307+)
+
+- **#29 (ADR-0021) — the OrderDetail sheet is the custom non-modal `SnapSheet`, not a modal `.sheet`.** Layered over the
+  always-present full-bleed map, 3 snap offsets (map-focus/peek≈0.75/expanded) via drag, no `.sheet`/dismiss state
+  (`skipHiddenState=true` parity), map camera bottom-padded by the sheet offset. **Findings:** a modal `.sheet` for
+  OrderDetail (an ADR-0018 D1/Gate-DP layout divergence); a 2-anchor collapse without the noted+re-approved fallback; a
+  `SnapSheet` used for a genuinely modal sheet (D3 boundary); any `@available(iOS 16.4)` that lifts the floor (the floor
+  stays 16.0). **Test: TC-IOS-SNAP** (the pure snap-offset resolver — see ADR-0021).
+- **#30 (§7.9 (a)/(e)) — the order map + list state are the canonical shapes.** (a) `fullBleedMap(coordinate:)` is one
+  additive `MapProvider` method (single pin, no polygon param) inside `MapKitMapProvider`; feature/VM import no MapKit
+  (composes with #7/#12). (e) the list is a sealed per-pane `UiState<[OrderListItem]>` + a `RefreshPhase` enum (NOT a
+  flag-bag struct), the per-pane/per-order staleness cache is PORTED (not load-on-appear), and the commit affordance is
+  iOS-native (the SlideToCommit divergence, noted). **Findings:** a ported `OrdersListUiState` flag-bag; PTR firing on
+  background refresh; dropping the staleness cache without explicit approval; a `fullBleedMap` overlay/polygon param
+  with no data; a feature `import MapKit`.
+- **#31 (§7.9 (c)/Code-convention) — the lifecycle action + status mapping are the one way.** (c) the primary action is
+  the pure shared `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:)` (not three inline switches); the function is
+  presentational and consumes `isMine`/`hasAfterPhotos` (ownership trust = §7.8 O1–O4). Code→OrderStatus is mapped in
+  exactly one `Code.toOrderStatus()` extension (no raw-`Int` `.value` comparisons; no second mapper). **Findings:** an
+  inline per-site action switch; a raw `orderStatus.value == N` comparison; a second status mapper. **Test:
+  TC-IOS-ORDER-ACTION** (the pure action table — every row of the decision (c) table, incl. `nil`/Completed/Cancelled →
+  `.none` and `_4`+mine+!photos → `.completeBlocked`).
+
+#### New / updated CRC roles (added with the T-0307 wiring)
+
+- **`ios-snap-sheet`** (new, `CleansiaCore/Components`) — the `SnapSheet` non-modal 3-snap container (ADR-0021):
+  *responsibility:* render content over a full-bleed backdrop parked at one of three drag-driven snap offsets
+  (map-focus/peek/expanded) and report its current offset for backdrop camera-padding. *Collaborators:* the host view
+  (which supplies the backdrop + content), `GeometryReader`/`DragGesture`. *Does NOT know:* what's in the content or the
+  backdrop (order data, MapKit), whether it's an order or a future map screen, or any feature/VM logic.
+- **`ios-order-primary-action`** (new, partner orders feature) — the pure `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:)`
+  table (decision (c)): *responsibility:* map status×ownership×after-photos → the one valid primary action (a sealed
+  enum), mirroring `OrderPrimaryAction.kt`. *Collaborators:* none (pure function over value inputs). *Does NOT know:*
+  how `isMine`/`hasAfterPhotos` are trusted (SECURITY §7.8 owns the ownership gate; the server is authoritative), how
+  the action is rendered (footer vs swipe), or how it is dispatched.
+- **`ios-orders-cache`** (new, the `OrdersRepository` staleness parity) — *responsibility:* hold the per-pane (~30s) +
+  per-order freshness watermarks, answer `isPaneStale`/`isOrderStale`, and `invalidatePanesFor(mutation)` mapping each
+  mutation to the panes it changes. *Collaborators:* the orders generated client (via the ADR-0019 spine), the
+  `SessionScopedCacheRegistry` (cleared on sign-out). *Does NOT know:* the UI refresh-phase (that's the VM's
+  `RefreshPhase`), which pane is on screen, or the token/device id (the Keychain spine).
+- **`ios-order-detail-vm`** (new) — the sealed `OrderDetailUiState` (Loading/Error/Loaded) + `ActionState` +
+  `OrderAction?` in-flight (the `OrderDetailViewModel.kt` parity — already canonical on Android, ported 1:1):
+  *responsibility:* load/refresh the order (silent-stale via `ios-orders-cache`), run lifecycle actions, derive
+  `hasAfterPhotos`, surface success/error via the `SnackbarController`. *Collaborators:* `ios-orders-cache`,
+  `ios-order-primary-action` (for the footer's action), `SnackbarController`, the orders client. *Does NOT know:* the
+  sheet's snap mechanics (`ios-snap-sheet`), MapKit (`fullBleedMap`), or photo capture (T-0308).
 
 ---
 

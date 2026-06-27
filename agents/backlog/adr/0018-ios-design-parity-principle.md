@@ -4,6 +4,12 @@
 - **Date:** 2026-06-23
 - **Supersedes:** —
 - **Superseded by:** —
+- **Refined by:** ADR-0021 (2026-06-27) — adds the missing **non-modal-sheet** mapping to D3's table: D3 maps Compose
+  `ModalBottomSheet` → `.sheet`+`.presentationDetents` for the **modal** customer booking sheet; ADR-0021 maps the
+  **non-modal** partner OrderDetail sheet (always-present over a live map) → a custom `SnapSheet` Core container, with
+  the modal/non-modal discriminator. It refines the D3 *mapping*, not the parity principle (D1 layout/flow/branding
+  stays non-negotiable — a modal `.sheet` for OrderDetail is the D1/Gate-DP failure ADR-0021 names). A status-block
+  pointer; the immutable body below is unchanged.
 - **Applies to:** ios | cross-cutting (process: a standing **Gate-DP** the reviewer + ios charters run on every iOS **screen** ticket)
 - **Refines:** **ADR-0013** (iOS architecture & port strategy — the "parity port" definition). This ADR does **not** re-open any ADR-0013/0014 *architecture* decision; it makes the **visual/UX meaning** of "parity port" explicit, concrete, and reviewable. It sits beside **ADR-0016** (the Apple App Review / quality bar) as the second standing iOS reviewer gate. Consumes ADR-0014 (iOS-16 floor: SwiftUI, `ObservableObject`, the iOS-16 MapKit variant).
 - **Ticket:** IOS-DESIGN-PARITY-ADR (this ADR) · **Consumers:** a one-line design-parity note on every iOS **screen/feature** ticket in `status/sprint-12.md` (the first vertical + each feature wave); the standing **Gate-DP** added to `agents/backlog/ios-app-review-checklist.md` (§G) + the sprint-12 reviewer-check #22; the living companion `architecture/decisions/ios-app-architecture.md` (design-parity section).

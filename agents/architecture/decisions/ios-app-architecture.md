@@ -457,6 +457,79 @@ which stack hosts it or the deferred `ServiceAreaProvider`); `ios-onboarding-cha
 stack; does NOT know the shell's Profile-tab stack); `ios-app-settings-store` (updated — gains writable language + a
 `Theme` enum + setters; still UserDefaults, still the one store; secrets stay in the Keychain spine).
 
+### Partner order work-loop — additive `fullBleedMap`, the non-modal `SnapSheet` (ADR-0021), the pure action machine, ported staleness cache (sprint-12 §7.9 / T-0307)
+
+The partner **order work-loop** — the 3-pane OrdersList, the OrderDetail shell (full-bleed map + the always-present
+3-snap sheet), the OnTheWay lifecycle, checklist/notes/issues/timeline — surfaced by the T-0307 Understand pass on
+`phase/ios-phase4` (HARD AREA #3; depends_on T-0304✓+T-0306✓). **The order-action OWNERSHIP gate is SECURITY's
+(§7.8 / `security/ios-orders.md`, O1–O4) — out of this record.** Five decisions: **four APPLY accepted ADRs (no new
+ADR); ONE is a genuine new trade-off → ADR-0021.**
+
+**Decision (a) — the additive `MapProvider.fullBleedMap(coordinate:)` method (no new ADR; §7.6 D1 + ADR-0014 D6′).**
+ONE additive method on the existing `MapProvider` seam — `fullBleedMap(coordinate:) -> some View`, implemented
+`MKMapView`-via-`UIViewRepresentable` inside `MapKitMapProvider`, rendering **ONE address pin** camera-bottom-padded for
+the sheet peek (`MapBackdrop`/`EdgeInsets` parity, `OrderDetailScreen.kt:256-299,273-281`). **NO `overlays:`/`polygon:`
+param:** the **key finding** is there is **no service-area polygon data in the partner spec** (`ServiceCityDto` has only
+`zipPrefix`, no geometry) and Android renders no polygon — designing overlay support now repeats the speculative shape
+§7.6 D1 rejected. Overlay support is additive IF T-0334 ever has geometry. Feature/VM import no MapKit (#7/#12/#30).
+
+**Decision (b) — the non-modal 3-snap sheet on the iOS-16.0 floor → ADR-0021 (the ADR-worthy one).** `.presentationDetents`
+ships 16.0 with **only** `.medium`/`.large`; custom `.fraction`/`.height` are 16.4+; the floor is 16.0. The Android
+OrderDetail is a **non-modal** `BottomSheetScaffold` (`skipHiddenState=true`, full-bleed map always behind, 0.75 peek,
+3-anchor map-focus/peek/expanded — `OrderDetailScreen.kt:172-245`) that a modal `.sheet` cannot model. Ruled among
+(i) bump the floor to 16.4 — **rejected** (re-opens the owner's 2017-device reach; and even 16.4 `.sheet` is modal),
+(ii) a **custom non-modal `SnapSheet` Core container** (`GeometryReader`+`DragGesture`, 3 snap offsets, 16.0-safe) —
+**CHOSEN**, full layout parity + the floor stays 16.0, (iii) a 2-detent native modal — **rejected as the answer**
+(an ADR-0018 D1/Gate-DP **layout** divergence), kept only as the explicitly-approved-only fallback. Native
+`.sheet`+`.presentationDetents` stays the way for **modal** sheets (the discriminator: modal-over-a-screen vs
+non-modal-over-a-live-backdrop). **ADR-0021** records it (extends ADR-0014 D6′ — the sheet half of D6′; refines
+ADR-0018 D3 — the missing non-modal-sheet mapping; the floor is NOT amended).
+
+**Decision (c) — the pure shared lifecycle action machine (no new ADR; ADR-0013 "mirror the code" + DRY).** A pure
+`OrderPrimaryAction.action(for status: OrderStatus?, isMine: Bool, hasAfterPhotos: Bool) -> OrderPrimaryAction` sealed
+enum (`.take/.notifyOnTheWay/.start/.complete/.completeBlocked/.none`), one tested function for the **three** call sites
+(detail footer, list inline row, panes) — canonicalizing the Android shape, which **inlines** the `when(status)` inside
+the `OrderPrimaryAction` Composable (`OrderPrimaryAction.kt:54-126`) so three iOS sites would each re-inline it. The
+table mirrors Android exactly (incl. `_4`+mine+!photos → `.completeBlocked` soft hint, `canComplete` parity; backend
+validator is the safety net). It is **presentational** and consumes `isMine`/`hasAfterPhotos` — the ownership trust is
+SECURITY §7.8 (O1–O4), not this function.
+
+**Decision (d) — the T-0308 photo precursor seam (confirmed; no new ADR).** T-0307 reserves the Photos slot in the
+sheet (rendered **disabled/placeholder**, visibly disabled — not a dead control) + derives `hasAfterPhotos` (feeding
+(c)'s `.complete`/`.completeBlocked`); **T-0308 fills photo CAPTURE additively** (camera → JSON base64 →
+`SaveOrderPhotosCommand`) with no OrderDetail re-layout — the `PhotosSection.kt` parity + the §7.2/§7.3 inert-now/
+additive-later precedent.
+
+**Decision (e) — the list state shape: sealed per-pane state + a refresh-phase enum, PORT the staleness cache (no new
+ADR; ADR-0014 D2′ + §7.7 D5 + the T-0310 D5 precedent + the Parity rule).** The Android `OrdersListUiState`
+(`OrdersListViewModel.kt:89-120`) is an **E1 flag-bag** (`isInitialLoad`/`isUserRefreshing`/`isBackgroundRefreshing`/
+`hasLoadedOnce`/`inFlightActionOrderId`/`error`). iOS is born sealed-state: a sealed per-pane `UiState<[OrderListItem]>`
+**plus** an orthogonal `enum RefreshPhase { idle, userRefreshing, backgroundRefreshing }` that preserves the silent-stale
+"PTR-only-on-user-pull" behavior (PTR binds `==.userRefreshing`; background refresh is invisible; `.loaded` stays
+mounted — no spinner flash). **The per-pane/per-order `Staleness` cache is PORTED** (`OrdersRepository.kt:159-192`:
+~30s watermarks + `invalidatePanesFor(mutation)` mapping Take/Notify→Available+Active, Start→Active,
+Complete→Active+History, registered in the `SessionScopedCacheRegistry`) — it is **load-bearing for no-flash
+resume-after-mutation**; **simplifying to load-on-appear+`.refreshable` is an un-approved behavior divergence**
+(the dashboard-cache §7.2/§7.4 deferral does not apply — that had no resume loop; the work-loop's resume IS the cache's
+reason to exist). Inline commit = an **iOS-native confirm affordance** (`SlideToCommit`→native button+confirmation /
+`swipeActions` — the noted Gate-DP component swap; same actions/in-flight/guard, the §7.8 O4 re-entry guard). Android
+E1 fix → T-0337.
+
+**Convention — Code→OrderStatus on the read path.** The read-path DTOs (`OrderItem`/`OrderListItem`.`orderStatus`)
+carry the **`Code` envelope** `{type,name,value:Int?}` (the action responses carry the typed `OrderStatus`). Map in
+**one** `extension Code { func toOrderStatus() -> OrderStatus? { value.flatMap(OrderStatus.init(rawValue:)) } }` —
+`OrderStatus: Int` rawValues 0…6 = the backend ints (0 New·1 Pending·2 Confirmed·3 OnTheWay·4 InProgress·5 Completed·
+6 Cancelled, `OrderStatusPill.kt:36-42`). No raw-`Int` `.value` compares; no second mapper.
+
+**Recorded Gate-DP divergences (all component-only):** the `SnapSheet` vs `.sheet` (ADR-0021, #29); `SlideToCommit`→
+native confirm (#30); **no service-area polygon** (Android has none either — recorded so the absence isn't flagged).
+**New CRCs (T-0307):** `ios-snap-sheet` (the non-modal 3-snap container; knows nothing of order data/MapKit);
+`ios-order-primary-action` (the pure action table; does NOT know how `isMine`/`hasAfterPhotos` are trusted —
+SECURITY §7.8); `ios-orders-cache` (per-pane/per-order watermarks + mutation→panes; does NOT know the UI refresh-phase
+or the token); `ios-order-detail-vm` (sealed `OrderDetailUiState`+`ActionState`+`OrderAction?`; does NOT know the
+sheet snap mechanics, MapKit, or photo capture). **Reviewer checks added:** #29 (ADR-0021 sheet), #30 (map+list state),
+#31 (action machine + Code→OrderStatus). **Tests:** TC-IOS-SNAP (snap resolver), TC-IOS-ORDER-ACTION (the action table).
+
 - **Deployment target: iOS 16 vs iOS 17 (ADR-0014).** Chose **iOS 16** — the owner prioritised old-device
   reach (iPhone 8/8 Plus/X, 2017+), which iOS 17 (XS/XR, 2018+) excluded. The cost is the state mechanism
   (`@Observable` is iOS-17-only) and a couple of MapKit API variants; both are accepted trade-offs, recorded
@@ -498,9 +571,11 @@ stack; does NOT know the shell's Profile-tab stack); `ios-app-settings-store` (u
 | ADR (iOS-16 floor + `ObservableObject` state + iOS-16 MapKit variant) | — | **accepted** (ADR-0014, partially supersedes ADR-0013 D2 + target) |
 | ADR (generated client authenticates via the Core-spine-backed `RequestBuilderFactory`) | — | **accepted** (ADR-0019, refines ADR-0013 D4/D5 — the one way; reviewer #13-gen) |
 | ADR (partner router = flat-enum `PartnerRootView` root-switch gated by `.splash`) | — | **accepted** (ADR-0020, refines ADR-0013 D2/D9 — the canonical partner router; reviewer #23; T-0304 builds it) |
+| ADR (partner OrderDetail's non-modal 3-snap sheet = a custom `SnapSheet` Core container on the **16.0 floor**; the floor stays 16.0; native `.presentationDetents` = the MODAL-sheet way) | — | **accepted** (ADR-0021, extends ADR-0014 D6′ + refines ADR-0018 D3 — the one way iOS does a non-modal map sheet; reviewer #29; T-0307 Slice C builds it) |
 | Partner auth completeness rulings (settings store / ConfirmEmail email via Route assoc-value / PasswordPolicy / PUT+empty-token / F1) | — | **recorded** (sprint-12 §7.5, **no new ADR** — applies ADR-0013/0019/0020 + the header-parity-contract; reviewer #25/#26; T-0305 builds it) |
 | Map-seam rulings (minimal `MapProvider` picker factory + additive-later / current-location DEFERRED to T-0310+T-0325 / geocoding best-effort + no-`UiState` / no-Mapbox-token security) | — | **recorded** (sprint-12 §7.6, **no new ADR** — applies ADR-0013 D6 + ADR-0014 D6′ + ADR-0018 Gate-DP; reviewer #27; T-0306 builds it) |
 | Partner Profile-tab rulings (in-tab `NavigationStack` over `ProfileRoute` / **lock-owns-its-own-stack** pushing the shared section set, fail-closed / `ServiceAreaRow` DEFERRED→T-0334 / `AppSettingsStore` extended + theme honored / born sealed-state, Android E1 NOT copied→T-0337 / current-location DEFERRED→T-0335 / Notifications DROPPED→T-0336) | — | **recorded** (sprint-12 §7.7, **no new ADR** — applies ADR-0020 + §7.5 D1 + §7.6 D2 + ADR-0018 Gate-DP + the Parity rule; reviewer #28; T-0310 builds it; device-id/revoke gate decisions 6–8 = SECURITY) |
+| Partner order work-loop rulings (additive `fullBleedMap(coordinate:)` single-pin no-polygon / the non-modal `SnapSheet` 16.0-floor sheet = **ADR-0021** / the pure shared `OrderPrimaryAction.action(…)` machine / the T-0308 photo precursor seam / sealed per-pane `UiState`+`RefreshPhase` + **PORTED** staleness cache, Android E1 NOT copied→T-0337 / Code→OrderStatus one-mapper convention / SlideToCommit→native + no-polygon Gate-DP divergences) | — | **recorded** (sprint-12 §7.9, **+ ADR-0021** for the sheet — the other four apply ADR-0013 D6/D9 + ADR-0014 D2′/D6′ + §7.6 D1 + §7.7 D5 + the Parity rule; reviewer #29/#30/#31; T-0307 builds it; the **order-action ownership gate = SECURITY** §7.8) |
 | Owner Q-IOS-01 (deployment target) | — | **ANSWERED — iOS 16** (old-device reach) |
 | Owner **mobile-spec regen** (the one hard blocker) | pre-Phase-2 | **PENDING — owner-only** (`manual_step: mobile-spec-regen`) |
 | Workspace + `CleansiaCore` skeleton + design tokens + DI + snackbar/error center | 0 | planned (runnable on approval) |

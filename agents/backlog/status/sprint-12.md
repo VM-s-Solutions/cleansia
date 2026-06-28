@@ -235,6 +235,43 @@ born-canonical Swift `ApiResult<T>` contract.
 > T-0335). Resulting transitions: **T-0307 → `done`, T-0308 → `done`** (§3 + INDEX Wave-10 roster). The owner commits
 > these backlog edits + opens the Phase-4 PR (the PM does not commit). Phase 2+ tail stays **proposed**.
 
+> **STATUS-LOG 2026-06-28 — §7.11 SECURITY SUB-NOTE: T-0311 (APNs push registration) Gate-SEC ruling —
+> security_touching YES · PASS-the-design (4 binding rules + 1 required test).** Logged ahead of the build on
+> `phase/ios-phase5` (ARCHITECT rules the seam / lifecycle-home / foreground-permission flow in parallel; this
+> sub-note rules only registration-authz / device-id / logout-clear / token-handling). Full record:
+> `security/ios-push.md`. **security_touching = YES** — T-0311 is a **device-token write surface**
+> (`/api/Device/Register`, `RegisterDeviceCommand{deviceId, deviceToken, platform="ios"}`, authed — NOT
+> anon-allow-listed) plus the **logout-clear** is a load-bearing session-security property (a logged-out handset
+> must STOP receiving pushes). **Greenfield on iOS** (`CleansiaCore/.../Push/Push.swift` = a bare placeholder
+> enum, no register/unregister call site, no APNs delegate, no token cache on disk) → these are rules the dev
+> builds to, NOT findings against shipped iOS code. **Backend traced on this Mac + VERIFIED safe** (no backend
+> change): `RegisterDevice`/`UnregisterDevice` derive the user from the JWT session, bind the row to the caller,
+> scope every lookup by `UserId`, reject empty sessions; a foreign `deviceId` cannot hijack/register to another
+> account (per-`(UserId, DeviceId)` upsert + the composite unique index `DeviceConfiguration.cs:35`); Unregister
+> soft-deletes caller-scoped (`Deactivate`→`IsActive=false`, never hard-remove —
+> `UnregisterDeviceHandlerTests`), and that **stops APNs delivery** because the dispatcher fetches eligible rows
+> via `GetByUserIdAsync` filtering `&& d.IsActive` (`SendPushNotificationHandler.cs:121` → `DeviceRepository.cs:30`,
+> the S10 chain). S4 re-confirmed: register/unregister responses + `DeviceDto` carry **no `DeviceToken`** (the
+> push secret stays server-side). **Four binding rules:** (1) **spine-authed register on the ONE device-id** —
+> `deviceId` = `DeviceIdProvider.deviceId` (the same `X-Device-Id` mint-once source as T-0310 `deviceMine`; no
+> 2nd id / `UUID()` / `identifierForVendor`), `platform=="ios"` literal; (2) **register on session×token**
+> (the Android `PushTokenSessionObserver` parity — registration is a session-state property, never store/register
+> unauthenticated); (3) **logout MUST `Device/Unregister` BEFORE `tokenStore.clear()`** (the Android
+> `AuthRepository.kt:210-225` ordering — best-effort, but the authed DELETE needs the live Bearer or the row
+> survives and pushes keep flowing post-logout) **AND** the last-token cache clears on **ALL** sign-outs by being
+> a `SessionScopedCache` (so `Auth.signOutLocal()` `Auth.swift:189` + `SessionRefresher.forceSignOut()`
+> `SessionRefresher.swift:76` both `clearAll()` it — closing the account-switch "next user inherits A's pushes"
+> leak: A's row gone + A's token gone → B registers fresh); (4) **token handling (S6/S4)** — NO token logging
+> anywhere incl. Sentry/crash (backend sweep clean), `UserDefaults` OK for the cache (device-scoped, not a user
+> secret, reset-on-reinstall — NOT a location surviving `clearAll()`), no token in `Device/Mine` DTO (vetted
+> T-0310). **Required test: TC-IOS-PUSH-LOGOUT-CLEARS (red-first)** — on logout, unregister is invoked BEFORE the
+> token wipe (assert ordering / non-empty Bearer at the DELETE) AND the push cache `SessionScopedCache.clear()`
+> runs on BOTH the explicit-logout and forced-signout paths. **No new backend follow-up**; standing latent S8
+> (RefreshToken tenant read asymmetry, `auth-sessions.md`/`ios-devices.md`) re-verify before non-null-`TenantId`
+> onboarding. Owner dependency = the **APNs auth key/cert** (infra, not a code gate; until set, the dispatcher
+> `result.Skipped` no-op safely ACKs — `SendPushNotificationHandler.cs:149`). T-0311 stays **proposed** (ready to
+> build on `phase/ios-phase5` against these rules).
+
 **Goal:** port the Kotlin/Compose customer + partner apps to **Swift/SwiftUI** as **parity** apps sharing
 the **same Mobile API contract**, on a `CleansiaCore` SPM package + 2 app targets, **partner-first**, with
 a hand-written auth/session/header layer to the exact Android contract. iOS code lives at
@@ -318,7 +355,7 @@ PHASE 2+ PARITY FEATURE WAVES ── ordered by complexity; the 3 hard areas cal
 | **T-0308** | **Partner photo upload** — camera capture → **JSON base64** photos (partner shape) on OrderDetail | M | **done ✅** `c216392`+`cf6ea6d`+`a2a2184` (`phase/ios-phase4`; **2 slices** — A Core `CameraOrLibraryPicker` (the repo's first `UIViewControllerRepresentable`) + `ImageCompressor` (1920/0.7, **EXPLICIT EXIF strip**, TC-IOS-PHOTOS-EXIF-STRIP); B the `PhotosSection` (before/after rails, capture→upload) + the upload/delete VM + the Complete-unblock + the bootstrapped `PrivacyInfo.xcprivacy` + the NSCamera/NSPhotoLibrary usage strings ×5. Reviewer **APPROVE**; **SECURITY PASS** (§7.10 P1–P5, TC-IOS-PHOTOS-OWNERSHIP — backend SavePhotos/DeletePhoto/GetPhotos ownership VERIFIED safe, no backend change). Owner sign-off pending on the camera/photo plist WORDING ×5) | ios | T-0307✓ | **owner: camera/photo plist WORDING sign-off ×5** | 4 (HARD AREA #3 cont.; `phase/ios-phase4`) |
 | **T-0309** | Partner earnings + invoices + PeriodPay (`EmployeePayroll/GetPeriodPays` — a regen'd-spec endpoint) | M | **proposed** | ios | T-0304 | — | 2 (partner) |
 | **T-0310** | Partner **Profile tab** (replaces `PartnerShellView.swift:36` `PlaceholderTab`) — the hub (hero + contract-status chip + section-group rows + logout) + **6 section editors** (Personal/Address/Identification/Bank/Emergency/Documents) over a new `PartnerProfileClient` (ADR-0019 spine) + the **onboarding chain** + **Devices** (Device/Mine list + revoke — **SECURITY-ruled, decisions 6–8**) + **Preferences** (Language/Theme). **Acceptance scope + the 5 Understand-pass rulings fixed in §7.7:** D1 (in-tab `NavigationStack` over a typed `ProfileRoute` enum — ADR-0020 intra-audience push, reviewer #28a), D2 (**the load-bearing call** — the RegistrationLock owns its OWN local `NavigationStack` + chain VM and pushes the SHARED section set over itself with `onboarding == true`; fail-closed, no cross-audience shell routing — reviewer #28b + TC-IOS-LOCK-CHAIN, composes with #24), D3 (`ServiceAreaRow` DEFERRED → T-0334, a Gate-DP divergence; Address ships pan/search/save at parity), D4 (EXTEND the one `AppSettingsStore` with writable language + a Theme enum + setters; honor theme via `.preferredColorScheme` now — reviewer #28c), D5 (born sealed-state canonical — Android E1 flag-bags NOT replicated; android fix → T-0337; reviewer #28d). **Scope cuts (PM to record):** current-location FAB + `LocationProvider` seam DEFERRED → T-0335 (gated on T-0325); **"Notifications" DROPPED** (no Android prefs surface / no backend prefs API / no client; the in-app feed is a separate spike → T-0336). Reviewer #28 + TC-IOS-PROFILE-ROUTE/-LOCK-CHAIN/-SECTION-SHARED/-SETTINGS-THEME/-PROFILE-STATE. Gate-DP. **Android parity: `partner-app/.../features/profile/` (`ProfileScreen.kt`/`ProfileViewModel.kt`, the `*Section*` set, `OnboardingChainHeader.kt`, `SectionScaffold.kt`, `AddressSectionScreen.kt`) + `features/orders/{RegistrationLockViewModel,OnboardingChainViewModel}.kt` + `core/settings/AppSettingsRepository.kt`** | M | **done ✅** `ce6c5fc`+`ee2f044`+`2cdaf93`+`6c6155c` (`phase/ios-phase3`; 3 slices. Slice A = the profile hub + 6 section editors (Personal/Address/Identification/Bank/Emergency/Documents) + onboarding chain + the now-live RegistrationLock Fix-CTAs (D2: the lock owns its OWN `NavigationStack`+chain VM, pushes the SHARED section set with `onboarding==true`, fail-CLOSED — gate #24 byte-unchanged, verified). Slice B = Devices (Device/Mine list + revoke) — **SECURITY PASS** on all binding rules (D6 single device-id source, D7a hide-on-current + D7b defensive self-revoke sign-out, D8 server-scoped revoke verified vs the backend; TC-IOS-DEVICES-SELF-REVOKE green). Slice C = Preferences (language [+ a System/follow-device row] + theme pickers; theme honored via `.preferredColorScheme`; the first runtime in-app language switch). D3 `ServiceAreaRow` DEFERRED → T-0334; D5 born sealed-state, Android E1 flag-bags NOT replicated → T-0337; current-location FAB → T-0335; Notifications DROPPED → T-0336. Reviewer **APPROVE** (incl. a re-review of the System-row fix); **185 CleansiaPartner tests**; swiftformat/swiftlint clean) | ios | T-0304✓, T-0306✓ | — | 2 (partner) |
-| **T-0311** | **Push (APNs)** — register for remote notifications → APNs token + `Platform="ios"` + same `X-Device-Id` to `/api/Device/*`; re-register on login, clear on logout (the `:core` push parity) | M | **proposed** | ios | T-0300 | **owner: APNs auth key/cert** | 2 (cross-app) |
+| **T-0311** | **Push (APNs) — REGISTRATION + token plumbing + device lifecycle + minimal foreground/tap** (NOT the in-app feed → T-0336) — register for remote notifications → APNs token + `Platform="ios"` + same `X-Device-Id` to `/api/Device/*` (generated `PartnerDeviceAPI` on the ADR-0019 spine); re-register on login, clear on logout (the `:core` push parity). **Acceptance scope + the 3 Understand-pass rulings fixed in §7.13 (no new ADR):** (a) a Core **`PushRegistrar`** seam (the SOLE `UNUserNotificationCenter`/`registerForRemoteNotifications` consumer — the ADR-0014 D6′/ADR-0018 D2 seam-family) + a per-app **`@UIApplicationDelegateAdaptor`** feeding its APNs-token stream (reviewer #34a); (b) **the load-bearing call** — a Core **`PushSessionObserver`** (the `PushTokenSessionObserver.kt` `combine(session,token)` parity), `unregisterDevice()` invoked from `AuthApiClient.logout()` BEFORE the `TokenStore` wipe + local `clear()` via the `SessionScopedCacheRegistry` (reviewer #34b; the **ordering GATE = SECURITY/Gate-SEC**); (c) minimal `willPresent`+`didReceive`-tap (→ existing order route via a `PartnerNotificationDeepLink` port), in-app feed→T-0336, **no plist key** (only the `aps-environment` entitlement), skip the rationale string, **no `UiState`/`ActionState`** (correct — §7.6 D3 precedent) (reviewer #34c). **2 slices** (A = `PushRegistrar` seam + `Device/Register` client + registrar logic; B = `PushSessionObserver` wiring + `@UIApplicationDelegateAdaptor` + foreground/tap + the entitlement). FCM→APNs over the same `Device/*` contract = the recorded Gate-DP divergence (ADR-0013 D8). TC-IOS-PUSH-REGISTER/-OBSERVER/-LOGOUT-ORDER/-TAP. **Android parity: `core/.../notifications/{PushTokenRepository,PushTokenSessionObserver,DeviceRegistrationClient,PushTokenDataStore}.kt` + `partner-app/.../data/auth/AuthRepository.kt:210-231`** | M | **proposed** | ios | T-0302✓, T-0303✓, T-0310✓, T-0331 | **owner: T-0342 (APNs `.p8` key + Push capability/provisioning) — the end-to-end-DELIVERY gate; T-0311 ships code-complete + the `aps-environment` entitlement without it (the T-0325-gates-T-0335 pattern)** | 2 (cross-app) |
 | **T-0312** | **Customer app shell + auth** — SignIn/SignUp/EmailVerify (+ Google Sign-In, customer-only) + Main shell (Home·Orders·Rewards·Profile + center **Book FAB**) | M | **proposed** | ios | T-0302, T-0306 | rides regen | 2 (customer) |
 | **T-0313** | **Customer booking wizard + Stripe** — the 3-step Bolt-style anchored sheet (Services / WhenWhere / Confirm), client-side pricing, **cash→success vs card→`stripe-ios` PaymentSheet** | **L → split** | **proposed** | ios | T-0312 | — | 2 (**HARD AREA #1 — hardest**) |
 | **T-0314** | Customer parity tail — Home, Orders+OrderDetail, Rewards/loyalty, Membership (SubscribePlus→Stripe), Recurring, **Disputes (multipart `IFormFile` evidence)**, Addresses (map seam), Profile/Settings (incl. **DeleteAccount/GDPR**, Devices, Notification prefs) | **L → split** | **proposed** | ios | T-0312, T-0306, T-0313 | — | 2 (customer) |
@@ -408,8 +445,11 @@ PHASE 2+ (after Phase 1 proves the architecture)
    is a regen of the *existing* contract — no backend code change. It also re-feeds Android's
    openapi-generator (kotlin) from the same spec, keeping all three clients aligned. **Gates T-0302's first
    real generation and every generated-client ticket (T-0303+).**
-2. **APNs auth key / push certificate (Apple Developer)** — for T-0311 push (the Android
-   `google-services.json` analogue). Owner provisioning; flagged, not built by agents.
+2. **APNs auth key (`.p8`) + Push capability/provisioning (Apple Developer)** — for T-0311 push (the Android
+   `google-services.json` analogue). Owner provisioning; flagged, not built by agents. **Ticketized as
+   T-0342** *(NOT "T-0341", which is the backend status-history flaky-test ticket)* — the
+   **end-to-end-DELIVERY** gate: T-0311 ships code-complete + the `aps-environment` entitlement without it
+   (the T-0325-gates-T-0335 pattern; §7.13).
 3. **Apple Developer account + signing / bundle ids** (`cz.cleansia.partner` / `cz.cleansia.customer`) —
    owner setup for T-0296's targets.
 4. **Mapbox token — ONLY IF** Q-IOS-02 flips the default to Mapbox (D6 fallback). **Not needed** under the
@@ -2632,6 +2672,307 @@ Record, no new ADR.**
 
 (The SECURITY ownership test **TC-IOS-EARNINGS-OWNERSHIP** + the E4 PDF-cleanup test are §7.11's — they compose with
 TC-IOS-PDF-GATE: the same `QuickLookPreview` coordinator that this record shapes is where E4's remove-on-dismiss runs.)
+
+---
+
+### 7.13 T-0311 (Phase-5 partner APNs push REGISTRATION + token plumbing + device lifecycle + minimal foreground/tap) — acceptance scope + the three Understand-pass rulings (recorded 2026-06-28, architect)
+
+The partner **APNs push registration** surface — register for remote notifications → an APNs device token → POST it to the
+**same `/api/Device/*` contract** the Android `:core` push uses (`Platform="ios"`, the **one** `X-Device-Id`) and re-register
+on login / clear on logout — surfaced by the T-0311 Understand pass on `phase/ios-phase5` (depends_on T-0302/0303/0310/0331).
+**Scope = REGISTRATION + token plumbing + device lifecycle + a MINIMAL foreground-banner / tap-to-route.** The **in-app
+notifications feed + persistence + dashboard bell badge + title/body templates + channels are DEFERRED → T-0336** (the spike,
+already filed; §7.7 / living doc). The generated **`PartnerDeviceAPI`** already carries
+`deviceRegister(RegisterDeviceCommand{deviceId, deviceToken, platform})` / `deviceUnregister(deviceId)` — both ride the
+**ADR-0019 spine** (the Bearer + `X-Device-Id`/`X-Device-Label`/`X-Time-Zone` + single-flight 401-refresh, via the
+`RequestBuilderFactory`); T-0311 writes **no auth code**, it just calls them. **The Android parity is the well-factored
+`:core` push** (`PushTokenRepository.kt`, `PushTokenSessionObserver.kt`, `DeviceRegistrationClient.kt`,
+`AuthRepository.kt:210-225`).
+
+**Three rulings, all APPLYING accepted ADRs + prior records — NO new ADR.** (a) APPLIES the **Core-seam family** precedent
+— ADR-0014 D6′ (the system-framework-behind-a-Core-protocol idiom: `MapProvider`/`MKMapView`, the `LocationProvider`) +
+ADR-0018 D2 (the brand-skin-over-native idiom: `CameraOrLibraryPicker`/`QuickLookPreview`) — the `PushRegistrar` is the
+next member of that family. (b) APPLIES the **ADR-0019** spine (the generated `PartnerDeviceAPI` on the
+`RequestBuilderFactory`) + the existing **`SessionScopedCacheRegistry`** + the `AuthApiClient.logout()` ordering. (c) is a
+scope/parity confirmation (the §7.6 D3 "sealed-state absence is correct" precedent + the §7.7 dropped-Notifications-row
+precedent). **A genuinely-new trade-off requiring a new ADR was looked for and NOT found** — the seam shape, the
+session-driven lifecycle, the device contract, and the deferral are all applications of records already accepted. **The
+registration / logout-clear-ordering SECURITY gate is ruled in PARALLEL by the security charter (Gate-SEC) — out of this
+record's scope; this record fixes the architectural seam + names WHERE `unregisterDevice()` is invoked so the security
+ordering has a home, not the ordering's enforcement.** Android source mirrored:
+`core/.../notifications/{PushTokenRepository,PushTokenSessionObserver,DeviceRegistrationClient,PushTokenDataStore}.kt` +
+`partner-app/.../data/auth/AuthRepository.kt:210-231`.
+
+**Two build slices (as the brief scoped them):** **Slice A** = the `PushRegistrar` Core seam + the `Device/Register` client
+binding + the registrar logic (the `PushTokenRepository` parity); **Slice B** = the lifecycle wiring (the
+`PushSessionObserver` + `@UIApplicationDelegateAdaptor`) + the minimal foreground/tap + the `aps-environment` entitlement.
+
+#### Decision (a) — the `PushRegistrar` Core seam + the `@UIApplicationDelegateAdaptor` AppDelegate hook (APPLIES ADR-0014 D6′ + ADR-0018 D2 — the Core-seam family; NO new ADR; HARVEST to `patterns-mobile`)
+
+**RULING (CONFIRMED as recommended): a `PushRegistrar` protocol in `CleansiaCore/Push` is the SOLE consumer of
+`UserNotifications` (`UNUserNotificationCenter`) + `UIApplication.registerForRemoteNotifications` — feature/lifecycle code
+imports neither `UserNotifications` nor `UIKit`** (exactly as feature code imports neither `MapKit`/`CoreLocation` behind
+`MapProvider`/`GeocodingService`, nor the `UIImagePickerController`/`QLPreviewController` behind
+`CameraOrLibraryPicker`/`QuickLookPreview`). **The SwiftUI-App lifecycle hook for the APNs-token callbacks
+(`application(_:didRegisterForRemoteNotificationsWithDeviceToken:)` / `...didFailToRegister...`) is a `@UIApplicationDelegateAdaptor`-installed
+`AppDelegate`** — the canonical SwiftUI way to receive AppDelegate callbacks in an App-lifecycle app (SwiftUI's `App`
+struct exposes no native `didRegisterForRemoteNotifications` hook; `@UIApplicationDelegateAdaptor` is Apple's sanctioned
+bridge, available on the iOS-16 floor — ADR-0014). This APPLIES the existing seam-family records; record, **no new ADR**.
+HARVEST the seam into `patterns-mobile` as the canonical "iOS push — the ONE way."**
+
+- **The seam shape (`PushRegistrar` protocol in `CleansiaCore/Push`).** It exposes exactly three things, mirroring the
+  three jobs the Android `:core` push splits across its repo + the messaging service:
+  1. **`requestAuthorization() async -> Bool`** — wraps `UNUserNotificationCenter.current().requestAuthorization(options:)`
+     (the iOS sibling of Android's `POST_NOTIFICATIONS` runtime grant). Decision (c) rules the rationale/soft-ask: **skip**
+     for strict Android parity.
+  2. **`registerForRemoteNotifications()`** — calls `UIApplication.shared.registerForRemoteNotifications()` (must run on the
+     main actor) — the iOS analogue of FCM minting a token; iOS asks APNs, the OS delivers the token via the AppDelegate.
+  3. **an APNs-token stream the AppDelegate FEEDS** — a `@Published`/`AsyncStream`/`PassthroughSubject` `apnsToken: String?`
+     the `@UIApplicationDelegateAdaptor` `AppDelegate` writes on `didRegisterForRemoteNotificationsWithDeviceToken` (the
+     `Data` token hex-encoded to the string the backend stores). **This is the structural parity to
+     `PushTokenRepository.fcmToken: StateFlow<String?>`** (`PushTokenRepository.kt:55`) — a hot stream the observer reacts
+     to, fed out-of-band by the OS callback, so the registrar never juggles the AppDelegate callback directly. (The
+     `didFailToRegister` callback logs best-effort and leaves the stream nil — the Android `fetchTokenOrNull` swallow-and-log
+     parity, `PushTokenRepository.kt:147-163`.)
+- **Why a Core seam (the recorded Gate-DP/Core divergence — FCM→APNs over the SAME `Device/*` contract — ADR-0018 D8).**
+  Android uses **FCM** (`FirebaseMessaging.getInstance().token` + the messaging-service `onNewToken`); iOS swaps to **APNs**
+  (`UIApplication.registerForRemoteNotifications` + the AppDelegate `didRegister…DeviceToken` + `UNUserNotificationCenter`)
+  — but **both POST the identical `Device/*` contract** (`deviceId`/`deviceToken`/`platform`), iOS sending **`Platform="ios"`**
+  where Android sends `"android"`. **This is the ADR-0013 D8 push divergence — a Gate-DP divergence with architect sign-off,
+  NOT a new trade-off:** *"Android FCM (`FirebaseMessaging` token + `onNewToken`) → iOS APNs (`registerForRemoteNotifications`
+  + the `@UIApplicationDelegateAdaptor` `didRegister…DeviceToken` + `UNUserNotificationCenter`); the SAME `Device/Register`/
+  `Device/Unregister` contract, `Platform="ios"`; the mechanism is the native platform push transport, the contract +
+  lifecycle are identical."* The `PushRegistrar` is what isolates that transport swap behind one Core protocol — so the
+  customer app (a future wave) installs the same seam with its own `Platform="ios"` and its own `CleansiaCustomerDeviceAPI`,
+  and a forced future transport change (a new APNs API, a re-platform) migrates **one provider, not every feature**.
+- **Why `@UIApplicationDelegateAdaptor` (vs the rejected alternatives).**
+  - **A bare SwiftUI `.onReceive`/scene-phase hook** — REJECTED: SwiftUI's `App`/`Scene` exposes **no**
+    `didRegisterForRemoteNotificationsWithDeviceToken`; that callback is an `UIApplicationDelegate` method only. There is no
+    SwiftUI-native receiver — `@UIApplicationDelegateAdaptor` is the **only** sanctioned bridge and the documented Apple way.
+  - **A hand-rolled `UIApplicationDelegate` set via `UIApplication.shared.delegate`** — REJECTED: fighting the SwiftUI
+    App-lifecycle (which owns the delegate); `@UIApplicationDelegateAdaptor` is the supported, lifecycle-integrated form.
+  - **`@UIApplicationDelegateAdaptor` feeding the Core `PushRegistrar`'s token stream** — CHOSEN: the canonical SwiftUI
+    AppDelegate bridge, thin (it only forwards the OS callbacks into the Core stream), and it keeps `UIKit`/`UserNotifications`
+    out of features — the App target's AppDelegate is the one allowed `UIKit` touch-point, exactly as the App target is the
+    one place that *installs* the `RequestBuilderFactory` (ADR-0019) and the `MapProvider` (§7.6).
+- **The seam stays in `CleansiaCore/Push`, the AppDelegate stays in the App target.** The `PushRegistrar` protocol + its
+  default impl (`UNUserNotificationCenter`/`UIApplication` consumer) are Core (shared by partner now, customer later — the
+  "shared code in Core, never duplicate across the two apps" rule, the same reason `QuickLookPreview`/`CameraOrLibraryPicker`
+  are Core). The `@UIApplicationDelegateAdaptor` `AppDelegate` is **per-app** (it lives in the App target and feeds the Core
+  registrar's stream) — the App-target-owns-composition split (ADR-0013 D3), not a Core type.
+
+#### Decision (b) — the lifecycle-wiring home: a Core `PushSessionObserver` (true `PushTokenSessionObserver` parity); `unregisterDevice()` invoked from `AuthApiClient.logout()` BEFORE the token wipe; the local clear via `SessionScopedCache` (APPLIES ADR-0019 spine + the `SessionScopedCacheRegistry` + the Android `AuthRepository.kt:210-225` ordering; NO new ADR)
+
+**RULING (CONFIRMED as recommended): register-on-login / clear-on-logout is a Core **`PushSessionObserver`** attached from
+the App — the true `PushTokenSessionObserver.kt` parity — NOT an ad-hoc hook bolted onto `PartnerRootView.afterLogin` +
+the logout call.** Registration is a **PROPERTY of the session×token state, not an event**: the observer combines the
+session-presence stream (the `TokenStore`/`SessionManager` validity) with the registrar's APNs-token stream, drops emissions
+where either is nil, dedupes, and calls the registrar's `ensureRegistered` on every distinct pair — the
+`combine(session, token).filterNotNull().distinctUntilChanged() → ensureRegistered` shape verbatim
+(`PushTokenSessionObserver.kt:56-64`). **The unregister DELETE is invoked from `AuthApiClient.logout()` BEFORE the access
+token is wiped** (the call needs the Bearer); the **local cache `clear()` runs via `SessionScopedCache` on sign-out**
+(both the user-logout path and the forced-401-sign-out path). Record, **no new ADR** (it APPLIES the ADR-0019 spine, the
+existing `SessionScopedCacheRegistry`, and the Android ordering).
+
+- **Why the observer, not the event hooks (the parity + the App-stays-thin argument).** The Android `:core` rewrote this
+  EXACTLY because the event-hook approach (register on login + on email-confirm + on FCM rotation) was the source of
+  "device wasn't registered" bugs — each hook could be missed (cold-launch on an existing session never re-registers;
+  rotation while signed-out silently 401s; pre-FCM installs never registered) (`PushTokenSessionObserver.kt:12-40`, the
+  docstring). Hooking iOS's `afterLogin` + the logout call would **re-introduce the exact event-hook brittleness the
+  Android team deleted** — and it would not cover the cold-start-on-existing-session case (the partner app re-launches into
+  an authed session via the SplashGate; no `afterLogin` fires) nor APNs-token-arrives-after-login (the AppDelegate callback
+  is async). The observer makes registration a state property → all four cases (cold-start-authed, login, token-arrives,
+  logout-drops) fall out for free. It also keeps the App thin: the App `attach`es one observer (the
+  `MainActivity.onCreate → observer.attach(lifecycleScope)` parity, `PushTokenSessionObserver.kt:38-39,53`), it does not
+  carry registration logic.
+- **The `ensureRegistered` cache short-circuit is PORTED (load-bearing, not optional).** `PushRegistrar.ensureRegistered`
+  must short-circuit on a locally-persisted "last registered token" (`PushTokenRepository.ensureRegistered:125-135` —
+  `if token == readLastRegisteredToken() return`) so re-attaching on every cold start is **free** (no redundant
+  `Device/Register` round-trip). It **persists on success only** (`writeLastRegisteredToken` after `register` returns ok —
+  the `DeviceRegistrationClient.register` "true only when the backend accepted" contract, `DeviceRegistrationClient.kt:8-16`).
+  The persistence is **`UserDefaults`-backed, NOT Keychain** (the Android `PushTokenDataStore`/DataStore parity — the
+  last-registered-token is not a secret and may reset on reinstall, like `AppSettingsStore`, §7.5 D1 / #26a). **A secret
+  reaching this store, or the device-id resolved anywhere but the one `DeviceIdProvider`, is a finding.**
+- **The unregister ordering — WHERE it is invoked (the load-bearing security-owned constraint, given an architectural
+  home).** The Android ordering is exact and verified (`AuthRepository.kt:210-225`): `logout()` calls
+  `pushTokenRepository.unregisterDevice()` **first** (best-effort, `runCatching`), **then** `authLogout(refreshToken)`,
+  **then** `signOutLocal()` (which wipes the `TokenStore` + clears the `SessionScopedCache`s). **The iOS home for the
+  invocation is `AuthApiClient.logout()`** (the spine's logout, the `authClient.logout()` the brief names) — it calls the
+  registrar's `unregisterDevice()` **before** it wipes the `TokenStore`, because the `Device/Unregister` DELETE rides the
+  ADR-0019 spine and **needs the Bearer** (a wiped token → a tokenless 401 → the row is not deleted server-side until it
+  GC's on the next NotRegistered report). It is **best-effort** (a failure still proceeds to the local wipe — the Android
+  `runCatching` parity, `AuthRepository.kt:215`). **The local `clear()`** (drop the persisted last-registered-token so the
+  next user on this handset re-registers fresh) is the **`SessionScopedCache.clear()`** the registrar's
+  store/repo implements, run by the `SessionScopedCacheRegistry.clearAll()` on **both** sign-out paths (user logout AND the
+  forced-401 sign-out) — exactly as the `PushTokenRepository` implements `SessionScopedCache` (`PushTokenRepository.kt:44,65-67`
+  — `clear()` is local-only, never a network call, because the forced sign-out happens after the token is already dead and a
+  network unregister would 401). **The unregister-network-DELETE (ordering + best-effort) is invoked from `logout()`; the
+  local-cache wipe is the `SessionScopedCache` on every sign-out.** **The SECURITY charter rules the gate** (that the DELETE
+  precedes the wipe; that no logout path skips it; that the forced-sign-out path clears local) **in parallel (Gate-SEC) —
+  this record only fixes that the invocation HOME is `AuthApiClient.logout()` (before the wipe) + the `SessionScopedCache`
+  (local), so security's ordering rule has a defined seam to attach to.**
+- **Rejected: the `PartnerRootView.afterLogin` + logout-call hooks.** Re-introduces the event-hook brittleness the Android
+  `:core` deleted (misses cold-start-authed + token-arrives-after-login), thickens the App with registration logic, and
+  forks two clear-paths (logout vs forced-401) that can drift — the exact reason the `SessionScopedCacheRegistry` exists
+  (one clear, two callers). The observer + the spine-`logout()` invocation is the parity-correct, drift-proof home.
+
+#### Decision (c) — foreground/tap scope + the permission/rationale + the no-`UiState` confirmation (CONFIRM: minimal now, feed → T-0336; NO plist key; skip the rationale string; the sealed-state ABSENCE is correct)
+
+**RULING (CONFIRMED as recommended):** ship a **MINIMAL `UNUserNotificationCenterDelegate`** now — `willPresent` (the
+foreground banner) + `didReceive` (tap → resolve to the existing order route via a `PartnerNotificationDeepLink` port) —
+and **DEFER the in-app feed + persistence + dashboard bell badge + title/body templates + channels → T-0336**. **NO Info.plist
+purpose string** (APNs does not require `NSUserNotificationsUsageDescription` — the OS shows the system permission alert
+itself; only the `aps-environment` entitlement is required). **SKIP the soft-ask rationale string for strict Android parity**
+(Android requests `POST_NOTIFICATIONS` silently, no rationale screen). **NO `UiState`/`ActionState`** — push registration is
+fire-and-forget background plumbing; the sealed-state ABSENCE is correct, not a reviewer finding. Record, no new ADR.
+
+- **Foreground/tap minimal scope.** `willPresent` shows the foreground banner (the iOS default-suppressed-in-foreground
+  behavior must be opted into — `[.banner, .sound]` / `[.list]`); `didReceive` reads the tap's userInfo and routes via a
+  **`PartnerNotificationDeepLink` port** to the **existing** order route (the `EarningsRoute`/order-detail destinations
+  T-0307/T-0309 already built — the tap does NOT invent a screen). The port is a thin Core protocol (the deep-link resolver)
+  so the feature owns "what an order tap navigates to" and the delegate owns "a tap happened." **DEFERRED → T-0336:** the
+  in-app notifications feed, local persistence of received pushes, the dashboard bell badge, server-driven title/body
+  templates, and notification channels/categories. This mirrors the §7.7 ruling that the partner "Notifications" surface is
+  a separate spike once a backend contract exists; T-0311 plumbs the OS path, T-0336 builds the in-app product.
+- **No plist purpose string (the verified Apple fact — composes with ADR-0016 §7.x / the §A.0 purpose-strings note).**
+  Remote push via APNs requires the **`aps-environment` entitlement** (`development`/`production`) + the runtime
+  `requestAuthorization` (the OS shows its own system alert) — it does **NOT** require an `Info.plist`
+  `NSUserNotificationsUsageDescription` key (no such purpose-string requirement exists for notifications, unlike
+  location/camera/photo-library which DO need their plist keys, §7.6/§7.10). **Slice B ships the `aps-environment`
+  entitlement** (`development` for the dev build; the `production` flip is part of the owner provisioning gate, below). The
+  reviewer's purpose-strings check (ADR-0016) is satisfied by **no notifications plist key + the entitlement present** — a
+  notifications plist key would be wrong (a non-existent requirement), and a missing entitlement is the finding.
+- **Skip the rationale string (strict parity; the one optional fallback recorded).** Android requests `POST_NOTIFICATIONS`
+  silently (no pre-permission rationale screen). **Strict parity = skip the soft-ask** — request authorization directly at
+  the parity moment Android does (post-login). **IF a soft-ask is later wanted** (an "iOS does it right" enhancement, a
+  Gate-DP-class component improvement), it is **one optional `.xcstrings` key ×5** (en/cs/sk/uk/ru) for a pre-permission
+  explainer sheet — recorded as the bounded fallback, **not built in T-0311**. The recommendation is **skip**; if the owner
+  later wants the soft-ask, it is the one key, not a redesign.
+- **The no-`UiState`/`ActionState` confirmation (so a reviewer does NOT flag it — the §7.6 D3 AddressPicker precedent).**
+  Push registration is **fire-and-forget background plumbing** — the registrar/observer have **no screen, no load-fetch
+  (E1), no user-driven mutation (E2)**. Like the AddressPicker (§7.6 D3 — "an interactive map with plain `@Published` state,
+  neither an E1 load-fetch nor an E2 mutation screen, so the sealed-state absence is correct"), the `PushRegistrar` /
+  `PushSessionObserver` correctly have **no sealed `UiState<T>`/`ActionState`** — plain async functions + the token stream +
+  best-effort logging. **The sealed-state archetypes are correctly scoped OUT; flagging their absence is a reviewer
+  mis-fire, not a finding.** (The minimal foreground banner / tap-route is delegate-driven OS UI, not a VM-rendered screen —
+  also correctly stateless. The in-app feed, T-0336, IS an E1 screen and WILL be sealed-state.)
+
+#### Owner gate — T-0342 (APNs auth key + Push capability/provisioning) is the END-TO-END-DELIVERY gate (the T-0325-gates-T-0335 pattern)
+
+**T-0311 ships CODE-COMPLETE + the `aps-environment` entitlement WITHOUT T-0342; delivery (a push actually arriving on a
+device) is OWNER-GATED.** End-to-end push delivery requires owner-only setup: the **APNs auth key (`.p8`)** uploaded to the
+backend's push sender, the **Push Notifications capability** enabled on the App ID, and the **provisioning profile** carrying
+it. That is filed as the owner ticket **T-0342** *(owner: APNs `.p8` key + Push capability/provisioning)* — **NOT "T-0341"**:
+the Understand pass proposed "T-0341" but **T-0341 is already taken** (the backend status-history flaky-test ticket), so the
+APNs owner ticket is the next free number, **T-0342**. (The orchestrator creates the T-0342 file; this record references it +
+the gate.) **The gate is the same shape as T-0325-gates-T-0335** (the location plist key the owner provides gates the
+my-location FAB): T-0311 is **code-complete + entitlement-present** through the agent workflow; the live-delivery proof
+(a test push round-trips to a device) is **deferred until T-0342 lands**. T-0311's reviewer/security gates do **not** block
+on T-0342 (they verify the code seam + the entitlement, not a live push); the *delivery* acceptance is the owner's once
+T-0342 is done. (Also note the standing owner-blocker list §7.x already names "APNs auth key / push certificate" for T-0311 —
+T-0342 is that blocker's ticketized form.)
+
+#### The recorded Gate-DP / Parity divergences (T-0311 — all transport/mechanism, none touch the device contract or lifecycle)
+
+1. **Transport: Android FCM (`FirebaseMessaging` token + the messaging-service `onNewToken`) → iOS APNs
+   (`UIApplication.registerForRemoteNotifications` + the `@UIApplicationDelegateAdaptor` `didRegister…DeviceToken` +
+   `UNUserNotificationCenter`)** — decision (a); the **ADR-0013 D8** push divergence. The SAME `Device/Register`/
+   `Device/Unregister` contract, **`Platform="ios"`**, the **one** `X-Device-Id` (== `DeviceIdProvider`, == the
+   `Device/Register` deviceId, T-0331/T-0310 D6); the mechanism is the native platform push transport, the contract +
+   register/clear lifecycle are identical.
+2. **Permission: Android `POST_NOTIFICATIONS` runtime grant (silent, no rationale) → iOS
+   `UNUserNotificationCenter.requestAuthorization` (the OS shows its own system alert)** — decision (c). No rationale screen
+   (strict parity); **no Info.plist purpose string** (APNs needs only the `aps-environment` entitlement, unlike
+   location/camera/photo which need plist keys); the one optional soft-ask `.xcstrings` key is the recorded, un-built fallback.
+3. **Token rotation: Android's `onNewToken` messaging-service callback feeds `reportRotatedToken` → iOS's
+   `didRegisterForRemoteNotificationsWithDeviceToken` (re-fired by the OS on token change) feeds the registrar's APNs-token
+   stream** — decision (a)/(b); same "rotation is just a new emission the session observer re-registers on" property, native
+   callback. (No Firebase-project migration analogue — `PushTokenRepository.runFirebaseProjectMigrationOnce` is FCM-specific,
+   correctly NOT ported.)
+
+#### Reviewer-check addition (T-0311+)
+
+- **#34 (§7.13 (a)/(b)/(c)) — the iOS partner APNs push-registration surface is the canonical shape.**
+  **(a) seam** — `UNUserNotificationCenter` + `UIApplication.registerForRemoteNotifications` are reached ONLY through the
+  `CleansiaCore/Push` **`PushRegistrar`**; the APNs-token AppDelegate callbacks are received via a per-app
+  **`@UIApplicationDelegateAdaptor`** that FEEDS the registrar's token stream. **Findings:** a feature/VM/lifecycle file
+  `import UserNotifications`/`import UIKit` for push (the seam is the only consumer — the `MapProvider`/`CameraOrLibraryPicker`
+  parity); a second push consumer outside `PushRegistrar`; a hand-rolled `UIApplication.shared.delegate` instead of
+  `@UIApplicationDelegateAdaptor`; the device token POSTed with anything but `Platform="ios"` or a device id not from the
+  one `DeviceIdProvider`. **(b) lifecycle** — register/clear is the Core **`PushSessionObserver`** (the
+  `combine(session, token).filterNotNull().distinctUntilChanged() → ensureRegistered` parity, attached once from the App);
+  `ensureRegistered` short-circuits on the persisted last-registered token (`UserDefaults`, not Keychain) and persists on
+  success only; **`unregisterDevice()` is invoked from `AuthApiClient.logout()` BEFORE the `TokenStore` wipe** (best-effort)
+  and the local `clear()` is the `SessionScopedCache` on every sign-out. **Findings:** registration bolted onto
+  `afterLogin`/an event hook instead of the session-state observer (the brittleness the Android `:core` deleted); the
+  last-registered-token in the Keychain (it is not a secret) or a secret in its store; `unregisterDevice()` after the token
+  wipe (a tokenless 401, the row not deleted) or skipped on a logout path; a second clear-path not going through the
+  `SessionScopedCacheRegistry`. **(SECURITY rules the unregister-ordering GATE in parallel — Gate-SEC — #34 verifies the
+  seam/home, not the security mandate.)** **(c) scope/permission** — minimal `willPresent` (foreground banner) + `didReceive`
+  (tap → existing order route via the `PartnerNotificationDeepLink` port) only; the in-app feed/badge/persistence/templates
+  are DEFERRED → T-0336; the `aps-environment` entitlement is present; there is **no** notifications Info.plist purpose
+  string; **no** `UiState`/`ActionState` on the registrar/observer (correctly stateless — do NOT flag). **Findings:** an
+  in-app feed / bell badge / push persistence built in T-0311 (it is T-0336); a notifications plist purpose string (a
+  non-existent requirement); a missing `aps-environment` entitlement; a flagged-as-missing `UiState`/`ActionState` on the
+  registrar/observer (the §7.6 D3 mis-fire). (Composes with #13-gen — the `Device/*` calls ride the ADR-0019 spine.)
+
+#### New CRC roles (added with the T-0311 wiring; the RDD home is the planned `agents/knowledge/roles/ios-*` cards that land with their code — ADR-0019 precedent)
+
+- **`ios-push-registrar`** (new, `CleansiaCore/Push`) — the `PushRegistrar` protocol + its default impl (decision (a); the
+  next member of the ADR-0014 D6′ / ADR-0018 D2 system-framework-behind-a-Core-seam family): *responsibility:* be the SOLE
+  consumer of `UNUserNotificationCenter` (authorization) + `UIApplication.registerForRemoteNotifications`, expose an
+  APNs-token stream the AppDelegate feeds, and `ensureRegistered(token)` it to `Device/Register` (cache-short-circuit +
+  persist-on-success) / `unregisterDevice()` it from `Device/Unregister` — the `PushTokenRepository.kt` parity over APNs.
+  *Collaborators:* the generated `PartnerDeviceAPI` (via the ADR-0019 spine), the one `DeviceIdProvider`, the persisted
+  last-registered-token store (`UserDefaults`), the `SessionScopedCacheRegistry` (it implements `SessionScopedCache.clear()`
+  local-only). *Does NOT know:* the access token value (that is `TokenStore`'s, reached only via the spine), how a session
+  becomes present (that is the observer's), which screen a tap routes to (that is the `PartnerNotificationDeepLink` port's),
+  the notification's title/body/template (T-0336), or any FCM/Firebase concept. **If this role reads the access token, or
+  resolves a device id anywhere but `DeviceIdProvider`, the responsibility is wrong — it delegates to the spine** (the
+  ADR-0019 invariant; the remote-revoke-correctness reason for the one device id).
+- **`ios-push-session-observer`** (new, `CleansiaCore/Push`) — the `PushSessionObserver` (decision (b); the
+  `PushTokenSessionObserver.kt` parity): *responsibility:* make registration a PROPERTY of session×token state — combine
+  session-presence with the registrar's APNs-token stream, drop nils, dedupe, and call `ensureRegistered` on every distinct
+  pair; attached once from the App. *Collaborators:* the `TokenStore`/`SessionManager` (session-presence stream), the
+  `PushRegistrar` (the token stream + `ensureRegistered`). *Does NOT know:* how to talk to APNs or the backend (that is the
+  registrar's), the token value, the unregister/logout ordering (that is `AuthApiClient.logout()`'s — decision (b)), or any
+  screen. **If this observer registers on a discrete event (login/confirm) instead of the combined state, the responsibility
+  is wrong** — it re-introduces the event-hook brittleness the Android `:core` deleted.
+- **`ios-push-app-delegate`** (new, per-app App target, via `@UIApplicationDelegateAdaptor`) — the thin AppDelegate +
+  `UNUserNotificationCenterDelegate` (decisions (a)/(c)): *responsibility:* receive the OS push callbacks
+  (`didRegisterForRemoteNotificationsWithDeviceToken` → feed the registrar's token stream; `didFailToRegister` → log;
+  `willPresent` → foreground banner; `didReceive` → resolve the tap via the deep-link port) and forward them — it holds NO
+  logic of its own. *Collaborators:* the Core `PushRegistrar` (feeds its token stream), the `PartnerNotificationDeepLink`
+  port (resolves a tap to an order route). *Does NOT know:* the token contract / backend (the registrar's), the session
+  state (the observer's), or how a screen renders (the feature's). The one allowed `UIKit`/`UserNotifications` touch-point in
+  the App target (the composition-root parity — like installing the `RequestBuilderFactory`/`MapProvider`).
+- **`ios-partner-notification-deep-link`** (new, port — Core protocol, partner-feature impl) — the tap→route resolver
+  (decision (c)): *responsibility:* map a tapped notification's payload to an EXISTING order route (the T-0307/T-0309
+  destinations); *Collaborators:* the partner router/route enum. *Does NOT know:* the OS delegate (the AppDelegate calls it),
+  push transport, or the in-app feed (T-0336). A thin port so the feature owns "where an order tap goes," the delegate owns
+  "a tap happened."
+
+#### Test contract (T-0311 — red-first)
+
+- **TC-IOS-PUSH-REGISTER** (decision (a)/(b)): with a present session + an APNs token in the registrar's stream, the
+  observer calls `Device/Register` with `{deviceId == DeviceIdProvider.deviceId, deviceToken == the APNs token,
+  platform == "ios"}` through the ADR-0019 spine; a second identical (session, token) emission is a **no-op**
+  (cache-short-circuit); the last-registered token persists on success only.
+- **TC-IOS-PUSH-OBSERVER** (decision (b)): the `combine(session, token)` observer (i) fires on cold-start-into-an-authed-
+  session (no `afterLogin` needed), (ii) fires when the APNs token arrives after login, (iii) buffers a token that arrives
+  while signed-out and fires once the session becomes present, (iv) does NOT re-register on logout (session→nil drops the
+  emission) — the `PushTokenSessionObserver.kt:26-36` behavioural properties, 1:1.
+- **TC-IOS-PUSH-LOGOUT-ORDER** (decision (b); the architectural-seam half — the security GATE is §7.x SECURITY's):
+  `AuthApiClient.logout()` invokes `unregisterDevice()` (the `Device/Unregister` DELETE) **before** the `TokenStore` is
+  wiped (asserted call order — the DELETE carries the Bearer); a failing unregister still proceeds to the local wipe
+  (best-effort); the `SessionScopedCache.clear()` (local last-registered-token drop) runs on BOTH the user-logout and the
+  forced-401 sign-out paths via the registry.
+- **TC-IOS-PUSH-TAP** (decision (c)): `didReceive` for an order notification resolves via the `PartnerNotificationDeepLink`
+  port to the existing order route (it does NOT create a screen); `willPresent` returns the foreground-banner presentation
+  options; no `UiState`/`ActionState` is involved (the stateless plumbing assertion — the absence is intended).
+- **No live-delivery test in T-0311** — an actual push round-tripping to a device is the **T-0342 owner-gated** delivery
+  proof (the entitlement + `.p8` + provisioning). T-0311's tests assert the code seam + the contract + the ordering, not a
+  live APNs round-trip.
 
 ---
 

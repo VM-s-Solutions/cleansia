@@ -689,6 +689,76 @@ who may read — SECURITY); `ios-earnings-format` (the pure money/date Core help
 stats source). **Tests:** TC-IOS-EARNINGS-NAV, TC-IOS-PDF-GATE, TC-IOS-EARNINGS-FORMAT (pure), TC-IOS-EARNINGS-STATS
 (+ SECURITY §7.11's TC-IOS-EARNINGS-OWNERSHIP + the E4 cleanup test compose with TC-IOS-PDF-GATE).
 
+### Partner APNs push registration — the `PushRegistrar` Core seam, the `@UIApplicationDelegateAdaptor` hook, the session-driven `PushSessionObserver`, the logout-ordered unregister (sprint-12 §7.13 / T-0311)
+
+The partner **APNs push registration** surface — register → an APNs token → the **same `/api/Device/*` contract** the
+Android `:core` push uses (`Platform="ios"`, the one `X-Device-Id`) + register-on-login / clear-on-logout, plus a minimal
+foreground-banner/tap — surfaced by the T-0311 Understand pass on `phase/ios-phase5` (depends_on T-0302/0303/0310/0331). The
+generated `PartnerDeviceAPI` (`deviceRegister(RegisterDeviceCommand{deviceId,deviceToken,platform})`/`deviceUnregister(deviceId)`)
+rides the **ADR-0019** spine — T-0311 writes no auth code. **Three rulings, all APPLYING accepted ADRs/records — no new ADR**
+(ADR-0013 D8 is the push divergence; ADR-0014 D6′ + ADR-0018 D2 own the Core-seam family; ADR-0019 owns the device-call
+transport; the `SessionScopedCacheRegistry` owns the clear). **The registration / logout-clear-ordering SECURITY gate is
+ruled in PARALLEL (Gate-SEC) — out of scope here; this record fixes the seam + names WHERE `unregisterDevice()` is invoked
+so the ordering has a home.** Android source mirrored: `core/.../notifications/{PushTokenRepository,PushTokenSessionObserver,
+DeviceRegistrationClient,PushTokenDataStore}.kt` + `partner-app/.../data/auth/AuthRepository.kt:210-231`.
+
+- **(a) The `PushRegistrar` Core seam + the `@UIApplicationDelegateAdaptor` hook.** A `PushRegistrar` protocol in
+  `CleansiaCore/Push` is the **SOLE** consumer of `UNUserNotificationCenter` + `UIApplication.registerForRemoteNotifications`
+  — feature/lifecycle code imports **neither** `UserNotifications` **nor** `UIKit` (the seam-family precedent:
+  `LocationProvider`/`MapProvider`/`GeocodingService` behind ADR-0014 D6′, `CameraOrLibraryPicker`/`QuickLookPreview` behind
+  ADR-0018 D2). It exposes **`requestAuthorization`** (the `POST_NOTIFICATIONS` parity), **`registerForRemoteNotifications`**
+  (main-actor), and an **APNs-token stream the AppDelegate feeds** — the structural parity to
+  `PushTokenRepository.fcmToken: StateFlow<String?>` (`PushTokenRepository.kt:55`), a hot stream fed out-of-band by the OS
+  callback so the registrar never juggles the AppDelegate directly. The APNs-token AppDelegate callbacks are received via a
+  **per-app `@UIApplicationDelegateAdaptor`** (the canonical SwiftUI AppDelegate bridge — SwiftUI's `App` exposes no
+  `didRegisterForRemoteNotifications` hook; available on the iOS-16 floor) that **only forwards** into the Core registrar.
+  Rejected: a bare SwiftUI hook (no such callback exists in `App`/`Scene`); a hand-rolled `UIApplication.shared.delegate`
+  (fights the App-lifecycle). The registrar/observer live in Core (shared with the future customer wave); the AppDelegate is
+  per-app (the composition-root parity, like installing the `RequestBuilderFactory`/`MapProvider`).
+- **(b) The lifecycle-wiring home: a Core `PushSessionObserver`; `unregisterDevice()` from `AuthApiClient.logout()` BEFORE
+  the token wipe.** Registration is a **PROPERTY of session×token state, not an event** — the
+  `combine(session, token).filterNotNull().distinctUntilChanged() → ensureRegistered` shape verbatim
+  (`PushTokenSessionObserver.kt:56-64`), attached once from the App (the `MainActivity.onCreate` parity). This is the exact
+  rewrite the Android `:core` did to kill "device wasn't registered" bugs (`PushTokenSessionObserver.kt:12-40`); hooking
+  iOS's `afterLogin` would re-introduce that brittleness and miss cold-start-into-an-authed-session (the SplashGate
+  re-enters an authed session with **no** `afterLogin`) and token-arrives-after-login. `ensureRegistered` short-circuits on
+  the persisted last-registered token (`UserDefaults`, not Keychain — the `PushTokenDataStore` parity; not a secret) and
+  persists on success only. **`unregisterDevice()` is invoked from `AuthApiClient.logout()` BEFORE the `TokenStore` wipe**
+  (best-effort; the `Device/Unregister` DELETE needs the Bearer — the `AuthRepository.kt:210-225` ordering); the local
+  `clear()` is the **`SessionScopedCache`** the registrar's store implements, run by the registry on **both** the user-logout
+  and the forced-401 sign-out paths (the `PushTokenRepository.kt:44,65-67` local-only `clear()` parity). **SECURITY rules the
+  ordering GATE in parallel; this record only fixes that the invocation home is `logout()` (before the wipe) + the
+  `SessionScopedCache` (local).** Rejected: the `afterLogin` + logout-call event hooks (the deleted Android brittleness;
+  thickens the App; forks two clear-paths).
+- **(c) Minimal foreground/tap; no plist key; skip the rationale; no `UiState`.** Ship a minimal
+  `UNUserNotificationCenterDelegate` — `willPresent` (foreground banner) + `didReceive` (tap → the EXISTING order route via a
+  thin `PartnerNotificationDeepLink` port). **DEFERRED → T-0336:** the in-app feed, persistence, the dashboard bell badge,
+  title/body templates, channels (the §7.7 separate-spike precedent). **No Info.plist purpose string** — APNs requires only
+  the **`aps-environment` entitlement** + the runtime `requestAuthorization` (the OS shows its own alert; notifications has
+  no plist key, unlike location/camera/photo). **Skip the rationale string** for strict parity (Android requests
+  `POST_NOTIFICATIONS` silently); the one optional soft-ask `.xcstrings` key ×5 is the recorded, un-built fallback. **No
+  `UiState`/`ActionState`** — fire-and-forget background plumbing; the sealed-state **absence is correct** (the §7.6 D3
+  AddressPicker precedent — neither an E1 load-fetch nor an E2 mutation screen).
+- **Recorded Gate-DP divergence (ADR-0013 D8):** *Android FCM (`FirebaseMessaging` token + `onNewToken`) → iOS APNs
+  (`registerForRemoteNotifications` + the `@UIApplicationDelegateAdaptor` `didRegister…DeviceToken` + `UNUserNotificationCenter`);
+  the SAME `Device/Register`/`Device/Unregister` contract, `Platform="ios"`, the one `X-Device-Id`; the mechanism is the
+  native platform push transport, the contract + register/clear lifecycle are identical.* (No Firebase-project-migration
+  analogue — FCM-specific, correctly not ported.)
+- **Owner gate — T-0342 (the end-to-end-delivery gate).** Delivery (a push arriving on a device) needs the owner's APNs
+  `.p8` key + the Push capability + provisioning — filed as **T-0342** *(NOT "T-0341", which is the backend status-history
+  flaky-test ticket)*. T-0311 ships **code-complete + the `aps-environment` entitlement**; delivery is owner-gated — the
+  **T-0325-gates-T-0335** pattern (the location plist key gating the my-location FAB). T-0311's reviewer/security gates verify
+  the code seam + the entitlement, not a live push.
+- **New CRCs (T-0311):** `ios-push-registrar` (the Core `UNUserNotificationCenter`/`registerForRemoteNotifications` sole
+  consumer; APNs-token stream + `ensureRegistered`/`unregisterDevice` over the ADR-0019 spine; does NOT know the access token
+  [the spine's], session presence [the observer's], the tap route [the port's], or templates [T-0336]); `ios-push-session-observer`
+  (the `combine(session,token)` → `ensureRegistered`; does NOT know APNs/the backend or the logout ordering);
+  `ios-push-app-delegate` (the per-app `@UIApplicationDelegateAdaptor`; forwards OS callbacks only; the one allowed
+  `UIKit`/`UserNotifications` touch-point); `ios-partner-notification-deep-link` (tap→existing-order-route resolver).
+  **Reviewer check added:** #34 (seam / lifecycle / scope-permission). **Tests:** TC-IOS-PUSH-REGISTER, TC-IOS-PUSH-OBSERVER,
+  TC-IOS-PUSH-LOGOUT-ORDER (the seam half; the security gate is §7.x SECURITY's), TC-IOS-PUSH-TAP — red-first; no live-delivery
+  test (the T-0342 owner-gated proof).
+
 - **Deployment target: iOS 16 vs iOS 17 (ADR-0014).** Chose **iOS 16** — the owner prioritised old-device
   reach (iPhone 8/8 Plus/X, 2017+), which iOS 17 (XS/XR, 2018+) excluded. The cost is the state mechanism
   (`@Observable` is iOS-17-only) and a couple of MapKit API variants; both are accepted trade-offs, recorded
@@ -737,6 +807,7 @@ stats source). **Tests:** TC-IOS-EARNINGS-NAV, TC-IOS-PDF-GATE, TC-IOS-EARNINGS-
 | Partner order work-loop rulings (additive `fullBleedMap(coordinate:)` single-pin no-polygon / the non-modal `SnapSheet` 16.0-floor sheet = **ADR-0021** / the pure shared `OrderPrimaryAction.action(…)` machine / the T-0308 photo precursor seam / sealed per-pane `UiState`+`RefreshPhase` + **PORTED** staleness cache, Android E1 NOT copied→T-0337 / Code→OrderStatus one-mapper convention / SlideToCommit→native + no-polygon Gate-DP divergences) | — | **recorded** (sprint-12 §7.9, **+ ADR-0021** for the sheet — the other four apply ADR-0013 D6/D9 + ADR-0014 D2′/D6′ + §7.6 D1 + §7.7 D5 + the Parity rule; reviewer #29/#30/#31; T-0307 builds it; the **order-action ownership gate = SECURITY** §7.8) |
 | Partner order PHOTOS rulings (capture seam = the Core **`CameraOrLibraryPicker` `UIViewControllerRepresentable`** — the repo's FIRST, the canonical UIKit-controller-behind-a-SwiftUI-seam idiom / **`ImageCompressor`** 1920px+JPEG-0.7 pure helper / read-back via SwiftUI **`AsyncImage`** + Complete gate trusts the **re-fetched `OrderItem.hasAfterPhotos`** / the two `NS*UsageDescription` keys in the PARTNER `project.yml` in-ticket ×5, Customer→T-0314; camera-vs-gallery + 1920/0.7 + Coil→`AsyncImage` Gate-DP/Parity divergences) | — | **recorded** (sprint-12 §7.10, **no new ADR** — applies ADR-0018 D2/D3 + ADR-0016 AR-PRIV-4 + ADR-0013 parity + the Parity rule; reviewer #32; T-0308 builds it; the **photo-upload ownership / EXIF gate = SECURITY** `security/ios-orders.md`). **Catalog correction:** the AddressPicker is pure MapKit/SwiftUI — it is NOT a `UIViewControllerRepresentable` precedent (the false claim is guarded against in `patterns-mobile`) |
 | Partner earnings/invoices/PeriodPay rulings (the `.invoices` shell tab roots an in-tab `NavigationStack` over a typed `EarningsRoute` enum landing on the Earnings **summary**, `onOpenEarnings` = a tab switch not a push / invoice PDF via the new Core **`QuickLookPreview`** seam — the 2nd §7.10 D1 UIKit-controller-behind-a-seam family member, reused by customer T-0314 — guarded on `pdfGenerationFailed`, **no `FileDownload` seam** / a small Core **`EarningsFormat`** (`%,.2f` + `%,.0f` + ISO dates), `DashboardFormat.money` NOT overloaded, currency-symbol harvested to Core / the Earnings summary **REUSES** `PartnerDashboardClient.getStats`; push+tab→single-tab+stack, FileProvider→QuickLook, Android E1 invoices flag-bag NOT replicated→T-0337, hand-written PeriodPay Retrofit→generated divergences) | — | **recorded** (sprint-12 §7.12, **no new ADR** — applies ADR-0020 + §7.7 D1 + the §7.10 D1 Core-seam precedent + ADR-0018 D2/Gate-DP + the §7.5 D4/§7.7 D4 Core-utility precedent + ADR-0013 parity + Core/DRY; reviewer #33; T-0309 builds it; the **read-scoping / PII gate + the post-preview PDF cache-cleanup = SECURITY** sprint-12 §7.11 / `security/ios-earnings.md`) |
+| Partner APNs push registration rulings (a Core **`PushRegistrar`** seam — the SOLE `UNUserNotificationCenter`/`registerForRemoteNotifications` consumer, the next ADR-0014 D6′/ADR-0018 D2 seam-family member — fed by a per-app **`@UIApplicationDelegateAdaptor`** / a Core **`PushSessionObserver`** = the `PushTokenSessionObserver.kt` combine-parity, `unregisterDevice()` from `AuthApiClient.logout()` BEFORE the token wipe + local `clear()` via the `SessionScopedCacheRegistry` / minimal `willPresent`+`didReceive`-tap, in-app feed→T-0336, **no plist key** (only the `aps-environment` entitlement), skip the rationale, **no `UiState`**; the FCM→APNs over the same `Device/*` contract `Platform="ios"` Gate-DP divergence) | 5 | **recorded** (sprint-12 §7.13, **no new ADR** — applies ADR-0013 D8 + ADR-0014 D6′ + ADR-0018 D2 + ADR-0019 + the `SessionScopedCacheRegistry`; reviewer #34; T-0311 builds it; the **registration / logout-clear-ordering gate = SECURITY** Gate-SEC). **Delivery owner-gated → T-0342** (APNs `.p8` + Push capability/provisioning — the T-0325-gates-T-0335 pattern; T-0311 ships code-complete + the entitlement) |
 | Owner Q-IOS-01 (deployment target) | — | **ANSWERED — iOS 16** (old-device reach) |
 | Owner **mobile-spec regen** (the one hard blocker) | pre-Phase-2 | **PENDING — owner-only** (`manual_step: mobile-spec-regen`) |
 | Workspace + `CleansiaCore` skeleton + design tokens + DI + snackbar/error center | 0 | planned (runnable on approval) |
@@ -780,7 +851,7 @@ The bar is engineered for the **knowable, reviewer-verifiable** checklist.
 | Code quality | **STRICT SwiftLint + SwiftFormat, BLOCKING** the iOS CI (`force_unwrapping`/`force_try`/`force_cast` = error; generated dir excluded) — the delta from FE's non-blocking lint (greenfield = no debt to grandfather) | T-0323; check #14 |
 | Privacy manifest | `PrivacyInfo.xcprivacy` per target: required-reason APIs, data types, **tracking=false** | T-0324; check #15 |
 | Tracking / ATT | **No tracking, no ATT prompt** — the apps operate the service, they don't track for ads | T-0324; check #15 |
-| Purpose strings | location (MapKit pickers), camera + photo library (partner photos T-0308 + customer dispute T-0314), localized ×5; **push = `aps-environment` entitlement + runtime request, NOT an Info.plist key** | T-0325; check #16 |
+| Purpose strings | location (MapKit pickers), camera + photo library (partner photos T-0308 + customer dispute T-0314), localized ×5; **push = `aps-environment` entitlement + runtime request, NOT an Info.plist key** (T-0311 ships the entitlement; the live-delivery `.p8`/capability/provisioning = owner T-0342 — sprint-12 §7.13) | T-0325; check #16 |
 | Account deletion | **In-app (5.1.1(v))** — customer Settings → Delete reaches the `GdprDeletionService` account+data deletion | T-0327; check #17 |
 | Sign in with Apple | **REQUIRED on the customer app (4.8)** because it offers Google Sign-In; partner app = none | T-0326; check #18; Q-IOS-04 (mechanism) |
 | Payments | **External Stripe is ALLOWED, IAP NOT required (3.1.3/3.1.5)** — cleaning is a real-world service; documented so a reviewer doesn't wrongly demand IAP | T-0328; check #19 |

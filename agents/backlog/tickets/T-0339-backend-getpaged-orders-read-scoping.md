@@ -1,11 +1,11 @@
 ---
 id: T-0339
 title: "Backend: scope GetPagedOrders 'mine' views to the JWT caller (employeeId over-read)"
-status: in-review
+status: done
 size: S
 owner: backend
 created: 2026-06-27
-updated: 2026-06-27
+updated: 2026-06-28
 depends_on: []
 blocks: []
 stories: []
@@ -74,3 +74,12 @@ In `GetPagedOrders.Handler` (mirror the existing `isAdmin ? filter.CustomerName 
   regen); no EF migration. Could not compile locally (no dotnet on the Mac) — **backend-ci** (build +
   Cleansia.Tests + Cleansia.IntegrationTests + Cleansia.HostTests) is the executable gate on the PR; flips to
   `done` when CI is green + the PR merges.
+- 2026-06-28 — **DONE — verified in master.** Also verified LOCALLY before the merge (dotnet 10 + colima
+  installed on the Mac; full `Cleansia.IntegrationTests` 97/97 + `Cleansia.HostTests` 60/60 green, incl.
+  `TC-BE-ORDERS-GETPAGED-SCOPE`). Landed in master via the PR #96 **squash-merge**: the original commit
+  `d688d30` is not a master *ancestor* (a squash flattens originals, so `git merge-base --is-ancestor` reads
+  NO and a commit-message grep finds nothing), **but master's TREE contains the fix** —
+  `GetPagedOrdersScopeIntegrationTests.cs`, `OrderSpecification.RestrictToEmployeeId`, and the GetPagedOrders
+  caller-pin are all present in `origin/master` (confirmed by `git cat-file`/`git grep` against the tree).
+  A brief "stranded on phase4 / owner must cherry-pick" reconciliation note (written off the misleading
+  ancestor check) was corrected here, in INDEX, and in sprint-12.

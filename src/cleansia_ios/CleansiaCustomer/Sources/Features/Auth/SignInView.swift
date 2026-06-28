@@ -23,12 +23,15 @@ struct SignInView: View {
         SignInContent(
             form: vm.signInForm,
             isLoading: vm.signInState.isSubmitting,
+            isSocialLoading: vm.socialState.isSubmitting,
             onEmailChange: vm.onSignInEmailChange,
             onPasswordChange: vm.onSignInPasswordChange,
             onRememberMeChange: vm.onRememberMeChange,
             onForgotPassword: onForgotPassword,
             onSignUp: onSignUp,
-            onSubmit: { Task { await vm.signIn() } }
+            onSubmit: { Task { await vm.signIn() } },
+            onApple: { Task { await vm.signInWithApple() } },
+            onGoogle: { Task { await vm.signInWithGoogle() } }
         )
         .onReceive(vm.outcome) { onOutcome($0) }
     }
@@ -37,12 +40,15 @@ struct SignInView: View {
 private struct SignInContent: View {
     let form: SignInFormState
     let isLoading: Bool
+    let isSocialLoading: Bool
     let onEmailChange: (String) -> Void
     let onPasswordChange: (String) -> Void
     let onRememberMeChange: (Bool) -> Void
     let onForgotPassword: () -> Void
     let onSignUp: () -> Void
     let onSubmit: () -> Void
+    let onApple: () -> Void
+    let onGoogle: () -> Void
 
     private var emailBinding: Binding<String> {
         Binding(get: { form.email }, set: onEmailChange)
@@ -116,6 +122,10 @@ private struct SignInContent: View {
                     action: onSubmit
                 )
 
+                Spacer().frame(height: Spacing.m)
+
+                SocialSignInSection(isLoading: isSocialLoading, onApple: onApple, onGoogle: onGoogle)
+
                 Spacer().frame(height: Spacing.l)
 
                 HStack(spacing: 0) {
@@ -159,12 +169,15 @@ private struct SignInContent: View {
             SignInContent(
                 form: form,
                 isLoading: isLoading,
+                isSocialLoading: false,
                 onEmailChange: { _ in },
                 onPasswordChange: { _ in },
                 onRememberMeChange: { _ in },
                 onForgotPassword: {},
                 onSignUp: {},
-                onSubmit: {}
+                onSubmit: {},
+                onApple: {},
+                onGoogle: {}
             )
         }
     }

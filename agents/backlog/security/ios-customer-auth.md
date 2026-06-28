@@ -152,3 +152,99 @@ guard runs in the handler against the VERIFIED `claims.Email` and covers Interna
 EF migration for `User.AppleId`; mobile spec/client regen; `Apple:BundleId=cz.cleansia.customer` +
 Apple capability/entitlement (T-0344). Until `Apple:BundleId` is set the verifier fails closed — the
 endpoint ships safely dark.
+
+---
+
+## 2026-06-28 — T-0312 Slice C (iOS customer SOCIAL sign-in: Apple + Google) build-time verification (auth-security gate, PASS)
+
+Branch `phase/ios-phase6`, uncommitted. Scope: the iOS acquisition controllers (`AppleSignInController`,
+`GoogleSignInController`, `Nonce`, `CustomerSocialSignInProvider`), the shared Core spine
+`socialAuth`/`googleAuth`/`appleAuth` + `SocialAuthClient`/`AppleAuthRequest`/`GoogleAuthRequest`, the
+`appleauth` anon allow-list entry, the customer VM social handlers, the SIWA entitlement + GoogleSignIn dep.
+Reviewer covers Gate-DP/seam-discipline in parallel; this entry OWNS the auth-security gate. Tests run on
+iPhone 17 (simulator, booted) via `xcodebuild test`: `CleansiaCoreTests/SocialAuthSpineTests` 6/6 green;
+`CleansiaCustomerTests/CustomerAuthViewModelTests` 27/27 green (incl. TC-IOS-SOCIAL-NONCE
+`testAppleNonceFlowRawToBackendHashedToApple` + `testAppleSpinePostsRawNonceNotHashed`).
+
+VERDICT: **PASS** — exploitable as-written: none found.
+
+### CROSS-COMPONENT — iOS↔backend nonce-encoding alignment (highest scrutiny) — PASS / ALIGNED
+The iOS encoding MATCHES the T-0343 backend's lowercase-hex expectation; live SIWA will NOT silently fail-closed.
+- iOS `request.nonce` = `Nonce.sha256(rawNonce)` (`AppleSignInController.swift:22`), where `Nonce.sha256`
+  = `SHA256.hash(Data(input.utf8))` formatted `%02x` per byte and joined → **lowercase hex of SHA256 over
+  UTF-8 bytes** (`Nonce.swift:23-26`). NOT raw bytes, NOT base64, NOT uppercase.
+- Backend `AppleTokenVerifier.HashNonce` = `Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(rawNonce)))`
+  compared to `token.nonce` via `FixedTimeEquals` (`AppleTokenVerifier.cs:115-126, :86-90`). Same algorithm,
+  same UTF-8 input, same lowercase-hex output.
+- Both sides pin the encoding by a KNOWN-ANSWER test on the SHA256("abc") vector:
+  iOS `CustomerAuthViewModelTests.swift:378-379` and backend `AppleTokenVerifierTests` both assert
+  `ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad` (canonical lowercase hex). A future
+  case/encoding drift on either side breaks a test, not production.
+- The credential carries the RAW (un-hashed) nonce to the spine: `AppleSignInController` finishes with
+  `AppleCredential(rawNonce: self.rawNonce, …)` where `rawNonce` is the pre-hash value
+  (`AppleSignInController.swift:53-58, :17,:21`); the VM forwards `credential.rawNonce` to
+  `appleAuth(rawNonce:)` (`CustomerAuthViewModel.swift:281-289`); the spine POSTs it as `AppleAuthRequest.rawNonce`
+  (`Auth.swift:159-171`, `AuthRequests.swift:59-64`). `testAppleSpinePostsRawNonceNotHashed` asserts the posted
+  body == raw, `!= sha256(raw)`.
+- Raw nonce is cryptographically random + single-use: `Nonce.randomRaw` draws each char via
+  `SecRandomCopyBytes(kSecRandomDefault, …)` (`Nonce.swift:5-21`), generated fresh per `signIn()` call and
+  cleared on `finish` (`AppleSignInController.swift:16-17,:34`). Length 32 asserted by test.
+- Field-name alignment confirmed: iOS `AppleAuthRequest{identityToken, rawNonce, firstName, lastName}` ↔
+  backend `AppleAuth.Command(IdentityToken, RawNonce, FirstName, LastName)` (`AppleAuth.cs:41-46`);
+  iOS `GoogleAuthRequest{token, googleId, email, firstName, lastName}` ↔ `GoogleAuth.Command(Token, GoogleId,
+  Email, FirstName, LastName)` (`GoogleAuth.cs:38-44`). The §7.14 D1 contract holds.
+
+### Spine — single token-write path, no parallel persist — PASS
+- `socialAuth` (`Auth.swift:174-190`) and both `googleAuth`/`appleAuth` route through the SAME
+  `resolveEmailGate` (:184) → the SINGLE private `persist` (:200, body :309-318 → `tokenStore.save` :317).
+- Exhaustive `tokenStore.save` call sites in the auth module: ONLY `Auth.swift:317` (the gate's persist) and
+  `SessionRefresher.swift:71` (pre-existing refresh rotation, not a social path). No second write path.
+- The acquisition controllers + provider contain ZERO `tokenStore`/Keychain/`save`/`persist` references
+  (grep clean over `Features/Auth/Social/`) — the token enters the spine only via the one gate. Seam
+  discipline holds as a security property.
+
+### Anon transport — no Bearer on social routes — PASS (S2-aligned)
+- `socialAuth` POSTs with `useNoAuthSession: true` (`Auth.swift:179`); `send` sets `accessToken = nil` when
+  `useNoAuthSession` (:284) so no `Authorization` header is stamped even with a stored token. X-Device-Id /
+  X-Time-Zone still applied via `headerAdapter` (:285). `testSocialAuthPathsNeverCarryBearerEvenWithStoredToken`
+  proves no Bearer + X-Device-Id present.
+- `appleauth` added to the anon allow-list (`AnonymousAllowList.swift:20`); `googleauth` already present (:19).
+  Backend mirror: `[AllowAnonymous][HttpPost("AppleAuth")]` + class `[EnableRateLimiting("auth")]` on
+  `Cleansia.Web.Mobile.Customer/Controllers/AuthController.cs:61-70, :25` (S5 PASS, per-IP partitioned auth window).
+
+### Empty-token / verified-email gate — PASS (S-rule: never a silent .home on unconfirmed)
+- `resolveEmailGate` returns `.unverifiedEmail(hasToken:false)` and does NOT persist when `token` is empty
+  (`Auth.swift:197-199`); persists then routes `.unverifiedEmail(hasToken:true)` if `isEmailConfirmed != true`
+  (:200-203); only `.authenticated` when confirmed (:204). VM maps `.unverifiedEmail → needsEmailConfirm`,
+  never `.signedIn`/`.home` (`CustomerAuthViewModel.swift:304-312`).
+- Apple verified-user path ⇒ signedIn: `User.CreateWithApple` sets `IsEmailConfirmed = true` (`User.cs:165`),
+  so `TokenService.GenerateTokenAsync` returns `Token=<jwt>, IsEmailConfirmed=true` (`TokenService.cs:44-51`)
+  ⇒ iOS gate → `.authenticated` → `.signedIn`. `testAppleSuccessAuthenticatedEmitsSignedIn` proves it.
+  Google routes per the server response (`testGoogleUnverifiedEmitsNeedsEmailConfirmAndRouterMapsToVerify`).
+
+### `.longLived` refresh-expiry fallback — PASS (not security-load-bearing)
+- `socialAuth` passes `refreshLifetime: .longLived` only as a DISPLAY/expiry HINT: `refreshExpiry` uses the
+  SERVER's `refreshTokenExpiresAt` when present and falls back to `lifetime.seconds` only when the server omits
+  it (`Auth.swift:324-329`). The server value wins; the fallback is a local Date estimate that cannot extend a
+  refresh token's server-side validity. The access-token expiry is read from the JWT itself (`accessExpiry`,
+  :320-322). No way to widen a session beyond server intent.
+
+### S6 — no token/idToken/nonce/PII logging — PASS
+- Grep for `print(|os_log|Logger|NSLog|debugPrint|dump(` across the entire touched iOS tree
+  (`CleansiaCore/Sources`, `CleansiaCustomer/Sources`) returns ZERO hits. Nonce, the two controllers, the
+  spine, and the VM emit no logs.
+
+### Fail-safe / no insecure default — PASS
+- Google `.notConfigured` when `clientID`/`serverClientID` empty (`GoogleSignInController.swift:19-21`);
+  `AppConfig.infoString` returns `""` for an unsubstituted `$(...)` placeholder (`AppConfig.swift:22-25`), so an
+  un-provisioned build degrades to `.notConfigured` (VM shows an error, NEVER calls the spine —
+  `testSocialNotConfiguredShowsErrorAndDoesNotCallSpine`). Apple capability-absent stub returns `.notConfigured`
+  (`AppleSignInController.swift:83-92`). Neither crashes nor bypasses a check.
+- Entitlement is `com.apple.developer.applesignin = [Default]` ONLY (`CleansiaCustomer.entitlements`); no ATT /
+  tracking keys added. The Google URL scheme is `$(GID_REVERSED_CLIENT_ID)` resolving to `""` until owner
+  provisioning at T-0345 (`Info.plist` diff, `project.yml:GID_* = ""`) — an inert placeholder.
+
+### Owner-gated (live sign-in, not part of this gate)
+`GID_CLIENT_ID` / `GID_SERVER_CLIENT_ID` / `GID_REVERSED_CLIENT_ID` Google iOS OAuth client (T-0345);
+`Apple:BundleId` backend audience (T-0344) — until set, the backend verifier fails closed. The endpoints ship
+safely dark. Mobile spec/client regen remains the owner's manual step.

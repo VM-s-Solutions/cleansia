@@ -256,6 +256,25 @@ private final class StubAuthSpine: AuthSpine, @unchecked Sendable {
         .success(())
     }
 
+    func googleAuth(
+        token _: String,
+        googleId _: String,
+        email _: String,
+        firstName _: String,
+        lastName _: String
+    ) async -> ApiResult<LoginOutcome> {
+        .success(.authenticated)
+    }
+
+    func appleAuth(
+        identityToken _: String,
+        rawNonce _: String,
+        firstName _: String?,
+        lastName _: String?
+    ) async -> ApiResult<LoginOutcome> {
+        .success(.authenticated)
+    }
+
     func refresh(refreshToken _: String) async -> RefreshedTokens? {
         nil
     }

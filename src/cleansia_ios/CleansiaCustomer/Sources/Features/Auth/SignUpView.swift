@@ -20,13 +20,16 @@ struct SignUpView: View {
         SignUpContent(
             form: vm.signUpForm,
             isLoading: vm.signUpState.isSubmitting,
+            isSocialLoading: vm.socialState.isSubmitting,
             onFirstNameChange: vm.onFirstNameChange,
             onLastNameChange: vm.onLastNameChange,
             onEmailChange: vm.onSignUpEmailChange,
             onPasswordChange: vm.onSignUpPasswordChange,
             onConfirmPasswordChange: vm.onConfirmPasswordChange,
             onSignIn: onSignIn,
-            onSubmit: { Task { await vm.signUp() } }
+            onSubmit: { Task { await vm.signUp() } },
+            onApple: { Task { await vm.signInWithApple() } },
+            onGoogle: { Task { await vm.signInWithGoogle() } }
         )
         .onReceive(vm.outcome) { onOutcome($0) }
     }
@@ -35,6 +38,7 @@ struct SignUpView: View {
 private struct SignUpContent: View {
     let form: SignUpFormState
     let isLoading: Bool
+    let isSocialLoading: Bool
     let onFirstNameChange: (String) -> Void
     let onLastNameChange: (String) -> Void
     let onEmailChange: (String) -> Void
@@ -42,6 +46,8 @@ private struct SignUpContent: View {
     let onConfirmPasswordChange: (String) -> Void
     let onSignIn: () -> Void
     let onSubmit: () -> Void
+    let onApple: () -> Void
+    let onGoogle: () -> Void
 
     private func binding(_ value: String, _ setter: @escaping (String) -> Void) -> Binding<String> {
         Binding(get: { value }, set: setter)
@@ -138,6 +144,10 @@ private struct SignUpContent: View {
                     action: onSubmit
                 )
 
+                Spacer().frame(height: Spacing.m)
+
+                SocialSignInSection(isLoading: isSocialLoading, onApple: onApple, onGoogle: onGoogle)
+
                 Spacer().frame(height: Spacing.l)
 
                 HStack(spacing: 0) {
@@ -192,13 +202,16 @@ private struct SignUpContent: View {
             SignUpContent(
                 form: form,
                 isLoading: isLoading,
+                isSocialLoading: false,
                 onFirstNameChange: { _ in },
                 onLastNameChange: { _ in },
                 onEmailChange: { _ in },
                 onPasswordChange: { _ in },
                 onConfirmPasswordChange: { _ in },
                 onSignIn: {},
-                onSubmit: {}
+                onSubmit: {},
+                onApple: {},
+                onGoogle: {}
             )
         }
     }

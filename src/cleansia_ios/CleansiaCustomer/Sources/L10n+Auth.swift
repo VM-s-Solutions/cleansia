@@ -169,5 +169,25 @@ extension L10n {
         static var errorEmailSendFailed: String {
             localized("error_email_sending_failed")
         }
+
+        static var dividerOr: String {
+            localized("login_or")
+        }
+
+        static var continueWithGoogle: String {
+            localized("login_continue_with_google")
+        }
+
+        static var socialNoAccount: String {
+            localized("auth_social_no_account")
+        }
+
+        static var socialNotConfigured: String {
+            localized("auth_social_not_configured")
+        }
+
+        static var socialFailed: String {
+            localized("auth_social_failed")
+        }
     }
 }

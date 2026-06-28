@@ -7,6 +7,7 @@ final class AnonymousAllowListTests: XCTestCase {
         "/api/Auth/Register",
         "/api/Auth/RegisterEmployee",
         "/api/Auth/GoogleAuth",
+        "/api/Auth/AppleAuth",
         "/api/Auth/ConfirmUserEmail",
         "/api/Auth/ResendConfirmationEmail",
         "/api/Auth/ForgotPassword",

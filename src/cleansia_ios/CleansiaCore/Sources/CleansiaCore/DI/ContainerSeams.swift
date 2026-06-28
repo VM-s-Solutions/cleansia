@@ -28,10 +28,27 @@ public protocol PasswordResetClient: AnyObject {
     func forgotPassword(email: String, language: String) async -> ApiResult<Void>
 }
 
+public protocol SocialAuthClient: AnyObject {
+    func googleAuth(
+        token: String,
+        googleId: String,
+        email: String,
+        firstName: String,
+        lastName: String
+    ) async -> ApiResult<LoginOutcome>
+
+    func appleAuth(
+        identityToken: String,
+        rawNonce: String,
+        firstName: String?,
+        lastName: String?
+    ) async -> ApiResult<LoginOutcome>
+}
+
 public protocol RefreshClient: AnyObject, AuthRefreshing {}
 
 public typealias AuthApiClients = AuthClient & EmailConfirmationClient & LoginClient
-    & PasswordResetClient & RegistrationAuthClient
+    & PasswordResetClient & RegistrationAuthClient & SocialAuthClient
 
 public protocol AuthSpine: AuthApiClients, RefreshClient {
     var tokenStore: TokenStore { get }

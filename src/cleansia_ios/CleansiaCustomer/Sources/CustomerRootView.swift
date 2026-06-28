@@ -65,6 +65,8 @@ struct CustomerRootView: View {
             registrationClient: container.registrationAuthClient,
             emailConfirmationClient: container.emailConfirmationClient,
             passwordResetClient: container.passwordResetClient,
+            socialAuthClient: container.socialAuthClient,
+            socialProvider: container.socialSignInProvider,
             settings: container.appSettings,
             snackbar: container.snackbar,
             pendingEmail: pendingEmail

@@ -64,6 +64,7 @@ final class CustomerAuthViewModel: ViewModel {
     @Published private(set) var forgotState: ActionState = .idle
     @Published private(set) var confirmState: ActionState = .idle
     @Published private(set) var resendState: ActionState = .idle
+    @Published private(set) var socialState: ActionState = .idle
 
     let outcome = PassthroughSubject<AuthOutcome, Never>()
 
@@ -71,6 +72,8 @@ final class CustomerAuthViewModel: ViewModel {
     private let registrationClient: RegistrationAuthClient
     private let emailConfirmationClient: EmailConfirmationClient
     private let passwordResetClient: PasswordResetClient
+    private let socialAuthClient: SocialAuthClient
+    private let socialProvider: SocialSignInProviding
     private let settings: AppSettingsStore
     private let snackbar: SnackbarController
     private let pendingEmail: String?
@@ -80,6 +83,8 @@ final class CustomerAuthViewModel: ViewModel {
         registrationClient: RegistrationAuthClient,
         emailConfirmationClient: EmailConfirmationClient,
         passwordResetClient: PasswordResetClient,
+        socialAuthClient: SocialAuthClient,
+        socialProvider: SocialSignInProviding,
         settings: AppSettingsStore,
         snackbar: SnackbarController,
         pendingEmail: String? = nil
@@ -88,6 +93,8 @@ final class CustomerAuthViewModel: ViewModel {
         self.registrationClient = registrationClient
         self.emailConfirmationClient = emailConfirmationClient
         self.passwordResetClient = passwordResetClient
+        self.socialAuthClient = socialAuthClient
+        self.socialProvider = socialProvider
         self.settings = settings
         self.snackbar = snackbar
         self.pendingEmail = pendingEmail
@@ -245,6 +252,55 @@ final class CustomerAuthViewModel: ViewModel {
         }
     }
 
+    func signInWithGoogle() async {
+        if socialState.isSubmitting { return }
+        socialState = .submitting
+        let result = await socialProvider.signInWithGoogle()
+        await handleSocial(result)
+    }
+
+    func signInWithApple() async {
+        if socialState.isSubmitting { return }
+        socialState = .submitting
+        let result = await socialProvider.signInWithApple()
+        await handleSocial(result)
+    }
+
+    private func handleSocial(_ result: SocialSignInResult) async {
+        switch result {
+        case let .google(credential):
+            let auth = await socialAuthClient.googleAuth(
+                token: credential.idToken,
+                googleId: credential.googleId,
+                email: credential.email,
+                firstName: credential.firstName,
+                lastName: credential.lastName
+            )
+            socialState = .idle
+            emit(auth, fallbackEmail: credential.email)
+        case let .apple(credential):
+            let auth = await socialAuthClient.appleAuth(
+                identityToken: credential.identityToken,
+                rawNonce: credential.rawNonce,
+                firstName: credential.firstName,
+                lastName: credential.lastName
+            )
+            socialState = .idle
+            emit(auth, fallbackEmail: "")
+        case .cancelled:
+            socialState = .idle
+        case .noAccount:
+            socialState = .idle
+            snackbar.showWarning(L10n.Auth.socialNoAccount)
+        case .notConfigured:
+            socialState = .idle
+            snackbar.showError(L10n.Auth.socialNotConfigured)
+        case .failure:
+            socialState = .idle
+            snackbar.showError(L10n.Auth.socialFailed)
+        }
+    }
+
     private func emit(_ result: ApiResult<LoginOutcome>, fallbackEmail: String) {
         switch result {
         case let .success(loginOutcome):
@@ -326,6 +382,10 @@ let confirmCodeLength = 6
 
         func forceSignUpSubmittingForTest() {
             signUpState = .submitting
+        }
+
+        func forceSocialSubmittingForTest() {
+            socialState = .submitting
         }
 
         func setVerifyCodeForTest(_ value: String) {

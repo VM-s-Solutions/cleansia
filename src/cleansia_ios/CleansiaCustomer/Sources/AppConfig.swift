@@ -10,4 +10,17 @@ enum AppConfig {
         }
         return url
     }()
+
+    static var googleClientID: String {
+        infoString("GIDClientID")
+    }
+
+    static var googleServerClientID: String {
+        infoString("GIDServerClientID")
+    }
+
+    private static func infoString(_ key: String) -> String {
+        let value = Bundle.main.object(forInfoDictionaryKey: key) as? String ?? ""
+        return value.hasPrefix("$(") ? "" : value
+    }
 }

@@ -9,6 +9,8 @@ final class CustomerAuthViewModelTests: XCTestCase {
     private var registration: FakeRegistrationClient!
     private var confirmation: FakeEmailConfirmationClient!
     private var passwordReset: FakePasswordResetClient!
+    private var social: FakeSocialAuthClient!
+    private var provider: FakeSocialSignInProvider!
     private var settings: FakeAppSettingsStore!
     private var snackbar: SnackbarController!
     private var cancellables: Set<AnyCancellable>!
@@ -19,6 +21,8 @@ final class CustomerAuthViewModelTests: XCTestCase {
         registration = FakeRegistrationClient()
         confirmation = FakeEmailConfirmationClient()
         passwordReset = FakePasswordResetClient()
+        social = FakeSocialAuthClient()
+        provider = FakeSocialSignInProvider()
         settings = FakeAppSettingsStore()
         snackbar = SnackbarController()
         cancellables = []
@@ -28,6 +32,8 @@ final class CustomerAuthViewModelTests: XCTestCase {
         cancellables = nil
         snackbar = nil
         settings = nil
+        provider = nil
+        social = nil
         passwordReset = nil
         confirmation = nil
         registration = nil
@@ -41,6 +47,8 @@ final class CustomerAuthViewModelTests: XCTestCase {
             registrationClient: registration,
             emailConfirmationClient: confirmation,
             passwordResetClient: passwordReset,
+            socialAuthClient: social,
+            socialProvider: provider,
             settings: settings,
             snackbar: snackbar,
             pendingEmail: pendingEmail
@@ -252,6 +260,139 @@ final class CustomerAuthViewModelTests: XCTestCase {
         )
         XCTAssertEqual(CustomerRootView.Route.afterAuth(.passwordReset), .login)
     }
+
+    func testGoogleSuccessAuthenticatedEmitsSignedInViaTheSpine() async throws {
+        provider.googleResult = .google(.init(
+            idToken: "g-token", googleId: "g-1", email: "a@b.cz", firstName: "A", lastName: "B"
+        ))
+        social.googleResult = .success(.authenticated)
+        let vm = makeViewModel()
+        let received = collectOutcome(vm)
+
+        await vm.signInWithGoogle()
+
+        XCTAssertEqual(received(), .signedIn)
+        XCTAssertEqual(social.lastGoogle?.token, "g-token")
+        XCTAssertEqual(social.lastGoogle?.googleId, "g-1")
+        let outcome = try XCTUnwrap(received())
+        XCTAssertEqual(CustomerRootView.Route.afterAuth(outcome), .home)
+        XCTAssertEqual(vm.socialState, .idle)
+    }
+
+    func testGoogleUnverifiedEmitsNeedsEmailConfirmAndRouterMapsToVerify() async throws {
+        provider.googleResult = .google(.init(
+            idToken: "g-token", googleId: "g-1", email: "a@b.cz", firstName: "A", lastName: "B"
+        ))
+        social.googleResult = .success(.unverifiedEmail(email: "a@b.cz", hasToken: false))
+        let vm = makeViewModel()
+        let received = collectOutcome(vm)
+
+        await vm.signInWithGoogle()
+
+        XCTAssertEqual(received(), .needsEmailConfirm(email: "a@b.cz"))
+        let outcome = try XCTUnwrap(received())
+        XCTAssertEqual(CustomerRootView.Route.afterAuth(outcome), .verifyEmail(email: "a@b.cz"))
+    }
+
+    func testAppleSuccessAuthenticatedEmitsSignedIn() async {
+        provider.appleResult = .apple(.init(
+            identityToken: "apple-token", rawNonce: "raw", firstName: "A", lastName: "B"
+        ))
+        social.appleResult = .success(.authenticated)
+        let vm = makeViewModel()
+        let received = collectOutcome(vm)
+
+        await vm.signInWithApple()
+
+        XCTAssertEqual(received(), .signedIn)
+        XCTAssertEqual(social.lastApple?.identityToken, "apple-token")
+        XCTAssertEqual(social.lastApple?.rawNonce, "raw")
+    }
+
+    func testSocialCancelledIsSilentNoOutcomeNoSnackbar() async {
+        provider.googleResult = .cancelled
+        let vm = makeViewModel()
+        let received = collectOutcome(vm)
+
+        await vm.signInWithGoogle()
+
+        XCTAssertNil(received())
+        XCTAssertNil(snackbar.current)
+        XCTAssertEqual(social.googleCallCount, 0)
+        XCTAssertEqual(vm.socialState, .idle)
+    }
+
+    func testSocialNotConfiguredShowsErrorAndDoesNotCallSpine() async {
+        provider.googleResult = .notConfigured
+        let vm = makeViewModel()
+        let received = collectOutcome(vm)
+
+        await vm.signInWithGoogle()
+
+        XCTAssertNil(received())
+        XCTAssertEqual(snackbar.current?.severity, .error)
+        XCTAssertEqual(social.googleCallCount, 0)
+    }
+
+    func testSocialNoAccountShowsWarning() async {
+        provider.googleResult = .noAccount
+        let vm = makeViewModel()
+
+        await vm.signInWithGoogle()
+
+        XCTAssertEqual(snackbar.current?.severity, .warning)
+    }
+
+    func testSocialFailureShowsError() async {
+        provider.googleResult = .failure
+        let vm = makeViewModel()
+
+        await vm.signInWithGoogle()
+
+        XCTAssertEqual(snackbar.current?.severity, .error)
+    }
+
+    func testSocialReentryGuardWhileSubmitting() async {
+        provider.googleResult = .google(.init(
+            idToken: "t", googleId: "g", email: "a@b.cz", firstName: "A", lastName: "B"
+        ))
+        let vm = makeViewModel()
+        vm.forceSocialSubmittingForTest()
+
+        await vm.signInWithGoogle()
+
+        XCTAssertEqual(provider.googleCallCount, 0)
+    }
+
+    func testAppleNonceFlowRawToBackendHashedToApple() {
+        let raw = Nonce.randomRaw()
+        let other = Nonce.randomRaw()
+        XCTAssertNotEqual(raw, other, "the raw nonce must be cryptographically random per request")
+        XCTAssertEqual(raw.count, 32)
+
+        let hashed = Nonce.sha256(raw)
+        XCTAssertEqual(hashed.count, 64)
+        XCTAssertNotEqual(hashed, raw, "the value sent to Apple is the SHA256, not the raw nonce")
+        XCTAssertEqual(hashed, Nonce.sha256(raw), "hashing is deterministic")
+
+        let knownDigest = Nonce.sha256("abc")
+        XCTAssertEqual(knownDigest, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+    }
+
+    func testAppleSpinePostsRawNonceNotHashed() async throws {
+        let raw = Nonce.randomRaw()
+        provider.appleResult = .apple(.init(
+            identityToken: "apple-token", rawNonce: raw, firstName: nil, lastName: nil
+        ))
+        social.appleResult = .success(.authenticated)
+        let vm = makeViewModel()
+
+        await vm.signInWithApple()
+
+        let posted = try XCTUnwrap(social.lastApple)
+        XCTAssertEqual(posted.rawNonce, raw)
+        XCTAssertNotEqual(posted.rawNonce, Nonce.sha256(raw))
+    }
 }
 
 private final class FakeLoginClient: LoginClient {
@@ -306,6 +447,56 @@ private final class FakePasswordResetClient: PasswordResetClient {
     func forgotPassword(email _: String, language _: String) async -> ApiResult<Void> {
         callCount += 1
         return result
+    }
+}
+
+private final class FakeSocialAuthClient: SocialAuthClient {
+    var googleResult: ApiResult<LoginOutcome> = .success(.authenticated)
+    var appleResult: ApiResult<LoginOutcome> = .success(.authenticated)
+    private(set) var googleCallCount = 0
+    private(set) var appleCallCount = 0
+    private(set) var lastGoogle: (token: String, googleId: String, email: String)?
+    private(set) var lastApple: (identityToken: String, rawNonce: String)?
+
+    func googleAuth(
+        token: String,
+        googleId: String,
+        email: String,
+        firstName _: String,
+        lastName _: String
+    ) async -> ApiResult<LoginOutcome> {
+        googleCallCount += 1
+        lastGoogle = (token, googleId, email)
+        return googleResult
+    }
+
+    func appleAuth(
+        identityToken: String,
+        rawNonce: String,
+        firstName _: String?,
+        lastName _: String?
+    ) async -> ApiResult<LoginOutcome> {
+        appleCallCount += 1
+        lastApple = (identityToken, rawNonce)
+        return appleResult
+    }
+}
+
+@MainActor
+private final class FakeSocialSignInProvider: SocialSignInProviding {
+    var googleResult: SocialSignInResult = .cancelled
+    var appleResult: SocialSignInResult = .cancelled
+    private(set) var googleCallCount = 0
+    private(set) var appleCallCount = 0
+
+    func signInWithGoogle() async -> SocialSignInResult {
+        googleCallCount += 1
+        return googleResult
+    }
+
+    func signInWithApple() async -> SocialSignInResult {
+        appleCallCount += 1
+        return appleResult
     }
 }
 

@@ -81,6 +81,10 @@ public final class BaseAppContainer: AppContainer {
         authSpine
     }
 
+    public var socialAuthClient: SocialAuthClient {
+        authSpine
+    }
+
     public var refreshClient: RefreshClient {
         authSpine
     }

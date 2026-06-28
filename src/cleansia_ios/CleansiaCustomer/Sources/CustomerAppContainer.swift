@@ -41,6 +41,10 @@ final class CustomerAppContainer: AppContainer {
         base.passwordResetClient
     }
 
+    var socialAuthClient: SocialAuthClient {
+        base.socialAuthClient
+    }
+
     var refreshClient: RefreshClient {
         base.refreshClient
     }
@@ -60,6 +64,11 @@ final class CustomerAppContainer: AppContainer {
     var apiClient: MobileApiClient {
         base.apiClient
     }
+
+    lazy var socialSignInProvider: SocialSignInProviding = CustomerSocialSignInProvider(
+        googleClientID: AppConfig.googleClientID,
+        googleServerClientID: AppConfig.googleServerClientID
+    )
 
     init(
         snackbar: SnackbarController,

@@ -4,6 +4,7 @@ import Foundation
 @MainActor
 final class CustomerAppContainer: AppContainer {
     private let base: BaseAppContainer
+    private let authStack: CustomerAuthStack
 
     var apiBaseURL: URL {
         base.apiBaseURL
@@ -74,16 +75,28 @@ final class CustomerAppContainer: AppContainer {
         snackbar: SnackbarController,
         apiBaseURL: URL = AppConfig.apiBaseURL
     ) {
+        let sessionScopedCaches = SessionScopedCacheRegistry()
+        let authStack = CustomerAuthSpine.make(
+            apiBaseURL: apiBaseURL,
+            sessionScopedCaches: sessionScopedCaches
+        )
+        self.authStack = authStack
         base = BaseAppContainer(
             apiBaseURL: apiBaseURL,
             snackbar: snackbar,
-            makeAuthSpine: { seams in
-                CustomerAuthSpine.make(
-                    apiBaseURL: seams.apiBaseURL,
-                    sessionScopedCaches: seams.sessionScopedCaches
-                )
-            },
+            sessionScopedCaches: sessionScopedCaches,
+            makeAuthSpine: { _ in authStack.spine },
             makeApiClient: { seams in CustomerMobileApiClient(baseURL: seams.apiBaseURL) }
         )
+    }
+
+    func installGeneratedClientAuth() {
+        let bridge = GeneratedClientAuthBridge(
+            headerAdapter: authStack.headerAdapter,
+            tokenStore: authStack.spine.tokenStore,
+            sessionRefresher: base.sessionRefresher,
+            session: URLSession(configuration: .default)
+        )
+        CustomerGeneratedAuth.install(bridge: bridge, basePath: apiBaseURL.absoluteString)
     }
 }

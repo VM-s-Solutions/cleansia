@@ -24,12 +24,6 @@ struct BookingStepPlaceholder: View {
     }
 }
 
-struct ServicesStep: View {
-    var body: some View {
-        BookingStepPlaceholder(systemImage: "sparkles", title: L10n.Booking.stepTitle(1))
-    }
-}
-
 struct WhenWhereStep: View {
     var body: some View {
         BookingStepPlaceholder(systemImage: "calendar", title: L10n.Booking.stepTitle(2))

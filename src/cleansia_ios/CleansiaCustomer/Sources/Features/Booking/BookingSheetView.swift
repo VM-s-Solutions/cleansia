@@ -7,8 +7,7 @@ struct BookingSheetView: View {
 
     var body: some View {
         BookingSheetContent(
-            step: vm.currentStep,
-            state: vm.state,
+            viewModel: vm,
             onLeading: {
                 if !vm.back() { onDismiss() }
             },
@@ -21,18 +20,33 @@ struct BookingSheetView: View {
 }
 
 private struct BookingSheetContent: View {
-    let step: Int
-    let state: BookingState
+    @ObservedObject var viewModel: BookingViewModel
     let onLeading: () -> Void
     let onContinue: () -> Void
     let onConfirm: () -> Void
+
+    private var step: Int {
+        viewModel.currentStep
+    }
 
     private var isLastStep: Bool {
         step >= BookingStepGate.totalSteps
     }
 
     private var canContinue: Bool {
-        BookingStepGate.canContinue(step: step, state: state)
+        BookingStepGate.canContinue(step: step, state: viewModel.state)
+    }
+
+    private var totalDisplay: String? {
+        guard let quote = viewModel.quoteState.quote else { return nil }
+        let promoDiscount: Double = if case let .valid(amount) = viewModel.promoState { amount } else { 0 }
+        let finalTotal = BookingPricing.finalTotal(
+            basePrice: quote.totalPrice,
+            cleaningAt: viewModel.state.selectedInstant,
+            tierDiscount: 0,
+            promoDiscount: promoDiscount
+        )
+        return BookingPricing.formatTotal(finalTotal, currencyCode: quote.currencyCode)
     }
 
     var body: some View {
@@ -76,7 +90,7 @@ private struct BookingSheetContent: View {
     private var stepBody: some View {
         ZStack {
             switch step {
-            case 1: ServicesStep()
+            case 1: ServicesStep(viewModel: viewModel)
             case 2: WhenWhereStep()
             default: ConfirmStep()
             }
@@ -96,11 +110,14 @@ private struct BookingSheetContent: View {
     private var footer: some View {
         VStack(spacing: 0) {
             if isLastStep {
-                SlideToConfirmTrack(text: L10n.Booking.slideToConfirm, enabled: canContinue)
-                    .onTapGesture { if canContinue { onConfirm() } }
+                SlideToConfirmTrack(
+                    text: totalDisplay.map(L10n.Booking.slideToConfirmPrice) ?? L10n.Booking.slideToConfirm,
+                    enabled: canContinue
+                )
+                .onTapGesture { if canContinue { onConfirm() } }
             } else {
                 CleansiaPrimaryButton(
-                    L10n.Booking.continueAction,
+                    totalDisplay.map(L10n.Booking.continuePrice) ?? L10n.Booking.continueAction,
                     trailingIcon: "arrow.right",
                     enabled: canContinue,
                     action: onContinue
@@ -144,46 +161,7 @@ private struct SlideToConfirmTrack: View {
 #if DEBUG
     struct BookingSheetView_Previews: PreviewProvider {
         static var previews: some View {
-            Group {
-                preview(step: 1, state: BookingState())
-                    .previewDisplayName("Step 1 — gate locked")
-                preview(step: 1, state: filledStepOne)
-                    .previewDisplayName("Step 1 — can continue")
-                preview(step: 2, state: filledStepTwo)
-                    .previewDisplayName("Step 2")
-                preview(step: 3, state: filledStepThree)
-                    .previewDisplayName("Step 3 — slide to confirm")
-            }
-        }
-
-        private static var filledStepOne: BookingState {
-            var state = BookingState()
-            state.selectedServiceIds = ["s-1"]
-            return state
-        }
-
-        private static var filledStepTwo: BookingState {
-            var state = filledStepOne
-            state.street = "Wenceslas Square"
-            state.selectedDate = "2026-07-01"
-            state.selectedTime = "10:00"
-            return state
-        }
-
-        private static var filledStepThree: BookingState {
-            var state = filledStepTwo
-            state.paymentMethod = "cash"
-            return state
-        }
-
-        private static func preview(step: Int, state: BookingState) -> some View {
-            BookingSheetContent(
-                step: step,
-                state: state,
-                onLeading: {},
-                onContinue: {},
-                onConfirm: {}
-            )
+            BookingSheetView(onDismiss: {})
         }
     }
 #endif

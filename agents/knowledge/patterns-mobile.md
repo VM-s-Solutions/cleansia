@@ -584,6 +584,34 @@ re-impl for the booking sheet (it is the native modal); a `canContinue` baked in
 view-consumed gate; navigation driven from the booking VM; an `@Observable` booking VM; a flag-bag booking state
 instead of the value + sealed states. (Slices B/C/D/E fill the step bodies + server pricing + cash/card + the
 Stripe seam; Slice A is the scaffold + step nav + the 5-state shape, no network.)
+**Slice B (T-0313 §7.16 pricing ruling, done):** ServicesStep renders to the Slice-A `BookingStepGate` (services/packages
+Set-backed multi-select + rooms/bathrooms steppers + service-category chips derived distinct-by-slug/sorted-by-displayOrder)
+over a **`CatalogClient` protocol** (DTO→domain map off the generated `CustomerService/Package GetOverview`, ADR-0019 spine)
+surfaced as a **sealed `UiState<Catalog>`** on the VM (NOT the Android `loading`+`loaded`+`services`+`packages` flag-bag — the
+E1 catch). **Server is authoritative for pricing:** the VM's `quoteState` FSM (`idle`/`quoting`/`quoted(BookingQuote)`,
+no `Error` variant — a swallowed failure keeps the prior quote, the Android `QuoteState` parity) is driven by a Combine
+**quoteWatcher** — `$state.map(\.quoteRequest).removeDuplicates().debounce(400ms).sink → orderQuote`; iOS computes ONLY the
+**display math** in a pure **`BookingPricing`** port (max(tier,promo) discount FIRST, then +20% express on the discounted
+subtotal for the 2–4h lead band, mirroring `CreateOrder.Handler` ordering so the shown total == the charged raw subtotal).
+The footer Continue/Slide label shows the live total via `BookingPricing.finalTotal` (the `BookingBottomSheet.kt` footer
+parity). **The customer app installs its OWN `CustomerGeneratedAuth` `RequestBuilderFactory`** (the per-host ADR-0019 twin of
+`PartnerGeneratedAuth`, `CustomerAuthSpine.make` now returns a stack exposing the `headerAdapter`) — the first customer
+business client, authed through the one Core spine. Quote/catalog are in `AnonymousAllowList.customer`, so the
+`HeaderAdapter` withholds the Bearer on those paths even with a stored token — guest booking works tokenless, and the
+**signed-in dual-use carve-out for Quote/CreateOrder is a Slice-D addition (T-0332)**; until then a signed-in Step-1
+quote is guest-priced (no tier/membership discount on the slider — a UX-trust gap, not a money risk: the path is
+server-authoritative). The factory does carry the Bearer on non-allow-listed paths. **Deviations a reviewer rejects:**
+a ported catalog flag-bag instead of `UiState<Catalog>`; a quote computed/totaled client-side instead of the server response;
+the discount applied AFTER the surcharge or promo/tier summed instead of max(); a per-call Bearer/401 on the quote/catalog
+call instead of the factory; a debounce that re-quotes on an unchanged input (must `removeDuplicates` first).
+
+**Debounced VM Combine pipelines — the scheduler seam (harvested T-0313):** when a VM debounces a `@Published` pipeline (the
+quoteWatcher 400ms), inject the scheduler as a Core **`AnyScheduler`/`AnySchedulerOf`** (`CleansiaCore/State`, a minimal
+Combine `Scheduler` type-eraser — no swift-clocks dep) defaulting to `.main`; behavioral tests pass a `TestScheduler` and
+`advance(by:)` the virtual clock so "no re-quote on unchanged input" + "one quote after settling" are deterministic with no
+real timer. Keep the generic `where`-clause on ONE declaration line (≤120 col) so swiftformat's `wrapMultilineStatementBraces`
+doesn't fight swiftlint's `opening_brace` (its `ignore_multiline_statement_conditions` covers `if`/`guard`, not a type/func
+`where`).
 
 **Parity deviation (Android is wrong, iOS is right) — auth validation strings:** the Android partner
 `RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set validation errors as **hardcoded English

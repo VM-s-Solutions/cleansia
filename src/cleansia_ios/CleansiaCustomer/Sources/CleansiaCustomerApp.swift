@@ -17,7 +17,7 @@ struct CleansiaCustomerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            CustomerRootView(container: container)
                 .environmentObject(sessionManager)
                 .environment(\.snackbarController, container.snackbar)
                 .snackbarHost(container.snackbar)

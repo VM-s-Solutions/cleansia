@@ -69,7 +69,7 @@ jobs:
 
       # CleansiaPartner has a hosted test target — run it so the partner VM +
       # security test suite (TC-IOS-*-OWNERSHIP etc.) actually gates in CI, not
-      # just compiles. CleansiaCustomer has no test target yet (build only).
+      # just compiles.
       - name: Build & test CleansiaPartner
         run: |
           set -o pipefail
@@ -77,9 +77,11 @@ jobs:
             -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
             build test | xcbeautify
 
-      - name: Build CleansiaCustomer
+      # CleansiaCustomer now has a hosted test target (T-0312) — run it so the
+      # customer VM + router suite gates in CI from the first customer slice.
+      - name: Build & test CleansiaCustomer
         run: |
           set -o pipefail
           xcodebuild -workspace Cleansia.xcworkspace -scheme CleansiaCustomer \
             -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
-            build | xcbeautify
+            build test | xcbeautify

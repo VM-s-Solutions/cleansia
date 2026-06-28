@@ -1,7 +1,7 @@
 ---
 id: T-0343
 title: "Backend: AppleAuth (Sign in with Apple) — AppleAuth CQRS + IAppleTokenVerifier + AppleConfig + User.AppleId (mirrors GoogleAuth)"
-status: ready
+status: done
 size: M
 owner: backend
 created: 2026-06-28
@@ -57,3 +57,4 @@ source: Q-IOS-04 ruling (sprint-12 §7.14); resolves the planned SIWA backend en
 
 ## Status log
 - 2026-06-28 — filed from the Q-IOS-04 ruling (sprint-12 §7.14). Backend-buildable now (fail-closed, stubbed-verifier tests); ships ahead of the owner provisioning (T-0344/T-0345) and the owner regen.
+- 2026-06-28 — `ready` → `in_progress` → `in_review` → **done**. Implemented on `phase/ios-phase6` (`a689d03`, off master `c898e79`). Shipped the full mirror: `AppleAuth` CQRS + `IAppleTokenVerifier`/`AppleTokenVerifier` (**RS256-PINNED** JWKS via `JsonWebTokenHandler` + `ConfigurationManager`/`OpenIdConnectConfigurationRetriever`, cached; `aud == Apple:BundleId` native bundle id; `iss == https://appleid.apple.com`; exp/iat; `SHA256(rawNonce) == token.nonce`; fail-closed on empty `BundleId`; hardcoded `https://appleid.apple.com/auth/keys`, no config override ⇒ no SSRF) + `AppleConfig`/`IAppleConfig` + `User.AppleId`/`AuthenticationType.Apple = 3`/`User.CreateWithApple` (+ `Anonymize()` inclusion + filtered index) + `[AllowAnonymous] POST /api/Auth/AppleAuth` on the **Customer Mobile host only** + `InvalidAppleUserToken` (`auth.invalid_apple_token`) ×5 i18n + the stubbed-verifier unit suite. Reviewer **APPROVE**; **SECURITY PASS** — account-takeover **NO** (the handler takeover guard against `claims.Email` covers Internal + Google ⇒ `InternalAuthTypeError`; the RS256-pin closes the alg-confusion re-entry; provision only when `claims.EmailVerified`). Ships **fail-closed** (no provisioning). **Owner gates for LIVE Apple sign-in:** the EF migration for `User.AppleId` + the `customer-mobile-api` spec+client regen + **T-0344** (Apple capability + `Apple:BundleId`). The Google `email_verified` parity-hardening is the separate follow-up **T-0346** (depends_on T-0343). Backlog edits left staged/working for the owner to commit with the Phase-6 PR.

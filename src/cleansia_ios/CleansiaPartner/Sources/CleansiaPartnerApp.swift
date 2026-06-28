@@ -3,9 +3,11 @@ import SwiftUI
 
 @main
 struct CleansiaPartnerApp: App {
+    @UIApplicationDelegateAdaptor(PartnerAppDelegate.self) private var appDelegate
     @StateObject private var snackbar: SnackbarController
     @StateObject private var sessionManager: SessionManager
     @StateObject private var preferences: PreferencesModel
+    @StateObject private var pushNavigation = PushNavigationModel()
     private let container: PartnerAppContainer
 
     init() {
@@ -22,10 +24,18 @@ struct CleansiaPartnerApp: App {
         WindowGroup {
             PartnerRootView(container: container, preferences: preferences)
                 .environmentObject(sessionManager)
+                .environmentObject(pushNavigation)
                 .environment(\.snackbarController, container.snackbar)
                 .environment(\.locale, preferences.locale)
                 .preferredColorScheme(preferences.theme.colorScheme)
                 .snackbarHost(container.snackbar)
+                .task {
+                    appDelegate.registrar = container.pushRegistrar
+                    appDelegate.onTap = { [weak pushNavigation] destination in
+                        pushNavigation?.pendingDestination = destination
+                    }
+                    container.startPush()
+                }
         }
     }
 }

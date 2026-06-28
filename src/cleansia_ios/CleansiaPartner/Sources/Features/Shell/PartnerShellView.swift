@@ -17,6 +17,8 @@ final class ShellModel: ViewModel {
 struct PartnerShellView: View {
     @StateObject private var model = ShellModel()
     @ObservedObject private var preferences: PreferencesModel
+    @EnvironmentObject private var pushNavigation: PushNavigationModel
+    @State private var deepLinkOrderId: String?
     private let container: PartnerAppContainer
     private let onSignedOut: () -> Void
 
@@ -31,6 +33,26 @@ struct PartnerShellView: View {
     }
 
     var body: some View {
+        tabs
+            .onChange(of: pushNavigation.pendingDestination) { destination in
+                guard let destination else { return }
+                apply(PushTapRouting.plan(for: destination))
+                _ = pushNavigation.consume()
+            }
+            .onAppear {
+                if let destination = pushNavigation.pendingDestination {
+                    apply(PushTapRouting.plan(for: destination))
+                    _ = pushNavigation.consume()
+                }
+            }
+    }
+
+    private func apply(_ plan: PushTapRouting.Plan) {
+        model.selectOrders()
+        deepLinkOrderId = plan.orderId
+    }
+
+    private var tabs: some View {
         TabView(selection: $model.selection) {
             DashboardView(
                 client: container.dashboardClient,
@@ -45,7 +67,8 @@ struct PartnerShellView: View {
                 staleness: container.ordersStaleness,
                 checklistStore: container.cleaningChecklistStore,
                 snackbar: container.snackbar,
-                mapProvider: container.mapProvider
+                mapProvider: container.mapProvider,
+                deepLinkOrderId: $deepLinkOrderId
             )
             .tabItem { Label(ShellTab.orders.label, systemImage: ShellTab.orders.systemImage) }
             .tag(ShellTab.orders)

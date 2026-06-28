@@ -22,6 +22,9 @@ struct PartnerRootView: View {
                 route = .login
             }
         }
+        .onChange(of: route) { _ in
+            container.updatePushSession(hasSession: container.hasValidSession)
+        }
     }
 
     @ViewBuilder

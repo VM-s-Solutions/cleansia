@@ -177,3 +177,93 @@ greenfield, enforced via the required test below.
   in `auth-sessions.md` / `ios-devices.md` — re-verify before any non-null-`TenantId` onboarding. The owner's
   T-0311 dependency is the **APNs auth key/cert** (infra provisioning, not a code gate); until it's set, the
   dispatcher's `result.Skipped` no-op path (`SendPushNotificationHandler.cs:149-155`) safely ACKs.
+
+---
+
+## 2026-06-28 — T-0311 Slice B BUILD-TIME VERIFICATION (Gate-SEC re-verify, against actual code) — PASS
+
+**Verified against the uncommitted code on branch `phase/ios-phase5` (security charter owns the
+registration/logout-clear gate; the reviewer covers Gate-DP + shared-spine safety in parallel).**
+This is the build-time confirmation of the 2026-06-28 PASS-the-design ruling above. The four binding
+rules + TC-IOS-PUSH-LOGOUT-CLEARS were traced to file:line in the implemented client and the iOS push
+test suites were **run on the iPhone 17 Pro simulator (15/15 PASS, 0 failures)**. Verdict per rule:
+
+### RULE 1 — single device-id, platform="ios" — PASS
+- `PushTokenRegistrar.ensureRegistered` / `.unregisterDevice` feed `deviceIdProvider.deviceId` as the
+  ONLY id source (`Push/PushTokenRegistrar.swift:53,64`); `platform` is the injected default `"ios"`
+  (`:34,40`). No literal/`UUID()`/`identifierForVendor`/alternate Keychain account in the register path.
+- Wiring binds the registrar's `deviceIdProvider` to the SAME `authStack.deviceIdProvider` the
+  `HeaderAdapter` stamps as `X-Device-Id` and that T-0310 `deviceMine` uses
+  (`CleansiaPartner/Sources/PartnerAppContainer.swift:97-100`, mirrors the devices client at `:95`).
+  `DeviceIdProvider` is mint-once-Keychain-persisted (`Auth/DeviceIdProvider.swift:31-52`).
+  Test: `PushTokenRegistrarTests.testEnsureRegisteredSendsExpectedRequestWithPlatformIos` (PASS).
+
+### RULE 2 — register on (hasSession × token), never without a session — PASS
+- `PushSessionObserver.attach` combineLatest(hasSession, apnsToken) → `.map { session, token in
+  session ? token : nil }` → `removeDuplicates` → `ensureRegistered` only on non-nil
+  (`Push/PushSessionObserver.swift:16-23`). A signed-out state maps the token to nil → no register.
+- The session signal `hasSessionSubject` is driven ONLY by genuine token state
+  (`AppContainer.hasValidSession` = non-empty access token, `DI/AppContainer.swift:106-109`):
+  seeded at `startPush()` (`PartnerAppContainer.swift:133`) and re-pushed on every route change
+  (`PartnerRootView.swift:25-27` → `updatePushSession(hasSession:)`). No register fires without a session.
+  Tests: `PushSessionObserverTests.testDoesNotRegisterWhenNoSession`, `testLoginAfterTokenArrivesFiresRegistration`,
+  `testLogoutStopsReRegistration`, `testSamePairDoesNotRegisterTwice` (all PASS).
+
+### RULE 3 — THE LOAD-BEARING property (unregister-before-wipe + clear on ALL sign-outs) — PASS (both halves)
+- **(3a) ordering — PASS.** `AuthApiClient.logout()` (`Auth/Auth.swift:190-197`) runs, IN ORDER:
+  `await preLogout?()` (`:191-192`) → server `api/Auth/Logout` (`:193-195`) → `signOutLocal()` (`:196`)
+  → `tokenStore.clear()` (`:200`). The `setPreLogout` hook IS the registrar's authed
+  `Device/Unregister` DELETE (`PartnerAppContainer.swift:123-125` → `PushTokenRegistrar.unregisterDevice`
+  → `DeviceRegistrationClient.unregister`). The hook runs WHILE the Bearer is still live, BEFORE the
+  wipe — the Android `AuthRepository.kt:210-225` ordering verbatim. The 12-line Auth.swift change is
+  purely additive (no deletion, no reorder of the existing server-logout + signOutLocal).
+- **(3b) clear on ALL sign-outs — PASS.** `PushTokenRegistrar` conforms to `SessionScopedCache`
+  (`PushTokenRegistrar.swift:31`, `clear()` wipes the last-token cache `:68-70`) and is registered in
+  the registry (`PartnerAppContainer.swift:119`). Both — and ONLY — token-wipe paths run `clearAll()`
+  first: user logout `Auth.signOutLocal()` (`Auth.swift:201`) and forced-signout
+  `SessionRefresher.forceSignOut()` (`SessionRefresher.swift:76`). Grep confirms no third
+  token-wipe/sign-out path bypasses the registry.
+- **best-effort — PASS.** `unregisterDevice()` calls `client.unregister(...)` which is
+  `async -> ApiResult<Void>` (non-throwing — errors are wrapped in the result, not thrown:
+  `Push/DeviceRegistrationClient.swift:17`, `PartnerDeviceRegistrationClient.swift:18-22`). A
+  failing/401 unregister cannot throw out of the hook, so `logout()` always proceeds to the server
+  logout + `signOutLocal()`. The cache is cleared unconditionally even on unregister failure
+  (`PushTokenRegistrar.swift:64-65`). Test: `PushTokenRegistrarTests.testUnregisterFailureStillClearsCacheSoNextEnsureReRegisters` (PASS).
+- **account-switch no-inheritance — PASS.** Single device-id (R1) + server row gone (3a) + local cache
+  cleared (3b) → login B after logout A on the same handset re-registers fresh.
+  Test: `PushLogoutClearsTests.testCacheClearRunsOnExplicitLogout` proves the cleared cache forces a
+  fresh register after logout (registerCallCount 2) (PASS).
+
+### RULE 4 — no token logging; UserDefaults cache stays non-secret — PASS
+- Sweep of ALL push + AppDelegate + push-nav/deep-link files for `print`/`os_log`/`Logger`/`NSLog`/
+  `Sentry`/`breadcrumb`/`capture`: the ONLY hit is `PartnerAppDelegate.swift:30`
+  `NSLog("APNs registration failed: %@", error.localizedDescription)` — logs the failure message ONLY,
+  never the token. `didRegisterForRemoteNotificationsWithDeviceToken` does NOT log; it forwards the
+  hex token to `reportRegistered` (`PartnerAppDelegate.swift:21-23`, `PushRegistrar.swift:43-45`).
+  `apnsHexToken` (`Push/ApnsToken.swift:4-6`) is a pure formatter, no logging.
+- Last-token cache stays `UserDefaults` (non-secret, device-scoped) and is exactly what the
+  `SessionScopedCache.clear()` wipes (`PushTokenRegistrar.swift:9-29,68-70`) — RULE 4b satisfied.
+
+### TC-IOS-PUSH-LOGOUT-CLEARS — EXISTS and PASSES
+- `CleansiaCore/Tests/CleansiaCoreTests/PushLogoutClearsTests.swift`:
+  `testUserLogoutRunsPreLogoutWhileBearerIsLiveThenWipesToken` (asserts Bearer live at hook + wiped
+  after, `:37-51`); `testRegistrarUnregisterRidesThePreLogoutHookBeforeWipe` (asserts the
+  Device/Unregister sees a non-empty Bearer, `:53-71`); `testCacheClearRunsOnExplicitLogout` (`:83-101`)
+  and `testCacheClearRunsOnForcedSignOut` (`:103-114`) — cache clear on BOTH sign-out paths.
+  **Run result: PushLogoutClearsTests 4/4 PASS; PushSessionObserverTests 5/5 PASS; PushTokenRegistrarTests
+  6/6 PASS — 15/15, 0 failures (iPhone 17 Pro simulator, xcodebuild, 2026-06-28).**
+
+### Auth.swift spine-regression check — PASS (no regression)
+- The pre-logout hook is the ONLY behavior change to the auth spine: `git diff` = +12 lines, 0 deletions.
+  It does NOT weaken logout (server logout + `signOutLocal` still run, unchanged order after the hook),
+  does NOT leak the Bearer (hook runs in-process; no header/path added), does NOT skip `signOutLocal`
+  on hook failure (hook is non-throwing best-effort). No new token/header/401 path → ADR-0019 spine
+  intact. The standing latent S8 (RefreshToken tenant read-asymmetry) is untouched.
+
+### Verdict
+**PASS — Slice B is build-time-verified against the binding design.** Rules 1–4 + TC-IOS-PUSH-LOGOUT-CLEARS
+all confirmed in code with passing tests. No new security gap. Note (scope, not a gap): this slice wires
+the registrar/observer/preLogout-hook into the **Partner** container only (`PartnerAppContainer.swift`);
+the **Customer** iOS host (`CleansiaCustomer/Sources/CustomerAppContainer.swift`) does NOT yet wire the
+push registrar/preLogout hook — when push is brought to the customer app, RULES 1–4 + TC must be applied
+there identically (the same load-bearing logout-clear ordering). Not a defect in Slice B's stated scope.

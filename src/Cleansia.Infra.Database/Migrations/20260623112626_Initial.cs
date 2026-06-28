@@ -704,6 +704,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Email = table.Column<string>(type: "citext", maxLength: 150, nullable: false),
                     PhoneNumber = table.Column<string>(type: "citext", maxLength: 50, nullable: true),
                     GoogleId = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
+                    AppleId = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
                     ResetPasswordCode = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
                     ResetPasswordCodeExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     BirthDate = table.Column<DateOnly>(type: "date", nullable: true),
@@ -3229,6 +3230,12 @@ namespace Cleansia.Infra.Database.Migrations
                 table: "UserNotificationPreferences",
                 column: "UserId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_AppleId",
+                table: "Users",
+                column: "AppleId",
+                filter: "\"AppleId\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_ConfirmationCode",

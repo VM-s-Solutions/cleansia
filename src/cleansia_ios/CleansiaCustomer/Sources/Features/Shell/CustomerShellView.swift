@@ -5,9 +5,11 @@ import SwiftUI
 final class CustomerShellModel: ViewModel {
     @Published var selection: CustomerShellTab = .home
 
-    @Published private(set) var didOpenBooking = false
+    @Published var isBookingPresented = false
 
-    func book() {}
+    func book() {
+        isBookingPresented = true
+    }
 }
 
 struct CustomerShellView: View {
@@ -23,6 +25,9 @@ struct CustomerShellView: View {
             .overlay(alignment: .bottom) {
                 BookFab(action: model.book)
                     .offset(y: -28)
+            }
+            .sheet(isPresented: $model.isBookingPresented) {
+                BookingSheetView(onDismiss: { model.isBookingPresented = false })
             }
     }
 

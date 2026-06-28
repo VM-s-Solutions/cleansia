@@ -561,6 +561,30 @@ ADRs/records — no new ADR.** (The in-app feed / bell badge / persistence / tem
   registrar/observer (the §7.6 D3 mis-fire). **The registration / logout-clear-ordering SECURITY gate is parallel
   (Gate-SEC) — not this rule.**
 
+**iOS customer booking sheet — the ONE way (sprint-12 §7.16, T-0313; ADR-0018 D3 modal mapping + ADR-0021 D3
+modal/non-modal discriminator; the HARD AREA #1 wizard):** the Bolt-style 3-step booking wizard
+(`BookingBottomSheet.kt`) is a **modal** anchored sheet → native SwiftUI **`.sheet` + `.presentationDetents`**
+(the customer `BookingSheetView`, presented from `CustomerShellView.book()` — the now-live Book FAB), **NOT** the
+partner `SnapSheet`. The discriminator (ADR-0021 D3, reviewer #29) is *modal-over-a-screen* vs
+*non-modal-over-a-live-backdrop*: the booking sheet dims the screen behind it / drags to dismiss / has no live map,
+so it is the native modal — `SnapSheet` is reserved for the partner OrderDetail over `fullBleedMap`. The Android
+`AnchoredDraggableState` 4-anchor draggable maps to `.presentationDetents([.large])` (the sheet opens near-full,
+mirroring `animateTo(Full)`) + `.presentationDragIndicator(.visible)` (the Compose drag-handle pill). The shared
+**`BookingViewModel`** is the Core `ViewModel` base (`ObservableObject`/`@Published`, NOT `@Observable`) mirroring
+the Android **5 StateFlows** — `state` (an immutable `BookingState` value rebuilt via `update { copy }`),
+`submitState` (the Core `ActionState`), `quoteState`/`promoState`/`referralState` (sealed enums, the
+`QuoteState`/`PromoCodeUiState`/`ReferralCodeUiState` parity) — plus the sealed **`BookingSubmitOutcome`**
+(`.success`/`.cardPending`/`.failed`/`.profileIncomplete`, the Android parity). **Step nav** (`currentStep` 1…3 +
+`advance`/`back` + `reset`) lives on the VM; the **per-step `canContinue` gates live in the VIEW** as a pure
+**`BookingStepGate.canContinue(step:state:)`** helper (the Android composable-gate parity — step1: ≥1 service OR
+package AND rooms≥1; step2: street+date+time; step3: paymentMethod), strict-TDD'd. The back-arrow decrements / the
+`xmark` closes on step 1 (`if !vm.back() { onDismiss() }`). **The VM holds no navigation** — the sheet's
+`isPresented` lives on the shell model. **Deviations a reviewer rejects:** a `SnapSheet`/`GeometryReader`+drag
+re-impl for the booking sheet (it is the native modal); a `canContinue` baked into the VM instead of the pure
+view-consumed gate; navigation driven from the booking VM; an `@Observable` booking VM; a flag-bag booking state
+instead of the value + sealed states. (Slices B/C/D/E fill the step bodies + server pricing + cash/card + the
+Stripe seam; Slice A is the scaffold + step nav + the 5-state shape, no network.)
+
 **Parity deviation (Android is wrong, iOS is right) — auth validation strings:** the Android partner
 `RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set validation errors as **hardcoded English
 literals** (no `@ApplicationContext Context`, no `R.string.*`) → they never localize across the 5 locales (a

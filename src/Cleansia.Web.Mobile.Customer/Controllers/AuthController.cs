@@ -59,6 +59,17 @@ public class AuthController(IMediator mediator) : CustomerMobileApiController(me
     }
 
     [AllowAnonymous]
+    [HttpPost("AppleAuth")]
+    [ProducesResponseType(typeof(JwtTokenResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> AppleAuth([FromBody] AppleAuth.Command command)
+    {
+        var result = await Mediator.Send(command);
+        return HandleResult<JwtTokenResponse>(result);
+    }
+
+    [AllowAnonymous]
     [HttpPut("ConfirmUserEmail")]
     [ProducesResponseType(typeof(JwtTokenResponse), StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

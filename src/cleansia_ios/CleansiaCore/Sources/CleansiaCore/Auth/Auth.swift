@@ -10,57 +10,21 @@ public struct JwtTokenResponseDto: Decodable, Sendable {
     public let refreshTokenExpiresAt: String?
 }
 
-public struct LoginRequest: Encodable, Sendable {
-    public let email: String
-    public let password: String
-    public let rememberMe: Bool
-
-    public init(email: String, password: String, rememberMe: Bool = true) {
-        self.email = email
-        self.password = password
-        self.rememberMe = rememberMe
-    }
-}
-
-public struct RefreshTokenRequest: Encodable, Sendable {
-    public let token: String
-    public init(token: String) {
-        self.token = token
-    }
-}
-
-public struct LogoutRequest: Encodable, Sendable {
-    public let token: String
-    public init(token: String) {
-        self.token = token
-    }
-}
-
-public struct RegisterEmployeeRequest: Encodable, Sendable {
-    public let email: String
-    public let password: String
-    public let firstName: String
-    public let lastName: String
-    public let language: String
-}
-
-public struct ConfirmUserEmailRequest: Encodable, Sendable {
-    public let code: String
-}
-
-public struct ResendConfirmationEmailRequest: Encodable, Sendable {
-    public let email: String
-    public let language: String
-}
-
-public struct ForgotPasswordRequest: Encodable, Sendable {
-    public let email: String
-    public let language: String
-}
-
 public enum LoginOutcome: Equatable, Sendable {
     case authenticated
     case unverifiedEmail(email: String, hasToken: Bool)
+}
+
+public enum RegisterEndpoint: Sendable {
+    case employee
+    case customer
+
+    var path: String {
+        switch self {
+        case .employee: "api/Auth/RegisterEmployee"
+        case .customer: "api/Auth/Register"
+        }
+    }
 }
 
 public final class AuthApiClient: AuthSpine, @unchecked Sendable {
@@ -70,6 +34,7 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
     private let headerAdapter: HeaderAdapter
     public let tokenStore: TokenStore
     private let sessionScopedCaches: SessionScopedCacheRegistry
+    private let registerEndpoint: RegisterEndpoint
     private let lock = NSLock()
     private var preLogout: (@Sendable () async -> Void)?
 
@@ -81,6 +46,7 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         tokenStore: TokenStore,
         headerAdapter: HeaderAdapter,
         sessionScopedCaches: SessionScopedCacheRegistry,
+        registerEndpoint: RegisterEndpoint = .employee,
         authedSession: URLSession = .shared,
         noAuthSession: URLSession = URLSession(configuration: .ephemeral)
     ) {
@@ -88,6 +54,7 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         self.tokenStore = tokenStore
         self.headerAdapter = headerAdapter
         self.sessionScopedCaches = sessionScopedCaches
+        self.registerEndpoint = registerEndpoint
         self.authedSession = authedSession
         self.noAuthSession = noAuthSession
     }
@@ -127,14 +94,14 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         lastName: String,
         language: String
     ) async -> ApiResult<Bool> {
-        let body = RegisterEmployeeRequest(
+        let body = RegisterRequest(
             email: email,
             password: password,
             firstName: firstName,
             lastName: lastName,
             language: language
         )
-        return await post(path: "api/Auth/RegisterEmployee", body: body, useNoAuthSession: true)
+        return await post(path: registerEndpoint.path, body: body, useNoAuthSession: true)
     }
 
     public func confirmEmail(code: String) async -> ApiResult<LoginOutcome> {
@@ -169,6 +136,56 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
             return .failure(error)
         case .success:
             return .success(())
+        }
+    }
+
+    public func googleAuth(
+        token: String,
+        googleId: String,
+        email: String,
+        firstName: String,
+        lastName: String
+    ) async -> ApiResult<LoginOutcome> {
+        let body = GoogleAuthRequest(
+            token: token,
+            googleId: googleId,
+            email: email,
+            firstName: firstName,
+            lastName: lastName
+        )
+        return await socialAuth(path: "api/Auth/GoogleAuth", body: body, fallbackEmail: email)
+    }
+
+    public func appleAuth(
+        identityToken: String,
+        rawNonce: String,
+        firstName: String?,
+        lastName: String?
+    ) async -> ApiResult<LoginOutcome> {
+        let body = AppleAuthRequest(
+            identityToken: identityToken,
+            rawNonce: rawNonce,
+            firstName: firstName,
+            lastName: lastName
+        )
+        return await socialAuth(path: "api/Auth/AppleAuth", body: body, fallbackEmail: "")
+    }
+
+    private func socialAuth(
+        path: String,
+        body: some Encodable,
+        fallbackEmail: String
+    ) async -> ApiResult<LoginOutcome> {
+        let result: ApiResult<JwtTokenResponseDto> = await post(path: path, body: body, useNoAuthSession: true)
+        switch result {
+        case let .failure(error):
+            return .failure(error)
+        case let .success(dto):
+            return .success(resolveEmailGate(
+                dto,
+                fallbackEmail: dto.email ?? fallbackEmail,
+                refreshLifetime: .longLived
+            ))
         }
     }
 

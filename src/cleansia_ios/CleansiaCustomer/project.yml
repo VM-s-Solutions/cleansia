@@ -5,6 +5,14 @@ options:
   deploymentTarget:
     iOS: "16.0"
   createIntermediateGroups: true
+  developmentLanguage: en
+
+knownRegions:
+  - en
+  - cs
+  - sk
+  - uk
+  - ru
 
 settings:
   base:
@@ -21,6 +29,9 @@ packages:
   # scripts/generate-api-clients.sh after a mobile-spec refresh; never hand-edit.
   CleansiaCustomerApi:
     path: ../CleansiaCustomerApi
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: 7.1.0
 
 targets:
   CleansiaCustomer:
@@ -34,6 +45,11 @@ targets:
       path: Info.plist
       properties:
         API_BASE_URL: $(API_BASE_URL)
+        GIDClientID: $(GID_CLIENT_ID)
+        GIDServerClientID: $(GID_SERVER_CLIENT_ID)
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - $(GID_REVERSED_CLIENT_ID)
         UIAppFonts:
           - Poppins-Medium.ttf
           - Poppins-SemiBold.ttf
@@ -41,13 +57,52 @@ targets:
           - Nunito-Regular.ttf
           - Nunito-SemiBold.ttf
           - Nunito-Bold.ttf
+    entitlements:
+      path: CleansiaCustomer.entitlements
+      properties:
+        com.apple.developer.applesignin:
+          - Default
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cz.cleansia.customer
         PRODUCT_NAME: CleansiaCustomer
         GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
         TARGETED_DEVICE_FAMILY: "1"
         API_BASE_URL: https:/$()/api-cleansia-customer-mobile-weu-dev.azurewebsites.net
+        CODE_SIGN_ENTITLEMENTS: CleansiaCustomer.entitlements
+        # Owner-provisioned Google iOS OAuth client; empty until then →
+        # graceful .notConfigured (no crash) and no Google button round-trip.
+        GID_CLIENT_ID: ""
+        GID_SERVER_CLIENT_ID: ""
+        GID_REVERSED_CLIENT_ID: ""
     dependencies:
       - package: CleansiaCore
       - package: CleansiaCustomerApi
+      - package: GoogleSignIn
+        product: GoogleSignIn
+
+  CleansiaCustomerTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: Tests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cz.cleansia.customer.tests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: CleansiaCustomer
+      - package: CleansiaCore
+
+schemes:
+  CleansiaCustomer:
+    build:
+      targets:
+        CleansiaCustomer: all
+        CleansiaCustomerTests: [test]
+    test:
+      targets:
+        - CleansiaCustomerTests
+      gatherCoverageData: false

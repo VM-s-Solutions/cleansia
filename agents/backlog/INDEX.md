@@ -10,8 +10,53 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
-> ## 🍎 WAVE 10 — iOS PORT (sprint-12): PHASE 0 DONE + MERGED · **PHASE 1 (T-0303) DONE** · **PHASE 2 — T-0304 + T-0305 DONE** · **PHASE 3 — T-0306 + T-0310 DONE (merged #95)** · **PHASE 4 — T-0307 + T-0308 DONE (merged #96)** · 🎉 **PHASE 5 — T-0309 + T-0311 DONE (PR drafted) → the iOS PARTNER APP is FEATURE-COMPLETE** (2026-06-28)
-> **iOS PHASE 5 IS DONE — `phase/ios-phase5` (8 commits, pushed); the Phase-5 PR is drafted. This phase makes the
+> ## 🍎 WAVE 10 — iOS PORT (sprint-12): PHASE 0 DONE + MERGED · **PHASE 1 (T-0303) DONE** · **PHASE 2 — T-0304 + T-0305 DONE** · **PHASE 3 — T-0306 + T-0310 DONE (merged #95)** · **PHASE 4 — T-0307 + T-0308 DONE (merged #96)** · **PHASE 5 — T-0309 + T-0311 DONE (merged #97) → the iOS PARTNER APP is FEATURE-COMPLETE** · 🍎 **PHASE 6 — T-0343 (backend AppleAuth) + T-0312 (customer shell + auth) DONE (PR drafted) → the iOS CUSTOMER AUTH FOUNDATION lands (the FIRST customer feature)** (2026-06-28)
+>
+> **iOS PHASE 6 IS DONE — `phase/ios-phase6` (6 commits, pushed; off master `c898e79` = the merged Phase-5 PR #97);
+> the Phase-6 PR is drafted. This phase opens the CUSTOMER app — the FIRST customer feature** (the partner app
+> shipped feature-complete in Phases 0–5). It stands up the customer app's root + shell scaffold + the complete auth
+> front door incl. **Sign in with Apple** + **Google**. Both tickets passed the full workflow (architect
+> Understand-pass → dev slices → reviewer/Gate-DP + security on the touching slices). **T-0343 (backend AppleAuth —
+> Sign in with Apple) → `done`** (`a689d03`): a new `AppleAuth` CQRS + `IAppleTokenVerifier`/`AppleTokenVerifier`
+> (**RS256-PINNED** JWKS via `JsonWebTokenHandler` + `ConfigurationManager`; `aud == Apple:BundleId` native,
+> iss/exp/nonce, fail-closed, no SSRF) + `AppleConfig` + `User.AppleId`/`AuthenticationType.Apple`/`CreateWithApple`
+> + `[AllowAnonymous] POST /api/Auth/AppleAuth` on the Customer Mobile host + `InvalidAppleUserToken` ×5 i18n.
+> **Mirrors GoogleAuth 1:1.** Reviewer **APPROVE**; **SECURITY PASS** (account-takeover **NO** — the RS256-pin + the
+> handler takeover-guard verified vs code). Ships **fail-closed**; LIVE Apple sign-in is gated on **T-0344** + the
+> owner EF migration (`User.AppleId`) + the `customer-mobile-api` regen. **T-0312 (iOS customer shell + auth — 3
+> slices, §7.15) → `done`** (`2cf0f1e`+`6f9c1de`+`2ae5982`): **Slice A** = `CustomerRootView` (flat-enum, COPIES the
+> ADR-0020 pattern, the simpler customer gate — no RegistrationLock) + the 4-tab shell + the inert Book FAB (the
+> FAB-as-overlay Gate-DP swap) + the new `CleansiaCustomerTests` target; ios-ci now `build test`s CleansiaCustomer.
+> **Slice B** = the email auth chain (SignIn/SignUp/EmailVerify/Forgot) + the event-driven `CustomerAuthViewModel`
+> (emits `AuthOutcome`, the router maps) + the **Core spine `RegisterEndpoint` fix** (a construction-time param:
+> customer→`/api/Auth/Register`, partner→`RegisterEmployee`, byte-equivalent). **Security PASS** (no parallel write
+> path; partner non-regression). **Slice C** = social — the official `ASAuthorizationAppleIDButton` + the real
+> multicolor Google "G"; the **`SocialSignInProviding` Core seam** (the Apple nonce flow + GoogleSignIn-iOS, the
+> sole framework consumers); two spine methods `googleAuth`/`appleAuth` (reuse the one empty-token gate + the single
+> Keychain persist; appleauth anon-allow-listed); the GoogleSignIn SPM dep + the `com.apple.developer.applesignin`
+> entitlement + the reversed-client-id placeholder; fail-safe when unconfigured. Reviewer **APPROVE**; **SECURITY
+> PASS** (the iOS↔backend nonce-encoding **ALIGNED** — live SIWA won't silently fail; no parallel write path).
+> **Gate-DP divergences:** the Android pager + floating-pill `CustomBottomBar` → native `TabView` + FAB-overlay; the
+> official Apple button + the recreated Google "G"; the `AuthHeaderImage` SF-Symbol PLACEHOLDER → T-0314 brand
+> asset. **T-0314 follow-ups recorded** (so they aren't lost): (a) ship the customer brand asset to replace the
+> SF-Symbol `AuthHeaderImage` + add the Android SignIn brand wordmark; (b) a brand-fidelity check of the recreated
+> Google "G" vs Google's official asset before App Store submission — both folded into the T-0314 §3 row/notes.
+> **Tests:** **CleansiaCore 202 + CleansiaCustomer 42** (+ the CleansiaPartner 366 non-regression) on the iPhone 17
+> simulator; swiftformat + swiftlint --strict clean. **CI:** ios-ci now `build test`s CleansiaCustomer; backend-ci
+> runs the AppleAuth tests. The build-time security verifications are in `security/ios-customer-auth.md`. **OWNER /
+> manual steps (all gate LIVE social sign-in; the code ships fail-closed):** T-0344 (Apple capability +
+> `Apple:BundleId`), T-0345 (Google client ids + `Google:ClientId` / IMP-1), the **EF migration for `User.AppleId`**,
+> the **customer-mobile-api spec + client regen** (also needed for the T-0314 business endpoints + the live social
+> e2e). **Follow-up:** T-0346 (backend Google `email_verified` hardening, dep T-0343 now ✓). The owner commits these
+> backlog edits + opens the Phase-6 PR (the PM does not commit). **Reconciliation note (the squash-merge caveat):**
+> Phase 5 merged to master as the squash commit `c898e79` (PR #97); `git merge-base --is-ancestor` would misread the
+> original Phase-5 commits — verify any prior-phase status by master **TREE** content, not the ancestor check. Full
+> plan + the §3 ticket table + the §7.14/§7.15 rulings + the Phase-6 status-log: **`status/sprint-12.md`** (top
+> banner reconciled 2026-06-28). The remaining Wave-10 scope is the customer tail (**T-0313** booking+Stripe →
+> **T-0314** the parity tail).
+>
+> **--- (Phase-5 banner — kept for traceability) ---**
+> **iOS PHASE 5 IS DONE — `phase/ios-phase5` (8 commits, pushed); merged via #97. This phase makes the
 > iOS PARTNER APP FEATURE-COMPLETE** — every partner surface is now ported (auth → shell → dashboard → orders+photos
 > → profile/devices/prefs → earnings/invoices → push); the remaining Wave-10 scope is the customer app
 > (T-0312…T-0314). Both Phase-5 tickets passed the full workflow (ios dev → reviewer/Gate-DP + security on the
@@ -146,6 +191,7 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > | **T-0308** | **Phase-4** partner photo upload (2 slices) — Core `CameraOrLibraryPicker` (first `UIViewControllerRepresentable`) + `ImageCompressor` (1920/0.7, EXPLICIT EXIF strip) + the `PhotosSection` (before/after rails, capture→upload) + the upload/delete VM + the Complete-unblock + the bootstrapped `PrivacyInfo.xcprivacy` + NSCamera/NSPhotoLibrary usage strings ×5 | M | **done ✅** `c216392`+`cf6ea6d`+`a2a2184` (`phase/ios-phase4`; **2 slices A–B**, reviewer **APPROVE**; **SECURITY PASS** §7.10 P1–P5, TC-IOS-PHOTOS-OWNERSHIP + TC-IOS-PHOTOS-EXIF-STRIP — backend SavePhotos/DeletePhoto/GetPhotos ownership VERIFIED safe, no backend change. Owner sign-off pending on the camera/photo plist WORDING ×5) | T-0307✓ | ios | **sec** (P1–P5 PASS) | **owner: camera/photo plist WORDING sign-off ×5** |
 > | **T-0309** | **Phase-5** partner earnings + invoices + PeriodPay (2 slices) — A Earnings summary (reuses `getStats`) + PeriodPay over the generated `PartnerEmployeePayrollAPI` (ADR-0019 spine) + a Core `EarningsFormat`; the `.invoices` tab is now the Earnings surface (in-tab `NavigationStack`/`EarningsRoute`). B invoices list/detail + the new Core `QuickLookPreview` seam (PDF) + the InvoicesStaleness silent-stale resume; `RefreshPhase` LIFTED to `CleansiaCore/State` (shared by Orders+Invoices) | M | **done ✅** `59be42b`+`e4e7793`+`7daa412` (`phase/ios-phase5`; reviewer **APPROVE**; **SECURITY PASS** §7.11 E1–E4 + TC-IOS-EARNINGS-OWNERSHIP — backend EmployeePayroll already JWT-scoped for non-admins (`GetPeriodPaysOwnershipTests` green 4/4), **NO T-0339-class gap, NO backend follow-up**; E4 PDF deleted from cache on dismiss; latent S5 rate-limit → BSP-4d. Android E1 invoices flag-bag NOT replicated → T-0337) | T-0304✓ | ios | **sec** (E1–E4 PASS) | — |
 > | **T-0311** | **Phase-5** partner APNs push registration (2 slices) — A the Core `PushRegistrar` seam + `PushTokenRegistrar` (`SessionScopedCache`) + the `Device/Register` client (generated `PartnerDeviceAPI`, ADR-0019 spine; `deviceId`==`DeviceIdProvider`, `platform=="ios"`). B the Core `PushSessionObserver` (register on session×token) + the `@UIApplicationDelegateAdaptor` AppDelegate (`willPresent`+`didReceive` tap→OrderDetail via the `PartnerNotificationDeepLink` port) + the new `Auth.setPreLogout` hook (logout unregisters BEFORE the token wipe) + the `aps-environment` entitlement | M | **done ✅** `f2a999f`+`8d53b18`+`b4fb556` (`phase/ios-phase5`; reviewer **APPROVE**; **SECURITY PASS** §7.11 `security/ios-push.md` rules 1–4 + TC-IOS-PUSH-LOGOUT-CLEARS — verified vs code; the `setPreLogout` hook safe/non-regressing; no token in any DTO/log; no T-0339-class backend gap (`RegisterDevice`/`UnregisterDevice` JWT-scoped + soft-delete stops APNs delivery). FCM→APNs over the SAME `Device/*` contract = Gate-DP divergence (ADR-0013 D8). End-to-end DELIVERY OWNER-gated → **T-0342**. **CI hardening:** ios-ci's partner step is now `build test` (366 partner tests gate for the first time — `1eb346f`)) | T-0302✓, T-0303✓, T-0310✓, T-0331 | ios | **sec** (rules 1–4 PASS) | **owner: T-0342 (APNs `.p8` key + Push capability) — end-to-end-DELIVERY gate** |
+> | **T-0312** | 🍎 **Phase-6** iOS CUSTOMER shell SCAFFOLD + FULL auth (the FIRST customer feature; 3 slices, §7.15) — **A** `CustomerRootView` (flat-enum, COPIES the ADR-0020 pattern, the simpler customer gate — NO RegistrationLock) + the 4-tab `TabView` shell + the inert Book FAB (FAB-as-overlay Gate-DP swap) + the new `CleansiaCustomerTests` target; ios-ci now `build test`s CleansiaCustomer. **B** the email auth chain (SignIn/SignUp/EmailVerify/Forgot) + the event-driven `CustomerAuthViewModel` (emits `AuthOutcome`, the router maps) + the Core spine **`RegisterEndpoint` fix** (construction-time param: customer→`/api/Auth/Register`, partner→`RegisterEmployee`, byte-equivalent). **C** social — the official `ASAuthorizationAppleIDButton` + the real multicolor Google "G"; the **`SocialSignInProviding` Core seam** (Apple nonce flow + GoogleSignIn-iOS, sole framework consumers); two spine methods `googleAuth`/`appleAuth` (reuse the one empty-token gate + the single Keychain persist; appleauth anon); the GoogleSignIn SPM dep + the `com.apple.developer.applesignin` entitlement + the reversed-client-id placeholder; fail-safe when unconfigured | M (3 slices) | **done ✅** `2cf0f1e`+`6f9c1de`+`2ae5982` (`phase/ios-phase6`, off master `c898e79`; the §7.15 ruling. Reviewer **APPROVE** all 3; **SECURITY PASS** on the security-touching B+C — no parallel write path, partner non-regression, the iOS↔backend nonce-encoding ALIGNED. Gate-DP divergences: pager+floating-pill → native `TabView`+FAB-overlay; the official Apple button + the recreated Google "G"; the `AuthHeaderImage` SF-Symbol PLACEHOLDER → T-0314 brand asset. **CleansiaCore 202 + CleansiaCustomer 42** (+ partner 366 non-regression) on iPhone 17; swiftformat/swiftlint --strict clean; build-time verifications in `security/ios-customer-auth.md`. T-0314 follow-ups recorded: ship the customer brand asset + the Android SignIn wordmark; brand-fidelity check the Google "G" pre-submission. LIVE social sign-in is OWNER-gated, code ships fail-closed) | T-0302✓, T-0306✓, T-0343✓ | ios | **sec** (B+C PASS) | **owner (gates LIVE social): EF migration (`User.AppleId`) + customer-mobile spec+client regen + T-0344 (Apple) + T-0345 (Google/IMP-1)** |
 >
 > **Phase-3/4 follow-up tickets (filed 2026-06-26/27) — all `draft`/`proposed`, deferred out of T-0306/T-0307/T-0308/T-0310; not dispatched:**
 >
@@ -161,6 +207,22 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > | **T-0340** | Order-detail parity nits — iOS checklist stable-id keying (vs positional index) + Android status-label casing convergence ("On the way"/"In progress") + the stale placeholder-preview literal sweep | S | **proposed** | T-0307✓ | ios, android | no | — | T-0307 Slice E reviewer (Findings 2 + 3) |
 > | **T-0341** | **Backend (flaky test)** — deterministic order status-history "current status" ordering (same-tick `CreatedOn` tie in `OrderByDescending(CreatedOn).First()` makes `AdminOverrideOrderStatusHandlerTests` flake 1–2/7); add a tiebreaker / canonical derivation + de-flake. Pre-existing on master (NOT from T-0339) | M | **proposed** (medium) | — | backend, architect | no | EF migration if a seq column is added | found during the local backend-suite run for T-0339 |
 > | **T-0342** | **OWNER TASK** — iOS APNs auth key (`.p8`) in the backend push provider + Push Notifications capability/provisioning on the App ID (gates end-to-end push DELIVERY; **T-0311 now `done` ships the code + the `aps-environment` entitlement without it** — this is the live-delivery gate) | S | **proposed** (owner — **the active push-delivery gate now T-0311 has landed**) | T-0311✓ | ios | no | **owner: APNs key + Push capability** | T-0311 §3B |
+> | **T-0343** | **Backend — AppleAuth (Sign in with Apple)** — `AppleAuth` CQRS + `IAppleTokenVerifier`/`AppleTokenVerifier` (JWKS + **RS256-pinned** + iss/aud=bundle-id/exp/nonce + fail-closed) + `AppleConfig` + `User.AppleId`/`AuthenticationType.Apple`/`CreateWithApple` + `[AllowAnonymous] POST /api/Auth/AppleAuth` on the Customer Mobile host + `InvalidAppleUserToken` ×5 i18n + stubbed-verifier tests. **Mirrors GoogleAuth 1:1**; ships fail-closed (no provisioning). Resolves Q-IOS-04 (§7.14) | M | **done ✅** `a689d03` (`phase/ios-phase6`, off master `c898e79`; the RS256-PINNED JWKS via `JsonWebTokenHandler`+`ConfigurationManager`, `aud == Apple:BundleId` native, iss/exp/nonce, fail-closed, no SSRF; reviewer **APPROVE**; **SECURITY PASS** — account-takeover **NO**: the RS256-pin + the handler takeover-guard against `claims.Email` (covers Internal + Google) verified vs code; provision only on `claims.EmailVerified`. Ships fail-closed) | — | backend, db | **yes** (PASS) | **owner: EF migration (`User.AppleId`) + customer-mobile spec+client regen — gate LIVE Apple sign-in (code ships fail-closed)** | Q-IOS-04 §7.14 / blocked T-0312 |
+> | **T-0344** | **OWNER TASK** — Apple SIWA provisioning: enable Sign in with Apple on the `cz.cleansia.customer` App ID (primary) + the Xcode entitlement + `Apple:BundleId` config. **No `.p8`/Services-ID/domain** (identity-token-only). Gates LIVE Apple sign-in (the code shipped in T-0343/T-0312) | S | **proposed** (owner — **now ACTIVE: T-0343+T-0312 have landed; this is a LIVE-Apple-sign-in gate; the code ships fail-closed without it — the T-0311-gated-by-T-0342 pattern**) | — | ios, backend | no | **owner: Apple capability + `Apple:BundleId`** | Q-IOS-04 §7.14 |
+> | **T-0345** | **OWNER TASK** — Google Sign-In provisioning for iOS (concretizes **IMP-1**): Cloud Console project + iOS OAuth client id (+ reversed-client-id Info.plist scheme) + web/server client id + set `Google:ClientId`=iOS `serverClientID`=web client id. **Zero backend code** (GoogleAuth already live). Gates LIVE Google sign-in | S | **proposed** (owner — **now ACTIVE: T-0312 Slice C has landed; this is a LIVE-Google-sign-in gate; the code/SPM dep/reversed-client-id slot ship without it**) | — | ios, backend | no | **owner: Google client ids + `Google:ClientId`** | Q-IOS-04 §7.14 D5 |
+> | **T-0346** | **Backend (security hardening)** — gate `GoogleAuth` provisioning on `email_verified` (parity with the new AppleAuth gate; the existing Google flow doesn't check it). Deliberately separate from T-0343 (changes live Google behavior) | S | **proposed** (medium — **dep T-0343 now ✓ done, UNBLOCKED**) | T-0343✓ | backend | **yes** | — | Q-IOS-04 security gate §7.14 (medium finding) |
+>
+> **OWNER / manual-step gates surfaced by Phase 6 (the PM never runs these — all gate LIVE social sign-in + the
+> next customer wave; the Phase-6 code ships fail-closed without them):**
+> - **EF migration for `User.AppleId`** (the new nullable column T-0343 added to `User`) — the owner creates + applies
+>   it; until then the AppleAuth provisioning path can't persist an Apple user. **Gates LIVE Apple sign-in.**
+> - **`customer-mobile-api` spec + client regen** — regenerate `customer-mobile-api.json` + the iOS `CleansiaCustomerApi`
+>   (+ the Android customer client) after T-0343's `AppleAuth` endpoint/DTOs landed. **Needed for** (a) the T-0314
+>   customer business endpoints and (b) the LIVE social e2e (the generated `AppleAuthCommand` confirms the wire shape
+>   the hand-written spine DTO matches). The bulk of T-0312 was built ahead of it against the documented §7.14
+>   contract; only the live Apple POST round-trip waits on it.
+> - **T-0344** (Apple SIWA capability + `Apple:BundleId`) + **T-0345** (Google client ids + `Google:ClientId`, IMP-1)
+>   — the per-provider LIVE-sign-in capability/config gates (rows above).
 >
 > **The standing latent backend SECURITY item — TRACKED, not new:** the multi-tenant asymmetry in
 > `RefreshTokenService.RevokeByDeviceAsync` / `RefreshTokenRepository.GetActiveByUserIdAsync` that the iOS remote

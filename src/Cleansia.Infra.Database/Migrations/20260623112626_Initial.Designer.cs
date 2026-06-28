@@ -4671,6 +4671,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
+                    b.Property<string>("AppleId")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
                     b.Property<int>("AuthenticationType")
                         .HasColumnType("integer");
 
@@ -4786,6 +4790,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AppleId")
+                        .HasFilter("\"AppleId\" IS NOT NULL");
 
                     b.HasIndex("ConfirmationCode")
                         .HasFilter("\"ConfirmationCode\" IS NOT NULL");

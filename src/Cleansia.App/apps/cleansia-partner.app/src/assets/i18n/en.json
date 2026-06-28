@@ -989,6 +989,7 @@
       "internal_type_error": "Internal authentication type error",
       "invalid_confirmation_code": "Invalid confirmation code",
       "invalid_google_token": "Invalid Google token",
+      "invalid_apple_token": "Invalid Apple token",
       "invalid_password_format": "Invalid password format",
       "invalid_reset_token": "Invalid password reset token",
       "same_reset_password": "New password matches the old password",

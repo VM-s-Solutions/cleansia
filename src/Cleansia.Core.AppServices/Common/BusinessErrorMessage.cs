@@ -7,6 +7,7 @@ public static class BusinessErrorMessage
     public const string InternalAuthTypeError = "auth.internal_type_error";
     public const string InvalidConfirmationCode = "auth.invalid_confirmation_code";
     public const string InvalidGoogleUserToken = "auth.invalid_google_token";
+    public const string InvalidAppleUserToken = "auth.invalid_apple_token";
     public const string InvalidPasswordFormat = "auth.invalid_password_format";
     public const string NotValidResetPasswordToken = "auth.invalid_reset_token";
     public const string SameResetPassword = "auth.same_reset_password";

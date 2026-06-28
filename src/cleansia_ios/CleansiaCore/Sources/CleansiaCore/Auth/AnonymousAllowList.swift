@@ -17,6 +17,7 @@ public struct AnonymousAllowList: Sendable {
         "/api/auth/register",
         "/api/auth/registeremployee",
         "/api/auth/googleauth",
+        "/api/auth/appleauth",
         "/api/auth/confirmuseremail",
         "/api/auth/resendconfirmationemail",
         "/api/auth/forgotpassword",

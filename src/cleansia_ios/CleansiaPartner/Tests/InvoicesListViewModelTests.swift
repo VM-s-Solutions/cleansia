@@ -87,8 +87,8 @@ final class InvoicesListViewModelTests: XCTestCase {
         XCTAssertEqual(vm.state.loadedValue?.count, 1)
     }
 
-    // A warm cache makes the next on-appear (resume) a silent no-op —
-    // no second network round-trip while inside the freshness window.
+    /// A warm cache makes the next on-appear (resume) a silent no-op —
+    /// no second network round-trip while inside the freshness window.
     func testOnAppearSkipsNetworkWhileCacheIsWarm() async {
         client.invoicesResult = .success([EmployeeInvoiceDto(id: "inv-1")])
         let vm = makeViewModel()
@@ -100,8 +100,8 @@ final class InvoicesListViewModelTests: XCTestCase {
         XCTAssertEqual(client.invoicesCallCount, 1)
     }
 
-    // Once the watermark goes stale, the next on-appear silently
-    // re-fetches (the silent-stale resume).
+    /// Once the watermark goes stale, the next on-appear silently
+    /// re-fetches (the silent-stale resume).
     func testOnAppearRefetchesAfterWatermarkGoesStale() async {
         client.invoicesResult = .success([EmployeeInvoiceDto(id: "inv-1")])
         let vm = makeViewModel()
@@ -113,7 +113,7 @@ final class InvoicesListViewModelTests: XCTestCase {
         XCTAssertEqual(client.invoicesCallCount, 2)
     }
 
-    // Invalidating the watermark forces a re-fetch even while warm.
+    /// Invalidating the watermark forces a re-fetch even while warm.
     func testInvalidateForcesRefetchEvenWhileWarm() async {
         client.invoicesResult = .success([EmployeeInvoiceDto(id: "inv-1")])
         let vm = makeViewModel()

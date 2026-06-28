@@ -306,6 +306,32 @@ green-check / red-cross rows + a `hasInput` flag). Partner (now) and customer (T
 a VM-local copy of the predicate (the Android `RegisterUiState`-getter smell, lifted to Core on iOS); a
 per-app password-rule widget instead of the Core component.
 
+**Per-host register endpoint — the ONE way (sprint-12 §7.15 Decision 3, T-0312 Slice B):** the shared
+`AuthApiClient` register path differs per audience — **partner self-registers cleaners at
+`api/Auth/RegisterEmployee`, customer self-registers at `api/Auth/Register`**. This is a **construction-time
+`RegisterEndpoint` parameter** on the one `AuthApiClient.init` (default `.employee` so the partner factory +
+every existing call site stay byte-equivalent; the customer factory passes `.customer`) consumed by the
+**single** `register(...)` method — NOT a second method, a `RegistrationAuthClient` fork, or a per-app
+subclass. The hand-written body (`RegisterRequest`: email/password/firstName/lastName/language) serializes
+identically for both endpoints (the customer `Register` accepts the partner field set; `referralCode` is
+omitted → null, a T-0314 concern). **Deviations a reviewer rejects:** a parallel `customerRegister(...)`
+method (forks the one register code path); hard-coding either path in `register(...)`; the body diverging
+between hosts. **Guard tests:** the customer client targets `/api/Auth/Register` (NOT `RegisterEmployee`,
+no Bearer) AND the default stays `RegisterEmployee` (the partner byte-equivalence proof).
+
+**The event-driven customer auth VM — the ONE way (sprint-12 §7.15 Decision 2, T-0312 Slice B; the Android
+`AuthViewModel` parity):** the customer auth surface (SignIn/SignUp/EmailVerify/ForgotPassword) is driven by a
+`CustomerAuthViewModel` that **emits an `AuthOutcome` (`signedIn` / `needsEmailConfirm(email)` /
+`passwordReset`) via a `PassthroughSubject` and NEVER navigates** — `CustomerRootView` maps the outcome to a
+route (`signedIn → .home`, `needsEmailConfirm(email) → .verifyEmail(email:)`, `passwordReset → .login`) in a
+static `afterAuth(_:)` (unit-testable without a view). The email rides the `.verifyEmail(email:)` associated
+value (the §7.5 D2 seam above), not a store; `needsEmailConfirm` is the surfacing of the **empty-token gate**
+(`200 + empty/blank token` or `isEmailConfirmed == false` → verify, never `.home` or an error — the shared
+`resolveEmailGate` in the Core spine, reused, never reimplemented). The four screens may each own a VM sharing
+the one outcome contract (the partner per-screen `loginSuccess`-subject pattern, generalized). **Deviations a
+reviewer rejects:** the VM calling navigation directly; a social/parallel token-write path bypassing the one
+Keychain `persist`; an empty-token success landing `.home`.
+
 **iOS maps — the ONE way (sprint-12 §7.6, T-0306; ADR-0013 D6 + ADR-0014 D6′ + ADR-0018 Gate-DP, reviewer
 #7/#12/#27):** all map + geocode use goes through `CleansiaCore/Location`'s **`MapProvider`** /
 **`GeocodingService`** protocols; the **only** sanctioned MapKit/CoreLocation consumers are the

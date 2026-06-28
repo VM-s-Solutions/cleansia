@@ -13,7 +13,10 @@ final class AuthApiClientTests: XCTestCase {
         super.tearDown()
     }
 
-    private func makeClient(store: TokenStore) throws -> AuthApiClient {
+    private func makeClient(
+        store: TokenStore,
+        registerEndpoint: RegisterEndpoint = .employee
+    ) throws -> AuthApiClient {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockURLProtocol.self]
         let session = URLSession(configuration: config)
@@ -26,6 +29,7 @@ final class AuthApiClientTests: XCTestCase {
                 timeZoneIdentifier: { "Europe/Prague" }
             ),
             sessionScopedCaches: SessionScopedCacheRegistry(),
+            registerEndpoint: registerEndpoint,
             authedSession: session,
             noAuthSession: session
         )
@@ -263,6 +267,34 @@ final class AuthApiClientTests: XCTestCase {
         XCTAssertTrue(value)
         let request = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "RegisterEmployee"))
         XCTAssertTrue(request.url?.path.contains("/api/Auth/RegisterEmployee") == true)
+    }
+
+    func testCustomerRegisterTargetsRegisterPathNotRegisterEmployee() async throws {
+        let client = try makeClient(store: MemTokenStore(), registerEndpoint: .customer)
+        MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
+
+        let result = await client.register(
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en"
+        )
+
+        guard case let .success(value) = result else { return XCTFail("expected success") }
+        XCTAssertTrue(value)
+        let request = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "Register"))
+        XCTAssertEqual(request.url?.path, "/api/Auth/Register")
+        XCTAssertFalse(request.url?.path.contains("RegisterEmployee") == true)
+        XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+    }
+
+    func testDefaultRegisterEndpointStaysEmployeeForPartnerByteEquivalence() async throws {
+        let client = try makeClient(store: MemTokenStore())
+        MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
+
+        _ = await client.register(
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en"
+        )
+
+        let request = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "Register"))
+        XCTAssertEqual(request.url?.path, "/api/Auth/RegisterEmployee")
     }
 
     func testAuthedNonAnonPathCarriesBearerPositiveControl() async throws {

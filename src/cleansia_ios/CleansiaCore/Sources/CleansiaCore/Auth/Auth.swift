@@ -36,7 +36,7 @@ public struct LogoutRequest: Encodable, Sendable {
     }
 }
 
-public struct RegisterEmployeeRequest: Encodable, Sendable {
+public struct RegisterRequest: Encodable, Sendable {
     public let email: String
     public let password: String
     public let firstName: String
@@ -63,6 +63,18 @@ public enum LoginOutcome: Equatable, Sendable {
     case unverifiedEmail(email: String, hasToken: Bool)
 }
 
+public enum RegisterEndpoint: Sendable {
+    case employee
+    case customer
+
+    var path: String {
+        switch self {
+        case .employee: "api/Auth/RegisterEmployee"
+        case .customer: "api/Auth/Register"
+        }
+    }
+}
+
 public final class AuthApiClient: AuthSpine, @unchecked Sendable {
     private let apiBaseURL: URL
     private let authedSession: URLSession
@@ -70,6 +82,7 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
     private let headerAdapter: HeaderAdapter
     public let tokenStore: TokenStore
     private let sessionScopedCaches: SessionScopedCacheRegistry
+    private let registerEndpoint: RegisterEndpoint
     private let lock = NSLock()
     private var preLogout: (@Sendable () async -> Void)?
 
@@ -81,6 +94,7 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         tokenStore: TokenStore,
         headerAdapter: HeaderAdapter,
         sessionScopedCaches: SessionScopedCacheRegistry,
+        registerEndpoint: RegisterEndpoint = .employee,
         authedSession: URLSession = .shared,
         noAuthSession: URLSession = URLSession(configuration: .ephemeral)
     ) {
@@ -88,6 +102,7 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         self.tokenStore = tokenStore
         self.headerAdapter = headerAdapter
         self.sessionScopedCaches = sessionScopedCaches
+        self.registerEndpoint = registerEndpoint
         self.authedSession = authedSession
         self.noAuthSession = noAuthSession
     }
@@ -127,14 +142,14 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         lastName: String,
         language: String
     ) async -> ApiResult<Bool> {
-        let body = RegisterEmployeeRequest(
+        let body = RegisterRequest(
             email: email,
             password: password,
             firstName: firstName,
             lastName: lastName,
             language: language
         )
-        return await post(path: "api/Auth/RegisterEmployee", body: body, useNoAuthSession: true)
+        return await post(path: registerEndpoint.path, body: body, useNoAuthSession: true)
     }
 
     public func confirmEmail(code: String) async -> ApiResult<LoginOutcome> {

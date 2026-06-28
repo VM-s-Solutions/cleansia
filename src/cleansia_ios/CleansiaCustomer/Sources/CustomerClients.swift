@@ -17,6 +17,7 @@ enum CustomerAuthSpine {
             tokenStore: tokenStore,
             headerAdapter: headerAdapter,
             sessionScopedCaches: sessionScopedCaches,
+            registerEndpoint: .customer,
             authedSession: URLSession(configuration: .default),
             noAuthSession: URLSession(configuration: .ephemeral)
         )

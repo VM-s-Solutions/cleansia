@@ -14,18 +14,19 @@ final class CustomerRootRouteTests: XCTestCase {
         XCTAssertEqual(CustomerRootView.Route.afterSplash(.unauthenticated), .login)
     }
 
-    func testVerifiedLoginRoutesToSplash() {
-        let route = CustomerRootView.Route.afterLogin(
-            LoginSuccess(requiresEmailConfirmation: false, email: nil)
-        )
-        XCTAssertEqual(route, .splash)
+    func testSignedInOutcomeRoutesToHome() {
+        XCTAssertEqual(CustomerRootView.Route.afterAuth(.signedIn), .home)
     }
 
-    func testUnverifiedLoginRoutesToVerifyEmailCarryingTheEmail() {
-        let route = CustomerRootView.Route.afterLogin(
-            LoginSuccess(requiresEmailConfirmation: true, email: "a@b.cz")
+    func testNeedsEmailConfirmOutcomeCarriesEmailOntoTheRoute() {
+        XCTAssertEqual(
+            CustomerRootView.Route.afterAuth(.needsEmailConfirm(email: "a@b.cz")),
+            .verifyEmail(email: "a@b.cz")
         )
-        XCTAssertEqual(route, .verifyEmail(email: "a@b.cz"))
+    }
+
+    func testPasswordResetOutcomeRoutesToLogin() {
+        XCTAssertEqual(CustomerRootView.Route.afterAuth(.passwordReset), .login)
     }
 
     func testCustomerRouteHasNoPartnerOnlyAudiences() {

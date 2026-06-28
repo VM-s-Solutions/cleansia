@@ -7,6 +7,86 @@ link/create + takeover guard lives in the `AppleAuth` / `GoogleAuth` handlers.
 
 ---
 
+## 2026-06-28 — T-0312 Slice B (iOS customer email-auth core) build-time verification (auth-security gate, PASS)
+
+Branch `phase/ios-phase6`, uncommitted. Scope: the shared Core auth-spine change (`CleansiaCore/Auth/Auth.swift`)
+that adds the customer email/password register route, plus the customer VM/views/routing. Reviewer covers
+Gate-DP/parity in parallel; this entry OWNS the auth-security gate. Tests run on iPhone 17 (simulator, booted):
+`AuthApiClientTests` 16/16 green (Core spine, via `xcodebuild test -scheme CleansiaCore -destination
+'…name=iPhone 17'`); `CleansiaCustomerTests` 32/32 green (VM + routing). Verdict per rule below.
+
+VERDICT: **PASS** — exploitable as-written: none found. The shared-spine Register change is **non-regressing**
+and has **no parallel auth write path**; the empty-token gate cannot yield a session without a verified token;
+the anon auth routes carry no Bearer; no token/PII logging.
+
+### Shared-spine Register change (highest scrutiny) — PASS
+- **Partner path UNCHANGED.** `RegisterEndpoint` enum: `.employee → api/Auth/RegisterEmployee`,
+  `.customer → api/Auth/Register` (`Auth.swift:66-76`). `init` defaults `registerEndpoint = .employee`
+  (`Auth.swift:97`); `PartnerAuthSpine.make` does NOT pass it (`CleansiaPartner/Sources/PartnerClients.swift:24-31`)
+  → partner still hits `RegisterEmployee` with the `.partner` allow-list. The `RegisterEmployeeRequest →
+  RegisterRequest` rename is serialization-identical (same 5 fields, same casing, same `Encodable`;
+  `Auth.swift:39-45`) — no wire drift on the partner body. Zero lingering `RegisterEmployeeRequest` refs
+  (grep clean). Tests: `testDefaultRegisterEndpointStaysEmployeeForPartnerByteEquivalence`,
+  `testCustomerRegisterTargetsRegisterPathNotRegisterEmployee` (asserts path `/api/Auth/Register` + NIL
+  Authorization), `testRegisterTargetsRegisterEmployeePath`.
+- **NO parallel auth write path.** Customer `register()` routes through the SAME `post()→send()→headerAdapter.apply`
+  transport as login/confirm (`Auth.swift:138-153`), returns `ApiResult<Bool>`, and **never** calls
+  `resolveEmailGate`/`persist`. The single token-persist mutation `tokenStore.save` has exactly two call
+  sites — `persist()` (`Auth.swift:315`, reached only via `resolveEmailGate` ← login `:130` / confirm `:166`)
+  and the spine's `SessionRefresher.swift:71` (refresh rotation) — both pre-existing; the diff added neither.
+  Register cannot mint or persist a session.
+- **Register returns Bool, never persists.** `RegistrationAuthClient.register → ApiResult<Bool>`
+  (`ContainerSeams.swift:12-20`); the VM maps success → `.needsEmailConfirm(email:)` only
+  (`CustomerAuthViewModel.swift:168-173`).
+
+### Anon allow-list / no-Bearer discipline (S2/S1) — PASS
+- `/api/auth/register` is in `sharedAuth` (`AnonymousAllowList.swift:18`) → present in BOTH `.partner` and
+  `.customer` lists (`:41-42`); the customer host installs `.customer` (`CustomerClients.swift:11-14`). So
+  `api/Auth/Register` is anon for the customer host. Belt-and-suspenders: register also forces
+  `useNoAuthSession: true` (`Auth.swift:152`) → `accessToken = nil` passed to the adapter regardless of the
+  allow-list. Login/register/confirmuseremail/resendconfirmationemail/forgotpassword/refreshtoken all anon;
+  Logout stays AUTHED (not in the list; rides the live Bearer in `logout()` `Auth.swift:205-212`).
+  `appleauth`/`googleauth` are Slice C / pre-existing — `googleauth` already anon (`:19`), `appleauth` N/A here.
+  Tests: `testAnonAuthPathsNeverCarryBearer`, `testConfirmEmailDoesNotAttachBearerEvenWithStoredToken`.
+- **X-Device-Id / X-Time-Zone invariants preserved** for the customer host: stamped unconditionally in
+  `HeaderAdapter.apply` (`HeaderAdapter.swift:24-32`), independent of the Bearer branch; the spine change did
+  not touch the adapter. Tests assert `X-Device-Id`/`X-Time-Zone` present on anon paths (`AuthApiClientTests:231-232,254`).
+
+### Empty-token gate / no silent session (ADR-0019, the load-bearing invariant) — PASS
+- `resolveEmailGate` (`Auth.swift:190-203`): empty/missing token ⇒ `.unverifiedEmail(hasToken:false)` BEFORE
+  any persist; `persist` runs only with a non-empty token; `isEmailConfirmed != true` ⇒ `.unverifiedEmail
+  (hasToken:true)` — `.authenticated` is returned ONLY for a persisted, confirmed token.
+- VM/routing: `signUp` → `.needsEmailConfirm` always; `signIn`/`confirmEmail` map `.unverifiedEmail` →
+  `.needsEmailConfirm` (confirm shows an error, never a session); only `.authenticated` → `.signedIn`
+  (`CustomerAuthViewModel.swift:188-199,248-260`). `Route.afterAuth(.signedIn)=.home` is the ONLY route to
+  `.home` from auth, and the splash `.home` is gated by `hasValidSession` = non-empty persisted access token
+  (`AppContainer.swift:106-109`). No unconfirmed/empty-token path reaches `.home`. Tests:
+  `testLoginWithEmptyTokenIsUnverifiedNoToken` (asserts `store.current()==nil`),
+  `testConfirmEmailEmptyTokenIsUnverifiedNoTokenAndStoresNothing`,
+  `testSignInEmptyTokenUnverifiedRoutesToVerifyNotError` (asserts route == `.verifyEmail`, not `.home`).
+
+### Event-driven VM / no PII or token leak (S4/S6) — PASS
+- `AuthOutcome` (`AuthOutcome.swift`) = `signedIn | needsEmailConfirm(email) | passwordReset` — carries no
+  token/refresh/secret. The `email` in `needsEmailConfirm` is the user's own entered email (from the sign-in/
+  sign-up form or the confirmed DTO email; `CustomerAuthViewModel.swift:170,255`) — no PII beyond self.
+- **No logging** of token/password/auth response anywhere in `CleansiaCore/Auth/*` or `CleansiaCustomer/.../Auth/*`
+  (grep for `print|os_log|Logger|NSLog|debugPrint` = none). Password fields use `CleansiaTextField(isPassword:true)`
+  → `SecureField` (`Components/CleansiaTextField.swift:102-103`); the password lives only in transient form
+  state (`SignUpFormState`/`SignInFormState`), passed to the request and not retained beyond it.
+
+### Tenant scoping / no new bypass (ADR-0019) — PASS
+No new endpoint or transport added; register reuses the one spine. The empty-token gate, the single-flight
+refresh (`SessionRefresher`), the single token source, and the anon allow-list are all unchanged in shape —
+the diff only adds a destination path enum + a constructor parameter. Customer register cannot mint a session
+without the verified-token (login/confirm → `resolveEmailGate` → `persist`) path.
+
+### Owner-gated (NOT part of this build-time gate)
+The customer email-register backend route (`POST /api/Auth/Register` on the Customer Mobile host) and its rate
+limit (`[EnableRateLimiting("auth")]`, S5) are backend concerns verified separately; the customer mobile
+spec/client regen is owner-gated. iOS Slice B is client-only and ships safely behind the verified-token gate.
+
+---
+
 ## 2026-06-28 — T-0343 AppleAuth build-time verification (Q-IOS-04 design gate, PASS-WITH-REQUIREMENTS)
 
 Branch `phase/ios-phase6`, uncommitted. Build clean; `dotnet test --filter Apple` = 20/20 green.

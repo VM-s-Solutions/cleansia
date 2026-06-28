@@ -37,24 +37,6 @@ enum L10n {
         localized("profile_logout")
     }
 
-    enum Auth {
-        static var signIn: String {
-            localized("login_title")
-        }
-
-        static var signUp: String {
-            localized("register_title")
-        }
-
-        static var forgotPassword: String {
-            localized("login_forgot_password")
-        }
-
-        static var verifyEmail: String {
-            localized("verify_title")
-        }
-    }
-
     nonisolated(unsafe) static var bundle: Bundle = .main
 
     static func localized(_ key: String) -> String {

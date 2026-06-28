@@ -30,16 +30,45 @@ struct CustomerRootView: View {
                 route = Route.afterSplash(outcome)
             }
         case .login:
-            AuthPlaceholderView(systemImage: "person.crop.circle", title: L10n.Auth.signIn)
+            SignInView(
+                makeViewModel: { makeAuthViewModel() },
+                onForgotPassword: { route = .forgotPassword },
+                onSignUp: { route = .register },
+                onOutcome: { route = Route.afterAuth($0) }
+            )
         case .register:
-            AuthPlaceholderView(systemImage: "person.badge.plus", title: L10n.Auth.signUp)
+            SignUpView(
+                makeViewModel: { makeAuthViewModel() },
+                onSignIn: { route = .login },
+                onOutcome: { route = Route.afterAuth($0) }
+            )
         case .forgotPassword:
-            AuthPlaceholderView(systemImage: "key", title: L10n.Auth.forgotPassword)
-        case .verifyEmail:
-            AuthPlaceholderView(systemImage: "envelope.badge", title: L10n.Auth.verifyEmail)
+            ForgotPasswordView(
+                makeViewModel: { makeAuthViewModel() },
+                onBack: { route = .login },
+                onOutcome: { route = Route.afterAuth($0) }
+            )
+        case let .verifyEmail(email):
+            EmailVerifyView(
+                makeViewModel: { makeAuthViewModel(pendingEmail: email) },
+                onBack: { route = .login },
+                onOutcome: { route = Route.afterAuth($0) }
+            )
         case .home:
             CustomerShellView(onSignedOut: { route = .login })
         }
+    }
+
+    private func makeAuthViewModel(pendingEmail: String? = nil) -> CustomerAuthViewModel {
+        CustomerAuthViewModel(
+            loginClient: container.loginClient,
+            registrationClient: container.registrationAuthClient,
+            emailConfirmationClient: container.emailConfirmationClient,
+            passwordResetClient: container.passwordResetClient,
+            settings: container.appSettings,
+            snackbar: container.snackbar,
+            pendingEmail: pendingEmail
+        )
     }
 
     enum Route: Equatable {
@@ -54,8 +83,12 @@ struct CustomerRootView: View {
             .splash
         }
 
-        static func afterLogin(_ success: LoginSuccess) -> Route {
-            success.requiresEmailConfirmation ? .verifyEmail(email: success.email) : .splash
+        static func afterAuth(_ outcome: AuthOutcome) -> Route {
+            switch outcome {
+            case .signedIn: .home
+            case let .needsEmailConfirm(email): .verifyEmail(email: email)
+            case .passwordReset: .login
+            }
         }
 
         static func afterSplash(_ outcome: CustomerSplashOutcome) -> Route {
@@ -64,23 +97,5 @@ struct CustomerRootView: View {
             case .unauthenticated: .login
             }
         }
-    }
-}
-
-private struct AuthPlaceholderView: View {
-    let systemImage: String
-    let title: String
-
-    var body: some View {
-        VStack(spacing: Spacing.s) {
-            Image(systemName: systemImage)
-                .font(.system(size: 48))
-                .foregroundColor(CleansiaColors.primary)
-            Text(verbatim: title)
-                .font(CleansiaTypography.titleMedium)
-                .foregroundColor(CleansiaColors.onBackground)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(CleansiaColors.background.ignoresSafeArea())
     }
 }

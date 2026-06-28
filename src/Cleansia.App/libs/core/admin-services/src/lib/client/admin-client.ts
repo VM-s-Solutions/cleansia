@@ -14155,6 +14155,7 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
     rejectedByUserId!: string | undefined;
     rejectedAt!: Date | undefined;
     missingFields!: string[] | undefined;
+    userId!: string | undefined;
 
     constructor(data?: IAdminEmployeeDetail) {
         if (data) {
@@ -14212,6 +14213,7 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
                 for (let item of Data["missingFields"])
                     this.missingFields!.push(item);
             }
+            this.userId = Data["userId"];
         }
     }
 
@@ -14269,6 +14271,7 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
             for (let item of this.missingFields)
                 data["missingFields"].push(item);
         }
+        data["userId"] = this.userId;
         return data;
     }
 }
@@ -14309,6 +14312,7 @@ export interface IAdminEmployeeDetail {
     rejectedByUserId: string | undefined;
     rejectedAt: Date | undefined;
     missingFields: string[] | undefined;
+    userId: string | undefined;
 }
 
 export class AdminEmployeeListItem implements IAdminEmployeeListItem {

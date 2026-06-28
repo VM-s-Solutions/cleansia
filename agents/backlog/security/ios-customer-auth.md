@@ -248,3 +248,69 @@ The iOS encoding MATCHES the T-0343 backend's lowercase-hex expectation; live SI
 `GID_CLIENT_ID` / `GID_SERVER_CLIENT_ID` / `GID_REVERSED_CLIENT_ID` Google iOS OAuth client (T-0345);
 `Apple:BundleId` backend audience (T-0344) — until set, the backend verifier fails closed. The endpoints ship
 safely dark. Mobile spec/client regen remains the owner's manual step.
+
+---
+
+## 2026-06-28 — T-0347 money-safety verification (Gate-SEC HIGH double-capture; sprint-12 §7.16) — PASS
+
+Branch `phase/ios-phase7`, uncommitted. Scope OWNED here: the money-safety property — **exactly one
+capturable Stripe charge surface per card order, per channel**. Reviewer covers conventions/web-non-regression
+in parallel. Tests: `dotnet test src/Cleansia.Tests --filter "OrderPaymentDispatcher|CreateOrder|OrderChannel"`
+→ **31/31 PASS** (incl. the new mobile-null / web-session / factory-never-invoked / DI-wiring cases).
+
+**VERDICT: PASS.** The double-capture surface the §7.16 gate flagged is closed. Can a single card order now
+present two capturable surfaces? **NO for mobile, NO for web** — see the per-point trace.
+
+### Property trace (file:line)
+1. **Mobile card ⇒ EXACTLY the PaymentIntent — PASS.** `OrderPaymentDispatcher.DispatchAsync`
+   `OrderPaymentDispatcher.cs:36-39`: on `channelProvider.Channel == OrderChannel.Mobile` the Card branch
+   returns `OrderPaymentDispatchResult.Ok(null)` **before** the `try` — it never calls
+   `stripeClientFactory.CreateClient()` (line 43) and never mints a Checkout Session. The order's only
+   capturable surface is the PaymentSheet PaymentIntent minted by `CreatePaymentIntent.cs:107`. Asserted by
+   `OrderPaymentDispatcherTests.MobileCard_DoesNotCreateStripeSession_*` and `MobileCard_NeverInvokesStripeClientFactory`.
+2. **Web card ⇒ EXACTLY the Checkout Session (byte-non-regressing) — PASS.** The Web channel falls through
+   to the original `try` (`OrderPaymentDispatcher.cs:41-45`), identical to HEAD (diff is purely the additive
+   Mobile early-return + the injected `IOrderChannelProvider` ctor param). Web `CreateOrder` does not call
+   `CreatePaymentIntent` (the dispatcher is the only Session/Intent mint in the CreateOrder path;
+   `CreateOrder.cs:275`). Asserted by `WebCard_CreatesStripeSession_*` and
+   `CreateOrderHandlerCharacterizationTests.WebChannel_CardPath_StillCreatesCheckoutSession`.
+3. **Channel is HOST-DERIVED, not client-supplied — PASS.** `CreateOrder.Command` has **no** `Channel` field
+   (`CreateOrder.cs:178-196`). The value comes only from the per-host DI registration of `IOrderChannelProvider`
+   (`Web.Customer/Extensions/ServiceExtensions.cs:24` = Web; `Web.Mobile.Customer/Extensions/ServiceExtensions.cs:25`
+   = Mobile). No request/route/query/JWT path reaches it — a client cannot spoof the channel to force or skip
+   a surface.
+4. **Safe default + override wiring — PASS.** Shared `Cleansia.Config` uses
+   `TryAddSingleton<IOrderChannelProvider>(Web)` (`Cleansia.Config/Services/ServiceExtensions.cs:118`): a host
+   that forgets to register gets **Web = Checkout Session = the pre-existing behavior**, never a state where both
+   surfaces fire. The override is robust regardless of registration order: each host's explicit `AddSingleton(...)`
+   runs in `AddServices` **before** `.AddCoreBindings → Config.AddServices`, so the later `TryAddSingleton`
+   is a no-op (Try* never overwrites an existing registration) and exactly one registration exists. Verified by
+   `OrderChannelWiringTests` (shared default = Web; mobile override resolves Mobile; web resolves Web). NB: the
+   wiring-test comment says "last registration … resolves"; the actual mechanism is Try*-no-op, but the resolved
+   value asserted is correct either way.
+5. **Webhook still confirms the mobile PaymentIntent — PASS.** `HandlePaymentNotification.cs:219` routes
+   `payment_intent.succeeded` into `HandleCompletedSession` → `PaymentStatus.Paid` + `OrderStatus.Confirmed`
+   (lines 251-252); `ExtractOrderId` reads OrderId off both Session and PaymentIntent (lines 95-107). Unaffected
+   by T-0347 — the single mobile surface still drives the order paid.
+6. **No idempotency weakening, no secret logging — PASS.** The ProcessedStripeEvents unique-index idempotency
+   gate (`HandlePaymentNotification.cs:148-163`) and the Paid/Refunded terminal-state skips
+   (`HandleCompletedSession` 245-249, `HandleExpiredSession` 292) are untouched. The dispatcher logs only the
+   `StripeException` message (`OrderPaymentDispatcher.cs:53`), no secrets; `CreatePaymentIntent` returns
+   `ClientSecret`/`EphemeralKey` in the response body but never logs them. No new endpoint/attack surface
+   (no controller/DTO change → no NSwag/mobile-spec regen; no EF migration — S9 clean).
+
+### Residual finding (LATENT, out of T-0347 scope — file as a follow-up, NOT a blocker)
+- **Mobile-paid card orders are not refundable via any code path.** The only refund implementation is
+  `RefundCheckoutSessionAsync(order.StripeSessionId, …)` (`RefundService.cs:113`, resolves session→PaymentIntent
+  in `StripeClient.cs:75-101`); both `RefundService.cs:44-48` and `AdminRefundOrder.cs:79-86` short-circuit to
+  `RefundOrderNotRefundable` when `order.StripeSessionId` is empty. Post-T-0347 a mobile card order has an empty
+  `StripeSessionId` (paid on `StripePaymentIntentId`), so admin refund / dispute refund of a mobile order fails.
+  There is **no** `RefundPaymentIntent` path. This is **latent, not a live customer breach and not a
+  double-capture**: (a) refund endpoints are Admin-host-only (`Web.Admin` `AdminOrderController` /
+  `AdminRefundController`) — not exposed to the customer mobile/web hosts; (b) it is a refund-COVERAGE gap, the
+  opposite of the double-CAPTURE defect this ticket closes; (c) it was effectively broken pre-T-0347 too — the
+  old double-surface set a `StripeSessionId`, but that session was never charged (mobile pays the PaymentIntent),
+  so `RefundCheckoutSessionAsync` would have thrown `"…has no PaymentIntent — likely unpaid"` (`StripeClient.cs:85`).
+  T-0347 changes the failure mode (guard reject vs. throw), not the outcome. **Recommend a follow-up ticket:**
+  "Add a PaymentIntent refund path for mobile-paid (PaymentSheet) card orders" — required before mobile card
+  goes live with real refunds, but does not gate the T-0347 double-capture fix.

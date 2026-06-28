@@ -70,3 +70,15 @@ order has exactly one charge surface. Options (architect/backend to rule):
 - 2026-06-28 — filed from the T-0313 Gate-SEC (§7.16, HIGH). Pre-existing (affects the live Android card flow);
   the architect's "mobile CreateOrder returns `StripeSessionId=null`" claim was contradicted by the code — this
   ticket makes it true.
+- 2026-06-28 — implemented (backend). **Discriminator: host-based — NO contract change, NO regen.** Chose the
+  host-based path because `IHostAudienceProvider` is NOT usable as the discriminator here (both the web host
+  `Cleansia.Web.Customer` and the mobile host `Cleansia.Web.Mobile.Customer` register the SAME
+  `JwtAudiences.Customer` audience, so the audience cannot tell web from mobile). Added a new per-host signal
+  `IOrderChannelProvider` (enum `OrderChannel { Web, Mobile }`) mirroring the existing per-host
+  `IHostAudienceProvider` registration seam: shared `Cleansia.Config` `TryAddSingleton`s the safe Web default
+  (keeps the unchanged Checkout Session flow); `Web.Customer` registers `Web`, `Web.Mobile.Customer` overrides
+  with `Mobile`. `OrderPaymentDispatcher` now skips the Checkout Session and returns `StripeSessionId == null`
+  on the Mobile channel (PaymentSheet PaymentIntent is the single capturable surface) and is byte-non-regressing
+  on Web. Cash unaffected. No DTO/endpoint change → no NSwag/mobile-spec regen. No EF migration. Tests: dispatcher
+  unit tests (web keeps session / mobile null + never touches the Stripe factory), CreateOrder handler tests
+  (mobile→null, web→session), and DI wiring tests (shared Web default; mobile AddSingleton override wins).

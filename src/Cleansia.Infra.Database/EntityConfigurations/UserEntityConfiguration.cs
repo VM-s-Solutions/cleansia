@@ -37,6 +37,9 @@ public class UserEntityConfiguration : AuditableEntityConfiguration<User, string
         builder.Property(u => u.GoogleId)
             .HasMaxLength(512);
 
+        builder.Property(u => u.AppleId)
+            .HasMaxLength(512);
+
         // Stores a SHA-256 hex hash (64 chars), not a 6-digit code.
         // (Column length / migration owned by the db agent — kept consistent on the C# side here.)
         builder.Property(u => u.ResetPasswordCode)
@@ -117,5 +120,8 @@ public class UserEntityConfiguration : AuditableEntityConfiguration<User, string
 
         builder.HasIndex(u => u.GoogleId)
             .HasFilter("\"GoogleId\" IS NOT NULL");
+
+        builder.HasIndex(u => u.AppleId)
+            .HasFilter("\"AppleId\" IS NOT NULL");
     }
 }

@@ -15,6 +15,9 @@
          "SendGrid" IHttpClientFactory client (standard resilience handler + OTel). -->
     <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <!-- AppleTokenVerifier — cached Apple JWKS via ConfigurationManager + the vetted
+         JsonWebTokenHandler (RS256-pinned), the Apple analogue of the Google.Apis.Auth path. -->
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />
   </ItemGroup>
 
   <ItemGroup>

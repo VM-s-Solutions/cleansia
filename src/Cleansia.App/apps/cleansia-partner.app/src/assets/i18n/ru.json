@@ -989,6 +989,7 @@
       "internal_type_error": "Ошибка типа внутренней аутентификации",
       "invalid_confirmation_code": "Недействительный код подтверждения",
       "invalid_google_token": "Недействительный токен Google",
+      "invalid_apple_token": "Недействительный токен Apple",
       "invalid_password_format": "Недопустимый формат пароля",
       "invalid_reset_token": "Недействительный токен для сброса пароля",
       "same_reset_password": "Новый пароль совпадает со старым",

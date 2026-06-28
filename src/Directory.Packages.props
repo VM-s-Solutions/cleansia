@@ -30,6 +30,10 @@
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageVersion Include="Polly" Version="8.6.5" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
+    <!-- AppleTokenVerifier: cached JWKS via ConfigurationManager + OpenIdConnectConfigurationRetriever
+         for the RS256-pinned Sign in with Apple identity-token validation. Aligned with the 8.16.0
+         IdentityModel family already pulled by System.IdentityModel.Tokens.Jwt. -->
+    <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.16.0" />
     <PackageVersion Include="Ulid" Version="1.4.1" />
   </ItemGroup>
 

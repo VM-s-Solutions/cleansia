@@ -7,4 +7,5 @@ public enum AuthenticationType
 {
     Internal = 1,
     Google = 2,
+    Apple = 3,
 }

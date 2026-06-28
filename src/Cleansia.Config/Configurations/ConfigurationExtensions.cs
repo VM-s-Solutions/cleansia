@@ -12,6 +12,7 @@ public static class ConfigurationExtensions
         services.AddSingleton<ISendGridConfig, SendGridConfig>();
         services.AddSingleton<IJwtSettings, JwtSettingsConfig>();
         services.AddSingleton<IGoogleConfig, GoogleConfig>();
+        services.AddSingleton<IAppleConfig, AppleConfig>();
         services.AddSingleton<IMapboxConfig, MapboxConfig>();
         services.AddSingleton<IFcmConfig, FcmConfig>();
         // ADR-0002 D3.4 — reconciliation-sweep tunables (threshold default 15

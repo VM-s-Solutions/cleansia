@@ -989,6 +989,7 @@
       "internal_type_error": "Chyba typu internej autentifikácie",
       "invalid_confirmation_code": "Neplatný potvrdzovací kód",
       "invalid_google_token": "Neplatný Google token",
+      "invalid_apple_token": "Neplatný Apple token",
       "invalid_password_format": "Neplatný formát hesla",
       "invalid_reset_token": "Neplatný token na obnovenie hesla",
       "same_reset_password": "Nové heslo sa zhoduje so starým heslom",

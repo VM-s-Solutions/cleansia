@@ -39,6 +39,9 @@ public class User : Auditable, ITenantEntity
     [MaxLength(512)]
     public string? GoogleId { get; private set; }
 
+    [MaxLength(512)]
+    public string? AppleId { get; private set; }
+
     public string? ResetPasswordCode { get; private set; }
 
     public DateTimeOffset? ResetPasswordCodeExpiresAt { get; private set; }
@@ -146,6 +149,18 @@ public class User : Auditable, ITenantEntity
             LastName = lastName,
             AuthenticationType = AuthenticationType.Google,
             GoogleId = googleId,
+            PreferredLanguageCode = languageCode ?? "en",
+            IsEmailConfirmed = true
+        };
+
+    public static User CreateWithApple(string email, string firstName, string lastName, string appleSub, string? languageCode = null)
+        => new()
+        {
+            Email = email,
+            FirstName = firstName,
+            LastName = lastName,
+            AuthenticationType = AuthenticationType.Apple,
+            AppleId = appleSub,
             PreferredLanguageCode = languageCode ?? "en",
             IsEmailConfirmed = true
         };
@@ -284,6 +299,7 @@ public class User : Auditable, ITenantEntity
         PhoneNumber = null;
         BirthDate = null;
         GoogleId = null;
+        AppleId = null;
         Password = null;
         ProfilePhotoName = null;
         PreferredLanguageCode = null;

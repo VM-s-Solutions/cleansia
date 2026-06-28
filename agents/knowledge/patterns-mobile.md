@@ -243,6 +243,9 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | `@Singleton OrdersRepository` per-pane (~30s) + per-order `Staleness` watermarks + `invalidatePanesFor(mutation)` (the silent-stale resume + `OrdersListUiState` flag-bag, `OrdersRepository.kt:159-192` / `OrdersListViewModel.kt:89-120`) | the cache is **PORTED** (an actor/class with the same per-pane/per-order watermarks + mutation→panes map, registered in the `SessionScopedCacheRegistry`) — load-bearing for no-flash resume; **NOT** simplified to load-on-appear+`.refreshable` (that's an un-approved behavior divergence). The list state is **sealed per-pane `UiState<[OrderListItem]>` + a `RefreshPhase` enum** (`idle`/`userRefreshing`/`backgroundRefreshing`; PTR binds `==.userRefreshing` only — the silent-stale parity), **NOT** the E1 flag-bag (Android E1 fix → T-0337). Inline commit = iOS-native confirm/`swipeActions`, the **`SlideToCommit`→native** Gate-DP swap (sprint-12 §7.9 (e), reviewer #30) |
 | `ActivityResultContracts.GetContent()` system image picker (gallery-only, `pickImage.launch("image/*")`, `PhotosSection.kt:146-161,200`) — Compose has no native camera/photo-source control either | the Core **`CameraOrLibraryPicker` `UIViewControllerRepresentable`** (`CleansiaCore/Components`) wrapping a camera-capable `UIImagePickerController` — **the repo's FIRST `UIViewControllerRepresentable`** + the canonical "imperative-UIKit-controller-behind-a-SwiftUI-seam" idiom (the *controller* analogue of the `MKMapView`/`UIViewRepresentable` *view* seam, ADR-0014 D6′; both ADR-0018 D2 brand-skin-over-native seams). The single Add tile opens a native `.confirmationDialog` action sheet → Take Photo (`.camera`) / Choose from Library (`.photoLibrary`). **Gate-DP camera-vs-gallery divergence (architect sign-off):** iOS adds **camera + library** over Android's **gallery-only** — the T-0308 ticket's camera requirement, an enhancement that ADDS a source affordance, not a layout/flow/branding change. Rejected: **PHPicker** (library-only — no camera), **AVFoundation** (over-engineered — rebuilds the system camera). NOT a feature/VM hand-rolled `UIImagePickerController` (sprint-12 §7.10 (a), reviewer #32) |
 | Coil `SubcomposeAsyncImage(model = ImageRequest(blobUrl)…)` with loading/error states (`PhotosSection.kt:235-272`) + raw camera bytes base64'd uncompressed (`:155-159` — Android comments base64 is slow for multi-MB images) | SwiftUI **`AsyncImage(url:content:placeholder:)`** (the ADR-0018 D3 Coil→`AsyncImage` row — same frame/aspect + loading/broken-image states, **NO 3rd-party dep**; `blobUrl` is a per-fetch SAS URL so disk-cache parity isn't load-bearing — Kingfisher is the scoped fallback only if a future surface needs it) **+** a pure Core **`ImageCompressor`** (downscale longest-side ≤1920px aspect-preserved + JPEG **0.7** + `contentType "image/jpeg"`, OFF the main thread) before base64 — an iOS PERF divergence from Android's raw bytes (smaller base64-over-JSON body + bounded memory on the 2017 floor), changing pixels not layout. Single-photo upload via the **batch-of-one** `orderSavePhotos(SaveOrderPhotosCommand{orderId, photos:[{photoType, BlobFileDto{fileName, base64Content, contentType}, notes}]})` (`OrdersRepository.kt:264-291`); read `orderGetPhotos`; delete `orderDeletePhoto(photoId)`. **The Complete gate trusts the RE-FETCHED `OrderItem.hasAfterPhotos`** (`OrderDetailScreen.kt:558`), kept live by the post-mutation parent refresh (the `mutationVersion`→`onContentMutated` parity) — **NOT** `GetOrderPhotosResponse.afterPhotoCount` (sprint-12 §7.10 (b)/(c), reviewer #32) |
+| Invoice-PDF viewing: the VM streams the `downloadInvoice` `ResponseBody` → app cache dir → a `FileProvider` URI handed to `Intent.ACTION_VIEW` (the system PDF viewer; a `notifyNoPdfViewer()` fallback if none installed — `InvoiceDetailViewModel.kt:81-108` / `InvoiceDetailScreen.kt:91-104`) | the Core **`QuickLookPreview` `UIViewControllerRepresentable`** (`CleansiaCore/Components`) wrapping **`QLPreviewController`** — the **2nd member of the `CameraOrLibraryPicker` family** (the canonical imperative-UIKit-controller-behind-a-SwiftUI-seam idiom; ADR-0018 D2 brand-skin-over-native), **reused by the customer app (T-0314)** so it MUST be Core, not partner-local. The generated swift5+urlsession `employeePayrollDownloadInvoice` (`format: binary`) **writes the body to disk and returns a local file `URL` itself** — so the VM holds the URL and surfaces it via a **ONE-SHOT event** (NOT a route); the screen presents `QuickLookPreview` over it. The "Open PDF" affordance is **guarded on the DTO's `pdfGenerationFailed`** (disabled/hidden when true — iOS does it better than Android's unconditional download). **NO `FileDownload` Core seam** (the generated client IS the download — an orchestration seam would be dead abstraction). **The previewed PDF is deleted from cache on dismiss — SECURITY E4** (`security/ios-earnings.md`); the coordinator hosts that cleanup. **Recorded Gate-DP divergence:** FileProvider/`ACTION_VIEW` → Core `QuickLookPreview`; same in-app PDF viewing, native mechanism, no stream-to-cache/FileProvider/no-viewer branch. **Rejected:** a partner-local representable (duplicated into customer); a share-sheet (export, not a viewer); `SafariView` (web URLs, not a `file://` PDF) (sprint-12 §7.12 (b), reviewer #33) |
+| Per-screen private `formatMoney`/`currencySymbol`/`formatDate` copied across `EarningsSummaryScreen.kt`/`InvoiceDetailScreen.kt`/`InvoicesListScreen.kt`/`PeriodPayScreen.kt` (two grouped money precisions: `%,.0f` whole for the earnings headline `:421`, `%,.2f` decimal for invoices/PeriodPay) | a small Core **`EarningsFormat`** (`CleansiaCore`, the `EmailValidator`/`PasswordPolicy` factoring): `formatMoney`(`%,.2f` grouped) + `formatMoneyWhole`(`%,.0f` grouped) + ISO→local date helpers, reusing the **currency-symbol resolution HARVESTED to Core** (≥3 call sites — a `NumberFormatter(.currency)`/`Locale` lookup with the never-crash raw-`code` fallback, the `Currency.getInstance(code).getSymbol(Locale)?:code` parity). **Do NOT overload `DashboardFormat.money`** (it is `%.0f` ungrouped — the dashboard hero's own contract, neither earnings format). PeriodPay's `currencyCode` is threaded via the **nav route** (`EarningsRoute.periodPay`), not the DTO (`PeriodPaySummary` has none — `PeriodPayViewModel.kt:43-44`). Client-side display only — server amounts authoritative. The Earnings **summary** REUSES `PartnerDashboardClient.getStats` (the `DashboardStatsDto` the Dashboard hero renders — `EarningsSummaryViewModel.kt:23-32,49`), NOT a payroll-client duplicate or a `GetPeriodPays`-derived summary (sprint-12 §7.12 (c)/(d), reviewer #33) |
+| `:core/notifications/{PushTokenRepository,PushTokenSessionObserver,DeviceRegistrationClient}.kt` — FCM token (`FirebaseMessaging.getInstance().token` + the messaging-service `onNewToken`) → `/api/Device/Register`/`Unregister` (`Platform="android"`); registration is a session×token PROPERTY (`combine(session,token).filterNotNull().distinctUntilChanged()→ensureRegistered`); `unregisterDevice()` BEFORE the token wipe (`AuthRepository.kt:210-225`); `clear()` = `SessionScopedCache` local-only | a Core **`PushRegistrar`** protocol in `CleansiaCore/Push` — the **SOLE** consumer of `UNUserNotificationCenter` + `UIApplication.registerForRemoteNotifications` (feature/lifecycle code imports neither `UserNotifications` nor `UIKit` — the `MapProvider`/`CameraOrLibraryPicker` seam family, ADR-0014 D6′/ADR-0018 D2) exposing `requestAuthorization`/`registerForRemoteNotifications`/an APNs-token stream (the `fcmToken: StateFlow<String?>` parity); the AppDelegate push callbacks via a per-app **`@UIApplicationDelegateAdaptor`** feeding it; a Core **`PushSessionObserver`** (the `PushTokenSessionObserver.kt` combine-parity); `Device/*` over the **ADR-0019** spine, **`Platform="ios"`**, the one `X-Device-Id`; `unregisterDevice()` from `AuthApiClient.logout()` BEFORE the `TokenStore` wipe + the local `clear()` via the `SessionScopedCacheRegistry`. Minimal `willPresent`/`didReceive`-tap now; in-app feed/badge → **T-0336**; the `aps-environment` entitlement (no plist key); delivery owner-gated → **T-0342** (sprint-12 §7.13, reviewer #34) |
 
 **Generated-client auth — the ONE way (ADR-0019, reviewer #13-gen):** authenticate the generated business
 client **only** through the Core-spine-backed `RequestBuilderFactory` (above). **Deviations a reviewer
@@ -425,6 +428,105 @@ read-back, delete, the After-photo Complete-unblock) fills the §7.9 (d) precurs
   representable precedent is **FALSE**; `CameraOrLibraryPicker` (T-0308) is the repo's **first**
   `UIViewControllerRepresentable` (the `MKMapView`/`UIViewRepresentable` `fullBleedMap`, T-0307, is the first *view*
   representable). Do not cite the AddressPicker as a controller-representable precedent.
+
+**iOS partner earnings/invoices/PeriodPay — the ONE way (sprint-12 §7.12, T-0309; ADR-0020 + §7.7 D1 + the §7.10 D1
+Core-seam precedent + ADR-0018 D2/D3 + the §7.5 D4/§7.7 D4 Core-utility precedent + ADR-0013 parity + the Parity rule;
+reviewer #33):** the partner earnings surface (Earnings summary, invoices list + detail + PDF, PeriodPay) over the
+generated `PartnerEmployeePayrollAPI` — all on the ADR-0019 spine. **All four rulings APPLY accepted ADRs/records — no new
+ADR.**
+- **Nav (a):** the partner shell's **`.invoices` tab IS the surface** — it roots an **in-tab `NavigationStack` over a
+  typed `EarningsRoute` enum** (`.summary`/`.invoices`/`.invoiceDetail(id)`/`.periodPay(payPeriodId,currencyCode)`),
+  **landing on `.summary`** (the Earnings summary — Android built it specifically to avoid the empty-invoices-list
+  landing, `EarningsSummaryScreen.kt:56-66`). This is the **ADR-0020 D4 / §7.7 D1 intra-audience push** (the root
+  `PartnerRootView` enum stays the audience selector). The Dashboard's `onOpenEarnings` sets `ShellModel.selection =
+  .invoices` — a **tab switch** (the `selectOrders()`/`onOpenOrders` parity), **NOT** a push. **Recorded Gate-DP
+  divergence** (same class as the T-0304 `MainScaffold`→`TabView` swap): Android Earnings(pushed)+Invoices(tab) → iOS
+  single tab + in-tab stack; same nav structure/content/back-stack order, native mechanism. `.periodPay` carries
+  `currencyCode` (the `PeriodPaySummary` DTO has none — `PeriodPayViewModel.kt:43-44`).
+- **PDF (b):** invoice PDF viewing goes through the **Core `QuickLookPreview`** (`QLPreviewController`
+  `UIViewControllerRepresentable` in `CleansiaCore/Components`) — the **2nd member of the §7.10 D1 `CameraOrLibraryPicker`
+  family**, reused by the customer app (T-0314) so it lives in Core. The generated swift5 `employeePayrollDownloadInvoice`
+  **writes the body to disk → returns a local file URL**; the VM surfaces it via a **one-shot event** → the screen
+  presents `QuickLookPreview`. The "Open PDF" affordance is **gated on `pdfGenerationFailed`**. **NO `FileDownload`
+  seam** (the codegen IS the download). **The previewed PDF is deleted from cache on dismiss — SECURITY E4
+  (`security/ios-earnings.md`)**, hosted by the coordinator. **Rejected:** a partner-local representable; a share-sheet
+  (export, not a viewer); `SafariView` (web URLs, not a `file://` PDF).
+- **Format (c):** money/date go through a small **Core `EarningsFormat`** (`formatMoney` `%,.2f` decimal for
+  invoices/PeriodPay + `formatMoneyWhole` `%,.0f` for the earnings headline + ISO→local dates), reusing the
+  **currency-symbol resolution HARVESTED to Core** (≥3 call sites — never-crash raw-`code` fallback). **Do NOT overload
+  `DashboardFormat.money`** (it is `%.0f` ungrouped — the dashboard hero's contract, neither earnings format).
+- **Stats (d):** the Earnings summary **REUSES `PartnerDashboardClient.getStats`** (the `DashboardStatsDto` the Dashboard
+  hero renders — `EarningsSummaryViewModel.kt:23-32,49`), NOT a payroll-client duplicate or a `GetPeriodPays`-derived
+  summary. `employeeId = null` (server scopes to the caller — the no-`UserProfileStore` fact §7.5 D2; the read-scoping
+  trust is SECURITY's).
+- **List state:** sealed per-list `UiState<[EmployeeInvoiceDto]>` + a `RefreshPhase` enum (the §7.9 (e) convention) + the
+  PORTED my-invoices staleness watermark — the Android `InvoicesListUiState` **E1 flag-bag NOT replicated** → Android fix
+  **T-0337**.
+- **Deviations a reviewer rejects:** the earnings surface modeled as a pushed screen off the Dashboard tab, or the tab
+  landing on the invoices list (the empty-landing Android removed); a partner-local `QLPreviewController` wrapper, a
+  share-sheet/`SafariView` substituted for the viewer, a built `FileDownload` seam, an Open-PDF affordance not gated on
+  `pdfGenerationFailed`, a VM re-streaming the body to disk; per-screen private money/symbol/date copies, or overloading
+  `DashboardFormat.money`; a second stats fetch on the payroll client or a `GetPeriodPays`-derived summary; a ported
+  `InvoicesListUiState` flag-bag. **The read-scoping / PII gate (own-id-only + the post-preview PDF cache-cleanup) is
+  SECURITY's** (`security/ios-earnings.md`) — not this rule.
+- **Parity catch-ups (Android is thin → iOS does it right, file the Android follow-up):** Android renders Open-PDF
+  unconditionally (no `pdfGenerationFailed` gate) and hand-wrote a `PeriodPayApi` Retrofit interface (the spec didn't
+  carry `GetPeriodPays` at the time — `PeriodPayApi.kt:8-18`); iOS gates the affordance off the flag and uses the
+  **generated** `employeePayrollGetPeriodPays` (the regen'd spec now carries it). Both Android catch-ups are PM-filed
+  follow-ups, independent of the iOS wave.
+
+**iOS push — the ONE way (sprint-12 §7.13, T-0311; ADR-0013 D8 + ADR-0014 D6′ + ADR-0018 D2 + ADR-0019 + the
+`SessionScopedCacheRegistry`; reviewer #34):** APNs push **registration + token plumbing + device lifecycle + a
+minimal foreground/tap** — the well-factored Android `:core` push ported over APNs. **All rulings APPLY accepted
+ADRs/records — no new ADR.** (The in-app feed / bell badge / persistence / templates / channels are DEFERRED →
+**T-0336**.)
+- **Seam (a):** a **`PushRegistrar`** protocol in `CleansiaCore/Push` is the **SOLE** consumer of
+  `UNUserNotificationCenter` + `UIApplication.registerForRemoteNotifications` — feature/lifecycle code **imports neither
+  `UserNotifications` nor `UIKit`** (the `MapProvider`/`GeocodingService` / `CameraOrLibraryPicker`/`QuickLookPreview`
+  seam-family — ADR-0014 D6′ system-framework-behind-a-protocol + ADR-0018 D2 brand-skin-over-native). It exposes
+  **`requestAuthorization`** (the `POST_NOTIFICATIONS` parity), **`registerForRemoteNotifications`** (main-actor), and an
+  **APNs-token stream the AppDelegate feeds** (the `PushTokenRepository.fcmToken: StateFlow<String?>` parity, fed
+  out-of-band by the OS callback). The APNs-token AppDelegate callbacks
+  (`didRegisterForRemoteNotificationsWithDeviceToken`/`didFailToRegister`/`willPresent`/`didReceive`) are received via a
+  **per-app `@UIApplicationDelegateAdaptor`** (the canonical SwiftUI AppDelegate bridge — SwiftUI's `App` has no native
+  push hook) that **only forwards** into the Core registrar/deep-link — the one allowed `UIKit`/`UserNotifications`
+  touch-point (the App-target composition-root parity, like installing the `RequestBuilderFactory`/`MapProvider`).
+- **Lifecycle (b):** register/clear is a Core **`PushSessionObserver`** — the `PushTokenSessionObserver.kt` parity:
+  **registration is a PROPERTY of session×token state, not an event** —
+  `combine(session, token).filterNotNull().distinctUntilChanged() → ensureRegistered` (`:56-64`), attached once from the
+  App (the `MainActivity.onCreate` parity). `ensureRegistered` **short-circuits on the persisted last-registered token**
+  (`UserDefaults`, NOT Keychain — the `PushTokenDataStore` parity; not a secret) and **persists on success only**.
+  **`unregisterDevice()` is invoked from `AuthApiClient.logout()` BEFORE the `TokenStore` wipe** (best-effort — the
+  `Device/Unregister` DELETE needs the Bearer; the `AuthRepository.kt:210-225` ordering) and the local `clear()` is the
+  **`SessionScopedCache`** run by the registry on **both** sign-out paths (user logout + forced-401). **The
+  unregister-ordering GATE is SECURITY's (Gate-SEC) — this rule fixes the seam + the invocation HOME, not the mandate.**
+- **Scope/permission (c):** **minimal** `willPresent` (foreground banner) + `didReceive` (tap → existing order route via a
+  **`PartnerNotificationDeepLink`** port) only. **NO Info.plist purpose string** — APNs needs only the **`aps-environment`
+  entitlement** + the runtime `requestAuthorization` (the OS shows its own alert; notifications has no plist key, unlike
+  location/camera/photo). **Skip the rationale string** (strict parity — Android requests `POST_NOTIFICATIONS` silently;
+  the one optional soft-ask `.xcstrings` key ×5 is the recorded, un-built fallback). **NO `UiState`/`ActionState`** —
+  fire-and-forget background plumbing; the **sealed-state ABSENCE is correct** (the §7.6 D3 AddressPicker precedent — do
+  NOT flag it).
+- **Recorded Gate-DP divergence (ADR-0013 D8):** *Android FCM (`FirebaseMessaging` token + the messaging-service
+  `onNewToken`) → iOS APNs (`registerForRemoteNotifications` + the `@UIApplicationDelegateAdaptor` `didRegister…DeviceToken`
+  + `UNUserNotificationCenter`); the SAME `Device/Register`/`Device/Unregister` contract, **`Platform="ios"`**, the one
+  `X-Device-Id` (== `DeviceIdProvider`); the mechanism is the native platform push transport, the contract + register/clear
+  lifecycle are identical.* (No Firebase-project-migration analogue — `runFirebaseProjectMigrationOnce` is FCM-specific,
+  correctly NOT ported.)
+- **Owner gate:** end-to-end delivery (a push arriving on a device) needs the owner's **APNs `.p8` key + Push capability +
+  provisioning** — filed as **T-0342** (NOT "T-0341", which is taken). T-0311 ships **code-complete + the `aps-environment`
+  entitlement**; delivery is owner-gated (the **T-0325-gates-T-0335** pattern).
+- **Deviations a reviewer rejects:** a feature/VM/lifecycle file `import UserNotifications`/`import UIKit` for push (the
+  registrar is the only consumer); a second push consumer outside `PushRegistrar`; a hand-rolled
+  `UIApplication.shared.delegate` instead of `@UIApplicationDelegateAdaptor`; registration bolted onto `afterLogin`/an
+  event hook instead of the session-state observer (the brittleness the Android `:core` deleted); the last-registered
+  token in the Keychain (or a secret in its `UserDefaults` store), or a device id not from the one `DeviceIdProvider`;
+  `unregisterDevice()` AFTER the token wipe or skipped on a logout path; a second clear-path not via the
+  `SessionScopedCacheRegistry`; the device token POSTed with anything but `Platform="ios"`; an in-app feed/bell
+  badge/push persistence built in T-0311 (it is T-0336); a notifications Info.plist purpose string (a non-existent
+  requirement) or a missing `aps-environment` entitlement; a flagged-as-missing `UiState`/`ActionState` on the
+  registrar/observer (the §7.6 D3 mis-fire). **The registration / logout-clear-ordering SECURITY gate is parallel
+  (Gate-SEC) — not this rule.**
 
 **Parity deviation (Android is wrong, iOS is right) — auth validation strings:** the Android partner
 `RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set validation errors as **hardcoded English

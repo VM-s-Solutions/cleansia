@@ -5,6 +5,7 @@ import SwiftUI
 struct OrdersRootView: View {
     @StateObject private var vm: OrdersListViewModel
     @State private var path: [OrderRoute] = []
+    @Binding private var deepLinkOrderId: String?
     private let client: PartnerOrderClient
     private let staleness: OrdersStaleness
     private let checklistStore: CleaningChecklistStore
@@ -16,11 +17,13 @@ struct OrdersRootView: View {
         staleness: OrdersStaleness,
         checklistStore: CleaningChecklistStore,
         snackbar: SnackbarController,
-        mapProvider: MapProvider
+        mapProvider: MapProvider,
+        deepLinkOrderId: Binding<String?> = .constant(nil)
     ) {
         _vm = StateObject(
             wrappedValue: OrdersListViewModel(client: client, staleness: staleness, snackbar: snackbar)
         )
+        _deepLinkOrderId = deepLinkOrderId
         self.client = client
         self.staleness = staleness
         self.checklistStore = checklistStore
@@ -47,6 +50,16 @@ struct OrdersRootView: View {
         }
         .onReceive(vm.navigateToDetail) { orderId in
             path.append(.detail(orderId: orderId))
+        }
+        .onChange(of: deepLinkOrderId) { orderId in
+            guard orderId != nil else { return }
+            path = PushTapRouting.appendingDeepLink(orderId, to: path)
+            deepLinkOrderId = nil
+        }
+        .onAppear {
+            guard deepLinkOrderId != nil else { return }
+            path = PushTapRouting.appendingDeepLink(deepLinkOrderId, to: path)
+            deepLinkOrderId = nil
         }
     }
 }

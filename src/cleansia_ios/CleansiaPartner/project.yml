@@ -52,6 +52,10 @@ targets:
           - Nunito-Regular.ttf
           - Nunito-SemiBold.ttf
           - Nunito-Bold.ttf
+    entitlements:
+      path: CleansiaPartner.entitlements
+      properties:
+        aps-environment: development
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cz.cleansia.partner

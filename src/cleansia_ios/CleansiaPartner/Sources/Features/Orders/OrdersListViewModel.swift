@@ -3,17 +3,6 @@ import CleansiaPartnerApi
 import Combine
 import Foundation
 
-/// Orthogonal to the sealed per-pane `UiState` (architect (e)): the refresh
-/// phase drives WHO sees a spinner. The pull-to-refresh indicator binds to
-/// `.userRefreshing` ONLY — a `.backgroundRefreshing` (auto / resume / silent
-/// re-fetch) is invisible. This replaces Android's three boolean flags
-/// (the E1 flag-bag) with one explicit enum.
-enum RefreshPhase: Equatable {
-    case idle
-    case userRefreshing
-    case backgroundRefreshing
-}
-
 @MainActor
 final class OrdersListViewModel: ViewModel {
     @Published private(set) var tab: OrdersTab = .available

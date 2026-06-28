@@ -1,4 +1,5 @@
 import CleansiaCore
+import Combine
 import Foundation
 
 @MainActor
@@ -62,16 +63,22 @@ final class PartnerAppContainer: AppContainer {
     }
 
     let dashboardClient: PartnerDashboardClient = LivePartnerDashboardClient()
+    let payrollClient: PartnerPayrollClient = LivePartnerPayrollClient()
     let registrationClient: PartnerRegistrationClient = LivePartnerRegistrationClient()
     let profileClient: PartnerProfileClient = LivePartnerProfileClient()
     let devicesClient: PartnerDevicesClient
     let orderClient: PartnerOrderClient = LivePartnerOrderClient()
     let ordersStaleness = OrdersStaleness()
+    let invoicesStaleness = InvoicesStaleness()
     let cleaningChecklistStore: CleaningChecklistStore = UserDefaultsCleaningChecklistStore()
     let geocodingService: GeocodingService = CLGeocoderGeocodingService()
     let mapProvider: MapProvider = MapKitMapProvider()
+    let pushRegistrar: any PushRegistrar = UNUserNotificationPushRegistrar()
 
     private let authStack: PartnerAuthStack
+    private let pushTokenRegistrar: PushTokenRegistrar
+    private let pushSessionObserver: PushSessionObserver
+    private let hasSessionSubject: CurrentValueSubject<Bool, Never>
 
     init(
         snackbar: SnackbarController,
@@ -87,6 +94,13 @@ final class PartnerAppContainer: AppContainer {
         // DeviceIdProvider the HeaderAdapter stamps as X-Device-Id.
         let devicesClient = LivePartnerDevicesClient(deviceIdProvider: authStack.deviceIdProvider)
         self.devicesClient = devicesClient
+        let pushTokenRegistrar = PushTokenRegistrar(
+            client: PartnerDeviceRegistrationClient(),
+            deviceIdProvider: authStack.deviceIdProvider
+        )
+        self.pushTokenRegistrar = pushTokenRegistrar
+        pushSessionObserver = PushSessionObserver(registrar: pushTokenRegistrar)
+        hasSessionSubject = CurrentValueSubject(false)
         base = BaseAppContainer(
             apiBaseURL: apiBaseURL,
             snackbar: snackbar,
@@ -101,6 +115,35 @@ final class PartnerAppContainer: AppContainer {
             sessionScopedCaches.register(cache)
         }
         sessionScopedCaches.register(ordersStaleness)
+        sessionScopedCaches.register(invoicesStaleness)
+        sessionScopedCaches.register(pushTokenRegistrar)
+        // Rule 3: the authed Device/Unregister DELETE runs while the Bearer is
+        // still live, before logout() wipes the token. The local cache clear()
+        // rides the SessionScopedCacheRegistry on every sign-out (above).
+        authStack.spine.setPreLogout { [pushTokenRegistrar] in
+            await pushTokenRegistrar.unregisterDevice()
+        }
+    }
+
+    /// Starts APNs registration + the session×token observer. Called once from
+    /// the App after auth is installed. The session signal is seeded from the
+    /// current token state (cold-start-into-authed-session parity) and pushed
+    /// forward by `updatePushSession(hasSession:)` at each session transition.
+    func startPush() {
+        hasSessionSubject.send(hasValidSession)
+        pushSessionObserver.attach(
+            hasSession: hasSessionSubject.eraseToAnyPublisher(),
+            apnsToken: pushRegistrar.apnsToken
+        )
+        Task {
+            if await pushRegistrar.requestAuthorization() {
+                pushRegistrar.registerForRemoteNotifications()
+            }
+        }
+    }
+
+    func updatePushSession(hasSession: Bool) {
+        hasSessionSubject.send(hasSession)
     }
 
     func installGeneratedClientAuth() {

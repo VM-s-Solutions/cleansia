@@ -70,6 +70,8 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
     private let headerAdapter: HeaderAdapter
     public let tokenStore: TokenStore
     private let sessionScopedCaches: SessionScopedCacheRegistry
+    private let lock = NSLock()
+    private var preLogout: (@Sendable () async -> Void)?
 
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -88,6 +90,14 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         self.sessionScopedCaches = sessionScopedCaches
         self.authedSession = authedSession
         self.noAuthSession = noAuthSession
+    }
+
+    /// Registers a hook run inside `logout()` while the Bearer is still live —
+    /// before the server-logout call and the token wipe. The push registrar's
+    /// authed `Device/Unregister` DELETE rides this so a logged-out handset
+    /// stops receiving pushes (the call needs the access token).
+    public func setPreLogout(_ task: @escaping @Sendable () async -> Void) {
+        lock.withLock { preLogout = task }
     }
 
     public func login(email: String, password: String, rememberMe: Bool = true) async -> ApiResult<LoginOutcome> {
@@ -178,6 +188,8 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
     }
 
     public func logout() async {
+        let preLogout = lock.withLock { self.preLogout }
+        await preLogout?()
         if let refreshToken = tokenStore.current()?.refreshToken, !refreshToken.isEmpty {
             await postExpectingNoBody(path: "api/Auth/Logout", body: LogoutRequest(token: refreshToken))
         }

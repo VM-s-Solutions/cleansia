@@ -1,8 +1,8 @@
 # Sprint 12 — iOS PORT (Wave 10): parity Swift/SwiftUI customer + partner apps
 
-**Status:** PHASE 0 FOUNDATION DONE + MAC-VERIFIED + MERGED (2026-06-26) · **PHASE 1 (T-0303) DONE** — proving vertical green on `phase/ios-phase1` · **PHASE 2 — T-0304 + T-0305 DONE** on `phase/ios-phase2` · **PHASE 3 — T-0306 + T-0310 DONE** on `phase/ios-phase3` (PR drafted) · **PHASE 4 — T-0307 (partner order work-loop, L→split, HARD AREA #3) + T-0308 (partner photo upload) DONE** on `phase/ios-phase4` (2026-06-27; **9 commits, pushed; Phase-4 PR drafted**). **T-0307:** 5 slices — A Core `SnapSheet` (ADR-0021 non-modal 3-snap) + `fullBleedMap` single-pin / B 3-pane OrdersList (sealed per-pane state + ported staleness cache) / C OrderDetail shell / D the OnTheWay lifecycle + the shared pure `OrderPrimaryAction` machine (**SECURITY PASS O1/O2/O4**) / E checklist/notes/issues/timeline; reviewer **APPROVE** all 5; security **PASS**. **T-0308:** 2 slices — A Core `CameraOrLibraryPicker` (first `UIViewControllerRepresentable`) + `ImageCompressor` (1920/0.7, EXPLICIT EXIF strip) / B `PhotosSection` (before/after rails, capture→upload) + Complete-unblock + bootstrapped `PrivacyInfo.xcprivacy` + camera/photo usage strings ×5; reviewer **APPROVE**; security **PASS** (P1–P5). Tests: **CleansiaCore 163 + CleansiaPartner 320** (iPhone 17); swiftformat + swiftlint --strict clean. **REQUIRED backend follow-up T-0339** (GetPagedOrders employeeId over-read — SECURITY, high, gates the GetPaged contract for go-live; iOS proceeded in parallel). · Phase 2+ tail (T-0309/0311/0312/0313/0314 + compliance T-0324…T-0329) proposed · follow-ups: **T-0334** (iOS ServiceAreaRow) / **T-0335** (iOS current-location FAB, gated on owner T-0325) / **T-0336** (iOS notifications-feed spike) / **T-0337** (Android partner profile sealed-state + i18n) / **T-0338** (Core catalog i18n ×5 + swappable bundle) / **T-0339** (backend GetPaged read-scoping — SECURITY) / **T-0340** (order-detail parity nits: checklist stable-id + Android status-label casing + placeholder-preview sweep); android i18n **T-0333** (Register/Forgot) prior · **owner items:** the camera/photo plist WORDING sign-off ×5 (T-0308 shipped en+cs/sk/uk/ru); T-0325 location string (owner, unused by Phase 4) · standing latent backend S8 (RefreshToken tenant read asymmetry the device-revoke kill rides on) tracked by **T-0236** (`done`) + `security/auth-sessions.md` + `security/ios-devices.md` — re-verify before any non-null-TenantId onboarding
+**Status:** 🎉 **PARTNER APP FEATURE-COMPLETE** (2026-06-28). PHASE 0 FOUNDATION DONE + MAC-VERIFIED + MERGED (2026-06-26) · **PHASE 1 (T-0303) DONE** — proving vertical green on `phase/ios-phase1` · **PHASE 2 — T-0304 + T-0305 DONE** on `phase/ios-phase2` · **PHASE 3 — T-0306 + T-0310 DONE** on `phase/ios-phase3` (merged #95) · **PHASE 4 — T-0307 (partner order work-loop, L→split, HARD AREA #3) + T-0308 (partner photo upload) DONE** on `phase/ios-phase4` (merged #96). **PHASE 5 — T-0309 (partner earnings + invoices + PeriodPay) + T-0311 (partner APNs push registration) DONE** on `phase/ios-phase5` (2026-06-28; **8 commits, pushed; Phase-5 PR drafted**) — **this phase makes the iOS PARTNER APP feature-complete** (every partner surface is now ported: auth → shell → dashboard → orders+photos → profile/devices/prefs → earnings/invoices → push). **T-0309:** 2 slices — A Earnings summary (reuses `getStats`) + PeriodPay (E1/E2 own-id) over the generated `PartnerEmployeePayrollAPI` + a Core `EarningsFormat`; the `.invoices` tab is now the Earnings surface (in-tab `NavigationStack`/`EarningsRoute`) / B invoices list+detail + the new Core `QuickLookPreview` seam (PDF) + the InvoicesStaleness silent-stale resume; `RefreshPhase` lifted to `CleansiaCore/State` (shared by Orders+Invoices). Reviewer **APPROVE**; **SECURITY PASS** (E1–E4 + TC-IOS-EARNINGS-OWNERSHIP; backend EmployeePayroll already JWT-scoped — **no T-0339-class gap**). **T-0311:** 2 slices — A the `PushRegistrar` Core seam + `PushTokenRegistrar` (`SessionScopedCache`) + the `Device/Register` client / B the `PushSessionObserver` (register on session×token) + the AppDelegate (`@UIApplicationDelegateAdaptor`) + the `Auth.setPreLogout` hook (logout unregisters BEFORE the token wipe) + the `aps-environment` entitlement + tap→OrderDetail. Reviewer **APPROVE**; **SECURITY PASS** (rules 1–4 + TC-IOS-PUSH-LOGOUT-CLEARS). End-to-end DELIVERY is OWNER-gated → **T-0342**. **PLUS a CI hardening:** ios-ci now runs the CleansiaPartner test suite (`build test`), not just `build` — the partner VM + security tests (366) now actually gate in CI for the first time. Tests: **CleansiaCore 194 + CleansiaPartner 366** (iPhone 17); swiftformat + swiftlint --strict clean. **T-0307:** 5 slices — A Core `SnapSheet` (ADR-0021 non-modal 3-snap) + `fullBleedMap` single-pin / B 3-pane OrdersList (sealed per-pane state + ported staleness cache) / C OrderDetail shell / D the OnTheWay lifecycle + the shared pure `OrderPrimaryAction` machine (**SECURITY PASS O1/O2/O4**) / E checklist/notes/issues/timeline; reviewer **APPROVE** all 5; security **PASS**. **T-0308:** 2 slices — A Core `CameraOrLibraryPicker` (first `UIViewControllerRepresentable`) + `ImageCompressor` (1920/0.7, EXPLICIT EXIF strip) / B `PhotosSection` (before/after rails, capture→upload) + Complete-unblock + bootstrapped `PrivacyInfo.xcprivacy` + camera/photo usage strings ×5; reviewer **APPROVE**; security **PASS** (P1–P5). Tests: **CleansiaCore 163 + CleansiaPartner 320** (iPhone 17); swiftformat + swiftlint --strict clean. **REQUIRED backend follow-up T-0339** (GetPagedOrders employeeId over-read — SECURITY, high, gates the GetPaged contract for go-live; iOS proceeded in parallel). · Phase 2+ tail (T-0309/0311/0312/0313/0314 + compliance T-0324…T-0329) proposed · follow-ups: **T-0334** (iOS ServiceAreaRow) / **T-0335** (iOS current-location FAB, gated on owner T-0325) / **T-0336** (iOS notifications-feed spike) / **T-0337** (Android partner profile sealed-state + i18n) / **T-0338** (Core catalog i18n ×5 + swappable bundle) / **T-0339** (backend GetPaged read-scoping — SECURITY) / **T-0340** (order-detail parity nits: checklist stable-id + Android status-label casing + placeholder-preview sweep); android i18n **T-0333** (Register/Forgot) prior · **owner items:** the camera/photo plist WORDING sign-off ×5 (T-0308 shipped en+cs/sk/uk/ru); T-0325 location string (owner, unused by Phase 4) · standing latent backend S8 (RefreshToken tenant read asymmetry the device-revoke kill rides on) tracked by **T-0236** (`done`) + `security/auth-sessions.md` + `security/ios-devices.md` — re-verify before any non-null-TenantId onboarding
 **Created:** 2026-06-23
-**Updated:** 2026-06-27
+**Updated:** 2026-06-28
 **Source:** **ADR-0013** (`adr/0013-ios-app-architecture-and-port-strategy.md`, **accepted** 2026-06-23) +
 **ADR-0014** (`adr/0014-ios-deployment-target-ios16-and-state-mechanism.md`, **accepted** 2026-06-23 —
 partially supersedes ADR-0013: **iOS-16 floor** + `ObservableObject`/`@Published` state + the iOS-16 MapKit
@@ -235,6 +235,116 @@ born-canonical Swift `ApiResult<T>` contract.
 > T-0335). Resulting transitions: **T-0307 → `done`, T-0308 → `done`** (§3 + INDEX Wave-10 roster). The owner commits
 > these backlog edits + opens the Phase-4 PR (the PM does not commit). Phase 2+ tail stays **proposed**.
 
+> **STATUS-LOG 2026-06-28 — §7.11 SECURITY SUB-NOTE: T-0311 (APNs push registration) Gate-SEC ruling —
+> security_touching YES · PASS-the-design (4 binding rules + 1 required test).** Logged ahead of the build on
+> `phase/ios-phase5` (ARCHITECT rules the seam / lifecycle-home / foreground-permission flow in parallel; this
+> sub-note rules only registration-authz / device-id / logout-clear / token-handling). Full record:
+> `security/ios-push.md`. **security_touching = YES** — T-0311 is a **device-token write surface**
+> (`/api/Device/Register`, `RegisterDeviceCommand{deviceId, deviceToken, platform="ios"}`, authed — NOT
+> anon-allow-listed) plus the **logout-clear** is a load-bearing session-security property (a logged-out handset
+> must STOP receiving pushes). **Greenfield on iOS** (`CleansiaCore/.../Push/Push.swift` = a bare placeholder
+> enum, no register/unregister call site, no APNs delegate, no token cache on disk) → these are rules the dev
+> builds to, NOT findings against shipped iOS code. **Backend traced on this Mac + VERIFIED safe** (no backend
+> change): `RegisterDevice`/`UnregisterDevice` derive the user from the JWT session, bind the row to the caller,
+> scope every lookup by `UserId`, reject empty sessions; a foreign `deviceId` cannot hijack/register to another
+> account (per-`(UserId, DeviceId)` upsert + the composite unique index `DeviceConfiguration.cs:35`); Unregister
+> soft-deletes caller-scoped (`Deactivate`→`IsActive=false`, never hard-remove —
+> `UnregisterDeviceHandlerTests`), and that **stops APNs delivery** because the dispatcher fetches eligible rows
+> via `GetByUserIdAsync` filtering `&& d.IsActive` (`SendPushNotificationHandler.cs:121` → `DeviceRepository.cs:30`,
+> the S10 chain). S4 re-confirmed: register/unregister responses + `DeviceDto` carry **no `DeviceToken`** (the
+> push secret stays server-side). **Four binding rules:** (1) **spine-authed register on the ONE device-id** —
+> `deviceId` = `DeviceIdProvider.deviceId` (the same `X-Device-Id` mint-once source as T-0310 `deviceMine`; no
+> 2nd id / `UUID()` / `identifierForVendor`), `platform=="ios"` literal; (2) **register on session×token**
+> (the Android `PushTokenSessionObserver` parity — registration is a session-state property, never store/register
+> unauthenticated); (3) **logout MUST `Device/Unregister` BEFORE `tokenStore.clear()`** (the Android
+> `AuthRepository.kt:210-225` ordering — best-effort, but the authed DELETE needs the live Bearer or the row
+> survives and pushes keep flowing post-logout) **AND** the last-token cache clears on **ALL** sign-outs by being
+> a `SessionScopedCache` (so `Auth.signOutLocal()` `Auth.swift:189` + `SessionRefresher.forceSignOut()`
+> `SessionRefresher.swift:76` both `clearAll()` it — closing the account-switch "next user inherits A's pushes"
+> leak: A's row gone + A's token gone → B registers fresh); (4) **token handling (S6/S4)** — NO token logging
+> anywhere incl. Sentry/crash (backend sweep clean), `UserDefaults` OK for the cache (device-scoped, not a user
+> secret, reset-on-reinstall — NOT a location surviving `clearAll()`), no token in `Device/Mine` DTO (vetted
+> T-0310). **Required test: TC-IOS-PUSH-LOGOUT-CLEARS (red-first)** — on logout, unregister is invoked BEFORE the
+> token wipe (assert ordering / non-empty Bearer at the DELETE) AND the push cache `SessionScopedCache.clear()`
+> runs on BOTH the explicit-logout and forced-signout paths. **No new backend follow-up**; standing latent S8
+> (RefreshToken tenant read asymmetry, `auth-sessions.md`/`ios-devices.md`) re-verify before non-null-`TenantId`
+> onboarding. Owner dependency = the **APNs auth key/cert** (infra, not a code gate; until set, the dispatcher
+> `result.Skipped` no-op safely ACKs — `SendPushNotificationHandler.cs:149`). T-0311 stays **proposed** (ready to
+> build on `phase/ios-phase5` against these rules).
+
+> **STATUS-LOG 2026-06-28 — 🎉 PHASE 5 COMPLETE → the iOS PARTNER APP is FEATURE-COMPLETE. T-0309 + T-0311
+> `proposed` → `done` on `phase/ios-phase5` (8 commits, pushed); Phase-5 PR drafted.** Both tickets passed the
+> full workflow (ios dev → reviewer/Gate-DP + security on the touching slices). **This phase ports the last two
+> partner surfaces (earnings/invoices + push), so every partner screen is now ported** — auth → shell → dashboard
+> → orders+photos → profile/devices/prefs → earnings/invoices → push. **T-0309 (partner earnings + invoices +
+> PeriodPay) → `done`** — `59be42b` (the §7.11/§7.12 decision docs) + `e4e7793` (Slice A) + `7daa412` (Slice B):
+> **Slice A** = the **Earnings summary** (the `EarningsSummaryScreen.kt` parity, reuses the existing
+> `PartnerDashboardClient.getStats` — §7.12 decision (d)) + **PeriodPay** (the per-period pay rollup) over the
+> generated `PartnerEmployeePayrollAPI` (`employeePayrollGetPeriodPays`) on the ADR-0019 spine + a new Core
+> **`EarningsFormat`** money/date helper (§7.12 decision (c) — the lift-the-dup-to-a-Core-helper idiom). **The
+> `.invoices` shell tab is now the Earnings surface** — it roots an in-tab `NavigationStack` over a typed
+> `EarningsRoute` enum landing on the summary (§7.12 decision (a), the §7.7 D1 in-tab-stack precedent), and the
+> Dashboard's `onOpenEarnings` is now a tab-switch (the `selectOrders()` parity). **Slice B** = the **invoices
+> list** (`employeePayrollGetPagedInvoices`, sealed `UiState<[EmployeeInvoiceDto]>`) + **detail**
+> (`employeePayrollGetInvoiceById`) + **PDF viewing** via the new Core **`QuickLookPreview`** seam (§7.12 decision
+> (b) — the T-0308 §7.10 D1 system-UIKit-controller-behind-a-Core-seam idiom, applied to QLPreviewController, over
+> `employeePayrollDownloadInvoice`'s local file URL) + the **InvoicesStaleness** silent-stale resume (the ported
+> `getMyInvoicesStaleness()`/`invalidateMyInvoices()` watermark). **`RefreshPhase` was LIFTED to
+> `CleansiaCore/State`** (was Orders-local in T-0307; now shared by Orders + Invoices — the 2nd consumer triggers
+> the harvest). **Reviewer APPROVE**; the **SECURITY gate (§7.11, `security/ios-earnings.md`, E1–E4) is PASS** —
+> and the headline: **UNLIKE `GetPagedOrders`/T-0339, all four EmployeePayroll handlers ALREADY pin to the JWT
+> caller** for non-admins (`GetPeriodPays`/`GetPagedInvoices`/`GetInvoiceById`/`DownloadInvoice` traced + the
+> existing `GetPeriodPaysOwnershipTests` green 4/4), so there is **NO T-0339-class backend over-read and NO new
+> backend follow-up**; E1 own-server-derived id only, E2 no foreign-id echo, E3 download-own-only, **E4 the
+> PII-bearing PDF is deleted from cache on preview-dismiss** (TC-IOS-EARNINGS-OWNERSHIP green). The latent S5
+> payroll-route rate-limit gap is folded into **BSP-4d** (backend hardening, not a T-0309 blocker). The Android E1
+> invoices flag-bag is NOT replicated (iOS born sealed-state) → **T-0337**. **T-0311 (partner APNs push
+> REGISTRATION + token plumbing + device lifecycle + minimal foreground/tap) → `done`** — `f2a999f` (the
+> §7.11/§7.13 decision docs + the T-0342 owner ticket) + `8d53b18` (Slice A) + `b4fb556` (Slice B): **Slice A** =
+> the Core **`PushRegistrar`** seam (the SOLE `UNUserNotificationCenter`/`registerForRemoteNotifications` consumer
+> — the ADR-0014 D6′/ADR-0018 D2 system-framework-behind-a-Core-seam family) + the **`PushTokenRegistrar`**
+> (cache-short-circuit + persist-on-success; the last-registered-token store is a **`SessionScopedCache`**) + the
+> `Device/Register` client over the generated `PartnerDeviceAPI` on the ADR-0019 spine (`deviceId` == the one
+> `DeviceIdProvider`, `platform == "ios"`). **Slice B** = the Core **`PushSessionObserver`** (the
+> `PushTokenSessionObserver.kt` `combine(session, token)` parity — registration is a session×token property, never
+> an event hook) + the per-app **`@UIApplicationDelegateAdaptor`** AppDelegate (feeds the APNs-token stream;
+> `willPresent` foreground banner + `didReceive` tap → existing OrderDetail route via the
+> `PartnerNotificationDeepLink` port) + the **`Auth.setPreLogout` hook** (logout invokes `Device/Unregister`
+> **BEFORE** the `TokenStore` wipe so the authed DELETE has a live Bearer; the cache `clear()` rides every
+> sign-out as a `SessionScopedCache`) + the **`aps-environment` entitlement**. **Reviewer APPROVE**; the
+> **SECURITY gate (§7.11, `security/ios-push.md`, rules 1–4) is PASS** — verified vs code: (1) spine-authed
+> register on the ONE device-id, (2) register on session×token, (3) **the `setPreLogout` hook unregisters before
+> the token wipe AND the push cache clears on ALL sign-outs** (explicit-logout + forced-signout), (4) no token
+> logging / `UserDefaults` cache OK / no token in any DTO; **the new Auth-spine `setPreLogout` hook is safe +
+> non-regressing** (best-effort, does not block sign-out, no new anon entry); **TC-IOS-PUSH-LOGOUT-CLEARS** green;
+> **no new backend follow-up** (`RegisterDevice`/`UnregisterDevice` already JWT-scoped + soft-delete stops APNs
+> delivery via the `&& d.IsActive` dispatcher filter). **End-to-end push DELIVERY is OWNER-gated → T-0342** (the
+> APNs `.p8` auth key + the Push Notifications capability/provisioning on the App ID): T-0311 ships
+> **code-complete + the `aps-environment` entitlement WITHOUT it** (the T-0325-gates-T-0335 pattern; until the key
+> is set the dispatcher `result.Skipped` no-ops safely). **CI hardening (call out):** the `1eb346f` commit changes
+> the **ios-ci** workflow's partner step from `build` to **`build test`** — so the CleansiaPartner VM + security
+> test suite (**366 tests**, incl. the iOS push/orders/photos/devices ownership tests) now **actually gate in CI
+> for the first time** (previously only CleansiaCore's suite + the partner *build* gated). This is a real gate
+> hardening, not a cosmetic change. **Tests:** **CleansiaCore 194 + CleansiaPartner 366** pass on the iPhone 17
+> simulator; **swiftformat + swiftlint --strict clean**. **Gate-DP divergences (recorded, all
+> component/mechanism — none touch layout/flow/branding):** Coil-family card visuals → native SwiftUI +
+> `AsyncImage`/the QuickLook PDF swap (Android FileProvider/`ACTION_VIEW` → iOS QLPreviewController); FCM →
+> APNs over the **same** `Device/*` contract (ADR-0013 D8); the Android push+tab two-surface nav →
+> single-tab + in-tab `NavigationStack`; the Android E1 invoices flag-bag NOT replicated → **T-0337**. **Owner /
+> manual steps (PM never runs these):** (1) **T-0342** — the APNs `.p8` auth key + the Push capability/provisioning
+> (the end-to-end-delivery gate; code ships without it); (2) the **camera/photo plist WORDING sign-off ×5**
+> (carried from T-0308, still pending owner); (3) **T-0325** — the deferred location-permission purpose string ×5
+> (owner, **unused this phase** — the current-location FAB is T-0335). **T-0339 reconciliation (RESOLVED — it IS in
+> master):** T-0339 (the backend `GetPagedOrders` read-scoping SECURITY fix) landed in master via the PR #96
+> **SQUASH-merge**. PR #96 has a single parent (`7055ef4`), so the original commit `d688d30` is not a master
+> *ancestor* (a squash flattens the originals — which is why `git merge-base --is-ancestor d688d30 master`
+> misreads NO); but master's TREE contains the fix — `GetPagedOrdersScopeIntegrationTests.cs` +
+> `RestrictToEmployeeId` (OrderSpecification) + the GetPagedOrders caller-pin are all present in `origin/master`
+> (verified by tree content 2026-06-28). T-0339 → **done**; no owner action needed. Resulting transitions: **T-0309 → `done`, T-0311 → `done`** (§3 + INDEX Wave-10
+> roster); **the iOS partner app is feature-complete.** Next: the customer app batch (T-0312…T-0314) is the
+> remaining Wave-10 scope; the partner follow-ups (T-0334–T-0342) are filed. The owner commits these backlog edits
+> + opens the Phase-5 PR (the PM does not commit).
+
 **Goal:** port the Kotlin/Compose customer + partner apps to **Swift/SwiftUI** as **parity** apps sharing
 the **same Mobile API contract**, on a `CleansiaCore` SPM package + 2 app targets, **partner-first**, with
 a hand-written auth/session/header layer to the exact Android contract. iOS code lives at
@@ -316,9 +426,9 @@ PHASE 2+ PARITY FEATURE WAVES ── ordered by complexity; the 3 hard areas cal
 | **T-0306** | **Map seam + MapKit default** — `MapProvider`/`GeocodingService` protocol + `Coordinate`/`GeocodedAddress` value types in `CleansiaCore` + `MapKitMapProvider`/`CLGeocoderGeocodingService` + the partner `AddressPickerView`/`VM` (first map surface; returns `GeocodedAddress` via callback — NOT wired into AddressSection, that's T-0310). **Acceptance scope + the 4 Understand-pass rulings fixed in §7.6**: D1 (a MINIMAL `MapProvider` picker factory now; T-0307's full-bleed/overlay surface added ADDITIVELY later — "the one way iOS does maps behind the seam"; `GeocodingService` = 1:1 `ReverseGeocodingService.kt` port minus the Mapbox token/network args), D2 (current-location/my-location FAB/`LocationProvider` seam DEFERRED → T-0310 gated on T-0325's `NSLocationWhenInUseUsageDescription`; ship pan+search parity on the Prague default — the recorded **Gate-DP divergence**, architect sign-off), D3 (geocoding best-effort: cancel-before-refire, nil/`[]` on error, never block the confirm; 300ms fwd / 500ms reverse debounce VERBATIM; the picker has **NO `UiState`/`ActionState`** — reviewer note #27), D4 (NO Mapbox token / map SDK / `Package.swift` change — net secret-surface reduction; Q-IOS-02 stays "No", `MapStyles.kt` NOT ported). **iOS-16 variant (ADR-0014 D6′):** `Map(coordinateRegion:annotationItems:[])` + SwiftUI overlay pin for the picker; `MKMapView`/`UIViewRepresentable` for the (additive, T-0307) full-bleed map + polygon overlays — NO iOS-17-only `Map {...}`/`Marker`/`MapPolygon`/`onMapCameraChange`. Reviewer #7/#12/#27 + Gate-DP. **Android parity: `AddressPickerScreen.kt` + `AddressPickerViewModel.kt` + `core/location/{ReverseGeocodingService,GeocodedAddress,LocationService,MapStyles}.kt`** | M | **done ✅** `480f5c4`+`03a00f3`+`199916b` (`phase/ios-phase3`; Slice A = Core `MapProvider`/`GeocodingService` seam + `Coordinate`/`GeocodedAddress` value types + `CLGeocoderGeocodingService` + the iOS-16 `MapKitMapProvider` — **125 CleansiaCore tests**; Slice B = the partner `AddressPickerView`/`VM`: pan + search, full-bleed map + static center-pin overlay, 300ms fwd / 500ms reverse-on-idle debounce verbatim, best-effort geocode, NO `UiState`/`ActionState` (reviewer #27), returns `GeocodedAddress` via `onConfirmed`. D2 current-location FAB DEFERRED → T-0335 (the recorded Gate-DP divergence). Reviewer **APPROVE**; swiftformat/swiftlint clean) | ios | T-0300✓ | — | 2 (**HARD AREA #2 — first half**) |
 | **T-0307** | **Partner order work-loop** — OrdersList + OrderDetail (full-bleed map + 3-snap sheet) + the **OnTheWay** lifecycle (Take→NotifyOnTheWay→Start→Complete) + checklist/notes/issues/timeline. **Acceptance scope + the 5 Understand-pass rulings fixed in §7.9 (architect) + the SECURITY order-action gate in §7.8:** (a) the additive `MapProvider.fullBleedMap(coordinate:)` — single pin, camera-padded, NO polygon param (no polygon data in spec; §7.6 D1 additive seam); (b) the **non-modal `SnapSheet` 16.0-floor sheet = ADR-0021** (custom `GeometryReader`+drag container, NOT a modal `.sheet`; the floor stays 16.0); (c) the pure shared `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:)` machine (3 call sites, NOT inline switches; ownership trust = §7.8); (d) the T-0308 photo precursor seam (disabled/placeholder Photos slot + `hasAfterPhotos` consumer; capture additive in T-0308); (e) sealed per-pane `UiState<[OrderListItem]>` + a `RefreshPhase` enum + **PORTED** per-pane staleness cache (Android E1 flag-bag NOT replicated→T-0337; SlideToCommit→native confirm Gate-DP swap). + the Code→OrderStatus one-mapper convention. Reviewer #29/#30/#31 + Gate-DP + TC-IOS-SNAP/-ORDER-ACTION; **SECURITY gate** (§7.8, O1–O4 + the backend GetPaged read-scoping fix). **Android parity: `partner-app/.../features/orders/{OrdersListScreen,OrdersListViewModel,OrderDetailScreen,OrderDetailViewModel,OrderPrimaryAction,CleaningChecklist,StatusTimeline,OrderStatusPill,PhotosSection}.kt` + `data/orders/OrdersRepository.kt`** | **L → split** | **done ✅** `4cb76ef`+`94050ae`+`3d0bf0d`+`7fca473`+`3c44356`+`42bb402` (`phase/ios-phase4`; **5 slices** — A Core `SnapSheet` (ADR-0021 non-modal 3-snap) + `fullBleedMap(coordinate:)` single-pin `MKMapView`; B 3-pane OrdersList (sealed per-pane `UiState`+`RefreshPhase`+ported staleness cache + Code→OrderStatus one-mapper; security O3 own-id-only); C OrderDetail shell (SnapSheet over fullBleedMap + content cards); D the OnTheWay lifecycle actions + the shared pure `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:)` machine — **SECURITY PASS O1/O2/O4**, TC-IOS-ORDERS-OWNERSHIP; E checklist (local store)/notes+issues (author-scoped)/timeline. Reviewer **APPROVE** all 5; **SECURITY PASS** (§7.8 O1–O4; the one backend GetPaged D2b gap → **T-0339**, iOS proceeds in parallel). E1 flag-bag NOT replicated→T-0337; SlideToCommit→native confirm Gate-DP swap; deferred checklist stable-id→T-0340; current-location FAB→T-0335. CleansiaCore 163 + CleansiaPartner 320 pass on iPhone 17 sim; swiftformat/swiftlint --strict clean) | ios | T-0304✓, T-0306✓ | — | 4 (**HARD AREA #3**; `phase/ios-phase4`) |
 | **T-0308** | **Partner photo upload** — camera capture → **JSON base64** photos (partner shape) on OrderDetail | M | **done ✅** `c216392`+`cf6ea6d`+`a2a2184` (`phase/ios-phase4`; **2 slices** — A Core `CameraOrLibraryPicker` (the repo's first `UIViewControllerRepresentable`) + `ImageCompressor` (1920/0.7, **EXPLICIT EXIF strip**, TC-IOS-PHOTOS-EXIF-STRIP); B the `PhotosSection` (before/after rails, capture→upload) + the upload/delete VM + the Complete-unblock + the bootstrapped `PrivacyInfo.xcprivacy` + the NSCamera/NSPhotoLibrary usage strings ×5. Reviewer **APPROVE**; **SECURITY PASS** (§7.10 P1–P5, TC-IOS-PHOTOS-OWNERSHIP — backend SavePhotos/DeletePhoto/GetPhotos ownership VERIFIED safe, no backend change). Owner sign-off pending on the camera/photo plist WORDING ×5) | ios | T-0307✓ | **owner: camera/photo plist WORDING sign-off ×5** | 4 (HARD AREA #3 cont.; `phase/ios-phase4`) |
-| **T-0309** | Partner earnings + invoices + PeriodPay (`EmployeePayroll/GetPeriodPays` — a regen'd-spec endpoint) | M | **proposed** | ios | T-0304 | — | 2 (partner) |
+| **T-0309** | Partner earnings + invoices + PeriodPay (`EmployeePayroll/GetPeriodPays` — a regen'd-spec endpoint). **Acceptance scope + the 4 Understand-pass rulings fixed in §7.12** (architect — nav/PDF-seam/format/stats-source) + the **§7.11 SECURITY read-scoping gate** (E1–E4) | M | **done ✅** `59be42b`+`e4e7793`+`7daa412` (`phase/ios-phase5`; **2 slices** — A Earnings summary (reuses `PartnerDashboardClient.getStats`, §7.12 (d)) + PeriodPay over the generated `PartnerEmployeePayrollAPI` (ADR-0019 spine) + a Core `EarningsFormat` helper; the `.invoices` tab roots an in-tab `NavigationStack`/`EarningsRoute` landing on the summary (§7.12 (a)); `onOpenEarnings` is now a tab-switch. B invoices list (`getPagedInvoices`, sealed `UiState`) + detail (`getInvoiceById`) + PDF via the new Core **`QuickLookPreview`** seam (§7.12 (b)) over `downloadInvoice` + the ported **InvoicesStaleness** silent-stale resume; **`RefreshPhase` LIFTED to `CleansiaCore/State`** (now shared by Orders+Invoices). Reviewer **APPROVE**; **SECURITY PASS** (§7.11 E1–E4, TC-IOS-EARNINGS-OWNERSHIP — backend EmployeePayroll already JWT-scoped for non-admins, `GetPeriodPaysOwnershipTests` green 4/4, **NO T-0339-class gap, NO backend follow-up**; E4 PDF deleted from cache on dismiss; latent S5 rate-limit → BSP-4d). Android E1 invoices flag-bag NOT replicated → T-0337) | ios | T-0304✓ | — | 5 (partner; `phase/ios-phase5`) |
 | **T-0310** | Partner **Profile tab** (replaces `PartnerShellView.swift:36` `PlaceholderTab`) — the hub (hero + contract-status chip + section-group rows + logout) + **6 section editors** (Personal/Address/Identification/Bank/Emergency/Documents) over a new `PartnerProfileClient` (ADR-0019 spine) + the **onboarding chain** + **Devices** (Device/Mine list + revoke — **SECURITY-ruled, decisions 6–8**) + **Preferences** (Language/Theme). **Acceptance scope + the 5 Understand-pass rulings fixed in §7.7:** D1 (in-tab `NavigationStack` over a typed `ProfileRoute` enum — ADR-0020 intra-audience push, reviewer #28a), D2 (**the load-bearing call** — the RegistrationLock owns its OWN local `NavigationStack` + chain VM and pushes the SHARED section set over itself with `onboarding == true`; fail-closed, no cross-audience shell routing — reviewer #28b + TC-IOS-LOCK-CHAIN, composes with #24), D3 (`ServiceAreaRow` DEFERRED → T-0334, a Gate-DP divergence; Address ships pan/search/save at parity), D4 (EXTEND the one `AppSettingsStore` with writable language + a Theme enum + setters; honor theme via `.preferredColorScheme` now — reviewer #28c), D5 (born sealed-state canonical — Android E1 flag-bags NOT replicated; android fix → T-0337; reviewer #28d). **Scope cuts (PM to record):** current-location FAB + `LocationProvider` seam DEFERRED → T-0335 (gated on T-0325); **"Notifications" DROPPED** (no Android prefs surface / no backend prefs API / no client; the in-app feed is a separate spike → T-0336). Reviewer #28 + TC-IOS-PROFILE-ROUTE/-LOCK-CHAIN/-SECTION-SHARED/-SETTINGS-THEME/-PROFILE-STATE. Gate-DP. **Android parity: `partner-app/.../features/profile/` (`ProfileScreen.kt`/`ProfileViewModel.kt`, the `*Section*` set, `OnboardingChainHeader.kt`, `SectionScaffold.kt`, `AddressSectionScreen.kt`) + `features/orders/{RegistrationLockViewModel,OnboardingChainViewModel}.kt` + `core/settings/AppSettingsRepository.kt`** | M | **done ✅** `ce6c5fc`+`ee2f044`+`2cdaf93`+`6c6155c` (`phase/ios-phase3`; 3 slices. Slice A = the profile hub + 6 section editors (Personal/Address/Identification/Bank/Emergency/Documents) + onboarding chain + the now-live RegistrationLock Fix-CTAs (D2: the lock owns its OWN `NavigationStack`+chain VM, pushes the SHARED section set with `onboarding==true`, fail-CLOSED — gate #24 byte-unchanged, verified). Slice B = Devices (Device/Mine list + revoke) — **SECURITY PASS** on all binding rules (D6 single device-id source, D7a hide-on-current + D7b defensive self-revoke sign-out, D8 server-scoped revoke verified vs the backend; TC-IOS-DEVICES-SELF-REVOKE green). Slice C = Preferences (language [+ a System/follow-device row] + theme pickers; theme honored via `.preferredColorScheme`; the first runtime in-app language switch). D3 `ServiceAreaRow` DEFERRED → T-0334; D5 born sealed-state, Android E1 flag-bags NOT replicated → T-0337; current-location FAB → T-0335; Notifications DROPPED → T-0336. Reviewer **APPROVE** (incl. a re-review of the System-row fix); **185 CleansiaPartner tests**; swiftformat/swiftlint clean) | ios | T-0304✓, T-0306✓ | — | 2 (partner) |
-| **T-0311** | **Push (APNs)** — register for remote notifications → APNs token + `Platform="ios"` + same `X-Device-Id` to `/api/Device/*`; re-register on login, clear on logout (the `:core` push parity) | M | **proposed** | ios | T-0300 | **owner: APNs auth key/cert** | 2 (cross-app) |
+| **T-0311** | **Push (APNs) — REGISTRATION + token plumbing + device lifecycle + minimal foreground/tap** (NOT the in-app feed → T-0336) — register for remote notifications → APNs token + `Platform="ios"` + same `X-Device-Id` to `/api/Device/*` (generated `PartnerDeviceAPI` on the ADR-0019 spine); re-register on login, clear on logout (the `:core` push parity). **Acceptance scope + the 3 Understand-pass rulings fixed in §7.13 (no new ADR):** (a) a Core **`PushRegistrar`** seam (the SOLE `UNUserNotificationCenter`/`registerForRemoteNotifications` consumer — the ADR-0014 D6′/ADR-0018 D2 seam-family) + a per-app **`@UIApplicationDelegateAdaptor`** feeding its APNs-token stream (reviewer #34a); (b) **the load-bearing call** — a Core **`PushSessionObserver`** (the `PushTokenSessionObserver.kt` `combine(session,token)` parity), `unregisterDevice()` invoked from `AuthApiClient.logout()` BEFORE the `TokenStore` wipe + local `clear()` via the `SessionScopedCacheRegistry` (reviewer #34b; the **ordering GATE = SECURITY/Gate-SEC**); (c) minimal `willPresent`+`didReceive`-tap (→ existing order route via a `PartnerNotificationDeepLink` port), in-app feed→T-0336, **no plist key** (only the `aps-environment` entitlement), skip the rationale string, **no `UiState`/`ActionState`** (correct — §7.6 D3 precedent) (reviewer #34c). **2 slices** (A = `PushRegistrar` seam + `Device/Register` client + registrar logic; B = `PushSessionObserver` wiring + `@UIApplicationDelegateAdaptor` + foreground/tap + the entitlement). FCM→APNs over the same `Device/*` contract = the recorded Gate-DP divergence (ADR-0013 D8). TC-IOS-PUSH-REGISTER/-OBSERVER/-LOGOUT-ORDER/-TAP. **Android parity: `core/.../notifications/{PushTokenRepository,PushTokenSessionObserver,DeviceRegistrationClient,PushTokenDataStore}.kt` + `partner-app/.../data/auth/AuthRepository.kt:210-231`** | M | **done ✅** `f2a999f`+`8d53b18`+`b4fb556` (`phase/ios-phase5`; **2 slices** — A the Core `PushRegistrar` seam (the SOLE `UNUserNotificationCenter`/`registerForRemoteNotifications` consumer) + `PushTokenRegistrar` (cache-short-circuit + persist-on-success; the last-token store is a `SessionScopedCache`) + the `Device/Register` client (generated `PartnerDeviceAPI`, ADR-0019 spine; `deviceId`==the one `DeviceIdProvider`, `platform=="ios"`). B the Core `PushSessionObserver` (`combine(session,token)` parity — registration is session×token state) + the per-app `@UIApplicationDelegateAdaptor` AppDelegate (`willPresent` banner + `didReceive` tap → OrderDetail via the `PartnerNotificationDeepLink` port) + the new **`Auth.setPreLogout` hook** (logout `Device/Unregister`s BEFORE the `TokenStore` wipe) + the `aps-environment` entitlement. Reviewer **APPROVE**; **SECURITY PASS** (§7.11 `security/ios-push.md` rules 1–4 + TC-IOS-PUSH-LOGOUT-CLEARS — verified vs code; the `setPreLogout` hook safe/non-regressing; no token in any DTO/log; no T-0339-class backend gap — `RegisterDevice`/`UnregisterDevice` JWT-scoped + soft-delete stops APNs delivery). FCM→APNs over the SAME `Device/*` contract = the recorded Gate-DP divergence (ADR-0013 D8). **End-to-end DELIVERY is OWNER-gated → T-0342** (code ships complete + the entitlement without the `.p8` key). **CI hardening:** ios-ci's partner step is now `build test` (the 366 partner tests gate for the first time — `1eb346f`)) | ios | T-0302✓, T-0303✓, T-0310✓, T-0331 | **owner: T-0342 (APNs `.p8` key + Push capability/provisioning) — the end-to-end-DELIVERY gate; T-0311 ships code-complete + the `aps-environment` entitlement without it (the T-0325-gates-T-0335 pattern)** | 5 (cross-app; `phase/ios-phase5`) |
 | **T-0312** | **Customer app shell + auth** — SignIn/SignUp/EmailVerify (+ Google Sign-In, customer-only) + Main shell (Home·Orders·Rewards·Profile + center **Book FAB**) | M | **proposed** | ios | T-0302, T-0306 | rides regen | 2 (customer) |
 | **T-0313** | **Customer booking wizard + Stripe** — the 3-step Bolt-style anchored sheet (Services / WhenWhere / Confirm), client-side pricing, **cash→success vs card→`stripe-ios` PaymentSheet** | **L → split** | **proposed** | ios | T-0312 | — | 2 (**HARD AREA #1 — hardest**) |
 | **T-0314** | Customer parity tail — Home, Orders+OrderDetail, Rewards/loyalty, Membership (SubscribePlus→Stripe), Recurring, **Disputes (multipart `IFormFile` evidence)**, Addresses (map seam), Profile/Settings (incl. **DeleteAccount/GDPR**, Devices, Notification prefs) | **L → split** | **proposed** | ios | T-0312, T-0306, T-0313 | — | 2 (customer) |
@@ -408,8 +518,11 @@ PHASE 2+ (after Phase 1 proves the architecture)
    is a regen of the *existing* contract — no backend code change. It also re-feeds Android's
    openapi-generator (kotlin) from the same spec, keeping all three clients aligned. **Gates T-0302's first
    real generation and every generated-client ticket (T-0303+).**
-2. **APNs auth key / push certificate (Apple Developer)** — for T-0311 push (the Android
-   `google-services.json` analogue). Owner provisioning; flagged, not built by agents.
+2. **APNs auth key (`.p8`) + Push capability/provisioning (Apple Developer)** — for T-0311 push (the Android
+   `google-services.json` analogue). Owner provisioning; flagged, not built by agents. **Ticketized as
+   T-0342** *(NOT "T-0341", which is the backend status-history flaky-test ticket)* — the
+   **end-to-end-DELIVERY** gate: T-0311 ships code-complete + the `aps-environment` entitlement without it
+   (the T-0325-gates-T-0335 pattern; §7.13).
 3. **Apple Developer account + signing / bundle ids** (`cz.cleansia.partner` / `cz.cleansia.customer`) —
    owner setup for T-0296's targets.
 4. **Mapbox token — ONLY IF** Q-IOS-02 flips the default to Mapbox (D6 fallback). **Not needed** under the
@@ -2232,6 +2345,707 @@ without re-touching the structure).**
   `orderSavePhotos` **batch-of-one** (one `SaveOrderPhotosPhotoToSave` carrying `BlobFileDto{fileName, base64Content,
   contentType: "image/jpeg"}`); the `PhotoType` maps `_1=Before`/`_2=After`; a failure snackbars + clears `isUploading`
   without bumping the parent (the `OrderPhotosViewModel.kt:104-107` parity).
+
+### 7.11 T-0309 (Phase-5 partner EARNINGS / Invoices / PeriodPay — read-only over EmployeePayroll: getPeriodPays + getPagedInvoices + getInvoiceById + downloadInvoice→PDF) — SECURITY read-scoping gate (recorded 2026-06-27, security reviewer)
+
+> **SECURITY sub-note (the read-side analogue of the §7.8 / T-0339 `GetPagedOrders` gate).** Full S1–S10
+> walk + the binding iOS client rules (E1–E4) + the required test + the PDF-PII handling rule live in
+> `agents/backlog/security/ios-earnings.md`. This is the index pointer + the headline ruling.
+
+**security_touching: YES** (own-data financial read; the invoice PDF carries bank/payment PII —
+`VariableSymbol`/`SpecificSymbol`/`PaymentReference`/`BankTransferNote`). **Verdict: PASS-the-design.**
+
+**The headline (the T-0339 contrast):** UNLIKE `GetPagedOrders` (which trusted the client
+`Filter.EmployeeId` → T-0339 filed), **all four payroll handlers ALREADY pin to the JWT caller** for
+non-admins — there is **NO** T-0339-class over-read here and **NO backend read-scoping follow-up
+ticket is needed.** Traced on this Mac + the existing `GetPeriodPaysOwnershipTests` ran **green (4/4)**:
+- `GetPeriodPays.cs:52-61` — non-admin foreign `employeeId` → `EmployeeNotFound` before any read.
+- `GetPagedInvoices.cs:33-43` — non-admin: the handler **overwrites** `employeeIdFilter` with the
+  server-resolved caller id and **ignores `Filter.EmployeeId`** (empty page if unresolvable). This is
+  exactly the pin T-0339 had to ADD to `GetPagedOrders` — payroll already has it.
+- `GetInvoiceById.cs:57-66` / `DownloadInvoice.cs:49-58` — non-admin `invoice.EmployeeId != caller`
+  → `InvoiceNotFound` (NotFound, not Forbidden); the blob is never fetched/streamed for a foreign id.
+
+**S4 (DTO leak) — PASS.** DTOs carry only the caller's OWN fields; `EmployeeInvoice` (`ITenantEntity`)
+has **no IBAN / raw bank-account number**; no `TenantId`/`UserId`/Stripe id/hash; no other-employee
+PII. **S5 (rate limit) — LATENT GAP, folded into BSP-4d:** `EmployeePayrollController`'s 4 routes carry
+**no** `[EnableRateLimiting]` while every sibling on the host does, and the global limiter is a
+no-limiter for authenticated callers — so the payroll reads are unthrottled (read-only enumeration
+surface; LOW/latent; **iOS cannot fix — backend hardening**, not a T-0309 blocker).
+
+**Binding iOS client rules (E1–E4):** E1 own-server-derived id only (`currentEmployeeId()`, the §7.7
+O3 precedent — never screen input); E2 no foreign-id echo; E3 download own invoices only (`invoiceId`
+from the caller's OWN list); E4 the downloaded PDF is **deleted from cache/temp after the preview is
+dismissed** (no PII-bearing PDF left resident in `Caches/`). **PrivacyInfo:** **NO** new
+`NSPrivacyCollectedDataType` entry for the download (a round-trip of the caller's OWN record is not
+App-Store "collection"; contrast T-0308's camera/library *capability* purpose strings) — it inherits
+the standing AR-PRIV-1 required-reason-API audit only.
+
+**Required test:** **TC-IOS-EARNINGS-OWNERSHIP** — the facade/VM building the requests asserts the
+outgoing id always equals the caller's own `currentEmployeeId()` even if a foreign id is injected into
+screen state, and `downloadInvoice` runs only with an `invoiceId` from the caller's own fetched list;
+PDF-cleanup (E4) covered by a remove-on-dismiss unit test (or folded into the architect's QuickLook
+coordinator test). Backend ownership already proven by `GetPeriodPaysOwnershipTests` (green here).
+
+**The architect rules nav / PDF preview mechanism / number-format in parallel — SECURITY stays out of
+those; it owns only the read-scoping + the PDF-PII-cleanup-is-mandatory rule.** Cross-ref:
+`agents/backlog/security/ios-earnings.md`.
+
+---
+
+### 7.12 T-0309 (Phase-5 partner earnings + invoices + PeriodPay) — acceptance scope + the four Understand-pass rulings (recorded 2026-06-27, architect)
+
+> **The read-scoping / PII gate (who may read which employee's earnings/invoices/PeriodPay, the own-id-only rule, the
+> mandatory post-preview PDF cache-cleanup) is ruled by SECURITY in parallel in §7.11 (`security/ios-earnings.md`,
+> E1–E4 + TC-IOS-EARNINGS-OWNERSHIP) — this architect record stays OUT of it.** The decisions below rule only the
+> *nav shape*, the *PDF-viewing seam*, the *money/date formatting*, and the *stats source* — never who may read whose
+> payroll. SECURITY's E4 (delete the previewed PDF from cache on dismiss) composes with this record's `QuickLookPreview`
+> coordinator (decision (b)); SECURITY's E1 (own-server-derived id only) composes with the no-`UserProfileStore` fact
+> (§7.5 D2) — iOS sources the caller-own id the iOS way, which SECURITY rules. Both records cover the same ticket from
+> their two mandates; neither contradicts the other.
+
+T-0309 (`M`, `phase/ios-phase5`, depends_on T-0304✓) builds the partner **earnings / invoices / PeriodPay** surface
+over the generated `PartnerEmployeePayrollAPI` — all four operations ride the **ADR-0019 spine** (the Core-spine-backed
+`RequestBuilderFactory`; no auth code): `employeePayrollGetPeriodPays` / `employeePayrollGetPagedInvoices` /
+`employeePayrollGetInvoiceById` / `employeePayrollDownloadInvoice`. **The spec is already regen'd** (the regen'd
+`partner-mobile-api.json` carries `EmployeePayroll_{GetPagedInvoices,GetInvoiceById,GetPeriodPays,DownloadInvoice}` —
+verified `:2977/:3162/:3262/:3368`), so **there is NO owner codegen step** for T-0309. It **replaces** the partner
+shell's 3rd tab placeholder (`PartnerShellView` `.invoices` = `PlaceholderTab(ticket:"T-0309")`) and wires the
+Dashboard's currently-inert `onOpenEarnings`. **2 slices (§6):** A = Earnings summary + PeriodPay; B = invoices list +
+detail + PDF.
+
+**This is a "record, not ADR" ruling — the §7.2/§7.4/§7.5/§7.6/§7.7/§7.9/§7.10 precedent.** All four decisions
+**APPLY accepted ADRs + prior records**: (a) applies **ADR-0020** (the intra-audience push is a `NavigationStack`
+WITHIN an audience; the audience tab is the surface) + the §7.7 D1 in-tab-`NavigationStack` precedent + ADR-0018
+Gate-DP (the recorded nav divergence form); (b) applies the **T-0308 §7.10 D1 Core-seam precedent** (a UIKit
+controller behind a `CleansiaCore/Components` seam, harvested) + ADR-0018 D2 (brand-skin-over-native) — `QuickLookPreview`
+is the *next* application of that idiom, not a new principle; (c) applies the §7.5 D4 / §7.7 D4 Core-utility-helper
+precedent (the `EmailValidator`/`PasswordPolicy`/`AppSettingsStore` "lift the duplicated thing to a small typed Core
+helper" pattern) + the `patterns-mobile` harvest-on-3+-call-sites rule; (d) applies **ADR-0013** parity + Core/DRY
+(reuse the existing `PartnerDashboardClient.getStats`, the Android `EarningsSummaryViewModel` parity exactly).
+**No new trade-off rises to an ADR's bar** (a decision that could move the deployment floor, or that sets a wholly new
+canonical archetype with rejected alternatives that must be defended on the immutable record). The PDF-viewing call is
+a **seam choice among three options** — but it is *the same shape* as the §7.10 D1 capture-seam decision (a system
+UIKit controller wrapped as a Core `CleansiaCore/Components` representable), so it is a §7.12 line + a `patterns-mobile`
+harvest, not an ADR.
+
+**Android parity source (the iOS port mirrors it):** `partner-app/.../features/earnings/` (`EarningsSummaryScreen.kt`/
+`EarningsSummaryViewModel.kt`), `features/invoices/` (`InvoicesListScreen.kt`/`InvoicesListViewModel.kt`,
+`InvoiceDetailScreen.kt`/`InvoiceDetailViewModel.kt`, `InvoiceStatusBadge.kt`), `features/payroll/`
+(`PeriodPayScreen.kt`/`PeriodPayViewModel.kt`) + `data/invoices/InvoicesRepository.kt` + `data/payroll/{PeriodPayApi,
+PeriodPayRepository}.kt`; nav `navigation/PartnerNavHost.kt:160-289` (the Earnings **push** + Invoices **tab** +
+InvoiceDetail/PeriodPay pushes). **Gate-DP applies** (T-0309 is a screen ticket): the screens cite their Compose
+counterparts; native SwiftUI; iOS-wins-on-conflict + the noted divergences (the push+tab → single-tab+stack nav swap;
+the Android FileProvider/`ACTION_VIEW` → iOS QuickLook PDF swap; the Coil-family card visual language → native).
+
+**IN — T-0309 acceptance scope:**
+- **Slice A:** the **Earnings summary** screen (the `EarningsSummaryScreen.kt` parity — headline current-period card +
+  Today/Week/Last-month breakdown + pay-period progress + the "View all invoices" entry row) driven by
+  `PartnerDashboardClient.getStats` (decision (d)) over a sealed `UiState<DashboardStatsDto>`; the **PeriodPay** detail
+  (`PeriodPayScreen.kt` parity — the per-order pay rollup for one pay period) over the generated
+  `employeePayrollGetPeriodPays`, a sealed `UiState<PeriodPaySummary>`. **The `.invoices` tab roots an in-tab
+  `NavigationStack` over a typed `EarningsRoute` enum** (decision (a)), **landing on the Earnings summary**.
+- **Slice B:** the **invoices list** (`InvoicesListScreen.kt` parity — lifetime-total hero + per-invoice cards) over
+  `employeePayrollGetPagedInvoices`, a sealed per-list `UiState<[EmployeeInvoiceDto]>` + a `RefreshPhase` enum (the
+  §7.9 (e) list-state convention — **NOT** the Android E1 flag-bag, see the divergence below) **+** the PORTED
+  my-invoices staleness watermark (the `InvoicesRepository.getMyInvoicesStaleness()`/`invalidateMyInvoices()` parity —
+  the silent-stale resume the tab needs); the **invoice detail** (`InvoiceDetailScreen.kt` parity — hero/breakdown/
+  period/references/notes cards + the "Open PDF" affordance) over `employeePayrollGetInvoiceById`; **PDF viewing** via
+  the new Core **`QuickLookPreview`** seam (decision (b)) over the generated `employeePayrollDownloadInvoice`'s local
+  file URL. The detail's "View period pay" row pushes `.periodPay(payPeriodId, currencyCode)` (decision (a)).
+
+**DEFERRED / NOT replicated — explicitly out of T-0309, with the ticket each lands in:**
+- **The Android E1 invoices flag-bag is NOT replicated** → **T-0337** (the standing Android-partner-E1 home). The
+  Android `InvoicesListUiState` is the same `isUserRefreshing`/`isBackgroundRefreshing`/`hasLoadedOnce`/`invoices`
+  flag-bag (`InvoicesListScreen.kt:125,132-148,150` reads them) the §7.9 (e) / §7.7 D5 ruling diverges from; iOS is
+  born sealed-state. (Recorded Gate-DP/Parity divergence — see below.)
+- **The read-scoping / PII gate** → **SECURITY §7.11** (`security/ios-earnings.md`, ruled in parallel — out of this
+  record).
+- **No `FileDownload` Core seam is built** (decision (b)): the generated client already downloads the PDF (writes the
+  body to disk, returns a local file URL); the VM only **surfaces** that URL via a one-shot event — there is nothing to
+  download-orchestrate, so a download seam would be dead abstraction.
+
+#### Decision (a) — NAV SHAPE: the `.invoices` TAB *is* the surface — it roots an in-tab `NavigationStack` over a typed `EarningsRoute` enum landing on the **Earnings summary**; the Dashboard's `onOpenEarnings` sets `ShellModel.selection = .invoices` (mirrors `selectOrders()`), NOT a push (APPLIES ADR-0020 + §7.7 D1 + ADR-0018 Gate-DP — no new ADR)
+
+**RULING: the partner shell's 3rd tab (`.invoices`, the slot T-0304 committed to) IS the earnings/invoices surface. It
+roots an in-tab `NavigationStack` over a typed `enum EarningsRoute { case summary; case invoices; case invoiceDetail(id:
+String); case periodPay(payPeriodId: String, currencyCode: String?) }` — the ADR-0020 D4 / §7.7 D1 intra-audience push
+(the root `PartnerRootView` enum stays the audience selector; the tab-local `NavigationStack` is the push container
+WITHIN the `.dashboard` shell, exactly as the Profile tab does). The Dashboard's `onOpenEarnings` sets
+`ShellModel.selection = .invoices` (the `selectOrders()` parity the dashboard already uses for `onOpenOrders` →
+T-0304's `onOpenOrders` → Orders tab) — a TAB SWITCH, **not** a push. THE TAB LANDING IS THE EARNINGS SUMMARY (the
+recommended option) — Android's Earnings screen exists specifically to avoid landing on an empty invoices list for a
+cleaner with no closed pay period yet. This canonicalizes the Android push+tab two-surface shape onto iOS's single-tab
++ in-tab-stack — the same Gate-DP class as the T-0304 TabView swap. Record, no new ADR.**
+
+- **The Android shape (verified — push + tab, two entry surfaces).** Android has **two** payroll surfaces:
+  `NavRoute.Earnings` is a **PUSHED** destination (`PartnerNavHost.kt:168` `onOpenEarnings = navigate(NavRoute.Earnings)`,
+  rendered `:260-278`), AND `NavRoute.Invoices` is a **bottom-nav TAB** inside `MainScaffold` (`:279-289` — "the
+  main-graph deep-link target… the Invoices bottom-nav tab"). The Earnings screen's "View all invoices" does **not**
+  push the list — it sets `MainTab.Invoices.ordinal` and pops Earnings so `MainScaffold` animates the pager to the
+  Invoices tab (`:264-275`). `InvoiceDetail` (`:247-255`) and `PeriodPay` (`:256-258`) are pushed; PeriodPay receives
+  `(payPeriodId, currencyCode)` (`:251`).
+- **Why iOS collapses push+tab into one tab + an in-tab stack (the ruling).** iOS already **committed** (T-0304) to the
+  `.invoices` shell tab — the shell is the native `TabView` (Dashboard·Orders·Invoices·Profile, the §7.4 Slice-B shape).
+  The Android "Earnings (pushed) + Invoices (tab)" split is a Compose-NavHost artifact (a pushed screen that hops to a
+  tab via an ordinal key + pop). On iOS the **native** shape is: the tab owns a `NavigationStack`, the summary is the
+  stack root, and the list is **one push** off the summary (the §7.7 D1 Profile-tab idiom — the tab hosts an in-tab
+  `NavigationStack` over a typed route enum). This is the **same Gate-DP component class as the T-0304 TabView swap**
+  (Android `MainScaffold` floating-island pill → SwiftUI `TabView`): the navigation *structure* (Earnings → Invoices →
+  Detail → PeriodPay, same back-stack order) and content are identical; only the *mechanism* (a NavHost push-to-tab vs a
+  tab-local stack) changes. **Layout/flow/branding are unchanged** — Gate-DP #3 passes.
+- **`onOpenEarnings` is a tab SWITCH, not a push (the load-bearing parity).** The Dashboard's earnings card must land on
+  the `.invoices` tab's summary root, not push a screen onto the Dashboard tab's stack — exactly as T-0304 already wired
+  `onOpenOrders` to switch to the Orders tab (the `selectOrders()` shape). So `onOpenEarnings` sets
+  `ShellModel.selection = .invoices`. (If the tab's stack is non-empty from a prior visit, switching to it shows
+  whatever was on top; a `.popToRoot` on tab-reselect is a reasonable native polish but not required for parity — record
+  it as the dev's call, defaulting to the native "remember the tab's stack" behavior, which matches Android's tab state
+  retention.)
+- **The tab landing = the Earnings SUMMARY (recommended), not the invoices list (the discriminator + why).** Android
+  built `EarningsSummaryScreen` **specifically** to avoid the empty-list landing: its own docstring —
+  *"the old flow jumped straight to InvoicesListScreen, which is empty for any cleaner whose first pay period hasn't
+  closed yet — confusing and unhelpful. This screen always has meaningful content (today/week/month earnings, jobs done,
+  pay-period progress, next payout) and offers 'View all invoices' as a deliberate drill-down"*
+  (`EarningsSummaryScreen.kt:56-66`). So the tab root is `.summary`; `.invoices` (the list) is a push off it (the
+  "View all invoices" entry row, `EarningsSummaryScreen.kt:127,332-368`). **Rejected: land the tab on the invoices
+  list** — it reproduces the exact empty-landing UX Android deliberately moved away from, and it drops the Earnings
+  summary (the today/week/month + pay-period card a cleaner with no invoices yet still sees). Landing on the summary is
+  the Android-parity-and-better-UX choice.
+- **Recorded Gate-DP divergence (architect sign-off):** *"Android = Earnings (pushed screen) + Invoices (bottom-nav tab),
+  with Earnings→Invoices a pop+tab-ordinal hop; iOS = the single `.invoices` shell tab rooting an in-tab `NavigationStack`
+  over a typed `EarningsRoute` enum (summary root → invoices list → detail → periodPay), `onOpenEarnings` a tab switch;
+  same nav structure/content/back-stack order, the mechanism is native — the same class as the T-0304 `MainScaffold`→
+  `TabView` swap; touches the component/mechanism, not layout/flow/branding."*
+
+#### Decision (b) — INVOICE PDF VIEWING: present the generated `downloadInvoice` local file URL via a NEW Core `CleansiaCore/Components` `QuickLookPreview` (`QLPreviewController` `UIViewControllerRepresentable`), guarded on the DTO's `pdfGenerationFailed`; NO `FileDownload` seam (the generated client already downloads → the VM surfaces the URL via a one-shot event) (APPLIES the §7.10 D1 Core-seam precedent + ADR-0018 D2 — no new ADR; HARVEST to `patterns-mobile`)
+
+**RULING: present the invoice PDF via QuickLook (`QLPreviewController`) wrapped as a NEW Core seam **`QuickLookPreview`**
+— a `UIViewControllerRepresentable` in `CleansiaCore/Components` (the second member of the `CameraOrLibraryPicker`
+family established by §7.10 D1: a system UIKit controller behind a `CleansiaCore/Components` SwiftUI brand-skin seam).
+The generated `employeePayrollDownloadInvoice` (a `format: binary` response, verified `:3388-3398`) is mapped by the
+swift5+urlsession generator to a **local file URL already written to the caches dir** (the URLSession layer streams the
+body to disk) — so the VM holds that URL and surfaces it via a ONE-SHOT effect (a `PassthroughSubject`/async-stream
+event, the §7.10 D3 `mutationVersion`-style one-shot, NOT a navigation route) that the screen consumes by presenting
+`QuickLookPreview` over the URL. **NO `FileDownload` Core seam is built** — the generated client IS the download; a
+download-orchestration seam would be dead abstraction. The "Open PDF" affordance is **guarded on the DTO's
+`pdfGenerationFailed`** (the boolean on `EmployeeInvoiceDto`/`EmployeeInvoiceDetailDto`, verified spec `:6448/:6557`):
+when `true`, the affordance is disabled/hidden (no point downloading a PDF that failed server-side generation).
+HARVEST `QuickLookPreview` into `patterns-mobile` as the canonical "preview a downloaded document" seam. Record, no
+new ADR (it is the §7.10 D1 idiom's next application). **The mandatory post-preview cache cleanup of the PII-bearing PDF
+is SECURITY's E4 (§7.11) — the `QuickLookPreview` coordinator hosts that cleanup; this record fixes the seam shape, not
+the cleanup mandate.**
+
+- **Why QuickLook wrapped as a Core seam (vs the rejected alternatives):**
+  - **A partner-local representable** — REJECTED: the **customer app (T-0314) reuses this** (its disputes/invoices
+    surface previews PDFs/evidence), so a partner-local `QLPreviewController` wrapper would be duplicated into the
+    customer target — the exact "put shared code in `:core`/`Core`, never duplicate across the two apps"
+    `patterns-mobile` rule. It homes in `CleansiaCore/Components` beside `CameraOrLibraryPicker` (the §7.10 D1 precedent:
+    the imperative-UIKit-controller-behind-a-SwiftUI-seam idiom lives in Core).
+  - **A share-sheet (`UIActivityViewController`) / `SafariView`** — REJECTED: a share sheet is a *share/export*
+    affordance, not an in-app *viewer* (it forces the user out to another app to read their own invoice — a worse
+    parity than Android's in-app `ACTION_VIEW` system PDF viewer); `SafariView`/`SFSafariViewController` is for **web
+    URLs**, not a local file URL (it cannot reliably render a `file://` PDF). QuickLook is the iOS-native **in-app
+    document preview** — the right native analogue of Android handing the FileProvider URI to the system PDF viewer.
+  - **`QuickLookPreview` (`QLPreviewController` representable)** — CHOSEN: it is the one native control that previews a
+    local document in-app (PDF/images/docs), maps cleanly to Android's "system PDF viewer over the downloaded file"
+    (`InvoiceDetailViewModel.kt:81-108` streams to cache → `InvoiceDetailScreen.kt:94-104` hands the FileProvider URI to
+    `Intent.ACTION_VIEW`), and is the second instance of the §7.10 D1 Core-seam idiom — so harvesting it makes the next
+    document-preview need (customer T-0314) free.
+- **The Android → iOS PDF swap (the recorded Gate-DP divergence).** Android: the VM **streams the `ResponseBody` to the
+  cache dir itself** then builds a `FileProvider` URI for `Intent.ACTION_VIEW` (`InvoiceDetailViewModel.kt:81-108`;
+  `InvoiceDetailScreen.kt:91-104`), with a `notifyNoPdfViewer()` fallback if no PDF app is installed. iOS: the generated
+  swift5 client **already wrote the body to disk** (the URLSession binary-response handler), so the VM holds the local
+  file URL directly — **no stream-to-cache step** — and presents `QuickLookPreview` (always available, no "no viewer
+  installed" branch needed — QuickLook is a system framework). **Recorded divergence:** *"Android = VM streams
+  `ResponseBody` → cache → `FileProvider` URI → `Intent.ACTION_VIEW` (system PDF viewer, with a no-viewer fallback);
+  iOS = the generated client writes the body to disk → the VM surfaces the local file URL via a one-shot event → the
+  screen presents the Core `QuickLookPreview` (`QLPreviewController`); same in-app PDF viewing, the mechanism is native;
+  no stream-to-cache step (the codegen does it), no FileProvider, no no-viewer fallback; touches the component/mechanism,
+  not layout/flow/branding."*
+- **The `pdfGenerationFailed` guard (the affordance gate).** The invoice DTOs carry `pdfGenerationFailed: boolean`
+  (+ `pdfGenerationError`, verified spec `:6448-6454/:6557`). The "Open PDF" affordance is **disabled (or hidden)** when
+  `pdfGenerationFailed == true` — downloading a server-side-failed PDF returns nothing useful. (Android renders the
+  Open-PDF button unconditionally in `InvoiceDetailScreen.kt:170-176` and relies on the download failing into a
+  snackbar — iOS does it *better* by gating the affordance off the flag the server already exposes; a small
+  Parity-rule "iOS does it right" improvement, not a flow change. The download-failure snackbar path stays as the
+  belt-and-braces fallback for a non-`pdfGenerationFailed` download error.)
+- **No `FileDownload` seam (the scope guard).** The generated `employeePayrollDownloadInvoice` IS the download (binary
+  response → local file URL). The VM's only job is to call it and surface the URL via a one-shot event; there is no
+  retry/resume/progress/storage-permission orchestration to abstract (unlike Android's manual cache-stream, which the
+  codegen subsumes). A `FileDownload` Core protocol here would be an empty seam — **not built**. (If a *future* surface
+  needs true download orchestration — large files, progress, resume — that earns its own seam then, on evidence.)
+
+#### Decision (c) — MONEY / FORMAT: a small Core `EarningsFormat` (decimal money `%,.2f` + a whole-currency `%,.0f` headline variant + ISO→local date helpers) reusing the shared currency-symbol resolution; do NOT overload `DashboardFormat.money` (which is `%.0f`); HARVEST the currency-symbol resolution to Core if it is now in 3+ places (APPLIES the §7.5 D4 / §7.7 D4 Core-utility-helper precedent + the Parity rule — no new ADR)
+
+**RULING: introduce a small Core **`EarningsFormat`** helper (in `CleansiaCore`, the `EmailValidator`/`PasswordPolicy`
+factoring) carrying: (1) **decimal money** `formatMoney(_:symbol:)` → `%,.2f` for PeriodPay rows + invoices (the
+`InvoiceDetailScreen.kt:624-627`/`InvoicesListScreen.kt:477-480`/PeriodPay `%,.2f` parity); (2) a **whole-currency
+headline** variant `formatMoneyWhole(_:symbol:)` → `%,.0f` for the earnings headline + breakdown numbers (the
+`EarningsSummaryScreen.kt:420-423` parity); (3) **ISO→local date** helpers (`d MMM` / `d MMM yyyy`, the
+`formatDate`/`parseIsoDate`/`formatShort` parity duplicated across all four Android screens). It reuses the **shared
+currency-symbol resolution** (the `Currency.getInstance(code).getSymbol(Locale)` → `code` fallback, duplicated VERBATIM
+in `EarningsSummaryScreen.kt:413-418` + `InvoiceDetailScreen.kt:617-622` + `InvoicesListScreen.kt:470-475`). **Do NOT
+overload `DashboardFormat.money`** — it is `%.0f` (whole-currency, no thousands grouping) and is the dashboard hero's
+contract; the earnings surface needs BOTH `%,.2f` (decimal, grouped) and `%,.0f` (grouped) — overloading the dashboard
+helper would either break the dashboard or fork its meaning. Record, no new ADR.**
+
+- **The two precisions are real and load-bearing (verified — the reason NOT to overload one helper).** The Android
+  earnings surface deliberately uses **two** money precisions: `%,.0f` for the **earnings headline + breakdown**
+  (`EarningsSummaryScreen.kt:421` — "$1,234 Kč", whole currency, the hero framing) and `%,.2f` for **invoices +
+  PeriodPay** (`InvoiceDetailScreen.kt:625` / `InvoicesListScreen.kt:478` / PeriodPay — "$1,234.56 Kč", exact money on
+  a billing document). Both **group thousands** (`%,`). `DashboardFormat.money` is `%.0f` (whole, **un**grouped) and is
+  the dashboard hero's own contract — it is neither of the two earnings formats. `EarningsFormat` carries both grouped
+  variants; the dashboard helper is left alone.
+- **Why a small Core helper (the "earns its place" bar).** The currency-symbol resolution + the date parse/format are
+  **duplicated verbatim across three (symbol: Earnings + InvoiceDetail + InvoicesList) and four (date) Android screens**
+  — copy-paste private functions per screen. On iOS, lifting them into one tested `EarningsFormat` (the §7.5 D4
+  `PasswordPolicy` / §7.7 D4 `AppSettingsStore` "the one way, in Core" factoring) makes the four screens consistent and
+  the *future* format change (a 5th surface, a currency-display tweak) cheaper — it earns its place. **Rejected: per-screen
+  private `formatMoney`/`currencySymbol`/`formatDate` copies** (the Android copy-paste shape — four drifting copies).
+- **HARVEST the currency-symbol resolution to Core (the 3+-call-sites rule).** The `currencySymbol(code)` resolution is
+  now used in **≥3 places** on iOS (Earnings, InvoiceDetail, InvoicesList — and PeriodPay threads a `currencyCode`).
+  Per the `patterns-mobile` "harvest a pattern used in 3+ places" rule, it is hoisted into Core (as part of
+  `EarningsFormat`, or a tiny `CurrencyFormatting` Core utility `EarningsFormat` uses). The iOS resolution is a
+  `NumberFormatter(.currency)` / `Locale` symbol lookup with the **ISO-code fallback** when unknown (the
+  `runCatching{...}.getOrNull() ?: code` parity — never crash, fall back to the raw code). **Client-side display only**
+  — the server amounts/currency are authoritative.
+- **The PeriodPay currency comes from the nav route, not the DTO (verified parity, threads decision (a)).** The
+  `PeriodPaySummary` DTO **carries no currency** — Android threads `currencyCode` through the nav route from the
+  launching invoice (`PeriodPayViewModel.kt:43-44` "the summary DTO carries no currency"; `:251` passes it). The iOS
+  `EarningsRoute.periodPay(payPeriodId:currencyCode:)` carries it (decision (a)); `EarningsFormat` formats the PeriodPay
+  rows with that threaded code's symbol. A PeriodPay reached with a nil `currencyCode` degrades to the
+  symbol-less/raw-code format (the empty-symbol branch — `formatMoney` returns the bare number).
+
+#### Decision (d) — STATS SOURCE for the Earnings summary: REUSE `PartnerDashboardClient.getStats` (the same `DashboardStatsDto` the Dashboard hero renders); do NOT duplicate onto the payroll client / call `GetPeriodPays` for the summary (APPLIES ADR-0013 parity + Core/DRY — no new ADR)
+
+**RULING (CONFIRMED as recommended): the Earnings summary screen REUSES `PartnerDashboardClient.getStats` — the same
+`dashboardGetStats` call returning the same `DashboardStatsDto` the T-0303 Dashboard hero already renders — NOT a
+duplicate stats fetch on the payroll client, and NOT `employeePayrollGetPeriodPays` (which is the per-period rollup, a
+different shape for a different screen). This mirrors the Android `EarningsSummaryViewModel` EXACTLY, which injects
+`DashboardRepository` and calls `dashboardRepository.getStats(employeeId = null)` (`EarningsSummaryViewModel.kt:9,31-32,49`).
+The Earnings summary VM is a thin sealed `UiState<DashboardStatsDto>` (Loading/Error/Loaded) over that one call.
+Record, no new ADR.**
+
+- **The Android parity is exact (verified).** `EarningsSummaryViewModel` reuses `DashboardRepository.getStats` — its own
+  docstring: *"Re-uses [DashboardRepository.getStats] — same data the dashboard hero cards already render, just on its
+  own dedicated surface"* (`EarningsSummaryViewModel.kt:23-29`). It does **not** call `GetPeriodPays`. The summary
+  screen renders `DashboardStatsDto` fields (`currentPeriodEarnings`, `today/week/lastMonth` earnings + counts,
+  `currentPayPeriodStart/End`, `nextPayoutDate`, `latestInvoiceStatus` — `EarningsSummaryScreen.kt:137-325`).
+- **Why reuse (the call).** `PartnerDashboardClient.getStats` already exists and is proven (T-0303, through the ADR-0019
+  spine). Duplicating the stats fetch onto the payroll client (or computing the summary from `GetPeriodPays`) would fork
+  the source-of-truth for the same numbers the dashboard hero shows — a Core/DRY + parity violation. The Earnings
+  summary and the Dashboard hero render the *same stats* by design; one client, one DTO. **Rejected: a payroll-client
+  stats duplicate / a `GetPeriodPays`-derived summary** — two sources for one set of numbers, drift, and extra surface.
+- **The `employeeId = null` parity (the own-stats read).** Android calls `getStats(employeeId = null)` — the server
+  scopes to the caller's own employee from the session (the partner-host `[Permission]`-guarded, token-scoped read the
+  T-0303 dashboard proved). iOS passes the same (no client employeeId). **How the caller-own scope is trusted on the
+  wire is SECURITY's §7.11 read-scoping ruling** (E1, composing with the no-`UserProfileStore` fact, §7.5 D2 — iOS does
+  NOT resolve the caller's `employeeId` from a client store; the server derives it). This decision rules only that the
+  summary's stats SOURCE is the reused dashboard client.
+
+#### The recorded Gate-DP / Parity divergences (T-0309 — all component/mechanism or "iOS does it right", none touch layout/flow/branding)
+
+1. **Nav: Android Earnings (pushed) + Invoices (bottom-nav tab) with a pop+tab-ordinal hop → iOS single `.invoices`
+   shell tab rooting an in-tab `NavigationStack` over a typed `EarningsRoute` enum; `onOpenEarnings` = a tab switch
+   (`ShellModel.selection = .invoices`)** — decision (a). Same nav structure/content/back-stack order; the mechanism is
+   native (the same class as the T-0304 `MainScaffold`→`TabView` swap).
+2. **PDF: Android VM streams `ResponseBody` → cache → `FileProvider` URI → `Intent.ACTION_VIEW` (with a no-viewer
+   fallback) → iOS the generated client writes the body to disk → the VM surfaces the local file URL → the Core
+   `QuickLookPreview` (`QLPreviewController`)** — decision (b). Same in-app PDF viewing; the mechanism is native; no
+   stream-to-cache (codegen does it), no FileProvider, no no-viewer branch.
+3. **List state: the Android `InvoicesListUiState` E1 flag-bag → iOS a sealed per-list `UiState<[EmployeeInvoiceDto]>` +
+   a `RefreshPhase` enum (the §7.9 (e) convention)** — NOT replicated; the per-list staleness watermark is PORTED. The
+   Android E1 fix is filed at **T-0337** (the standing partner-E1 home).
+4. **Open-PDF gate: Android renders the Open-PDF button unconditionally and relies on the download failing into a
+   snackbar → iOS gates the affordance off the DTO's `pdfGenerationFailed` flag** — decision (b). A Parity-rule "iOS does
+   it right" improvement (the server already exposes the flag); the download-error snackbar stays as the fallback for a
+   non-flag failure. (The Android catch-up — gate the button off `pdfGenerationFailed` — is a PM-filed follow-up,
+   independent of the iOS wave.)
+5. **PeriodPay endpoint: Android hand-wrote a `PeriodPayApi` Retrofit interface (because the checked-in spec didn't
+   carry `GetPeriodPays` at the time — `PeriodPayApi.kt:8-18`) → iOS uses the GENERATED `employeePayrollGetPeriodPays`
+   (the regen'd spec now carries it, verified `:3262`)** — a mechanism divergence with zero behavior change; iOS rides
+   the ADR-0019 spine like every other generated call, no hand-written Retrofit/verb. (The Android catch-up — drop the
+   hand-written `PeriodPayApi` for the generated one once its spec is refreshed — is a PM-filed follow-up.)
+
+#### Reviewer-check addition (T-0309+)
+
+- **#33 (§7.12 (a)/(b)/(c)/(d)) — the partner earnings/invoices/PeriodPay surface is the canonical shape.**
+  **(a) nav** — the `.invoices` shell tab roots an in-tab `NavigationStack` over a typed `EarningsRoute` enum
+  (`.summary`/`.invoices`/`.invoiceDetail(id)`/`.periodPay(payPeriodId,currencyCode)`), landing on `.summary`;
+  `onOpenEarnings` sets `ShellModel.selection = .invoices` (a tab switch, the `selectOrders()`/`onOpenOrders` parity),
+  NOT a push; `.periodPay` carries `currencyCode` (the DTO has none). **Findings:** the earnings surface modeled as a
+  pushed screen off the Dashboard tab (an ADR-0020 audience-vs-intra-audience confusion); the tab landing on the
+  invoices list (the empty-landing UX Android removed); a top-level audience hop (the audience stays the `PartnerRootView`
+  enum — #23). **(b) PDF** — viewing goes through the Core **`QuickLookPreview`** (`QLPreviewController`
+  `UIViewControllerRepresentable` in `CleansiaCore/Components`) over the generated `downloadInvoice` local file URL,
+  surfaced by a one-shot VM event; the Open-PDF affordance is gated on `pdfGenerationFailed`. **Findings:** a
+  partner-local `QLPreviewController` wrapper (it must be the Core seam — the customer app T-0314 reuses it); a
+  share-sheet/`SafariView` substituted for the in-app viewer; a built `FileDownload` seam (the generated client IS the
+  download); an Open-PDF affordance not gated on `pdfGenerationFailed`; a VM re-streaming the body to disk (the codegen
+  already did). **(c) format** — money/date go through the Core **`EarningsFormat`** (decimal `%,.2f` for invoices/
+  PeriodPay + whole `%,.0f` for the earnings headline + ISO→local dates); the currency-symbol resolution is the Core
+  utility (3+ call sites harvested); `DashboardFormat.money` (`%.0f`) is NOT overloaded. **Findings:** per-screen
+  private `formatMoney`/`currencySymbol`/`formatDate` copies; the dashboard helper overloaded for the earnings precisions;
+  a single `%,.2f`/`%,.0f` collapse losing the headline-vs-document distinction. **(d) stats** — the Earnings summary
+  reuses `PartnerDashboardClient.getStats` (the `DashboardStatsDto` the Dashboard hero renders), NOT a payroll-client
+  duplicate or a `GetPeriodPays`-derived summary. **Findings:** a second stats fetch on the payroll client; the summary
+  computed from `GetPeriodPays`. (Composes with #13-gen — every payroll call rides the ADR-0019 spine.) **The
+  read-scoping / PII gate (incl. the post-preview PDF cache-cleanup) is SECURITY's §7.11** — out of #33.
+
+#### New CRC roles (added with the T-0309 wiring)
+
+- **`ios-quicklook-preview`** (new, `CleansiaCore/Components`) — the `QuickLookPreview` `UIViewControllerRepresentable`
+  wrapping `QLPreviewController` (decision (b); the second member of the §7.10 D1 UIKit-controller-behind-a-SwiftUI-seam
+  family): *responsibility:* present a system in-app preview of ONE local document (a `file://` URL) and dismiss itself
+  (its coordinator hosts SECURITY's E4 post-dismiss cache cleanup). *Collaborators:* `QLPreviewController`, the SwiftUI
+  host that presents it (on the VM's one-shot URL event). *Does NOT know:* the invoice/payroll contract, how the file
+  was downloaded (the generated client), who may read it (SECURITY), or anything about the document's content. The
+  canonical "preview a downloaded document" seam (harvested to `patterns-mobile`), reused by the customer app (T-0314).
+- **`ios-earnings-format`** (new, `CleansiaCore`) — the `EarningsFormat` pure helper (decision (c)): *responsibility:*
+  format money (decimal `%,.2f` + whole `%,.0f`, grouped, with a currency symbol) and ISO→local dates for the
+  earnings/invoices/PeriodPay surface, reusing the Core currency-symbol resolution. *Collaborators:* the Core
+  currency-symbol utility (`NumberFormatter`/`Locale`); none else (pure deterministic transforms). *Does NOT know:* the
+  DTOs, which screen consumes it, the dashboard's `DashboardFormat.money` (a separate `%.0f` helper it does NOT
+  overload), or the server amounts' authority.
+- **`ios-earnings-summary-vm`** (new, partner earnings feature) — the `EarningsSummaryViewModel.kt` parity (decision (d)):
+  *responsibility:* load the earnings summary (a sealed `UiState<DashboardStatsDto>`) by REUSING
+  `PartnerDashboardClient.getStats`; surface errors via the `SnackbarController`. *Collaborators:* `PartnerDashboardClient`
+  (via the ADR-0019 spine), `SnackbarController`, `EarningsFormat` (in the view). *Does NOT know:* the payroll client,
+  `GetPeriodPays`, the invoices list, or who the caller is (the server scopes the own-stats read — SECURITY §7.11).
+- **`ios-invoices-vm`** (new, partner invoices feature) — the `InvoicesListViewModel.kt`/`InvoiceDetailViewModel.kt`
+  parity (decisions (a)/(b)): *responsibility:* load the invoices list (sealed per-list `UiState<[EmployeeInvoiceDto]>`
+  + a `RefreshPhase` enum + the ported staleness watermark) and one invoice detail (sealed `UiState`); on "Open PDF",
+  call the generated `downloadInvoice` and surface the returned local file URL via a ONE-SHOT event (guarded on
+  `pdfGenerationFailed`). *Collaborators:* the payroll generated client (via the ADR-0019 spine), `SnackbarController`,
+  `QuickLookPreview` (via the screen), `EarningsFormat` (in the view). *Does NOT know:* the `QLPreviewController`
+  internals, how the file was written (the codegen), who may read the invoice (SECURITY §7.11), or the audience router
+  (it pushes within the `.invoices` tab's stack — the `EarningsRoute` enum).
+- **`ios-periodpay-vm`** (new, partner payroll feature) — the `PeriodPayViewModel.kt` parity (decisions (a)/(c)):
+  *responsibility:* load one period's pay rollup (a sealed `UiState<PeriodPaySummary>`) via the generated
+  `employeePayrollGetPeriodPays`; format rows with the route-threaded `currencyCode` via `EarningsFormat`. *Collaborators:*
+  the payroll generated client (via the ADR-0019 spine), `SnackbarController`, `EarningsFormat`. *Does NOT know:* the
+  invoices list/detail, how the caller's own `employeeId` is trusted on the wire (SECURITY §7.11 E1 — iOS has no
+  `UserProfileStore`, the server scopes the read), or the audience router.
+
+#### Test contract (T-0309 — red-first)
+
+- **TC-IOS-EARNINGS-NAV** (decision (a)): `onOpenEarnings` sets `ShellModel.selection = .invoices` (a tab switch, NOT a
+  push onto the Dashboard tab's stack); the `.invoices` tab's `NavigationStack` is seeded with `EarningsRoute.summary`
+  (the root), and "View all invoices" pushes `.invoices`, an invoice card pushes `.invoiceDetail(id)`, "View period pay"
+  pushes `.periodPay(payPeriodId, currencyCode)` (the currencyCode threaded from the invoice).
+- **TC-IOS-PDF-GATE** (decision (b)): an invoice with `pdfGenerationFailed == true` renders the Open-PDF affordance
+  disabled/hidden; with `pdfGenerationFailed == false`, tapping Open-PDF calls `downloadInvoice` and emits a one-shot
+  URL event (the screen presents `QuickLookPreview` over it); a download error (non-flag) snackbars and does NOT present.
+- **TC-IOS-EARNINGS-FORMAT** (decision (c), pure): `EarningsFormat` formats `1234.5` as `1,234.50 <sym>` (decimal) and
+  `1234.5` as `1,235 <sym>` (whole, the `%,.0f` rounding); an unknown currency code falls back to the raw code (never
+  crashes); a nil symbol yields the bare grouped number.
+- **TC-IOS-EARNINGS-STATS** (decision (d)): the Earnings summary VM loads via `PartnerDashboardClient.getStats`
+  (asserted — NOT the payroll client, NOT `GetPeriodPays`); a `.success` → `.loaded(DashboardStatsDto)`, a `.failure` →
+  `.error` + snackbar (the `EarningsSummaryViewModel.kt:44-59` parity).
+
+(The SECURITY ownership test **TC-IOS-EARNINGS-OWNERSHIP** + the E4 PDF-cleanup test are §7.11's — they compose with
+TC-IOS-PDF-GATE: the same `QuickLookPreview` coordinator that this record shapes is where E4's remove-on-dismiss runs.)
+
+---
+
+### 7.13 T-0311 (Phase-5 partner APNs push REGISTRATION + token plumbing + device lifecycle + minimal foreground/tap) — acceptance scope + the three Understand-pass rulings (recorded 2026-06-28, architect)
+
+The partner **APNs push registration** surface — register for remote notifications → an APNs device token → POST it to the
+**same `/api/Device/*` contract** the Android `:core` push uses (`Platform="ios"`, the **one** `X-Device-Id`) and re-register
+on login / clear on logout — surfaced by the T-0311 Understand pass on `phase/ios-phase5` (depends_on T-0302/0303/0310/0331).
+**Scope = REGISTRATION + token plumbing + device lifecycle + a MINIMAL foreground-banner / tap-to-route.** The **in-app
+notifications feed + persistence + dashboard bell badge + title/body templates + channels are DEFERRED → T-0336** (the spike,
+already filed; §7.7 / living doc). The generated **`PartnerDeviceAPI`** already carries
+`deviceRegister(RegisterDeviceCommand{deviceId, deviceToken, platform})` / `deviceUnregister(deviceId)` — both ride the
+**ADR-0019 spine** (the Bearer + `X-Device-Id`/`X-Device-Label`/`X-Time-Zone` + single-flight 401-refresh, via the
+`RequestBuilderFactory`); T-0311 writes **no auth code**, it just calls them. **The Android parity is the well-factored
+`:core` push** (`PushTokenRepository.kt`, `PushTokenSessionObserver.kt`, `DeviceRegistrationClient.kt`,
+`AuthRepository.kt:210-225`).
+
+**Three rulings, all APPLYING accepted ADRs + prior records — NO new ADR.** (a) APPLIES the **Core-seam family** precedent
+— ADR-0014 D6′ (the system-framework-behind-a-Core-protocol idiom: `MapProvider`/`MKMapView`, the `LocationProvider`) +
+ADR-0018 D2 (the brand-skin-over-native idiom: `CameraOrLibraryPicker`/`QuickLookPreview`) — the `PushRegistrar` is the
+next member of that family. (b) APPLIES the **ADR-0019** spine (the generated `PartnerDeviceAPI` on the
+`RequestBuilderFactory`) + the existing **`SessionScopedCacheRegistry`** + the `AuthApiClient.logout()` ordering. (c) is a
+scope/parity confirmation (the §7.6 D3 "sealed-state absence is correct" precedent + the §7.7 dropped-Notifications-row
+precedent). **A genuinely-new trade-off requiring a new ADR was looked for and NOT found** — the seam shape, the
+session-driven lifecycle, the device contract, and the deferral are all applications of records already accepted. **The
+registration / logout-clear-ordering SECURITY gate is ruled in PARALLEL by the security charter (Gate-SEC) — out of this
+record's scope; this record fixes the architectural seam + names WHERE `unregisterDevice()` is invoked so the security
+ordering has a home, not the ordering's enforcement.** Android source mirrored:
+`core/.../notifications/{PushTokenRepository,PushTokenSessionObserver,DeviceRegistrationClient,PushTokenDataStore}.kt` +
+`partner-app/.../data/auth/AuthRepository.kt:210-231`.
+
+**Two build slices (as the brief scoped them):** **Slice A** = the `PushRegistrar` Core seam + the `Device/Register` client
+binding + the registrar logic (the `PushTokenRepository` parity); **Slice B** = the lifecycle wiring (the
+`PushSessionObserver` + `@UIApplicationDelegateAdaptor`) + the minimal foreground/tap + the `aps-environment` entitlement.
+
+#### Decision (a) — the `PushRegistrar` Core seam + the `@UIApplicationDelegateAdaptor` AppDelegate hook (APPLIES ADR-0014 D6′ + ADR-0018 D2 — the Core-seam family; NO new ADR; HARVEST to `patterns-mobile`)
+
+**RULING (CONFIRMED as recommended): a `PushRegistrar` protocol in `CleansiaCore/Push` is the SOLE consumer of
+`UserNotifications` (`UNUserNotificationCenter`) + `UIApplication.registerForRemoteNotifications` — feature/lifecycle code
+imports neither `UserNotifications` nor `UIKit`** (exactly as feature code imports neither `MapKit`/`CoreLocation` behind
+`MapProvider`/`GeocodingService`, nor the `UIImagePickerController`/`QLPreviewController` behind
+`CameraOrLibraryPicker`/`QuickLookPreview`). **The SwiftUI-App lifecycle hook for the APNs-token callbacks
+(`application(_:didRegisterForRemoteNotificationsWithDeviceToken:)` / `...didFailToRegister...`) is a `@UIApplicationDelegateAdaptor`-installed
+`AppDelegate`** — the canonical SwiftUI way to receive AppDelegate callbacks in an App-lifecycle app (SwiftUI's `App`
+struct exposes no native `didRegisterForRemoteNotifications` hook; `@UIApplicationDelegateAdaptor` is Apple's sanctioned
+bridge, available on the iOS-16 floor — ADR-0014). This APPLIES the existing seam-family records; record, **no new ADR**.
+HARVEST the seam into `patterns-mobile` as the canonical "iOS push — the ONE way."**
+
+- **The seam shape (`PushRegistrar` protocol in `CleansiaCore/Push`).** It exposes exactly three things, mirroring the
+  three jobs the Android `:core` push splits across its repo + the messaging service:
+  1. **`requestAuthorization() async -> Bool`** — wraps `UNUserNotificationCenter.current().requestAuthorization(options:)`
+     (the iOS sibling of Android's `POST_NOTIFICATIONS` runtime grant). Decision (c) rules the rationale/soft-ask: **skip**
+     for strict Android parity.
+  2. **`registerForRemoteNotifications()`** — calls `UIApplication.shared.registerForRemoteNotifications()` (must run on the
+     main actor) — the iOS analogue of FCM minting a token; iOS asks APNs, the OS delivers the token via the AppDelegate.
+  3. **an APNs-token stream the AppDelegate FEEDS** — a `@Published`/`AsyncStream`/`PassthroughSubject` `apnsToken: String?`
+     the `@UIApplicationDelegateAdaptor` `AppDelegate` writes on `didRegisterForRemoteNotificationsWithDeviceToken` (the
+     `Data` token hex-encoded to the string the backend stores). **This is the structural parity to
+     `PushTokenRepository.fcmToken: StateFlow<String?>`** (`PushTokenRepository.kt:55`) — a hot stream the observer reacts
+     to, fed out-of-band by the OS callback, so the registrar never juggles the AppDelegate callback directly. (The
+     `didFailToRegister` callback logs best-effort and leaves the stream nil — the Android `fetchTokenOrNull` swallow-and-log
+     parity, `PushTokenRepository.kt:147-163`.)
+- **Why a Core seam (the recorded Gate-DP/Core divergence — FCM→APNs over the SAME `Device/*` contract — ADR-0018 D8).**
+  Android uses **FCM** (`FirebaseMessaging.getInstance().token` + the messaging-service `onNewToken`); iOS swaps to **APNs**
+  (`UIApplication.registerForRemoteNotifications` + the AppDelegate `didRegister…DeviceToken` + `UNUserNotificationCenter`)
+  — but **both POST the identical `Device/*` contract** (`deviceId`/`deviceToken`/`platform`), iOS sending **`Platform="ios"`**
+  where Android sends `"android"`. **This is the ADR-0013 D8 push divergence — a Gate-DP divergence with architect sign-off,
+  NOT a new trade-off:** *"Android FCM (`FirebaseMessaging` token + `onNewToken`) → iOS APNs (`registerForRemoteNotifications`
+  + the `@UIApplicationDelegateAdaptor` `didRegister…DeviceToken` + `UNUserNotificationCenter`); the SAME `Device/Register`/
+  `Device/Unregister` contract, `Platform="ios"`; the mechanism is the native platform push transport, the contract +
+  lifecycle are identical."* The `PushRegistrar` is what isolates that transport swap behind one Core protocol — so the
+  customer app (a future wave) installs the same seam with its own `Platform="ios"` and its own `CleansiaCustomerDeviceAPI`,
+  and a forced future transport change (a new APNs API, a re-platform) migrates **one provider, not every feature**.
+- **Why `@UIApplicationDelegateAdaptor` (vs the rejected alternatives).**
+  - **A bare SwiftUI `.onReceive`/scene-phase hook** — REJECTED: SwiftUI's `App`/`Scene` exposes **no**
+    `didRegisterForRemoteNotificationsWithDeviceToken`; that callback is an `UIApplicationDelegate` method only. There is no
+    SwiftUI-native receiver — `@UIApplicationDelegateAdaptor` is the **only** sanctioned bridge and the documented Apple way.
+  - **A hand-rolled `UIApplicationDelegate` set via `UIApplication.shared.delegate`** — REJECTED: fighting the SwiftUI
+    App-lifecycle (which owns the delegate); `@UIApplicationDelegateAdaptor` is the supported, lifecycle-integrated form.
+  - **`@UIApplicationDelegateAdaptor` feeding the Core `PushRegistrar`'s token stream** — CHOSEN: the canonical SwiftUI
+    AppDelegate bridge, thin (it only forwards the OS callbacks into the Core stream), and it keeps `UIKit`/`UserNotifications`
+    out of features — the App target's AppDelegate is the one allowed `UIKit` touch-point, exactly as the App target is the
+    one place that *installs* the `RequestBuilderFactory` (ADR-0019) and the `MapProvider` (§7.6).
+- **The seam stays in `CleansiaCore/Push`, the AppDelegate stays in the App target.** The `PushRegistrar` protocol + its
+  default impl (`UNUserNotificationCenter`/`UIApplication` consumer) are Core (shared by partner now, customer later — the
+  "shared code in Core, never duplicate across the two apps" rule, the same reason `QuickLookPreview`/`CameraOrLibraryPicker`
+  are Core). The `@UIApplicationDelegateAdaptor` `AppDelegate` is **per-app** (it lives in the App target and feeds the Core
+  registrar's stream) — the App-target-owns-composition split (ADR-0013 D3), not a Core type.
+
+#### Decision (b) — the lifecycle-wiring home: a Core `PushSessionObserver` (true `PushTokenSessionObserver` parity); `unregisterDevice()` invoked from `AuthApiClient.logout()` BEFORE the token wipe; the local clear via `SessionScopedCache` (APPLIES ADR-0019 spine + the `SessionScopedCacheRegistry` + the Android `AuthRepository.kt:210-225` ordering; NO new ADR)
+
+**RULING (CONFIRMED as recommended): register-on-login / clear-on-logout is a Core **`PushSessionObserver`** attached from
+the App — the true `PushTokenSessionObserver.kt` parity — NOT an ad-hoc hook bolted onto `PartnerRootView.afterLogin` +
+the logout call.** Registration is a **PROPERTY of the session×token state, not an event**: the observer combines the
+session-presence stream (the `TokenStore`/`SessionManager` validity) with the registrar's APNs-token stream, drops emissions
+where either is nil, dedupes, and calls the registrar's `ensureRegistered` on every distinct pair — the
+`combine(session, token).filterNotNull().distinctUntilChanged() → ensureRegistered` shape verbatim
+(`PushTokenSessionObserver.kt:56-64`). **The unregister DELETE is invoked from `AuthApiClient.logout()` BEFORE the access
+token is wiped** (the call needs the Bearer); the **local cache `clear()` runs via `SessionScopedCache` on sign-out**
+(both the user-logout path and the forced-401-sign-out path). Record, **no new ADR** (it APPLIES the ADR-0019 spine, the
+existing `SessionScopedCacheRegistry`, and the Android ordering).
+
+- **Why the observer, not the event hooks (the parity + the App-stays-thin argument).** The Android `:core` rewrote this
+  EXACTLY because the event-hook approach (register on login + on email-confirm + on FCM rotation) was the source of
+  "device wasn't registered" bugs — each hook could be missed (cold-launch on an existing session never re-registers;
+  rotation while signed-out silently 401s; pre-FCM installs never registered) (`PushTokenSessionObserver.kt:12-40`, the
+  docstring). Hooking iOS's `afterLogin` + the logout call would **re-introduce the exact event-hook brittleness the
+  Android team deleted** — and it would not cover the cold-start-on-existing-session case (the partner app re-launches into
+  an authed session via the SplashGate; no `afterLogin` fires) nor APNs-token-arrives-after-login (the AppDelegate callback
+  is async). The observer makes registration a state property → all four cases (cold-start-authed, login, token-arrives,
+  logout-drops) fall out for free. It also keeps the App thin: the App `attach`es one observer (the
+  `MainActivity.onCreate → observer.attach(lifecycleScope)` parity, `PushTokenSessionObserver.kt:38-39,53`), it does not
+  carry registration logic.
+- **The `ensureRegistered` cache short-circuit is PORTED (load-bearing, not optional).** `PushRegistrar.ensureRegistered`
+  must short-circuit on a locally-persisted "last registered token" (`PushTokenRepository.ensureRegistered:125-135` —
+  `if token == readLastRegisteredToken() return`) so re-attaching on every cold start is **free** (no redundant
+  `Device/Register` round-trip). It **persists on success only** (`writeLastRegisteredToken` after `register` returns ok —
+  the `DeviceRegistrationClient.register` "true only when the backend accepted" contract, `DeviceRegistrationClient.kt:8-16`).
+  The persistence is **`UserDefaults`-backed, NOT Keychain** (the Android `PushTokenDataStore`/DataStore parity — the
+  last-registered-token is not a secret and may reset on reinstall, like `AppSettingsStore`, §7.5 D1 / #26a). **A secret
+  reaching this store, or the device-id resolved anywhere but the one `DeviceIdProvider`, is a finding.**
+- **The unregister ordering — WHERE it is invoked (the load-bearing security-owned constraint, given an architectural
+  home).** The Android ordering is exact and verified (`AuthRepository.kt:210-225`): `logout()` calls
+  `pushTokenRepository.unregisterDevice()` **first** (best-effort, `runCatching`), **then** `authLogout(refreshToken)`,
+  **then** `signOutLocal()` (which wipes the `TokenStore` + clears the `SessionScopedCache`s). **The iOS home for the
+  invocation is `AuthApiClient.logout()`** (the spine's logout, the `authClient.logout()` the brief names) — it calls the
+  registrar's `unregisterDevice()` **before** it wipes the `TokenStore`, because the `Device/Unregister` DELETE rides the
+  ADR-0019 spine and **needs the Bearer** (a wiped token → a tokenless 401 → the row is not deleted server-side until it
+  GC's on the next NotRegistered report). It is **best-effort** (a failure still proceeds to the local wipe — the Android
+  `runCatching` parity, `AuthRepository.kt:215`). **The local `clear()`** (drop the persisted last-registered-token so the
+  next user on this handset re-registers fresh) is the **`SessionScopedCache.clear()`** the registrar's
+  store/repo implements, run by the `SessionScopedCacheRegistry.clearAll()` on **both** sign-out paths (user logout AND the
+  forced-401 sign-out) — exactly as the `PushTokenRepository` implements `SessionScopedCache` (`PushTokenRepository.kt:44,65-67`
+  — `clear()` is local-only, never a network call, because the forced sign-out happens after the token is already dead and a
+  network unregister would 401). **The unregister-network-DELETE (ordering + best-effort) is invoked from `logout()`; the
+  local-cache wipe is the `SessionScopedCache` on every sign-out.** **The SECURITY charter rules the gate** (that the DELETE
+  precedes the wipe; that no logout path skips it; that the forced-sign-out path clears local) **in parallel (Gate-SEC) —
+  this record only fixes that the invocation HOME is `AuthApiClient.logout()` (before the wipe) + the `SessionScopedCache`
+  (local), so security's ordering rule has a defined seam to attach to.**
+- **Rejected: the `PartnerRootView.afterLogin` + logout-call hooks.** Re-introduces the event-hook brittleness the Android
+  `:core` deleted (misses cold-start-authed + token-arrives-after-login), thickens the App with registration logic, and
+  forks two clear-paths (logout vs forced-401) that can drift — the exact reason the `SessionScopedCacheRegistry` exists
+  (one clear, two callers). The observer + the spine-`logout()` invocation is the parity-correct, drift-proof home.
+
+#### Decision (c) — foreground/tap scope + the permission/rationale + the no-`UiState` confirmation (CONFIRM: minimal now, feed → T-0336; NO plist key; skip the rationale string; the sealed-state ABSENCE is correct)
+
+**RULING (CONFIRMED as recommended):** ship a **MINIMAL `UNUserNotificationCenterDelegate`** now — `willPresent` (the
+foreground banner) + `didReceive` (tap → resolve to the existing order route via a `PartnerNotificationDeepLink` port) —
+and **DEFER the in-app feed + persistence + dashboard bell badge + title/body templates + channels → T-0336**. **NO Info.plist
+purpose string** (APNs does not require `NSUserNotificationsUsageDescription` — the OS shows the system permission alert
+itself; only the `aps-environment` entitlement is required). **SKIP the soft-ask rationale string for strict Android parity**
+(Android requests `POST_NOTIFICATIONS` silently, no rationale screen). **NO `UiState`/`ActionState`** — push registration is
+fire-and-forget background plumbing; the sealed-state ABSENCE is correct, not a reviewer finding. Record, no new ADR.
+
+- **Foreground/tap minimal scope.** `willPresent` shows the foreground banner (the iOS default-suppressed-in-foreground
+  behavior must be opted into — `[.banner, .sound]` / `[.list]`); `didReceive` reads the tap's userInfo and routes via a
+  **`PartnerNotificationDeepLink` port** to the **existing** order route (the `EarningsRoute`/order-detail destinations
+  T-0307/T-0309 already built — the tap does NOT invent a screen). The port is a thin Core protocol (the deep-link resolver)
+  so the feature owns "what an order tap navigates to" and the delegate owns "a tap happened." **DEFERRED → T-0336:** the
+  in-app notifications feed, local persistence of received pushes, the dashboard bell badge, server-driven title/body
+  templates, and notification channels/categories. This mirrors the §7.7 ruling that the partner "Notifications" surface is
+  a separate spike once a backend contract exists; T-0311 plumbs the OS path, T-0336 builds the in-app product.
+- **No plist purpose string (the verified Apple fact — composes with ADR-0016 §7.x / the §A.0 purpose-strings note).**
+  Remote push via APNs requires the **`aps-environment` entitlement** (`development`/`production`) + the runtime
+  `requestAuthorization` (the OS shows its own system alert) — it does **NOT** require an `Info.plist`
+  `NSUserNotificationsUsageDescription` key (no such purpose-string requirement exists for notifications, unlike
+  location/camera/photo-library which DO need their plist keys, §7.6/§7.10). **Slice B ships the `aps-environment`
+  entitlement** (`development` for the dev build; the `production` flip is part of the owner provisioning gate, below). The
+  reviewer's purpose-strings check (ADR-0016) is satisfied by **no notifications plist key + the entitlement present** — a
+  notifications plist key would be wrong (a non-existent requirement), and a missing entitlement is the finding.
+- **Skip the rationale string (strict parity; the one optional fallback recorded).** Android requests `POST_NOTIFICATIONS`
+  silently (no pre-permission rationale screen). **Strict parity = skip the soft-ask** — request authorization directly at
+  the parity moment Android does (post-login). **IF a soft-ask is later wanted** (an "iOS does it right" enhancement, a
+  Gate-DP-class component improvement), it is **one optional `.xcstrings` key ×5** (en/cs/sk/uk/ru) for a pre-permission
+  explainer sheet — recorded as the bounded fallback, **not built in T-0311**. The recommendation is **skip**; if the owner
+  later wants the soft-ask, it is the one key, not a redesign.
+- **The no-`UiState`/`ActionState` confirmation (so a reviewer does NOT flag it — the §7.6 D3 AddressPicker precedent).**
+  Push registration is **fire-and-forget background plumbing** — the registrar/observer have **no screen, no load-fetch
+  (E1), no user-driven mutation (E2)**. Like the AddressPicker (§7.6 D3 — "an interactive map with plain `@Published` state,
+  neither an E1 load-fetch nor an E2 mutation screen, so the sealed-state absence is correct"), the `PushRegistrar` /
+  `PushSessionObserver` correctly have **no sealed `UiState<T>`/`ActionState`** — plain async functions + the token stream +
+  best-effort logging. **The sealed-state archetypes are correctly scoped OUT; flagging their absence is a reviewer
+  mis-fire, not a finding.** (The minimal foreground banner / tap-route is delegate-driven OS UI, not a VM-rendered screen —
+  also correctly stateless. The in-app feed, T-0336, IS an E1 screen and WILL be sealed-state.)
+
+#### Owner gate — T-0342 (APNs auth key + Push capability/provisioning) is the END-TO-END-DELIVERY gate (the T-0325-gates-T-0335 pattern)
+
+**T-0311 ships CODE-COMPLETE + the `aps-environment` entitlement WITHOUT T-0342; delivery (a push actually arriving on a
+device) is OWNER-GATED.** End-to-end push delivery requires owner-only setup: the **APNs auth key (`.p8`)** uploaded to the
+backend's push sender, the **Push Notifications capability** enabled on the App ID, and the **provisioning profile** carrying
+it. That is filed as the owner ticket **T-0342** *(owner: APNs `.p8` key + Push capability/provisioning)* — **NOT "T-0341"**:
+the Understand pass proposed "T-0341" but **T-0341 is already taken** (the backend status-history flaky-test ticket), so the
+APNs owner ticket is the next free number, **T-0342**. (The orchestrator creates the T-0342 file; this record references it +
+the gate.) **The gate is the same shape as T-0325-gates-T-0335** (the location plist key the owner provides gates the
+my-location FAB): T-0311 is **code-complete + entitlement-present** through the agent workflow; the live-delivery proof
+(a test push round-trips to a device) is **deferred until T-0342 lands**. T-0311's reviewer/security gates do **not** block
+on T-0342 (they verify the code seam + the entitlement, not a live push); the *delivery* acceptance is the owner's once
+T-0342 is done. (Also note the standing owner-blocker list §7.x already names "APNs auth key / push certificate" for T-0311 —
+T-0342 is that blocker's ticketized form.)
+
+#### The recorded Gate-DP / Parity divergences (T-0311 — all transport/mechanism, none touch the device contract or lifecycle)
+
+1. **Transport: Android FCM (`FirebaseMessaging` token + the messaging-service `onNewToken`) → iOS APNs
+   (`UIApplication.registerForRemoteNotifications` + the `@UIApplicationDelegateAdaptor` `didRegister…DeviceToken` +
+   `UNUserNotificationCenter`)** — decision (a); the **ADR-0013 D8** push divergence. The SAME `Device/Register`/
+   `Device/Unregister` contract, **`Platform="ios"`**, the **one** `X-Device-Id` (== `DeviceIdProvider`, == the
+   `Device/Register` deviceId, T-0331/T-0310 D6); the mechanism is the native platform push transport, the contract +
+   register/clear lifecycle are identical.
+2. **Permission: Android `POST_NOTIFICATIONS` runtime grant (silent, no rationale) → iOS
+   `UNUserNotificationCenter.requestAuthorization` (the OS shows its own system alert)** — decision (c). No rationale screen
+   (strict parity); **no Info.plist purpose string** (APNs needs only the `aps-environment` entitlement, unlike
+   location/camera/photo which need plist keys); the one optional soft-ask `.xcstrings` key is the recorded, un-built fallback.
+3. **Token rotation: Android's `onNewToken` messaging-service callback feeds `reportRotatedToken` → iOS's
+   `didRegisterForRemoteNotificationsWithDeviceToken` (re-fired by the OS on token change) feeds the registrar's APNs-token
+   stream** — decision (a)/(b); same "rotation is just a new emission the session observer re-registers on" property, native
+   callback. (No Firebase-project migration analogue — `PushTokenRepository.runFirebaseProjectMigrationOnce` is FCM-specific,
+   correctly NOT ported.)
+
+#### Reviewer-check addition (T-0311+)
+
+- **#34 (§7.13 (a)/(b)/(c)) — the iOS partner APNs push-registration surface is the canonical shape.**
+  **(a) seam** — `UNUserNotificationCenter` + `UIApplication.registerForRemoteNotifications` are reached ONLY through the
+  `CleansiaCore/Push` **`PushRegistrar`**; the APNs-token AppDelegate callbacks are received via a per-app
+  **`@UIApplicationDelegateAdaptor`** that FEEDS the registrar's token stream. **Findings:** a feature/VM/lifecycle file
+  `import UserNotifications`/`import UIKit` for push (the seam is the only consumer — the `MapProvider`/`CameraOrLibraryPicker`
+  parity); a second push consumer outside `PushRegistrar`; a hand-rolled `UIApplication.shared.delegate` instead of
+  `@UIApplicationDelegateAdaptor`; the device token POSTed with anything but `Platform="ios"` or a device id not from the
+  one `DeviceIdProvider`. **(b) lifecycle** — register/clear is the Core **`PushSessionObserver`** (the
+  `combine(session, token).filterNotNull().distinctUntilChanged() → ensureRegistered` parity, attached once from the App);
+  `ensureRegistered` short-circuits on the persisted last-registered token (`UserDefaults`, not Keychain) and persists on
+  success only; **`unregisterDevice()` is invoked from `AuthApiClient.logout()` BEFORE the `TokenStore` wipe** (best-effort)
+  and the local `clear()` is the `SessionScopedCache` on every sign-out. **Findings:** registration bolted onto
+  `afterLogin`/an event hook instead of the session-state observer (the brittleness the Android `:core` deleted); the
+  last-registered-token in the Keychain (it is not a secret) or a secret in its store; `unregisterDevice()` after the token
+  wipe (a tokenless 401, the row not deleted) or skipped on a logout path; a second clear-path not going through the
+  `SessionScopedCacheRegistry`. **(SECURITY rules the unregister-ordering GATE in parallel — Gate-SEC — #34 verifies the
+  seam/home, not the security mandate.)** **(c) scope/permission** — minimal `willPresent` (foreground banner) + `didReceive`
+  (tap → existing order route via the `PartnerNotificationDeepLink` port) only; the in-app feed/badge/persistence/templates
+  are DEFERRED → T-0336; the `aps-environment` entitlement is present; there is **no** notifications Info.plist purpose
+  string; **no** `UiState`/`ActionState` on the registrar/observer (correctly stateless — do NOT flag). **Findings:** an
+  in-app feed / bell badge / push persistence built in T-0311 (it is T-0336); a notifications plist purpose string (a
+  non-existent requirement); a missing `aps-environment` entitlement; a flagged-as-missing `UiState`/`ActionState` on the
+  registrar/observer (the §7.6 D3 mis-fire). (Composes with #13-gen — the `Device/*` calls ride the ADR-0019 spine.)
+
+#### New CRC roles (added with the T-0311 wiring; the RDD home is the planned `agents/knowledge/roles/ios-*` cards that land with their code — ADR-0019 precedent)
+
+- **`ios-push-registrar`** (new, `CleansiaCore/Push`) — the `PushRegistrar` protocol + its default impl (decision (a); the
+  next member of the ADR-0014 D6′ / ADR-0018 D2 system-framework-behind-a-Core-seam family): *responsibility:* be the SOLE
+  consumer of `UNUserNotificationCenter` (authorization) + `UIApplication.registerForRemoteNotifications`, expose an
+  APNs-token stream the AppDelegate feeds, and `ensureRegistered(token)` it to `Device/Register` (cache-short-circuit +
+  persist-on-success) / `unregisterDevice()` it from `Device/Unregister` — the `PushTokenRepository.kt` parity over APNs.
+  *Collaborators:* the generated `PartnerDeviceAPI` (via the ADR-0019 spine), the one `DeviceIdProvider`, the persisted
+  last-registered-token store (`UserDefaults`), the `SessionScopedCacheRegistry` (it implements `SessionScopedCache.clear()`
+  local-only). *Does NOT know:* the access token value (that is `TokenStore`'s, reached only via the spine), how a session
+  becomes present (that is the observer's), which screen a tap routes to (that is the `PartnerNotificationDeepLink` port's),
+  the notification's title/body/template (T-0336), or any FCM/Firebase concept. **If this role reads the access token, or
+  resolves a device id anywhere but `DeviceIdProvider`, the responsibility is wrong — it delegates to the spine** (the
+  ADR-0019 invariant; the remote-revoke-correctness reason for the one device id).
+- **`ios-push-session-observer`** (new, `CleansiaCore/Push`) — the `PushSessionObserver` (decision (b); the
+  `PushTokenSessionObserver.kt` parity): *responsibility:* make registration a PROPERTY of session×token state — combine
+  session-presence with the registrar's APNs-token stream, drop nils, dedupe, and call `ensureRegistered` on every distinct
+  pair; attached once from the App. *Collaborators:* the `TokenStore`/`SessionManager` (session-presence stream), the
+  `PushRegistrar` (the token stream + `ensureRegistered`). *Does NOT know:* how to talk to APNs or the backend (that is the
+  registrar's), the token value, the unregister/logout ordering (that is `AuthApiClient.logout()`'s — decision (b)), or any
+  screen. **If this observer registers on a discrete event (login/confirm) instead of the combined state, the responsibility
+  is wrong** — it re-introduces the event-hook brittleness the Android `:core` deleted.
+- **`ios-push-app-delegate`** (new, per-app App target, via `@UIApplicationDelegateAdaptor`) — the thin AppDelegate +
+  `UNUserNotificationCenterDelegate` (decisions (a)/(c)): *responsibility:* receive the OS push callbacks
+  (`didRegisterForRemoteNotificationsWithDeviceToken` → feed the registrar's token stream; `didFailToRegister` → log;
+  `willPresent` → foreground banner; `didReceive` → resolve the tap via the deep-link port) and forward them — it holds NO
+  logic of its own. *Collaborators:* the Core `PushRegistrar` (feeds its token stream), the `PartnerNotificationDeepLink`
+  port (resolves a tap to an order route). *Does NOT know:* the token contract / backend (the registrar's), the session
+  state (the observer's), or how a screen renders (the feature's). The one allowed `UIKit`/`UserNotifications` touch-point in
+  the App target (the composition-root parity — like installing the `RequestBuilderFactory`/`MapProvider`).
+- **`ios-partner-notification-deep-link`** (new, port — Core protocol, partner-feature impl) — the tap→route resolver
+  (decision (c)): *responsibility:* map a tapped notification's payload to an EXISTING order route (the T-0307/T-0309
+  destinations); *Collaborators:* the partner router/route enum. *Does NOT know:* the OS delegate (the AppDelegate calls it),
+  push transport, or the in-app feed (T-0336). A thin port so the feature owns "where an order tap goes," the delegate owns
+  "a tap happened."
+
+#### Test contract (T-0311 — red-first)
+
+- **TC-IOS-PUSH-REGISTER** (decision (a)/(b)): with a present session + an APNs token in the registrar's stream, the
+  observer calls `Device/Register` with `{deviceId == DeviceIdProvider.deviceId, deviceToken == the APNs token,
+  platform == "ios"}` through the ADR-0019 spine; a second identical (session, token) emission is a **no-op**
+  (cache-short-circuit); the last-registered token persists on success only.
+- **TC-IOS-PUSH-OBSERVER** (decision (b)): the `combine(session, token)` observer (i) fires on cold-start-into-an-authed-
+  session (no `afterLogin` needed), (ii) fires when the APNs token arrives after login, (iii) buffers a token that arrives
+  while signed-out and fires once the session becomes present, (iv) does NOT re-register on logout (session→nil drops the
+  emission) — the `PushTokenSessionObserver.kt:26-36` behavioural properties, 1:1.
+- **TC-IOS-PUSH-LOGOUT-ORDER** (decision (b); the architectural-seam half — the security GATE is §7.x SECURITY's):
+  `AuthApiClient.logout()` invokes `unregisterDevice()` (the `Device/Unregister` DELETE) **before** the `TokenStore` is
+  wiped (asserted call order — the DELETE carries the Bearer); a failing unregister still proceeds to the local wipe
+  (best-effort); the `SessionScopedCache.clear()` (local last-registered-token drop) runs on BOTH the user-logout and the
+  forced-401 sign-out paths via the registry.
+- **TC-IOS-PUSH-TAP** (decision (c)): `didReceive` for an order notification resolves via the `PartnerNotificationDeepLink`
+  port to the existing order route (it does NOT create a screen); `willPresent` returns the foreground-banner presentation
+  options; no `UiState`/`ActionState` is involved (the stateless plumbing assertion — the absence is intended).
+- **No live-delivery test in T-0311** — an actual push round-tripping to a device is the **T-0342 owner-gated** delivery
+  proof (the entitlement + `.p8` + provisioning). T-0311's tests assert the code seam + the contract + the ordering, not a
+  live APNs round-trip.
 
 ---
 

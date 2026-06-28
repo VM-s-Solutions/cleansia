@@ -68,6 +68,7 @@ final class PartnerAppContainer: AppContainer {
     let devicesClient: PartnerDevicesClient
     let orderClient: PartnerOrderClient = LivePartnerOrderClient()
     let ordersStaleness = OrdersStaleness()
+    let invoicesStaleness = InvoicesStaleness()
     let cleaningChecklistStore: CleaningChecklistStore = UserDefaultsCleaningChecklistStore()
     let geocodingService: GeocodingService = CLGeocoderGeocodingService()
     let mapProvider: MapProvider = MapKitMapProvider()
@@ -102,6 +103,7 @@ final class PartnerAppContainer: AppContainer {
             sessionScopedCaches.register(cache)
         }
         sessionScopedCaches.register(ordersStaleness)
+        sessionScopedCaches.register(invoicesStaleness)
     }
 
     func installGeneratedClientAuth() {

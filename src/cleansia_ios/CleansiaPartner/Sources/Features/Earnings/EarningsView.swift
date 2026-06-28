@@ -7,15 +7,18 @@ struct EarningsView: View {
     @State private var path: [EarningsRoute] = []
 
     private let payrollClient: PartnerPayrollClient
+    private let invoicesStaleness: InvoicesStaleness
     private let snackbar: SnackbarController
 
     init(
         dashboardClient: PartnerDashboardClient,
         payrollClient: PartnerPayrollClient,
+        invoicesStaleness: InvoicesStaleness,
         snackbar: SnackbarController
     ) {
         _vm = StateObject(wrappedValue: EarningsViewModel(client: dashboardClient))
         self.payrollClient = payrollClient
+        self.invoicesStaleness = invoicesStaleness
         self.snackbar = snackbar
     }
 
@@ -49,10 +52,21 @@ struct EarningsView: View {
     private func destination(_ route: EarningsRoute) -> some View {
         switch route {
         case .invoices:
-            // The invoices list is not built yet; this is the wired route seam.
-            EarningsRoutePlaceholder(title: L10n.Earnings.viewInvoices)
-        case .invoiceDetail:
-            EarningsRoutePlaceholder(title: L10n.Earnings.viewInvoices)
+            InvoicesListView(
+                client: payrollClient,
+                staleness: invoicesStaleness,
+                snackbar: snackbar,
+                onOpenInvoice: { path.append(.invoiceDetail(id: $0)) }
+            )
+        case let .invoiceDetail(id):
+            InvoiceDetailView(
+                invoiceId: id,
+                client: payrollClient,
+                snackbar: snackbar,
+                onOpenPeriodPay: { payPeriodId, currencyCode in
+                    path.append(.periodPay(payPeriodId: payPeriodId, currencyCode: currencyCode))
+                }
+            )
         case let .periodPay(payPeriodId, currencyCode):
             PeriodPayView(
                 payPeriodId: payPeriodId,
@@ -83,16 +97,6 @@ private struct EarningsErrorView: View {
         .padding(Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(CleansiaColors.background.ignoresSafeArea())
-    }
-}
-
-private struct EarningsRoutePlaceholder: View {
-    let title: String
-
-    var body: some View {
-        PlaceholderDestination(systemImage: "doc.text", text: title)
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
     }
 }
 

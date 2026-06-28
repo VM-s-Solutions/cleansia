@@ -5,39 +5,6 @@ import XCTest
 
 @MainActor
 final class PeriodPayViewModelTests: XCTestCase {
-    private final class FakePayrollClient: PartnerPayrollClient {
-        var employeeIdResult: ApiResult<String> = .success("emp-1")
-        var periodPaysResult: ApiResult<PeriodPaySummaryDto> = .success(PeriodPaySummaryDto())
-        private(set) var periodPaysCallCount = 0
-        private(set) var lastEmployeeId: String?
-        private(set) var lastPayPeriodId: String?
-
-        func currentEmployeeId() async -> ApiResult<String> {
-            employeeIdResult
-        }
-
-        func getPeriodPays(employeeId: String, payPeriodId: String) async -> ApiResult<PeriodPaySummaryDto> {
-            periodPaysCallCount += 1
-            lastEmployeeId = employeeId
-            lastPayPeriodId = payPeriodId
-            return periodPaysResult
-        }
-
-        func getPagedInvoices(employeeId _: String) async -> ApiResult<[EmployeeInvoiceDto]> {
-            .success([])
-        }
-
-        func getInvoice(id _: String) async
-            -> ApiResult<EmployeeInvoiceDetailDto>
-        {
-            .success(EmployeeInvoiceDetailDto())
-        }
-
-        func downloadInvoicePdf(id _: String) async -> ApiResult<URL> {
-            .success(URL(fileURLWithPath: "/tmp/x"))
-        }
-    }
-
     private var client: FakePayrollClient!
     private var snackbar: SnackbarController!
 
@@ -76,8 +43,8 @@ final class PeriodPayViewModelTests: XCTestCase {
         guard let summary = vm.state.loadedValue else { return XCTFail("expected loaded") }
         XCTAssertEqual(summary.grandTotal, 4200)
         XCTAssertEqual(client.periodPaysCallCount, 1)
-        XCTAssertEqual(client.lastEmployeeId, "emp-1")
-        XCTAssertEqual(client.lastPayPeriodId, "pp-1")
+        XCTAssertEqual(client.periodPaysEmployeeId, "emp-1")
+        XCTAssertEqual(client.periodPaysPayPeriodId, "pp-1")
     }
 
     func testMissingEmployeeIdGoesToErrorWithoutNetworkCall() async {

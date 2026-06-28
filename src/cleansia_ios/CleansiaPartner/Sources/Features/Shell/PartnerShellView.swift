@@ -53,6 +53,7 @@ struct PartnerShellView: View {
             EarningsView(
                 dashboardClient: container.dashboardClient,
                 payrollClient: container.payrollClient,
+                invoicesStaleness: container.invoicesStaleness,
                 snackbar: container.snackbar
             )
             .tabItem { Label(ShellTab.invoices.label, systemImage: ShellTab.invoices.systemImage) }

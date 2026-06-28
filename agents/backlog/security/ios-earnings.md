@@ -166,3 +166,111 @@ A client-side test proving the earnings/invoices surface NEVER sends a foreign i
 follow-up). Binding iOS rules E1–E4 + TC-IOS-EARNINGS-OWNERSHIP. PDF-PII cleanup mandatory (D3a);
 no PrivacyInfo collected-data entry for the download (D3b). One latent S5 rate-limit gap recorded
 into BSP-4d (backend, not a blocker, iOS cannot fix). Re-verify on the actual iOS diff at review time.
+
+---
+
+## 2026-06-28 — T-0309 Slice B BUILD-TIME VERIFICATION (Gate-SEC, security reviewer) — verified-against-code on `phase/ios-phase5` (uncommitted) — VERDICT: PASS
+
+**security_touching: YES.** This is the build-time re-verify the 2026-06-27 design ruling demanded
+("Re-verify on the actual iOS diff at review time"). Verified against the ACTUAL uncommitted Slice B
+code (`git status` clean except this slice; `git diff`/untracked read), not the design. All four
+binding iOS client rules (E1/E3/E4 + the standing E2), TC-IOS-EARNINGS-OWNERSHIP, and S4 hold as
+written. The reviewer owns Gate-DP in parallel; this entry is the read-scoping / PII gate only.
+
+### Files verified (file:line evidence)
+- `CleansiaPartner/Sources/Features/Earnings/InvoicesListViewModel.swift`
+- `CleansiaPartner/Sources/Features/Earnings/InvoiceDetailViewModel.swift`
+- `CleansiaPartner/Sources/Features/Earnings/PeriodPayViewModel.swift`
+- `CleansiaPartner/Sources/Features/Earnings/{InvoicesListView,InvoicesListContent,InvoiceDetailView}.swift`
+- `CleansiaPartner/Sources/Data/PartnerPayrollClient.swift`
+- `CleansiaCore/Sources/CleansiaCore/Components/QuickLookPreview.swift`
+- `CleansiaPartnerApi/URLSessionImplementations.swift` (generated download file-sink — load-bearing for E4)
+- Tests: `EarningsOwnershipTests.swift`, `InvoicesListViewModelTests.swift`,
+  `InvoiceDetailViewModelTests.swift`, `QuickLookPreviewTests.swift`, `FakePayrollClient.swift`
+
+### E1 — own-server-derived id ONLY — PASS (VERIFIED)
+- `InvoicesListViewModel.fetch()` (`InvoicesListViewModel.swift:31-49`): the ONLY id passed to
+  `getPagedInvoices` is `client.currentEmployeeId()` (→ generated `employeeGetCurrentEmployee`, see
+  `PartnerPayrollClient.swift:18-26,37-47`). No screen/route value reaches it. A `.failure` (nil/
+  unresolvable id) → `state = .loaded([])` with a `return` BEFORE the `getPagedInvoices` call → ZERO
+  network call (`:35-38`).
+- `PeriodPayViewModel.load()` (`PeriodPayViewModel.swift:33-38`): same pattern — own id only;
+  unresolvable → `.error` with NO `getPeriodPays` call.
+- Grep of the whole Earnings feature for a screen/route-supplied employeeId reaching
+  `getPagedInvoices`/`getPeriodPays`: NONE. `getPagedInvoices(employeeId:)` / `getPeriodPays(employeeId:)`
+  are only ever called with the `currentEmployeeId()` result. The client protocol intentionally exposes
+  NO setter for a foreign id (`PartnerPayrollClient.swift:5-15`).
+- Tests: `testInvoicesListSendsOnlyOwnServerDerivedEmployeeId` (`EarningsOwnershipTests.swift:30-39`,
+  asserts outgoing id == `emp-own`), `testInvoicesListNeverQueriesWhenIdUnresolvable` (`:42-49`,
+  `invoicesCallCount == 0`), `testMissingEmployeeIdMapsToEmptyWithoutNetworkCall`
+  (`InvoicesListViewModelTests.swift:52-60`), `testPeriodPaySendsOnlyOwnServerDerivedEmployeeId`
+  (`EarningsOwnershipTests.swift:52-65`).
+
+### E2 — no foreign-id echo — PASS (VERIFIED, by construction)
+The invoiceId carried into detail/download originates ONLY from the caller's own server-fetched list:
+`InvoicesListContent`/`InvoiceCard.open()` (`InvoicesListContent.swift:88-90`) maps `invoice.id` (a
+field of an `EmployeeInvoiceDto` returned by the own-scoped `getPagedInvoices`) into `onOpenInvoice`
+→ `EarningsView.swift` `path.append(.invoiceDetail(id:$0))` → `InvoiceDetailView(invoiceId:)`. No
+text field, deep link, or out-of-band id is constructed into any request anywhere in the feature.
+
+### E3 — download own invoice only — PASS (VERIFIED)
+- `InvoiceDetailViewModel.openPdf()` (`InvoiceDetailViewModel.swift:56-69`) and `.load()` (`:41-54`)
+  act ONLY on `self.invoiceId` — the immutable `let` set at construction (`:24,28-32`) from the
+  caller's own list row (E2 chain above). No synthesized/echoed/foreign id reaches
+  `downloadInvoicePdf(id:)` or `getInvoice(id:)`; the VM has no API to mutate `invoiceId`.
+- Test: `testDownloadActsOnlyOnTheLoadedInvoiceId` (`EarningsOwnershipTests.swift:69-79`, asserts
+  `client.lastDownloadId == "inv-own"`); also `testDownloadSuccessEmitsPresentEventAndReturnsToIdle`
+  (`InvoiceDetailViewModelTests.swift:63-79`, `lastDownloadId == "inv-1"`).
+
+### E4 — delete the PDF after preview (load-bearing PII rule) — PASS (VERIFIED), single resident copy
+- The generated downloader writes the PDF to ONE deterministic file under the Caches dir via
+  `data.write(to: filePath, options: .atomic)` (`URLSessionImplementations.swift:314-332`); the
+  returned `URL` IS that file. `.atomic` consumes its temp sibling on rename → NO second copy. There
+  is no in-app re-copy/move in `LivePartnerPayrollClient` (`PartnerPayrollClient.swift:55-59`) or the
+  VM — the Caches file is the only PII-at-rest copy.
+- That exact URL flows VM → `presentPdf` (`InvoiceDetailViewModel.swift:64`) → view
+  `.onReceive` → `.sheet(item:)` (`InvoiceDetailView.swift:42-45`) → `QuickLookPreview(url:url, …)`
+  (`:52`). `deleteOnDismiss` defaults to `true` (`QuickLookPreview.swift:21`), and the coordinator
+  deletes the file in `previewControllerWillDismiss` (`:61-66` → `removeFile(at:)`). The delete is
+  file-URL-gated: `removeFile` early-returns unless `url.isFileURL`, then best-effort `try?`
+  (`:72-75`) — never touches a remote URL.
+- `previewControllerWillDismiss` is the QLPreviewController delegate hook; within the `.sheet` the
+  QLPreviewController is the sheet root, so Done / swipe-down / programmatic dismissal all route
+  through it before the sheet tears down — no dismissal path leaves the file resident.
+- Tests: `testRemoveFileDeletesAnExistingFile` (`QuickLookPreviewTests.swift:6-15`),
+  `testRemoveFileIsNoOpForMissingFile` (`:17-23`), `testRemoveFileIgnoresNonFileURL` (`:25-31`,
+  proves the remote-URL guard).
+
+### TC-IOS-EARNINGS-OWNERSHIP — EXISTS — PASS (E1 own-id + E3 own-invoice)
+Present at `CleansiaPartner/Tests/EarningsOwnershipTests.swift` (4 cases; E1 list+period, E1
+no-network-on-unresolvable, E3 download-own). E4 cleanup covered by `QuickLookPreviewTests.swift`.
+NOTE: PASS is asserted at the code/logic level (the fakes in `FakePayrollClient.swift` record the
+outgoing ids and the assertions are correct); the iOS suite is run on the Mac toolchain by the dev/
+reviewer — flag a green `swift test`/Xcode run as the build proof at merge (no other-platform run here).
+
+### S4 (DTO leak) — PASS (VERIFIED, unchanged from §7.11)
+`EmployeeInvoiceDto` / `EmployeeInvoiceDetailDto` (`CleansiaPartnerApi/Models/*`) carry only:
+`variableSymbol`/`specificSymbol`/`paymentReference`/`bankTransferNote` (CZ/SK payment-routing refs the
+cleaner needs) + amounts + own `employeeId`/`employeeName`. NO IBAN / raw bank-account number, NO
+`tenantId`, NO `userId`, NO Stripe id, NO hash, NO other-employee fields. These are NSwag-generated from
+the same backend DTOs already passed at S4 in §7.11; the server pins all fields to the caller (owner gate
+on all four handlers). The PDF is the only PII-at-rest and E4 cleans it.
+
+### ADR-0019 spine / auth — PASS (no new token/header/401 path)
+`LivePartnerPayrollClient` calls the generated `PartnerEmployeePayrollAPI.*` via the same
+`URLSessionRequestBuilderFactory` / global session and `currentEmployeeId()` via `PartnerEmployeeAPI`
+already used by shipped Order/Employee clients — all ride the existing `PartnerAuthSpine` HeaderAdapter
+(`PartnerClients.swift:13-34`, wired once in `PartnerAppContainer.swift`). The generated builder's
+`requiresAuthentication: false` is the stock NSwag default; Authorization/X-Device-Id are stamped at the
+spine layer for every partner call, not per-route. No new KeychainTokenStore, 401 handler, or header path
+in this slice.
+
+### S5 (rate limit) — UNCHANGED LATENT (BSP-4d), not a blocker
+`EmployeePayrollController`'s four routes still carry no `[EnableRateLimiting]`; the authed-global limiter
+is a no-op. iOS cannot fix; folded into BSP-4d. Read-only enumeration is blocked by the owner gate, so
+LOW/latent. This iOS slice does not change it.
+
+### Verdict — PASS (build-time, verified-against-code)
+E1 PASS · E2 PASS · E3 PASS · E4 PASS · TC-IOS-EARNINGS-OWNERSHIP exists & logically correct ·
+S4 PASS · ADR-0019 no-new-auth-path PASS. NO new gap found. NO code edits (audit-only). Remaining:
+S5/BSP-4d (backend, standing). Merge-proof to capture at PR: a green iOS test run on the Mac toolchain.

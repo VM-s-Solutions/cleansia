@@ -24,10 +24,10 @@ final class CustomerShellSelectionTests: XCTestCase {
         }
     }
 
-    func testBookActionIsInertInThisSlice() {
+    func testBookActionPresentsTheBookingSheet() {
         let model = CustomerShellModel()
-        XCTAssertFalse(model.didOpenBooking)
+        XCTAssertFalse(model.isBookingPresented)
         model.book()
-        XCTAssertFalse(model.didOpenBooking)
+        XCTAssertTrue(model.isBookingPresented)
     }
 }

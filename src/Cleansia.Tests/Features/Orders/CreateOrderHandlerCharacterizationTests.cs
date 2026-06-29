@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -92,7 +93,7 @@ public class CreateOrderHandlerCharacterizationTests
                 }));
     }
 
-    private CreateOrder.Handler CreateHandler() =>
+    private CreateOrder.Handler CreateHandler(OrderChannel channel = OrderChannel.Web) =>
         new(
             _currencyRepository.Object,
             _session.Object,
@@ -114,6 +115,7 @@ public class CreateOrderHandlerCharacterizationTests
             new OrderPaymentDispatcher(
                 _stripeClientFactory.Object,
                 _pending.Object,
+                new OrderChannelProvider(channel),
                 NullLogger<OrderPaymentDispatcher>.Instance));
 
     private void ArrangeSavedAddress(string savedAddressId, string ownerUserId, Address? resolved = null)
@@ -240,6 +242,38 @@ public class CreateOrderHandlerCharacterizationTests
             It.IsAny<QueueEnvelope<GenerateReceiptMessage>>(),
             It.IsAny<string>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task MobileChannel_CardPath_StripeSessionIdIsNull_AndDoesNotCreateCheckoutSession()
+    {
+        var command = CreateOrderTestData.ValidCommand(paymentType: PaymentType.Card);
+
+        var result = await CreateHandler(OrderChannel.Mobile).Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value!.StripeSessionId);
+        _stripeClient.Verify(
+            c => c.CreateCheckoutSessionAsync(It.IsAny<Cleansia.Core.Domain.Orders.Order>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task WebChannel_CardPath_StillCreatesCheckoutSession()
+    {
+        _stripeClient
+            .Setup(c => c.CreateCheckoutSessionAsync(It.IsAny<Cleansia.Core.Domain.Orders.Order>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("cs_test_session");
+
+        var command = CreateOrderTestData.ValidCommand(paymentType: PaymentType.Card);
+
+        var result = await CreateHandler(OrderChannel.Web).Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("cs_test_session", result.Value!.StripeSessionId);
+        _stripeClient.Verify(
+            c => c.CreateCheckoutSessionAsync(It.IsAny<Cleansia.Core.Domain.Orders.Order>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]

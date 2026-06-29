@@ -2,14 +2,21 @@ import Foundation
 
 public struct AnonymousAllowList: Sendable {
     private let paths: [String]
+    private let dualUsePaths: [String]
 
-    public init(paths: [String]) {
+    public init(paths: [String], dualUsePaths: [String] = []) {
         self.paths = paths.map { $0.lowercased() }
+        self.dualUsePaths = dualUsePaths.map { $0.lowercased() }
     }
 
     public func isAnonymous(path: String) -> Bool {
         let lower = path.lowercased()
         return paths.contains { lower.contains($0) }
+    }
+
+    public func isDualUse(path: String) -> Bool {
+        let lower = path.lowercased()
+        return dualUsePaths.contains { lower.contains($0) }
     }
 
     private static let sharedAuth = [
@@ -39,6 +46,15 @@ public struct AnonymousAllowList: Sendable {
         "/api/referral/validate"
     ]
 
+    private static let customerDualUse = [
+        "/api/order/quote",
+        "/api/order/createorder",
+        "/api/payment/createorder"
+    ]
+
     public static let partner = AnonymousAllowList(paths: sharedAuth)
-    public static let customer = AnonymousAllowList(paths: sharedAuth + customerGuestBooking)
+    public static let customer = AnonymousAllowList(
+        paths: sharedAuth + customerGuestBooking,
+        dualUsePaths: customerDualUse
+    )
 }

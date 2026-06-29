@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
@@ -13,11 +14,17 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <summary>
 /// Default <see cref="IOrderPaymentDispatcher"/>. Wraps the Card/Stripe checkout-session creation and
 /// the Cash receipt enqueue with the same narrow <c>StripeException</c> mapping and the same
-/// post-commit dispatch seam the handler had inline — extracted verbatim, no behavior change.
+/// post-commit dispatch seam the handler had inline.
+///
+/// One charge surface per card order: the Card branch mints a Checkout Session ONLY on the Web
+/// channel. On the Mobile channel it mints nothing here — the in-app Stripe PaymentSheet path
+/// (<see cref="CreatePaymentIntent"/>) is the single capturable surface, so the dispatcher returns a
+/// null session id to avoid a second, independently-capturable charge surface on the same order.
 /// </summary>
 public sealed class OrderPaymentDispatcher(
     IStripeClientFactory stripeClientFactory,
     IPendingDispatch pending,
+    IOrderChannelProvider channelProvider,
     ILogger<OrderPaymentDispatcher> logger) : IOrderPaymentDispatcher
 {
     public async Task<OrderPaymentDispatchResult> DispatchAsync(
@@ -26,6 +33,11 @@ public sealed class OrderPaymentDispatcher(
         switch (order.PaymentType)
         {
             case PaymentType.Card:
+                if (channelProvider.Channel == OrderChannel.Mobile)
+                {
+                    return OrderPaymentDispatchResult.Ok(null);
+                }
+
                 try
                 {
                     var stripeClient = stripeClientFactory.CreateClient();

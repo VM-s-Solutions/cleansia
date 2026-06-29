@@ -11,6 +11,8 @@ struct CleansiaCustomerApp: App {
         let snackbar = SnackbarController()
         _snackbar = StateObject(wrappedValue: snackbar)
         let container = CustomerAppContainer(snackbar: snackbar)
+        container.installGeneratedClientAuth()
+        StripeLaunch.applyPublishableKey()
         _sessionManager = StateObject(wrappedValue: container.sessionManager)
         self.container = container
     }

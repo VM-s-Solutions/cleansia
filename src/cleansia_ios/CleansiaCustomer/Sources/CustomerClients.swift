@@ -1,18 +1,24 @@
 import CleansiaCore
 import Foundation
 
+struct CustomerAuthStack {
+    let spine: AuthApiClient
+    let headerAdapter: HeaderAdapter
+    let deviceIdProvider: DeviceIdProvider
+}
+
 enum CustomerAuthSpine {
     static func make(
         apiBaseURL: URL,
         sessionScopedCaches: SessionScopedCacheRegistry
-    ) -> AuthApiClient {
+    ) -> CustomerAuthStack {
         let tokenStore = KeychainTokenStore(service: "cz.cleansia.customer.tokens")
         let deviceIdProvider = DeviceIdProvider(service: "cz.cleansia.customer.device")
         let headerAdapter = HeaderAdapter(
             deviceIdProvider: deviceIdProvider,
             anonymousAllowList: .customer
         )
-        return AuthApiClient(
+        let spine = AuthApiClient(
             apiBaseURL: apiBaseURL,
             tokenStore: tokenStore,
             headerAdapter: headerAdapter,
@@ -21,6 +27,7 @@ enum CustomerAuthSpine {
             authedSession: URLSession(configuration: .default),
             noAuthSession: URLSession(configuration: .ephemeral)
         )
+        return CustomerAuthStack(spine: spine, headerAdapter: headerAdapter, deviceIdProvider: deviceIdProvider)
     }
 }
 

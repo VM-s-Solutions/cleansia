@@ -20,6 +20,9 @@ public static class ServiceExtensions
     public static void AddServices(this IServiceCollection services, IConfiguration configuration, IHostEnvironment env)
     {
         services.AddSingleton<IHostAudienceProvider>(new HostAudienceProvider(JwtAudiences.Customer));
+        // Mobile card flow uses the Stripe PaymentSheet (CreatePaymentIntent) as its single charge
+        // surface, so the dispatcher must NOT also mint a Checkout Session for this host.
+        services.AddSingleton<IOrderChannelProvider>(new OrderChannelProvider(OrderChannel.Mobile));
 
         services
             .AddHttpContextAccessor()

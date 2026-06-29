@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -35,8 +36,9 @@ public class OrderPaymentDispatcherTests
         _stripeClientFactory.Setup(f => f.CreateClient()).Returns(_stripeClient.Object);
     }
 
-    private OrderPaymentDispatcher CreateDispatcher() =>
+    private OrderPaymentDispatcher CreateDispatcher(OrderChannel channel = OrderChannel.Web) =>
         new(_stripeClientFactory.Object, _pending.Object,
+            new OrderChannelProvider(channel),
             NullLogger<OrderPaymentDispatcher>.Instance);
 
     private static Order BuildOrder(PaymentType paymentType) =>
@@ -49,13 +51,13 @@ public class OrderPaymentDispatcherTests
         });
 
     [Fact]
-    public async Task Card_CreatesStripeSession_ReturnsSessionId_DoesNotEnqueue()
+    public async Task WebCard_CreatesStripeSession_ReturnsSessionId_DoesNotEnqueue()
     {
         _stripeClient
             .Setup(c => c.CreateCheckoutSessionAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("cs_test_session");
 
-        var result = await CreateDispatcher().DispatchAsync(
+        var result = await CreateDispatcher(OrderChannel.Web).DispatchAsync(
             BuildOrder(PaymentType.Card), LanguageCode, CancellationToken.None);
 
         Assert.Null(result.Failure);
@@ -65,6 +67,33 @@ public class OrderPaymentDispatcherTests
             It.IsAny<QueueEnvelope<GenerateReceiptMessage>>(),
             It.IsAny<string>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task MobileCard_DoesNotCreateStripeSession_ReturnsNullSession_DoesNotEnqueue()
+    {
+        var result = await CreateDispatcher(OrderChannel.Mobile).DispatchAsync(
+            BuildOrder(PaymentType.Card), LanguageCode, CancellationToken.None);
+
+        Assert.Null(result.Failure);
+        Assert.Null(result.StripeSessionId);
+        _stripeClient.Verify(
+            c => c.CreateCheckoutSessionAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _pending.Verify(p => p.Enqueue(
+            It.IsAny<string>(),
+            It.IsAny<QueueEnvelope<GenerateReceiptMessage>>(),
+            It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task MobileCard_NeverInvokesStripeClientFactory()
+    {
+        await CreateDispatcher(OrderChannel.Mobile).DispatchAsync(
+            BuildOrder(PaymentType.Card), LanguageCode, CancellationToken.None);
+
+        _stripeClientFactory.Verify(f => f.CreateClient(), Times.Never);
     }
 
     [Fact]

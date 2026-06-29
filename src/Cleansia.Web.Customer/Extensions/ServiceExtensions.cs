@@ -20,6 +20,8 @@ public static class ServiceExtensions
     public static void AddServices(this IServiceCollection services, IConfiguration configuration, IHostEnvironment env)
     {
         services.AddSingleton<IHostAudienceProvider>(new HostAudienceProvider(JwtAudiences.Customer));
+        // Web card flow uses the Stripe Checkout Session as its single charge surface.
+        services.AddSingleton<IOrderChannelProvider>(new OrderChannelProvider(OrderChannel.Web));
 
         services
             .AddHttpContextAccessor()

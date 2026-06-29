@@ -248,3 +248,261 @@ The iOS encoding MATCHES the T-0343 backend's lowercase-hex expectation; live SI
 `GID_CLIENT_ID` / `GID_SERVER_CLIENT_ID` / `GID_REVERSED_CLIENT_ID` Google iOS OAuth client (T-0345);
 `Apple:BundleId` backend audience (T-0344) — until set, the backend verifier fails closed. The endpoints ship
 safely dark. Mobile spec/client regen remains the owner's manual step.
+
+---
+
+## 2026-06-28 — T-0347 money-safety verification (Gate-SEC HIGH double-capture; sprint-12 §7.16) — PASS
+
+Branch `phase/ios-phase7`, uncommitted. Scope OWNED here: the money-safety property — **exactly one
+capturable Stripe charge surface per card order, per channel**. Reviewer covers conventions/web-non-regression
+in parallel. Tests: `dotnet test src/Cleansia.Tests --filter "OrderPaymentDispatcher|CreateOrder|OrderChannel"`
+→ **31/31 PASS** (incl. the new mobile-null / web-session / factory-never-invoked / DI-wiring cases).
+
+**VERDICT: PASS.** The double-capture surface the §7.16 gate flagged is closed. Can a single card order now
+present two capturable surfaces? **NO for mobile, NO for web** — see the per-point trace.
+
+### Property trace (file:line)
+1. **Mobile card ⇒ EXACTLY the PaymentIntent — PASS.** `OrderPaymentDispatcher.DispatchAsync`
+   `OrderPaymentDispatcher.cs:36-39`: on `channelProvider.Channel == OrderChannel.Mobile` the Card branch
+   returns `OrderPaymentDispatchResult.Ok(null)` **before** the `try` — it never calls
+   `stripeClientFactory.CreateClient()` (line 43) and never mints a Checkout Session. The order's only
+   capturable surface is the PaymentSheet PaymentIntent minted by `CreatePaymentIntent.cs:107`. Asserted by
+   `OrderPaymentDispatcherTests.MobileCard_DoesNotCreateStripeSession_*` and `MobileCard_NeverInvokesStripeClientFactory`.
+2. **Web card ⇒ EXACTLY the Checkout Session (byte-non-regressing) — PASS.** The Web channel falls through
+   to the original `try` (`OrderPaymentDispatcher.cs:41-45`), identical to HEAD (diff is purely the additive
+   Mobile early-return + the injected `IOrderChannelProvider` ctor param). Web `CreateOrder` does not call
+   `CreatePaymentIntent` (the dispatcher is the only Session/Intent mint in the CreateOrder path;
+   `CreateOrder.cs:275`). Asserted by `WebCard_CreatesStripeSession_*` and
+   `CreateOrderHandlerCharacterizationTests.WebChannel_CardPath_StillCreatesCheckoutSession`.
+3. **Channel is HOST-DERIVED, not client-supplied — PASS.** `CreateOrder.Command` has **no** `Channel` field
+   (`CreateOrder.cs:178-196`). The value comes only from the per-host DI registration of `IOrderChannelProvider`
+   (`Web.Customer/Extensions/ServiceExtensions.cs:24` = Web; `Web.Mobile.Customer/Extensions/ServiceExtensions.cs:25`
+   = Mobile). No request/route/query/JWT path reaches it — a client cannot spoof the channel to force or skip
+   a surface.
+4. **Safe default + override wiring — PASS.** Shared `Cleansia.Config` uses
+   `TryAddSingleton<IOrderChannelProvider>(Web)` (`Cleansia.Config/Services/ServiceExtensions.cs:118`): a host
+   that forgets to register gets **Web = Checkout Session = the pre-existing behavior**, never a state where both
+   surfaces fire. The override is robust regardless of registration order: each host's explicit `AddSingleton(...)`
+   runs in `AddServices` **before** `.AddCoreBindings → Config.AddServices`, so the later `TryAddSingleton`
+   is a no-op (Try* never overwrites an existing registration) and exactly one registration exists. Verified by
+   `OrderChannelWiringTests` (shared default = Web; mobile override resolves Mobile; web resolves Web). NB: the
+   wiring-test comment says "last registration … resolves"; the actual mechanism is Try*-no-op, but the resolved
+   value asserted is correct either way.
+5. **Webhook still confirms the mobile PaymentIntent — PASS.** `HandlePaymentNotification.cs:219` routes
+   `payment_intent.succeeded` into `HandleCompletedSession` → `PaymentStatus.Paid` + `OrderStatus.Confirmed`
+   (lines 251-252); `ExtractOrderId` reads OrderId off both Session and PaymentIntent (lines 95-107). Unaffected
+   by T-0347 — the single mobile surface still drives the order paid.
+6. **No idempotency weakening, no secret logging — PASS.** The ProcessedStripeEvents unique-index idempotency
+   gate (`HandlePaymentNotification.cs:148-163`) and the Paid/Refunded terminal-state skips
+   (`HandleCompletedSession` 245-249, `HandleExpiredSession` 292) are untouched. The dispatcher logs only the
+   `StripeException` message (`OrderPaymentDispatcher.cs:53`), no secrets; `CreatePaymentIntent` returns
+   `ClientSecret`/`EphemeralKey` in the response body but never logs them. No new endpoint/attack surface
+   (no controller/DTO change → no NSwag/mobile-spec regen; no EF migration — S9 clean).
+
+### Residual finding (LATENT, out of T-0347 scope — file as a follow-up, NOT a blocker)
+- **Mobile-paid card orders are not refundable via any code path.** The only refund implementation is
+  `RefundCheckoutSessionAsync(order.StripeSessionId, …)` (`RefundService.cs:113`, resolves session→PaymentIntent
+  in `StripeClient.cs:75-101`); both `RefundService.cs:44-48` and `AdminRefundOrder.cs:79-86` short-circuit to
+  `RefundOrderNotRefundable` when `order.StripeSessionId` is empty. Post-T-0347 a mobile card order has an empty
+  `StripeSessionId` (paid on `StripePaymentIntentId`), so admin refund / dispute refund of a mobile order fails.
+  There is **no** `RefundPaymentIntent` path. This is **latent, not a live customer breach and not a
+  double-capture**: (a) refund endpoints are Admin-host-only (`Web.Admin` `AdminOrderController` /
+  `AdminRefundController`) — not exposed to the customer mobile/web hosts; (b) it is a refund-COVERAGE gap, the
+  opposite of the double-CAPTURE defect this ticket closes; (c) it was effectively broken pre-T-0347 too — the
+  old double-surface set a `StripeSessionId`, but that session was never charged (mobile pays the PaymentIntent),
+  so `RefundCheckoutSessionAsync` would have thrown `"…has no PaymentIntent — likely unpaid"` (`StripeClient.cs:85`).
+  T-0347 changes the failure mode (guard reject vs. throw), not the outcome. **Recommend a follow-up ticket:**
+  "Add a PaymentIntent refund path for mobile-paid (PaymentSheet) card orders" — required before mobile card
+  goes live with real refunds, but does not gate the T-0347 double-capture fix.
+
+---
+
+## 2026-06-29 — T-0313 Slice D Gate-SEC verification (cash submit + T-0332 dual-use Bearer carve-out) — VERDICT: PASS
+
+Scope: the UNCOMMITTED Slice D on `phase/ios-phase7` (`git diff`, not yet committed) — the Core
+`HeaderAdapter`/`AnonymousAllowList` dual-use carve-out (the T-0332 resolution) + the ConfirmStep cash submit
++ the double-submit guard. Verified against §7.16 Gate-SEC ACs, the T-0332 ruling (sprint-12 §7.16 Decision 2),
+and S1–S10. Gate-DP/parity is the parallel reviewer's; this is the payment/auth-security gate only.
+
+### The T-0332 dual-use Bearer carve-out — PASS (4/4)
+- **Core change** (the load-bearing files):
+  `CleansiaCore/Sources/CleansiaCore/Auth/AnonymousAllowList.swift:5-20,49-59` adds `dualUsePaths` +
+  `isDualUse(path:)`; customer dual-use = exactly the 3 booking endpoints `/api/order/quote`,
+  `/api/order/createorder`, `/api/payment/createorder` (lines 49-53); partner dual-use = `[]` (default,
+  `partner` ctor line 55). `HeaderAdapter.swift:34-40` `shouldAttachBearer` = `isDualUse(path) || !isAnonymous(path)`,
+  attached only `if let accessToken, !accessToken.isEmpty` (line 29).
+- **AC1 dual-use Bearer IFF token exists — PASS.** Signed-in dual-use → Bearer; tokenless guest → no Bearer
+  (the genuine guest booking path survives at the transport layer). `HeaderAdapter.swift:29,34-40`. Tests:
+  `AuthSpineTests.testSignedInDualUseBookingPathsCarryBearer` / `testGuestDualUseBookingPathsStayTokenless`.
+- **AC2 pure-anon NEVER carries the Bearer even signed-in — PASS (critical regression check).**
+  `dualUsePaths` is EXACTLY the 3 booking endpoints; no pure-anon path (login/register/confirmuseremail/
+  forgotpassword/googleauth/appleauth/`*GetOverview`/`Order/Lookup`/`Referral/Validate`) is a `contains`-substring
+  of any dual-use entry, so `isDualUse` is false for every pure-anon path and `shouldAttachBearer` falls to
+  `!isAnonymous`=false. Exhaustive substring sweep over the full generated customer endpoint inventory confirms
+  no collision (notably `/api/payment/createpaymentintent` does NOT contain `/api/payment/createorder`). Tests:
+  `AuthSpineTests.testSignedInPureAnonPathsStayTokenless` / `testSignedInGuestReadPathsStayTokenless`;
+  `AnonymousAllowListTests.testPureAnonPathsAreNotDualUse`.
+- **AC3 CreatePaymentIntent always authed — PASS.** `/api/Payment/CreatePaymentIntent` is in NO anon set and NOT
+  dual-use → `shouldAttachBearer`=true always (a guest cannot complete an in-app card booking). Tests:
+  `AnonymousAllowListTests.testPaymentCreateIntentIsNeverAnonymousOrDualUse`;
+  `AuthSpineTests.testCreatePaymentIntentAlwaysCarriesBearer`.
+- **AC4 partner non-regression — PASS.** Partner uses `.partner` (empty dual-use, `PartnerClients.swift:22`);
+  `shouldAttachBearer` reduces to the prior `!isAnonymous` — byte-equivalent behavior. The `customerGuestBooking`
+  entries STAY (additive; `AnonymousAllowList.swift:36-47`), not deleted (T-0332 out-of-scope honored).
+  `testPartnerHasNoDualUsePaths` + `testPartnerBookingPathsAreNotAnonymousSoTheyCarryBearer`; full partner suite
+  **366 green** on iPhone 17. X-Device-Id/X-Time-Zone still stamp unconditionally (`HeaderAdapter.swift:25-27`).
+
+### Price / submit ACs (§7.16 Decision 3 + the Gate-SEC iOS ACs) — PASS
+- **Server-authoritative price echo — PASS. Can a client cause a lower charge? NO.**
+  `BookingOrderCommandFactory.swift:45` sends `totalPrice: resolved.quote.totalPrice` — the RAW quote totalPrice
+  echoed VERBATIM, never a discounted/`finalTotal` value. `BookingCodeStates.swift:43-45` maps it straight from
+  `QuoteOrderResponse.totalPrice`. The display-only discount math (`ConfirmStep.finalTotal`,
+  `BookingSheetView.totalDisplay`) never feeds the command. Same `cleaningDate` to Quote and Create
+  (`BookingViewModel+Submit.swift:18,49` + `BookingViewModel.swift:306` both read `selectedInstant`); a mismatch
+  is rejected server-side by `PriceMatchesAsync` → `TotalPriceNotMatch` (no silent re-price). Tests:
+  `testPriceEchoesQuotedRawTotalVerbatim` (1899 RAW echoed despite 201 tier discount),
+  `testSameCleaningDateSentToQuoteAndCreate`.
+- **Double-submit / double-order — PASS.** `BookingViewModel+Submit.swift:6-8`
+  `guard !submitState.isSubmitting else { return .failed }` then `submitState = .submitting`, all synchronous on
+  the `@MainActor` before the first `await` (line 12) — atomic single-in-flight guard; CreateOrder has no server
+  idempotency so this is the sole guard. Test: `testDoubleSubmitYieldsSingleCreateCall` (2 concurrent → 1 create,
+  1 success + 1 failed).
+- **Cash path / no leaked secret — PASS.** Cash → `.success(orderId, confirmationCode)`; card branch is a Slice-E
+  placeholder → `.cardPending(orderId, confirmationCode)` with NO secret. The slice DELETES `PaymentSheetParams`
+  (clientSecret/ephemeralKey/customerId) from `BookingSubmitOutcome` (diff) — no Stripe/client_secret in Slice D.
+  `CreatedOrder` carries only id+confirmationCode (`OrderCreateClient.swift:5-8`). grep for
+  stripe/client_secret/payment_intent across the booking tree: NONE.
+- **S6 no PII/token/secret logging — PASS.** grep `print|os_log|Logger|NSLog|debugPrint|dump` across all changed
+  AND new slice files: ZERO matches. Only token persistence is `CustomerBookingTokenStore.shared` =
+  `KeychainTokenStore("cz.cleansia.customer.tokens")`, the SAME service as `CustomerClients.swift:15` (single
+  canonical token source; no second store, no disk write of secrets).
+- **Order binds to the right user / no guest leak — PASS.** In-app `submit()` requires a token
+  (`BookingViewModel+Submit.swift:10` → `.failed` for a guest; `testGuestWithNoTokenFailsWithoutCreatingOrder`,
+  create callCount 0); a signed-in CreateOrder carries the Bearer (dual-use) so the server binds `order.UserId`
+  from the JWT (S1). Contact name/email/phone come from the caller's OWN self-scoped `userGetCurrentUser`
+  (`ProfileClient.swift:27`), display/contact data only — not an identity claim; cannot create under another user.
+
+### Explicit verdicts
+- (a) Does any pure-anon path now wrongly carry the Bearer? **NO.** dualUsePaths is exactly the 3 booking
+  endpoints; no pure-anon path collides by substring; verified by code + the negative-control tests.
+- (b) Can a client lower the charge? **NO.** RAW quote totalPrice echoed verbatim; server `PriceMatchesAsync`
+  re-validates; the charge reads `order.TotalPrice` server-side.
+- (c) Does the carve-out preserve the guest path + partner non-regression? **YES.** Guest tokenless path survives
+  at the transport layer; `customerGuestBooking` intact; partner empty-dual-use → byte-unchanged, 366 green.
+
+### Residual (NON-blocking, NOT a security finding — cross-gate note for the parallel Gate-DP reviewer)
+- **Cash-order success copy says "Booking confirmed!"** (`Localizable.xcstrings` `booking_success_title` =
+  "Booking confirmed!", `booking_success_subtitle` = "Your cleaning is booked. Sit back and relax."). The §7.16
+  Decision 4 architect ruling (sprint-12:3557) corrects CLAUDE.md: a one-off cash order is NOT auto-confirmed at
+  create — it stays Pending+New until a cleaner takes it; "iOS must not show 'Confirmed' for a fresh cash booking."
+  This is a COPY/UX accuracy nit (the task brief's "cash creates a Confirmed order" premise is itself contradicted
+  by the ruling), NOT a security leak — the success OUTCOME carries no secret (only the confirmationCode, the
+  by-design shared-secret lookup token). Owned by Gate-DP/parity; flagged here for awareness, not a Gate-SEC block.
+
+### Tests run on iPhone 17 (sim already booted; no erase needed)
+- CleansiaCore (swift/xcodebuild, iOS sim): AnonymousAllowListTests 12 + HeaderAdapterTests 11 = **23 PASS** —
+  the dual-use Bearer matrix (signed-in→Bearer, guest→none, pure-anon→never-with-token, CreatePaymentIntent→always).
+- CleansiaCustomer BookingSubmitTests: **20 PASS** — price-echo-raw-verbatim, same-cleaningDate, double-submit→one,
+  guest-no-order, card-no-Stripe.
+- CleansiaPartner full suite: **366 PASS** — non-regression confirmed.
+
+**VERDICT: PASS.** Slice D is exploitable-as-written: NONE found. The dual-use carve-out is correct and minimal;
+no pure-anon path leaks the Bearer; no client-lowerable charge; guest path + partner behavior preserved. The one
+residual ("Booking confirmed!" cash copy) is a Gate-DP parity nit, not a security gate failure.
+
+---
+
+## 2026-06-29 — T-0313 Slice E (customer card branch + Stripe PaymentSheet) — Gate-SEC verification — PASS
+
+Verified the UNCOMMITTED Slice E on `phase/ios-phase7` (working-tree diff + 6 untracked files) against the
+§7.16 Gate-SEC ACs and S1–S10. Read the actual code; ran the security tests on iPhone 17 (sim already booted).
+I OWN the payment-completion security gate; Gate-DP/parity covered in parallel by the reviewer. T-0347
+(single-charge-surface) is already on HEAD — re-confirmed Slice E adds no second surface.
+
+New/changed files in scope:
+- `CleansiaCustomer/Sources/Features/Booking/Payment/StripePaymentController.swift` (new) — sole Stripe importer
+- `CleansiaCustomer/Sources/Features/Booking/Payment/PaymentSheetPresenting.swift` (new) — protocol + redacted DTO
+- `CleansiaCustomer/Sources/Features/Booking/Payment/BookingCardResultResolver.swift` (new) — pure result→nav mapper
+- `CleansiaCustomer/Sources/Features/Booking/Submit/PaymentIntentClient.swift` (new) — CreatePaymentIntent client
+- `CleansiaCustomer/Sources/StripeConfig.swift` (new) — fail-closed publishable-key gate
+- `BookingViewModel{,+Submit}.swift`, `BookingSubmitOutcome.swift`, `BookingSheetView.swift`,
+  `CustomerShellView.swift`, `CleansiaCustomerApp.swift`, `project.yml`, `Info.plist`, `Package.resolved`,
+  `Localizable.xcstrings` (modified)
+
+### Per-AC verdict (file:line)
+- **AC1 — `.completed` is UX-only; webhook is sole paid authority — PASS.** `StripePaymentController.present`
+  (`StripePaymentController.swift:37-47`) returns ONLY the typed `PaymentSheetOutcome`; `.completed` maps via
+  `BookingCardResultResolver.resolve` (`BookingCardResultResolver.swift:11-12`) to `.navigateToSuccess(confirmationCode:)`
+  — pure navigation. `BookingSheetView.presentPaymentSheet` (`BookingSheetView.swift:70-76`) only sets local
+  `successCode`; no order-mutation/confirm/markpaid API anywhere in the completion path (grep across Payment/ +
+  Submit + SheetView: only `confirmationCode`/UI-`onConfirm`). The intent response DTO carries NO `status`/`paid`
+  field (`CreatePaymentIntentResponse.swift:13-19`) and the app's `PaymentIntentDetails`
+  (`PaymentIntentClient.swift:5-9`) drops even `paymentIntentId` — the client physically cannot infer paid state.
+  Success screen shows confirmation code + status-accurate copy: `booking_success_title`="Booking received",
+  `booking_success_subtitle`="…we'll confirm it shortly" (HEAD baseline; NOT "Confirmed"/"Paid"). This RESOLVES
+  the Slice-D residual ("Booking confirmed!" cash copy) — the copy was corrected on HEAD before this slice.
+- **AC2 — no secret logging/persistence (S6) — PASS.** grep `print|os_log|Logger|NSLog|debugPrint` across ALL
+  payment files: ZERO. `PaymentSheetPresentation` is `CustomStringConvertible`+`CustomDebugStringConvertible`
+  with `description`/`debugDescription` = `"PaymentSheetPresentation(merchant: …, secrets: <redacted>)"`
+  (`PaymentSheetPresenting.swift:9-15`) — a logged/printed value cannot leak the secret (test-proven, below).
+  No Keychain/UserDefaults/`.set` in any payment file — secrets are in-memory only.
+- **AC3 — client_secret straight to the sheet — PASS.** Arrives only over the authed HTTPS
+  `paymentCreatePaymentIntent` response (`PaymentIntentClient.swift:17-21`), flows
+  intent→`PaymentSheetPresentation`→`PaymentSheet(paymentIntentClientSecret:)` (`StripePaymentController.swift:31-34`);
+  not re-used, not stored.
+- **AC4 — fail-closed on empty/`$(...)` key — PASS.** `StripeConfig.publishableKey` strips the `$(` placeholder to ""
+  (`StripeConfig.swift:4-7`); `isCardPaymentAvailable` is false when unconfigured (`:9-16`). `StripeLaunch.applyPublishableKey`
+  early-returns and does NOT set `STPAPIClient.shared.publishableKey` when unavailable (`StripePaymentController.swift:9-12`).
+  Two-gate defense: card option hidden in UI (`ConfirmStep.swift:173`) AND the submit card-branch requires
+  `… , isCardPaymentAvailable` (`BookingViewModel+Submit.swift:42`) so `createPaymentIntent`/`.cardPending` is
+  unreachable with an unconfigured key → sheet never presented, cash path fully works.
+- **AC5 — no Stripe SECRET key — PASS.** grep `sk_live|sk_test|secretKey|STRIPE_SECRET`: NONE. Only the publishable
+  slot ships: `STRIPE_PUBLISHABLE_KEY: $(STRIPE_PUBLISHABLE_KEY)` (Info.plist) default-empty in project.yml with an
+  explicit "pk_ only — NEVER a secret key" comment.
+- **AC6 — sole-importer invariant — PASS.** `import StripeCore`/`import StripePaymentSheet` appears ONLY in
+  `StripePaymentController.swift:4-5` (grep across all Sources/Tests). The "PaymentSheet(" hits in
+  `BookingSheetView.swift` are the local `PaymentSheetPresenting` protocol / `PaymentSheetPresentation` struct, not
+  the SDK. No Stripe in CleansiaCore / CleansiaPartner / Packages. `project.yml` adds the `StripePaymentSheet`
+  product as a dependency of the CleansiaCustomer target ONLY — customer-only dep.
+- **AC7 — `.canceled`/`.failed` leave the order Pending — PASS.** Resolver maps both to a `.snackbar(...)`
+  (`BookingCardResultResolver.swift:13-16`); the VM performs NO order-cancel/mutation — backend
+  `CleanupStalePendingOrders` sweeps the stale Pending. No client-driven order-state change.
+- **AC8 — single charge surface (with T-0347) — PASS.** The order card path uses CreateOrder + CreatePaymentIntent +
+  PaymentSheet only. NO Checkout-session call in Sources (grep `checkout`: none). `membershipCreateCheckoutSession`
+  exists only on the separate `CustomerMembershipAPI` (subscription flow) and is NOT called by the booking VM/views.
+  Legacy `CreateOrderResponse.stripeSessionId` is NOT surfaced — `CreatedOrder` is `{id, confirmationCode}` only
+  (`OrderCreateClient.swift:5-8,19-24`). No second surface introduced.
+
+### Explicit verdicts demanded by the brief
+- (a) Can a client appear-paid without a real capture? **NO.** `.completed` is navigation-only; no order-mutation API
+  in the completion path; the intent DTO carries no paid/status field; the webhook (HandlePaymentNotification) is the
+  sole paid-status authority. Success copy is "Booking received / we'll confirm it shortly", not "Confirmed".
+- (b) Can the client_secret/ephemeralKey/stripeCustomerId leak via log/persist? **NO.** No print/os_log/Logger/NSLog/
+  debugPrint in any payment file; the presentation's description/debugDescription redact ("secrets: <redacted>",
+  test-proven); no Keychain/UserDefaults/disk write — in-memory only, handed straight to the sheet.
+- (c) Is the card path fail-closed when unconfigured + single-surface? **YES.** Empty/`$(...)` key ⇒ STPAPIClient not
+  initialized, card option hidden, submit card-branch unreachable, sheet never presented, cash unaffected; exactly one
+  charge surface (PaymentIntent/PaymentSheet), no Checkout session client-side.
+
+### Tests run on iPhone 17 (sim id 04753F32… already booted; xcodegen-generated proj; Stripe 25.17.0 resolved)
+`xcodebuild test -workspace Cleansia.xcworkspace -scheme CleansiaCustomer` — **16/16 PASS, 0 failures**:
+- `.completed`-doesn't-flip-state: `BookingCardResultTests.testCompletedNavigatesToSuccessWithoutFlippingOrderState`,
+  `testNonCompletedOutcomesNeverNavigateToSuccess` — PASS
+- fail-closed (empty key → no sheet): `BookingCardSubmitTests.testFailClosedSubmitNeverReachesPaymentSheet`,
+  `testCardUnavailableNeverCallsPaymentIntent`, `testDefaultCardAvailabilityIsFailClosedUnderEmptyKey`,
+  `StripeConfigTests.testEmptyKeyIsUnconfigured` / `testPlaceholderKeyIsTreatedAsUnconfigured` — PASS
+- secret-redaction: `PaymentSheetSecretRedactionTests.testPresentationDescriptionNeverLeaksSecrets` — PASS
+- canceled/failed-leave-Pending: `BookingCardResultTests.testCanceledShowsSnackbarAndLeavesOrderPending`,
+  `testFailedShowsSnackbarAndLeavesOrderPending` — PASS
+- supporting: `testCardSubmitCreatesOrderThenPaymentIntent`, `testEmptyClientSecretFails`,
+  `testPaymentIntentFailureLeavesCardPendingUnreached`, `testCashSubmitNeverCallsPaymentIntent`,
+  `testIsCardPaymentAvailableReflectsInjectedFlag`, `testPublishableKeyIsConfigured` — PASS
+
+### Residual (NON-blocking)
+- `CreateOrderResponse.stripeSessionId` (generated DTO, `CreateOrderResponse.swift:17`) is a dead legacy field from the
+  Checkout-session era. NOT a live leak — the iOS `CreatedOrder` never reads it. Cleanup nit for the backend DTO
+  (drop it next NSwag regen once no client references it, per S9), not a Gate-SEC block.
+
+**VERDICT: PASS.** Slice E is exploitable-as-written: NONE found. Webhook remains the sole paid-status authority;
+`.completed` is UX-only; no secret logged/persisted; the card path is fail-closed when unconfigured and uses exactly
+one charge surface. This completes the T-0313 payment security gate.

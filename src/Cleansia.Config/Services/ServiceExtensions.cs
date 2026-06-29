@@ -112,6 +112,10 @@ public static class ServiceExtensions
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);
+        // Default booking channel for hosts that don't register their own: Web keeps the
+        // unchanged Stripe Checkout Session flow. Only the mobile customer host overrides this to
+        // OrderChannel.Mobile so its card orders mint exactly the PaymentSheet PaymentIntent surface.
+        services.TryAddSingleton<IOrderChannelProvider>(new OrderChannelProvider(OrderChannel.Web));
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IGoogleTokenVerifier, GoogleTokenVerifier>();
         services.AddScoped<IAppleTokenVerifier, AppleTokenVerifier>();

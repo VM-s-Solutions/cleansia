@@ -26,14 +26,17 @@ public struct HeaderAdapter: Sendable {
         request.setValue(headerSafe(deviceLabel, max: 120), forHTTPHeaderField: Header.deviceLabel)
         request.setValue(timeZoneIdentifier(), forHTTPHeaderField: Header.timeZone)
 
-        if let accessToken, !accessToken.isEmpty, !isAnonymous(request.url) {
+        if let accessToken, !accessToken.isEmpty, shouldAttachBearer(request.url) {
             request.setValue("Bearer \(accessToken)", forHTTPHeaderField: Header.authorization)
         }
     }
 
-    private func isAnonymous(_ url: URL?) -> Bool {
-        guard let path = url?.path else { return false }
-        return anonymousAllowList.isAnonymous(path: path)
+    private func shouldAttachBearer(_ url: URL?) -> Bool {
+        guard let path = url?.path else { return true }
+        if anonymousAllowList.isDualUse(path: path) {
+            return true
+        }
+        return !anonymousAllowList.isAnonymous(path: path)
     }
 
     private func headerSafeDeviceId() -> String {

@@ -314,3 +314,98 @@ present two capturable surfaces? **NO for mobile, NO for web** — see the per-p
   T-0347 changes the failure mode (guard reject vs. throw), not the outcome. **Recommend a follow-up ticket:**
   "Add a PaymentIntent refund path for mobile-paid (PaymentSheet) card orders" — required before mobile card
   goes live with real refunds, but does not gate the T-0347 double-capture fix.
+
+---
+
+## 2026-06-29 — T-0313 Slice D Gate-SEC verification (cash submit + T-0332 dual-use Bearer carve-out) — VERDICT: PASS
+
+Scope: the UNCOMMITTED Slice D on `phase/ios-phase7` (`git diff`, not yet committed) — the Core
+`HeaderAdapter`/`AnonymousAllowList` dual-use carve-out (the T-0332 resolution) + the ConfirmStep cash submit
++ the double-submit guard. Verified against §7.16 Gate-SEC ACs, the T-0332 ruling (sprint-12 §7.16 Decision 2),
+and S1–S10. Gate-DP/parity is the parallel reviewer's; this is the payment/auth-security gate only.
+
+### The T-0332 dual-use Bearer carve-out — PASS (4/4)
+- **Core change** (the load-bearing files):
+  `CleansiaCore/Sources/CleansiaCore/Auth/AnonymousAllowList.swift:5-20,49-59` adds `dualUsePaths` +
+  `isDualUse(path:)`; customer dual-use = exactly the 3 booking endpoints `/api/order/quote`,
+  `/api/order/createorder`, `/api/payment/createorder` (lines 49-53); partner dual-use = `[]` (default,
+  `partner` ctor line 55). `HeaderAdapter.swift:34-40` `shouldAttachBearer` = `isDualUse(path) || !isAnonymous(path)`,
+  attached only `if let accessToken, !accessToken.isEmpty` (line 29).
+- **AC1 dual-use Bearer IFF token exists — PASS.** Signed-in dual-use → Bearer; tokenless guest → no Bearer
+  (the genuine guest booking path survives at the transport layer). `HeaderAdapter.swift:29,34-40`. Tests:
+  `AuthSpineTests.testSignedInDualUseBookingPathsCarryBearer` / `testGuestDualUseBookingPathsStayTokenless`.
+- **AC2 pure-anon NEVER carries the Bearer even signed-in — PASS (critical regression check).**
+  `dualUsePaths` is EXACTLY the 3 booking endpoints; no pure-anon path (login/register/confirmuseremail/
+  forgotpassword/googleauth/appleauth/`*GetOverview`/`Order/Lookup`/`Referral/Validate`) is a `contains`-substring
+  of any dual-use entry, so `isDualUse` is false for every pure-anon path and `shouldAttachBearer` falls to
+  `!isAnonymous`=false. Exhaustive substring sweep over the full generated customer endpoint inventory confirms
+  no collision (notably `/api/payment/createpaymentintent` does NOT contain `/api/payment/createorder`). Tests:
+  `AuthSpineTests.testSignedInPureAnonPathsStayTokenless` / `testSignedInGuestReadPathsStayTokenless`;
+  `AnonymousAllowListTests.testPureAnonPathsAreNotDualUse`.
+- **AC3 CreatePaymentIntent always authed — PASS.** `/api/Payment/CreatePaymentIntent` is in NO anon set and NOT
+  dual-use → `shouldAttachBearer`=true always (a guest cannot complete an in-app card booking). Tests:
+  `AnonymousAllowListTests.testPaymentCreateIntentIsNeverAnonymousOrDualUse`;
+  `AuthSpineTests.testCreatePaymentIntentAlwaysCarriesBearer`.
+- **AC4 partner non-regression — PASS.** Partner uses `.partner` (empty dual-use, `PartnerClients.swift:22`);
+  `shouldAttachBearer` reduces to the prior `!isAnonymous` — byte-equivalent behavior. The `customerGuestBooking`
+  entries STAY (additive; `AnonymousAllowList.swift:36-47`), not deleted (T-0332 out-of-scope honored).
+  `testPartnerHasNoDualUsePaths` + `testPartnerBookingPathsAreNotAnonymousSoTheyCarryBearer`; full partner suite
+  **366 green** on iPhone 17. X-Device-Id/X-Time-Zone still stamp unconditionally (`HeaderAdapter.swift:25-27`).
+
+### Price / submit ACs (§7.16 Decision 3 + the Gate-SEC iOS ACs) — PASS
+- **Server-authoritative price echo — PASS. Can a client cause a lower charge? NO.**
+  `BookingOrderCommandFactory.swift:45` sends `totalPrice: resolved.quote.totalPrice` — the RAW quote totalPrice
+  echoed VERBATIM, never a discounted/`finalTotal` value. `BookingCodeStates.swift:43-45` maps it straight from
+  `QuoteOrderResponse.totalPrice`. The display-only discount math (`ConfirmStep.finalTotal`,
+  `BookingSheetView.totalDisplay`) never feeds the command. Same `cleaningDate` to Quote and Create
+  (`BookingViewModel+Submit.swift:18,49` + `BookingViewModel.swift:306` both read `selectedInstant`); a mismatch
+  is rejected server-side by `PriceMatchesAsync` → `TotalPriceNotMatch` (no silent re-price). Tests:
+  `testPriceEchoesQuotedRawTotalVerbatim` (1899 RAW echoed despite 201 tier discount),
+  `testSameCleaningDateSentToQuoteAndCreate`.
+- **Double-submit / double-order — PASS.** `BookingViewModel+Submit.swift:6-8`
+  `guard !submitState.isSubmitting else { return .failed }` then `submitState = .submitting`, all synchronous on
+  the `@MainActor` before the first `await` (line 12) — atomic single-in-flight guard; CreateOrder has no server
+  idempotency so this is the sole guard. Test: `testDoubleSubmitYieldsSingleCreateCall` (2 concurrent → 1 create,
+  1 success + 1 failed).
+- **Cash path / no leaked secret — PASS.** Cash → `.success(orderId, confirmationCode)`; card branch is a Slice-E
+  placeholder → `.cardPending(orderId, confirmationCode)` with NO secret. The slice DELETES `PaymentSheetParams`
+  (clientSecret/ephemeralKey/customerId) from `BookingSubmitOutcome` (diff) — no Stripe/client_secret in Slice D.
+  `CreatedOrder` carries only id+confirmationCode (`OrderCreateClient.swift:5-8`). grep for
+  stripe/client_secret/payment_intent across the booking tree: NONE.
+- **S6 no PII/token/secret logging — PASS.** grep `print|os_log|Logger|NSLog|debugPrint|dump` across all changed
+  AND new slice files: ZERO matches. Only token persistence is `CustomerBookingTokenStore.shared` =
+  `KeychainTokenStore("cz.cleansia.customer.tokens")`, the SAME service as `CustomerClients.swift:15` (single
+  canonical token source; no second store, no disk write of secrets).
+- **Order binds to the right user / no guest leak — PASS.** In-app `submit()` requires a token
+  (`BookingViewModel+Submit.swift:10` → `.failed` for a guest; `testGuestWithNoTokenFailsWithoutCreatingOrder`,
+  create callCount 0); a signed-in CreateOrder carries the Bearer (dual-use) so the server binds `order.UserId`
+  from the JWT (S1). Contact name/email/phone come from the caller's OWN self-scoped `userGetCurrentUser`
+  (`ProfileClient.swift:27`), display/contact data only — not an identity claim; cannot create under another user.
+
+### Explicit verdicts
+- (a) Does any pure-anon path now wrongly carry the Bearer? **NO.** dualUsePaths is exactly the 3 booking
+  endpoints; no pure-anon path collides by substring; verified by code + the negative-control tests.
+- (b) Can a client lower the charge? **NO.** RAW quote totalPrice echoed verbatim; server `PriceMatchesAsync`
+  re-validates; the charge reads `order.TotalPrice` server-side.
+- (c) Does the carve-out preserve the guest path + partner non-regression? **YES.** Guest tokenless path survives
+  at the transport layer; `customerGuestBooking` intact; partner empty-dual-use → byte-unchanged, 366 green.
+
+### Residual (NON-blocking, NOT a security finding — cross-gate note for the parallel Gate-DP reviewer)
+- **Cash-order success copy says "Booking confirmed!"** (`Localizable.xcstrings` `booking_success_title` =
+  "Booking confirmed!", `booking_success_subtitle` = "Your cleaning is booked. Sit back and relax."). The §7.16
+  Decision 4 architect ruling (sprint-12:3557) corrects CLAUDE.md: a one-off cash order is NOT auto-confirmed at
+  create — it stays Pending+New until a cleaner takes it; "iOS must not show 'Confirmed' for a fresh cash booking."
+  This is a COPY/UX accuracy nit (the task brief's "cash creates a Confirmed order" premise is itself contradicted
+  by the ruling), NOT a security leak — the success OUTCOME carries no secret (only the confirmationCode, the
+  by-design shared-secret lookup token). Owned by Gate-DP/parity; flagged here for awareness, not a Gate-SEC block.
+
+### Tests run on iPhone 17 (sim already booted; no erase needed)
+- CleansiaCore (swift/xcodebuild, iOS sim): AnonymousAllowListTests 12 + HeaderAdapterTests 11 = **23 PASS** —
+  the dual-use Bearer matrix (signed-in→Bearer, guest→none, pure-anon→never-with-token, CreatePaymentIntent→always).
+- CleansiaCustomer BookingSubmitTests: **20 PASS** — price-echo-raw-verbatim, same-cleaningDate, double-submit→one,
+  guest-no-order, card-no-Stripe.
+- CleansiaPartner full suite: **366 PASS** — non-regression confirmed.
+
+**VERDICT: PASS.** Slice D is exploitable-as-written: NONE found. The dual-use carve-out is correct and minimal;
+no pure-anon path leaks the Bearer; no client-lowerable charge; guest path + partner behavior preserved. The one
+residual ("Booking confirmed!" cash copy) is a Gate-DP parity nit, not a security gate failure.

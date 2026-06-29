@@ -3,14 +3,21 @@ import SwiftUI
 
 struct PromoCodeSheet: View {
     let initialCode: String
+    let currencyCode: String
     let onValidate: (String) async -> PromoCodeState
     let onDismiss: () -> Void
 
     @State private var code: String
     @State private var localState: PromoCodeState = .idle
 
-    init(initialCode: String, onValidate: @escaping (String) async -> PromoCodeState, onDismiss: @escaping () -> Void) {
+    init(
+        initialCode: String,
+        currencyCode: String,
+        onValidate: @escaping (String) async -> PromoCodeState,
+        onDismiss: @escaping () -> Void
+    ) {
         self.initialCode = initialCode
+        self.currencyCode = currencyCode
         self.onValidate = onValidate
         self.onDismiss = onDismiss
         _code = State(initialValue: initialCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased())
@@ -68,7 +75,7 @@ struct PromoCodeSheet: View {
         case let .valid(amount):
             CodeSheetMessage.success(L10n.Booking.promoDialogSuccess(BookingPricing.formatTotal(
                 amount,
-                currencyCode: "CZK"
+                currencyCode: currencyCode
             )))
         case let .invalid(error):
             CodeSheetMessage.error(L10n.Booking.promoError(error))

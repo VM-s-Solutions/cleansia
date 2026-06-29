@@ -1,4 +1,5 @@
 import CleansiaCore
+import CleansiaCustomerApi
 import Foundation
 @testable import CleansiaCustomer
 
@@ -85,6 +86,96 @@ final class FakeReferralClient: ReferralClient, @unchecked Sendable {
         callCount += 1
         lastCode = code
         return result
+    }
+}
+
+final class FakeProfileClient: ProfileClient, @unchecked Sendable {
+    var result: ApiResult<BookingProfile>
+    private(set) var callCount = 0
+
+    init(result: ApiResult<BookingProfile> = .success(BookingProfile(
+        firstName: "Jana",
+        lastName: "Nováková",
+        email: "jana@example.com",
+        phoneNumber: "+420777123456"
+    ))) {
+        self.result = result
+    }
+
+    func currentProfile() async -> ApiResult<BookingProfile> {
+        callCount += 1
+        return result
+    }
+}
+
+final class FakeOrderCreateClient: OrderCreateClient, @unchecked Sendable {
+    var result: ApiResult<CreatedOrder>
+    private(set) var callCount = 0
+    private(set) var commands: [CreateOrderCommand] = []
+
+    init(result: ApiResult<CreatedOrder> = .success(CreatedOrder(id: "order-1", confirmationCode: "CLN-001"))) {
+        self.result = result
+    }
+
+    func create(_ command: CreateOrderCommand) async -> ApiResult<CreatedOrder> {
+        callCount += 1
+        commands.append(command)
+        return result
+    }
+}
+
+final class FakeCountryResolver: CountryResolver, @unchecked Sendable {
+    var resolved: String?
+    private(set) var requestedIsoCodes: [String] = []
+
+    init(resolved: String? = "country-cz") {
+        self.resolved = resolved
+    }
+
+    func countryId(forIsoCode isoCode: String) async -> String? {
+        requestedIsoCodes.append(isoCode)
+        return resolved
+    }
+}
+
+final class FakeTokenStore: TokenStore, @unchecked Sendable {
+    private let lock = NSLock()
+    private var stored: AuthTokens?
+
+    init(_ tokens: AuthTokens?) {
+        stored = tokens
+    }
+
+    static func signedIn(accessToken: String = "token-1") -> FakeTokenStore {
+        let future = Date(timeIntervalSinceNow: 9999)
+        return FakeTokenStore(AuthTokens(
+            accessToken: accessToken,
+            accessTokenExpiresAt: future,
+            refreshToken: "r-1",
+            refreshTokenExpiresAt: future
+        ))
+    }
+
+    static var guest: FakeTokenStore {
+        FakeTokenStore(nil)
+    }
+
+    func current() -> AuthTokens? {
+        lock.lock()
+        defer { lock.unlock() }
+        return stored
+    }
+
+    func save(_ tokens: AuthTokens) {
+        lock.lock()
+        stored = tokens
+        lock.unlock()
+    }
+
+    func clear() {
+        lock.lock()
+        stored = nil
+        lock.unlock()
     }
 }
 

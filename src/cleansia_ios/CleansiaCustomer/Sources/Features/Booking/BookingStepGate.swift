@@ -10,7 +10,7 @@ enum BookingStepGate {
         case 2:
             !state.street.isBlank && !state.selectedDate.isBlank && !state.selectedTime.isBlank
         case 3:
-            !state.paymentMethod.isBlank
+            state.paymentMethod != nil
         default:
             false
         }

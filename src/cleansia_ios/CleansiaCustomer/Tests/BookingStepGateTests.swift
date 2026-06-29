@@ -47,7 +47,7 @@ final class BookingStepGateTests: XCTestCase {
         var state = BookingState()
         XCTAssertFalse(BookingStepGate.canContinue(step: 3, state: state))
 
-        state.paymentMethod = "cash"
+        state.paymentMethod = .cash
         XCTAssertTrue(BookingStepGate.canContinue(step: 3, state: state))
     }
 

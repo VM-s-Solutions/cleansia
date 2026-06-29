@@ -71,4 +71,47 @@ final class AnonymousAllowListTests: XCTestCase {
         XCTAssertFalse(AnonymousAllowList.partner.isAnonymous(path: "/api/Order/Get"))
         XCTAssertFalse(AnonymousAllowList.customer.isAnonymous(path: "/api/Order/Get"))
     }
+
+    private let dualUsePaths = [
+        "/api/Order/Quote",
+        "/api/Order/CreateOrder",
+        "/api/Payment/CreateOrder"
+    ]
+
+    func testCustomerClassifiesBookingPathsAsDualUse() {
+        let list = AnonymousAllowList.customer
+        for path in dualUsePaths {
+            XCTAssertTrue(list.isDualUse(path: path), "customer should treat \(path) as dual-use")
+        }
+    }
+
+    func testDualUsePathsRemainOnTheGuestAllowList() {
+        let list = AnonymousAllowList.customer
+        for path in dualUsePaths {
+            XCTAssertTrue(list.isAnonymous(path: path), "dual-use \(path) must stay on the guest allow-list")
+        }
+    }
+
+    func testPureAnonPathsAreNotDualUse() {
+        let list = AnonymousAllowList.customer
+        for path in sharedAuthPaths {
+            XCTAssertFalse(list.isDualUse(path: path), "pure-anon \(path) must never be dual-use")
+        }
+        XCTAssertFalse(list.isDualUse(path: "/api/Order/Lookup"))
+        XCTAssertFalse(list.isDualUse(path: "/api/Service/GetOverview"))
+        XCTAssertFalse(list.isDualUse(path: "/api/Referral/Validate"))
+    }
+
+    func testPaymentCreateIntentIsNeverAnonymousOrDualUse() {
+        let list = AnonymousAllowList.customer
+        XCTAssertFalse(list.isAnonymous(path: "/api/Payment/CreatePaymentIntent"))
+        XCTAssertFalse(list.isDualUse(path: "/api/Payment/CreatePaymentIntent"))
+    }
+
+    func testPartnerHasNoDualUsePaths() {
+        let list = AnonymousAllowList.partner
+        for path in dualUsePaths {
+            XCTAssertFalse(list.isDualUse(path: path), "partner must have no dual-use paths")
+        }
+    }
 }

@@ -297,16 +297,6 @@ private struct ConfirmCard: View {
 }
 
 #if DEBUG
-    private struct PreviewMapProvider: MapProvider {
-        func pickerMap(region _: Binding<MKCoordinateRegion>, showsUserLocation _: Bool) -> AnyView {
-            AnyView(CleansiaColors.surfaceVariant)
-        }
-
-        func fullBleedMap(coordinate _: Coordinate) -> AnyView {
-            AnyView(CleansiaColors.surfaceVariant)
-        }
-    }
-
     struct BookingAddressPickerView_Previews: PreviewProvider {
         static var previews: some View {
             BookingAddressPickerView(

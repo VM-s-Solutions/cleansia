@@ -206,7 +206,7 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | Hilt `NetworkModule`/`AuthModule` per app | a hand-rolled per-app `AppContainer` (initializer injection; no Hilt analogue) conforming to the `Core/DI` `AppContainer` protocol. `Core/DI`'s `@MainActor BaseAppContainer` is the lazy composition root: it `lazy`-builds ONE `AuthSpine` (the `AuthApiClient`, which is **both** the `AuthClient` and the `RefreshClient` — it owns the separate authed + no-auth sessions internally) and exposes the same instance as `authClient`/`refreshClient`; the `SessionManager` + `SessionRefresher` are wired off that one spine + the shared `TokenStore`/cache registry so there's a single token source. `PartnerAppContainer`/`CustomerAppContainer` live in the app targets, own a `BaseAppContainer`, and pass their app-specific `make…AuthSpine`/`makeApiClient` factories; the App owns one + reads its snackbar and observes `sessionManager` |
 | two OkHttp clients (`@NoAuthOkHttp` refresh vs `@AuthOkHttp`) | the `AuthApiClient` holds **two `URLSession`s** — an authed session + a separate no-auth `.ephemeral` session used for `/api/Auth/*` (login/refresh/forgot) so a 401-on-refresh can't loop; `AuthNetworkBoundary` in `Core/DI` is the generic lazy-seam variant kept for surfaces that need the boundary made explicit |
 | `Set<SessionScopedCache>` Hilt multibinding (`SessionScopedModule`) | a `SessionScopedCacheRegistry` in `Core/Auth` — repos `register` themselves (held weakly); both sign-out and the 401-refresh path call `clearAll()`, so the two clear-paths can't drift |
-| `AuthInterceptor` anon path-skip (one hardcoded list) | `HeaderAdapter` takes an injected `AnonymousAllowList` (`Core/Auth`) — **host-specific**: `.partner` is auth-only; `.customer` adds the guest-booking surface (`Service/Package/Extra GetOverview`, `Membership/GetPlans`, `Order/{Quote,CreateOrder,Lookup,LookupBatch}`, `Payment/CreateOrder`, `Referral/Validate`). Same case-insensitive path-contains match as Android; `Logout` is never anon |
+| `AuthInterceptor` anon path-skip (one hardcoded list) | `HeaderAdapter` takes an injected `AnonymousAllowList` (`Core/Auth`) — **host-specific**: `.partner` is auth-only; `.customer` adds the guest-booking surface (`Service/Package/Extra GetOverview`, `Membership/GetPlans`, `Order/{Quote,CreateOrder,Lookup,LookupBatch}`, `Payment/CreateOrder`, `Referral/Validate`). Same case-insensitive path-contains match as Android; `Logout` is never anon. **`AnonymousAllowList` also carries a `dualUsePaths` set** (`isDualUse(path:)`) — `.customer` = `Order/{Quote,CreateOrder}` + `Payment/CreateOrder`; `HeaderAdapter` attaches the Bearer when `isDualUse OR !isAnonymous`, so a dual-use path is Bearer-iff-token (signed-in carries it for tier/membership pricing + user binding; true guest stays tokenless). Pure-anon + guest-read paths stay tokenless even signed-in; `.partner` has none (T-0332) |
 | `AuthAuthenticator` `synchronized(this)` single-flight 401-refresh | `actor SessionRefresher` (`Core/Auth`): coalesces concurrent 401s into ONE network refresh (queued callers reuse the freshly-stored token), **replaces** the stored refresh token every refresh (theft-detection), and on failure/expiry wipes the `TokenStore` + `clearAll()` caches + emits `ForcedSignOut` via the `SessionManager` (no retry) |
 | `BuildConfig.API_BASE_URL` | per-app `AppConfig.apiBaseURL` reading the `API_BASE_URL` Info.plist key (set from the build setting; each app points at its own `…-mobile-…` host) |
 | `ui.theme.Spacing` / `CleansiaShapes` | `Spacing` + `CornerRadius` enums in `Core/DesignSystem` (same 8-pt scale + 6/12/16/24/32 corners + a `pill`) |
@@ -597,10 +597,15 @@ The footer Continue/Slide label shows the live total via `BookingPricing.finalTo
 parity). **The customer app installs its OWN `CustomerGeneratedAuth` `RequestBuilderFactory`** (the per-host ADR-0019 twin of
 `PartnerGeneratedAuth`, `CustomerAuthSpine.make` now returns a stack exposing the `headerAdapter`) — the first customer
 business client, authed through the one Core spine. Quote/catalog are in `AnonymousAllowList.customer`, so the
-`HeaderAdapter` withholds the Bearer on those paths even with a stored token — guest booking works tokenless, and the
-**signed-in dual-use carve-out for Quote/CreateOrder is a Slice-D addition (T-0332)**; until then a signed-in Step-1
-quote is guest-priced (no tier/membership discount on the slider — a UX-trust gap, not a money risk: the path is
-server-authoritative). The factory does carry the Bearer on non-allow-listed paths. **Deviations a reviewer rejects:**
+`HeaderAdapter` withholds the Bearer on those paths even with a stored token — guest booking works tokenless. The
+**signed-in dual-use carve-out (T-0332, Slice D, done)**: `AnonymousAllowList` now also carries a `dualUsePaths` set
+(`.customer` = `Order/Quote`, `Order/CreateOrder`, `Payment/CreateOrder`); `HeaderAdapter.apply` attaches the Bearer when
+`isDualUse(path)` **OR** `!isAnonymous(path)` — so a dual-use path gets the Bearer **iff a token exists** (signed-in →
+order binds to the user + tier/membership discounts; true guest with no token → still tokenless). The guest-booking
+allow-list entries STAY (the carve-out is an additive classification, NOT a deletion). Pure-anon paths
+(login/register/confirm/forgot/google/apple) and the guest READ paths (`*/GetOverview`, `Order/Lookup`, `Referral/Validate`)
+are anon-but-not-dual-use → **never** get the Bearer even signed-in; `Payment/CreatePaymentIntent` is in no anon set →
+always authed. `partner` has an empty `dualUsePaths` (no regression). The factory carries the Bearer on non-allow-listed paths. **Deviations a reviewer rejects:**
 a ported catalog flag-bag instead of `UiState<Catalog>`; a quote computed/totaled client-side instead of the server response;
 the discount applied AFTER the surcharge or promo/tier summed instead of max(); a per-call Bearer/401 on the quote/catalog
 call instead of the factory; a debounce that re-quotes on an unchanged input (must `removeDuplicates` first).
@@ -633,6 +638,37 @@ than the seam reused (the picker View is app-local presentation, but a duplicate
 Architect call); an extras/promo/referral flag-bag instead of the sealed `UiState`/FSM; a referral `.invalid` that blocks
 continue/submit (must fail-soft); the lead-time slot bands diverging from the `BookingPricing` express boundary; saved-address CRUD
 built here instead of T-0314. (Slice D fills submit + cash/card + the Stripe seam + the T-0332 signed-in Quote/CreateOrder carve-out.)
+
+**Slice D (T-0313 §7.16 Confirm-rest + cash submit + the T-0332 carve-out, done; NO card/Stripe = Slice E):** the rest of
+Step 3 — special instructions (a native `TextEditor` placeholder field — Core `CleansiaTextField` is single-line), the **Plus
+preferred-cleaner picker** (a `PreferredCleanerViewModel` gating on `Membership/GetMine.hasMembership` → only then
+`Order/MyServingCleaners`; `isVisible = isPlus && !cleaners.isEmpty`, renders nothing otherwise — the Android
+`PreferredCleanerPicker` parity), the **cancellation policy** (a pure `CancellationPolicyBuilder` TDD'd from the backend
+`BookingPolicy` constants `standardFree=24`/`penalty=4`, Plus widens the free window only when strictly `>24h`), and **trust
+badges**. The **Slice-A `paymentMethod: String` debt is resolved** → a `PaymentMethod` enum (`cash`/`card`) with
+`.paymentType` mapping to the generated `PaymentType` (`._1`=Cash, `._2`=Card). **`BookingViewModel.submit()` → `BookingSubmitOutcome`**
+(`.success` / `.cardPending` / `.failed` / `.profileIncomplete`, sealed) mirrors `BookingViewModel.submit()` 296-495:
+(a) auth/profile pre-flight — `tokenStore.current() != nil` (the session source of truth, NOT a profile cache) else `.failed`;
+`ProfileClient.currentProfile()` (`User/GetCurrentUser`) failure → `.failed`, name/email/phone blank → `.profileIncomplete`;
+(b) require `selectedInstant` else `.failed`; (c) **reuse-cached-or-refetch quote** (`resolvedQuote`: reuse iff
+`lastQuoteRequest == state.quoteRequest`, else re-quote, fail → `.failed`); (d) **country resolve** via a `CountryResolver`
+(`Country/GetServiced`, iso match lowercased both sides — the iOS `ServiceAreaProvider` seam (T-0334 draft) doesn't exist yet,
+so this is the minimal booking-only resolve; nil for saved-address or unmatched iso → backend single-country fallback);
+(e) `BookingOrderCommandFactory.make` — **inline-address XOR savedAddressId**, extras slug→true, promo **only when
+`promoState == .valid`**, referral raw (fail-soft), **`totalPrice` = the quoted RAW `totalPrice` echoed VERBATIM** (never
+`FinalPriceAfterDiscount`; the **same `cleaningDate` passed to Quote+Create** so the server express-surcharge matches —
+mismatch surfaces `TotalPriceNotMatch`, never a silent re-price); (f) CASH (`paymentType=1`) → `.success` (a fresh one-off
+cash order is **created server-side (Pending+New), NOT auto-confirmed** — §7.16 D4 corrects CLAUDE.md; the success screen
+shows only a confirmation code + a status-accurate "Booking received", never "Confirmed") → the sheet swaps to
+`BookingSuccessView` (confirmation code) + `vm.reset()` on done; CARD → `.cardPending` (a
+placeholder — **NO Stripe call this slice**; real `CreatePaymentIntent`+PaymentSheet = Slice E). **Double-submit debounce:**
+the `submit()` guard `!submitState.isSubmitting` returns `.failed` immediately on re-entry (single in-flight; re-enabled only
+on a terminal outcome via `defer`) since CreateOrder has NO server idempotency; the slide-to-confirm is disabled+busy for the
+whole round-trip (`canConfirm = canContinue && !isSubmitting`, `allowsHitTesting(!busy)`). The View drives navigation (success
+screen / snackbar), NOT the VM. **Deviations a reviewer rejects:** echoing `FinalPriceAfterDiscount` instead of the raw
+`totalPrice`; a different `cleaningDate` to Create than Quote; sending both inline-address AND savedAddressId; no
+double-submit guard (a tap-storm = N orders); a card branch that calls Stripe (that's Slice E); logging the token/secret;
+the preferred-cleaner picker fetching cleaners for non-Plus users.
 
 **Debounced VM Combine pipelines — the scheduler seam (harvested T-0313):** when a VM debounces a `@Published` pipeline (the
 quoteWatcher 400ms), inject the scheduler as a Core **`AnyScheduler`/`AnySchedulerOf`** (`CleansiaCore/State`, a minimal

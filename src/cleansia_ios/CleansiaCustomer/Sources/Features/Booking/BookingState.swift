@@ -16,7 +16,7 @@ struct BookingState: Equatable {
     var selectedTime: String = ""
     var selectedInstant: Date?
 
-    var paymentMethod: String = ""
+    var paymentMethod: PaymentMethod?
     var specialInstructions: String = ""
     var promoCode: String = ""
     var referralCode: String = ""

@@ -3,23 +3,49 @@ import SwiftUI
 
 struct BookingSheetView: View {
     @StateObject private var vm = BookingViewModel()
+    @Environment(\.snackbarController) private var snackbar
+    @State private var successCode: String?
     let geocoding: GeocodingService
     let mapProvider: MapProvider
     let onDismiss: () -> Void
 
     var body: some View {
-        BookingSheetContent(
-            viewModel: vm,
-            geocoding: geocoding,
-            mapProvider: mapProvider,
-            onLeading: {
-                if !vm.back() { onDismiss() }
-            },
-            onContinue: { vm.advance() },
-            onConfirm: {}
-        )
+        Group {
+            if let successCode {
+                BookingSuccessView(
+                    confirmationCode: successCode,
+                    onDone: {
+                        vm.reset()
+                        self.successCode = nil
+                        onDismiss()
+                    }
+                )
+            } else {
+                BookingSheetContent(
+                    viewModel: vm,
+                    geocoding: geocoding,
+                    mapProvider: mapProvider,
+                    onLeading: {
+                        if !vm.back() { onDismiss() }
+                    },
+                    onContinue: { vm.advance() },
+                    onConfirm: submit
+                )
+            }
+        }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+    }
+
+    private func submit() async {
+        switch await vm.submit() {
+        case let .success(_, confirmationCode), let .cardPending(_, confirmationCode):
+            successCode = confirmationCode
+        case .profileIncomplete:
+            snackbar.showError(L10n.Booking.errorProfileIncomplete)
+        case .failed:
+            snackbar.showError(L10n.Booking.errorGenericNetwork)
+        }
     }
 }
 
@@ -29,7 +55,7 @@ private struct BookingSheetContent: View {
     let mapProvider: MapProvider
     let onLeading: () -> Void
     let onContinue: () -> Void
-    let onConfirm: () -> Void
+    let onConfirm: () async -> Void
 
     private var step: Int {
         viewModel.currentStep
@@ -39,8 +65,16 @@ private struct BookingSheetContent: View {
         step >= BookingStepGate.totalSteps
     }
 
+    private var isSubmitting: Bool {
+        viewModel.submitState.isSubmitting
+    }
+
     private var canContinue: Bool {
         BookingStepGate.canContinue(step: step, state: viewModel.state)
+    }
+
+    private var canConfirm: Bool {
+        canContinue && !isSubmitting
     }
 
     private var totalDisplay: String? {
@@ -118,9 +152,13 @@ private struct BookingSheetContent: View {
             if isLastStep {
                 SlideToConfirmTrack(
                     text: totalDisplay.map(L10n.Booking.slideToConfirmPrice) ?? L10n.Booking.slideToConfirm,
-                    enabled: canContinue
+                    enabled: canConfirm,
+                    busy: isSubmitting
                 )
-                .onTapGesture { if canContinue { onConfirm() } }
+                .onTapGesture {
+                    guard canConfirm else { return }
+                    Task { await onConfirm() }
+                }
             } else {
                 CleansiaPrimaryButton(
                     totalDisplay.map(L10n.Booking.continuePrice) ?? L10n.Booking.continueAction,
@@ -139,28 +177,36 @@ private struct BookingSheetContent: View {
 private struct SlideToConfirmTrack: View {
     let text: String
     let enabled: Bool
+    let busy: Bool
 
     var body: some View {
         ZStack(alignment: .leading) {
             RoundedRectangle(cornerRadius: CornerRadius.pill)
-                .fill(enabled ? CleansiaColors.primary : CleansiaColors.surfaceVariant)
+                .fill(enabled || busy ? CleansiaColors.primary : CleansiaColors.surfaceVariant)
 
-            Text(text)
-                .font(CleansiaTypography.labelLarge)
-                .foregroundColor(enabled ? CleansiaColors.onPrimary : CleansiaColors.onSurfaceVariant)
-                .frame(maxWidth: .infinity)
+            if busy {
+                ProgressView()
+                    .tint(CleansiaColors.onPrimary)
+                    .frame(maxWidth: .infinity)
+            } else {
+                Text(text)
+                    .font(CleansiaTypography.labelLarge)
+                    .foregroundColor(enabled ? CleansiaColors.onPrimary : CleansiaColors.onSurfaceVariant)
+                    .frame(maxWidth: .infinity)
 
-            Circle()
-                .fill(CleansiaColors.surface)
-                .overlay {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(enabled ? CleansiaColors.primary : CleansiaColors.onSurfaceVariant)
-                }
-                .padding(4)
+                Circle()
+                    .fill(CleansiaColors.surface)
+                    .overlay {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(enabled ? CleansiaColors.primary : CleansiaColors.onSurfaceVariant)
+                    }
+                    .padding(4)
+            }
         }
         .frame(height: 56)
-        .opacity(enabled ? 1 : 0.6)
+        .opacity(enabled || busy ? 1 : 0.6)
+        .allowsHitTesting(!busy)
     }
 }
 

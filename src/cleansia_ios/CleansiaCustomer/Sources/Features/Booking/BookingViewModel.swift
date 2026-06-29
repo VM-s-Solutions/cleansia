@@ -5,8 +5,8 @@ import Foundation
 @MainActor
 final class BookingViewModel: ViewModel {
     @Published private(set) var state = BookingState()
-    @Published private(set) var submitState: ActionState = .idle
-    @Published private(set) var quoteState: BookingQuoteState = .idle
+    @Published internal(set) var submitState: ActionState = .idle
+    @Published internal(set) var quoteState: BookingQuoteState = .idle
     @Published private(set) var promoState: PromoCodeState = .idle
     @Published private(set) var referralState: ReferralCodeState = .idle
     @Published private(set) var catalogState: UiState<Catalog> = .loading
@@ -15,14 +15,18 @@ final class BookingViewModel: ViewModel {
     @Published private(set) var currentStep = 1
 
     private let catalogClient: CatalogClient
-    private let quoteClient: QuoteClient
+    let quoteClient: QuoteClient
     private let extraClient: ExtraClient
     private let promoClient: PromoCodeClient
     private let referralClient: ReferralClient
+    let profileClient: ProfileClient
+    let orderCreateClient: OrderCreateClient
+    let countryResolver: CountryResolver
+    let tokenStore: TokenStore
     private let quoteDebounce: DispatchQueue.SchedulerTimeType.Stride
     private let scheduler: AnySchedulerOf<DispatchQueue>
 
-    private var lastQuoteRequest: QuoteRequest?
+    var lastQuoteRequest: QuoteRequest?
     private var quoteTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
@@ -32,6 +36,10 @@ final class BookingViewModel: ViewModel {
         extraClient: ExtraClient = LiveExtraClient(),
         promoClient: PromoCodeClient = LivePromoCodeClient(),
         referralClient: ReferralClient = LiveReferralClient(),
+        profileClient: ProfileClient = LiveProfileClient(),
+        orderCreateClient: OrderCreateClient = LiveOrderCreateClient(),
+        countryResolver: CountryResolver = LiveCountryResolver(),
+        tokenStore: TokenStore = CustomerBookingTokenStore.shared,
         quoteDebounce: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(400),
         scheduler: AnySchedulerOf<DispatchQueue> = .main
     ) {
@@ -40,6 +48,10 @@ final class BookingViewModel: ViewModel {
         self.extraClient = extraClient
         self.promoClient = promoClient
         self.referralClient = referralClient
+        self.profileClient = profileClient
+        self.orderCreateClient = orderCreateClient
+        self.countryResolver = countryResolver
+        self.tokenStore = tokenStore
         self.quoteDebounce = quoteDebounce
         self.scheduler = scheduler
         super.init()
@@ -283,7 +295,7 @@ final class BookingViewModel: ViewModel {
     }
 }
 
-private extension BookingState {
+extension BookingState {
     var quoteRequest: QuoteRequest {
         QuoteRequest(
             serviceIds: selectedServiceIds.sorted(),

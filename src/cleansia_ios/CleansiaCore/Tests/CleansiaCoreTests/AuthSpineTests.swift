@@ -132,6 +132,62 @@ final class HeaderAdapterTests: XCTestCase {
         XCTAssertTrue(stamped.allSatisfy(\.isASCII))
         XCTAssertFalse(stamped.contains("\u{00A0}"))
     }
+
+    private func customerAdapter() -> HeaderAdapter {
+        HeaderAdapter(
+            deviceIdProvider: StubDeviceIdProvider(deviceId: "device-123"),
+            anonymousAllowList: .customer,
+            deviceLabel: "iPhone",
+            timeZoneIdentifier: { "Europe/Prague" }
+        )
+    }
+
+    private func customerBearer(for path: String, token: String?) throws -> String? {
+        var request = try URLRequest(url: XCTUnwrap(URL(string: "https://api.test\(path)")))
+        customerAdapter().apply(to: &request, accessToken: token)
+        return request.value(forHTTPHeaderField: "Authorization")
+    }
+
+    func testSignedInDualUseBookingPathsCarryBearer() throws {
+        for path in ["/api/Order/Quote", "/api/Order/CreateOrder", "/api/Payment/CreateOrder"] {
+            XCTAssertEqual(try customerBearer(for: path, token: "t-1"), "Bearer t-1", "signed-in \(path)")
+        }
+    }
+
+    func testGuestDualUseBookingPathsStayTokenless() throws {
+        for path in ["/api/Order/Quote", "/api/Order/CreateOrder", "/api/Payment/CreateOrder"] {
+            XCTAssertNil(try customerBearer(for: path, token: nil), "guest \(path) must be tokenless")
+        }
+    }
+
+    func testSignedInPureAnonPathsStayTokenless() throws {
+        let paths = [
+            "/api/Auth/Login",
+            "/api/Auth/Register",
+            "/api/Auth/GoogleAuth",
+            "/api/Auth/AppleAuth",
+            "/api/Auth/ForgotPassword"
+        ]
+        for path in paths {
+            XCTAssertNil(try customerBearer(for: path, token: "t-1"), "pure-anon \(path) must never carry Bearer")
+        }
+    }
+
+    func testSignedInGuestReadPathsStayTokenless() throws {
+        for path in ["/api/Service/GetOverview", "/api/Order/Lookup", "/api/Referral/Validate"] {
+            XCTAssertNil(try customerBearer(for: path, token: "t-1"), "guest read \(path) stays tokenless")
+        }
+    }
+
+    func testCreatePaymentIntentAlwaysCarriesBearer() throws {
+        XCTAssertEqual(try customerBearer(for: "/api/Payment/CreatePaymentIntent", token: "t-1"), "Bearer t-1")
+    }
+
+    func testPartnerBookingPathsAreNotAnonymousSoTheyCarryBearer() throws {
+        var request = try URLRequest(url: XCTUnwrap(URL(string: "https://api.test/api/Order/CreateOrder")))
+        adapter().apply(to: &request, accessToken: "t-1")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer t-1")
+    }
 }
 
 final class SessionRefresherTests: XCTestCase {

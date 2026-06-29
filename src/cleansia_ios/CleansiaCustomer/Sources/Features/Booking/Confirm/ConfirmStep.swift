@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ConfirmStep: View {
     @ObservedObject var viewModel: BookingViewModel
+    @StateObject private var extras = PreferredCleanerViewModel()
 
     @State private var showPromoSheet = false
     @State private var showReferralSheet = false
@@ -71,13 +72,23 @@ struct ConfirmStep: View {
                 promoRow
                 referralRow
                 paymentSection
+                specialInstructionsSection
+                PreferredCleanerPicker(
+                    viewModel: extras,
+                    selectedId: viewModel.state.preferredEmployeeId,
+                    onSelect: setPreferredCleaner
+                )
+                CancellationPolicyCard(policy: extras.cancellationPolicy)
+                TrustBadges()
             }
             .padding(Spacing.l)
         }
         .task { await viewModel.loadExtras() }
+        .task { await extras.load() }
         .sheet(isPresented: $showPromoSheet) {
             PromoCodeSheet(
                 initialCode: viewModel.state.promoCode,
+                currencyCode: currencyCode,
                 onValidate: { code in await viewModel.validatePromoCode(code) },
                 onDismiss: { showPromoSheet = false }
             )
@@ -163,23 +174,44 @@ struct ConfirmStep: View {
                 systemImage: "creditcard",
                 title: L10n.Booking.payCard,
                 subtitle: L10n.Booking.payCardDesc,
-                selected: viewModel.state.paymentMethod == "card",
-                action: { setPayment("card") }
+                selected: viewModel.state.paymentMethod == .card,
+                action: { setPayment(.card) }
             )
             PaymentOption(
                 systemImage: "banknote",
                 title: L10n.Booking.payCash,
                 subtitle: L10n.Booking.payCashDesc,
-                selected: viewModel.state.paymentMethod == "cash",
-                action: { setPayment("cash") }
+                selected: viewModel.state.paymentMethod == .cash,
+                action: { setPayment(.cash) }
             )
         }
     }
 
-    private func setPayment(_ method: String) {
+    private func setPayment(_ method: PaymentMethod) {
         viewModel.update { current in
             var next = current
             next.paymentMethod = method
+            return next
+        }
+    }
+
+    private var specialInstructionsSection: some View {
+        SpecialInstructionsField(text: Binding(
+            get: { viewModel.state.specialInstructions },
+            set: { value in
+                viewModel.update { current in
+                    var next = current
+                    next.specialInstructions = value
+                    return next
+                }
+            }
+        ))
+    }
+
+    private func setPreferredCleaner(_ id: String?) {
+        viewModel.update { current in
+            var next = current
+            next.preferredEmployeeId = id
             return next
         }
     }

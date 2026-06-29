@@ -72,12 +72,17 @@ enum PromoCodeState: Equatable {
     case idle
     case validating
     case valid(discountAmount: Double)
-    case invalid(code: String?)
+    case invalid(PromoCodeError?)
+
+    var discount: Double {
+        if case let .valid(amount) = self { return amount }
+        return 0
+    }
 }
 
 enum ReferralCodeState: Equatable {
     case idle
     case validating
     case valid(referrerFirstName: String?)
-    case invalid(code: String?)
+    case invalid(ReferralValidationError?)
 }

@@ -29,6 +29,16 @@ struct CatalogPackageServiceSummary: Equatable {
     let translations: [String: CatalogTranslation]
 }
 
+struct CatalogExtra: Equatable, Identifiable {
+    let id: String
+    let slug: String
+    let name: String
+    let description: String?
+    let price: Double
+    let displayOrder: Int
+    let translations: [String: CatalogTranslation]
+}
+
 struct CatalogPackage: Equatable, Identifiable {
     let id: String
     let name: String

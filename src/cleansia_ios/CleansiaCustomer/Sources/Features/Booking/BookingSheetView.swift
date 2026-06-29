@@ -3,11 +3,15 @@ import SwiftUI
 
 struct BookingSheetView: View {
     @StateObject private var vm = BookingViewModel()
+    let geocoding: GeocodingService
+    let mapProvider: MapProvider
     let onDismiss: () -> Void
 
     var body: some View {
         BookingSheetContent(
             viewModel: vm,
+            geocoding: geocoding,
+            mapProvider: mapProvider,
             onLeading: {
                 if !vm.back() { onDismiss() }
             },
@@ -21,6 +25,8 @@ struct BookingSheetView: View {
 
 private struct BookingSheetContent: View {
     @ObservedObject var viewModel: BookingViewModel
+    let geocoding: GeocodingService
+    let mapProvider: MapProvider
     let onLeading: () -> Void
     let onContinue: () -> Void
     let onConfirm: () -> Void
@@ -91,8 +97,8 @@ private struct BookingSheetContent: View {
         ZStack {
             switch step {
             case 1: ServicesStep(viewModel: viewModel)
-            case 2: WhenWhereStep()
-            default: ConfirmStep()
+            case 2: WhenWhereStep(viewModel: viewModel, geocoding: geocoding, mapProvider: mapProvider)
+            default: ConfirmStep(viewModel: viewModel)
             }
         }
         .transition(stepTransition)
@@ -161,7 +167,11 @@ private struct SlideToConfirmTrack: View {
 #if DEBUG
     struct BookingSheetView_Previews: PreviewProvider {
         static var previews: some View {
-            BookingSheetView(onDismiss: {})
+            BookingSheetView(
+                geocoding: CLGeocoderGeocodingService(),
+                mapProvider: PreviewMapProvider(),
+                onDismiss: {}
+            )
         }
     }
 #endif

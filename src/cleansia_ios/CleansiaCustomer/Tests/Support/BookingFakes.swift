@@ -32,6 +32,62 @@ final class FakeQuoteClient: QuoteClient, @unchecked Sendable {
     }
 }
 
+final class FakeExtraClient: ExtraClient, @unchecked Sendable {
+    var result: ApiResult<[CatalogExtra]>
+    private(set) var callCount = 0
+
+    init(result: ApiResult<[CatalogExtra]> = .success([])) {
+        self.result = result
+    }
+
+    func loadExtras() async -> ApiResult<[CatalogExtra]> {
+        callCount += 1
+        return result
+    }
+}
+
+final class FakePromoCodeClient: PromoCodeClient, @unchecked Sendable {
+    var result: ApiResult<PromoValidation>
+    private(set) var callCount = 0
+    private(set) var lastCode: String?
+    private(set) var lastSubtotal: Double?
+
+    init(result: ApiResult<PromoValidation> = .success(PromoValidation(
+        isValid: true,
+        discountAmount: 100,
+        errorCode: nil
+    ))) {
+        self.result = result
+    }
+
+    func validate(code: String, orderSubtotal: Double) async -> ApiResult<PromoValidation> {
+        callCount += 1
+        lastCode = code
+        lastSubtotal = orderSubtotal
+        return result
+    }
+}
+
+final class FakeReferralClient: ReferralClient, @unchecked Sendable {
+    var result: ApiResult<ReferralValidation>
+    private(set) var callCount = 0
+    private(set) var lastCode: String?
+
+    init(result: ApiResult<ReferralValidation> = .success(ReferralValidation(
+        isValid: true,
+        referrerFirstName: "Eva",
+        errorCode: nil
+    ))) {
+        self.result = result
+    }
+
+    func validate(code: String) async -> ApiResult<ReferralValidation> {
+        callCount += 1
+        lastCode = code
+        return result
+    }
+}
+
 enum CatalogFixtures {
     static func category(slug: String = "home", order: Int = 0) -> CatalogCategory {
         CatalogCategory(
@@ -71,4 +127,21 @@ enum CatalogFixtures {
         services: [service(id: "s-1"), service(id: "s-2", category: category(slug: "deep", order: 1))],
         packages: [package(id: "p-1")]
     )
+
+    static func extra(slug: String, order: Int = 0) -> CatalogExtra {
+        CatalogExtra(
+            id: "extra-\(slug)",
+            slug: slug,
+            name: slug.capitalized,
+            description: "desc",
+            price: 200,
+            displayOrder: order,
+            translations: [:]
+        )
+    }
+
+    static let extras = [
+        extra(slug: "inside-oven", order: 1),
+        extra(slug: "windows", order: 0)
+    ]
 }

@@ -605,6 +605,35 @@ a ported catalog flag-bag instead of `UiState<Catalog>`; a quote computed/totale
 the discount applied AFTER the surcharge or promo/tier summed instead of max(); a per-call Bearer/401 on the quote/catalog
 call instead of the factory; a debounce that re-quotes on an unchanged input (must `removeDuplicates` first).
 
+**Slice C (T-0313 §7.16 When&Where + Confirm extras/promo/referral, done):** Step 2 = the address row (a `.fullScreenCover`
+over a customer-local `BookingAddressPickerView` reusing the Core `MapProvider`/`GeocodingService` seam — the partner
+`AddressPickerView` mirrored, NOT imported: the picker *View+VM* is presentation tied to each app's `L10n`, app-local like every
+screen; `onConfirmed(GeocodedAddress)` → `vm.applyAddress` writes street+city+zip+coords into `BookingState`, `savedAddressId`
+stays nil — **saved-address list/CRUD is the Android "Address Manager" overlay, DEFERRED → T-0314**) + a pure **`BookingTimeSlots`**
+port of `buildDays`/`timeSlotsFor`/`combineDateAndTime` (today+7 day strip; 1h windows 08:00–19:00; the lead-time bands
+`<2h Unavailable` / `2–4h Express` / first `≥4h` Earliest / rest Available — the **same `EXPRESS_LEAD_HOURS`/`STANDARD_LEAD_HOURS`
+boundary that drives `BookingPricing.requiresExpressSurcharge`**, asserted in a guard test). `selectedDate` stores the localized
+day label (matched back to a `BookingDay`); `vm.selectDay`/`selectTime` set `selectedInstant`. The map seam is threaded App-root →
+`CustomerAppContainer.geocodingService`/`mapProvider` → shell → `BookingSheetView` → step (feature/VM import NO MapKit — a Core
+`PreviewMapProvider` exists so feature previews need no MapKit either). Step 3 (the rest is Slice D): the extras catalog rides a
+new **`ExtraClient`** (generated `Extra/GetOverview` DTO→`CatalogExtra`, ADR-0019 spine) as a sealed **`UiState<[CatalogExtra]>`**
+(NOT a flag-bag), sorted-by-displayOrder **on the VM** (the View consumes pre-sorted); `vm.toggleExtra(slug)` mutates the
+slug→true `selectedExtraSlugs`. Promo + referral are **one-shot Apply-validate FSMs** mirroring `validatePromoCodeNow`/
+`validateReferralCodeNow`: `PromoCodeState` (`idle`/`validating`/`valid(discount)`/`invalid(PromoCodeError?)`) over a
+**`PromoCodeClient`** (`PromoCode/Validate`, subtotal from the quoted total) and `ReferralCodeState`
+(`…/invalid(ReferralValidationError?)`) over a **`ReferralClient`** (`Referral/Validate`, **fail-soft** — a network failure or
+typed-invalid is `.invalid`, never fatal; the wire payload still forwards the raw code at submit, Slice D). Valid persists the
+normalized code into `BookingState`; the typed-error enums map to localized `.xcstrings` keys (NOT the `code: String?` placeholder).
+The code dialogs are native `.sheet`+`.presentationDetents([.medium])` owning local input+FSM, firing the VM's async validate once
+per Apply, swapping to Done on Valid (the `PromoCodeBottomSheet.kt` parity). **Recorded parity divergence:** Android's ConfirmStep
+*removed* the referral row (signup-only); the ticket re-scopes the referral FSM+row into Slice C, so iOS ships it (the
+`validateReferralCodeNow` FSM is still live on the Android VM). **Deviations a reviewer rejects:** a feature/VM `import MapKit`/
+`CoreLocation` (the §7.6 seam — the picker file is the only sanctioned consumer); the picker *VM logic* copied between apps rather
+than the seam reused (the picker View is app-local presentation, but a duplicated **VM** is a harvest-to-Core candidate — flag, an
+Architect call); an extras/promo/referral flag-bag instead of the sealed `UiState`/FSM; a referral `.invalid` that blocks
+continue/submit (must fail-soft); the lead-time slot bands diverging from the `BookingPricing` express boundary; saved-address CRUD
+built here instead of T-0314. (Slice D fills submit + cash/card + the Stripe seam + the T-0332 signed-in Quote/CreateOrder carve-out.)
+
 **Debounced VM Combine pipelines — the scheduler seam (harvested T-0313):** when a VM debounces a `@Published` pipeline (the
 quoteWatcher 400ms), inject the scheduler as a Core **`AnyScheduler`/`AnySchedulerOf`** (`CleansiaCore/State`, a minimal
 Combine `Scheduler` type-eraser — no swift-clocks dep) defaulting to `.main`; behavioral tests pass a `TestScheduler` and

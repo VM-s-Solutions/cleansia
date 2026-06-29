@@ -14,9 +14,17 @@ final class CustomerShellModel: ViewModel {
 
 struct CustomerShellView: View {
     @StateObject private var model = CustomerShellModel()
+    private let geocoding: GeocodingService
+    private let mapProvider: MapProvider
     private let onSignedOut: () -> Void
 
-    init(onSignedOut: @escaping () -> Void) {
+    init(
+        geocoding: GeocodingService,
+        mapProvider: MapProvider,
+        onSignedOut: @escaping () -> Void
+    ) {
+        self.geocoding = geocoding
+        self.mapProvider = mapProvider
         self.onSignedOut = onSignedOut
     }
 
@@ -27,7 +35,11 @@ struct CustomerShellView: View {
                     .offset(y: -28)
             }
             .sheet(isPresented: $model.isBookingPresented) {
-                BookingSheetView(onDismiss: { model.isBookingPresented = false })
+                BookingSheetView(
+                    geocoding: geocoding,
+                    mapProvider: mapProvider,
+                    onDismiss: { model.isBookingPresented = false }
+                )
             }
     }
 
@@ -105,7 +117,11 @@ private struct ProfilePlaceholderView: View {
 #if DEBUG
     struct CustomerShellView_Previews: PreviewProvider {
         static var previews: some View {
-            CustomerShellView(onSignedOut: {})
+            CustomerShellView(
+                geocoding: CLGeocoderGeocodingService(),
+                mapProvider: PreviewMapProvider(),
+                onSignedOut: {}
+            )
         }
     }
 #endif

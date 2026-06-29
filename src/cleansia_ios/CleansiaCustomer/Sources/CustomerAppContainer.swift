@@ -71,6 +71,9 @@ final class CustomerAppContainer: AppContainer {
         googleServerClientID: AppConfig.googleServerClientID
     )
 
+    let geocodingService: GeocodingService = CLGeocoderGeocodingService()
+    let mapProvider: MapProvider = MapKitMapProvider()
+
     init(
         snackbar: SnackbarController,
         apiBaseURL: URL = AppConfig.apiBaseURL

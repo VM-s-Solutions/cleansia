@@ -55,7 +55,11 @@ struct CustomerRootView: View {
                 onOutcome: { route = Route.afterAuth($0) }
             )
         case .home:
-            CustomerShellView(onSignedOut: { route = .login })
+            CustomerShellView(
+                geocoding: container.geocodingService,
+                mapProvider: container.mapProvider,
+                onSignedOut: { route = .login }
+            )
         }
     }
 

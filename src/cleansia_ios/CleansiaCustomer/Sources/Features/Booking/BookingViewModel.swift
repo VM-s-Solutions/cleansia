@@ -10,11 +10,15 @@ final class BookingViewModel: ViewModel {
     @Published private(set) var promoState: PromoCodeState = .idle
     @Published private(set) var referralState: ReferralCodeState = .idle
     @Published private(set) var catalogState: UiState<Catalog> = .loading
+    @Published private(set) var extrasState: UiState<[CatalogExtra]> = .loading
 
     @Published private(set) var currentStep = 1
 
     private let catalogClient: CatalogClient
     private let quoteClient: QuoteClient
+    private let extraClient: ExtraClient
+    private let promoClient: PromoCodeClient
+    private let referralClient: ReferralClient
     private let quoteDebounce: DispatchQueue.SchedulerTimeType.Stride
     private let scheduler: AnySchedulerOf<DispatchQueue>
 
@@ -25,11 +29,17 @@ final class BookingViewModel: ViewModel {
     init(
         catalogClient: CatalogClient = LiveCatalogClient(),
         quoteClient: QuoteClient = LiveQuoteClient(),
+        extraClient: ExtraClient = LiveExtraClient(),
+        promoClient: PromoCodeClient = LivePromoCodeClient(),
+        referralClient: ReferralClient = LiveReferralClient(),
         quoteDebounce: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(400),
         scheduler: AnySchedulerOf<DispatchQueue> = .main
     ) {
         self.catalogClient = catalogClient
         self.quoteClient = quoteClient
+        self.extraClient = extraClient
+        self.promoClient = promoClient
+        self.referralClient = referralClient
         self.quoteDebounce = quoteDebounce
         self.scheduler = scheduler
         super.init()
@@ -90,6 +100,151 @@ final class BookingViewModel: ViewModel {
             catalogState = .loaded(catalog)
         case let .failure(error):
             catalogState = .error(error)
+        }
+    }
+
+    func loadExtras() async {
+        if case .loaded = extrasState { return }
+        switch await extraClient.loadExtras() {
+        case let .success(extras):
+            extrasState = .loaded(extras.sorted { $0.displayOrder < $1.displayOrder })
+        case let .failure(error):
+            extrasState = .error(error)
+        }
+    }
+
+    func toggleExtra(_ slug: String) {
+        update { current in
+            var next = current
+            if next.selectedExtraSlugs.contains(slug) {
+                next.selectedExtraSlugs.remove(slug)
+            } else {
+                next.selectedExtraSlugs.insert(slug)
+            }
+            return next
+        }
+    }
+
+    func applyAddress(_ address: GeocodedAddress) {
+        update { current in
+            var next = current
+            next.street = address.street.isBlank ? address.formatted : address.street
+            next.city = address.city
+            next.zipCode = address.zipCode
+            next.countryIsoCode = address.countryIsoCode
+            next.savedAddressId = nil
+            return next
+        }
+    }
+
+    func selectDay(_ date: Date, calendar: Calendar = .current) {
+        update { current in
+            var next = current
+            next.selectedDate = BookingDateFormat.dayLabel(date, calendar: calendar)
+            let time = next.selectedTime
+            next.selectedInstant = time.isBlank
+                ? nil
+                : BookingTimeSlots.instant(date: date, timeLabel: time, calendar: calendar)
+            return next
+        }
+    }
+
+    func selectTime(_ time: String, on date: Date, calendar: Calendar = .current) {
+        update { current in
+            var next = current
+            next.selectedTime = time
+            next.selectedInstant = BookingTimeSlots.instant(date: date, timeLabel: time, calendar: calendar)
+            return next
+        }
+    }
+
+    func clearSelectedTimeIfUnavailable(slots: [BookingTimeSlot]) {
+        guard !state.selectedTime.isBlank else { return }
+        let match = slots.first { $0.time == state.selectedTime }
+        if match == nil || match?.state == .unavailable {
+            update { current in
+                var next = current
+                next.selectedTime = ""
+                next.selectedInstant = nil
+                return next
+            }
+        }
+    }
+
+    @discardableResult
+    func validatePromoCode(_ rawCode: String) async -> PromoCodeState {
+        let normalized = rawCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        if normalized.isEmpty {
+            promoState = .idle
+            return .idle
+        }
+        promoState = .validating
+        let subtotal = quoteState.quote?.totalPrice ?? 0
+        let resolved: PromoCodeState = switch await promoClient.validate(code: normalized, orderSubtotal: subtotal) {
+        case let .success(validation):
+            if validation.isValid, let discount = validation.discountAmount {
+                .valid(discountAmount: discount)
+            } else {
+                .invalid(PromoCodeError.from(validation.errorCode))
+            }
+        case .failure:
+            .invalid(nil)
+        }
+        promoState = resolved
+        if case .valid = resolved {
+            update { current in
+                var next = current
+                next.promoCode = normalized
+                return next
+            }
+        }
+        return resolved
+    }
+
+    @discardableResult
+    func validateReferralCode(_ rawCode: String) async -> ReferralCodeState {
+        let normalized = rawCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        if normalized.isEmpty {
+            referralState = .idle
+            return .idle
+        }
+        referralState = .validating
+        let resolved: ReferralCodeState = switch await referralClient.validate(code: normalized) {
+        case let .success(validation):
+            if validation.isValid {
+                .valid(referrerFirstName: validation.referrerFirstName)
+            } else {
+                .invalid(ReferralValidationError.from(validation.errorCode))
+            }
+        case .failure:
+            .invalid(nil)
+        }
+        referralState = resolved
+        if case .valid = resolved {
+            update { current in
+                var next = current
+                next.referralCode = normalized
+                return next
+            }
+        }
+        return resolved
+    }
+
+    func clearPromoCode() {
+        promoState = .idle
+        update { current in
+            var next = current
+            next.promoCode = ""
+            return next
+        }
+    }
+
+    func clearReferralCode() {
+        referralState = .idle
+        update { current in
+            var next = current
+            next.referralCode = ""
+            return next
         }
     }
 

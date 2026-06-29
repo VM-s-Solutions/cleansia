@@ -1,11 +1,11 @@
 ---
 id: T-0332
 title: iOS booking-flow design checkpoint — send Bearer on dual-use Order/Payment endpoints when a session exists (withhold only for true guest)
-status: draft
+status: done
 size: S
 owner: pm
 created: 2026-06-26
-updated: 2026-06-26
+updated: 2026-06-29
 depends_on: [T-0313]
 blocks: []
 stories: []
@@ -100,6 +100,13 @@ guest-withholds Authorization assertions on the customer host.
   `layers: [ios]`; `security_touching: false` (the carve-out adds Bearer; the gate lives on T-0313);
   `manual_steps: []`. No panel (no-decision: the allow-list is ratified per ADR-0013 §D4.4 — this records
   the dual-use rule, no new decision).
+- 2026-06-29 — **`draft` → `done`/RESOLVED.** The dual-use Bearer carve-out shipped in **T-0313 Slice D**
+  (`4e30aff`, `phase/ios-phase7`): `HeaderAdapter` attaches the Bearer on the 3 booking endpoints **iff a
+  token exists** (signed-in customer → authed order; guest → tokenless; pure-anon paths → never; and
+  `CreatePaymentIntent` is **always** authed). AC1–AC4 satisfied — the dual-use carve-out is explicit (not an
+  allow-list deletion), cross-referenced to ADR-0013 §D4.4 + header-parity §3, with the authed-carries /
+  guest-withholds Authorization test on the customer host. Reviewer **APPROVE** + security **PASS** (no
+  pure-anon Bearer leak; guest path + partner non-regression preserved). Recorded in `security/ios-customer-auth.md`.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

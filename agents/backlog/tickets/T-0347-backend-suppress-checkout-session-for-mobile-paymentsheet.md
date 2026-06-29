@@ -1,11 +1,11 @@
 ---
 id: T-0347
 title: "Backend (money-safety): one charge surface per card order — suppress the Stripe Checkout Session for the mobile PaymentSheet path"
-status: ready
+status: done
 size: M
 owner: backend
 created: 2026-06-28
-updated: 2026-06-28
+updated: 2026-06-29
 depends_on: []
 blocks: [T-0313]
 stories: []
@@ -82,3 +82,12 @@ order has exactly one charge surface. Options (architect/backend to rule):
   on Web. Cash unaffected. No DTO/endpoint change → no NSwag/mobile-spec regen. No EF migration. Tests: dispatcher
   unit tests (web keeps session / mobile null + never touches the Stripe factory), CreateOrder handler tests
   (mobile→null, web→session), and DI wiring tests (shared Web default; mobile AddSingleton override wins).
+- 2026-06-29 — **`ready` → `done`.** Landed on `phase/ios-phase7` (off master `c47f34a`) as `afaa920`
+  "fix(be): T-0347 — one charge surface per card order (suppress Checkout Session for mobile)". Reviewer
+  **APPROVE** + security **PASS** (closes the pre-existing double-capture defect — the live Android card flow
+  had it too; the mobile order's single charge surface is now the PaymentIntent). Files: `Cleansia.Config`
+  `ServiceExtensions` (shared Web-default `TryAddSingleton<IOrderChannelProvider>`), `IOrderChannelProvider`,
+  `OrderPaymentDispatcher`, the `Web.Customer` (Web) + `Web.Mobile.Customer` (Mobile) per-host overrides, and
+  the dispatcher/CreateOrder-characterization/DI-wiring tests. No EF migration, no spec/client regen.
+  **Residual follow-up T-0348** (the mobile PaymentIntent refund path — admin-only, latent; gates LIVE mobile
+  refunds, NOT this fix). LIVE iOS card is still owner-gated on the Stripe publishable key (T-0313).

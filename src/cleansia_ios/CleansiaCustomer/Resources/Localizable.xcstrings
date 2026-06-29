@@ -4662,6 +4662,74 @@
         }
       }
     },
+    "error_payment_cancelled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Payment cancelled. You can try again."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba byla zrušena. Můžete to zkusit znovu."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba bola zrušená. Môžete to skúsiť znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Платіж скасовано. Можна спробувати знову."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Платёж отменён. Можно попробовать снова."
+          }
+        }
+      }
+    },
+    "error_payment_failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Payment failed. Please try again or use a different card."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba se nezdařila. Zkuste to znovu nebo použijte jinou kartu."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba sa nepodarila. Skúste to znova alebo použite inú kartu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Платіж не вдався. Спробуйте знову або скористайтеся іншою карткою."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Платёж не прошёл. Попробуйте снова или используйте другую карту."
+          }
+        }
+      }
+    },
     "error_referral_already_referred": {
       "localizations": {
         "en": {

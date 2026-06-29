@@ -124,6 +124,40 @@ final class FakeOrderCreateClient: OrderCreateClient, @unchecked Sendable {
     }
 }
 
+final class FakePaymentIntentClient: PaymentIntentClient, @unchecked Sendable {
+    var result: ApiResult<PaymentIntentDetails>
+    private(set) var callCount = 0
+    private(set) var orderIds: [String] = []
+
+    init(result: ApiResult<PaymentIntentDetails> = .success(PaymentIntentDetails(
+        clientSecret: "pi_secret_123",
+        ephemeralKey: "ek_secret_456",
+        stripeCustomerId: "cus_789"
+    ))) {
+        self.result = result
+    }
+
+    func createPaymentIntent(orderId: String) async -> ApiResult<PaymentIntentDetails> {
+        callCount += 1
+        orderIds.append(orderId)
+        return result
+    }
+}
+
+final class FakePaymentSheetPresenter: PaymentSheetPresenting, @unchecked Sendable {
+    var outcome: PaymentSheetOutcome
+    private(set) var presentations: [PaymentSheetPresentation] = []
+
+    init(outcome: PaymentSheetOutcome = .completed) {
+        self.outcome = outcome
+    }
+
+    func present(_ presentation: PaymentSheetPresentation) async -> PaymentSheetOutcome {
+        presentations.append(presentation)
+        return outcome
+    }
+}
+
 final class FakeCountryResolver: CountryResolver, @unchecked Sendable {
     var resolved: String?
     private(set) var requestedIsoCodes: [String] = []

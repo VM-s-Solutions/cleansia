@@ -39,10 +39,28 @@ extension BookingViewModel {
             return .failed
         }
 
-        if current.paymentMethod == .card {
-            return .cardPending(orderId: order.id, confirmationCode: order.confirmationCode)
+        if current.paymentMethod == .card, isCardPaymentAvailable {
+            return await cardPending(for: order)
         }
         return .success(orderId: order.id, confirmationCode: order.confirmationCode)
+    }
+
+    private func cardPending(for order: CreatedOrder) async -> BookingSubmitOutcome {
+        guard case let .success(intent) = await paymentIntentClient.createPaymentIntent(orderId: order.id),
+              !intent.clientSecret.isEmpty
+        else {
+            return .failed
+        }
+        return .cardPending(
+            orderId: order.id,
+            confirmationCode: order.confirmationCode,
+            presentation: PaymentSheetPresentation(
+                clientSecret: intent.clientSecret,
+                ephemeralKey: intent.ephemeralKey,
+                stripeCustomerId: intent.stripeCustomerId,
+                merchantDisplayName: "Cleansia"
+            )
+        )
     }
 
     func resolvedQuote(for current: BookingState) async -> BookingQuote? {

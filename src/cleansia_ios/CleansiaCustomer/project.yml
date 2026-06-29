@@ -32,6 +32,9 @@ packages:
   GoogleSignIn:
     url: https://github.com/google/GoogleSignIn-iOS
     from: 7.1.0
+  StripePaymentSheet:
+    url: https://github.com/stripe/stripe-ios
+    majorVersion: 25.0.0
 
 targets:
   CleansiaCustomer:
@@ -47,6 +50,7 @@ targets:
         API_BASE_URL: $(API_BASE_URL)
         GIDClientID: $(GID_CLIENT_ID)
         GIDServerClientID: $(GID_SERVER_CLIENT_ID)
+        STRIPE_PUBLISHABLE_KEY: $(STRIPE_PUBLISHABLE_KEY)
         CFBundleURLTypes:
           - CFBundleURLSchemes:
               - $(GID_REVERSED_CLIENT_ID)
@@ -76,11 +80,18 @@ targets:
         GID_CLIENT_ID: ""
         GID_SERVER_CLIENT_ID: ""
         GID_REVERSED_CLIENT_ID: ""
+        # Owner-provisioned Stripe publishable key (pk_ only — NEVER a secret
+        # key). Empty until then → card payment is hidden and the cash path is
+        # the only option; STPAPIClient is not initialised and PaymentSheet is
+        # never presented (fail-closed).
+        STRIPE_PUBLISHABLE_KEY: ""
     dependencies:
       - package: CleansiaCore
       - package: CleansiaCustomerApi
       - package: GoogleSignIn
         product: GoogleSignIn
+      - package: StripePaymentSheet
+        product: StripePaymentSheet
 
   CleansiaCustomerTests:
     type: bundle.unit-test

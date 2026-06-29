@@ -55,14 +55,14 @@ final class BookingSubmitTests: XCTestCase {
         XCTAssertEqual(vm.submitState, .idle)
     }
 
-    func testCardSubmitReturnsCardPendingWithoutStripe() async {
+    func testCardSelectedWhenUnconfiguredCreatesOrderWithoutStripeHop() async {
         let create = FakeOrderCreateClient(result: .success(CreatedOrder(id: "o-card", confirmationCode: "CLN-C")))
         let vm = makeVM(create: create)
         vm.update(readyState(payment: .card))
 
         let outcome = await vm.submit()
 
-        XCTAssertEqual(outcome, .cardPending(orderId: "o-card", confirmationCode: "CLN-C"))
+        XCTAssertEqual(outcome, .success(orderId: "o-card", confirmationCode: "CLN-C"))
         XCTAssertEqual(create.commands.first?.paymentType, ._2)
     }
 

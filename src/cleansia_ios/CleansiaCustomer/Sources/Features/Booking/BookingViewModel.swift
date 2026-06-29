@@ -21,8 +21,10 @@ final class BookingViewModel: ViewModel {
     private let referralClient: ReferralClient
     let profileClient: ProfileClient
     let orderCreateClient: OrderCreateClient
+    let paymentIntentClient: PaymentIntentClient
     let countryResolver: CountryResolver
     let tokenStore: TokenStore
+    let isCardPaymentAvailable: Bool
     private let quoteDebounce: DispatchQueue.SchedulerTimeType.Stride
     private let scheduler: AnySchedulerOf<DispatchQueue>
 
@@ -38,8 +40,10 @@ final class BookingViewModel: ViewModel {
         referralClient: ReferralClient = LiveReferralClient(),
         profileClient: ProfileClient = LiveProfileClient(),
         orderCreateClient: OrderCreateClient = LiveOrderCreateClient(),
+        paymentIntentClient: PaymentIntentClient = LivePaymentIntentClient(),
         countryResolver: CountryResolver = LiveCountryResolver(),
         tokenStore: TokenStore = CustomerBookingTokenStore.shared,
+        isCardPaymentAvailable: Bool = StripeConfig.isCardPaymentAvailable,
         quoteDebounce: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(400),
         scheduler: AnySchedulerOf<DispatchQueue> = .main
     ) {
@@ -50,8 +54,10 @@ final class BookingViewModel: ViewModel {
         self.referralClient = referralClient
         self.profileClient = profileClient
         self.orderCreateClient = orderCreateClient
+        self.paymentIntentClient = paymentIntentClient
         self.countryResolver = countryResolver
         self.tokenStore = tokenStore
+        self.isCardPaymentAvailable = isCardPaymentAvailable
         self.quoteDebounce = quoteDebounce
         self.scheduler = scheduler
         super.init()

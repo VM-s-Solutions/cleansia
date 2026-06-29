@@ -33,6 +33,8 @@
 	<string>$(GID_CLIENT_ID)</string>
 	<key>GIDServerClientID</key>
 	<string>$(GID_SERVER_CLIENT_ID)</string>
+	<key>STRIPE_PUBLISHABLE_KEY</key>
+	<string>$(STRIPE_PUBLISHABLE_KEY)</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Poppins-Medium.ttf</string>

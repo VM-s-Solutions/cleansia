@@ -7,7 +7,20 @@ struct BookingSheetView: View {
     @State private var successCode: String?
     let geocoding: GeocodingService
     let mapProvider: MapProvider
+    let paymentSheet: PaymentSheetPresenting
     let onDismiss: () -> Void
+
+    init(
+        geocoding: GeocodingService,
+        mapProvider: MapProvider,
+        paymentSheet: PaymentSheetPresenting,
+        onDismiss: @escaping () -> Void
+    ) {
+        self.geocoding = geocoding
+        self.mapProvider = mapProvider
+        self.paymentSheet = paymentSheet
+        self.onDismiss = onDismiss
+    }
 
     var body: some View {
         Group {
@@ -39,12 +52,27 @@ struct BookingSheetView: View {
 
     private func submit() async {
         switch await vm.submit() {
-        case let .success(_, confirmationCode), let .cardPending(_, confirmationCode):
+        case let .success(_, confirmationCode):
             successCode = confirmationCode
+        case let .cardPending(_, confirmationCode, presentation):
+            await presentPaymentSheet(presentation, confirmationCode: confirmationCode)
         case .profileIncomplete:
             snackbar.showError(L10n.Booking.errorProfileIncomplete)
         case .failed:
             snackbar.showError(L10n.Booking.errorGenericNetwork)
+        }
+    }
+
+    private func presentPaymentSheet(
+        _ presentation: PaymentSheetPresentation,
+        confirmationCode: String
+    ) async {
+        let outcome = await paymentSheet.present(presentation)
+        switch BookingCardResultResolver.resolve(outcome, confirmationCode: confirmationCode) {
+        case let .navigateToSuccess(code):
+            successCode = code
+        case let .snackbar(messageKey):
+            snackbar.showError(L10n.localized(messageKey))
         }
     }
 }
@@ -216,6 +244,7 @@ private struct SlideToConfirmTrack: View {
             BookingSheetView(
                 geocoding: CLGeocoderGeocodingService(),
                 mapProvider: PreviewMapProvider(),
+                paymentSheet: StripePaymentController(),
                 onDismiss: {}
             )
         }

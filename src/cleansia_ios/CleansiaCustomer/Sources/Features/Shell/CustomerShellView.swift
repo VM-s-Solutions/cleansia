@@ -38,6 +38,7 @@ struct CustomerShellView: View {
                 BookingSheetView(
                     geocoding: geocoding,
                     mapProvider: mapProvider,
+                    paymentSheet: StripePaymentController(),
                     onDismiss: { model.isBookingPresented = false }
                 )
             }

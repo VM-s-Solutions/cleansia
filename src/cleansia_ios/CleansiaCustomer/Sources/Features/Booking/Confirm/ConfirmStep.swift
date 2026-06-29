@@ -170,13 +170,15 @@ struct ConfirmStep: View {
                 .font(CleansiaTypography.titleMedium)
                 .fontWeight(.semibold)
                 .foregroundColor(CleansiaColors.onBackground)
-            PaymentOption(
-                systemImage: "creditcard",
-                title: L10n.Booking.payCard,
-                subtitle: L10n.Booking.payCardDesc,
-                selected: viewModel.state.paymentMethod == .card,
-                action: { setPayment(.card) }
-            )
+            if viewModel.isCardPaymentAvailable {
+                PaymentOption(
+                    systemImage: "creditcard",
+                    title: L10n.Booking.payCard,
+                    subtitle: L10n.Booking.payCardDesc,
+                    selected: viewModel.state.paymentMethod == .card,
+                    action: { setPayment(.card) }
+                )
+            }
             PaymentOption(
                 systemImage: "banknote",
                 title: L10n.Booking.payCash,

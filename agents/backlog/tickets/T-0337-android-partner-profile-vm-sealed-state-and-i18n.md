@@ -1,11 +1,11 @@
 ---
 id: T-0337
 title: Android partner profile VMs — migrate flag-bag UiState to sealed states (E1) + move hardcoded validation/error strings to R.string.* (E8)
-status: draft
+status: done
 size: S
-owner: pm
+owner: android
 created: 2026-06-26
-updated: 2026-06-26
+updated: 2026-06-30
 depends_on: []
 blocks: []
 stories: []
@@ -42,14 +42,14 @@ The T-0310 Understand pass confirmed the Android partner profile VMs are E1/E8 v
    English in all 5 locales (the same F1 class as `RegisterViewModel`/`ForgotPasswordViewModel`, T-0333).
 
 ## Acceptance criteria
-- [ ] **AC1 — Sealed load state (E1).** `ProfileViewModel` + each profile `*SectionViewModel` expose a sealed
+- [x] **AC1 — Sealed load state (E1).** `ProfileViewModel` + each profile `*SectionViewModel` expose a sealed
   `*UiState` (`Loading`/`Error(canRetry)`/`Loaded(data)`) for the load lifecycle — no `isLoading`/`error` flag-bag.
-- [ ] **AC2 — `ActionState` for save (E2).** The section save uses the shared `cz.cleansia.core.ui.state.ActionState`
+- [x] **AC2 — `ActionState` for save (E2).** The section save uses the shared `cz.cleansia.core.ui.state.ActionState`
   (`Idle`/`Submitting`/`Error`) + a `SharedFlow(replay=0)` success effect — not loose `isSaving`/`isSaved` booleans.
-- [ ] **AC3 — Strings localized (E8).** Every validation/error literal moves to `R.string.*` (inject
+- [x] **AC3 — Strings localized (E8).** Every validation/error literal moves to `R.string.*` (inject
   `@ApplicationContext Context` per E3, mirror `OrderDetailViewModel.kt:80`); all 5 locale files
   (`en/cs/sk/uk/ru`) carry the keys. No hardcoded user-facing string in the profile VMs.
-- [ ] **AC4 — Behavior unchanged + gates green.** The screens render identically (load/error/saved/sign-out
+- [x] **AC4 — Behavior unchanged + gates green.** The screens render identically (load/error/saved/sign-out
   paths preserved); the onboarding-chain routing (`OnboardingChainViewModel`) is untouched in behavior; Android
   build + tests green; lint clean.
 
@@ -73,6 +73,17 @@ sign-out paths + the 5-locale string presence.
   F1/T-0333. Dedup-checked: distinct from T-0333 (that's Register/Forgot auth VMs; this is the profile VMs).
   `depends_on: []`; `security_touching: false`; `manual_steps: []`; sized **S** (sealed-state migrate + i18n move,
   no behavior change). No panel (no-decision: mechanical cleanup against ratified consistency rules).
+- 2026-06-30 — **draft → done** (HARDENING-1, `1d99333` on `phase/hardening-1`, off master `3e7ce52`; bundled
+  in the android parity-hygiene commit with T-0333 + T-0351). Migrated the **7 partner profile VMs**
+  (`Profile` + the `{Personal,Address,Identification,Bank,Emergency,Documents}Section` VMs) to sealed
+  `Loading`/`Error`/`Loaded` load states + `ActionState` for save + `R.string.*` ×5 for every validation/error
+  literal; screens consume the sealed state via `is Loading` + `as? Loaded` (behavior-preserved); added a
+  `BankSectionViewModelTest`. **Verified by a LOCAL gradle build** (JDK21/SDK35 — partner + customer compile,
+  the new test passes) since `android-ci` runs only on PR. Reviewer **APPROVE**. **The android review surfaced
+  a residual UX gap** — because the section screens consume the sealed state with `is Loading` + `as? Loaded`
+  (not an exhaustive `when`), the **Error state renders an empty editable form with no retry affordance**
+  (behavior-preserved from before, but a gap) — filed as the NON-blocking enhancement follow-up **T-0353**.
+  NOT committed by the PM — the owner commits the backlog edits with the phase PR.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

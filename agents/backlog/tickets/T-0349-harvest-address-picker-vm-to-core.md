@@ -1,11 +1,11 @@
 ---
 id: T-0349
 title: "Harvest: hoist the address-picker ViewModel into CleansiaCore (unify partner + customer)"
-status: proposed
+status: done
 size: S
 owner: architect
 created: 2026-06-29
-updated: 2026-06-29
+updated: 2026-06-30
 depends_on: [T-0313]
 blocks: []
 stories: []
@@ -54,6 +54,16 @@ source: T-0313 Slice C reviewer (the address-picker VM is duplicated partner↔c
   Regenerated both Xcode projects (xcodegen). Tests all green: Core 218, Partner 366, Customer 362. swiftformat
   0/501 (0.60.1), swiftlint --strict 0 violations. Catalog updated (`patterns-mobile.md` + the living
   `ios-app-architecture.md`); the T-0313 Slice-C harvest-candidate flag resolved. NOT committed — reviewer runs next.
+- 2026-06-30 — **proposed → done** (HARDENING-1, `d834e92` on `phase/hardening-1`, off master `3e7ce52`).
+  Reviewer **APPROVE** (partner + customer non-regression confirmed). Public framework-pure
+  `CleansiaCore/Location/AddressPickerViewModel` (customer's parameterized shape, `searchBias: [String] =
+  ["cz","sk"]` default — load-bearing for the partner non-regression); both app-local copies deleted; partner
+  View needed no change (same type name now resolves to Core), customer `BookingAddressPickerView` repointed;
+  Views stay app-local (the sanctioned `pickerMap`/`fullBleedMap` MapKit binding). Tests **Core 218 / Partner
+  366 / Customer 362** green; swiftformat 0.60.1 + swiftlint --strict clean. **No new ADR** (home change via
+  the ADR-0013 escape clause — a provider/home edit, recorded as a living-doc note, not a contract change).
+  Harvest recorded in `patterns-mobile.md` + `ios-app-architecture.md`. NOT committed by the PM — the owner
+  commits the backlog edits with the phase PR.
 
 ## Architect ruling (2026-06-30)
 

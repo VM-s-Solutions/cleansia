@@ -1,11 +1,11 @@
 ---
 id: T-0341
 title: "Backend: deterministic order status-history 'current status' ordering (same-tick CreatedOn tie) + de-flake AdminOverrideOrderStatus tests"
-status: proposed
+status: done
 size: M
 owner: backend
 created: 2026-06-27
-updated: 2026-06-27
+updated: 2026-06-30
 depends_on: []
 blocks: []
 stories: []
@@ -59,9 +59,9 @@ Then **de-flake the tests**: `AdminOverrideOrderStatusHandlerTests` (and any sib
 multiple tracks) should be deterministic once the production ordering is — verify by running the class repeatedly.
 
 ## Done when
-- [ ] The status-history "current status" derivation is deterministic regardless of equal `CreatedOn` (no tie).
-- [ ] `AdminOverrideOrderStatusHandlerTests` passes 20×/20× locally (no flake).
-- [ ] All call sites of the `OrderByDescending(CreatedOn).First()` status pattern use the canonical derivation.
+- [x] The status-history "current status" derivation is deterministic regardless of equal `CreatedOn` (no tie).
+- [x] `AdminOverrideOrderStatusHandlerTests` passes 20×/20× locally (no flake).
+- [x] All call sites of the `OrderByDescending(CreatedOn).First()` status pattern use the canonical derivation.
 
 ## Notes
 - Reproduced locally: `dotnet test src/Cleansia.Tests --filter AdminOverrideOrderStatusHandlerTests` fails
@@ -71,6 +71,21 @@ multiple tracks) should be deterministic once the production ordering is — ver
 ## Status log
 - 2026-06-27 — filed. Pre-existing flaky test found during the local backend-suite run for the T-0339
   verification (the integration-test fix is separate, already landed `fbe21e8`). Unrelated to T-0339.
+- 2026-06-30 — **proposed → done** (HARDENING-1, `e4e00b0` on `phase/hardening-1`, off master `3e7ce52`).
+  Shipped exactly the architect ruling: new `OrderStatusTrack.Sequence` (`int`, NOT NULL), assigned at append
+  time from the aggregate's own history in `Order.AddOrderStatus`; canonical `Order.CurrentStatus`
+  (`OrderByDescending(s => s.CreatedOn).ThenByDescending(s => s.Sequence)`) is the single source of truth.
+  Routed ALL call sites through it — the in-memory handlers (`AdminOverrideOrderStatus`, `AdminCancelOrder`,
+  `CancelOrder`, `NotifyOnTheWay`, `StartOrder`, `CompleteOrder`), `OrderMappers.GetCurrentStatus`, and the
+  two SQL-translated sites (`OrderSpecification` `OrderStatuses` filter + `OrderRepository`) which carry the
+  same `ThenByDescending(Sequence)` mirror. The `.Any(...)`-existence checks were left untouched (out of
+  scope, ordering-independent). **manual_step done in-branch (owner-authorized pre-prod Initial-regen):** the
+  single `20260623112626_Initial` migration was REGENERATED so `OrderStatusHistory` gains the `Sequence`
+  column (`OrderStatusTrackEntityConfiguration` + `Initial.cs`/`.Designer.cs` + snapshot updated; timestamp
+  preserved); NO new incremental migration, NO NSwag impact (`Sequence` is internal ordering state). **De-flake
+  gate met: `AdminOverrideOrderStatusHandlerTests` 20/20 green** locally (test assertions retargeted to read
+  `order.CurrentStatus`). **`Cleansia.Tests` 1685; IntegrationTests 97/97 + HostTests 60/60.** Reviewer
+  APPROVE. No new ADR. NOT committed by the PM — the owner commits the backlog edits with the phase PR.
 
 ## Architect ruling (2026-06-30)
 

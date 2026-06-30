@@ -51,6 +51,7 @@ enum ProfileRoute: Hashable {
     case disputes
     case createDispute(orderId: String?)
     case disputeDetail(String)
+    case addresses
 }
 
 struct CustomerShellView: View {
@@ -150,6 +151,7 @@ struct CustomerShellView: View {
             NavigationStack(path: $model.profilePath) {
                 ProfileHubView(
                     onOpenDisputes: { model.profilePath = [.disputes] },
+                    onOpenAddresses: { model.profilePath = [.addresses] },
                     onSignedOut: onSignedOut
                 )
                 .navigationDestination(for: ProfileRoute.self) { route in
@@ -185,6 +187,14 @@ struct CustomerShellView: View {
                 disputeId: disputeId,
                 repository: container.disputeRepository,
                 snackbar: snackbar
+            )
+        case .addresses:
+            AddressManagerView(
+                repository: container.savedAddressRepository,
+                geocoding: container.geocodingService,
+                mapProvider: container.mapProvider,
+                snackbar: snackbar,
+                onBack: { model.profilePath.removeLast() }
             )
         }
     }
@@ -277,10 +287,16 @@ private struct BookFab: View {
 
 private struct ProfileHubView: View {
     let onOpenDisputes: () -> Void
+    let onOpenAddresses: () -> Void
     let onSignedOut: () -> Void
 
     var body: some View {
         List {
+            Button(action: onOpenAddresses) {
+                Label(L10n.AddressManager.profileRow, systemImage: "mappin.and.ellipse")
+            }
+            .foregroundColor(CleansiaColors.onSurface)
+
             Button(action: onOpenDisputes) {
                 Label(L10n.Disputes.listTitle, systemImage: "exclamationmark.bubble")
             }

@@ -725,6 +725,34 @@ Gate-DP):** the customer read cluster (Home + paged Orders + OrderDetail with ca
   `QLPreviewController` wrapper or a stream-to-cache instead of the generated download + Core `QuickLookPreview`; camera/photo plist
   keys added to the customer (it only views); building customer push here.
 
+**iOS customer addresses (AddressManager 3-pane + saved-address CRUD) — the ONE way (sprint-12 §7.17, T-0314 Slice E; ADR-0019
+spine + the §7.6 map seam + the §7.16 Slice C booking picker reuse + the Parity rule; Gate-DP):** the saved-address surface
+(`AddressManagerScreen.kt`) over the generated `CustomerSavedAddressAPI` (`savedAddressGetMine`/`savedAddressAdd`/
+`savedAddressUpdate`/`savedAddressSetDefault`/`savedAddressDelete`).
+- **3-pane native SwiftUI** (`List` / `AddOnMap` / `ReviewNew`) hosted by a holder `AddressManagerViewModel` exposing the repo +
+  the Core `MapProvider`/`GeocodingService` seams + snackbar; the pane + the picked-`GeocodedAddress` draft live on the VM (so the
+  List→AddOnMap→ReviewNew→save→back-to-List flow is unit-testable without a view). The **AddOnMap pane REUSES the existing
+  customer-local `BookingAddressPickerView`** (§7.16 Slice C — same pan/search/geocode picker, `onConfirmed`/`onBack`); do NOT hoist
+  the picker to Core (the picker→Core HARVEST is **T-0349**, deferred). The VM holds no app navigation — the host's onBack closes.
+- **`SavedAddressRepository`** is `@MainActor`, a `SessionScopedCache`, registered, caching the `[SavedAddress]` list — and is
+  **server-scoped only**. The Android `AddressRepository.kt` guest/DataStore offline path + `serverId`/local-id duality are NOT
+  ported (they exist on Android purely for the offline guest cache); the iOS repo always hits the backend. Ownership is enforced
+  server-side (`BeOwnedByCaller`) — **add NO client ownership check.**
+- **Mutations refetch the list** rather than mirroring server invariants in two places: `setDefault` (the server demotes peers),
+  `add`/`update`, and especially **Delete — `savedAddressDelete` returns an intentional empty-200 with NO id in the body, so the
+  repo refetches `getMine` rather than expecting a returned id**. A mutation's `getMine` failure surfaces the error (the VM
+  snackbars it); the mutation already succeeded server-side.
+- **Country-bias DEFERRED → T-0334** (the §7.7 D3 "design the seam, defer the affordance" move): ship the pan/search/save at full
+  parity WITHOUT the service-area country-bias on search **and** without the Android ReviewPane "city not serviced" advisory banner
+  (the `ServiceAreaProvider` that drives both rides the deferred T-0334; Slice D did not touch it). Recorded Gate-DP divergence —
+  the divergence touches a deferred advisory affordance, not layout/flow/branding; the backend re-validates the city on submit.
+- **Reachability:** an "Saved addresses" row + a `.addresses` case extend the interim `ProfileHubView`/`ProfileRoute` **in place**
+  (Slice F keeps it when it builds the full hub — do NOT rebuild the hub here). i18n ×5 from the Android customer `strings.xml`.
+- **Deviations a reviewer rejects:** a client-side ownership/serverId check; a ported guest/DataStore offline path; a Delete that
+  expects a returned id instead of refetching; the country-bias/`ServiceAreaProvider` or the city-not-serviced banner built here
+  (T-0334); hoisting the picker to Core (T-0349); the picker VM logic copied instead of reusing `BookingAddressPickerView`; a
+  flag-bag pane state; the AddressManager VM driving app navigation.
+
 **Parity deviation (Android is wrong, iOS is right) — auth validation strings:** the Android partner
 `RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set validation errors as **hardcoded English
 literals** (no `@ApplicationContext Context`, no `R.string.*`) → they never localize across the 5 locales (a

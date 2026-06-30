@@ -86,6 +86,8 @@ final class CustomerAppContainer: AppContainer {
 
     let disputeRepository: DisputeRepository
 
+    let savedAddressRepository: SavedAddressRepository
+
     init(
         snackbar: SnackbarController,
         apiBaseURL: URL = AppConfig.apiBaseURL
@@ -110,6 +112,8 @@ final class CustomerAppContainer: AppContainer {
         self.recurringRepository = recurringRepository
         let disputeRepository = DisputeRepository(client: LiveDisputeClient())
         self.disputeRepository = disputeRepository
+        let savedAddressRepository = SavedAddressRepository(client: LiveSavedAddressClient())
+        self.savedAddressRepository = savedAddressRepository
         base = BaseAppContainer(
             apiBaseURL: apiBaseURL,
             snackbar: snackbar,
@@ -123,6 +127,7 @@ final class CustomerAppContainer: AppContainer {
         sessionScopedCaches.register(membershipRepository)
         sessionScopedCaches.register(recurringRepository)
         sessionScopedCaches.register(disputeRepository)
+        sessionScopedCaches.register(savedAddressRepository)
     }
 
     func installGeneratedClientAuth() {

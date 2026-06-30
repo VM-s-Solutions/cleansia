@@ -582,10 +582,23 @@
     <string name="error_email_invalid">Будь ласка, введіть дійсну електронну адресу</string>
     <string name="error_password_required">Пароль обов\'язковий</string>
     <string name="error_password_min_length">Пароль повинен містити щонайменше 8 символів</string>
+    <string name="error_password_rules">Пароль повинен містити щонайменше 8 символів, літеру та цифру</string>
     <string name="error_passwords_not_match">Паролі не збігаються</string>
     <string name="error_first_name_required">Ім\'я обов\'язкове</string>
     <string name="error_last_name_required">Прізвище обов\'язкове</string>
     <string name="error_terms_required">Ви повинні прийняти Умови та положення</string>
+
+    <!-- Profile section validation -->
+    <string name="error_profile_not_loaded">Профіль ще не завантажено</string>
+    <string name="error_iban_required">IBAN обов\'язковий</string>
+    <string name="error_name_required">Ім\'я контакту обов\'язкове</string>
+    <string name="error_phone_required">Телефон контакту обов\'язковий</string>
+    <string name="error_pick_nationality">Виберіть громадянство</string>
+    <string name="error_passport_required">Введіть номер паспорта / ID</string>
+    <string name="error_pick_business_country">Виберіть країну реєстрації вашого бізнесу</string>
+    <string name="error_registration_number_required">Введіть реєстраційний номер</string>
+    <string name="error_legal_entity_name_required">Введіть назву юридичної особи</string>
+    <string name="error_pick_address_first">Спершу виберіть адресу на карті</string>
 
     <!-- Profile Validation -->
     <string name="validation_required">Це поле обов\'язкове</string>

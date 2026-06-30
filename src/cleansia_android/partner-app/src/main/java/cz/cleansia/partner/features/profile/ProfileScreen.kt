@@ -84,8 +84,9 @@ fun ProfileScreen(
     val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
     val settingsUi by settingsViewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(uiState.isSignedOut, settingsUi.isSignedOut) {
-        if (uiState.isSignedOut || settingsUi.isSignedOut) onSignedOut()
+    LaunchedEffect(viewModel) { viewModel.signedOut.collect { onSignedOut() } }
+    LaunchedEffect(settingsUi.isSignedOut) {
+        if (settingsUi.isSignedOut) onSignedOut()
     }
 
     // Logout confirm — destructive, irreversible from the user's POV (kicks
@@ -97,8 +98,8 @@ fun ProfileScreen(
 
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
-    when {
-        uiState.isLoading && uiState.employee == null -> {
+    when (val s = uiState) {
+        ProfileUiState.Loading -> {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -108,8 +109,8 @@ fun ProfileScreen(
                 CircularProgressIndicator()
             }
         }
-        uiState.employee != null -> {
-            val employee = uiState.employee!!
+        is ProfileUiState.Loaded -> {
+            val employee = s.employee
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -120,7 +121,7 @@ fun ProfileScreen(
                 item {
                     ProfileHero(
                         employee = employee,
-                        contractStatus = uiState.contractStatus,
+                        contractStatus = s.contractStatus,
                         statusBarTop = statusBarTop,
                     )
                 }
@@ -209,7 +210,7 @@ fun ProfileScreen(
                 }
             }
         }
-        else -> {
+        ProfileUiState.Error -> {
             Box(
                 modifier = Modifier
                     .fillMaxSize()

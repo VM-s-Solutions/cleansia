@@ -83,6 +83,15 @@ public class GoogleAuth
                 return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken));
             }
 
+            // Provision only when Google reports the email as verified — reject an unverifiable email
+            // rather than create an account around it (parity with the AppleAuth gate; the takeover
+            // guard above then rests on a verified email for both providers).
+            if (!claims.EmailVerified)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(Command.Token), BusinessErrorMessage.InvalidGoogleUserToken));
+            }
+
             // FirstName / LastName are kept from the command — the Google ID-token may not carry a name
             // claim, so the client-provided display name is the only available source for those two.
             var userEntity = User.CreateWithGoogle(claims.Email, command.FirstName, command.LastName, claims.Subject);

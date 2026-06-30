@@ -69,9 +69,7 @@ public class AdminCancelOrder
             // No ownership gate: the admin acts on ANY order (the customer path's order.UserId != userId
             // rejection does not apply here). Authorization is the AdminOnly policy on the endpoint.
 
-            var latestStatus = order.OrderStatusHistory
-                .OrderByDescending(s => s.CreatedOn)
-                .FirstOrDefault()?.Status;
+            var latestStatus = order.CurrentStatus;
 
             if (latestStatus == OrderStatus.Cancelled)
             {
@@ -107,7 +105,7 @@ public class AdminCancelOrder
             if (order.PaymentType == PaymentType.Card
                 && order.PaymentStatus == PaymentStatus.Paid
                 && refundAmount > 0m
-                && !string.IsNullOrEmpty(order.StripeSessionId))
+                && order.HasRefundableChargeSurface)
             {
                 // The cancel-purpose RefundKey (refund:{OrderId}:cancel) is one-per-order, so a retried
                 // admin cancel — or a customer cancel of the same order — collapses onto the single refund

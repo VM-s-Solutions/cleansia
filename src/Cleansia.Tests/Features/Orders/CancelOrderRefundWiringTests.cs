@@ -18,7 +18,9 @@ namespace Cleansia.Tests.Features.Orders;
 /// The seam suite proves the money call is delegated correctly; these prove (a) the
 /// <c>Response.FeeRate/RefundAmount/TotalPrice</c> equal the policy formula and <c>Order.Cancel</c> is
 /// persisted with the SAME numbers, (b) the refund branch fires ONLY when
-/// <c>Card &amp;&amp; Paid &amp;&amp; refundAmount &gt; 0 &amp;&amp; StripeSessionId set</c>, and (c) a
+/// <c>Card &amp;&amp; Paid &amp;&amp; refundAmount &gt; 0 &amp;&amp; a refundable charge surface is
+/// present</c> — i.e. a Checkout Session (web) OR a PaymentIntent (mobile, T-0347/T-0348), via
+/// <c>Order.HasRefundableChargeSurface</c> — and skips only when NEITHER surface exists, and (c) a
 /// terminal latest status returns the matching error and computes no refund.
 ///
 /// The policy resolver returns the DEFAULT window (24h/4h/0.25/0.50) so the expected fee rate is the
@@ -127,6 +129,26 @@ public class CancelOrderRefundWiringTests
             s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    // T-0348: a mobile (PaymentSheet) card order has NO Checkout Session — its only charge surface is the
+    // PaymentIntent (T-0347 suppresses the Session). Cancelling such a paid order MUST still refund (under
+    // master the session-only gate silently kept the money). The refund branch fires on the intent surface.
+    [Fact]
+    public async Task RefundBranch_Fires_OnceThroughSeam_ForCardPaidWithPaymentIntentOnly()
+    {
+        var order = OrderMockFactory.GenerateWithStatusHistory(
+            [OrderStatus.New, OrderStatus.Confirmed],
+            orderId: OrderId, userId: UserId,
+            stripeSessionId: null, stripePaymentIntentId: "pi_test_cancel");
+        Arrange(order);
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value!.RefundInitiated);
+        _refundService.Verify(
+            s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     // ── AC5: the refund-branch guard — each disqualifying condition must skip the seam ──
 
     [Fact]
@@ -161,12 +183,16 @@ public class CancelOrderRefundWiringTests
             s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    // The refund branch keys on Order.HasRefundableChargeSurface, so it skips ONLY when neither a
+    // Checkout Session nor a PaymentIntent is present (both explicitly null here). A session-only OR an
+    // intent-only order DOES refund — those positive paths are pinned above.
     [Fact]
-    public async Task RefundBranch_Skipped_WhenNoStripeSessionId()
+    public async Task RefundBranch_Skipped_WhenNoChargeSurface_NeitherSessionNorIntent()
     {
         var order = OrderMockFactory.GenerateWithStatusHistory(
             [OrderStatus.New, OrderStatus.Confirmed],
-            orderId: OrderId, userId: UserId, stripeSessionId: null);
+            orderId: OrderId, userId: UserId,
+            stripeSessionId: null, stripePaymentIntentId: null);
         Arrange(order);
 
         var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
@@ -182,7 +208,7 @@ public class CancelOrderRefundWiringTests
     {
         // Accepted, cleaning in 30 minutes → LAST-MINUTE tier 0.50. But to make refundAmount EXACTLY 0
         // we need feeRate 1; the tiers never reach 1, so instead assert the positive-refund guard via a
-        // zero-priced order: 0 × (1 − feeRate) = 0 → branch must skip even though Card/Paid/session hold.
+        // zero-priced order: 0 × (1 − feeRate) = 0 → branch must skip even though Card/Paid/surface hold.
         var order = OrderMockFactory.GenerateWithStatusHistory(
             [OrderStatus.New, OrderStatus.Confirmed],
             totalPrice: 0m, orderId: OrderId, userId: UserId);

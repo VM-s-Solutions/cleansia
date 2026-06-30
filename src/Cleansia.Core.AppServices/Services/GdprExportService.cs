@@ -43,7 +43,7 @@ public class GdprExportService(
             .AsNoTracking()
             .Select(o => new GdprExportOrderDto(
                 o.Id, o.DisplayOrderNumber, o.CustomerName, o.CustomerEmail,
-                o.OrderStatusHistory.OrderByDescending(s => s.CreatedOn).First().Status,
+                o.OrderStatusHistory.OrderByDescending(s => s.CreatedOn).ThenByDescending(s => s.Sequence).First().Status,
                 o.TotalPrice, o.CleaningDateTime, o.CreatedOn))
             .ToListAsync(cancellationToken);
 

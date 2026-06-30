@@ -79,9 +79,7 @@ public class StartOrder
 
             if (order == null) return false;
 
-            var currentStatus = order.OrderStatusHistory
-                .OrderByDescending(osh => osh.CreatedOn)
-                .FirstOrDefault()?.Status;
+            var currentStatus = order.CurrentStatus;
 
             return currentStatus is OrderStatus.Confirmed or OrderStatus.OnTheWay;
         }
@@ -111,6 +109,7 @@ public class StartOrder
                 .Where(o => o.AssignedEmployees.Any(ae => ae.EmployeeId == employeeId))
                 .AnyAsync(o => o.OrderStatusHistory
                     .OrderByDescending(h => h.CreatedOn)
+                    .ThenByDescending(h => h.Sequence)
                     .FirstOrDefault()!.Status == OrderStatus.InProgress, cancellationToken);
 
             return !hasInProgressOrder;

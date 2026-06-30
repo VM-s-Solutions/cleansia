@@ -1,14 +1,17 @@
 package cz.cleansia.partner.features.auth
 
+import android.content.Context
 import cz.cleansia.core.validation.EmailValidator
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.partner.R
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.data.auth.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,6 +34,7 @@ class ForgotPasswordViewModel @Inject constructor(
     private val errorTranslator: ApiErrorTranslator,
     private val appSettingsRepository: AppSettingsRepository,
     private val snackbar: SnackbarController,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ForgotPasswordUiState())
@@ -43,11 +47,11 @@ class ForgotPasswordViewModel @Inject constructor(
     fun requestPasswordReset() {
         val state = _uiState.value
         if (state.email.isBlank()) {
-            _uiState.update { it.copy(emailError = "Email is required") }
+            _uiState.update { it.copy(emailError = context.getString(R.string.error_email_required)) }
             return
         }
         if (!EmailValidator.isValid(state.email)) {
-            _uiState.update { it.copy(emailError = "Please enter a valid email") }
+            _uiState.update { it.copy(emailError = context.getString(R.string.error_email_invalid)) }
             return
         }
 

@@ -1,11 +1,11 @@
 ---
 id: T-0348
 title: "Backend: add a PaymentIntent refund path for mobile-paid (PaymentSheet) card orders"
-status: proposed
+status: done
 size: M
 owner: backend
 created: 2026-06-28
-updated: 2026-06-28
+updated: 2026-06-30
 depends_on: [T-0347]
 blocks: []
 stories: []
@@ -33,9 +33,26 @@ source: T-0347 Gate-SEC (sprint-12 §7.16) — residual LATENT finding (refund c
 - Tests: a mobile-paid (PaymentIntent, no session) card order refunds via the PaymentIntent path; the web (session) refund is non-regressing; partial + full refund parity.
 
 ## Done when
-- [ ] A mobile-paid card order (StripeSessionId null, PaymentIntentId set) is refundable (full + partial).
-- [ ] The web Checkout-Session refund path is non-regressing.
-- [ ] Reviewer APPROVE + (money path) security PASS.
+- [x] A mobile-paid card order (StripeSessionId null, PaymentIntentId set) is refundable (full + partial).
+- [x] The web Checkout-Session refund path is non-regressing.
+- [x] Reviewer APPROVE + (money path) security PASS.
 
 ## Status log
 - 2026-06-28 — filed from the T-0347 Gate-SEC residual finding. Latent (admin-only refund surface); gates LIVE mobile-card refunds, not the T-0347 double-capture fix or the T-0313 build.
+- 2026-06-30 — **proposed → done** (HARDENING-1, `64f6525` on `phase/hardening-1`, off master `3e7ce52`;
+  bundled in the backend trio with T-0346 + T-0350). Added `RefundPaymentIntentAsync` on
+  `IStripeClient`/`StripeClient` (Stripe `Refund.Create` against the PaymentIntent) and routed `RefundService`
+  by charge surface: `StripeSessionId` present → the existing Checkout-Session refund (web, non-regressing);
+  else a stored `StripePaymentIntentId` present → the new PaymentIntent refund (mobile). **NO schema change** —
+  `Order.StripePaymentIntentId` already existed (set when the mobile PaymentIntent is created), so there was
+  nothing to persist/migrate. **Money-correctness fix folded in:** extended the refundable-surface gate to the
+  **two CANCEL paths** (`CancelOrder` + `AdminCancelOrder`) via `Order.HasRefundableChargeSurface`, so a
+  cancelled paid mobile/recurring card order now actually refunds (previously short-circuited to
+  `RefundOrderNotRefundable`). **Test/correctness findings folded:** added cancel-refund-wiring coverage
+  (`CancelOrderRefundWiringTests`/`AdminCancelOrderHandlerTests`), the PaymentIntent refund path
+  (`RefundServiceTests`/`AdminRefundOrderHandlerTests`), and retargeted the stale web-only refund tests; the
+  architect's "both-surfaces" finding was **refuted and dropped** — a card order has exactly **one** charge
+  surface (web Session XOR mobile PaymentIntent, by T-0347), so the surface router is an either/or, not a
+  both. **Security review CLEAN** (money path: surface-correct, no double-refund, admin-only). Build 0 errors;
+  `Cleansia.Tests` 1685. Reviewer APPROVE. NOT committed by the PM — the owner commits the backlog edits with
+  the phase PR.

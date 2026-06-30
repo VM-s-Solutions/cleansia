@@ -20,6 +20,19 @@ public interface IStripeClient
         string stripeSessionId, decimal amount, string idempotencyKey, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Refund a charge captured on a PaymentIntent directly (the mobile PaymentSheet path, where there
+    /// is no Checkout Session — T-0347 suppresses it). Amount is in the intent's currency.
+    /// <para>
+    /// <paramref name="idempotencyKey"/> is the caller's deterministic refund key (ADR-0006 D3), passed
+    /// to Stripe verbatim — exactly as <see cref="RefundCheckoutSessionAsync"/> uses it: the same key
+    /// replays the same Stripe refund instead of issuing a second one, which is what makes the resilience
+    /// retry safe to auto-retry this write.
+    /// </para>
+    /// </summary>
+    Task RefundPaymentIntentAsync(
+        string paymentIntentId, decimal amount, string idempotencyKey, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Create a new Stripe Customer record for a user who's making their first
     /// card payment. Caller is responsible for persisting the returned id on the
     /// User entity and reusing it on subsequent calls — this method does NOT

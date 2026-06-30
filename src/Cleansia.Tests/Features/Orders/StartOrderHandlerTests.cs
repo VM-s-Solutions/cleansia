@@ -71,7 +71,6 @@ public class StartOrderHandlerTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(OrderStatus.InProgress, result.Value!.NewStatus);
-        Assert.Equal(OrderStatus.InProgress, order.OrderStatusHistory
-            .OrderByDescending(s => s.CreatedOn).First().Status);
+        Assert.Equal(OrderStatus.InProgress, order.CurrentStatus);
     }
 }

@@ -37,8 +37,6 @@ struct MembershipManagementCard: View {
                     onSwitch: { showSwitchDialog = true }
                 )
             }
-        } else {
-            EmptyView()
         }
     }
 

@@ -257,7 +257,7 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
             .FirstAsync(o => o.Id == _orderId);
 
     private static OrderStatus LatestStatus(Order order) =>
-        order.OrderStatusHistory.OrderByDescending(s => s.CreatedOn).First().Status;
+        order.CurrentStatus!.Value;
 
     private static async Task<int> ProcessedEventCountAsync(CleansiaDbContext context, string eventId) =>
         await context.Set<ProcessedStripeEvent>()

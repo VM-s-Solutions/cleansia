@@ -69,9 +69,7 @@ public class AdminCancelOrder
             // No ownership gate: the admin acts on ANY order (the customer path's order.UserId != userId
             // rejection does not apply here). Authorization is the AdminOnly policy on the endpoint.
 
-            var latestStatus = order.OrderStatusHistory
-                .OrderByDescending(s => s.CreatedOn)
-                .FirstOrDefault()?.Status;
+            var latestStatus = order.CurrentStatus;
 
             if (latestStatus == OrderStatus.Cancelled)
             {

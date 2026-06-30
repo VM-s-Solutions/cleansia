@@ -132,8 +132,7 @@ public class AdminCancelOrderHandlerTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(CancelledBy.Admin, order.CancelledBy);
-        Assert.Equal(OrderStatus.Cancelled, order.OrderStatusHistory
-            .OrderByDescending(s => s.CreatedOn).First().Status);
+        Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
     }
 
     [Fact]

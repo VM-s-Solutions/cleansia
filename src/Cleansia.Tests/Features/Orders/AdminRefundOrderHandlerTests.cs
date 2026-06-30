@@ -150,8 +150,7 @@ public class AdminRefundOrderHandlerTests
 
         Assert.True(result.IsSuccess);
         // Lifecycle status UNCHANGED.
-        Assert.Equal(OrderStatus.Confirmed, order.OrderStatusHistory
-            .OrderByDescending(s => s.CreatedOn).First().Status);
+        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
         Assert.DoesNotContain(order.OrderStatusHistory, s => s.Status == OrderStatus.Cancelled);
         Assert.Equal(PaymentStatus.Refunded, result.Value!.PaymentStatus);
     }
@@ -228,8 +227,7 @@ public class AdminRefundOrderHandlerTests
 
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.RefundFailed, result.Error!.Message);
-        Assert.Equal(OrderStatus.Confirmed, order.OrderStatusHistory
-            .OrderByDescending(s => s.CreatedOn).First().Status);
+        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
     }
 
     [Fact]

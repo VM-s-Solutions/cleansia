@@ -233,6 +233,15 @@ public class Order : Auditable, ITenantEntity
     private ICollection<OrderStatusTrack> _orderStatusHistory = [];
     public IReadOnlyCollection<OrderStatusTrack> OrderStatusHistory => _orderStatusHistory.ToList().AsReadOnly();
 
+    // The ONE way to read current status in memory. CreatedOn is the primary (human-meaningful) sort;
+    // Sequence is the deterministic tiebreaker for same-tick transitions the ULID Id can't provide
+    // (Ulid.NewUlid() is not monotonic within a millisecond).
+    public OrderStatus? CurrentStatus =>
+        _orderStatusHistory
+            .OrderByDescending(s => s.CreatedOn)
+            .ThenByDescending(s => s.Sequence)
+            .FirstOrDefault()?.Status;
+
     private ICollection<OrderEmployee> _assignedEmployees = [];
     public IReadOnlyCollection<OrderEmployee> AssignedEmployees => _assignedEmployees.ToList().AsReadOnly();
 
@@ -328,6 +337,8 @@ public class Order : Auditable, ITenantEntity
 
     public Order AddOrderStatus(OrderStatusTrack orderStatusTrack)
     {
+        orderStatusTrack.AssignSequence(
+            _orderStatusHistory.Count == 0 ? 0 : _orderStatusHistory.Max(s => s.Sequence) + 1);
         _orderStatusHistory.Add(orderStatusTrack);
 
         return this;

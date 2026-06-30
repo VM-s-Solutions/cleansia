@@ -75,9 +75,7 @@ public class CancelOrder
                     BusinessErrorMessage.OrderNotFound));
             }
 
-            var latestStatus = order.OrderStatusHistory
-                .OrderByDescending(s => s.CreatedOn)
-                .FirstOrDefault()?.Status;
+            var latestStatus = order.CurrentStatus;
 
             if (latestStatus == OrderStatus.Cancelled)
             {

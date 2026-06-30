@@ -3387,6 +3387,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasColumnType("character varying(26)");
 
+                    b.Property<int>("Sequence")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 

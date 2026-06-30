@@ -78,6 +78,9 @@ final class CustomerAppContainer: AppContainer {
     let orderEventBus = OrderEventBus()
     let orderRepository: OrderRepository
 
+    let loyaltyRepository: LoyaltyRepository
+    let referralRepository: RewardsReferralRepository
+
     init(
         snackbar: SnackbarController,
         apiBaseURL: URL = AppConfig.apiBaseURL
@@ -92,6 +95,10 @@ final class CustomerAppContainer: AppContainer {
         let orderRepository = OrderRepository(client: orderClient)
         self.orderClient = orderClient
         self.orderRepository = orderRepository
+        let loyaltyRepository = LoyaltyRepository(client: LiveLoyaltyClient())
+        let referralRepository = RewardsReferralRepository(client: LiveRewardsReferralClient())
+        self.loyaltyRepository = loyaltyRepository
+        self.referralRepository = referralRepository
         base = BaseAppContainer(
             apiBaseURL: apiBaseURL,
             snackbar: snackbar,
@@ -100,6 +107,8 @@ final class CustomerAppContainer: AppContainer {
             makeApiClient: { seams in CustomerMobileApiClient(baseURL: seams.apiBaseURL) }
         )
         sessionScopedCaches.register(orderRepository)
+        sessionScopedCaches.register(loyaltyRepository)
+        sessionScopedCaches.register(referralRepository)
     }
 
     func installGeneratedClientAuth() {

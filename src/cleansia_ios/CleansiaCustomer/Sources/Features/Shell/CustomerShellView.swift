@@ -6,6 +6,7 @@ final class CustomerShellModel: ViewModel {
     @Published var selection: CustomerShellTab = .home
     @Published var ordersPath: [OrderRoute] = []
     @Published var homePath: [OrderRoute] = []
+    @Published var rewardsPath: [RewardsRoute] = []
     @Published var isBookingPresented = false
 
     func book() {
@@ -31,6 +32,10 @@ final class CustomerShellModel: ViewModel {
 
 enum OrderRoute: Hashable {
     case detail(String)
+}
+
+enum RewardsRoute: Hashable {
+    case activity
 }
 
 struct CustomerShellView: View {
@@ -62,7 +67,13 @@ struct CustomerShellView: View {
                     }
                 )
             }
-            .task { await container.orderRepository.refresh() }
+            .task { await prefetch() }
+    }
+
+    private func prefetch() async {
+        await container.orderRepository.refresh()
+        await container.loyaltyRepository.refresh()
+        await container.referralRepository.refresh()
     }
 
     private var tabs: some View {
@@ -97,10 +108,17 @@ struct CustomerShellView: View {
             .tabItem { Label(CustomerShellTab.orders.label, systemImage: CustomerShellTab.orders.systemImage) }
             .tag(CustomerShellTab.orders)
 
-            PlaceholderTabView(
-                systemImage: CustomerShellTab.rewards.systemImage,
-                title: L10n.Shell.placeholderComingSoon(CustomerShellTab.rewards.label)
-            )
+            NavigationStack(path: $model.rewardsPath) {
+                RewardsTab(
+                    loyaltyRepository: container.loyaltyRepository,
+                    referralRepository: container.referralRepository,
+                    snackbar: snackbar,
+                    onOpenActivity: { model.rewardsPath = [.activity] }
+                )
+                .navigationDestination(for: RewardsRoute.self) { route in
+                    rewardsDestination(route)
+                }
+            }
             .tabItem { Label(CustomerShellTab.rewards.label, systemImage: CustomerShellTab.rewards.systemImage) }
             .tag(CustomerShellTab.rewards)
 
@@ -121,6 +139,17 @@ struct CustomerShellView: View {
                 repository: container.orderRepository,
                 snackbar: snackbar,
                 eventBus: container.orderEventBus
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func rewardsDestination(_ route: RewardsRoute) -> some View {
+        switch route {
+        case .activity:
+            RewardsActivityScreen(
+                loyaltyRepository: container.loyaltyRepository,
+                snackbar: snackbar
             )
         }
     }

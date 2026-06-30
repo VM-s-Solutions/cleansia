@@ -525,10 +525,13 @@
     <!-- Profile — security -->
     <string name="profile_security_title">Security</string>
     <string name="profile_security_change_password">Change password</string>
-    <string name="profile_security_current">Current password</string>
     <string name="profile_security_new">New password</string>
     <string name="profile_security_confirm">Confirm new password</string>
     <string name="profile_security_update">Update password</string>
+    <string name="security_intro">We\'ll email you a verification code, then you can set a new password.</string>
+    <string name="security_request_code">Send verification code</string>
+    <string name="security_code_helper">Enter the code from the email we just sent you.</string>
+    <string name="security_code_label">Verification code</string>
 
     <!-- Booking wizard (3 steps) -->
     <string name="booking_step1_title">What do you need?</string>

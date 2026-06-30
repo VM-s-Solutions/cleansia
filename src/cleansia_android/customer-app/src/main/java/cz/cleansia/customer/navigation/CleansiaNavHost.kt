@@ -429,7 +429,27 @@ fun CleansiaNavHost(
             popEnterTransition = popEnter,
             popExitTransition = popExit,
         ) {
-            SecurityScreen(onBack = { navController.popBackStack() })
+            val authVm: AuthViewModel = hiltViewModel()
+            val profileVm: cz.cleansia.customer.features.profile.ProfileViewModel = hiltViewModel()
+            val authState by authVm.uiState.collectAsState()
+            val user by profileVm.currentUser.collectAsState()
+            val email = user?.email.orEmpty()
+
+            LaunchedEffect(authState.outcome) {
+                if (authState.outcome is AuthOutcome.PasswordReset) {
+                    authVm.clearState()
+                    navController.popBackStack()
+                }
+            }
+
+            SecurityScreen(
+                onBack = { navController.popBackStack() },
+                onSendCode = { authVm.requestPasswordChange(email) },
+                onChangePassword = { code, newPassword ->
+                    authVm.changePassword(email, code, newPassword)
+                },
+                loading = authState.loading,
+            )
         }
         composable<Routes.Devices>(
             enterTransition = pushEnter,

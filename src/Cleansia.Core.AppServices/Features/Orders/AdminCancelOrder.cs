@@ -107,7 +107,7 @@ public class AdminCancelOrder
             if (order.PaymentType == PaymentType.Card
                 && order.PaymentStatus == PaymentStatus.Paid
                 && refundAmount > 0m
-                && !string.IsNullOrEmpty(order.StripeSessionId))
+                && order.HasRefundableChargeSurface)
             {
                 // The cancel-purpose RefundKey (refund:{OrderId}:cancel) is one-per-order, so a retried
                 // admin cancel — or a customer cancel of the same order — collapses onto the single refund

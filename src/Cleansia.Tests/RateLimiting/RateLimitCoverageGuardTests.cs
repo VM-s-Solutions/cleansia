@@ -40,6 +40,7 @@ public class RateLimitCoverageGuardTests
         typeof(Cleansia.Web.Customer.Controllers.UserController),
         typeof(Cleansia.Web.Customer.Controllers.OrderController),
         typeof(Cleansia.Web.Customer.Controllers.GdprController),
+        typeof(Cleansia.Web.Customer.Controllers.NotificationPreferencesController),
 
         // Mobile.Customer host (same audience surface as Customer)
         typeof(Cleansia.Web.Mobile.Customer.Controllers.AuthController),
@@ -53,6 +54,7 @@ public class RateLimitCoverageGuardTests
         typeof(Cleansia.Web.Mobile.Customer.Controllers.UserController),
         typeof(Cleansia.Web.Mobile.Customer.Controllers.OrderController),
         typeof(Cleansia.Web.Mobile.Customer.Controllers.GdprController),
+        typeof(Cleansia.Web.Mobile.Customer.Controllers.NotificationPreferencesController),
 
         // Partner host
         typeof(Cleansia.Web.Partner.Controllers.AuthController),
@@ -148,6 +150,17 @@ public class RateLimitCoverageGuardTests
     public void Stripe_Webhook_Keeps_The_Dedicated_Webhook_Policy(Type controller, string action)
     {
         Assert.Equal("webhook", EffectivePolicyOf(controller.GetMethod(action)!));
+    }
+
+    // NotificationPreferences GetMine is a side-effecting GET (it lazy-creates the prefs row on first
+    // call), so the mutating-method sweep above does not reach it. T-0350: it carries the "auth" window
+    // explicitly on BOTH hosts — pin it directly.
+    [Theory]
+    [InlineData(typeof(Cleansia.Web.Customer.Controllers.NotificationPreferencesController), "GetMine")]
+    [InlineData(typeof(Cleansia.Web.Mobile.Customer.Controllers.NotificationPreferencesController), "GetMine")]
+    public void NotificationPreferences_GetMine_Carries_The_Auth_Window(Type controller, string action)
+    {
+        Assert.Equal("auth", EffectivePolicyOf(controller.GetMethod(action)!));
     }
 
     // Catalog lifecycle (partially covered controllers, so not in the full-coverage list):

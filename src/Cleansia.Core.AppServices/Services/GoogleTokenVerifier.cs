@@ -36,7 +36,7 @@ public class GoogleTokenVerifier(IGoogleConfig googleConfig) : IGoogleTokenVerif
                 return null;
             }
 
-            return new GoogleVerifiedClaims(payload.Subject, payload.Email);
+            return new GoogleVerifiedClaims(payload.Subject, payload.Email, payload.EmailVerified);
         }
         catch
         {

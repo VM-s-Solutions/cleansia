@@ -31,6 +31,7 @@ public class RefundServiceTests
     private const string OrderId = "order-1";
     private const string ActorId = "admin-1";
     private const string StripeSessionId = "cs_test_123";
+    private const string StripePaymentIntentId = "pi_test_456";
 
     private readonly Mock<IRefundRepository> _refundRepository = new();
     private readonly Mock<IOrderRepository> _orderRepository = new();
@@ -63,6 +64,31 @@ public class RefundServiceTests
         order.Id = OrderId;
         order.SetCurrency(currency);
         order.AssignStripeSessionId(StripeSessionId);
+        return order;
+    }
+
+    // A mobile (PaymentSheet) card order: T-0347 suppresses the Checkout Session, so the single
+    // capturable charge surface is the PaymentIntent (StripeSessionId is empty).
+    private static Order CreateMobileCardPaidOrder(decimal totalPrice)
+    {
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var order = Order.Create(
+            customerName: "Cust",
+            customerEmail: "c@x.test",
+            customerPhone: "+420123456789",
+            customerAddress: null!,
+            rooms: 2,
+            bathrooms: 1,
+            extras: new Dictionary<string, bool>(),
+            cleaningDateTime: DateTime.UtcNow.AddDays(1),
+            paymentType: PaymentType.Card,
+            totalPrice: totalPrice,
+            currencyId: currency.Id,
+            paymentStatus: PaymentStatus.Paid,
+            userId: "user-1");
+        order.Id = OrderId;
+        order.SetCurrency(currency);
+        order.AssignStripePaymentIntentId(StripePaymentIntentId);
         return order;
     }
 
@@ -117,6 +143,88 @@ public class RefundServiceTests
         Assert.Equal(RefundStatus.Succeeded, row.Status);
         Assert.Equal(1000m, row.Amount);
         Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
+    }
+
+    // Web non-regression (T-0348): a Checkout-Session order routes through the SESSION refund surface,
+    // never the new PaymentIntent path.
+    [Fact]
+    public async Task IssueRefund_WebSessionOrder_RoutesThroughCheckoutSessionRefund_NotPaymentIntent()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+        ArrangeConsumed(0m);
+        CaptureAddedRefund(out _);
+
+        var result = await CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 1000m, RefundReason.CustomerCancellation, ActorId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, _stripe.SessionRefundCallCount);
+        Assert.Equal(0, _stripe.PaymentIntentRefundCallCount);
+        Assert.Equal(StripeSessionId, _stripe.LastSessionId);
+    }
+
+    // T-0348: a mobile-paid card order (StripeSessionId null, PaymentIntentId set) refunds in full via
+    // the new PaymentIntent surface.
+    [Fact]
+    public async Task IssueRefund_MobilePaymentIntentOrder_FullRefund_RoutesThroughPaymentIntent()
+    {
+        var order = CreateMobileCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+        ArrangeConsumed(0m);
+        CaptureAddedRefund(out var added);
+
+        var result = await CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 1000m, RefundReason.CustomerCancellation, ActorId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, _stripe.PaymentIntentRefundCallCount);
+        Assert.Equal(0, _stripe.SessionRefundCallCount);
+        Assert.Equal(StripePaymentIntentId, _stripe.LastPaymentIntentId);
+        var row = Assert.Single(added);
+        Assert.Equal(RefundStatus.Succeeded, row.Status);
+        Assert.Equal(1000m, row.Amount);
+        Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
+    }
+
+    // T-0348: a mobile-paid card order supports a partial refund on the PaymentIntent surface.
+    [Fact]
+    public async Task IssueRefund_MobilePaymentIntentOrder_PartialRefund_LeavesPartiallyRefunded()
+    {
+        var order = CreateMobileCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+        ArrangeConsumed(0m);
+        CaptureAddedRefund(out var added);
+
+        var result = await CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 400m, RefundReason.CustomerCancellation, ActorId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, _stripe.PaymentIntentRefundCallCount);
+        Assert.Equal(400m, _stripe.LastAmount);
+        Assert.Equal(400m, Assert.Single(added).Amount);
+        Assert.Equal(PaymentStatus.PartiallyRefunded, order.PaymentStatus);
+    }
+
+    // T-0348: an order with NEITHER charge surface (no session, no intent) is not refundable — the
+    // short-circuit is now keyed on "has a refundable surface", not on the Session alone.
+    [Fact]
+    public async Task IssueRefund_OrderWithNoChargeSurface_ReturnsNotRefundable_NoStripeCall()
+    {
+        var order = CreateMobileCardPaidOrder(1000m);
+        order.AssignStripePaymentIntentId(string.Empty);
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+
+        var result = await CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 1000m, RefundReason.CustomerCancellation, ActorId), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.RefundOrderNotRefundable, result.Error!.Message);
+        Assert.Equal(0, _stripe.RefundCallCount);
     }
 
     [Fact]
@@ -354,8 +462,12 @@ public class RefundServiceTests
         private readonly List<string> _refundKeys = [];
 
         public int RefundCallCount { get; private set; }
+        public int SessionRefundCallCount { get; private set; }
+        public int PaymentIntentRefundCallCount { get; private set; }
         public int InternalAttemptCount { get; private set; }
         public string? LastIdempotencyKey { get; private set; }
+        public string? LastSessionId { get; private set; }
+        public string? LastPaymentIntentId { get; private set; }
         public decimal LastAmount { get; private set; }
         public bool RetryFirstAttemptTransientlyInternally { get; set; }
         public bool ThrowOnRefund { get; set; }
@@ -364,8 +476,12 @@ public class RefundServiceTests
         public void Reset()
         {
             RefundCallCount = 0;
+            SessionRefundCallCount = 0;
+            PaymentIntentRefundCallCount = 0;
             InternalAttemptCount = 0;
             LastIdempotencyKey = null;
+            LastSessionId = null;
+            LastPaymentIntentId = null;
             LastAmount = 0m;
             _refundKeys.Clear();
             RetryFirstAttemptTransientlyInternally = false;
@@ -374,6 +490,21 @@ public class RefundServiceTests
 
         public Task RefundCheckoutSessionAsync(
             string stripeSessionId, decimal amount, string idempotencyKey, CancellationToken cancellationToken)
+        {
+            LastSessionId = stripeSessionId;
+            SessionRefundCallCount++;
+            return RecordRefund(amount, idempotencyKey);
+        }
+
+        public Task RefundPaymentIntentAsync(
+            string paymentIntentId, decimal amount, string idempotencyKey, CancellationToken cancellationToken)
+        {
+            LastPaymentIntentId = paymentIntentId;
+            PaymentIntentRefundCallCount++;
+            return RecordRefund(amount, idempotencyKey);
+        }
+
+        private Task RecordRefund(decimal amount, string idempotencyKey)
         {
             if (ThrowOnRefund)
             {

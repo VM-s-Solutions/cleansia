@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
@@ -101,6 +102,13 @@ public class Order : Auditable, ITenantEntity
     public string StripeSessionId { get; private set; } = string.Empty;
 
     public string? StripePaymentIntentId { get; private set; }
+
+    // A card order is charged on exactly one Stripe surface: the web flow on a Checkout Session, the
+    // mobile (PaymentSheet) flow on a PaymentIntent (T-0347 suppresses the Session for mobile, so its
+    // StripeSessionId is empty). A refund is possible when either surface is present.
+    [NotMapped]
+    public bool HasRefundableChargeSurface =>
+        !string.IsNullOrEmpty(StripeSessionId) || !string.IsNullOrEmpty(StripePaymentIntentId);
 
     public string? Notes { get; private set; }
 

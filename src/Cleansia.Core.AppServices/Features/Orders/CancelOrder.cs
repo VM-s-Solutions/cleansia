@@ -126,7 +126,7 @@ public class CancelOrder
             if (order.PaymentType == PaymentType.Card
                 && order.PaymentStatus == PaymentStatus.Paid
                 && refundAmount > 0m
-                && !string.IsNullOrEmpty(order.StripeSessionId))
+                && order.HasRefundableChargeSurface)
             {
                 var refund = await refundService.IssueRefundAsync(
                     new RefundRequest(order.Id, refundAmount, RefundReason.CustomerCancellation, userId),

@@ -77,6 +77,37 @@ public class AdminCancelOrderHandlerTests
         return order;
     }
 
+    // A mobile (PaymentSheet) card order: T-0347 suppresses the Checkout Session, so the order's only
+    // refundable charge surface is the PaymentIntent.
+    private Order ArrangeOrderWithPaymentIntentOnly(
+        OrderStatus latestStatus, PaymentStatus paymentStatus = PaymentStatus.Paid)
+    {
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var order = Order.Create(
+            customerName: "Cust",
+            customerEmail: "c@x.test",
+            customerPhone: "+420123456789",
+            customerAddress: null!,
+            rooms: 2,
+            bathrooms: 1,
+            extras: new Dictionary<string, bool>(),
+            cleaningDateTime: DateTime.UtcNow.AddDays(5),
+            paymentType: PaymentType.Card,
+            totalPrice: 1000m,
+            currencyId: currency.Id,
+            paymentStatus: paymentStatus,
+            userId: OwnerUserId);
+        order.Id = OrderId;
+        order.SetCurrency(currency);
+        order.AssignStripePaymentIntentId("pi_test_admin_cancel");
+        order.AddOrderStatus(OrderStatusTrack.Create(latestStatus, order));
+
+        _orderRepository
+            .Setup(r => r.GetQueryable())
+            .Returns(new[] { order }.AsQueryable().BuildMock());
+        return order;
+    }
+
     private void ArrangeSeamSuccess(decimal amount, bool resolvedToExisting = false)
     {
         _refundService
@@ -165,6 +196,24 @@ public class AdminCancelOrderHandlerTests
         Assert.Equal(RefundReason.CustomerCancellation, captured.Reason);
         Assert.Equal(AdminUserId, captured.ActorId);
         Assert.Null(captured.DisputeId);
+    }
+
+    // T-0348: cancelling a mobile-paid card order (StripeSessionId empty, PaymentIntentId set) MUST
+    // still refund — the cancel gate now keys on the charge surface, not the Session alone (under master
+    // the session-only gate silently kept the money on a cancelled mobile card order).
+    [Fact]
+    public async Task Admin_Cancel_PaymentIntentOnlyOrder_StillRefunds_ThroughSeam()
+    {
+        ArrangeOrderWithPaymentIntentOnly(OrderStatus.Confirmed);
+        ArrangeSeamSuccess(amount: 1000m);
+
+        var result = await CreateHandler().Handle(
+            new AdminCancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value!.RefundInitiated);
+        _refundService.Verify(
+            s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

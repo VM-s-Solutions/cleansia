@@ -753,6 +753,53 @@ spine + the §7.6 map seam + the §7.16 Slice C booking picker reuse + the Parit
   (T-0334); hoisting the picker to Core (T-0349); the picker VM logic copied instead of reusing `BookingAddressPickerView`; a
   flag-bag pane state; the AddressManager VM driving app navigation.
 
+**iOS customer Profile/Settings + GDPR-delete + Devices + NotificationPreferences — the ONE way (sprint-12 §7.17, T-0314 Slice F;
+the FINAL customer slice; ADR-0019 spine + §7.7 D6-8 Devices + §7.5 D1 `AppSettingsStore` + ADR-0016 AR-ACCT-1 + §7.14 D4 SIWA +
+the Parity rule; Gate-SEC):** the customer settings tail over the generated `CustomerGdprAPI`/`CustomerUserAPI`/`CustomerDeviceAPI`/
+`CustomerNotificationPreferencesAPI`. The interim `ProfileHubView`/`ProfileRoute` (Slices D/E) is **promoted in place** to the real
+`ProfileTab` hub — the disputes + addresses rows are KEPT, the new cases ADDED to the existing enum.
+- **GDPR delete (THE load-bearing security item, R1–R4):** a `DeleteAccountViewModel` (Core `ViewModel`/`ActionState` + an
+  `accountDeleted` one-shot) **branches on the `ApiResult`** — on SUCCESS → `AuthClient.signOutLocal()` (Keychain `tokenStore.clear()`
+  + `sessionScopedCaches.clearAll()` — **never `logout()`**, the account is gone server-side) + emit `accountDeleted` → the root resets
+  to login (the existing `onSignedOut` seam); on FAILURE the deletion is BLOCKED mid-transaction → **stay signed in (NO wipe)** + show
+  the localized backend error. The 3 blocked codes (`gdpr.deletion_blocked_by_order`/`_by_invoice`/`_already_pending`) map to `.xcstrings`
+  keys ×5 via a typed `GdprDeletionBlock(code:)`; the destructive flow is a typed-email confirm + a `.destructive` `CleansiaDialog` + an
+  explicit "permanently deletes" message ×5 + the **SIWA note ×5** ("remove Cleansia in Settings → Apple ID → Sign in with Apple" —
+  satisfies 5.1.1(v); Apple `/auth/revoke` owner-deferred §7.14 D4). **No client-side delete logic / no client flag.**
+- **The backend-error-code seam (harvested):** the customer generated `ApiError.fromGenerated` drops the code (`code: nil`, raw body as
+  message). Branching on a typed backend error (the GDPR blocked codes) needs the code, so a small **`ProblemDetailsError.map`**
+  (`CleansiaCustomer/Sources/Data`) decodes the ASP.NET `ProblemDetails` body's **`type`** field into `ApiError.code` (falling back to
+  `fromGenerated`) — because `CleansiaApiController.CreateProblemDetails` sets `Type = error.Code`. Reuse this mapper for ANY customer
+  client that must branch on a `BusinessErrorMessage` code; the snackbar still wins on the server `detail`.
+- **Devices (R13 / §7.7 D6-8 VERBATIM):** a customer-local `CustomerDevicesViewModel`/`CustomerDevicesView` mirroring the partner T-0310
+  pattern — `deviceMine(currentDeviceId:)` where `currentDeviceId` is the **ONE** `DeviceIdProvider.deviceId` (the SAME instance the
+  `HeaderAdapter` stamps as `X-Device-Id`; customer service `"cz.cleansia.customer.device"`, threaded from `CustomerAuthStack`); hide the
+  revoke control on the current device (`isCurrent`); the defensive **self-revoke → `signedOut` → `logout()` + route→login** branch
+  (D7b — a server-killed session's access token survives ~15min otherwise); server-scoped revoke, no client ownership check.
+- **NotificationPreferences (R14):** a sealed `UiState<NotificationPreferences>` (NOT the Android flag-bag — E1 catch) over the ~11
+  boolean toggles (`notificationPreferencesGetMine` lazy-creates), **optimistic** local update + a **300ms-debounced replace-all PUT**
+  via a `PassthroughSubject`→`.debounce(scheduler:)`→`update` pipeline (the Android CONFLATED-Channel parity), revert-to-snapshot on PUT
+  failure. Inject the Core `AnySchedulerOf<DispatchQueue>` (harvested T-0313) so the "rapid toggles coalesce into one PUT" test is
+  deterministic with a `TestScheduler`. Category↔field is a `[NotificationCategory: WritableKeyPath]` map (NOT an 11-case switch — keeps
+  cyclomatic ≤10). Own-only by JWT subject (no client check).
+- **Sub-screens:** Security = the backend **reset-code** flow (`userRequestPasswordChange` emails a code → `userChangePassword(email,
+  code,newPassword)`, the Core `PasswordPolicy` validates the new password) — **NOT** a current-password change (the backend
+  `ChangePassword` is email+code+new; the Android `SecurityScreen` is a dead stub wired to nothing — a Parity catch-up: iOS wires the
+  real flow). Language + Appearance reuse the Core `AppSettingsStore` via a customer-local `CustomerPreferencesModel`/`Labels` (the
+  partner T-0310 Slice C pattern; theme honored via `.preferredColorScheme` at the App root, language via `L10n.bundle` repointing).
+  Help/Support is static FAQ + contact. EditProfile/Onboarding share ONE `ProfileViewModel` (`userGetCurrentUser`→form→
+  `userUpdateCurrentUser`; refresh/save `ActionState`s + `completeOnboarding`/`skipOnboarding` — the Slice-A Home nudge routes to the
+  Profile tab → EditProfile).
+- **Brand asset (§7.15 deferral):** NO customer brand asset exists in the repo → KEEP the SF-Symbol `AuthHeaderImage` + flag an
+  owner-provide follow-up (the partner-mascot precedent — do NOT block on creating brand art). The Google "G" brand-fidelity check is a
+  pre-submission OWNER note.
+- **Deviations a reviewer rejects:** a delete path that calls `logout()` (not `signOutLocal()`) or trusts a client flag; a blocked-error
+  failure that wipes the session; a missing SIWA note; a Devices screen using anything but the ONE `DeviceIdProvider`, a revoke shown on
+  the current device, or no self-revoke→sign-out; a notification-prefs flag-bag `UiState` or a PUT that doesn't debounce/coalesce; a
+  current-password "change password" instead of the reset-code flow; a second settings store or theme/language in the Keychain; a
+  rebuilt (not promoted-in-place) Profile hub that drops the disputes/addresses rows. **The GDPR/Devices/prefs SECURITY enforcement is
+  Gate-SEC (security charter) — this rule fixes the seams.**
+
 **Parity deviation (Android is wrong, iOS is right) — auth validation strings:** the Android partner
 `RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set validation errors as **hardcoded English
 literals** (no `@ApplicationContext Context`, no `R.string.*`) → they never localize across the 5 locales (a

@@ -29,6 +29,11 @@ final class CustomerShellModel: ViewModel {
     func openProfile() {
         selection = .profile
     }
+
+    func openEditProfile() {
+        selection = .profile
+        profilePath = [.editProfile]
+    }
 }
 
 enum OrderRoute: Hashable {
@@ -52,20 +57,41 @@ enum ProfileRoute: Hashable {
     case createDispute(orderId: String?)
     case disputeDetail(String)
     case addresses
+    case editProfile
+    case subscribePlus
+    case devices
+    case notifications
+    case security
+    case language
+    case appearance
+    case help
+    case deleteAccount
 }
 
 struct CustomerShellView: View {
     @StateObject private var model = CustomerShellModel()
     @StateObject private var membershipVM: MembershipViewModel
+    @StateObject private var profileVM: ProfileViewModel
+    @ObservedObject private var preferences: CustomerPreferencesModel
     @Environment(\.snackbarController) private var snackbar
     private let container: CustomerAppContainer
     private let onSignedOut: () -> Void
 
-    init(container: CustomerAppContainer, onSignedOut: @escaping () -> Void) {
+    init(
+        container: CustomerAppContainer,
+        preferences: CustomerPreferencesModel,
+        onSignedOut: @escaping () -> Void
+    ) {
         self.container = container
+        self.preferences = preferences
         self.onSignedOut = onSignedOut
         _membershipVM = StateObject(wrappedValue: MembershipViewModel(
             repository: container.membershipRepository,
+            snackbar: container.snackbar
+        ))
+        _profileVM = StateObject(wrappedValue: ProfileViewModel(
+            repository: container.userProfileRepository,
+            settings: container.appSettings,
             snackbar: container.snackbar
         ))
     }
@@ -97,6 +123,7 @@ struct CustomerShellView: View {
         await container.referralRepository.refresh()
         await container.membershipRepository.refresh()
         await container.membershipRepository.refreshPlans()
+        await profileVM.refresh()
     }
 
     private var tabs: some View {
@@ -109,7 +136,7 @@ struct CustomerShellView: View {
                     onBookCleaning: model.book,
                     onOrderClick: { model.homePath = [.detail($0)] },
                     onSeeAllOrders: model.openOrders,
-                    onCompleteProfile: model.openProfile,
+                    onCompleteProfile: model.openEditProfile,
                     onSubscribePlus: { model.homePath.append(.subscribePlus) },
                     onManageRecurring: { model.homePath.append(.recurringList) }
                 )
@@ -149,10 +176,12 @@ struct CustomerShellView: View {
             .tag(CustomerShellTab.rewards)
 
             NavigationStack(path: $model.profilePath) {
-                ProfileHubView(
-                    onOpenDisputes: { model.profilePath = [.disputes] },
-                    onOpenAddresses: { model.profilePath = [.addresses] },
-                    onSignedOut: onSignedOut
+                ProfileTab(
+                    profileVM: profileVM,
+                    membershipVM: membershipVM,
+                    preferences: preferences,
+                    onOpen: { model.profilePath.append($0) },
+                    onSignOut: signOut
                 )
                 .navigationDestination(for: ProfileRoute.self) { route in
                     profileDestination(route)
@@ -196,6 +225,71 @@ struct CustomerShellView: View {
                 snackbar: snackbar,
                 onBack: { model.profilePath.removeLast() }
             )
+        default:
+            profileSettingsDestination(route)
+        }
+    }
+
+    @ViewBuilder
+    private func profileSettingsDestination(_ route: ProfileRoute) -> some View {
+        switch route {
+        case .editProfile:
+            EditProfileView(vm: profileVM, onSaved: { popProfile() })
+        case .subscribePlus:
+            SubscribePlusScreen(
+                repository: container.membershipRepository,
+                snackbar: snackbar,
+                paymentSheet: StripePaymentController(),
+                onBack: { popProfile() },
+                onSubscribed: {
+                    Task { await membershipVM.refresh() }
+                    popProfile()
+                }
+            )
+        case .devices:
+            CustomerDevicesView(
+                client: container.devicesClient,
+                authClient: container.authClient,
+                snackbar: snackbar,
+                onSignedOut: onSignedOut
+            )
+        case .notifications:
+            NotificationsView(client: container.notificationPreferencesClient)
+        case .security:
+            SecurityView(
+                email: profileVM.currentUser?.email ?? "",
+                language: preferences.languageTag,
+                client: container.changePasswordClient,
+                snackbar: snackbar,
+                onChanged: { popProfile() }
+            )
+        case .language:
+            LanguagePickerView(preferences: preferences, onSelected: { popProfile() })
+        case .appearance:
+            AppearancePickerView(preferences: preferences, onSelected: { popProfile() })
+        case .help:
+            HelpSupportView()
+        case .deleteAccount:
+            DeleteAccountView(
+                userEmail: profileVM.currentUser?.email ?? "",
+                client: container.gdprDeleteClient,
+                authClient: container.authClient,
+                snackbar: snackbar,
+                onDeleted: onSignedOut
+            )
+        default:
+            EmptyView()
+        }
+    }
+
+    private func popProfile() {
+        if !model.profilePath.isEmpty { model.profilePath.removeLast() }
+    }
+
+    private func signOut() {
+        Task {
+            await container.authClient.logout()
+            onSignedOut()
         }
     }
 
@@ -282,32 +376,5 @@ private struct BookFab: View {
                 .overlay(Circle().stroke(CleansiaColors.background, lineWidth: 4))
         }
         .accessibilityLabel(Text(verbatim: L10n.Shell.book))
-    }
-}
-
-private struct ProfileHubView: View {
-    let onOpenDisputes: () -> Void
-    let onOpenAddresses: () -> Void
-    let onSignedOut: () -> Void
-
-    var body: some View {
-        List {
-            Button(action: onOpenAddresses) {
-                Label(L10n.AddressManager.profileRow, systemImage: "mappin.and.ellipse")
-            }
-            .foregroundColor(CleansiaColors.onSurface)
-
-            Button(action: onOpenDisputes) {
-                Label(L10n.Disputes.listTitle, systemImage: "exclamationmark.bubble")
-            }
-            .foregroundColor(CleansiaColors.onSurface)
-
-            Button(role: .destructive, action: onSignedOut) {
-                Label(L10n.signOut, systemImage: "rectangle.portrait.and.arrow.right")
-            }
-        }
-        .navigationTitle(L10n.Shell.profile)
-        .navigationBarTitleDisplayMode(.inline)
-        .background(CleansiaColors.background.ignoresSafeArea())
     }
 }

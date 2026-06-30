@@ -704,3 +704,130 @@ server-/UUID-controlled (no path traversal, no user filename); image evidence is
 construction (test-proven); no secret travels in the multipart body and nothing in the feature is logged;
 temp files are cleaned on success and failure; the privacy manifest + usage strings accurately describe the
 new capture surface. R10–R12 + T-0308 all PASS.
+
+---
+
+## T-0314 Slice F — Profile + GDPR delete + Devices + notification-prefs — Gate-SEC verification (2026-06-30)
+
+Branch `phase/ios-phase8`, UNCOMMITTED working tree (untracked `Features/Profile/`, `ProblemDetailsError.swift`,
+`L10n+Profile.swift`, `L10n+Devices.swift`, tests; modified shell/container/L10n/xcstrings). Verified against
+§7.17 Gate-SEC (R1-R4 GDPR, R13 Devices, R14 prefs) + S1-S10. I own the GDPR-delete + Devices gate; Gate-DP/parity
+covered in parallel by the reviewer. Read the actual code; ran the tests on iPhone 17 (sim 04753F32… booted).
+
+### R2 — signOutLocal-not-logout on success — PASS
+- `DeleteAccountViewModel.confirmDelete()` `.success:` calls `authClient.signOutLocal()`
+  (`DeleteAccountViewModel.swift:27`), NEVER `logout()`. `signOutLocal()` = `tokenStore.clear()` +
+  `await sessionScopedCaches.clearAll()` with NO server call, NO preLogout push-unregister, NO Apple revoke
+  (`Auth.swift:216-219`). Contrast `logout()` (`Auth.swift:207-214`) which DOES hit `api/Auth/Logout` + preLogout —
+  correctly NOT used (the account is already gone server-side; there is no live token to log out with).
+- Production wiring passes the real spine: `DeleteAccountView(authClient: container.authClient, …)`
+  (`CustomerShellView.swift:264`); `container.authClient` → the `AuthApiClient` spine (`CustomerAppContainer.swift:25-27`,
+  `makeAuthSpine: { _ in authStack.spine }` :130). `AuthApiClient` conforms `AuthSpine → AuthClient`, so
+  `signOutLocal()` is exactly `Auth.swift:216`.
+- Test: `testSuccessCallsSignOutLocalNotLogout` asserts `signOutLocalCount == 1 && logoutCount == 0`
+  (`DeleteAccountViewModelTests.swift:22-30`); `FakeAuthClient` counts the two separately
+  (`ProfileFakes.swift:17-28`). PASS.
+
+### R1 — branch-on-result + blocked-stays-signed-in + no-resurrect — PASS
+- The VM switches `ApiResult`: ONLY HTTP-2xx (no thrown error) reaches `.success`; a BLOCKED 4xx throws
+  `ErrorResponse.error`, caught by `apiResult(mapError: ProblemDetailsError.map)` → `.failure`
+  (`GdprDeleteClient.swift:24-30`, `SafeApiCall.swift:7-13`). A blocked response CANNOT be mis-mapped to a false
+  success — the only success path is a 2xx body.
+- Code extraction is correct and unspoofable: backend sets `ProblemDetails.Type = error.Code`
+  (`CleansiaApiController.cs:92`); iOS `ProblemDetailsError.map` decodes `body.type → ApiError.code`
+  (`ProblemDetailsError.swift:10-12`). The 3 codes match the backend constants exactly:
+  `gdpr.deletion_blocked_by_order` / `_by_invoice` / `_already_pending`
+  (`GdprDeleteClient.swift:11-17` ↔ `BusinessErrorMessage.cs:317-319`, emitted at `GdprDeletionService.cs:54,59,66`).
+- Each blocked path shows the localized error and LEAVES the session intact — `.failure:` only snackbars +
+  sets `deleteState = .error`, NO `signOutLocal`, NO route-to-login (`DeleteAccountViewModel.swift:30-34`).
+  All 3 blocked codes + a generic 500 are localized in 5 languages (`error_gdpr_deletion_*` keys present in
+  en/cs/sk/uk/ru). Tests: `testBlockedByOrderShowsErrorAndStaysSignedIn` / `…ByInvoice…` / `…AlreadyPending…` /
+  `testGenericFailureStaysSignedIn` all assert `signOutLocalCount == 0` (and order-test also `logoutCount == 0`,
+  `accountDeleted` NOT emitted) (`DeleteAccountViewModelTests.swift:46-92`). A "wipe-on-any-response" stranding
+  bug is NOT present. PASS.
+- No-resurrect: on success `signOutLocal` wipes token + ALL session caches — `clearAll()` iterates every
+  registered cache (`SessionScopedCache.swift:19-31`); `CustomerAppContainer.init` registers all 8 session
+  repos (order/loyalty/referral/membership/recurring/dispute/savedAddress/userProfile)
+  (`CustomerAppContainer.swift:133-140`). Re-login is a fresh session; no pre-delete identity replayed. PASS.
+
+### R3 — SIWA note shown + Apple revoke owner-deferred — PASS
+- `DeleteAccountView` renders `appleNote` via `L10n.DeleteAccount.appleRevokeNote`
+  (`DeleteAccountView.swift:100-112`, key `delete_account_apple_note`), localized ×5 (en/cs/sk/uk/ru) with the
+  required "remove Cleansia in Settings → Apple ID → Sign in with Apple" guidance (5.1.1(v)).
+- NO Apple `/auth/revoke` is attempted anywhere — grep of the whole customer module finds only the localized
+  note + its render site; nothing holds an Apple token to revoke. `/auth/revoke` stays owner-deferred (§7.14 D4). PASS.
+
+### R4 — no client-side delete logic / no client flag — PASS
+- The VM only calls `client.deleteMyAccount()` → `CustomerGdprAPI.gdprDeleteMyAccount()` (no args, no client id,
+  no flag) and reacts to the result (`GdprDeleteClient.swift:25-29`, `DeleteAccountViewModel.swift:22-35`).
+  Server (JWT subject) owns the deletion decision. PASS.
+
+### R13 — Devices (T-0310 D6-8 verbatim) — PASS
+- The ONE id: `LiveCustomerDevicesClient(deviceIdProvider: authStack.deviceIdProvider)`
+  (`CustomerAppContainer.swift:125`) is the SAME `DeviceIdProvider` instance (service `cz.cleansia.customer.device`)
+  passed to the `HeaderAdapter` that stamps `X-Device-Id` (`CustomerClients.swift:16-20`; `HeaderAdapter.swift:25,42-44`).
+  `client.currentDeviceId` returns `deviceIdProvider.deviceId` (`CustomerDevicesClient.swift:26-28`). NO second
+  UUID / `identifierForVendor` source — `DeviceIdProvider.deviceId` is keychain-backed single source
+  (`DeviceIdProvider.swift:31-52`). Same id is sent as the `currentDeviceId:` query param to `deviceMine`
+  (`CustomerDevicesClient.swift:32`). Test `testLoadSendsTheOneDeviceIdAsCurrentDeviceId` proves the provider id
+  is what is sent (`CustomerDevicesViewModelTests.swift:39-45`).
+- Current device hides revoke: server flags `isCurrent`; VM `isCurrentDevice` compares
+  `device.deviceId == client.currentDeviceId` with `device.isCurrent` fallback (`CustomerDevicesViewModel.swift:52-57`).
+- Defensive self-revoke → sign-out: revoking the current row emits `signedOut` (`…ViewModel.swift:41-42`); tests
+  `testSelfRevokeEmitsSignedOut` + `testSelfRevokeByIsCurrentFlagWhenDeviceIdMissing`
+  (`CustomerDevicesViewModelTests.swift:79-115`).
+- Server-scoped own-device-only revoke (no client check): `RevokeDevice.Handler` derives `userId` from
+  `IUserSessionProvider` then `GetByIdAndUserAsync(DeviceRowId, userId)` → null ⇒ `DeviceNotFound` (S3 no-leak),
+  then deactivate + `RevokeByDeviceAsync` (`RevokeDevice.cs:33-46`); controller `[Permission(Policy.Authenticated)]`
+  + `[EnableRateLimiting("auth")]` (`DeviceController.cs:76-88`). `GetMyDevices` scopes `GetByUserIdAsync(userId)`;
+  the `CurrentDeviceId` param only flags `IsCurrent` (`GetMyDevices.cs:19-25`). `DeviceDto` leaks no
+  UserId/TenantId/token (`DeviceDto.cs:3-9`) — S4 clean. Other-device revoke removes the row and STAYS signed in
+  (`testRevokeOtherRemovesRowAndStaysSignedIn`); failure keeps the list + snackbars (`testRevokeFailureKeepsList…`). PASS.
+
+### R14 — Notification preferences own-only — PASS
+- `notificationPreferencesGetMine()` / `notificationPreferencesUpdate(command:)` carry NO client-supplied id;
+  `toCommand()` is the 11 booleans only (`NotificationPreferences.swift:65-77, 98-114`). Server scopes to the JWT
+  subject. Optimistic apply + 300ms debounce + replace-all + rollback-on-failure is sound
+  (`NotificationPreferencesViewModel.swift:20-25, 39-58`); tests coalesce/separate/revert all pass. PASS.
+
+### Cross-cutting S-rules on these paths
+- S6 (no PII/secret logging): grep of `Features/Profile/`, `ProblemDetailsError.swift`, and `Auth.swift` for
+  print/os_log/NSLog/Logger/debugPrint → NONE. `ProblemDetailsError.map` decodes only `type`+`detail` (the error
+  code + a server message), no PII/secret. PASS.
+- Change-password (Security) flow: `userRequestPasswordChange` (email+language) → `userChangePassword`
+  (email+code+newPassword) (`ChangePasswordClient.swift:11-25`); VM gates on `PasswordPolicy.isValid` +
+  `passwordsMatch` BEFORE the network call (`SecurityViewModel.swift:43-50`); no secret is logged; the new
+  password rides the HTTPS body, not a query/log. Reset-by-emailed-code is the established public-ish flow. PASS.
+- S1/S2/S3/S4/S5 on the backend device endpoints: all satisfied (see R13). S7/S8/S9/S10 N/A to this iOS slice
+  (no new side-effecting command, entity, migration, or soft-delete query introduced client-side; the GDPR
+  deletion idempotency/blocking is enforced server-side in `GdprDeletionService`, out of Slice-F scope).
+
+### Tests on iPhone 17 (sim 04753F32-7518-4747-8A6E-D030CAD7A42E booted; workspace Cleansia)
+`xcodebuild test -scheme CleansiaCustomer` on DeleteAccountViewModelTests + CustomerDevicesViewModelTests +
+NotificationPreferencesViewModelTests + SecurityViewModelTests + ProfileViewModelTests:
+**34/34 PASS, 0 failures.** Confirms success→signOutLocal-not-logout; the 3 blocked + generic→stay-signed-in;
+the-ONE-id sent; self-revoke→sign-out (both deviceId and isCurrent-fallback); hide-on-current; prefs
+optimistic+debounce+rollback; password-policy gate.
+
+### Explicit GDPR verdict demanded by the brief
+- (a) Does success do a COMPLETE local wipe via `signOutLocal` (not `logout`)? **YES** — token cleared + all 8
+  session caches cleared; no server logout; test-proven `signOutLocalCount==1, logoutCount==0`.
+- (b) Does a BLOCKED delete leave the user signed in (never strand them)? **YES** — only a 2xx reaches success;
+  all 3 blocked codes + generic failure hit `.failure`, which never wipes/redirects; test-proven `signOutLocalCount==0`.
+- (c) Is the SIWA-revoke correctly deferred + the note shown? **YES** — no Apple `/auth/revoke` attempted
+  anywhere; the localized "remove Cleansia in Settings → Apple ID → Sign in with Apple" note is shown, ×5 languages.
+
+### Devices D6-8 verdict
+**PASS** — single keychain-backed `DeviceIdProvider` instance shared between `HeaderAdapter`(X-Device-Id) and the
+devices client (no second UUID/identifierForVendor); current device hides revoke; defensive self-revoke→sign-out;
+server-scoped own-device-only revoke with NotFound-on-non-owned (S3).
+
+### Residual
+- NONE blocking. Observation (non-blocking): `NotificationPreferences.toDomain()` defaults missing booleans to
+  `true` except `promo` → `false` (`NotificationPreferences.swift:80-95`) — a safe, privacy-preserving default
+  (opt-out marketing by default), not a security issue.
+
+**VERDICT: PASS.** T-0314 Slice F is exploitable-as-written: NONE found. The load-bearing GDPR delete is correct
+on all three axes (complete-wipe-via-signOutLocal on success; blocked-stays-signed-in with unspoofable code
+extraction; SIWA note shown + Apple revoke owner-deferred). Devices D6-8 and prefs R14 PASS. No secret/PII logged
+on any path. This completes the T-0314 customer security gate.

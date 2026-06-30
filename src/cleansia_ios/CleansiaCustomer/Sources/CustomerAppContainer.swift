@@ -88,6 +88,12 @@ final class CustomerAppContainer: AppContainer {
 
     let savedAddressRepository: SavedAddressRepository
 
+    let userProfileRepository: UserProfileRepository
+    let devicesClient: CustomerDevicesClient
+    let gdprDeleteClient: GdprDeleteClient = LiveGdprDeleteClient()
+    let notificationPreferencesClient: NotificationPreferencesClient = LiveNotificationPreferencesClient()
+    let changePasswordClient: ChangePasswordClient = LiveChangePasswordClient()
+
     init(
         snackbar: SnackbarController,
         apiBaseURL: URL = AppConfig.apiBaseURL
@@ -114,6 +120,9 @@ final class CustomerAppContainer: AppContainer {
         self.disputeRepository = disputeRepository
         let savedAddressRepository = SavedAddressRepository(client: LiveSavedAddressClient())
         self.savedAddressRepository = savedAddressRepository
+        let userProfileRepository = UserProfileRepository(client: LiveUserProfileClient())
+        self.userProfileRepository = userProfileRepository
+        devicesClient = LiveCustomerDevicesClient(deviceIdProvider: authStack.deviceIdProvider)
         base = BaseAppContainer(
             apiBaseURL: apiBaseURL,
             snackbar: snackbar,
@@ -128,6 +137,7 @@ final class CustomerAppContainer: AppContainer {
         sessionScopedCaches.register(recurringRepository)
         sessionScopedCaches.register(disputeRepository)
         sessionScopedCaches.register(savedAddressRepository)
+        sessionScopedCaches.register(userProfileRepository)
     }
 
     func installGeneratedClientAuth() {

@@ -41,6 +41,10 @@ enum L10n {
         localized("common_cancel")
     }
 
+    static var retry: String {
+        localized("common_retry")
+    }
+
     nonisolated(unsafe) static var bundle: Bundle = .main
 
     static func localized(_ key: String) -> String {

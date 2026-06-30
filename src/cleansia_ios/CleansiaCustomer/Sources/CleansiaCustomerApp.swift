@@ -5,6 +5,7 @@ import SwiftUI
 struct CleansiaCustomerApp: App {
     @StateObject private var snackbar: SnackbarController
     @StateObject private var sessionManager: SessionManager
+    @StateObject private var preferences: CustomerPreferencesModel
     private let container: CustomerAppContainer
 
     init() {
@@ -14,14 +15,17 @@ struct CleansiaCustomerApp: App {
         container.installGeneratedClientAuth()
         StripeLaunch.applyPublishableKey()
         _sessionManager = StateObject(wrappedValue: container.sessionManager)
+        _preferences = StateObject(wrappedValue: CustomerPreferencesModel(settings: container.appSettings))
         self.container = container
     }
 
     var body: some Scene {
         WindowGroup {
-            CustomerRootView(container: container)
+            CustomerRootView(container: container, preferences: preferences)
                 .environmentObject(sessionManager)
                 .environment(\.snackbarController, container.snackbar)
+                .environment(\.locale, preferences.locale)
+                .preferredColorScheme(preferences.theme.colorScheme)
                 .snackbarHost(container.snackbar)
         }
     }

@@ -7,6 +7,7 @@ final class CustomerShellModel: ViewModel {
     @Published var ordersPath: [OrderRoute] = []
     @Published var homePath: [HomeRoute] = []
     @Published var rewardsPath: [RewardsRoute] = []
+    @Published var profilePath: [ProfileRoute] = []
     @Published var isBookingPresented = false
 
     func book() {
@@ -44,6 +45,12 @@ enum HomeRoute: Hashable {
 
 enum RewardsRoute: Hashable {
     case activity
+}
+
+enum ProfileRoute: Hashable {
+    case disputes
+    case createDispute(orderId: String?)
+    case disputeDetail(String)
 }
 
 struct CustomerShellView: View {
@@ -140,11 +147,46 @@ struct CustomerShellView: View {
             .tabItem { Label(CustomerShellTab.rewards.label, systemImage: CustomerShellTab.rewards.systemImage) }
             .tag(CustomerShellTab.rewards)
 
-            ProfilePlaceholderView(onSignedOut: onSignedOut)
-                .tabItem { Label(CustomerShellTab.profile.label, systemImage: CustomerShellTab.profile.systemImage) }
-                .tag(CustomerShellTab.profile)
+            NavigationStack(path: $model.profilePath) {
+                ProfileHubView(
+                    onOpenDisputes: { model.profilePath = [.disputes] },
+                    onSignedOut: onSignedOut
+                )
+                .navigationDestination(for: ProfileRoute.self) { route in
+                    profileDestination(route)
+                }
+            }
+            .tabItem { Label(CustomerShellTab.profile.label, systemImage: CustomerShellTab.profile.systemImage) }
+            .tag(CustomerShellTab.profile)
         }
         .tint(CleansiaColors.primary)
+    }
+
+    @ViewBuilder
+    private func profileDestination(_ route: ProfileRoute) -> some View {
+        switch route {
+        case .disputes:
+            DisputesListView(
+                repository: container.disputeRepository,
+                snackbar: snackbar,
+                onDisputeClick: { model.profilePath.append(.disputeDetail($0)) },
+                onCreateDispute: { model.profilePath.append(.createDispute(orderId: nil)) },
+                onBrowseOrders: model.openOrders
+            )
+        case let .createDispute(orderId):
+            CreateDisputeView(
+                orderId: orderId,
+                repository: container.disputeRepository,
+                snackbar: snackbar,
+                onCreated: { id in model.profilePath = [.disputes, .disputeDetail(id)] }
+            )
+        case let .disputeDetail(disputeId):
+            DisputeDetailView(
+                disputeId: disputeId,
+                repository: container.disputeRepository,
+                snackbar: snackbar
+            )
+        }
     }
 
     @ViewBuilder
@@ -233,26 +275,23 @@ private struct BookFab: View {
     }
 }
 
-private struct ProfilePlaceholderView: View {
+private struct ProfileHubView: View {
+    let onOpenDisputes: () -> Void
     let onSignedOut: () -> Void
 
     var body: some View {
-        VStack(spacing: Spacing.l) {
-            Spacer()
-            Image(systemName: CustomerShellTab.profile.systemImage)
-                .font(.system(size: 48))
-                .foregroundColor(CleansiaColors.primary)
-            Text(verbatim: L10n.Shell.placeholderComingSoon(CustomerShellTab.profile.label))
-                .font(CleansiaTypography.titleMedium)
-                .foregroundColor(CleansiaColors.onBackground)
-                .multilineTextAlignment(.center)
-            Spacer()
-            Button(role: .destructive, action: onSignedOut) {
-                Text(verbatim: L10n.signOut)
+        List {
+            Button(action: onOpenDisputes) {
+                Label(L10n.Disputes.listTitle, systemImage: "exclamationmark.bubble")
             }
-            .padding(.bottom, Spacing.xxl)
+            .foregroundColor(CleansiaColors.onSurface)
+
+            Button(role: .destructive, action: onSignedOut) {
+                Label(L10n.signOut, systemImage: "rectangle.portrait.and.arrow.right")
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .navigationTitle(L10n.Shell.profile)
+        .navigationBarTitleDisplayMode(.inline)
         .background(CleansiaColors.background.ignoresSafeArea())
     }
 }

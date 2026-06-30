@@ -37,6 +37,10 @@ enum L10n {
         localized("profile_logout")
     }
 
+    static var cancel: String {
+        localized("common_cancel")
+    }
+
     nonisolated(unsafe) static var bundle: Bundle = .main
 
     static func localized(_ key: String) -> String {

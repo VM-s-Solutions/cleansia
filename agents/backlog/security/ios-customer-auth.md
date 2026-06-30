@@ -595,3 +595,112 @@ fail-closed, webhook-re-read, secret-redaction, ConfirmRecurring cash/card/compl
 authority for membership-active and order-paid state; `.completed` (SetupIntent and PaymentIntent) is UX-only;
 one idempotency token spans both subscribe phases; the card/subscribe path is fail-closed when unconfigured;
 secrets are redacted and never logged/persisted; the Stripe seam stays single-importer. R5–R9 all PASS.
+
+---
+
+## T-0314 Slice D — Customer Disputes + multipart evidence upload (Gate-SEC R10–R12 + T-0308 photo-privacy) — 2026-06-30
+
+Scope: the customer's FIRST capture surface (camera/library/PDF) feeding a multipart evidence upload.
+Reviewer owns Gate-DP/parity in parallel; THIS note owns the file-upload + capture-surface security gate.
+Verified against UNCOMMITTED working tree on `phase/ios-phase8`. No code edited.
+
+### R10 own-dispute scoping — PASS
+- SERVER-enforced (DisputeNotOwnedByUser); the client adds NO ownership check that could be bypassed.
+  `DisputeClient.getById` sends only `disputeId` (`DisputeClient.swift:21-31`); list/create/addMessage/upload
+  carry no client userId. `DisputeRepository` does NOT cache details — `getById` always hits the network
+  (`DisputeRepository.swift:64-66`), so no stale cross-user detail can be served.
+- Cache wipe on sign-out / forced-401: `DisputeRepository: SessionScopedCache` (`DisputeRepository.swift:13`,
+  `clear()` :80-84) is REGISTERED (`CustomerAppContainer.swift:125`). `clearAll()` runs on logout
+  (`Auth.swift:218`) and on forced-401/failed-refresh (`SessionRefresher.forceSignOut:75-79` → :76 clears
+  caches BEFORE token clear). Registry holds weak refs and awaits each `clear()` (`SessionScopedCache.swift:19-31`).
+- Bearer rides every dispute call (ADR-0019 spine): the generated builder sets `requiresAuthentication:false`
+  (`CustomerDisputeAPI.swift:233`) but auth is attached at the URLSession layer by `HeaderAdapter`
+  (`HeaderAdapter.swift:29-30`) for any path NOT on the anon allow-list. `/api/Dispute/*` is absent from
+  `AnonymousAllowList.customer` (`AnonymousAllowList.swift:42-63`); customer wires `HeaderAdapter(anonymousAllowList: .customer)`
+  (`CustomerClients.swift:17-19`). So all dispute reads/writes carry the caller's Bearer.
+
+### R11 client file validation FAIL-CLOSED, mirroring the backend — PASS
+- `EvidenceFileValidator.validate` (`EvidenceFileValidator.swift:14-22`): size > 10 MiB → `.tooLarge`;
+  contentType not in {image/jpeg, image/png, image/webp, application/pdf} (lowercased) → `.unsupportedType`.
+  Empty/unknown type fails closed (the set lookup misses). Limit == backend MaxFileSize:
+  `maxEvidenceBytes = 10*1024*1024` (`DisputeFormConstants.swift:12-18`).
+- Runs on the FINAL bytes BEFORE the temp file is written AND before the network call:
+  image path validates AFTER ImageCompressor.encode and BEFORE `write` (`EvidencePreparer.swift:44-50`);
+  PDF path validates BEFORE `write` (`:57-61`). `write` is the only place a temp file is created (`:64-77`).
+- Cannot be bypassed: the VM's ONLY upload path is `uploadEvidence` → `uploadOne` → `prepare` → EvidencePreparer
+  (`DisputeDetailViewModel.swift:75-118`); a rejection returns before any `repository.uploadEvidence` call.
+  Tests: EvidenceFileValidatorTests (7/7 incl. empty-type fail-closed, over-by-1, case-insensitive,
+  oversize-wins-over-wrong-type); EvidencePreparerTests `testPreparePdfRejectsOversizeBeforeWritingFile`
+  (temp dir empty after rejection); DisputeDetailViewModelTests `testUploadEvidenceRejectsOversizePdfBeforeCall`
+  (uploadCallCount == 0), `testUploadEvidenceMixedValidAndInvalidUploadsOnlyValid`. ALL PASS.
+
+### R12 no path traversal — PASS
+- Blob name is SERVER-controlled (`{disputeId}/{Guid}{ext}`); the client contributes only the extension.
+- Temp file is UUID-named with a fixed prefix and a fixed ext: `dispute-evidence-<UUID>.jpg|.pdf`
+  (`EvidencePreparer.swift:70`). No user-supplied filename enters the path.
+- The multipart `filename` is `fileURL.lastPathComponent` (`URLSessionImplementations.swift:531,542`) = the
+  UUID temp name, NOT the picked source's display name. The camera/library picker returns a bare `UIImage`
+  (`CameraOrLibraryPicker.swift:69` reads `info[.originalImage]`) — no source URL/name travels; the PDF is
+  read as raw `Data` (`DisputeDetailView.swift:193`) — the security-scoped source URL is dropped after read.
+
+### EXIF/GPS strip (T-0308 photo-privacy) — PASS
+- Image evidence goes through `ImageCompressor.encode` (`EvidencePreparer.swift:39`), which re-renders into a
+  fresh CGBitmapContext (no source metadata) and re-encodes via ImageIO with an empty-but-quality properties
+  dict (`ImageCompressor.swift:47-86`) — explicit EXIF/GPS strip by construction. PDFs pass through untouched
+  (no EXIF concern). PROVEN: ImageCompressorTests `testEncodedOutputHasNoGpsOrExifMetadata` (GPS-tagged source
+  → no GPS dict in output) and EvidencePreparerTests `testPreparedImageHasNoGpsMetadata` (strip survives the
+  temp-file write) — both PASS on iPhone 17.
+
+### No secret in multipart / no secret logging / temp cleanup — PASS
+- Multipart body carries only `disputeId` + `file` (bytes + UUID filename + mimetype) — no token/secret
+  (`CustomerDisputeAPI.swift:215-218`; Bearer is a header, not a body part).
+- ZERO logging in the whole Disputes feature and in ImageCompressor (grep for print/os_log/NSLog/Logger/
+  debugPrint → none). No token/secret/file-path is logged.
+- Temp file is cleaned up on BOTH success and failure: `defer { prepared.cleanUp() }`
+  (`DisputeDetailViewModel.swift:99`); `cleanUp()` removes the temp file (`EvidencePreparer.swift:15-17`).
+  Tests: `testUploadEvidenceUploadsTempPdfWithCorrectExtensionAndCleansUp` (file gone after upload),
+  EvidencePreparerTests temp-cleanup assertions. PASS.
+
+### New capture surface (privacy) — PASS
+- `NSCameraUsageDescription` + `NSPhotoLibraryUsageDescription` present in BOTH Info.plist (diff) and
+  project.yml (XcodeGen source of truth) — customer's first capture surface.
+- `PrivacyInfo.xcprivacy` added and wired into the target sources (`project.yml`); declares
+  `NSPrivacyCollectedDataTypePhotosorVideos`, Linked=true, Tracking=false, purpose=AppFunctionality —
+  ACCURATE for the actual capture (photo/PDF evidence used only for app functionality; no tracking).
+  Matches ADR-0016 AR-PRIV: manifest matches the real capture.
+- PDF preview uses the server SAS URL (`DisputeDetailView.openPdf` → `evidence.blobURL`, :142-148) and
+  presents `QuickLookPreview(url:, deleteOnDismiss:false)` (:153). `deleteOnDismiss:false` is CORRECT for a
+  REMOTE URL — and `QuickLookPreview.removeFile` is `url.isFileURL`-guarded (`QuickLookPreview.swift:72-75`)
+  so it could not delete a remote URL anyway. No local PII PDF is left undeleted (the locally-prepared
+  upload temp is the only on-disk PII, and it is `defer`-cleaned post-upload). The in-place fullscreen image
+  preview likewise points at the remote `blobURL` (:134-139), not a local file.
+
+### Explicit verdicts demanded by the brief
+- (a) Can a client upload an oversize / disallowed-type / path-traversing file? **NO.** Fail-closed validation
+  runs on the final bytes before any temp write and before the network call; the VM has no bypass path; the
+  blob name is server-controlled and the temp/multipart filename is a UUID — no user filename in the path.
+- (b) Does image evidence leak EXIF/GPS or any secret? **NO.** Images are re-rendered + re-encoded metadata-free
+  (test-proven, strip survives the temp write); the multipart body carries no secret; nothing in the feature
+  logs the token/secret/file path; temp files are cleaned on success and failure.
+- (c) Is the privacy manifest accurate for the new capture surface? **YES.** PhotosorVideos / Linked / no-Tracking
+  / AppFunctionality matches the camera+library+PDF evidence capture; the two usage-description strings are
+  present in both Info.plist and project.yml.
+
+### Tests on iPhone 17 (sim 04753F32… booted; workspace Cleansia; project regenerated via xcodegen)
+- `CleansiaCustomer`: EvidenceFileValidatorTests + EvidencePreparerTests + DisputeDetailViewModelTests —
+  **25/25 PASS, 0 failures** (validator oversize/wrong-type/empty-fail-closed; preparer EXIF-strip +
+  validate-before-write + temp-cleanup; upload per-file sequential + cleanup + reject-before-call + mixed).
+- `CleansiaCore`: ImageCompressorTests/testEncodedOutputHasNoGpsOrExifMetadata — **PASS** (EXIF/GPS strip proof).
+
+### Residual
+- NON-blocking observation: `requiresAuthentication:false` on the generated dispute builders is the NSwag
+  default and is harmless here ONLY because the URLSession-level `HeaderAdapter` attaches the Bearer for all
+  non-anon paths. This is the established spine for every customer endpoint, not a Slice-D regression. No action.
+
+**VERDICT: PASS.** T-0314 Slice D is exploitable-as-written: NONE found. Own-dispute scoping is server-enforced
+with no client bypass and a session-scoped cache that wipes on sign-out/401; client file validation is
+fail-closed on the final bytes before write/network and cannot be bypassed; the blob/temp/multipart name is
+server-/UUID-controlled (no path traversal, no user filename); image evidence is EXIF/GPS-stripped by
+construction (test-proven); no secret travels in the multipart body and nothing in the feature is logged;
+temp files are cleaned on success and failure; the privacy manifest + usage strings accurately describe the
+new capture surface. R10–R12 + T-0308 all PASS.

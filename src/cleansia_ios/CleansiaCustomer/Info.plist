@@ -33,6 +33,10 @@
 	<string>$(GID_CLIENT_ID)</string>
 	<key>GIDServerClientID</key>
 	<string>$(GID_SERVER_CLIENT_ID)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Cleansia uses the camera so you can attach photo evidence to a dispute.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Cleansia needs access to your photos so you can attach photo evidence to a dispute.</string>
 	<key>STRIPE_PUBLISHABLE_KEY</key>
 	<string>$(STRIPE_PUBLISHABLE_KEY)</string>
 	<key>UIAppFonts</key>

@@ -84,6 +84,8 @@ final class CustomerAppContainer: AppContainer {
     let membershipRepository: MembershipRepository
     let recurringRepository: RecurringBookingRepository
 
+    let disputeRepository: DisputeRepository
+
     init(
         snackbar: SnackbarController,
         apiBaseURL: URL = AppConfig.apiBaseURL
@@ -106,6 +108,8 @@ final class CustomerAppContainer: AppContainer {
         let recurringRepository = RecurringBookingRepository(client: LiveRecurringBookingClient())
         self.membershipRepository = membershipRepository
         self.recurringRepository = recurringRepository
+        let disputeRepository = DisputeRepository(client: LiveDisputeClient())
+        self.disputeRepository = disputeRepository
         base = BaseAppContainer(
             apiBaseURL: apiBaseURL,
             snackbar: snackbar,
@@ -118,6 +122,7 @@ final class CustomerAppContainer: AppContainer {
         sessionScopedCaches.register(referralRepository)
         sessionScopedCaches.register(membershipRepository)
         sessionScopedCaches.register(recurringRepository)
+        sessionScopedCaches.register(disputeRepository)
     }
 
     func installGeneratedClientAuth() {

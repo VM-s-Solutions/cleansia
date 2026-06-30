@@ -4,24 +4,33 @@ import SwiftUI
 
 struct HomeTab: View {
     @StateObject private var vm: HomeTabViewModel
+    @ObservedObject private var membershipVM: MembershipViewModel
     let onBookCleaning: () -> Void
     let onOrderClick: (String) -> Void
     let onSeeAllOrders: () -> Void
     let onCompleteProfile: () -> Void
+    let onSubscribePlus: () -> Void
+    let onManageRecurring: () -> Void
 
     init(
         orderRepository: OrderRepository,
+        membershipVM: MembershipViewModel,
         snackbar: SnackbarController,
         onBookCleaning: @escaping () -> Void,
         onOrderClick: @escaping (String) -> Void,
         onSeeAllOrders: @escaping () -> Void,
-        onCompleteProfile: @escaping () -> Void
+        onCompleteProfile: @escaping () -> Void,
+        onSubscribePlus: @escaping () -> Void,
+        onManageRecurring: @escaping () -> Void
     ) {
         _vm = StateObject(wrappedValue: HomeTabViewModel(orderRepository: orderRepository, snackbar: snackbar))
+        self.membershipVM = membershipVM
         self.onBookCleaning = onBookCleaning
         self.onOrderClick = onOrderClick
         self.onSeeAllOrders = onSeeAllOrders
         self.onCompleteProfile = onCompleteProfile
+        self.onSubscribePlus = onSubscribePlus
+        self.onManageRecurring = onManageRecurring
     }
 
     var body: some View {
@@ -32,6 +41,12 @@ struct HomeTab: View {
                 ProfileNudgeCard(onComplete: onCompleteProfile)
 
                 BookCard(onBook: onBookCleaning)
+
+                MembershipManagementCard(vm: membershipVM, onSubscribeClick: onSubscribePlus)
+
+                if membershipVM.current?.hasMembership == true {
+                    RecurringEntryRow(onManage: onManageRecurring)
+                }
 
                 if !vm.recentOrders.isEmpty {
                     RecentOrdersSection(
@@ -48,7 +63,45 @@ struct HomeTab: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(CleansiaColors.background.ignoresSafeArea())
-        .task { await vm.refreshCatalog() }
+        .task {
+            await vm.refreshCatalog()
+            await membershipVM.load()
+        }
+    }
+}
+
+private struct RecurringEntryRow: View {
+    let onManage: () -> Void
+
+    var body: some View {
+        Button(action: onManage) {
+            HStack(spacing: Spacing.s) {
+                Image(systemName: "repeat")
+                    .font(.system(size: 22))
+                    .foregroundColor(CleansiaColors.primary)
+                VStack(alignment: .leading, spacing: Spacing.hair) {
+                    Text(L10n.Recurring.bookingsTitle)
+                        .font(CleansiaTypography.titleMedium)
+                        .foregroundColor(CleansiaColors.onSurface)
+                    Text(L10n.Membership.perkRecurringDesc)
+                        .font(CleansiaTypography.bodyMedium)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+            }
+            .padding(Spacing.m)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.large))
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.large)
+                    .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 

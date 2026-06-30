@@ -5,7 +5,7 @@ import SwiftUI
 final class CustomerShellModel: ViewModel {
     @Published var selection: CustomerShellTab = .home
     @Published var ordersPath: [OrderRoute] = []
-    @Published var homePath: [OrderRoute] = []
+    @Published var homePath: [HomeRoute] = []
     @Published var rewardsPath: [RewardsRoute] = []
     @Published var isBookingPresented = false
 
@@ -34,12 +34,21 @@ enum OrderRoute: Hashable {
     case detail(String)
 }
 
+enum HomeRoute: Hashable {
+    case detail(String)
+    case subscribePlus
+    case membershipSuccess
+    case recurringList
+    case createRecurring(orderId: String?)
+}
+
 enum RewardsRoute: Hashable {
     case activity
 }
 
 struct CustomerShellView: View {
     @StateObject private var model = CustomerShellModel()
+    @StateObject private var membershipVM: MembershipViewModel
     @Environment(\.snackbarController) private var snackbar
     private let container: CustomerAppContainer
     private let onSignedOut: () -> Void
@@ -47,6 +56,10 @@ struct CustomerShellView: View {
     init(container: CustomerAppContainer, onSignedOut: @escaping () -> Void) {
         self.container = container
         self.onSignedOut = onSignedOut
+        _membershipVM = StateObject(wrappedValue: MembershipViewModel(
+            repository: container.membershipRepository,
+            snackbar: container.snackbar
+        ))
     }
 
     var body: some View {
@@ -74,6 +87,8 @@ struct CustomerShellView: View {
         await container.orderRepository.refresh()
         await container.loyaltyRepository.refresh()
         await container.referralRepository.refresh()
+        await container.membershipRepository.refresh()
+        await container.membershipRepository.refreshPlans()
     }
 
     private var tabs: some View {
@@ -81,14 +96,17 @@ struct CustomerShellView: View {
             NavigationStack(path: $model.homePath) {
                 HomeTab(
                     orderRepository: container.orderRepository,
+                    membershipVM: membershipVM,
                     snackbar: snackbar,
                     onBookCleaning: model.book,
                     onOrderClick: { model.homePath = [.detail($0)] },
                     onSeeAllOrders: model.openOrders,
-                    onCompleteProfile: model.openProfile
+                    onCompleteProfile: model.openProfile,
+                    onSubscribePlus: { model.homePath.append(.subscribePlus) },
+                    onManageRecurring: { model.homePath.append(.recurringList) }
                 )
-                .navigationDestination(for: OrderRoute.self) { route in
-                    orderDestination(route)
+                .navigationDestination(for: HomeRoute.self) { route in
+                    homeDestination(route)
                 }
             }
             .tabItem { Label(CustomerShellTab.home.label, systemImage: CustomerShellTab.home.systemImage) }
@@ -138,7 +156,51 @@ struct CustomerShellView: View {
                 client: container.orderClient,
                 repository: container.orderRepository,
                 snackbar: snackbar,
-                eventBus: container.orderEventBus
+                eventBus: container.orderEventBus,
+                paymentSheet: StripePaymentController()
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func homeDestination(_ route: HomeRoute) -> some View {
+        switch route {
+        case let .detail(orderId):
+            OrderDetailView(
+                orderId: orderId,
+                client: container.orderClient,
+                repository: container.orderRepository,
+                snackbar: snackbar,
+                eventBus: container.orderEventBus,
+                paymentSheet: StripePaymentController()
+            )
+        case .subscribePlus:
+            SubscribePlusScreen(
+                repository: container.membershipRepository,
+                snackbar: snackbar,
+                paymentSheet: StripePaymentController(),
+                onBack: { model.homePath.removeLast() },
+                onSubscribed: { model.homePath.append(.membershipSuccess) }
+            )
+        case .membershipSuccess:
+            MembershipSuccessScreen(
+                onSetupRecurring: { model.homePath = [.recurringList, .createRecurring(orderId: nil)] },
+                onBackHome: { model.homePath = [] }
+            )
+        case .recurringList:
+            RecurringBookingsScreen(
+                repository: container.recurringRepository,
+                membershipRepository: container.membershipRepository,
+                snackbar: snackbar,
+                onCreateNew: { model.homePath.append(.createRecurring(orderId: nil)) },
+                onSubscribePlus: { model.homePath.append(.subscribePlus) }
+            )
+        case let .createRecurring(orderId):
+            CreateRecurringScreen(
+                sourceOrderId: orderId,
+                repository: container.recurringRepository,
+                snackbar: snackbar,
+                onCreated: { model.homePath.removeLast() }
             )
         }
     }

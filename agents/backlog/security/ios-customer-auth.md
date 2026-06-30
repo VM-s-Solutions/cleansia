@@ -506,3 +506,92 @@ New/changed files in scope:
 **VERDICT: PASS.** Slice E is exploitable-as-written: NONE found. Webhook remains the sole paid-status authority;
 `.completed` is UX-only; no secret logged/persisted; the card path is fail-closed when unconfigured and uses exactly
 one charge surface. This completes the T-0313 payment security gate.
+
+---
+
+## 2026-06-30 — T-0314 Slice C (Membership/Plus + Recurring + ConfirmRecurring) — Gate-SEC §7.17 R5–R9
+
+Branch `phase/ios-phase8`, UNCOMMITTED working tree. Scope OWNED: membership/recurring money-path
+security gate (extends the Core Stripe seam). Reviewer covers Gate-DP/parity in parallel.
+
+### Seam extension (PaymentSheetPresenting / StripePaymentController + PaymentIntentKind)
+- **Single importer — PASS.** `grep "import StripePaymentSheet"` → exactly one hit:
+  `StripePaymentController.swift:5`. `StripeCore` (`:4`) is also confined to this file (pre-existing,
+  only sets the publishable key). No second SDK importer added.
+- **Secret redaction — PASS.** `PaymentSheetPresentation.description` (`PaymentSheetPresenting.swift:29-31`)
+  renders `"…secrets: <redacted>"`; `debugDescription` (`:33-35`) delegates to it. The new `intentKind`
+  is logged (non-secret); `clientSecret`/`ephemeralKey`/`stripeCustomerId` never appear. Test:
+  `MembershipViewModelTests.testSecretsNeverAppearInSetupIntentPresentationDescription` — PASS.
+- **Setup-intent path adds no log/persist — PASS.** The `.setup` branch (`StripePaymentController.swift:37-41`)
+  only constructs `PaymentSheet(setupIntentClientSecret:)`. No print/os_log/Logger/NSLog/debugPrint and no
+  UserDefaults/Keychain/file write in any Membership/Recurring/Payment source file (grep, 0 hits).
+
+### Membership two-phase (R5–R9), file:line
+- **R5/R9 webhook-authority — PASS.** Authoritative published state `MembershipRepository.current`
+  (drives `hasMembership`) is mutated ONLY by `refresh()` → `client.getMine()` → `membershipGetMine`
+  (`MembershipRepository.swift:22-31`). `confirmSubscribe` (`MembershipViewModel.swift:81-101`) calls
+  `repository.refresh()` on success (`:95`) and NEVER writes `current`/`hasMembership` from the
+  subscribe/SDK result. The `.subscribed(membershipId:)` return is a navigation signal off the server
+  `membershipId`, not a client-set active flag. `.canceled`/`.failed` → no mutation
+  (`SubscribePlusScreen.swift:99-109`; failure branch `MembershipViewModel.swift:97-99`). Tests:
+  `testConfirmSubscribeRereadsMembershipAfterCompleted` (asserts `mineCallCount==1`),
+  `testConfirmSubscribeFailureReturnsFailedAndNoMutation` (`repo.current` stays nil) — PASS.
+- **R6 no-secret-logging — PASS.** grep print/os_log/Logger/NSLog/debugPrint/UserDefaults/FileManager
+  across Membership+Recurring+Payment sources → 0 hits.
+- **R7 fail-closed — PASS.** `canSubscribe == isCardPaymentAvailable` (`MembershipViewModel.swift:35-37`).
+  `startSubscribe` first line `guard canSubscribe else { return .failed }` (`:51`) returns BEFORE
+  `repository.subscribePhase1` — no SetupIntent requested. CTA bar renders only `if vm.canSubscribe`
+  (`SubscribePlusScreen.swift:47`) — hidden when key empty. `StripeConfig.isConfigured` treats empty
+  and `$(...)` placeholder as unconfigured (`StripeConfig.swift:13-16`). Tests:
+  `testFailClosedStartSubscribeUnreachableUnderEmptyKey` (asserts `subscribeCalls.isEmpty`),
+  `testCtaHiddenWhenCardUnavailable` — PASS.
+- **R8 idempotency replay — PASS.** ONE token minted at Phase-1 (`MembershipViewModel.swift:56-57`),
+  REPLAYED at Phase-2 (`:86-87` reuses `subscribeIdempotencyToken`). A fresh `startSubscribe` mints a new
+  token (`:56`). Tests: `testConfirmSubscribeReplaysTheSameIdempotencyTokenAcrossBothPhases` (Phase1.token
+  == Phase2.token, confirmed=false/true), `testFreshSubscribeAttemptMintsANewToken` (tokens differ) — PASS.
+- **R9 own-only — PASS.** `getMine`/`cancel` parameterless; `subscribe` sends planCode+confirmed+token only;
+  `swapPlan` sends newPlanCode only (`MembershipManagementClient.swift:5-12,29-58`). No client userId.
+  In-app cancel reachable: `MembershipManagementCard.ActiveCard` Cancel button (`:188-195`) → `vm.cancel()`,
+  card mounted on HomeTab.
+
+### ConfirmRecurring path, file:line
+- **Two-phase branch — PASS.** `OrderDetailViewModel.confirmRecurring` (`:215-241`): cash response
+  (nil/empty `clientSecret`, `RecurringConfirmation.needsPayment==false`, `OrderClient.swift:18-19`) ⇒
+  snackbar + `repository.refresh()` + `fetch(initial:false)` — re-read, never client-infer paid. Card
+  response (non-empty secret) ⇒ emits `PaymentSheetPresentation(intentKind: .payment)` for the view.
+- **`.completed` never flips order state — PASS.** `notifyRecurringPaymentResult(.completed)` (`:243-253`)
+  ONLY does `repository.refresh()` + `fetch(initial:false)` — re-reads the order; no client status mutation.
+  `.canceled` → no-op; `.failed` → snackbar only. View wiring `OrderDetailView.swift:47-52` presents the
+  sheet then calls `notifyRecurringPaymentResult`. Test: `testRecurringCardPaymentCompletedRefetches`
+  (asserts detail re-fetch) — PASS.
+- **CREATE does not charge a client-trusted price — PASS.** `CreateRecurringInput`
+  (`RecurringModels.swift:26-37`) and `CreateRecurringBookingCommand` (`RecurringBookingClient.swift:21-33`)
+  carry frequency/rooms/services/packages/paymentType — NO price/amount field. Template is server-priced;
+  the generated order confirms (and prices) later.
+
+### Explicit verdicts demanded by the brief
+- (a) Can a client appear-subscribed/paid without a real capture? **NO.** Membership active-state and order
+  paid-state are mutated only by server re-reads (`membershipGetMine` / order GET); the SDK `.completed` is
+  UX-only; subscribe/confirm DTOs set no client-trusted paid flag. Webhook remains the sole authority.
+- (b) Can secrets leak via log/persist? **NO.** No logging/persistence anywhere in the money-path files;
+  description/debugDescription redact (test-proven); secrets are in-memory, handed straight to the sheet.
+- (c) Is the seam extension still single-importer + fail-closed? **YES.** Exactly one StripePaymentSheet
+  importer (`StripePaymentController.swift`); empty/placeholder key ⇒ CTA hidden AND subscribe branch
+  unreachable (no SetupIntent requested), sheet never presented.
+
+### Tests on iPhone 17 (sim 04753F32… booted; workspace Cleansia, Stripe 25.17.0)
+`xcodebuild test -scheme CleansiaCustomer -destination 'platform=iOS Simulator,name=iPhone 17'`
+restricted to MembershipViewModelTests + CreateRecurringViewModelTests + RecurringBookingsViewModelTests
++ OrderDetailViewModelTests — **50/50 PASS, 0 failures.** Covers two-phase, idempotency-replay,
+fail-closed, webhook-re-read, secret-redaction, ConfirmRecurring cash/card/completed.
+
+### Residual
+- NON-blocking nit: `OrderRecurringConfirm.needsConfirmation` (`OrderDetailView.swift:165-170`) hard-codes
+  `paymentStatus?.value == 1` (Pending). This is a UX visibility gate for the confirm button, NOT a
+  security boundary — the real confirm authority is server-side `orderConfirmRecurring`, which re-validates
+  ownership and state. No security impact.
+
+**VERDICT: PASS.** T-0314 Slice C is exploitable-as-written: NONE found. Webhook/server re-read is the sole
+authority for membership-active and order-paid state; `.completed` (SetupIntent and PaymentIntent) is UX-only;
+one idempotency token spans both subscribe phases; the card/subscribe path is fail-closed when unconfigured;
+secrets are redacted and never logged/persisted; the Stripe seam stays single-importer. R5–R9 all PASS.

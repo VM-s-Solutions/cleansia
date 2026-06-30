@@ -229,6 +229,77 @@ final class OrderDetailViewModelTests: XCTestCase {
         XCTAssertEqual(client.photosCallCount, 2)
     }
 
+    // MARK: Confirm recurring
+
+    func testConfirmRecurringCashNullSecretConfirmsAndRefetches() async {
+        let client = FakeOrderClient()
+        client.detailResults = [
+            .success(OrderFixtures.detail(statusValue: 1)),
+            .success(OrderFixtures.detail(statusValue: 2))
+        ]
+        client.confirmRecurringResult = .success(
+            RecurringConfirmation(clientSecret: nil, stripeCustomerId: nil, ephemeralKey: nil)
+        )
+        let vm = makeVM(client: client)
+        await vm.load()
+
+        var presented: PaymentSheetPresentation?
+        let cancellable = vm.recurringCardPayment.sink { presented = $0 }
+        await vm.confirmRecurring()
+        cancellable.cancel()
+
+        XCTAssertNil(presented, "cash confirm must not present a PaymentSheet")
+        XCTAssertEqual(client.confirmRecurringCallCount, 1)
+        XCTAssertEqual(vm.confirmRecurringState, .idle)
+    }
+
+    func testConfirmRecurringCardNonNullSecretEmitsPaymentIntentPresentation() async {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(OrderFixtures.detail(statusValue: 1))]
+        client.confirmRecurringResult = .success(
+            RecurringConfirmation(clientSecret: "pi_secret_1", stripeCustomerId: "cus_1", ephemeralKey: "ek_1")
+        )
+        let vm = makeVM(client: client)
+        await vm.load()
+
+        var presented: PaymentSheetPresentation?
+        let cancellable = vm.recurringCardPayment.sink { presented = $0 }
+        await vm.confirmRecurring()
+        cancellable.cancel()
+
+        XCTAssertEqual(presented?.intentKind, .payment)
+        XCTAssertEqual(presented?.clientSecret, "pi_secret_1")
+        XCTAssertEqual(presented?.stripeCustomerId, "cus_1")
+        XCTAssertEqual(vm.confirmRecurringState, .idle)
+    }
+
+    func testConfirmRecurringFailureStaysIdle() async {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(OrderFixtures.detail(statusValue: 1))]
+        client.confirmRecurringResult = .failure(ApiError(httpStatus: 500))
+        let vm = makeVM(client: client)
+        await vm.load()
+
+        await vm.confirmRecurring()
+
+        XCTAssertEqual(vm.confirmRecurringState, .idle)
+    }
+
+    func testRecurringCardPaymentCompletedRefetches() async {
+        let client = FakeOrderClient()
+        client.detailResults = [
+            .success(OrderFixtures.detail(statusValue: 1)),
+            .success(OrderFixtures.detail(statusValue: 2))
+        ]
+        let vm = makeVM(client: client)
+        await vm.load()
+        let before = client.detailCallCount
+
+        await vm.notifyRecurringPaymentResult(.completed)
+
+        XCTAssertGreaterThan(client.detailCallCount, before, "completed PaymentSheet re-reads the order")
+    }
+
     // MARK: Poller / events
 
     func testActiveOrderStartsPollerWhichRefetches() async {

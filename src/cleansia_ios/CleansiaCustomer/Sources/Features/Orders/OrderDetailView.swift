@@ -11,13 +11,15 @@ struct OrderDetailView: View {
 
     private let client: OrderClient
     private let snackbar: SnackbarController
+    private let paymentSheet: PaymentSheetPresenting
 
     init(
         orderId: String,
         client: OrderClient,
         repository: OrderRepository,
         snackbar: SnackbarController,
-        eventBus: OrderEventBus
+        eventBus: OrderEventBus,
+        paymentSheet: PaymentSheetPresenting
     ) {
         _vm = StateObject(
             wrappedValue: OrderDetailViewModel(
@@ -30,6 +32,7 @@ struct OrderDetailView: View {
         )
         self.client = client
         self.snackbar = snackbar
+        self.paymentSheet = paymentSheet
     }
 
     var body: some View {
@@ -41,6 +44,12 @@ struct OrderDetailView: View {
             .onReceive(vm.cancelSucceeded) { _ in showCancelSheet = false }
             .onReceive(vm.reviewSucceeded) { _ in showReviewSheet = false }
             .onReceive(vm.receiptReady) { url in receiptURL = ReceiptFile(url: url) }
+            .onReceive(vm.recurringCardPayment) { presentation in
+                Task {
+                    let outcome = await paymentSheet.present(presentation)
+                    await vm.notifyRecurringPaymentResult(outcome)
+                }
+            }
             .navigationDestination(isPresented: $showPhotos) {
                 OrderPhotosScreen(orderId: orderId, client: client, snackbar: snackbar)
             }
@@ -80,7 +89,11 @@ struct OrderDetailView: View {
                 )
                 .task(id: order.id) { await vm.ensurePhotosLoaded() }
 
-                if OrderStatusGroup.isCancellable(order.status) {
+                if OrderRecurringConfirm.needsConfirmation(order) {
+                    ConfirmRecurringFooter(submitting: vm.confirmRecurringState.isSubmitting) {
+                        Task { await vm.confirmRecurring() }
+                    }
+                } else if OrderStatusGroup.isCancellable(order.status) {
                     CancelFooter(enabled: !vm.cancelState.isSubmitting) {
                         showCancelSheet = true
                     }
@@ -145,6 +158,36 @@ private struct ReceiptFile: Identifiable {
     let url: URL
     var id: String {
         url.path
+    }
+}
+
+enum OrderRecurringConfirm {
+    /// A recurring-generated order awaiting customer confirmation: it carries a
+    /// `recurringTemplateId` and its payment status is Pending (value 1).
+    static func needsConfirmation(_ order: OrderItem) -> Bool {
+        guard let templateId = order.recurringTemplateId, !templateId.isBlank else { return false }
+        return order.paymentStatus?.value == 1
+    }
+}
+
+private struct ConfirmRecurringFooter: View {
+    let submitting: Bool
+    let onConfirm: () -> Void
+
+    var body: some View {
+        VStack {
+            CleansiaPrimaryButton(
+                L10n.Recurring.confirmCta,
+                leadingIcon: "checkmark.circle",
+                loading: submitting,
+                enabled: !submitting,
+                action: onConfirm
+            )
+        }
+        .padding(.horizontal, Spacing.m)
+        .padding(.vertical, Spacing.s)
+        .frame(maxWidth: .infinity)
+        .background(CleansiaColors.surface.ignoresSafeArea(edges: .bottom))
     }
 }
 

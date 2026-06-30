@@ -25,6 +25,10 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
     var photosResults: [ApiResult<GetOrderPhotosResponse>] = []
     private(set) var photosCallCount = 0
 
+    var confirmRecurringResult: ApiResult<RecurringConfirmation> =
+        .success(RecurringConfirmation(clientSecret: nil, stripeCustomerId: nil, ephemeralKey: nil))
+    private(set) var confirmRecurringCallCount = 0
+
     func getMyOrders(offset: Int, limit: Int) async -> ApiResult<OrdersPage> {
         pageRequests.append((offset, limit))
         if let pageError { return .failure(pageError) }
@@ -62,6 +66,11 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
         let index = min(photosCallCount, photosResults.count - 1)
         guard index >= 0 else { return .failure(ApiError(httpStatus: 500)) }
         return photosResults[index]
+    }
+
+    func confirmRecurring(orderId _: String) async -> ApiResult<RecurringConfirmation> {
+        confirmRecurringCallCount += 1
+        return confirmRecurringResult
     }
 }
 

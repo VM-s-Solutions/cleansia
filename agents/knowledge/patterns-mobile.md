@@ -670,6 +670,14 @@ screen / snackbar), NOT the VM. **Deviations a reviewer rejects:** echoing `Fina
 double-submit guard (a tap-storm = N orders); a card branch that calls Stripe (that's Slice E); logging the token/secret;
 the preferred-cleaner picker fetching cleaners for non-Plus users.
 
+**iOS Stripe seam — adding a new intent type (T-0314 §7.17 Slice C):** extend `PaymentIntentKind {payment, setup}` on
+`PaymentSheetPresentation` + branch the `StripePaymentController` switch (one `PaymentSheet(setupIntentClientSecret:)`
+path for membership SetupIntent alongside the T-0313 `paymentIntentClientSecret` path) — **NEVER a second Stripe
+importer** (`StripePaymentController` stays the sole `import StripePaymentSheet`; secrets stay `<redacted>` in
+`description`). The same Gate-SEC rules carry to every intent: `.completed` is UX-only (re-read the server, the webhook
+is the sole paid authority), fail-closed on an empty publishable key (`StripeConfig.isCardPaymentAvailable` → hide the
+CTA + the branch is unreachable), replay one idempotency token across a two-phase confirm.
+
 **Debounced VM Combine pipelines — the scheduler seam (harvested T-0313):** when a VM debounces a `@Published` pipeline (the
 quoteWatcher 400ms), inject the scheduler as a Core **`AnyScheduler`/`AnySchedulerOf`** (`CleansiaCore/State`, a minimal
 Combine `Scheduler` type-eraser — no swift-clocks dep) defaulting to `.main`; behavioral tests pass a `TestScheduler` and

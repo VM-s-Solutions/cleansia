@@ -28,10 +28,18 @@ import Foundation
                 )
             }
 
-            let sheet = PaymentSheet(
-                paymentIntentClientSecret: presentation.clientSecret,
-                configuration: configuration
-            )
+            let sheet = switch presentation.intentKind {
+            case .payment:
+                PaymentSheet(
+                    paymentIntentClientSecret: presentation.clientSecret,
+                    configuration: configuration
+                )
+            case .setup:
+                PaymentSheet(
+                    setupIntentClientSecret: presentation.clientSecret,
+                    configuration: configuration
+                )
+            }
 
             return await withCheckedContinuation { continuation in
                 sheet.present(from: presenter) { result in

@@ -24,10 +24,12 @@ final class OrderDetailViewModel: ViewModel {
     @Published private(set) var cancelState: ActionState = .idle
     @Published private(set) var reviewState: ActionState = .idle
     @Published private(set) var receiptState: ActionState = .idle
+    @Published private(set) var confirmRecurringState: ActionState = .idle
 
     let cancelSucceeded = PassthroughSubject<CancelOrderResponse, Never>()
     let reviewSucceeded = PassthroughSubject<OrderReviewDto, Never>()
     let receiptReady = PassthroughSubject<URL, Never>()
+    let recurringCardPayment = PassthroughSubject<PaymentSheetPresentation, Never>()
 
     private let orderId: String
     private let client: OrderClient
@@ -201,6 +203,58 @@ final class OrderDetailViewModel: ViewModel {
         case let .failure(error):
             snackbar.showApiError(error)
             receiptState = .idle
+        }
+    }
+
+    // MARK: - Confirm recurring
+
+    /// A recurring-generated order in payment-pending state needs an explicit
+    /// confirm. The backend branches on payment type: a cash response carries no
+    /// `clientSecret` (already Confirmed + Paid) → success + refetch; a card
+    /// response carries a `clientSecret` → emit a PaymentSheet presentation for
+    /// the view to present (PaymentIntent variant). `.completed` is UX-only — the
+    /// view calls `notifyRecurringPaymentResult` and we re-read the order; the
+    /// webhook remains the sole paid authority.
+    func confirmRecurring() async {
+        guard !orderId.isBlank, !confirmRecurringState.isSubmitting else { return }
+        confirmRecurringState = .submitting
+        switch await client.confirmRecurring(orderId: orderId) {
+        case let .success(confirmation):
+            confirmRecurringState = .idle
+            if confirmation.needsPayment,
+               let clientSecret = confirmation.clientSecret,
+               let stripeCustomerId = confirmation.stripeCustomerId,
+               let ephemeralKey = confirmation.ephemeralKey,
+               !stripeCustomerId.isEmpty, !ephemeralKey.isEmpty
+            {
+                recurringCardPayment.send(PaymentSheetPresentation(
+                    clientSecret: clientSecret,
+                    ephemeralKey: ephemeralKey,
+                    stripeCustomerId: stripeCustomerId,
+                    merchantDisplayName: "Cleansia",
+                    intentKind: .payment
+                ))
+            } else {
+                snackbar.showSuccess(L10n.Recurring.confirmSuccess)
+                _ = await repository.refresh()
+                await fetch(initial: false)
+            }
+        case let .failure(error):
+            snackbar.showApiError(error)
+            confirmRecurringState = .idle
+        }
+    }
+
+    func notifyRecurringPaymentResult(_ outcome: PaymentSheetOutcome) async {
+        switch outcome {
+        case .completed:
+            snackbar.showSuccess(L10n.Recurring.confirmSuccess)
+            _ = await repository.refresh()
+            await fetch(initial: false)
+        case .canceled:
+            break
+        case .failed:
+            snackbar.showError(L10n.localized("error_payment_failed"))
         }
     }
 

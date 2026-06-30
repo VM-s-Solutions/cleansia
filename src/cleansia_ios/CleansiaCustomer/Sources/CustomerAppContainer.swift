@@ -74,6 +74,10 @@ final class CustomerAppContainer: AppContainer {
     let geocodingService: GeocodingService = CLGeocoderGeocodingService()
     let mapProvider: MapProvider = MapKitMapProvider()
 
+    let orderClient: OrderClient
+    let orderEventBus = OrderEventBus()
+    let orderRepository: OrderRepository
+
     init(
         snackbar: SnackbarController,
         apiBaseURL: URL = AppConfig.apiBaseURL
@@ -84,6 +88,10 @@ final class CustomerAppContainer: AppContainer {
             sessionScopedCaches: sessionScopedCaches
         )
         self.authStack = authStack
+        let orderClient = LiveOrderClient()
+        let orderRepository = OrderRepository(client: orderClient)
+        self.orderClient = orderClient
+        self.orderRepository = orderRepository
         base = BaseAppContainer(
             apiBaseURL: apiBaseURL,
             snackbar: snackbar,
@@ -91,6 +99,7 @@ final class CustomerAppContainer: AppContainer {
             makeAuthSpine: { _ in authStack.spine },
             makeApiClient: { seams in CustomerMobileApiClient(baseURL: seams.apiBaseURL) }
         )
+        sessionScopedCaches.register(orderRepository)
     }
 
     func installGeneratedClientAuth() {

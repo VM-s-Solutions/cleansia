@@ -3,6 +3,7 @@ import SwiftUI
 
 struct BookingSuccessView: View {
     let confirmationCode: String
+    let onViewOrder: (() -> Void)?
     let onDone: () -> Void
 
     var body: some View {
@@ -30,7 +31,14 @@ struct BookingSuccessView: View {
                 confirmationCard
             }
             Spacer()
-            CleansiaPrimaryButton(L10n.Booking.successGoHome, action: onDone)
+            VStack(spacing: Spacing.s) {
+                if let onViewOrder {
+                    CleansiaPrimaryButton(L10n.Orders.viewOrder, action: onViewOrder)
+                    CleansiaOutlinedButton(L10n.Booking.successGoHome, action: onDone)
+                } else {
+                    CleansiaPrimaryButton(L10n.Booking.successGoHome, action: onDone)
+                }
+            }
         }
         .padding(Spacing.l)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -61,7 +69,7 @@ struct BookingSuccessView: View {
 #if DEBUG
     struct BookingSuccessView_Previews: PreviewProvider {
         static var previews: some View {
-            BookingSuccessView(confirmationCode: "CLN-12345", onDone: {})
+            BookingSuccessView(confirmationCode: "CLN-12345", onViewOrder: {}, onDone: {})
         }
     }
 #endif

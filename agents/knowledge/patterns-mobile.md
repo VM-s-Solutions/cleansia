@@ -678,6 +678,45 @@ real timer. Keep the generic `where`-clause on ONE declaration line (≤120 col)
 doesn't fight swiftlint's `opening_brace` (its `ignore_multiline_statement_conditions` covers `if`/`guard`, not a type/func
 `where`).
 
+**iOS customer Home/Orders/OrderDetail — the ONE way (sprint-12 §7.17, T-0314 Slice A; ADR-0019 spine + ADR-0018 D3 modal
+mapping + the §7.10 D1 `QuickLookPreview` Core seam + the §7.9 sealed-state/`Code`-mapping conventions + the Parity rule;
+Gate-DP):** the customer read cluster (Home + paged Orders + OrderDetail with cancel/review/receipt) over the generated
+`CustomerOrderAPI` (`orderGetMyOrders`/`orderGetById`/`orderCancel`/`orderSubmitReview`/`orderDownloadReceipt`/`orderGetPhotos`).
+- **The 7-state `OrderStatus` (open risk) — map EXACTLY (`OrderEnums.kt:11`):** `New=0·Pending=1·Confirmed=2·**OnTheWay=3**·
+  InProgress=4·Completed=5·Cancelled=6`. The generated `OrderStatus` enum is `_0…_6` (raw == backend int); read the read-path
+  `Code` envelope through the **one** `Code.toOrderStatus()` extension (`value.flatMap(OrderStatus.init(rawValue:))`) — never a raw
+  `.value == N` compare. **Do NOT use the CLAUDE.md 6-state lifecycle (it omits OnTheWay)** — the timeline/LiveProgressHero/status
+  labels MUST handle all 7 or OnTheWay orders render wrong. The LiveProgressHero step indicator is **5 steps** (Booked·Accepted·On
+  the way·Started·Finished) with the active index from a pure `LiveProgress.activeStep(for:)` (the `LiveProgressHero.kt:296-303`
+  table — strict-TDD'd, esp. that `_3` is its own `.onTheWay` step, not folded into InProgress). Status labels are `.xcstrings` ×5.
+- **The paged Orders list** is a sealed `UiState<[OrderListItem]>` + `RefreshPhase` (PTR binds `.userRefreshing`; on-appear refresh is
+  `.backgroundRefreshing`) over a `@Singleton`-parity **`OrderRepository`** (an injected `@MainActor` class registered in the
+  `SessionScopedCacheRegistry`) that owns the list cache + **ADDITIVE** pagination (`refresh()` replaces page 0, `loadNextPage()`
+  appends `offset == orders.count`) — the `OrderRepository.kt` parity; the VM observes its `@Published` via Combine. A refresh
+  failure while already loaded STAYS loaded (snackbar only); first-load failure → `.error`.
+- **OrderDetail** is `UiState<OrderItem>` + a separate **`PhotosUiState`** side-channel (lazy `ensurePhotosLoaded()` → `orderGetPhotos`,
+  **fresh fetch each open** — SAS URLs ~1h, no cross-open cache) + three sealed **`ActionState`**s (cancel/review/receipt) each with a
+  paired one-shot **`PassthroughSubject`** effect (close-sheet / file-URL), never a success-as-state. The receipt path: the generated
+  `orderDownloadReceipt` **returns a local file `URL`** → the VM surfaces it via the effect → the screen presents the **Core
+  `QuickLookPreview`** with `deleteOnDismiss` (the §7.10 D1 seam, reused — SECURITY E4). A **5-min active-order poller** (Confirmed/
+  OnTheWay/InProgress only; self-cancels on terminal) + refresh-on-`.task` + an **`OrderEventBus`** seam cover refresh.
+  **Customer push registration is NOT built (that was partner T-0311); the poller + on-appear + the bus seam cover refresh until
+  customer push lands — flag it, do not build push here.** Cancel is a modal `.sheet` previewing the fee/refund via a pure TDD'd
+  `CancellationFeePreview` (oops≤15m/free≥24h/half 4–24h/full<4h, the `CancelOrderSheet.kt` tiers; server recomputes
+  authoritatively). **No camera/photo Info.plist keys** — the customer only *views* photos (`AsyncImage` + a fullscreen pager); capture
+  is partner-only (§7.10).
+- **The T-0313 success→OrderDetail fold:** `BookingSuccessView` gains a "View order" CTA (next to "Go home") that threads the new
+  `orderId` (already on `BookingSubmitOutcome.success`) up through `BookingSheetView.onViewOrder` → the shell jumps to the Orders tab
+  and pushes `.detail(orderId)` (T-0313 deferred this since Orders didn't exist).
+- **HomeTab** is the injection-seam VM (no own state) observing the customer singletons that exist (orders now; loyalty/membership/
+  catalog/address/recurring land in later slices — observe what exists, stub the rest cleanly) + a `refreshCatalog` seam; the soft
+  profile-completeness nudge **routes to the Profile tab** (EditProfile lands in Slice F; the nudge just navigates).
+- **Deviations a reviewer rejects:** a raw `orderStatus.value == N` compare or a second `Code→OrderStatus` mapper; folding OnTheWay
+  into InProgress (a 6-state timeline); a list `UiState` flag-bag or non-additive pagination; PTR firing on background refresh;
+  dropping the `OrderRepository` singleton/cache un-approved; success modeled as a state instead of a one-shot effect; a partner-local
+  `QLPreviewController` wrapper or a stream-to-cache instead of the generated download + Core `QuickLookPreview`; camera/photo plist
+  keys added to the customer (it only views); building customer push here.
+
 **Parity deviation (Android is wrong, iOS is right) — auth validation strings:** the Android partner
 `RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set validation errors as **hardcoded English
 literals** (no `@ApplicationContext Context`, no `R.string.*`) → they never localize across the 5 locales (a

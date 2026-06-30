@@ -4,27 +4,43 @@ import SwiftUI
 @MainActor
 final class CustomerShellModel: ViewModel {
     @Published var selection: CustomerShellTab = .home
-
+    @Published var ordersPath: [OrderRoute] = []
+    @Published var homePath: [OrderRoute] = []
     @Published var isBookingPresented = false
 
     func book() {
         isBookingPresented = true
     }
+
+    /// The T-0313 success→OrderDetail fold: jump to the Orders tab and open the
+    /// new order's detail (Orders didn't exist when the success screen shipped).
+    func openOrder(_ orderId: String) {
+        selection = .orders
+        ordersPath = [.detail(orderId)]
+    }
+
+    func openOrders() {
+        selection = .orders
+        ordersPath = []
+    }
+
+    func openProfile() {
+        selection = .profile
+    }
+}
+
+enum OrderRoute: Hashable {
+    case detail(String)
 }
 
 struct CustomerShellView: View {
     @StateObject private var model = CustomerShellModel()
-    private let geocoding: GeocodingService
-    private let mapProvider: MapProvider
+    @Environment(\.snackbarController) private var snackbar
+    private let container: CustomerAppContainer
     private let onSignedOut: () -> Void
 
-    init(
-        geocoding: GeocodingService,
-        mapProvider: MapProvider,
-        onSignedOut: @escaping () -> Void
-    ) {
-        self.geocoding = geocoding
-        self.mapProvider = mapProvider
+    init(container: CustomerAppContainer, onSignedOut: @escaping () -> Void) {
+        self.container = container
         self.onSignedOut = onSignedOut
     }
 
@@ -36,27 +52,48 @@ struct CustomerShellView: View {
             }
             .sheet(isPresented: $model.isBookingPresented) {
                 BookingSheetView(
-                    geocoding: geocoding,
-                    mapProvider: mapProvider,
+                    geocoding: container.geocodingService,
+                    mapProvider: container.mapProvider,
                     paymentSheet: StripePaymentController(),
-                    onDismiss: { model.isBookingPresented = false }
+                    onDismiss: { model.isBookingPresented = false },
+                    onViewOrder: { orderId in
+                        model.isBookingPresented = false
+                        model.openOrder(orderId)
+                    }
                 )
             }
+            .task { await container.orderRepository.refresh() }
     }
 
     private var tabs: some View {
         TabView(selection: $model.selection) {
-            PlaceholderTabView(
-                systemImage: CustomerShellTab.home.systemImage,
-                title: L10n.Shell.placeholderComingSoon(CustomerShellTab.home.label)
-            )
+            NavigationStack(path: $model.homePath) {
+                HomeTab(
+                    orderRepository: container.orderRepository,
+                    snackbar: snackbar,
+                    onBookCleaning: model.book,
+                    onOrderClick: { model.homePath = [.detail($0)] },
+                    onSeeAllOrders: model.openOrders,
+                    onCompleteProfile: model.openProfile
+                )
+                .navigationDestination(for: OrderRoute.self) { route in
+                    orderDestination(route)
+                }
+            }
             .tabItem { Label(CustomerShellTab.home.label, systemImage: CustomerShellTab.home.systemImage) }
             .tag(CustomerShellTab.home)
 
-            PlaceholderTabView(
-                systemImage: CustomerShellTab.orders.systemImage,
-                title: L10n.Shell.placeholderComingSoon(CustomerShellTab.orders.label)
-            )
+            NavigationStack(path: $model.ordersPath) {
+                OrdersTab(
+                    repository: container.orderRepository,
+                    snackbar: snackbar,
+                    onOrderClick: { model.ordersPath = [.detail($0)] },
+                    onBookCleaning: model.book
+                )
+                .navigationDestination(for: OrderRoute.self) { route in
+                    orderDestination(route)
+                }
+            }
             .tabItem { Label(CustomerShellTab.orders.label, systemImage: CustomerShellTab.orders.systemImage) }
             .tag(CustomerShellTab.orders)
 
@@ -72,6 +109,20 @@ struct CustomerShellView: View {
                 .tag(CustomerShellTab.profile)
         }
         .tint(CleansiaColors.primary)
+    }
+
+    @ViewBuilder
+    private func orderDestination(_ route: OrderRoute) -> some View {
+        switch route {
+        case let .detail(orderId):
+            OrderDetailView(
+                orderId: orderId,
+                client: container.orderClient,
+                repository: container.orderRepository,
+                snackbar: snackbar,
+                eventBus: container.orderEventBus
+            )
+        }
     }
 }
 
@@ -114,15 +165,3 @@ private struct ProfilePlaceholderView: View {
         .background(CleansiaColors.background.ignoresSafeArea())
     }
 }
-
-#if DEBUG
-    struct CustomerShellView_Previews: PreviewProvider {
-        static var previews: some View {
-            CustomerShellView(
-                geocoding: CLGeocoderGeocodingService(),
-                mapProvider: PreviewMapProvider(),
-                onSignedOut: {}
-            )
-        }
-    }
-#endif

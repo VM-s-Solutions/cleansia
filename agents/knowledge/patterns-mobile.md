@@ -670,6 +670,14 @@ screen / snackbar), NOT the VM. **Deviations a reviewer rejects:** echoing `Fina
 double-submit guard (a tap-storm = N orders); a card branch that calls Stripe (that's Slice E); logging the token/secret;
 the preferred-cleaner picker fetching cleaners for non-Plus users.
 
+**iOS Stripe seam — adding a new intent type (T-0314 §7.17 Slice C):** extend `PaymentIntentKind {payment, setup}` on
+`PaymentSheetPresentation` + branch the `StripePaymentController` switch (one `PaymentSheet(setupIntentClientSecret:)`
+path for membership SetupIntent alongside the T-0313 `paymentIntentClientSecret` path) — **NEVER a second Stripe
+importer** (`StripePaymentController` stays the sole `import StripePaymentSheet`; secrets stay `<redacted>` in
+`description`). The same Gate-SEC rules carry to every intent: `.completed` is UX-only (re-read the server, the webhook
+is the sole paid authority), fail-closed on an empty publishable key (`StripeConfig.isCardPaymentAvailable` → hide the
+CTA + the branch is unreachable), replay one idempotency token across a two-phase confirm.
+
 **Debounced VM Combine pipelines — the scheduler seam (harvested T-0313):** when a VM debounces a `@Published` pipeline (the
 quoteWatcher 400ms), inject the scheduler as a Core **`AnyScheduler`/`AnySchedulerOf`** (`CleansiaCore/State`, a minimal
 Combine `Scheduler` type-eraser — no swift-clocks dep) defaulting to `.main`; behavioral tests pass a `TestScheduler` and
@@ -677,6 +685,120 @@ Combine `Scheduler` type-eraser — no swift-clocks dep) defaulting to `.main`; 
 real timer. Keep the generic `where`-clause on ONE declaration line (≤120 col) so swiftformat's `wrapMultilineStatementBraces`
 doesn't fight swiftlint's `opening_brace` (its `ignore_multiline_statement_conditions` covers `if`/`guard`, not a type/func
 `where`).
+
+**iOS customer Home/Orders/OrderDetail — the ONE way (sprint-12 §7.17, T-0314 Slice A; ADR-0019 spine + ADR-0018 D3 modal
+mapping + the §7.10 D1 `QuickLookPreview` Core seam + the §7.9 sealed-state/`Code`-mapping conventions + the Parity rule;
+Gate-DP):** the customer read cluster (Home + paged Orders + OrderDetail with cancel/review/receipt) over the generated
+`CustomerOrderAPI` (`orderGetMyOrders`/`orderGetById`/`orderCancel`/`orderSubmitReview`/`orderDownloadReceipt`/`orderGetPhotos`).
+- **The 7-state `OrderStatus` (open risk) — map EXACTLY (`OrderEnums.kt:11`):** `New=0·Pending=1·Confirmed=2·**OnTheWay=3**·
+  InProgress=4·Completed=5·Cancelled=6`. The generated `OrderStatus` enum is `_0…_6` (raw == backend int); read the read-path
+  `Code` envelope through the **one** `Code.toOrderStatus()` extension (`value.flatMap(OrderStatus.init(rawValue:))`) — never a raw
+  `.value == N` compare. **Do NOT use the CLAUDE.md 6-state lifecycle (it omits OnTheWay)** — the timeline/LiveProgressHero/status
+  labels MUST handle all 7 or OnTheWay orders render wrong. The LiveProgressHero step indicator is **5 steps** (Booked·Accepted·On
+  the way·Started·Finished) with the active index from a pure `LiveProgress.activeStep(for:)` (the `LiveProgressHero.kt:296-303`
+  table — strict-TDD'd, esp. that `_3` is its own `.onTheWay` step, not folded into InProgress). Status labels are `.xcstrings` ×5.
+- **The paged Orders list** is a sealed `UiState<[OrderListItem]>` + `RefreshPhase` (PTR binds `.userRefreshing`; on-appear refresh is
+  `.backgroundRefreshing`) over a `@Singleton`-parity **`OrderRepository`** (an injected `@MainActor` class registered in the
+  `SessionScopedCacheRegistry`) that owns the list cache + **ADDITIVE** pagination (`refresh()` replaces page 0, `loadNextPage()`
+  appends `offset == orders.count`) — the `OrderRepository.kt` parity; the VM observes its `@Published` via Combine. A refresh
+  failure while already loaded STAYS loaded (snackbar only); first-load failure → `.error`.
+- **OrderDetail** is `UiState<OrderItem>` + a separate **`PhotosUiState`** side-channel (lazy `ensurePhotosLoaded()` → `orderGetPhotos`,
+  **fresh fetch each open** — SAS URLs ~1h, no cross-open cache) + three sealed **`ActionState`**s (cancel/review/receipt) each with a
+  paired one-shot **`PassthroughSubject`** effect (close-sheet / file-URL), never a success-as-state. The receipt path: the generated
+  `orderDownloadReceipt` **returns a local file `URL`** → the VM surfaces it via the effect → the screen presents the **Core
+  `QuickLookPreview`** with `deleteOnDismiss` (the §7.10 D1 seam, reused — SECURITY E4). A **5-min active-order poller** (Confirmed/
+  OnTheWay/InProgress only; self-cancels on terminal) + refresh-on-`.task` + an **`OrderEventBus`** seam cover refresh.
+  **Customer push registration is NOT built (that was partner T-0311); the poller + on-appear + the bus seam cover refresh until
+  customer push lands — flag it, do not build push here.** Cancel is a modal `.sheet` previewing the fee/refund via a pure TDD'd
+  `CancellationFeePreview` (oops≤15m/free≥24h/half 4–24h/full<4h, the `CancelOrderSheet.kt` tiers; server recomputes
+  authoritatively). **No camera/photo Info.plist keys** — the customer only *views* photos (`AsyncImage` + a fullscreen pager); capture
+  is partner-only (§7.10).
+- **The T-0313 success→OrderDetail fold:** `BookingSuccessView` gains a "View order" CTA (next to "Go home") that threads the new
+  `orderId` (already on `BookingSubmitOutcome.success`) up through `BookingSheetView.onViewOrder` → the shell jumps to the Orders tab
+  and pushes `.detail(orderId)` (T-0313 deferred this since Orders didn't exist).
+- **HomeTab** is the injection-seam VM (no own state) observing the customer singletons that exist (orders now; loyalty/membership/
+  catalog/address/recurring land in later slices — observe what exists, stub the rest cleanly) + a `refreshCatalog` seam; the soft
+  profile-completeness nudge **routes to the Profile tab** (EditProfile lands in Slice F; the nudge just navigates).
+- **Deviations a reviewer rejects:** a raw `orderStatus.value == N` compare or a second `Code→OrderStatus` mapper; folding OnTheWay
+  into InProgress (a 6-state timeline); a list `UiState` flag-bag or non-additive pagination; PTR firing on background refresh;
+  dropping the `OrderRepository` singleton/cache un-approved; success modeled as a state instead of a one-shot effect; a partner-local
+  `QLPreviewController` wrapper or a stream-to-cache instead of the generated download + Core `QuickLookPreview`; camera/photo plist
+  keys added to the customer (it only views); building customer push here.
+
+**iOS customer addresses (AddressManager 3-pane + saved-address CRUD) — the ONE way (sprint-12 §7.17, T-0314 Slice E; ADR-0019
+spine + the §7.6 map seam + the §7.16 Slice C booking picker reuse + the Parity rule; Gate-DP):** the saved-address surface
+(`AddressManagerScreen.kt`) over the generated `CustomerSavedAddressAPI` (`savedAddressGetMine`/`savedAddressAdd`/
+`savedAddressUpdate`/`savedAddressSetDefault`/`savedAddressDelete`).
+- **3-pane native SwiftUI** (`List` / `AddOnMap` / `ReviewNew`) hosted by a holder `AddressManagerViewModel` exposing the repo +
+  the Core `MapProvider`/`GeocodingService` seams + snackbar; the pane + the picked-`GeocodedAddress` draft live on the VM (so the
+  List→AddOnMap→ReviewNew→save→back-to-List flow is unit-testable without a view). The **AddOnMap pane REUSES the existing
+  customer-local `BookingAddressPickerView`** (§7.16 Slice C — same pan/search/geocode picker, `onConfirmed`/`onBack`); do NOT hoist
+  the picker to Core (the picker→Core HARVEST is **T-0349**, deferred). The VM holds no app navigation — the host's onBack closes.
+- **`SavedAddressRepository`** is `@MainActor`, a `SessionScopedCache`, registered, caching the `[SavedAddress]` list — and is
+  **server-scoped only**. The Android `AddressRepository.kt` guest/DataStore offline path + `serverId`/local-id duality are NOT
+  ported (they exist on Android purely for the offline guest cache); the iOS repo always hits the backend. Ownership is enforced
+  server-side (`BeOwnedByCaller`) — **add NO client ownership check.**
+- **Mutations refetch the list** rather than mirroring server invariants in two places: `setDefault` (the server demotes peers),
+  `add`/`update`, and especially **Delete — `savedAddressDelete` returns an intentional empty-200 with NO id in the body, so the
+  repo refetches `getMine` rather than expecting a returned id**. A mutation's `getMine` failure surfaces the error (the VM
+  snackbars it); the mutation already succeeded server-side.
+- **Country-bias DEFERRED → T-0334** (the §7.7 D3 "design the seam, defer the affordance" move): ship the pan/search/save at full
+  parity WITHOUT the service-area country-bias on search **and** without the Android ReviewPane "city not serviced" advisory banner
+  (the `ServiceAreaProvider` that drives both rides the deferred T-0334; Slice D did not touch it). Recorded Gate-DP divergence —
+  the divergence touches a deferred advisory affordance, not layout/flow/branding; the backend re-validates the city on submit.
+- **Reachability:** an "Saved addresses" row + a `.addresses` case extend the interim `ProfileHubView`/`ProfileRoute` **in place**
+  (Slice F keeps it when it builds the full hub — do NOT rebuild the hub here). i18n ×5 from the Android customer `strings.xml`.
+- **Deviations a reviewer rejects:** a client-side ownership/serverId check; a ported guest/DataStore offline path; a Delete that
+  expects a returned id instead of refetching; the country-bias/`ServiceAreaProvider` or the city-not-serviced banner built here
+  (T-0334); hoisting the picker to Core (T-0349); the picker VM logic copied instead of reusing `BookingAddressPickerView`; a
+  flag-bag pane state; the AddressManager VM driving app navigation.
+
+**iOS customer Profile/Settings + GDPR-delete + Devices + NotificationPreferences — the ONE way (sprint-12 §7.17, T-0314 Slice F;
+the FINAL customer slice; ADR-0019 spine + §7.7 D6-8 Devices + §7.5 D1 `AppSettingsStore` + ADR-0016 AR-ACCT-1 + §7.14 D4 SIWA +
+the Parity rule; Gate-SEC):** the customer settings tail over the generated `CustomerGdprAPI`/`CustomerUserAPI`/`CustomerDeviceAPI`/
+`CustomerNotificationPreferencesAPI`. The interim `ProfileHubView`/`ProfileRoute` (Slices D/E) is **promoted in place** to the real
+`ProfileTab` hub — the disputes + addresses rows are KEPT, the new cases ADDED to the existing enum.
+- **GDPR delete (THE load-bearing security item, R1–R4):** a `DeleteAccountViewModel` (Core `ViewModel`/`ActionState` + an
+  `accountDeleted` one-shot) **branches on the `ApiResult`** — on SUCCESS → `AuthClient.signOutLocal()` (Keychain `tokenStore.clear()`
+  + `sessionScopedCaches.clearAll()` — **never `logout()`**, the account is gone server-side) + emit `accountDeleted` → the root resets
+  to login (the existing `onSignedOut` seam); on FAILURE the deletion is BLOCKED mid-transaction → **stay signed in (NO wipe)** + show
+  the localized backend error. The 3 blocked codes (`gdpr.deletion_blocked_by_order`/`_by_invoice`/`_already_pending`) map to `.xcstrings`
+  keys ×5 via a typed `GdprDeletionBlock(code:)`; the destructive flow is a typed-email confirm + a `.destructive` `CleansiaDialog` + an
+  explicit "permanently deletes" message ×5 + the **SIWA note ×5** ("remove Cleansia in Settings → Apple ID → Sign in with Apple" —
+  satisfies 5.1.1(v); Apple `/auth/revoke` owner-deferred §7.14 D4). **No client-side delete logic / no client flag.**
+- **The backend-error-code seam (harvested):** the customer generated `ApiError.fromGenerated` drops the code (`code: nil`, raw body as
+  message). Branching on a typed backend error (the GDPR blocked codes) needs the code, so a small **`ProblemDetailsError.map`**
+  (`CleansiaCustomer/Sources/Data`) decodes the ASP.NET `ProblemDetails` body's **`type`** field into `ApiError.code` (falling back to
+  `fromGenerated`) — because `CleansiaApiController.CreateProblemDetails` sets `Type = error.Code`. Reuse this mapper for ANY customer
+  client that must branch on a `BusinessErrorMessage` code; the snackbar still wins on the server `detail`.
+- **Devices (R13 / §7.7 D6-8 VERBATIM):** a customer-local `CustomerDevicesViewModel`/`CustomerDevicesView` mirroring the partner T-0310
+  pattern — `deviceMine(currentDeviceId:)` where `currentDeviceId` is the **ONE** `DeviceIdProvider.deviceId` (the SAME instance the
+  `HeaderAdapter` stamps as `X-Device-Id`; customer service `"cz.cleansia.customer.device"`, threaded from `CustomerAuthStack`); hide the
+  revoke control on the current device (`isCurrent`); the defensive **self-revoke → `signedOut` → `logout()` + route→login** branch
+  (D7b — a server-killed session's access token survives ~15min otherwise); server-scoped revoke, no client ownership check.
+- **NotificationPreferences (R14):** a sealed `UiState<NotificationPreferences>` (NOT the Android flag-bag — E1 catch) over the ~11
+  boolean toggles (`notificationPreferencesGetMine` lazy-creates), **optimistic** local update + a **300ms-debounced replace-all PUT**
+  via a `PassthroughSubject`→`.debounce(scheduler:)`→`update` pipeline (the Android CONFLATED-Channel parity), revert-to-snapshot on PUT
+  failure. Inject the Core `AnySchedulerOf<DispatchQueue>` (harvested T-0313) so the "rapid toggles coalesce into one PUT" test is
+  deterministic with a `TestScheduler`. Category↔field is a `[NotificationCategory: WritableKeyPath]` map (NOT an 11-case switch — keeps
+  cyclomatic ≤10). Own-only by JWT subject (no client check).
+- **Sub-screens:** Security = the backend **reset-code** flow (`userRequestPasswordChange` emails a code → `userChangePassword(email,
+  code,newPassword)`, the Core `PasswordPolicy` validates the new password) — **NOT** a current-password change (the backend
+  `ChangePassword` is email+code+new; the Android `SecurityScreen` is a dead stub wired to nothing — a Parity catch-up: iOS wires the
+  real flow). Language + Appearance reuse the Core `AppSettingsStore` via a customer-local `CustomerPreferencesModel`/`Labels` (the
+  partner T-0310 Slice C pattern; theme honored via `.preferredColorScheme` at the App root, language via `L10n.bundle` repointing).
+  Help/Support is static FAQ + contact. EditProfile/Onboarding share ONE `ProfileViewModel` (`userGetCurrentUser`→form→
+  `userUpdateCurrentUser`; refresh/save `ActionState`s + `completeOnboarding`/`skipOnboarding` — the Slice-A Home nudge routes to the
+  Profile tab → EditProfile).
+- **Brand asset (§7.15 deferral):** NO customer brand asset exists in the repo → KEEP the SF-Symbol `AuthHeaderImage` + flag an
+  owner-provide follow-up (the partner-mascot precedent — do NOT block on creating brand art). The Google "G" brand-fidelity check is a
+  pre-submission OWNER note.
+- **Deviations a reviewer rejects:** a delete path that calls `logout()` (not `signOutLocal()`) or trusts a client flag; a blocked-error
+  failure that wipes the session; a missing SIWA note; a Devices screen using anything but the ONE `DeviceIdProvider`, a revoke shown on
+  the current device, or no self-revoke→sign-out; a notification-prefs flag-bag `UiState` or a PUT that doesn't debounce/coalesce; a
+  current-password "change password" instead of the reset-code flow; a second settings store or theme/language in the Keychain; a
+  rebuilt (not promoted-in-place) Profile hub that drops the disputes/addresses rows. **The GDPR/Devices/prefs SECURITY enforcement is
+  Gate-SEC (security charter) — this rule fixes the seams.**
 
 **Parity deviation (Android is wrong, iOS is right) — auth validation strings:** the Android partner
 `RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set validation errors as **hardcoded English

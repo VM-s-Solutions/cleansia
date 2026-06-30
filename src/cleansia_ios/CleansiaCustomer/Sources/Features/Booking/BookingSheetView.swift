@@ -4,32 +4,40 @@ import SwiftUI
 struct BookingSheetView: View {
     @StateObject private var vm = BookingViewModel()
     @Environment(\.snackbarController) private var snackbar
-    @State private var successCode: String?
+    @State private var success: BookingSuccess?
     let geocoding: GeocodingService
     let mapProvider: MapProvider
     let paymentSheet: PaymentSheetPresenting
     let onDismiss: () -> Void
+    let onViewOrder: (String) -> Void
 
     init(
         geocoding: GeocodingService,
         mapProvider: MapProvider,
         paymentSheet: PaymentSheetPresenting,
-        onDismiss: @escaping () -> Void
+        onDismiss: @escaping () -> Void,
+        onViewOrder: @escaping (String) -> Void = { _ in }
     ) {
         self.geocoding = geocoding
         self.mapProvider = mapProvider
         self.paymentSheet = paymentSheet
         self.onDismiss = onDismiss
+        self.onViewOrder = onViewOrder
     }
 
     var body: some View {
         Group {
-            if let successCode {
+            if let success {
                 BookingSuccessView(
-                    confirmationCode: successCode,
+                    confirmationCode: success.confirmationCode,
+                    onViewOrder: success.orderId.isBlank ? nil : {
+                        vm.reset()
+                        self.success = nil
+                        onViewOrder(success.orderId)
+                    },
                     onDone: {
                         vm.reset()
-                        self.successCode = nil
+                        self.success = nil
                         onDismiss()
                     }
                 )
@@ -52,10 +60,10 @@ struct BookingSheetView: View {
 
     private func submit() async {
         switch await vm.submit() {
-        case let .success(_, confirmationCode):
-            successCode = confirmationCode
-        case let .cardPending(_, confirmationCode, presentation):
-            await presentPaymentSheet(presentation, confirmationCode: confirmationCode)
+        case let .success(orderId, confirmationCode):
+            success = BookingSuccess(orderId: orderId, confirmationCode: confirmationCode)
+        case let .cardPending(orderId, confirmationCode, presentation):
+            await presentPaymentSheet(presentation, orderId: orderId, confirmationCode: confirmationCode)
         case .profileIncomplete:
             snackbar.showError(L10n.Booking.errorProfileIncomplete)
         case .failed:
@@ -65,16 +73,22 @@ struct BookingSheetView: View {
 
     private func presentPaymentSheet(
         _ presentation: PaymentSheetPresentation,
+        orderId: String,
         confirmationCode: String
     ) async {
         let outcome = await paymentSheet.present(presentation)
         switch BookingCardResultResolver.resolve(outcome, confirmationCode: confirmationCode) {
         case let .navigateToSuccess(code):
-            successCode = code
+            success = BookingSuccess(orderId: orderId, confirmationCode: code)
         case let .snackbar(messageKey):
             snackbar.showError(L10n.localized(messageKey))
         }
     }
+}
+
+private struct BookingSuccess {
+    let orderId: String
+    let confirmationCode: String
 }
 
 private struct BookingSheetContent: View {

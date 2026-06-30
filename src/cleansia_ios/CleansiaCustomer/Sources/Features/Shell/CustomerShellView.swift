@@ -4,28 +4,96 @@ import SwiftUI
 @MainActor
 final class CustomerShellModel: ViewModel {
     @Published var selection: CustomerShellTab = .home
-
+    @Published var ordersPath: [OrderRoute] = []
+    @Published var homePath: [HomeRoute] = []
+    @Published var rewardsPath: [RewardsRoute] = []
+    @Published var profilePath: [ProfileRoute] = []
     @Published var isBookingPresented = false
 
     func book() {
         isBookingPresented = true
     }
+
+    /// The T-0313 success→OrderDetail fold: jump to the Orders tab and open the
+    /// new order's detail (Orders didn't exist when the success screen shipped).
+    func openOrder(_ orderId: String) {
+        selection = .orders
+        ordersPath = [.detail(orderId)]
+    }
+
+    func openOrders() {
+        selection = .orders
+        ordersPath = []
+    }
+
+    func openProfile() {
+        selection = .profile
+    }
+
+    func openEditProfile() {
+        selection = .profile
+        profilePath = [.editProfile]
+    }
+}
+
+enum OrderRoute: Hashable {
+    case detail(String)
+}
+
+enum HomeRoute: Hashable {
+    case detail(String)
+    case subscribePlus
+    case membershipSuccess
+    case recurringList
+    case createRecurring(orderId: String?)
+}
+
+enum RewardsRoute: Hashable {
+    case activity
+}
+
+enum ProfileRoute: Hashable {
+    case disputes
+    case createDispute(orderId: String?)
+    case disputeDetail(String)
+    case addresses
+    case editProfile
+    case subscribePlus
+    case devices
+    case notifications
+    case security
+    case language
+    case appearance
+    case help
+    case deleteAccount
 }
 
 struct CustomerShellView: View {
     @StateObject private var model = CustomerShellModel()
-    private let geocoding: GeocodingService
-    private let mapProvider: MapProvider
+    @StateObject private var membershipVM: MembershipViewModel
+    @StateObject private var profileVM: ProfileViewModel
+    @ObservedObject private var preferences: CustomerPreferencesModel
+    @Environment(\.snackbarController) private var snackbar
+    private let container: CustomerAppContainer
     private let onSignedOut: () -> Void
 
     init(
-        geocoding: GeocodingService,
-        mapProvider: MapProvider,
+        container: CustomerAppContainer,
+        preferences: CustomerPreferencesModel,
         onSignedOut: @escaping () -> Void
     ) {
-        self.geocoding = geocoding
-        self.mapProvider = mapProvider
+        self.container = container
+        self.preferences = preferences
         self.onSignedOut = onSignedOut
+        _membershipVM = StateObject(wrappedValue: MembershipViewModel(
+            repository: container.membershipRepository,
+            snackbar: container.snackbar
+        ))
+        _profileVM = StateObject(wrappedValue: ProfileViewModel(
+            repository: container.userProfileRepository,
+            settings: container.appSettings,
+            snackbar: container.snackbar
+        ))
     }
 
     var body: some View {
@@ -36,42 +104,262 @@ struct CustomerShellView: View {
             }
             .sheet(isPresented: $model.isBookingPresented) {
                 BookingSheetView(
-                    geocoding: geocoding,
-                    mapProvider: mapProvider,
+                    geocoding: container.geocodingService,
+                    mapProvider: container.mapProvider,
                     paymentSheet: StripePaymentController(),
-                    onDismiss: { model.isBookingPresented = false }
+                    onDismiss: { model.isBookingPresented = false },
+                    onViewOrder: { orderId in
+                        model.isBookingPresented = false
+                        model.openOrder(orderId)
+                    }
                 )
             }
+            .task { await prefetch() }
+    }
+
+    private func prefetch() async {
+        await container.orderRepository.refresh()
+        await container.loyaltyRepository.refresh()
+        await container.referralRepository.refresh()
+        await container.membershipRepository.refresh()
+        await container.membershipRepository.refreshPlans()
+        await profileVM.refresh()
     }
 
     private var tabs: some View {
         TabView(selection: $model.selection) {
-            PlaceholderTabView(
-                systemImage: CustomerShellTab.home.systemImage,
-                title: L10n.Shell.placeholderComingSoon(CustomerShellTab.home.label)
-            )
+            NavigationStack(path: $model.homePath) {
+                HomeTab(
+                    orderRepository: container.orderRepository,
+                    membershipVM: membershipVM,
+                    snackbar: snackbar,
+                    onBookCleaning: model.book,
+                    onOrderClick: { model.homePath = [.detail($0)] },
+                    onSeeAllOrders: model.openOrders,
+                    onCompleteProfile: model.openEditProfile,
+                    onSubscribePlus: { model.homePath.append(.subscribePlus) },
+                    onManageRecurring: { model.homePath.append(.recurringList) }
+                )
+                .navigationDestination(for: HomeRoute.self) { route in
+                    homeDestination(route)
+                }
+            }
             .tabItem { Label(CustomerShellTab.home.label, systemImage: CustomerShellTab.home.systemImage) }
             .tag(CustomerShellTab.home)
 
-            PlaceholderTabView(
-                systemImage: CustomerShellTab.orders.systemImage,
-                title: L10n.Shell.placeholderComingSoon(CustomerShellTab.orders.label)
-            )
+            NavigationStack(path: $model.ordersPath) {
+                OrdersTab(
+                    repository: container.orderRepository,
+                    snackbar: snackbar,
+                    onOrderClick: { model.ordersPath = [.detail($0)] },
+                    onBookCleaning: model.book
+                )
+                .navigationDestination(for: OrderRoute.self) { route in
+                    orderDestination(route)
+                }
+            }
             .tabItem { Label(CustomerShellTab.orders.label, systemImage: CustomerShellTab.orders.systemImage) }
             .tag(CustomerShellTab.orders)
 
-            PlaceholderTabView(
-                systemImage: CustomerShellTab.rewards.systemImage,
-                title: L10n.Shell.placeholderComingSoon(CustomerShellTab.rewards.label)
-            )
+            NavigationStack(path: $model.rewardsPath) {
+                RewardsTab(
+                    loyaltyRepository: container.loyaltyRepository,
+                    referralRepository: container.referralRepository,
+                    snackbar: snackbar,
+                    onOpenActivity: { model.rewardsPath = [.activity] }
+                )
+                .navigationDestination(for: RewardsRoute.self) { route in
+                    rewardsDestination(route)
+                }
+            }
             .tabItem { Label(CustomerShellTab.rewards.label, systemImage: CustomerShellTab.rewards.systemImage) }
             .tag(CustomerShellTab.rewards)
 
-            ProfilePlaceholderView(onSignedOut: onSignedOut)
-                .tabItem { Label(CustomerShellTab.profile.label, systemImage: CustomerShellTab.profile.systemImage) }
-                .tag(CustomerShellTab.profile)
+            NavigationStack(path: $model.profilePath) {
+                ProfileTab(
+                    profileVM: profileVM,
+                    membershipVM: membershipVM,
+                    preferences: preferences,
+                    onOpen: { model.profilePath.append($0) },
+                    onSignOut: signOut
+                )
+                .navigationDestination(for: ProfileRoute.self) { route in
+                    profileDestination(route)
+                }
+            }
+            .tabItem { Label(CustomerShellTab.profile.label, systemImage: CustomerShellTab.profile.systemImage) }
+            .tag(CustomerShellTab.profile)
         }
         .tint(CleansiaColors.primary)
+    }
+
+    @ViewBuilder
+    private func profileDestination(_ route: ProfileRoute) -> some View {
+        switch route {
+        case .disputes:
+            DisputesListView(
+                repository: container.disputeRepository,
+                snackbar: snackbar,
+                onDisputeClick: { model.profilePath.append(.disputeDetail($0)) },
+                onCreateDispute: { model.profilePath.append(.createDispute(orderId: nil)) },
+                onBrowseOrders: model.openOrders
+            )
+        case let .createDispute(orderId):
+            CreateDisputeView(
+                orderId: orderId,
+                repository: container.disputeRepository,
+                snackbar: snackbar,
+                onCreated: { id in model.profilePath = [.disputes, .disputeDetail(id)] }
+            )
+        case let .disputeDetail(disputeId):
+            DisputeDetailView(
+                disputeId: disputeId,
+                repository: container.disputeRepository,
+                snackbar: snackbar
+            )
+        case .addresses:
+            AddressManagerView(
+                repository: container.savedAddressRepository,
+                geocoding: container.geocodingService,
+                mapProvider: container.mapProvider,
+                snackbar: snackbar,
+                onBack: { model.profilePath.removeLast() }
+            )
+        default:
+            profileSettingsDestination(route)
+        }
+    }
+
+    @ViewBuilder
+    private func profileSettingsDestination(_ route: ProfileRoute) -> some View {
+        switch route {
+        case .editProfile:
+            EditProfileView(vm: profileVM, onSaved: { popProfile() })
+        case .subscribePlus:
+            SubscribePlusScreen(
+                repository: container.membershipRepository,
+                snackbar: snackbar,
+                paymentSheet: StripePaymentController(),
+                onBack: { popProfile() },
+                onSubscribed: {
+                    Task { await membershipVM.refresh() }
+                    popProfile()
+                }
+            )
+        case .devices:
+            CustomerDevicesView(
+                client: container.devicesClient,
+                authClient: container.authClient,
+                snackbar: snackbar,
+                onSignedOut: onSignedOut
+            )
+        case .notifications:
+            NotificationsView(client: container.notificationPreferencesClient)
+        case .security:
+            SecurityView(
+                email: profileVM.currentUser?.email ?? "",
+                language: preferences.languageTag,
+                client: container.changePasswordClient,
+                snackbar: snackbar,
+                onChanged: { popProfile() }
+            )
+        case .language:
+            LanguagePickerView(preferences: preferences, onSelected: { popProfile() })
+        case .appearance:
+            AppearancePickerView(preferences: preferences, onSelected: { popProfile() })
+        case .help:
+            HelpSupportView()
+        case .deleteAccount:
+            DeleteAccountView(
+                userEmail: profileVM.currentUser?.email ?? "",
+                client: container.gdprDeleteClient,
+                authClient: container.authClient,
+                snackbar: snackbar,
+                onDeleted: onSignedOut
+            )
+        default:
+            EmptyView()
+        }
+    }
+
+    private func popProfile() {
+        if !model.profilePath.isEmpty { model.profilePath.removeLast() }
+    }
+
+    private func signOut() {
+        Task {
+            await container.authClient.logout()
+            onSignedOut()
+        }
+    }
+
+    @ViewBuilder
+    private func orderDestination(_ route: OrderRoute) -> some View {
+        switch route {
+        case let .detail(orderId):
+            OrderDetailView(
+                orderId: orderId,
+                client: container.orderClient,
+                repository: container.orderRepository,
+                snackbar: snackbar,
+                eventBus: container.orderEventBus,
+                paymentSheet: StripePaymentController()
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func homeDestination(_ route: HomeRoute) -> some View {
+        switch route {
+        case let .detail(orderId):
+            OrderDetailView(
+                orderId: orderId,
+                client: container.orderClient,
+                repository: container.orderRepository,
+                snackbar: snackbar,
+                eventBus: container.orderEventBus,
+                paymentSheet: StripePaymentController()
+            )
+        case .subscribePlus:
+            SubscribePlusScreen(
+                repository: container.membershipRepository,
+                snackbar: snackbar,
+                paymentSheet: StripePaymentController(),
+                onBack: { model.homePath.removeLast() },
+                onSubscribed: { model.homePath.append(.membershipSuccess) }
+            )
+        case .membershipSuccess:
+            MembershipSuccessScreen(
+                onSetupRecurring: { model.homePath = [.recurringList, .createRecurring(orderId: nil)] },
+                onBackHome: { model.homePath = [] }
+            )
+        case .recurringList:
+            RecurringBookingsScreen(
+                repository: container.recurringRepository,
+                membershipRepository: container.membershipRepository,
+                snackbar: snackbar,
+                onCreateNew: { model.homePath.append(.createRecurring(orderId: nil)) },
+                onSubscribePlus: { model.homePath.append(.subscribePlus) }
+            )
+        case let .createRecurring(orderId):
+            CreateRecurringScreen(
+                sourceOrderId: orderId,
+                repository: container.recurringRepository,
+                snackbar: snackbar,
+                onCreated: { model.homePath.removeLast() }
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func rewardsDestination(_ route: RewardsRoute) -> some View {
+        switch route {
+        case .activity:
+            RewardsActivityScreen(
+                loyaltyRepository: container.loyaltyRepository,
+                snackbar: snackbar
+            )
+        }
     }
 }
 
@@ -90,39 +378,3 @@ private struct BookFab: View {
         .accessibilityLabel(Text(verbatim: L10n.Shell.book))
     }
 }
-
-private struct ProfilePlaceholderView: View {
-    let onSignedOut: () -> Void
-
-    var body: some View {
-        VStack(spacing: Spacing.l) {
-            Spacer()
-            Image(systemName: CustomerShellTab.profile.systemImage)
-                .font(.system(size: 48))
-                .foregroundColor(CleansiaColors.primary)
-            Text(verbatim: L10n.Shell.placeholderComingSoon(CustomerShellTab.profile.label))
-                .font(CleansiaTypography.titleMedium)
-                .foregroundColor(CleansiaColors.onBackground)
-                .multilineTextAlignment(.center)
-            Spacer()
-            Button(role: .destructive, action: onSignedOut) {
-                Text(verbatim: L10n.signOut)
-            }
-            .padding(.bottom, Spacing.xxl)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(CleansiaColors.background.ignoresSafeArea())
-    }
-}
-
-#if DEBUG
-    struct CustomerShellView_Previews: PreviewProvider {
-        static var previews: some View {
-            CustomerShellView(
-                geocoding: CLGeocoderGeocodingService(),
-                mapProvider: PreviewMapProvider(),
-                onSignedOut: {}
-            )
-        }
-    }
-#endif

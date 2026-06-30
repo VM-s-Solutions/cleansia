@@ -74,6 +74,26 @@ final class CustomerAppContainer: AppContainer {
     let geocodingService: GeocodingService = CLGeocoderGeocodingService()
     let mapProvider: MapProvider = MapKitMapProvider()
 
+    let orderClient: OrderClient
+    let orderEventBus = OrderEventBus()
+    let orderRepository: OrderRepository
+
+    let loyaltyRepository: LoyaltyRepository
+    let referralRepository: RewardsReferralRepository
+
+    let membershipRepository: MembershipRepository
+    let recurringRepository: RecurringBookingRepository
+
+    let disputeRepository: DisputeRepository
+
+    let savedAddressRepository: SavedAddressRepository
+
+    let userProfileRepository: UserProfileRepository
+    let devicesClient: CustomerDevicesClient
+    let gdprDeleteClient: GdprDeleteClient = LiveGdprDeleteClient()
+    let notificationPreferencesClient: NotificationPreferencesClient = LiveNotificationPreferencesClient()
+    let changePasswordClient: ChangePasswordClient = LiveChangePasswordClient()
+
     init(
         snackbar: SnackbarController,
         apiBaseURL: URL = AppConfig.apiBaseURL
@@ -84,6 +104,25 @@ final class CustomerAppContainer: AppContainer {
             sessionScopedCaches: sessionScopedCaches
         )
         self.authStack = authStack
+        let orderClient = LiveOrderClient()
+        let orderRepository = OrderRepository(client: orderClient)
+        self.orderClient = orderClient
+        self.orderRepository = orderRepository
+        let loyaltyRepository = LoyaltyRepository(client: LiveLoyaltyClient())
+        let referralRepository = RewardsReferralRepository(client: LiveRewardsReferralClient())
+        self.loyaltyRepository = loyaltyRepository
+        self.referralRepository = referralRepository
+        let membershipRepository = MembershipRepository(client: LiveMembershipManagementClient())
+        let recurringRepository = RecurringBookingRepository(client: LiveRecurringBookingClient())
+        self.membershipRepository = membershipRepository
+        self.recurringRepository = recurringRepository
+        let disputeRepository = DisputeRepository(client: LiveDisputeClient())
+        self.disputeRepository = disputeRepository
+        let savedAddressRepository = SavedAddressRepository(client: LiveSavedAddressClient())
+        self.savedAddressRepository = savedAddressRepository
+        let userProfileRepository = UserProfileRepository(client: LiveUserProfileClient())
+        self.userProfileRepository = userProfileRepository
+        devicesClient = LiveCustomerDevicesClient(deviceIdProvider: authStack.deviceIdProvider)
         base = BaseAppContainer(
             apiBaseURL: apiBaseURL,
             snackbar: snackbar,
@@ -91,6 +130,14 @@ final class CustomerAppContainer: AppContainer {
             makeAuthSpine: { _ in authStack.spine },
             makeApiClient: { seams in CustomerMobileApiClient(baseURL: seams.apiBaseURL) }
         )
+        sessionScopedCaches.register(orderRepository)
+        sessionScopedCaches.register(loyaltyRepository)
+        sessionScopedCaches.register(referralRepository)
+        sessionScopedCaches.register(membershipRepository)
+        sessionScopedCaches.register(recurringRepository)
+        sessionScopedCaches.register(disputeRepository)
+        sessionScopedCaches.register(savedAddressRepository)
+        sessionScopedCaches.register(userProfileRepository)
     }
 
     func installGeneratedClientAuth() {

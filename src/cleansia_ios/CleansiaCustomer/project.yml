@@ -44,6 +44,7 @@ targets:
     sources:
       - path: Sources
       - path: Resources
+      - path: PrivacyInfo.xcprivacy
     info:
       path: Info.plist
       properties:
@@ -51,6 +52,8 @@ targets:
         GIDClientID: $(GID_CLIENT_ID)
         GIDServerClientID: $(GID_SERVER_CLIENT_ID)
         STRIPE_PUBLISHABLE_KEY: $(STRIPE_PUBLISHABLE_KEY)
+        NSCameraUsageDescription: Cleansia uses the camera so you can attach photo evidence to a dispute.
+        NSPhotoLibraryUsageDescription: Cleansia needs access to your photos so you can attach photo evidence to a dispute.
         CFBundleURLTypes:
           - CFBundleURLSchemes:
               - $(GID_REVERSED_CLIENT_ID)

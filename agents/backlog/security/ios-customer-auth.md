@@ -506,3 +506,328 @@ New/changed files in scope:
 **VERDICT: PASS.** Slice E is exploitable-as-written: NONE found. Webhook remains the sole paid-status authority;
 `.completed` is UX-only; no secret logged/persisted; the card path is fail-closed when unconfigured and uses exactly
 one charge surface. This completes the T-0313 payment security gate.
+
+---
+
+## 2026-06-30 — T-0314 Slice C (Membership/Plus + Recurring + ConfirmRecurring) — Gate-SEC §7.17 R5–R9
+
+Branch `phase/ios-phase8`, UNCOMMITTED working tree. Scope OWNED: membership/recurring money-path
+security gate (extends the Core Stripe seam). Reviewer covers Gate-DP/parity in parallel.
+
+### Seam extension (PaymentSheetPresenting / StripePaymentController + PaymentIntentKind)
+- **Single importer — PASS.** `grep "import StripePaymentSheet"` → exactly one hit:
+  `StripePaymentController.swift:5`. `StripeCore` (`:4`) is also confined to this file (pre-existing,
+  only sets the publishable key). No second SDK importer added.
+- **Secret redaction — PASS.** `PaymentSheetPresentation.description` (`PaymentSheetPresenting.swift:29-31`)
+  renders `"…secrets: <redacted>"`; `debugDescription` (`:33-35`) delegates to it. The new `intentKind`
+  is logged (non-secret); `clientSecret`/`ephemeralKey`/`stripeCustomerId` never appear. Test:
+  `MembershipViewModelTests.testSecretsNeverAppearInSetupIntentPresentationDescription` — PASS.
+- **Setup-intent path adds no log/persist — PASS.** The `.setup` branch (`StripePaymentController.swift:37-41`)
+  only constructs `PaymentSheet(setupIntentClientSecret:)`. No print/os_log/Logger/NSLog/debugPrint and no
+  UserDefaults/Keychain/file write in any Membership/Recurring/Payment source file (grep, 0 hits).
+
+### Membership two-phase (R5–R9), file:line
+- **R5/R9 webhook-authority — PASS.** Authoritative published state `MembershipRepository.current`
+  (drives `hasMembership`) is mutated ONLY by `refresh()` → `client.getMine()` → `membershipGetMine`
+  (`MembershipRepository.swift:22-31`). `confirmSubscribe` (`MembershipViewModel.swift:81-101`) calls
+  `repository.refresh()` on success (`:95`) and NEVER writes `current`/`hasMembership` from the
+  subscribe/SDK result. The `.subscribed(membershipId:)` return is a navigation signal off the server
+  `membershipId`, not a client-set active flag. `.canceled`/`.failed` → no mutation
+  (`SubscribePlusScreen.swift:99-109`; failure branch `MembershipViewModel.swift:97-99`). Tests:
+  `testConfirmSubscribeRereadsMembershipAfterCompleted` (asserts `mineCallCount==1`),
+  `testConfirmSubscribeFailureReturnsFailedAndNoMutation` (`repo.current` stays nil) — PASS.
+- **R6 no-secret-logging — PASS.** grep print/os_log/Logger/NSLog/debugPrint/UserDefaults/FileManager
+  across Membership+Recurring+Payment sources → 0 hits.
+- **R7 fail-closed — PASS.** `canSubscribe == isCardPaymentAvailable` (`MembershipViewModel.swift:35-37`).
+  `startSubscribe` first line `guard canSubscribe else { return .failed }` (`:51`) returns BEFORE
+  `repository.subscribePhase1` — no SetupIntent requested. CTA bar renders only `if vm.canSubscribe`
+  (`SubscribePlusScreen.swift:47`) — hidden when key empty. `StripeConfig.isConfigured` treats empty
+  and `$(...)` placeholder as unconfigured (`StripeConfig.swift:13-16`). Tests:
+  `testFailClosedStartSubscribeUnreachableUnderEmptyKey` (asserts `subscribeCalls.isEmpty`),
+  `testCtaHiddenWhenCardUnavailable` — PASS.
+- **R8 idempotency replay — PASS.** ONE token minted at Phase-1 (`MembershipViewModel.swift:56-57`),
+  REPLAYED at Phase-2 (`:86-87` reuses `subscribeIdempotencyToken`). A fresh `startSubscribe` mints a new
+  token (`:56`). Tests: `testConfirmSubscribeReplaysTheSameIdempotencyTokenAcrossBothPhases` (Phase1.token
+  == Phase2.token, confirmed=false/true), `testFreshSubscribeAttemptMintsANewToken` (tokens differ) — PASS.
+- **R9 own-only — PASS.** `getMine`/`cancel` parameterless; `subscribe` sends planCode+confirmed+token only;
+  `swapPlan` sends newPlanCode only (`MembershipManagementClient.swift:5-12,29-58`). No client userId.
+  In-app cancel reachable: `MembershipManagementCard.ActiveCard` Cancel button (`:188-195`) → `vm.cancel()`,
+  card mounted on HomeTab.
+
+### ConfirmRecurring path, file:line
+- **Two-phase branch — PASS.** `OrderDetailViewModel.confirmRecurring` (`:215-241`): cash response
+  (nil/empty `clientSecret`, `RecurringConfirmation.needsPayment==false`, `OrderClient.swift:18-19`) ⇒
+  snackbar + `repository.refresh()` + `fetch(initial:false)` — re-read, never client-infer paid. Card
+  response (non-empty secret) ⇒ emits `PaymentSheetPresentation(intentKind: .payment)` for the view.
+- **`.completed` never flips order state — PASS.** `notifyRecurringPaymentResult(.completed)` (`:243-253`)
+  ONLY does `repository.refresh()` + `fetch(initial:false)` — re-reads the order; no client status mutation.
+  `.canceled` → no-op; `.failed` → snackbar only. View wiring `OrderDetailView.swift:47-52` presents the
+  sheet then calls `notifyRecurringPaymentResult`. Test: `testRecurringCardPaymentCompletedRefetches`
+  (asserts detail re-fetch) — PASS.
+- **CREATE does not charge a client-trusted price — PASS.** `CreateRecurringInput`
+  (`RecurringModels.swift:26-37`) and `CreateRecurringBookingCommand` (`RecurringBookingClient.swift:21-33`)
+  carry frequency/rooms/services/packages/paymentType — NO price/amount field. Template is server-priced;
+  the generated order confirms (and prices) later.
+
+### Explicit verdicts demanded by the brief
+- (a) Can a client appear-subscribed/paid without a real capture? **NO.** Membership active-state and order
+  paid-state are mutated only by server re-reads (`membershipGetMine` / order GET); the SDK `.completed` is
+  UX-only; subscribe/confirm DTOs set no client-trusted paid flag. Webhook remains the sole authority.
+- (b) Can secrets leak via log/persist? **NO.** No logging/persistence anywhere in the money-path files;
+  description/debugDescription redact (test-proven); secrets are in-memory, handed straight to the sheet.
+- (c) Is the seam extension still single-importer + fail-closed? **YES.** Exactly one StripePaymentSheet
+  importer (`StripePaymentController.swift`); empty/placeholder key ⇒ CTA hidden AND subscribe branch
+  unreachable (no SetupIntent requested), sheet never presented.
+
+### Tests on iPhone 17 (sim 04753F32… booted; workspace Cleansia, Stripe 25.17.0)
+`xcodebuild test -scheme CleansiaCustomer -destination 'platform=iOS Simulator,name=iPhone 17'`
+restricted to MembershipViewModelTests + CreateRecurringViewModelTests + RecurringBookingsViewModelTests
++ OrderDetailViewModelTests — **50/50 PASS, 0 failures.** Covers two-phase, idempotency-replay,
+fail-closed, webhook-re-read, secret-redaction, ConfirmRecurring cash/card/completed.
+
+### Residual
+- NON-blocking nit: `OrderRecurringConfirm.needsConfirmation` (`OrderDetailView.swift:165-170`) hard-codes
+  `paymentStatus?.value == 1` (Pending). This is a UX visibility gate for the confirm button, NOT a
+  security boundary — the real confirm authority is server-side `orderConfirmRecurring`, which re-validates
+  ownership and state. No security impact.
+
+**VERDICT: PASS.** T-0314 Slice C is exploitable-as-written: NONE found. Webhook/server re-read is the sole
+authority for membership-active and order-paid state; `.completed` (SetupIntent and PaymentIntent) is UX-only;
+one idempotency token spans both subscribe phases; the card/subscribe path is fail-closed when unconfigured;
+secrets are redacted and never logged/persisted; the Stripe seam stays single-importer. R5–R9 all PASS.
+
+---
+
+## T-0314 Slice D — Customer Disputes + multipart evidence upload (Gate-SEC R10–R12 + T-0308 photo-privacy) — 2026-06-30
+
+Scope: the customer's FIRST capture surface (camera/library/PDF) feeding a multipart evidence upload.
+Reviewer owns Gate-DP/parity in parallel; THIS note owns the file-upload + capture-surface security gate.
+Verified against UNCOMMITTED working tree on `phase/ios-phase8`. No code edited.
+
+### R10 own-dispute scoping — PASS
+- SERVER-enforced (DisputeNotOwnedByUser); the client adds NO ownership check that could be bypassed.
+  `DisputeClient.getById` sends only `disputeId` (`DisputeClient.swift:21-31`); list/create/addMessage/upload
+  carry no client userId. `DisputeRepository` does NOT cache details — `getById` always hits the network
+  (`DisputeRepository.swift:64-66`), so no stale cross-user detail can be served.
+- Cache wipe on sign-out / forced-401: `DisputeRepository: SessionScopedCache` (`DisputeRepository.swift:13`,
+  `clear()` :80-84) is REGISTERED (`CustomerAppContainer.swift:125`). `clearAll()` runs on logout
+  (`Auth.swift:218`) and on forced-401/failed-refresh (`SessionRefresher.forceSignOut:75-79` → :76 clears
+  caches BEFORE token clear). Registry holds weak refs and awaits each `clear()` (`SessionScopedCache.swift:19-31`).
+- Bearer rides every dispute call (ADR-0019 spine): the generated builder sets `requiresAuthentication:false`
+  (`CustomerDisputeAPI.swift:233`) but auth is attached at the URLSession layer by `HeaderAdapter`
+  (`HeaderAdapter.swift:29-30`) for any path NOT on the anon allow-list. `/api/Dispute/*` is absent from
+  `AnonymousAllowList.customer` (`AnonymousAllowList.swift:42-63`); customer wires `HeaderAdapter(anonymousAllowList: .customer)`
+  (`CustomerClients.swift:17-19`). So all dispute reads/writes carry the caller's Bearer.
+
+### R11 client file validation FAIL-CLOSED, mirroring the backend — PASS
+- `EvidenceFileValidator.validate` (`EvidenceFileValidator.swift:14-22`): size > 10 MiB → `.tooLarge`;
+  contentType not in {image/jpeg, image/png, image/webp, application/pdf} (lowercased) → `.unsupportedType`.
+  Empty/unknown type fails closed (the set lookup misses). Limit == backend MaxFileSize:
+  `maxEvidenceBytes = 10*1024*1024` (`DisputeFormConstants.swift:12-18`).
+- Runs on the FINAL bytes BEFORE the temp file is written AND before the network call:
+  image path validates AFTER ImageCompressor.encode and BEFORE `write` (`EvidencePreparer.swift:44-50`);
+  PDF path validates BEFORE `write` (`:57-61`). `write` is the only place a temp file is created (`:64-77`).
+- Cannot be bypassed: the VM's ONLY upload path is `uploadEvidence` → `uploadOne` → `prepare` → EvidencePreparer
+  (`DisputeDetailViewModel.swift:75-118`); a rejection returns before any `repository.uploadEvidence` call.
+  Tests: EvidenceFileValidatorTests (7/7 incl. empty-type fail-closed, over-by-1, case-insensitive,
+  oversize-wins-over-wrong-type); EvidencePreparerTests `testPreparePdfRejectsOversizeBeforeWritingFile`
+  (temp dir empty after rejection); DisputeDetailViewModelTests `testUploadEvidenceRejectsOversizePdfBeforeCall`
+  (uploadCallCount == 0), `testUploadEvidenceMixedValidAndInvalidUploadsOnlyValid`. ALL PASS.
+
+### R12 no path traversal — PASS
+- Blob name is SERVER-controlled (`{disputeId}/{Guid}{ext}`); the client contributes only the extension.
+- Temp file is UUID-named with a fixed prefix and a fixed ext: `dispute-evidence-<UUID>.jpg|.pdf`
+  (`EvidencePreparer.swift:70`). No user-supplied filename enters the path.
+- The multipart `filename` is `fileURL.lastPathComponent` (`URLSessionImplementations.swift:531,542`) = the
+  UUID temp name, NOT the picked source's display name. The camera/library picker returns a bare `UIImage`
+  (`CameraOrLibraryPicker.swift:69` reads `info[.originalImage]`) — no source URL/name travels; the PDF is
+  read as raw `Data` (`DisputeDetailView.swift:193`) — the security-scoped source URL is dropped after read.
+
+### EXIF/GPS strip (T-0308 photo-privacy) — PASS
+- Image evidence goes through `ImageCompressor.encode` (`EvidencePreparer.swift:39`), which re-renders into a
+  fresh CGBitmapContext (no source metadata) and re-encodes via ImageIO with an empty-but-quality properties
+  dict (`ImageCompressor.swift:47-86`) — explicit EXIF/GPS strip by construction. PDFs pass through untouched
+  (no EXIF concern). PROVEN: ImageCompressorTests `testEncodedOutputHasNoGpsOrExifMetadata` (GPS-tagged source
+  → no GPS dict in output) and EvidencePreparerTests `testPreparedImageHasNoGpsMetadata` (strip survives the
+  temp-file write) — both PASS on iPhone 17.
+
+### No secret in multipart / no secret logging / temp cleanup — PASS
+- Multipart body carries only `disputeId` + `file` (bytes + UUID filename + mimetype) — no token/secret
+  (`CustomerDisputeAPI.swift:215-218`; Bearer is a header, not a body part).
+- ZERO logging in the whole Disputes feature and in ImageCompressor (grep for print/os_log/NSLog/Logger/
+  debugPrint → none). No token/secret/file-path is logged.
+- Temp file is cleaned up on BOTH success and failure: `defer { prepared.cleanUp() }`
+  (`DisputeDetailViewModel.swift:99`); `cleanUp()` removes the temp file (`EvidencePreparer.swift:15-17`).
+  Tests: `testUploadEvidenceUploadsTempPdfWithCorrectExtensionAndCleansUp` (file gone after upload),
+  EvidencePreparerTests temp-cleanup assertions. PASS.
+
+### New capture surface (privacy) — PASS
+- `NSCameraUsageDescription` + `NSPhotoLibraryUsageDescription` present in BOTH Info.plist (diff) and
+  project.yml (XcodeGen source of truth) — customer's first capture surface.
+- `PrivacyInfo.xcprivacy` added and wired into the target sources (`project.yml`); declares
+  `NSPrivacyCollectedDataTypePhotosorVideos`, Linked=true, Tracking=false, purpose=AppFunctionality —
+  ACCURATE for the actual capture (photo/PDF evidence used only for app functionality; no tracking).
+  Matches ADR-0016 AR-PRIV: manifest matches the real capture.
+- PDF preview uses the server SAS URL (`DisputeDetailView.openPdf` → `evidence.blobURL`, :142-148) and
+  presents `QuickLookPreview(url:, deleteOnDismiss:false)` (:153). `deleteOnDismiss:false` is CORRECT for a
+  REMOTE URL — and `QuickLookPreview.removeFile` is `url.isFileURL`-guarded (`QuickLookPreview.swift:72-75`)
+  so it could not delete a remote URL anyway. No local PII PDF is left undeleted (the locally-prepared
+  upload temp is the only on-disk PII, and it is `defer`-cleaned post-upload). The in-place fullscreen image
+  preview likewise points at the remote `blobURL` (:134-139), not a local file.
+
+### Explicit verdicts demanded by the brief
+- (a) Can a client upload an oversize / disallowed-type / path-traversing file? **NO.** Fail-closed validation
+  runs on the final bytes before any temp write and before the network call; the VM has no bypass path; the
+  blob name is server-controlled and the temp/multipart filename is a UUID — no user filename in the path.
+- (b) Does image evidence leak EXIF/GPS or any secret? **NO.** Images are re-rendered + re-encoded metadata-free
+  (test-proven, strip survives the temp write); the multipart body carries no secret; nothing in the feature
+  logs the token/secret/file path; temp files are cleaned on success and failure.
+- (c) Is the privacy manifest accurate for the new capture surface? **YES.** PhotosorVideos / Linked / no-Tracking
+  / AppFunctionality matches the camera+library+PDF evidence capture; the two usage-description strings are
+  present in both Info.plist and project.yml.
+
+### Tests on iPhone 17 (sim 04753F32… booted; workspace Cleansia; project regenerated via xcodegen)
+- `CleansiaCustomer`: EvidenceFileValidatorTests + EvidencePreparerTests + DisputeDetailViewModelTests —
+  **25/25 PASS, 0 failures** (validator oversize/wrong-type/empty-fail-closed; preparer EXIF-strip +
+  validate-before-write + temp-cleanup; upload per-file sequential + cleanup + reject-before-call + mixed).
+- `CleansiaCore`: ImageCompressorTests/testEncodedOutputHasNoGpsOrExifMetadata — **PASS** (EXIF/GPS strip proof).
+
+### Residual
+- NON-blocking observation: `requiresAuthentication:false` on the generated dispute builders is the NSwag
+  default and is harmless here ONLY because the URLSession-level `HeaderAdapter` attaches the Bearer for all
+  non-anon paths. This is the established spine for every customer endpoint, not a Slice-D regression. No action.
+
+**VERDICT: PASS.** T-0314 Slice D is exploitable-as-written: NONE found. Own-dispute scoping is server-enforced
+with no client bypass and a session-scoped cache that wipes on sign-out/401; client file validation is
+fail-closed on the final bytes before write/network and cannot be bypassed; the blob/temp/multipart name is
+server-/UUID-controlled (no path traversal, no user filename); image evidence is EXIF/GPS-stripped by
+construction (test-proven); no secret travels in the multipart body and nothing in the feature is logged;
+temp files are cleaned on success and failure; the privacy manifest + usage strings accurately describe the
+new capture surface. R10–R12 + T-0308 all PASS.
+
+---
+
+## T-0314 Slice F — Profile + GDPR delete + Devices + notification-prefs — Gate-SEC verification (2026-06-30)
+
+Branch `phase/ios-phase8`, UNCOMMITTED working tree (untracked `Features/Profile/`, `ProblemDetailsError.swift`,
+`L10n+Profile.swift`, `L10n+Devices.swift`, tests; modified shell/container/L10n/xcstrings). Verified against
+§7.17 Gate-SEC (R1-R4 GDPR, R13 Devices, R14 prefs) + S1-S10. I own the GDPR-delete + Devices gate; Gate-DP/parity
+covered in parallel by the reviewer. Read the actual code; ran the tests on iPhone 17 (sim 04753F32… booted).
+
+### R2 — signOutLocal-not-logout on success — PASS
+- `DeleteAccountViewModel.confirmDelete()` `.success:` calls `authClient.signOutLocal()`
+  (`DeleteAccountViewModel.swift:27`), NEVER `logout()`. `signOutLocal()` = `tokenStore.clear()` +
+  `await sessionScopedCaches.clearAll()` with NO server call, NO preLogout push-unregister, NO Apple revoke
+  (`Auth.swift:216-219`). Contrast `logout()` (`Auth.swift:207-214`) which DOES hit `api/Auth/Logout` + preLogout —
+  correctly NOT used (the account is already gone server-side; there is no live token to log out with).
+- Production wiring passes the real spine: `DeleteAccountView(authClient: container.authClient, …)`
+  (`CustomerShellView.swift:264`); `container.authClient` → the `AuthApiClient` spine (`CustomerAppContainer.swift:25-27`,
+  `makeAuthSpine: { _ in authStack.spine }` :130). `AuthApiClient` conforms `AuthSpine → AuthClient`, so
+  `signOutLocal()` is exactly `Auth.swift:216`.
+- Test: `testSuccessCallsSignOutLocalNotLogout` asserts `signOutLocalCount == 1 && logoutCount == 0`
+  (`DeleteAccountViewModelTests.swift:22-30`); `FakeAuthClient` counts the two separately
+  (`ProfileFakes.swift:17-28`). PASS.
+
+### R1 — branch-on-result + blocked-stays-signed-in + no-resurrect — PASS
+- The VM switches `ApiResult`: ONLY HTTP-2xx (no thrown error) reaches `.success`; a BLOCKED 4xx throws
+  `ErrorResponse.error`, caught by `apiResult(mapError: ProblemDetailsError.map)` → `.failure`
+  (`GdprDeleteClient.swift:24-30`, `SafeApiCall.swift:7-13`). A blocked response CANNOT be mis-mapped to a false
+  success — the only success path is a 2xx body.
+- Code extraction is correct and unspoofable: backend sets `ProblemDetails.Type = error.Code`
+  (`CleansiaApiController.cs:92`); iOS `ProblemDetailsError.map` decodes `body.type → ApiError.code`
+  (`ProblemDetailsError.swift:10-12`). The 3 codes match the backend constants exactly:
+  `gdpr.deletion_blocked_by_order` / `_by_invoice` / `_already_pending`
+  (`GdprDeleteClient.swift:11-17` ↔ `BusinessErrorMessage.cs:317-319`, emitted at `GdprDeletionService.cs:54,59,66`).
+- Each blocked path shows the localized error and LEAVES the session intact — `.failure:` only snackbars +
+  sets `deleteState = .error`, NO `signOutLocal`, NO route-to-login (`DeleteAccountViewModel.swift:30-34`).
+  All 3 blocked codes + a generic 500 are localized in 5 languages (`error_gdpr_deletion_*` keys present in
+  en/cs/sk/uk/ru). Tests: `testBlockedByOrderShowsErrorAndStaysSignedIn` / `…ByInvoice…` / `…AlreadyPending…` /
+  `testGenericFailureStaysSignedIn` all assert `signOutLocalCount == 0` (and order-test also `logoutCount == 0`,
+  `accountDeleted` NOT emitted) (`DeleteAccountViewModelTests.swift:46-92`). A "wipe-on-any-response" stranding
+  bug is NOT present. PASS.
+- No-resurrect: on success `signOutLocal` wipes token + ALL session caches — `clearAll()` iterates every
+  registered cache (`SessionScopedCache.swift:19-31`); `CustomerAppContainer.init` registers all 8 session
+  repos (order/loyalty/referral/membership/recurring/dispute/savedAddress/userProfile)
+  (`CustomerAppContainer.swift:133-140`). Re-login is a fresh session; no pre-delete identity replayed. PASS.
+
+### R3 — SIWA note shown + Apple revoke owner-deferred — PASS
+- `DeleteAccountView` renders `appleNote` via `L10n.DeleteAccount.appleRevokeNote`
+  (`DeleteAccountView.swift:100-112`, key `delete_account_apple_note`), localized ×5 (en/cs/sk/uk/ru) with the
+  required "remove Cleansia in Settings → Apple ID → Sign in with Apple" guidance (5.1.1(v)).
+- NO Apple `/auth/revoke` is attempted anywhere — grep of the whole customer module finds only the localized
+  note + its render site; nothing holds an Apple token to revoke. `/auth/revoke` stays owner-deferred (§7.14 D4). PASS.
+
+### R4 — no client-side delete logic / no client flag — PASS
+- The VM only calls `client.deleteMyAccount()` → `CustomerGdprAPI.gdprDeleteMyAccount()` (no args, no client id,
+  no flag) and reacts to the result (`GdprDeleteClient.swift:25-29`, `DeleteAccountViewModel.swift:22-35`).
+  Server (JWT subject) owns the deletion decision. PASS.
+
+### R13 — Devices (T-0310 D6-8 verbatim) — PASS
+- The ONE id: `LiveCustomerDevicesClient(deviceIdProvider: authStack.deviceIdProvider)`
+  (`CustomerAppContainer.swift:125`) is the SAME `DeviceIdProvider` instance (service `cz.cleansia.customer.device`)
+  passed to the `HeaderAdapter` that stamps `X-Device-Id` (`CustomerClients.swift:16-20`; `HeaderAdapter.swift:25,42-44`).
+  `client.currentDeviceId` returns `deviceIdProvider.deviceId` (`CustomerDevicesClient.swift:26-28`). NO second
+  UUID / `identifierForVendor` source — `DeviceIdProvider.deviceId` is keychain-backed single source
+  (`DeviceIdProvider.swift:31-52`). Same id is sent as the `currentDeviceId:` query param to `deviceMine`
+  (`CustomerDevicesClient.swift:32`). Test `testLoadSendsTheOneDeviceIdAsCurrentDeviceId` proves the provider id
+  is what is sent (`CustomerDevicesViewModelTests.swift:39-45`).
+- Current device hides revoke: server flags `isCurrent`; VM `isCurrentDevice` compares
+  `device.deviceId == client.currentDeviceId` with `device.isCurrent` fallback (`CustomerDevicesViewModel.swift:52-57`).
+- Defensive self-revoke → sign-out: revoking the current row emits `signedOut` (`…ViewModel.swift:41-42`); tests
+  `testSelfRevokeEmitsSignedOut` + `testSelfRevokeByIsCurrentFlagWhenDeviceIdMissing`
+  (`CustomerDevicesViewModelTests.swift:79-115`).
+- Server-scoped own-device-only revoke (no client check): `RevokeDevice.Handler` derives `userId` from
+  `IUserSessionProvider` then `GetByIdAndUserAsync(DeviceRowId, userId)` → null ⇒ `DeviceNotFound` (S3 no-leak),
+  then deactivate + `RevokeByDeviceAsync` (`RevokeDevice.cs:33-46`); controller `[Permission(Policy.Authenticated)]`
+  + `[EnableRateLimiting("auth")]` (`DeviceController.cs:76-88`). `GetMyDevices` scopes `GetByUserIdAsync(userId)`;
+  the `CurrentDeviceId` param only flags `IsCurrent` (`GetMyDevices.cs:19-25`). `DeviceDto` leaks no
+  UserId/TenantId/token (`DeviceDto.cs:3-9`) — S4 clean. Other-device revoke removes the row and STAYS signed in
+  (`testRevokeOtherRemovesRowAndStaysSignedIn`); failure keeps the list + snackbars (`testRevokeFailureKeepsList…`). PASS.
+
+### R14 — Notification preferences own-only — PASS
+- `notificationPreferencesGetMine()` / `notificationPreferencesUpdate(command:)` carry NO client-supplied id;
+  `toCommand()` is the 11 booleans only (`NotificationPreferences.swift:65-77, 98-114`). Server scopes to the JWT
+  subject. Optimistic apply + 300ms debounce + replace-all + rollback-on-failure is sound
+  (`NotificationPreferencesViewModel.swift:20-25, 39-58`); tests coalesce/separate/revert all pass. PASS.
+
+### Cross-cutting S-rules on these paths
+- S6 (no PII/secret logging): grep of `Features/Profile/`, `ProblemDetailsError.swift`, and `Auth.swift` for
+  print/os_log/NSLog/Logger/debugPrint → NONE. `ProblemDetailsError.map` decodes only `type`+`detail` (the error
+  code + a server message), no PII/secret. PASS.
+- Change-password (Security) flow: `userRequestPasswordChange` (email+language) → `userChangePassword`
+  (email+code+newPassword) (`ChangePasswordClient.swift:11-25`); VM gates on `PasswordPolicy.isValid` +
+  `passwordsMatch` BEFORE the network call (`SecurityViewModel.swift:43-50`); no secret is logged; the new
+  password rides the HTTPS body, not a query/log. Reset-by-emailed-code is the established public-ish flow. PASS.
+- S1/S2/S3/S4/S5 on the backend device endpoints: all satisfied (see R13). S7/S8/S9/S10 N/A to this iOS slice
+  (no new side-effecting command, entity, migration, or soft-delete query introduced client-side; the GDPR
+  deletion idempotency/blocking is enforced server-side in `GdprDeletionService`, out of Slice-F scope).
+
+### Tests on iPhone 17 (sim 04753F32-7518-4747-8A6E-D030CAD7A42E booted; workspace Cleansia)
+`xcodebuild test -scheme CleansiaCustomer` on DeleteAccountViewModelTests + CustomerDevicesViewModelTests +
+NotificationPreferencesViewModelTests + SecurityViewModelTests + ProfileViewModelTests:
+**34/34 PASS, 0 failures.** Confirms success→signOutLocal-not-logout; the 3 blocked + generic→stay-signed-in;
+the-ONE-id sent; self-revoke→sign-out (both deviceId and isCurrent-fallback); hide-on-current; prefs
+optimistic+debounce+rollback; password-policy gate.
+
+### Explicit GDPR verdict demanded by the brief
+- (a) Does success do a COMPLETE local wipe via `signOutLocal` (not `logout`)? **YES** — token cleared + all 8
+  session caches cleared; no server logout; test-proven `signOutLocalCount==1, logoutCount==0`.
+- (b) Does a BLOCKED delete leave the user signed in (never strand them)? **YES** — only a 2xx reaches success;
+  all 3 blocked codes + generic failure hit `.failure`, which never wipes/redirects; test-proven `signOutLocalCount==0`.
+- (c) Is the SIWA-revoke correctly deferred + the note shown? **YES** — no Apple `/auth/revoke` attempted
+  anywhere; the localized "remove Cleansia in Settings → Apple ID → Sign in with Apple" note is shown, ×5 languages.
+
+### Devices D6-8 verdict
+**PASS** — single keychain-backed `DeviceIdProvider` instance shared between `HeaderAdapter`(X-Device-Id) and the
+devices client (no second UUID/identifierForVendor); current device hides revoke; defensive self-revoke→sign-out;
+server-scoped own-device-only revoke with NotFound-on-non-owned (S3).
+
+### Residual
+- NONE blocking. Observation (non-blocking): `NotificationPreferences.toDomain()` defaults missing booleans to
+  `true` except `promo` → `false` (`NotificationPreferences.swift:80-95`) — a safe, privacy-preserving default
+  (opt-out marketing by default), not a security issue.
+
+**VERDICT: PASS.** T-0314 Slice F is exploitable-as-written: NONE found. The load-bearing GDPR delete is correct
+on all three axes (complete-wipe-via-signOutLocal on success; blocked-stays-signed-in with unspoofable code
+extraction; SIWA note shown + Apple revoke owner-deferred). Devices D6-8 and prefs R14 PASS. No secret/PII logged
+on any path. This completes the T-0314 customer security gate.

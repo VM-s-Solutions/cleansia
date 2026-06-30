@@ -3,11 +3,13 @@ import SwiftUI
 
 struct CustomerRootView: View {
     private let container: CustomerAppContainer
+    @ObservedObject private var preferences: CustomerPreferencesModel
     @EnvironmentObject private var sessionManager: SessionManager
     @State private var route: Route
 
-    init(container: CustomerAppContainer) {
+    init(container: CustomerAppContainer, preferences: CustomerPreferencesModel) {
         self.container = container
+        self.preferences = preferences
         _route = State(initialValue: Route.seed())
     }
 
@@ -56,8 +58,8 @@ struct CustomerRootView: View {
             )
         case .home:
             CustomerShellView(
-                geocoding: container.geocodingService,
-                mapProvider: container.mapProvider,
+                container: container,
+                preferences: preferences,
                 onSignedOut: { route = .login }
             )
         }

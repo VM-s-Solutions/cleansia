@@ -53,6 +53,11 @@ jobs:
     if: inputs.environment == 'DEV'
     needs: validate
     runs-on: ubuntu-latest
+    # Match deploy-dev.yml (environment: dev-weu) so OIDC federates with the
+    # environment:dev-weu subject that holds the RBAC + the dev-scoped secrets
+    # (AZURE_* + DB_CONNECTION_STRING_DEV). Without it the branch subject has no
+    # subscription access → "No subscriptions found". (execute-pro uses prod-weu.)
+    environment: dev-weu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

@@ -10,7 +10,7 @@ public static class OrderMappers
 {
     public static OrderStatus GetCurrentOrderStatus(this Order order)
     {
-        return order.OrderStatusHistory.OrderByDescending(x => x.CreatedOn).FirstOrDefault()!.Status;
+        return order.CurrentStatus!.Value;
     }
     public static OrderListItem MapToDto(this Order order)
     {

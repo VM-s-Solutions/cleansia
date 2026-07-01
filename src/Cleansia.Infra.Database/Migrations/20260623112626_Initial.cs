@@ -1895,6 +1895,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Id = table.Column<string>(type: "text", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     OrderId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    Sequence = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     TenantId = table.Column<string>(type: "text", nullable: true),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),

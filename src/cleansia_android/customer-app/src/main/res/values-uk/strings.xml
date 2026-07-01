@@ -519,10 +519,13 @@
     <!-- Profile — security -->
     <string name="profile_security_title">Безпека</string>
     <string name="profile_security_change_password">Змінити пароль</string>
-    <string name="profile_security_current">Поточний пароль</string>
     <string name="profile_security_new">Новий пароль</string>
     <string name="profile_security_confirm">Підтвердіть новий пароль</string>
     <string name="profile_security_update">Оновити пароль</string>
+    <string name="security_intro">Ми надішлемо код підтвердження на пошту, потім ви зможете встановити новий пароль.</string>
+    <string name="security_request_code">Надіслати код підтвердження</string>
+    <string name="security_code_helper">Введіть код із листа, який ми щойно надіслали.</string>
+    <string name="security_code_label">Код підтвердження</string>
 
     <!-- Booking wizard -->
     <string name="booking_step1_title">Що вам потрібно?</string>

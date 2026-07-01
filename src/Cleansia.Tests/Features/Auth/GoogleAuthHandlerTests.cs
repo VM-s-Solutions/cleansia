@@ -27,7 +27,9 @@ namespace Cleansia.Tests.Features.Auth;
 ///   - a forged/unverifiable token (verifier returns null) fails with
 ///     <see cref="BusinessErrorMessage.InvalidGoogleUserToken"/> and creates no <see cref="User"/>/<see cref="Cart"/>;
 ///   - the legitimate flow is preserved (known active user → token; unknown email → provision
-///     from verified claims).
+///     from verified claims);
+///   - provisioning happens ONLY when <c>claims.EmailVerified</c> (parity with the AppleAuth gate —
+///     an unverified-email Google token provisions NOTHING).
 /// Written red → green per knowledge/testing.md (predates the handler rewrite).
 /// </summary>
 public class GoogleAuthHandlerTests
@@ -67,7 +69,7 @@ public class GoogleAuthHandlerTests
         const string verifiedEmail = "real-google-user@example.com";
         _verifier
             .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new GoogleVerifiedClaims("verified-subject", verifiedEmail));
+            .ReturnsAsync(new GoogleVerifiedClaims("verified-subject", verifiedEmail, EmailVerified: true));
         _userRepository
             .Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
@@ -92,7 +94,7 @@ public class GoogleAuthHandlerTests
         const string attackerClaimedGoogleId = "attacker-google-id";
         _verifier
             .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new GoogleVerifiedClaims(verifiedSubject, "new-user@example.com"));
+            .ReturnsAsync(new GoogleVerifiedClaims(verifiedSubject, "new-user@example.com", EmailVerified: true));
         _userRepository
             .Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
@@ -136,7 +138,7 @@ public class GoogleAuthHandlerTests
         existing.IsActive = true;
         _verifier
             .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new GoogleVerifiedClaims("subject-1", existing.Email));
+            .ReturnsAsync(new GoogleVerifiedClaims("subject-1", existing.Email, EmailVerified: true));
         _userRepository
             .Setup(r => r.GetByEmailAsync(existing.Email, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
@@ -157,7 +159,7 @@ public class GoogleAuthHandlerTests
         const string verifiedSubject = "subject-new";
         _verifier
             .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new GoogleVerifiedClaims(verifiedSubject, verifiedEmail));
+            .ReturnsAsync(new GoogleVerifiedClaims(verifiedSubject, verifiedEmail, EmailVerified: true));
         _userRepository
             .Setup(r => r.GetByEmailAsync(verifiedEmail, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
@@ -171,6 +173,27 @@ public class GoogleAuthHandlerTests
             u.AuthenticationType == AuthenticationType.Google)), Times.Once);
         _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Once);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    // Parity with the AppleAuth gate: a verified token whose email_verified is false provisions NOTHING.
+    [Fact]
+    public async Task Unverified_Email_Does_Not_Provision()
+    {
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GoogleVerifiedClaims("subject-unverified", "unverified@example.com", EmailVerified: false));
+        _userRepository
+            .Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        var result = await CreateHandler().Handle(CommandWith("unverified@example.com", "any-google-id"), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.InvalidGoogleUserToken, result.Error!.Message);
+        Assert.Equal(nameof(GoogleAuth.Command.Token), result.Error!.Code);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
+        _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // (S1): the AuthenticationType guard now runs in the HANDLER against the VERIFIED
@@ -187,7 +210,7 @@ public class GoogleAuthHandlerTests
         existing.IsActive = true;
         _verifier
             .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new GoogleVerifiedClaims("subject-collide", existing.Email));
+            .ReturnsAsync(new GoogleVerifiedClaims("subject-collide", existing.Email, EmailVerified: true));
         _userRepository
             .Setup(r => r.GetByEmailAsync(existing.Email, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
@@ -213,7 +236,7 @@ public class GoogleAuthHandlerTests
         existing.IsActive = false;
         _verifier
             .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new GoogleVerifiedClaims("subject-1", existing.Email));
+            .ReturnsAsync(new GoogleVerifiedClaims("subject-1", existing.Email, EmailVerified: true));
         _userRepository
             .Setup(r => r.GetByEmailAsync(existing.Email, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);

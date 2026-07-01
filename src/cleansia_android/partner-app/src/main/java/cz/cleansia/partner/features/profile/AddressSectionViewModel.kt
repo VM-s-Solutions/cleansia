@@ -1,10 +1,13 @@
 package cz.cleansia.partner.features.profile
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.location.GeocodedAddress
 import cz.cleansia.core.servicearea.ServiceAreaProvider
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.core.ui.state.ActionState
+import cz.cleansia.partner.R
 import cz.cleansia.partner.api.client.CountryApi
 import cz.cleansia.partner.api.model.CountryListItem
 import cz.cleansia.partner.core.network.ApiErrorTranslator
@@ -12,25 +15,18 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.partner.data.profile.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
-/**
- * State for the partner Address section v2. The cleaner's address is
- * now picked on a map (full `AddressPickerScreen`) and applied to this
- * VM via [applyPick] — no more raw text fields for Street/City/ZIP/
- * Country. The optional `state` field stays inline for US/CA cases.
- *
- * [pickedAddress] is the most recent Mapbox result; it always carries
- * the lat/lng we trust on save. [countries] is the cached serviced
- * country list used to resolve the Mapbox alpha-2 ISO code into the
- * backend country id we send in the update command.
- */
 /**
  * Three-state indicator for "how serviced is this address?".
  *
@@ -54,14 +50,21 @@ sealed class ServiceAreaStatus {
     data object CountryNotServiced : ServiceAreaStatus()
 }
 
-data class AddressSectionUiState(
-    val isLoading: Boolean = false,
-    val isSaving: Boolean = false,
+/**
+ * Form for the partner Address section. The cleaner's address is
+ * picked on a map (full `AddressPickerScreen`) and applied via
+ * [AddressSectionViewModel.applyPick] — no raw text fields.
+ *
+ * [pickedAddress] is the most recent Mapbox result; it always carries
+ * the lat/lng we trust on save. [countries] is the cached serviced
+ * country list used to resolve the Mapbox alpha-2 ISO code into the
+ * backend country id we send in the update command.
+ */
+data class AddressForm(
     val employeeId: String = "",
     val pickedAddress: GeocodedAddress? = null,
     val countries: List<CountryListItem> = emptyList(),
     val serviceAreaStatus: ServiceAreaStatus = ServiceAreaStatus.Unknown,
-    val isSaved: Boolean = false,
 ) {
     /** Single-line summary for the section's tappable picker card. */
     val summaryLine1: String?
@@ -79,6 +82,12 @@ data class AddressSectionUiState(
         }
 }
 
+sealed interface AddressSectionUiState {
+    data object Loading : AddressSectionUiState
+    data object Error : AddressSectionUiState
+    data class Loaded(val form: AddressForm) : AddressSectionUiState
+}
+
 @HiltViewModel
 class AddressSectionViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
@@ -87,16 +96,23 @@ class AddressSectionViewModel @Inject constructor(
     private val snackbar: SnackbarController,
     private val serviceAreaProvider: ServiceAreaProvider,
     private val json: Json,
+    @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(AddressSectionUiState())
+    private val _uiState = MutableStateFlow<AddressSectionUiState>(AddressSectionUiState.Loading)
     val uiState: StateFlow<AddressSectionUiState> = _uiState.asStateFlow()
+
+    private val _saveState = MutableStateFlow<ActionState>(ActionState.Idle)
+    val saveState: StateFlow<ActionState> = _saveState.asStateFlow()
+
+    private val _saved = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val saved: SharedFlow<Unit> = _saved.asSharedFlow()
 
     init { load() }
 
     private fun load() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.value = AddressSectionUiState.Loading
 
             val countriesResult = safeApiCall(json) { countryApi.countryGetServiced() }
             val countries = (countriesResult as? ApiResult.Success)?.data.orEmpty()
@@ -124,14 +140,13 @@ class AddressSectionViewModel @Inject constructor(
                             .filterNot { it.isNullOrBlank() }
                             .joinToString(", "),
                     )
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
+                    _uiState.value = AddressSectionUiState.Loaded(
+                        AddressForm(
                             employeeId = e.id.orEmpty(),
                             pickedAddress = picked,
                             countries = countries,
-                        )
-                    }
+                        ),
+                    )
                     // Kick off the service-area lookup for the loaded
                     // address so the indicator row reflects the saved
                     // state on screen entry (not just after re-picking).
@@ -140,8 +155,8 @@ class AddressSectionViewModel @Inject constructor(
                     }
                 }
                 is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, countries = countries) }
                     snackbar.showError(errorTranslator.translate(empResult.error))
+                    _uiState.value = AddressSectionUiState.Error
                 }
             }
         }
@@ -149,7 +164,7 @@ class AddressSectionViewModel @Inject constructor(
 
     /** Called by the screen after the picker pops with a fresh pick. */
     fun applyPick(address: GeocodedAddress) {
-        _uiState.update {
+        updateForm {
             it.copy(
                 pickedAddress = address,
                 // Reset to Unknown immediately so the row shows the
@@ -171,7 +186,7 @@ class AddressSectionViewModel @Inject constructor(
     private fun refreshServiceArea(address: GeocodedAddress) {
         val cityName = address.city.takeIf { it.isNotBlank() }
         if (cityName == null) {
-            _uiState.update { it.copy(serviceAreaStatus = ServiceAreaStatus.Unknown) }
+            updateForm { it.copy(serviceAreaStatus = ServiceAreaStatus.Unknown) }
             return
         }
         viewModelScope.launch {
@@ -180,11 +195,11 @@ class AddressSectionViewModel @Inject constructor(
                 c.isoCode == mapboxCode || c.isoCode.startsWith(mapboxCode)
             }
             if (country == null) {
-                _uiState.update { it.copy(serviceAreaStatus = ServiceAreaStatus.CountryNotServiced) }
+                updateForm { it.copy(serviceAreaStatus = ServiceAreaStatus.CountryNotServiced) }
                 return@launch
             }
             val serviced = serviceAreaProvider.isCityServiced(country.id, cityName)
-            _uiState.update {
+            updateForm {
                 it.copy(
                     serviceAreaStatus = if (serviced)
                         ServiceAreaStatus.InServicedCity(cityName)
@@ -195,14 +210,15 @@ class AddressSectionViewModel @Inject constructor(
     }
 
     fun save() {
-        val state = _uiState.value
-        val picked = state.pickedAddress
+        val form = (_uiState.value as? AddressSectionUiState.Loaded)?.form ?: return
+        if (_saveState.value is ActionState.Submitting) return
+        val picked = form.pickedAddress
         if (picked == null) {
-            snackbar.showError("Pick your address on the map first")
+            snackbar.showError(appContext.getString(R.string.error_pick_address_first))
             return
         }
-        if (state.employeeId.isBlank()) {
-            snackbar.showError("Profile not loaded yet")
+        if (form.employeeId.isBlank()) {
+            snackbar.showError(appContext.getString(R.string.error_profile_not_loaded))
             return
         }
 
@@ -211,25 +227,25 @@ class AddressSectionViewModel @Inject constructor(
         // can find the matching countryId — also catches existing employees
         // whose loaded address put the backend's alpha-3 in `countryIsoCode`.
         val mapboxCode = picked.countryIsoCode.lowercase()
-        val countryId = state.countries.firstOrNull { c ->
+        val countryId = form.countries.firstOrNull { c ->
             val iso = c.isoCode?.lowercase().orEmpty()
             iso == mapboxCode || iso.startsWith(mapboxCode)
         }?.id
 
         if (countryId.isNullOrBlank()) {
-            snackbar.showError("This country isn't serviced yet")
+            snackbar.showError(appContext.getString(R.string.error_country_not_serviced))
             return
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isSaving = true) }
+            _saveState.value = ActionState.Submitting
             // Send coords only when the picked address actually has them
             // (a freshly map-picked address will; a back-fill from a
             // legacy server record with no lat/lng yet won't — falling
             // through to server-side geocoding is correct in that case).
             val hasCoords = picked.latitude != 0.0 && picked.longitude != 0.0
             val result = profileRepository.updateAddress(
-                employeeId = state.employeeId,
+                employeeId = form.employeeId,
                 street = picked.street.trim(),
                 city = picked.city.trim(),
                 zipCode = picked.zipCode.trim(),
@@ -247,14 +263,21 @@ class AddressSectionViewModel @Inject constructor(
                 longitude = picked.longitude.takeIf { hasCoords },
             )
             when (result) {
-                is ApiResult.Success -> _uiState.update { it.copy(isSaving = false, isSaved = true) }
+                is ApiResult.Success -> {
+                    _saveState.value = ActionState.Idle
+                    _saved.emit(Unit)
+                }
                 is ApiResult.Error -> {
-                    _uiState.update { it.copy(isSaving = false) }
+                    _saveState.value = ActionState.Idle
                     snackbar.showError(errorTranslator.translate(result.error))
                 }
             }
         }
     }
 
-    fun clearError() = _uiState.update { it } // No-op now — errors go via SnackbarController.
+    private inline fun updateForm(transform: (AddressForm) -> AddressForm) {
+        _uiState.update { state ->
+            if (state is AddressSectionUiState.Loaded) state.copy(form = transform(state.form)) else state
+        }
+    }
 }

@@ -96,9 +96,7 @@ public class CompleteOrder
 
             if (order == null) return false;
 
-            var currentStatus = order.OrderStatusHistory
-                .OrderByDescending(osh => osh.CreatedOn)
-                .FirstOrDefault()?.Status;
+            var currentStatus = order.CurrentStatus;
 
             return currentStatus == OrderStatus.InProgress;
         }

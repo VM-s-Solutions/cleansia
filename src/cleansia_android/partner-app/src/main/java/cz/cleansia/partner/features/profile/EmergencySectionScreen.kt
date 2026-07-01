@@ -12,6 +12,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaPhoneInput
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextField
+import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 
@@ -22,30 +23,33 @@ fun EmergencySectionScreen(
     viewModel: EmergencySectionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val saveState by viewModel.saveState.collectAsStateWithLifecycle()
+    val saving = saveState is ActionState.Submitting
 
-    LaunchedEffect(uiState.isSaved) { if (uiState.isSaved) onSaved() }
+    LaunchedEffect(viewModel) { viewModel.saved.collect { onSaved() } }
 
     SectionScaffold(
         title = stringResource(R.string.emergency_contact),
-        isLoading = uiState.isLoading,
+        isLoading = uiState is EmergencySectionUiState.Loading,
         onNavigateBack = onNavigateBack,
     ) {
+        val form = (uiState as? EmergencySectionUiState.Loaded)?.form ?: EmergencyForm()
         FormSectionCard(title = stringResource(R.string.emergency_contact)) {
             CleansiaTextField(
-                value = uiState.name,
+                value = form.name,
                 onValueChange = viewModel::onNameChange,
                 label = stringResource(R.string.emergency_name),
-                errorText = uiState.nameError,
-                enabled = !uiState.isSaving,
+                errorText = form.nameError,
+                enabled = !saving,
                 transparentContainer = true,
             )
             Spacer(Modifier.height(Spacing.XS))
             CleansiaPhoneInput(
-                value = uiState.phone,
+                value = form.phone,
                 onValueChange = viewModel::onPhoneChange,
                 label = stringResource(R.string.emergency_phone),
-                errorText = uiState.phoneError,
-                enabled = !uiState.isSaving,
+                errorText = form.phoneError,
+                enabled = !saving,
                 transparentContainer = true,
             )
         }
@@ -53,9 +57,8 @@ fun EmergencySectionScreen(
         CleansiaPrimaryButton(
             text = stringResource(R.string.save),
             onClick = { viewModel.save() },
-            loading = uiState.isSaving,
-            enabled = uiState.name.isNotBlank() && uiState.phone.isNotBlank() && !uiState.isSaving,
+            loading = saving,
+            enabled = form.name.isNotBlank() && form.phone.isNotBlank() && !saving,
         )
     }
 }
-

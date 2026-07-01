@@ -519,10 +519,13 @@
     <!-- Profile — security -->
     <string name="profile_security_title">Zabezpečenie</string>
     <string name="profile_security_change_password">Zmeniť heslo</string>
-    <string name="profile_security_current">Aktuálne heslo</string>
     <string name="profile_security_new">Nové heslo</string>
     <string name="profile_security_confirm">Potvrdiť nové heslo</string>
     <string name="profile_security_update">Aktualizovať heslo</string>
+    <string name="security_intro">Pošleme vám overovací kód e-mailom, potom si môžete nastaviť nové heslo.</string>
+    <string name="security_request_code">Odoslať overovací kód</string>
+    <string name="security_code_helper">Zadajte kód z e-mailu, ktorý sme vám práve poslali.</string>
+    <string name="security_code_label">Overovací kód</string>
 
     <!-- Booking wizard -->
     <string name="booking_step1_title">Čo potrebujete?</string>

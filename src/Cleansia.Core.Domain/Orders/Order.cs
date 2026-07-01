@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
@@ -101,6 +102,13 @@ public class Order : Auditable, ITenantEntity
     public string StripeSessionId { get; private set; } = string.Empty;
 
     public string? StripePaymentIntentId { get; private set; }
+
+    // A card order is charged on exactly one Stripe surface: the web flow on a Checkout Session, the
+    // mobile (PaymentSheet) flow on a PaymentIntent (T-0347 suppresses the Session for mobile, so its
+    // StripeSessionId is empty). A refund is possible when either surface is present.
+    [NotMapped]
+    public bool HasRefundableChargeSurface =>
+        !string.IsNullOrEmpty(StripeSessionId) || !string.IsNullOrEmpty(StripePaymentIntentId);
 
     public string? Notes { get; private set; }
 
@@ -225,6 +233,15 @@ public class Order : Auditable, ITenantEntity
     private ICollection<OrderStatusTrack> _orderStatusHistory = [];
     public IReadOnlyCollection<OrderStatusTrack> OrderStatusHistory => _orderStatusHistory.ToList().AsReadOnly();
 
+    // The ONE way to read current status in memory. CreatedOn is the primary (human-meaningful) sort;
+    // Sequence is the deterministic tiebreaker for same-tick transitions the ULID Id can't provide
+    // (Ulid.NewUlid() is not monotonic within a millisecond).
+    public OrderStatus? CurrentStatus =>
+        _orderStatusHistory
+            .OrderByDescending(s => s.CreatedOn)
+            .ThenByDescending(s => s.Sequence)
+            .FirstOrDefault()?.Status;
+
     private ICollection<OrderEmployee> _assignedEmployees = [];
     public IReadOnlyCollection<OrderEmployee> AssignedEmployees => _assignedEmployees.ToList().AsReadOnly();
 
@@ -320,6 +337,8 @@ public class Order : Auditable, ITenantEntity
 
     public Order AddOrderStatus(OrderStatusTrack orderStatusTrack)
     {
+        orderStatusTrack.AssignSequence(
+            _orderStatusHistory.Count == 0 ? 0 : _orderStatusHistory.Max(s => s.Sequence) + 1);
         _orderStatusHistory.Add(orderStatusTrack);
 
         return this;

@@ -1,14 +1,17 @@
 package cz.cleansia.partner.features.auth
 
+import android.content.Context
 import cz.cleansia.core.validation.EmailValidator
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.partner.R
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.data.auth.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -46,6 +49,7 @@ class RegisterViewModel @Inject constructor(
     private val errorTranslator: ApiErrorTranslator,
     private val appSettingsRepository: AppSettingsRepository,
     private val snackbar: SnackbarController,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegisterUiState())
@@ -61,25 +65,25 @@ class RegisterViewModel @Inject constructor(
     fun register() {
         val state = _uiState.value
         var hasError = false
-        if (state.firstName.isBlank()) { _uiState.update { it.copy(firstNameError = "First name is required") }; hasError = true }
-        if (state.lastName.isBlank()) { _uiState.update { it.copy(lastNameError = "Last name is required") }; hasError = true }
+        if (state.firstName.isBlank()) { _uiState.update { it.copy(firstNameError = context.getString(R.string.error_first_name_required)) }; hasError = true }
+        if (state.lastName.isBlank()) { _uiState.update { it.copy(lastNameError = context.getString(R.string.error_last_name_required)) }; hasError = true }
         if (state.email.isBlank()) {
-            _uiState.update { it.copy(emailError = "Email is required") }
+            _uiState.update { it.copy(emailError = context.getString(R.string.error_email_required)) }
             hasError = true
         } else if (!EmailValidator.isValid(state.email)) {
-            _uiState.update { it.copy(emailError = "Please enter a valid email") }
+            _uiState.update { it.copy(emailError = context.getString(R.string.error_email_invalid)) }
             hasError = true
         }
         if (!state.passwordHasMinLength || !state.passwordHasLetter || !state.passwordHasNumber) {
-            _uiState.update { it.copy(passwordError = "Password must be at least 8 characters with a letter and a number") }
+            _uiState.update { it.copy(passwordError = context.getString(R.string.error_password_rules)) }
             hasError = true
         }
         if (!state.passwordsMatch) {
-            _uiState.update { it.copy(confirmPasswordError = "Passwords do not match") }
+            _uiState.update { it.copy(confirmPasswordError = context.getString(R.string.error_passwords_not_match)) }
             hasError = true
         }
         if (!state.acceptTerms) {
-            _uiState.update { it.copy(termsError = "You must accept the terms") }
+            _uiState.update { it.copy(termsError = context.getString(R.string.error_terms_required)) }
             hasError = true
         }
         if (hasError) return

@@ -1,19 +1,18 @@
-import CleansiaCore
 import Combine
 import Foundation
 
 @MainActor
-final class BookingAddressPickerViewModel: ViewModel {
-    @Published private(set) var resolved: GeocodedAddress?
-    @Published private(set) var lookingUp = false
-    @Published private(set) var searchQuery = ""
-    @Published private(set) var searchResults: [GeocodedAddress] = []
-    @Published private(set) var searching = false
+public final class AddressPickerViewModel: ViewModel {
+    @Published public private(set) var resolved: GeocodedAddress?
+    @Published public private(set) var lookingUp = false
+    @Published public private(set) var searchQuery = ""
+    @Published public private(set) var searchResults: [GeocodedAddress] = []
+    @Published public private(set) var searching = false
 
-    let confirmed = PassthroughSubject<GeocodedAddress, Never>()
-    let recenter = PassthroughSubject<Coordinate, Never>()
+    public let confirmed = PassthroughSubject<GeocodedAddress, Never>()
+    public let recenter = PassthroughSubject<Coordinate, Never>()
 
-    var canConfirm: Bool {
+    public var canConfirm: Bool {
         resolved != nil && !lookingUp
     }
 
@@ -25,7 +24,7 @@ final class BookingAddressPickerViewModel: ViewModel {
     private var reverseTask: Task<Void, Never>?
     private var searchTask: Task<Void, Never>?
 
-    init(
+    public init(
         geocoding: GeocodingService,
         reverseDebounce: Duration = .milliseconds(500),
         searchDebounce: Duration = .milliseconds(300),
@@ -37,7 +36,7 @@ final class BookingAddressPickerViewModel: ViewModel {
         self.searchBias = searchBias
     }
 
-    func centerChanged(_ center: Coordinate) {
+    public func centerChanged(_ center: Coordinate) {
         lookingUp = true
         reverseTask?.cancel()
         reverseTask = Task { [weak self] in
@@ -53,7 +52,7 @@ final class BookingAddressPickerViewModel: ViewModel {
         }
     }
 
-    func onSearchChange(_ query: String) {
+    public func onSearchChange(_ query: String) {
         searchQuery = query
         searchTask?.cancel()
         guard query.count >= 2 else {
@@ -73,11 +72,11 @@ final class BookingAddressPickerViewModel: ViewModel {
         }
     }
 
-    func clearSearch() {
+    public func clearSearch() {
         onSearchChange("")
     }
 
-    func selectResult(_ address: GeocodedAddress) {
+    public func selectResult(_ address: GeocodedAddress) {
         searchTask?.cancel()
         resolved = address
         searchQuery = ""
@@ -86,7 +85,7 @@ final class BookingAddressPickerViewModel: ViewModel {
         recenter.send(Coordinate(latitude: address.latitude, longitude: address.longitude))
     }
 
-    func confirm() {
+    public func confirm() {
         guard let resolved, !lookingUp else { return }
         confirmed.send(resolved)
     }

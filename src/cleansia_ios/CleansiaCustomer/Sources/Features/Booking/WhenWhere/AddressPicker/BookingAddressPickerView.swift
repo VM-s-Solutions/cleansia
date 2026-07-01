@@ -3,7 +3,7 @@ import MapKit
 import SwiftUI
 
 struct BookingAddressPickerView: View {
-    @StateObject private var vm: BookingAddressPickerViewModel
+    @StateObject private var vm: AddressPickerViewModel
     @State private var region = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: defaultLatitude, longitude: defaultLongitude),
         span: MKCoordinateSpan(latitudeDelta: defaultSpan, longitudeDelta: defaultSpan)
@@ -24,7 +24,7 @@ struct BookingAddressPickerView: View {
         onConfirmed: @escaping (GeocodedAddress) -> Void,
         onBack: @escaping () -> Void
     ) {
-        _vm = StateObject(wrappedValue: BookingAddressPickerViewModel(geocoding: geocoding))
+        _vm = StateObject(wrappedValue: AddressPickerViewModel(geocoding: geocoding))
         self.mapProvider = mapProvider
         self.onConfirmed = onConfirmed
         self.onBack = onBack

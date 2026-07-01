@@ -22,10 +22,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # xcodegen + swiftformat + xcbeautify are not on the runner image (swiftlint
-      # usually is); installing them keeps CI independent of image drift.
+      # xcodegen + xcbeautify are not on the runner image (swiftlint usually is);
+      # installing them keeps CI independent of image drift.
       - name: Install toolchain
-        run: brew install xcodegen swiftlint swiftformat xcbeautify openapi-generator
+        run: brew install xcodegen swiftlint xcbeautify openapi-generator
+
+      # SwiftFormat is PINNED (not brew-latest): a brew bump silently adds new default
+      # rules, failing CI on code that passed a dev's older local lint (the docComments
+      # + redundantEmptyView drift we hit twice). Devs: match this version locally
+      # (`brew install swiftformat` then check `--version`, or download the same release).
+      - name: Install SwiftFormat (pinned 0.60.1)
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/swiftformat.zip \
+            https://github.com/nicklockwood/SwiftFormat/releases/download/0.60.1/swiftformat.zip
+          unzip -o /tmp/swiftformat.zip -d /tmp/swiftformat-bin
+          BIN="$(find /tmp/swiftformat-bin -name swiftformat -type f -perm -u+x | head -1)"
+          sudo install "$BIN" /usr/local/bin/swiftformat
+          swiftformat --version
 
       # The generated business client (CleansiaPartnerApi / CleansiaCustomerApi) is
       # gitignored and machine-owned — regenerate it from the committed mobile specs

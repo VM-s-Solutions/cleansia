@@ -364,6 +364,22 @@ geocode text↔`GeocodedAddress`, best-effort (nil/`[]` on error, cancel-before-
 (there isn't one), the network client (system framework), which feature/VM consumes it, or how the picker
 renders. (The `ios-map-provider` CRC from ADR-0013 is unchanged — `MapKitMapProvider` is its default impl.)
 
+**Living-doc note (T-0349, 2026-06-30) — the address-picker VM is a Core type, the View stays app-local.** The
+near-duplicate address-picker VM (partner `Profile/AddressPicker` + customer `Booking/WhenWhere/AddressPicker`)
+is hoisted into **`CleansiaCore/Location/AddressPickerViewModel`** (public, alongside the `MapProvider`/
+`GeocodingService` seam it already depended on) — partner + customer construct the one Core type. Per ADR-0013's
+own escape clause this is a **home change, not a contract change** → recorded here + in `patterns-mobile.md`, no
+new ADR. The public init is the customer's parameterized shape: `init(geocoding:, reverseDebounce: =
+.milliseconds(500), searchDebounce: = .milliseconds(300), searchBias: [String] = ["cz","sk"])` — `searchBias` is
+the **only** variation point (a caller-supplied param mapping 1:1 to `GeocodingService.forwardGeocode(query:,
+countryIsoCodes:)`, never a country branch inside the VM); the `["cz","sk"]` default keeps partner non-regressing
+(its test asserts the default bias unchanged). The **Views stay app-local** (`AddressPickerView` /
+`BookingAddressPickerView` — distinct chrome/L10n/navigation); their `import MapKit` is the sanctioned
+View-layer touch — binding the `MapProvider` protocol's MapKit-typed `pickerMap(region: Binding<MKCoordinateRegion>,
+…)` / `fullBleedMap` signature (the `MapProvider.swift:5` boundary), NOT map/geocode logic. Invariant #7 ("no
+feature imports MapKit") is about logic, not the View's binding to the protocol's typed signature. The VM is the
+**only** shared piece.
+
 ### Partner Profile tab — in-tab `NavigationStack`, lock-owns-its-own-stack, deferred service-area, theme-honoring, sealed-state (sprint-12 §7.7 / T-0310)
 
 The partner **Profile tab** (replacing `PartnerShellView.swift:36`'s `PlaceholderTab`) — the hub + 6 section editors +

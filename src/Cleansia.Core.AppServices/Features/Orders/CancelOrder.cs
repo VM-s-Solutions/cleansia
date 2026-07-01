@@ -75,9 +75,7 @@ public class CancelOrder
                     BusinessErrorMessage.OrderNotFound));
             }
 
-            var latestStatus = order.OrderStatusHistory
-                .OrderByDescending(s => s.CreatedOn)
-                .FirstOrDefault()?.Status;
+            var latestStatus = order.CurrentStatus;
 
             if (latestStatus == OrderStatus.Cancelled)
             {
@@ -126,7 +124,7 @@ public class CancelOrder
             if (order.PaymentType == PaymentType.Card
                 && order.PaymentStatus == PaymentStatus.Paid
                 && refundAmount > 0m
-                && !string.IsNullOrEmpty(order.StripeSessionId))
+                && order.HasRefundableChargeSurface)
             {
                 var refund = await refundService.IssueRefundAsync(
                     new RefundRequest(order.Id, refundAmount, RefundReason.CustomerCancellation, userId),

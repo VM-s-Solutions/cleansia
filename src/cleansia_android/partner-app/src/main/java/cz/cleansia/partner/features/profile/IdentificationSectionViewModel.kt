@@ -1,8 +1,11 @@
 package cz.cleansia.partner.features.profile
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.core.ui.state.ActionState
+import cz.cleansia.partner.R
 import cz.cleansia.partner.api.client.CountryApi
 import cz.cleansia.partner.api.model.CountryListItem
 import cz.cleansia.partner.api.model.EmployeeEntityType
@@ -11,8 +14,12 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.partner.data.profile.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -20,7 +27,7 @@ import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 /**
- * State for "Identification & business" — collects everything the
+ * Form for "Identification & business" — collects everything the
  * backend's `IsProfileComplete` check needs that doesn't live on the
  * other section screens: nationality + passport (the person), plus
  * entity type + business country + IČO + optional VAT + legal entity
@@ -30,23 +37,23 @@ import javax.inject.Inject
  * on load so the typical case (business registered where the cleaner
  * lives) is one tap. They can override it via the country picker.
  */
-data class IdentificationSectionUiState(
-    val isLoading: Boolean = false,
-    val isSaving: Boolean = false,
+data class IdentificationForm(
     val employeeId: String = "",
     val countries: List<CountryListItem> = emptyList(),
-    // Identification (person)
     val nationalityId: String? = null,
     val passportId: String = "",
-    // Business identity
     val entityType: EmployeeEntityType = EmployeeEntityType._1,
     val businessCountryId: String? = null,
     val registrationNumber: String = "",
     val vatNumber: String = "",
     val legalEntityName: String = "",
-    val error: String? = null,
-    val isSaved: Boolean = false,
 )
+
+sealed interface IdentificationSectionUiState {
+    data object Loading : IdentificationSectionUiState
+    data object Error : IdentificationSectionUiState
+    data class Loaded(val form: IdentificationForm) : IdentificationSectionUiState
+}
 
 @HiltViewModel
 class IdentificationSectionViewModel @Inject constructor(
@@ -55,24 +62,30 @@ class IdentificationSectionViewModel @Inject constructor(
     private val errorTranslator: ApiErrorTranslator,
     private val snackbar: SnackbarController,
     private val json: Json,
+    @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(IdentificationSectionUiState())
+    private val _uiState = MutableStateFlow<IdentificationSectionUiState>(IdentificationSectionUiState.Loading)
     val uiState: StateFlow<IdentificationSectionUiState> = _uiState.asStateFlow()
+
+    private val _saveState = MutableStateFlow<ActionState>(ActionState.Idle)
+    val saveState: StateFlow<ActionState> = _saveState.asStateFlow()
+
+    private val _saved = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val saved: SharedFlow<Unit> = _saved.asSharedFlow()
 
     init { load() }
 
     private fun load() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.value = IdentificationSectionUiState.Loading
             val countries = (safeApiCall(json) { countryApi.countryGetOverview() } as? ApiResult.Success)
                 ?.data.orEmpty()
             when (val empResult = profileRepository.getCurrentEmployee()) {
                 is ApiResult.Success -> {
                     val e = empResult.data
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
+                    _uiState.value = IdentificationSectionUiState.Loaded(
+                        IdentificationForm(
                             employeeId = e.id.orEmpty(),
                             countries = countries,
                             nationalityId = e.nationalityId,
@@ -84,96 +97,96 @@ class IdentificationSectionViewModel @Inject constructor(
                             registrationNumber = e.registrationNumber.orEmpty(),
                             vatNumber = e.vatNumber.orEmpty(),
                             legalEntityName = e.legalEntityName.orEmpty(),
-                        )
-                    }
+                        ),
+                    )
                 }
                 is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, countries = countries) }
                     snackbar.showError(errorTranslator.translate(empResult.error))
+                    _uiState.value = IdentificationSectionUiState.Error
                 }
             }
         }
     }
 
-    fun onNationalitySelected(id: String) =
-        _uiState.update { it.copy(nationalityId = id, error = null) }
+    fun onNationalitySelected(id: String) = updateForm { it.copy(nationalityId = id) }
 
-    fun onPassportChange(v: String) =
-        _uiState.update { it.copy(passportId = v, error = null) }
+    fun onPassportChange(v: String) = updateForm { it.copy(passportId = v) }
 
-    fun onEntityTypeSelected(type: EmployeeEntityType) =
-        _uiState.update {
-            // Clear legal entity name when switching back to natural
-            // person — backend ignores it but a stale value is confusing
-            // if the user toggles back to legal entity later.
-            it.copy(
-                entityType = type,
-                legalEntityName = if (type == EmployeeEntityType._2) it.legalEntityName else "",
-                error = null,
-            )
-        }
+    fun onEntityTypeSelected(type: EmployeeEntityType) = updateForm {
+        // Clear legal entity name when switching back to natural
+        // person — backend ignores it but a stale value is confusing
+        // if the user toggles back to legal entity later.
+        it.copy(
+            entityType = type,
+            legalEntityName = if (type == EmployeeEntityType._2) it.legalEntityName else "",
+        )
+    }
 
-    fun onBusinessCountrySelected(id: String) =
-        _uiState.update { it.copy(businessCountryId = id, error = null) }
+    fun onBusinessCountrySelected(id: String) = updateForm { it.copy(businessCountryId = id) }
 
-    fun onRegistrationNumberChange(v: String) =
-        _uiState.update { it.copy(registrationNumber = v, error = null) }
+    fun onRegistrationNumberChange(v: String) = updateForm { it.copy(registrationNumber = v) }
 
-    fun onVatNumberChange(v: String) =
-        _uiState.update { it.copy(vatNumber = v, error = null) }
+    fun onVatNumberChange(v: String) = updateForm { it.copy(vatNumber = v) }
 
-    fun onLegalEntityNameChange(v: String) =
-        _uiState.update { it.copy(legalEntityName = v, error = null) }
+    fun onLegalEntityNameChange(v: String) = updateForm { it.copy(legalEntityName = v) }
 
     fun save() {
-        val state = _uiState.value
-        if (state.employeeId.isBlank()) {
-            snackbar.showError("Profile not loaded yet")
+        val form = (_uiState.value as? IdentificationSectionUiState.Loaded)?.form ?: return
+        if (_saveState.value is ActionState.Submitting) return
+        if (form.employeeId.isBlank()) {
+            snackbar.showError(appContext.getString(R.string.error_profile_not_loaded))
             return
         }
 
-        val nationalityId = state.nationalityId
-        val businessCountryId = state.businessCountryId
+        val nationalityId = form.nationalityId
+        val businessCountryId = form.businessCountryId
         // Client-side guards so the error message points at the right
         // field instead of bouncing through the generic server-side
         // "Required" message. The server still re-validates everything.
         if (nationalityId.isNullOrBlank()) {
-            snackbar.showError("Pick your nationality"); return
+            snackbar.showError(appContext.getString(R.string.error_pick_nationality)); return
         }
-        if (state.passportId.isBlank()) {
-            snackbar.showError("Enter your passport / ID number"); return
+        if (form.passportId.isBlank()) {
+            snackbar.showError(appContext.getString(R.string.error_passport_required)); return
         }
         if (businessCountryId.isNullOrBlank()) {
-            snackbar.showError("Pick the country your business is registered in"); return
+            snackbar.showError(appContext.getString(R.string.error_pick_business_country)); return
         }
-        if (state.registrationNumber.isBlank()) {
-            snackbar.showError("Enter your registration number (IČO)"); return
+        if (form.registrationNumber.isBlank()) {
+            snackbar.showError(appContext.getString(R.string.error_registration_number_required)); return
         }
-        if (state.entityType == EmployeeEntityType._2 && state.legalEntityName.isBlank()) {
-            snackbar.showError("Enter the legal entity name"); return
+        if (form.entityType == EmployeeEntityType._2 && form.legalEntityName.isBlank()) {
+            snackbar.showError(appContext.getString(R.string.error_legal_entity_name_required)); return
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isSaving = true) }
+            _saveState.value = ActionState.Submitting
             val result = profileRepository.updateIdentification(
-                employeeId = state.employeeId,
+                employeeId = form.employeeId,
                 nationalityId = nationalityId,
-                passportId = state.passportId,
-                entityType = state.entityType,
+                passportId = form.passportId,
+                entityType = form.entityType,
                 businessCountryId = businessCountryId,
-                registrationNumber = state.registrationNumber,
-                vatNumber = state.vatNumber.takeIf { it.isNotBlank() },
-                legalEntityName = state.legalEntityName.takeIf { it.isNotBlank() },
+                registrationNumber = form.registrationNumber,
+                vatNumber = form.vatNumber.takeIf { it.isNotBlank() },
+                legalEntityName = form.legalEntityName.takeIf { it.isNotBlank() },
             )
             when (result) {
-                is ApiResult.Success -> _uiState.update { it.copy(isSaving = false, isSaved = true) }
+                is ApiResult.Success -> {
+                    _saveState.value = ActionState.Idle
+                    _saved.emit(Unit)
+                }
                 is ApiResult.Error -> {
-                    _uiState.update { it.copy(isSaving = false) }
+                    _saveState.value = ActionState.Idle
                     snackbar.showError(errorTranslator.translate(result.error))
                 }
             }
         }
     }
 
-    fun clearError() = _uiState.update { it.copy(error = null) }
+    private inline fun updateForm(transform: (IdentificationForm) -> IdentificationForm) {
+        _uiState.update { state ->
+            if (state is IdentificationSectionUiState.Loaded) state.copy(form = transform(state.form)) else state
+        }
+    }
 }

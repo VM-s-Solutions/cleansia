@@ -49,17 +49,20 @@ fun IdentificationSectionScreen(
     chainViewModel: cz.cleansia.partner.features.orders.OnboardingChainViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val saveState by viewModel.saveState.collectAsStateWithLifecycle()
     val chainState by chainViewModel.state.collectAsStateWithLifecycle()
+    val saving = saveState is cz.cleansia.core.ui.state.ActionState.Submitting
+    val form = (uiState as? IdentificationSectionUiState.Loaded)?.form ?: IdentificationForm()
 
-    LaunchedEffect(uiState.isSaved) { if (uiState.isSaved) onSaved() }
+    LaunchedEffect(viewModel) { viewModel.saved.collect { onSaved() } }
 
-    val countryOptions = uiState.countries.map { country ->
+    val countryOptions = form.countries.map { country ->
         country.id.orEmpty() to (country.name ?: country.isoCode ?: country.id.orEmpty())
     }
 
     SectionScaffold(
         title = stringResource(R.string.identification_title),
-        isLoading = uiState.isLoading,
+        isLoading = uiState is IdentificationSectionUiState.Loading,
         onNavigateBack = onNavigateBack,
         headerSlot = if (!onboarding) null else ({
             cz.cleansia.partner.features.profile.OnboardingChainHeader(
@@ -70,19 +73,19 @@ fun IdentificationSectionScreen(
     ) {
         FormSectionCard(title = stringResource(R.string.identification_header_person)) {
             PickerDropdown(
-                selectedId = uiState.nationalityId,
+                selectedId = form.nationalityId,
                 options = countryOptions,
                 onSelected = viewModel::onNationalitySelected,
                 label = stringResource(R.string.nationality),
-                enabled = !uiState.isSaving,
+                enabled = !saving,
                 searchable = true,
             )
             Spacer(Modifier.height(Spacing.XS))
             CleansiaTextField(
-                value = uiState.passportId,
+                value = form.passportId,
                 onValueChange = viewModel::onPassportChange,
                 label = stringResource(R.string.passport_id),
-                enabled = !uiState.isSaving,
+                enabled = !saving,
                 transparentContainer = true,
             )
         }
@@ -91,36 +94,36 @@ fun IdentificationSectionScreen(
 
         FormSectionCard(title = stringResource(R.string.identification_header_business)) {
             EntityTypeSelector(
-                selected = uiState.entityType,
+                selected = form.entityType,
                 onSelect = viewModel::onEntityTypeSelected,
-                enabled = !uiState.isSaving,
+                enabled = !saving,
             )
             Spacer(Modifier.height(Spacing.S))
 
             PickerDropdown(
-                selectedId = uiState.businessCountryId,
+                selectedId = form.businessCountryId,
                 options = countryOptions,
                 onSelected = viewModel::onBusinessCountrySelected,
                 label = stringResource(R.string.business_country),
-                enabled = !uiState.isSaving,
+                enabled = !saving,
                 searchable = true,
             )
             Spacer(Modifier.height(Spacing.XS))
             CleansiaTextField(
-                value = uiState.registrationNumber,
+                value = form.registrationNumber,
                 onValueChange = viewModel::onRegistrationNumberChange,
                 label = stringResource(R.string.registration_number_label),
                 helper = stringResource(R.string.registration_number_helper),
-                enabled = !uiState.isSaving,
+                enabled = !saving,
                 transparentContainer = true,
             )
             Spacer(Modifier.height(Spacing.XS))
             CleansiaTextField(
-                value = uiState.vatNumber,
+                value = form.vatNumber,
                 onValueChange = viewModel::onVatNumberChange,
                 label = stringResource(R.string.vat_number_label),
                 helper = stringResource(R.string.vat_number_helper),
-                enabled = !uiState.isSaving,
+                enabled = !saving,
                 transparentContainer = true,
             )
 
@@ -128,14 +131,14 @@ fun IdentificationSectionScreen(
             // Animated visibility keeps the field out of the layout when
             // not applicable so the form stays tight for OSVČ/natural-
             // person (the common case).
-            AnimatedVisibility(visible = uiState.entityType == EmployeeEntityType._2) {
+            AnimatedVisibility(visible = form.entityType == EmployeeEntityType._2) {
                 Box {
                     Spacer(Modifier.height(Spacing.XS))
                     CleansiaTextField(
-                        value = uiState.legalEntityName,
+                        value = form.legalEntityName,
                         onValueChange = viewModel::onLegalEntityNameChange,
                         label = stringResource(R.string.legal_entity_name_label),
-                        enabled = !uiState.isSaving,
+                        enabled = !saving,
                         transparentContainer = true,
                     )
                 }
@@ -149,8 +152,8 @@ fun IdentificationSectionScreen(
                 if (onboarding) R.string.save_and_continue else R.string.save,
             ),
             onClick = { viewModel.save() },
-            loading = uiState.isSaving,
-            enabled = !uiState.isSaving,
+            loading = saving,
+            enabled = !saving,
         )
     }
 }

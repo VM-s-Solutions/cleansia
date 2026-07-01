@@ -78,7 +78,7 @@ public class AdminRefundOrder
             // cancellation is a separate command (AdminCancelOrder).
             if (order.PaymentType != PaymentType.Card
                 || order.PaymentStatus != PaymentStatus.Paid
-                || string.IsNullOrEmpty(order.StripeSessionId))
+                || !order.HasRefundableChargeSurface)
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(command.OrderId),

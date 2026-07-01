@@ -513,10 +513,23 @@
     <string name="error_email_invalid">Zadejte prosím platný e-mail</string>
     <string name="error_password_required">Heslo je povinné</string>
     <string name="error_password_min_length">Heslo musí mít alespoň 8 znaků</string>
+    <string name="error_password_rules">Heslo musí mít alespoň 8 znaků, písmeno a číslo</string>
     <string name="error_passwords_not_match">Hesla se neshodují</string>
     <string name="error_first_name_required">Jméno je povinné</string>
     <string name="error_last_name_required">Příjmení je povinné</string>
     <string name="error_terms_required">Musíte souhlasit s obchodními podmínkami</string>
+
+    <!-- Profile section validation -->
+    <string name="error_profile_not_loaded">Profil se ještě nenačetl</string>
+    <string name="error_iban_required">IBAN je povinný</string>
+    <string name="error_name_required">Jméno kontaktu je povinné</string>
+    <string name="error_phone_required">Telefon kontaktu je povinný</string>
+    <string name="error_pick_nationality">Vyberte svou národnost</string>
+    <string name="error_passport_required">Zadejte číslo pasu / OP</string>
+    <string name="error_pick_business_country">Vyberte zemi, kde je vaše podnikání registrováno</string>
+    <string name="error_registration_number_required">Zadejte IČO</string>
+    <string name="error_legal_entity_name_required">Zadejte název právnické osoby</string>
+    <string name="error_pick_address_first">Nejprve vyberte adresu na mapě</string>
 
     <!-- Profile Validation -->
     <string name="validation_required">Toto pole je povinné</string>

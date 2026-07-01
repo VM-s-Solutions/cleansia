@@ -75,9 +75,7 @@ public class AdminOverrideOrderStatus
                     BusinessErrorMessage.OrderNotFound));
             }
 
-            var currentStatus = order.OrderStatusHistory
-                .OrderByDescending(s => s.CreatedOn)
-                .FirstOrDefault()?.Status;
+            var currentStatus = order.CurrentStatus;
 
             if (currentStatus == OrderStatus.Completed)
             {

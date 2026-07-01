@@ -72,11 +72,12 @@ fun AddressSectionScreen(
     chainViewModel: cz.cleansia.partner.features.orders.OnboardingChainViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val saveState by viewModel.saveState.collectAsStateWithLifecycle()
     val chainState by chainViewModel.state.collectAsStateWithLifecycle()
+    val saving = saveState is cz.cleansia.core.ui.state.ActionState.Submitting
+    val form = (uiState as? AddressSectionUiState.Loaded)?.form ?: AddressForm()
 
-    LaunchedEffect(uiState.isSaved) {
-        if (uiState.isSaved) onSaved()
-    }
+    LaunchedEffect(viewModel) { viewModel.saved.collect { onSaved() } }
 
     // Picker → section handoff. NavHost stashes the pick into our
     // SavedStateHandle and surfaces it here as [pickerResult]; we
@@ -91,7 +92,7 @@ fun AddressSectionScreen(
 
     SectionScaffold(
         title = stringResource(R.string.address),
-        isLoading = uiState.isLoading,
+        isLoading = uiState is AddressSectionUiState.Loading,
         onNavigateBack = onNavigateBack,
         headerSlot = if (onboarding) {
             {
@@ -103,15 +104,15 @@ fun AddressSectionScreen(
         } else null,
     ) {
         AddressSummaryCard(
-            line1 = uiState.summaryLine1,
-            line2 = uiState.summaryLine2,
-            enabled = !uiState.isSaving,
+            line1 = form.summaryLine1,
+            line2 = form.summaryLine2,
+            enabled = !saving,
             onClick = onLaunchPicker,
         )
 
-        if (uiState.pickedAddress != null) {
+        if (form.pickedAddress != null) {
             Spacer(Modifier.height(Spacing.S))
-            ServiceAreaRow(status = uiState.serviceAreaStatus)
+            ServiceAreaRow(status = form.serviceAreaStatus)
         }
 
         Spacer(Modifier.height(Spacing.M))
@@ -125,8 +126,8 @@ fun AddressSectionScreen(
                 if (onboarding) R.string.save_and_continue else R.string.save,
             ),
             onClick = { viewModel.save() },
-            loading = uiState.isSaving,
-            enabled = !uiState.isSaving && uiState.pickedAddress != null,
+            loading = saving,
+            enabled = !saving && form.pickedAddress != null,
         )
     }
 }

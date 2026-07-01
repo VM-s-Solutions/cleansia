@@ -10,10 +10,12 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.auth.AuthRepository
 import cz.cleansia.partner.data.profile.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -22,18 +24,20 @@ import javax.inject.Inject
  * exposes a refresh hook that section editors can call after they save —
  * so when the user closes an editor and returns to the overview, the
  * displayed values reflect the change without a manual reload.
+ *
+ * Contract status is read from getRegistrationStatus() — the
+ * EmployeeItem DTO doesn't carry it (intentional, partners only see
+ * fields they can edit). Surfaced on [Loaded] so the profile hero can
+ * render the read-only status chip.
  */
-data class ProfileUiState(
-    val isLoading: Boolean = false,
-    val employee: EmployeeItem? = null,
-    // Contract status is read from getRegistrationStatus() — the
-    // EmployeeItem DTO doesn't carry it (intentional, partners only
-    // see fields they can edit). Surfaced here so the profile hero
-    // can render the read-only status chip.
-    val contractStatus: ContractStatus? = null,
-    val error: String? = null,
-    val isSignedOut: Boolean = false,
-)
+sealed interface ProfileUiState {
+    data object Loading : ProfileUiState
+    data object Error : ProfileUiState
+    data class Loaded(
+        val employee: EmployeeItem,
+        val contractStatus: ContractStatus? = null,
+    ) : ProfileUiState
+}
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
@@ -43,8 +47,11 @@ class ProfileViewModel @Inject constructor(
     private val snackbar: SnackbarController,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ProfileUiState())
+    private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
+
+    private val _signedOut = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val signedOut: SharedFlow<Unit> = _signedOut.asSharedFlow()
 
     init {
         refresh()
@@ -52,21 +59,22 @@ class ProfileViewModel @Inject constructor(
 
     fun refresh() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            if (_uiState.value !is ProfileUiState.Loaded) _uiState.value = ProfileUiState.Loading
             when (val result = profileRepository.getCurrentEmployee()) {
                 is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, employee = result.data) }
+                    _uiState.value = ProfileUiState.Loaded(employee = result.data)
                 }
                 is ApiResult.Error -> {
                     snackbar.showError(errorTranslator.translate(result.error))
-                    _uiState.update { it.copy(isLoading = false) }
+                    if (_uiState.value !is ProfileUiState.Loaded) _uiState.value = ProfileUiState.Error
                 }
             }
             // Status is fire-and-forget — failing to load it shouldn't
             // block the rest of the profile, so we don't surface its
             // error to the snackbar. The chip just stays hidden.
-            (profileRepository.getRegistrationStatus() as? ApiResult.Success)?.let { status ->
-                _uiState.update { it.copy(contractStatus = status.data.contractStatus) }
+            val status = (profileRepository.getRegistrationStatus() as? ApiResult.Success)?.data
+            (_uiState.value as? ProfileUiState.Loaded)?.let { loaded ->
+                _uiState.value = loaded.copy(contractStatus = status?.contractStatus ?: loaded.contractStatus)
             }
         }
     }
@@ -74,11 +82,7 @@ class ProfileViewModel @Inject constructor(
     fun signOut() {
         viewModelScope.launch {
             authRepository.logout()
-            _uiState.update { it.copy(isSignedOut = true) }
+            _signedOut.emit(Unit)
         }
-    }
-
-    fun clearError() {
-        _uiState.update { it.copy(error = null) }
     }
 }

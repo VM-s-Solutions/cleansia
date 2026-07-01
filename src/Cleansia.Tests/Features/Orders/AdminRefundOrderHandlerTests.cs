@@ -83,6 +83,41 @@ public class AdminRefundOrderHandlerTests
         return order;
     }
 
+    // A mobile (PaymentSheet) card order: T-0347 suppresses the Checkout Session, so the order's only
+    // charge surface — and the only thing the refundable gate can key on — is the PaymentIntent.
+    private Order ArrangeMobileOrder(
+        OrderStatus latestStatus = OrderStatus.Confirmed,
+        PaymentStatus paymentStatus = PaymentStatus.Paid)
+    {
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var order = Order.Create(
+            customerName: "Cust",
+            customerEmail: "c@x.test",
+            customerPhone: "+420123456789",
+            customerAddress: null!,
+            rooms: 2,
+            bathrooms: 1,
+            extras: new Dictionary<string, bool>(),
+            cleaningDateTime: DateTime.UtcNow.AddDays(5),
+            paymentType: PaymentType.Card,
+            totalPrice: 1000m,
+            currencyId: currency.Id,
+            paymentStatus: paymentStatus,
+            userId: OwnerUserId);
+        order.Id = OrderId;
+        order.SetCurrency(currency);
+        order.AssignStripePaymentIntentId("pi_test_admin_refund");
+        order.AddOrderStatus(OrderStatusTrack.Create(latestStatus, order));
+
+        _orderRepository
+            .Setup(r => r.GetQueryable())
+            .Returns(new[] { order }.AsQueryable().BuildMock());
+        _orderRepository
+            .Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
+        return order;
+    }
+
     private void ArrangeSeamSuccess(decimal amount, bool resolvedToExisting = false)
     {
         _refundService
@@ -115,8 +150,7 @@ public class AdminRefundOrderHandlerTests
 
         Assert.True(result.IsSuccess);
         // Lifecycle status UNCHANGED.
-        Assert.Equal(OrderStatus.Confirmed, order.OrderStatusHistory
-            .OrderByDescending(s => s.CreatedOn).First().Status);
+        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
         Assert.DoesNotContain(order.OrderStatusHistory, s => s.Status == OrderStatus.Cancelled);
         Assert.Equal(PaymentStatus.Refunded, result.Value!.PaymentStatus);
     }
@@ -193,8 +227,7 @@ public class AdminRefundOrderHandlerTests
 
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.RefundFailed, result.Error!.Message);
-        Assert.Equal(OrderStatus.Confirmed, order.OrderStatusHistory
-            .OrderByDescending(s => s.CreatedOn).First().Status);
+        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
     }
 
     [Fact]
@@ -209,6 +242,25 @@ public class AdminRefundOrderHandlerTests
         Assert.Equal(BusinessErrorMessage.RefundOrderNotRefundable, result.Error!.Message);
         _refundService.Verify(
             s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // T-0348: a mobile-paid card order (StripeSessionId empty, PaymentIntentId set) clears the
+    // refundable gate and goes through the seam — the gate now keys on the charge surface, not the
+    // Session alone.
+    [Fact]
+    public async Task Admin_RefundOnly_MobilePaymentIntentOrder_PassesRefundableGate_GoesThroughSeam()
+    {
+        ArrangeMobileOrder(OrderStatus.Confirmed);
+        ArrangeSeamSuccess(amount: 1000m);
+        ArrangeConsumedTotal(1000m);
+
+        var result = await CreateHandler().Handle(
+            new AdminRefundOrder.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(PaymentStatus.Refunded, result.Value!.PaymentStatus);
+        _refundService.Verify(
+            s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

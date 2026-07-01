@@ -108,7 +108,7 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
 
         if (OrderStatuses is not null && OrderStatuses.Any())
         {
-            specification &= new DirectSpecification<Order>(x => OrderStatuses.Contains(x.OrderStatusHistory.OrderByDescending(s => s.CreatedOn).First().Status));
+            specification &= new DirectSpecification<Order>(x => OrderStatuses.Contains(x.OrderStatusHistory.OrderByDescending(s => s.CreatedOn).ThenByDescending(s => s.Sequence).First().Status));
         }
 
         if (IsUnassigned.HasValue && IsUnassigned.Value)

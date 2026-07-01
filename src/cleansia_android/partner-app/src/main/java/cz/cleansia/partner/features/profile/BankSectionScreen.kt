@@ -11,6 +11,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextField
+import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.orders.OnboardingChainViewModel
@@ -25,13 +26,15 @@ fun BankSectionScreen(
     chainViewModel: OnboardingChainViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val saveState by viewModel.saveState.collectAsStateWithLifecycle()
     val chainState by chainViewModel.state.collectAsStateWithLifecycle()
+    val saving = saveState is ActionState.Submitting
 
-    LaunchedEffect(uiState.isSaved) { if (uiState.isSaved) onSaved() }
+    LaunchedEffect(viewModel) { viewModel.saved.collect { onSaved() } }
 
     SectionScaffold(
         title = stringResource(R.string.bank_details),
-        isLoading = uiState.isLoading,
+        isLoading = uiState is BankSectionUiState.Loading,
         onNavigateBack = onNavigateBack,
         headerSlot = if (!onboarding) null else ({
             OnboardingChainHeader(
@@ -40,13 +43,14 @@ fun BankSectionScreen(
             )
         }),
     ) {
+        val form = (uiState as? BankSectionUiState.Loaded)?.form ?: BankForm()
         FormSectionCard(title = stringResource(R.string.bank_details)) {
             CleansiaTextField(
-                value = uiState.iban,
+                value = form.iban,
                 onValueChange = viewModel::onIbanChange,
                 label = stringResource(R.string.iban),
-                errorText = uiState.ibanError,
-                enabled = !uiState.isSaving,
+                errorText = form.ibanError,
+                enabled = !saving,
                 transparentContainer = true,
             )
         }
@@ -57,8 +61,8 @@ fun BankSectionScreen(
         CleansiaPrimaryButton(
             text = stringResource(R.string.save),
             onClick = { viewModel.save() },
-            loading = uiState.isSaving,
-            enabled = uiState.iban.isNotBlank() && !uiState.isSaving,
+            loading = saving,
+            enabled = form.iban.isNotBlank() && !saving,
         )
     }
 }

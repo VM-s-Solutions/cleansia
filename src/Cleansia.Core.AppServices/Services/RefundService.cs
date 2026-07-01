@@ -41,7 +41,7 @@ public sealed class RefundService(
             return ResolveToExisting(existing);
         }
 
-        if (string.IsNullOrEmpty(order.StripeSessionId))
+        if (!order.HasRefundableChargeSurface)
         {
             return BusinessResult.Failure<RefundResult>(new Error(
                 nameof(request.OrderId), BusinessErrorMessage.RefundOrderNotRefundable));
@@ -110,7 +110,17 @@ public sealed class RefundService(
         var stripe = stripeClientFactory.CreateClient();
         try
         {
-            await stripe.RefundCheckoutSessionAsync(order.StripeSessionId, refund.Amount, refundKey, cancellationToken);
+            // Route by charge surface: a web order carries a Checkout Session; a mobile (PaymentSheet)
+            // order carries only a PaymentIntent (T-0347 suppresses its Session). Prefer the Session when
+            // present so the established web refund path is byte-unchanged.
+            if (!string.IsNullOrEmpty(order.StripeSessionId))
+            {
+                await stripe.RefundCheckoutSessionAsync(order.StripeSessionId, refund.Amount, refundKey, cancellationToken);
+            }
+            else
+            {
+                await stripe.RefundPaymentIntentAsync(order.StripePaymentIntentId!, refund.Amount, refundKey, cancellationToken);
+            }
         }
         catch (StripeException ex)
         {

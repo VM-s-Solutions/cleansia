@@ -15,8 +15,9 @@ public interface IGoogleTokenVerifier
 
 /// <summary>
 /// The subset of verified Google ID-token claims the auth flow trusts: <paramref name="Subject"/> is
-/// the Google <c>sub</c> (the stable account id, bound as <c>User.GoogleId</c>) and
-/// <paramref name="Email"/> is the verified <c>email</c>. These are the source of truth — never the
-/// client-supplied request fields.
+/// the Google <c>sub</c> (the stable account id, bound as <c>User.GoogleId</c>), <paramref name="Email"/>
+/// is the <c>email</c> claim, and <paramref name="EmailVerified"/> is Google's <c>email_verified</c>
+/// flag. These are the source of truth — never the client-supplied request fields. Provisioning is gated
+/// on <paramref name="EmailVerified"/>.
 /// </summary>
-public record GoogleVerifiedClaims(string Subject, string Email);
+public record GoogleVerifiedClaims(string Subject, string Email, bool EmailVerified);

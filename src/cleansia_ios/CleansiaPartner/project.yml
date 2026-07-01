@@ -42,6 +42,12 @@ targets:
     info:
       path: Info.plist
       properties:
+        # A launch screen opts the app into native full-screen rendering on every device.
+        # Without it iOS runs the app at a legacy canvas and LETTERBOXES it (black bars +
+        # scaled/clipped content). Portrait-locked to match the Android app.
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
         API_BASE_URL: $(API_BASE_URL)
         NSCameraUsageDescription: Cleansia uses the camera to capture before and after photos of your cleaning jobs.
         NSPhotoLibraryUsageDescription: Cleansia needs access to your photos so you can attach before and after photos to your jobs.

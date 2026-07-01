@@ -1,7 +1,7 @@
 ---
 id: T-0351
 title: "Android customer SecurityScreen is a dead stub — wire onChangePassword to the existing reset-code flow"
-status: proposed
+status: done
 size: S
 owner: android
 created: 2026-06-30
@@ -37,14 +37,14 @@ wired by `ForgotPasswordScreen` (`CleansiaNavHost.kt:242-246`). The signed-in Se
 that same reset-code flow (the email is known from the session) rather than introduce a parallel path.
 
 ## Acceptance criteria
-- [ ] **AC1** — Given a signed-in customer on Settings → Security, When they fill current/new/confirm and tap
+- [x] **AC1** — Given a signed-in customer on Settings → Security, When they fill current/new/confirm and tap
   "Update" with valid input, Then the existing reset-code change-password flow runs to completion (success →
   a confirmation snackbar + pop back; failure → the localized error, no silent discard).
-- [ ] **AC2** — `SecurityScreen`'s `onChangePassword` is wired at the `CleansiaNavHost.kt:432` call site
+- [x] **AC2** — `SecurityScreen`'s `onChangePassword` is wired at the `CleansiaNavHost.kt:432` call site
   (no longer the default no-op); no parallel/duplicate change-password API path is introduced (it rides the
   existing `AuthViewModel.requestPasswordChange`/`changePassword` reset-code flow or the project's canonical
   equivalent).
-- [ ] **AC3** — User-visible strings are `R.string.*` (no hardcoded English); the existing customer build +
+- [x] **AC3** — User-visible strings are `R.string.*` (no hardcoded English); the existing customer build +
   tests stay green.
 
 ## Out of scope
@@ -64,6 +64,15 @@ that same reset-code flow (the email is known from the session) rather than intr
 - 2026-06-30 — filed from the T-0314 Slice-F review (§7.17). iOS shipped the real change-password flow; the
   Android customer SecurityScreen "Update" button is a dead no-op (`SecurityScreen.kt:38,66` +
   `CleansiaNavHost.kt:432`). Wire it to the existing reset-code flow. `proposed`, not dispatched.
+- 2026-06-30 — **proposed → done** (HARDENING-1, `1d99333` on `phase/hardening-1`, off master `3e7ce52`;
+  bundled in the android parity-hygiene commit with T-0333 + T-0337). The dead `SecurityScreen` "Update" stub
+  is wired to the existing customer reset-code change-password flow (`AuthViewModel.requestPasswordChange` →
+  `changePassword`, the same path the forgot-password flow uses; the email comes from the session); the
+  `CleansiaNavHost.kt:432` call site now passes the action (no longer the default no-op `{}`); success/error
+  route through the existing snackbar/effect bus; strings are `R.string.*`. No backend change (the reset-code
+  endpoints already exist), no parallel API path. **Verified by a LOCAL gradle build** (JDK21/SDK35 — partner
+  + customer compile) since `android-ci` runs only on PR. Reviewer **APPROVE**. NOT committed by the PM — the
+  owner commits the backlog edits with the phase PR.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

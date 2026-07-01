@@ -582,10 +582,23 @@
     <string name="error_email_invalid">Please enter a valid email</string>
     <string name="error_password_required">Password is required</string>
     <string name="error_password_min_length">Password must be at least 8 characters</string>
+    <string name="error_password_rules">Password must be at least 8 characters with a letter and a number</string>
     <string name="error_passwords_not_match">Passwords do not match</string>
     <string name="error_first_name_required">First name is required</string>
     <string name="error_last_name_required">Last name is required</string>
     <string name="error_terms_required">You must accept the terms and conditions</string>
+
+    <!-- Profile section validation -->
+    <string name="error_profile_not_loaded">Profile not loaded yet</string>
+    <string name="error_iban_required">IBAN is required</string>
+    <string name="error_name_required">Contact name is required</string>
+    <string name="error_phone_required">Contact phone is required</string>
+    <string name="error_pick_nationality">Pick your nationality</string>
+    <string name="error_passport_required">Enter your passport / ID number</string>
+    <string name="error_pick_business_country">Pick the country your business is registered in</string>
+    <string name="error_registration_number_required">Enter your registration number</string>
+    <string name="error_legal_entity_name_required">Enter the legal entity name</string>
+    <string name="error_pick_address_first">Pick your address on the map first</string>
 
     <!-- Profile Validation -->
     <string name="validation_required">This field is required</string>

@@ -33,14 +33,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -75,8 +72,11 @@ fun DocumentsSectionScreen(
     viewModel: DocumentsSectionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val uploadState by viewModel.uploadState.collectAsStateWithLifecycle()
+    val deletingId by viewModel.deletingId.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val snackbarHostState = remember { SnackbarHostState() }
+    val uploading = uploadState is cz.cleansia.core.ui.state.ActionState.Submitting
+    val documents = (uiState as? DocumentsSectionUiState.Loaded)?.documents.orEmpty()
 
     // Pending pick — once the user picks a file, we hold its Uri here and
     // open the metadata dialog. Null again after upload starts or dialog
@@ -95,16 +95,6 @@ fun DocumentsSectionScreen(
         }.getOrNull() ?: return@rememberLauncherForActivityResult
         val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
         pendingFile = PendingUpload(fileName = name, contentType = contentType, base64 = base64)
-    }
-
-    LaunchedEffect(uiState.error) {
-        uiState.error?.let { err ->
-            snackbarHostState.showSnackbar(err)
-            viewModel.clearError()
-        }
-    }
-    LaunchedEffect(uiState.uploadSuccess) {
-        if (uiState.uploadSuccess) viewModel.clearUploadSuccess()
     }
 
     Scaffold(
@@ -131,7 +121,6 @@ fun DocumentsSectionScreen(
                 ),
             )
         },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { pickFile.launch("*/*") },
@@ -148,12 +137,12 @@ fun DocumentsSectionScreen(
                 .padding(paddingValues),
         ) {
             when {
-                uiState.isLoading && uiState.documents.isEmpty() -> {
+                uiState is DocumentsSectionUiState.Loading -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
                 }
-                uiState.documents.isEmpty() -> {
+                documents.isEmpty() -> {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -182,10 +171,10 @@ fun DocumentsSectionScreen(
                             .padding(horizontal = Spacing.M),
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = Spacing.S),
                     ) {
-                        items(uiState.documents, key = { it.documentId.orEmpty() }) { doc ->
+                        items(documents, key = { it.documentId.orEmpty() }) { doc ->
                             DocumentRow(
                                 doc = doc,
-                                isDeleting = uiState.deletingId == doc.documentId,
+                                isDeleting = deletingId == doc.documentId,
                                 onDelete = { doc.documentId?.let { viewModel.delete(it) } },
                             )
                         }
@@ -198,7 +187,7 @@ fun DocumentsSectionScreen(
     pendingFile?.let { pending ->
         UploadDialog(
             pending = pending,
-            isUploading = uiState.isUploading,
+            isUploading = uploading,
             onDismiss = { pendingFile = null },
             onConfirm = { type, description ->
                 viewModel.upload(

@@ -27,7 +27,7 @@ public class GoogleAuthTests(PostgresContainerFixture fixture) : BaseIntegration
                 var verifier = new Mock<IGoogleTokenVerifier>();
                 verifier
                     .Setup(v => v.VerifyAsync("valid-test-token", It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(new GoogleVerifiedClaims("google123", Constants.TestUserSession.TestUserEmail));
+                    .ReturnsAsync(new GoogleVerifiedClaims("google123", Constants.TestUserSession.TestUserEmail, EmailVerified: true));
                 services.Replace(ServiceDescriptor.Scoped<IGoogleTokenVerifier>(_ => verifier.Object));
                 return Task.CompletedTask;
             },

@@ -188,6 +188,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
                 && o.AssignedEmployees.Any(e => e.EmployeeId == employeeId)
                 && o.OrderStatusHistory
                     .OrderByDescending(s => s.CreatedOn)
+                    .ThenByDescending(s => s.Sequence)
                     .Select(s => s.Status)
                     .FirstOrDefault() == OrderStatus.Completed)
             .AnyAsync(ct);

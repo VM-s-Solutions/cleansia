@@ -1,11 +1,11 @@
 ---
 id: T-0350
 title: "Backend (S5 consistency): add [EnableRateLimiting(\"auth\")] to NotificationPreferences GetMine/Update"
-status: proposed
+status: done
 size: S
 owner: backend
 created: 2026-06-29
-updated: 2026-06-29
+updated: 2026-06-30
 depends_on: []
 blocks: []
 stories: []
@@ -36,9 +36,16 @@ write-amplification abuse).
 - No contract/DTO change, no regen, no migration.
 
 ## Done when
-- [ ] Both NotificationPreferences actions carry `[EnableRateLimiting("auth")]`.
-- [ ] Reviewer APPROVE (a trivial consistency change; the existing tests stay green).
+- [x] Both NotificationPreferences actions carry `[EnableRateLimiting("auth")]`.
+- [x] Reviewer APPROVE (a trivial consistency change; the existing tests stay green).
 
 ## Status log
 - 2026-06-29 — filed from the T-0314 Gate-SEC (§7.17, LOW). Own-prefs-only (no leak); a rate-limit consistency
   fix, not an iOS blocker.
+- 2026-06-30 — **proposed → done** (HARDENING-1, `64f6525` on `phase/hardening-1`, off master `3e7ce52`;
+  bundled in the backend trio with T-0346 + T-0348). Added `[EnableRateLimiting("auth")]` to GetMine + Update
+  on **both** the customer-host and mobile-host `NotificationPreferencesController` (the partitioned per-JWT-sub
+  window its siblings carry); plus a `RateLimitCoverageGuardTests` guard for the lazy-create GET. No
+  contract/DTO change, no regen, no migration. **Security review CLEAN** (own-prefs-only, no cross-user leak).
+  Build 0 errors; `Cleansia.Tests` 1685. Reviewer APPROVE. NOT committed by the PM — the owner commits the
+  backlog edits with the phase PR.

@@ -77,15 +77,16 @@ fun PersonalSectionScreen(
     chainViewModel: cz.cleansia.partner.features.orders.OnboardingChainViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val saveState by viewModel.saveState.collectAsStateWithLifecycle()
     val chainState by chainViewModel.state.collectAsStateWithLifecycle()
+    val saving = saveState is cz.cleansia.core.ui.state.ActionState.Submitting
+    val form = (uiState as? PersonalSectionUiState.Loaded)?.form ?: PersonalForm()
 
-    LaunchedEffect(uiState.isSaved) {
-        if (uiState.isSaved) onSaved()
-    }
+    LaunchedEffect(viewModel) { viewModel.saved.collect { onSaved() } }
 
     SectionScaffold(
         title = stringResource(R.string.personal),
-        isLoading = uiState.isLoading,
+        isLoading = uiState is PersonalSectionUiState.Loading,
         onNavigateBack = onNavigateBack,
         headerSlot = if (onboarding) {
             {
@@ -97,47 +98,47 @@ fun PersonalSectionScreen(
         } else null,
         form = {
             AvatarPreview(
-                initials = initialsOf(uiState.firstName, uiState.lastName),
+                initials = initialsOf(form.firstName, form.lastName),
             )
             Spacer(Modifier.height(Spacing.L))
 
             FormSectionCard(title = stringResource(R.string.profile_section_personal)) {
                 CleansiaTextField(
-                    value = uiState.firstName,
+                    value = form.firstName,
                     onValueChange = viewModel::onFirstNameChange,
                     label = stringResource(R.string.first_name),
-                    errorText = uiState.firstNameError,
-                    enabled = !uiState.isSaving,
+                    errorText = form.firstNameError,
+                    enabled = !saving,
                     transparentContainer = true,
                 )
                 Spacer(Modifier.height(Spacing.XS))
                 CleansiaTextField(
-                    value = uiState.lastName,
+                    value = form.lastName,
                     onValueChange = viewModel::onLastNameChange,
                     label = stringResource(R.string.last_name),
-                    errorText = uiState.lastNameError,
-                    enabled = !uiState.isSaving,
+                    errorText = form.lastNameError,
+                    enabled = !saving,
                     transparentContainer = true,
                 )
                 Spacer(Modifier.height(Spacing.XS))
                 BirthDateField(
-                    value = uiState.birthDate,
+                    value = form.birthDate,
                     onValueChange = viewModel::onBirthDateChange,
-                    enabled = !uiState.isSaving,
+                    enabled = !saving,
                 )
             }
             Spacer(Modifier.height(Spacing.M))
 
             FormSectionCard(title = stringResource(R.string.profile_section_contact)) {
                 CleansiaPhoneInput(
-                    value = uiState.phone,
+                    value = form.phone,
                     onValueChange = viewModel::onPhoneChange,
                     label = stringResource(R.string.phone),
-                    enabled = !uiState.isSaving,
+                    enabled = !saving,
                     transparentContainer = true,
                 )
                 Spacer(Modifier.height(Spacing.XS))
-                ReadOnlyEmailField(value = uiState.email)
+                ReadOnlyEmailField(value = form.email)
             }
 
             Spacer(Modifier.height(Spacing.L))
@@ -147,8 +148,8 @@ fun PersonalSectionScreen(
                     if (onboarding) R.string.save_and_continue else R.string.save,
                 ),
                 onClick = { viewModel.save() },
-                loading = uiState.isSaving,
-                enabled = uiState.firstName.isNotBlank() && uiState.lastName.isNotBlank() && !uiState.isSaving,
+                loading = saving,
+                enabled = form.firstName.isNotBlank() && form.lastName.isNotBlank() && !saving,
             )
         },
     )

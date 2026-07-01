@@ -101,6 +101,24 @@ public class StripeClient : IStripeClient
             () => refundService.CreateAsync(refundOptions, requestOptions, cancellationToken));
     }
 
+    public async Task RefundPaymentIntentAsync(
+        string paymentIntentId, decimal amount, string idempotencyKey, CancellationToken cancellationToken)
+    {
+        var refundService = new global::Stripe.RefundService(stripe);
+        var refundOptions = new global::Stripe.RefundCreateOptions
+        {
+            PaymentIntent = paymentIntentId,
+            Amount = (long)(amount * 100),
+            Reason = global::Stripe.RefundReasons.RequestedByCustomer,
+        };
+        // The caller's deterministic refund key is the idempotency key (ADR-0006 D3): a retry of the
+        // same logical refund replays Stripe's original refund instead of issuing a second one.
+        var requestOptions = new RequestOptions { IdempotencyKey = idempotencyKey };
+        await ClassifyAsync(
+            nameof(RefundPaymentIntentAsync),
+            () => refundService.CreateAsync(refundOptions, requestOptions, cancellationToken));
+    }
+
     public async Task<string> CreateCustomerAsync(
         string userId,
         string email,

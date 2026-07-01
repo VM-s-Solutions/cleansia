@@ -522,10 +522,13 @@
     <!-- Profile — security -->
     <string name="profile_security_title">Zabezpečení</string>
     <string name="profile_security_change_password">Změnit heslo</string>
-    <string name="profile_security_current">Aktuální heslo</string>
     <string name="profile_security_new">Nové heslo</string>
     <string name="profile_security_confirm">Potvrdit nové heslo</string>
     <string name="profile_security_update">Aktualizovat heslo</string>
+    <string name="security_intro">Pošleme vám ověřovací kód e-mailem, poté si můžete nastavit nové heslo.</string>
+    <string name="security_request_code">Odeslat ověřovací kód</string>
+    <string name="security_code_helper">Zadejte kód z e-mailu, který jsme vám právě poslali.</string>
+    <string name="security_code_label">Ověřovací kód</string>
 
     <!-- Booking wizard -->
     <string name="booking_step1_title">Co potřebujete?</string>

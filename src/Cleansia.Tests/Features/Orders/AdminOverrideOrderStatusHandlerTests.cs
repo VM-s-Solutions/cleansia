@@ -74,8 +74,7 @@ public class AdminOverrideOrderStatusHandlerTests
             new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.OnTheWay), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(OrderStatus.OnTheWay, order.OrderStatusHistory
-            .OrderByDescending(s => s.CreatedOn).First().Status);
+        Assert.Equal(OrderStatus.OnTheWay, order.CurrentStatus);
         // History is appended, never rewritten: the prior states remain.
         Assert.Contains(order.OrderStatusHistory, s => s.Status == OrderStatus.New);
         Assert.Contains(order.OrderStatusHistory, s => s.Status == OrderStatus.Confirmed);
@@ -104,8 +103,7 @@ public class AdminOverrideOrderStatusHandlerTests
 
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.InvalidOrderStatusTransition, result.Error!.Message);
-        Assert.Equal(OrderStatus.OnTheWay, order.OrderStatusHistory
-            .OrderByDescending(s => s.CreatedOn).First().Status);
+        Assert.Equal(OrderStatus.OnTheWay, order.CurrentStatus);
     }
 
     [Fact]

@@ -98,6 +98,7 @@ public class OrderMockFactory
         PaymentType paymentType = PaymentType.Card,
         PaymentStatus paymentStatus = PaymentStatus.Paid,
         string? stripeSessionId = "cs_test_refund",
+        string? stripePaymentIntentId = null,
         Currency? currency = null)
     {
         var resolvedCurrency = currency ?? Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
@@ -122,6 +123,11 @@ public class OrderMockFactory
         if (!string.IsNullOrEmpty(stripeSessionId))
         {
             order.AssignStripeSessionId(stripeSessionId);
+        }
+
+        if (!string.IsNullOrEmpty(stripePaymentIntentId))
+        {
+            order.AssignStripePaymentIntentId(stripePaymentIntentId);
         }
 
         var stamp = DateTimeOffset.UtcNow.AddHours(-statuses.Count);

@@ -167,7 +167,14 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   `AddressSectionViewModel.kt:201,205,220` — the same F1/E8 class as Register/Forgot). **The iOS port is born
   right** (sealed `UiState<T>` load + `ActionState` save + `.xcstrings` ×5; sprint-12 §7.7 D5 — Android E1 NOT
   replicated); the android profile-VM fix (sealed states + move the literals to `R.string.*`) is the PM-filed
-  follow-up **T-0337** (mechanical; independent of the iOS wave — same shape as F1/T-0333).
+  follow-up **T-0337** (mechanical; independent of the iOS wave — same shape as F1/T-0333). **RESOLVED on Android
+  (T-0337):** the partner `ProfileViewModel` + every profile `*SectionViewModel` now expose a sealed
+  `*UiState` (`Loading`/`Error`/`Loaded`). **The canonical shape for an EDITABLE-form section VM** (where
+  `Loaded` must hold mutable fields + per-field errors): `Loaded(val form: XxxForm)` — a `XxxForm` data class
+  carrying the editable fields + field-error strings — edited via a private `inline fun updateForm { … }`
+  guard that only mutates when `is Loaded`; the **save** is a separate `StateFlow<ActionState>` + a
+  `SharedFlow<Unit>(replay=0)` `saved` effect the screen collects to fire `onSaved()` (mirrors
+  `DevicesViewModel`). Validation/error literals localized via injected `@ApplicationContext Context`.
 - **E2.** **One-shot actions use the shared `sealed ActionState` (Idle/Submitting/Error)** + a
   `SharedFlow(replay=0)` for the success effect — **not** loose `_submitting: Boolean` + `_error: String?`
   StateFlows. ✗ customer `CreateDisputeViewModel`, `MembershipViewModel`, `ProfileViewModel` use loose
@@ -207,7 +214,11 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   literals on iOS.** Android fix = inject `@ApplicationContext Context` + move the strings to `R.string.*`
   (mirror `OrderDetailViewModel.kt:80`); a PM-filed **android follow-up ticket** (small, mechanical i18n),
   not part of the iOS wave. (This is the canonical case for the `patterns-mobile.md` Parity rule:
-  Android-wrong → diverge correctly on iOS + raise an Android finding, don't silently copy.)
+  Android-wrong → diverge correctly on iOS + raise an Android finding, don't silently copy.) **RESOLVED
+  (T-0333):** both partner auth VMs now inject `@ApplicationContext Context` and source every validation
+  message from `R.string.*` (reusing the existing `error_*_required`/`error_email_invalid` keys + one new
+  `error_password_rules`), ×5 locales. **Also RESOLVED for the profile section VMs (T-0337):** the literals
+  in `Personal/Address/Identification/Bank/Emergency` section VMs moved to `R.string.*` ×5.
 
 ---
 

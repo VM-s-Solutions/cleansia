@@ -3,9 +3,9 @@ BEGIN TRANSACTION;
 -- Temporarily defer foreign key constraint checks (Azure-compatible)
 SET CONSTRAINTS ALL DEFERRED;
 
--- 1. EXTENSION + FUNCTIONS (unchanged)
-
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- 1. FUNCTIONS
+-- (No pgcrypto: Azure Postgres blocks it unless allow-listed. generate_ulid() below uses
+--  core md5(random()) for its random bytes instead of pgcrypto's gen_random_bytes.)
 
 CREATE 
 OR REPLACE FUNCTION generate_ulid() RETURNS TEXT AS $inner$ DECLARE base32_chars TEXT := '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
@@ -21,7 +21,7 @@ BEGIN timestamp := EXTRACT(
 ) * 1000;
 IF timestamp > 281474976710655 THEN RAISE EXCEPTION 'Timestamp too large for ULID';
 END IF;
-random_bytes := gen_random_bytes(10);
+random_bytes := SUBSTRING(DECODE(MD5(RANDOM()::TEXT || CLOCK_TIMESTAMP()::TEXT), 'hex') FROM 1 FOR 10);
 value := timestamp;
 FOR i IN 1..10 LOOP ulid := SUBSTRING(
   base32_chars 

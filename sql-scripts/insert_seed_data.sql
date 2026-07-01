@@ -1150,10 +1150,17 @@ VALUES
 -- Insert Order Status Tracks (Order history)
 -- Status: 0=New, 1=Pending, 2=Confirmed, 3=OnTheWay, 4=InProgress, 5=Completed, 6=Cancelled
 -- NOTE: seed values below use 1,2,4,5,6 (skipping the optional OnTheWay step).
+-- Sequence (NOT NULL, T-0341) is computed per order in CreatedOn order via ROW_NUMBER over
+-- the VALUES rows below (already authored in status order), keeping this seed valid against
+-- the OrderStatusTrack.Sequence column.
 INSERT INTO public."OrderStatusHistory" (
-  "Id", "IsActive","CreatedBy", "CreatedOn", "Status", "OrderId"
+  "Id", "IsActive", "CreatedBy", "CreatedOn", "Status", "OrderId", "Sequence"
 )
-VALUES
+SELECT
+  v."Id", v."IsActive", v."CreatedBy", v."CreatedOn", v."Status", v."OrderId",
+  (ROW_NUMBER() OVER (PARTITION BY v."OrderId" ORDER BY v."CreatedOn"))::int
+FROM (
+  VALUES
   -- Order 1: Pending -> Confirmed -> InProgress -> Completed
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '45 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '44 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1)),
@@ -1240,7 +1247,8 @@ VALUES
 
   -- Order 18: Pending -> Confirmed
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '3 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0018' LIMIT 1)),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '2 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0018' LIMIT 1));
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '2 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0018' LIMIT 1))
+) AS v("Id", "IsActive", "CreatedBy", "CreatedOn", "Status", "OrderId");
 
 -- 13. PAY PERIODS
 -- Creating monthly pay periods for the last 3 months and upcoming month

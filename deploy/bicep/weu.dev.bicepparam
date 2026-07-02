@@ -41,6 +41,9 @@ param adminIpAddress = '0.0.0.0'
 // (owner may grant out of band). CI may override via --parameters ciPrincipalId=$CI_PRINCIPAL_ID.
 param ciPrincipalId = ''
 
+// ── Alerting (ADR-0015 D3) — the ops email the dev Action Group notifies (not a secret) ─────────────
+param alertEmail = 'cmisa695@gmail.com'
+
 // ── Tags applied to every resource (commonTags in main.bicep adds project/region/env/managedBy) ──────
 param tags = {
   costCenter: 'cleansia-dev'

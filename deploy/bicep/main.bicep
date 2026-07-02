@@ -72,6 +72,9 @@ param adminIpAddress string
 @description('Object id of the CI/provisioning principal granted Key Vault Secrets Officer. Empty string skips it (owner may grant out of band).')
 param ciPrincipalId string = ''
 
+@description('Ops email the alerts Action Group notifies (ADR-0015 D3). Empty string SKIPS the alerts module entirely (prod supplies its own address when it goes live).')
+param alertEmail string = ''
+
 @description('Resource tags applied to every resource.')
 param tags object = {}
 
@@ -131,6 +134,12 @@ var apiHosts = [
 
 var apiLinuxFxVersion = 'DOTNETCORE|10.0'
 var ssrLinuxFxVersion = 'NODE|20-lts'
+
+// Deploy-time site NAMES — the single source both the appService instantiations and the alerts
+// module consume. Alert scopes must be deploy-time strings (module outputs cannot be collected for
+// the alerts for-loop: BCP182), so the names live here rather than being read back from the modules.
+var apiSiteNames = [for host in apiHosts: 'api-cleansia-${host.audience}-${region}-${env}']
+var ssrSiteName = 'web-cleansia-customer-${region}-${env}'
 
 // ---------------------------------------------------------------------------------------------------
 // Foundation: observability, secret store, storage, registry, database.
@@ -290,10 +299,10 @@ var fiscalSettings = {
 // ---------------------------------------------------------------------------------------------------
 
 module apiAppServices 'modules/appService.bicep' = [
-  for host in apiHosts: {
+  for (host, i) in apiHosts: {
     name: 'api-${host.audience}'
     params: {
-      name: 'api-cleansia-${host.audience}-${region}-${env}'
+      name: apiSiteNames[i]
       location: location
       appServicePlanId: appServicePlan.outputs.id
       linuxFxVersion: apiLinuxFxVersion
@@ -324,7 +333,7 @@ module appServicePlan 'modules/appServicePlan.bicep' = {
 module ssr 'modules/appService.bicep' = {
   name: 'ssr-customer'
   params: {
-    name: 'web-cleansia-customer-${region}-${env}'
+    name: ssrSiteName
     location: location
     appServicePlanId: appServicePlan.outputs.id
     linuxFxVersion: ssrLinuxFxVersion
@@ -425,6 +434,34 @@ module derivedSecrets 'modules/derivedSecrets.bicep' = {
     postgresAdministratorPassword: postgresAdministratorPassword
     jwtIssuer: 'https://${apiAppServices[0].outputs.defaultHostName}'
   }
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Alerting (ADR-0015 D2/D3) — Action Group + metric alerts over the six web hosts, the App Insights
+// component, and Postgres. Deployed only when an alert email is supplied (dev today; prod wires its
+// own address when it goes live). Scopes are passed as deploy-time NAMES — the module rebuilds the
+// resource ids itself, because module outputs cannot feed its per-site for-loop (BCP182) — hence the
+// explicit dependsOn so the alerts never race the resources they watch. The postgres/appInsights
+// names MIRROR the owning modules' naming (postgres.bicep / appInsights.bicep).
+// ---------------------------------------------------------------------------------------------------
+
+module alerts 'modules/alerts.bicep' = if (!empty(alertEmail)) {
+  name: 'alerts'
+  params: {
+    env: env
+    region: region
+    alertEmail: alertEmail
+    siteNames: concat(apiSiteNames, [ssrSiteName])
+    postgresServerName: 'pg-cleansia-${region}-${env}'
+    appInsightsName: 'appi-cleansia-${region}-${env}'
+    tags: commonTags
+  }
+  dependsOn: [
+    apiAppServices
+    ssr
+    postgres
+    appInsights
+  ]
 }
 
 // ---------------------------------------------------------------------------------------------------

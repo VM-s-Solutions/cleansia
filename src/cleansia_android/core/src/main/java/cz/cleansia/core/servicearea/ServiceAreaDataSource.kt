@@ -9,18 +9,22 @@ package cz.cleansia.core.servicearea
  * care which app it lives inside.
  *
  * Implementations should:
- *  - return an empty list on failure (not throw — the provider treats
- *    the lookup as best-effort and the UI degrades gracefully),
- *  - lowercase ISO codes when filling [ServicedCountry.isoCode] so the
- *    Mapbox bias param doesn't need to re-normalize.
+ *  - return NULL on failure (network error, non-2xx) and log it — never throw.
+ *    Null is load-bearing: it tells the provider the answer is UNKNOWN, so the
+ *    failure is not cached and callers can fail open. Returning an empty list
+ *    on failure is indistinguishable from "the company serves nothing" and
+ *    used to poison the address picker for the process lifetime.
+ *  - lowercase + alpha-2-normalise ISO codes when filling
+ *    [ServicedCountry.isoCode] (see IsoCountryCodes) so Mapbox comparisons and
+ *    the country= bias param work without call-site tolerance.
  */
 interface ServiceAreaDataSource {
-    suspend fun fetchServicedCountries(): List<ServicedCountry>
+    suspend fun fetchServicedCountries(): List<ServicedCountry>?
 
     /**
      * [countryId] null = "all serviced cities across countries". When
      * provided, the implementation MAY filter server-side or in-memory
      * — the provider caches the unfiltered list either way.
      */
-    suspend fun fetchServiceCities(countryId: String?): List<ServicedCity>
+    suspend fun fetchServiceCities(countryId: String?): List<ServicedCity>?
 }

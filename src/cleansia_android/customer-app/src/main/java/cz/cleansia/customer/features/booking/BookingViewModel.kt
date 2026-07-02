@@ -394,9 +394,11 @@ class BookingViewModel @Inject constructor(
             // in service-areas.md.
             val resolvedCountryId: String? = if (s.countryIsoCode.isNotBlank()) {
                 // :core's ServicedCountry.isoCode is already lowercase
-                // (the adapter normalises) — just compare directly.
+                // (the adapter normalises) — just compare directly. A failed
+                // load (null) degrades to no country id, same as no match.
                 serviceAreaProvider
                     .loadCountries()
+                    .orEmpty()
                     .firstOrNull { it.isoCode == s.countryIsoCode.lowercase() }
                     ?.id
             } else null

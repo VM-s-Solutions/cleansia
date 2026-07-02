@@ -191,7 +191,14 @@ class AddressSectionViewModel @Inject constructor(
         }
         viewModelScope.launch {
             val mapboxCode = address.countryIsoCode.lowercase()
-            val country = serviceAreaProvider.loadCountries().firstOrNull { c ->
+            // A failed load (null) is UNKNOWN, not "no serviced countries" —
+            // keep the indicator at Unknown rather than claiming NotServiced.
+            val countries = serviceAreaProvider.loadCountries()
+            if (countries == null) {
+                updateForm { it.copy(serviceAreaStatus = ServiceAreaStatus.Unknown) }
+                return@launch
+            }
+            val country = countries.firstOrNull { c ->
                 c.isoCode == mapboxCode || c.isoCode.startsWith(mapboxCode)
             }
             if (country == null) {
@@ -201,9 +208,11 @@ class AddressSectionViewModel @Inject constructor(
             val serviced = serviceAreaProvider.isCityServiced(country.id, cityName)
             updateForm {
                 it.copy(
-                    serviceAreaStatus = if (serviced)
-                        ServiceAreaStatus.InServicedCity(cityName)
-                    else ServiceAreaStatus.OutsideServicedCity,
+                    serviceAreaStatus = when (serviced) {
+                        null -> ServiceAreaStatus.Unknown
+                        true -> ServiceAreaStatus.InServicedCity(cityName)
+                        false -> ServiceAreaStatus.OutsideServicedCity
+                    },
                 )
             }
         }

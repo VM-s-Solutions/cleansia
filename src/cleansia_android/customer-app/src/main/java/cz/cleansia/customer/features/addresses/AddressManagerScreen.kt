@@ -796,20 +796,36 @@ private fun ReviewPane(
     var setDefault by remember { mutableStateOf(false) }
 
     // City-not-serviced inline validator. State sequence:
-    //  - null  → still resolving (or required input missing)
+    //  - null + !lookupFailed → still resolving, Confirm blocked
     //  - true  → city is served, Confirm enabled
-    //  - false → backend doesn't serve this city, show warning + disable Confirm
+    //  - false → the server SAID it doesn't serve this city: warning + Confirm blocked
+    //  - lookupFailed → the service-area list could not be LOADED (network/auth) —
+    //    the answer is unknown, which is NOT "not serviced". Fail OPEN: Confirm
+    //    enabled, no warning. This is a soft UX check; order creation re-validates
+    //    the city server-side, so an unserved address still gets rejected there.
     var cityServiced by remember(picked.countryIsoCode, picked.city) { mutableStateOf<Boolean?>(null) }
+    var lookupFailed by remember(picked.countryIsoCode, picked.city) { mutableStateOf(false) }
     LaunchedEffect(picked.countryIsoCode, picked.city) {
         if (picked.countryIsoCode.isBlank() || picked.city.isBlank()) {
             cityServiced = null
             return@LaunchedEffect
         }
         val countries = serviceArea.loadCountries()
-        val match = countries.firstOrNull {
-            it.isoCode?.lowercase() == picked.countryIsoCode.lowercase()
+        if (countries == null) {
+            lookupFailed = true
+            return@LaunchedEffect
         }
-        cityServiced = match?.id?.let { serviceArea.isCityServiced(it, picked.city) } ?: false
+        val match = countries.firstOrNull {
+            it.isoCode.lowercase() == picked.countryIsoCode.lowercase()
+        }
+        if (match == null) {
+            cityServiced = false
+            return@LaunchedEffect
+        }
+        when (val serviced = serviceArea.isCityServiced(match.id, picked.city)) {
+            null -> lookupFailed = true
+            else -> cityServiced = serviced
+        }
     }
 
     Column(
@@ -937,10 +953,10 @@ private fun ReviewPane(
             CleansiaPrimaryButton(
                 text = stringResource(R.string.address_manager_confirm),
                 onClick = { onConfirm(label.trim().ifBlank { "Saved" }, save, setDefault) },
-                // Block confirm while the lookup is still pending OR explicitly
-                // failed. Null = still resolving — better to make the user wait
-                // a moment than let them save a city we'll reject server-side.
-                enabled = cityServiced == true,
+                // Block confirm while resolving or on a definitive server "no".
+                // A FAILED lookup fails open — the check is advisory and order
+                // creation re-validates the city server-side.
+                enabled = cityServiced == true || lookupFailed,
             )
 
             Spacer(Modifier.height(20.dp))

@@ -15,11 +15,12 @@ import kotlinx.coroutines.sync.withLock
  *  - the inline city service-area indicator on the partner address
  *    section + customer order wizard.
  *
- * Fetched lazily on first access, cached in-memory for the process
- * lifetime. Re-fetching only happens when [refresh] is explicitly
- * called (e.g. after sign-in or settings change) — admin-side
- * IsServiced toggles propagate on the next cold start, which is
- * acceptable for a product that expands one country at a time.
+ * Fetched lazily on first access; ONLY a successful server answer is cached
+ * (in-memory, for the process lifetime — [refresh] clears it). A FAILED fetch
+ * returns null and is NOT cached, so the next access retries: caching the
+ * failure used to pin an empty list until force-stop, making the address
+ * picker claim "we don't serve this city" for every address after one
+ * startup-time network/auth blip.
  *
  * Lives in `:core` so customer-app and partner-app share one
  * implementation; each app supplies its own [ServiceAreaDataSource]
@@ -36,54 +37,53 @@ class ServiceAreaProvider(
     val servicedCountries: StateFlow<List<ServicedCountry>?> = countriesState.asStateFlow()
     val servicedCities: StateFlow<List<ServicedCity>?> = citiesState.asStateFlow()
 
-    /** Lazy fetch of countries. Safe to call repeatedly — subsequent calls hit the cache. */
-    suspend fun loadCountries(): List<ServicedCountry> {
+    /**
+     * Lazy fetch of countries. Null = the fetch failed and the answer is
+     * UNKNOWN — treat it as "couldn't check", never as "serves nothing".
+     * Safe to call repeatedly — successes hit the cache, failures retry.
+     */
+    suspend fun loadCountries(): List<ServicedCountry>? {
         countriesState.value?.let { return it }
         mutex.withLock {
             countriesState.value?.let { return it }
-            val fetched = dataSource.fetchServicedCountries()
+            val fetched = dataSource.fetchServicedCountries() ?: return null
             countriesState.value = fetched
             return fetched
         }
     }
 
     /**
-     * Lazy fetch of cities. When [countryId] is provided, returns only
-     * cities in that country. The unfiltered fetch is cached so
-     * subsequent country-scoped calls hit the cache.
+     * Lazy fetch of cities; null = fetch failed (UNKNOWN). When [countryId]
+     * is provided, returns only cities in that country. The unfiltered fetch
+     * is cached so subsequent country-scoped calls hit the cache.
      */
-    suspend fun loadCities(countryId: String? = null): List<ServicedCity> {
-        citiesState.value?.let { cached ->
-            return if (countryId == null) cached
-            else cached.filter { it.countryId == countryId }
-        }
+    suspend fun loadCities(countryId: String? = null): List<ServicedCity>? {
+        citiesState.value?.let { return it.scopedTo(countryId) }
         mutex.withLock {
-            citiesState.value?.let { cached ->
-                return if (countryId == null) cached
-                else cached.filter { it.countryId == countryId }
-            }
-            val fetched = dataSource.fetchServiceCities(countryId = null)
+            citiesState.value?.let { return it.scopedTo(countryId) }
+            val fetched = dataSource.fetchServiceCities(countryId = null) ?: return null
             citiesState.value = fetched
-            return if (countryId == null) fetched
-            else fetched.filter { it.countryId == countryId }
+            return fetched.scopedTo(countryId)
         }
     }
 
     /**
-     * ISO codes (lowercase) for the Mapbox `country=` bias param.
-     * The provider already normalises in the data-source adapter, so
-     * this is a straight projection.
+     * ISO codes (alpha-2 lowercase) for the Mapbox `country=` bias param.
+     * Empty when the list is unavailable — no bias degrades to global
+     * suggestions, which is the right failure mode for a UX hint.
      */
     suspend fun servicedCountryIsoCodes(): List<String> =
-        loadCountries().map { it.isoCode }
+        loadCountries().orEmpty().map { it.isoCode }
 
     /**
-     * True iff <cityName> matches a city we serve in <countryId>,
-     * case + trim-insensitively. Falls back to city-name-only match
-     * (ZipPrefix on the schema isn't enforced in v1).
+     * Tri-state: true/false is the server's answer for <cityName> in
+     * <countryId> (case + trim-insensitive name match; ZipPrefix unenforced
+     * in v1). NULL means the list could not be loaded — callers MUST treat
+     * that as unknown and fail OPEN where a server-side re-validation exists
+     * (order creation re-checks the city), never render it as "not serviced".
      */
-    suspend fun isCityServiced(countryId: String, cityName: String): Boolean {
-        val cities = loadCities(countryId)
+    suspend fun isCityServiced(countryId: String, cityName: String): Boolean? {
+        val cities = loadCities(countryId) ?: return null
         val normalized = cityName.trim().lowercase()
         return cities.any { it.name.trim().lowercase() == normalized }
     }
@@ -95,4 +95,7 @@ class ServiceAreaProvider(
             citiesState.value = null
         }
     }
+
+    private fun List<ServicedCity>.scopedTo(countryId: String?): List<ServicedCity> =
+        if (countryId == null) this else filter { it.countryId == countryId }
 }

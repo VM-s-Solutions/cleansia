@@ -26,10 +26,13 @@ class PartnerServiceAreaDataSource @Inject constructor(
     private val serviceCityApi: ServiceCityApi,
 ) : ServiceAreaDataSource {
 
-    override suspend fun fetchServicedCountries(): List<ServicedCountry> =
-        runCatching {
+    override suspend fun fetchServicedCountries(): List<ServicedCountry>? =
+        runCatching<List<ServicedCountry>?> {
             val response = countryApi.countryGetServiced()
-            if (!response.isSuccessful) return@runCatching emptyList()
+            if (!response.isSuccessful) {
+                Log.w("ServiceArea", "countryGetServiced failed: HTTP ${response.code()}")
+                return@runCatching null
+            }
             response.body().orEmpty().mapNotNull { dto ->
                 val id = dto.id ?: return@mapNotNull null
                 ServicedCountry(
@@ -42,12 +45,15 @@ class PartnerServiceAreaDataSource @Inject constructor(
             }
         }.onFailure {
             Log.w("ServiceArea", "Failed to load serviced countries", it)
-        }.getOrDefault(emptyList())
+        }.getOrNull()
 
-    override suspend fun fetchServiceCities(countryId: String?): List<ServicedCity> =
-        runCatching {
+    override suspend fun fetchServiceCities(countryId: String?): List<ServicedCity>? =
+        runCatching<List<ServicedCity>?> {
             val response = serviceCityApi.serviceCityGetServiceCities(countryId = countryId)
-            if (!response.isSuccessful) return@runCatching emptyList()
+            if (!response.isSuccessful) {
+                Log.w("ServiceArea", "serviceCityGetServiceCities failed: HTTP ${response.code()}")
+                return@runCatching null
+            }
             response.body().orEmpty().mapNotNull { dto ->
                 val id = dto.id ?: return@mapNotNull null
                 val cityCountryId = dto.countryId ?: return@mapNotNull null
@@ -59,5 +65,5 @@ class PartnerServiceAreaDataSource @Inject constructor(
             }
         }.onFailure {
             Log.w("ServiceArea", "Failed to load service cities", it)
-        }.getOrDefault(emptyList())
+        }.getOrNull()
 }

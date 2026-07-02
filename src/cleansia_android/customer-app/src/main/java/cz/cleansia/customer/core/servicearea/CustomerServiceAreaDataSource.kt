@@ -15,9 +15,11 @@ import javax.inject.Singleton
  * `ServiceCityApi` to the `:core` slim DTOs the shared
  * [cz.cleansia.core.servicearea.ServiceAreaProvider] consumes.
  *
- * Failures are logged + swallowed: a transient network blip shouldn't
- * promote a hard error all the way to the UI, since the address picker
- * + Mapbox bias degrade gracefully (no bias = global suggestions).
+ * Failures are logged and surfaced as NULL (never thrown): null tells the
+ * provider the answer is UNKNOWN so it does not cache the failure and callers
+ * can fail open — an empty list on failure is indistinguishable from "the
+ * company serves nothing" and used to pin the address picker on "city not
+ * serviced" for the process lifetime.
  */
 @Singleton
 class CustomerServiceAreaDataSource @Inject constructor(
@@ -25,10 +27,13 @@ class CustomerServiceAreaDataSource @Inject constructor(
     private val serviceCityApi: ServiceCityApi,
 ) : ServiceAreaDataSource {
 
-    override suspend fun fetchServicedCountries(): List<ServicedCountry> =
-        runCatching {
+    override suspend fun fetchServicedCountries(): List<ServicedCountry>? =
+        runCatching<List<ServicedCountry>?> {
             val response = countryApi.countryGetServiced()
-            if (!response.isSuccessful) return@runCatching emptyList()
+            if (!response.isSuccessful) {
+                Log.w("ServiceArea", "countryGetServiced failed: HTTP ${response.code()}")
+                return@runCatching null
+            }
             response.body().orEmpty().mapNotNull { dto ->
                 val id = dto.id ?: return@mapNotNull null
                 ServicedCountry(
@@ -43,12 +48,15 @@ class CustomerServiceAreaDataSource @Inject constructor(
             }
         }.onFailure {
             Log.w("ServiceArea", "Failed to load serviced countries", it)
-        }.getOrDefault(emptyList())
+        }.getOrNull()
 
-    override suspend fun fetchServiceCities(countryId: String?): List<ServicedCity> =
-        runCatching {
+    override suspend fun fetchServiceCities(countryId: String?): List<ServicedCity>? =
+        runCatching<List<ServicedCity>?> {
             val response = serviceCityApi.serviceCityGetServiceCities(countryId = countryId)
-            if (!response.isSuccessful) return@runCatching emptyList()
+            if (!response.isSuccessful) {
+                Log.w("ServiceArea", "serviceCityGetServiceCities failed: HTTP ${response.code()}")
+                return@runCatching null
+            }
             response.body().orEmpty().mapNotNull { dto ->
                 val id = dto.id ?: return@mapNotNull null
                 val cityCountryId = dto.countryId ?: return@mapNotNull null
@@ -60,5 +68,5 @@ class CustomerServiceAreaDataSource @Inject constructor(
             }
         }.onFailure {
             Log.w("ServiceArea", "Failed to load service cities", it)
-        }.getOrDefault(emptyList())
+        }.getOrNull()
 }

@@ -45,6 +45,7 @@ var secretNames = [
   'Stripe--WebhookSecret'
   'Stripe--PublishableKey'
   'SendGrid--ApiKey'
+  'SendGrid--OrderStatusUpdateTemplateId'
   'Sentry--Dsn'
   'Storage--ConnectionString'
   'Mapbox--GeocodingAccessToken'

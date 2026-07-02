@@ -227,11 +227,18 @@ var apiBaseSettings = {
   // a one-flag flip.
   Csrf__Secret: kvRef(keyVaultUri, 'Csrf--Secret')
   SendGrid__ApiKey: kvRef(keyVaultUri, 'SendGrid--ApiKey')
-  // The two customer-facing SendGrid URLs, pointed at the dev SSR host (appsettings defaults are
-  // localhost). NOTE: SendGrid:OrderStatusUpdateTemplateId is intentionally NOT set here — its
-  // appsettings value is SET_VIA_USER_SECRETS because that dynamic template was never created in
-  // SendGrid. Set it as a GitHub secret (ORDER_STATUS_TEMPLATE_ID) once the template exists; the CI
-  // push wires it. Setting a wrong `d-...` id here would send the wrong template.
+  // SendGrid dynamic-template ids. In dev these came from local user-secrets (SET_VIA_USER_SECRETS in
+  // appsettings), so the deployed app has no value unless set here. Each email uses its OWN dedicated
+  // template — never a substitute. The five below are the known real ids; OrderStatusUpdateTemplateId
+  // has no committed value (its id lives only in the owner's user-secrets), so it's supplied via the
+  // KV/CI secret (SendGrid--OrderStatusUpdateTemplateId / ORDER_STATUS_TEMPLATE_ID).
+  SendGrid__ResetPasswordTemplateId: 'd-c475f44d635f40569aa8b5171dc63270'
+  SendGrid__OrderReceiptTemplateId: 'd-2e4f0bcc8af54b3d88c471d7e0cd507a'
+  SendGrid__EmailConfirmationTemplateId: 'd-eb7daac9cbe94f01beb2ee1bb0ec5c29'
+  SendGrid__PeriodClosedTemplateId: 'd-75a0f9cfdcc44eabb617de12e28d784d'
+  SendGrid__PeriodEndReminderTemplateId: 'd-d8428c5ffff14355a59d0a35023445da'
+  SendGrid__OrderStatusUpdateTemplateId: kvRef(keyVaultUri, 'SendGrid--OrderStatusUpdateTemplateId')
+  // The two customer-facing SendGrid URLs, pointed at the dev SSR host (appsettings defaults are localhost).
   SendGrid__ResetPasswordUrl: '${customerWebBaseUrl}/forgot-password'
   SendGrid__OrderStatusUrl: '${customerWebBaseUrl}/orders'
   Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')

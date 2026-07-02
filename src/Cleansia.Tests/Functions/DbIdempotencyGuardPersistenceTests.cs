@@ -149,6 +149,8 @@ public sealed class DbIdempotencyGuardPersistenceTests : IDisposable
             throw new DbUpdateException("simulated infra fault", new TimeoutException("connection reset"));
 
         public void Add(ProcessedMessage entity) { }
+        // Not-yet-claimed, so the guard proceeds to the throwing CommitAsync (the point of this test).
+        public Task<bool> HasProcessedAsync(string messageKey, CancellationToken ct) => Task.FromResult(false);
         public Task<bool> ExistsAsync(string id, CancellationToken ct) => Task.FromResult(false);
         public Task<bool> ExistWithIdsAsync(IEnumerable<string> ids, CancellationToken ct) => Task.FromResult(false);
         public Task<ProcessedMessage?> GetByIdAsync(string id, CancellationToken ct) => Task.FromResult<ProcessedMessage?>(null);

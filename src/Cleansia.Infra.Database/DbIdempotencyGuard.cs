@@ -22,6 +22,16 @@ public class DbIdempotencyGuard(IProcessedMessageRepository repository) : IIdemp
 {
     public async Task<bool> AlreadyProcessedAsync(string messageKey, CancellationToken ct = default)
     {
+        // Fast path: the common redelivery case (the key was claimed on an earlier attempt) short-circuits
+        // here, so we don't attempt an insert that would fail the unique index — which EF logs as a noisy
+        // "Failed executing DbCommand" Error even though the guard handles it. Not a substitute for the
+        // insert-catch below (two parallel redeliveries can both miss this) — it just removes the noise
+        // and a wasted round-trip in the overwhelmingly common single-redelivery case.
+        if (await repository.HasProcessedAsync(messageKey, ct))
+        {
+            return true;
+        }
+
         repository.Add(ProcessedMessage.Create(messageKey));
         try
         {
@@ -31,10 +41,10 @@ public class DbIdempotencyGuard(IProcessedMessageRepository repository) : IIdemp
         }
         catch (DbUpdateException ex) when (IsUniqueViolation(ex))
         {
-            // The unique index on MessageKey rejected this insert: a concurrent/earlier consumer already
-            // claimed the key (parallel-retry race, redelivery, or scale-out). Already claimed → the
-            // caller acks WITHOUT re-running the effect. Genuine infra faults are not unique-violations,
-            // so they re-throw and the queue retries.
+            // The unique index on MessageKey rejected this insert: a concurrent consumer claimed the key
+            // between our existence check and this insert (the rare two-parallel-redeliveries race).
+            // Already claimed → the caller acks WITHOUT re-running the effect. Genuine infra faults are not
+            // unique-violations, so they re-throw and the queue retries.
             return true;
         }
     }

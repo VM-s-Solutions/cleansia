@@ -1,3 +1,4 @@
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
@@ -147,6 +148,19 @@ public static class Extensions
         if (useOtlpExporter)
         {
             builder.Services.AddOpenTelemetry().UseOtlpExporter();
+        }
+
+        // Export the OTel pipeline (traces/metrics/logs) to Application Insights when a connection string
+        // is configured (the Bicep sets APPLICATIONINSIGHTS_CONNECTION_STRING on every API host). Without
+        // this the OTel data was collected but never shipped — API failures were invisible in App Insights.
+        // Guarded on the connection string so local dev (no App Insights) is unaffected.
+        var appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+        if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+        {
+            builder.Services.AddOpenTelemetry().UseAzureMonitor(options =>
+            {
+                options.ConnectionString = appInsightsConnectionString;
+            });
         }
 
         return builder;

@@ -89,6 +89,11 @@
          The Instrumentation.* packages above don't ship a 1.15.3 yet, but their constraint is ">=", so
          this pin overrides the resolved version of the transitive Api dep. -->
     <PackageVersion Include="OpenTelemetry.Api" Version="1.15.3" />
+    <!-- Azure Monitor OpenTelemetry distro — exports the API hosts' OTel traces/metrics/logs to
+         Application Insights by reading APPLICATIONINSIGHTS_CONNECTION_STRING. Without it the OTel
+         pipeline collected but exported nowhere (the OTLP exporter needs OTEL_EXPORTER_OTLP_ENDPOINT,
+         which isn't set), so API failures never reached App Insights. -->
+    <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.3.0" />
   </ItemGroup>
 
   <ItemGroup Label="Testing">

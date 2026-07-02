@@ -213,12 +213,27 @@ var browserCorsOrigins = [
 // App settings shared by every API host: DB + Storage + JWT + SendGrid + Sentry + Mapbox Key Vault
 // references, plus the (non-secret) App Insights connection string. The `__` -> `:` App Service
 // mapping means the app reads its existing config keys with no code change (ADR-0015 D4).
+// The customer SSR host — the base for customer-facing links in emails/Stripe redirects (reset
+// password, order status, checkout success/cancel). Dev: the SSR default hostname.
+var customerWebBaseUrl = 'https://${ssr.outputs.defaultHostName}'
+
 var apiBaseSettings = {
   ConnectionStrings__ConnectionString: kvRef(keyVaultUri, 'ConnectionStrings--cleansia-db')
   ConnectionStrings__BlobContainerConfigurationConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
   ConnectionStrings__QueueStorageConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
   JwtSettings__Secret: kvRef(keyVaultUri, 'Jwt--Key')
+  // CSRF secret — a true secret pushed by CI (like the other externals). The app throws on an empty
+  // secret only when Csrf:Enabled=true; dev runs disabled, but we still supply it so enabling CSRF is
+  // a one-flag flip.
+  Csrf__Secret: kvRef(keyVaultUri, 'Csrf--Secret')
   SendGrid__ApiKey: kvRef(keyVaultUri, 'SendGrid--ApiKey')
+  // The two customer-facing SendGrid URLs, pointed at the dev SSR host (appsettings defaults are
+  // localhost). NOTE: SendGrid:OrderStatusUpdateTemplateId is intentionally NOT set here — its
+  // appsettings value is SET_VIA_USER_SECRETS because that dynamic template was never created in
+  // SendGrid. Set it as a GitHub secret (ORDER_STATUS_TEMPLATE_ID) once the template exists; the CI
+  // push wires it. Setting a wrong `d-...` id here would send the wrong template.
+  SendGrid__ResetPasswordUrl: '${customerWebBaseUrl}/forgot-password'
+  SendGrid__OrderStatusUrl: '${customerWebBaseUrl}/orders'
   Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
   Mapbox__GeocodingAccessToken: kvRef(keyVaultUri, 'Mapbox--GeocodingAccessToken')
   APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.outputs.connectionString
@@ -233,6 +248,27 @@ var apiBaseSettings = {
 var stripeSettings = {
   Stripe__SecretKey: kvRef(keyVaultUri, 'Stripe--SecretKey')
   Stripe__WebhookSecret: kvRef(keyVaultUri, 'Stripe--WebhookSecret')
+  // The app also binds Stripe:PublishableKey — publishable keys are client-safe (not a true secret),
+  // but we route it through Key Vault + CI push for uniformity. And the checkout redirect bases, which
+  // default to localhost in appsettings — point them at the dev customer SSR host.
+  Stripe__PublishableKey: kvRef(keyVaultUri, 'Stripe--PublishableKey')
+  Stripe__SuccessUrlBase: '${customerWebBaseUrl}/checkout/success'
+  Stripe__CancelUrlBase: '${customerWebBaseUrl}/checkout/cancel'
+}
+
+// Fiscal (Czech EET) config the app binds. Disabled in dev (Fiscal:CzechEet2:Enabled=false), so these
+// are empty placeholders wired for completeness — the section binds without gaps and enabling fiscal
+// later is a matter of supplying the values (the sensitive ones via KV/CI at that point). No live
+// fiscal secret is committed.
+var fiscalSettings = {
+  Fiscal__CzechEet2__Enabled: 'false'
+  Fiscal__CzechEet2__ApiUrl: ''
+  Fiscal__CzechEet2__ApiKey: ''
+  Fiscal__CzechEet2__CertificatePath: ''
+  Fiscal__CzechEet2__CertificatePassword: ''
+  Fiscal__CzechEet2__TaxpayerIdentifier: ''
+  Fiscal__CzechEet2__BusinessPremiseId: ''
+  Fiscal__CzechEet2__CashRegisterId: ''
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -247,7 +283,7 @@ module apiAppServices 'modules/appService.bicep' = [
       location: location
       appServicePlanId: appServicePlan.outputs.id
       linuxFxVersion: apiLinuxFxVersion
-      appSettings: host.needsStripe ? union(apiBaseSettings, stripeSettings) : apiBaseSettings
+      appSettings: host.needsStripe ? union(apiBaseSettings, fiscalSettings, stripeSettings) : union(apiBaseSettings, fiscalSettings)
       corsAllowedOrigins: host.browserFacing ? browserCorsOrigins : []
       httpsOnly: true
       alwaysOn: false

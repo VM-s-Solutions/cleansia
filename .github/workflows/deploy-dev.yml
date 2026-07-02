@@ -280,8 +280,10 @@ jobs:
           KV: kv-cleansia-${{ matrix.region }}-dev
           RG: rg-cleansia-${{ matrix.region }}-dev
           JWT_KEY: ${{ secrets.JWT_KEY }}
+          CSRF_SECRET: ${{ secrets.CSRF_SECRET }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
@@ -310,8 +312,10 @@ jobs:
             echo "::error::failed to set $1 after retries (check the CI principal's Key Vault RBAC)"; return 1
           }
           set_secret "Jwt--Key"                     "$JWT_KEY"
+          set_secret "Csrf--Secret"                 "$CSRF_SECRET"
           set_secret "Stripe--SecretKey"            "$STRIPE_SECRET_KEY"
           set_secret "Stripe--WebhookSecret"        "$STRIPE_WEBHOOK_SECRET"
+          set_secret "Stripe--PublishableKey"       "$STRIPE_PUBLISHABLE_KEY"
           set_secret "SendGrid--ApiKey"             "$SENDGRID_API_KEY"
           set_secret "Sentry--Dsn"                  "$SENTRY_DSN"
           set_secret "Mapbox--GeocodingAccessToken" "$MAPBOX_TOKEN"

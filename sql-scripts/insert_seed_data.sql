@@ -161,6 +161,91 @@ FROM (VALUES
   ('Pardubice',         '53')
 ) AS city(name, zip_prefix);
 
+-- 3c. SERVICE CITIES — Prague-region name variants.
+-- The serviced check is an EXACT (case-insensitive) name match
+-- (ServiceCityRepository.CityIsServicedAsync: Name.ToLower() == input), so
+-- the single 'Praha' row above does NOT cover what real addresses carry:
+--   • 'Prague' — the English exonym Mapbox geocoding returns in the en locale
+--     (the seeded customer addresses use it too);
+--   • 'Praha N' / 'Prague N' — the administrative-district forms geocoders and
+--     users commonly produce ('Praha 5', 'Prague 2', …).
+-- Without these variants a booking in Prague fails city.not_serviced purely
+-- on the spelling of the city the address picker happened to emit.
+--
+-- ZipPrefix: districts 1-10 carry their natural postal prefix (Praha 1 = 110xx
+-- … Praha 9 = 190xx, Praha 10 = 10xxx); districts 11-22 span mixed ranges of
+-- the old postal districts, so they get the generic Prague '1' (unenforced in
+-- v1 either way — see the note above).
+--
+-- Idempotent (NOT EXISTS per name), so this block can be re-run standalone
+-- against a database that already holds the base list above.
+INSERT INTO public."ServiceCities" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
+  "TenantId", "CountryId", "Name", "ZipPrefix"
+)
+SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+       NULL,
+       (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
+       city.name, city.zip_prefix
+FROM (VALUES
+  -- English exonym
+  ('Prague',     '1'),
+  -- Czech district forms
+  ('Praha 1',    '11'),
+  ('Praha 2',    '12'),
+  ('Praha 3',    '13'),
+  ('Praha 4',    '14'),
+  ('Praha 5',    '15'),
+  ('Praha 6',    '16'),
+  ('Praha 7',    '17'),
+  ('Praha 8',    '18'),
+  ('Praha 9',    '19'),
+  ('Praha 10',   '10'),
+  ('Praha 11',   '1'),
+  ('Praha 12',   '1'),
+  ('Praha 13',   '1'),
+  ('Praha 14',   '1'),
+  ('Praha 15',   '1'),
+  ('Praha 16',   '1'),
+  ('Praha 17',   '1'),
+  ('Praha 18',   '1'),
+  ('Praha 19',   '1'),
+  ('Praha 20',   '1'),
+  ('Praha 21',   '1'),
+  ('Praha 22',   '1'),
+  -- English district forms (mixed-locale geocoder output)
+  ('Prague 1',   '11'),
+  ('Prague 2',   '12'),
+  ('Prague 3',   '13'),
+  ('Prague 4',   '14'),
+  ('Prague 5',   '15'),
+  ('Prague 6',   '16'),
+  ('Prague 7',   '17'),
+  ('Prague 8',   '18'),
+  ('Prague 9',   '19'),
+  ('Prague 10',  '10'),
+  ('Prague 11',  '1'),
+  ('Prague 12',  '1'),
+  ('Prague 13',  '1'),
+  ('Prague 14',  '1'),
+  ('Prague 15',  '1'),
+  ('Prague 16',  '1'),
+  ('Prague 17',  '1'),
+  ('Prague 18',  '1'),
+  ('Prague 19',  '1'),
+  ('Prague 20',  '1'),
+  ('Prague 21',  '1'),
+  ('Prague 22',  '1')
+) AS city(name, zip_prefix)
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM public."ServiceCities" sc
+  WHERE sc."CountryId" = (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1)
+    AND LOWER(sc."Name") = LOWER(city.name)
+    AND sc."TenantId" IS NULL
+);
+
 -- 4. EMAIL TRANSLATIONS
 INSERT INTO public."EmailTranslations" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",

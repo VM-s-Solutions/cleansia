@@ -38,6 +38,16 @@ param appInsightsConnectionString string
 @description('Resource tags.')
 param tags object = {}
 
+@description('''
+Extra app settings composed by the orchestrator (main.bicep) — the SHARED application config the
+Functions app must receive (SendGrid email config, Sentry, fiscal placeholders). CRITICAL: unlike the
+API hosts, the Functions container ships an appsettings.json with ONLY cron schedules — every piece of
+application config (template ids, from-address, link base URLs, …) must arrive via these app settings
+or the email/receipt handlers throw at runtime (the SendEmail templateId ArgumentNullException). One
+shared definition in main.bicep feeds both the API hosts and this app so the two can never drift.
+''')
+param extraAppSettings object = {}
+
 var functionAppName = 'func-cleansia-${region}-${env}'
 
 // QuestPDF needs native libfontconfig1/libfreetype6 baked into the image — the Functions host is a
@@ -46,9 +56,63 @@ var linuxFxVersion = 'DOCKER|${acrLoginServer}/${imageRepository}:${imageTag}'
 
 // Key Vault references — secret NAMES only; values are owner/CI-populated in Key Vault (ADR-0015 D4).
 var dbConnSecretUri = '${keyVaultUri}/secrets/ConnectionStrings--cleansia-db'
-var sendGridSecretUri = '${keyVaultUri}/secrets/SendGrid--ApiKey'
-var sentrySecretUri = '${keyVaultUri}/secrets/Sentry--Dsn'
 var storageSecretUri = '${keyVaultUri}/secrets/Storage--ConnectionString'
+
+// The orchestrator-supplied object → the {name, value} array shape App Service wants.
+var extraAppSettingsArray = [
+  for setting in items(extraAppSettings): {
+    name: setting.key
+    value: setting.value
+  }
+]
+
+// Functions-runtime + storage/db wiring owned by this module; application config (SendGrid/Sentry/
+// fiscal) arrives via extraAppSettings so it has ONE home in main.bicep shared with the API hosts.
+var baseAppSettings = [
+  {
+    name: 'FUNCTIONS_EXTENSION_VERSION'
+    value: '~4'
+  }
+  {
+    name: 'FUNCTIONS_WORKER_RUNTIME'
+    value: 'dotnet-isolated'
+  }
+  {
+    name: 'DOCKER_REGISTRY_SERVER_URL'
+    value: 'https://${acrLoginServer}'
+  }
+  {
+    name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
+    value: 'false'
+  }
+  // Functions runtime store — managed-identity binding to the Storage Account
+  // (no AzureWebJobsStorage connection string; the __accountName/__credential form).
+  {
+    name: 'AzureWebJobsStorage__accountName'
+    value: storageAccountName
+  }
+  {
+    name: 'AzureWebJobsStorage__credential'
+    value: 'managedidentity'
+  }
+  {
+    name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+    value: appInsightsConnectionString
+  }
+  // App config via Key Vault references (double-underscore -> colon mapping; no app code change).
+  {
+    name: 'ConnectionStrings__ConnectionString'
+    value: '@Microsoft.KeyVault(SecretUri=${dbConnSecretUri})'
+  }
+  {
+    name: 'ConnectionStrings__BlobContainerConfigurationConnectionString'
+    value: '@Microsoft.KeyVault(SecretUri=${storageSecretUri})'
+  }
+  {
+    name: 'ConnectionStrings__QueueStorageConnectionString'
+    value: '@Microsoft.KeyVault(SecretUri=${storageSecretUri})'
+  }
+]
 
 resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
   name: functionAppName
@@ -66,63 +130,16 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
       linuxFxVersion: linuxFxVersion
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
-      alwaysOn: false
+      // MUST be true on a Dedicated (App Service) plan: with alwaysOn=false the Functions host unloads
+      // when idle and stops polling the Storage Queues (send-email, generate-receipt, generate-invoice,
+      // notifications) and firing timers until something wakes it — messages sit invisible past their
+      // visibility timeout and come back with DequeueCount > 1. Only Consumption plans get an external
+      // scale controller; on this shared B2 the warm host IS the queue scaler.
+      alwaysOn: true
       // Pull the image from ACR using the Function App's managed identity (AcrPull granted in
       // roleAssignments.bicep). No registry admin user, no registry password in config.
       acrUseManagedIdentityCreds: true
-      appSettings: [
-        {
-          name: 'FUNCTIONS_EXTENSION_VERSION'
-          value: '~4'
-        }
-        {
-          name: 'FUNCTIONS_WORKER_RUNTIME'
-          value: 'dotnet-isolated'
-        }
-        {
-          name: 'DOCKER_REGISTRY_SERVER_URL'
-          value: 'https://${acrLoginServer}'
-        }
-        {
-          name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
-          value: 'false'
-        }
-        // Functions runtime store — managed-identity binding to the Storage Account
-        // (no AzureWebJobsStorage connection string; the __accountName/__credential form).
-        {
-          name: 'AzureWebJobsStorage__accountName'
-          value: storageAccountName
-        }
-        {
-          name: 'AzureWebJobsStorage__credential'
-          value: 'managedidentity'
-        }
-        {
-          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: appInsightsConnectionString
-        }
-        // App config via Key Vault references (double-underscore -> colon mapping; no app code change).
-        {
-          name: 'ConnectionStrings__ConnectionString'
-          value: '@Microsoft.KeyVault(SecretUri=${dbConnSecretUri})'
-        }
-        {
-          name: 'ConnectionStrings__BlobContainerConfigurationConnectionString'
-          value: '@Microsoft.KeyVault(SecretUri=${storageSecretUri})'
-        }
-        {
-          name: 'ConnectionStrings__QueueStorageConnectionString'
-          value: '@Microsoft.KeyVault(SecretUri=${storageSecretUri})'
-        }
-        {
-          name: 'SendGrid__ApiKey'
-          value: '@Microsoft.KeyVault(SecretUri=${sendGridSecretUri})'
-        }
-        {
-          name: 'Sentry__Dsn'
-          value: '@Microsoft.KeyVault(SecretUri=${sentrySecretUri})'
-        }
-      ]
+      appSettings: concat(baseAppSettings, extraAppSettingsArray)
     }
   }
 }

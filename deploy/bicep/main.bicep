@@ -217,7 +217,29 @@ var browserCorsOrigins = [
 // password, order status, checkout success/cancel). Dev: the SSR default hostname.
 var customerWebBaseUrl = 'https://${ssr.outputs.defaultHostName}'
 
-var apiBaseSettings = {
+// SendGrid email config — ONE shared definition consumed by BOTH the API hosts and the Functions app
+// (the Functions container ships an appsettings.json with only cron schedules, so it receives ZERO
+// application config unless set here — a missing template id throws ArgumentNullException at send time).
+// All 6 dynamic-template ids are supplied via GitHub secrets → Key Vault → these references (set the 6
+// SENDGRID_*_TEMPLATE_ID GitHub secrets; the CI push writes them to KV). Each email uses its OWN
+// dedicated template — never a substitute.
+// LINK COMPOSITION (EmailService concatenates): resetLink = ClientDomainUrl + ResetPasswordUrl, and the
+// receipt track-order link = ClientDomainUrl + '/track-order'. So ClientDomainUrl is the customer web
+// BASE URL and ResetPasswordUrl is a PATH — setting ResetPasswordUrl to a full URL would double the host.
+var sendGridSettings = {
+  SendGrid__ApiKey: kvRef(keyVaultUri, 'SendGrid--ApiKey')
+  SendGrid__ResetPasswordTemplateId: kvRef(keyVaultUri, 'SendGrid--ResetPasswordTemplateId')
+  SendGrid__OrderReceiptTemplateId: kvRef(keyVaultUri, 'SendGrid--OrderReceiptTemplateId')
+  SendGrid__EmailConfirmationTemplateId: kvRef(keyVaultUri, 'SendGrid--EmailConfirmationTemplateId')
+  SendGrid__PeriodClosedTemplateId: kvRef(keyVaultUri, 'SendGrid--PeriodClosedTemplateId')
+  SendGrid__PeriodEndReminderTemplateId: kvRef(keyVaultUri, 'SendGrid--PeriodEndReminderTemplateId')
+  SendGrid__OrderStatusUpdateTemplateId: kvRef(keyVaultUri, 'SendGrid--OrderStatusUpdateTemplateId')
+  SendGrid__AddressFrom: 'it@cleansia.cz'
+  SendGrid__ClientDomainUrl: customerWebBaseUrl
+  SendGrid__ResetPasswordUrl: '/forgot-password'
+}
+
+var apiBaseSettings = union({
   ConnectionStrings__ConnectionString: kvRef(keyVaultUri, 'ConnectionStrings--cleansia-db')
   ConnectionStrings__BlobContainerConfigurationConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
   ConnectionStrings__QueueStorageConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
@@ -226,21 +248,6 @@ var apiBaseSettings = {
   // secret only when Csrf:Enabled=true; dev runs disabled, but we still supply it so enabling CSRF is
   // a one-flag flip.
   Csrf__Secret: kvRef(keyVaultUri, 'Csrf--Secret')
-  SendGrid__ApiKey: kvRef(keyVaultUri, 'SendGrid--ApiKey')
-  // All 6 SendGrid dynamic-template ids are supplied via GitHub secrets → Key Vault → these references
-  // (uniform with the other externals; the ids live in one place, not split between Bicep + secrets).
-  // In dev they came from local user-secrets (SET_VIA_USER_SECRETS in appsettings), so the deployed app
-  // has no value unless pushed. Each email uses its OWN dedicated template — never a substitute. Set the
-  // 6 GitHub secrets (SENDGRID_*_TEMPLATE_ID); the CI push writes them to KV.
-  SendGrid__ResetPasswordTemplateId: kvRef(keyVaultUri, 'SendGrid--ResetPasswordTemplateId')
-  SendGrid__OrderReceiptTemplateId: kvRef(keyVaultUri, 'SendGrid--OrderReceiptTemplateId')
-  SendGrid__EmailConfirmationTemplateId: kvRef(keyVaultUri, 'SendGrid--EmailConfirmationTemplateId')
-  SendGrid__PeriodClosedTemplateId: kvRef(keyVaultUri, 'SendGrid--PeriodClosedTemplateId')
-  SendGrid__PeriodEndReminderTemplateId: kvRef(keyVaultUri, 'SendGrid--PeriodEndReminderTemplateId')
-  SendGrid__OrderStatusUpdateTemplateId: kvRef(keyVaultUri, 'SendGrid--OrderStatusUpdateTemplateId')
-  // The two customer-facing SendGrid URLs, pointed at the dev SSR host (appsettings defaults are localhost).
-  SendGrid__ResetPasswordUrl: '${customerWebBaseUrl}/forgot-password'
-  SendGrid__OrderStatusUrl: '${customerWebBaseUrl}/orders'
   Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
   Mapbox__GeocodingAccessToken: kvRef(keyVaultUri, 'Mapbox--GeocodingAccessToken')
   APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.outputs.connectionString
@@ -250,7 +257,7 @@ var apiBaseSettings = {
   // satisfies the "no /0–/8 supernet" guard: it trusts the App Service front end, not the public net.
   ForwardedHeaders__KnownNetworks: '100.64.0.0/10'
   ForwardedHeaders__ForwardLimit: '1'
-}
+}, sendGridSettings)
 
 var stripeSettings = {
   Stripe__SecretKey: kvRef(keyVaultUri, 'Stripe--SecretKey')
@@ -355,8 +362,11 @@ module staticWebApps 'modules/staticWebApp.bicep' = [
 ]
 
 // ---------------------------------------------------------------------------------------------------
-// Functions — container pulled from ACR (QuestPDF native deps; ADR-0015 D2). The module composes its
-// own Key Vault references internally; it receives the vault URI + ACR login server + storage + AI.
+// Functions — container pulled from ACR (QuestPDF native deps; ADR-0015 D2). The module owns only the
+// runtime/storage/db wiring; ALL application config (SendGrid, Sentry, fiscal) is passed in via
+// extraAppSettings from the SAME shared objects the API hosts use. The Functions container ships an
+// appsettings.json with only cron schedules — anything not set here simply does not exist at runtime
+// (this is exactly how the SendEmail templateId ArgumentNullException happened).
 // ---------------------------------------------------------------------------------------------------
 
 module functionApp 'modules/functionApp.bicep' = {
@@ -371,6 +381,9 @@ module functionApp 'modules/functionApp.bicep' = {
     storageAccountName: storage.outputs.storageAccountName
     storageAccountId: storage.outputs.storageAccountId
     appInsightsConnectionString: appInsights.outputs.connectionString
+    extraAppSettings: union(sendGridSettings, fiscalSettings, {
+      Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
+    })
     tags: commonTags
   }
 }

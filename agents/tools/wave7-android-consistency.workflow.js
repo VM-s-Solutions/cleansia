@@ -18,20 +18,21 @@ const COMMON = [
   'ENCODING DISCIPLINE (a prior Android wave had a corruption incident): every .kt file you write/edit/move MUST stay clean UTF-8, NO BOM, NO mojibake (no Ã/Â/â€ byte sequences). After editing, confirm byte-clean. For E7 file MOVES, preserve the exact file content byte-for-byte except the package/import lines.',
   'VERIFY (mandatory): from ' + ANDROID + ', run ./gradlew.bat <modules>:compileDebugKotlin --offline -q (EXIT 0) and the relevant :<app>:testDebugUnitTest --offline -q. Report exact pass/fail. Known pre-existing: NONE now — partner-app is 26/26, customer-app 201/201, :core 13/13 green at baseline, so ANY new red is YOURS.',
   'No nswag-regen, no ef-migration, no i18n (mobile structural). Comment discipline: no ticket IDs in source. Final message is data for the orchestrator.',
+  'Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs live in the ticket status log, never in the report.',
 ].join('\n')
 
 const DEV_SCHEMA = {
   type: 'object',
   required: ['summary', 'filesChanged', 'verificationAchieved', 'encodingClean', 'behaviorPreserved', 'deviations'],
   properties: {
-    summary: { type: 'string' }, filesChanged: { type: 'array', items: { type: 'string' } },
-    verificationAchieved: { type: 'string' }, encodingClean: { type: 'boolean' },
-    behaviorPreserved: { type: 'string' }, deviations: { type: 'array', items: { type: 'string' } },
+    summary: { type: 'string', maxLength: 600 }, filesChanged: { type: 'array', items: { type: 'string', maxLength: 300 } },
+    verificationAchieved: { type: 'string', maxLength: 600 }, encodingClean: { type: 'boolean' },
+    behaviorPreserved: { type: 'string', maxLength: 600 }, deviations: { type: 'array', items: { type: 'string', maxLength: 300 } },
   },
 }
 const REVIEW_SCHEMA = {
   type: 'object', required: ['verdict', 'mustFix', 'notes'],
-  properties: { verdict: { type: 'string', enum: ['PASS', 'PASS-WITH-NOTES', 'FAIL'] }, mustFix: { type: 'array', items: { type: 'string' } }, notes: { type: 'array', items: { type: 'string' } } },
+  properties: { verdict: { type: 'string', enum: ['PASS', 'PASS-WITH-NOTES', 'FAIL'] }, mustFix: { type: 'array', items: { type: 'string', maxLength: 300 } }, notes: { type: 'array', items: { type: 'string', maxLength: 300 } } },
 }
 
 function reviewPrompt(t, dev) {

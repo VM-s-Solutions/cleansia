@@ -86,6 +86,8 @@ no // AC#); KEEP only load-bearing ADR-0009/ADR-0006/ADR-0001 + S7a/S7b refs. Do
 only) — flag manual_step: ef-migration. Do NOT run npm generate / hand-edit NSwag clients — flag manual_step:
 nswag-regen. Do NOT edit DB seeds without owner approval — flag instead. Build src/Cleansia.Api.sln and run
 src/Cleansia.Tests to green before returning. Backend only (the admin UX is the sibling T-0168).
+Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs
+live in the ticket status log, never in the report.
 `
 
 phase('Design')

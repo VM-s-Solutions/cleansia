@@ -159,3 +159,19 @@ A ticket is `done` only when **all** of these hold:
    final transition.
 
 Anything short of this stays out of `done`. We do not mark work complete on hope.
+
+### When the in-workflow gate did not run (hand-gating)
+
+A final-report (StructuredOutput) failure can kill a ticket's in-workflow reviewer lane while the work
+itself landed fine on disk — observed three times across two waves (see `quality-gates.md` §"A
+final-report failure ≠ a work failure"). Such a ticket may still reach `done`, but ONLY when both hold:
+
+1. The ticket's `## Review` carries a **MANUAL-GATE block** recording the concrete evidence the
+   orchestrator inspected by hand: the files it read, the commands it ran itself (with exit codes and
+   pass/fail counts), and which AC each piece of evidence covers. "The work looked fine" is not a
+   MANUAL-GATE block — it is the narration Gate 8 forbids.
+2. The `INDEX.md` row carries a **manual-gate provenance marker** (e.g. `done (manual-gate)`), so
+   nobody later mistakes a hand-gated ticket for one whose reviewer lane actually ran.
+
+A ticket with neither is not `done` — it is `in_review` with a dead reviewer lane, and the PM re-runs
+the gate or hand-gates it properly.

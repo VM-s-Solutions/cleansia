@@ -20,23 +20,24 @@ const COMMON = [
   'ENCODING DISCIPLINE (CRITICAL — Phase 1 had a corruption incident): every .kt file you write/edit MUST stay clean UTF-8 with NO BOM and NO mojibake (no Ã/Â/â€/â† byte sequences). Kotlin source is ASCII-clean here — if your edit introduces any non-ASCII byte, you corrupted it; fix it. After editing, the file must be byte-clean.',
   'VERIFY (mandatory, per repo): from ' + ANDROID + ', run `./gradlew.bat :customer-app:compileDebugKotlin --offline -q` (must be EXIT 0) and `./gradlew.bat :customer-app:testDebugUnitTest --offline -q` for your new/changed tests. Known pre-existing customer-app test state: most pass; if a failure is unrelated to your repo (e.g. android.util.Patterns in a login VM), note it — do not chase it. Report exact results.',
   'No nswag-regen, no ef-migration (mobile-only). Touch ONLY your repo file, its consuming ViewModels, and its test. If a ViewModel you must edit is ALSO listed as another lane\'s VM, you are in the SERIAL cluster — your lane runs alone, so just edit it; never assume another lane is concurrently in the same VM. Your final message is data for the orchestrator.',
+  'Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs live in the ticket status log, never in the report.',
 ].join('\n')
 
 const DEV_SCHEMA = {
   type: 'object',
   required: ['summary', 'repoMigrated', 'filesChanged', 'vmsUpdated', 'characterizationEvidence', 'verificationAchieved', 'encodingClean', 'deviations'],
   properties: {
-    summary: { type: 'string' }, repoMigrated: { type: 'string' },
-    filesChanged: { type: 'array', items: { type: 'string' } },
-    vmsUpdated: { type: 'array', items: { type: 'string' } },
-    characterizationEvidence: { type: 'string' }, verificationAchieved: { type: 'string' },
+    summary: { type: 'string', maxLength: 600 }, repoMigrated: { type: 'string', maxLength: 300 },
+    filesChanged: { type: 'array', items: { type: 'string', maxLength: 300 } },
+    vmsUpdated: { type: 'array', items: { type: 'string', maxLength: 300 } },
+    characterizationEvidence: { type: 'string', maxLength: 600 }, verificationAchieved: { type: 'string', maxLength: 600 },
     encodingClean: { type: 'boolean', description: 'true if you confirmed all edited .kt files are clean UTF-8 no-BOM no-mojibake' },
-    deviations: { type: 'array', items: { type: 'string' } },
+    deviations: { type: 'array', items: { type: 'string', maxLength: 300 } },
   },
 }
 const REVIEW_SCHEMA = {
   type: 'object', required: ['verdict', 'mustFix', 'notes'],
-  properties: { verdict: { type: 'string', enum: ['PASS', 'PASS-WITH-NOTES', 'FAIL'] }, mustFix: { type: 'array', items: { type: 'string' } }, notes: { type: 'array', items: { type: 'string' } } },
+  properties: { verdict: { type: 'string', enum: ['PASS', 'PASS-WITH-NOTES', 'FAIL'] }, mustFix: { type: 'array', items: { type: 'string', maxLength: 300 } }, notes: { type: 'array', items: { type: 'string', maxLength: 300 } } },
 }
 
 function reviewPrompt(t, dev) {

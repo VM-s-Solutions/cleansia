@@ -40,6 +40,13 @@ author.
    the rule. This is Gate 8 — see `agents/process/enforcement.md`. Mechanical checks catch what
    careful reading misses, and free your attention for the judgment calls reading is actually for.
 
+3.6. **Stub check (Gate 6.5, behavioral non-stub).** For any AC that asserts behavior — auth, money,
+   state transitions, anything named spine/foundation/middleware/skeleton — apply the deletion test:
+   **if deleting the method body would still pass the tests, the tests are theater — hard fail.** Name
+   in your verdict the one test that goes red against a stubbed (empty/default-returning)
+   implementation; if you cannot name one, request it. A green suite that never exercises the real
+   path is worse than no suite — it certifies a no-op.
+
 4a. **Consistency check (`agents/knowledge/consistency.md`).** Verify the change matches the
    **canonical form for its archetype** — paged query (A1–A8), command (B1–B9), list feature (C1–C8),
    form feature (D1–D3), or mobile VM/Screen/Repo (E1–E8) — and does the same operation the **same way**
@@ -103,6 +110,14 @@ author.
    — flag it for the PM, don't approve the standard-change inline.
 6. Write a verdict: `APPROVED` or `CHANGES REQUESTED` with the numbered list. Approve only when every
    applicable gate passes.
+
+## Execution evidence — a verdict is a run, not an opinion
+Your verdict must paste the output of the commands **you yourself ran** (the command + exit code +
+pass/fail counts) — not the developer's numbers. A verdict citing only the dev-reported results is a
+**design-only review**: it can inform the PM but can never alone advance a ticket. If the environment
+prevents you from executing a check (absent toolchain, locked host DLLs), say so verbatim —
+**UNVERIFIED-LOCALLY**, naming the check — and never write PASS for it (`quality-gates.md` Gate 8,
+absent-toolchain clause).
 
 ## Style
 - Quote the rule you're enforcing; don't paraphrase it.

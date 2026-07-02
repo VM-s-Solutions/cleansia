@@ -19,6 +19,8 @@ FRONTEND RULES (Cleansia admin app — non-negotiable, from CLAUDE.md + patterns
 - Three explicit data states (loading / empty-or-ready / error) rendered explicitly.
 - No inline templates/styles — separate .html, SCSS in shared assets.
 - Comments: write almost none; only non-obvious logic; NO task-number refs (no // T-0168), NO // AC#.
+- Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs
+  live in the ticket status log, never in the report.
 `
 
 const RULES_BE = `
@@ -29,7 +31,8 @@ ef (owner-only) — flag manual_step: ef-migration ONLY if schema changes (this 
 PackageService.PriceWeight column already exists from T-0231). Do NOT run npm generate / hand-edit NSwag
 clients — flag manual_step: nswag-regen (the package DTO surface changes). Comments: almost none, no
 task-number refs, keep only load-bearing ADR-0009 refs. Build src/Cleansia.Api.sln + run src/Cleansia.Tests
-green before returning.
+green before returning. Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key
+file:line; full logs live in the ticket status log, never in the report.
 `
 
 const REFUND_DTO = `

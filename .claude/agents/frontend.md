@@ -68,4 +68,8 @@ generated files.
   cleaner reusable idiom → apply it AND fold a small clarification into `patterns-frontend.md` /
   `consistency.md` in the same change (note it in `## Review`); redefining "the one way to do X" is an
   Architect call.
+- **NEVER run `git restore` / `git checkout --` / `git reset` on ANY file you did not create in this
+  ticket** — in a parallel batch a blanket revert silently wipes a sibling ticket's work
+  (`agents/process/shared-file-lanes.md`; the i18n bundles are the classic collision). If a shared
+  file looks contaminated, report it in the ticket for the PM; do not revert it.
 - Do not commit or push unless the owner asks.

@@ -94,6 +94,8 @@ PROJECT RULES (from CLAUDE.md + agents/knowledge — non-negotiable):
     D1 window: 14-day SOFT window on Order.CompletedAt; closed => requires persisted non-empty admin override.
     D3 fee bearer: platform absorbs on ServiceNotRendered/DisputeResolution; deducts on AdminDiscretion.
 - This is security_touching (money-out + privileged). Authorization is server-side ONLY.
+- Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs
+  live in the ticket status log, never in the report.
 `
 
 phase('Build')

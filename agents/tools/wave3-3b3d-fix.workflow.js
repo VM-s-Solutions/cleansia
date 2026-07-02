@@ -64,6 +64,8 @@ claim is its OWN commit (the whole point: claim survives even if the later effec
 discipline (no task-number refs). Do NOT run dotnet ef — flag manual_step: ef-migration (the new
 ProcessedMessage + CampaignProgress tables). Build src/Cleansia.Api.sln + run src/Cleansia.Tests green
 (single-threaded; the IntegrationFailureMetricsTests meter flake is unrelated).
+Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs
+live in the ticket status log, never in the report.
 `
 
 phase('Design')

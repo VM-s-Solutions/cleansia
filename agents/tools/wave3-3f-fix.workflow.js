@@ -39,6 +39,7 @@ const SPEC = [
   '',
   'RULES: attributes only; match sibling bucket precedents; comment discipline; build src/Cleansia.Api.sln +',
   'run src/Cleansia.Tests (single-threaded) green incl. the extended guard.',
+  'Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs live in the ticket status log, never in the report.',
 ].join('\n')
 
 phase('Fix')

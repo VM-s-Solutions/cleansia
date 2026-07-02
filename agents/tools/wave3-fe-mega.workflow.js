@@ -17,6 +17,7 @@ const FE_RULES = [
   'parity: every backend error code an action returns has an errors.* translation x5. Run nx lint + nx test',
   'for each touched lib to green (no NEW lint errors; pre-existing baseline out of scope). Mirror the',
   'established admin facade/component archetypes (read a sibling first).',
+  'Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs live in the ticket status log, never in the report.',
 ].join('\n')
 
 phase('Build+Review')

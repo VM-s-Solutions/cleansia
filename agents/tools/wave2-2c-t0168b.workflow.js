@@ -43,7 +43,8 @@ Cleansia.Core.AppServices/Mappers. No CommitAsync anywhere here (read-path only)
 almost none, no task-number refs, keep only load-bearing ADR refs. TEST-FIRST. Do NOT run npm generate /
 hand-edit NSwag clients — flag manual_step: nswag-regen (the order-detail/PackageDetails DTO surface changes
 for the admin client). NO ef-migration (no schema change — Service.Id already exists). Build src/Cleansia.Api.sln
-+ run src/Cleansia.Tests green. Backend only.
++ run src/Cleansia.Tests green. Backend only. Evidence fields are POINTERS not artifacts — terse counts +
+one-line verdict + key file:line; full logs live in the ticket status log, never in the report.
 `
 
 phase('Build')

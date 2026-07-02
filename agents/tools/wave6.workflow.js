@@ -22,21 +22,23 @@ const COMMON = [
   'OWNER-ONLY (never run): dotnet ef migrations/database, npm run generate-*-client, edits to NSwag clients, edits to DB seeds. Response/DTO shape change → MANUAL_STEP nswag-regen. Schema/index/FK change → write the EF entity-config/migration-intent but record MANUAL_STEP ef-migration; do NOT run dotnet ef.',
   'i18n: any new user-visible string needs a TranslatePipe key in ALL 5 locales of the relevant app.',
   'Update your ticket: status -> review, append status-log. Final message is data for the orchestrator.',
+  'Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs live in the ticket status log, never in the report.',
 ].join('\n')
 
 const DEV_SCHEMA = {
   type: 'object',
   required: ['summary', 'filesChanged', 'testEvidence', 'verificationAchieved', 'deviations', 'manualSteps', 'productionBugsFound'],
   properties: {
-    summary: { type: 'string' }, filesChanged: { type: 'array', items: { type: 'string' } },
-    testEvidence: { type: 'string' }, verificationAchieved: { type: 'string' },
-    deviations: { type: 'array', items: { type: 'string' } }, manualSteps: { type: 'array', items: { type: 'string' } },
-    productionBugsFound: { type: 'array', items: { type: 'string' } },
+    summary: { type: 'string', maxLength: 600 }, filesChanged: { type: 'array', items: { type: 'string', maxLength: 300 } },
+    testEvidence: { type: 'array', items: { type: 'string', maxLength: 300 }, description: 'short pointers: suite + counts + one-line verdict, never raw logs' },
+    verificationAchieved: { type: 'string', maxLength: 600 },
+    deviations: { type: 'array', items: { type: 'string', maxLength: 300 } }, manualSteps: { type: 'array', items: { type: 'string', maxLength: 300 } },
+    productionBugsFound: { type: 'array', items: { type: 'string', maxLength: 300 } },
   },
 }
 const REVIEW_SCHEMA = {
   type: 'object', required: ['verdict', 'mustFix', 'notes'],
-  properties: { verdict: { type: 'string', enum: ['PASS', 'PASS-WITH-NOTES', 'FAIL'] }, mustFix: { type: 'array', items: { type: 'string' } }, notes: { type: 'array', items: { type: 'string' } } },
+  properties: { verdict: { type: 'string', enum: ['PASS', 'PASS-WITH-NOTES', 'FAIL'] }, mustFix: { type: 'array', items: { type: 'string', maxLength: 300 } }, notes: { type: 'array', items: { type: 'string', maxLength: 300 } } },
 }
 
 function reviewPrompt(t, dev) {

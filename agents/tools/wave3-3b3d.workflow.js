@@ -25,6 +25,8 @@ ef-migration if schema changes. Do NOT run npm generate / hand-edit NSwag client
 nswag-regen if a client surface changes. Build src/Cleansia.Api.sln + run src/Cleansia.Tests green
 (single-threaded if needed: the IntegrationFailureMetricsTests meter-listener flake is unrelated). Backend
 only — frontend/Android consumers are held for a later regen.
+Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs
+live in the ticket status log, never in the report.
 `
 
 phase('Build')

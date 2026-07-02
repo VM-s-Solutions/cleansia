@@ -21,20 +21,21 @@ const COMMON = [
   'OWNER-ONLY (never run): dotnet ef migrations/database, npm run generate-*-client, edits to NSwag-generated client files, edits to DB seeds. If your ticket changes an API response/DTO shape, record a MANUAL_STEP nswag-regen (do NOT regen, do NOT hand-edit the client). If it needs a schema change, record MANUAL_STEP ef-migration.',
   'i18n: any new user-visible string needs a TranslatePipe key in ALL 5 locales of the relevant app (en/cs/sk/uk/ru).',
   'Update your ticket: status -> review, append status-log (what changed, test evidence, deviations, MANUAL_STEPs). Your final message is data for the orchestrator.',
+  'Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs live in the ticket status log, never in the report.',
 ].join('\n')
 
 const DEV_SCHEMA = {
   type: 'object',
   required: ['summary', 'filesChanged', 'behaviorPreserved', 'testEvidence', 'verificationAchieved', 'deviations', 'manualSteps', 'productionBugsFound'],
   properties: {
-    summary: { type: 'string' },
-    filesChanged: { type: 'array', items: { type: 'string' } },
-    behaviorPreserved: { type: 'string', description: 'how you confirmed the change does not alter behavior (which tests, which characterization suite stayed green)' },
-    testEvidence: { type: 'string' },
-    verificationAchieved: { type: 'string' },
-    deviations: { type: 'array', items: { type: 'string' } },
-    manualSteps: { type: 'array', items: { type: 'string' } },
-    productionBugsFound: { type: 'array', items: { type: 'string' } },
+    summary: { type: 'string', maxLength: 600 },
+    filesChanged: { type: 'array', items: { type: 'string', maxLength: 300 } },
+    behaviorPreserved: { type: 'string', maxLength: 600, description: 'how you confirmed the change does not alter behavior (which tests, which characterization suite stayed green)' },
+    testEvidence: { type: 'array', items: { type: 'string', maxLength: 300 }, description: 'short pointers: suite + counts + one-line verdict, never raw logs' },
+    verificationAchieved: { type: 'string', maxLength: 600 },
+    deviations: { type: 'array', items: { type: 'string', maxLength: 300 } },
+    manualSteps: { type: 'array', items: { type: 'string', maxLength: 300 } },
+    productionBugsFound: { type: 'array', items: { type: 'string', maxLength: 300 } },
   },
 }
 
@@ -43,8 +44,8 @@ const REVIEW_SCHEMA = {
   required: ['verdict', 'mustFix', 'notes'],
   properties: {
     verdict: { type: 'string', enum: ['PASS', 'PASS-WITH-NOTES', 'FAIL'] },
-    mustFix: { type: 'array', items: { type: 'string' } },
-    notes: { type: 'array', items: { type: 'string' } },
+    mustFix: { type: 'array', items: { type: 'string', maxLength: 300 } },
+    notes: { type: 'array', items: { type: 'string', maxLength: 300 } },
   },
 }
 

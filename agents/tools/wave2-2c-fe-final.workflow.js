@@ -17,6 +17,8 @@ placeholders). No 'any' — use the NSwag types from '@cleansia/admin-services' 
 hand-edit the generated client. Three explicit data states + OnPush. No inline templates/styles. Comments:
 almost none, no task-number refs (no // T-0168), no // AC#. Run nx lint + nx test for the touched lib to
 green (add no NEW lint errors; pre-existing baseline is out of scope).
+Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs
+live in the ticket status log, never in the report.
 `
 
 phase('Build')

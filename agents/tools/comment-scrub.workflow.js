@@ -44,6 +44,7 @@ const RULE = [
   '- A test name or a string literal that happens to contain one of these tokens is CODE — do NOT touch it.',
   '- Preserve XML doc structure (/// <summary> etc.); only edit the prose inside.',
   'Return a short list of files you edited and, per file, how many comment lines you stripped vs deleted.',
+  'Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs live in the ticket status log, never in the report.',
 ].join('\n')
 
 const VERIFY = [
@@ -58,8 +59,8 @@ const VERIFY = [
 const SCRUB_SCHEMA = {
   type: 'object',
   properties: {
-    editedFiles: { type: 'array', items: { type: 'string' } },
-    notes: { type: 'string' },
+    editedFiles: { type: 'array', items: { type: 'string', maxLength: 300 } },
+    notes: { type: 'string', maxLength: 600 },
   },
   required: ['editedFiles'],
 }
@@ -67,7 +68,7 @@ const VERIFY_SCHEMA = {
   type: 'object',
   properties: {
     ok: { type: 'boolean' },
-    problems: { type: 'array', items: { type: 'string' } },
+    problems: { type: 'array', items: { type: 'string', maxLength: 300 } },
   },
   required: ['ok'],
 }

@@ -112,6 +112,19 @@ adds a dependency.
 - Cross-layer behavior has an integration test where the project's harness supports it.
 - The QA test plan exists and was executed; results recorded.
 
+### Gate 6.5 — Behavioral non-stub (when the AC assert behavior)
+A green suite proves nothing if it would stay green with the feature deleted. This gate exists because
+it happened: a "spine" ticket shipped with a green suite whose tests never exercised the real path — the
+implementation could have been a no-op and nothing would have gone red. For any ticket whose AC assert
+**behavior** — auth decisions, money math, state transitions, and anything named *spine / foundation /
+middleware / skeleton* (tickets whose whole point is that the real path works) — at least one test must
+**FAIL if the implementation body is replaced with the empty/default value** (return default, no-op,
+empty collection). The reviewer **names that test** in the verdict (e.g. "Gate 6.5:
+`RefundKey_DoubleSubmit_SingleStripeCall` goes red against a no-op seam"). If no such test can be named,
+the suite is asserting the scaffolding, not the behavior — the gate fails, however green the run. The
+cheap mental check: *delete the method body — does anything go red?* Routing flags these tickets up
+front (`routing.md` §"Spine tickets gate harder") so the dev writes to this gate, not just past it.
+
 ### Gate 7 — Contract & docs parity (when the surface changed)
 - If a backend DTO/endpoint changed, the ticket carries a `MANUAL_STEP: nswag-regen` flag for the
   owner. The agents do **not** regenerate clients.
@@ -148,6 +161,19 @@ net — the gate must not depend on a human remembering to run a suite:
 > not trust per-agent "PASS" reports or per-lane isolation runs. Agents repeatedly reported "the tree
 > won't build" on a transient mid-flight state, and reported PASS where a real-DB run failed. The
 > authoritative gate is a clean rebuild of the merged tree, not the agent's word.
+>
+> This posture is a **required artifact, not a habit**: the ticket's `## Review` must contain the
+> orchestrator's OWN combined-tree run — the command, its exit code, and the counts (tests passed /
+> failed / skipped, build errors). A Gate 8 entry showing only a dev-reported PASS with no independent
+> run recorded is **itself a FAIL** — the gate did not run, it was narrated.
+
+**Absent toolchain ⇒ DEFERRED-TO-CI, never PASS.** If a touched stack's toolchain is absent from the
+execution environment (Swift on a non-macOS box; `az`/Bicep where not installed; Docker down so the
+Testcontainers suites cannot start), the mechanical check for that stack is **DEFERRED-TO-CI** and is
+recorded on the ticket verbatim as **UNVERIFIED-LOCALLY** — naming the check that did not run and the
+CI job that will run it. An agent may **NEVER** report PASS for a check it could not execute; "it
+should pass" is a prediction, not evidence. The ticket may advance on the checks that DID run, but the
+deferred check stays visibly open until CI goes green.
 
 A ticket whose mechanical checks fail cannot be `done`, regardless of how good the review reads. If a
 check is failing for a reason genuinely unrelated to the change (a flaky test, a pre-existing
@@ -200,7 +226,9 @@ When a batch fans out in parallel, tickets that touch the **same shared file** m
 `{en,cs,sk,uk,ru}.json` per app), and the `Policy.cs` / `PolicyBuilder.cs` authz cluster (these two
 must move together or `AssertComplete` fails boot). The PM sequences these into a single lane the same
 way `:core` (T-0277/T-0278) and the Policy cluster (T-0285) were serialized — never two instances
-editing one of them at once.
+editing one of them at once. The cluster list is maintained as **data** (verified paths, per-cluster
+rationale) in [`shared-file-lanes.md`](./shared-file-lanes.md) — the PM validates every parallel
+batch's lane assignments against that file before dispatch.
 
 When true parallelism on adjacent (not identical) regions is unavoidable, each agent is told to **edit
 only its own hunks** and is **forbidden from running `git restore` (or `git checkout --`, or a

@@ -44,6 +44,7 @@ const SPEC = [
   'must not introduce tracker refs); build src/Cleansia.Api.sln + run the affected test filters green',
   '(Catalog/Services/Packages/Currencies/AdminUsers/ChangeOwnPassword); single-threaded if the metrics flake',
   'fires. Do NOT run dotnet ef / npm generate.',
+  'Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs live in the ticket status log, never in the report.',
 ].join('\n')
 
 phase('Fix')

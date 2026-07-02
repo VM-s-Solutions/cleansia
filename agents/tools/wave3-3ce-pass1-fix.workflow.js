@@ -55,6 +55,7 @@ const RULES = [
   'no any type. Comment discipline: no task-number refs. Do NOT run dotnet ef (flag manual_step: ef-migration',
   'for RefreshToken.DeviceId) / npm generate. Build src/Cleansia.Api.sln + run src/Cleansia.Tests green',
   '(single-threaded). For the T-0180 integration test, free port 5432 if needed.',
+  'Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs live in the ticket status log, never in the report.',
 ].join('\n')
 
 phase('Design')

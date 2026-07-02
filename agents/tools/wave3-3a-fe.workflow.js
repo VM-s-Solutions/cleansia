@@ -19,7 +19,9 @@ inline templates/styles. Comments: almost none, no task/finding-number refs. Eve
 code an action can return must have a matching errors.* translation in all 5 locales (contract parity). Run
 nx lint + nx test for the touched lib to green (add NO new lint errors; pre-existing baseline is out of scope).
 Mirror existing admin-feature facades (inject the AdminClient sub-client, signal state, snackbar on success,
-error-code→i18n on failure) — read a sibling facade first.`
+error-code→i18n on failure) — read a sibling facade first.
+Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs
+live in the ticket status log, never in the report.`
 
 phase('Build')
 const [orderUi, disputeUi] = await parallel([

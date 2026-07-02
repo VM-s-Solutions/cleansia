@@ -59,12 +59,12 @@ const FINDING_SCHEMA = {
       items: {
         type: 'object',
         properties: {
-          title: { type: 'string' },
-          file: { type: 'string', description: 'path:line' },
+          title: { type: 'string', maxLength: 300 },
+          file: { type: 'string', maxLength: 300, description: 'path:line' },
           severity: { type: 'string', enum: ['critical', 'high', 'medium', 'low', 'nit'] },
-          category: { type: 'string', description: 'e.g. security/IDOR, correctness, perf/N+1, convention' },
-          evidence: { type: 'string', description: 'the specific code that is wrong and why' },
-          recommendation: { type: 'string' },
+          category: { type: 'string', maxLength: 300, description: 'e.g. security/IDOR, correctness, perf/N+1, convention' },
+          evidence: { type: 'string', maxLength: 600, description: 'the specific code that is wrong and why — a pointer, not a paste' },
+          recommendation: { type: 'string', maxLength: 600 },
         },
         required: ['title', 'file', 'severity', 'category', 'evidence', 'recommendation'],
       },
@@ -78,7 +78,7 @@ const VERDICT_SCHEMA = {
   properties: {
     isReal: { type: 'boolean', description: 'true only if the finding is a genuine defect in the CHANGED code' },
     confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
-    reasoning: { type: 'string' },
+    reasoning: { type: 'string', maxLength: 600 },
     correctedSeverity: { type: 'string', enum: ['critical', 'high', 'medium', 'low', 'nit'] },
   },
   required: ['isReal', 'confidence', 'reasoning', 'correctedSeverity'],
@@ -88,7 +88,8 @@ const DIFF_HINT =
   'Read the file list at the path given, then run `git diff master...HEAD -- <those files>` to see ONLY the changed lines. ' +
   'Review the CHANGES (this is a PR review, not a whole-file audit). Read agents/knowledge/*.md for the conventions and the ' +
   'S1-S10 + S7a/S7b rules first. Read surrounding code for context before judging. Report ONLY genuine issues in the changed code; ' +
-  'do not invent issues and do not report pre-existing code outside the diff. If a slice is clean, return an empty findings array.'
+  'do not invent issues and do not report pre-existing code outside the diff. If a slice is clean, return an empty findings array. ' +
+  'Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs live in the ticket status log, never in the report.'
 
 // One pipeline item per (group x lens). Stage 1 reviews; stage 2 verifies each finding adversarially.
 const UNITS = []

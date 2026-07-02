@@ -17,20 +17,22 @@ const COMMON = [
   'ENVIRONMENT: backend — dotnet build <proj>.csproj then dotnet test <proj>.csproj --no-build (VS host-DLL locks; build the specific project). Real Postgres via Testcontainers is up — the atomic/failure/survives-erasure tests are real-Postgres integration tests. Baseline green: Cleansia.Tests 1580, IntegrationTests 79, HostTests 51. ANY new red is YOURS.',
   'OWNER-ONLY (never run): dotnet ef, npm run generate-*-client, NSwag client edits. T-0285 adds a new admin query DTO → record MANUAL_STEP nswag-regen (do NOT regen — T-0286 UI is held for the owner to do it). C# files keep their existing BOM (repo norm); no mojibake.',
   'Comment discipline: NO ticket IDs in source; default no comment. Update your ticket: status -> review, append status-log. Final message is data for the orchestrator.',
+  'Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs live in the ticket status log, never in the report.',
 ].join('\n')
 
 const DEV_SCHEMA = {
   type: 'object',
   required: ['summary', 'filesChanged', 'testEvidence', 'verificationAchieved', 'manualSteps', 'deviations'],
   properties: {
-    summary: { type: 'string' }, filesChanged: { type: 'array', items: { type: 'string' } },
-    testEvidence: { type: 'string' }, verificationAchieved: { type: 'string' },
-    manualSteps: { type: 'array', items: { type: 'string' } }, deviations: { type: 'array', items: { type: 'string' } },
+    summary: { type: 'string', maxLength: 600 }, filesChanged: { type: 'array', items: { type: 'string', maxLength: 300 } },
+    testEvidence: { type: 'array', items: { type: 'string', maxLength: 300 }, description: 'short pointers: suite + counts + one-line verdict, never raw logs' },
+    verificationAchieved: { type: 'string', maxLength: 600 },
+    manualSteps: { type: 'array', items: { type: 'string', maxLength: 300 } }, deviations: { type: 'array', items: { type: 'string', maxLength: 300 } },
   },
 }
 const REVIEW_SCHEMA = {
   type: 'object', required: ['verdict', 'mustFix', 'notes'],
-  properties: { verdict: { type: 'string', enum: ['PASS', 'PASS-WITH-NOTES', 'FAIL'] }, mustFix: { type: 'array', items: { type: 'string' } }, notes: { type: 'array', items: { type: 'string' } } },
+  properties: { verdict: { type: 'string', enum: ['PASS', 'PASS-WITH-NOTES', 'FAIL'] }, mustFix: { type: 'array', items: { type: 'string', maxLength: 300 } }, notes: { type: 'array', items: { type: 'string', maxLength: 300 } } },
 }
 
 function reviewPrompt(t, dev) {

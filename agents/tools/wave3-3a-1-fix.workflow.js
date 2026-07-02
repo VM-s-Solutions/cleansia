@@ -58,6 +58,8 @@ TEST-FIRST for the new behavior (write the failing test, confirm red, then fix).
 task/finding-number refs in source (no // T-0174, // DA-2, // AC4), keep only ADR-NNNN/S-rule refs where
 load-bearing. Do NOT run dotnet ef / npm generate — flag manual_step. Build src/Cleansia.Api.sln + run
 src/Cleansia.Tests green. For the IntegrationTests authz test, free port 5432 if needed (Testcontainers).
+Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs
+live in the ticket status log, never in the report.
 `
 
 phase('Design')

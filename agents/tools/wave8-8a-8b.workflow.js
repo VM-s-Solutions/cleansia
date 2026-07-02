@@ -20,20 +20,21 @@ const COMMON = [
   'Comment discipline: NO ticket IDs in source. conventions.md default = no comment.',
   'OWNER-ONLY (never run): dotnet ef, npm run generate-*-client, edits to NSwag clients. If your change alters a response/DTO shape, record MANUAL_STEP nswag-regen (do not regen).',
   'Update your ticket: status -> review, append status-log (what changed, test evidence, deviations, manual steps). Final message is data for the orchestrator.',
+  'Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs live in the ticket status log, never in the report.',
 ].join('\n')
 
 const DEV_SCHEMA = {
   type: 'object',
   required: ['summary', 'filesChanged', 'behaviorPreserved', 'verificationAchieved', 'manualSteps', 'deviations'],
   properties: {
-    summary: { type: 'string' }, filesChanged: { type: 'array', items: { type: 'string' } },
-    behaviorPreserved: { type: 'string' }, verificationAchieved: { type: 'string' },
-    manualSteps: { type: 'array', items: { type: 'string' } }, deviations: { type: 'array', items: { type: 'string' } },
+    summary: { type: 'string', maxLength: 600 }, filesChanged: { type: 'array', items: { type: 'string', maxLength: 300 } },
+    behaviorPreserved: { type: 'string', maxLength: 600 }, verificationAchieved: { type: 'string', maxLength: 600 },
+    manualSteps: { type: 'array', items: { type: 'string', maxLength: 300 } }, deviations: { type: 'array', items: { type: 'string', maxLength: 300 } },
   },
 }
 const REVIEW_SCHEMA = {
   type: 'object', required: ['verdict', 'mustFix', 'notes'],
-  properties: { verdict: { type: 'string', enum: ['PASS', 'PASS-WITH-NOTES', 'FAIL'] }, mustFix: { type: 'array', items: { type: 'string' } }, notes: { type: 'array', items: { type: 'string' } } },
+  properties: { verdict: { type: 'string', enum: ['PASS', 'PASS-WITH-NOTES', 'FAIL'] }, mustFix: { type: 'array', items: { type: 'string', maxLength: 300 } }, notes: { type: 'array', items: { type: 'string', maxLength: 300 } } },
 }
 
 function reviewPrompt(t, dev) {

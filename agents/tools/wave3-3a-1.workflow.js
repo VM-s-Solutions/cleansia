@@ -21,6 +21,8 @@ reason, then implement; an implementation-first change fails the review gate. Do
 (owner-only) — flag manual_step: ef-migration if schema changes. Do NOT run npm generate / hand-edit NSwag
 clients — flag manual_step: nswag-regen if a client DTO/endpoint surface changes. Build src/Cleansia.Api.sln
 + run src/Cleansia.Tests green before returning. Backend only (frontend halves are separate, held on regen).
+Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs
+live in the ticket status log, never in the report.
 `
 
 phase('Build')

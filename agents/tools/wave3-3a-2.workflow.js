@@ -22,6 +22,8 @@ refs in source (no // T-0170, // AC2, // DA-1); keep only load-bearing ADR-NNNN 
 dotnet ef / npm generate — flag manual_step. Build src/Cleansia.Api.sln + run src/Cleansia.Tests green
 (single-threaded if needed: the IntegrationFailureMetricsTests meter-listener flake is unrelated). Backend
 only — frontend (admin UI) is held for a later regen.
+Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs
+live in the ticket status log, never in the report.
 `
 
 phase('Build')

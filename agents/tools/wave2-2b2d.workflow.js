@@ -83,12 +83,12 @@ const T = {
 }
 
 const DEV_SCHEMA = { type: 'object', properties: {
-  ticket: { type: 'string' }, summary: { type: 'string' }, filesChanged: { type: 'array', items: { type: 'string' } },
-  manualSteps: { type: 'array', items: { type: 'string' } }, buildStatus: { type: 'string' }, testStatus: { type: 'string' }, decisions: { type: 'string' },
+  ticket: { type: 'string', maxLength: 300 }, summary: { type: 'string', maxLength: 600 }, filesChanged: { type: 'array', items: { type: 'string', maxLength: 300 } },
+  manualSteps: { type: 'array', items: { type: 'string', maxLength: 300 } }, buildStatus: { type: 'string', maxLength: 300 }, testStatus: { type: 'string', maxLength: 300 }, decisions: { type: 'string', maxLength: 600 },
 }, required: ['ticket', 'buildStatus', 'testStatus'] }
 const REVIEW_SCHEMA = { type: 'object', properties: {
-  ticket: { type: 'string' }, role: { type: 'string' }, verdict: { type: 'string', enum: ['APPROVED', 'CHANGES_REQUESTED'] }, acsCovered: { type: 'boolean' },
-  blockers: { type: 'array', items: { type: 'object', properties: { severity: { type: 'string', enum: ['blocker', 'major', 'minor', 'nit'] }, file: { type: 'string' }, issue: { type: 'string' }, fix: { type: 'string' } }, required: ['severity', 'issue'] } },
+  ticket: { type: 'string', maxLength: 300 }, role: { type: 'string', maxLength: 300 }, verdict: { type: 'string', enum: ['APPROVED', 'CHANGES_REQUESTED'] }, acsCovered: { type: 'boolean' },
+  blockers: { type: 'array', items: { type: 'object', properties: { severity: { type: 'string', enum: ['blocker', 'major', 'minor', 'nit'] }, file: { type: 'string', maxLength: 300 }, issue: { type: 'string', maxLength: 300 }, fix: { type: 'string', maxLength: 300 } }, required: ['severity', 'issue'] } },
 }, required: ['ticket', 'verdict'] }
 
 function bnr(id) {
@@ -96,7 +96,8 @@ function bnr(id) {
   return agent(
     t.dev + ' Follow conventions.md INCLUDING comment-discipline: NO tracker refs (// T-0xxx, // AC#, BLIND-#, DA-#, ADR sub-section ids like ' +
     'D-F4.2/CH-#) and NO WHAT-comments in source/tests — only genuine non-obvious WHY (stable ADR-NNNN and S1-S10 refs may stay). Reuse real ' +
-    'types (patterns-backend.md). Read the ticket + governing ADRs + catalogs first.',
+    'types (patterns-backend.md). Read the ticket + governing ADRs + catalogs first. ' +
+    'Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs live in the ticket status log, never in the report.',
     { label: `dev:${id}`, phase: 'Build', agentType: t.agent, schema: DEV_SCHEMA }
   ).then((dev) => {
     const revs = [() => agent(

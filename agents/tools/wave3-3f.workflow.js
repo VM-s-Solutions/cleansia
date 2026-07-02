@@ -13,6 +13,7 @@ const COMMON = [
   'cluster edit. TEST-FIRST (red->green) for authz/lockout/state logic. Comment discipline: no task-number',
   'refs. Do NOT run dotnet ef / npm generate — flag manual_step. Build src/Cleansia.Api.sln + run',
   'src/Cleansia.Tests green (single-threaded; the IntegrationFailureMetricsTests meter flake is unrelated).',
+  'Evidence fields are POINTERS not artifacts — terse counts + one-line verdict + key file:line; full logs live in the ticket status log, never in the report.',
 ].join('\n')
 
 phase('Build')

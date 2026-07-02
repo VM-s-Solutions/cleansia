@@ -17,6 +17,7 @@ specialist(s) — and a reviewer alongside each developer. This table is the dec
 | i18n keys / copy across the 5 locales | the relevant dev adds keys; flag wording questions to owner |
 | Any diff in `in_review` | `reviewer` (always) |
 | `security_touching: true` | `security` (in addition to reviewer) |
+| Spine / foundation / middleware / skeleton ticket (everything else stands on it) | the assigned dev + reviewer, flagged for **Gate 6.5** (behavioral non-stub) + an end-to-end test driving the real path |
 | Hot path, list view, paged query, new dependency, heavy UI | `optimizer` |
 | PR/diff ready for behavioral verification | `qa` |
 | Shipped behavior changed; docs/changelog stale | `docs` |
@@ -30,15 +31,24 @@ specialist(s) — and a reviewer alongside each developer. This table is the dec
 3. **Fan out independent tickets.** Multiple instances of the same charter run concurrently on
    *different* tickets (e.g. two `backend` instances on two unrelated features). Never two instances
    editing the same files at once — the PM serializes those. This applies especially to the **shared-file
-   clusters** (`consistency.md`, `INDEX.md`, the per-app i18n bundles, the `Policy.cs`/`PolicyBuilder.cs`
-   pair): they get a **single serialized lane**, and parallel agents must **edit only their own hunks and
-   never `git restore` a shared file** (a blanket revert wipes a sibling ticket's work — see
-   `quality-gates.md` §"Serialize shared-file lanes …" for the 2026-06-23 incident).
+   clusters** — maintained as a data list in [`shared-file-lanes.md`](./shared-file-lanes.md), which the
+   PM validates every parallel batch's lane assignments against before dispatch — (`consistency.md`,
+   `INDEX.md`, the per-app i18n bundles, the 3-file `Policy.cs`/`PolicyBuilder.cs`/
+   `FrozenPermissionMapTests.cs` cluster): they get a **single serialized lane**, and parallel agents
+   must **edit only their own hunks and never `git restore` a shared file** (a blanket revert wipes a
+   sibling ticket's work — see `quality-gates.md` §"Serialize shared-file lanes …" for the 2026-06-23
+   incident).
 4. **Platforms parallel.** `android` and `ios` run together off the same locked contract.
 5. **Gates last.** `security` / `optimizer` / `qa` run after implementation + review converge,
    before merge.
 6. **Manual steps block.** If a ticket needs an EF migration or NSwag regen, the PM flags it to the
    owner and **holds** the dependent layer until confirmed.
+7. **Spine tickets gate harder.** A ticket that builds a *spine / foundation / middleware / skeleton*
+   (the change everything else will stand on) is flagged at routing time as requiring **Gate 6.5**
+   (behavioral non-stub — at least one test fails if the implementation is stubbed to the empty/default
+   value) **plus an end-to-end test that drives the real path**, not just the units around it. The PM
+   writes the flag into the ticket so the dev builds to it and the reviewer gates on it
+   (`quality-gates.md` Gate 6.5).
 
 ## What the PM does NOT do
 

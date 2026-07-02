@@ -90,4 +90,8 @@ branch.
 - Do not run EF migrations or NSwag regen — flag them.
 - Do not put logic in controllers, skip pipeline behaviors, expose `IQueryable` from repos, swallow
   exceptions, log PII above Debug, or add an endpoint without an authorization attribute.
+- **NEVER run `git restore` / `git checkout --` / `git reset` on ANY file you did not create in this
+  ticket** — in a parallel batch a blanket revert silently wipes a sibling ticket's work
+  (`agents/process/shared-file-lanes.md`). If a shared file looks contaminated, report it in the
+  ticket for the PM; do not revert it.
 - Do not commit or push unless the owner asks.

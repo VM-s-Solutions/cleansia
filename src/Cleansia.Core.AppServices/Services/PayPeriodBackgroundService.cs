@@ -318,21 +318,14 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             return null;
         }
 
-        var subTotal = orderPays.Sum(p => p.BasePay + p.ExtrasPay + p.ExpensesPay);
-        var bonusAmount = orderPays.Sum(p => p.BonusPay);
-        var deductionAmount = orderPays.Sum(p => p.DeductionPay);
-
         var currency = await _currencyRepository.GetByCodeAsync(employee.PreferredCurrencyCode ?? string.Empty, cancellationToken) ??
                        await _currencyRepository.GetDefaultAsync(cancellationToken);
 
-        var invoice = EmployeeInvoice.Create(
+        var invoice = EmployeeInvoice.CreateFromOrderPays(
             employee.Id,
             period.Id,
-            orderPays.Count,
-            subTotal,
-            currency!.Id,
-            bonusAmount,
-            deductionAmount);
+            orderPays,
+            currency!.Id);
 
         _employeeInvoiceRepository.Add(invoice);
 

@@ -97,6 +97,32 @@ public class GenerateInvoiceCommandHandlerTests
     }
 
     [Fact]
+    public async Task Clamped_Pay_Is_Invoiced_At_Persisted_TotalPay_Not_Raw_Components()
+    {
+        // MaximumPay clamped the first order to 400 at calculation time (its components sum to
+        // 650). The invoice must bill the persisted TotalPay — the same basis the period-pays
+        // preview (GrandTotal = Σ TotalPay) shows the admin and the employee.
+        var pays = new[]
+        {
+            ClampedOrderPay(basePay: 500m, extrasPay: 100m, expensesPay: 50m, clampedTotalPay: 400m),
+            PayrollMockFactory.OrderPay(basePay: 100m)
+        };
+        ArrangeOrderPays(pays);
+        EmployeeInvoice? added = null;
+        _invoiceRepository.Setup(r => r.Add(It.IsAny<EmployeeInvoice>()))
+            .Callback<EmployeeInvoice>(i => added = i);
+
+        var result = await CreateHandler().Handle(
+            new GenerateInvoice.Command(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(added);
+        Assert.Equal(pays.Sum(p => p.TotalPay), added!.TotalAmount);
+        Assert.Equal(500m, added.SubTotal);
+        Assert.Equal(500m, added.TotalAmount);
+    }
+
+    [Fact]
     public async Task Net_Negative_Pay_Set_Clamps_Invoice_Total_To_Zero()
     {
         var pays = new[]
@@ -114,4 +140,17 @@ public class GenerateInvoiceCommandHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(0m, added!.TotalAmount);
     }
+
+    // PayrollMockFactory derives TotalPay from the components, so a pay where the min/max clamp
+    // fired (TotalPay < components sum) has to be created directly.
+    private static OrderEmployeePay ClampedOrderPay(
+        decimal basePay, decimal extrasPay, decimal expensesPay, decimal clampedTotalPay) =>
+        OrderEmployeePay.Create(
+            orderId: $"order-{Guid.NewGuid():N}",
+            employeeId: EmployeeId,
+            payPeriodId: PayPeriodId,
+            basePay: basePay,
+            extrasPay: extrasPay,
+            expensesPay: expensesPay,
+            totalPay: clampedTotalPay);
 }

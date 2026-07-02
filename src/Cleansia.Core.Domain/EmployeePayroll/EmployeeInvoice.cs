@@ -127,6 +127,24 @@ public class EmployeeInvoice : Auditable, ITenantEntity
         };
     }
 
+    public static EmployeeInvoice CreateFromOrderPays(
+        string employeeId,
+        string payPeriodId,
+        IReadOnlyCollection<OrderEmployeePay> orderPays,
+        string currencyId)
+    {
+        var (subTotal, bonusAmount, deductionAmount) = SumPayAmounts(orderPays);
+
+        return Create(
+            employeeId,
+            payPeriodId,
+            orderPays.Count,
+            subTotal,
+            currencyId,
+            bonusAmount,
+            deductionAmount);
+    }
+
     public EmployeeInvoice AddOrderPays(IEnumerable<OrderEmployeePay> orderPays)
     {
         foreach (var pay in orderPays)
@@ -135,7 +153,7 @@ public class EmployeeInvoice : Auditable, ITenantEntity
         }
 
         TotalOrders = _orderPays.Count;
-        SubTotal = _orderPays.Sum(p => p.TotalPay);
+        (SubTotal, BonusAmount, DeductionAmount) = SumPayAmounts(_orderPays);
         TotalAmount = SubTotal + BonusAmount - DeductionAmount;
 
         if (TotalAmount < 0)
@@ -144,6 +162,29 @@ public class EmployeeInvoice : Auditable, ITenantEntity
         }
 
         return this;
+    }
+
+    // TotalPay is the per-order amount actually owed: the min/max clamp was applied to it at
+    // calculation time and the pay mutators fold BonusPay/DeductionPay into it. SubTotal is
+    // therefore derived by backing bonus/deduction OUT of TotalPay — re-summing the raw
+    // BasePay/ExtrasPay/ExpensesPay components would silently undo the clamp, and adding
+    // bonus/deduction on top of Σ TotalPay would count them twice. Invariant:
+    // TotalAmount == Σ TotalPay, the same basis the period-pays preview (GrandTotal) shows.
+    private static (decimal SubTotal, decimal BonusAmount, decimal DeductionAmount) SumPayAmounts(
+        IEnumerable<OrderEmployeePay> orderPays)
+    {
+        var subTotal = 0m;
+        var bonusAmount = 0m;
+        var deductionAmount = 0m;
+
+        foreach (var pay in orderPays)
+        {
+            subTotal += pay.TotalPay - pay.BonusPay + pay.DeductionPay;
+            bonusAmount += pay.BonusPay;
+            deductionAmount += pay.DeductionPay;
+        }
+
+        return (subTotal, bonusAmount, deductionAmount);
     }
 
     public EmployeeInvoice SetPdfBlobUrl(string pdfBlobUrl)

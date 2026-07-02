@@ -78,24 +78,17 @@ public class GenerateInvoice
             var orderPays = await orderEmployeePayRepository.GetUnassignedForEmployeePeriodAsync(
                 command.EmployeeId, command.PayPeriodId, cancellationToken);
 
-            var subTotal = orderPays.Sum(p => p.BasePay + p.ExtrasPay + p.ExpensesPay);
-            var bonusAmount = orderPays.Sum(p => p.BonusPay);
-            var deductionAmount = orderPays.Sum(p => p.DeductionPay);
-
             var currencyCode = await currencyResolutionService
                 .ResolveCurrencyCodeForEmployeeAsync(command.EmployeeId, cancellationToken);
             var currency = (currencyCode is not null
                 ? await currencyRepository.GetByCodeAsync(currencyCode, cancellationToken)
                 : null) ?? await currencyRepository.GetDefaultAsync(cancellationToken);
 
-            var invoice = EmployeeInvoice.Create(
+            var invoice = EmployeeInvoice.CreateFromOrderPays(
                 command.EmployeeId,
                 command.PayPeriodId,
-                orderPays.Count,
-                subTotal,
-                currency.Id,
-                bonusAmount,
-                deductionAmount);
+                orderPays,
+                currency.Id);
 
             invoiceRepository.Add(invoice);
 

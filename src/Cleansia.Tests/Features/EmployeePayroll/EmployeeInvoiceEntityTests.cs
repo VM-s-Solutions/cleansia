@@ -46,6 +46,42 @@ public class EmployeeInvoiceEntityTests
         Assert.Equal(5.50m, invoice.DeductionAmount);
     }
 
+    // ── invoice-from-pays formula: bills Σ TotalPay, no double count ──
+
+    [Fact]
+    public void CreateFromOrderPays_Bills_Sum_Of_TotalPay_Without_Double_Counting_Bonus_Deduction()
+    {
+        // TotalPay already folds bonus/deduction in (100 + 20 - 5 = 115). The invoice must show
+        // the bonus/deduction lines AND still total 115, not add them again on top.
+        var pays = new[] { PayrollMockFactory.OrderPay(basePay: 100m, bonusPay: 20m, deductionPay: 5m) };
+
+        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, "currency-1");
+
+        Assert.Equal(100m, invoice.SubTotal);
+        Assert.Equal(20m, invoice.BonusAmount);
+        Assert.Equal(5m, invoice.DeductionAmount);
+        Assert.Equal(pays.Sum(p => p.TotalPay), invoice.TotalAmount);
+        Assert.Equal(115m, invoice.TotalAmount);
+    }
+
+    [Fact]
+    public void CreateFromOrderPays_And_AddOrderPays_Agree_On_The_Same_Pays()
+    {
+        var pays = new[]
+        {
+            PayrollMockFactory.OrderPay(basePay: 100m, extrasPay: 15m, bonusPay: 20m, deductionPay: 5m),
+            PayrollMockFactory.OrderPay(basePay: 250m, expensesPay: 12.50m)
+        };
+
+        var created = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, "currency-1");
+        var added = PayrollMockFactory.Invoice(totalOrders: 0, subTotal: 0m).AddOrderPays(pays);
+
+        Assert.Equal(created.SubTotal, added.SubTotal);
+        Assert.Equal(created.BonusAmount, added.BonusAmount);
+        Assert.Equal(created.DeductionAmount, added.DeductionAmount);
+        Assert.Equal(created.TotalAmount, added.TotalAmount);
+    }
+
     // ── AC9: invoice number shape, payment reference, uniqueness ─────
 
     [Fact]

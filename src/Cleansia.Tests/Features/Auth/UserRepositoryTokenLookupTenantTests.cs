@@ -3,12 +3,13 @@ using System.Text.RegularExpressions;
 namespace Cleansia.Tests.Features.Auth;
 
 /// <summary>
-/// The anonymous confirm/reset hashed-token lookups must NOT bypass the
+/// The anonymous confirm hashed-token lookups must NOT bypass the
 /// global tenant filter with <c>IgnoreQueryFilters()</c> (which would let a hashed token match
-/// cross-tenant). The repo exposes <c>GetByIdIgnoringTenantAsync</c> for system
-/// triggers, but the confirm/reset flows must NOT route through it. This source-level guard pins that
-/// the confirm-lookup methods stay inside the global filter and that only the explicitly-named
-/// cross-tenant method (and the base helper) carry <c>IgnoreQueryFilters</c>.
+/// cross-tenant). The repo does expose deliberate bypasses — the <c>*IgnoringTenant*</c> lookups for
+/// system triggers and the anonymous login path, plus the login-lockout / reset-budget charges that
+/// must land for tenant-stamped accounts on anonymous requests — but the confirm-token flows must NOT
+/// route through them. This source-level guard pins that the confirm-lookup methods stay inside the
+/// global filter and that <c>IgnoreQueryFilters</c> appears only in the enumerated bypass methods.
 /// </summary>
 public class UserRepositoryTokenLookupTenantTests
 {
@@ -44,17 +45,31 @@ public class UserRepositoryTokenLookupTenantTests
         }
     }
 
-    // IgnoreQueryFilters() is only CALLED in the explicitly-named cross-tenant helper, never the
-    // confirm/reset flows. (GetByIdIgnoringTenantAsync is the sole intentional bypass.)
+    // IgnoreQueryFilters() is only CALLED in the enumerated bypass methods (the named cross-tenant /
+    // anonymous-login lookups and the anonymous lockout/reset-budget charges), never the confirm flows.
+    // Adding a bypass anywhere else must consciously extend this list.
     [Fact]
-    public void IgnoreQueryFilters_Is_Confined_To_The_Named_Cross_Tenant_Method()
+    public void IgnoreQueryFilters_Is_Confined_To_The_Enumerated_Bypass_Methods()
     {
         var source = ReadRepositorySource();
 
         var occurrences = Regex.Matches(source, IgnoreCall).Count;
-        var inNamedBypass = Regex.Matches(ExtractMethodBody(source, "GetByIdIgnoringTenantAsync"), IgnoreCall).Count;
+        var inNamedBypasses = new[]
+            {
+                "GetByIdIgnoringTenantAsync",
+                "GetByEmailIgnoringTenantAsync",
+                "ExistsWithEmailIgnoringTenantAsync",
+                "RecordFailedLoginAsync",
+                "TryChargeResetPasswordCodeAttemptAsync",
+                // The OTP confirm branch resolves the account by email (anonymous), so its budget
+                // charge must land for tenant-stamped accounts too — mirrors the reset charge above.
+                // The confirm-token HASH lookups stay filtered (the test above); only the charge is a
+                // bypass.
+                "TryChargeConfirmationCodeAttemptAsync",
+            }
+            .Sum(method => Regex.Matches(ExtractMethodBody(source, method), IgnoreCall).Count);
 
-        Assert.Equal(inNamedBypass, occurrences);
+        Assert.Equal(inNamedBypasses, occurrences);
     }
 
     // Extracts a single method's brace-balanced body by name.

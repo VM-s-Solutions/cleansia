@@ -46,7 +46,7 @@ public class PartnerLogin
     {
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var user = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
+            var user = await userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
 
             if (user is null || !user.IsActive)
             {

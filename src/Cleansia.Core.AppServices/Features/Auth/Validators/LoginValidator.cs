@@ -13,6 +13,8 @@ namespace Cleansia.Core.AppServices.Features.Auth.Validators;
 /// password gate (Cascade.Stop so a locked account never evaluates the password), and the failed-login
 /// counting are defined once here. Each host's login command — Login, PartnerLogin, AdminLogin — derives
 /// from this with its own field selectors; the per-host profile gate lives in the handler, not here.
+/// All user reads go through the IgnoringTenant variants: login is anonymous (no tenant claim), so the
+/// global tenant filter would otherwise hide every tenant-stamped account.
 /// </summary>
 public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
 {
@@ -59,7 +61,7 @@ public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .WithMessage(BusinessErrorMessage.Required)
-            .MustAsync(userRepository.ExistsWithEmailAsync)
+            .MustAsync(userRepository.ExistsWithEmailIgnoringTenantAsync)
             .WithMessage(BusinessErrorMessage.NotExistingUserWithEmail)
             .WithErrorCode(emailName)
             .MustAsync(UserAuthenticationTypeIsInternal)
@@ -74,7 +76,7 @@ public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
 
     private async Task<bool> UserAuthenticationTypeIsInternal(string email, CancellationToken cancellationToken)
     {
-        var user = await userRepository.GetByEmailAsync(email, cancellationToken);
+        var user = await userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
         return user is not null && user.AuthenticationType == AuthenticationType.Internal;
     }
 
@@ -87,7 +89,7 @@ public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
     // standing, identical to the baseline lockout behavior, so a credential-sprayer gains no new oracle.
     private async Task<bool> AccountIsNotLockedOutOrTrustedDevice(string email, string? trustedDeviceToken, CancellationToken cancellationToken)
     {
-        var user = await userRepository.GetByEmailAsync(email, cancellationToken);
+        var user = await userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
         if (user is null || !user.IsLockedOut(DateTimeOffset.UtcNow))
         {
             return true;
@@ -111,7 +113,7 @@ public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
 
     private async Task<bool> HasValidPassword(string email, string password, CancellationToken cancellationToken)
     {
-        var userEntity = await userRepository.GetByEmailAsync(email, cancellationToken);
+        var userEntity = await userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
         if (userEntity is null)
         {
             return false;

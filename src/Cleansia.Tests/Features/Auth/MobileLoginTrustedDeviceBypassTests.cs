@@ -54,8 +54,8 @@ public class MobileLoginTrustedDeviceBypassTests
         User user, RefreshToken? tokenByHash = null)
     {
         var users = new Mock<IUserRepository>();
-        users.Setup(r => r.ExistsWithEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        users.Setup(r => r.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        users.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        users.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         var tokens = new Mock<IRefreshTokenRepository>();
         tokens.Setup(r => r.GetByTokenHashAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

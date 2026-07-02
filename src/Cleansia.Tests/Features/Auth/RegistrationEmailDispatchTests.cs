@@ -107,7 +107,7 @@ public class RegistrationEmailDispatchTests
     {
         var user = User.CreateWithPassword(Email, "Password1!@abc", "John", "Doe");
         user.UpdateLanguagePreference("uk");
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         var handler = new RequestPasswordChange.Handler(_userRepository.Object, _pending);
 
@@ -124,7 +124,7 @@ public class RegistrationEmailDispatchTests
     {
         var user = User.CreateWithPassword(Email, "Password1!@abc", "John", "Doe");
         user.UpdateLanguagePreference(null);
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         var handler = new RequestPasswordChange.Handler(_userRepository.Object, _pending);
 

@@ -24,7 +24,7 @@ public class ChangePassword
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .WithErrorCode(nameof(Command.Email))
-                .MustAsync(userRepository.ExistsWithEmailAsync)
+                .MustAsync(userRepository.ExistsWithEmailIgnoringTenantAsync)
                 .WithErrorCode(nameof(Command.Email))
                 .WithMessage(BusinessErrorMessage.NotExistingUserWithEmail);
 
@@ -47,7 +47,7 @@ public class ChangePassword
                     .WithErrorCode(nameof(Command.NewPassword))
                     .WithMessage(BusinessErrorMessage.SameResetPassword)
                 .When(c => !string.IsNullOrWhiteSpace(c.Code) && !string.IsNullOrWhiteSpace(c.NewPassword))
-                .WhenAsync((c, cc) => userRepository.ExistsWithEmailAsync(c.Email, cc));
+                .WhenAsync((c, cc) => userRepository.ExistsWithEmailIgnoringTenantAsync(c.Email, cc));
         }
 
         // The reset command is email-bound, so every guess against an account holding an ACTIVE
@@ -56,7 +56,7 @@ public class ChangePassword
         // (ADR-0003 residual: per-code attempt cap). A fresh code re-grants the budget.
         private async Task<bool> HasAttemptBudgetAsync(Command command, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByEmailAsync(command.Email, cancellationToken);
+            var user = await _userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
             if (user?.ResetPasswordCode is null)
             {
                 return true;
@@ -69,7 +69,7 @@ public class ChangePassword
         {
             // lookup is (email, HASH of token). The reset token is stored hashed,
             // so hash the supplied raw code and compare — no plaintext comparison remains.
-            var user = await _userRepository.GetByEmailAsync(command.Email, cancellationToken);
+            var user = await _userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
 
             return user is not null &&
                    user.ResetPasswordCode is not null &&
@@ -80,7 +80,7 @@ public class ChangePassword
 
         private async Task<bool> CheckIfPasswordDifferentAsync(Command command, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByEmailAsync(command.Email, cancellationToken);
+            var user = await _userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
             return user is not null && !command.NewPassword.CheckIfPasswordSame(user.Password!);
         }
     }
@@ -99,7 +99,7 @@ public class ChangePassword
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var user = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
+            var user = await userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
             user!.UpdatePassword(command.NewPassword);
             user.ClearResetPasswordToken();
 

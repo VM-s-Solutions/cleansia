@@ -78,7 +78,9 @@ public class RefreshToken
                     new Error(nameof(Command.Token), BusinessErrorMessage.InvalidRefreshToken));
             }
 
-            var user = await userRepository.GetByIdAsync(issued.Record.UserId, cancellationToken);
+            // The refresh request is anonymous (the refresh token is the credential), so the tenant
+            // filter would hide a tenant-stamped user; the rotated token's own UserId is the scope.
+            var user = await userRepository.GetByIdIgnoringTenantAsync(issued.Record.UserId, cancellationToken);
             if (user is null || !user.IsActive)
             {
                 return BusinessResult.Failure<JwtTokenResponse>(

@@ -40,8 +40,8 @@ public class ChangePasswordSecurityTests
     private static Mock<IUserRepository> RepoFor(User user)
     {
         var repo = new Mock<IUserRepository>();
-        repo.Setup(r => r.ExistsWithEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        repo.Setup(r => r.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        repo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        repo.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         // Attempt budget available — the per-code cap is covered by ChangePasswordAttemptCapTests.
         repo.Setup(r => r.TryChargeResetPasswordCodeAttemptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
         return repo;
@@ -70,9 +70,9 @@ public class ChangePasswordSecurityTests
         var wrongUser = UserWithResetToken(WrongEmail, SecurityTokens.Hash(SecurityTokens.Generate()), DateTimeOffset.UtcNow.AddMinutes(15));
 
         var repo = new Mock<IUserRepository>();
-        repo.Setup(r => r.ExistsWithEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        repo.Setup(r => r.GetByEmailAsync(RightEmail, It.IsAny<CancellationToken>())).ReturnsAsync(rightUser);
-        repo.Setup(r => r.GetByEmailAsync(WrongEmail, It.IsAny<CancellationToken>())).ReturnsAsync(wrongUser);
+        repo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        repo.Setup(r => r.GetByEmailIgnoringTenantAsync(RightEmail, It.IsAny<CancellationToken>())).ReturnsAsync(rightUser);
+        repo.Setup(r => r.GetByEmailIgnoringTenantAsync(WrongEmail, It.IsAny<CancellationToken>())).ReturnsAsync(wrongUser);
         repo.Setup(r => r.TryChargeResetPasswordCodeAttemptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var validator = new ChangePassword.Validator(repo.Object);

@@ -23,6 +23,22 @@ public interface IUserRepository : IRepository<User, string>
     Task<User?> GetByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default);
     Task<User?> GetByEmailOrPhoneNumberAsync(string email, string phoneNumber, CancellationToken cancellationToken = default);
     Task<bool> ExistsWithEmailAsync(string email, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Anonymous-path variant of <see cref="GetByEmailAsync"/> for login / lockout / password-reset.
+    /// Those requests carry no tenant claim, so the global tenant filter narrows every read to
+    /// <c>TenantId == null</c> and a tenant-stamped account could never log in. Bypasses the filter;
+    /// the caller-supplied email is the scope. Never use it on authenticated or registration
+    /// surfaces — email uniqueness is per-tenant (the (TenantId, Email) unique index), so those must
+    /// stay inside the filter.
+    /// </summary>
+    Task<User?> GetByEmailIgnoringTenantAsync(string email, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Anonymous-path variant of <see cref="ExistsWithEmailAsync"/>; same contract and constraints
+    /// as <see cref="GetByEmailIgnoringTenantAsync"/>.
+    /// </summary>
+    Task<bool> ExistsWithEmailIgnoringTenantAsync(string email, CancellationToken cancellationToken = default);
     Task<bool> ExistsWithConfirmationCodeAsync(string token, CancellationToken cancellationToken = default);
     Task<User?> GetByConfirmationCodeAsync(string token, CancellationToken cancellationToken = default);
     IQueryable<User> GetUnconfirmedUsersOlderThan(DateTime cutoffDate);
@@ -31,9 +47,10 @@ public interface IUserRepository : IRepository<User, string>
 
     /// <summary>
     /// Cross-tenant lookup by user id. Use only from system-level triggers
-    /// (Stripe webhook, Azure Function) that have no tenant context. Caller
-    /// MUST set <see cref="ITenantProvider.SetTenantOverride"/> with
-    /// <c>user.TenantId</c> before mutating any tenant-scoped row.
+    /// (Stripe webhook, Azure Function) and the anonymous refresh path, which
+    /// have no tenant context. Caller MUST set
+    /// <see cref="ITenantProvider.SetTenantOverride"/> with <c>user.TenantId</c>
+    /// before mutating any tenant-scoped row.
     /// </summary>
     Task<User?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken = default);
 

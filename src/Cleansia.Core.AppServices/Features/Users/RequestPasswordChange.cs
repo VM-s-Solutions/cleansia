@@ -19,7 +19,9 @@ public class RequestPasswordChange
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .WithErrorCode(nameof(Command.Email))
-                .MustAsync(userRepository.ExistsWithEmailAsync)
+                // Anonymous forgot-password request — the IgnoringTenant read reaches
+                // tenant-stamped accounts the ambient-null tenant filter would hide.
+                .MustAsync(userRepository.ExistsWithEmailIgnoringTenantAsync)
                 .WithErrorCode(nameof(Command.Email))
                 .WithMessage(BusinessErrorMessage.NotExistingUserWithEmail);
         }
@@ -37,7 +39,7 @@ public class RequestPasswordChange
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
-            var user = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
+            var user = await userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
             // email the RAW reset token returned by the generator; the row keeps
             // only the hash (never read the persisted hashed column back into the email).
             var rawResetToken = user!.UpdateResetPasswordToken();

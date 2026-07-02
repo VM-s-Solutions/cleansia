@@ -56,6 +56,27 @@ public class UserRepository(CleansiaDbContext context)
         return GetDbSet().AnyAsync(user => user.Email == email, cancellationToken);
     }
 
+    // Login / lockout / password-reset run on ANONYMOUS requests (no tenant claim), so the global
+    // tenant filter narrows every read to TenantId == null and a tenant-stamped account could never
+    // log in. IgnoreQueryFilters(); the caller-supplied email is the scope. Registration keeps the
+    // filtered lookups — email uniqueness is per-tenant (the (TenantId, Email) unique index), so its
+    // duplicate pre-check must stay tenant-scoped.
+    public Task<User?> GetByEmailIgnoringTenantAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return GetDbSet()
+            .IgnoreQueryFilters()
+            .Include(user => user.Employee)
+            .FirstOrDefaultAsync(user => user.Email == email, cancellationToken);
+    }
+
+    // Anonymous-path existence check; the comment above applies.
+    public Task<bool> ExistsWithEmailIgnoringTenantAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return GetDbSet()
+            .IgnoreQueryFilters()
+            .AnyAsync(user => user.Email == email, cancellationToken);
+    }
+
     // The confirmation token is stored as a SHA-256 hash, so the incoming RAW
     // token is hashed and matched against the stored hash. Stays inside the global tenant filter
     // (no IgnoreQueryFilters) — a hashed token must not match cross-tenant.
@@ -104,11 +125,16 @@ public class UserRepository(CleansiaDbContext context)
     // and the WHERE makes attempts during an open lockout a no-op so racing failures cannot extend it.
     // Hitting the threshold opens the window and resets the counter, so cooldown expiry restores a
     // fresh budget.
+    //
+    // IgnoreQueryFilters(): the failing login is anonymous (no tenant claim), so the filter would
+    // narrow the WHERE to TenantId == null and a tenant-stamped account would never accrue failures
+    // or lock — the email keys the scope, matching the login lookup.
     public async Task RecordFailedLoginAsync(string email, DateTimeOffset now, CancellationToken cancellationToken = default)
     {
         var lockoutEnd = now.Add(User.FailedLoginLockout);
 
         await GetDbSet()
+            .IgnoreQueryFilters()
             .Where(u => u.Email == email && (u.LockoutEndsAt == null || u.LockoutEndsAt <= now))
             .ExecuteUpdateAsync(s => s
                 .SetProperty(
@@ -145,7 +171,12 @@ public class UserRepository(CleansiaDbContext context)
     public async Task<bool> TryChargeConfirmationCodeAttemptAsync(string userId, CancellationToken cancellationToken = default)
     {
         // S7a — atomic conditional increment; 0 rows affected = budget spent (no exception).
+        // IgnoreQueryFilters(): the confirm flow is anonymous (no tenant claim), so the filter would
+        // zero-match a tenant-stamped account and wrongly refuse its confirmation as budget-spent. The
+        // id comes from the account the anonymous email lookup resolved (the OTP branch of
+        // ConfirmUserEmail), so the scope never widens. Mirrors TryChargeResetPasswordCodeAttemptAsync.
         var rowsAffected = await GetDbSet()
+            .IgnoreQueryFilters()
             .Where(u => u.Id == userId && u.ConfirmationCodeAttempts < User.MaxCodeVerificationAttempts)
             .ExecuteUpdateAsync(
                 s => s.SetProperty(u => u.ConfirmationCodeAttempts, u => u.ConfirmationCodeAttempts + 1),
@@ -157,7 +188,11 @@ public class UserRepository(CleansiaDbContext context)
     public async Task<bool> TryChargeResetPasswordCodeAttemptAsync(string userId, CancellationToken cancellationToken = default)
     {
         // S7a — atomic conditional increment; 0 rows affected = budget spent (no exception).
+        // IgnoreQueryFilters(): the reset flow is anonymous (no tenant claim), so the filter would
+        // zero-match a tenant-stamped account and wrongly refuse its reset as budget-spent. The id
+        // comes from the account the anonymous email lookup resolved, so the scope never widens.
         var rowsAffected = await GetDbSet()
+            .IgnoreQueryFilters()
             .Where(u => u.Id == userId && u.ResetPasswordCodeAttempts < User.MaxCodeVerificationAttempts)
             .ExecuteUpdateAsync(
                 s => s.SetProperty(u => u.ResetPasswordCodeAttempts, u => u.ResetPasswordCodeAttempts + 1),

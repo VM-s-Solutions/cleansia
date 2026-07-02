@@ -48,7 +48,7 @@ public class RefreshTokenDoesNotRecordLoginTests
             .Setup(s => s.RotateAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new IssuedRefreshToken("new-raw-token", record));
         _userRepository
-            .Setup(r => r.GetByIdAsync(customer.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdIgnoringTenantAsync(customer.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(customer);
 
         var result = await Handle(new RefreshTokenCmd.Command("any")

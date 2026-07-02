@@ -62,7 +62,7 @@ public class GoogleAuth
                     new Error(nameof(Command.Token), BusinessErrorMessage.InvalidGoogleUserToken));
             }
 
-            var user = await userRepository.GetByEmailAsync(claims.Email, cancellationToken);
+            var user = await userRepository.GetByEmailIgnoringTenantAsync(claims.Email, cancellationToken);
             if (user is not null)
             {
                 // S1: the account-type guard MUST run against the account the handler

@@ -61,7 +61,7 @@ public class RefreshTokenProfileGateHandlerTests
             .Setup(s => s.RotateAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new IssuedRefreshToken("new-raw-token", record));
         _userRepository
-            .Setup(r => r.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdIgnoringTenantAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
     }
 

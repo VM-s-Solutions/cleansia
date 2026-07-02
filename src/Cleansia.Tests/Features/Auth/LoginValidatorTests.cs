@@ -78,8 +78,8 @@ public class LoginValidatorTests
     {
         // Arrange
         var email = "nonexistent@example.com";
-        _mockRepo.Setup(r => r.ExistsWithEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(false);
-        _mockRepo.Setup(r => r.GetByEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync((User)null);
+        _mockRepo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync((User)null);
         var command = new Login.Command(email, "password", true);
 
         // Act
@@ -97,8 +97,8 @@ public class LoginValidatorTests
     {
         // Arrange
         var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { AuthenticationType = AuthenticationType.Google });
-        _mockRepo.Setup(r => r.ExistsWithEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        _mockRepo.Setup(r => r.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _mockRepo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         var command = new Login.Command(user.Email, "password", true);
 
         // Act
@@ -116,8 +116,8 @@ public class LoginValidatorTests
     {
         // Arrange
         var user = UserMockFactory.Generate();
-        _mockRepo.Setup(r => r.ExistsWithEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        _mockRepo.Setup(r => r.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _mockRepo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         var command = new Login.Command(user.Email, string.Empty, true);
 
         // Act
@@ -134,8 +134,8 @@ public class LoginValidatorTests
     {
         // Arrange
         var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { Password = TestUtilities.Constants.TestUserSession.TestUserPassword.HashAndSaltPassword() });
-        _mockRepo.Setup(r => r.ExistsWithEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        _mockRepo.Setup(r => r.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _mockRepo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         var command = new Login.Command(user.Email, TestUtilities.Constants.TestUserSession.TestUserPassword + "s", true);
 
         // Act
@@ -153,8 +153,8 @@ public class LoginValidatorTests
         // Arrange
         const string password = TestUtilities.Constants.TestUserSession.TestUserPassword;
         var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { Password = password.HashAndSaltPassword() });
-        _mockRepo.Setup(r => r.ExistsWithEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        _mockRepo.Setup(r => r.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _mockRepo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         var command = new Login.Command(user.Email, password, true);
 
         // Act

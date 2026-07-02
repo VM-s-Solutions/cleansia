@@ -36,7 +36,7 @@ public class LoginHandlerProfileGateTests
     private static (Mock<ITokenService> tokenService, Mock<IUserRepository> repo) Arrange(User user)
     {
         var repo = new Mock<IUserRepository>();
-        repo.Setup(r => r.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        repo.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         var tokenService = new Mock<ITokenService>();
         tokenService

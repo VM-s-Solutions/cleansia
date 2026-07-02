@@ -67,13 +67,13 @@ public class AppleAuthHandlerTests
             .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AppleVerifiedClaims(verifiedSubject, verifiedEmail, EmailVerified: true));
         _userRepository
-            .Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         var result = await CreateHandler().Handle(Command(), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        _userRepository.Verify(r => r.GetByEmailAsync(verifiedEmail, It.IsAny<CancellationToken>()), Times.Once);
+        _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(verifiedEmail, It.IsAny<CancellationToken>()), Times.Once);
         _userRepository.Verify(r => r.Add(It.Is<User>(u =>
             u.Email == verifiedEmail &&
             u.AppleId == verifiedSubject &&
@@ -97,7 +97,7 @@ public class AppleAuthHandlerTests
         Assert.Equal(BusinessErrorMessage.InvalidAppleUserToken, result.Error!.Message);
         Assert.Equal(nameof(AppleAuth.Command.IdentityToken), result.Error!.Code);
 
-        _userRepository.Verify(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
         _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -116,7 +116,7 @@ public class AppleAuthHandlerTests
             .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AppleVerifiedClaims("sub-1", existing.Email, EmailVerified: true));
         _userRepository
-            .Setup(r => r.GetByEmailAsync(existing.Email, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(existing.Email, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         var result = await CreateHandler().Handle(Command(), CancellationToken.None);
@@ -137,7 +137,7 @@ public class AppleAuthHandlerTests
             .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AppleVerifiedClaims(verifiedSubject, verifiedEmail, EmailVerified: true));
         _userRepository
-            .Setup(r => r.GetByEmailAsync(verifiedEmail, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(verifiedEmail, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         var result = await CreateHandler().Handle(Command(), CancellationToken.None);
@@ -168,7 +168,7 @@ public class AppleAuthHandlerTests
             .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AppleVerifiedClaims("sub-collide", existing.Email, EmailVerified: true));
         _userRepository
-            .Setup(r => r.GetByEmailAsync(existing.Email, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(existing.Email, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         var result = await CreateHandler().Handle(Command(), CancellationToken.None);
@@ -188,7 +188,7 @@ public class AppleAuthHandlerTests
             .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AppleVerifiedClaims("sub-unverified", "unverified@example.com", EmailVerified: false));
         _userRepository
-            .Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         var result = await CreateHandler().Handle(Command(), CancellationToken.None);
@@ -213,7 +213,7 @@ public class AppleAuthHandlerTests
             .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AppleVerifiedClaims("sub-1", existing.Email, EmailVerified: true));
         _userRepository
-            .Setup(r => r.GetByEmailAsync(existing.Email, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(existing.Email, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         var result = await CreateHandler().Handle(Command(), CancellationToken.None);

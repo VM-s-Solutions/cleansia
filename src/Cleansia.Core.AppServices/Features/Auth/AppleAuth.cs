@@ -65,7 +65,7 @@ public class AppleAuth
                     new Error(nameof(Command.IdentityToken), BusinessErrorMessage.InvalidAppleUserToken));
             }
 
-            var user = await userRepository.GetByEmailAsync(claims.Email, cancellationToken);
+            var user = await userRepository.GetByEmailIgnoringTenantAsync(claims.Email, cancellationToken);
             if (user is not null)
             {
                 // S1: the account-type guard MUST run against the account the handler actually

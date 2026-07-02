@@ -71,16 +71,16 @@ public class GoogleAuthHandlerTests
             .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GoogleVerifiedClaims("verified-subject", verifiedEmail, EmailVerified: true));
         _userRepository
-            .Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         var result = await CreateHandler().Handle(CommandWith(attackerClaimedEmail, "any-google-id"), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         // The attacker-claimed email is never looked up...
-        _userRepository.Verify(r => r.GetByEmailAsync(attackerClaimedEmail, It.IsAny<CancellationToken>()), Times.Never);
+        _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(attackerClaimedEmail, It.IsAny<CancellationToken>()), Times.Never);
         // ...only the verified email is.
-        _userRepository.Verify(r => r.GetByEmailAsync(verifiedEmail, It.IsAny<CancellationToken>()), Times.Once);
+        _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(verifiedEmail, It.IsAny<CancellationToken>()), Times.Once);
         // ...and the new account is provisioned with the verified email.
         _userRepository.Verify(r => r.Add(It.Is<User>(u => u.Email == verifiedEmail)), Times.Once);
         _userRepository.Verify(r => r.Add(It.Is<User>(u => u.Email == attackerClaimedEmail)), Times.Never);
@@ -96,7 +96,7 @@ public class GoogleAuthHandlerTests
             .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GoogleVerifiedClaims(verifiedSubject, "new-user@example.com", EmailVerified: true));
         _userRepository
-            .Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         var result = await CreateHandler().Handle(CommandWith("new-user@example.com", attackerClaimedGoogleId), CancellationToken.None);
@@ -121,7 +121,7 @@ public class GoogleAuthHandlerTests
         Assert.Equal(BusinessErrorMessage.InvalidGoogleUserToken, result.Error!.Message);
         Assert.Equal(nameof(GoogleAuth.Command.Token), result.Error!.Code);
 
-        _userRepository.Verify(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
         _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -140,7 +140,7 @@ public class GoogleAuthHandlerTests
             .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GoogleVerifiedClaims("subject-1", existing.Email, EmailVerified: true));
         _userRepository
-            .Setup(r => r.GetByEmailAsync(existing.Email, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(existing.Email, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         var result = await CreateHandler().Handle(CommandWith(existing.Email, "any-google-id"), CancellationToken.None);
@@ -161,7 +161,7 @@ public class GoogleAuthHandlerTests
             .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GoogleVerifiedClaims(verifiedSubject, verifiedEmail, EmailVerified: true));
         _userRepository
-            .Setup(r => r.GetByEmailAsync(verifiedEmail, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(verifiedEmail, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         var result = await CreateHandler().Handle(CommandWith(verifiedEmail, "ignored-google-id"), CancellationToken.None);
@@ -183,7 +183,7 @@ public class GoogleAuthHandlerTests
             .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GoogleVerifiedClaims("subject-unverified", "unverified@example.com", EmailVerified: false));
         _userRepository
-            .Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         var result = await CreateHandler().Handle(CommandWith("unverified@example.com", "any-google-id"), CancellationToken.None);
@@ -212,7 +212,7 @@ public class GoogleAuthHandlerTests
             .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GoogleVerifiedClaims("subject-collide", existing.Email, EmailVerified: true));
         _userRepository
-            .Setup(r => r.GetByEmailAsync(existing.Email, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(existing.Email, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         var result = await CreateHandler().Handle(CommandWith(existing.Email, "any-google-id"), CancellationToken.None);
@@ -238,7 +238,7 @@ public class GoogleAuthHandlerTests
             .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GoogleVerifiedClaims("subject-1", existing.Email, EmailVerified: true));
         _userRepository
-            .Setup(r => r.GetByEmailAsync(existing.Email, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(existing.Email, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         var result = await CreateHandler().Handle(CommandWith(existing.Email, "any-google-id"), CancellationToken.None);

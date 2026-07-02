@@ -187,9 +187,15 @@ final class CustomerAuthViewModel: ViewModel {
     func confirmEmail() async {
         if confirmState.isSubmitting { return }
         guard verifyCode.count == confirmCodeLength else { return }
+        // The 6-digit code only proves possession relative to the account it was issued to — the
+        // server verifies it against the email-named account, so without the email nothing can match.
+        guard let pendingEmail, !pendingEmail.isBlank else {
+            snackbar.showError(L10n.Auth.errorGeneric)
+            return
+        }
 
         confirmState = .submitting
-        let result = await emailConfirmationClient.confirmEmail(code: verifyCode)
+        let result = await emailConfirmationClient.confirmEmail(email: pendingEmail, code: verifyCode)
         confirmState = .idle
 
         switch result {

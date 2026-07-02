@@ -12,7 +12,7 @@ final class ConfirmEmailViewModelTests: XCTestCase {
         private(set) var resendCallCount = 0
         private(set) var lastResendArgs: (email: String, language: String)?
 
-        func confirmEmail(code _: String) async -> ApiResult<LoginOutcome> {
+        func confirmEmail(email _: String, code _: String) async -> ApiResult<LoginOutcome> {
             confirmCallCount += 1
             return confirmResult
         }

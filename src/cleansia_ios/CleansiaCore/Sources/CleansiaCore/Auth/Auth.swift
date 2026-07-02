@@ -104,10 +104,10 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         return await post(path: registerEndpoint.path, body: body, useNoAuthSession: true)
     }
 
-    public func confirmEmail(code: String) async -> ApiResult<LoginOutcome> {
+    public func confirmEmail(email: String, code: String) async -> ApiResult<LoginOutcome> {
         let result: ApiResult<JwtTokenResponseDto> = await post(
             path: "api/Auth/ConfirmUserEmail",
-            body: ConfirmUserEmailRequest(code: code),
+            body: ConfirmUserEmailRequest(code: code, email: email),
             useNoAuthSession: false,
             method: .put
         )
@@ -115,7 +115,7 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         case let .failure(error):
             return .failure(error)
         case let .success(dto):
-            return .success(resolveEmailGate(dto, fallbackEmail: dto.email ?? "", refreshLifetime: .shortLived))
+            return .success(resolveEmailGate(dto, fallbackEmail: dto.email ?? email, refreshLifetime: .shortLived))
         }
     }
 

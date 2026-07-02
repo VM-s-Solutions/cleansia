@@ -159,7 +159,7 @@ final class AuthApiClientTests: XCTestCase {
             (200, Data(#"{"token":"\#(access)","isEmailConfirmed":true,"refreshToken":"r1"}"#.utf8))
         }
 
-        _ = await client.confirmEmail(code: "123456")
+        _ = await client.confirmEmail(email: "a@b.cz", code: "123456")
 
         let confirm = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "ConfirmUserEmail"))
         XCTAssertEqual(confirm.httpMethod, "PUT")
@@ -189,7 +189,7 @@ final class AuthApiClientTests: XCTestCase {
             (200, Data(#"{"token":"","isEmailConfirmed":false,"email":"a@b.cz"}"#.utf8))
         }
 
-        let result = await client.confirmEmail(code: "123456")
+        let result = await client.confirmEmail(email: "a@b.cz", code: "123456")
 
         guard case let .success(.unverifiedEmail(_, hasToken)) = result else {
             return XCTFail("expected unverifiedEmail")
@@ -206,7 +206,7 @@ final class AuthApiClientTests: XCTestCase {
             (200, Data(#"{"token":"\#(access)","isEmailConfirmed":true,"refreshToken":"r9"}"#.utf8))
         }
 
-        let result = await client.confirmEmail(code: "123456")
+        let result = await client.confirmEmail(email: "a@b.cz", code: "123456")
 
         guard case .success(.authenticated) = result else { return XCTFail("expected authenticated") }
         XCTAssertEqual(store.current()?.accessToken, access)
@@ -224,7 +224,7 @@ final class AuthApiClientTests: XCTestCase {
         let client = try makeClient(store: store)
         MockURLProtocol.handler = { _ in (200, Data(#"{"token":"","isEmailConfirmed":false}"#.utf8)) }
 
-        _ = await client.confirmEmail(code: "123456")
+        _ = await client.confirmEmail(email: "a@b.cz", code: "123456")
 
         let confirm = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "ConfirmUserEmail"))
         XCTAssertNil(confirm.value(forHTTPHeaderField: "Authorization"))

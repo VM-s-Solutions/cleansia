@@ -215,20 +215,26 @@ You no longer hand-populate all 10 secrets. The deploy automates most of it:
 
 - **4 DERIVED by the Bicep** (`derivedSecrets` module — nothing for you to do): `Storage--ConnectionString`,
   `ConnectionStrings--cleansia-db`, `Jwt--Issuer`, `Jwt--Audience`.
-- **6 EXTERNAL pushed by CI from GitHub-Environment secrets** — set these **6 secrets once** in the
-  `dev-weu` GitHub Environment and every deploy syncs them into Key Vault:
+- **EXTERNAL pushed by CI from GitHub-Environment secrets** — set these in the `dev-weu` GitHub
+  Environment once and every deploy syncs them into Key Vault:
 
   | GitHub `dev-weu` secret | → Key Vault secret | Value |
   |---|---|---|
   | `JWT_KEY` | `Jwt--Key` | a strong random 256-bit key |
+  | `CSRF_SECRET` | `Csrf--Secret` | a random string (only enforced when Csrf:Enabled=true; safe to set now) |
   | `STRIPE_SECRET_KEY` | `Stripe--SecretKey` | `sk_test_…` (TEST, never live) |
   | `STRIPE_WEBHOOK_SECRET` | `Stripe--WebhookSecret` | `whsec_…` |
-  | `SENDGRID_API_KEY` | `SendGrid--ApiKey` | `SG.…` |
-  | `SENTRY_DSN` | `Sentry--Dsn` | `https://…@sentry.io/…` |
+  | `STRIPE_PUBLISHABLE_KEY` | `Stripe--PublishableKey` | `pk_test_…` (client-safe, but routed through KV) |
+  | `SENDGRID_API_KEY` | `SendGrid--ApiKey` | `SG.…` ← **the one that was blocking email** |
+  | `SENTRY_DSN` | `Sentry--Dsn` | leave EMPTY for dev (Sentry off); real DSN in prod |
   | `MAPBOX_TOKEN` | `Mapbox--GeocodingAccessToken` | `pk.…` (rotate the exposed one first) |
 
-  That's the whole owner Key-Vault step now. After the next deploy, all 10 secrets are populated and the
-  App Service Key-Vault references resolve green. (A missing optional GitHub secret is skipped, not fatal.)
+  That's the whole owner Key-Vault step now. After the next deploy, the secrets are populated and the App
+  Service Key-Vault references resolve green. (A missing/empty GitHub secret is skipped, not fatal.)
+  Non-secret config (SendGrid template ids/URLs, Stripe redirect URLs, the Fiscal placeholders) is set
+  directly by the Bicep app settings — nothing to do. **`SendGrid:OrderStatusUpdateTemplateId`** is
+  intentionally left unset (its template was never created in SendGrid); add a `d-…` id via the Bicep or
+  a GitHub secret once that template exists.
 
 The manual `az keyvault secret set` block below is now only a **fallback** (e.g. setting a value out of
 band before the first CI deploy). Grant yourself access first, then set whatever you need.

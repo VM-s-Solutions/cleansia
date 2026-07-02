@@ -226,14 +226,24 @@ You no longer hand-populate all 10 secrets. The deploy automates most of it:
   | `STRIPE_WEBHOOK_SECRET` | `Stripe--WebhookSecret` | `whsec_…` |
   | `STRIPE_PUBLISHABLE_KEY` | `Stripe--PublishableKey` | `pk_test_…` (client-safe, but routed through KV) |
   | `SENDGRID_API_KEY` | `SendGrid--ApiKey` | `SG.…` ← **the one that was blocking email** |
+  | `SENDGRID_RESET_PASSWORD_TEMPLATE_ID` | `SendGrid--ResetPasswordTemplateId` | `d-c475f44d635f40569aa8b5171dc63270` |
+  | `SENDGRID_ORDER_RECEIPT_TEMPLATE_ID` | `SendGrid--OrderReceiptTemplateId` | `d-2e4f0bcc8af54b3d88c471d7e0cd507a` |
+  | `SENDGRID_EMAIL_CONFIRMATION_TEMPLATE_ID` | `SendGrid--EmailConfirmationTemplateId` | `d-eb7daac9cbe94f01beb2ee1bb0ec5c29` |
+  | `SENDGRID_PERIOD_CLOSED_TEMPLATE_ID` | `SendGrid--PeriodClosedTemplateId` | `d-75a0f9cfdcc44eabb617de12e28d784d` |
+  | `SENDGRID_PERIOD_END_REMINDER_TEMPLATE_ID` | `SendGrid--PeriodEndReminderTemplateId` | `d-d8428c5ffff14355a59d0a35023445da` |
+  | `SENDGRID_ORDER_STATUS_UPDATE_TEMPLATE_ID` | `SendGrid--OrderStatusUpdateTemplateId` | your `d-…` id (from your user-secrets) |
   | `SENTRY_DSN` | `Sentry--Dsn` | leave EMPTY for dev (Sentry off); real DSN in prod |
   | `MAPBOX_TOKEN` | `Mapbox--GeocodingAccessToken` | `pk.…` (rotate the exposed one first) |
 
+  (The 5 template-id values above are the ones committed in `appsettings.json`; the 6th
+  — OrderStatusUpdate — has no committed value, so paste your real `d-…` id from your user-secrets. If
+  any of the 5 differ in your user-secrets, use YOUR values.)
+
   That's the whole owner Key-Vault step now. After the next deploy, the secrets are populated and the App
   Service Key-Vault references resolve green. (A missing/empty GitHub secret is skipped, not fatal.)
-  Non-secret config (SendGrid template ids/URLs, Stripe redirect URLs, the Fiscal placeholders) is set
-  directly by the Bicep app settings — nothing to do. **`SendGrid:OrderStatusUpdateTemplateId`** is
-  intentionally left unset (its template was never created in SendGrid); add a `d-…` id via the Bicep or
+  Non-secret config (SendGrid URLs, Stripe redirect URLs, the Fiscal placeholders) is set
+  directly by the Bicep app settings — nothing to do. **`SendGrid:OrderStatusUpdateTemplateId`** — set a
+  real `d-…` id via
   a GitHub secret once that template exists.
 
 The manual `az keyvault secret set` block below is now only a **fallback** (e.g. setting a value out of

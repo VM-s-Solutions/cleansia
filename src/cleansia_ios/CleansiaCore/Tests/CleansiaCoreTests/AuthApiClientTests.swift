@@ -297,6 +297,38 @@ final class AuthApiClientTests: XCTestCase {
         XCTAssertEqual(request.url?.path, "/api/Auth/RegisterEmployee")
     }
 
+    func testFailureSurfacesFirstBusinessKeyFromErrorsDict() async throws {
+        let client = try makeClient(store: MemTokenStore())
+        MockURLProtocol.handler = { _ in
+            let body = """
+            {"title":"Validation Error","type":"auth.invalid_confirmation_code",\
+            "detail":"A validation problem occurred.","status":400,\
+            "errors":{"Code":"auth.invalid_confirmation_code"}}
+            """
+            return (400, Data(body.utf8))
+        }
+
+        let result = await client.login(email: "a@b.cz", password: "pw")
+
+        guard case let .failure(error) = result else { return XCTFail("expected failure") }
+        XCTAssertEqual(error.code, "auth.invalid_confirmation_code")
+        XCTAssertEqual(error.message, "A validation problem occurred.")
+        XCTAssertEqual(error.httpStatus, 400)
+    }
+
+    func testFailureSurfacesFirstModelStateArrayValue() async throws {
+        let client = try makeClient(store: MemTokenStore())
+        MockURLProtocol.handler = { _ in
+            (400, Data(#"{"title":"Bad Request","errors":{"Email":["The Email field is required."]}}"#.utf8))
+        }
+
+        let result = await client.login(email: "a@b.cz", password: "pw")
+
+        guard case let .failure(error) = result else { return XCTFail("expected failure") }
+        XCTAssertEqual(error.code, "The Email field is required.")
+        XCTAssertEqual(error.message, "Bad Request")
+    }
+
     func testAuthedNonAnonPathCarriesBearerPositiveControl() async throws {
         let store = MemTokenStore()
         store.save(.init(

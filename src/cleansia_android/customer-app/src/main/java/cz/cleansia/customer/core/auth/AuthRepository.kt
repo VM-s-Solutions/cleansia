@@ -69,8 +69,8 @@ class AuthRepository(
         )
     }.map { }
 
-    suspend fun confirmEmail(code: String): ApiResult<AuthSuccess> =
-        when (val result = safeApiCall(json) { api.confirmUserEmail(ConfirmUserEmailRequest(code)) }) {
+    suspend fun confirmEmail(email: String, code: String): ApiResult<AuthSuccess> =
+        when (val result = safeApiCall(json) { api.confirmUserEmail(ConfirmUserEmailRequest(code, email)) }) {
             is ApiResult.Success -> handleAuthBody(result.data)
             is ApiResult.Error -> result
         }

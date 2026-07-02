@@ -88,8 +88,10 @@ data class GoogleAuthRequest(
     val lastName: String,
 )
 
+// The email names the account the 6-digit code was issued to — the server verifies the code ONLY
+// against that account (a bare code proves nothing by itself).
 @Serializable
-data class ConfirmUserEmailRequest(val code: String)
+data class ConfirmUserEmailRequest(val code: String, val email: String)
 
 @Serializable
 data class ResendConfirmationEmailRequest(

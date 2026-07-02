@@ -99,4 +99,71 @@ public class ConfirmUserEmailAttemptCapTests
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidConfirmationCode);
         repo.Verify(r => r.TryChargeConfirmationCodeAttemptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    // ---- The 6-digit OTP branch: the account is named by email, so EVERY guess against it charges
+    // its budget — right or wrong — which is what makes a 10^6 space survivable at 5 tries per code.
+
+    private static (User user, string otp) UserWithLiveOtp()
+    {
+        var otp = SecurityTokens.GenerateOtp();
+        var user = UserMockFactory.Generate(new UserMockFactory.UserPartial
+        {
+            ConfirmationCode = SecurityTokens.Hash(otp),
+            ConfirmationCodeExpiresAt = DateTimeOffset.UtcNow.AddMinutes(15),
+            IsEmailConfirmed = false,
+        });
+        return (user, otp);
+    }
+
+    private static Mock<IUserRepository> RepoResolvingByEmail(User user)
+    {
+        var repo = new Mock<IUserRepository>();
+        repo.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        return repo;
+    }
+
+    [Fact]
+    public async Task A_Wrong_Otp_Guess_Charges_The_Account_Named_By_Email()
+    {
+        var (user, otp) = UserWithLiveOtp();
+        var repo = RepoResolvingByEmail(user);
+        repo.Setup(r => r.TryChargeConfirmationCodeAttemptAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var wrongOtp = otp == "000000" ? "000001" : "000000";
+        var result = await ValidatorFor(repo).ValidateAsync(new ConfirmUserEmail.Command(wrongOtp, user.Email));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidConfirmationCode);
+        repo.Verify(r => r.TryChargeConfirmationCodeAttemptAsync(user.Id, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task When_The_Budget_Is_Spent_Even_The_Correct_Live_Otp_Is_Refused()
+    {
+        var (user, otp) = UserWithLiveOtp();
+        var repo = RepoResolvingByEmail(user);
+        repo.Setup(r => r.TryChargeConfirmationCodeAttemptAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var result = await ValidatorFor(repo).ValidateAsync(new ConfirmUserEmail.Command(otp, user.Email));
+
+        Assert.False(result.IsValid);
+        Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.TooManyAttempts, result.Errors[0].ErrorMessage);
+    }
+
+    [Fact]
+    public async Task An_Otp_Against_An_Unknown_Email_Charges_No_One()
+    {
+        var (user, otp) = UserWithLiveOtp();
+        var repo = RepoResolvingByEmail(user);
+
+        var result = await ValidatorFor(repo).ValidateAsync(new ConfirmUserEmail.Command(otp, "nobody@example.com"));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidConfirmationCode);
+        repo.Verify(r => r.TryChargeConfirmationCodeAttemptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 }

@@ -56,9 +56,10 @@ public class User : Auditable, ITenantEntity
     public string? ProfilePhotoName { get; private set; }
 
     /// <summary>
-    /// SHA-256 HASH of the email-confirmation token (never the raw value):
-    /// the raw token is emailed once via <see cref="RawConfirmationToken"/> and only the hash is
-    /// persisted, so a stolen DB row cannot confirm/log in the account.
+    /// SHA-256 HASH of the email-confirmation code (never the raw value): the raw 6-digit OTP is
+    /// emailed once via <see cref="RawConfirmationToken"/> and only the hash is persisted. For a
+    /// 6-digit space the at-rest hash is hygiene, not brute-proofing — the safety is the 15-minute
+    /// expiry + the per-code attempt budget + email-scoped verification (never lookup by bare code).
     /// </summary>
     public string? ConfirmationCode { get; private set; }
 
@@ -123,9 +124,10 @@ public class User : Auditable, ITenantEntity
 
     public static User CreateWithPassword(string email, string password, string firstName, string lastName, UserProfile profile = UserProfile.Customer, string? languageCode = null)
     {
-        // Generate a cryptographic raw token, persist only its hash, and surface
-        // the raw value transiently so the registration handler can email it (never persisted/logged).
-        var rawConfirmationToken = SecurityTokens.Generate();
+        // Generate the typed 6-digit verification code (the apps render six digit boxes), persist only
+        // its hash, and surface the raw value transiently so the registration handler can email it
+        // (never persisted/logged). The password-reset token stays the 128-bit link token.
+        var rawConfirmationToken = SecurityTokens.GenerateOtp();
 
         return new()
         {
@@ -254,12 +256,13 @@ public class User : Auditable, ITenantEntity
     }
 
     /// <summary>
-    /// Generates a fresh cryptographic email-confirmation token, persists only its hash, and RETURNS
-    /// the RAW token so the caller can email it. The raw value is never stored.
+    /// Generates a fresh 6-digit email-confirmation OTP, persists only its hash, and RETURNS
+    /// the RAW code so the caller can email it. The raw value is never stored. Re-issuance resets the
+    /// attempt budget — a user who exhausted it recovers by requesting a new code.
     /// </summary>
     public string UpdateConfirmationCode()
     {
-        var rawToken = SecurityTokens.Generate();
+        var rawToken = SecurityTokens.GenerateOtp();
         ConfirmationCode = SecurityTokens.Hash(rawToken);
         RawConfirmationToken = rawToken;
         ConfirmationCodeExpiresAt = DateTime.UtcNow.AddMinutes(15);

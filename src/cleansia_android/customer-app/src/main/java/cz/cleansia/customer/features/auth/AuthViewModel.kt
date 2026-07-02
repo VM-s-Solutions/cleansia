@@ -81,10 +81,16 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun confirmEmail(code: String) {
+    fun confirmEmail(email: String?, code: String) {
+        if (email.isNullOrBlank()) {
+            // The 6-digit code only proves possession relative to the account it was issued to —
+            // without the email there is nothing to verify against (reachable only via a nav bug).
+            snackbar.showErrorKey(R.string.error_generic_unknown)
+            return
+        }
         _uiState.value = AuthUiState(loading = true)
         viewModelScope.launch {
-            _uiState.value = when (val result = authRepository.confirmEmail(code)) {
+            _uiState.value = when (val result = authRepository.confirmEmail(email, code)) {
                 is ApiResult.Success -> when (result.data) {
                     is AuthSuccess.Authenticated -> AuthUiState(outcome = AuthOutcome.SignedIn)
                     is AuthSuccess.EmailUnconfirmed -> {

@@ -273,7 +273,7 @@ fun CleansiaNavHost(
 
             EmailVerifyScreen(
                 email = args.email,
-                onVerify = { code -> vm.confirmEmail(code) },
+                onVerify = { code -> vm.confirmEmail(args.email, code) },
                 onResend = { targetEmail -> vm.resendConfirmationEmail(targetEmail) },
                 onBack = { navController.popBackStack() },
                 loading = state.loading,

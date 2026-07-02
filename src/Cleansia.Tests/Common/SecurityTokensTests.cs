@@ -5,17 +5,35 @@ using Cleansia.Core.Domain.Users;
 namespace Cleansia.Tests.Common;
 
 /// <summary>
-/// The hole: email-confirm + password-reset codes were a 6-digit
+/// The original hole: email-confirm + password-reset codes were a 6-digit
 /// <c>Random.Shared.Next(100000,999999)</c> (non-crypto, 900k values) stored in PLAINTEXT and looked
-/// up by the bare code. These tests pin the new contract per the owner-decision (BINDING):
-///   - tokens are cryptographic (CSPRNG, >=128 bits) and non-sequential; <c>Random.Shared</c> is
-///     gone from the token-generating domain paths.
-///   - only a hash of the token is stored; the persisted column never equals the raw token.
+/// up by the bare code. These tests pin the two-class contract per the owner-decision (BINDING,
+/// updated when the typed 6-digit confirmation UX was restored):
+///   - the password-reset LINK token (<see cref="SecurityTokens.Generate"/>) is cryptographic
+///     (CSPRNG, >=128 bits), non-sequential, and self-authenticating.
+///   - the email-confirmation code (<see cref="SecurityTokens.GenerateOtp"/>) is the typed 6-digit
+///     OTP the apps render as digit boxes — CSPRNG-uniform over the full 10^6 space, and NEVER
+///     resolved by the bare code (email-scoped verification + attempt cap + expiry carry the safety).
+///   - <c>Random.Shared</c> is gone from the token-generating domain paths.
+///   - only a hash is stored for BOTH classes; the persisted column never equals the raw value.
 /// The hashing seam (<see cref="SecurityTokens"/>) is the single canonical place the domain generators
-/// AND the repository lookup agree on. Written red -> green (predates the implementation).
+/// AND the verification paths agree on.
 /// </summary>
 public class SecurityTokensTests
 {
+    // The confirmation OTP: exactly 6 digits, zero-padded, from the CSPRNG — and not a constant.
+    [Fact]
+    public void GenerateOtp_Produces_Six_Zero_Padded_Digits()
+    {
+        var codes = Enumerable.Range(0, 50).Select(_ => SecurityTokens.GenerateOtp()).ToList();
+
+        Assert.All(codes, c => Assert.Matches(new Regex("^[0-9]{6}$"), c));
+        Assert.Equal(SecurityTokens.OtpLength, codes[0].Length);
+
+        // 50 draws from 10^6 are not all identical (a constant/broken generator would be).
+        Assert.True(codes.Distinct().Count() > 1, "GenerateOtp returned the same value 50 times");
+    }
+
     // generation is high-entropy and unpredictable: a large sample is collision-free and not
     // sequential (the old 6-digit space would collide and/or step by 1).
     [Fact]
@@ -77,6 +95,7 @@ public class SecurityTokensTests
         var raw = user.RawConfirmationToken;
 
         Assert.False(string.IsNullOrWhiteSpace(raw));
+        Assert.Matches(new Regex("^[0-9]{6}$"), raw!);               // the typed 6-digit OTP class
         Assert.NotEqual(raw, user.ConfirmationCode);                 // not plaintext at rest
         Assert.Equal(SecurityTokens.Hash(raw!), user.ConfirmationCode); // stored == hash(raw)
     }
@@ -89,6 +108,7 @@ public class SecurityTokensTests
         var raw = user.UpdateConfirmationCode();
 
         Assert.False(string.IsNullOrWhiteSpace(raw));
+        Assert.Matches(new Regex("^[0-9]{6}$"), raw);                // the typed 6-digit OTP class
         Assert.NotEqual(raw, user.ConfirmationCode);
         Assert.Equal(SecurityTokens.Hash(raw), user.ConfirmationCode);
     }
@@ -101,6 +121,9 @@ public class SecurityTokensTests
         var raw = user.UpdateResetPasswordToken();
 
         Assert.False(string.IsNullOrWhiteSpace(raw));
+        // The reset token stays in the self-authenticating 128-bit class (it rides a link), NEVER the
+        // 6-digit OTP class — length is what discriminates the two on the confirm wire.
+        Assert.True(raw.Length >= 16, $"reset token must stay high-entropy: '{raw}'");
         Assert.NotEqual(raw, user.ResetPasswordCode);
         Assert.Equal(SecurityTokens.Hash(raw), user.ResetPasswordCode);
     }

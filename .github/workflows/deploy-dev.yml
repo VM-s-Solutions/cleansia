@@ -285,7 +285,12 @@ jobs:
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          ORDER_STATUS_TEMPLATE_ID: ${{ secrets.ORDER_STATUS_TEMPLATE_ID }}
+          SENDGRID_RESET_PASSWORD_TEMPLATE_ID: ${{ secrets.SENDGRID_RESET_PASSWORD_TEMPLATE_ID }}
+          SENDGRID_ORDER_RECEIPT_TEMPLATE_ID: ${{ secrets.SENDGRID_ORDER_RECEIPT_TEMPLATE_ID }}
+          SENDGRID_EMAIL_CONFIRMATION_TEMPLATE_ID: ${{ secrets.SENDGRID_EMAIL_CONFIRMATION_TEMPLATE_ID }}
+          SENDGRID_PERIOD_CLOSED_TEMPLATE_ID: ${{ secrets.SENDGRID_PERIOD_CLOSED_TEMPLATE_ID }}
+          SENDGRID_PERIOD_END_REMINDER_TEMPLATE_ID: ${{ secrets.SENDGRID_PERIOD_END_REMINDER_TEMPLATE_ID }}
+          SENDGRID_ORDER_STATUS_UPDATE_TEMPLATE_ID: ${{ secrets.SENDGRID_ORDER_STATUS_UPDATE_TEMPLATE_ID }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
         run: |
@@ -317,8 +322,13 @@ jobs:
           set_secret "Stripe--SecretKey"            "$STRIPE_SECRET_KEY"
           set_secret "Stripe--WebhookSecret"        "$STRIPE_WEBHOOK_SECRET"
           set_secret "Stripe--PublishableKey"       "$STRIPE_PUBLISHABLE_KEY"
-          set_secret "SendGrid--ApiKey"                     "$SENDGRID_API_KEY"
-          set_secret "SendGrid--OrderStatusUpdateTemplateId" "$ORDER_STATUS_TEMPLATE_ID"
+          set_secret "SendGrid--ApiKey"                        "$SENDGRID_API_KEY"
+          set_secret "SendGrid--ResetPasswordTemplateId"       "$SENDGRID_RESET_PASSWORD_TEMPLATE_ID"
+          set_secret "SendGrid--OrderReceiptTemplateId"        "$SENDGRID_ORDER_RECEIPT_TEMPLATE_ID"
+          set_secret "SendGrid--EmailConfirmationTemplateId"   "$SENDGRID_EMAIL_CONFIRMATION_TEMPLATE_ID"
+          set_secret "SendGrid--PeriodClosedTemplateId"        "$SENDGRID_PERIOD_CLOSED_TEMPLATE_ID"
+          set_secret "SendGrid--PeriodEndReminderTemplateId"   "$SENDGRID_PERIOD_END_REMINDER_TEMPLATE_ID"
+          set_secret "SendGrid--OrderStatusUpdateTemplateId"   "$SENDGRID_ORDER_STATUS_UPDATE_TEMPLATE_ID"
           set_secret "Sentry--Dsn"                  "$SENTRY_DSN"
           set_secret "Mapbox--GeocodingAccessToken" "$MAPBOX_TOKEN"
 

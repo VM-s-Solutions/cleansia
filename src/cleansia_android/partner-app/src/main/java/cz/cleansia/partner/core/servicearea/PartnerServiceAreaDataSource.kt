@@ -1,6 +1,7 @@
 package cz.cleansia.partner.core.servicearea
 
 import android.util.Log
+import cz.cleansia.core.servicearea.IsoCountryCodes
 import cz.cleansia.core.servicearea.ServiceAreaDataSource
 import cz.cleansia.core.servicearea.ServicedCity
 import cz.cleansia.core.servicearea.ServicedCountry
@@ -33,7 +34,9 @@ class PartnerServiceAreaDataSource @Inject constructor(
                 val id = dto.id ?: return@mapNotNull null
                 ServicedCountry(
                     id = id,
-                    isoCode = dto.isoCode?.lowercase().orEmpty(),
+                    // Normalised to ISO alpha-2 lowercase — see IsoCountryCodes
+                    // (backend stores alpha-3; Mapbox-facing code is alpha-2).
+                    isoCode = IsoCountryCodes.toAlpha2(dto.isoCode),
                     name = dto.name.orEmpty(),
                 )
             }

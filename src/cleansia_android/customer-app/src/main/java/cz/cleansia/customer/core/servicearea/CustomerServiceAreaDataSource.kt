@@ -1,6 +1,7 @@
 package cz.cleansia.customer.core.servicearea
 
 import android.util.Log
+import cz.cleansia.core.servicearea.IsoCountryCodes
 import cz.cleansia.core.servicearea.ServiceAreaDataSource
 import cz.cleansia.core.servicearea.ServicedCity
 import cz.cleansia.core.servicearea.ServicedCountry
@@ -32,14 +33,11 @@ class CustomerServiceAreaDataSource @Inject constructor(
                 val id = dto.id ?: return@mapNotNull null
                 ServicedCountry(
                     id = id,
-                    // Mapbox bias expects ISO-3166 alpha-2 lowercase.
-                    // Backend stores alpha-3 uppercase (e.g. "CZE");
-                    // converting alpha-3 → alpha-2 here would require a
-                    // lookup table — for now we lowercase the alpha-3
-                    // and let downstream callers tolerate either form.
-                    // See servicedCountryIsoCodes() comment in the
-                    // provider for the trade-off.
-                    isoCode = dto.isoCode?.lowercase().orEmpty(),
+                    // Normalised to ISO alpha-2 lowercase: the backend stores
+                    // alpha-3 ("CZE") but everything Mapbox-facing (short_code
+                    // matches, the country= bias param) is alpha-2 ("cz") — a
+                    // raw-lowercased alpha-3 can never equality-match either.
+                    isoCode = IsoCountryCodes.toAlpha2(dto.isoCode),
                     name = dto.name.orEmpty(),
                 )
             }

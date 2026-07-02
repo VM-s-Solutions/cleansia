@@ -1,11 +1,32 @@
 name: Deploy to PRO
 
+# THIN caller for the shared pipeline (deploy-azure.yml) — the SAME build/provision/migrate/deploy
+# flow as dev, pointed at the prod footprint. This file owns only what is prod-specific:
+#
+# - Dispatch-ONLY (never a push trigger): prod deploys are always a deliberate button press, and the
+#   mode defaults to `what-if` so the no-thought path is the non-mutating preview; a real `deploy`
+#   is an explicit choice.
+# - The old typed-"deploy"-confirmation gate is REPLACED by GitHub Environment protection: every job
+#   that touches prod runs in the `prod-weu` Environment (set inside the reusable workflow), whose
+#   REQUIRED REVIEWERS must approve the run before any prod secret is released. That protection is
+#   UI config, not YAML — see the PROD section of deploy/AZURE-DEV-RUNBOOK.md for the setup steps.
+# - Concurrency stays caller-level: one prod run at a time, and an in-flight prod deploy is never
+#   cancelled by a newer one.
+# - `secrets: inherit` + the reusable jobs' `environment: prod-weu` resolve every secret by NAME from
+#   the prod-weu GitHub Environment (same secret NAMES as dev-weu, prod values); no secret value is
+#   in this file (ADR-0015 D4).
+
 on:
   workflow_dispatch:
     inputs:
-      confirm:
-        description: 'Type "deploy" to confirm production deployment'
+      mode:
+        description: 'deploy = provision + migrate + deploy all hosts; what-if = non-mutating Bicep preview only'
+        type: choice
         required: true
+        default: what-if
+        options:
+          - deploy
+          - what-if
 
 permissions:
   id-token: write
@@ -16,416 +37,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  validate:
-    name: Validate deployment
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check confirmation
-        if: github.event.inputs.confirm != 'deploy'
-        run: |
-          echo "::error::You must type 'deploy' to confirm production deployment"
-          exit 1
-
-  build-dotnet:
-    name: Build .NET APIs
-    needs: validate
-    runs-on: ubuntu-latest
-    environment: prod-weu
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.x
-
-      - name: Restore dependencies
-        run: dotnet restore Cleansia.Api.sln
-        working-directory: ./src
-
-      - name: Build solution
-        run: dotnet build Cleansia.Api.sln --configuration Release --no-restore
-        working-directory: ./src
-
-      - name: Run tests
-        run: dotnet test Cleansia.Api.sln --configuration Release --no-build --verbosity normal
-        working-directory: ./src
-
-      - name: Publish Partner API
-        run: dotnet publish Cleansia.Web/Cleansia.Web.Partner.csproj --configuration Release --no-restore --output ./publish/partner-api
-        working-directory: ./src
-
-      - name: Publish Admin API
-        run: dotnet publish Cleansia.Web.Admin/Cleansia.Web.Admin.csproj --configuration Release --no-restore --output ./publish/admin-api
-        working-directory: ./src
-
-      - name: Publish Customer API
-        run: dotnet publish Cleansia.Web.Customer/Cleansia.Web.Customer.csproj --configuration Release --no-restore --output ./publish/customer-api
-        working-directory: ./src
-
-      - name: Publish Mobile API
-        run: dotnet publish Cleansia.Web.Mobile/Cleansia.Web.Mobile.csproj --configuration Release --no-restore --output ./publish/mobile-api
-        working-directory: ./src
-
-      - name: Upload Partner API artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: partner-api
-          path: ./src/publish/partner-api
-
-      - name: Upload Admin API artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: admin-api
-          path: ./src/publish/admin-api
-
-      - name: Upload Customer API artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: customer-api
-          path: ./src/publish/customer-api
-
-      - name: Upload Mobile API artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mobile-api
-          path: ./src/publish/mobile-api
-
-  build-angular:
-    name: Build Angular Apps
-    needs: validate
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: ./src/Cleansia.App/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-        working-directory: ./src/Cleansia.App
-
-      - name: Build Customer App
-        run: npx nx build cleansia.app --configuration=production --skip-nx-cache
-        working-directory: ./src/Cleansia.App
-
-      - name: Build Partner App
-        run: npm run build:cleansia-partner
-        working-directory: ./src/Cleansia.App
-
-      - name: Build Admin App
-        run: npm run build:cleansia-admin
-        working-directory: ./src/Cleansia.App
-
-      - name: Prepare Customer SSR package.json
-        run: |
-          echo '{"name":"cleansia-customer-ssr","version":"1.0.0","type":"module","scripts":{"start":"node server/server.mjs"}}' \
-            > ./src/Cleansia.App/dist/apps/cleansia.app/package.json
-
-      - name: Upload Customer App artifact (SSR)
-        uses: actions/upload-artifact@v4
-        with:
-          name: customer-app
-          path: ./src/Cleansia.App/dist/apps/cleansia.app
-
-      - name: Upload Partner App artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: partner-app
-          path: ./src/Cleansia.App/dist/apps/cleansia-partner.app/browser
-
-      - name: Upload Admin App artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: admin-app
-          path: ./src/Cleansia.App/dist/apps/cleansia-admin.app/browser
-
-  # =============================================
-  # Run EF migrations before any API deploys
-  # =============================================
-
-  migrate-database:
-    name: Run DB Migrations
-    needs: build-dotnet
-    runs-on: ubuntu-latest
-    environment: prod-weu
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.x
-
-      - name: Install EF Core tools
-        run: dotnet tool install --global dotnet-ef
-
-      - name: Restore packages
-        run: dotnet restore Cleansia.Api.sln
-        working-directory: ./src
-
-      - name: Build EF migrations bundle
-        run: |
-          dotnet ef migrations bundle \
-            --project Cleansia.Infra.Database/Cleansia.Infra.Database.csproj \
-            --startup-project Cleansia.Web/Cleansia.Web.Partner.csproj \
-            --configuration Release \
-            --output ./efbundle \
-            --force
-        working-directory: ./src
-
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Apply migrations
-        env:
-          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING_PRO }}
-        run: |
-          chmod +x ./src/efbundle
-          ./src/efbundle --connection "$DB_CONNECTION_STRING"
-
-  # =============================================
-  # Deploy step-by-step (sequential to avoid
-  # overloading the B1 App Service Plan)
-  # =============================================
-
-  deploy-partner-api:
-    name: 1/7 — Partner API
-    needs: [build-dotnet, migrate-database]
-    runs-on: ubuntu-latest
-    environment: prod-weu
-    steps:
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: partner-api
-          path: ./partner-api
-
-      - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: api-cleansia-pro
-          package: ./partner-api
-
-      - name: Force container refresh
-        run: |
-          az webapp stop --name api-cleansia-pro --resource-group rg-cleansia-pro
-          az webapp start --name api-cleansia-pro --resource-group rg-cleansia-pro
-
-  deploy-admin-api:
-    name: 2/7 — Admin API
-    needs: [build-dotnet, migrate-database, deploy-partner-api]
-    runs-on: ubuntu-latest
-    environment: prod-weu
-    steps:
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: admin-api
-          path: ./admin-api
-
-      - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: api-cleansia-admin-pro
-          package: ./admin-api
-
-      - name: Force container refresh
-        run: |
-          az webapp stop --name api-cleansia-admin-pro --resource-group rg-cleansia-pro
-          az webapp start --name api-cleansia-admin-pro --resource-group rg-cleansia-pro
-
-  deploy-customer-api:
-    name: 3/7 — Customer API
-    needs: [build-dotnet, migrate-database, deploy-admin-api]
-    runs-on: ubuntu-latest
-    environment: prod-weu
-    steps:
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: customer-api
-          path: ./customer-api
-
-      - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: api-cleansia-customer-pro
-          package: ./customer-api
-
-      - name: Force container refresh
-        run: |
-          az webapp stop --name api-cleansia-customer-pro --resource-group rg-cleansia-pro
-          az webapp start --name api-cleansia-customer-pro --resource-group rg-cleansia-pro
-
-  deploy-mobile-api:
-    name: 4/7 — Mobile API
-    needs: [build-dotnet, migrate-database, deploy-customer-api]
-    runs-on: ubuntu-latest
-    environment: prod-weu
-    steps:
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: mobile-api
-          path: ./mobile-api
-
-      - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: api-cleansia-mobile-pro
-          package: ./mobile-api
-
-      - name: Force container refresh
-        run: |
-          az webapp stop --name api-cleansia-mobile-pro --resource-group rg-cleansia-pro
-          az webapp start --name api-cleansia-mobile-pro --resource-group rg-cleansia-pro
-
-  build-and-deploy-functions:
-    name: 5/8 — Functions
-    needs: [build-dotnet, migrate-database]
-    runs-on: ubuntu-latest
-    environment: prod-weu
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Build and push Docker image to ACR
-        run: |
-          az acr build \
-            --registry ${{ secrets.ACR_NAME }} \
-            --image cleansia-functions:${{ github.sha }} \
-            --file src/Cleansia.Functions/Dockerfile \
-            src/
-
-      - name: Deploy to Azure Functions
-        run: |
-          az functionapp config container set \
-            --name func-cleansia-pro \
-            --resource-group rg-cleansia-pro \
-            --image "${{ secrets.ACR_NAME }}.azurecr.io/cleansia-functions:${{ github.sha }}"
-
-      - name: Restart Functions App
-        run: |
-          az functionapp restart --name func-cleansia-pro --resource-group rg-cleansia-pro
-
-  deploy-customer-ssr:
-    name: 6/8 — Customer SSR
-    needs: [build-angular, deploy-mobile-api]
-    runs-on: ubuntu-latest
-    environment: prod-weu
-    steps:
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: customer-app
-          path: ./customer-app
-
-      - name: Configure startup command
-        run: az webapp config set --name web-cleansia-customer-pro --resource-group rg-cleansia-pro --startup-file "node server/server.mjs"
-
-      - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: web-cleansia-customer-pro
-          package: ./customer-app
-
-      - name: Force container refresh
-        run: |
-          az webapp stop --name web-cleansia-customer-pro --resource-group rg-cleansia-pro
-          az webapp start --name web-cleansia-customer-pro --resource-group rg-cleansia-pro
-
-  deploy-partner-spa:
-    name: 7/8 — Partner SPA
-    needs: [build-angular, deploy-customer-ssr]
-    runs-on: ubuntu-latest
-    environment: prod-weu
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: partner-app
-          path: ./partner-app
-
-      - name: Deploy to Azure Static Web App
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER_PRO }}
-          action: upload
-          app_location: ./partner-app
-          skip_app_build: true
-          skip_api_build: true
-
-  deploy-admin-spa:
-    name: 8/8 — Admin SPA
-    needs: [build-angular, deploy-partner-spa]
-    runs-on: ubuntu-latest
-    environment: prod-weu
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: admin-app
-          path: ./admin-app
-
-      - name: Deploy to Azure Static Web App
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN_PRO }}
-          action: upload
-          app_location: ./admin-app
-          skip_app_build: true
-          skip_api_build: true
+  deploy:
+    name: Prod pipeline
+    uses: ./.github/workflows/deploy-azure.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      env: prod
+      githubEnvironment: prod-weu
+      mode: ${{ inputs.mode }}
+      region: weu
+      bicepparamFile: deploy/bicep/weu.prod.bicepparam
+    secrets: inherit

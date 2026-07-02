@@ -123,7 +123,9 @@ az group create --name rg-cleansia-weu-dev --location westeurope
 In **GitHub → repo → Settings → Environments**:
 
 - [ ] Create **`dev-weu`** — no protection rules (auto-deploys on merge to `master`).
-- [ ] Create **`prod-weu`** — **Required reviewers** = you; **Wait timer** optional. (Stays unused this wave.)
+- [ ] Create **`prod-weu`** — **Required reviewers** = you; **Wait timer** optional. This protection **is**
+      the prod gate: `deploy-pro.yml` has no typed-confirmation step anymore — a prod run pauses for your
+      approval before any prod secret is released. Full prod setup: **§11 (PROD)** below.
 
 Add these **environment secrets** to `dev-weu` (Settings → Environments → dev-weu → Add secret):
 
@@ -364,6 +366,30 @@ dotnet ef migrations bundle \
 
 ## 8. Build the Functions container + first app deploy
 
+### Workflow structure — ONE reusable pipeline, two thin callers
+
+Since the deploy refactor there is a **single** pipeline definition,
+[`deploy-azure.yml`](../.github/workflows/deploy-azure.yml) (`on: workflow_call`), and the per-stage
+workflows are **thin callers** that own only their trigger, concurrency group and inputs. Dev and prod
+run the *identical* job graph — they cannot drift:
+
+```
+.github/workflows/
+├── deploy-dev.yml ─── trigger: push to master (auto) + manual button (mode deploy|what-if);
+│                      resolves mode, then calls ▼ with env=dev, githubEnvironment=dev-weu,
+│                      bicepparamFile=deploy/bicep/weu.dev.bicepparam, secrets: inherit
+│
+├── deploy-azure.yml ─ the REUSABLE pipeline: build-dotnet + build-angular → provision (Bicep,
+│                      + Key-Vault secret sync) → migrate-database (temp firewall rule) →
+│                      5 APIs + SSR + Functions (ACR) + 2 SPAs. Every stage-touching job runs
+│                      in `environment: <githubEnvironment>`, so the caller's GitHub Environment
+│                      supplies the secrets AND (for prod) the required-reviewers gate.
+│
+└── deploy-pro.yml ─── trigger: manual ONLY (mode deploy|what-if, default what-if); calls ▲ with
+                       env=prod, githubEnvironment=prod-weu,
+                       bicepparamFile=deploy/bicep/weu.prod.bicepparam, secrets: inherit
+```
+
 The [`deploy-dev.yml`](../.github/workflows/deploy-dev.yml) trigger is **hybrid** (dev tracks master):
 - **Auto** — **every push/merge to `master` auto-deploys to dev** (always a full `deploy`). So after the
   first manual provision below, you normally don't deploy by hand — merging keeps dev current.
@@ -371,8 +397,8 @@ The [`deploy-dev.yml`](../.github/workflows/deploy-dev.yml) trigger is **hybrid*
   workflow**) with a **mode** choice: `deploy` (full provision + migrate + deploy) or `what-if` (a
   non-mutating Bicep preview — no migrate, no deploy — to see what a deploy would change).
 
-It **never** runs inside a PR. (Prod — `deploy-pro.yml` — stays manual-with-confirmation and never
-auto-deploys.)
+It **never** runs inside a PR. (Prod — `deploy-pro.yml` — is manual-only behind the `prod-weu`
+required-reviewers gate, defaults to `what-if`, and never auto-deploys — see §11.)
 
 For the **first** deploy specifically, fill the 2 SWA deploy tokens (below) first, then either merge to
 master or click Run workflow.
@@ -419,6 +445,96 @@ When green: the five `api-cleansia-*-weu-dev.azurewebsites.net` hosts are the st
 [ ] 9.  Smoke: 5 APIs + both mobile tokens + SSR + 2 SPAs + the Functions PDF pipeline
 [ ] 10. Green → tell Claude → iOS Phase 0 points at dev
 ```
+
+---
+
+## 11. PROD — provisioning + first deploy (all MANUAL_STEPs)
+
+Prod is the **same pipeline** (`deploy-azure.yml`) pointed at the `*-weu-prod` footprint by
+[`deploy-pro.yml`](../.github/workflows/deploy-pro.yml) — dispatch-only, **mode defaults to
+`what-if`**, so the lazy path is always the non-mutating preview. Everything below is owner UI/CLI
+work the YAML cannot do. Do it **in this order**:
+
+> **MANUAL_STEP P1 — create the `prod-weu` GitHub Environment with Required reviewers.**
+> GitHub → repo → **Settings → Environments → New environment → `prod-weu`** → add **Required
+> reviewers** = you (+ a second approver if available); **Wait timer** optional; optionally restrict
+> *Deployment branches* to `master`. This **replaces** the old typed-"deploy" confirmation gate: a
+> `Deploy to PRO` run now pauses at the first prod job until a reviewer approves — **no prod secret is
+> released before that approval.**
+
+> **MANUAL_STEP P2 — federate the OIDC app to `prod-weu`** (repeat §2.2 with the prod subject):
+>
+> ```bash
+> az ad app federated-credential create --id "$APP_ID" --parameters '{
+>   "name": "cleansia-prod-weu",
+>   "issuer": "https://token.actions.githubusercontent.com",
+>   "subject": "repo:VM-s-Solutions/cleansia:environment:prod-weu",
+>   "audiences": ["api://AzureADTokenExchange"]
+> }'
+> ```
+
+> **MANUAL_STEP P3 — create the prod resource group:**
+>
+> ```bash
+> az group create --name rg-cleansia-weu-prod --location westeurope
+> ```
+
+> **MANUAL_STEP P4 — add the `prod-weu` Environment secrets.** Same **names** as `dev-weu`
+> (the reusable workflow reads identical names in both stages — only the Environment differs),
+> prod **values**. Never reuse a dev secret value in prod.
+
+| `prod-weu` secret (same name as dev-weu) | Prod value | Used by |
+|---|---|---|
+| `AZURE_CLIENT_ID` | the OIDC app id (after P2 federation) | `azure/login` |
+| `AZURE_TENANT_ID` | tenant id | `azure/login` |
+| `AZURE_SUBSCRIPTION_ID` | subscription id | `azure/login` |
+| `POSTGRES_ADMIN_PASSWORD` | a **new** strong alphanumeric password (§1 rules; never dev's) | the Bicep `@secure()` param |
+| `ADMIN_IP_ADDRESS` | your laptop's public IP (§1 caveats apply) | the Postgres admin firewall rule |
+| `CI_PRINCIPAL_ID` | the OIDC SP object id — optional; empty skips the Bicep grant (the deploy self-grants Secrets Officer) | the Bicep `ciPrincipalId` param |
+| `DB_CONNECTION_STRING` | full Npgsql string for `pg-cleansia-weu-prod` (build as §6.2, prod names) | `migrate-database` |
+| `ACR_NAME` | `acrcleansiaweuprod` (deterministic — same naming rule as §4's note) | the Functions `az acr build` step |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER` | `swa-cleansia-partner-weu-prod` deploy token (fill after P5) | partner SPA deploy |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN` | `swa-cleansia-admin-weu-prod` deploy token (fill after P5) | admin SPA deploy |
+| `JWT_KEY` | a **new** strong random 256-bit key | KV push → `Jwt--Key` |
+| `CSRF_SECRET` | a new random string | KV push → `Csrf--Secret` |
+| `STRIPE_SECRET_KEY` | `sk_live_…` (**live** key — prod only) | KV push → `Stripe--SecretKey` |
+| `STRIPE_WEBHOOK_SECRET` | the **live** `whsec_…` (from the prod Stripe webhook endpoint) | KV push → `Stripe--WebhookSecret` |
+| `STRIPE_PUBLISHABLE_KEY` | `pk_live_…` | KV push → `Stripe--PublishableKey` |
+| `SENDGRID_API_KEY` | the prod SendGrid key | KV push → `SendGrid--ApiKey` |
+| `SENDGRID_RESET_PASSWORD_TEMPLATE_ID` | `d-…` (same template ids as dev unless prod gets its own set) | KV push |
+| `SENDGRID_ORDER_RECEIPT_TEMPLATE_ID` | `d-…` | KV push |
+| `SENDGRID_EMAIL_CONFIRMATION_TEMPLATE_ID` | `d-…` | KV push |
+| `SENDGRID_PERIOD_CLOSED_TEMPLATE_ID` | `d-…` | KV push |
+| `SENDGRID_PERIOD_END_REMINDER_TEMPLATE_ID` | `d-…` | KV push |
+| `SENDGRID_ORDER_STATUS_UPDATE_TEMPLATE_ID` | `d-…` | KV push |
+| `SENTRY_DSN` | the **real** prod DSN (dev leaves this empty; prod is where Sentry is on) | KV push → `Sentry--Dsn` |
+| `MAPBOX_TOKEN` | the prod Mapbox token | KV push → `Mapbox--GeocodingAccessToken` |
+
+> The 4 derivable Key Vault secrets (`Storage--ConnectionString`, `ConnectionStrings--cleansia-db`,
+> `Jwt--Issuer`, `Jwt--Audience`) are written by the Bicep `derivedSecrets` module on the first
+> provision, exactly as in dev (§6) — nothing to set.
+
+> **MANUAL_STEP P5 — first provision.** Preferred: dispatch **Actions → "Deploy to PRO" → Run
+> workflow → mode = `what-if`**, review the preview, then re-dispatch with **mode = `deploy`** and
+> approve the environment gate — the pipeline provisions `rg-cleansia-weu-prod` from
+> [`weu.prod.bicepparam`](bicep/weu.prod.bicepparam) (its `adminIpAddress`/`ciPrincipalId`
+> placeholders are overridden by the P4 secrets at deploy time, same as dev). The CLI fallback is
+> §5 with the prod names: `-g rg-cleansia-weu-prod … --parameters deploy/bicep/weu.prod.bicepparam`.
+> The two SPA deploy jobs fail on this first run (empty SWA tokens) — expected; continue to P6.
+
+> **MANUAL_STEP P6 — fill the two SWA tokens, then redeploy:**
+>
+> ```bash
+> az staticwebapp secrets list -g rg-cleansia-weu-prod -n swa-cleansia-partner-weu-prod --query properties.apiKey -o tsv
+> az staticwebapp secrets list -g rg-cleansia-weu-prod -n swa-cleansia-admin-weu-prod   --query properties.apiKey -o tsv
+> ```
+>
+> Paste into the two `AZURE_STATIC_WEB_APPS_API_TOKEN_*` secrets (P4), dispatch
+> **Deploy to PRO → mode = `deploy`** again, approve, and smoke-test the §9 checklist against the
+> `*-weu-prod` hostnames.
+
+Provision order recap: **P1 environment+reviewers → P2 OIDC federation → P3 resource group →
+P4 secrets → P5 what-if, then deploy → P6 SWA tokens + final deploy + smoke test.**
 
 ---
 

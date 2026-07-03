@@ -1,7 +1,7 @@
 ---
 id: T-0372
 title: "iOS brand/asset parity — 6 mascot imagesets + Core Mascot enum + AnimatedMascotView (ImageIO webp), mascots across auth/splash/success/hero/empty-states/membership (+ BusyMascotOverlay), app icons BOTH apps, branded launch screens BOTH apps, category icon meaning + tints"
-status: in_progress
+status: done
 size: M
 owner: ios
 created: 2026-07-03
@@ -54,14 +54,14 @@ source: phase/ios-fix1 on-device shakeout diagnosis (2026-07-02, cluster brand-a
   (used by the partner app — `OrdersListComponents.swift:160`).
 
 ## Acceptance criteria
-- [ ] **AC1 (imagesets)** — The 6 mascot PNGs land in `CleansiaCustomer/Resources/Assets.xcassets` as
+- [x] **AC1 (imagesets)** — The 6 mascot PNGs land in `CleansiaCustomer/Resources/Assets.xcassets` as
   universal single-scale imagesets (the exact Contents.json shape of the partner's `mascot_waving.imageset`,
   template-rendering-intent: original); optionally optimized (~8 MB raw).
-- [ ] **AC2 (Core enum + animator)** — Partner's `Mascot.swift` enum is promoted to `CleansiaCore` (+
+- [x] **AC2 (Core enum + animator)** — Partner's `Mascot.swift` enum is promoted to `CleansiaCore` (+
   `.idea`/`.mopping` cases; partner repoints); a Core `AnimatedMascotView` (UIViewRepresentable wrapping
   `CGAnimateImageDataWithBlock` — ImageIO decodes animated WebP since iOS 14, safe at the 16 floor) plays the
   2 WebPs bundled as data assets, with a static-still fallback mode.
-- [ ] **AC3 (usage parity)** — mascot_waving in AuthHeaderImage (SignIn/SignUp/EmailVerify/Forgot/
+- [x] **AC3 (usage parity)** — mascot_waving in AuthHeaderImage (SignIn/SignUp/EmailVerify/Forgot/
   Onboarding), SplashGateView, and the SubscribePlus hero; mascot_ready in MembershipManagementCard
   (`:94/:152`, replacing crown/checkmark); mascot_idea via the EXISTING Core `MascotEmptyState` in
   OrdersEmptyView + the disputes empty state (exactly as the partner app does); animated welcoming
@@ -69,23 +69,27 @@ source: phase/ios-fix1 on-device shakeout diagnosis (2026-07-02, cluster brand-a
   mascot overlay + trailing content padding on LiveProgressHero; a `BusyMascotOverlay` (scrim +
   RoundedRectangle(24) card + 140pt mascot + message, spring scale-in transition) attached to
   BookingSheetView + SubscribePlusScreen keyed to isSubmitting (static mascot_cleaning acceptable until the
-  animator lands; button spinner kept).
-- [ ] **AC4 (app icons, BOTH apps)** — A 1024×1024 full-bleed master per app (white C path on `#0284C7`
+  animator lands; button spinner kept). *(Marking [x]: SubscribePlus attached in `0be26d5d`; the
+  BookingSheetView attachment DELIVERED by the recorded carrier T-0371 in `fef5745c` — AC3 complete
+  across both carriers.)*
+- [x] **AC4 (app icons, BOTH apps)** — A 1024×1024 full-bleed master per app (white C path on `#0284C7`
   baked in, no transparency; partner slightly differentiated, e.g. the bolder C), `AppIcon.appiconset` with
   the modern single-size Contents.json, `ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon` in both `project.yml`s
   + xcodegen re-run; both apps install with a real icon.
-- [ ] **AC5 (launch screens, BOTH apps)** — `UILaunchScreen` populated in both `project.yml`s
+- [x] **AC5 (launch screens, BOTH apps)** — *(with the recorded DEVIATION below: COLOR-ONLY
+  `UILaunchScreen` — no `UIImageName`; real-hardware re-probe filed as T-0377)* — `UILaunchScreen`
+  populated in both `project.yml`s
   (`UIColorName: SplashBackground` — a new color asset `#0284C7` with a dark-appearance variant mirroring
   values-night — + `UIImageName: mascot_waving`, `UIImageRespectsSafeAreaInsets: true`); the in-app
   `SplashGateView` restyled to mirror `SplashScreen.kt`: Sky600→Sky400 LinearGradient full-bleed, 180pt
   mascot_waving, white Poppins "Cleansia" wordmark (font already bundled via UIAppFonts), white tagline +
   white-tinted ProgressView, a 600ms opacity fade on appear.
-- [ ] **AC6 (category icons + tints)** — home→`bubbles.and.sparkles` (SF Symbols 4, iOS 16; reads as
+- [x] **AC6 (category icons + tints)** — home→`bubbles.and.sparkles` (SF Symbols 4, iOS 16; reads as
   cleaning — or `paintbrush.fill`); `CategoryPalette` extended to return the Android tint hexes
   (`0284C7`/`7C3AED`/`0891B2`/`EA580C`) so card icon chips match; `"washer"` verified rendering on a real
   iOS 16.0 device/16.4 sim (an unavailable symbol renders EMPTY, silently); the no-broom substitution
   recorded as the one-line Gate-DP divergence note.
-- [ ] **AC7 (verification)** — Both apps build; suites green; swiftformat/swiftlint --strict clean; iOS
+- [x] **AC7 (verification)** — Both apps build; suites green; swiftformat/swiftlint --strict clean; iOS
   16.4-simulator visual smoke of splash/auth/home/success/empty states (T-0374 leg).
 
 ## Out of scope
@@ -144,9 +148,26 @@ source: phase/ios-fix1 on-device shakeout diagnosis (2026-07-02, cluster brand-a
   DEFERRED to T-0371** (Slice D owns that file in this parallel batch; attaching here would collide).
   T-0371 is the carrier: attach `BusyMascotOverlay` keyed to the booking submit state (+ `busy_booking` /
   `busy_payment` strings). SubscribePlusScreen is attached in this ticket.
+- 2026-07-03 — the deferred BookingSheetView attachment DELIVERED by carrier T-0371 (`fef5745c`: keyed to
+  isSubmitting, Android `busy_booking` copy ×5; `busy_payment` deliberately not mirrored — unused in
+  Android). AC3 complete across both carriers.
+- 2026-07-03 — **done** by pm at phase close (reviewer CHANGES folded in `0be26d5d`; red→green proofs in
+  the fold entry). Recorded deviations STAND: AC5 launch screen ships COLOR-ONLY (`UIImageName`
+  known-broken on the 16.4 SIMULATOR — the real-hardware re-probe filed as **T-0377**); AC6 no-broom →
+  `bubbles.and.sparkles` (Gate-DP one-liner). Follow-up **T-0378** filed (partner in-app splash branding —
+  its gate is still a bare ProgressView; the customer got the full branded splash). Final-tree gates:
+  Core 272/272 (both runtimes), Customer 406/406, Partner green, swiftformat 0.60.1 0/528 + swiftlint
+  --strict clean tree-wide; both apps install with real icons + the branded launch color on the 16.4
+  smoke. Mascot/icon/splash LOOK on real hardware rides the owner device pass (phase PR).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
+- 2026-07-03 reviewer (Slice E, concurrent): **CHANGES** — (1) the `AnimatedMascotView` stale-animation
+  restart bug (SwiftUI view reuse froze the OLD animation on a mascot switch); (2) the accidental
+  33.6k-line xcstrings catalog-sync churn shipped in `62d9495b` (revert + a build-level guard demanded);
+  (3) the missing AC3 `BusyMascotOverlay` attachments. ALL folded in `0be26d5d` (the booking-sheet
+  attachment via the T-0371 carrier — file-lock discipline); red→green proofs recorded in the status log.
+  PM reconciled 2026-07-03: folded, slice advanced to done.
 - 2026-07-03 — dev (harvest note): folded two clarifications into `patterns-mobile.md` with the review fold —
   the `AnimatedMascotView` row now records the Coordinator `(data, loop)` + generation-token restart idiom
   (empty `updateUIView` freezes the old animation on view reuse; `CGAnimateImageDataWithBlock` has no cancel

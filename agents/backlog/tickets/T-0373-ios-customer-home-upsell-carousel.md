@@ -1,7 +1,7 @@
 ---
 id: T-0373
 title: "iOS customer Home upsell carousel — port the Android HorizontalPager of gradient mascot upsell slides (TabView(.page) + BrandGradients)"
-status: proposed
+status: done
 size: M
 owner: ios
 created: 2026-07-03
@@ -31,18 +31,19 @@ Deliberately split from T-0372 because it is **structural, not just assets**: it
 HomeTab would mean immediate rework, hence `proposed` until both land.
 
 ## Acceptance criteria
-- [ ] **AC1 (pager)** — HomeTab's `BookCard` is replaced by a SwiftUI `TabView(.page)` pager (the ADR-0018
+- [x] **AC1 (pager)** — HomeTab's `BookCard` is replaced by a SwiftUI `TabView(.page)` pager (the ADR-0018
   D3-style mapping for HorizontalPager) of gradient upsell cards; `MembershipManagementCard` +
   `RecurringEntryRow` stay below, as on Android.
-- [ ] **AC2 (slide model parity)** — Same slide predicate logic (`isPlus` / `showSetupRecurring` /
+- [x] **AC2 (slide model parity)** — Same slide predicate logic (`isPlus` / `showSetupRecurring` /
   `hasAnyOrders`), same slide order, same gradients — a `BrandGradients` set defined in `CleansiaCore`
   mirroring the Android values — each slide with its dedicated mascot (`mascot_ready`/`mascot_idea`/
   `mascot_mopping`/`mascot_cleaning` ×2) trailing-aligned, plus the per-slide CTA wiring (Plus →
   SubscribePlus, book-hero → booking sheet, referral → Rewards, setup-recurring → recurring flow).
-- [ ] **AC3 (Gate-DP)** — Review cites `HomeTab.kt:426-500` as the reference; divergences (if any) recorded
-  as one-line notes; the pager renders correctly on the iOS 16.4 simulator (T-0374 leg) with no clipping
-  against the T-0368 pill-bar inset contract.
-- [ ] **AC4 (non-regression)** — Customer suite green; swiftformat/swiftlint --strict clean.
+- [x] **AC3 (Gate-DP)** — Review cites `HomeTab.kt:426-500` as the reference; divergences (if any) recorded
+  as one-line notes (5 recorded below — divergence (1) filed as the Android follow-up **T-0375**); the
+  pager renders correctly on the iOS 16.4 simulator (T-0374 leg) with no clipping against the T-0368
+  pill-bar inset contract.
+- [x] **AC4 (non-regression)** — Customer suite green; swiftformat/swiftlint --strict clean.
 
 ## Out of scope
 - The mascot assets/animator (T-0372) and the shell/pager restructure (T-0368) — hard dependencies.
@@ -99,6 +100,25 @@ HomeTab would mean immediate rework, hence `proposed` until both land.
   `onCreated: { model.pop() }`, so a naive single `path.append(.createRecurring)` from Home would pop to the
   tab root after creation instead of landing on the recurring list (Android's fixed Path B,
   `CleansiaNavHost.kt:591-602`); mirror the `membershipSuccess.onSetupRecurring` wiring.
+- 2026-07-03 — the "PENDING SHELL WIRING" entry above is **RESOLVED IN `e69a0283` ITSELF**: the Slice-D
+  file lock released before this slice committed, so the wiring shipped WITH the slice —
+  `recurringRepository` passed at the `HomeTab(...)` call site, referral CTA → `model.select(.rewards)`,
+  setup-recurring CTA → the PRE-SEEDED `NavigationPath([recurringList, createRecurring])` (pop-on-created
+  semantics preserved). No inert-CTA interim ever landed on the branch. Post-wiring Customer 405/405.
+- 2026-07-03 — D+F review fold (`bfb1ca7a`): **F-1 (floor catch):** `BrandGradientTests` was RED on the
+  iOS 16.4 runtime (18 failures) — caught ONLY because the T-0374 floor leg ran the suite there; fixed
+  STRUCTURALLY — the light/dark hex stops become `BrandGradient`'s single source of truth (`colors`
+  derives from them) and the tests assert the stops: OS-independent value equality; Core 272/272 green on
+  BOTH iPhone 17 and iOS 16.4. Also folded: HomeTab's recurring source + referral/setup-recurring
+  callbacks made REQUIRED (an optional-defaulted callback is a silently inert CTA — the exact failure
+  class this phase fixed); the Book FAB glyph follows the T-0372 nearest-meaning ruling
+  (`bubbles.and.sparkles`).
+- 2026-07-03 — Gate-DP divergence (1) FILED as **T-0375**: Android `home_hero_greeting` bakes ", Michael"
+  into every user's greeting (`strings.xml:116` ×5 locales; consumed at `HomeTab.kt:489`) — fix name-less
+  or a real placeholder; iOS deliberately shipped the name-less set.
+- 2026-07-03 — **done** by pm at phase close. Final-tree gates: Core 272/272 (both runtimes), Customer
+  406/406, lint clean tree-wide; the 16.4 render smoke via the floor leg. REMAINING acceptance: the
+  owner's signed-in Home render + nested-pager gesture feel — flagged in the phase PR.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
@@ -106,3 +126,12 @@ HomeTab would mean immediate rework, hence `proposed` until both land.
   `BrandGradients.kt` → the Core `BrandGradient` token enum (dynamic pairs + fixed `.plusHero`,
   `linearGradient` top-leading→bottom-trailing = Compose's default), with the "models carry the semantic
   token so tests compare gradients by case" idiom.
+- 2026-07-03 reviewer (D+F combined, concurrent): **CHANGES** — **F-1** (the gradient tests were red on
+  the iOS 16.4 floor runtime while green on iPhone 17) + the required-CTA hardening; folded in
+  `bfb1ca7a`. **Empirical correction ON the review (recorded):** the reviewer's suggested F-1 fix —
+  `UITraitCollection.performAsCurrent` around the `UIColor(Color)` roundtrip — was EMPIRICALLY WRONG on
+  iOS 16: `UIColor(Color)` flattens the dynamic provider REGARDLESS of current traits (trait
+  preservation arrived in iOS 17), so NO roundtrip works on the floor OS. The landed fix asserts the hex
+  stops (the new single source of truth) instead — OS-independent. The reviewer's DIAGNOSIS stands as
+  the catch (and as the T-0374 leg's proof-of-value); the fix diverged with evidence. PM reconciled
+  2026-07-03: fold verified, slice advanced to done.

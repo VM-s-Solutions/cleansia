@@ -34,8 +34,8 @@ public struct RegisterRequest: Encodable, Sendable {
     public let language: String
 }
 
-// The email names the account the 6-digit code was issued to — the server verifies the code ONLY
-// against that account (a bare code proves nothing by itself).
+/// The email names the account the 6-digit code was issued to — the server verifies the code ONLY
+/// against that account (a bare code proves nothing by itself).
 public struct ConfirmUserEmailRequest: Encodable, Sendable {
     public let code: String
     public let email: String

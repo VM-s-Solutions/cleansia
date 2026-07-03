@@ -42,10 +42,16 @@ targets:
     info:
       path: Info.plist
       properties:
-        # A launch screen opts the app into native full-screen rendering on every device.
-        # Without it iOS runs the app at a legacy canvas and LETTERBOXES it (black bars +
-        # scaled/clipped content). Portrait-locked to match the Android app.
-        UILaunchScreen: {}
+        # Static launch screen — parity analogue of Android's system splash
+        # background (Theme.Cleansia.Splash windowSplashScreenBackground, with
+        # the values-night dark variant). Also opts the app into native
+        # full-screen rendering (without it iOS letterboxes). Deliberately
+        # color-only: on the iOS 16.4 simulator UIImageName either scales the
+        # image to fill the screen (broken giant mascot) or silently renders
+        # nothing for padded variants — the branded mascot splash lives in
+        # SplashGateView instead.
+        UILaunchScreen:
+          UIColorName: SplashBackground
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         API_BASE_URL: $(API_BASE_URL)
@@ -67,7 +73,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: cz.cleansia.partner
         PRODUCT_NAME: CleansiaPartner
         GENERATE_INFOPLIST_FILE: NO
-        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1"
         API_BASE_URL: https:/$()/api-cleansia-partner-mobile-weu-dev.azurewebsites.net
     dependencies:

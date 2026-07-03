@@ -7,9 +7,9 @@ public protocol ApiErrorLocalizing {
 public struct ApiErrorLocalizer: ApiErrorLocalizing {
     public init() {}
 
-    // Mirrors Android's ApiErrorParser: catalog lookup by error key → the raw
-    // key text → the server message → a status-based generic. Transport-level
-    // "network.*" codes are never shown raw.
+    /// Mirrors Android's ApiErrorParser: catalog lookup by error key → the raw
+    /// key text → the server message → a status-based generic. Transport-level
+    /// "network.*" codes are never shown raw.
     public func message(for error: ApiError) -> String {
         if let key = error.code, key.contains(".") {
             if let localized = catalogString("error." + key) {

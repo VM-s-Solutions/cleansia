@@ -192,22 +192,17 @@ private struct DisputesEmptyView: View {
     let onBrowseOrders: () -> Void
 
     var body: some View {
-        VStack(spacing: Spacing.m) {
-            Image(systemName: "checkmark.shield")
-                .font(.system(size: 64))
-                .foregroundColor(CleansiaColors.primary)
-            Text(L10n.Disputes.listEmptyTitle)
-                .font(CleansiaTypography.headlineSmall)
-                .foregroundColor(CleansiaColors.onBackground)
-                .multilineTextAlignment(.center)
-            Text(L10n.Disputes.listEmptySubtitle)
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .multilineTextAlignment(.center)
+        MascotEmptyState(
+            image: Mascot.idea.image,
+            text: L10n.Disputes.listEmptyTitle,
+            subtitle: L10n.Disputes.listEmptySubtitle,
+            verticallyCentered: true,
+            imageSize: 160,
+            titleFont: CleansiaTypography.headlineSmall
+        ) {
             CleansiaPrimaryButton(L10n.Disputes.listEmptyCta, action: onBrowseOrders)
                 .fixedSize()
         }
-        .padding(Spacing.xl)
     }
 }
 

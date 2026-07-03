@@ -33,6 +33,7 @@ struct PropertyStepper: View {
 struct CategoryChip: View {
     let label: String
     let systemImage: String
+    let tint: Color
     let selected: Bool
     let onTap: () -> Void
 
@@ -41,17 +42,18 @@ struct CategoryChip: View {
             HStack(spacing: Spacing.xxs) {
                 Image(systemName: systemImage)
                     .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(selected ? .white : tint)
                 Text(label)
                     .font(CleansiaTypography.labelLarge)
+                    .foregroundColor(selected ? .white : CleansiaColors.onSurface)
             }
-            .foregroundColor(selected ? CleansiaColors.onPrimary : CleansiaColors.onSurface)
             .padding(.horizontal, Spacing.s)
             .padding(.vertical, Spacing.xs)
-            .background(selected ? CleansiaColors.primary : CleansiaColors.surface)
+            .background(selected ? tint : CleansiaColors.surface)
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.pill))
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.pill)
-                    .stroke(selected ? CleansiaColors.primary : CleansiaColors.outlineVariant, lineWidth: 1)
+                    .stroke(selected ? tint : CleansiaColors.outlineVariant, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -66,11 +68,12 @@ struct ServiceRow: View {
     var body: some View {
         Button(action: onToggle) {
             HStack(alignment: .top, spacing: Spacing.s) {
+                let tint = CategoryPalette.tint(for: service.category.slug)
                 Image(systemName: CategoryPalette.symbol(for: service.category.slug))
                     .font(.system(size: 20))
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(tint)
                     .frame(width: 44, height: 44)
-                    .background(CleansiaColors.primaryContainer.opacity(0.5))
+                    .background(tint.opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
 
                 details
@@ -244,14 +247,29 @@ struct CatalogMessageView: View {
     }
 }
 
+/// Slug-keyed palette mirroring Android ServicesStep.kt: SF Symbols map the
+/// Material icons' meaning (no SF broom exists, so home→bubbles.and.sparkles
+/// and deep→leaf stand in for CleaningServices/Spa), tints are the Android
+/// per-category hexes.
 enum CategoryPalette {
+    static let defaultTint = Color(red: 2 / 255, green: 132 / 255, blue: 199 / 255)
+
     static func symbol(for slug: String) -> String {
         switch slug {
-        case "home": "sparkles"
-        case "deep": "drop.fill"
+        case "home": "bubbles.and.sparkles"
+        case "deep": "leaf"
         case "laundry": "washer"
         case "pet": "pawprint"
         default: "star"
+        }
+    }
+
+    static func tint(for slug: String) -> Color {
+        switch slug {
+        case "deep": Color(red: 124 / 255, green: 58 / 255, blue: 237 / 255)
+        case "laundry": Color(red: 8 / 255, green: 145 / 255, blue: 178 / 255)
+        case "pet": Color(red: 234 / 255, green: 88 / 255, blue: 12 / 255)
+        default: defaultTint
         }
     }
 }

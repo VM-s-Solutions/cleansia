@@ -8,10 +8,9 @@ struct MembershipSuccessScreen: View {
     var body: some View {
         ScrollView {
             VStack(spacing: Spacing.l) {
-                Image(systemName: "crown.fill")
-                    .font(.system(size: 56))
-                    .foregroundColor(MembershipPalette.premiumGold)
-                    .padding(.top, Spacing.xxl)
+                AnimatedMascotView(.welcoming, loop: false, fallback: .waving)
+                    .frame(width: 200, height: 200)
+                    .padding(.top, Spacing.xl)
                 Text(L10n.Membership.successTitle)
                     .font(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onBackground)

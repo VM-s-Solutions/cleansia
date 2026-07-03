@@ -7,6 +7,7 @@ struct PromoCodeSheet: View {
     let onValidate: (String) async -> PromoCodeState
     let onDismiss: () -> Void
 
+    @Environment(\.snackbarController) private var snackbar
     @State private var code: String
     @State private var localState: PromoCodeState = .idle
 
@@ -49,6 +50,7 @@ struct PromoCodeSheet: View {
             onCancel: onDismiss,
             message: { resultBlock }
         )
+        .snackbarHost(snackbar, bottomInset: SnackbarController.defaultBottomInset)
         .presentationDetents([.medium])
     }
 

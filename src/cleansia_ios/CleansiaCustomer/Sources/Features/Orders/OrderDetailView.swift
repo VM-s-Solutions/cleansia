@@ -118,6 +118,7 @@ struct OrderDetailView: View {
                     }
                 }
             )
+            .snackbarHost(snackbar, bottomInset: SnackbarController.defaultBottomInset)
         }
     }
 
@@ -138,6 +139,7 @@ struct OrderDetailView: View {
                     }
                 }
             )
+            .snackbarHost(snackbar, bottomInset: SnackbarController.defaultBottomInset)
         }
     }
 

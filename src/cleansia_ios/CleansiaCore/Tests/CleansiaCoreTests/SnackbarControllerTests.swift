@@ -68,4 +68,15 @@ final class SnackbarControllerTests: XCTestCase {
         let info = SnackbarMessage(text: "i", severity: .info)
         XCTAssertGreaterThan(error.autoDismissDuration, info.autoDismissDuration)
     }
+
+    func testBottomInsetDefaultsFollowsSetAndReset() {
+        let controller = SnackbarController()
+        XCTAssertEqual(controller.bottomInset, SnackbarController.defaultBottomInset)
+
+        controller.setBottomInset(100)
+        XCTAssertEqual(controller.bottomInset, 100)
+
+        controller.resetBottomInset()
+        XCTAssertEqual(controller.bottomInset, SnackbarController.defaultBottomInset)
+    }
 }

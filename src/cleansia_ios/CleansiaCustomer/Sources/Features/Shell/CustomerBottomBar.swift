@@ -12,13 +12,13 @@ struct CustomerBottomBar: View {
     let onBook: () -> Void
 
     var body: some View {
-        ZStack(alignment: .top) {
-            pill
-            BookFab(action: onBook)
-                .offset(y: -12)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        pill
+            .overlay(alignment: .top) {
+                BookFab(action: onBook)
+                    .offset(y: -12)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
     }
 
     private var pill: some View {
@@ -79,9 +79,9 @@ private struct BookFab: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "sparkles")
-                .font(.system(size: 30, weight: .semibold))
+                .font(.system(size: 34, weight: .semibold))
                 .foregroundColor(CleansiaColors.onPrimary)
-                .frame(width: 64, height: 64)
+                .frame(width: 74, height: 74)
                 .background(Circle().fill(CleansiaColors.primary))
                 .overlay(Circle().stroke(CleansiaColors.background, lineWidth: 4))
         }

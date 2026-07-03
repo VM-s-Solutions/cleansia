@@ -93,11 +93,11 @@ extension L10n.Booking {
         L10n.localized("error_booking_pick_time")
     }
 
-    static var errorProfileIncomplete: String {
-        L10n.localized("error_booking_profile_incomplete")
-    }
-
     static var errorGenericNetwork: String {
         L10n.localized("error_generic_network")
+    }
+
+    static var busyBooking: String {
+        L10n.localized("busy_booking")
     }
 }

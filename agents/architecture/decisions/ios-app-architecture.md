@@ -799,8 +799,10 @@ bottom-bar row — see the amended table above):
   multi-element sets `CustomerShellView.swift:212,333`, `isPresented` mixing `OrderDetailView.swift:53`); the 4
   tab ROOTS (only) sit in `TabView(selection:)` + `.tabViewStyle(.page(indexDisplayMode: .never))` (swipe
   parity); the `CustomerBottomBar` pill/FAB composite (`CustomBottomBar` + `BookFab` port: 64pt pill, 16pt
-  margins, radius 32, outline-variant stroke, animated `NavSlot` dots, 72pt center gap, FAB top-center offset
-  −12) mounts via **`.safeAreaInset(edge: .bottom)`** — the 88pt-clearance contract; the ad-hoc 40pt spacers +
+  margins, radius 32, outline-variant stroke, animated `NavSlot` dots, 72pt center gap, the 74pt FAB — 34pt
+  glyph — top-center offset −12 [transcription-corrected 2026-07-03: ADR-0022 originally said 64pt;
+  `MainShell.kt:456-462` is 74dp/34dp]) mounts via **`.safeAreaInset(edge: .bottom)`** — the 88pt-clearance
+  contract; the ad-hoc 40pt spacers +
   the `.overlay`/`offset(y:-28)` FAB are deleted; the outer root stack is deleted. Pushed children **cover the
   whole shell** (bar hidden on push — the Android NavHost-above-shell parity); one back stack, exactly like
   Android (the per-tab-stack loss is conceded and priced in ADR-0022). ADR-0020 (root enum) + ADR-0021 (booking

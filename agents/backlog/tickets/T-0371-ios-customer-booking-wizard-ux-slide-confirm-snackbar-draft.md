@@ -87,6 +87,28 @@ source: phase/ios-fix1 on-device shakeout diagnosis (2026-07-02, cluster booking
 - 2026-07-03 — filed `ready` by pm from the phase/ios-fix1 diagnosis (booking-ux cluster, 3 findings). High
   priority (the customer PRIMARY flow's confirm affordance is effectively broken on device). Dispatch note:
   serialize `CustomerShellView.swift` edits with T-0368.
+- 2026-07-03 — implemented by ios (phase/ios-fix1 Slice D). Red→green: `SlideToConfirmLogicTests` (7 tests:
+  clamp, ≥0.9 fire+lock, spring-back, locked-ignores-drag, reset-refires, zero-width, progress) written first
+  against the not-yet-existing Core `SlideToConfirmThumb`, then the Core `SlideToConfirm` control (partner
+  `.subtle` / customer `.prominent` styles, `enabled:`/`resetTrigger:` added, partner API-compatible) made them
+  pass; `BookingDraftSurvivalTests` (2) + `ShellSnackbarInsetTests` (3) + the `SnackbarController.bottomInset`
+  test likewise test-first. Partner-local `SlideToConfirm.swift` deleted (call sites repoint to Core
+  unchanged). Customer footer now drives the real slide (busy spinner + price label kept; thumb resets on
+  `.failed`/`.profileIncomplete` and when busy ends). In-sheet snackbar hosts: booking (88pt over the footer),
+  promo, referral, order-cancel, order-review; `.profileIncomplete` no longer snackbars — `onCompleteProfile`
+  → shell dismisses + `openEditProfile()` (Android parity). `BookingViewModel` hoisted to `CustomerShellView`
+  (`@StateObject`, session lifetime) and passed as `@ObservedObject`; `reset()` fires only on submit success.
+  Coordinator add-ons folded in: the shell-scoped snackbar lift (`SnackbarController.bottomInset` published +
+  `ShellSnackbarInset` 100pt = 88 composite + 12 gap, reset on push/disappear) and the ADR-0022 FAB
+  transcription fix (74pt / 34pt glyph, ADR + living-doc corrected). T-0372-deferred `BusyMascotOverlay`
+  attached to the booking sheet on `busy_booking` (×5 from Android). Tactile slide feel + sheet-pan
+  coexistence = owner device pass.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
+- 2026-07-03 ios harvest note: `patterns-mobile.md` gained three rows — the Core `SlideToConfirm` as "the one
+  slide control" (a static tap-track stand-in = defect), the "attach `.snackbarHost` at every modal-sheet root
+  that emits" convention (AC2's recorded convention), and the `SnackbarInsetScope` parity via
+  `SnackbarController.bottomInset` (shell lifts, sheets pin). Gate-DP references: `SwipeToConfirmButton.kt`
+  (90% threshold, spring-back, resetTrigger) + `BookingBottomSheet.kt` (ProfileIncomplete → dismiss +
+  edit-profile; busy overlay on `busy_booking`; reset-on-Failed).

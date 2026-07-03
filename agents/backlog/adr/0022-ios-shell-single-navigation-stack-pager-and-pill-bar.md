@@ -58,7 +58,9 @@ a defect class, never a pattern**, anywhere in either app.
 **D3 — The pill-bar/FAB composite is BRANDING, mounted via the safe-area contract.** A `CustomerBottomBar`
 composite (the `CustomBottomBar` + `BookFab` port: 64pt pill, 16pt horizontal margins, corner radius 32, surface
 fill + 1pt outline-variant stroke, 4 `NavSlot`s with the animated selection dot, a reserved 72pt center gap, the
-64pt `BookFab` at top-center offset −12) is mounted with **`.safeAreaInset(edge: .bottom)`** on the pager — every
+74pt `BookFab` (34pt glyph) at top-center offset −12 *[transcription-corrected 2026-07-03: this line originally
+said 64pt, but its own cited source `MainShell.kt:456-462` is `Modifier.size(74.dp)` + a 34dp icon — D3's
+copy-Android-exactly ruling governs]*) is mounted with **`.safeAreaInset(edge: .bottom)`** on the pager — every
 tab's `ScrollView` is automatically inset by the composite's full height (pill + FAB overhang, the Android 88dp
 clearance-contract analogue). The ad-hoc 40pt trailing spacers and the shell-level `.overlay` + `offset(y:-28)` FAB
 are deleted. Under `.page` style **no system tab bar exists**, so no `.toolbar(.hidden, for: .tabBar)` is needed —

@@ -41,6 +41,7 @@ final class CustomerShellModel: ViewModel {
 
 struct CustomerShellView: View {
     @StateObject private var model = CustomerShellModel()
+    @StateObject private var bookingVM = BookingViewModel()
     @StateObject private var membershipVM: MembershipViewModel
     @StateObject private var profileVM: ProfileViewModel
     @ObservedObject private var preferences: CustomerPreferencesModel
@@ -85,6 +86,7 @@ struct CustomerShellView: View {
         .tint(CleansiaColors.primary)
         .sheet(isPresented: $model.isBookingPresented) {
             BookingSheetView(
+                vm: bookingVM,
                 geocoding: container.geocodingService,
                 mapProvider: container.mapProvider,
                 paymentSheet: StripePaymentController(),
@@ -92,10 +94,19 @@ struct CustomerShellView: View {
                 onViewOrder: { orderId in
                     model.isBookingPresented = false
                     model.openOrder(orderId)
+                },
+                onCompleteProfile: {
+                    model.isBookingPresented = false
+                    model.openEditProfile()
                 }
             )
         }
         .task { await prefetch() }
+        .onAppear { snackbar.setBottomInset(ShellSnackbarInset.inset(pathDepth: model.path.count)) }
+        .onChange(of: model.path.count) { depth in
+            snackbar.setBottomInset(ShellSnackbarInset.inset(pathDepth: depth))
+        }
+        .onDisappear { snackbar.resetBottomInset() }
     }
 
     private func prefetch() async {

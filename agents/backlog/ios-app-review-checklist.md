@@ -86,6 +86,12 @@ floor. Columns: ☐ Partner · ☐ Customer (mark N/A where an item is one-app-o
       match the corresponding Android Compose screen** — and the ticket **cites it** (`<path/Screen.kt>`). Same
       region arrangement, same flow position, same field set + order, same brand (colors/logo/type/spacing/icon
       meaning). A moved flow / dropped/added/merged screen or field / re-brand is a **blocking** finding. *(both apps)*
+- [ ] **AR-DP-1a — Brand-asset parity (ADR-0022 hardening, 2026-07-02).** Every `drawable`/`raw`/`mipmap` asset
+      the cited Android screen references has an **iOS asset-catalog counterpart** (imageset / data asset) that
+      the iOS screen actually references. **SF-symbol substitution is allowed ONLY for Material ICON vectors**
+      (mapping the icon's *meaning*, per AR-DP-2) — **NEVER for brand raster or animated art** (mascots, logo,
+      wordmark, illustrations, launcher art). A brand asset replaced by an SF glyph or omitted is a **blocking**
+      finding, not a notable divergence. *(both apps)*
 - [ ] **AR-DP-2 — Native SwiftUI components, standard iOS pattern.** Every control is a **native SwiftUI
       component** — **no Material re-implementation** (no faux Material text field/sheet/ripple). The standard
       iOS pattern is used for nav (`NavigationStack`/`TabView`), pickers (`DatePicker`/`Picker`/`Menu`), sheets
@@ -96,12 +102,21 @@ floor. Columns: ☐ Partner · ☐ Customer (mark N/A where an item is one-app-o
 - [ ] **AR-DP-3 — Conflicts resolved iOS-native + noted.** Where an Android and an iOS convention genuinely
       conflicted, the **iOS-native** pattern was chosen, the divergence is **noted in the ticket** (one line:
       "Android X → iOS-native Y, iOS convention"), and the divergence touches **only the component** — never
-      layout/flow/branding. Canonical mappings (ADR-0018 D3): Compose bottom-nav → `TabView`; `ModalBottomSheet`
+      layout/flow/branding. Canonical mappings (ADR-0018 D3, as amended by ADR-0022): `ModalBottomSheet`
       → `.sheet`+`.presentationDetents`; Material `DatePicker` → native `DatePicker`; Material `TextField` →
       native `TextField`/`SecureField` (same labels + error strings ×5); Android system-back → swipe-back +
       `NavigationStack` back; Coil `AsyncImage` → SwiftUI `AsyncImage`/Kingfisher; Material `Snackbar` → native
-      toast on the same `SnackbarController` bus; Material `AlertDialog` → `.alert`/`.confirmationDialog`. An
-      **undocumented** divergence, or one that **moves layout/flow**, is a **blocking** finding. *(both apps)*
+      toast on the same `SnackbarController` bus; Material `AlertDialog` → `.alert`/`.confirmationDialog`.
+      **The shell bottom bar is NOT a swap point:** the Android floating pill bar (+ customer center FAB) is
+      **branding** → the custom pill composite per **ADR-0022** (a stock `TabView`/`.tabItem` shell bar is a
+      finding). An **undocumented** divergence, or one that **moves layout/flow**, is a **blocking** finding.
+      *(both apps)*
+- [ ] **AR-DP-4 — App chrome (ONE-TIME per app target; ADR-0022 hardening, 2026-07-02).** Owned by the app's
+      **shell/scaffold ticket** (app chrome appears in no screen's `.kt` citation — that is why it gets its own
+      item), re-verified here before submission: **(a)** `AppIcon.appiconset` present +
+      `ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon` in `project.yml` (no blank-grid placeholder icon);
+      **(b)** `UILaunchScreen` is **branded** (background color asset + brand image — not the empty `{}` dict);
+      **(c)** the in-app splash matches the Android splash branding (gradient / mascot / wordmark). *(both apps)*
 
 ## F. App Store Connect submission prerequisites (owner — the ASC half)
 

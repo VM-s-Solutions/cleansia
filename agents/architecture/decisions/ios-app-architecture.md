@@ -76,7 +76,8 @@ pixel-cloning Material or into an iOS redesign:
 
 | Android (Compose / Material) | iOS-native | identical (parity) |
 |---|---|---|
-| bottom `NavigationBar` | `TabView` | same tabs, same order |
+| customer shell: `HorizontalPager` + floating-pill `CustomBottomBar` + center `BookFab` (`MainShell.kt:363-474`) | ONE shell-level `NavigationStack` + `TabView(selection:)` `.tabViewStyle(.page(indexDisplayMode: .never))` pager (tab roots only) + the custom `CustomerBottomBar` pill/FAB composite via `.safeAreaInset(edge: .bottom)` — **ADR-0022**; the pill+FAB is **BRANDING**, never a component swap | same 4 tabs/order, swipe-between-tabs, pill+FAB signature, ONE back stack, bar hidden on child push |
+| partner shell: `HorizontalPager` + `FloatingIslandBottomBar` (4 even slots, no FAB — `MainScaffold.kt:106,144`) | the same ADR-0022 shape, partner pill variant (PM-filed follow-up; recorded interim after the crash fix = stock `TabView` + per-tab `NavigationPath` stacks) | same tabs, same order |
 | `ModalBottomSheet` / AnchoredDraggable booking sheet | `.sheet` + `.presentationDetents` | same 3 steps + content + snap intent |
 | Material `DatePicker`/`TimePicker` | native `DatePicker` (`.graphical`/`.wheel`/`.compact`) | same field + label + placement |
 | Material `TextField` | native `TextField`/`SecureField` | same fields/labels/error strings ×5 |
@@ -85,9 +86,15 @@ pixel-cloning Material or into an iOS redesign:
 | Material `Snackbar` | native toast on the same `SnackbarController` bus | same message, one-per-failure |
 | Material `AlertDialog` | `.alert` / `.confirmationDialog` | same title/body/actions/destructive semantics |
 
-**Gate-DP** (standing per-screen reviewer gate) checks three assertions (AR-DP-1/2/3): cite-the-Android-screen
-layout/flow/branding parity; native-components-only; conflicts-iOS-native-and-noted-touching-only-the-component.
-Recorded in §G of `agents/backlog/ios-app-review-checklist.md` + sprint-12 §10.6 + reviewer-check #22; it runs
+**Gate-DP** (standing per-screen reviewer gate) checks the §G assertions (AR-DP-1/2/3 **+ the 2026-07-02
+ADR-0022 hardening: AR-DP-1a + AR-DP-4**): cite-the-Android-screen layout/flow/branding parity; native-components-only;
+conflicts-iOS-native-and-noted-touching-only-the-component; **AR-DP-1a** — every drawable/raw asset the cited
+Android screen references has an iOS asset-catalog counterpart (SF-symbol substitution ONLY for Material icon
+vectors, NEVER for brand raster/animated art — mascots/logo/wordmark); **AR-DP-4** — a ONE-TIME per-app app-chrome
+check (AppIcon + branded launch screen + in-app splash), owned by the app's shell/scaffold ticket because app
+chrome lives in no screen's `.kt` citation (the phase/ios-fix1 gate-miss lesson: the gate's citation unit was the
+`.kt` screen file, so everything in `res/` and app packaging slipped). Recorded in §G of
+`agents/backlog/ios-app-review-checklist.md` + sprint-12 §10.6 + reviewer-check #22; it runs
 beside Gate-AR (ADR-0016) and the SwiftLint/SwiftFormat gate on every iOS **screen** ticket (infra tickets
 N/A). A **new** control mapping a feature surfaces is folded back into the table above (living-doc note) so the
 set converges; a new *rule about the principle itself* would be a superseding ADR.
@@ -775,6 +782,65 @@ DeviceRegistrationClient,PushTokenDataStore}.kt` + `partner-app/.../data/auth/Au
   TC-IOS-PUSH-LOGOUT-ORDER (the seam half; the security gate is §7.x SECURITY's), TC-IOS-PUSH-TAP — red-first; no live-delivery
   test (the T-0342 owner-gated proof).
 
+### The iOS-16 shell crash + shell design-parity restructure — ONE shell stack, page-pager, pill bar (phase/ios-fix1, recorded 2026-07-02, **ADR-0022**)
+
+The first on-device pass (the owner's iOS 16 iPhone — the ADR-0014 floor) surfaced a **fatal navigation defect
+class + the un-ported shell chrome**. Root cause (empirically reproduced on the iOS 16.4 sim): the outer pathless
+`NavigationStack` at `CustomerRootView.swift:17` / `PartnerRootView.swift:17` wrapping the shells' sibling
+typed-path `NavigationStack`s — illegal nesting iOS 17+ tolerates and iOS 16 punishes (`comparisonTypeMismatch`
+crash on the Plus pushes; yellow-⚠️ missing-destination placeholder pages on Profile pushes). **Four rulings,
+ADR-0022 carries the trade-off** (it supersedes the sprint-12 §7.15 D6 shell mapping and corrects the ADR-0018 D3
+bottom-bar row — see the amended table above):
+
+- **R1 (customer) — the RESTRUCTURE is approved, not the minimal fix.** ONE shell-level
+  `NavigationStack(path:)` owning ALL child routes: the four route enums merge into **one `ShellRoute` enum**
+  (deduping `subscribePlus` + order-detail, registered once via `.navigationDestination(for: ShellRoute.self)`);
+  the path is a **type-erased `NavigationPath`** (retires all three iOS-16 hazards: sibling typed paths,
+  multi-element sets `CustomerShellView.swift:212,333`, `isPresented` mixing `OrderDetailView.swift:53`); the 4
+  tab ROOTS (only) sit in `TabView(selection:)` + `.tabViewStyle(.page(indexDisplayMode: .never))` (swipe
+  parity); the `CustomerBottomBar` pill/FAB composite (`CustomBottomBar` + `BookFab` port: 64pt pill, 16pt
+  margins, radius 32, outline-variant stroke, animated `NavSlot` dots, 72pt center gap, FAB top-center offset
+  −12) mounts via **`.safeAreaInset(edge: .bottom)`** — the 88pt-clearance contract; the ad-hoc 40pt spacers +
+  the `.overlay`/`offset(y:-28)` FAB are deleted; the outer root stack is deleted. Pushed children **cover the
+  whole shell** (bar hidden on push — the Android NavHost-above-shell parity); one back stack, exactly like
+  Android (the per-tab-stack loss is conceded and priced in ADR-0022). ADR-0020 (root enum) + ADR-0021 (booking
+  stays a modal `.sheet` off the shell root) are **unchanged**. Tab roots stop driving nav-bar chrome
+  (`ProfileTab.swift:44`'s `.navigationTitle` → in-content header).
+- **R2 (partner) — minimal crash fix ONLY this phase:** delete the outer stack + convert the four typed paths
+  (`OrdersListView.swift:35`, `EarningsView.swift:26`, `ProfileView.swift:47`, `RegistrationLockView.swift:38`)
+  to `NavigationPath`, topology otherwise as recorded (§7.7 D1 / §7.12 D1). Partner pill/pager parity (Android
+  partner IS a `HorizontalPager` + `FloatingIslandBottomBar` — 4 even slots, no FAB) = a **PM-filed follow-up**
+  adopting the ADR-0022 shape; the pill is harvested to Core at that second call site, not before (§7.6 D1
+  anti-speculation). Until then the partner's stock bar is a *recorded* interim divergence.
+- **R3 (D3 table) —** the "bottom `NavigationBar` → `TabView`" row was stale (neither Android shell is a Material
+  `NavigationBar`); corrected in the table above. Classification: the floating pill + center FAB is the apps'
+  shared **brand signature** (per the `FloatingIslandBottomBar.kt` comment) — ADR-0018 *branding*, non-negotiable
+  parity, never an "iOS-wins" component swap. §7.15 D6's contrary call is superseded by ADR-0022.
+- **R4 (Gate-DP hardening) —** §G gains **AR-DP-1a** (Android-asset → asset-catalog parity; SF-symbol
+  substitution ONLY for Material icon vectors, never brand raster art) + **AR-DP-4** (one-time per-app app-chrome:
+  AppIcon + branded `UILaunchScreen` + in-app splash, owned by the shell/scaffold ticket); AR-DP-3's canonical
+  mapping list drops "Compose bottom-nav → `TabView`". These close the two gate-miss classes the diagnosis proved
+  (everything living in Android `res/` and app-level packaging escaped the per-`.kt`-screen citation unit).
+
+**Slice-A implementation names (the dev contract):** `ShellRoute` (one `Hashable` enum: `.orderDetail(String)`,
+`.subscribePlus`, `.membershipSuccess`, `.recurringList`, `.createRecurring(orderId: String?)`,
+`.rewardsActivity`, `.disputes`, `.createDispute(orderId: String?)`, `.disputeDetail(String)`, `.addresses`,
+`.editProfile`, `.devices`, `.notifications`, `.security`, `.language`, `.appearance`, `.help`,
+`.deleteAccount`); `CustomerShellModel` keeps `@Published var selection: CustomerShellTab` (the pager binding —
+pill taps set it inside `withAnimation`, the `animateScrollToPage` parity) + gains
+`@Published var path = NavigationPath()` (replacing the four arrays; `openOrder` = select `.orders` +
+`path = NavigationPath([ShellRoute.orderDetail(id)])`); `CustomerBottomBar(selection:onSelect:onBook:)` is the
+app-local composite. **Verify on an iOS 16.x device:** Plus from Home + from Profile, order detail, dispute
+create→detail, membership success, order photos, tab swipe, bar-hidden-on-push.
+
+**CRC updates (ADR-0022):** `ios-customer-shell` — `CustomerShellView` + `CustomerShellModel`: *responsibility:*
+own the tab selection, the ONE shell `NavigationPath`, and the booking-sheet presentation; *collaborators:*
+`ShellRoute` destinations, `CustomerBottomBar`, `BookingSheetView`, the repositories it prefetches; *does NOT
+know:* the audience root (CustomerRootView's), auth/session mutation, how child screens render, MapKit/Stripe.
+`ios-customer-bottom-bar` — the pill/FAB composite: *responsibility:* render selection + emit
+`onSelect`/`onBook`; *does NOT know:* navigation paths, routes, or any business data (a bar that appends to the
+path has the wrong responsibility). **Reviewer check #35** = ADR-0022 §"How a reviewer verifies compliance".
+
 - **Deployment target: iOS 16 vs iOS 17 (ADR-0014).** Chose **iOS 16** — the owner prioritised old-device
   reach (iPhone 8/8 Plus/X, 2017+), which iOS 17 (XS/XR, 2018+) excluded. The cost is the state mechanism
   (`@Observable` is iOS-17-only) and a couple of MapKit API variants; both are accepted trade-offs, recorded
@@ -824,6 +890,7 @@ DeviceRegistrationClient,PushTokenDataStore}.kt` + `partner-app/.../data/auth/Au
 | Partner order PHOTOS rulings (capture seam = the Core **`CameraOrLibraryPicker` `UIViewControllerRepresentable`** — the repo's FIRST, the canonical UIKit-controller-behind-a-SwiftUI-seam idiom / **`ImageCompressor`** 1920px+JPEG-0.7 pure helper / read-back via SwiftUI **`AsyncImage`** + Complete gate trusts the **re-fetched `OrderItem.hasAfterPhotos`** / the two `NS*UsageDescription` keys in the PARTNER `project.yml` in-ticket ×5, Customer→T-0314; camera-vs-gallery + 1920/0.7 + Coil→`AsyncImage` Gate-DP/Parity divergences) | — | **recorded** (sprint-12 §7.10, **no new ADR** — applies ADR-0018 D2/D3 + ADR-0016 AR-PRIV-4 + ADR-0013 parity + the Parity rule; reviewer #32; T-0308 builds it; the **photo-upload ownership / EXIF gate = SECURITY** `security/ios-orders.md`). **Catalog correction:** the AddressPicker is pure MapKit/SwiftUI — it is NOT a `UIViewControllerRepresentable` precedent (the false claim is guarded against in `patterns-mobile`) |
 | Partner earnings/invoices/PeriodPay rulings (the `.invoices` shell tab roots an in-tab `NavigationStack` over a typed `EarningsRoute` enum landing on the Earnings **summary**, `onOpenEarnings` = a tab switch not a push / invoice PDF via the new Core **`QuickLookPreview`** seam — the 2nd §7.10 D1 UIKit-controller-behind-a-seam family member, reused by customer T-0314 — guarded on `pdfGenerationFailed`, **no `FileDownload` seam** / a small Core **`EarningsFormat`** (`%,.2f` + `%,.0f` + ISO dates), `DashboardFormat.money` NOT overloaded, currency-symbol harvested to Core / the Earnings summary **REUSES** `PartnerDashboardClient.getStats`; push+tab→single-tab+stack, FileProvider→QuickLook, Android E1 invoices flag-bag NOT replicated→T-0337, hand-written PeriodPay Retrofit→generated divergences) | — | **recorded** (sprint-12 §7.12, **no new ADR** — applies ADR-0020 + §7.7 D1 + the §7.10 D1 Core-seam precedent + ADR-0018 D2/Gate-DP + the §7.5 D4/§7.7 D4 Core-utility precedent + ADR-0013 parity + Core/DRY; reviewer #33; T-0309 builds it; the **read-scoping / PII gate + the post-preview PDF cache-cleanup = SECURITY** sprint-12 §7.11 / `security/ios-earnings.md`) |
 | Partner APNs push registration rulings (a Core **`PushRegistrar`** seam — the SOLE `UNUserNotificationCenter`/`registerForRemoteNotifications` consumer, the next ADR-0014 D6′/ADR-0018 D2 seam-family member — fed by a per-app **`@UIApplicationDelegateAdaptor`** / a Core **`PushSessionObserver`** = the `PushTokenSessionObserver.kt` combine-parity, `unregisterDevice()` from `AuthApiClient.logout()` BEFORE the token wipe + local `clear()` via the `SessionScopedCacheRegistry` / minimal `willPresent`+`didReceive`-tap, in-app feed→T-0336, **no plist key** (only the `aps-environment` entitlement), skip the rationale, **no `UiState`**; the FCM→APNs over the same `Device/*` contract `Platform="ios"` Gate-DP divergence) | 5 | **recorded** (sprint-12 §7.13, **no new ADR** — applies ADR-0013 D8 + ADR-0014 D6′ + ADR-0018 D2 + ADR-0019 + the `SessionScopedCacheRegistry`; reviewer #34; T-0311 builds it; the **registration / logout-clear-ordering gate = SECURITY** Gate-SEC). **Delivery owner-gated → T-0342** (APNs `.p8` + Push capability/provisioning — the T-0325-gates-T-0335 pattern; T-0311 ships code-complete + the entitlement) |
+| ADR (iOS shell = ONE shell-level `NavigationStack` + `.page` tab pager + custom pill-bar/FAB composite; outer root stacks DELETED both apps; partner this phase = minimal crash fix, pill/pager parity = PM-filed follow-up; supersedes §7.15 D6's pill→`TabView` swap + corrects the ADR-0018 D3 bottom-bar row; Gate-DP gains AR-DP-1a + AR-DP-4) | — | **accepted** (ADR-0022, 2026-07-02 — the phase/ios-fix1 owner-device iOS-16 defect ruling; reviewer #35) |
 | Owner Q-IOS-01 (deployment target) | — | **ANSWERED — iOS 16** (old-device reach) |
 | Owner **mobile-spec regen** (the one hard blocker) | pre-Phase-2 | **PENDING — owner-only** (`manual_step: mobile-spec-regen`) |
 | Workspace + `CleansiaCore` skeleton + design tokens + DI + snackbar/error center | 0 | planned (runnable on approval) |

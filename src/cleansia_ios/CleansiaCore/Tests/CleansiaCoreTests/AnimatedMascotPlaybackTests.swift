@@ -17,6 +17,40 @@ final class AnimatedMascotPlaybackTests: XCTestCase {
         XCTAssertFalse(AnimatedMascotPlayback.shouldStop(loop: false, frameIndex: 100, frameCount: 0))
     }
 
+    func testFirstRenderRestarts() {
+        XCTAssertTrue(AnimatedMascotPlayback.shouldRestart(
+            activeData: nil, activeLoop: nil, data: Data([1]), loop: true
+        ))
+    }
+
+    func testSameDataAndLoopDoesNotRestart() {
+        let data = Data([1, 2, 3])
+        XCTAssertFalse(AnimatedMascotPlayback.shouldRestart(
+            activeData: data, activeLoop: true, data: data, loop: true
+        ))
+    }
+
+    func testChangedDataRestarts() {
+        XCTAssertTrue(AnimatedMascotPlayback.shouldRestart(
+            activeData: Data([1]), activeLoop: true, data: Data([2]), loop: true
+        ))
+    }
+
+    func testChangedLoopRestarts() {
+        let data = Data([1])
+        XCTAssertTrue(AnimatedMascotPlayback.shouldRestart(
+            activeData: data, activeLoop: false, data: data, loop: true
+        ))
+    }
+
+    func testCurrentGenerationIsNotSuperseded() {
+        XCTAssertFalse(AnimatedMascotPlayback.isSuperseded(generation: 2, activeGeneration: 2))
+    }
+
+    func testOlderGenerationIsSuperseded() {
+        XCTAssertTrue(AnimatedMascotPlayback.isSuperseded(generation: 1, activeGeneration: 2))
+    }
+
     func testAnimatedMascotAssetNames() {
         XCTAssertEqual(AnimatedMascot.cleaningInProgress.rawValue, "mascot_cleaning_in_progress")
         XCTAssertEqual(AnimatedMascot.welcoming.rawValue, "mascot_welcoming")

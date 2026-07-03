@@ -107,6 +107,48 @@ source: phase/ios-fix1 on-device shakeout diagnosis (2026-07-02, cluster brand-a
 - 2026-07-03 — filed `in_progress` by pm from the phase/ios-fix1 diagnosis (brand-assets cluster; findings
   1–3 + deltas 2/3/4-6; delta 1 — the upsell carousel — split to T-0373). Dev dispatched. medium-high
   priority (no crash, but the single largest visual-credibility gap; App-Store-blocking via the icon).
+- 2026-07-03 — dev: slice landed in `62d9495b` on phase/ios-fix1. AC1/AC2/AC4/AC6 delivered; AC3 delivered
+  except the two BusyMascotOverlay attachments (see the fold entry below); AC5 delivered with a recorded
+  deviation (below). Verified per the commit: Core 252 / Customer 378 / Partner 369 green on iPhone 17 +
+  the asset/palette/splash suites re-run on the iOS 16.4 destination; swiftformat 0.60.1 + swiftlint
+  --strict clean; 16.4 visual smoke (mascot sign-in, branded splash, launch color, both springboard icons).
+- 2026-07-03 — **AC5 deviation (recorded):** `UILaunchScreen` ships **color-only** (`UIColorName:
+  SplashBackground`, `#0284C7` + dark variant) instead of the AC's `UIImageName: mascot_waving` —
+  empirically on the iOS 16.4 simulator `UIImageName` renders the raw imageset scaled-to-fill (giant
+  mascot) or silently blank for every padded variant tried. The branded mascot splash lands one frame later
+  in the restyled customer `SplashGateView`. Re-probe `UIImageName` on real hardware before adopting
+  (`patterns-mobile.md` launcher/splash row updated to say exactly that).
+- 2026-07-03 — **AC6 Gate-DP divergence (one-line):** no SF Symbols broom exists, so Android
+  home→CleaningServices (broom) maps to iOS home→`bubbles.and.sparkles` — same "cleaning" meaning, native
+  symbol (AR-DP-2).
+- 2026-07-03 — dev: review fold (reviewer requested CHANGES). (1) `AnimatedMascotView` stale-animation bug
+  fixed: empty `updateUIView` froze the OLD animation when SwiftUI reused the `UIImageView` across a mascot
+  switch (e.g. LiveProgressHero `.welcoming` → `.cleaningInProgress` as an order advances under refresh) —
+  now a `Coordinator` holds the active `(data, loop)` + a generation token; `updateUIView` restarts on
+  change and a superseded run stops itself via the block's stop flag; the failure fallback now respects the
+  view's `bundle` (`UIImage(named:in:with:)`). **Red→green:** `shouldRestart`/`isSuperseded` tests added to
+  `AnimatedMascotPlaybackTests` first (6 tests, confirmed failing-to-compile red), then the Coordinator
+  implementation turned the suite green (Core 259). (2) The accidental Xcode string-catalog sync rewrite of
+  BOTH `Localizable.xcstrings` in `62d9495b` (33.6k lines of `extractionState: stale` churn + junk
+  auto-extracted keys; verified zero value-level localization changes) reverted to the pre-commit content;
+  `SWIFT_EMIT_LOC_STRINGS: NO` pinned in BOTH `project.yml`s so no build ever sync-rewrites the
+  hand-managed catalogs (guard proven: a clean `xcodebuild` of CleansiaCustomer leaves both catalogs
+  byte-identical). (3) AC3's `BusyMascotOverlay` built (customer-local `Components/BusyMascotOverlay.swift`,
+  matching Android's customer-app home) and attached to SubscribePlusScreen keyed to
+  `submitState.isSubmitting` (+ `busy_subscribe_plus` ×5 locales). Also: partner launch-screen comment
+  corrected (its gate is a plain ProgressView, no mascot splash), `mascot_idea`/`mascot_mopping` imagesets
+  copied into the partner catalog (Core `Mascot` has the cases; they resolved to a silently-empty `Image`),
+  and the `patterns-mobile.md` `UIImageName` row softened to "known-broken on the iOS 16.4 SIMULATOR —
+  re-probe on real hardware".
+- 2026-07-03 — **AC3 deviation (recorded):** the `BusyMascotOverlay` attachment to **BookingSheetView is
+  DEFERRED to T-0371** (Slice D owns that file in this parallel batch; attaching here would collide).
+  T-0371 is the carrier: attach `BusyMascotOverlay` keyed to the booking submit state (+ `busy_booking` /
+  `busy_payment` strings). SubscribePlusScreen is attached in this ticket.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
+- 2026-07-03 — dev (harvest note): folded two clarifications into `patterns-mobile.md` with the review fold —
+  the `AnimatedMascotView` row now records the Coordinator `(data, loop)` + generation-token restart idiom
+  (empty `updateUIView` freezes the old animation on view reuse; `CGAnimateImageDataWithBlock` has no cancel
+  handle), and the launcher/splash row's `UIImageName` ban is softened to "known-broken on the iOS 16.4
+  SIMULATOR — re-probe on real hardware; color-only until then".

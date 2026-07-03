@@ -53,6 +53,10 @@ struct SubscribePlusScreen: View {
                     onTap: subscribe
                 )
             }
+            BusyMascotOverlay(
+                visible: vm.submitState.isSubmitting,
+                message: L10n.Membership.busySubscribePlus
+            )
         }
         .background(CleansiaColors.background.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)

@@ -217,5 +217,9 @@ extension L10n {
         static var back: String {
             localized("common_back")
         }
+
+        static var busySubscribePlus: String {
+            localized("busy_subscribe_plus")
+        }
     }
 }

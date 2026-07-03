@@ -21,6 +21,9 @@ settings:
     SWIFT_VERSION: "5.9"
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
+    # Pins compile-time string extraction OFF so no build ever sync-rewrites the
+    # hand-managed Localizable.xcstrings (stale-marking + junk auto-extracted keys).
+    SWIFT_EMIT_LOC_STRINGS: NO
 
 packages:
   CleansiaCore:

@@ -14,7 +14,10 @@ struct PartnerRootView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        // ZStack (not the switch view itself) keeps the forced-sign-out
+        // subscription alive across route swaps — a task on `content`
+        // restarts whenever the route case changes identity.
+        ZStack {
             content
         }
         .task {

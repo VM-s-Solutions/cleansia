@@ -20,15 +20,15 @@ final class PushTapRoutingTests: XCTestCase {
         XCTAssertNotEqual(order, tab)
     }
 
-    func testOrderTapAppendsDetailRouteToOrdersPath() {
+    func testOrderTapResolvesDetailRouteForOrdersPath() {
         let plan = PushTapRouting.plan(for: .order(orderId: "ord-7"))
-        let path = PushTapRouting.appendingDeepLink(plan.orderId, to: [])
-        XCTAssertEqual(path, [.detail(orderId: "ord-7")], "the tap drills to the specific order detail")
+        let route = PushTapRouting.deepLinkRoute(plan.orderId)
+        XCTAssertEqual(route, .detail(orderId: "ord-7"), "the tap drills to the specific order detail")
     }
 
-    func testOrdersTabTapDoesNotAppendDetailRoute() {
+    func testOrdersTabTapResolvesNoDetailRoute() {
         let plan = PushTapRouting.plan(for: .ordersTab)
-        let path = PushTapRouting.appendingDeepLink(plan.orderId, to: [])
-        XCTAssertEqual(path, [], "order.new_available lands on the list with no detail push")
+        let route = PushTapRouting.deepLinkRoute(plan.orderId)
+        XCTAssertNil(route, "order.new_available lands on the list with no detail push")
     }
 }

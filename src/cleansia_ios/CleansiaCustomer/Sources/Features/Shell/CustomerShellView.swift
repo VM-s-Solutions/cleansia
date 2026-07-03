@@ -125,12 +125,20 @@ struct CustomerShellView: View {
                 orderRepository: container.orderRepository,
                 membershipVM: membershipVM,
                 snackbar: snackbar,
+                recurringRepository: container.recurringRepository,
                 onBookCleaning: model.book,
                 onOrderClick: { model.path.append(ShellRoute.orderDetail($0)) },
                 onSeeAllOrders: model.openOrders,
                 onCompleteProfile: model.openEditProfile,
                 onSubscribePlus: { model.path.append(ShellRoute.subscribePlus) },
-                onManageRecurring: { model.path.append(ShellRoute.recurringList) }
+                onManageRecurring: { model.path.append(ShellRoute.recurringList) },
+                onOpenReferral: { model.select(.rewards) },
+                // Pre-seeded: the createRecurring destination pops on creation, so the
+                // wizard must sit ON TOP of the list or creation lands on the tab root
+                // (Android's fixed Path B) — mirrors the membershipSuccess wiring.
+                onSetupRecurring: {
+                    model.path = NavigationPath([ShellRoute.recurringList, ShellRoute.createRecurring(orderId: nil)])
+                }
             )
             .tag(CustomerShellTab.home)
 

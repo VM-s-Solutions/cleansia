@@ -11,19 +11,28 @@ struct HomeTab: View {
     let onCompleteProfile: () -> Void
     let onSubscribePlus: () -> Void
     let onManageRecurring: () -> Void
+    let onOpenReferral: (() -> Void)?
+    let onSetupRecurring: (() -> Void)?
 
     init(
         orderRepository: OrderRepository,
         membershipVM: MembershipViewModel,
         snackbar: SnackbarController,
+        recurringRepository: RecurringBookingRepository? = nil,
         onBookCleaning: @escaping () -> Void,
         onOrderClick: @escaping (String) -> Void,
         onSeeAllOrders: @escaping () -> Void,
         onCompleteProfile: @escaping () -> Void,
         onSubscribePlus: @escaping () -> Void,
-        onManageRecurring: @escaping () -> Void
+        onManageRecurring: @escaping () -> Void,
+        onOpenReferral: (() -> Void)? = nil,
+        onSetupRecurring: (() -> Void)? = nil
     ) {
-        _vm = StateObject(wrappedValue: HomeTabViewModel(orderRepository: orderRepository, snackbar: snackbar))
+        _vm = StateObject(wrappedValue: HomeTabViewModel(
+            orderRepository: orderRepository,
+            recurringRepository: recurringRepository,
+            snackbar: snackbar
+        ))
         self.membershipVM = membershipVM
         self.onBookCleaning = onBookCleaning
         self.onOrderClick = onOrderClick
@@ -31,21 +40,38 @@ struct HomeTab: View {
         self.onCompleteProfile = onCompleteProfile
         self.onSubscribePlus = onSubscribePlus
         self.onManageRecurring = onManageRecurring
+        self.onOpenReferral = onOpenReferral
+        self.onSetupRecurring = onSetupRecurring
+    }
+
+    private var isPlus: Bool {
+        membershipVM.current?.hasMembership == true
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.m) {
                 GreetingHeader()
+                    .padding(.horizontal, Spacing.ml)
 
                 ProfileNudgeCard(onComplete: onCompleteProfile)
+                    .padding(.horizontal, Spacing.ml)
 
-                BookCard(onBook: onBookCleaning)
+                UpsellCarousel(
+                    slides: UpsellSlide.slides(
+                        isPlus: isPlus,
+                        hasAnyOrders: vm.hasAnyOrders,
+                        showSetupRecurring: vm.showSetupRecurringSlide(isPlus: isPlus)
+                    ),
+                    onAction: handleUpsell
+                )
 
                 MembershipManagementCard(vm: membershipVM, onSubscribeClick: onSubscribePlus)
+                    .padding(.horizontal, Spacing.ml)
 
-                if membershipVM.current?.hasMembership == true {
+                if isPlus {
                     RecurringEntryRow(onManage: onManageRecurring)
+                        .padding(.horizontal, Spacing.ml)
                 }
 
                 if !vm.recentOrders.isEmpty {
@@ -54,9 +80,9 @@ struct HomeTab: View {
                         onOrderClick: onOrderClick,
                         onSeeAll: onSeeAllOrders
                     )
+                    .padding(.horizontal, Spacing.ml)
                 }
             }
-            .padding(.horizontal, Spacing.ml)
             .padding(.top, Spacing.m)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -64,6 +90,25 @@ struct HomeTab: View {
         .task {
             await vm.refreshCatalog()
             await membershipVM.load()
+        }
+        .task(id: isPlus) {
+            await vm.refreshRecurringIfPlus(isPlus)
+        }
+    }
+
+    /// Slide CTA → callback mapping (`MainShell.kt:265-280`). Until the shell
+    /// wires the two new callbacks: setup-recurring falls back to the recurring
+    /// list (which carries its own create CTA), referral is inert.
+    private func handleUpsell(_ action: UpsellSlide.Action) {
+        switch action {
+        case .subscribePlus:
+            onSubscribePlus()
+        case .book:
+            onBookCleaning()
+        case .openReferral:
+            onOpenReferral?()
+        case .setupRecurring:
+            (onSetupRecurring ?? onManageRecurring)()
         }
     }
 }
@@ -143,29 +188,6 @@ private struct ProfileNudgeCard: View {
             )
         }
         .buttonStyle(.plain)
-    }
-}
-
-private struct BookCard: View {
-    let onBook: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
-            Text(L10n.Home.bookTitle)
-                .font(CleansiaTypography.headlineSmall)
-                .foregroundColor(CleansiaColors.onBackground)
-            Text(L10n.Home.bookSubtitle)
-                .font(CleansiaTypography.bodyLarge)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-            CleansiaPrimaryButton(L10n.Home.bookCta, leadingIcon: "sparkles", action: onBook)
-        }
-        .padding(Spacing.m)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.large))
-        .overlay(
-            RoundedRectangle(cornerRadius: CornerRadius.large)
-                .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
-        )
     }
 }
 

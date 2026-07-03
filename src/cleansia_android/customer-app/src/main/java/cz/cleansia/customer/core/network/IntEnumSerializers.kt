@@ -10,6 +10,7 @@ import cz.cleansia.customer.api.model.EmployeeInvoiceStatus
 import cz.cleansia.customer.api.model.LoyaltyEarnSource
 import cz.cleansia.customer.api.model.LoyaltyTier
 import cz.cleansia.customer.api.model.LoyaltyTransactionType
+import cz.cleansia.customer.api.model.MembershipStatus
 import cz.cleansia.customer.api.model.OrderStatus
 import cz.cleansia.customer.api.model.PaymentStatus
 import cz.cleansia.customer.api.model.PaymentType
@@ -75,6 +76,11 @@ val IntEnumSerializersModule = SerializersModule {
         "LoyaltyTransactionType",
         { it.value },
         { raw -> LoyaltyTransactionType.entries.firstOrNull { it.value == raw } },
+    ))
+    contextual(MembershipStatus::class, IntValueEnumSerializer(
+        "MembershipStatus",
+        { it.value },
+        { raw -> MembershipStatus.entries.firstOrNull { it.value == raw } },
     ))
     contextual(OrderStatus::class, IntValueEnumSerializer(
         "OrderStatus",

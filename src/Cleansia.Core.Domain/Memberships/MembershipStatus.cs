@@ -1,3 +1,5 @@
+using Cleansia.Infra.Common.Attributes;
+
 namespace Cleansia.Core.Domain.Memberships;
 
 /// <summary>
@@ -7,6 +9,7 @@ namespace Cleansia.Core.Domain.Memberships;
 /// <see cref="Cancelled"/> or <see cref="Active"/> respectively when the
 /// webhook lands.
 /// </summary>
+[SwaggerEnumAsInt]
 public enum MembershipStatus
 {
     /// <summary>Subscription is paid up and benefits apply.</summary>

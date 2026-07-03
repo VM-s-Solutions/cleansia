@@ -118,12 +118,13 @@ struct CustomerShellView: View {
     }
 
     private func prefetch() async {
-        await container.orderRepository.refresh()
-        await container.loyaltyRepository.refresh()
-        await container.referralRepository.refresh()
-        await container.membershipRepository.refresh()
-        await container.membershipRepository.refreshPlans()
-        await profileVM.refresh()
+        async let orders = container.orderRepository.refresh()
+        async let loyalty = container.loyaltyRepository.refresh()
+        async let referrals = container.referralRepository.refresh()
+        async let membership = container.membershipRepository.refresh()
+        async let plans = container.membershipRepository.refreshPlans()
+        async let profile = profileVM.refresh()
+        _ = await (orders, loyalty, referrals, membership, plans, profile)
     }
 
     private var tabs: some View {

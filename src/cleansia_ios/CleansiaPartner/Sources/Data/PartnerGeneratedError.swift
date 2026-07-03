@@ -1,5 +1,5 @@
 import CleansiaCore
-import CleansiaCustomerApi
+import CleansiaPartnerApi
 import Foundation
 
 extension ApiError {

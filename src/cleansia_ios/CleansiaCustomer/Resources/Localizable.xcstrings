@@ -9116,36 +9116,70 @@
         }
       }
     },
-    "home_greeting": {
+    "home_address_label": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Welcome back"
-          }
-        },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vítejte zpět"
+            "value": "Úklid na adrese"
           }
         },
-        "sk": {
+        "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vitajte späť"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "З поверненням"
+            "value": "Cleaning at"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "С возвращением"
+            "value": "Уборка по адресу"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upratovanie na adrese"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прибирання за адресою"
+          }
+        }
+      }
+    },
+    "home_address_placeholder": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyberte adresu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select an address"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите адрес"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyberte adresu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виберіть адресу"
           }
         }
       }
@@ -9252,120 +9286,296 @@
         }
       }
     },
-    "home_profile_nudge_subtitle": {
+    "home_milestone_subtitle_v2": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add your details for a faster booking."
-          }
-        },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doplňte své údaje pro rychlejší objednání."
+            "value": "Ještě %1$d bodů k úrovni %2$@"
           }
         },
-        "sk": {
+        "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doplňte svoje údaje pre rýchlejšie objednanie."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Додайте свої дані для швидшого замовлення."
+            "value": "%1$d more points to %2$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Добавьте свои данные для быстрого заказа."
-          }
-        }
-      }
-    },
-    "home_profile_nudge_title": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Complete your profile"
-          }
-        },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dokončete svůj profil"
+            "value": "Ещё %1$d баллов до уровня %2$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dokončite svoj profil"
+            "value": "Ešte %1$d bodov do úrovne %2$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заповніть свій профіль"
+            "value": "Ще %1$d балів до рівня %2$@"
+          }
+        }
+      }
+    },
+    "home_milestone_title_v2": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ — Pokrok k další úrovni"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ — Progress to next tier"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заполните свой профиль"
-          }
-        }
-      }
-    },
-    "home_recent_orders_title": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recent orders"
-          }
-        },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nedávné objednávky"
+            "value": "%1$@ — Прогресс к следующему уровню"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nedávne objednávky"
+            "value": "%1$@ — Pokrok k ďalšej úrovni"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Останні замовлення"
+            "value": "%1$@ — Прогрес до наступного рівня"
+          }
+        }
+      }
+    },
+    "home_order_again_fallback_title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš poslední úklid"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your last cleaning"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Недавние заказы"
+            "value": "Ваша последняя уборка"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše posledné upratovanie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваше останнє прибирання"
           }
         }
       }
     },
-    "home_see_all": {
+    "home_order_again_subtitle": {
       "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naposledy %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last booked %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Последний заказ %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naposledy %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Останнє замовлення %1$@"
+          }
+        }
+      }
+    },
+    "home_order_again_title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OBJEDNAT ZNOVU"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ORDER AGAIN"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ЗАКАЗАТЬ СНОВА"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OBJEDNAŤ ZNOVA"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ЗАМОВИТИ ЗНОВУ"
+          }
+        }
+      }
+    },
+    "home_popular_packages_add_cta": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klepnout pro objednání"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to book"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажмите для заказа"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klepnúť na objednanie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Натисніть для замовлення"
+          }
+        }
+      }
+    },
+    "home_popular_packages_title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oblíbené balíčky"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Popular packages"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Популярные пакеты"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obľúbené balíčky"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Популярні пакети"
+          }
+        }
+      }
+    },
+    "home_recent_fallback_title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Úklid"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleaning"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уборка"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upratovanie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прибирання"
+          }
+        }
+      }
+    },
+    "home_recent_see_all": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobrazit vše"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "See all"
           }
         },
-        "cs": {
+        "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zobrazit vše"
+            "value": "Показать все"
           }
         },
         "sk": {
@@ -9377,13 +9587,279 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Переглянути всі"
+            "value": "Показати всі"
+          }
+        }
+      }
+    },
+    "home_recent_title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nedávné rezervace"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent bookings"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Показать все"
+            "value": "Недавние бронирования"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nedávne rezervácie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Останні бронювання"
+          }
+        }
+      }
+    },
+    "home_recurring_section_manage": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spravovat"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Управлять"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spravovať"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Керувати"
+          }
+        }
+      }
+    },
+    "home_recurring_section_title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše pravidelné úklidy"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your recurring cleanings"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваши регулярные уборки"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše pravidelné upratovania"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваші регулярні прибирання"
+          }
+        }
+      }
+    },
+    "home_seasonal_subtitle": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kombinace oken + čalounění — tento měsíc +450 Kč"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Window + upholstery combo — +450 CZK this month"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Окна + обивка комбо — в этом месяце +450 CZK"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kombinácia okien + čalúnenia — tento mesiac +450 Kč"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Комбо вікна + оббивка — цього місяця +450 CZK"
+          }
+        }
+      }
+    },
+    "home_seasonal_title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sezóna jarního úklidu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spring deep clean season"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сезон весенней уборки"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sezóna jarného upratovania"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сезон весняного прибирання"
+          }
+        }
+      }
+    },
+    "home_trust_insured": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pojištěno"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insured"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Застраховано"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poistené"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Застраховано"
+          }
+        }
+      }
+    },
+    "home_trust_same_day": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dnes"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Same-day"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сегодня"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dnes"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сьогодні"
+          }
+        }
+      }
+    },
+    "home_trust_vetted": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prověřeno"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vetted"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверено"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preverené"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірено"
           }
         }
       }
@@ -11571,31 +12047,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Active until %1$s"
+            "value": "Active until %1$@"
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aktivní do %1$s"
+            "value": "Aktivní do %1$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aktívne do %1$s"
+            "value": "Aktívne do %1$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Активний до %1$s"
+            "value": "Активний до %1$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Активна до %1$s"
+            "value": "Активна до %1$@"
           }
         }
       }
@@ -11809,31 +12285,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Active until %1$s"
+            "value": "Active until %1$@"
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aktivní do %1$s"
+            "value": "Aktivní do %1$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aktívne do %1$s"
+            "value": "Aktívne do %1$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Активний до %1$s"
+            "value": "Активний до %1$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Активна до %1$s"
+            "value": "Активна до %1$@"
           }
         }
       }
@@ -11843,31 +12319,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Then %1$s / month. Cancel anytime before the trial ends and you won't be charged."
+            "value": "Then %1$@ / month. Cancel anytime before the trial ends and you won't be charged."
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Poté %1$s / měsíc. Zrušte kdykoli před koncem zkušebního období a nic vám nebude účtováno."
+            "value": "Poté %1$@ / měsíc. Zrušte kdykoli před koncem zkušebního období a nic vám nebude účtováno."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Potom %1$s / mesiac. Zrušte kedykoľvek pred koncom skúšobného obdobia a nič vám nebude účtované."
+            "value": "Potom %1$@ / mesiac. Zrušte kedykoľvek pred koncom skúšobného obdobia a nič vám nebude účtované."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Потім %1$s / місяць. Скасуйте будь-коли до кінця пробного періоду — і вас не спишуть."
+            "value": "Потім %1$@ / місяць. Скасуйте будь-коли до кінця пробного періоду — і вас не спишуть."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Затем %1$s / месяц. Отмените в любой момент до конца пробного периода — и с вас не спишут."
+            "value": "Затем %1$@ / месяц. Отмените в любой момент до конца пробного периода — и с вас не спишут."
           }
         }
       }
@@ -11877,31 +12353,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Then %1$s / year. Cancel anytime before the trial ends and you won't be charged."
+            "value": "Then %1$@ / year. Cancel anytime before the trial ends and you won't be charged."
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Poté %1$s / rok. Zrušte kdykoli před koncem zkušebního období a nic vám nebude účtováno."
+            "value": "Poté %1$@ / rok. Zrušte kdykoli před koncem zkušebního období a nic vám nebude účtováno."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Potom %1$s / rok. Zrušte kedykoľvek pred koncom skúšobného obdobia a nič vám nebude účtované."
+            "value": "Potom %1$@ / rok. Zrušte kedykoľvek pred koncom skúšobného obdobia a nič vám nebude účtované."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Потім %1$s / рік. Скасуйте будь-коли до кінця пробного періоду — і вас не спишуть."
+            "value": "Потім %1$@ / рік. Скасуйте будь-коли до кінця пробного періоду — і вас не спишуть."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Затем %1$s / год. Отмените в любой момент до конца пробного периода — и с вас не спишут."
+            "value": "Затем %1$@ / год. Отмените в любой момент до конца пробного периода — и с вас не спишут."
           }
         }
       }
@@ -12047,31 +12523,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "then %1$s / month"
+            "value": "then %1$@ / month"
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "poté %1$s / měsíc"
+            "value": "poté %1$@ / měsíc"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "potom %1$s / mesiac"
+            "value": "potom %1$@ / mesiac"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "потім %1$s / місяць"
+            "value": "потім %1$@ / місяць"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "затем %1$s / месяц"
+            "value": "затем %1$@ / месяц"
           }
         }
       }
@@ -12081,31 +12557,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "then %1$s / year"
+            "value": "then %1$@ / year"
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "poté %1$s / rok"
+            "value": "poté %1$@ / rok"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "potom %1$s / rok"
+            "value": "potom %1$@ / rok"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "потім %1$s / рік"
+            "value": "потім %1$@ / рік"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "затем %1$s / год"
+            "value": "затем %1$@ / год"
           }
         }
       }
@@ -12727,31 +13203,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$s / month"
+            "value": "%1$@ / month"
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$s / měsíc"
+            "value": "%1$@ / měsíc"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$s / mesiac"
+            "value": "%1$@ / mesiac"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$s / місяць"
+            "value": "%1$@ / місяць"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$s / месяц"
+            "value": "%1$@ / месяц"
           }
         }
       }
@@ -12761,31 +13237,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$s / year"
+            "value": "%1$@ / year"
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$s / rok"
+            "value": "%1$@ / rok"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$s / rok"
+            "value": "%1$@ / rok"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$s / рік"
+            "value": "%1$@ / рік"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$s / год"
+            "value": "%1$@ / год"
           }
         }
       }
@@ -12829,31 +13305,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Renews on %1$s"
+            "value": "Renews on %1$@"
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Obnoví se %1$s"
+            "value": "Obnoví se %1$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Obnoví sa %1$s"
+            "value": "Obnoví sa %1$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Продовжується %1$s"
+            "value": "Продовжується %1$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Продлевается %1$s"
+            "value": "Продлевается %1$@"
           }
         }
       }
@@ -13203,31 +13679,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You'll be charged the prorated difference today, then %1$s per year. Your benefits keep going."
+            "value": "You'll be charged the prorated difference today, then %1$@ per year. Your benefits keep going."
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dnes zaplatíte poměrný rozdíl, poté %1$s za rok. Vaše výhody pokračují."
+            "value": "Dnes zaplatíte poměrný rozdíl, poté %1$@ za rok. Vaše výhody pokračují."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dnes zaplatíte pomerný rozdiel, potom %1$s za rok. Vaše výhody pokračujú."
+            "value": "Dnes zaplatíte pomerný rozdiel, potom %1$@ za rok. Vaše výhody pokračujú."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сьогодні буде списано пропорційну різницю, потім %1$s на рік. Ваші переваги залишаються."
+            "value": "Сьогодні буде списано пропорційну різницю, потім %1$@ на рік. Ваші переваги залишаються."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сегодня будет списана пропорциональная разница, затем %1$s в год. Ваши преимущества продолжаются."
+            "value": "Сегодня будет списана пропорциональная разница, затем %1$@ в год. Ваши преимущества продолжаются."
           }
         }
       }
@@ -17074,6 +17550,40 @@
         }
       }
     },
+    "order_rebook_unavailable_items": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Některé položky z vaší předchozí objednávky již nejsou dostupné."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some items from your previous booking are no longer available."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Некоторые позиции из вашего предыдущего заказа больше не доступны."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niektoré položky z vašej predchádzajúcej objednávky už nie sú dostupné."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Деякі позиції з вашого попереднього замовлення більше не доступні."
+          }
+        }
+      }
+    },
     "order_receipt_no_viewer": {
       "localizations": {
         "en": {
@@ -19697,31 +20207,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$s at %2$s"
+            "value": "%1$@ at %2$@"
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$s v %2$s"
+            "value": "%1$@ v %2$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$s o %2$s"
+            "value": "%1$@ o %2$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$s о %2$s"
+            "value": "%1$@ о %2$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$s в %2$s"
+            "value": "%1$@ в %2$@"
           }
         }
       }

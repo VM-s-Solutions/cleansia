@@ -134,4 +134,66 @@ final class SavedAddressRepositoryTests: XCTestCase {
         XCTAssertTrue(repo.addresses.isEmpty)
         XCTAssertFalse(repo.loaded)
     }
+
+    private func isolatedDefaults() throws -> UserDefaults {
+        let suiteName = "saved-address-tests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        addTeardownBlock { defaults.removePersistentDomain(forName: suiteName) }
+        return defaults
+    }
+
+    func testSetSelectedPersistsAcrossInstances() throws {
+        let defaults = try isolatedDefaults()
+        let repo = SavedAddressRepository(client: FakeSavedAddressClient(), defaults: defaults)
+
+        repo.setSelected("a")
+
+        XCTAssertEqual(repo.selectedId, "a")
+        let rehydrated = SavedAddressRepository(client: FakeSavedAddressClient(), defaults: defaults)
+        XCTAssertEqual(rehydrated.selectedId, "a")
+    }
+
+    func testDeletingTheSelectedAddressClearsTheSelection() async throws {
+        let defaults = try isolatedDefaults()
+        let client = FakeSavedAddressClient()
+        client.pages = [
+            [SavedAddressFixtures.address(id: "a"), SavedAddressFixtures.address(id: "b")],
+            [SavedAddressFixtures.address(id: "b")]
+        ]
+        let repo = SavedAddressRepository(client: client, defaults: defaults)
+        await repo.refresh()
+        repo.setSelected("a")
+
+        await repo.delete(id: "a")
+
+        XCTAssertNil(repo.selectedId)
+        XCTAssertNil(defaults.string(forKey: "saved_address_selected_id"))
+    }
+
+    func testDeletingAnotherAddressKeepsTheSelection() async throws {
+        let defaults = try isolatedDefaults()
+        let client = FakeSavedAddressClient()
+        client.pages = [
+            [SavedAddressFixtures.address(id: "a"), SavedAddressFixtures.address(id: "b")],
+            [SavedAddressFixtures.address(id: "a")]
+        ]
+        let repo = SavedAddressRepository(client: client, defaults: defaults)
+        await repo.refresh()
+        repo.setSelected("a")
+
+        await repo.delete(id: "b")
+
+        XCTAssertEqual(repo.selectedId, "a")
+    }
+
+    func testClearWipesTheSelection() async throws {
+        let defaults = try isolatedDefaults()
+        let repo = SavedAddressRepository(client: FakeSavedAddressClient(), defaults: defaults)
+        repo.setSelected("a")
+
+        await repo.clear()
+
+        XCTAssertNil(repo.selectedId)
+        XCTAssertNil(defaults.string(forKey: "saved_address_selected_id"))
+    }
 }

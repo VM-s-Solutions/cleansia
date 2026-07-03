@@ -119,6 +119,59 @@ HomeTab would mean immediate rework, hence `proposed` until both land.
 - 2026-07-03 — **done** by pm at phase close. Final-tree gates: Core 272/272 (both runtimes), Customer
   406/406, lint clean tree-wide; the 16.4 render smoke via the floor leg. REMAINING acceptance: the
   owner's signed-in Home render + nested-pager gesture feel — flagged in the phase PR.
+- 2026-07-03 — **fix-round 2 (owner device pass): the FULL Android Home ported** — this slice only
+  ported the carousel; the rest of `HomeTab.kt` was never mirrored (PM may re-home this entry to a new
+  ticket). Uncommitted on `phase/ios-fix1` per the batch rule. **Section-by-section parity
+  (`HomeTab.kt` → iOS):**
+  | Android source | iOS |
+  |---|---|
+  | `AddressTopBar` `:313-365` (pin + "Cleaning at"/selected▾ + bell; bar opens the address picker; `selected ?? default ?? first` `:111-113`; bell `onNotificationClick = {}` `:228`) | `HomeTab.swift` `AddressTopBar` → shell `.sheet` `AddressManagerView` (row-tap select added, Android's selected-row styling `AddressManagerScreen.kt:355-425`); `HomeSections.displayedAddress`; bell rendered INERT = Android parity |
+  | `SmartUpsellCarousel` `:234-242` | untouched (this slice's original scope) |
+  | `OrderAgainCard` / `TrustStrip` fallback `:249-256`, title `:971-978`, "MMM d" `:684-692` | `HomeSectionViews.swift` + `HomeSections.mostRecentCompleted/recentBookingTitle/orderAgainWhen` |
+  | `RecurringSchedulesSection` `:262-268` (Plus && active, top 3; rows → manage) | `RecurringSchedulesSection` + `HomeSections.activeRecurring` |
+  | `PopularPackagesSection` `:273-279` (top-3 non-blank-id packages; tap seeds the sheet `BookingBottomSheet.kt:390-399`) | `PopularPackagesSection` + `HomeSections.popularPackages` + `BookingPrefill.withPackage` |
+  | `RecentBookingsSection` `:282-289` (sort `:177-181`, gate `:185`, status chip `:1021-1039`, date·price `:1042`) | `HomeSecondarySections.swift` + `HomeSections.recentForDisplay/showRecent/statusChipLabel` |
+  | `MilestoneProgressCard` `:295-300`, `:1074-1135` | `MilestoneProgressCard` + `HomeSections.showMilestone` (tier labels via `L10n.Rewards.tierLabel`) |
+  | `SeasonalCard` `:303` | `SeasonalCard` → booking sheet |
+  | `HomeSkeleton` first-paint gate `:196-215` (orders+membership+packages, 1.5s ceiling, never-revert) | `HomeSkeleton` + `HomeTabViewModel.firstPaintReady` watcher + `runFirstPaintCeiling()` |
+  | data effects `:108-172` (membership-if-null, catalog-if-empty, recurring-if-Plus) | `HomeTabViewModel.refresh*` `.task`s; VM mirrors order/loyalty/membership/address/recurring repos + the catalog |
+  | `MainShell.kt:264-282` CTA wiring + `:197-199` address warm + hydration/rebook (`BookingBottomSheet.kt:270-282`, `:305-374`) | `CustomerShellView` + `CustomerShellView+Booking.swift` (`openBooking`/`bookPackage`/`rebookOrder` seed the session `BookingViewModel` via pure `BookingPrefill`); shell prefetch now warms `savedAddressRepository` |
+  **Sections REMOVED from iOS Home (Android has none):** GreetingHeader, ProfileNudgeCard,
+  MembershipManagementCard (stays on Profile), RecurringEntryRow; dead keys `home_greeting`,
+  `home_profile_nudge_*`, `home_recent_orders_title`, `home_see_all` deleted (accessors + xcstrings).
+  **Strings:** 20 new keys ×5 locales verbatim from Android `values*/strings.xml:102-176` + `:1020`
+  (`%1$s`→`%1$@` transposed — iOS `String(format:)` prints garbage on `%s`); harvested as a
+  patterns-mobile.md row note. **New pure logic + tests-first:** `HomeSections` (16 tests) +
+  `BookingPrefill` (8 tests) + saved-address selection (4 repo + 1 VM tests). Customer suite 441/441
+  (1 skipped) on iPhone 17; swiftformat 0.60.1 --lint + swiftlint --strict clean; 16.4 sim build +
+  launch OK — signed-out sign-in screenshot `agents/backlog/attachments/T-0373-fix2-ios164-signin.png`
+  (signed-in Home needs the owner's device).
+- 2026-07-03 — **fix-round 2 Gate-DP divergences (one-line each):**
+  (1) Bell: inert on BOTH platforms (Android wires `{}`) — NOT routed to NotificationPreferences; a
+  feed is T-0336-class work.
+  (2) `selectedId` persistence: Android DataStore → iOS UserDefaults key on `SavedAddressRepository`
+  (same wiped-on-signout semantics via `clear()`; also cleared when the selected address is deleted).
+  (3) Rebook `countryIsoCode`: iOS keeps the draft's current value (iOS `SavedAddress` carries no ISO;
+  Android assigns the matched saved address's — empty for server-loaded rows; `savedAddressId` drives
+  the submit either way).
+  (4) Catalog cache: Android's shared `CatalogRepository` singleton → the session-lived
+  `BookingViewModel` as Home's `catalogSource` (one cache for Home + sheet; no second fetch path).
+  (5) Catalog-refresh errors: Android silences `ApiError.Network` only; iOS uses the codebase-wide
+  `showApiError` for all failures (the existing iOS convention).
+  (6) Fresh-open draft reset: Android resets the sheet per open (`BookingBottomSheet.kt:298-303`); iOS
+  keeps the deliberate session-lived draft (T-0313, `BookingDraftSurvivalTests`) — hydration therefore
+  only fills a BLANK street, same guard as Android's.
+  (7) Android's unused `onViewAllServices` param (dead in `HomeTab.kt`'s body) not ported.
+- 2026-07-03 — **fix-round 2 findings (not fixed here, for PM routing):**
+  (a) 10 `membership_*` xcstrings keys still carry Android-style `%1$s` and render garbage through
+  `String(format:)` (e.g. "Active until –9"): membership_active_until, membership_cancelled_until,
+  membership_cta_disclosure_trial{,_year}, membership_hero_then_price{,_year},
+  membership_plan_per_{month,year}, membership_renews_on, membership_switch_dialog_message.
+  `recurring_bookings_day_at_time` was fixed in this round (my Home section renders it).
+  (b) The working-tree customer + Core `Localizable.xcstrings` arrived re-serialized by an Xcode
+  string-catalog sync (junk auto-extracted keys `"%@"`, `"•  %@"`, `extractionState: stale` markers)
+  despite `SWIFT_EMIT_LOC_STRINGS: NO` — NOT reverted (shared-file lane rule); edits made in the
+  current serialization.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

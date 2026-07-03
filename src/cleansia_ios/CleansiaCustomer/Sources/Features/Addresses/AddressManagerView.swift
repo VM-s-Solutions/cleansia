@@ -4,13 +4,15 @@ import SwiftUI
 struct AddressManagerView: View {
     @StateObject private var vm: AddressManagerViewModel
     private let onBack: () -> Void
+    private let onSelected: (SavedAddress) -> Void
 
     init(
         repository: SavedAddressRepository,
         geocoding: GeocodingService,
         mapProvider: MapProvider,
         snackbar: SnackbarController,
-        onBack: @escaping () -> Void
+        onBack: @escaping () -> Void,
+        onSelected: @escaping (SavedAddress) -> Void
     ) {
         _vm = StateObject(wrappedValue: AddressManagerViewModel(
             repository: repository,
@@ -19,6 +21,7 @@ struct AddressManagerView: View {
             snackbar: snackbar
         ))
         self.onBack = onBack
+        self.onSelected = onSelected
     }
 
     var body: some View {
@@ -33,8 +36,13 @@ struct AddressManagerView: View {
         case .list:
             AddressListPane(
                 addresses: vm.addresses,
+                selectedId: vm.selectedId,
                 onBack: onBack,
                 onAdd: vm.startAdd,
+                onSelect: { address in
+                    vm.select(address)
+                    onSelected(address)
+                },
                 onSetDefault: { id in Task { await vm.setDefault(id: id) } },
                 onRename: { id, label in Task { await vm.rename(id: id, newLabel: label) } },
                 onDelete: { id in Task { await vm.delete(id: id) } }
@@ -86,8 +94,10 @@ private struct AddressManagerHeader: View {
 
 private struct AddressListPane: View {
     let addresses: [SavedAddress]
+    let selectedId: String?
     let onBack: () -> Void
     let onAdd: () -> Void
+    let onSelect: (SavedAddress) -> Void
     let onSetDefault: (String) -> Void
     let onRename: (String, String) -> Void
     let onDelete: (String) -> Void
@@ -106,6 +116,8 @@ private struct AddressListPane: View {
                         ForEach(addresses) { address in
                             SavedAddressRow(
                                 address: address,
+                                isSelected: address.id == selectedId,
+                                onSelect: { onSelect(address) },
                                 onSetDefault: { onSetDefault(address.id) },
                                 onRename: { renaming = address },
                                 onDelete: { deleting = address }
@@ -200,6 +212,8 @@ private struct RenameAlertButtons: View {
 
 private struct SavedAddressRow: View {
     let address: SavedAddress
+    let isSelected: Bool
+    let onSelect: () -> Void
     let onSetDefault: () -> Void
     let onRename: () -> Void
     let onDelete: () -> Void
@@ -258,12 +272,17 @@ private struct SavedAddressRow: View {
         .padding(Spacing.m)
         .background(
             RoundedRectangle(cornerRadius: CornerRadius.medium)
-                .fill(CleansiaColors.surface)
+                .fill(isSelected ? CleansiaColors.primaryContainer.opacity(0.3) : CleansiaColors.surface)
         )
         .overlay(
             RoundedRectangle(cornerRadius: CornerRadius.medium)
-                .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
+                .stroke(
+                    isSelected ? CleansiaColors.primary : CleansiaColors.outlineVariant,
+                    lineWidth: isSelected ? 2 : 1
+                )
         )
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onSelect)
     }
 }
 
@@ -363,7 +382,8 @@ private struct AddressReviewPane: View {
                 geocoding: CLGeocoderGeocodingService(),
                 mapProvider: PreviewMapProvider(),
                 snackbar: SnackbarController(),
-                onBack: {}
+                onBack: {},
+                onSelected: { _ in }
             )
         }
     }

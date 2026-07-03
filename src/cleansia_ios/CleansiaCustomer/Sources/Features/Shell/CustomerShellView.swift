@@ -1,52 +1,14 @@
 import CleansiaCore
 import SwiftUI
 
-@MainActor
-final class CustomerShellModel: ViewModel {
-    @Published var selection: CustomerShellTab = .home
-    @Published var path = NavigationPath()
-    @Published var isBookingPresented = false
-
-    func book() {
-        isBookingPresented = true
-    }
-
-    /// Pill taps animate the pager — the `animateScrollToPage` parity
-    /// (`MainShell.kt:97-99`).
-    func select(_ tab: CustomerShellTab) {
-        withAnimation { selection = tab }
-    }
-
-    /// The T-0313 success→OrderDetail fold: jump to the Orders tab and open the
-    /// new order's detail (Orders didn't exist when the success screen shipped).
-    func openOrder(_ orderId: String) {
-        selection = .orders
-        path = NavigationPath([ShellRoute.orderDetail(orderId)])
-    }
-
-    func openOrders() {
-        selection = .orders
-        path = NavigationPath()
-    }
-
-    func openEditProfile() {
-        selection = .profile
-        path = NavigationPath([ShellRoute.editProfile])
-    }
-
-    func pop() {
-        if !path.isEmpty { path.removeLast() }
-    }
-}
-
 struct CustomerShellView: View {
-    @StateObject private var model = CustomerShellModel()
-    @StateObject private var bookingVM = BookingViewModel()
+    @StateObject var model = CustomerShellModel()
+    @StateObject var bookingVM = BookingViewModel()
     @StateObject private var membershipVM: MembershipViewModel
     @StateObject private var profileVM: ProfileViewModel
     @ObservedObject private var preferences: CustomerPreferencesModel
-    @Environment(\.snackbarController) private var snackbar
-    private let container: CustomerAppContainer
+    @Environment(\.snackbarController) var snackbar
+    let container: CustomerAppContainer
     private let onSignedOut: () -> Void
 
     init(
@@ -75,7 +37,7 @@ struct CustomerShellView: View {
                     CustomerBottomBar(
                         selection: model.selection,
                         onSelect: { model.select($0) },
-                        onBook: model.book
+                        onBook: openBooking
                     )
                 }
                 .toolbar(.hidden, for: .navigationBar)
@@ -101,6 +63,17 @@ struct CustomerShellView: View {
                 }
             )
         }
+        .sheet(isPresented: $model.isAddressManagerPresented) {
+            AddressManagerView(
+                repository: container.savedAddressRepository,
+                geocoding: container.geocodingService,
+                mapProvider: container.mapProvider,
+                snackbar: snackbar,
+                onBack: { model.isAddressManagerPresented = false },
+                onSelected: { _ in model.isAddressManagerPresented = false }
+            )
+            .snackbarHost(snackbar, bottomInset: Spacing.m)
+        }
         .task { await prefetch() }
         .onAppear { snackbar.setBottomInset(ShellSnackbarInset.inset(pathDepth: model.path.count)) }
         .onChange(of: model.path.count) { depth in
@@ -115,30 +88,36 @@ struct CustomerShellView: View {
         async let referrals = container.referralRepository.refresh()
         async let membership = container.membershipRepository.refresh()
         async let plans = container.membershipRepository.refreshPlans()
+        async let addresses = container.savedAddressRepository.refresh()
         async let profile = profileVM.refresh()
-        _ = await (orders, loyalty, referrals, membership, plans, profile)
+        _ = await (orders, loyalty, referrals, membership, plans, addresses, profile)
     }
 
     private var pager: some View {
         TabView(selection: $model.selection) {
             HomeTab(
                 orderRepository: container.orderRepository,
-                membershipVM: membershipVM,
-                snackbar: snackbar,
                 recurringRepository: container.recurringRepository,
-                onBookCleaning: model.book,
+                loyaltyRepository: container.loyaltyRepository,
+                membershipRepository: container.membershipRepository,
+                savedAddressRepository: container.savedAddressRepository,
+                bookingVM: bookingVM,
+                snackbar: snackbar,
+                onBookCleaning: openBooking,
+                onOpenAddressManager: { model.isAddressManagerPresented = true },
                 onOrderClick: { model.path.append(ShellRoute.orderDetail($0)) },
                 onSeeAllOrders: model.openOrders,
-                onCompleteProfile: model.openEditProfile,
                 onSubscribePlus: { model.path.append(ShellRoute.subscribePlus) },
-                onManageRecurring: { model.path.append(ShellRoute.recurringList) },
                 onOpenReferral: { model.select(.rewards) },
+                onBookPackage: bookPackage,
+                onRebookOrder: rebookOrder,
                 // Pre-seeded: the createRecurring destination pops on creation, so the
                 // wizard must sit ON TOP of the list or creation lands on the tab root
                 // (Android's fixed Path B) — mirrors the membershipSuccess wiring.
                 onSetupRecurring: {
                     model.path = NavigationPath([ShellRoute.recurringList, ShellRoute.createRecurring(orderId: nil)])
-                }
+                },
+                onManageRecurring: { model.path.append(ShellRoute.recurringList) }
             )
             .tag(CustomerShellTab.home)
 
@@ -146,7 +125,7 @@ struct CustomerShellView: View {
                 repository: container.orderRepository,
                 snackbar: snackbar,
                 onOrderClick: { model.path.append(ShellRoute.orderDetail($0)) },
-                onBookCleaning: model.book
+                onBookCleaning: openBooking
             )
             .tag(CustomerShellTab.orders)
 
@@ -225,7 +204,8 @@ struct CustomerShellView: View {
                 geocoding: container.geocodingService,
                 mapProvider: container.mapProvider,
                 snackbar: snackbar,
-                onBack: { model.pop() }
+                onBack: { model.pop() },
+                onSelected: { _ in model.pop() }
             )
         case .editProfile:
             EditProfileView(vm: profileVM, onSaved: { model.pop() })

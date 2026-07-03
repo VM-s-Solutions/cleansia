@@ -16,10 +16,28 @@ final class SavedAddressRepository: SessionScopedCache {
     @Published private(set) var loaded = false
     @Published private(set) var loading = false
 
-    private let client: SavedAddressClient
+    /// The address shown in the home top bar and preferred by the booking
+    /// hydration (the Android `SELECTED_ID` DataStore key — here a
+    /// UserDefaults-backed pointer, wiped on sign-out like the rest).
+    @Published private(set) var selectedId: String?
 
-    init(client: SavedAddressClient) {
+    private let client: SavedAddressClient
+    private let defaults: UserDefaults
+    private static let selectedIdKey = "saved_address_selected_id"
+
+    init(client: SavedAddressClient, defaults: UserDefaults = .standard) {
         self.client = client
+        self.defaults = defaults
+        selectedId = defaults.string(forKey: Self.selectedIdKey)
+    }
+
+    func setSelected(_ id: String?) {
+        selectedId = id
+        if let id {
+            defaults.set(id, forKey: Self.selectedIdKey)
+        } else {
+            defaults.removeObject(forKey: Self.selectedIdKey)
+        }
     }
 
     @discardableResult
@@ -71,9 +89,10 @@ final class SavedAddressRepository: SessionScopedCache {
     func delete(id: String) async -> ApiResult<Void> {
         switch await client.delete(id: id) {
         case .success:
-            await reload()
+            if selectedId == id { setSelected(nil) }
+            return await reload()
         case let .failure(error):
-            .failure(error)
+            return .failure(error)
         }
     }
 
@@ -94,5 +113,6 @@ final class SavedAddressRepository: SessionScopedCache {
     func clear() async {
         addresses = []
         loaded = false
+        setSelected(nil)
     }
 }

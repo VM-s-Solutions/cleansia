@@ -4,8 +4,17 @@ import XCTest
 
 @MainActor
 final class AddressManagerViewModelTests: XCTestCase {
-    private func makeVM(_ client: FakeSavedAddressClient) -> (AddressManagerViewModel, SavedAddressRepository) {
-        let repo = SavedAddressRepository(client: client)
+    /// Isolated defaults: the repo persists the selection, and .standard would
+    /// leak into the test host's real defaults (and across tests on a crash).
+    private func isolatedDefaults() throws -> UserDefaults {
+        let suiteName = "address-manager-vm-tests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        addTeardownBlock { defaults.removePersistentDomain(forName: suiteName) }
+        return defaults
+    }
+
+    private func makeVM(_ client: FakeSavedAddressClient) throws -> (AddressManagerViewModel, SavedAddressRepository) {
+        let repo = try SavedAddressRepository(client: client, defaults: isolatedDefaults())
         let vm = AddressManagerViewModel(
             repository: repo,
             geocoding: StubGeocodingService(),
@@ -15,10 +24,10 @@ final class AddressManagerViewModelTests: XCTestCase {
         return (vm, repo)
     }
 
-    func testOnAppearMirrorsRepositoryList() async {
+    func testOnAppearMirrorsRepositoryList() async throws {
         let client = FakeSavedAddressClient()
         client.pages = [[SavedAddressFixtures.address(id: "a")]]
-        let (vm, _) = makeVM(client)
+        let (vm, _) = try makeVM(client)
 
         await vm.onAppear()
 
@@ -26,9 +35,9 @@ final class AddressManagerViewModelTests: XCTestCase {
         XCTAssertTrue(vm.loaded)
     }
 
-    func testStartAddOpensMapPaneAndClearsPick() {
+    func testStartAddOpensMapPaneAndClearsPick() throws {
         let client = FakeSavedAddressClient()
-        let (vm, _) = makeVM(client)
+        let (vm, _) = try makeVM(client)
 
         vm.startAdd()
 
@@ -36,9 +45,9 @@ final class AddressManagerViewModelTests: XCTestCase {
         XCTAssertNil(vm.pickedAddress)
     }
 
-    func testMapConfirmPopulatesDraftAndAdvancesToReview() {
+    func testMapConfirmPopulatesDraftAndAdvancesToReview() throws {
         let client = FakeSavedAddressClient()
-        let (vm, _) = makeVM(client)
+        let (vm, _) = try makeVM(client)
         vm.startAdd()
         let picked = SavedAddressFixtures.geocoded(street: "Karlova 5", city: "Prague")
 
@@ -49,10 +58,10 @@ final class AddressManagerViewModelTests: XCTestCase {
         XCTAssertEqual(vm.pickedAddress?.city, "Prague")
     }
 
-    func testFullFlowListToMapToReviewToSaveReturnsToList() async {
+    func testFullFlowListToMapToReviewToSaveReturnsToList() async throws {
         let client = FakeSavedAddressClient()
         client.pages = [[SavedAddressFixtures.address(id: "saved")]]
-        let (vm, _) = makeVM(client)
+        let (vm, _) = try makeVM(client)
         XCTAssertEqual(vm.pane, .list)
 
         vm.startAdd()
@@ -72,10 +81,10 @@ final class AddressManagerViewModelTests: XCTestCase {
         XCTAssertEqual(vm.addresses.map(\.id), ["saved"])
     }
 
-    func testSaveWithBlankLabelFallsBackToDefaultLabel() async {
+    func testSaveWithBlankLabelFallsBackToDefaultLabel() async throws {
         let client = FakeSavedAddressClient()
         client.pages = [[]]
-        let (vm, _) = makeVM(client)
+        let (vm, _) = try makeVM(client)
         vm.startAdd()
         vm.mapDidConfirm(SavedAddressFixtures.geocoded())
 
@@ -84,9 +93,9 @@ final class AddressManagerViewModelTests: XCTestCase {
         XCTAssertEqual(client.lastAddDraft?.label, L10n.AddressManager.fallbackLabel)
     }
 
-    func testBackToListReturnsToListPane() {
+    func testBackToListReturnsToListPane() throws {
         let client = FakeSavedAddressClient()
-        let (vm, _) = makeVM(client)
+        let (vm, _) = try makeVM(client)
         vm.startAdd()
 
         vm.backToList()
@@ -94,9 +103,9 @@ final class AddressManagerViewModelTests: XCTestCase {
         XCTAssertEqual(vm.pane, .list)
     }
 
-    func testBackToMapReturnsFromReview() {
+    func testBackToMapReturnsFromReview() throws {
         let client = FakeSavedAddressClient()
-        let (vm, _) = makeVM(client)
+        let (vm, _) = try makeVM(client)
         vm.startAdd()
         vm.mapDidConfirm(SavedAddressFixtures.geocoded())
 
@@ -105,13 +114,13 @@ final class AddressManagerViewModelTests: XCTestCase {
         XCTAssertEqual(vm.pane, .addOnMap)
     }
 
-    func testSetDefaultDelegatesToRepository() async {
+    func testSetDefaultDelegatesToRepository() async throws {
         let client = FakeSavedAddressClient()
         client.pages = [
             [SavedAddressFixtures.address(id: "a", isDefault: true), SavedAddressFixtures.address(id: "b")],
             [SavedAddressFixtures.address(id: "a"), SavedAddressFixtures.address(id: "b", isDefault: true)]
         ]
-        let (vm, _) = makeVM(client)
+        let (vm, _) = try makeVM(client)
         await vm.onAppear()
 
         await vm.setDefault(id: "b")
@@ -120,13 +129,13 @@ final class AddressManagerViewModelTests: XCTestCase {
         XCTAssertEqual(vm.addresses.first(where: { $0.id == "b" })?.isDefault, true)
     }
 
-    func testDeleteDelegatesToRepository() async {
+    func testDeleteDelegatesToRepository() async throws {
         let client = FakeSavedAddressClient()
         client.pages = [
             [SavedAddressFixtures.address(id: "a"), SavedAddressFixtures.address(id: "b")],
             [SavedAddressFixtures.address(id: "b")]
         ]
-        let (vm, _) = makeVM(client)
+        let (vm, _) = try makeVM(client)
         await vm.onAppear()
 
         await vm.delete(id: "a")
@@ -135,13 +144,13 @@ final class AddressManagerViewModelTests: XCTestCase {
         XCTAssertEqual(vm.addresses.map(\.id), ["b"])
     }
 
-    func testRenameUsesExistingCoordsAndDraftLabel() async {
+    func testRenameUsesExistingCoordsAndDraftLabel() async throws {
         let client = FakeSavedAddressClient()
         client.pages = [
             [SavedAddressFixtures.address(id: "a", label: "Home", latitude: 49.5, longitude: 13.5)],
             [SavedAddressFixtures.address(id: "a", label: "Casa", latitude: 49.5, longitude: 13.5)]
         ]
-        let (vm, _) = makeVM(client)
+        let (vm, _) = try makeVM(client)
         await vm.onAppear()
 
         await vm.rename(id: "a", newLabel: "Casa")
@@ -150,5 +159,15 @@ final class AddressManagerViewModelTests: XCTestCase {
         XCTAssertEqual(client.lastUpdate?.draft.label, "Casa")
         XCTAssertEqual(client.lastUpdate?.draft.latitude, 49.5)
         XCTAssertEqual(vm.addresses.first?.label, "Casa")
+    }
+
+    func testSelectPersistsTheSelectionOnTheRepository() throws {
+        let client = FakeSavedAddressClient()
+        let (vm, repo) = try makeVM(client)
+
+        vm.select(SavedAddressFixtures.address(id: "a"))
+
+        XCTAssertEqual(repo.selectedId, "a")
+        XCTAssertEqual(vm.selectedId, "a")
     }
 }

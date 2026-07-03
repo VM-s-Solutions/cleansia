@@ -2,8 +2,12 @@ import Foundation
 
 extension L10n {
     enum Home {
-        static var greeting: String {
-            localized("home_greeting")
+        static var addressLabel: String {
+            localized("home_address_label")
+        }
+
+        static var addressPlaceholder: String {
+            localized("home_address_placeholder")
         }
 
         static var heroGreeting: String {
@@ -66,20 +70,72 @@ extension L10n {
             localized("home_upsell_referral_cta")
         }
 
-        static var recentOrdersTitle: String {
-            localized("home_recent_orders_title")
+        static var trustInsured: String {
+            localized("home_trust_insured")
         }
 
-        static var seeAll: String {
-            localized("home_see_all")
+        static var trustVetted: String {
+            localized("home_trust_vetted")
         }
 
-        static var profileNudgeTitle: String {
-            localized("home_profile_nudge_title")
+        static var trustSameDay: String {
+            localized("home_trust_same_day")
         }
 
-        static var profileNudgeSubtitle: String {
-            localized("home_profile_nudge_subtitle")
+        static var orderAgainTitle: String {
+            localized("home_order_again_title")
+        }
+
+        static func orderAgainSubtitle(_ when: String) -> String {
+            format("home_order_again_subtitle", when)
+        }
+
+        static var orderAgainFallbackTitle: String {
+            localized("home_order_again_fallback_title")
+        }
+
+        static var recurringSectionTitle: String {
+            localized("home_recurring_section_title")
+        }
+
+        static var recurringSectionManage: String {
+            localized("home_recurring_section_manage")
+        }
+
+        static var popularPackagesTitle: String {
+            localized("home_popular_packages_title")
+        }
+
+        static var popularPackagesAddCta: String {
+            localized("home_popular_packages_add_cta")
+        }
+
+        static var recentTitle: String {
+            localized("home_recent_title")
+        }
+
+        static var recentSeeAll: String {
+            localized("home_recent_see_all")
+        }
+
+        static var recentFallbackTitle: String {
+            localized("home_recent_fallback_title")
+        }
+
+        static func milestoneTitle(_ currentTier: String) -> String {
+            format("home_milestone_title_v2", currentTier)
+        }
+
+        static func milestoneSubtitle(_ pointsToNext: Int, _ nextTier: String) -> String {
+            format("home_milestone_subtitle_v2", pointsToNext, nextTier)
+        }
+
+        static var seasonalTitle: String {
+            localized("home_seasonal_title")
+        }
+
+        static var seasonalSubtitle: String {
+            localized("home_seasonal_subtitle")
         }
     }
 }

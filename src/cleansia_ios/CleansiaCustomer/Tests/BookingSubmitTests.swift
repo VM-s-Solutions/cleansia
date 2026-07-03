@@ -55,6 +55,21 @@ final class BookingSubmitTests: XCTestCase {
         XCTAssertEqual(vm.submitState, .idle)
     }
 
+    /// The duplicate-order guard: the session-lived draft must be wiped AT the
+    /// success outcome — a sheet swiped away over the success screen skips the
+    /// exit closures, and a stale draft would re-arm slide-to-pay at step 3.
+    func testSuccessfulCashSubmitWipesTheDraftForTheNextBooking() async {
+        let create = FakeOrderCreateClient(result: .success(CreatedOrder(id: "o-10", confirmationCode: "CLN-10")))
+        let vm = makeVM(create: create)
+        vm.update(readyState(payment: .cash))
+
+        let outcome = await vm.submit()
+
+        XCTAssertEqual(outcome, .success(orderId: "o-10", confirmationCode: "CLN-10"))
+        XCTAssertEqual(vm.state, BookingState())
+        XCTAssertEqual(vm.currentStep, 1)
+    }
+
     func testCardSelectedWhenUnconfiguredCreatesOrderWithoutStripeHop() async {
         let create = FakeOrderCreateClient(result: .success(CreatedOrder(id: "o-card", confirmationCode: "CLN-C")))
         let vm = makeVM(create: create)

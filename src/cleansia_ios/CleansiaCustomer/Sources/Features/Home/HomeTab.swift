@@ -11,22 +11,25 @@ struct HomeTab: View {
     let onCompleteProfile: () -> Void
     let onSubscribePlus: () -> Void
     let onManageRecurring: () -> Void
-    let onOpenReferral: (() -> Void)?
-    let onSetupRecurring: (() -> Void)?
+    let onOpenReferral: () -> Void
+    let onSetupRecurring: () -> Void
 
+    /// All callbacks + the recurring source are REQUIRED: an optional-defaulted
+    /// callback here means a silently inert slide CTA — the failure class this
+    /// phase fixed (T-0373 review N-F1).
     init(
         orderRepository: OrderRepository,
         membershipVM: MembershipViewModel,
         snackbar: SnackbarController,
-        recurringRepository: RecurringBookingRepository? = nil,
+        recurringRepository: RecurringBookingRepository,
         onBookCleaning: @escaping () -> Void,
         onOrderClick: @escaping (String) -> Void,
         onSeeAllOrders: @escaping () -> Void,
         onCompleteProfile: @escaping () -> Void,
         onSubscribePlus: @escaping () -> Void,
         onManageRecurring: @escaping () -> Void,
-        onOpenReferral: (() -> Void)? = nil,
-        onSetupRecurring: (() -> Void)? = nil
+        onOpenReferral: @escaping () -> Void,
+        onSetupRecurring: @escaping () -> Void
     ) {
         _vm = StateObject(wrappedValue: HomeTabViewModel(
             orderRepository: orderRepository,
@@ -96,9 +99,7 @@ struct HomeTab: View {
         }
     }
 
-    /// Slide CTA → callback mapping (`MainShell.kt:265-280`). Until the shell
-    /// wires the two new callbacks: setup-recurring falls back to the recurring
-    /// list (which carries its own create CTA), referral is inert.
+    /// Slide CTA → callback mapping (`MainShell.kt:265-280`).
     private func handleUpsell(_ action: UpsellSlide.Action) {
         switch action {
         case .subscribePlus:
@@ -106,9 +107,9 @@ struct HomeTab: View {
         case .book:
             onBookCleaning()
         case .openReferral:
-            onOpenReferral?()
+            onOpenReferral()
         case .setupRecurring:
-            (onSetupRecurring ?? onManageRecurring)()
+            onSetupRecurring()
         }
     }
 }

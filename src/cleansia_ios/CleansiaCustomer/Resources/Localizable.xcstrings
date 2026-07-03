@@ -7892,40 +7892,6 @@
         }
       }
     },
-    "error_booking_profile_incomplete": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please complete your profile before booking — we need your phone number to reach you."
-          }
-        },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Před rezervací prosím doplňte svůj profil — potřebujeme vaše telefonní číslo, abychom vás mohli kontaktovat."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pred rezerváciou si prosím doplňte profil — potrebujeme vaše telefónne číslo, aby sme vás mohli kontaktovať."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Будь ласка, заповніть профіль перед бронюванням — нам потрібен ваш номер телефону, щоб зв’язатися з вами."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пожалуйста, заполните профиль перед бронированием — нам нужен ваш номер телефона, чтобы связаться с вами."
-          }
-        }
-      }
-    },
     "error_booking_sign_in_required": {
       "localizations": {
         "en": {

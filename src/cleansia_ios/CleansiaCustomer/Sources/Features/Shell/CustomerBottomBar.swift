@@ -78,7 +78,9 @@ private struct BookFab: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: "sparkles")
+            // Android's FAB glyph is CleaningServices (the broom); SF has no broom,
+            // so this follows the T-0372 category ruling's nearest-meaning pick.
+            Image(systemName: "bubbles.and.sparkles")
                 .font(.system(size: 34, weight: .semibold))
                 .foregroundColor(CleansiaColors.onPrimary)
                 .frame(width: 74, height: 74)

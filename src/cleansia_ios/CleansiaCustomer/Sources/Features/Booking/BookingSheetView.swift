@@ -97,6 +97,10 @@ struct BookingSheetView: View {
         let outcome = await paymentSheet.present(presentation)
         switch BookingCardResultResolver.resolve(outcome, confirmationCode: confirmationCode) {
         case let .navigateToSuccess(code):
+            // Same duplicate-order guard as the VM's cash path: clear the
+            // session-lived draft the moment the payment lands, not on the
+            // success screen's exit (a swiped-away sheet skips those closures).
+            vm.reset()
             success = BookingSuccess(orderId: orderId, confirmationCode: code)
         case let .snackbar(messageKey):
             snackbar.showError(L10n.localized(messageKey))

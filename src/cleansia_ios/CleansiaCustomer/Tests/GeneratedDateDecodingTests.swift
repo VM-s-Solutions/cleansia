@@ -32,6 +32,11 @@ final class GeneratedDateDecodingTests: XCTestCase {
         XCTAssertEqual(try decode("2026-07-02T10:11:12"), try reference())
     }
 
+    func testOffsetlessThreeDigitFractionDecodesAsUtc() throws {
+        let decoded = try decode("2026-07-02T10:11:12.345")
+        XCTAssertEqual(try decoded.timeIntervalSince(reference()), 0.345, accuracy: 0.001)
+    }
+
     func testOffsetlessSevenDigitFractionDecodesAsUtc() throws {
         let decoded = try decode("2026-07-02T10:11:12.3456789")
         XCTAssertEqual(try decoded.timeIntervalSince(reference()), 0.345, accuracy: 0.001)

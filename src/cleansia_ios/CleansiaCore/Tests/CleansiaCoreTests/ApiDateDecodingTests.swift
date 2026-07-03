@@ -50,6 +50,11 @@ final class ApiDateDecodingTests: XCTestCase {
         XCTAssertEqual(try decode("2026-07-02T10:11:12"), try noonUtc())
     }
 
+    func testOffsetlessDateTimeWithThreeDigitFractionDecodesAsUtc() throws {
+        let decoded = try decode("2026-07-02T10:11:12.345")
+        XCTAssertEqual(try decoded.timeIntervalSince(noonUtc()), 0.345, accuracy: 0.001)
+    }
+
     func testOffsetlessDateTimeWithSevenDigitFractionDecodesAsUtc() throws {
         let decoded = try decode("2026-07-02T10:11:12.3456789")
         XCTAssertEqual(try decoded.timeIntervalSince(noonUtc()), 0.345, accuracy: 0.001)

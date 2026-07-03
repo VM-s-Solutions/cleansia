@@ -96,6 +96,35 @@ source: phase/ios-fix1 on-device shakeout diagnosis (2026-07-02, cluster data-la
 - 2026-07-03 — filed `in_progress` by pm from the phase/ios-fix1 diagnosis (data-layer cluster); dev
   dispatched on items 2–4 + the backend attribute; the regen-gated halves of AC2 are ON HOLD pending the
   owner manual steps (flagged in the INDEX banner). T-0367 absorbed into item 4 (dedup — same fix).
+- 2026-07-03 — all four fixes landed in `5252bfb9` (spec re-dumped locally against a disposable
+  postgres — NOT the owner regen; the two ride-along drift entries AppleAuth + ConfirmUserEmail.email
+  verified as stale-spec catch-up). Suites at commit time: Core 252, Customer 377, Partner 369, dotnet
+  0 errors, `:customer-app:compileDebugKotlin` green.
+- 2026-07-03 — review CHANGES folded (3 test/guard additions, no production-code change):
+  (1) **AC1 spec-enum guard** — `Cleansia.Tests/Configuration/MobileSpecEnumGuardTests.cs` pins every
+  enum-carrying `components.schemas` entry in BOTH committed mobile specs to `type: integer`
+  (16 customer + 12 partner enum schemas covered). **Red→green proven**: flipping MembershipStatus
+  back to `string` in the spec fails the customer case naming the offender; restored, 2/2 green.
+  (2) **3-digit offset-less fraction** case added to `ApiDateDecodingTests` (Core) and
+  `GeneratedDateDecodingTests` (customer) — green.
+  (3) **Gate-4d install-seam tests** — `PartnerInstallSeamTests` + `CustomerInstallSeamTests`
+  construct the REAL container, call `installGeneratedClientAuth()`, and assert the ACTUAL
+  `CodableHelper.jsonDecoder` decodes an offset-less date and `…ApiAPI.apiResponseQueue !== .main`.
+  **Red→green proven on partner**: with the two container install lines deleted, both tests fail
+  (2/2 red), restored → full partner suite green. Customer red-proof is by the identical mechanism
+  (nothing else in the test process sets the customer-module globals); not re-run mid-Slice-A-churn.
+  Post-fold suites: Core **253**, Customer **381**, Partner **371**, MobileSpecEnumGuardTests 2/2 —
+  all green on iPhone 17 sim; customer target compiled fine on the single attempt (no deferral
+  needed). Global-state mutation in the seam tests follows the suite's existing practice
+  (`GeneratedClientAuthAdapterTests` already installs per-test bridges).
 
 ## Review
-<!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
+- 2026-07-03 reviewer verdict (relayed via coordinator): **PASSED on substance** — all four fixes
+  verified correct, the spec diff independently confirmed clean (MembershipStatus int + the two
+  stale-spec catch-ups), formatter usage verified thread-safe. Three cheap CHANGES to fold, all
+  test/guard additions, no production-code defects: AC1 spec-enum guard test, the 3-digit
+  offset-less fraction case, and Gate-4d install-seam red tests per app. → folded, see status log.
+- Harvest (rode `5252bfb9`): three rows added to `agents/knowledge/patterns-mobile.md` — the ONE
+  install seam for generated-client globals (queue + hardened decoder), the ONE ProblemDetails body
+  parser (`ApiError.fromProblemDetails`), and the `[SwaggerEnumAsInt]` new-mobile-enum checklist
+  (now also pinned by MobileSpecEnumGuardTests).

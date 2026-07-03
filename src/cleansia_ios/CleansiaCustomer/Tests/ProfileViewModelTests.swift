@@ -59,9 +59,45 @@ final class ProfileViewModelTests: XCTestCase {
         XCTAssertEqual(vm.saveState, .idle)
     }
 
+    func testSaveCarriesCurrentUserIdAndPickedBirthDate() async {
+        client.currentUserResult = .success(ProfileFixtures.user(id: "user-42"))
+        client.updateResult = .success(())
+        let vm = makeVM()
+        await vm.refresh()
+
+        let birthDate = Date(timeIntervalSince1970: 641_520_000)
+        await vm.save(
+            firstName: "Grace",
+            lastName: "Hopper",
+            phoneNumber: nil,
+            birthDate: birthDate,
+            languageCode: nil
+        )
+
+        XCTAssertEqual(client.lastUpdate?.id, "user-42")
+        XCTAssertEqual(client.lastUpdate?.birthDate, birthDate)
+    }
+
+    func testSaveWithoutLoadedUserFailsWithoutCallingUpdate() async {
+        client.updateResult = .success(())
+        let vm = makeVM()
+
+        var saved = false
+        let token = vm.saved.sink { saved = true }
+        defer { token.cancel() }
+
+        await vm.save(firstName: "G", lastName: "H", phoneNumber: nil, birthDate: nil, languageCode: nil)
+
+        XCTAssertEqual(client.updateCallCount, 0)
+        XCTAssertFalse(saved)
+        XCTAssertNotNil(snackbar.current)
+        guard case .error = vm.saveState else { return XCTFail("expected action error") }
+    }
+
     func testSaveTrimsWhitespace() async {
         client.updateResult = .success(())
         let vm = makeVM()
+        await vm.refresh()
         await vm.save(
             firstName: "  Grace  ",
             lastName: " Hopper ",
@@ -77,6 +113,7 @@ final class ProfileViewModelTests: XCTestCase {
     func testSaveFailureSurfacesActionErrorAndDoesNotEmitSaved() async {
         client.updateResult = .failure(ApiError(httpStatus: 400))
         let vm = makeVM()
+        await vm.refresh()
 
         var saved = false
         let token = vm.saved.sink { saved = true }
@@ -92,6 +129,7 @@ final class ProfileViewModelTests: XCTestCase {
     func testSaveReentryGuard() async {
         client.updateResult = .success(())
         let vm = makeVM()
+        await vm.refresh()
         async let first: Void = vm.save(
             firstName: "A",
             lastName: "B",

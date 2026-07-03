@@ -144,6 +144,14 @@ cluster, all sharing one root topology:
   clean tree-wide; iOS 16.4 boot-install-launch smoke of BOTH apps with 0 NavigationAuthority/
   comparisonTypeMismatch hits. REMAINING acceptance: the owner's on-device pass (Plus from Home + Profile,
   order detail, dispute create→detail, tab swipe, bar hidden on push) — flagged in the phase PR.
+- 2026-07-03 — fix-round 2 by ios (**owner directive** from the on-device pass): the pill's opaque
+  surface fill replaced with translucent material — `.glassEffect(.regular, in:
+  RoundedRectangle(cornerRadius: 32))` under `#available(iOS 26.0, *)` (compiles against the Xcode 26.3
+  SDK), `.ultraThinMaterial` in a `Capsule` below — every other D3 geometry element kept (64pt pill,
+  16pt margins, r32, outline-variant stroke, selection dots, 72pt center gap, opaque-primary FAB).
+  Recorded as the dated owner-directed amendment note under ADR-0022 D3 (overrides the
+  copy-Android-exactly fill; Android parity for the fill is intentionally broken by owner order).
+  Evidence: Customer 408/408 green on iPhone 17; swiftformat + swiftlint --strict clean on the file.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

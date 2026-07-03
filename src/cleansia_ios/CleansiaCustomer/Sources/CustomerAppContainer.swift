@@ -121,7 +121,9 @@ final class CustomerAppContainer: AppContainer {
         self.disputeRepository = disputeRepository
         let savedAddressRepository = SavedAddressRepository(client: LiveSavedAddressClient())
         self.savedAddressRepository = savedAddressRepository
-        let userProfileRepository = UserProfileRepository(client: LiveUserProfileClient())
+        let userProfileRepository = UserProfileRepository(
+            client: LiveUserProfileClient(tokenStore: authStack.spine.tokenStore)
+        )
         self.userProfileRepository = userProfileRepository
         devicesClient = LiveCustomerDevicesClient(deviceIdProvider: authStack.deviceIdProvider)
         base = BaseAppContainer(

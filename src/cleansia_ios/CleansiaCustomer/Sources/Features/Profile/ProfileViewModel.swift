@@ -39,8 +39,15 @@ final class ProfileViewModel: ViewModel {
         languageCode: String?
     ) async {
         guard !saveState.isSubmitting else { return }
+        guard let user = repository.currentUser else {
+            let message = localizer.message(for: ApiError())
+            snackbar.showError(message)
+            saveState = .error(message)
+            return
+        }
         saveState = .submitting
         let update = ProfileUpdate(
+            id: user.id,
             firstName: firstName.trimmed,
             lastName: lastName.trimmed,
             phoneNumber: phoneNumber?.trimmed.nilIfEmpty,
@@ -63,6 +70,7 @@ final class ProfileViewModel: ViewModel {
         guard !saveState.isSubmitting else { return }
         saveState = .submitting
         let update = ProfileUpdate(
+            id: user.id,
             firstName: user.firstName,
             lastName: user.lastName,
             phoneNumber: phoneNumber.trimmed.nilIfEmpty,

@@ -225,6 +225,7 @@ private struct ProfileHero: View {
         static var previews: some View {
             ProfileHero(
                 user: CurrentUserProfile(
+                    id: "user-1",
                     email: "jane@example.com",
                     firstName: "Jane",
                     lastName: "Doe",

@@ -183,6 +183,8 @@ private struct PropertyRow: View {
             Text(L10n.Booking.yourHome)
                 .font(CleansiaTypography.labelLarge)
                 .foregroundColor(CleansiaColors.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
                 .frame(maxWidth: .infinity, alignment: .leading)
             PropertyStepper(label: L10n.Booking.roomsShort(rooms), value: rooms, onChange: onRoomsChange)
             PropertyStepper(label: L10n.Booking.bathShort(bathrooms), value: bathrooms, onChange: onBathroomsChange)

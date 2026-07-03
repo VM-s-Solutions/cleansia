@@ -134,6 +134,25 @@ source: phase/ios-fix1 on-device shakeout diagnosis (2026-07-02, cluster data-la
   Core 272/272 on iPhone 17 AND iOS 16.4; Customer 406/406 + Partner green; Android compile green on the
   regenerated client; lint clean tree-wide. Closes **T-0367** (absorbed). The subscribed-user membership
   screen on a real device rides the owner device pass (phase PR).
+- 2026-07-03 — fix-round 2 by ios+backend (**owner-reported on-device defect, filed here as the
+  dates/decode-cluster carrier**): **customer profile save was broken end-to-end.**
+  (a) iOS omitted the required `id` on `UpdateCurrentUserCommand` — the backend own-account guard
+  (`user.Id == command.Id`, `UpdateCurrentUser.cs:70`) rejects every save. Fixed by Android-parity JWT
+  threading (`UserRepository.kt:85-96,111`): `CurrentUserProfile` + `ProfileUpdate` gain `id`,
+  `LiveUserProfileClient` (now injected with the spine `TokenStore`) pulls it from the JWT sub claim via
+  `JwtDecoder.userId(of:)` at fetch time, `ProfileViewModel.save` guards a nil `currentUser` (graceful
+  snackbar+`.error`, never a nil-id send). **Red→green:** `testSaveCarriesCurrentUserIdAndPickedBirthDate`
+  + `testSaveWithoutLoadedUserFailsWithoutCallingUpdate` (ProfileViewModelTests) + 2 new
+  `UserProfileClientMappingTests` pinning the generated command carries the id + the picked birthDate —
+  Customer 408/408 on iPhone 17.
+  (b) backend: the generated Swift client encodes `birthDate` (`format: date`) as a full ISO date-time
+  (`"1990-05-01T00:00:00.000Z"`), which default STJ `DateOnly` handling 400s before validation. Added
+  `TolerantDateOnlyConverter` (`Cleansia.Config/Abstractions`, the `TolerantEnumConverterFactory` sibling)
+  registered via the new shared `CleansiaStartupBase.ConfigureJsonSerialization` (all five hosts): reads
+  `"yyyy-MM-dd"` AND full ISO date-time (time truncated literally — no tz day-shift), still WRITES
+  `"yyyy-MM-dd"` (Android/web wire unchanged), garbage still 400s. **Red→green:** 12 new
+  `TolerantDateOnlyConverterTests` run against the REAL host serializer config (compile-red before the
+  converter existed); dotnet build 0 errors; full Cleansia.Tests **1726/1726**.
 
 ## Review
 - 2026-07-03 reviewer verdict (relayed via coordinator): **PASSED on substance** — all four fixes

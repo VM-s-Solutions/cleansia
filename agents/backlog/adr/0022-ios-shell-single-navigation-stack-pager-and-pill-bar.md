@@ -68,6 +68,11 @@ do not add dead modifiers. Classification ruling: the floating pill + center FAB
 signature** (the partner Android file says so in code), i.e. ADR-0018 **branding/layout — non-negotiable parity** —
 not a swappable "component". §7.15 D6's contrary classification is superseded.
 
+*[Owner-directed amendment, 2026-07-03 (fix-round 2):* the pill's **opaque surface fill** is replaced by
+**translucent material** — Liquid Glass (`.glassEffect`) on iOS 26+, `.ultraThinMaterial` (Capsule) below —
+keeping every other D3 geometry element (64pt pill, 16pt margins, radius 32, stroke, dots, opaque-primary FAB);
+an explicit owner override of the copy-Android-exactly fill.*]*
+
 **D4 — Partner scope THIS phase: the minimal crash fix only.** Delete the outer stack (D1) + convert the four typed
 `[Route]` paths to `NavigationPath` (keeping every `.navigationDestination(for:)` registration and the in-tab-stack
 topology recorded in §7.7 D1 / §7.12 D1). Partner pill/pager parity (Android partner **does** use

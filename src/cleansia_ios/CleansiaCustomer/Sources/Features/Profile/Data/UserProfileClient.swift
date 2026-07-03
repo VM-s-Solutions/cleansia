@@ -3,6 +3,7 @@ import CleansiaCustomerApi
 import Foundation
 
 struct CurrentUserProfile: Equatable {
+    let id: String
     let email: String
     let firstName: String
     let lastName: String
@@ -21,6 +22,7 @@ struct CurrentUserProfile: Equatable {
 }
 
 struct ProfileUpdate: Equatable {
+    let id: String
     let firstName: String
     let lastName: String
     let phoneNumber: String?
@@ -34,30 +36,51 @@ protocol UserProfileClient: AnyObject {
 }
 
 final class LiveUserProfileClient: UserProfileClient {
+    private let tokenStore: TokenStore
+
+    init(tokenStore: TokenStore) {
+        self.tokenStore = tokenStore
+    }
+
     func currentUser() async -> ApiResult<CurrentUserProfile> {
-        await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerUserAPI.userGetCurrentUser().toDomain()
+        // The profile response carries no user id — it lives in the JWT sub
+        // claim (Android UserRepository parity), pulled once per fetch.
+        guard let accessToken = tokenStore.current()?.accessToken,
+              let userId = JwtDecoder.userId(of: accessToken)
+        else {
+            return .failure(ApiError())
+        }
+        return await apiResult(mapError: ApiError.fromGenerated) {
+            try await CustomerUserAPI.userGetCurrentUser().toDomain(id: userId)
         }
     }
 
     func updateCurrentUser(_ update: ProfileUpdate) async -> ApiResult<Void> {
         await apiResult(mapError: ApiError.fromGenerated) {
             _ = try await CustomerUserAPI.userUpdateCurrentUser(
-                updateCurrentUserCommand: UpdateCurrentUserCommand(
-                    firstName: update.firstName,
-                    lastName: update.lastName,
-                    phoneNumber: update.phoneNumber?.nilIfBlank,
-                    birthDate: update.birthDate,
-                    languageCode: update.languageCode
-                )
+                updateCurrentUserCommand: UpdateCurrentUserCommand(update)
             )
         }
     }
 }
 
+extension UpdateCurrentUserCommand {
+    init(_ update: ProfileUpdate) {
+        self.init(
+            id: update.id,
+            firstName: update.firstName,
+            lastName: update.lastName,
+            phoneNumber: update.phoneNumber?.nilIfBlank,
+            birthDate: update.birthDate,
+            languageCode: update.languageCode
+        )
+    }
+}
+
 private extension MyProfileDto {
-    func toDomain() -> CurrentUserProfile {
+    func toDomain(id: String) -> CurrentUserProfile {
         CurrentUserProfile(
+            id: id,
             email: email ?? "",
             firstName: firstName ?? "",
             lastName: lastName ?? "",

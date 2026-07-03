@@ -3,9 +3,13 @@ import SwiftUI
 
 /// The floating pill bar + center Book FAB composite — the `CustomBottomBar`
 /// port (`MainShell.kt:363-407`): 64pt pill, 16pt side margins, radius 32,
-/// surface fill + outline-variant stroke, a reserved 72pt center gap, the FAB
-/// half-overlapping the pill top. Mounted via `.safeAreaInset(edge: .bottom)`
-/// so every tab's scroll content clears the full 88pt composite (ADR-0022 D3).
+/// outline-variant stroke, a reserved 72pt center gap, the FAB half-overlapping
+/// the pill top. Mounted via `.safeAreaInset(edge: .bottom)` so every tab's
+/// scroll content clears the full 88pt composite (ADR-0022 D3).
+///
+/// Owner-directed deviation from the opaque Android surface fill (ADR-0022
+/// amendment, 2026-07-03): the pill is translucent — Liquid Glass on iOS 26+,
+/// `.ultraThinMaterial` below. The FAB stays opaque primary.
 struct CustomerBottomBar: View {
     let selection: CustomerShellTab
     let onSelect: (CustomerShellTab) -> Void
@@ -22,6 +26,20 @@ struct CustomerBottomBar: View {
     }
 
     private var pill: some View {
+        glassSlots
+            .overlay(RoundedRectangle(cornerRadius: 32).stroke(CleansiaColors.outlineVariant, lineWidth: 1))
+    }
+
+    @ViewBuilder
+    private var glassSlots: some View {
+        if #available(iOS 26.0, *) {
+            slots.glassEffect(.regular, in: RoundedRectangle(cornerRadius: 32))
+        } else {
+            slots.background(.ultraThinMaterial, in: Capsule())
+        }
+    }
+
+    private var slots: some View {
         HStack(spacing: 0) {
             NavSlot(tab: .home, selection: selection, onSelect: onSelect)
             NavSlot(tab: .orders, selection: selection, onSelect: onSelect)
@@ -32,8 +50,6 @@ struct CustomerBottomBar: View {
         .padding(.horizontal, 8)
         .frame(height: 64)
         .frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 32).fill(CleansiaColors.surface))
-        .overlay(RoundedRectangle(cornerRadius: 32).stroke(CleansiaColors.outlineVariant, lineWidth: 1))
     }
 }
 

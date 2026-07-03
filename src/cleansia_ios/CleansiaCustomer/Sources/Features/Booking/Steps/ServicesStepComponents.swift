@@ -9,9 +9,14 @@ struct PropertyStepper: View {
     var body: some View {
         HStack(spacing: 0) {
             stepButton(systemImage: "minus") { onChange(value - 1) }
+            // Android CompactCounter parity: the counter label keeps its
+            // intrinsic width so long locales (RU "1 комнат") never break
+            // mid-word — the flexible row label absorbs the squeeze instead.
             Text(label)
                 .font(CleansiaTypography.labelLarge)
                 .foregroundColor(CleansiaColors.onSurface)
+                .lineLimit(1)
+                .fixedSize()
                 .padding(.horizontal, Spacing.xxs)
             stepButton(systemImage: "plus") { onChange(value + 1) }
         }

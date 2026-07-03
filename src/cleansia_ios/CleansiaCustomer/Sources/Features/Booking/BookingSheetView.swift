@@ -182,11 +182,15 @@ private struct BookingSheetContent: View {
             Text(L10n.Booking.stepTitle(step))
                 .font(CleansiaTypography.headlineSmall)
                 .foregroundColor(CleansiaColors.onBackground)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(L10n.Booking.stepIndicator(step, BookingStepGate.totalSteps))
                 .font(CleansiaTypography.labelLarge)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .lineLimit(1)
+                .fixedSize()
         }
         .padding(.horizontal, Spacing.m)
         .padding(.top, Spacing.xs)
@@ -228,6 +232,8 @@ private struct BookingSheetContent: View {
                     style: .prominent,
                     onConfirm: { Task { await onConfirm() } }
                 )
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
             } else {
                 CleansiaPrimaryButton(
                     totalDisplay.map(L10n.Booking.continuePrice) ?? L10n.Booking.continueAction,
@@ -235,6 +241,8 @@ private struct BookingSheetContent: View {
                     enabled: canContinue,
                     action: onContinue
                 )
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
             }
         }
         .padding(.horizontal, Spacing.ml)

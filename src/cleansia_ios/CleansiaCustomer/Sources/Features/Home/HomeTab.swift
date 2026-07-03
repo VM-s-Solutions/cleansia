@@ -55,8 +55,6 @@ struct HomeTab: View {
                         onSeeAll: onSeeAllOrders
                     )
                 }
-
-                Color.clear.frame(height: Spacing.xxl)
             }
             .padding(.horizontal, Spacing.ml)
             .padding(.top, Spacing.m)

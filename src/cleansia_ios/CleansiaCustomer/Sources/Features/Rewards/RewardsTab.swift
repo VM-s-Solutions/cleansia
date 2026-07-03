@@ -89,8 +89,6 @@ struct RewardsContentView: View {
                 }
 
                 ActivityPreviewCard(activity: content.activityPreview, onOpenActivity: onOpenActivity)
-
-                Color.clear.frame(height: Spacing.xxl)
             }
             .padding(.horizontal, Spacing.ml)
         }

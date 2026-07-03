@@ -14,14 +14,12 @@ struct CustomerRootView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            content
-        }
-        .task {
-            for await _ in sessionManager.forcedSignOutStream {
-                route = .login
+        content
+            .task {
+                for await _ in sessionManager.forcedSignOutStream {
+                    route = .login
+                }
             }
-        }
     }
 
     @ViewBuilder

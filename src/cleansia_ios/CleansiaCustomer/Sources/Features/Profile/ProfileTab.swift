@@ -5,13 +5,13 @@ struct ProfileTab: View {
     @ObservedObject var profileVM: ProfileViewModel
     @ObservedObject var membershipVM: MembershipViewModel
     @ObservedObject var preferences: CustomerPreferencesModel
-    let onOpen: (ProfileRoute) -> Void
+    let onOpen: (ShellRoute) -> Void
     let onSignOut: () -> Void
 
     /// The membership card's "Subscribe to Plus" CTA routes to the paid
     /// subscribe flow — NOT Edit Profile. Held as a value so it's guarded by a
     /// test (a money surface that must not silently regress its destination).
-    static let subscribeRoute: ProfileRoute = .subscribePlus
+    static let subscribeRoute: ShellRoute = .subscribePlus
 
     @State private var showSignOutDialog = false
 
@@ -20,6 +20,12 @@ struct ProfileTab: View {
             CleansiaColors.background.ignoresSafeArea()
             ScrollView {
                 VStack(spacing: Spacing.l) {
+                    Text(L10n.Shell.profile)
+                        .font(CleansiaTypography.headlineMedium)
+                        .foregroundColor(CleansiaColors.onBackground)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, Spacing.ml)
+
                     ProfileHero(user: profileVM.currentUser, onEdit: { onOpen(.editProfile) })
 
                     MembershipManagementCard(vm: membershipVM, onSubscribeClick: { onOpen(Self.subscribeRoute) })
@@ -41,8 +47,6 @@ struct ProfileTab: View {
                 .padding(.top, Spacing.m)
             }
         }
-        .navigationTitle(L10n.Shell.profile)
-        .navigationBarTitleDisplayMode(.inline)
         .overlay { signOutOverlay }
     }
 
@@ -125,9 +129,9 @@ struct ProfileRowItem {
     let icon: String
     let label: String
     var value: String?
-    let route: ProfileRoute
+    let route: ShellRoute
 
-    init(icon: String, label: String, value: String? = nil, route: ProfileRoute) {
+    init(icon: String, label: String, value: String? = nil, route: ShellRoute) {
         self.icon = icon
         self.label = label
         self.value = value

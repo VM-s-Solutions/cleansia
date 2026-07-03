@@ -4,68 +4,39 @@ import SwiftUI
 @MainActor
 final class CustomerShellModel: ViewModel {
     @Published var selection: CustomerShellTab = .home
-    @Published var ordersPath: [OrderRoute] = []
-    @Published var homePath: [HomeRoute] = []
-    @Published var rewardsPath: [RewardsRoute] = []
-    @Published var profilePath: [ProfileRoute] = []
+    @Published var path = NavigationPath()
     @Published var isBookingPresented = false
 
     func book() {
         isBookingPresented = true
     }
 
+    /// Pill taps animate the pager — the `animateScrollToPage` parity
+    /// (`MainShell.kt:97-99`).
+    func select(_ tab: CustomerShellTab) {
+        withAnimation { selection = tab }
+    }
+
     /// The T-0313 success→OrderDetail fold: jump to the Orders tab and open the
     /// new order's detail (Orders didn't exist when the success screen shipped).
     func openOrder(_ orderId: String) {
         selection = .orders
-        ordersPath = [.detail(orderId)]
+        path = NavigationPath([ShellRoute.orderDetail(orderId)])
     }
 
     func openOrders() {
         selection = .orders
-        ordersPath = []
-    }
-
-    func openProfile() {
-        selection = .profile
+        path = NavigationPath()
     }
 
     func openEditProfile() {
         selection = .profile
-        profilePath = [.editProfile]
+        path = NavigationPath([ShellRoute.editProfile])
     }
-}
 
-enum OrderRoute: Hashable {
-    case detail(String)
-}
-
-enum HomeRoute: Hashable {
-    case detail(String)
-    case subscribePlus
-    case membershipSuccess
-    case recurringList
-    case createRecurring(orderId: String?)
-}
-
-enum RewardsRoute: Hashable {
-    case activity
-}
-
-enum ProfileRoute: Hashable {
-    case disputes
-    case createDispute(orderId: String?)
-    case disputeDetail(String)
-    case addresses
-    case editProfile
-    case subscribePlus
-    case devices
-    case notifications
-    case security
-    case language
-    case appearance
-    case help
-    case deleteAccount
+    func pop() {
+        if !path.isEmpty { path.removeLast() }
+    }
 }
 
 struct CustomerShellView: View {
@@ -97,24 +68,34 @@ struct CustomerShellView: View {
     }
 
     var body: some View {
-        tabs
-            .overlay(alignment: .bottom) {
-                BookFab(action: model.book)
-                    .offset(y: -28)
-            }
-            .sheet(isPresented: $model.isBookingPresented) {
-                BookingSheetView(
-                    geocoding: container.geocodingService,
-                    mapProvider: container.mapProvider,
-                    paymentSheet: StripePaymentController(),
-                    onDismiss: { model.isBookingPresented = false },
-                    onViewOrder: { orderId in
-                        model.isBookingPresented = false
-                        model.openOrder(orderId)
-                    }
-                )
-            }
-            .task { await prefetch() }
+        NavigationStack(path: $model.path) {
+            pager
+                .safeAreaInset(edge: .bottom) {
+                    CustomerBottomBar(
+                        selection: model.selection,
+                        onSelect: { model.select($0) },
+                        onBook: model.book
+                    )
+                }
+                .toolbar(.hidden, for: .navigationBar)
+                .navigationDestination(for: ShellRoute.self) { route in
+                    destination(route)
+                }
+        }
+        .tint(CleansiaColors.primary)
+        .sheet(isPresented: $model.isBookingPresented) {
+            BookingSheetView(
+                geocoding: container.geocodingService,
+                mapProvider: container.mapProvider,
+                paymentSheet: StripePaymentController(),
+                onDismiss: { model.isBookingPresented = false },
+                onViewOrder: { orderId in
+                    model.isBookingPresented = false
+                    model.openOrder(orderId)
+                }
+            )
+        }
+        .task { await prefetch() }
     }
 
     private func prefetch() async {
@@ -127,82 +108,81 @@ struct CustomerShellView: View {
         _ = await (orders, loyalty, referrals, membership, plans, profile)
     }
 
-    private var tabs: some View {
+    private var pager: some View {
         TabView(selection: $model.selection) {
-            NavigationStack(path: $model.homePath) {
-                HomeTab(
-                    orderRepository: container.orderRepository,
-                    membershipVM: membershipVM,
-                    snackbar: snackbar,
-                    onBookCleaning: model.book,
-                    onOrderClick: { model.homePath = [.detail($0)] },
-                    onSeeAllOrders: model.openOrders,
-                    onCompleteProfile: model.openEditProfile,
-                    onSubscribePlus: { model.homePath.append(.subscribePlus) },
-                    onManageRecurring: { model.homePath.append(.recurringList) }
-                )
-                .navigationDestination(for: HomeRoute.self) { route in
-                    homeDestination(route)
-                }
-            }
-            .tabItem { Label(CustomerShellTab.home.label, systemImage: CustomerShellTab.home.systemImage) }
+            HomeTab(
+                orderRepository: container.orderRepository,
+                membershipVM: membershipVM,
+                snackbar: snackbar,
+                onBookCleaning: model.book,
+                onOrderClick: { model.path.append(ShellRoute.orderDetail($0)) },
+                onSeeAllOrders: model.openOrders,
+                onCompleteProfile: model.openEditProfile,
+                onSubscribePlus: { model.path.append(ShellRoute.subscribePlus) },
+                onManageRecurring: { model.path.append(ShellRoute.recurringList) }
+            )
             .tag(CustomerShellTab.home)
 
-            NavigationStack(path: $model.ordersPath) {
-                OrdersTab(
-                    repository: container.orderRepository,
-                    snackbar: snackbar,
-                    onOrderClick: { model.ordersPath = [.detail($0)] },
-                    onBookCleaning: model.book
-                )
-                .navigationDestination(for: OrderRoute.self) { route in
-                    orderDestination(route)
-                }
-            }
-            .tabItem { Label(CustomerShellTab.orders.label, systemImage: CustomerShellTab.orders.systemImage) }
+            OrdersTab(
+                repository: container.orderRepository,
+                snackbar: snackbar,
+                onOrderClick: { model.path.append(ShellRoute.orderDetail($0)) },
+                onBookCleaning: model.book
+            )
             .tag(CustomerShellTab.orders)
 
-            NavigationStack(path: $model.rewardsPath) {
-                RewardsTab(
-                    loyaltyRepository: container.loyaltyRepository,
-                    referralRepository: container.referralRepository,
-                    snackbar: snackbar,
-                    onOpenActivity: { model.rewardsPath = [.activity] }
-                )
-                .navigationDestination(for: RewardsRoute.self) { route in
-                    rewardsDestination(route)
-                }
-            }
-            .tabItem { Label(CustomerShellTab.rewards.label, systemImage: CustomerShellTab.rewards.systemImage) }
+            RewardsTab(
+                loyaltyRepository: container.loyaltyRepository,
+                referralRepository: container.referralRepository,
+                snackbar: snackbar,
+                onOpenActivity: { model.path.append(ShellRoute.rewardsActivity) }
+            )
             .tag(CustomerShellTab.rewards)
 
-            NavigationStack(path: $model.profilePath) {
-                ProfileTab(
-                    profileVM: profileVM,
-                    membershipVM: membershipVM,
-                    preferences: preferences,
-                    onOpen: { model.profilePath.append($0) },
-                    onSignOut: signOut
-                )
-                .navigationDestination(for: ProfileRoute.self) { route in
-                    profileDestination(route)
-                }
-            }
-            .tabItem { Label(CustomerShellTab.profile.label, systemImage: CustomerShellTab.profile.systemImage) }
+            ProfileTab(
+                profileVM: profileVM,
+                membershipVM: membershipVM,
+                preferences: preferences,
+                onOpen: { model.path.append($0) },
+                onSignOut: signOut
+            )
             .tag(CustomerShellTab.profile)
         }
-        .tint(CleansiaColors.primary)
+        .tabViewStyle(.page(indexDisplayMode: .never))
     }
 
     @ViewBuilder
-    private func profileDestination(_ route: ProfileRoute) -> some View {
+    private func destination(_ route: ShellRoute) -> some View {
+        switch route {
+        case let .orderDetail(orderId):
+            orderDetail(orderId)
+        case .subscribePlus:
+            subscribePlus
+        case .membershipSuccess:
+            membershipSuccess
+        case .recurringList:
+            recurringList
+        case let .createRecurring(orderId):
+            createRecurring(orderId)
+        case .rewardsActivity:
+            RewardsActivityScreen(
+                loyaltyRepository: container.loyaltyRepository,
+                snackbar: snackbar
+            )
+        default:
+            profileDestination(route)
+        }
+    }
+
+    @ViewBuilder
+    private func profileDestination(_ route: ShellRoute) -> some View {
         switch route {
         case .disputes:
             DisputesListView(
                 repository: container.disputeRepository,
                 snackbar: snackbar,
-                onDisputeClick: { model.profilePath.append(.disputeDetail($0)) },
-                onCreateDispute: { model.profilePath.append(.createDispute(orderId: nil)) },
+                onDisputeClick: { model.path.append(ShellRoute.disputeDetail($0)) },
+                onCreateDispute: { model.path.append(ShellRoute.createDispute(orderId: nil)) },
                 onBrowseOrders: model.openOrders
             )
         case let .createDispute(orderId):
@@ -210,7 +190,9 @@ struct CustomerShellView: View {
                 orderId: orderId,
                 repository: container.disputeRepository,
                 snackbar: snackbar,
-                onCreated: { id in model.profilePath = [.disputes, .disputeDetail(id)] }
+                onCreated: { id in
+                    model.path = NavigationPath([ShellRoute.disputes, ShellRoute.disputeDetail(id)])
+                }
             )
         case let .disputeDetail(disputeId):
             DisputeDetailView(
@@ -224,29 +206,18 @@ struct CustomerShellView: View {
                 geocoding: container.geocodingService,
                 mapProvider: container.mapProvider,
                 snackbar: snackbar,
-                onBack: { model.profilePath.removeLast() }
+                onBack: { model.pop() }
             )
+        case .editProfile:
+            EditProfileView(vm: profileVM, onSaved: { model.pop() })
         default:
-            profileSettingsDestination(route)
+            settingsDestination(route)
         }
     }
 
     @ViewBuilder
-    private func profileSettingsDestination(_ route: ProfileRoute) -> some View {
+    private func settingsDestination(_ route: ShellRoute) -> some View {
         switch route {
-        case .editProfile:
-            EditProfileView(vm: profileVM, onSaved: { popProfile() })
-        case .subscribePlus:
-            SubscribePlusScreen(
-                repository: container.membershipRepository,
-                snackbar: snackbar,
-                paymentSheet: StripePaymentController(),
-                onBack: { popProfile() },
-                onSubscribed: {
-                    Task { await membershipVM.refresh() }
-                    popProfile()
-                }
-            )
         case .devices:
             CustomerDevicesView(
                 client: container.devicesClient,
@@ -262,12 +233,12 @@ struct CustomerShellView: View {
                 language: preferences.languageTag,
                 client: container.changePasswordClient,
                 snackbar: snackbar,
-                onChanged: { popProfile() }
+                onChanged: { model.pop() }
             )
         case .language:
-            LanguagePickerView(preferences: preferences, onSelected: { popProfile() })
+            LanguagePickerView(preferences: preferences, onSelected: { model.pop() })
         case .appearance:
-            AppearancePickerView(preferences: preferences, onSelected: { popProfile() })
+            AppearancePickerView(preferences: preferences, onSelected: { model.pop() })
         case .help:
             HelpSupportView()
         case .deleteAccount:
@@ -283,8 +254,63 @@ struct CustomerShellView: View {
         }
     }
 
-    private func popProfile() {
-        if !model.profilePath.isEmpty { model.profilePath.removeLast() }
+    private func orderDetail(_ orderId: String) -> some View {
+        OrderDetailView(
+            orderId: orderId,
+            client: container.orderClient,
+            repository: container.orderRepository,
+            snackbar: snackbar,
+            eventBus: container.orderEventBus,
+            paymentSheet: StripePaymentController()
+        )
+    }
+
+    /// One deduped destination for both the Home banner and the Profile card.
+    /// On subscribe, Success REPLACES the paywall so back never lands on it —
+    /// the `CleansiaNavHost.kt:540-546` popUpTo-inclusive parity.
+    private var subscribePlus: some View {
+        SubscribePlusScreen(
+            repository: container.membershipRepository,
+            snackbar: snackbar,
+            paymentSheet: StripePaymentController(),
+            onBack: { model.pop() },
+            onSubscribed: {
+                Task { await membershipVM.refresh() }
+                model.pop()
+                model.path.append(ShellRoute.membershipSuccess)
+            }
+        )
+    }
+
+    private var membershipSuccess: some View {
+        MembershipSuccessScreen(
+            onSetupRecurring: {
+                model.path = NavigationPath([
+                    ShellRoute.recurringList,
+                    ShellRoute.createRecurring(orderId: nil)
+                ])
+            },
+            onBackHome: { model.path = NavigationPath() }
+        )
+    }
+
+    private var recurringList: some View {
+        RecurringBookingsScreen(
+            repository: container.recurringRepository,
+            membershipRepository: container.membershipRepository,
+            snackbar: snackbar,
+            onCreateNew: { model.path.append(ShellRoute.createRecurring(orderId: nil)) },
+            onSubscribePlus: { model.path.append(ShellRoute.subscribePlus) }
+        )
+    }
+
+    private func createRecurring(_ orderId: String?) -> some View {
+        CreateRecurringScreen(
+            sourceOrderId: orderId,
+            repository: container.recurringRepository,
+            snackbar: snackbar,
+            onCreated: { model.pop() }
+        )
     }
 
     private func signOut() {
@@ -292,90 +318,5 @@ struct CustomerShellView: View {
             await container.authClient.logout()
             onSignedOut()
         }
-    }
-
-    @ViewBuilder
-    private func orderDestination(_ route: OrderRoute) -> some View {
-        switch route {
-        case let .detail(orderId):
-            OrderDetailView(
-                orderId: orderId,
-                client: container.orderClient,
-                repository: container.orderRepository,
-                snackbar: snackbar,
-                eventBus: container.orderEventBus,
-                paymentSheet: StripePaymentController()
-            )
-        }
-    }
-
-    @ViewBuilder
-    private func homeDestination(_ route: HomeRoute) -> some View {
-        switch route {
-        case let .detail(orderId):
-            OrderDetailView(
-                orderId: orderId,
-                client: container.orderClient,
-                repository: container.orderRepository,
-                snackbar: snackbar,
-                eventBus: container.orderEventBus,
-                paymentSheet: StripePaymentController()
-            )
-        case .subscribePlus:
-            SubscribePlusScreen(
-                repository: container.membershipRepository,
-                snackbar: snackbar,
-                paymentSheet: StripePaymentController(),
-                onBack: { model.homePath.removeLast() },
-                onSubscribed: { model.homePath.append(.membershipSuccess) }
-            )
-        case .membershipSuccess:
-            MembershipSuccessScreen(
-                onSetupRecurring: { model.homePath = [.recurringList, .createRecurring(orderId: nil)] },
-                onBackHome: { model.homePath = [] }
-            )
-        case .recurringList:
-            RecurringBookingsScreen(
-                repository: container.recurringRepository,
-                membershipRepository: container.membershipRepository,
-                snackbar: snackbar,
-                onCreateNew: { model.homePath.append(.createRecurring(orderId: nil)) },
-                onSubscribePlus: { model.homePath.append(.subscribePlus) }
-            )
-        case let .createRecurring(orderId):
-            CreateRecurringScreen(
-                sourceOrderId: orderId,
-                repository: container.recurringRepository,
-                snackbar: snackbar,
-                onCreated: { model.homePath.removeLast() }
-            )
-        }
-    }
-
-    @ViewBuilder
-    private func rewardsDestination(_ route: RewardsRoute) -> some View {
-        switch route {
-        case .activity:
-            RewardsActivityScreen(
-                loyaltyRepository: container.loyaltyRepository,
-                snackbar: snackbar
-            )
-        }
-    }
-}
-
-private struct BookFab: View {
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 30, weight: .semibold))
-                .foregroundColor(CleansiaColors.onPrimary)
-                .frame(width: 64, height: 64)
-                .background(Circle().fill(CleansiaColors.primary))
-                .overlay(Circle().stroke(CleansiaColors.background, lineWidth: 4))
-        }
-        .accessibilityLabel(Text(verbatim: L10n.Shell.book))
     }
 }

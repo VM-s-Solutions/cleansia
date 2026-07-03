@@ -95,8 +95,6 @@ private struct OrdersListContent: View {
                         .tint(CleansiaColors.primary)
                         .padding(.vertical, Spacing.s)
                 }
-
-                Color.clear.frame(height: Spacing.xxl)
             }
             .padding(.horizontal, Spacing.ml)
             .padding(.top, Spacing.xxs)

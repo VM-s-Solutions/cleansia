@@ -12,7 +12,7 @@ enum ShellRoute: Hashable, Codable {
     case createDispute(orderId: String?)
     case disputeDetail(String)
     case addresses
-    case editProfile
+    case editProfile(showBookingHint: Bool)
     case devices
     case notifications
     case security

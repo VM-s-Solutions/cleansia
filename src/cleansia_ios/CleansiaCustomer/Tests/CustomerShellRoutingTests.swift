@@ -30,7 +30,16 @@ final class CustomerShellRoutingTests: XCTestCase {
         model.openEditProfile()
 
         XCTAssertEqual(model.selection, .profile)
-        try assertPath(model.path, equals: [ShellRoute.editProfile])
+        try assertPath(model.path, equals: [ShellRoute.editProfile(showBookingHint: false)])
+    }
+
+    func testOpenEditProfileFromTheBookingGateCarriesTheHintFlag() throws {
+        let model = CustomerShellModel()
+
+        model.openEditProfile(showBookingHint: true)
+
+        XCTAssertEqual(model.selection, .profile)
+        try assertPath(model.path, equals: [ShellRoute.editProfile(showBookingHint: true)])
     }
 
     func testSelectChangesTheTabWithoutTouchingThePath() {
@@ -69,7 +78,8 @@ final class CustomerShellRoutingTests: XCTestCase {
             .createDispute(orderId: "order-3"),
             .disputeDetail("d-1"),
             .addresses,
-            .editProfile,
+            .editProfile(showBookingHint: false),
+            .editProfile(showBookingHint: true),
             .devices,
             .notifications,
             .security,
@@ -93,7 +103,11 @@ final class CustomerShellRoutingTests: XCTestCase {
         XCTAssertNotEqual(ShellRoute.orderDetail("a"), ShellRoute.orderDetail("b"))
         XCTAssertEqual(ShellRoute.orderDetail("a").hashValue, ShellRoute.orderDetail("a").hashValue)
         XCTAssertNotEqual(ShellRoute.createRecurring(orderId: nil), ShellRoute.createRecurring(orderId: "x"))
-        XCTAssertNotEqual(ShellRoute.subscribePlus, ShellRoute.editProfile)
+        XCTAssertNotEqual(
+            ShellRoute.editProfile(showBookingHint: false),
+            ShellRoute.editProfile(showBookingHint: true)
+        )
+        XCTAssertNotEqual(ShellRoute.subscribePlus, ShellRoute.editProfile(showBookingHint: false))
     }
 
     private func assertPath(

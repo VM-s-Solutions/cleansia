@@ -172,6 +172,63 @@ HomeTab would mean immediate rework, hence `proposed` until both land.
   string-catalog sync (junk auto-extracted keys `"%@"`, `"•  %@"`, `extractionState: stale` markers)
   despite `SWIFT_EMIT_LOC_STRINGS: NO` — NOT reverted (shared-file lane rule); edits made in the
   current serialization.
+- 2026-07-04 — **fix-round 3 (owner profile/onboarding findings; PM may re-home to a new ticket):**
+  **(1) ProfileOnboardingScreen ported** (`ProfileOnboardingView.swift` ← `ProfileOnboardingScreen.kt`):
+  mascot_waving 160pt hero, named greeting via a REAL `%1$@` placeholder (`onboarding_greeting_named` —
+  Android's key is placeholder-correct; the T-0375 hardcoded-name defect is `home_hero_greeting`, not
+  this), `CleansiaPhoneInput` with the country-code helper, optional tap-to-pick birth-date field +
+  helper, Save-and-continue (disabled until phone non-blank, loading while submitting), Skip for now.
+  **Android trigger mirrored exactly** (`MainShell.kt:142-181` + `CleansiaNavHost.kt:346-388`): once per
+  shell entry the gate forces a FRESH `GetCurrentUser` round-trip (never trusts the cached snapshot —
+  Android's stale-`isProfileComplete` bug note) and fires iff `!(phoneOk && nameOk && emailOk) &&
+  !hasSeenOnboarding(userId)`. `ProfileViewModel.needsOnboarding()` owns the decision;
+  `CustomerShellView.prefetch()` awaits it inside the parallel prefetch; the ROOT lands the state — new
+  pre-shell flat-enum case `CustomerRootView.Route.profileOnboarding` (ADR-0020; NOT a shell-stack push).
+  **Skip** → `markOnboardingSeen(userId:)` only → lands Home; **Save** → `completeOnboarding` (names
+  untouched; language = the resolved app tag ∈ {en,cs,sk,uk,ru} — the Android device-locale clamp,
+  `ProfileViewModel.kt:105-106`) → marks seen → lands Home; a FAILED save leaves the gate unseen (error
+  snackbar, screen stays). The seen-flag is **PER-USER** — `AppSettingsStore.hasSeenOnboarding(userId:)`/
+  `markOnboardingSeen(userId:)` added to Core (customer `AppSettingsRepository.kt:40-47` parity; the
+  prior global flag would have leaked "seen" across accounts on one device; partner's pre-auth carousel
+  keeps the global pair via protocol-extension defaults). Strings: 9 new `onboarding_*` keys ×5 verbatim
+  from Android `values*/strings.xml:736-755` (+ pre-existing `onboarding_birthdate_placeholder`),
+  `%1$s`→`%1$@` transposed.
+  **(2) profileIncomplete redirect explained (recorded owner-directed divergence — Android lands Edit
+  Profile with no explanation too, but its users passed onboarding first):** `ShellRoute.editProfile`
+  now carries `showBookingHint:`; the booking sheet's `onCompleteProfile` routes
+  `model.openEditProfile(showBookingHint: true)`; EditProfileView renders an info banner
+  (`profile_edit_booking_hint` ×5, house-style translations) and error-marks the blank required fields
+  (phone via new `profile_edit_phone_required` ×5; names via existing `auth_error_*_required`; marks
+  clear as the user types). The direct Profile→Edit entry passes `false` — unchanged. Only
+  CustomerShellView's edit-profile destination + onCompleteProfile wiring touched (bar/pager untouched;
+  CustomerBottomBar not touched — Slice lane respected).
+  **Gate-DP divergences (one-line):** (a) Skip/Save land Home by ROOT-case switch (shell re-creates and
+  re-prefetches once) vs Android's pop-over-live-shell — same landing surface, nothing user-visible to
+  lose at that point; (b) the phone field is the Core floating-label `CleansiaPhoneInput`, which has no
+  inner "+420 000 000 000" placeholder affordance (Android bakes that placeholder as a code literal) —
+  the country-code guidance rides the helper line both platforms show; (c) Material `DatePickerDialog` →
+  `.sheet` graphical `DatePicker` (the established EditProfileView mapping).
+  **Red→green** (compile-red by construction for the new VM/store surface, tests written first):
+  ProfileViewModelTests 9 onboarding cases (gate ×5 — trigger-after-forced-refresh / complete-profile /
+  seen-per-user / never-loads / cached-fallback-on-failed-refresh; skip ×2; save ×2 incl.
+  failure-leaves-gate-unseen + resolved-language) + Core `AppSettingsStoreTests` per-user ×3 +
+  `CustomerShellRoutingTests` hint-flag ×2 + round-trip + `CustomerRootRouteTests` pre-shell case.
+  Customer **453/453**, Core **275/275**, Partner **371/371** on iPhone 17 (partner rides the T-0370
+  fix-round 3 date-wire change); swiftformat 0.60.1 --lint + swiftlint --strict clean. **iOS 16.4
+  build+launch smoke:** the sim carried a signed-in incomplete-profile session, so the launch itself
+  exercised the gate end-to-end — splash → shell prefetch → forced profile refresh → the pre-shell
+  onboarding case rendered with the real first name:
+  `agents/backlog/attachments/T-0373-fix3-ios164-onboarding.png`. Uncommitted on phase/ios-fix1 per the
+  batch rule.
+- 2026-07-04 — **fix-round 3 findings (not fixed here, for PM routing):**
+  (a) Android auto-reopens the booking sheet when the user returns from Edit Profile with the phone now
+  filled (`MainShell.kt:123,186-192` `reopenBookingAfterProfile` keyed on the phone transition); iOS has
+  NO reopen path — after the banner-guided save the user reopens booking manually and rebuilds nothing
+  (the draft survives), but the reopen affordance itself is missing. Needs its own slice if wanted.
+  (b) Android's booking pre-flight ALSO toasts `error_booking_profile_incomplete` before navigating
+  (`BookingViewModel.kt:335`); the iOS `.profileIncomplete` outcome navigates silently — the new
+  destination banner now carries the explanation (owner-directed), but the Android snackbar + its key
+  remain unported on iOS.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

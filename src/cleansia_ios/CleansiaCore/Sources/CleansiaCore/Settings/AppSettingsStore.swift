@@ -10,6 +10,12 @@ public protocol AppSettingsStore: AnyObject {
     var hasSeenOnboarding: Bool { get }
     func markOnboardingSeen()
 
+    /// Per-user variant for post-signin onboarding (the customer app): keyed on
+    /// the user id so a different user signing in on the same device still gets
+    /// prompted once. The partner pre-auth onboarding keeps the global flag.
+    func hasSeenOnboarding(userId: String) -> Bool
+    func markOnboardingSeen(userId: String)
+
     /// The resolved language tag — an explicit choice, else the device locale,
     /// else "en". Always one of `supportedLanguageTags`.
     var languageTag: String { get }
@@ -22,6 +28,16 @@ public protocol AppSettingsStore: AnyObject {
 
     var theme: Theme { get }
     func setTheme(_ theme: Theme)
+}
+
+public extension AppSettingsStore {
+    func hasSeenOnboarding(userId _: String) -> Bool {
+        hasSeenOnboarding
+    }
+
+    func markOnboardingSeen(userId _: String) {
+        markOnboardingSeen()
+    }
 }
 
 public final class UserDefaultsAppSettingsStore: AppSettingsStore, @unchecked Sendable {
@@ -51,6 +67,14 @@ public final class UserDefaultsAppSettingsStore: AppSettingsStore, @unchecked Se
 
     public func markOnboardingSeen() {
         defaults.set(true, forKey: Key.onboardingSeen)
+    }
+
+    public func hasSeenOnboarding(userId: String) -> Bool {
+        defaults.bool(forKey: "\(Key.onboardingSeen)_\(userId)")
+    }
+
+    public func markOnboardingSeen(userId: String) {
+        defaults.set(true, forKey: "\(Key.onboardingSeen)_\(userId)")
     }
 
     public var languageTag: String {

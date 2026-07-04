@@ -71,7 +71,7 @@ extension UpdateCurrentUserCommand {
             firstName: update.firstName,
             lastName: update.lastName,
             phoneNumber: update.phoneNumber?.nilIfBlank,
-            birthDate: update.birthDate,
+            birthDate: OpenAPIDateWithoutTime(wrappedDate: update.birthDate),
             languageCode: update.languageCode
         )
     }
@@ -85,7 +85,7 @@ private extension MyProfileDto {
             firstName: firstName ?? "",
             lastName: lastName ?? "",
             phoneNumber: phoneNumber,
-            birthDate: birthDate,
+            birthDate: birthDate?.wrappedDate,
             preferredLanguageCode: preferredLanguageCode,
             isEmailConfirmed: isEmailConfirmed ?? false
         )

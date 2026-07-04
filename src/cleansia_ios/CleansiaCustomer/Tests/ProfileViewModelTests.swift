@@ -148,9 +148,42 @@ final class ProfileViewModelTests: XCTestCase {
         XCTAssertEqual(client.updateCallCount, 1)
     }
 
-    func testCompleteOnboardingSavesAndMarksSeen() async {
-        client.currentUserResult = .success(ProfileFixtures.user())
+    func testCompleteOnboardingSavesAndMarksSeenForTheUser() async {
+        client.currentUserResult = .success(ProfileFixtures.user(id: "user-7", phoneNumber: nil))
         client.updateResult = .success(())
+        let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults(), localeLanguageCode: { "cs" })
+        let vm = ProfileViewModel(repository: repository, settings: settings, snackbar: snackbar)
+        await vm.refresh()
+
+        var completed = false
+        let token = vm.saved.sink { completed = true }
+        defer { token.cancel() }
+
+        await vm.completeOnboarding(phoneNumber: " +420111 ", birthDate: nil)
+
+        XCTAssertTrue(completed)
+        XCTAssertTrue(settings.hasSeenOnboarding(userId: "user-7"))
+        XCTAssertEqual(client.lastUpdate?.id, "user-7")
+        XCTAssertEqual(client.lastUpdate?.phoneNumber, "+420111")
+        XCTAssertEqual(client.lastUpdate?.firstName, "Jane")
+        XCTAssertEqual(client.lastUpdate?.lastName, "Doe")
+    }
+
+    func testCompleteOnboardingSendsTheResolvedAppLanguage() async {
+        client.currentUserResult = .success(ProfileFixtures.user(phoneNumber: nil))
+        client.updateResult = .success(())
+        let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults(), localeLanguageCode: { "uk" })
+        let vm = ProfileViewModel(repository: repository, settings: settings, snackbar: snackbar)
+        await vm.refresh()
+
+        await vm.completeOnboarding(phoneNumber: "+420111", birthDate: nil)
+
+        XCTAssertEqual(client.lastUpdate?.languageCode, "uk")
+    }
+
+    func testCompleteOnboardingFailureLeavesTheGateUnseen() async {
+        client.currentUserResult = .success(ProfileFixtures.user(id: "user-7", phoneNumber: nil))
+        client.updateResult = .failure(ApiError(httpStatus: 400))
         let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults())
         let vm = ProfileViewModel(repository: repository, settings: settings, snackbar: snackbar)
         await vm.refresh()
@@ -161,14 +194,84 @@ final class ProfileViewModelTests: XCTestCase {
 
         await vm.completeOnboarding(phoneNumber: "+420111", birthDate: nil)
 
-        XCTAssertTrue(completed)
-        XCTAssertTrue(settings.hasSeenOnboarding)
+        XCTAssertFalse(completed)
+        XCTAssertFalse(settings.hasSeenOnboarding(userId: "user-7"))
+        XCTAssertNotNil(snackbar.current)
+        guard case .error = vm.saveState else { return XCTFail("expected action error") }
     }
 
-    func testSkipOnboardingMarksSeen() {
+    func testSkipOnboardingMarksSeenForTheLoadedUser() async {
+        client.currentUserResult = .success(ProfileFixtures.user(id: "user-7"))
         let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults())
         let vm = ProfileViewModel(repository: repository, settings: settings, snackbar: snackbar)
+        await vm.refresh()
+
         vm.skipOnboarding()
-        XCTAssertTrue(settings.hasSeenOnboarding)
+
+        XCTAssertTrue(settings.hasSeenOnboarding(userId: "user-7"))
+        XCTAssertFalse(settings.hasSeenOnboarding(userId: "someone-else"))
+    }
+
+    func testSkipOnboardingWithoutLoadedUserMarksNothing() {
+        let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults())
+        let vm = ProfileViewModel(repository: repository, settings: settings, snackbar: snackbar)
+
+        vm.skipOnboarding()
+
+        XCTAssertFalse(settings.hasSeenOnboarding(userId: "user-1"))
+    }
+
+    func testNeedsOnboardingTriggersOnIncompleteUnseenProfileAfterAForcedRefresh() async {
+        client.currentUserResult = .success(ProfileFixtures.user(id: "user-7", phoneNumber: nil))
+        let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults())
+        let vm = ProfileViewModel(repository: repository, settings: settings, snackbar: snackbar)
+
+        let needed = await vm.needsOnboarding()
+
+        XCTAssertTrue(needed)
+        XCTAssertEqual(client.currentUserCallCount, 1)
+    }
+
+    func testNeedsOnboardingFalseWhenProfileComplete() async {
+        client.currentUserResult = .success(ProfileFixtures.user(phoneNumber: "+420123"))
+        let vm = makeVM()
+
+        let needed = await vm.needsOnboarding()
+
+        XCTAssertFalse(needed)
+    }
+
+    func testNeedsOnboardingFalseOnceSeenForThatUserButNotForAnother() async {
+        client.currentUserResult = .success(ProfileFixtures.user(id: "user-7", phoneNumber: nil))
+        let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults())
+        settings.markOnboardingSeen(userId: "user-7")
+        let vm = ProfileViewModel(repository: repository, settings: settings, snackbar: snackbar)
+
+        let neededForSeenUser = await vm.needsOnboarding()
+        XCTAssertFalse(neededForSeenUser)
+
+        client.currentUserResult = .success(ProfileFixtures.user(id: "user-8", phoneNumber: nil))
+        let neededForNewUser = await vm.needsOnboarding()
+        XCTAssertTrue(neededForNewUser)
+    }
+
+    func testNeedsOnboardingFalseWhenTheProfileNeverLoads() async {
+        client.currentUserResult = .failure(ApiError(httpStatus: 500))
+        let vm = makeVM()
+
+        let needed = await vm.needsOnboarding()
+
+        XCTAssertFalse(needed)
+    }
+
+    func testNeedsOnboardingUsesTheCachedUserWhenTheForcedRefreshFails() async {
+        client.currentUserResult = .success(ProfileFixtures.user(id: "user-7", phoneNumber: nil))
+        let vm = makeVM()
+        await vm.refresh()
+        client.currentUserResult = .failure(ApiError(httpStatus: 500))
+
+        let needed = await vm.needsOnboarding()
+
+        XCTAssertTrue(needed)
     }
 }

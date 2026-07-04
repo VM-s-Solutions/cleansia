@@ -42,6 +42,26 @@ final class AppSettingsStoreTests: XCTestCase {
         XCTAssertFalse(store.hasSeenOnboarding)
     }
 
+    func testPerUserOnboardingIsScopedToTheUserId() {
+        let store = makeStore(locale: "en")
+        store.markOnboardingSeen(userId: "user-a")
+
+        XCTAssertTrue(store.hasSeenOnboarding(userId: "user-a"))
+        XCTAssertFalse(store.hasSeenOnboarding(userId: "user-b"))
+        XCTAssertFalse(store.hasSeenOnboarding)
+    }
+
+    func testPerUserOnboardingPersistsAcrossReinit() {
+        makeStore(locale: "en").markOnboardingSeen(userId: "user-a")
+        XCTAssertTrue(makeStore(locale: "en").hasSeenOnboarding(userId: "user-a"))
+    }
+
+    func testGlobalOnboardingDoesNotLeakIntoPerUserFlag() {
+        let store = makeStore(locale: "en")
+        store.markOnboardingSeen()
+        XCTAssertFalse(store.hasSeenOnboarding(userId: "user-a"))
+    }
+
     func testLanguageResolvesPersistedInSetTag() {
         defaults.set("sk", forKey: "settings.language")
         let store = makeStore(locale: "en")

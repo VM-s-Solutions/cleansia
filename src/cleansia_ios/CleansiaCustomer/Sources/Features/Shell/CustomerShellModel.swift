@@ -30,9 +30,9 @@ final class CustomerShellModel: ViewModel {
         path = NavigationPath()
     }
 
-    func openEditProfile() {
+    func openEditProfile(showBookingHint: Bool = false) {
         selection = .profile
-        path = NavigationPath([ShellRoute.editProfile])
+        path = NavigationPath([ShellRoute.editProfile(showBookingHint: showBookingHint)])
     }
 
     func pop() {

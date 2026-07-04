@@ -18,7 +18,7 @@ final class UserProfileClientMappingTests: XCTestCase {
         let command = UpdateCurrentUserCommand(update)
 
         XCTAssertEqual(command.id, "user-42")
-        XCTAssertEqual(command.birthDate, birthDate)
+        XCTAssertEqual(command.birthDate, OpenAPIDateWithoutTime(wrappedDate: birthDate))
         XCTAssertEqual(command.firstName, "Grace")
         XCTAssertEqual(command.lastName, "Hopper")
         XCTAssertEqual(command.phoneNumber, "+420999")

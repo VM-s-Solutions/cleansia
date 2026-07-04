@@ -26,7 +26,7 @@ struct ProfileTab: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, Spacing.ml)
 
-                    ProfileHero(user: profileVM.currentUser, onEdit: { onOpen(.editProfile) })
+                    ProfileHero(user: profileVM.currentUser, onEdit: { onOpen(.editProfile(showBookingHint: false)) })
 
                     MembershipManagementCard(vm: membershipVM, onSubscribeClick: { onOpen(Self.subscribeRoute) })
                         .padding(.horizontal, Spacing.m)
@@ -52,7 +52,11 @@ struct ProfileTab: View {
 
     private var accountRows: [ProfileRowItem] {
         [
-            ProfileRowItem(icon: "person.crop.circle", label: L10n.Profile.rowEditProfile, route: .editProfile),
+            ProfileRowItem(
+                icon: "person.crop.circle",
+                label: L10n.Profile.rowEditProfile,
+                route: .editProfile(showBookingHint: false)
+            ),
             ProfileRowItem(icon: "mappin.and.ellipse", label: L10n.AddressManager.profileRow, route: .addresses),
             ProfileRowItem(icon: "exclamationmark.bubble", label: L10n.Profile.rowDisputes, route: .disputes)
         ]

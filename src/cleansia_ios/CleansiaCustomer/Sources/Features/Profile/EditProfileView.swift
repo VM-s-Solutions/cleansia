@@ -3,6 +3,7 @@ import SwiftUI
 
 struct EditProfileView: View {
     @ObservedObject var vm: ProfileViewModel
+    var showBookingHint = false
     let onSaved: () -> Void
 
     @State private var firstName = ""
@@ -15,20 +16,40 @@ struct EditProfileView: View {
         !firstName.isBlank && !lastName.isBlank && !vm.saveState.isSubmitting
     }
 
+    private func missingFieldError(_ value: String, message: String) -> String? {
+        showBookingHint && value.isBlank ? message : nil
+    }
+
     var body: some View {
         ZStack {
             CleansiaColors.background.ignoresSafeArea()
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.m) {
-                    CleansiaTextField(value: $firstName, label: L10n.EditProfile.firstName)
-                    CleansiaTextField(value: $lastName, label: L10n.EditProfile.lastName)
+                    if showBookingHint {
+                        BookingHintBanner()
+                    }
+                    CleansiaTextField(
+                        value: $firstName,
+                        label: L10n.EditProfile.firstName,
+                        errorText: missingFieldError(firstName, message: L10n.Auth.errorFirstNameRequired)
+                    )
+                    CleansiaTextField(
+                        value: $lastName,
+                        label: L10n.EditProfile.lastName,
+                        errorText: missingFieldError(lastName, message: L10n.Auth.errorLastNameRequired)
+                    )
                     CleansiaTextField(
                         value: .constant(vm.currentUser?.email ?? ""),
                         label: L10n.EditProfile.email,
                         helper: L10n.EditProfile.emailReadonly,
                         enabled: false
                     )
-                    CleansiaTextField(value: $phone, label: L10n.EditProfile.phone, keyboardType: .phonePad)
+                    CleansiaTextField(
+                        value: $phone,
+                        label: L10n.EditProfile.phone,
+                        errorText: missingFieldError(phone, message: L10n.EditProfile.phoneRequired),
+                        keyboardType: .phonePad
+                    )
                     BirthDateField(birthDate: $birthDate)
 
                     CleansiaPrimaryButton(
@@ -65,6 +86,22 @@ struct EditProfileView: View {
         lastName = user.lastName
         phone = user.phoneNumber ?? ""
         birthDate = user.birthDate
+    }
+}
+
+private struct BookingHintBanner: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: Spacing.s) {
+            Image(systemName: "info.circle.fill")
+                .foregroundColor(CleansiaColors.primary)
+            Text(L10n.EditProfile.bookingHint)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onPrimaryContainer)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.m)
+        .background(CleansiaColors.primaryContainer)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
     }
 }
 

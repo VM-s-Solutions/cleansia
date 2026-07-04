@@ -153,6 +153,25 @@ source: phase/ios-fix1 on-device shakeout diagnosis (2026-07-02, cluster data-la
   `"yyyy-MM-dd"` (Android/web wire unchanged), garbage still 400s. **Red→green:** 12 new
   `TolerantDateOnlyConverterTests` run against the REAL host serializer config (compile-red before the
   converter existed); dotnet build 0 errors; full Cleansia.Tests **1726/1726**.
+- 2026-07-04 — **fix-round 3 by ios — the CLIENT-SIDE half of the (b) date defect** (owner-directed: the
+  DEPLOYED backend predates the branch's `TolerantDateOnlyConverter`, so profile save must fix the wire,
+  not wait for a deploy): both swift5 generator configs
+  (`openapi/openapi-generator-config.{customer,partner}.yaml`) now set **`useCustomDateWithoutTime: true`**
+  — every `format: date` spec field generates `OpenAPIDateWithoutTime` and rides **`"yyyy-MM-dd"` both
+  directions** (Android/`DateOnly` wire parity). The flag landed cleanly on openapi-generator 7.23.0
+  (regen only — no hand-edits to generated output; the hand-encode fallback was NOT needed).
+  **format:date sweep (all 7 spec fields):** customer `UpdateCurrentUser_Command.birthDate` (encode — THE
+  broken save) + `MyProfileDto.birthDate` (decode) adapted at the `UserProfileClient.swift` seam; partner
+  `UpdatePersonalInfo_Command.birthDate` (encode) + `EmployeeItem.birthDate` (decode) adapted in
+  `PersonalSectionViewModel.swift` — **the "partner has no date-only commands" assumption was FALSE** (the
+  partner Personal section saves birthDate; same 400 class, fixed in the same pass); customer+partner
+  `GdprExportProfileDto.birthDate` and partner `UpdateEmployee_Command.birthDate` have NO iOS call sites
+  (nothing to adapt). Domain models keep `Date`; the wrapper stays at the client seam.
+  **Red→green:** `BirthDateWireFormatTests` (3 — the encoded JSON body carries `"birthDate":"1990-05-01"`,
+  date-only decode of `MyProfileDto.birthDate` (the GetCurrentUser round-trip), encode/decode round-trip)
+  + `UserProfileClientMappingTests` re-pinned on `OpenAPIDateWithoutTime`. Customer 453/453 on iPhone 17;
+  lint clean. Harvested as a `patterns-mobile.md` parity-table row (format:date → OpenAPIDateWithoutTime).
+  Uncommitted on phase/ios-fix1 per the batch rule.
 
 ## Review
 - 2026-07-03 reviewer verdict (relayed via coordinator): **PASSED on substance** — all four fixes

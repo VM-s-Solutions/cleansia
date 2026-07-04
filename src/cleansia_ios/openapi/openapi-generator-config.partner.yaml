@@ -15,6 +15,10 @@ additionalProperties:
   hashableModels: true
   apiNamePrefix: Partner
   validatable: false
+  # format:date fields (birthDate) must go on the wire as "yyyy-MM-dd" — the
+  # currently deployed backend binds DateOnly strictly and 400s a full ISO
+  # date-time (Android sends date-only; this restores wire parity).
+  useCustomDateWithoutTime: true
 
 globalProperties:
   apiTests: "false"

@@ -10,15 +10,18 @@ struct CustomerShellView: View {
     @Environment(\.snackbarController) var snackbar
     let container: CustomerAppContainer
     private let onSignedOut: () -> Void
+    private let onNeedsOnboarding: () -> Void
 
     init(
         container: CustomerAppContainer,
         preferences: CustomerPreferencesModel,
-        onSignedOut: @escaping () -> Void
+        onSignedOut: @escaping () -> Void,
+        onNeedsOnboarding: @escaping () -> Void
     ) {
         self.container = container
         self.preferences = preferences
         self.onSignedOut = onSignedOut
+        self.onNeedsOnboarding = onNeedsOnboarding
         _membershipVM = StateObject(wrappedValue: MembershipViewModel(
             repository: container.membershipRepository,
             snackbar: container.snackbar
@@ -59,7 +62,7 @@ struct CustomerShellView: View {
                 },
                 onCompleteProfile: {
                     model.isBookingPresented = false
-                    model.openEditProfile()
+                    model.openEditProfile(showBookingHint: true)
                 }
             )
         }
@@ -89,8 +92,11 @@ struct CustomerShellView: View {
         async let membership = container.membershipRepository.refresh()
         async let plans = container.membershipRepository.refreshPlans()
         async let addresses = container.savedAddressRepository.refresh()
-        async let profile = profileVM.refresh()
-        _ = await (orders, loyalty, referrals, membership, plans, addresses, profile)
+        // The gate refreshes the profile itself (`MainShell.kt:157-181` — once
+        // per shell entry, on the fresh server snapshot, never a stale cache).
+        async let needsOnboarding = profileVM.needsOnboarding()
+        _ = await (orders, loyalty, referrals, membership, plans, addresses)
+        if await needsOnboarding { onNeedsOnboarding() }
     }
 
     private var pager: some View {
@@ -207,8 +213,8 @@ struct CustomerShellView: View {
                 onBack: { model.pop() },
                 onSelected: { _ in model.pop() }
             )
-        case .editProfile:
-            EditProfileView(vm: profileVM, onSaved: { model.pop() })
+        case let .editProfile(showBookingHint):
+            EditProfileView(vm: profileVM, showBookingHint: showBookingHint, onSaved: { model.pop() })
         default:
             settingsDestination(route)
         }

@@ -34,4 +34,10 @@ final class CustomerRootRouteTests: XCTestCase {
         XCTAssertNotEqual(CustomerRootView.Route.forgotPassword, .login)
         XCTAssertNotEqual(CustomerRootView.Route.home, .login)
     }
+
+    func testProfileOnboardingIsItsOwnPreShellAudience() {
+        XCTAssertNotEqual(CustomerRootView.Route.profileOnboarding, .home)
+        XCTAssertNotEqual(CustomerRootView.Route.profileOnboarding, .login)
+        XCTAssertNotEqual(CustomerRootView.Route.profileOnboarding, .splash)
+    }
 }

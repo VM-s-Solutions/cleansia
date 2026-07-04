@@ -65,6 +65,10 @@ final class ProfileViewModel: ViewModel {
         }
     }
 
+    /// Saves the onboarding fields without disturbing first/last name (the
+    /// registration form already collected those). The language rides the
+    /// resolved app tag — always ∈ {en,cs,sk,uk,ru} — the Android device-locale
+    /// clamp (`ProfileViewModel.kt:105-106`) through the one settings store.
     func completeOnboarding(phoneNumber: String, birthDate: Date?) async {
         guard let user = repository.currentUser else { return }
         guard !saveState.isSubmitting else { return }
@@ -75,12 +79,12 @@ final class ProfileViewModel: ViewModel {
             lastName: user.lastName,
             phoneNumber: phoneNumber.trimmed.nilIfEmpty,
             birthDate: birthDate,
-            languageCode: nil
+            languageCode: settings.languageTag
         )
         switch await repository.update(update) {
         case .success:
             saveState = .idle
-            settings.markOnboardingSeen()
+            settings.markOnboardingSeen(userId: user.id)
             saved.send()
         case let .failure(error):
             let message = localizer.message(for: error)
@@ -90,7 +94,17 @@ final class ProfileViewModel: ViewModel {
     }
 
     func skipOnboarding() {
-        settings.markOnboardingSeen()
+        guard let user = repository.currentUser else { return }
+        settings.markOnboardingSeen(userId: user.id)
+    }
+
+    /// The post-signin onboarding gate (`MainShell.kt:157-181` parity): force a
+    /// server round-trip so the decision never trusts a stale cached snapshot,
+    /// then prompt once per user for an incomplete profile.
+    func needsOnboarding() async -> Bool {
+        await refresh()
+        guard let user = repository.currentUser else { return false }
+        return !user.isComplete && !settings.hasSeenOnboarding(userId: user.id)
     }
 }
 

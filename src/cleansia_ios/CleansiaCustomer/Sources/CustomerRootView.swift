@@ -58,9 +58,23 @@ struct CustomerRootView: View {
             CustomerShellView(
                 container: container,
                 preferences: preferences,
-                onSignedOut: { route = .login }
+                onSignedOut: { route = .login },
+                onNeedsOnboarding: { route = .profileOnboarding }
+            )
+        case .profileOnboarding:
+            ProfileOnboardingView(
+                makeViewModel: { makeProfileViewModel() },
+                onDone: { route = .home }
             )
         }
+    }
+
+    private func makeProfileViewModel() -> ProfileViewModel {
+        ProfileViewModel(
+            repository: container.userProfileRepository,
+            settings: container.appSettings,
+            snackbar: container.snackbar
+        )
     }
 
     private func makeAuthViewModel(pendingEmail: String? = nil) -> CustomerAuthViewModel {
@@ -84,6 +98,7 @@ struct CustomerRootView: View {
         case forgotPassword
         case verifyEmail(email: String?)
         case home
+        case profileOnboarding
 
         static func seed() -> Route {
             .splash

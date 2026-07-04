@@ -67,6 +67,48 @@ extension L10n {
         }
     }
 
+    enum Onboarding {
+        static var greeting: String {
+            localized("onboarding_greeting")
+        }
+
+        static func greetingNamed(_ firstName: String) -> String {
+            format("onboarding_greeting_named", firstName)
+        }
+
+        static var subtitle: String {
+            localized("onboarding_subtitle")
+        }
+
+        static var phoneLabel: String {
+            localized("onboarding_phone_label")
+        }
+
+        static var phoneHelper: String {
+            localized("onboarding_phone_helper")
+        }
+
+        static var birthDateLabel: String {
+            localized("onboarding_birthdate_label")
+        }
+
+        static var birthDatePlaceholder: String {
+            localized("onboarding_birthdate_placeholder")
+        }
+
+        static var birthDateHelper: String {
+            localized("onboarding_birthdate_helper")
+        }
+
+        static var save: String {
+            localized("onboarding_save")
+        }
+
+        static var skip: String {
+            localized("onboarding_skip")
+        }
+    }
+
     enum EditProfile {
         static var title: String {
             localized("profile_edit_title")
@@ -102,6 +144,14 @@ extension L10n {
 
         static var save: String {
             localized("profile_edit_save")
+        }
+
+        static var bookingHint: String {
+            localized("profile_edit_booking_hint")
+        }
+
+        static var phoneRequired: String {
+            localized("profile_edit_phone_required")
         }
     }
 

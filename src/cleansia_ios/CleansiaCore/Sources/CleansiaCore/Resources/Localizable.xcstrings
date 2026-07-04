@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {
-
-    },
     "error.address.already_exists" : {
       "extractionState" : "stale",
       "localizations" : {

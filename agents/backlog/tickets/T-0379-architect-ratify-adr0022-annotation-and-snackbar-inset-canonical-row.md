@@ -76,3 +76,11 @@ the architect's signature.
 
 ## Review
 <!-- architect writes the ratification verdicts here; PM reconciles -->
+
+## Status log (additions)
+- 2026-07-04 — scope addition from the fix-round-3 review: also ratify the new patterns-mobile
+  rule row "a `format: date` field ridden as plain `Date` is a defect — use the generator's
+  `useCustomDateWithoutTime` / `OpenAPIDateWithoutTime`" (defines the one way for date-only
+  wire on iOS; it codifies the shipped 5d6654a2 fix). And note: the string-catalog junk-entry
+  churn class (SWIFT_EMIT_LOC_STRINGS: NO not fully holding) recurred in round 3 — the knob
+  re-investigation stays open (T-0373 finding b); junk entries stripped at commit time again.

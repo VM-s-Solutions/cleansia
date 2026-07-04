@@ -9,34 +9,40 @@ import SwiftUI
 ///
 /// Owner-directed deviation from the opaque Android surface fill (ADR-0022
 /// amendment, 2026-07-03): the pill is translucent — Liquid Glass on iOS 26+,
-/// `.ultraThinMaterial` below. The FAB stays opaque primary.
+/// `.ultraThinMaterial` + outline stroke below. On iOS 26 the composite is one
+/// `GlassEffectContainer` (system glass draws its own rim light, so the
+/// hand-drawn stroke and the FAB's separator ring exist only on the classic
+/// branch) and the FAB is primary-tinted interactive glass.
 struct CustomerBottomBar: View {
     let selection: CustomerShellTab
     let onSelect: (CustomerShellTab) -> Void
     let onBook: () -> Void
 
     var body: some View {
-        pill
-            .overlay(alignment: .top) {
-                BookFab(action: onBook)
-                    .offset(y: -12)
-            }
+        composite
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
     }
 
-    private var pill: some View {
-        glassSlots
-            .overlay(RoundedRectangle(cornerRadius: 32).stroke(CleansiaColors.outlineVariant, lineWidth: 1))
+    @ViewBuilder
+    private var composite: some View {
+        if #available(iOS 26.0, *) {
+            GlassEffectContainer {
+                slots
+                    .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 32))
+                    .overlay(alignment: .top) { fab }
+            }
+        } else {
+            slots
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay(RoundedRectangle(cornerRadius: 32).stroke(CleansiaColors.outlineVariant, lineWidth: 1))
+                .overlay(alignment: .top) { fab }
+        }
     }
 
-    @ViewBuilder
-    private var glassSlots: some View {
-        if #available(iOS 26.0, *) {
-            slots.glassEffect(.regular, in: RoundedRectangle(cornerRadius: 32))
-        } else {
-            slots.background(.ultraThinMaterial, in: Capsule())
-        }
+    private var fab: some View {
+        BookFab(action: onBook)
+            .offset(y: -12)
     }
 
     private var slots: some View {
@@ -94,16 +100,29 @@ private struct BookFab: View {
 
     var body: some View {
         Button(action: action) {
-            // Android's FAB glyph is CleaningServices (the broom); SF has no broom,
-            // so this follows the T-0372 category ruling's nearest-meaning pick.
-            Image(systemName: "bubbles.and.sparkles")
-                .font(.system(size: 34, weight: .semibold))
-                .foregroundColor(CleansiaColors.onPrimary)
-                .frame(width: 74, height: 74)
+            surface
+        }
+        .accessibilityLabel(Text(verbatim: L10n.Shell.book))
+    }
+
+    @ViewBuilder
+    private var surface: some View {
+        if #available(iOS 26.0, *) {
+            glyph.glassEffect(.regular.tint(CleansiaColors.primary).interactive(), in: Circle())
+        } else {
+            glyph
                 .background(Circle().fill(CleansiaColors.primary))
                 .overlay(Circle().stroke(CleansiaColors.background, lineWidth: 4))
         }
-        .accessibilityLabel(Text(verbatim: L10n.Shell.book))
+    }
+
+    private var glyph: some View {
+        // Android's FAB glyph is CleaningServices (the broom); SF has no broom,
+        // so this follows the T-0372 category ruling's nearest-meaning pick.
+        Image(systemName: "bubbles.and.sparkles")
+            .font(.system(size: 34, weight: .semibold))
+            .foregroundColor(CleansiaColors.onPrimary)
+            .frame(width: 74, height: 74)
     }
 }
 

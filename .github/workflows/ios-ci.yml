@@ -35,6 +35,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # The runner's DEFAULT Xcode lags the newest SDK on the image, while local dev
+      # builds against the newest installed Xcode. Any #available-gated API newer than
+      # the default SDK then compiles locally but fails CI (bit us with the since-retired
+      # Liquid Glass bar). Select the newest Xcode the image ships so CI's SDK tracks
+      # what local dev builds against.
+      - name: Select the newest Xcode on the runner
+        run: |
+          set -euo pipefail
+          NEWEST="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+          echo "Selecting: $NEWEST"
+          sudo xcode-select -s "$NEWEST"
+          xcodebuild -version
+
       # xcodegen + xcbeautify are not on the runner image (swiftlint usually is);
       # installing them keeps CI independent of image drift.
       - name: Install toolchain

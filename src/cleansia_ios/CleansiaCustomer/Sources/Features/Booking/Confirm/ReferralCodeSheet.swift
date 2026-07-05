@@ -6,6 +6,7 @@ struct ReferralCodeSheet: View {
     let onValidate: (String) async -> ReferralCodeState
     let onDismiss: () -> Void
 
+    @Environment(\.snackbarController) private var snackbar
     @State private var code: String
     @State private var localState: ReferralCodeState = .idle
 
@@ -46,6 +47,7 @@ struct ReferralCodeSheet: View {
             onCancel: onDismiss,
             message: { resultBlock }
         )
+        .snackbarHost(snackbar, bottomInset: SnackbarController.defaultBottomInset)
         .presentationDetents([.medium])
     }
 

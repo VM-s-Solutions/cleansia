@@ -4,7 +4,7 @@ import SwiftUI
 
 struct EarningsView: View {
     @StateObject private var vm: EarningsViewModel
-    @State private var path: [EarningsRoute] = []
+    @State private var path = NavigationPath()
 
     private let payrollClient: PartnerPayrollClient
     private let invoicesStaleness: InvoicesStaleness
@@ -43,7 +43,7 @@ struct EarningsView: View {
         case let .error(error):
             EarningsErrorView(error: error) { Task { await vm.load() } }
         case let .loaded(stats):
-            EarningsContent(stats: stats, onOpenInvoices: { path.append(.invoices) })
+            EarningsContent(stats: stats, onOpenInvoices: { path.append(EarningsRoute.invoices) })
                 .background(CleansiaColors.background.ignoresSafeArea())
         }
     }
@@ -56,7 +56,7 @@ struct EarningsView: View {
                 client: payrollClient,
                 staleness: invoicesStaleness,
                 snackbar: snackbar,
-                onOpenInvoice: { path.append(.invoiceDetail(id: $0)) }
+                onOpenInvoice: { path.append(EarningsRoute.invoiceDetail(id: $0)) }
             )
         case let .invoiceDetail(id):
             InvoiceDetailView(
@@ -64,7 +64,7 @@ struct EarningsView: View {
                 client: payrollClient,
                 snackbar: snackbar,
                 onOpenPeriodPay: { payPeriodId, currencyCode in
-                    path.append(.periodPay(payPeriodId: payPeriodId, currencyCode: currencyCode))
+                    path.append(EarningsRoute.periodPay(payPeriodId: payPeriodId, currencyCode: currencyCode))
                 }
             )
         case let .periodPay(payPeriodId, currencyCode):

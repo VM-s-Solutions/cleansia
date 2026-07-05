@@ -17,7 +17,11 @@ struct LiveProgressHero: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
-            HStack(alignment: .top) {
+            ZStack(alignment: .topTrailing) {
+                if let mascotOverlay {
+                    mascotOverlay
+                        .frame(width: 140, height: 140)
+                }
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     OrderStatusPill(
                         label: OrderStatusPresentation.label(order.orderStatus),
@@ -32,11 +36,10 @@ struct LiveProgressHero: View {
                             .foregroundColor(CleansiaColors.onSurfaceVariant)
                     }
                 }
-                Spacer()
-                Image(systemName: heroSymbol)
-                    .font(.system(size: 44))
-                    .foregroundColor(CleansiaColors.primary)
+                .padding(.trailing, 148)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .frame(minHeight: hasMascot ? 140 : 0, alignment: .top)
 
             if status == ._4 {
                 progressBar
@@ -78,11 +81,15 @@ struct LiveProgressHero: View {
         }
     }
 
-    private var heroSymbol: String {
+    private var hasMascot: Bool {
+        status == ._2 || status == ._3 || status == ._4
+    }
+
+    private var mascotOverlay: AnimatedMascotView? {
         switch status {
-        case ._4: "sparkles"
-        case ._2, ._3: "hand.wave.fill"
-        default: "checkmark.seal.fill"
+        case ._4: AnimatedMascotView(.cleaningInProgress, fallback: .cleaning)
+        case ._2, ._3: AnimatedMascotView(.welcoming, loop: false, fallback: .waving)
+        default: nil
         }
     }
 

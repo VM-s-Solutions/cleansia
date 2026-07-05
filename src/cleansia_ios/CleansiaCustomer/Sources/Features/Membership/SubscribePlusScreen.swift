@@ -53,6 +53,10 @@ struct SubscribePlusScreen: View {
                     onTap: subscribe
                 )
             }
+            BusyMascotOverlay(
+                visible: vm.submitState.isSubmitting,
+                message: L10n.Membership.busySubscribePlus
+            )
         }
         .background(CleansiaColors.background.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
@@ -118,39 +122,48 @@ private struct HeroBlock: View {
     let onBack: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.m) {
-            HStack {
-                Button(action: onBack) {
-                    Image(systemName: "arrow.left")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
+        ZStack(alignment: .bottomTrailing) {
+            VStack(alignment: .leading, spacing: Spacing.m) {
+                HStack {
+                    Button(action: onBack) {
+                        Image(systemName: "arrow.left")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                    Spacer()
                 }
-                Spacer()
-            }
-            HStack(spacing: Spacing.xs) {
-                Spacer()
-                Text(verbatim: "Cleansia")
-                    .font(CleansiaTypography.displayMedium)
+                HStack(spacing: Spacing.xs) {
+                    Spacer()
+                    Text(verbatim: "Cleansia")
+                        .font(CleansiaTypography.displayMedium)
+                        .foregroundColor(.white)
+                    Text(L10n.Membership.inactiveBadge)
+                        .font(CleansiaTypography.titleMedium)
+                        .foregroundColor(MembershipPalette.slate900)
+                        .padding(.horizontal, Spacing.s)
+                        .padding(.vertical, 4)
+                        .background(MembershipPalette.sky400, in: RoundedRectangle(cornerRadius: 10))
+                    Spacer()
+                }
+                Text(L10n.Membership.heroHeadline)
+                    .font(CleansiaTypography.headlineMedium)
                     .foregroundColor(.white)
-                Text(L10n.Membership.inactiveBadge)
-                    .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(MembershipPalette.slate900)
-                    .padding(.horizontal, Spacing.s)
-                    .padding(.vertical, 4)
-                    .background(MembershipPalette.sky400, in: RoundedRectangle(cornerRadius: 10))
-                Spacer()
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .multilineTextAlignment(.center)
+                priceBlock
+                if plans.count >= 2 {
+                    PlanSwitcher(plans: plans, selectedCode: selectedPlanCode, onSelect: onSelectPlan)
+                }
+                Spacer().frame(height: 56)
             }
-            Text(L10n.Membership.heroHeadline)
-                .font(CleansiaTypography.headlineMedium)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .multilineTextAlignment(.center)
-            priceBlock
-            if plans.count >= 2 {
-                PlanSwitcher(plans: plans, selectedCode: selectedPlanCode, onSelect: onSelectPlan)
-            }
+            .padding(Spacing.ml)
+            Mascot.waving.image
+                .resizable()
+                .scaledToFit()
+                .frame(width: 96, height: 96)
+                .padding(.trailing, Spacing.s)
+                .padding(.bottom, Spacing.xxs)
         }
-        .padding(Spacing.ml)
         .frame(maxWidth: .infinity)
         .background(
             LinearGradient(

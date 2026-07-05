@@ -95,8 +95,6 @@ private struct OrdersListContent: View {
                         .tint(CleansiaColors.primary)
                         .padding(.vertical, Spacing.s)
                 }
-
-                Color.clear.frame(height: Spacing.xxl)
             }
             .padding(.horizontal, Spacing.ml)
             .padding(.top, Spacing.xxs)
@@ -238,21 +236,17 @@ private struct OrdersEmptyView: View {
     let onBookCleaning: () -> Void
 
     var body: some View {
-        VStack(spacing: Spacing.m) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 64))
-                .foregroundColor(CleansiaColors.primary)
-            Text(L10n.Orders.emptyTitle)
-                .font(CleansiaTypography.headlineSmall)
-                .foregroundColor(CleansiaColors.onBackground)
-            Text(L10n.Orders.emptySubtitle)
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .multilineTextAlignment(.center)
+        MascotEmptyState(
+            image: Mascot.idea.image,
+            text: L10n.Orders.emptyTitle,
+            subtitle: L10n.Orders.emptySubtitle,
+            verticallyCentered: true,
+            imageSize: 160,
+            titleFont: CleansiaTypography.headlineSmall
+        ) {
             CleansiaPrimaryButton(L10n.Orders.emptyCta, action: onBookCleaning)
                 .fixedSize()
         }
-        .padding(Spacing.xl)
     }
 }
 

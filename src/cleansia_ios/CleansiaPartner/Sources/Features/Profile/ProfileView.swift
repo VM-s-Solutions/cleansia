@@ -6,7 +6,7 @@ struct ProfileView: View {
     @StateObject private var vm: ProfileViewModel
     @StateObject private var chainVM: OnboardingChainViewModel
     @ObservedObject private var preferences: PreferencesModel
-    @State private var path: [ProfileRoute] = []
+    @State private var path = NavigationPath()
     @State private var showLogoutDialog = false
 
     private let client: PartnerProfileClient

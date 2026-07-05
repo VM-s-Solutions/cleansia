@@ -90,24 +90,33 @@ private struct InactiveCard: View {
     var body: some View {
         Button(action: onClick) {
             VStack(alignment: .leading, spacing: Spacing.m) {
-                HStack(spacing: Spacing.xs) {
-                    Image(systemName: "crown.fill")
-                        .font(.system(size: 12))
-                        .foregroundColor(CleansiaColors.onPrimary)
-                    Text(L10n.Membership.inactiveBadge)
-                        .font(CleansiaTypography.labelSmall)
-                        .foregroundColor(CleansiaColors.onPrimary)
-                }
-                .padding(.horizontal, Spacing.s)
-                .padding(.vertical, 4)
-                .background(CleansiaColors.primary, in: RoundedRectangle(cornerRadius: CornerRadius.extraSmall))
+                HStack(alignment: .top, spacing: Spacing.xs) {
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        HStack(spacing: Spacing.xs) {
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 12))
+                                .foregroundColor(CleansiaColors.onPrimary)
+                            Text(L10n.Membership.inactiveBadge)
+                                .font(CleansiaTypography.labelSmall)
+                                .foregroundColor(CleansiaColors.onPrimary)
+                        }
+                        .padding(.horizontal, Spacing.s)
+                        .padding(.vertical, 4)
+                        .background(CleansiaColors.primary, in: RoundedRectangle(cornerRadius: CornerRadius.extraSmall))
 
-                Text(L10n.Membership.inactiveTitle)
-                    .font(CleansiaTypography.titleLarge)
-                    .foregroundColor(CleansiaColors.onSurface)
-                Text(L10n.Membership.inactivePerksSummary)
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        Text(L10n.Membership.inactiveTitle)
+                            .font(CleansiaTypography.titleLarge)
+                            .foregroundColor(CleansiaColors.onSurface)
+                        Text(L10n.Membership.inactivePerksSummary)
+                            .font(CleansiaTypography.bodyMedium)
+                            .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Mascot.ready.image
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 72, height: 72)
+                }
 
                 HStack {
                     Text(L10n.Membership.inactiveCta)
@@ -148,20 +157,32 @@ private struct ActiveCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            HStack(spacing: Spacing.xs) {
-                Image(systemName: "crown.fill").foregroundColor(accent)
-                Text(membership.cancelRequested
-                    ? L10n.Membership.statusEndingBadge
-                    : L10n.Membership.statusActiveBadge)
-                    .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(accent)
-                    .padding(.horizontal, Spacing.s)
-                    .padding(.vertical, 3)
-                    .background(accent.opacity(0.15), in: RoundedRectangle(cornerRadius: CornerRadius.extraSmall))
+            HStack(alignment: .top, spacing: Spacing.xs) {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    HStack(spacing: Spacing.xs) {
+                        Image(systemName: "crown.fill").foregroundColor(accent)
+                        Text(membership.cancelRequested
+                            ? L10n.Membership.statusEndingBadge
+                            : L10n.Membership.statusActiveBadge)
+                            .font(CleansiaTypography.labelSmall)
+                            .foregroundColor(accent)
+                            .padding(.horizontal, Spacing.s)
+                            .padding(.vertical, 3)
+                            .background(
+                                accent.opacity(0.15),
+                                in: RoundedRectangle(cornerRadius: CornerRadius.extraSmall)
+                            )
+                    }
+                    Text(membership.planName ?? L10n.Membership.plusTitle)
+                        .font(CleansiaTypography.titleLarge)
+                        .foregroundColor(CleansiaColors.onSurface)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Mascot.ready.image
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 64, height: 64)
             }
-            Text(membership.planName ?? L10n.Membership.plusTitle)
-                .font(CleansiaTypography.titleLarge)
-                .foregroundColor(CleansiaColors.onSurface)
 
             if let periodEnd = membership.currentPeriodEnd {
                 let dateText = MembershipFormat.periodEnd(periodEnd)

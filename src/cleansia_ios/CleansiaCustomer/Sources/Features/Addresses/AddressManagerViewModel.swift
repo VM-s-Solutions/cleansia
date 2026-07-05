@@ -22,6 +22,7 @@ final class AddressManagerViewModel: ViewModel {
 
     @Published private(set) var addresses: [SavedAddress] = []
     @Published private(set) var loaded = false
+    @Published private(set) var selectedId: String?
 
     init(
         repository: SavedAddressRepository,
@@ -36,6 +37,13 @@ final class AddressManagerViewModel: ViewModel {
         super.init()
         repository.$addresses.assign(to: &$addresses)
         repository.$loaded.assign(to: &$loaded)
+        repository.$selectedId.assign(to: &$selectedId)
+    }
+
+    /// Row tap — persist the selection the home top bar and booking hydration
+    /// read (`AddressManagerScreen.kt:168` → `repo.setSelected`).
+    func select(_ address: SavedAddress) {
+        repository.setSelected(address.id)
     }
 
     func onAppear() async {

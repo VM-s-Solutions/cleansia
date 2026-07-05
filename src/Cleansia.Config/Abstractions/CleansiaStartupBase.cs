@@ -61,21 +61,30 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
     /// </summary>
     protected virtual void UseHostAuthMiddleware(IApplicationBuilder app) { }
 
+    /// <summary>
+    /// The one host JSON configuration, shared by all five APIs and pinned by
+    /// <c>TolerantDateOnlyConverterTests</c> so a dropped registration fails in CI.
+    /// </summary>
+    public static void ConfigureJsonSerialization(System.Text.Json.JsonSerializerOptions options)
+    {
+        // Allow incoming JSON to provide numeric properties as
+        // strings (e.g. price `"12.50"` instead of `12.50`).
+        options.NumberHandling =
+            System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString;
+
+        // Tolerant enum deserialization for Kotlin clients —
+        // see [TolerantEnumConverterFactory] for the rationale.
+        options.Converters.Add(new TolerantEnumConverterFactory());
+
+        // Tolerant DateOnly deserialization for the Swift clients —
+        // see [TolerantDateOnlyConverter] for the rationale.
+        options.Converters.Add(new TolerantDateOnlyConverter());
+    }
+
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddControllers()
-            .AddJsonOptions(options =>
-            {
-                // Allow incoming JSON to provide numeric properties as
-                // strings (e.g. price `"12.50"` instead of `12.50`).
-                options.JsonSerializerOptions.NumberHandling =
-                    System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString;
-
-                // Tolerant enum deserialization for Kotlin clients —
-                // see [TolerantEnumConverterFactory] for the rationale.
-                options.JsonSerializerOptions.Converters.Add(
-                    new TolerantEnumConverterFactory());
-            });
+            .AddJsonOptions(options => ConfigureJsonSerialization(options.JsonSerializerOptions));
         services.AddEndpointsApiExplorer();
         AddProjectServices(services);
 

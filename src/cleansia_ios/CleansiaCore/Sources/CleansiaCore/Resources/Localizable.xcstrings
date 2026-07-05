@@ -1,3882 +1,3989 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "error.address.already_exists": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You already have this address saved."
+  "sourceLanguage" : "en",
+  "strings" : {
+    "error.address.already_exists" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tuto adresu už máte uloženou."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tuto adresu už máte uloženou."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You already have this address saved."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Túto adresu už máte uloženú."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот адрес уже сохранён."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ця адреса вже збережена."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Túto adresu už máte uloženú."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот адрес уже сохранён."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ця адреса вже збережена."
           }
         }
       }
     },
-    "error.address.invalid_length": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Address is too short or too long."
+    "error.address.invalid_length" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adresa je příliš krátká nebo příliš dlouhá."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adresa je příliš krátká nebo příliš dlouhá."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Address is too short or too long."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adresa je príliš krátka alebo príliš dlhá."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Адрес слишком короткий или слишком длинный."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Адреса занадто коротка або занадто довга."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adresa je príliš krátka alebo príliš dlhá."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Адрес слишком короткий или слишком длинный."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Адреса занадто коротка або занадто довга."
           }
         }
       }
     },
-    "error.address.label_required": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please provide a label for this address."
+    "error.address.label_required" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadejte prosím název adresy."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadejte prosím název adresy."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please provide a label for this address."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadajte prosím názov tejto adresy."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пожалуйста, введите название для этого адреса."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Будь ласка, введіть назву для цієї адреси."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadajte prosím názov tejto adresy."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пожалуйста, введите название для этого адреса."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Будь ласка, введіть назву для цієї адреси."
           }
         }
       }
     },
-    "error.address.mapbox_coords_required": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please pick the address on the map."
+    "error.address.mapbox_coords_required" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zvolte prosím adresu na mapě."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zvolte prosím adresu na mapě."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please pick the address on the map."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zvoľte prosím adresu na mape."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите, пожалуйста, адрес на карте."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Виберіть, будь ласка, адресу на мапі."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zvoľte prosím adresu na mape."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Выберите, пожалуйста, адрес на карте."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Виберіть, будь ласка, адресу на мапі."
           }
         }
       }
     },
-    "error.address.not_owned_by_user": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You can't access this address."
+    "error.address.not_owned_by_user" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "K této adrese nemáte přístup."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "K této adrese nemáte přístup."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can't access this address."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Môžete spravovať iba vlastné adresy."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы можете управлять только своими адресами."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ви можете керувати лише власними адресами."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Môžete spravovať iba vlastné adresy."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вы можете управлять только своими адресами."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ви можете керувати лише власними адресами."
           }
         }
       }
     },
-    "error.auth.google_type_error": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This account uses Google sign-in. Use the Google button."
+    "error.auth.google_type_error" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento účet používá přihlášení přes Google. Použijte tlačítko Google."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento účet používá přihlášení přes Google. Použijte tlačítko Google."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This account uses Google sign-in. Use the Google button."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento účet používa prihlásenie cez Google. Použite tlačidlo Google."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эта учётная запись использует вход через Google. Используйте кнопку Google."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цей обліковий запис використовує вхід через Google. Скористайтеся кнопкою Google."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento účet používa prihlásenie cez Google. Použite tlačidlo Google."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Эта учётная запись использует вход через Google. Используйте кнопку Google."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей обліковий запис використовує вхід через Google. Скористайтеся кнопкою Google."
           }
         }
       }
     },
-    "error.auth.insufficient_privileges": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You don't have permission to do that."
+    "error.auth.insufficient_privileges" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nemáte oprávnění k této akci."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nemáte oprávnění k této akci."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You don't have permission to do that."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nemáte oprávnenie na túto akciu."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У вас нет разрешения на это действие."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "У вас немає дозволу на цю дію."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nemáte oprávnenie na túto akciu."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "У вас нет разрешения на это действие."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У вас немає дозволу на цю дію."
           }
         }
       }
     },
-    "error.auth.internal_type_error": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Use email and password to sign in for this account."
+    "error.auth.internal_type_error" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro tento účet se přihlaste e-mailem a heslem."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pro tento účet se přihlaste e-mailem a heslem."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use email and password to sign in for this account."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pre tento účet sa prihláste e-mailom a heslom."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для этой учётной записи войдите по email и паролю."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Для цього облікового запису увійдіть з email і паролем."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pre tento účet sa prihláste e-mailom a heslom."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Для этой учётной записи войдите по email и паролю."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для цього облікового запису увійдіть з email і паролем."
           }
         }
       }
     },
-    "error.auth.invalid_confirmation_code": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This code is invalid or has expired."
+    "error.auth.invalid_confirmation_code" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento kód je neplatný nebo vypršel."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento kód je neplatný nebo vypršel."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This code is invalid or has expired."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento kód je neplatný alebo vypršal."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот код недействителен или истёк."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цей код недійсний або застарів."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento kód je neplatný alebo vypršal."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот код недействителен или истёк."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей код недійсний або застарів."
           }
         }
       }
     },
-    "error.auth.invalid_google_token": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Google sign-in failed. Please try again."
+    "error.auth.invalid_google_token" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Přihlášení přes Google se nezdařilo. Zkuste to znovu."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Přihlášení přes Google se nezdařilo. Zkuste to znovu."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google sign-in failed. Please try again."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prihlásenie cez Google sa nepodarilo. Skúste to znova."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось войти через Google. Попробуйте снова."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося увійти через Google. Спробуйте знову."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prihlásenie cez Google sa nepodarilo. Skúste to znova."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось войти через Google. Попробуйте снова."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося увійти через Google. Спробуйте знову."
           }
         }
       }
     },
-    "error.auth.invalid_password_format": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Password must be at least 8 characters with letters and numbers."
+    "error.auth.invalid_password_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heslo musí mít alespoň 8 znaků a obsahovat písmena a číslice."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Heslo musí mít alespoň 8 znaků a obsahovat písmena a číslice."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password must be at least 8 characters with letters and numbers."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Heslo musí mať aspoň 8 znakov a obsahovať písmená a číslice."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пароль должен содержать минимум 8 символов, буквы и цифры."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пароль має містити щонайменше 8 символів, літери та цифри."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heslo musí mať aspoň 8 znakov a obsahovať písmená a číslice."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пароль должен содержать минимум 8 символов, буквы и цифры."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пароль має містити щонайменше 8 символів, літери та цифри."
           }
         }
       }
     },
-    "error.auth.invalid_refresh_token": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your session expired. Please sign in again."
+    "error.auth.invalid_refresh_token" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaše přihlášení vypršelo. Přihlaste se prosím znovu."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vaše přihlášení vypršelo. Přihlaste se prosím znovu."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your session expired. Please sign in again."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vaša relácia vypršala. Prihláste sa znova."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваша сессия истекла. Войдите снова."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваша сесія завершилася. Увійдіть знову."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaša relácia vypršala. Prihláste sa znova."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваша сессия истекла. Войдите снова."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваша сесія завершилася. Увійдіть знову."
           }
         }
       }
     },
-    "error.auth.invalid_reset_token": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This password reset link is invalid or has expired."
+    "error.auth.invalid_reset_token" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento odkaz pro obnovení hesla je neplatný nebo vypršel."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento odkaz pro obnovení hesla je neplatný nebo vypršel."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This password reset link is invalid or has expired."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento odkaz na obnovenie hesla je neplatný alebo vypršal."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эта ссылка для сброса пароля недействительна или истекла."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Це посилання для скидання пароля недійсне або застаріле."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento odkaz na obnovenie hesla je neplatný alebo vypršal."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Эта ссылка для сброса пароля недействительна или истекла."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це посилання для скидання пароля недійсне або застаріле."
           }
         }
       }
     },
-    "error.auth.refresh_token_reused": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "For your security, you've been signed out everywhere."
+    "error.auth.refresh_token_reused" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Z bezpečnostních důvodů jste byli odhlášeni ze všech zařízení."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Z bezpečnostních důvodů jste byli odhlášeni ze všech zařízení."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For your security, you've been signed out everywhere."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Z bezpečnostných dôvodov ste boli odhlásení zo všetkých zariadení."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В целях безопасности вы вышли со всех устройств."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "З міркувань безпеки вас вийшли з усіх пристроїв."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Z bezpečnostných dôvodov ste boli odhlásení zo všetkých zariadení."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "В целях безопасности вы вышли со всех устройств."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "З міркувань безпеки вас вийшли з усіх пристроїв."
           }
         }
       }
     },
-    "error.auth.same_reset_password": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please choose a password different from your old one."
+    "error.auth.same_reset_password" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zvolte prosím heslo odlišné od původního."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zvolte prosím heslo odlišné od původního."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please choose a password different from your old one."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zvoľte prosím heslo odlišné od pôvodného."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите пароль, отличный от старого."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Виберіть пароль, відмінний від попереднього."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zvoľte prosím heslo odlišné od pôvodného."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Выберите пароль, отличный от старого."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Виберіть пароль, відмінний від попереднього."
           }
         }
       }
     },
-    "error.city.not_serviced": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We don't operate in this city yet."
+    "error.city.not_serviced" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "V tomto městě zatím nepůsobíme."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "V tomto městě zatím nepůsobíme."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We don't operate in this city yet."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "V tomto meste zatiaľ nepôsobíme."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В этом городе мы пока не работаем."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "У цьому місті ми поки що не працюємо."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "V tomto meste zatiaľ nepôsobíme."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "В этом городе мы пока не работаем."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У цьому місті ми поки що не працюємо."
           }
         }
       }
     },
-    "error.common.invalid_enum_value": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Invalid selection."
+    "error.common.invalid_enum_value" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neplatná volba."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neplatná volba."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid selection."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neplatná voľba."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Неверный выбор."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Невірний вибір."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neplatná voľba."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Неверный выбор."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Невірний вибір."
           }
         }
       }
     },
-    "error.common.max_length": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Too long."
+    "error.common.max_length" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Příliš dlouhé."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Příliš dlouhé."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too long."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Príliš dlhé."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Слишком длинное."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Занадто довге."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Príliš dlhé."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Слишком длинное."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Занадто довге."
           }
         }
       }
     },
-    "error.common.min_length": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Too short."
+    "error.common.min_length" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Příliš krátké."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Příliš krátké."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too short."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Príliš krátke."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Слишком короткое."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Занадто коротке."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Príliš krátke."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Слишком короткое."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Занадто коротке."
           }
         }
       }
     },
-    "error.common.required": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This field is required."
+    "error.common.required" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto pole je povinné."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toto pole je povinné."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This field is required."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toto pole je povinné."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это поле обязательно."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Це поле обов’язкове."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto pole je povinné."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Это поле обязательно."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це поле обов’язкове."
           }
         }
       }
     },
-    "error.country.not_serviced": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We don't operate in this country yet."
+    "error.country.not_serviced" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "V této zemi zatím nepůsobíme."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "V této zemi zatím nepůsobíme."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We don't operate in this country yet."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "V tejto krajine zatiaľ nepôsobíme."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В этой стране мы пока не работаем."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "У цій країні ми поки що не працюємо."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "V tejto krajine zatiaľ nepôsobíme."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "В этой стране мы пока не работаем."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У цій країні ми поки що не працюємо."
           }
         }
       }
     },
-    "error.country.required": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please select a country."
+    "error.country.required" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zvolte prosím zemi."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zvolte prosím zemi."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please select a country."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zvoľte prosím krajinu."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите, пожалуйста, страну."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Виберіть, будь ласка, країну."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zvoľte prosím krajinu."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Выберите, пожалуйста, страну."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Виберіть, будь ласка, країну."
           }
         }
       }
     },
-    "error.device.invalid_platform": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Invalid device platform."
+    "error.device.invalid_platform" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neplatná platforma zařízení."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neplatná platforma zařízení."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid device platform."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neplatná platforma zariadenia."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Недействительная платформа устройства."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Недійсна платформа пристрою."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neplatná platforma zariadenia."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Недействительная платформа устройства."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Недійсна платформа пристрою."
           }
         }
       }
     },
-    "error.device.not_found": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This device is no longer registered."
+    "error.device.not_found" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto zařízení už není registrované."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toto zařízení už není registrované."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This device is no longer registered."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toto zariadenie už nie je registrované."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это устройство больше не зарегистрировано."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цей пристрій більше не зареєстрований."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto zariadenie už nie je registrované."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Это устройство больше не зарегистрировано."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей пристрій більше не зареєстрований."
           }
         }
       }
     },
-    "error.email.invalid_email": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please enter a valid email."
+    "error.email.invalid_email" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadejte prosím platný e-mail."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadejte prosím platný e-mail."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a valid email."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadajte prosím platný e-mail."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пожалуйста, введите корректный email."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Будь ласка, введіть дійсний email."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadajte prosím platný e-mail."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пожалуйста, введите корректный email."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Будь ласка, введіть дійсний email."
           }
         }
       }
     },
-    "error.email.invalid_format": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please enter a valid email."
+    "error.email.invalid_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadejte prosím platný e-mail."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadejte prosím platný e-mail."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a valid email."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadajte prosím platný e-mail."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пожалуйста, введите корректный email."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Будь ласка, введіть дійсний email."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadajte prosím platný e-mail."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пожалуйста, введите корректный email."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Будь ласка, введіть дійсний email."
           }
         }
       }
     },
-    "error.employee.already_approved": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This employee is already approved."
+    "error.employee_document.not_found" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dokument nenalezen."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento zaměstnanec je již schválen."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document not found."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento zamestnanec je už schválený."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Документ не найден."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цього працівника вже схвалено."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dokument sa nenašiel."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот сотрудник уже одобрен."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Документ не знайдено."
           }
         }
       }
     },
-    "error.employee.already_rejected": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This employee is already rejected."
+    "error.employee_document.not_owned" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento dokument vám nepatří."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento zaměstnanec je již zamítnut."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You don't own this document."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento zamestnanec je už zamietnutý."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот документ вам не принадлежит."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цього працівника вже відхилено."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento dokument vám nepatrí."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот сотрудник уже отклонён."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей документ вам не належить."
           }
         }
       }
     },
-    "error.employee.documents_missing": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Required documents are missing. Please upload them in your profile."
+    "error.employee_document.unauthorized" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "K tomuto dokumentu nemáte přístup."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chybí povinné dokumenty. Nahrajte je ve svém profilu."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can't access this document."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chýbajú povinné dokumenty. Nahrajte ich vo svojom profile."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У вас нет доступа к этому документу."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Відсутні обов'язкові документи. Завантажте їх у профілі."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "K tomuto dokumentu nemáte prístup."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Отсутствуют обязательные документы. Загрузите их в профиле."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У вас немає доступу до цього документа."
           }
         }
       }
     },
-    "error.employee.not_allowed_to_update": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You can't edit this employee."
+    "error.employee.already_approved" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento zaměstnanec je již schválen."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tohoto zaměstnance nemůžete upravovat."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This employee is already approved."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tohto zamestnanca nemôžete upravovať."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот сотрудник уже одобрен."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ви не можете редагувати цього працівника."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento zamestnanec je už schválený."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вы не можете редактировать этого сотрудника."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цього працівника вже схвалено."
           }
         }
       }
     },
-    "error.employee.not_existing_email": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No employee found with this email."
+    "error.employee.already_rejected" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento zaměstnanec je již zamítnut."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zaměstnanec s tímto e-mailem nebyl nalezen."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This employee is already rejected."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zamestnanec s týmto e-mailom sa nenašiel."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот сотрудник уже отклонён."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Працівника з цією е-поштою не знайдено."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento zamestnanec je už zamietnutý."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сотрудник с этим е-мейлом не найден."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цього працівника вже відхилено."
           }
         }
       }
     },
-    "error.employee.not_found": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Employee not found."
+    "error.employee.documents_missing" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chybí povinné dokumenty. Nahrajte je ve svém profilu."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zaměstnanec nenalezen."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Required documents are missing. Please upload them in your profile."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zamestnanec sa nenašiel."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отсутствуют обязательные документы. Загрузите их в профиле."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Працівника не знайдено."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chýbajú povinné dokumenty. Nahrajte ich vo svojom profile."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сотрудник не найден."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Відсутні обов'язкові документи. Завантажте їх у профілі."
           }
         }
       }
     },
-    "error.employee.profile_incomplete": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please complete your profile before taking jobs."
+    "error.employee.not_allowed_to_update" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tohoto zaměstnance nemůžete upravovat."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Před přijímáním zakázek prosím dokončete svůj profil."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can't edit this employee."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pred prijímaním zákaziek si prosím dokončite profil."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы не можете редактировать этого сотрудника."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перед прийняттям замовлень заповніть свій профіль."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tohto zamestnanca nemôžete upravovať."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перед приёмом заказов завершите ваш профиль."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ви не можете редагувати цього працівника."
           }
         }
       }
     },
-    "error.employee_document.not_found": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Document not found."
+    "error.employee.not_existing_email" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaměstnanec s tímto e-mailem nebyl nalezen."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dokument nenalezen."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No employee found with this email."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dokument sa nenašiel."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сотрудник с этим е-мейлом не найден."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Документ не знайдено."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamestnanec s týmto e-mailom sa nenašiel."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Документ не найден."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Працівника з цією е-поштою не знайдено."
           }
         }
       }
     },
-    "error.employee_document.not_owned": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You don't own this document."
+    "error.employee.not_found" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaměstnanec nenalezen."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento dokument vám nepatří."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Employee not found."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento dokument vám nepatrí."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сотрудник не найден."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цей документ вам не належить."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamestnanec sa nenašiel."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот документ вам не принадлежит."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Працівника не знайдено."
           }
         }
       }
     },
-    "error.employee_document.unauthorized": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You can't access this document."
+    "error.employee.profile_incomplete" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Před přijímáním zakázek prosím dokončete svůj profil."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "K tomuto dokumentu nemáte přístup."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please complete your profile before taking jobs."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "K tomuto dokumentu nemáte prístup."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перед приёмом заказов завершите ваш профиль."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "У вас немає доступу до цього документа."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pred prijímaním zákaziek si prosím dokončite profil."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "У вас нет доступа к этому документу."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перед прийняттям замовлень заповніть свій профіль."
           }
         }
       }
     },
-    "error.file.content_type_doesnt_match": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "File type doesn't match."
+    "error.file.content_type_doesnt_match" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typ souboru nesedí."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Typ souboru nesedí."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File type doesn't match."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Typ súboru nesedí."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тип файла не совпадает."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Тип файлу не збігається."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typ súboru nesedí."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Тип файла не совпадает."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тип файлу не збігається."
           }
         }
       }
     },
-    "error.file.count_exceeded": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Too many files."
+    "error.file.count_exceeded" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Příliš mnoho souborů."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Příliš mnoho souborů."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too many files."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Príliš veľa súborov."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Слишком много файлов."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Занадто багато файлів."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Príliš veľa súborov."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Слишком много файлов."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Занадто багато файлів."
           }
         }
       }
     },
-    "error.file.count_too_few": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please attach at least one file."
+    "error.file.count_too_few" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Připojte prosím alespoň jeden soubor."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Připojte prosím alespoň jeden soubor."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please attach at least one file."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pripojte prosím aspoň jeden súbor."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прикрепите, пожалуйста, хотя бы один файл."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Додайте, будь ласка, хоча б один файл."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pripojte prosím aspoň jeden súbor."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Прикрепите, пожалуйста, хотя бы один файл."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Додайте, будь ласка, хоча б один файл."
           }
         }
       }
     },
-    "error.file.invalid_file_type": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unsupported file type."
+    "error.file.invalid_file_type" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nepodporovaný typ souboru."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nepodporovaný typ souboru."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unsupported file type."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nepodporovaný typ súboru."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Неподдерживаемый тип файла."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Непідтримуваний тип файлу."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nepodporovaný typ súboru."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Неподдерживаемый тип файла."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Непідтримуваний тип файлу."
           }
         }
       }
     },
-    "error.file.required": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A file is required."
+    "error.file.required" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soubor je povinný."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Soubor je povinný."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A file is required."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Súbor je povinný."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файл обязателен."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Файл обов'язковий."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Súbor je povinný."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Файл обязателен."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файл обов'язковий."
           }
         }
       }
     },
-    "error.file.size_exceeded": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "File is too large."
+    "error.file.size_exceeded" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soubor je příliš velký."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Soubor je příliš velký."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File is too large."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Súbor je príliš veľký."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файл слишком большой."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Файл занадто великий."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Súbor je príliš veľký."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Файл слишком большой."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файл занадто великий."
           }
         }
       }
     },
-    "error.file.size_exceeded_10mb": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "File is too large (max 10 MB)."
+    "error.file.size_exceeded_10mb" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soubor je příliš velký (max 10 MB)."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Soubor je příliš velký (max 10 MB)."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File is too large (max 10 MB)."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Súbor je príliš veľký (max 10 MB)."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файл слишком большой (макс. 10 МБ)."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Файл занадто великий (макс. 10 МБ)."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Súbor je príliš veľký (max 10 MB)."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Файл слишком большой (макс. 10 МБ)."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файл занадто великий (макс. 10 МБ)."
           }
         }
       }
     },
-    "error.file.type_not_allowed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This file type isn't allowed."
+    "error.file.type_not_allowed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento typ souboru není povolen."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento typ souboru není povolen."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This file type isn't allowed."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento typ súboru nie je povolený."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот тип файла не разрешён."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цей тип файлу не дозволено."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento typ súboru nie je povolený."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот тип файла не разрешён."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей тип файлу не дозволено."
           }
         }
       }
     },
-    "error.gdpr.deletion_already_pending": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your deletion request is already being processed."
+    "error.gdpr.deletion_already_pending" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Žádost o odstranění se již zpracovává."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Žádost o odstranění se již zpracovává."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your deletion request is already being processed."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Žiadosť o odstránenie sa už spracováva."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш запрос на удаление уже обрабатывается."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваш запит на видалення вже обробляється."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Žiadosť o odstránenie sa už spracováva."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваш запрос на удаление уже обрабатывается."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш запит на видалення вже обробляється."
           }
         }
       }
     },
-    "error.gdpr.deletion_failed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couldn't delete your account. Please contact support."
+    "error.gdpr.deletion_failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nelze odstranit účet. Kontaktujte prosím podporu."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nelze odstranit účet. Kontaktujte prosím podporu."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't delete your account. Please contact support."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie je možné odstrániť účet. Kontaktujte prosím podporu."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось удалить учётную запись. Обратитесь в поддержку."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося видалити обліковий запис. Зверніться в підтримку."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie je možné odstrániť účet. Kontaktujte prosím podporu."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось удалить учётную запись. Обратитесь в поддержку."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося видалити обліковий запис. Зверніться в підтримку."
           }
         }
       }
     },
-    "error.gdpr.export_failed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couldn't export your data. Please try again."
+    "error.gdpr.export_failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nelze exportovat data. Zkuste to znovu."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nelze exportovat data. Zkuste to znovu."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't export your data. Please try again."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie je možné exportovať údaje. Skúste to znova."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось экспортировать данные. Попробуйте снова."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося експортувати дані. Спробуйте знову."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie je možné exportovať údaje. Skúste to znova."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось экспортировать данные. Попробуйте снова."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося експортувати дані. Спробуйте знову."
           }
         }
       }
     },
-    "error.general.not_found": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Not found."
+    "error.general.not_found" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenalezeno."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nenalezeno."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not found."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nenájdené."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не найдено."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не знайдено."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenájdené."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не найдено."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не знайдено."
           }
         }
       }
     },
-    "error.generic": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Something went wrong. Please try again."
+    "error.generic" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Něco se pokazilo. Zkuste to prosím znovu."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Něco se pokazilo. Zkuste to prosím znovu."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong. Please try again."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Niečo sa pokazilo. Skúste to znova."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что-то пошло не так. Попробуйте ещё раз."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Щось пішло не так. Спробуйте ще раз."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niečo sa pokazilo. Skúste to znova."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Что-то пошло не так. Попробуйте ещё раз."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Щось пішло не так. Спробуйте ще раз."
           }
         }
       }
     },
-    "error.language.not_supported": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This language isn't supported."
+    "error.language.not_supported" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento jazyk není podporován."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento jazyk není podporován."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This language isn't supported."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento jazyk nie je podporovaný."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот язык не поддерживается."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ця мова не підтримується."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento jazyk nie je podporovaný."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот язык не поддерживается."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ця мова не підтримується."
           }
         }
       }
     },
-    "error.network.unreachable": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Can't reach the server. Check your connection."
+    "error.network.unreachable" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zkontrolujte připojení k internetu a zkuste to znovu."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zkontrolujte připojení k internetu a zkuste to znovu."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't reach the server. Check your connection."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skontrolujte pripojenie na internet a skúste to znova."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверьте подключение к интернету и попробуйте снова."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перевірте підключення до Інтернету та спробуйте знову."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skontrolujte pripojenie na internet a skúste to znova."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Проверьте подключение к интернету и попробуйте снова."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перевірте підключення до Інтернету та спробуйте знову."
           }
         }
       }
     },
-    "error.not_found": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We couldn't find what you were looking for."
+    "error.not_found" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nepodařilo se najít, co hledáte."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nepodařilo se najít, co hledáte."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't find what you were looking for."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nepodarilo sa nájsť, čo hľadáte."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось найти то, что вы искали."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося знайти те, що ви шукали."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nepodarilo sa nájsť, čo hľadáte."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось найти то, что вы искали."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося знайти те, що ви шукали."
           }
         }
       }
     },
-    "error.order.actual_time.positive": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Actual time must be greater than zero."
+    "error.order.actual_time.positive" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skutečný čas musí být větší než nula."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skutečný čas musí být větší než nula."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actual time must be greater than zero."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skutočný čas musí byť väčší ako nula."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фактическое время должно быть больше нуля."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Фактичний час має бути більший за нуль."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skutočný čas musí byť väčší ako nula."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Фактическое время должно быть больше нуля."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фактичний час має бути більший за нуль."
           }
         }
       }
     },
-    "error.order.address_exactly_one_required": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please select a saved address or enter a new one."
+    "error.order.address_exactly_one_required" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vyberte prosím uloženou adresu nebo zadejte novou."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vyberte prosím uloženou adresu nebo zadejte novou."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please select a saved address or enter a new one."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vyberte prosím uloženú adresu alebo zadajte novú."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пожалуйста, выберите сохранённый адрес или введите новый."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Будь ласка, виберіть збережену адресу або введіть нову."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vyberte prosím uloženú adresu alebo zadajte novú."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пожалуйста, выберите сохранённый адрес или введите новый."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Будь ласка, виберіть збережену адресу або введіть нову."
           }
         }
       }
     },
-    "error.order.after_photos.required": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Take at least one \"after\" photo before completing the order."
+    "error.order.after_photos.required" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Před dokončením zakázky pořiďte alespoň jednu fotografii „po\"."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Před dokončením zakázky pořiďte alespoň jednu fotografii „po\"."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take at least one \"after\" photo before completing the order."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pred dokončením zákazky odfoťte aspoň jednu fotografiu „po\"."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перед завершением заказа сделайте хотя бы одно фото «после»."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перед завершенням замовлення зробіть хоча б одне фото «після»."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pred dokončením zákazky odfoťte aspoň jednu fotografiu „po\"."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перед завершением заказа сделайте хотя бы одно фото «после»."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перед завершенням замовлення зробіть хоча б одне фото «після»."
           }
         }
       }
     },
-    "error.order.already_assigned": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This order was just taken by another cleaner."
+    "error.order.already_assigned" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tuto zakázku právě převzal jiný uklízeč."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tuto zakázku právě převzal jiný uklízeč."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This order was just taken by another cleaner."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Túto zákazku práve prevzal iný upratovač."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот заказ только что взял другой клинер."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Це замовлення щойно взяв інший прибиральник."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Túto zákazku práve prevzal iný upratovač."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот заказ только что взял другой клинер."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це замовлення щойно взяв інший прибиральник."
           }
         }
       }
     },
-    "error.order.already_cancelled": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This booking is already cancelled."
+    "error.order.already_cancelled" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tato rezervace je již zrušena."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tato rezervace je již zrušena."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This booking is already cancelled."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Táto rezervácia je už zrušená."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это бронирование уже отменено."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Це бронювання вже скасоване."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Táto rezervácia je už zrušená."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Это бронирование уже отменено."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це бронювання вже скасоване."
           }
         }
       }
     },
-    "error.order.already_completed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This booking is already completed."
+    "error.order.already_completed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tato rezervace je již dokončena."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tato rezervace je již dokončena."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This booking is already completed."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Táto rezervácia je už dokončená."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это бронирование уже завершено."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Це бронювання вже завершене."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Táto rezervácia je už dokončená."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Это бронирование уже завершено."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це бронювання вже завершене."
           }
         }
       }
     },
-    "error.order.cancellation_window_closed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The cancellation window has closed."
+    "error.order.cancellation_window_closed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lhůta pro zrušení již uplynula."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lhůta pro zrušení již uplynula."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The cancellation window has closed."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lehota na zrušenie už uplynula."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Период отмены уже закрыт."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Період скасування вже закінчився."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lehota na zrušenie už uplynula."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Период отмены уже закрыт."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Період скасування вже закінчився."
           }
         }
       }
     },
-    "error.order.cleaning_date.below_lead_time": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This time is too close. Please choose a later slot."
+    "error.order.cleaning_date.below_lead_time" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento čas je příliš blízko. Zvolte pozdější termín."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento čas je příliš blízko. Zvolte pozdější termín."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This time is too close. Please choose a later slot."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento čas je príliš blízko. Zvoľte neskorší termín."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это время слишком близко. Выберите более поздний слот."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цей час занадто близький. Виберіть пізніший слот."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento čas je príliš blízko. Zvoľte neskorší termín."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Это время слишком близко. Выберите более поздний слот."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей час занадто близький. Виберіть пізніший слот."
           }
         }
       }
     },
-    "error.order.cleaning_date.future": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Date must be in the future."
+    "error.order.cleaning_date.future" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datum musí být v budoucnosti."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Datum musí být v budoucnosti."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date must be in the future."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dátum musí byť v budúcnosti."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дата должна быть в будущем."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Дата має бути в майбутньому."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dátum musí byť v budúcnosti."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Дата должна быть в будущем."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дата має бути в майбутньому."
           }
         }
       }
     },
-    "error.order.completion_notes.required": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Completion notes are required."
+    "error.order.completion_notes.required" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poznámky k dokončení jsou povinné."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poznámky k dokončení jsou povinné."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completion notes are required."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poznámky k dokončeniu sú povinné."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заметки о завершении обязательны."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нотатки про завершення обов'язкові."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poznámky k dokončeniu sú povinné."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заметки о завершении обязательны."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нотатки про завершення обов'язкові."
           }
         }
       }
     },
-    "error.order.completion_notes.too_long": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Completion notes are too long."
+    "error.order.completion_notes.too_long" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poznámky k dokončení jsou příliš dlouhé."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poznámky k dokončení jsou příliš dlouhé."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completion notes are too long."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poznámky k dokončeniu sú príliš dlhé."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заметки о завершении слишком длинные."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нотатки про завершення занадто довгі."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poznámky k dokončeniu sú príliš dlhé."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заметки о завершении слишком длинные."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нотатки про завершення занадто довгі."
           }
         }
       }
     },
-    "error.order.creation_failed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couldn't create booking. Please try again."
+    "error.order.creation_failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nelze vytvořit rezervaci. Zkuste to znovu."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nelze vytvořit rezervaci. Zkuste to znovu."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't create booking. Please try again."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie je možné vytvoriť rezerváciu. Skúste to znova."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось создать бронирование. Попробуйте снова."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося створити бронювання. Спробуйте знову."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie je možné vytvoriť rezerváciu. Skúste to znova."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось создать бронирование. Попробуйте снова."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося створити бронювання. Спробуйте знову."
           }
         }
       }
     },
-    "error.order.employee_already_assigned": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You're already assigned to this order."
+    "error.order.employee_already_assigned" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na tuto zakázku jste již přiřazeni."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Na tuto zakázku jste již přiřazeni."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're already assigned to this order."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Na túto zákazku ste už priradení."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы уже назначены на этот заказ."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вас уже призначено на це замовлення."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na túto zákazku ste už priradení."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вы уже назначены на этот заказ."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вас уже призначено на це замовлення."
           }
         }
       }
     },
-    "error.order.employee_already_has_order_in_progress": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You already have another order in progress. Finish it before starting a new one."
+    "error.order.employee_already_has_order_in_progress" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Již máte jinou zakázku v průběhu. Před zahájením nové ji prosím dokončete."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Již máte jinou zakázku v průběhu. Před zahájením nové ji prosím dokončete."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You already have another order in progress. Finish it before starting a new one."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Už máte inú zákazku v priebehu. Pred začatím novej ju prosím dokončite."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У вас уже есть другой заказ в работе. Завершите его перед началом нового."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "У вас уже є інше замовлення в роботі. Завершіть його перед початком нового."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Už máte inú zákazku v priebehu. Pred začatím novej ju prosím dokončite."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "У вас уже есть другой заказ в работе. Завершите его перед началом нового."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У вас уже є інше замовлення в роботі. Завершіть його перед початком нового."
           }
         }
       }
     },
-    "error.order.employee_not_assigned": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You're not assigned to this order."
+    "error.order.employee_not_assigned" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na tuto zakázku nejste přiřazeni."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Na tuto zakázku nejste přiřazeni."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're not assigned to this order."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Na túto zákazku nie ste priradení."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы не назначены на этот заказ."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вас не призначено на це замовлення."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na túto zákazku nie ste priradení."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вы не назначены на этот заказ."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вас не призначено на це замовлення."
           }
         }
       }
     },
-    "error.order.empty": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your order is empty. Please add at least one service."
+    "error.order.empty" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Objednávka je prázdná. Přidejte prosím alespoň jednu službu."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Objednávka je prázdná. Přidejte prosím alespoň jednu službu."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your order is empty. Please add at least one service."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Objednávka je prázdna. Pridajte prosím aspoň jednu službu."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш заказ пуст. Пожалуйста, добавьте хотя бы одну услугу."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваше замовлення порожнє. Будь ласка, додайте принаймні одну послугу."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Objednávka je prázdna. Pridajte prosím aspoň jednu službu."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваш заказ пуст. Пожалуйста, добавьте хотя бы одну услугу."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваше замовлення порожнє. Будь ласка, додайте принаймні одну послугу."
           }
         }
       }
     },
-    "error.order.in_progress_cannot_cancel": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This booking is in progress and can't be cancelled."
+    "error.order.in_progress_cannot_cancel" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezervace probíhá a nelze ji zrušit."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rezervace probíhá a nelze ji zrušit."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This booking is in progress and can't be cancelled."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rezervácia prebieha a nie je možné ju zrušiť."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это бронирование выполняется и не может быть отменено."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Це бронювання виконується і не може бути скасоване."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezervácia prebieha a nie je možné ju zrušiť."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Это бронирование выполняется и не может быть отменено."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це бронювання виконується і не може бути скасоване."
           }
         }
       }
     },
-    "error.order.issue.description_required": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Issue description is required."
+    "error.order.issue.description_required" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Popis problému je povinný."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Popis problému je povinný."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Issue description is required."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Popis problému je povinný."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Описание проблемы обязательно."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Опис проблеми обов'язковий."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Popis problému je povinný."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Описание проблемы обязательно."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Опис проблеми обов'язковий."
           }
         }
       }
     },
-    "error.order.max_employees_exceeded": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This order already has the maximum number of cleaners."
+    "error.order.max_employees_exceeded" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tato zakázka již má maximální počet uklízečů."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tato zakázka již má maximální počet uklízečů."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This order already has the maximum number of cleaners."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Táto zákazka už má maximálny počet upratovačov."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На этом заказе уже максимальное количество клинеров."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "На цьому замовленні вже максимальна кількість прибиральників."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Táto zákazka už má maximálny počet upratovačov."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "На этом заказе уже максимальное количество клинеров."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На цьому замовленні вже максимальна кількість прибиральників."
           }
         }
       }
     },
-    "error.order.no_available_spots": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No cleaners are available for that slot. Please pick another time."
+    "error.order.no_available_spots" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro tento termín nejsou k dispozici žádní uklízeči. Zvolte jiný čas."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pro tento termín nejsou k dispozici žádní uklízeči. Zvolte jiný čas."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No cleaners are available for that slot. Please pick another time."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pre tento termín nie sú k dispozícii žiadne upratovačky. Zvoľte iný čas."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На этот слот нет доступных клинеров. Выберите другое время."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "На цей слот немає доступних клінерів. Виберіть інший час."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pre tento termín nie sú k dispozícii žiadne upratovačky. Zvoľte iný čas."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "На этот слот нет доступных клинеров. Выберите другое время."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На цей слот немає доступних клінерів. Виберіть інший час."
           }
         }
       }
     },
-    "error.order.not_completed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This order isn't completed yet."
+    "error.order.not_completed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tato zakázka ještě není dokončena."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tato zakázka ještě není dokončena."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This order isn't completed yet."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Táto zákazka ešte nie je dokončená."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот заказ ещё не завершён."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Це замовлення ще не завершено."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Táto zákazka ešte nie je dokončená."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот заказ ещё не завершён."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це замовлення ще не завершено."
           }
         }
       }
     },
-    "error.order.not_confirmed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This order isn't confirmed yet."
+    "error.order.not_confirmed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tato zakázka ještě není potvrzena."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tato zakázka ještě není potvrzena."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This order isn't confirmed yet."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Táto zákazka ešte nie je potvrdená."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот заказ ещё не подтверждён."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Це замовлення ще не підтверджено."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Táto zákazka ešte nie je potvrdená."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот заказ ещё не подтверждён."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це замовлення ще не підтверджено."
           }
         }
       }
     },
-    "error.order.not_found": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Booking not found."
+    "error.order.not_found" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezervace nenalezena."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rezervace nenalezena."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Booking not found."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rezervácia nenájdená."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бронирование не найдено."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Бронювання не знайдено."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezervácia nenájdená."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Бронирование не найдено."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бронювання не знайдено."
           }
         }
       }
     },
-    "error.order.not_in_progress": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This order isn't in progress."
+    "error.order.not_in_progress" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tato zakázka není v průběhu."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tato zakázka není v průběhu."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This order isn't in progress."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Táto zákazka nie je v priebehu."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот заказ не в работе."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Це замовлення не в роботі."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Táto zákazka nie je v priebehu."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот заказ не в работе."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це замовлення не в роботі."
           }
         }
       }
     },
-    "error.order.note.content_required": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Note text is required."
+    "error.order.note.content_required" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text poznámky je povinný."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Text poznámky je povinný."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note text is required."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Text poznámky je povinný."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Текст заметки обязателен."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Текст нотатки обов'язковий."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text poznámky je povinný."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Текст заметки обязателен."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Текст нотатки обов'язковий."
           }
         }
       }
     },
-    "error.order.payment_gateway_unavailable": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Payment service is temporarily unavailable."
+    "error.order.payment_gateway_unavailable" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platební služba je dočasně nedostupná."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Platební služba je dočasně nedostupná."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment service is temporarily unavailable."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Platobná služba je dočasne nedostupná."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Платёжный сервис временно недоступен."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Платіжна служба тимчасово недоступна."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platobná služba je dočasne nedostupná."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Платёжный сервис временно недоступен."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Платіжна служба тимчасово недоступна."
           }
         }
       }
     },
-    "error.order.preferred_employee.not_eligible": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You're not eligible to take this order."
+    "error.order.preferred_employee.not_eligible" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nejste oprávněni přijmout tuto zakázku."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nejste oprávněni přijmout tuto zakázku."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're not eligible to take this order."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie ste oprávnení prijať túto zákazku."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы не имеете права принять этот заказ."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ви не маєте права прийняти це замовлення."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie ste oprávnení prijať túto zákazku."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вы не имеете права принять этот заказ."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ви не маєте права прийняти це замовлення."
           }
         }
       }
     },
-    "error.order.review.already_exists": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You've already reviewed this booking."
+    "error.order.review.already_exists" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tuto rezervaci jste již hodnotili."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tuto rezervaci jste již hodnotili."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've already reviewed this booking."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Túto rezerváciu ste už hodnotili."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы уже оставили отзыв об этом бронировании."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ви вже залишили відгук про це бронювання."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Túto rezerváciu ste už hodnotili."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вы уже оставили отзыв об этом бронировании."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ви вже залишили відгук про це бронювання."
           }
         }
       }
     },
-    "error.order.review.rating_invalid": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rating must be between 1 and 5."
+    "error.order.review.rating_invalid" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hodnocení musí být mezi 1 a 5."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hodnocení musí být mezi 1 a 5."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rating must be between 1 and 5."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hodnotenie musí byť medzi 1 a 5."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оценка должна быть от 1 до 5."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оцінка має бути від 1 до 5."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hodnotenie musí byť medzi 1 a 5."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оценка должна быть от 1 до 5."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оцінка має бути від 1 до 5."
           }
         }
       }
     },
-    "error.order.selected_package.invalid": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "One of the selected packages is no longer available."
+    "error.order.selected_package.invalid" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeden z vybraných balíčků již není dostupný."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jeden z vybraných balíčků již není dostupný."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One of the selected packages is no longer available."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jeden z vybraných balíčkov už nie je dostupný."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Один из выбранных пакетов больше не доступен."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Один із вибраних пакетів більше не доступний."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeden z vybraných balíčkov už nie je dostupný."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Один из выбранных пакетов больше не доступен."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Один із вибраних пакетів більше не доступний."
           }
         }
       }
     },
-    "error.order.selected_services.invalid": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "One of the selected services is no longer available."
+    "error.order.selected_services.invalid" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jedna z vybraných služeb již není dostupná."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jedna z vybraných služeb již není dostupná."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One of the selected services is no longer available."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jedna z vybraných služieb už nie je dostupná."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Одна из выбранных услуг больше не доступна."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Одна з вибраних послуг більше не доступна."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jedna z vybraných služieb už nie je dostupná."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Одна из выбранных услуг больше не доступна."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Одна з вибраних послуг більше не доступна."
           }
         }
       }
     },
-    "error.order.time_conflict": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This time conflicts with another booking."
+    "error.order.time_conflict" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento čas koliduje s jinou rezervací."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento čas koliduje s jinou rezervací."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This time conflicts with another booking."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento čas koliduje s inou rezerváciou."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это время конфликтует с другим бронированием."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цей час конфліктує з іншим бронюванням."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento čas koliduje s inou rezerváciou."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Это время конфликтует с другим бронированием."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей час конфліктує з іншим бронюванням."
           }
         }
       }
     },
-    "error.order.total_price.not_match": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Price changed. Please refresh and try again."
+    "error.order.total_price.not_match" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cena se změnila. Obnovte prosím a zkuste znovu."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cena se změnila. Obnovte prosím a zkuste znovu."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price changed. Please refresh and try again."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cena sa zmenila. Obnovte prosím a skúste znova."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цена изменилась. Обновите и попробуйте снова."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ціна змінилася. Оновіть і спробуйте знову."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cena sa zmenila. Obnovte prosím a skúste znova."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цена изменилась. Обновите и попробуйте снова."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ціна змінилася. Оновіть і спробуйте знову."
           }
         }
       }
     },
-    "error.order.total_price.positive": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Total price must be greater than zero."
+    "error.order.total_price.positive" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Celková cena musí být větší než nula."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Celková cena musí být větší než nula."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total price must be greater than zero."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Celková cena musí byť väčšia ako nula."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Общая цена должна быть больше нуля."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Загальна ціна має бути більшою за нуль."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Celková cena musí byť väčšia ako nula."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Общая цена должна быть больше нуля."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загальна ціна має бути більшою за нуль."
           }
         }
       }
     },
-    "error.order.weekly_limit_reached": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You've reached the weekly booking limit."
+    "error.order.weekly_limit_reached" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dosáhli jste týdenního limitu rezervací."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dosáhli jste týdenního limitu rezervací."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've reached the weekly booking limit."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dosiahli ste týždenný limit rezervácií."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы достигли еженедельного лимита бронирований."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ви досягли тижневого ліміту бронювань."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dosiahli ste týždenný limit rezervácií."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вы достигли еженедельного лимита бронирований."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ви досягли тижневого ліміту бронювань."
           }
         }
       }
     },
-    "error.referral.already_referred": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You've already accepted a referral"
+    "error.referral.already_referred" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doporučení jste už přijali"
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doporučení jste už přijali"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've already accepted a referral"
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Odporúčanie ste už prijali"
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы уже приняли рекомендацию"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ви вже прийняли рекомендацію"
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odporúčanie ste už prijali"
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вы уже приняли рекомендацию"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ви вже прийняли рекомендацію"
           }
         }
       }
     },
-    "error.referral.inactive": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This referral code is no longer active"
+    "error.referral.inactive" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento kód doporučení už není aktivní"
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento kód doporučení už není aktivní"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This referral code is no longer active"
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento kód odporúčania už nie je aktívny"
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот реферальный код больше не активен"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цей реферальний код більше не активний"
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento kód odporúčania už nie je aktívny"
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот реферальный код больше не активен"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей реферальний код більше не активний"
           }
         }
       }
     },
-    "error.referral.not_found": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Referral code not found"
+    "error.referral.not_found" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kód doporučení nebyl nalezen"
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kód doporučení nebyl nalezen"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Referral code not found"
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kód odporúčania nebol nájdený"
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Реферальный код не найден"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Реферальний код не знайдено"
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kód odporúčania nebol nájdený"
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Реферальный код не найден"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Реферальний код не знайдено"
           }
         }
       }
     },
-    "error.referral.self_referral": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You can't refer yourself"
+    "error.referral.self_referral" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nemůžete doporučit sami sebe"
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nemůžete doporučit sami sebe"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can't refer yourself"
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nemôžete odporučiť sami seba"
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы не можете рекомендовать себя"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ви не можете рекомендувати себе"
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nemôžete odporučiť sami seba"
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вы не можете рекомендовать себя"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ви не можете рекомендувати себе"
           }
         }
       }
     },
-    "error.request": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Something about that request wasn't right."
+    "error.request" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S tímto požadavkem nebylo něco v pořádku."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "S tímto požadavkem nebylo něco v pořádku."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something about that request wasn't right."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "S touto požiadavkou nebolo niečo v poriadku."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "С этим запросом что-то было не так."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Із цим запитом щось було не так."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S touto požiadavkou nebolo niečo v poriadku."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "С этим запросом что-то было не так."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Із цим запитом щось було не так."
           }
         }
       }
     },
-    "error.server": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Something went wrong on our side. Please try again."
+    "error.server" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server je dočasně nedostupný. Zkuste to později."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Server je dočasně nedostupný. Zkuste to později."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong on our side. Please try again."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Server je dočasne nedostupný. Skúste to neskôr."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер временно недоступен. Попробуйте позже."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сервер тимчасово недоступний. Спробуйте пізніше."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server je dočasne nedostupný. Skúste to neskôr."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сервер временно недоступен. Попробуйте позже."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер тимчасово недоступний. Спробуйте пізніше."
           }
         }
       }
     },
-    "error.unauthorized": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your session has expired. Please sign in again."
+    "error.unauthorized" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaše přihlášení vypršelo. Přihlaste se prosím znovu."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vaše přihlášení vypršelo. Přihlaste se prosím znovu."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your session has expired. Please sign in again."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vaša relácia vypršala. Prihláste sa znova."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваша сессия истекла. Войдите снова."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваша сесія завершилася. Увійдіть знову."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaša relácia vypršala. Prihláste sa znova."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваша сессия истекла. Войдите снова."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваша сесія завершилася. Увійдіть знову."
           }
         }
       }
     },
-    "error.unreachable": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Can't reach the server. Check your connection."
+    "error.unreachable" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zkontrolujte připojení k internetu a zkuste to znovu."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zkontrolujte připojení k internetu a zkuste to znovu."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't reach the server. Check your connection."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skontrolujte pripojenie na internet a skúste to znova."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверьте подключение к интернету и попробуйте снова."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перевірте підключення до Інтернету та спробуйте знову."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skontrolujte pripojenie na internet a skúste to znova."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Проверьте подключение к интернету и попробуйте снова."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перевірте підключення до Інтернету та спробуйте знову."
           }
         }
       }
     },
-    "error.user.email_confirmed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This email is already confirmed."
+    "error.user.email_confirmed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento e-mail je již potvrzen."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento e-mail je již potvrzen."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This email is already confirmed."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento e-mail je už potvrdený."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот email уже подтверждён."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цей email вже підтверджено."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento e-mail je už potvrdený."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот email уже подтверждён."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей email вже підтверджено."
           }
         }
       }
     },
-    "error.user.existing_email": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "An account with this email already exists."
+    "error.user.existing_email" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Účet s tímto e-mailem již existuje."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Účet s tímto e-mailem již existuje."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An account with this email already exists."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Účet s týmto e-mailom už existuje."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Учётная запись с этим email уже существует."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обліковий запис із цим email вже існує."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Účet s týmto e-mailom už existuje."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Учётная запись с этим email уже существует."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обліковий запис із цим email вже існує."
           }
         }
       }
     },
-    "error.user.existing_phone_number": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This phone number is already in use."
+    "error.user.existing_phone_number" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto telefonní číslo je již používáno."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toto telefonní číslo je již používáno."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This phone number is already in use."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toto telefónne číslo je už používané."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот номер телефона уже используется."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цей номер телефону вже використовується."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto telefónne číslo je už používané."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот номер телефона уже используется."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей номер телефону вже використовується."
           }
         }
       }
     },
-    "error.user.not_allowed_to_update": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You can't edit this profile."
+    "error.user.not_allowed_to_update" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento profil nelze upravit."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento profil nelze upravit."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can't edit this profile."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tento profil nie je možné upraviť."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы не можете редактировать этот профиль."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ви не можете редагувати цей профіль."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento profil nie je možné upraviť."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вы не можете редактировать этот профиль."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ви не можете редагувати цей профіль."
           }
         }
       }
     },
-    "error.user.not_existing_email": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No account found with this email."
+    "error.user.not_existing_email" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Účet s tímto e-mailem neexistuje."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Účet s tímto e-mailem neexistuje."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No account found with this email."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Účet s týmto e-mailom neexistuje."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Учётная запись с этим email не найдена."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обліковий запис із цим email не знайдено."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Účet s týmto e-mailom neexistuje."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Учётная запись с этим email не найдена."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обліковий запис із цим email не знайдено."
           }
         }
       }
     },
-    "error.user.not_existing_id": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "User not found."
+    "error.user.not_existing_id" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uživatel nenalezen."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uživatel nenalezen."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "User not found."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Používateľ nenájdený."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пользователь не найден."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Користувача не знайдено."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Používateľ nenájdený."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пользователь не найден."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Користувача не знайдено."
           }
         }
       }
     },
-    "error.user.not_found": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "User not found."
+    "error.user.not_found" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uživatel nenalezen."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uživatel nenalezen."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "User not found."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Používateľ nenájdený."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пользователь не найден."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Користувача не знайдено."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Používateľ nenájdený."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пользователь не найден."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Користувача не знайдено."
           }
         }
       }
     },
-    "error.validation.date_must_be_in_past": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Date must be in the past."
+    "error.validation.date_must_be_in_past" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datum musí být v minulosti."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Datum musí být v minulosti."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date must be in the past."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dátum musí byť v minulosti."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дата должна быть в прошлом."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Дата має бути в минулому."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dátum musí byť v minulosti."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Дата должна быть в прошлом."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дата має бути в минулому."
           }
         }
       }
     },
-    "error.validation.invalid_age": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please enter a valid age."
+    "error.validation.invalid_age" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadejte prosím platný věk."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadejte prosím platný věk."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a valid age."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadajte prosím platný vek."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пожалуйста, введите корректный возраст."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Будь ласка, введіть дійсний вік."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadajte prosím platný vek."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пожалуйста, введите корректный возраст."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Будь ласка, введіть дійсний вік."
           }
         }
       }
     },
-    "error.validation.invalid_availability_format": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Availability format is invalid."
+    "error.validation.invalid_availability_format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neplatný formát dostupnosti."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neplatný formát dostupnosti."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Availability format is invalid."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neplatný formát dostupnosti."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Неверный формат доступности."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Неправильний формат доступності."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neplatný formát dostupnosti."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Неверный формат доступности."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Неправильний формат доступності."
           }
         }
       }
     },
-    "error.validation.invalid_date": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please enter a valid date."
+    "error.validation.invalid_date" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadejte prosím platné datum."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadejte prosím platné datum."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a valid date."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadajte prosím platný dátum."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пожалуйста, введите корректную дату."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Будь ласка, введіть дійсну дату."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadajte prosím platný dátum."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пожалуйста, введите корректную дату."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Будь ласка, введіть дійсну дату."
           }
         }
       }
     },
-    "error.validation.invalid_iban": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please enter a valid IBAN."
+    "error.validation.invalid_iban" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadejte prosím platný IBAN."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadejte prosím platný IBAN."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a valid IBAN."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadajte prosím platný IBAN."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите, пожалуйста, корректный IBAN."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Введіть, будь ласка, дійсний IBAN."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadajte prosím platný IBAN."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Введите, пожалуйста, корректный IBAN."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введіть, будь ласка, дійсний IBAN."
           }
         }
       }
     },
-    "error.validation.invalid_national_id": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please enter a valid national ID."
+    "error.validation.invalid_national_id" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadejte prosím platné rodné číslo."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadejte prosím platné rodné číslo."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a valid national ID."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadajte prosím platné rodné číslo."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите, пожалуйста, корректный национальный ID."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Введіть, будь ласка, дійсний національний ID."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadajte prosím platné rodné číslo."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Введите, пожалуйста, корректный национальный ID."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введіть, будь ласка, дійсний національний ID."
           }
         }
       }
     },
-    "error.validation.invalid_password": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Incorrect password."
+    "error.validation.invalid_password" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nesprávné heslo."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nesprávné heslo."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incorrect password."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nesprávne heslo."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Неверный пароль."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Невірний пароль."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nesprávne heslo."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Неверный пароль."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Невірний пароль."
           }
         }
       }
     },
-    "error.validation.invalid_phone_number": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please enter a valid phone number."
+    "error.validation.invalid_phone_number" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadejte prosím platné telefonní číslo."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadejte prosím platné telefonní číslo."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a valid phone number."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadajte prosím platné telefónne číslo."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пожалуйста, введите корректный номер телефона."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Будь ласка, введіть дійсний номер телефону."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadajte prosím platné telefónne číslo."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пожалуйста, введите корректный номер телефона."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Будь ласка, введіть дійсний номер телефону."
           }
         }
       }
     },
-    "error.validation.invalid_tax_id": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please enter a valid tax ID."
+    "error.validation.invalid_tax_id" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadejte prosím platné DIČ."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadejte prosím platné DIČ."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a valid tax ID."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadajte prosím platné DIČ."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите, пожалуйста, корректный налоговый ID."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Введіть, будь ласка, дійсний податковий ID."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadajte prosím platné DIČ."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Введите, пожалуйста, корректный налоговый ID."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введіть, будь ласка, дійсний податковий ID."
           }
         }
       }
     },
-    "error.validation.invalid_zip_code": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please enter a valid ZIP code."
+    "error.validation.invalid_zip_code" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadejte prosím platné PSČ."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadejte prosím platné PSČ."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a valid ZIP code."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadajte prosím platné PSČ."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пожалуйста, введите корректный индекс."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Будь ласка, введіть дійсний поштовий індекс."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadajte prosím platné PSČ."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пожалуйста, введите корректный индекс."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Будь ласка, введіть дійсний поштовий індекс."
           }
         }
       }
     },
-    "error.validation.must_be_positive": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Must be a positive number."
+    "error.validation.must_be_positive" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Musí být kladné číslo."
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Musí být kladné číslo."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Must be a positive number."
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Musí byť kladné číslo."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Должно быть положительное число."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Має бути додатне число."
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Musí byť kladné číslo."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Должно быть положительное число."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Має бути додатне число."
           }
         }
       }
     },
-    "snackbar.dismiss": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dismiss"
+    "snackbar.dismiss" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zavřít"
           }
         },
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zavřít"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dismiss"
           }
         },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zavrieť"
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Закрити"
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zavrieť"
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Закрыть"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрити"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

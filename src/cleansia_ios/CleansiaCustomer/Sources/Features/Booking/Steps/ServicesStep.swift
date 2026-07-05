@@ -22,7 +22,7 @@ struct ServicesStep: View {
                 )
             case let .loaded(catalog) where catalog.isEmpty:
                 CatalogMessageView(
-                    systemImage: "sparkles",
+                    systemImage: "bubbles.and.sparkles",
                     message: L10n.Booking.catalogEmpty,
                     retryTitle: L10n.Booking.catalogRetry,
                     onRetry: { Task { await viewModel.retryCatalog() } }
@@ -110,6 +110,7 @@ private struct CatalogContentView: View {
                         CategoryChip(
                             label: L10n.Booking.catAll,
                             systemImage: "star",
+                            tint: CategoryPalette.defaultTint,
                             selected: activeCategorySlug == nil
                         ) {
                             activeCategorySlug = nil
@@ -118,6 +119,7 @@ private struct CatalogContentView: View {
                             CategoryChip(
                                 label: category.localizedName,
                                 systemImage: CategoryPalette.symbol(for: category.slug),
+                                tint: CategoryPalette.tint(for: category.slug),
                                 selected: activeCategorySlug == category.slug
                             ) {
                                 activeCategorySlug = category.slug
@@ -181,6 +183,8 @@ private struct PropertyRow: View {
             Text(L10n.Booking.yourHome)
                 .font(CleansiaTypography.labelLarge)
                 .foregroundColor(CleansiaColors.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
                 .frame(maxWidth: .infinity, alignment: .leading)
             PropertyStepper(label: L10n.Booking.roomsShort(rooms), value: rooms, onChange: onRoomsChange)
             PropertyStepper(label: L10n.Booking.bathShort(bathrooms), value: bathrooms, onChange: onBathroomsChange)

@@ -113,12 +113,7 @@ private fun GenGetMyMembershipResponse?.toAppDto(): GetMyMembershipResponse = Ge
     monthlyEquivalentPriceCzk = this?.monthlyEquivalentPriceCzk,
 )
 
-private fun GenMembershipStatus.toCode(): Int = when (this) {
-    GenMembershipStatus.ACTIVE -> MembershipStatus.Active.code
-    GenMembershipStatus.PAST_DUE -> MembershipStatus.PastDue.code
-    GenMembershipStatus.CANCELLED -> MembershipStatus.Cancelled.code
-    GenMembershipStatus.PAUSED -> MembershipStatus.Paused.code
-}
+private fun GenMembershipStatus.toCode(): Int = value
 
 private fun GenGetMembershipPlansResponse.toAppDto(): MembershipPlanDto? {
     val code = code ?: return null

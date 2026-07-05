@@ -5,13 +5,13 @@ struct ProfileTab: View {
     @ObservedObject var profileVM: ProfileViewModel
     @ObservedObject var membershipVM: MembershipViewModel
     @ObservedObject var preferences: CustomerPreferencesModel
-    let onOpen: (ProfileRoute) -> Void
+    let onOpen: (ShellRoute) -> Void
     let onSignOut: () -> Void
 
     /// The membership card's "Subscribe to Plus" CTA routes to the paid
     /// subscribe flow — NOT Edit Profile. Held as a value so it's guarded by a
     /// test (a money surface that must not silently regress its destination).
-    static let subscribeRoute: ProfileRoute = .subscribePlus
+    static let subscribeRoute: ShellRoute = .subscribePlus
 
     @State private var showSignOutDialog = false
 
@@ -20,7 +20,13 @@ struct ProfileTab: View {
             CleansiaColors.background.ignoresSafeArea()
             ScrollView {
                 VStack(spacing: Spacing.l) {
-                    ProfileHero(user: profileVM.currentUser, onEdit: { onOpen(.editProfile) })
+                    Text(L10n.Shell.profile)
+                        .font(CleansiaTypography.headlineMedium)
+                        .foregroundColor(CleansiaColors.onBackground)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, Spacing.ml)
+
+                    ProfileHero(user: profileVM.currentUser, onEdit: { onOpen(.editProfile(showBookingHint: false)) })
 
                     MembershipManagementCard(vm: membershipVM, onSubscribeClick: { onOpen(Self.subscribeRoute) })
                         .padding(.horizontal, Spacing.m)
@@ -41,14 +47,16 @@ struct ProfileTab: View {
                 .padding(.top, Spacing.m)
             }
         }
-        .navigationTitle(L10n.Shell.profile)
-        .navigationBarTitleDisplayMode(.inline)
         .overlay { signOutOverlay }
     }
 
     private var accountRows: [ProfileRowItem] {
         [
-            ProfileRowItem(icon: "person.crop.circle", label: L10n.Profile.rowEditProfile, route: .editProfile),
+            ProfileRowItem(
+                icon: "person.crop.circle",
+                label: L10n.Profile.rowEditProfile,
+                route: .editProfile(showBookingHint: false)
+            ),
             ProfileRowItem(icon: "mappin.and.ellipse", label: L10n.AddressManager.profileRow, route: .addresses),
             ProfileRowItem(icon: "exclamationmark.bubble", label: L10n.Profile.rowDisputes, route: .disputes)
         ]
@@ -125,9 +133,9 @@ struct ProfileRowItem {
     let icon: String
     let label: String
     var value: String?
-    let route: ProfileRoute
+    let route: ShellRoute
 
-    init(icon: String, label: String, value: String? = nil, route: ProfileRoute) {
+    init(icon: String, label: String, value: String? = nil, route: ShellRoute) {
         self.icon = icon
         self.label = label
         self.value = value
@@ -221,6 +229,7 @@ private struct ProfileHero: View {
         static var previews: some View {
             ProfileHero(
                 user: CurrentUserProfile(
+                    id: "user-1",
                     email: "jane@example.com",
                     firstName: "Jane",
                     lastName: "Doe",

@@ -1,14 +1,20 @@
 import SwiftUI
 
 public extension View {
-    func snackbarHost(_ controller: SnackbarController, bottomInset: CGFloat = 16) -> some View {
-        modifier(SnackbarHostModifier(controller: controller, bottomInset: bottomInset))
+    /// A `nil` inset follows `controller.bottomInset` (the shell-scoped lift);
+    /// hosts at modal-sheet roots pin an explicit value instead.
+    func snackbarHost(_ controller: SnackbarController, bottomInset: CGFloat? = nil) -> some View {
+        modifier(SnackbarHostModifier(controller: controller, pinnedInset: bottomInset))
     }
 }
 
 struct SnackbarHostModifier: ViewModifier {
     @ObservedObject var controller: SnackbarController
-    let bottomInset: CGFloat
+    let pinnedInset: CGFloat?
+
+    private var bottomInset: CGFloat {
+        pinnedInset ?? controller.bottomInset
+    }
 
     func body(content: Content) -> some View {
         content.overlay(alignment: .bottom) {

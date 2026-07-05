@@ -2,27 +2,35 @@ import CleansiaCore
 import SwiftUI
 
 struct BookingSheetView: View {
-    @StateObject private var vm = BookingViewModel()
+    @ObservedObject var vm: BookingViewModel
     @Environment(\.snackbarController) private var snackbar
     @State private var success: BookingSuccess?
+    @State private var slideResetCount = 0
     let geocoding: GeocodingService
     let mapProvider: MapProvider
     let paymentSheet: PaymentSheetPresenting
     let onDismiss: () -> Void
     let onViewOrder: (String) -> Void
+    let onCompleteProfile: () -> Void
+
+    private static let footerSnackbarInset: CGFloat = 88
 
     init(
+        vm: BookingViewModel,
         geocoding: GeocodingService,
         mapProvider: MapProvider,
         paymentSheet: PaymentSheetPresenting,
         onDismiss: @escaping () -> Void,
-        onViewOrder: @escaping (String) -> Void = { _ in }
+        onViewOrder: @escaping (String) -> Void = { _ in },
+        onCompleteProfile: @escaping () -> Void = {}
     ) {
+        self.vm = vm
         self.geocoding = geocoding
         self.mapProvider = mapProvider
         self.paymentSheet = paymentSheet
         self.onDismiss = onDismiss
         self.onViewOrder = onViewOrder
+        self.onCompleteProfile = onCompleteProfile
     }
 
     var body: some View {
@@ -46,6 +54,7 @@ struct BookingSheetView: View {
                     viewModel: vm,
                     geocoding: geocoding,
                     mapProvider: mapProvider,
+                    slideResetTrigger: slideResetCount,
                     onLeading: {
                         if !vm.back() { onDismiss() }
                     },
@@ -54,6 +63,13 @@ struct BookingSheetView: View {
                 )
             }
         }
+        .overlay {
+            BusyMascotOverlay(
+                visible: vm.submitState.isSubmitting,
+                message: L10n.Booking.busyBooking
+            )
+        }
+        .snackbarHost(snackbar, bottomInset: Self.footerSnackbarInset)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
@@ -65,8 +81,10 @@ struct BookingSheetView: View {
         case let .cardPending(orderId, confirmationCode, presentation):
             await presentPaymentSheet(presentation, orderId: orderId, confirmationCode: confirmationCode)
         case .profileIncomplete:
-            snackbar.showError(L10n.Booking.errorProfileIncomplete)
+            slideResetCount += 1
+            onCompleteProfile()
         case .failed:
+            slideResetCount += 1
             snackbar.showError(L10n.Booking.errorGenericNetwork)
         }
     }
@@ -79,6 +97,10 @@ struct BookingSheetView: View {
         let outcome = await paymentSheet.present(presentation)
         switch BookingCardResultResolver.resolve(outcome, confirmationCode: confirmationCode) {
         case let .navigateToSuccess(code):
+            // Same duplicate-order guard as the VM's cash path: clear the
+            // session-lived draft the moment the payment lands, not on the
+            // success screen's exit (a swiped-away sheet skips those closures).
+            vm.reset()
             success = BookingSuccess(orderId: orderId, confirmationCode: code)
         case let .snackbar(messageKey):
             snackbar.showError(L10n.localized(messageKey))
@@ -95,6 +117,7 @@ private struct BookingSheetContent: View {
     @ObservedObject var viewModel: BookingViewModel
     let geocoding: GeocodingService
     let mapProvider: MapProvider
+    let slideResetTrigger: Int
     let onLeading: () -> Void
     let onContinue: () -> Void
     let onConfirm: () async -> Void
@@ -159,11 +182,15 @@ private struct BookingSheetContent: View {
             Text(L10n.Booking.stepTitle(step))
                 .font(CleansiaTypography.headlineSmall)
                 .foregroundColor(CleansiaColors.onBackground)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(L10n.Booking.stepIndicator(step, BookingStepGate.totalSteps))
                 .font(CleansiaTypography.labelLarge)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .lineLimit(1)
+                .fixedSize()
         }
         .padding(.horizontal, Spacing.m)
         .padding(.top, Spacing.xs)
@@ -189,18 +216,24 @@ private struct BookingSheetContent: View {
         )
     }
 
+    private var confirmLabel: String {
+        totalDisplay.map(L10n.Booking.slideToConfirmPrice) ?? L10n.Booking.slideToConfirm
+    }
+
     private var footer: some View {
         VStack(spacing: 0) {
             if isLastStep {
-                SlideToConfirmTrack(
-                    text: totalDisplay.map(L10n.Booking.slideToConfirmPrice) ?? L10n.Booking.slideToConfirm,
+                SlideToConfirm(
+                    idleLabel: confirmLabel,
+                    busyLabel: confirmLabel,
+                    isBusy: isSubmitting,
                     enabled: canConfirm,
-                    busy: isSubmitting
+                    resetTrigger: slideResetTrigger,
+                    style: .prominent,
+                    onConfirm: { Task { await onConfirm() } }
                 )
-                .onTapGesture {
-                    guard canConfirm else { return }
-                    Task { await onConfirm() }
-                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
             } else {
                 CleansiaPrimaryButton(
                     totalDisplay.map(L10n.Booking.continuePrice) ?? L10n.Booking.continueAction,
@@ -208,6 +241,8 @@ private struct BookingSheetContent: View {
                     enabled: canContinue,
                     action: onContinue
                 )
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
             }
         }
         .padding(.horizontal, Spacing.ml)
@@ -216,46 +251,11 @@ private struct BookingSheetContent: View {
     }
 }
 
-private struct SlideToConfirmTrack: View {
-    let text: String
-    let enabled: Bool
-    let busy: Bool
-
-    var body: some View {
-        ZStack(alignment: .leading) {
-            RoundedRectangle(cornerRadius: CornerRadius.pill)
-                .fill(enabled || busy ? CleansiaColors.primary : CleansiaColors.surfaceVariant)
-
-            if busy {
-                ProgressView()
-                    .tint(CleansiaColors.onPrimary)
-                    .frame(maxWidth: .infinity)
-            } else {
-                Text(text)
-                    .font(CleansiaTypography.labelLarge)
-                    .foregroundColor(enabled ? CleansiaColors.onPrimary : CleansiaColors.onSurfaceVariant)
-                    .frame(maxWidth: .infinity)
-
-                Circle()
-                    .fill(CleansiaColors.surface)
-                    .overlay {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(enabled ? CleansiaColors.primary : CleansiaColors.onSurfaceVariant)
-                    }
-                    .padding(4)
-            }
-        }
-        .frame(height: 56)
-        .opacity(enabled || busy ? 1 : 0.6)
-        .allowsHitTesting(!busy)
-    }
-}
-
 #if DEBUG
     struct BookingSheetView_Previews: PreviewProvider {
         static var previews: some View {
             BookingSheetView(
+                vm: BookingViewModel(),
                 geocoding: CLGeocoderGeocodingService(),
                 mapProvider: PreviewMapProvider(),
                 paymentSheet: StripePaymentController(),

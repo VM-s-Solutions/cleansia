@@ -9,14 +9,8 @@ struct BookingSuccessView: View {
     var body: some View {
         VStack(spacing: Spacing.l) {
             Spacer()
-            ZStack {
-                Circle()
-                    .fill(CleansiaColors.successText.opacity(0.15))
-                    .frame(width: 96, height: 96)
-                Image(systemName: "checkmark")
-                    .font(.system(size: 44, weight: .bold))
-                    .foregroundColor(CleansiaColors.successText)
-            }
+            AnimatedMascotView(.welcoming, loop: false, fallback: .waving)
+                .frame(width: 220, height: 220)
             VStack(spacing: Spacing.s) {
                 Text(L10n.Booking.successTitle)
                     .font(CleansiaTypography.headlineSmall)

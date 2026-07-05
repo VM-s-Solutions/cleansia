@@ -4,7 +4,7 @@ import SwiftUI
 struct RegistrationLockView: View {
     @StateObject private var vm: RegistrationLockViewModel
     @StateObject private var chainVM: OnboardingChainViewModel
-    @State private var path: [ProfileRoute] = []
+    @State private var path = NavigationPath()
 
     let onCompleted: () -> Void
     let onSignedOut: () -> Void
@@ -56,11 +56,14 @@ struct RegistrationLockView: View {
             case let .next(route):
                 // Replace the current section with the next missing one so
                 // system-back returns to the lock, not the previous section.
-                if !path.isEmpty { path[path.count - 1] = route }
+                if !path.isEmpty {
+                    path.removeLast()
+                    path.append(route)
+                }
             case .finished:
                 // Chain done — pop back to the lock; its onAppear re-load
                 // re-resolves and only the success watermark flips the root.
-                path.removeAll()
+                path.removeLast(path.count)
             }
         }
     }
@@ -95,7 +98,7 @@ struct RegistrationLockView: View {
                 )
             )
         case .documents:
-            path.append(.documents)
+            path.append(ProfileRoute.documents)
         case .approval:
             break
         }

@@ -2,10 +2,18 @@ name: iOS CI
 
 # macOS runners bill at a higher rate than Linux, so only run this when the iOS
 # sources (or this workflow) actually change — backend/frontend PRs skip it.
+# Also runs on pushes to master: direct-to-master commits used to bypass this
+# gate entirely (pull_request-only), which let lint-red code land unnoticed.
 on:
   pull_request:
     branches:
       - '*'
+    paths:
+      - 'src/cleansia_ios/**'
+      - '.github/workflows/ios-ci.yml'
+  push:
+    branches:
+      - master
     paths:
       - 'src/cleansia_ios/**'
       - '.github/workflows/ios-ci.yml'

@@ -2,201 +2,226 @@ import CleansiaCore
 import CleansiaCustomerApi
 import SwiftUI
 
+/// The customer Home tab — a section-for-section port of `HomeTab.kt:217-307`:
+/// address bar + bell, smart upsell carousel, order-again/trust strip,
+/// recurring schedules (Plus), popular packages, recent bookings, loyalty
+/// milestone, seasonal card, behind the first-paint skeleton gate.
 struct HomeTab: View {
     @StateObject private var vm: HomeTabViewModel
-    @ObservedObject private var membershipVM: MembershipViewModel
     let onBookCleaning: () -> Void
+    let onOpenAddressManager: () -> Void
     let onOrderClick: (String) -> Void
     let onSeeAllOrders: () -> Void
-    let onCompleteProfile: () -> Void
     let onSubscribePlus: () -> Void
+    let onOpenReferral: () -> Void
+    let onBookPackage: (String) -> Void
+    let onRebookOrder: (String) -> Void
+    let onSetupRecurring: () -> Void
     let onManageRecurring: () -> Void
 
+    /// All callbacks + sources are REQUIRED: an optional-defaulted callback
+    /// here means a silently inert CTA — the failure class this phase fixed.
     init(
         orderRepository: OrderRepository,
-        membershipVM: MembershipViewModel,
+        recurringRepository: RecurringBookingRepository,
+        loyaltyRepository: LoyaltyRepository,
+        membershipRepository: MembershipRepository,
+        savedAddressRepository: SavedAddressRepository,
+        bookingVM: BookingViewModel,
         snackbar: SnackbarController,
         onBookCleaning: @escaping () -> Void,
+        onOpenAddressManager: @escaping () -> Void,
         onOrderClick: @escaping (String) -> Void,
         onSeeAllOrders: @escaping () -> Void,
-        onCompleteProfile: @escaping () -> Void,
         onSubscribePlus: @escaping () -> Void,
+        onOpenReferral: @escaping () -> Void,
+        onBookPackage: @escaping (String) -> Void,
+        onRebookOrder: @escaping (String) -> Void,
+        onSetupRecurring: @escaping () -> Void,
         onManageRecurring: @escaping () -> Void
     ) {
-        _vm = StateObject(wrappedValue: HomeTabViewModel(orderRepository: orderRepository, snackbar: snackbar))
-        self.membershipVM = membershipVM
+        _vm = StateObject(wrappedValue: HomeTabViewModel(
+            orderRepository: orderRepository,
+            recurringRepository: recurringRepository,
+            loyaltyRepository: loyaltyRepository,
+            membershipRepository: membershipRepository,
+            savedAddressRepository: savedAddressRepository,
+            catalogSource: bookingVM,
+            snackbar: snackbar
+        ))
         self.onBookCleaning = onBookCleaning
+        self.onOpenAddressManager = onOpenAddressManager
         self.onOrderClick = onOrderClick
         self.onSeeAllOrders = onSeeAllOrders
-        self.onCompleteProfile = onCompleteProfile
         self.onSubscribePlus = onSubscribePlus
+        self.onOpenReferral = onOpenReferral
+        self.onBookPackage = onBookPackage
+        self.onRebookOrder = onRebookOrder
+        self.onSetupRecurring = onSetupRecurring
         self.onManageRecurring = onManageRecurring
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Spacing.m) {
-                GreetingHeader()
-
-                ProfileNudgeCard(onComplete: onCompleteProfile)
-
-                BookCard(onBook: onBookCleaning)
-
-                MembershipManagementCard(vm: membershipVM, onSubscribeClick: onSubscribePlus)
-
-                if membershipVM.current?.hasMembership == true {
-                    RecurringEntryRow(onManage: onManageRecurring)
-                }
-
-                if !vm.recentOrders.isEmpty {
-                    RecentOrdersSection(
-                        orders: Array(vm.recentOrders.prefix(3)),
-                        onOrderClick: onOrderClick,
-                        onSeeAll: onSeeAllOrders
-                    )
-                }
-
-                Color.clear.frame(height: Spacing.xxl)
+        Group {
+            if vm.firstPaintReady {
+                content
+            } else {
+                HomeSkeleton()
             }
-            .padding(.horizontal, Spacing.ml)
-            .padding(.top, Spacing.m)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(CleansiaColors.background.ignoresSafeArea())
-        .task {
-            await vm.refreshCatalog()
-            await membershipVM.load()
-        }
+        .task { await vm.runFirstPaintCeiling() }
+        .task { await vm.refreshMembershipIfNeeded() }
+        .task { await vm.refreshCatalogIfNeeded() }
+        .task(id: vm.isPlus) { await vm.refreshRecurringIfPlus(vm.isPlus) }
     }
-}
 
-private struct RecurringEntryRow: View {
-    let onManage: () -> Void
+    private var content: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                AddressTopBar(
+                    displayedAddress: vm.displayedAddress?.oneLine,
+                    onAddressTap: onOpenAddressManager
+                )
+                Spacer().frame(height: Spacing.xs)
 
-    var body: some View {
-        Button(action: onManage) {
-            HStack(spacing: Spacing.s) {
-                Image(systemName: "repeat")
-                    .font(.system(size: 22))
-                    .foregroundColor(CleansiaColors.primary)
-                VStack(alignment: .leading, spacing: Spacing.hair) {
-                    Text(L10n.Recurring.bookingsTitle)
-                        .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(CleansiaColors.onSurface)
-                    Text(L10n.Membership.perkRecurringDesc)
-                        .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                        .multilineTextAlignment(.leading)
+                UpsellCarousel(
+                    slides: UpsellSlide.slides(
+                        isPlus: vm.isPlus,
+                        hasAnyOrders: vm.hasAnyOrders,
+                        showSetupRecurring: vm.showSetupRecurringSlide
+                    ),
+                    onAction: handleUpsell
+                )
+                Spacer().frame(height: Spacing.ml)
+
+                Group {
+                    if let completed = vm.mostRecentCompleted {
+                        OrderAgainCard(order: completed) {
+                            if let id = completed.id { onRebookOrder(id) }
+                        }
+                    } else {
+                        TrustStrip()
+                    }
                 }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-            }
-            .padding(Spacing.m)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.large))
-            .overlay(
-                RoundedRectangle(cornerRadius: CornerRadius.large)
-                    .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-}
+                .padding(.horizontal, Spacing.ml)
+                Spacer().frame(height: Spacing.l)
 
-private struct GreetingHeader: View {
-    var body: some View {
-        Text(L10n.Home.greeting)
-            .font(CleansiaTypography.headlineMedium)
-            .foregroundColor(CleansiaColors.onBackground)
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-private struct ProfileNudgeCard: View {
-    let onComplete: () -> Void
-
-    var body: some View {
-        Button(action: onComplete) {
-            HStack(spacing: Spacing.s) {
-                Image(systemName: "person.crop.circle.badge.exclamationmark")
-                    .font(.system(size: 24))
-                    .foregroundColor(CleansiaColors.primary)
-                VStack(alignment: .leading, spacing: Spacing.hair) {
-                    Text(L10n.Home.profileNudgeTitle)
-                        .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(CleansiaColors.onSurface)
-                    Text(L10n.Home.profileNudgeSubtitle)
-                        .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                        .multilineTextAlignment(.leading)
+                if vm.showRecurringSection {
+                    RecurringSchedulesSection(templates: vm.activeRecurring, onManage: onManageRecurring)
+                        .padding(.horizontal, Spacing.ml)
+                    Spacer().frame(height: Spacing.l)
                 }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+
+                if !vm.popularPackages.isEmpty {
+                    PopularPackagesSection(packages: vm.popularPackages, onPackageTap: onBookPackage)
+                        .padding(.horizontal, Spacing.ml)
+                    Spacer().frame(height: Spacing.l)
+                }
+
+                if vm.showRecent {
+                    RecentBookingsSection(
+                        orders: vm.recentForDisplay,
+                        onOrderTap: onOrderClick,
+                        onSeeAll: onSeeAllOrders
+                    )
+                    .padding(.horizontal, Spacing.ml)
+                    Spacer().frame(height: Spacing.l)
+                }
+
+                if let account = vm.milestoneAccount {
+                    MilestoneProgressCard(account: account)
+                        .padding(.horizontal, Spacing.ml)
+                    Spacer().frame(height: Spacing.m)
+                }
+
+                SeasonalCard(onTap: onBookCleaning)
+                    .padding(.horizontal, Spacing.ml)
             }
-            .padding(Spacing.m)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                CleansiaColors.primaryContainer.opacity(0.4),
-                in: RoundedRectangle(cornerRadius: CornerRadius.large)
-            )
+            .padding(.top, Spacing.s)
         }
-        .buttonStyle(.plain)
+    }
+
+    /// Slide CTA → callback mapping (`MainShell.kt:265-280`).
+    private func handleUpsell(_ action: UpsellSlide.Action) {
+        switch action {
+        case .subscribePlus:
+            onSubscribePlus()
+        case .book:
+            onBookCleaning()
+        case .openReferral:
+            onOpenReferral()
+        case .setupRecurring:
+            onSetupRecurring()
+        }
     }
 }
 
-private struct BookCard: View {
-    let onBook: () -> Void
+/// "Cleaning at / <address> ▾" + the notification bell (`AddressTopBar`,
+/// `HomeTab.kt:313-365`). The bell is rendered but inert — Android wires
+/// `onNotificationClick = {}` (`HomeTab.kt:228`); a notifications feed is
+/// separate future work on both platforms.
+private struct AddressTopBar: View {
+    let displayedAddress: String?
+    let onAddressTap: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
-            Text(L10n.Home.bookTitle)
-                .font(CleansiaTypography.headlineSmall)
-                .foregroundColor(CleansiaColors.onBackground)
-            Text(L10n.Home.bookSubtitle)
-                .font(CleansiaTypography.bodyLarge)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-            CleansiaPrimaryButton(L10n.Home.bookCta, leadingIcon: "sparkles", action: onBook)
-        }
-        .padding(Spacing.m)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.large))
-        .overlay(
-            RoundedRectangle(cornerRadius: CornerRadius.large)
-                .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
-        )
-    }
-}
-
-private struct RecentOrdersSection: View {
-    let orders: [OrderListItem]
-    let onOrderClick: (String) -> Void
-    let onSeeAll: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
-            HStack {
-                Text(L10n.Home.recentOrdersTitle)
-                    .font(CleansiaTypography.headlineSmall)
-                    .foregroundColor(CleansiaColors.onBackground)
-                Spacer()
-                Button(action: onSeeAll) {
-                    Text(L10n.Home.seeAll)
-                        .font(CleansiaTypography.labelLarge)
+        HStack(spacing: Spacing.xs) {
+            Button(action: onAddressTap) {
+                HStack(spacing: 6) {
+                    Image(systemName: "mappin.and.ellipse")
+                        .font(.system(size: 18))
                         .foregroundColor(CleansiaColors.primary)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(L10n.Home.addressLabel)
+                            .font(CleansiaTypography.labelSmall)
+                            .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        HStack(spacing: Spacing.xxs) {
+                            Text(displayedAddress ?? L10n.Home.addressPlaceholder)
+                                .font(CleansiaTypography.titleMedium)
+                                .foregroundColor(CleansiaColors.onBackground)
+                                .lineLimit(1)
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        }
+                    }
+                    Spacer(minLength: 0)
                 }
+                .padding(.vertical, 6)
+                .contentShape(Rectangle())
             }
-            ForEach(orders, id: \.id) { order in
-                Button {
-                    if let id = order.id { onOrderClick(id) }
-                } label: {
-                    OrderListCard(order: order)
-                }
-                .buttonStyle(.plain)
+            .buttonStyle(.plain)
+
+            ZStack {
+                Circle()
+                    .fill(CleansiaColors.surface)
+                    .frame(width: 40, height: 40)
+                Circle()
+                    .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
+                    .frame(width: 40, height: 40)
+                Image(systemName: "bell")
+                    .font(.system(size: 18))
+                    .foregroundColor(CleansiaColors.onSurface)
             }
         }
+        .padding(.leading, Spacing.ml)
+        .padding(.trailing, Spacing.xs)
+        .padding(.top, Spacing.s)
+        .padding(.bottom, Spacing.xxs)
     }
 }
+
+#if DEBUG
+    struct AddressTopBar_Previews: PreviewProvider {
+        static var previews: some View {
+            VStack(spacing: 0) {
+                AddressTopBar(displayedAddress: "Zenklova 6, Praha", onAddressTap: {})
+                AddressTopBar(displayedAddress: nil, onAddressTap: {})
+            }
+            .background(CleansiaColors.background)
+            .previewLayout(.sizeThatFits)
+        }
+    }
+#endif

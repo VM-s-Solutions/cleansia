@@ -33,9 +33,10 @@ public class ConfirmUserEmailTests(PostgresContainerFixture fixture) : BaseInteg
             act: async provider =>
             {
                 var mediator = provider.GetRequiredService<IMediator>();
-                // Submit the RAW token (what the email carries); the stored
-                // ConfirmationCode is now its SHA-256 hash, and the repository hashes the input to match.
-                var command = new ConfirmUserEmail.Command(user.RawConfirmationToken);
+                // Submit the RAW 6-digit code + the account email: an OTP is guessable in
+                // isolation, so it is never resolved by the bare code — the email names the
+                // account whose stored hash the code is compared against.
+                var command = new ConfirmUserEmail.Command(user.RawConfirmationToken!, user.Email);
                 return await mediator.Send(command);
             },
             assert: async (context, result) =>

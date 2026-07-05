@@ -1,9 +1,15 @@
 name: Backend CI
 
+# Also runs on pushes to master: direct-to-master commits used to bypass this gate
+# entirely (pull_request-only), which is how the stale ConfirmUserEmail integration
+# tests rode in red and unnoticed until the next PR surfaced them.
 on:
   pull_request:
     branches:
       - '*'
+  push:
+    branches:
+      - master
 
 jobs:
   build:

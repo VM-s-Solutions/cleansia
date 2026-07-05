@@ -15,10 +15,7 @@ enum PushTapRouting {
         }
     }
 
-    /// Appends the deep-link order detail to the Orders stack path. Returns the
-    /// updated path so the binding-driven push is verifiable without a host.
-    static func appendingDeepLink(_ orderId: String?, to path: [OrderRoute]) -> [OrderRoute] {
-        guard let orderId else { return path }
-        return path + [.detail(orderId: orderId)]
+    static func deepLinkRoute(_ orderId: String?) -> OrderRoute? {
+        orderId.map { .detail(orderId: $0) }
     }
 }

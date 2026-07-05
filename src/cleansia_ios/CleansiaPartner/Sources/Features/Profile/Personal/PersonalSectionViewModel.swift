@@ -46,7 +46,7 @@ final class PersonalSectionViewModel: ViewModel {
                 employeeId: employee.id ?? "",
                 firstName: employee.firstName ?? "",
                 lastName: employee.lastName ?? "",
-                birthDate: employee.birthDate,
+                birthDate: employee.birthDate?.wrappedDate,
                 phone: employee.phoneNumber ?? "",
                 email: employee.email ?? ""
             )
@@ -82,7 +82,7 @@ final class PersonalSectionViewModel: ViewModel {
             employeeId: form.employeeId,
             firstName: form.firstName.trimmed,
             lastName: form.lastName.trimmed,
-            birthDate: form.birthDate,
+            birthDate: OpenAPIDateWithoutTime(wrappedDate: form.birthDate),
             phone: form.phone.trimmedOrNil,
             email: form.email.trimmedOrNil
         )

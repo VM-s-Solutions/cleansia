@@ -105,12 +105,14 @@ final class FakeChangePasswordClient: ChangePasswordClient, @unchecked Sendable 
 
 enum ProfileFixtures {
     static func user(
+        id: String = "user-1",
         email: String = "jane@example.com",
         firstName: String = "Jane",
         lastName: String = "Doe",
         phoneNumber: String? = "+420123456789"
     ) -> CurrentUserProfile {
         CurrentUserProfile(
+            id: id,
             email: email,
             firstName: firstName,
             lastName: lastName,

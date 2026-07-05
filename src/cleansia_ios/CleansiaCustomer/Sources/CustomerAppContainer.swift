@@ -1,4 +1,5 @@
 import CleansiaCore
+import CleansiaCustomerApi
 import Foundation
 
 @MainActor
@@ -120,7 +121,9 @@ final class CustomerAppContainer: AppContainer {
         self.disputeRepository = disputeRepository
         let savedAddressRepository = SavedAddressRepository(client: LiveSavedAddressClient())
         self.savedAddressRepository = savedAddressRepository
-        let userProfileRepository = UserProfileRepository(client: LiveUserProfileClient())
+        let userProfileRepository = UserProfileRepository(
+            client: LiveUserProfileClient(tokenStore: authStack.spine.tokenStore)
+        )
         self.userProfileRepository = userProfileRepository
         devicesClient = LiveCustomerDevicesClient(deviceIdProvider: authStack.deviceIdProvider)
         base = BaseAppContainer(
@@ -148,5 +151,9 @@ final class CustomerAppContainer: AppContainer {
             session: URLSession(configuration: .default)
         )
         CustomerGeneratedAuth.install(bridge: bridge, basePath: apiBaseURL.absoluteString)
+        // Response processing + Codable decode happen on this queue instead of
+        // main; call sites await via continuations, so UI updates still hop back.
+        CleansiaCustomerApiAPI.apiResponseQueue = DispatchQueue(label: "cz.cleansia.api.response", qos: .userInitiated)
+        CodableHelper.jsonDecoder = ApiDateDecoding.decoder(primary: { CodableHelper.dateFormatter.date(from: $0) })
     }
 }

@@ -11,6 +11,11 @@ public enum CleansiaColors {
     public static let secondaryContainer = Color.dynamic(light: Palette.sky50, dark: Palette.sky800)
     public static let onSecondaryContainer = Color.dynamic(light: Palette.sky900, dark: Palette.sky100)
 
+    /// The customer Android theme never overrides the tertiary slots, so its
+    /// home milestone card renders the Material3 BASELINE tertiaryContainer
+    /// (tertiary90/tertiary30) — mirrored verbatim for parity.
+    public static let tertiaryContainer = Color.dynamic(light: Color(hex: 0xFFD8E4), dark: Color(hex: 0x633B48))
+
     public static let background = Color.dynamic(light: Palette.slate50, dark: Palette.slate900)
     public static let onBackground = Color.dynamic(light: Palette.slate900, dark: Palette.darkTextPrimary)
 
@@ -30,4 +35,9 @@ public enum CleansiaColors {
     public static let successText = Palette.successText
     public static let successBg = Palette.successBg
     public static let warningStar = Palette.warningStar
+
+    // Fixed brand ramp for the splash gradient (sky-600 → sky-400), matching
+    // Android's SplashScreen which does not vary with the color scheme.
+    public static let splashGradientStart = Palette.sky600
+    public static let splashGradientEnd = Palette.sky400
 }

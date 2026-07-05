@@ -23,7 +23,7 @@ protocol GdprDeleteClient: AnyObject {
 
 final class LiveGdprDeleteClient: GdprDeleteClient {
     func deleteMyAccount() async -> ApiResult<Void> {
-        await apiResult(mapError: ProblemDetailsError.map) {
+        await apiResult(mapError: ApiError.fromGenerated) {
             try await CustomerGdprAPI.gdprDeleteMyAccount()
         }
     }

@@ -1,4 +1,5 @@
 import CleansiaCore
+import CleansiaPartnerApi
 import Combine
 import Foundation
 
@@ -154,5 +155,9 @@ final class PartnerAppContainer: AppContainer {
             session: URLSession(configuration: .default)
         )
         PartnerGeneratedAuth.install(bridge: bridge, basePath: apiBaseURL.absoluteString)
+        // Response processing + Codable decode happen on this queue instead of
+        // main; call sites await via continuations, so UI updates still hop back.
+        CleansiaPartnerApiAPI.apiResponseQueue = DispatchQueue(label: "cz.cleansia.api.response", qos: .userInitiated)
+        CodableHelper.jsonDecoder = ApiDateDecoding.decoder(primary: { CodableHelper.dateFormatter.date(from: $0) })
     }
 }

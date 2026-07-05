@@ -42,6 +42,12 @@ extension BookingViewModel {
         if current.paymentMethod == .card, isCardPaymentAvailable {
             return await cardPending(for: order)
         }
+        // Wipe the draft at the success outcome itself, not on the success screen's
+        // exit: the VM is session-lived, so a sheet swiped away over the success
+        // screen would otherwise re-arm slide-to-pay with the already-submitted
+        // draft (a duplicate-order path). Android resets before navigating too.
+        // The card path resets in the view when PaymentSheet resolves to success.
+        reset()
         return .success(orderId: order.id, confirmationCode: order.confirmationCode)
     }
 

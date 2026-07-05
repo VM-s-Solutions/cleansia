@@ -58,7 +58,7 @@ public class ConfirmationCodeAttemptCapTests(PostgresContainerFixture fixture) :
 
                 using var scope = provider.CreateScope();
                 var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-                return await mediator.Send(new ConfirmUserEmail.Command(user.RawConfirmationToken!));
+                return await mediator.Send(new ConfirmUserEmail.Command(user.RawConfirmationToken!, user.Email));
             },
             assert: async (context, result) =>
             {
@@ -94,7 +94,7 @@ public class ConfirmationCodeAttemptCapTests(PostgresContainerFixture fixture) :
                 {
                     using var scope = provider.CreateScope();
                     var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-                    last = await mediator.Send(new ConfirmUserEmail.Command(user.RawConfirmationToken!));
+                    last = await mediator.Send(new ConfirmUserEmail.Command(user.RawConfirmationToken!, user.Email));
                 }
 
                 return last;
@@ -122,7 +122,7 @@ public class ConfirmationCodeAttemptCapTests(PostgresContainerFixture fixture) :
             {
                 using var scope = provider.CreateScope();
                 var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-                return await mediator.Send(new ConfirmUserEmail.Command(user.RawConfirmationToken!));
+                return await mediator.Send(new ConfirmUserEmail.Command(user.RawConfirmationToken!, user.Email));
             },
             assert: async (context, result) =>
             {

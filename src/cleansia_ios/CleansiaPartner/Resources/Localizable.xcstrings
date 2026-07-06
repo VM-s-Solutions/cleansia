@@ -4766,31 +4766,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vystaveno %1$s"
+            "value": "Vystaveno %1$@"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Generated %1$s"
+            "value": "Generated %1$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Создано %1$s"
+            "value": "Создано %1$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vystavené %1$s"
+            "value": "Vystavené %1$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Створено %1$s"
+            "value": "Створено %1$@"
           }
         }
       }
@@ -4834,31 +4834,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vyplaceno %1$s"
+            "value": "Vyplaceno %1$@"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Paid on %1$s"
+            "value": "Paid on %1$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Оплачено %1$s"
+            "value": "Оплачено %1$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vyplatené %1$s"
+            "value": "Vyplatené %1$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сплачено %1$s"
+            "value": "Сплачено %1$@"
           }
         }
       }

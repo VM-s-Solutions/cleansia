@@ -82,6 +82,7 @@ public class RegisterEmployee
             else
             {
                 rawConfirmationToken = userEntity.UpdateConfirmationCode();
+                userEntity.UpgradeToEmployee();
             }
 
             if (userEntity.Employee is null)

@@ -45,6 +45,9 @@ struct AddressSectionView: View {
                     enabled: !vm.action.isSubmitting,
                     onTap: { pickerOpen = true }
                 )
+                if vm.serviceAreaStatus == .countryNotServiced {
+                    CountryNotServicedRow()
+                }
                 WhyWeNeedThisCard(expanded: $whyExpanded)
                 SaveSectionButton(
                     onboarding: onboarding,
@@ -124,6 +127,22 @@ private struct AddressSummaryCard: View {
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
+    }
+}
+
+private struct CountryNotServicedRow: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: Spacing.xs) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(CleansiaColors.error)
+            Text(L10n.Profile.errorCountryNotServiced)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.error)
+        }
+        .padding(Spacing.m)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(CleansiaColors.error.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
     }
 }
 

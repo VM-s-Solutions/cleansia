@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.location.GeocodedAddress
+import cz.cleansia.core.servicearea.IsoCountryCodes
 import cz.cleansia.core.servicearea.ServiceAreaProvider
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
@@ -124,9 +125,13 @@ class AddressSectionViewModel @Inject constructor(
                     // so the summary card shows the cleaner's current
                     // address on first open. ISO code isn't known from
                     // backend response (only countryId) — we map back
-                    // through the cached countries list when present.
+                    // through the cached countries list when present,
+                    // normalising the backend's alpha-3 to the alpha-2
+                    // form GeocodedAddress promises.
                     val countryName = countries.firstOrNull { it.id == e.countryId }?.name.orEmpty()
-                    val countryIso = countries.firstOrNull { it.id == e.countryId }?.isoCode.orEmpty()
+                    val countryIso = IsoCountryCodes.toAlpha2(
+                        countries.firstOrNull { it.id == e.countryId }?.isoCode,
+                    )
                     val picked = if (e.street.isNullOrBlank()) null else GeocodedAddress(
                         latitude = 0.0, // existing record may lack coords; save
                                           // will pass nulls so backend re-geocodes
@@ -185,12 +190,12 @@ class AddressSectionViewModel @Inject constructor(
      */
     private fun refreshServiceArea(address: GeocodedAddress) {
         val cityName = address.city.takeIf { it.isNotBlank() }
-        if (cityName == null) {
+        val pickedCode = IsoCountryCodes.toAlpha2(address.countryIsoCode)
+        if (cityName == null || pickedCode.isBlank()) {
             updateForm { it.copy(serviceAreaStatus = ServiceAreaStatus.Unknown) }
             return
         }
         viewModelScope.launch {
-            val mapboxCode = address.countryIsoCode.lowercase()
             // A failed load (null) is UNKNOWN, not "no serviced countries" —
             // keep the indicator at Unknown rather than claiming NotServiced.
             val countries = serviceAreaProvider.loadCountries()
@@ -199,7 +204,7 @@ class AddressSectionViewModel @Inject constructor(
                 return@launch
             }
             val country = countries.firstOrNull { c ->
-                c.isoCode == mapboxCode || c.isoCode.startsWith(mapboxCode)
+                IsoCountryCodes.toAlpha2(c.isoCode) == pickedCode
             }
             if (country == null) {
                 updateForm { it.copy(serviceAreaStatus = ServiceAreaStatus.CountryNotServiced) }
@@ -231,15 +236,12 @@ class AddressSectionViewModel @Inject constructor(
             return
         }
 
-        // Mapbox returns ISO-3166 alpha-2 (`cz`); backend's `Country.IsoCode`
-        // column holds ISO-3 (`CZE`). Match prefix case-insensitively so we
-        // can find the matching countryId — also catches existing employees
-        // whose loaded address put the backend's alpha-3 in `countryIsoCode`.
-        val mapboxCode = picked.countryIsoCode.lowercase()
-        val countryId = form.countries.firstOrNull { c ->
-            val iso = c.isoCode?.lowercase().orEmpty()
-            iso == mapboxCode || iso.startsWith(mapboxCode)
-        }?.id
+        // Backend `Country.IsoCode` is alpha-3 (`CZE`); Mapbox picks are
+        // alpha-2 (`cz`) — normalise both sides before comparing.
+        val pickedCode = IsoCountryCodes.toAlpha2(picked.countryIsoCode)
+        val countryId = if (pickedCode.isBlank()) null else form.countries
+            .firstOrNull { IsoCountryCodes.toAlpha2(it.isoCode) == pickedCode }
+            ?.id
 
         if (countryId.isNullOrBlank()) {
             snackbar.showError(appContext.getString(R.string.error_country_not_serviced))

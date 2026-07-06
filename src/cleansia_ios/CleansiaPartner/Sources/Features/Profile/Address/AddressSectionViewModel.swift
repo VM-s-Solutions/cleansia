@@ -3,16 +3,30 @@ import CleansiaPartnerApi
 import Combine
 import Foundation
 
+/// Country-level slice of the Android `ServiceAreaStatus` tri-state law:
+/// UNKNOWN (couldn't check) is a distinct state from "not serviced" and must
+/// never be rendered — or acted on — as a block. The city-level states
+/// (in/outside serviced city) need a serviced-cities endpoint the partner
+/// client doesn't expose yet.
+enum ServiceAreaStatus: Equatable {
+    case unknown
+    case countryServiced
+    case countryNotServiced
+}
+
 @MainActor
 final class AddressSectionViewModel: ViewModel {
     @Published private(set) var state: UiState<Void> = .loading
     @Published private(set) var action: ActionState = .idle
     @Published private(set) var picked: GeocodedAddress?
+    @Published private(set) var serviceAreaStatus: ServiceAreaStatus = .unknown
 
     let saved = PassthroughSubject<Void, Never>()
 
     private(set) var employeeId = ""
-    private var countries: [CountryListItem] = []
+    // nil = the serviced-countries fetch failed (UNKNOWN) — not the same as
+    // a loaded-but-empty list, which is the server saying "none serviced".
+    private var countries: [CountryListItem]?
 
     private let client: PartnerProfileClient
     private let snackbar: SnackbarController
@@ -43,11 +57,12 @@ final class AddressSectionViewModel: ViewModel {
 
     func load() async {
         state = .loading
-        countries = await (client.getServicedCountries()).valueOrNil ?? []
+        countries = (await client.getServicedCountries()).valueOrNil
         switch await client.getCurrentEmployee() {
         case let .success(employee):
             employeeId = employee.id ?? ""
             picked = reconstructAddress(from: employee)
+            refreshServiceAreaStatus()
             state = .loaded(())
         case let .failure(error):
             state = .error(error)
@@ -57,6 +72,7 @@ final class AddressSectionViewModel: ViewModel {
 
     func applyPick(_ address: GeocodedAddress) {
         picked = address
+        refreshServiceAreaStatus()
     }
 
     func save() async {
@@ -68,6 +84,18 @@ final class AddressSectionViewModel: ViewModel {
         guard !employeeId.isBlank else {
             snackbar.showError(L10n.Profile.errorProfileNotLoaded)
             return
+        }
+        if countries == nil {
+            switch await client.getServicedCountries() {
+            case let .success(fetched):
+                countries = fetched
+                refreshServiceAreaStatus()
+            case let .failure(error):
+                // The list never loaded, so the answer is UNKNOWN — surface
+                // the fetch failure, never "country not serviced".
+                snackbar.showError(localizer.message(for: error))
+                return
+            }
         }
         guard let countryId = resolveCountryId(for: picked.countryIsoCode) else {
             snackbar.showError(L10n.Profile.errorCountryNotServiced)
@@ -98,7 +126,7 @@ final class AddressSectionViewModel: ViewModel {
 
     private func reconstructAddress(from employee: EmployeeItem) -> GeocodedAddress? {
         guard let street = employee.street, !street.isBlank else { return nil }
-        let country = countries.first { $0.id == employee.countryId }
+        let country = countries?.first { $0.id == employee.countryId }
         return GeocodedAddress(
             latitude: 0,
             longitude: 0,
@@ -114,13 +142,28 @@ final class AddressSectionViewModel: ViewModel {
         )
     }
 
+    // The geocoder gives alpha-2 ("sk"), the backend stores alpha-3 ("SVK");
+    // only the Core normaliser matches them — a prefix heuristic doesn't
+    // ("svk" does not start with "sk").
     private func resolveCountryId(for isoCode: String) -> String? {
-        let code = isoCode.lowercased()
+        let code = IsoCountryCodes.toAlpha2(isoCode)
         guard !code.isEmpty else { return nil }
-        return countries.first { country in
-            let iso = (country.isoCode ?? "").lowercased()
-            return iso == code || iso.hasPrefix(code)
-        }?.id
+        return countries?.first { IsoCountryCodes.toAlpha2($0.isoCode) == code }?.id
+    }
+
+    private func refreshServiceAreaStatus() {
+        guard let picked, let countries else {
+            serviceAreaStatus = .unknown
+            return
+        }
+        let code = IsoCountryCodes.toAlpha2(picked.countryIsoCode)
+        guard !code.isEmpty else {
+            serviceAreaStatus = .unknown
+            return
+        }
+        serviceAreaStatus = countries.contains { IsoCountryCodes.toAlpha2($0.isoCode) == code }
+            ? .countryServiced
+            : .countryNotServiced
     }
 }
 

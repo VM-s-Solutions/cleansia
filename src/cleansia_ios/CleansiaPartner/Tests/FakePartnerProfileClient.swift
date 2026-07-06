@@ -26,6 +26,7 @@ final class FakePartnerProfileClient: PartnerProfileClient {
     private(set) var saveDocumentsCommand: SaveMyDocumentsCommand?
     private(set) var deletedDocumentId: String?
     private(set) var checkCount = 0
+    private(set) var servicedCountriesCallCount = 0
 
     func getCurrentEmployee() async -> ApiResult<EmployeeItem> {
         employeeResult
@@ -76,7 +77,8 @@ final class FakePartnerProfileClient: PartnerProfileClient {
     }
 
     func getServicedCountries() async -> ApiResult<[CountryListItem]> {
-        servicedCountriesResult
+        servicedCountriesCallCount += 1
+        return servicedCountriesResult
     }
 
     func getAllCountries() async -> ApiResult<[CountryListItem]> {

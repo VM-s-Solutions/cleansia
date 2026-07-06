@@ -40,7 +40,20 @@ final class AddressPickerViewModelTests: XCTestCase {
         super.tearDown()
     }
 
-    private func makeViewModel(searchBias: [String]? = nil) -> AddressPickerViewModel {
+    private final class ServicedCountriesStub {
+        var results: [[String]?] = []
+        private(set) var callCount = 0
+
+        func next() -> [String]? {
+            callCount += 1
+            return results.isEmpty ? nil : results.removeFirst()
+        }
+    }
+
+    private func makeViewModel(
+        searchBias: [String]? = nil,
+        provider: ServicedCountriesStub? = nil
+    ) -> AddressPickerViewModel {
         if let searchBias {
             return AddressPickerViewModel(
                 geocoding: geocoding,
@@ -49,10 +62,15 @@ final class AddressPickerViewModelTests: XCTestCase {
                 searchBias: searchBias
             )
         }
+        var providerClosure: (() async -> [String]?)?
+        if let provider {
+            providerClosure = { provider.next() }
+        }
         return AddressPickerViewModel(
             geocoding: geocoding,
             reverseDebounce: .zero,
-            searchDebounce: .zero
+            searchDebounce: .zero,
+            servicedCountryCodesProvider: providerClosure
         )
     }
 
@@ -96,5 +114,60 @@ final class AddressPickerViewModelTests: XCTestCase {
 
         XCTAssertEqual(geocoding.lastForwardQuery, "Ber")
         XCTAssertEqual(geocoding.lastForwardBias, ["de", "pl"])
+    }
+
+    func testProviderBiasIsNormalizedToAlpha2() async {
+        geocoding.forwardResult = [address()]
+        let provider = ServicedCountriesStub()
+        provider.results = [["CZE", "SVK"]]
+        let vm = makeViewModel(provider: provider)
+
+        vm.onSearchChange("Vin")
+        await waitForSearch(vm)
+
+        XCTAssertEqual(geocoding.lastForwardBias, ["cz", "sk"])
+    }
+
+    func testProviderSuccessIsCachedAcrossSearches() async {
+        geocoding.forwardResult = [address()]
+        let provider = ServicedCountriesStub()
+        provider.results = [["CZE"]]
+        let vm = makeViewModel(provider: provider)
+
+        vm.onSearchChange("Vin")
+        await waitForSearch(vm)
+        vm.onSearchChange("Vino")
+        await waitForSearch(vm)
+
+        XCTAssertEqual(provider.callCount, 1)
+        XCTAssertEqual(geocoding.lastForwardBias, ["cz"])
+    }
+
+    func testProviderFailureFallsBackToStaticBiasAndRetries() async {
+        geocoding.forwardResult = [address()]
+        let provider = ServicedCountriesStub()
+        provider.results = [nil, ["POL"]]
+        let vm = makeViewModel(provider: provider)
+
+        vm.onSearchChange("Vin")
+        await waitForSearch(vm)
+        XCTAssertEqual(geocoding.lastForwardBias, ["cz", "sk"])
+
+        vm.onSearchChange("Vino")
+        await waitForSearch(vm)
+        XCTAssertEqual(provider.callCount, 2)
+        XCTAssertEqual(geocoding.lastForwardBias, ["pl"])
+    }
+
+    func testProviderEmptySuccessMeansNoBias() async {
+        geocoding.forwardResult = [address()]
+        let provider = ServicedCountriesStub()
+        provider.results = [[]]
+        let vm = makeViewModel(provider: provider)
+
+        vm.onSearchChange("Vin")
+        await waitForSearch(vm)
+
+        XCTAssertEqual(geocoding.lastForwardBias, [])
     }
 }

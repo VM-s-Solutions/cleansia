@@ -127,18 +127,31 @@ final class CLGeocoderGeocodingServiceTests: XCTestCase {
         XCTAssertNil(address)
     }
 
-    func testForwardCountryBiasKeepsMatchesAndDropsOthers() async {
+    func testForwardCountryBiasRanksMatchesFirstAndKeepsOthers() async {
         let geocoder = FakeGeocoder()
         geocoder.forwardResult = .success([
+            placemark(city: "Wien", country: "Austria", isoCountryCode: "AT"),
             placemark(city: "Praha", country: "Czechia", isoCountryCode: "CZ"),
-            placemark(city: "Bratislava", country: "Slovakia", isoCountryCode: "SK"),
-            placemark(city: "Wien", country: "Austria", isoCountryCode: "AT")
+            placemark(city: "Bratislava", country: "Slovakia", isoCountryCode: "SK")
         ])
         let service = CLGeocoderGeocodingService(geocoder: geocoder)
 
         let results = await service.forwardGeocode(query: "test", countryIsoCodes: ["cz", "sk"])
 
-        XCTAssertEqual(results.map(\.countryIsoCode), ["cz", "sk"])
+        XCTAssertEqual(results.map(\.countryIsoCode), ["cz", "sk", "at"])
+    }
+
+    func testForwardBiasAcceptsBackendAlpha3Codes() async {
+        let geocoder = FakeGeocoder()
+        geocoder.forwardResult = .success([
+            placemark(city: "Wien", country: "Austria", isoCountryCode: "AT"),
+            placemark(city: "Bratislava", country: "Slovakia", isoCountryCode: "SK")
+        ])
+        let service = CLGeocoderGeocodingService(geocoder: geocoder)
+
+        let results = await service.forwardGeocode(query: "test", countryIsoCodes: ["SVK"])
+
+        XCTAssertEqual(results.map(\.countryIsoCode), ["sk", "at"])
     }
 
     func testForwardWithEmptyBiasReturnsAll() async {

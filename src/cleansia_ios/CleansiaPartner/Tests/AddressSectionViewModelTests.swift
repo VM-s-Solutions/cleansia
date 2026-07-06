@@ -18,7 +18,7 @@ final class AddressSectionViewModelTests: XCTestCase {
         AddressSectionViewModel(client: client, snackbar: snackbar)
     }
 
-    private func sampleAddress() -> GeocodedAddress {
+    private func sampleAddress(isoCode: String = "cz") -> GeocodedAddress {
         GeocodedAddress(
             latitude: 50.0755,
             longitude: 14.4378,
@@ -26,7 +26,7 @@ final class AddressSectionViewModelTests: XCTestCase {
             city: "Praha",
             zipCode: "120 00",
             country: "Czechia",
-            countryIsoCode: "cz",
+            countryIsoCode: isoCode,
             formatted: "Vinohradská 12, Praha"
         )
     }
@@ -61,7 +61,7 @@ final class AddressSectionViewModelTests: XCTestCase {
         XCTAssertEqual(vm.summaryLine1, "Vinohradská 12")
     }
 
-    func testSaveResolvesCountryByPrefixAndSendsCoords() async {
+    func testSaveResolvesAlpha3BackendCountryAndSendsCoords() async {
         client.servicedCountriesResult = .success([
             CountryListItem(id: "cz-id", isoCode: "CZE", name: "Czechia")
         ])
@@ -81,6 +81,20 @@ final class AddressSectionViewModelTests: XCTestCase {
         XCTAssertNil(client.addressCommand?.state)
     }
 
+    func testSaveResolvesSlovakiaWhereThePrefixHeuristicFailed() async {
+        client.servicedCountriesResult = .success([
+            CountryListItem(id: "sk-id", isoCode: "SVK", name: "Slovakia"),
+            CountryListItem(id: "pl-id", isoCode: "POL", name: "Poland")
+        ])
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
+        let vm = makeVM()
+        await vm.load()
+        vm.applyPick(sampleAddress(isoCode: "sk"))
+
+        await vm.save()
+        XCTAssertEqual(client.addressCommand?.countryId, "sk-id")
+    }
+
     func testSaveWithUnservicedCountrySnackbarsAndSkips() async {
         client.servicedCountriesResult = .success([
             CountryListItem(id: "sk-id", isoCode: "SVK", name: "Slovakia")
@@ -91,7 +105,8 @@ final class AddressSectionViewModelTests: XCTestCase {
         vm.applyPick(sampleAddress())
         await vm.save()
         XCTAssertNil(client.addressCommand)
-        XCTAssertNotNil(snackbar.current)
+        XCTAssertEqual(snackbar.current?.text, L10n.Profile.errorCountryNotServiced)
+        XCTAssertEqual(vm.serviceAreaStatus, .countryNotServiced)
     }
 
     func testSaveWithoutPickSnackbarsAndSkips() async {
@@ -101,5 +116,64 @@ final class AddressSectionViewModelTests: XCTestCase {
         await vm.save()
         XCTAssertNil(client.addressCommand)
         XCTAssertNotNil(snackbar.current)
+    }
+
+    func testStatusIsServicedAfterLoadReconstructsAlpha3Country() async {
+        client.servicedCountriesResult = .success([
+            CountryListItem(id: "cz-id", isoCode: "CZE", name: "Czechia")
+        ])
+        client.employeeResult = .success(EmployeeItem(
+            id: "emp-1",
+            street: "Vinohradská 12",
+            city: "Praha",
+            zipCode: "120 00",
+            countryId: "cz-id"
+        ))
+        let vm = makeVM()
+        await vm.load()
+
+        XCTAssertEqual(vm.serviceAreaStatus, .countryServiced)
+    }
+
+    func testStatusIsUnknownNotBlockedWhenCountriesFetchFails() async {
+        client.servicedCountriesResult = .failure(ApiError(code: "network.unreachable"))
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
+        let vm = makeVM()
+        await vm.load()
+        vm.applyPick(sampleAddress())
+
+        XCTAssertEqual(vm.serviceAreaStatus, .unknown)
+    }
+
+    func testSaveRetriesFailedCountriesFetchAndProceeds() async {
+        client.servicedCountriesResult = .failure(ApiError(code: "network.unreachable"))
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
+        let vm = makeVM()
+        await vm.load()
+        vm.applyPick(sampleAddress(isoCode: "sk"))
+
+        client.servicedCountriesResult = .success([
+            CountryListItem(id: "sk-id", isoCode: "SVK", name: "Slovakia")
+        ])
+        await vm.save()
+
+        XCTAssertEqual(client.servicedCountriesCallCount, 2)
+        XCTAssertEqual(client.addressCommand?.countryId, "sk-id")
+        XCTAssertEqual(vm.serviceAreaStatus, .countryServiced)
+    }
+
+    func testSaveWithUnknownCountriesNeverClaimsNotServiced() async {
+        client.servicedCountriesResult = .failure(ApiError(code: "network.unreachable"))
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
+        let vm = makeVM()
+        await vm.load()
+        vm.applyPick(sampleAddress())
+
+        await vm.save()
+
+        XCTAssertNil(client.addressCommand)
+        XCTAssertNotNil(snackbar.current)
+        XCTAssertNotEqual(snackbar.current?.text, L10n.Profile.errorCountryNotServiced)
+        XCTAssertEqual(vm.serviceAreaStatus, .unknown)
     }
 }

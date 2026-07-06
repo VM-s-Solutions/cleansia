@@ -69,9 +69,14 @@ public final class CLGeocoderGeocodingService: GeocodingService {
             return []
         }
         let addresses = placemarks.compactMap { Self.address(from: $0) }
-        let bias = countryIsoCodes.map { $0.lowercased() }
+        let bias = Set(countryIsoCodes.map { IsoCountryCodes.toAlpha2($0) }.filter { !$0.isEmpty })
         guard !bias.isEmpty else { return addresses }
-        return addresses.filter { bias.contains($0.countryIsoCode) }
+        // The bias RANKS, never filters: CLGeocoder has no country parameter,
+        // and dropping non-matching placemarks made every search outside the
+        // biased countries return nothing (the backend re-validates the
+        // country on save, so unbiased results are safe to surface).
+        let biased = addresses.filter { bias.contains($0.countryIsoCode) }
+        return biased + addresses.filter { !bias.contains($0.countryIsoCode) }
     }
 
     private func cancelInFlight() {

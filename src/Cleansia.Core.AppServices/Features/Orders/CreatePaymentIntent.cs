@@ -99,9 +99,7 @@ public class CreatePaymentIntent
                     user.PhoneNumber,
                     cancellationToken);
                 user.AssignStripeCustomerId(stripeCustomerId);
-                logger.LogInformation(
-                    "Created Stripe customer {StripeCustomerId} for user {UserId}",
-                    stripeCustomerId, user.Id);
+                logger.LogInformation("Created Stripe customer for user {UserId}", user.Id);
             }
 
             var intent = await stripeClient.CreatePaymentIntentAsync(

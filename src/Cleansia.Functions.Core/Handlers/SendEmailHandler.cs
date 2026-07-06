@@ -38,16 +38,32 @@ public class SendEmailHandler(
         }
         catch (JsonException ex)
         {
-            logger.LogWarning(ex, "Discarding email message: malformed body (permanent). Message: {Message}", messageText);
+            // Never log the payload — it carries the recipient email and a live confirmation/reset code.
+            logger.LogWarning(ex, "Discarding email message: malformed body (permanent)");
             return;
         }
 
-        if (message is null
-            || string.IsNullOrEmpty(message.UserId)
-            || string.IsNullOrEmpty(message.Email)
-            || string.IsNullOrEmpty(message.Code))
+        if (message is null)
         {
-            logger.LogWarning("Discarding email message with missing required fields (permanent). Message: {Message}", messageText);
+            logger.LogWarning("Discarding email message: empty payload (permanent)");
+            return;
+        }
+
+        var missingFields = new[]
+            {
+                (Name: nameof(message.UserId), Value: message.UserId),
+                (Name: nameof(message.Email), Value: message.Email),
+                (Name: nameof(message.Code), Value: message.Code),
+            }
+            .Where(f => string.IsNullOrEmpty(f.Value))
+            .Select(f => f.Name)
+            .ToList();
+
+        if (missingFields.Count > 0)
+        {
+            logger.LogWarning(
+                "Discarding {EmailType} email message with missing required fields (permanent): {MissingFields}",
+                message.EmailType, string.Join(", ", missingFields));
             return;
         }
 

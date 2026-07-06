@@ -67,7 +67,6 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     {
         var request = context.Request;
         var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
-        var userEmail = context.User?.FindFirst(ClaimTypes.Email)?.Value ?? "N/A";
 
         var rawBody = await ReadRequestBodyAsync(request);
         var safeBody = IsSensitivePath(request.Path)
@@ -75,13 +74,12 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
             : RedactSensitiveFields(rawBody);
 
         _logger.LogInformation(
-            "[{RequestId}] {Method} {Path}{QueryString} | User: {UserId} ({UserEmail}) | IP: {IP} | Body: {Body}",
+            "[{RequestId}] {Method} {Path}{QueryString} | User: {UserId} | IP: {IP} | Body: {Body}",
             requestId,
             request.Method,
             request.Path,
-            request.QueryString,
+            RedactQueryString(request.QueryString),
             userId,
-            userEmail,
             context.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
             string.IsNullOrEmpty(safeBody) ? "N/A" : safeBody
         );
@@ -173,10 +171,19 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
         return SensitiveFieldRegex().Replace(body, m => $"\"{m.Groups[1].Value}\":{Redacted}");
     }
 
+    private static string RedactQueryString(QueryString queryString)
+    {
+        if (!queryString.HasValue) return string.Empty;
+        return EmailQueryParamRegex().Replace(queryString.Value!, "$1***REDACTED***");
+    }
+
     private static bool IsSensitivePath(PathString path)
     {
         var pathValue = path.Value?.ToLowerInvariant() ?? string.Empty;
-        return pathValue.Contains("/auth/") || pathValue.Contains("/login") || pathValue.Contains("password");
+        return pathValue.Contains("/auth/") ||
+               pathValue.Contains("/login") ||
+               pathValue.Contains("password") ||
+               pathValue.Contains("/order/lookup");
     }
 
     private static bool ShouldSkipLogging(PathString path)
@@ -195,4 +202,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     [GeneratedRegex("\"(password|currentPassword|newPassword|confirmPassword|token|refreshToken|accessToken|clientSecret|apiKey|base64Content|fileData|fileBase64)\"\\s*:\\s*(\"(?:[^\"\\\\]|\\\\.)*\"|null)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled)]
     private static partial Regex SensitiveFieldRegex();
+
+    [GeneratedRegex(@"([?&][^=&]*email[^=&]*=)[^&]*", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    private static partial Regex EmailQueryParamRegex();
 }

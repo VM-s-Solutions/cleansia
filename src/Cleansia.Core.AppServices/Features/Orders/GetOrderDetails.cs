@@ -110,7 +110,8 @@ public class GetOrderDetails
             return BusinessResult.Success(order.MapToDetail(
                 estimatedCleanerPay,
                 isAssignedToCurrentUser,
-                hasAfterPhotos));
+                hasAfterPhotos,
+                orderAccessService.IsCustomerCaller()));
         }
     }
 }

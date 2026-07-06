@@ -57,9 +57,10 @@ public static class OrderMappers
     }
 
     /// <summary>
-    /// Detail-shape projection of an Order. The two caller-context
-    /// parameters (<paramref name="estimatedCleanerPay"/> and
-    /// <paramref name="isAssignedToCurrentUser"/>) are passed in rather
+    /// Detail-shape projection of an Order. The caller-context
+    /// parameters (<paramref name="estimatedCleanerPay"/>,
+    /// <paramref name="isAssignedToCurrentUser"/> and
+    /// <paramref name="isCustomerCaller"/>) are passed in rather
     /// than computed here because they require services the mapper
     /// shouldn't reach for (pay-config repository, current-user
     /// resolver). Handlers compute them and hand the values in.
@@ -68,7 +69,8 @@ public static class OrderMappers
         this Order order,
         decimal? estimatedCleanerPay = null,
         bool isAssignedToCurrentUser = false,
-        bool hasAfterPhotos = false)
+        bool hasAfterPhotos = false,
+        bool isCustomerCaller = false)
     {
         var (source, applied) = ResolveAppliedDiscount(order);
         return new OrderItem(
@@ -106,7 +108,7 @@ public static class OrderMappers
             StatusHistory: order.OrderStatusHistory.Select(sh => sh.MapToDto()) ?? [],
             CreatedOn: order.CreatedOn,
             UpdatedOn: order.UpdatedOn,
-            AssignedEmployees: order.AssignedEmployees.Select(ae => ae.MapToAssignedEmployeeDto()),
+            AssignedEmployees: order.AssignedEmployees.Select(ae => ae.MapToAssignedEmployeeDto(isCustomerCaller)),
             ReceiptNumber: order.Receipt?.ReceiptNumber,
             OrderNotes: order.OrderNotes.Select(n => n.MapToDto()),
             OrderIssues: order.OrderIssues.Select(i => i.MapToDto()),
@@ -151,7 +153,9 @@ public static class OrderMappers
         );
     }
 
-    public static AssignedEmployeeDto MapToAssignedEmployeeDto(this OrderEmployee orderEmployee)
+    // Customer callers get the cleaner's first name only and no phone —
+    // same masking GetOrderPhotos applies to CapturedByEmployeeName.
+    public static AssignedEmployeeDto MapToAssignedEmployeeDto(this OrderEmployee orderEmployee, bool isCustomerCaller = false)
     {
         var employee = orderEmployee.Employee;
         var user = employee?.User;
@@ -159,10 +163,12 @@ public static class OrderMappers
         return new AssignedEmployeeDto(
             Id: orderEmployee.Id,
             EmployeeId: orderEmployee.EmployeeId,
-            FullName: user != null
-                ? $"{user.FirstName} {user.LastName}".Trim()
-                : string.Empty,
-            PhoneNumber: user?.PhoneNumber
+            FullName: isCustomerCaller
+                ? user?.FirstName ?? string.Empty
+                : user != null
+                    ? $"{user.FirstName} {user.LastName}".Trim()
+                    : string.Empty,
+            PhoneNumber: isCustomerCaller ? null : user?.PhoneNumber
         );
     }
 

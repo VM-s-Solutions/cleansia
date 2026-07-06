@@ -159,10 +159,9 @@ export class WizardSummaryStepComponent implements OnInit {
   });
 
   /**
-   * Final price — `displayedTotalPrice` already includes both the best-of-three
-   * discount and the express surcharge (applied AFTER the discount so the
-   * surcharge tracks the discounted price). Mirrors CreateOrder.Handler. Wrapped
-   * in computed because `facade` is an @Input and isn't bound at field-init time.
+   * Final price — the server-quoted total (express surcharge already folded
+   * in) minus the best-of-three discount. Wrapped in computed because `facade`
+   * is an @Input and isn't bound at field-init time.
    */
   protected readonly grandTotal = computed(() => this.facade.displayedTotalPrice());
 

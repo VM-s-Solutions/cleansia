@@ -46,7 +46,12 @@ describe('OrderWizardFacade', () => {
     add: jest.Mock;
   };
 
-  const quoteResponse = { totalPrice: 1000, currencyId: 'czk' };
+  const quoteResponse = {
+    totalPrice: 1000,
+    expressSurchargeApplied: false,
+    expressSurchargeAmount: 0,
+    currencyId: 'czk',
+  };
 
   const savedAddress = {
     id: 'addr-1',
@@ -720,7 +725,7 @@ describe('OrderWizardFacade', () => {
     });
   });
 
-  describe('pricing math', () => {
+  describe('pricing display', () => {
     it('reflects the server-quoted total in totalPrice', async () => {
       facade.updateFormData({ selectedServiceIds: ['s1'] });
       await facade.refreshQuoteNow();
@@ -728,50 +733,29 @@ describe('OrderWizardFacade', () => {
       expect(facade.totalPrice()).toBe(1000);
     });
 
-    it('returns false for isExpressSlot when there is no slot picked', () => {
-      expect(facade.isExpressSlot()).toBe(false);
-    });
-
-    it('marks the slot express when it falls in the 2-4h lead window', () => {
-      const slot = new Date(Date.now() + 3 * 60 * 60 * 1000);
-      const time = `${slot.getHours().toString().padStart(2, '0')}:${slot
-        .getMinutes()
-        .toString()
-        .padStart(2, '0')}`;
-      facade.updateFormData({ cleaningDate: slot, cleaningTime: time });
-
-      expect(facade.isExpressSlot()).toBe(true);
-    });
-
-    it('does not mark a slot express outside the 2-4h window', () => {
-      const slot = new Date(Date.now() + 6 * 60 * 60 * 1000);
-      const time = `${slot.getHours().toString().padStart(2, '0')}:${slot
-        .getMinutes()
-        .toString()
-        .padStart(2, '0')}`;
-      facade.updateFormData({ cleaningDate: slot, cleaningTime: time });
-
-      expect(facade.isExpressSlot()).toBe(false);
-    });
-
-    it('applies a 20% surcharge on the discounted total for an express slot', async () => {
-      facade.updateFormData({ selectedServiceIds: ['s1'] });
-      await facade.refreshQuoteNow();
-      const slot = new Date(Date.now() + 3 * 60 * 60 * 1000);
-      const time = `${slot.getHours().toString().padStart(2, '0')}:${slot
-        .getMinutes()
-        .toString()
-        .padStart(2, '0')}`;
-      facade.updateFormData({ cleaningDate: slot, cleaningTime: time });
-
-      expect(facade.expressSurcharge()).toBeCloseTo(200, 5);
-      expect(facade.displayedTotalPrice()).toBeCloseTo(1200, 5);
-    });
-
-    it('charges no surcharge and shows the bare total for a standard slot', async () => {
+    it('renders the express quote verbatim — server total, no client gross-up', async () => {
+      orderClient.quote.mockReturnValue(
+        of({
+          totalPrice: 1200,
+          expressSurchargeApplied: true,
+          expressSurchargeAmount: 200,
+          currencyId: 'czk',
+        }),
+      );
       facade.updateFormData({ selectedServiceIds: ['s1'] });
       await facade.refreshQuoteNow();
 
+      expect(facade.expressSurchargeApplied()).toBe(true);
+      expect(facade.expressSurcharge()).toBe(200);
+      expect(facade.preSurchargeSubtotal()).toBe(1000);
+      expect(facade.displayedTotalPrice()).toBe(1200);
+    });
+
+    it('charges no surcharge and shows the bare total for a standard quote', async () => {
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.refreshQuoteNow();
+
+      expect(facade.expressSurchargeApplied()).toBe(false);
       expect(facade.expressSurcharge()).toBe(0);
       expect(facade.displayedTotalPrice()).toBe(1000);
     });

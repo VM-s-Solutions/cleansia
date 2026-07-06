@@ -19,12 +19,7 @@ import {
   takeUntil,
   tap,
 } from 'rxjs';
-import {
-  EXPRESS_LEAD_TIME_HOURS,
-  EXPRESS_SURCHARGE_RATE,
-  OrderWizardFormData,
-  STANDARD_LEAD_TIME_HOURS,
-} from './order-wizard.models';
+import { OrderWizardFormData } from './order-wizard.models';
 
 /**
  * Snapshot of the wizard inputs that affect pricing. Sorted arrays so
@@ -47,14 +42,14 @@ interface PricingConnection {
 }
 
 /**
- * Live server-quote engine + express-surcharge math for the booking wizard.
+ * Live server-quote engine for the booking wizard.
  *
  * The server is the single source of truth for the total — clients never
  * compute prices themselves. This collaborator debounces the wizard's pricing
  * inputs into `/api/Order/Quote` calls (mirroring the mobile pattern) and
- * derives the displayed total (express surcharge layered on the discounted
- * subtotal). The orchestrating facade owns the discount inputs and connects
- * them in via [connect].
+ * renders the server's totals verbatim (the quote already folds any express
+ * surcharge into `totalPrice`). The orchestrating facade owns the discount
+ * inputs and connects them in via [connect].
  */
 @Injectable()
 export class OrderPricingFacade extends UnsubscribeControlDirective {
@@ -70,8 +65,9 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
   private readonly lastQuotedInputs = signal<QuoteInputs | null>(null);
 
   /**
-   * Server-quoted base total — does NOT include the express surcharge. Use
-   * [displayedTotalPrice] for what the user sees in the summary.
+   * Server-quoted total. Already includes the express surcharge whenever the
+   * quoted slot falls in the express window — never re-apply a percentage on
+   * top of this client-side.
    */
   readonly totalPrice = computed(() => this.quote()?.totalPrice ?? 0);
 
@@ -84,45 +80,25 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
     return this.deps?.effectiveDiscount() ?? 0;
   }
 
-  /**
-   * True when the currently-selected (date, time) falls inside the 2–4h lead
-   * window. The backend's QuoteOrder endpoint does NOT know about the cleaning
-   * date/time, so the express surcharge is applied client-side here. Backend
-   * mirrors the same `EXPRESS_SURCHARGE_RATE = 0.20` in `BookingPolicy.cs`
-   * and grosses up at CreateOrder time — keep those two constants in sync.
-   */
-  readonly isExpressSlot = computed(() => {
-    const data = this.formData();
-    if (!data.cleaningDate || !data.cleaningTime) return false;
-    const [h, m] = data.cleaningTime.split(':').map(Number);
-    if (Number.isNaN(h) || Number.isNaN(m)) return false;
-    const slot = new Date(data.cleaningDate);
-    slot.setHours(h, m, 0, 0);
-    const hoursAhead = (slot.getTime() - Date.now()) / (1000 * 60 * 60);
-    return hoursAhead >= EXPRESS_LEAD_TIME_HOURS && hoursAhead < STANDARD_LEAD_TIME_HOURS;
-  });
+  /** Server verdict — true when the quoted slot carried the express surcharge. */
+  readonly expressSurchargeApplied = computed(
+    () => this.quote()?.expressSurchargeApplied ?? false,
+  );
+
+  /** Express surcharge line item, rendered verbatim from the server quote. */
+  readonly expressSurcharge = computed(() => this.quote()?.expressSurchargeAmount ?? 0);
+
+  /** Pre-surcharge subtotal for the breakdown rows — server numbers only. */
+  readonly preSurchargeSubtotal = computed(() => this.totalPrice() - this.expressSurcharge());
 
   /**
-   * 20% surcharge amount (CZK), or 0 when the slot isn't express. Computed
-   * against the POST-discount subtotal so the surcharge tracks what the user
-   * actually pays. Mirrors backend CreateOrder.Handler order: discount on raw,
-   * then surcharge on the discounted price.
+   * Final price the user pays — the server total (surcharge already included)
+   * minus the best-of-three discount. Sidebar + summary both render this so
+   * they always agree.
    */
-  readonly expressSurcharge = computed(() => {
-    if (!this.isExpressSlot()) return 0;
-    const discounted = Math.max(0, this.totalPrice() - this.effectiveDiscount());
-    return discounted * EXPRESS_SURCHARGE_RATE;
-  });
-
-  /**
-   * Final price the user pays — raw subtotal minus best-of-three discount,
-   * plus express surcharge on the discounted total. Sidebar + summary both
-   * render this so they always agree.
-   */
-  readonly displayedTotalPrice = computed(() => {
-    const discounted = Math.max(0, this.totalPrice() - this.effectiveDiscount());
-    return discounted + this.expressSurcharge();
-  });
+  readonly displayedTotalPrice = computed(() =>
+    Math.max(0, this.totalPrice() - this.effectiveDiscount()),
+  );
 
   /** Inputs that affect the server quote. Sorted ids so the snapshot is stable. */
   private readonly quoteInputs = computed<QuoteInputs>(() => {

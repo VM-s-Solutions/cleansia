@@ -166,9 +166,6 @@ export const EXPRESS_LEAD_TIME_HOURS = 2;
 /** Minimum hours for a standard (non-surcharge) booking. Slots between 2–4h lead are "express". */
 export const STANDARD_LEAD_TIME_HOURS = 4;
 
-/** Surcharge applied to base price for express slots (2–4h lead time). */
-export const EXPRESS_SURCHARGE_RATE = 0.20;
-
 export type SlotAvailability = 'available' | 'express' | 'unavailable';
 
 export interface TimeOption {

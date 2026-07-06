@@ -62,12 +62,13 @@ class FakeOrderWizardFacade {
   extras = signal<unknown[]>([]);
 
   totalPrice = signal(0);
+  preSurchargeSubtotal = signal(0);
   displayedTotalPrice = signal(0);
   membershipDiscount = signal(0);
   tierDiscount = signal(0);
   effectivePromoDiscount = signal(0);
   expressSurcharge = signal(0);
-  isExpressSlot = signal(false);
+  expressSurchargeApplied = signal(false);
   appliedDiscountKind = signal<'none' | 'membership' | 'tier' | 'combined' | 'promo'>('none');
   promoCode = signal('');
 

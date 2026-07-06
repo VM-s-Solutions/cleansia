@@ -224,7 +224,7 @@
       <div class="order-wizard__summary-card-body">
         <div class="order-wizard__summary-row">
           <span>{{ 'pages.order.summary.subtotal' | translate }}</span>
-          <span class="order-wizard__summary-row-price">{{ formatPriceFn(facade.totalPrice()) }}</span>
+          <span class="order-wizard__summary-row-price">{{ formatPriceFn(facade.preSurchargeSubtotal()) }}</span>
         </div>
         @if (showMembershipChip()) {
           <div class="order-wizard__summary-row order-wizard__summary-row--discount">
@@ -250,7 +250,7 @@
             </span>
           </div>
         }
-        @if (facade.isExpressSlot()) {
+        @if (facade.expressSurchargeApplied()) {
           <div class="order-wizard__summary-row order-wizard__summary-row--surcharge">
             <span>{{ 'pages.order.express_surcharge_label' | translate }}</span>
             <span class="order-wizard__summary-row-price">

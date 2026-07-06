@@ -749,7 +749,7 @@
               </div>
             }
           }
-          @if (facade.isExpressSlot()) {
+          @if (facade.expressSurchargeApplied()) {
           <div class="order-wizard__sidebar-item order-wizard__sidebar-item--express">
             <span>{{ 'pages.order.express_surcharge_label' | translate }}</span>
             <span>+ {{ formatPrice(facade.expressSurcharge()) }}</span>
@@ -844,7 +844,7 @@
           </div>
         }
       }
-      @if (facade.isExpressSlot()) {
+      @if (facade.expressSurchargeApplied()) {
       <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--express">
         <span>{{ 'pages.order.express_surcharge_label' | translate }}</span>
         <span>+ {{ formatPrice(facade.expressSurcharge()) }}</span>

@@ -11,7 +11,28 @@ describe('OrderPricingFacade', () => {
   let formData: ReturnType<typeof signal<OrderWizardFormData>>;
   let effectiveDiscount: ReturnType<typeof signal<number>>;
 
-  const quoteResponse = { totalPrice: 1000, currencyId: 'czk' };
+  const quoteResponse = {
+    totalPrice: 1000,
+    expressSurchargeApplied: false,
+    expressSurchargeAmount: 0,
+    currencyId: 'czk',
+  };
+  // Server totals already include the surcharge — 1000 base + 200 express.
+  const expressQuoteResponse = {
+    totalPrice: 1200,
+    expressSurchargeApplied: true,
+    expressSurchargeAmount: 200,
+    currencyId: 'czk',
+  };
+
+  function pickExpressSlot(): void {
+    const slot = new Date(Date.now() + 3 * 60 * 60 * 1000);
+    const time = `${slot.getHours().toString().padStart(2, '0')}:${slot
+      .getMinutes()
+      .toString()
+      .padStart(2, '0')}`;
+    formData.update((d) => ({ ...d, cleaningDate: slot, cleaningTime: time }));
+  }
 
   function build(platform: 'server' | 'browser'): void {
     orderClient = { quote: jest.fn().mockReturnValue(of(quoteResponse)) };
@@ -63,7 +84,7 @@ describe('OrderPricingFacade', () => {
     });
   });
 
-  describe('express-surcharge math', () => {
+  describe('server-verbatim pricing display', () => {
     beforeEach(() => build('server'));
 
     it('exposes the server-quoted total via totalPrice', async () => {
@@ -73,43 +94,37 @@ describe('OrderPricingFacade', () => {
       expect(facade.totalPrice()).toBe(1000);
     });
 
-    it('charges a 20% surcharge on the discounted total for an express slot', async () => {
+    it('displays the server total unchanged for an express quote — no client gross-up', async () => {
+      orderClient.quote.mockReturnValue(of(expressQuoteResponse));
       formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));
+      pickExpressSlot();
       await facade.refreshQuoteNow();
-      const slot = new Date(Date.now() + 3 * 60 * 60 * 1000);
-      const time = `${slot.getHours().toString().padStart(2, '0')}:${slot
-        .getMinutes()
-        .toString()
-        .padStart(2, '0')}`;
-      formData.update((d) => ({ ...d, cleaningDate: slot, cleaningTime: time }));
 
-      expect(facade.isExpressSlot()).toBe(true);
-      expect(facade.expressSurcharge()).toBeCloseTo(200, 5);
-      expect(facade.displayedTotalPrice()).toBeCloseTo(1200, 5);
+      expect(facade.expressSurchargeApplied()).toBe(true);
+      expect(facade.expressSurcharge()).toBe(200);
+      expect(facade.preSurchargeSubtotal()).toBe(1000);
+      expect(facade.displayedTotalPrice()).toBe(1200);
     });
 
-    it('layers the surcharge on the post-discount subtotal', async () => {
+    it('subtracts the discount from the server total and keeps the surcharge line verbatim', async () => {
+      orderClient.quote.mockReturnValue(of(expressQuoteResponse));
       formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));
+      pickExpressSlot();
       await facade.refreshQuoteNow();
       effectiveDiscount.set(100);
-      const slot = new Date(Date.now() + 3 * 60 * 60 * 1000);
-      const time = `${slot.getHours().toString().padStart(2, '0')}:${slot
-        .getMinutes()
-        .toString()
-        .padStart(2, '0')}`;
-      formData.update((d) => ({ ...d, cleaningDate: slot, cleaningTime: time }));
 
-      expect(facade.expressSurcharge()).toBeCloseTo(180, 5);
-      expect(facade.displayedTotalPrice()).toBeCloseTo(1080, 5);
+      expect(facade.expressSurcharge()).toBe(200);
+      expect(facade.displayedTotalPrice()).toBe(1100);
     });
 
-    it('shows the bare discounted total and no surcharge for a standard slot', async () => {
+    it('shows the bare discounted total and no surcharge for a standard quote', async () => {
       formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));
       await facade.refreshQuoteNow();
       effectiveDiscount.set(150);
 
-      expect(facade.isExpressSlot()).toBe(false);
+      expect(facade.expressSurchargeApplied()).toBe(false);
       expect(facade.expressSurcharge()).toBe(0);
+      expect(facade.preSurchargeSubtotal()).toBe(1000);
       expect(facade.displayedTotalPrice()).toBe(850);
     });
   });

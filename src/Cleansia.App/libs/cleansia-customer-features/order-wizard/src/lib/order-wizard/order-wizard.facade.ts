@@ -138,13 +138,14 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
 
   // ─── Live quote (server-authoritative pricing) ──────────────────
   //
-  // The quote engine + express-surcharge math live in OrderPricingFacade,
-  // provided alongside this facade on the component. We re-expose its surface
-  // so the template/summary-step keep reading the wizard facade.
+  // The quote engine lives in OrderPricingFacade, provided alongside this
+  // facade on the component. We re-expose its surface so the template/
+  // summary-step keep reading the wizard facade.
   readonly quote = this.pricing.quote;
   readonly quoting = this.pricing.quoting;
   readonly totalPrice = this.pricing.totalPrice;
-  readonly isExpressSlot = this.pricing.isExpressSlot;
+  readonly preSurchargeSubtotal = this.pricing.preSurchargeSubtotal;
+  readonly expressSurchargeApplied = this.pricing.expressSurchargeApplied;
   readonly expressSurcharge = this.pricing.expressSurcharge;
   readonly displayedTotalPrice = this.pricing.displayedTotalPrice;
 
@@ -588,14 +589,11 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       cleaningDate: cleaningDate,
       paymentType: data.paymentType,
       currencyId: quoted.currencyId,
-      // Send the bare server-quoted total (no client-applied surcharge).
-      // `CreateOrder.PriceMatchesAsync` validates against the same calculator
-      // result (`result.TotalPrice == command.TotalPrice`) — exact decimal
-      // match. The handler then grosses up itself when the slot is express.
-      // We avoid sending a JS-multiplied surcharged value because Number×1.2
-      // drifts on prices like 1234.56 (→ 1481.4720000000002), which would
-      // fail the strict-equality grossed-up branch of the validator.
-      // Display-side, the user already sees the surcharge in `displayedTotalPrice`.
+      // Send the server-quoted total unchanged — it already includes any
+      // express surcharge for the quoted slot. `CreateOrder.PriceMatchesAsync`
+      // validates against the same calculator result (`result.TotalPrice ==
+      // command.TotalPrice`), exact decimal match, so any client-side price
+      // math here would be rejected.
       totalPrice: quoted.totalPrice,
       language: this.translate.currentLang || this.translate.getDefaultLang(),
       promoCode: promoCodeToSend,

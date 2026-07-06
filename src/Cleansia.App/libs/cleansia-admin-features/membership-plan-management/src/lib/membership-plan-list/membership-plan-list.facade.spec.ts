@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import {
   AdminMembershipClient,
-  BillingInterval,
   DeactivateMembershipPlanResponse,
   MembershipPlanListItem,
   PagedDataOfMembershipPlanListItem,
@@ -10,6 +9,7 @@ import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { MembershipPlanListFacade } from './membership-plan-list.facade';
+import { BILLING_INTERVAL_WIRE } from './membership-plan-list.models';
 
 describe('MembershipPlanListFacade', () => {
   let facade: MembershipPlanListFacade;
@@ -22,7 +22,7 @@ describe('MembershipPlanListFacade', () => {
         id: 'plan-1',
         code: 'PLUS_MONTHLY',
         name: 'Cleansia Plus',
-        billingInterval: BillingInterval.Monthly,
+        billingInterval: BILLING_INTERVAL_WIRE.monthly,
         monthlyPriceCzk: 199,
         isActive: true,
       }),

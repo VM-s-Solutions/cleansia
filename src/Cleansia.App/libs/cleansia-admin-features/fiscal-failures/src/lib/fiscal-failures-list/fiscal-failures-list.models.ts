@@ -1,7 +1,26 @@
 import { TemplateRef } from '@angular/core';
-import { FiscalFailureDto } from '@cleansia/admin-services';
+import { FiscalErrorKind, FiscalFailureDto } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
+
+/**
+ * FiscalErrorKind wire values — the backend serializes enums as ints
+ * (None=0, Transient=1, Permanent=2, Configuration=3, Unknown=4); the
+ * generated string enum lies about the runtime shape until the admin
+ * client is regenerated.
+ */
+const FISCAL_ERROR_KIND_BADGES: Readonly<Record<number, string>> = {
+  1: 'transient',
+  2: 'permanent',
+  3: 'configuration',
+  4: 'unknown',
+};
+
+export function getFiscalErrorKindBadge(
+  kind: FiscalErrorKind | number | undefined
+): string | undefined {
+  return FISCAL_ERROR_KIND_BADGES[Number(kind)];
+}
 
 export function getFiscalFailureTableColumns(
   translate: TranslateService,

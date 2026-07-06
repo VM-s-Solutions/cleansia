@@ -3,12 +3,32 @@ import { BillingInterval, MembershipPlanListItem } from '@cleansia/admin-service
 import { TableAction, TableColumn } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
 
-export const BILLING_INTERVAL_LABEL_KEYS: Readonly<
-  Record<BillingInterval, string>
-> = {
-  [BillingInterval.Monthly]: 'pages.membership_plans.interval.Monthly',
-  [BillingInterval.Yearly]: 'pages.membership_plans.interval.Yearly',
+/**
+ * BillingInterval wire values — the backend serializes enums as ints
+ * (Monthly=1, Yearly=2); the generated string enum lies about the runtime
+ * shape until the admin client is regenerated.
+ */
+export const BILLING_INTERVAL_WIRE = {
+  monthly: 1,
+  yearly: 2,
+} as const;
+
+export type BillingIntervalWireValue =
+  (typeof BILLING_INTERVAL_WIRE)[keyof typeof BILLING_INTERVAL_WIRE];
+
+export const BILLING_INTERVAL_LABEL_KEYS: Readonly<Record<number, string>> = {
+  [BILLING_INTERVAL_WIRE.monthly]: 'pages.membership_plans.interval.Monthly',
+  [BILLING_INTERVAL_WIRE.yearly]: 'pages.membership_plans.interval.Yearly',
 };
+
+export function toBillingIntervalWireValue(
+  value: BillingInterval | number | undefined
+): BillingIntervalWireValue {
+  if (value === BillingInterval.Yearly) return BILLING_INTERVAL_WIRE.yearly;
+  return Number(value) === BILLING_INTERVAL_WIRE.yearly
+    ? BILLING_INTERVAL_WIRE.yearly
+    : BILLING_INTERVAL_WIRE.monthly;
+}
 
 export function getMembershipPlanTableDefinition(
   defs: {
@@ -39,10 +59,10 @@ export function getMembershipPlanTableDefinition(
         id: 'billingInterval',
         field: 'billingInterval',
         header: translate.instant('pages.membership_plans.columns.interval'),
-        getValue: (row) =>
-          row.billingInterval
-            ? translate.instant(BILLING_INTERVAL_LABEL_KEYS[row.billingInterval])
-            : '',
+        getValue: (row) => {
+          const labelKey = BILLING_INTERVAL_LABEL_KEYS[Number(row.billingInterval)];
+          return labelKey ? translate.instant(labelKey) : '';
+        },
         width: '9%',
       },
       {

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Infra.Common.Attributes;
 
 namespace Cleansia.Core.Domain.Memberships;
 
@@ -8,6 +9,7 @@ namespace Cleansia.Core.Domain.Memberships;
 /// recurring.interval shape (we map Monthly → "month", Yearly → "year"
 /// when registering the Stripe Price). Stored as int — don't reorder.
 /// </summary>
+[SwaggerEnumAsInt]
 public enum BillingInterval
 {
     Monthly = 1,

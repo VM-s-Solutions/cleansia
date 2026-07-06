@@ -1,9 +1,12 @@
+using Cleansia.Infra.Common.Attributes;
+
 namespace Cleansia.Core.Fiscal.Abstractions;
 
 /// <summary>
 /// Classifies a fiscal authority failure so the retry job can decide
 /// whether to retry the request or escalate it to operations.
 /// </summary>
+[SwaggerEnumAsInt]
 public enum FiscalErrorKind
 {
     /// <summary>No error (success or not required).</summary>

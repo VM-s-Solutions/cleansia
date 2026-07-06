@@ -11,10 +11,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import {
-  BillingInterval,
-  MembershipPlanDetailDto,
-} from '@cleansia/admin-services';
+import { MembershipPlanDetailDto } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaCheckboxComponent,
@@ -26,7 +23,12 @@ import {
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { MembershipPlanFormFacade } from './membership-plan-form.facade';
-import { BILLING_INTERVAL_LABEL_KEYS } from '../membership-plan-list/membership-plan-list.models';
+import {
+  BILLING_INTERVAL_LABEL_KEYS,
+  BILLING_INTERVAL_WIRE,
+  BillingIntervalWireValue,
+  toBillingIntervalWireValue,
+} from '../membership-plan-list/membership-plan-list.models';
 
 const CODE_PATTERN = /^[A-Z0-9_]{2,50}$/i;
 
@@ -75,8 +77,8 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
       Validators.required,
       Validators.maxLength(100),
     ]),
-    billingInterval: this.fb.nonNullable.control<BillingInterval>(
-      BillingInterval.Monthly
+    billingInterval: this.fb.nonNullable.control<BillingIntervalWireValue>(
+      BILLING_INTERVAL_WIRE.monthly
     ),
     monthlyPriceCzk: this.fb.control<number | null>(null, [
       Validators.required,
@@ -103,10 +105,12 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
   });
 
   readonly intervalOptions = computed(() =>
-    [BillingInterval.Monthly, BillingInterval.Yearly].map((value) => ({
-      label: this.translate.instant(BILLING_INTERVAL_LABEL_KEYS[value]),
-      value,
-    }))
+    [BILLING_INTERVAL_WIRE.monthly, BILLING_INTERVAL_WIRE.yearly].map(
+      (value) => ({
+        label: this.translate.instant(BILLING_INTERVAL_LABEL_KEYS[value]),
+        value,
+      })
+    )
   );
 
   private readonly populateEffect = effect(() => {
@@ -186,7 +190,7 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
     this.form.patchValue({
       code: detail.code ?? '',
       name: detail.name ?? '',
-      billingInterval: detail.billingInterval ?? BillingInterval.Monthly,
+      billingInterval: toBillingIntervalWireValue(detail.billingInterval),
       monthlyPriceCzk: detail.monthlyPriceCzk ?? null,
       stripePriceId: detail.stripePriceId ?? '',
       discountPercentage: detail.discountPercentage ?? 0,

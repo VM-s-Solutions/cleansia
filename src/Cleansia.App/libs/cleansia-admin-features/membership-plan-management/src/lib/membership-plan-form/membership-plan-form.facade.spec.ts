@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
   AdminMembershipClient,
-  BillingInterval,
   CreateMembershipPlanResponse,
   MembershipPlanDetailDto,
   UpdateMembershipPlanResponse,
@@ -10,6 +9,7 @@ import {
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
+import { BILLING_INTERVAL_WIRE } from '../membership-plan-list/membership-plan-list.models';
 import { MembershipPlanFormFacade } from './membership-plan-form.facade';
 
 describe('MembershipPlanFormFacade', () => {
@@ -26,7 +26,7 @@ describe('MembershipPlanFormFacade', () => {
     id: 'plan-1',
     code: 'PLUS_MONTHLY',
     name: 'Cleansia Plus',
-    billingInterval: BillingInterval.Monthly,
+    billingInterval: BILLING_INTERVAL_WIRE.monthly,
     monthlyPriceCzk: 199,
     stripePriceId: 'price_123',
     discountPercentage: 10,
@@ -39,7 +39,7 @@ describe('MembershipPlanFormFacade', () => {
   const createInput = {
     code: 'plus_yearly',
     name: 'Cleansia Plus Yearly',
-    billingInterval: BillingInterval.Yearly,
+    billingInterval: BILLING_INTERVAL_WIRE.yearly,
     monthlyPriceCzk: 159,
     stripePriceId: 'price_456',
     discountPercentage: 15,
@@ -101,7 +101,7 @@ describe('MembershipPlanFormFacade', () => {
     expect(membershipClient.create).toHaveBeenCalledTimes(1);
     const command = membershipClient.create.mock.calls[0][0];
     expect(command.code).toBe('PLUS_YEARLY');
-    expect(command.billingInterval).toBe(BillingInterval.Yearly);
+    expect(command.toJSON()['billingInterval']).toBe(BILLING_INTERVAL_WIRE.yearly);
     expect(command.monthlyPriceCzk).toBe(159);
     expect(command.stripePriceId).toBe('price_456');
     expect(command.discountPercentage).toBe(15);

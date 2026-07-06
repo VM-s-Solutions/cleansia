@@ -22,6 +22,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subject, takeUntil } from 'rxjs';
 import { FiscalFailuresListFacade } from './fiscal-failures-list.facade';
 import {
+  getFiscalErrorKindBadge,
   getFiscalFailureTableActions,
   getFiscalFailureTableColumns,
 } from './fiscal-failures-list.models';
@@ -45,8 +46,6 @@ export class FiscalFailuresListComponent implements AfterViewInit, OnDestroy {
   private readonly cd = inject(ChangeDetectorRef);
   private readonly translate = inject(TranslateService);
   protected readonly facade = inject(FiscalFailuresListFacade);
-
-  readonly FiscalErrorKind = FiscalErrorKind;
 
   errorKindTemplate = viewChild<TemplateRef<FiscalFailureDto>>('errorKindTemplate');
 
@@ -99,23 +98,15 @@ export class FiscalFailuresListComponent implements AfterViewInit, OnDestroy {
   }
 
   getErrorKindClass(kind: FiscalErrorKind | undefined): string {
-    switch (kind) {
-      case FiscalErrorKind.Transient:
-        return 'fiscal-error-badge fiscal-error-transient';
-      case FiscalErrorKind.Permanent:
-        return 'fiscal-error-badge fiscal-error-permanent';
-      case FiscalErrorKind.Configuration:
-        return 'fiscal-error-badge fiscal-error-configuration';
-      case FiscalErrorKind.Unknown:
-        return 'fiscal-error-badge fiscal-error-unknown';
-      default:
-        return 'fiscal-error-badge';
-    }
+    const badge = getFiscalErrorKindBadge(kind);
+    return badge
+      ? `fiscal-error-badge fiscal-error-${badge}`
+      : 'fiscal-error-badge';
   }
 
   getErrorKindLabel(kind: FiscalErrorKind | undefined): string {
-    if (!kind) return '-';
-    const key = `fiscal_failures.error_kind.${kind.toLowerCase()}`;
-    return this.translate.instant(key);
+    const badge = getFiscalErrorKindBadge(kind);
+    if (!badge) return '-';
+    return this.translate.instant(`fiscal_failures.error_kind.${badge}`);
   }
 }

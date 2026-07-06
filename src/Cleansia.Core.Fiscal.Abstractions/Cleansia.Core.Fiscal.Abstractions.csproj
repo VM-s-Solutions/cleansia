@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- [SwaggerEnumAsInt] on the wire-facing enums; same reference Core.Domain carries. -->
+    <ProjectReference Include="..\Cleansia.Infra.Common\Cleansia.Infra.Common.csproj" />
+  </ItemGroup>
+
 </Project>

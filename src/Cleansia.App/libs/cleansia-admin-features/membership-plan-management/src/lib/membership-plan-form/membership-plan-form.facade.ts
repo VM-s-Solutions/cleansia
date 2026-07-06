@@ -11,12 +11,15 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
-import { resolveMembershipPlanErrorKey } from '../membership-plan-list/membership-plan-list.models';
+import {
+  BillingIntervalWireValue,
+  resolveMembershipPlanErrorKey,
+} from '../membership-plan-list/membership-plan-list.models';
 
 export interface MembershipPlanCreateInput {
   code: string;
   name: string;
-  billingInterval: BillingInterval;
+  billingInterval: BillingIntervalWireValue;
   monthlyPriceCzk: number;
   stripePriceId: string;
   discountPercentage: number;
@@ -66,7 +69,9 @@ export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
     const command = new CreateMembershipPlanCommand({
       code: input.code.trim().toUpperCase(),
       name: input.name.trim(),
-      billingInterval: input.billingInterval,
+      // The wire value is an int (Monthly=1, Yearly=2); the generated string
+      // enum type is stale until the admin client is regenerated.
+      billingInterval: input.billingInterval as unknown as BillingInterval,
       monthlyPriceCzk: input.monthlyPriceCzk,
       stripePriceId: input.stripePriceId.trim(),
       discountPercentage: input.discountPercentage,

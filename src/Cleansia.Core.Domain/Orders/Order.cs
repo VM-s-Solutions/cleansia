@@ -233,11 +233,17 @@ public class Order : Auditable, ITenantEntity
     private ICollection<OrderStatusTrack> _orderStatusHistory = [];
     public IReadOnlyCollection<OrderStatusTrack> OrderStatusHistory => _orderStatusHistory.ToList().AsReadOnly();
 
+    // Persisted denormalization of the latest OrderStatusHistory row, maintained in AddOrderStatus
+    // (the single append seam). OrderStatusHistory stays the authoritative audit trail.
+    private OrderStatus? _currentStatus;
+
     // The ONE way to read current status in memory. CreatedOn is the primary (human-meaningful) sort;
     // Sequence is the deterministic tiebreaker for same-tick transitions the ULID Id can't provide
-    // (Ulid.NewUlid() is not monotonic within a millisecond).
+    // (Ulid.NewUlid() is not monotonic within a millisecond). Falls back to deriving from the loaded
+    // history for rows written before the CurrentStatus column was backfilled.
     public OrderStatus? CurrentStatus =>
-        _orderStatusHistory
+        _currentStatus
+        ?? _orderStatusHistory
             .OrderByDescending(s => s.CreatedOn)
             .ThenByDescending(s => s.Sequence)
             .FirstOrDefault()?.Status;
@@ -340,6 +346,13 @@ public class Order : Auditable, ITenantEntity
         orderStatusTrack.AssignSequence(
             _orderStatusHistory.Count == 0 ? 0 : _orderStatusHistory.Max(s => s.Sequence) + 1);
         _orderStatusHistory.Add(orderStatusTrack);
+        // Recompute (rather than blindly take the appended status) so the persisted value is by
+        // construction the same rule as the audit trail — a track appended with a backdated
+        // CreatedOn (seeds, tests) correctly does NOT become current.
+        _currentStatus = _orderStatusHistory
+            .OrderByDescending(s => s.CreatedOn)
+            .ThenByDescending(s => s.Sequence)
+            .First().Status;
 
         return this;
     }

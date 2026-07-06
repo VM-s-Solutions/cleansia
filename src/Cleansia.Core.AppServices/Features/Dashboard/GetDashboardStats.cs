@@ -18,7 +18,7 @@ public class GetDashboardStats
 {
     public record Query(string? EmployeeId = null) : IQuery<DashboardStatsDto>;
 
-    internal class Handler(
+    public class Handler(
         IOrderRepository orderRepository,
         IEmployeeInvoiceRepository employeeInvoiceRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
@@ -99,14 +99,13 @@ public class GetDashboardStats
             // cleaner's POV. Earnings (below) still go through
             // OrderEmployeePay because money the cleaner hasn't
             // actually had booked is not earnings yet.
-            var thisMonthCompletedOrders = await orderRepository.CountCompletedForEmployeeBetweenAsync(
-                employeeId, currentMonthStart, currentMonthEnd, cancellationToken);
-            var lastMonthCompletedOrders = await orderRepository.CountCompletedForEmployeeBetweenAsync(
-                employeeId, previousMonthStart, previousMonthEnd, cancellationToken);
-            var todayCompletedCount = await orderRepository.CountCompletedForEmployeeBetweenAsync(
-                employeeId, todayStart, todayEnd, cancellationToken);
-            var weekCompletedCount = await orderRepository.CountCompletedForEmployeeBetweenAsync(
-                employeeId, weekStart, weekEnd, cancellationToken);
+            var completedCounts = await orderRepository.CountCompletedForEmployeeWindowsAsync(
+                employeeId,
+                currentMonthStart, currentMonthEnd,
+                previousMonthStart, previousMonthEnd,
+                todayStart, todayEnd,
+                weekStart, weekEnd,
+                cancellationToken);
 
             // Earnings — sum per-order, using booked OrderEmployeePay
             // when it exists, otherwise the per-employee pay-config
@@ -120,22 +119,25 @@ public class GetDashboardStats
             //
             // We do this in three steps shared across the three
             // windows (today / this-week / last-month):
-            //   1. Pull the orders completed in each window (Includes
-            //      services + packages — needed by the estimator).
+            //   1. Pull the orders completed in the week OR last-month
+            //      window in ONE round trip (today ⊆ week, so the today
+            //      rows are a subset) and partition in memory with the
+            //      same inclusive bounds the per-window fetches used.
             //   2. Load pay configs ONCE for the union of all
             //      service / package ids touched by any window.
             //   3. For each window, sum: booked pay (if a row exists)
             //      OR estimator output OR 0 if no config matches.
-            var todayCompletedOrderRows = await orderRepository.GetCompletedOrdersByDateRangeAsync(
-                employeeId, todayStart, todayEnd, cancellationToken);
-            var weekCompletedOrderRows = await orderRepository.GetCompletedOrdersByDateRangeAsync(
-                employeeId, weekStart, weekEnd, cancellationToken);
-            var lastMonthCompletedOrderRows = await orderRepository.GetCompletedOrdersByDateRangeAsync(
-                employeeId, previousMonthStart, previousMonthEnd, cancellationToken);
+            var fetchedCompletedOrders = await orderRepository.GetCompletedOrdersInEitherRangeAsync(
+                employeeId, weekStart, weekEnd, previousMonthStart, previousMonthEnd, cancellationToken);
 
-            var allCompletedOrders = todayCompletedOrderRows
-                .Concat(weekCompletedOrderRows)
-                .Concat(lastMonthCompletedOrderRows)
+            List<Cleansia.Core.Domain.Orders.Order> InWindow(DateTime start, DateTime end) =>
+                fetchedCompletedOrders.Where(o => o.CompletedAt >= start && o.CompletedAt <= end).ToList();
+
+            var todayCompletedOrderRows = InWindow(todayStart, todayEnd);
+            var weekCompletedOrderRows = InWindow(weekStart, weekEnd);
+            var lastMonthCompletedOrderRows = InWindow(previousMonthStart, previousMonthEnd);
+
+            var allCompletedOrders = fetchedCompletedOrders
                 .DistinctBy(o => o.Id)
                 .ToList();
             var allServiceIds = allCompletedOrders
@@ -211,12 +213,12 @@ public class GetDashboardStats
             return new DashboardStatsDto(
                 AvailableOrdersCount: availableOrdersCount,
                 MyActiveOrdersCount: activeOrdersCount,
-                ThisMonthCompletedOrders: thisMonthCompletedOrders,
-                LastMonthCompletedOrders: lastMonthCompletedOrders,
+                ThisMonthCompletedOrders: completedCounts.ThisMonth,
+                LastMonthCompletedOrders: completedCounts.LastMonth,
                 TodayEarnings: todayEarnings,
-                TodayCompletedCount: todayCompletedCount,
+                TodayCompletedCount: completedCounts.Today,
                 WeekEarnings: weekEarnings,
-                WeekCompletedCount: weekCompletedCount,
+                WeekCompletedCount: completedCounts.Week,
                 LastMonthEarnings: lastMonthEarnings,
                 CurrentPeriodEarnings: pendingEarnings > 0 ? pendingEarnings : latestInvoice?.TotalAmount ?? 0,
                 CurrentPayPeriodStart: periodStart,

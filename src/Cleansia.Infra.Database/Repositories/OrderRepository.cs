@@ -71,6 +71,54 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .CountAsync(cancellationToken);
     }
 
+    public async Task<CompletedOrderWindowCounts> CountCompletedForEmployeeWindowsAsync(
+        string employeeId,
+        DateTime thisMonthStart, DateTime thisMonthEnd,
+        DateTime lastMonthStart, DateTime lastMonthEnd,
+        DateTime todayStart, DateTime todayEnd,
+        DateTime weekStart, DateTime weekEnd,
+        CancellationToken cancellationToken)
+    {
+        var overallStart = Min(thisMonthStart, Min(lastMonthStart, Min(todayStart, weekStart)));
+        var overallEnd = Max(thisMonthEnd, Max(lastMonthEnd, Max(todayEnd, weekEnd)));
+
+        var counts = await GetDbSet()
+            .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId)
+                && o.CompletedAt >= overallStart
+                && o.CompletedAt < overallEnd)
+            .GroupBy(_ => 1)
+            .Select(g => new CompletedOrderWindowCounts(
+                g.Count(o => o.CompletedAt >= thisMonthStart && o.CompletedAt < thisMonthEnd),
+                g.Count(o => o.CompletedAt >= lastMonthStart && o.CompletedAt < lastMonthEnd),
+                g.Count(o => o.CompletedAt >= todayStart && o.CompletedAt < todayEnd),
+                g.Count(o => o.CompletedAt >= weekStart && o.CompletedAt < weekEnd)))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return counts ?? CompletedOrderWindowCounts.Empty;
+    }
+
+    public async Task<IReadOnlyList<Order>> GetCompletedOrdersInEitherRangeAsync(
+        string employeeId,
+        DateTime firstStart, DateTime firstEnd,
+        DateTime secondStart, DateTime secondEnd,
+        CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
+            .Include(o => o.AssignedEmployees)
+            .Include(o => o.SelectedServices)
+                .ThenInclude(s => s.Service)
+            .Include(o => o.SelectedPackages)
+                .ThenInclude(op => op.Package)
+            .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId)
+                && ((o.CompletedAt >= firstStart && o.CompletedAt <= firstEnd)
+                    || (o.CompletedAt >= secondStart && o.CompletedAt <= secondEnd)))
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
+    }
+
+    private static DateTime Min(DateTime a, DateTime b) => a <= b ? a : b;
+    private static DateTime Max(DateTime a, DateTime b) => a >= b ? a : b;
+
 
     public override Task<Order?> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
@@ -179,18 +227,14 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
 
     public async Task<bool> UserHasCompletedOrderWithEmployeeAsync(string userId, string employeeId, CancellationToken ct)
     {
-        // Most-recent status flip on each candidate order tells us if the
-        // booking actually finished. Past Completed orders qualify; in-flight
+        // Current status on each candidate order tells us if the booking
+        // actually finished. Past Completed orders qualify; in-flight
         // ones don't (you can't request "the cleaner I'm currently with" as a
         // preference for a future booking — they need to have finished one).
         return await GetDbSet()
             .Where(o => o.UserId == userId
                 && o.AssignedEmployees.Any(e => e.EmployeeId == employeeId)
-                && o.OrderStatusHistory
-                    .OrderByDescending(s => s.CreatedOn)
-                    .ThenByDescending(s => s.Sequence)
-                    .Select(s => s.Status)
-                    .FirstOrDefault() == OrderStatus.Completed)
+                && o.CurrentStatus == OrderStatus.Completed)
             .AnyAsync(ct);
     }
 
@@ -201,14 +245,17 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // average across all of them; we don't filter by status because a
         // customer might review while the order is still "Completed-but-not-
         // closed" (existing system) and we want that signal too.
-        var ratings = await GetDbSet()
+        // AVG/COUNT computed in SQL — the previous version materialized every
+        // rating row just to average in memory.
+        var aggregate = await GetDbSet()
             .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId))
             .SelectMany(o => o.Reviews)
-            .Select(r => r.Rating)
-            .ToListAsync(cancellationToken);
+            .GroupBy(_ => 1)
+            .Select(g => new { Average = g.Average(r => (double)r.Rating), Count = g.Count() })
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (ratings.Count == 0) return (null, 0);
-        return (ratings.Average(), ratings.Count);
+        if (aggregate is null) return (null, 0);
+        return (aggregate.Average, aggregate.Count);
     }
 
     public async Task<List<Order>> GetReceiptReconciliationCandidatesAsync(
@@ -240,24 +287,54 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // (whose body is an untranslatable tenantProvider.GetCurrentTenantId() call) is NOT re-attached
         // inside the correlated subquery — and so the cross-tenant system read stays correct: a stale
         // order in tenant T whose receipt is registered must still be seen as realized, which requires
-        // the subquery to look across tenants too (same as the outer IgnoreQueryFilters). The Include of
-        // Receipt + CustomerAddress stays for LOADing the graph the per-item enforcement-mode resolution
-        // needs — Include for LOAD is fine; the bug was the Include'd nav inside the WHERE.
+        // the subquery to look across tenants too (same as the outer IgnoreQueryFilters).
         var registeredReceipts = Context.Set<OrderReceipt>().IgnoreQueryFilters();
 
-        return await GetDbSet()
+        // The single-query `(Cash OR Paid)` shape forced a seq scan 288x/day — the OR defeats both
+        // (PaymentType|PaymentStatus, CreatedOn) composites. Split the eligibility into one
+        // index-served, CreatedOn-ordered, take-bounded arm per composite and UNION them: the global
+        // oldest `take` candidates are always contained in (cash top-take ∪ paid top-take), and the
+        // Union dedupes an order that is both Cash and Paid. Ids first, then one graph load — the
+        // Include of Receipt + Language + CustomerAddress stays because the per-item
+        // enforcement-mode resolution needs it (Language so the re-enqueue preserves the receipt's
+        // locale instead of defaulting to English).
+        var cashArm = GetDbSet()
             .IgnoreQueryFilters()
-            .Include(o => o.Receipt)
-                // Load Receipt.Language so the recon re-enqueue preserves the receipt's
-                // locale. Without this ThenInclude the nav was always null and the re-enqueue defaulted
-                // every receipt to English.
-                .ThenInclude(r => r!.Language)
-            .Include(o => o.CustomerAddress)
-            .Where(o => (o.PaymentType == PaymentType.Cash || o.PaymentStatus == PaymentStatus.Paid)
+            .Where(o => o.PaymentType == PaymentType.Cash
                 && o.CreatedOn <= cutoff
                 && !registeredReceipts.Any(r => r.OrderId == o.Id && r.FiscalCode != null))
             .OrderBy(o => o.CreatedOn)
             .Take(take)
+            .Select(o => new { o.Id, o.CreatedOn });
+
+        var paidArm = GetDbSet()
+            .IgnoreQueryFilters()
+            .Where(o => o.PaymentStatus == PaymentStatus.Paid
+                && o.CreatedOn <= cutoff
+                && !registeredReceipts.Any(r => r.OrderId == o.Id && r.FiscalCode != null))
+            .OrderBy(o => o.CreatedOn)
+            .Take(take)
+            .Select(o => new { o.Id, o.CreatedOn });
+
+        var candidateIds = await cashArm
+            .Union(paidArm)
+            .OrderBy(x => x.CreatedOn)
+            .Take(take)
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
+
+        if (candidateIds.Count == 0)
+        {
+            return [];
+        }
+
+        return await GetDbSet()
+            .IgnoreQueryFilters()
+            .Include(o => o.Receipt)
+                .ThenInclude(r => r!.Language)
+            .Include(o => o.CustomerAddress)
+            .Where(o => candidateIds.Contains(o.Id))
+            .OrderBy(o => o.CreatedOn)
             .ToListAsync(cancellationToken);
     }
 }

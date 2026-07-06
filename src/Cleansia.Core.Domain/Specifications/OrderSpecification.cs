@@ -108,7 +108,12 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
 
         if (OrderStatuses is not null && OrderStatuses.Any())
         {
-            specification &= new DirectSpecification<Order>(x => OrderStatuses.Contains(x.OrderStatusHistory.OrderByDescending(s => s.CreatedOn).ThenByDescending(s => s.Sequence).First().Status));
+            // Reads the persisted Order.CurrentStatus column (denormalized from OrderStatusHistory at
+            // the AddOrderStatus seam) instead of a per-row latest-history subquery, so the status
+            // filter is index-served. Rows with a NULL column (pre-backfill) are excluded — the
+            // deploy runbook re-runs the idempotent backfill after rollout to close that window.
+            specification &= new DirectSpecification<Order>(x =>
+                x.CurrentStatus != null && OrderStatuses.Contains(x.CurrentStatus.Value));
         }
 
         if (IsUnassigned.HasValue && IsUnassigned.Value)

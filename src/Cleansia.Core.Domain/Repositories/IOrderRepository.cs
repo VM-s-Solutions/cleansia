@@ -36,6 +36,31 @@ public interface IOrderRepository : IRepository<Order, string>
         string employeeId, DateTime from, DateTime to, CancellationToken cancellationToken);
 
     /// <summary>
+    /// The dashboard's four completion counts (this month / last month / today / this week) in ONE
+    /// grouped query. Same semantics as four <see cref="CountCompletedForEmployeeBetweenAsync"/>
+    /// calls with half-open [from, to) windows over <c>Order.CompletedAt</c>.
+    /// </summary>
+    Task<CompletedOrderWindowCounts> CountCompletedForEmployeeWindowsAsync(
+        string employeeId,
+        DateTime thisMonthStart, DateTime thisMonthEnd,
+        DateTime lastMonthStart, DateTime lastMonthEnd,
+        DateTime todayStart, DateTime todayEnd,
+        DateTime weekStart, DateTime weekEnd,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Completed orders for an employee falling in EITHER of two inclusive [start, end] windows —
+    /// one round trip covering the dashboard's week + last-month earnings windows (today is a subset
+    /// of the week window; callers partition in memory). Loads the services/packages graph the pay
+    /// estimator needs, same as <see cref="GetCompletedOrdersByDateRangeAsync"/>.
+    /// </summary>
+    Task<IReadOnlyList<Order>> GetCompletedOrdersInEitherRangeAsync(
+        string employeeId,
+        DateTime firstStart, DateTime firstEnd,
+        DateTime secondStart, DateTime secondEnd,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// All orders within a date range. Used by the admin revenue report.
     /// </summary>
     Task<IReadOnlyList<Order>> GetOrdersByDateRangeAsync(

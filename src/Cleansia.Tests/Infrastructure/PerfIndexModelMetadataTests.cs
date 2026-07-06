@@ -1,5 +1,6 @@
 using Cleansia.Core.Domain.Devices;
 using Cleansia.Core.Domain.Memberships;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
@@ -97,6 +98,34 @@ public sealed class PerfIndexModelMetadataTests : IDisposable
     {
         using var ctx = NewContext();
         Assert.True(HasIndexOn<Device>(ctx, nameof(Device.IsActive), nameof(Device.LastActiveAt)));
+    }
+
+    [Fact]
+    public void Orders_HasCurrentStatusCleaningDateTimeIndex_ForStatusPredicates()
+    {
+        using var ctx = NewContext();
+        Assert.True(HasIndexOn<Order>(ctx, nameof(Order.CurrentStatus), nameof(Order.CleaningDateTime)));
+    }
+
+    [Fact]
+    public void Orders_HasPaymentTypeCreatedOnIndex_ForFiscalSweepCashArm()
+    {
+        using var ctx = NewContext();
+        Assert.True(HasIndexOn<Order>(ctx, nameof(Order.PaymentType), nameof(Order.CreatedOn)));
+    }
+
+    [Fact]
+    public void Orders_HasStripePaymentIntentIdIndex_ForDisputeWebhookLookup()
+    {
+        using var ctx = NewContext();
+        Assert.True(HasIndexOn<Order>(ctx, nameof(Order.StripePaymentIntentId)));
+    }
+
+    [Fact]
+    public void Orders_HasCustomerPhoneIndex_ForPhoneBackfillScan()
+    {
+        using var ctx = NewContext();
+        Assert.True(HasIndexOn<Order>(ctx, nameof(Order.CustomerPhone)));
     }
 
     private sealed class NullTenantProvider : ITenantProvider

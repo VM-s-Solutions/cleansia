@@ -89,9 +89,35 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
 
         // The fiscal receipt-reconciliation sweep runs 288x/day:
         //   WHERE (PaymentType = Cash OR PaymentStatus = Paid) AND CreatedOn <= cutoff ORDER BY CreatedOn
-        // over the unboundedly growing Orders table. A (PaymentStatus, CreatedOn) composite serves the
-        // Paid arm's equality + the range/sort, turning the seq-scan-plus-full-sort into an index scan.
+        // over the unboundedly growing Orders table. The sweep query is split into one arm per
+        // eligibility clause; (PaymentStatus, CreatedOn) serves the Paid arm and (PaymentType,
+        // CreatedOn) the Cash arm — each an equality + range/sort index scan instead of a seq scan.
         builder.HasIndex(o => new { o.PaymentStatus, o.CreatedOn });
+        builder.HasIndex(o => new { o.PaymentType, o.CreatedOn });
+
+        // Persisted current status, denormalized from OrderStatusHistory in Order.AddOrderStatus
+        // (the single append seam). Nullable: rows written before the backfill read as "unknown" and
+        // the entity falls back to deriving from the loaded history. Field access mode — the public
+        // property is get-only with the history fallback, so EF must read/write the backing field.
+        builder.Property(o => o.CurrentStatus)
+            .HasField("_currentStatus")
+            .UsePropertyAccessMode(PropertyAccessMode.Field)
+            .IsRequired(false);
+
+        // (CurrentStatus, CleaningDateTime): the leftmost prefix serves the status-set predicates
+        // migrated off the per-row latest-history subquery (partner available/active dashboard
+        // counts, admin/partner status filters), and the second column serves the spec's most common
+        // combined shape — status set + cleaning-date window — without a second index.
+        builder.HasIndex(o => new { o.CurrentStatus, o.CleaningDateTime });
+
+        // Dispute webhook lookup: charge.dispute.* events resolve the order by payment intent
+        // (GetByStripePaymentIntentIdIgnoringTenantAsync) on an anonymous hot path.
+        builder.HasIndex(o => o.StripePaymentIntentId);
+
+        // UpdateCurrentUser back-fills a phone change onto historical orders matched by
+        // CustomerPhone (including anonymous orders sharing the phone, so it cannot become a
+        // UserId-keyed lookup without changing semantics).
+        builder.HasIndex(o => o.CustomerPhone);
 
         // Stamped by the 24h-ahead reminder sweep. Indexed alongside
         // RecurringTemplateId so the sweep's "find Pending recurring orders

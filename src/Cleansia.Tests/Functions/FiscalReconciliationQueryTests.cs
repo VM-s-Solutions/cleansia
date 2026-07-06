@@ -218,6 +218,59 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         Assert.Empty(due);
     }
 
+    // ── OR-shape regression — the sweep is now a UNION of a Cash arm and a Paid arm; an order that
+    // is BOTH Cash and Paid must appear exactly once ──
+
+    [Fact]
+    public async Task Receipt_Recon_Returns_DualEligible_Cash_And_Paid_Order_Once()
+    {
+        await EnsureSchemaAsync();
+        var stale = DateTimeOffset.UtcNow.AddMinutes(-60);
+
+        await using (var seed = NewContext())
+        {
+            seed.Add(NewOrder("01HZX9N6M7Q8R9S0T1V2W3X415", PaymentType.Cash, PaymentStatus.Paid, stale));
+            await seed.CommitAsync(CancellationToken.None);
+        }
+
+        await using var ctx = NewContext();
+        var repo = new OrderRepository(ctx);
+        var cutoff = DateTime.UtcNow.AddMinutes(-15);
+        var due = await repo.GetReceiptReconciliationCandidatesAsync(cutoff, take: 50, CancellationToken.None);
+
+        Assert.Single(due);
+        Assert.Equal("01HZX9N6M7Q8R9S0T1V2W3X415", due[0].Id);
+    }
+
+    // ── OR-shape regression — `take` still selects the GLOBALLY oldest candidates across both
+    // arms (oldest-first), not per-arm quotas ──
+
+    [Fact]
+    public async Task Receipt_Recon_Take_Selects_Globally_Oldest_Across_Both_Arms()
+    {
+        await EnsureSchemaAsync();
+        var oldest = DateTimeOffset.UtcNow.AddMinutes(-90);
+        var middle = DateTimeOffset.UtcNow.AddMinutes(-60);
+        var newest = DateTimeOffset.UtcNow.AddMinutes(-30);
+
+        await using (var seed = NewContext())
+        {
+            seed.Add(NewOrder("01HZX9N6M7Q8R9S0T1V2W3X416", PaymentType.Cash, PaymentStatus.Pending, oldest));
+            seed.Add(NewOrder("01HZX9N6M7Q8R9S0T1V2W3X417", PaymentType.Card, PaymentStatus.Paid, middle));
+            seed.Add(NewOrder("01HZX9N6M7Q8R9S0T1V2W3X418", PaymentType.Cash, PaymentStatus.Pending, newest));
+            await seed.CommitAsync(CancellationToken.None);
+        }
+
+        await using var ctx = NewContext();
+        var repo = new OrderRepository(ctx);
+        var cutoff = DateTime.UtcNow.AddMinutes(-15);
+        var due = await repo.GetReceiptReconciliationCandidatesAsync(cutoff, take: 2, CancellationToken.None);
+
+        Assert.Equal(2, due.Count);
+        Assert.Equal("01HZX9N6M7Q8R9S0T1V2W3X416", due[0].Id);
+        Assert.Equal("01HZX9N6M7Q8R9S0T1V2W3X417", due[1].Id);
+    }
+
     // ── A stale PayPeriod with an employee lacking an EmployeeInvoice is swept ──
 
     [Fact]

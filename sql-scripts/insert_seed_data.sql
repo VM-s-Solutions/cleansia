@@ -1335,6 +1335,18 @@ FROM (
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '2 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0018' LIMIT 1))
 ) AS v("Id", "IsActive", "CreatedBy", "CreatedOn", "Status", "OrderId");
 
+-- The raw history INSERT above bypasses Order.AddOrderStatus, which is the seam that
+-- maintains the denormalized Orders.CurrentStatus column, so backfill it here with the
+-- same latest-by-CreatedOn-then-Sequence rule (idempotent, same UPDATE as the migration).
+UPDATE public."Orders" o
+SET "CurrentStatus" = h."Status"
+FROM (
+  SELECT DISTINCT ON ("OrderId") "OrderId", "Status"
+  FROM public."OrderStatusHistory"
+  ORDER BY "OrderId", "CreatedOn" DESC, "Sequence" DESC
+) h
+WHERE h."OrderId" = o."Id";
+
 -- 13. PAY PERIODS
 -- Creating monthly pay periods for the last 3 months and upcoming month
 INSERT INTO public."PayPeriods" (

@@ -10,12 +10,17 @@ on:
       - '*'
     paths:
       - 'src/cleansia_ios/**'
+      # Shared mobile OpenAPI specs (committed in the Android tree) that
+      # scripts/generate-api-clients.sh consumes — a spec-only change must
+      # re-run the iOS codegen + builds too.
+      - 'src/cleansia_android/openapi/**'
       - '.github/workflows/ios-ci.yml'
   push:
     branches:
       - master
     paths:
       - 'src/cleansia_ios/**'
+      - 'src/cleansia_android/openapi/**'
       - '.github/workflows/ios-ci.yml'
 
 jobs:
@@ -33,7 +38,29 @@ jobs:
       # xcodegen + xcbeautify are not on the runner image (swiftlint usually is);
       # installing them keeps CI independent of image drift.
       - name: Install toolchain
-        run: brew install xcodegen swiftlint xcbeautify openapi-generator
+        run: brew install xcodegen swiftlint xcbeautify
+
+      # openapi-generator is PINNED (not brew-latest) for the same reason as
+      # SwiftFormat below: the generated business clients are wire-load-bearing,
+      # and a generator bump silently changes their output. 7.10.0 matches the
+      # version Android pins for the same shared specs
+      # (src/cleansia_android/gradle/libs.versions.toml → org.openapi.generator),
+      # so both platforms generate one contract with one generator. Checksum-
+      # verified jar from Maven Central; the runner image ships a Temurin JDK,
+      # and generate-api-clients.sh only needs `openapi-generator` on PATH.
+      - name: Install openapi-generator (pinned 7.10.0)
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/openapi-generator-cli.jar \
+            https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.10.0/openapi-generator-cli-7.10.0.jar
+          echo "615e014705af34861e789e0b2a11075d3c80db134f881e937265479a4a83996e  /tmp/openapi-generator-cli.jar" \
+            | shasum -a 256 -c -
+          sudo mkdir -p /usr/local/bin /usr/local/lib
+          sudo mv /tmp/openapi-generator-cli.jar /usr/local/lib/openapi-generator-cli.jar
+          printf '#!/usr/bin/env bash\nexec java -jar /usr/local/lib/openapi-generator-cli.jar "$@"\n' \
+            | sudo tee /usr/local/bin/openapi-generator >/dev/null
+          sudo chmod +x /usr/local/bin/openapi-generator
+          openapi-generator version
 
       # SwiftFormat is PINNED (not brew-latest): a brew bump silently adds new default
       # rules, failing CI on code that passed a dev's older local lint (the docComments

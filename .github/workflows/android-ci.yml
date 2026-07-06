@@ -1,9 +1,27 @@
 name: Android CI
 
+# Also runs on pushes to master: direct-to-master commits used to bypass this
+# gate entirely (pull_request-only) — the same hole backend-ci and ios-ci already
+# closed. Paths-scoped to the Android tree so backend/frontend/iOS changes skip it.
 on:
   pull_request:
     branches:
       - '*'
+    paths:
+      - 'src/cleansia_android/**'
+      - '.github/workflows/android-ci.yml'
+  push:
+    branches:
+      - master
+    paths:
+      - 'src/cleansia_android/**'
+      - '.github/workflows/android-ci.yml'
+
+# A newer push to the same ref supersedes the in-flight run — stacked runs only
+# burn runner minutes on stale SHAs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:

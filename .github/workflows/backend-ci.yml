@@ -3,13 +3,35 @@ name: Backend CI
 # Also runs on pushes to master: direct-to-master commits used to bypass this gate
 # entirely (pull_request-only), which is how the stale ConfirmUserEmail integration
 # tests rode in red and unnoticed until the next PR surfaced them.
+# Paths-scoped to the backend trees: the frontend (Cleansia.App), Android and iOS
+# trees have their own CIs, so their changes must not spin the full Testcontainers
+# suite here. The sln + Directory.Packages.props live under src/, so 'src/**'
+# covers them.
 on:
   pull_request:
     branches:
       - '*'
+    paths:
+      - 'src/**'
+      - '!src/Cleansia.App/**'
+      - '!src/cleansia_android/**'
+      - '!src/cleansia_ios/**'
+      - '.github/workflows/backend-ci.yml'
   push:
     branches:
       - master
+    paths:
+      - 'src/**'
+      - '!src/Cleansia.App/**'
+      - '!src/cleansia_android/**'
+      - '!src/cleansia_ios/**'
+      - '.github/workflows/backend-ci.yml'
+
+# A newer push to the same ref supersedes the in-flight run — the container-backed
+# suites are the long pole, and stacked runs only burn runner minutes on stale SHAs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:

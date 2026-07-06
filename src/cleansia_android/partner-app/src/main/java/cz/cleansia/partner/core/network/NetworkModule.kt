@@ -118,6 +118,7 @@ object NetworkModule {
     fun provideLoggingInterceptor(): HttpLoggingInterceptor = HttpLoggingInterceptor().apply {
         level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.HEADERS
         else HttpLoggingInterceptor.Level.NONE
+        redactHeader("Authorization")
     }
 
     /**

@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  cleansia_auth_tokens.xml: EncryptedSharedPreferences token store (:core TokenStore).
+  datastore/user_addresses:    saved address PII.
+  datastore/push_token_state:  FCM device-registration state.
+  datastore/app_settings stays backed up — theme/locale only.
+-->
 <full-backup-content>
-    <exclude domain="sharedpref" path="cleansia_secure.xml" />
-    <exclude domain="sharedpref" path="auth_prefs.xml" />
+    <exclude domain="sharedpref" path="cleansia_auth_tokens.xml" />
+    <exclude domain="file" path="datastore/user_addresses.preferences_pb" />
+    <exclude domain="file" path="datastore/push_token_state.preferences_pb" />
 </full-backup-content>

@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Same exclusions as backup_rules.xml (Android 12+ variant) — see there
+     for what lives in each domain. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="." />
         <exclude domain="database" path="." />
+        <exclude domain="file" path="datastore/" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="." />
         <exclude domain="database" path="." />
+        <exclude domain="file" path="datastore/" />
     </device-transfer>
 </data-extraction-rules>

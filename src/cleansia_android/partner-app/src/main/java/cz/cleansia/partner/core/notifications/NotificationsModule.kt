@@ -58,9 +58,9 @@ object NotificationsModule {
 
 /**
  * Binds the partner [DeviceRegistrationClient] and joins [PushTokenRepository]
- * to the [SessionScopedCache] multibinding so its `clear()` runs on every
- * sign-out alongside the other per-user caches. Separate abstract module
- * because @Binds can't live in an `object` module.
+ * + [NotificationFeedCache] to the [SessionScopedCache] multibinding so their
+ * `clear()` runs on every sign-out alongside the other per-user caches.
+ * Separate abstract module because @Binds can't live in an `object` module.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -73,4 +73,8 @@ abstract class NotificationsBindingsModule {
     @Binds
     @IntoSet
     abstract fun bindPushTokenRepository(impl: PushTokenRepository): SessionScopedCache
+
+    @Binds
+    @IntoSet
+    abstract fun bindNotificationFeedCache(impl: NotificationFeedCache): SessionScopedCache
 }

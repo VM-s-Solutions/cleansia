@@ -22,4 +22,8 @@ interface NotificationDao {
     /** Called when the feed opens — everything visible is now seen. */
     @Query("UPDATE notification_records SET isRead = 1 WHERE isRead = 0")
     suspend fun markAllRead()
+
+    /** Sign-out wipe — the next account on the device must not inherit this feed. */
+    @Query("DELETE FROM notification_records")
+    suspend fun clearAll()
 }

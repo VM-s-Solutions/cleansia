@@ -52,6 +52,7 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.partner.BuildConfig
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.GetOrderPhotosOrderPhotoDto
 import cz.cleansia.partner.api.model.PhotoType
@@ -230,19 +231,22 @@ private fun PhotoTile(
         // SubcomposeAsyncImage so we can render distinct loading /
         // error states (vs the silent blank that AsyncImage falls
         // back to). Explicit ImageRequest with crossfade so the photo
-        // fades in on load. listener logs success/failure to logcat
-        // so we can debug bad SAS URLs / blob auth issues.
+        // fades in on load. listener logs failures to logcat — debug
+        // builds only, SAS query stripped so the signed token never
+        // hits the log.
         SubcomposeAsyncImage(
             model = ImageRequest.Builder(context)
                 .data(photo.blobUrl)
                 .crossfade(true)
                 .listener(
                     onError = { _, result ->
-                        android.util.Log.w(
-                            "PhotoTile",
-                            "Photo load failed url=${photo.blobUrl}",
-                            result.throwable,
-                        )
+                        if (BuildConfig.DEBUG) {
+                            android.util.Log.w(
+                                "PhotoTile",
+                                "Photo load failed url=${photo.blobUrl?.substringBefore('?')}",
+                                result.throwable,
+                            )
+                        }
                     },
                 )
                 .build(),

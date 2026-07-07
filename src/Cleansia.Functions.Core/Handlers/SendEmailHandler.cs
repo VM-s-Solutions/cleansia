@@ -13,11 +13,14 @@ namespace Cleansia.Functions.Core.Handlers;
 /// record this intent post-commit; this consumer resolves the template by <see cref="EmailType"/> and
 /// sends via the existing <see cref="IEmailService"/>, preserving the language the producer chose.
 ///
-/// Idempotent via <see cref="IIdempotencyGuard"/> (claim-then-act on the deterministic key, before the
-/// terminal send) so a redelivery / duplicate enqueue re-sends nothing. Dual-reads the bare in-flight
-/// payload at the deploy boundary, synthesizing the same key from the payload. Classifies failures: a
-/// malformed / business-rejected body acks (no throw); an infra/transport fault throws so the runtime
-/// retries to maxDequeueCount and then dead-letters.
+/// Idempotent via <see cref="IIdempotencyGuard"/> in ACT-THEN-CLAIM mode (at-least-once): non-claiming
+/// check on the deterministic key → send → claim. A FAILED send leaves the key unclaimed so the queue
+/// retry genuinely retries — the previous claim-then-act permanently lost any email whose send failed
+/// after the claim. The accepted residual is a rare duplicate email, never a lost one; claim-then-act
+/// stays mandatory for consumers whose effect is not safely repeatable (anything money-shaped).
+/// Dual-reads the bare in-flight payload at the deploy boundary, synthesizing the same key from the
+/// payload. Classifies failures: a malformed / business-rejected body acks (no throw); an
+/// infra/transport fault throws so the runtime retries to maxDequeueCount and then dead-letters.
 /// </summary>
 public class SendEmailHandler(
     IEmailService emailService,
@@ -69,7 +72,7 @@ public class SendEmailHandler(
 
         var messageKey = MessageKeys.Email(message.EmailType, message.UserId, MessageKeys.HashCode(message.Code));
 
-        if (await idempotencyGuard.AlreadyProcessedAsync(messageKey, ct))
+        if (await idempotencyGuard.HasProcessedAsync(messageKey, ct))
         {
             logger.LogInformation("Email {MessageKey} already sent, skipping (idempotent)", messageKey);
             return;
@@ -90,10 +93,25 @@ public class SendEmailHandler(
         }
         catch (Exception ex)
         {
+            // The key is still unclaimed, so this redelivery genuinely re-attempts the send.
             logger.LogError(ex,
                 "Transient/infra failure sending {EmailType} email for user {UserId} — will retry via queue",
                 message.EmailType, message.UserId);
             throw;
+        }
+
+        try
+        {
+            await idempotencyGuard.MarkProcessedAsync(messageKey, ct);
+        }
+        catch (Exception ex)
+        {
+            // The email IS sent; throwing here would force an immediate redelivery — a guaranteed
+            // duplicate. Log and ack: the residual is a rare duplicate IF this message is redelivered
+            // while its key remains unclaimed, which is the accepted worst case for a notification email.
+            logger.LogWarning(ex,
+                "Sent {EmailType} email to user {UserId} but failed to record the idempotency claim (key {MessageKey}) — acking; a redelivery may duplicate this email",
+                message.EmailType, message.UserId, messageKey);
         }
     }
 

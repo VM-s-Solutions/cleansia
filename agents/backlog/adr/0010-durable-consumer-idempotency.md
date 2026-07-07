@@ -3,7 +3,14 @@
 - **Status:** accepted   <!-- proposed | accepted | superseded | rejected -->
 - **Date:** 2026-06-09
 - **Supersedes:** —
-- **Superseded by:** —
+- **Superseded by:** ADR-0023 **partially** (2026-07-08) — only the **claim ordering for the
+  send-email consumer** (the D2 at-most-once-after-the-marker semantic as the email path consumes it
+  via D6: that consumer moves to claim-AFTER-successful-send, at-least-once) and the **"no interface
+  change" invariant** (title/D6: `IIdempotencyGuard` gains two additive members — `AlreadyProcessedAsync`
+  itself and the push consumer's guard-first contract stay byte-unchanged). **All other decisions here
+  (D1, D2's algorithm and own-commit rule, D3, D4, D5) remain in force.** A status-block pointer per
+  the ADR rule; the immutable body below is left unedited — the email-affected parts are superseded,
+  not deleted.
 - **Applies to:** backend | functions | cross-cutting
 - **Backs / extends:** ADR-0002 (D2.2 idempotent consumers, D2.3 the promo resume cursor) and ADR-0008 (mirrors the `OutboxMessage` unique-row + DI-swap shape). Does **not** change either frozen contract.
 - **Ticket:** T-0186 (this ADR) · **Consumer:** the two backings + EF configs + DI swap + tests (one ticket, the interfaces are unchanged so there is no call-site fan-out)

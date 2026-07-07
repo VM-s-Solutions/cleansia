@@ -233,5 +233,12 @@ public class SendPushNotificationIdempotencyTests
         public void PreClaim(string key) => _claimed.Add(key);
         public Task<bool> AlreadyProcessedAsync(string messageKey, CancellationToken ct = default) =>
             Task.FromResult(!_claimed.Add(messageKey));
+        public Task<bool> HasProcessedAsync(string messageKey, CancellationToken ct = default) =>
+            Task.FromResult(_claimed.Contains(messageKey));
+        public Task MarkProcessedAsync(string messageKey, CancellationToken ct = default)
+        {
+            _claimed.Add(messageKey);
+            return Task.CompletedTask;
+        }
     }
 }

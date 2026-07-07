@@ -6,15 +6,19 @@ namespace Cleansia.Core.Domain.Messaging;
 /// <summary>
 /// Durable claim row for the queue-consumer idempotency guard (the durable backing for
 /// <see cref="Queue.Abstractions.IIdempotencyGuard"/>). One row per deterministic consumer message key:
-/// the guard inserts a row to CLAIM the key before the terminal effect, so a redelivery / parallel
-/// retry / worker-restart sees the existing row and short-circuits (at-most-once-after-the-marker).
-/// Mirrors <see cref="Payments.ProcessedStripeEvent"/>, the established at-most-once idempotency-row
-/// pattern.
+/// a redelivery / parallel retry / worker-restart sees the existing row and short-circuits.
+/// Mirrors <see cref="Payments.ProcessedStripeEvent"/>, the established idempotency-row pattern.
+///
+/// <para>What the row MEANS depends on the consumer's claim ordering (the <see cref="MessageKey"/>
+/// prefix disambiguates): for claim-then-act consumers (<c>push:</c>) the row means CLAIMED —
+/// written before the terminal effect (at-most-once-after-the-marker); for act-then-claim consumers
+/// (<c>email:</c>) the row means SENT — written only after the effect succeeded (at-least-once).</para>
 ///
 /// <para><b>Tenant-global by design — intentionally NOT <see cref="ITenantEntity"/> (a reasoned S8
-/// exception).</b> The queue consumer CLAIMS the key BEFORE it sets any tenant override (the override is
-/// derived from the message payload, which is read after the claim), so there is no tenant in context at
-/// claim time. <see cref="MessageKey"/> already embeds globally-unique ULIDs (e.g. an order id), so a
+/// exception).</b> Claim-then-act consumers write the row before any tenant override is set;
+/// act-then-claim consumers mark it after the send, possibly inside an override — safe either way,
+/// because the entity is not tenant-scoped so no ambient tenant can touch the row.
+/// <see cref="MessageKey"/> already embeds globally-unique ULIDs (e.g. an order id), so a
 /// composite <c>(TenantId, MessageKey)</c> key would only WEAKEN dedup for the null-tenant rows the
 /// claim writes. The dedup must work across every tenant the platform serves.</para>
 ///

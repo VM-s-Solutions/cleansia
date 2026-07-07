@@ -135,18 +135,92 @@ public sealed class DbIdempotencyGuardPersistenceTests : IDisposable
 
         // A genuine infra fault on commit (NOT a unique-violation) must propagate so the queue retries —
         // the guard only swallows 23505 / SQLITE_CONSTRAINT, everything else bubbles.
-        var guard = new DbIdempotencyGuard(new ThrowingRepository());
+        var guard = new DbIdempotencyGuard(InfraFaultRepository());
 
         await Assert.ThrowsAsync<DbUpdateException>(
             () => guard.AlreadyProcessedAsync("push:USER-5:x:y", CancellationToken.None));
     }
 
-    // A repository whose claim commit throws a non-unique-violation DbUpdateException — proves the guard
-    // re-throws genuine infra faults instead of masking them as already-claimed.
-    private sealed class ThrowingRepository : IProcessedMessageRepository
+    [Fact]
+    public async Task HasProcessed_Is_A_Non_Claiming_Read()
     {
-        public Task CommitAsync(CancellationToken cancellationToken) =>
-            throw new DbUpdateException("simulated infra fault", new TimeoutException("connection reset"));
+        await EnsureSchemaAsync();
+        const string key = "email:ResetPassword:USER-6:hash1";
+
+        await using (var readCtx = NewContext())
+        {
+            Assert.False(await Guard(readCtx).HasProcessedAsync(key, CancellationToken.None));
+        }
+
+        // The read wrote nothing — a fresh guard still WINS the claim for the same key.
+        await using var claimCtx = NewContext();
+        Assert.False(await Guard(claimCtx).AlreadyProcessedAsync(key, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Mark_Commits_A_Durable_Claim_That_HasProcessed_Reads_Back()
+    {
+        await EnsureSchemaAsync();
+        const string key = "email:ConfirmationEmail:USER-7:hash2";
+
+        await using (var markCtx = NewContext())
+        {
+            await Guard(markCtx).MarkProcessedAsync(key, CancellationToken.None);
+        }
+
+        await using var readCtx = NewContext();
+        Assert.True(await Guard(readCtx).HasProcessedAsync(key, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Double_Mark_And_Mark_After_A_Concurrent_Claim_Are_Safe_NoOps()
+    {
+        await EnsureSchemaAsync();
+        const string key = "email:ConfirmationEmail:USER-8:hash3";
+
+        // A concurrent consumer already claimed the key …
+        await using (var winner = NewContext())
+        {
+            Assert.False(await Guard(winner).AlreadyProcessedAsync(key, CancellationToken.None));
+        }
+
+        // … marking after it, twice, must neither throw nor duplicate the row.
+        await using (var markCtx = NewContext())
+        {
+            await Guard(markCtx).MarkProcessedAsync(key, CancellationToken.None);
+        }
+        await using (var markAgainCtx = NewContext())
+        {
+            await Guard(markAgainCtx).MarkProcessedAsync(key, CancellationToken.None);
+        }
+
+        await using var readCtx = NewContext();
+        Assert.Single(await readCtx.Set<ProcessedMessage>().Where(m => m.MessageKey == key).ToListAsync());
+    }
+
+    [Fact]
+    public async Task Mark_Swallows_A_Parallel_Claim_Unique_Violation_But_Re_Throws_Infra_Faults()
+    {
+        // The two-parallel-consumers race: both miss the existence check, the loser's insert hits the
+        // unique index — for Mark that is success (the row exists), so no throw.
+        var raceLoser = new DbIdempotencyGuard(new ThrowingRepository(
+            new DbUpdateException("duplicate key", new SqliteException("UNIQUE constraint failed", 19))));
+        await raceLoser.MarkProcessedAsync("email:x:y:z", CancellationToken.None);
+
+        // A genuine infra fault on the claim write must still propagate for the caller to classify.
+        var infraFault = new DbIdempotencyGuard(InfraFaultRepository());
+        await Assert.ThrowsAsync<DbUpdateException>(
+            () => infraFault.MarkProcessedAsync("email:x:y:z", CancellationToken.None));
+    }
+
+    private static ThrowingRepository InfraFaultRepository() =>
+        new(new DbUpdateException("simulated infra fault", new TimeoutException("connection reset")));
+
+    // A repository whose claim commit throws the given DbUpdateException — proves the guard re-throws
+    // genuine infra faults instead of masking them, and collapses unique-violations to already-claimed.
+    private sealed class ThrowingRepository(DbUpdateException exception) : IProcessedMessageRepository
+    {
+        public Task CommitAsync(CancellationToken cancellationToken) => throw exception;
 
         public void Add(ProcessedMessage entity) { }
         // Not-yet-claimed, so the guard proceeds to the throwing CommitAsync (the point of this test).

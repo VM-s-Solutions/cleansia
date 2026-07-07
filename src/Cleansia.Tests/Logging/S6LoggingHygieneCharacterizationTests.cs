@@ -306,6 +306,10 @@ public class S6LoggingHygieneCharacterizationTests
     {
         public Task<bool> AlreadyProcessedAsync(string messageKey, CancellationToken ct = default) =>
             Task.FromResult(false);
+        public Task<bool> HasProcessedAsync(string messageKey, CancellationToken ct = default) =>
+            Task.FromResult(false);
+        public Task MarkProcessedAsync(string messageKey, CancellationToken ct = default) =>
+            Task.CompletedTask;
     }
 
     private sealed class CapturingLogger<T> : ILogger<T>

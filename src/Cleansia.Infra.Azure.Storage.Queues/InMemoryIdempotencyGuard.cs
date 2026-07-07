@@ -11,8 +11,9 @@ namespace Cleansia.Infra.Azure.Storage.Queues;
 ///
 /// <para>The claim lives only in this process's memory, so it does not dedup across a worker restart
 /// or across scaled-out worker instances; the accepted residual is a rare duplicate notification email
-/// under those conditions — never a duplicate fiscal artifact. A durable backing (a unique
-/// <c>ProcessedMessage</c> row) would close that gap with no change to this interface.</para>
+/// under those conditions — never a duplicate fiscal artifact. Production DI resolves the durable
+/// <c>DbIdempotencyGuard</c> (a unique <c>ProcessedMessage</c> row) instead; this class remains as a
+/// non-DB fallback / test backing.</para>
 /// </summary>
 public sealed class InMemoryIdempotencyGuard : IIdempotencyGuard
 {
@@ -20,4 +21,13 @@ public sealed class InMemoryIdempotencyGuard : IIdempotencyGuard
 
     public Task<bool> AlreadyProcessedAsync(string messageKey, CancellationToken ct = default) =>
         Task.FromResult(!_claimed.TryAdd(messageKey, 0));
+
+    public Task<bool> HasProcessedAsync(string messageKey, CancellationToken ct = default) =>
+        Task.FromResult(_claimed.ContainsKey(messageKey));
+
+    public Task MarkProcessedAsync(string messageKey, CancellationToken ct = default)
+    {
+        _claimed.TryAdd(messageKey, 0);
+        return Task.CompletedTask;
+    }
 }

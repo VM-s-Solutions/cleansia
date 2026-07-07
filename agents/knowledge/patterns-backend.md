@@ -382,6 +382,41 @@ A refund is the one side effect with both money and fiscal consequences, so it h
 - **Partial loyalty clawback** uses the per-refund-keyed `ILoyaltyService.RevokeForPartialRefundAsync`
   (cumulative-capped, `UserId==null` skip), **not** the one-shot `RevokeForCancelledOrderAsync` mirror.
 
+## Queue-consumer idempotency — the claim-ordering rule (ADR-0002 D2.2 · ADR-0010 · ADR-0023)
+
+Every effect-realizing queue consumer MUST assert its terminal effect has not already happened
+(ADR-0002 D2.2): a **domain target-state check** where one exists (preferred — e.g. the
+already-calculated pay validator), else the durable **`IIdempotencyGuard` / `ProcessedMessage`
+unique-row backstop** (ADR-0010: `BaseEntity`, UNIQUE `MessageKey`, claimed in the guard's **own**
+committed unit of work, PG 23505 → "already processed"). **When the marker is written is a
+per-consumer decision**, governed by one test (ADR-0023):
+
+> **The repeatable-effect test:** if this consumer's terminal effect ran twice, would anything need
+> un-doing (a refund, a reversal, a duplicate document/ledger/pay row, a double charge)?
+> **Yes → Mode A is mandatory. At-worst-a-nuisance → Mode B is permitted.**
+
+- **Mode A — claim-BEFORE-act (at-most-once after the marker). MANDATORY for non-repeatable effects**
+  (receipt/invoice generation, pay calculation, fiscal registration — anything money-shaped):
+  `if (await guard.AlreadyProcessedAsync(key, ct)) return;` then act. Residual: a crash between claim
+  and act loses that one effect — accepted, because the duplicate would be worse. Reference:
+  `SendPushNotificationHandler`.
+- **Mode B — claim-AFTER-successful-act (at-least-once). Permitted where a duplicate is benign**
+  (today: the send-email consumer ONLY; push is a candidate follow-up, not ratified): non-claiming
+  pre-check `HasProcessedAsync(key)` (a redelivery *filter*, deliberately not atomic) → act →
+  `MarkProcessedAsync(key)` post-success (23505 = benign no-op inside the guard; any other claim-write
+  failure is caught by the *handler*, logged "sent but unclaimed", and ACKED — never thrown, since
+  throwing after a successful send manufactures the duplicate). A failed act leaves **no row**, so the
+  queue retry genuinely retries — the point of Mode B (the SendGrid config-gap incident: claim-first
+  turned every retry into a green no-op and permanently ate the emails). Residual: rare duplicates in
+  two windows — concurrent redeliveries both passing the pre-check, and a crash between act-success
+  and claim-write.
+
+Adopting Mode B for a new consumer requires an ADR (or an explicit ticket decision note citing
+ADR-0023's test) + the two duplicate windows documented in the consumer's doc-comment. **Never mix
+modes in one consumer**, and never hide the mode behind a boolean — the member name at the call site
+is the greppable evidence of which mode the consumer runs (ADR-0002 verification check #3 logic).
+Role card: `agents/knowledge/roles/idempotency-guard.md`.
+
 ## Tenancy is APP; region is INFRA — they are orthogonal (ADR-0017)
 
 Two isolation axes meet in this codebase, and they live in **different layers** — keep them there.

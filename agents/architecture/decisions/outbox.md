@@ -39,8 +39,12 @@ Four load-bearing invariants:
    `IStartupFilter` (wrong layer) and not an in-handler call (handler doesn't own the commit).
 2. **Deterministic `MessageKey` per logical effect** — a *duplicate enqueue* collapses onto the same
    key as a *redelivery*. (Random Guid would dedup redeliveries but not duplicate enqueues.)
-3. **Idempotent consumers** — target-state check (preferred) or `IIdempotencyGuard` claim-then-act
-   (for non-transactional effects: push/promo/email).
+3. **Idempotent consumers** — target-state check (preferred) or the durable `IIdempotencyGuard` /
+   `ProcessedMessage` backstop (ADR-0010) for non-transactional effects (push/promo/email). *When*
+   the marker is written is per-consumer (ADR-0023): claim-**before**-act (Mode A, at-most-once —
+   mandatory for non-repeatable/money-shaped effects) or claim-**after**-successful-act (Mode B,
+   at-least-once — permitted where a duplicate is benign; today: email only). See the claim-ordering
+   section below.
 4. **Poison/dead-letter floor + fiscal reconciliation** — every queue has a `<queue>-poison` consumer
    (durable `DeadLetter` row + alert); the two fiscal queues add a reconciliation sweep for the
    never-enqueued case.
@@ -52,7 +56,8 @@ Four load-bearing invariants:
 | Handler → buffer/outbox | in-memory, cleared on non-commit | outbox row, atomic with state |
 | Buffer/outbox → wire | **at-most-once** (crash between commit & drain loses it) | **at-least-once** (drainer) |
 | Consumer effect (receipt create, pay row) | exactly-once (target-state) | exactly-once |
-| Consumer effect (push, email — non-transactional) | **at-most-once after marker** (guard-first) | same |
+| Consumer effect (push — non-transactional, Mode A) | **at-most-once after marker** (guard-first) | same |
+| Consumer effect (email — non-transactional, Mode B since ADR-0023) | **at-least-once** (claim-after-successful-send; rare duplicate accepted, loss impossible short of dead-letter) | same |
 | Never-enqueued silent loss (fiscal) | **detected + re-enqueued** by reconciliation (default 15 min) | gap removed by durable outbox |
 
 Wave-0 is unambiguously better than today on the silent-loss axis (it replaces a *silent* phantom-and-
@@ -93,6 +98,32 @@ is closed." That is Wave-1.
 | `SendPushNotificationFunction` | **no guard** (`:30-122`); throws on everything incl. deserialize (`:115-121`); commit is conditional (`:100-108`) | guard-first `IIdempotencyGuard`; split permanent/transient |
 | `SendSitewidePromoFanoutFunction` | n/a — producer | none (downstream dedup); already continues per-recipient (`:137-146`) |
 
+## Claim ordering is per-consumer (ADR-0023, 2026-07-08 — the current shape)
+
+The durable dedup (ADR-0010: `ProcessedMessage` unique-row, own-unit-of-work commit) is uniform;
+**when the row is written is not.** The SendGrid config-gap incident proved claim-before-send is the
+wrong ordering for email: the durable claim committed, the send threw, and every queue retry
+short-circuited on the claim and acked green — confirmation/reset emails were **permanently lost while
+telemetry showed "already sent, skipping"**. The owner ruled (2026-07-08):
+
+- **Mode A — claim-before-act** (at-most-once after the marker) stays **mandatory** where a duplicate
+  effect is not safely repeatable: receipt/invoice generation, pay calculation, fiscal registration —
+  anything money-shaped. Residual: a crash between claim and act loses that one effect.
+- **Mode B — claim-after-successful-act** (at-least-once) is **permitted** where a duplicate is benign.
+  Today: **the send-email consumer only** — non-claiming `HasProcessedAsync` pre-check → send →
+  `MarkProcessedAsync` post-success (23505 benign; other claim-write failures logged + acked by the
+  handler). A failed send leaves no row → the retry is real. Residual: rare duplicates in two windows
+  (concurrent redeliveries both passing the pre-check; a crash between send-success and claim-write) —
+  owner-accepted. The `email:` row now means *sent*, not *attempted*.
+- **The boundary is one question** (the repeatable-effect test): would a second run need un-doing?
+  Yes → Mode A. Nuisance at worst → Mode B permitted, ratified per consumer (ADR or ticket decision
+  note citing ADR-0023). **Push is a candidate for Mode B — explicitly not decided;**
+  `SendPushNotificationHandler` remains guard-first and untouched.
+
+The mode is greppable at the call site (three named `IIdempotencyGuard` members, no boolean flag).
+Full rule + rationale: `agents/backlog/adr/0023-per-consumer-claim-ordering-email-claims-after-successful-send.md`;
+catalog entry: `agents/knowledge/patterns-backend.md` ("Queue-consumer idempotency").
+
 ## Why the rejected options were rejected
 
 - **Enroll the queue/FCM in the EF transaction** — they are not transactional resources; a send can't
@@ -128,6 +159,10 @@ failure result *without* calling `next()`, so UoW never runs) **plus** a defense
 ## Pointers
 
 - Immutable contract: `agents/backlog/adr/0002-outbox-dispatch-contract.md`
+- Durable consumer dedup: `agents/backlog/adr/0010-durable-consumer-idempotency.md` (partially
+  superseded by ADR-0023 for the email claim ordering + the interface-frozen invariant)
+- Claim-ordering rule: `agents/backlog/adr/0023-per-consumer-claim-ordering-email-claims-after-successful-send.md`
+- Guard role card: `agents/knowledge/roles/idempotency-guard.md`
 - Authorization (prior ADR): `agents/backlog/adr/0001-authorization-model.md`
 - Catalog: `agents/knowledge/patterns-backend.md:281` (B8 side-effects rule),
   `agents/knowledge/security-rules.md:100` (S7 idempotency)

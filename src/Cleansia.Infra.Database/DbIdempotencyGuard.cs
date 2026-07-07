@@ -49,6 +49,15 @@ public class DbIdempotencyGuard(IProcessedMessageRepository repository) : IIdemp
         }
     }
 
+    public Task<bool> HasProcessedAsync(string messageKey, CancellationToken ct = default) =>
+        repository.HasProcessedAsync(messageKey, ct);
+
+    // The act-then-claim caller only needs the row to exist afterwards, so this reuses the claim above
+    // verbatim (existence fast path, own-commit insert, unique-violation collapse on a concurrent claim)
+    // and discards the won/lost distinction. Genuine infra faults still propagate.
+    public Task MarkProcessedAsync(string messageKey, CancellationToken ct = default) =>
+        AlreadyProcessedAsync(messageKey, ct);
+
     /// <summary>
     /// True when the <see cref="DbUpdateException"/> was caused by a unique-constraint violation. Detected
     /// provider-agnostically by duck-typing the inner exception chain (this layer carries no hard Npgsql

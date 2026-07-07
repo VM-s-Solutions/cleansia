@@ -42,6 +42,10 @@ public class SendPushNotificationDisabledAckTests
     {
         public Task<bool> AlreadyProcessedAsync(string messageKey, CancellationToken ct = default) =>
             Task.FromResult(false);
+        public Task<bool> HasProcessedAsync(string messageKey, CancellationToken ct = default) =>
+            Task.FromResult(false);
+        public Task MarkProcessedAsync(string messageKey, CancellationToken ct = default) =>
+            Task.CompletedTask;
     }
 
     private static string Serialize(SendPushNotificationMessage message) =>

@@ -14,7 +14,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Cleansia.MigrationService\Cleansia.MigrationService.csproj" />
+    <!-- Build-ordering only: the migrator runs as an executable resource (dotnet <dll>), not
+         AddProject — the VS run-session service refuses to launch plain console projects. -->
+    <ProjectReference Include="..\Cleansia.MigrationService\Cleansia.MigrationService.csproj" IsAspireProjectResource="false" />
     <ProjectReference Include="..\Cleansia.Web.Partner\Cleansia.Web.Partner.csproj" />
     <ProjectReference Include="..\Cleansia.Web.Admin\Cleansia.Web.Admin.csproj" />
     <ProjectReference Include="..\Cleansia.Web.Mobile.Partner\Cleansia.Web.Mobile.Partner.csproj" />

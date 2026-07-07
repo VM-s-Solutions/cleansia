@@ -56,7 +56,24 @@ foreach (var containerName in blobContainers)
 // fiscal sweep, Hangfire) race the in-process migration and crash on missing tables.
 // A non-zero exit (failed migration) keeps every dependent stopped instead of letting it
 // run against a half-migrated schema.
-var migrations = builder.AddProject<Projects.Cleansia_MigrationService>("migrations")
+//
+// Deliberately an EXECUTABLE resource, not AddProject: under Visual Studio, project
+// resources are launched through the IDE's run-session service, and VS refuses this
+// console project ("run session could not be started: IDE returned a response indicating
+// failure"). Executables are spawned by Aspire's own orchestrator, so the same graph works
+// under F5 and `dotnet run` alike. The AppHost's ProjectReference (IsAspireProjectResource
+// =false) keeps the migrator compiled before the AppHost starts.
+#if DEBUG
+const string migratorConfiguration = "Debug";
+#else
+const string migratorConfiguration = "Release";
+#endif
+var migratorDir = Path.GetFullPath(Path.Combine(builder.AppHostDirectory, "..", "Cleansia.MigrationService"));
+var migrations = builder.AddExecutable(
+        "migrations",
+        "dotnet",
+        migratorDir,
+        Path.Combine(migratorDir, "bin", migratorConfiguration, "net10.0", "Cleansia.MigrationService.dll"))
     .WithReference(cleansiaDb)
     .WaitFor(cleansiaDb);
 

@@ -85,9 +85,9 @@ export class PartnerAuthService {
     );
   }
 
-  confirmUserEmail(code: string): Observable<JwtTokenResponse> {
+  confirmUserEmail(code: string, email: string): Observable<JwtTokenResponse> {
     return this.partnerClient.authClient
-      .confirmUserEmail(new ConfirmUserEmailCommand({ code }))
+      .confirmUserEmail(new ConfirmUserEmailCommand({ code, email }))
       .pipe(
         map((authResult: JwtTokenResponse) => {
           this.setSession(authResult);

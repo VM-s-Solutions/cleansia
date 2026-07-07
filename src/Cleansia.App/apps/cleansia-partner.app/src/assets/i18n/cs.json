@@ -72,6 +72,7 @@
     "email_confirm": {
       "title": "Potvrzení e-mailu",
       "description": "Prosím, zkontrolujte svůj e-mail a zadejte kód pro potvrzení.",
+      "email_label": "E-mail",
       "resend_email": "Odeslat e-mail znovu",
       "verify_email": "Potvrdit",
       "resend_code": "Odeslat kód",

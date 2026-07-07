@@ -14,6 +14,18 @@
       <p class="cleansia-email-confirm__message">
         {{ 'pages.email_confirm.description' | translate }}
       </p>
+      @if (!facade.emailKnown()) {
+      <div class="cleansia-email-confirm__form-control">
+        <cleansia-text-input
+          [label]="'pages.email_confirm.email_label' | translate"
+          [floatVariant]="'on'"
+          formControlName="email"
+          dataType="email"
+          [required]="true"
+          [showErrors]="true"
+        />
+      </div>
+      }
       <div class="cleansia-email-confirm__form-control">
         <cleansia-code-input
           formControlName="code"
@@ -22,14 +34,14 @@
       </div>
       <div class="cleansia-email-confirm__actions">
         <div>
-          @if (facade.isResendDisabled) {
-          {{ resendCodeTimeout }}
+          @if (facade.isResendDisabled()) {
+          {{ resendCodeTimeout() }}
           }
           <cleansia-button
             [title]="'pages.email_confirm.resend_code' | translate"
             [style]="'raised-button'"
             [icon]="'pi pi-refresh'"
-            [loading]="facade.isResendDisabled"
+            [loading]="facade.isResendDisabled()"
             (clickFn)="onResendCode()"
           />
         </div>

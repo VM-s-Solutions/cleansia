@@ -72,6 +72,7 @@
     "email_confirm": {
       "title": "Email Confirmation",
       "description": "Please check your email and enter the confirmation code.",
+      "email_label": "Email",
       "resend_email": "Resend email",
       "verify_email": "Verify",
       "resend_code": "Resend code",

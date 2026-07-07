@@ -61,4 +61,12 @@
     <ProjectReference Include="..\Cleansia.Web.Mobile.Customer\Cleansia.Web.Mobile.Customer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- SQLitePCLRaw.lib.e_sqlite3 (transitive of EFCore.Sqlite, the TEST-ONLY in-memory
+         harness — never shipped) bundles a vulnerable native SQLite with NO patched package
+         published yet. Suppress THIS advisory only so the NU1903 audit record doesn't abort
+         EF cmdlets in the VS Package Manager Console; remove once upstream ships a fix. -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
+  </ItemGroup>
+
 </Project>

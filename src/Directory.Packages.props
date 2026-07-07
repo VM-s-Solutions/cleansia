@@ -43,6 +43,10 @@
     <PackageVersion Include="Hangfire.AspNetCore" Version="1.8.23" />
     <PackageVersion Include="Hangfire.PostgreSql" Version="1.21.1" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.3" />
+    <!-- Transitive of Swashbuckle, pinned above its vulnerable range (GHSA-v5pm-xwqc-g5wc,
+         NU1903 high: circular schema refs can terminate OpenAPI parsing; patched in 2.7.5).
+         The NU1903 audit warning also aborts Add-Migration in the VS Package Manager Console. -->
+    <PackageVersion Include="Microsoft.OpenApi" Version="2.7.5" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.1.4" />
   </ItemGroup>
 
@@ -129,6 +133,10 @@
   <ItemGroup Label="Tooling">
     <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.1.1" />
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.1.1" />
+    <!-- Transitive of the Aspire.Hosting packages, pinned above five NuGet-audit advisories
+         (1x NU1903 high GHSA-hv8m-jj95-wg3x + 4x NU1902 moderate; all patched in 2.5.301).
+         Audit warnings abort EF cmdlets in the VS Package Manager Console. -->
+    <PackageVersion Include="MessagePack" Version="2.5.301" />
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
   </ItemGroup>
 

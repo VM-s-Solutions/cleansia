@@ -6534,6 +6534,7 @@ export interface ICompleteOrderResponse {
 
 export class ConfirmUserEmailCommand implements IConfirmUserEmailCommand {
     code!: string | undefined;
+    email!: string | undefined;
 
     constructor(data?: IConfirmUserEmailCommand) {
         if (data) {
@@ -6547,6 +6548,7 @@ export class ConfirmUserEmailCommand implements IConfirmUserEmailCommand {
     init(Data?: any) {
         if (Data) {
             this.code = Data["code"];
+            this.email = Data["email"];
         }
     }
 
@@ -6560,12 +6562,14 @@ export class ConfirmUserEmailCommand implements IConfirmUserEmailCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["code"] = this.code;
+        data["email"] = this.email;
         return data;
     }
 }
 
 export interface IConfirmUserEmailCommand {
     code: string | undefined;
+    email: string | undefined;
 }
 
 export enum ConsentType {

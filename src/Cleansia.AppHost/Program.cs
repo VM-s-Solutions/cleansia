@@ -32,6 +32,24 @@ var storage = builder.AddAzureStorage("storage")
         .WithTablePort(10002));
 var queues = storage.AddQueues("QueueStorageConnectionString");
 
+// A fresh Azurite volume starts with NO blob containers, and unlike queues (created on every
+// send by AzureStorageQueueClient) the blob read/list paths never create one — the data-retention
+// sweep and PDF jobs failed on first run. Modeling the containers here makes the emulator create
+// them at startup. Names mirror Constants.BlobContainers and deploy/bicep/modules/storage.bicep.
+string[] blobContainers =
+[
+    "generated-receipts",
+    "generated-invoices",
+    "user-files",
+    "employee-documents",
+    "order-photos",
+    "dispute-evidence",
+];
+foreach (var containerName in blobContainers)
+{
+    storage.AddBlobContainer(containerName);
+}
+
 // One-shot migrator: the ONLY startup actor allowed to touch the schema. Every app project
 // below waits for its COMPLETION (exit 0), not merely for the Postgres container being
 // healthy — WaitFor(cleansiaDb) alone let the hosts' background jobs (outbox drainer,

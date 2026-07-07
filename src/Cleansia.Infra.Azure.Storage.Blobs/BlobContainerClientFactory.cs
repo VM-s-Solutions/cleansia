@@ -22,15 +22,19 @@ public class BlobContainerClientFactory : IBlobContainerClientFactory
             throw new ArgumentNullException(nameof(containerName));
         }
 
+        // Write paths must survive a storage account/emulator that starts empty — create the
+        // container on first write, same contract the queue client honors on every send. Both
+        // auth modes may create: the shared-key connection string has full rights and the
+        // managed identities carry Storage Blob Data Contributor.
         if (_config.UseManagedIdentity)
         {
             var accountUrl = _config.AccountUrl!.TrimEnd('/');
             var containerUri = new Uri($"{accountUrl}/{containerName}");
             var azureClient = new global::Azure.Storage.Blobs.BlobContainerClient(containerUri, new DefaultAzureCredential());
-            return new BlobContainerClient(azureClient);
+            return new BlobContainerClient(azureClient, createContainerIfNotExists: true);
         }
 
         var connectionString = _configuration.GetConnectionString(_config.ConnectionStringName);
-        return new BlobContainerClient(connectionString, containerName);
+        return new BlobContainerClient(connectionString, containerName, createContainerIfNotExists: true);
     }
 }

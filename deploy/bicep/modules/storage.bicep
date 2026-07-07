@@ -39,6 +39,7 @@ var blobContainers = [
   'user-files'
   'employee-documents'
   'order-photos'
+  'dispute-evidence'
 ]
 
 // The runtime queue set (QueueNames.cs). Each carries a `-poison` companion (ADR-0002 D3): the

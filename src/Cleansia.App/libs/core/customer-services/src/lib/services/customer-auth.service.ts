@@ -2,7 +2,6 @@ import { Injectable, Signal, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { SavedAddressStore } from '@cleansia/customer-stores';
 import {
-  ConfirmUserEmailCommand,
   GoogleAuthCommand,
   JwtTokenResponse,
   RequestPasswordChangeCommand,
@@ -10,6 +9,7 @@ import {
 } from '@cleansia/partner-services';
 import { AUTH_COOKIE_KEYS, CleansiaCustomerRoute } from '@cleansia/services';
 import {
+  ConfirmUserEmailCommand,
   LoginCommand,
   LogoutCommand,
   RefreshTokenCommand,
@@ -65,9 +65,9 @@ export class CustomerAuthService {
     );
   }
 
-  confirmUserEmail(code: string): Observable<JwtTokenResponse> {
+  confirmUserEmail(code: string, email: string): Observable<JwtTokenResponse> {
     return this.customerClient.authClient
-      .confirmUserEmail(new ConfirmUserEmailCommand({ code }))
+      .confirmUserEmail(new ConfirmUserEmailCommand({ code, email }))
       .pipe(
         map((authResult: JwtTokenResponse) => {
           this.setSession(authResult);

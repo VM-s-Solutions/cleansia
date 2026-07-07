@@ -1198,6 +1198,7 @@
     "email_confirm": {
       "title": "Email Confirmation",
       "description": "We've sent a 6-digit verification code to your email. Enter the code below to verify your account.",
+      "email_label": "Email",
       "resend_code": "Resend code",
       "verify_code": "Verify code",
       "email_sent": "Email sent successfully",

@@ -1198,6 +1198,7 @@
     "email_confirm": {
       "title": "Potvrdenie e-mailu",
       "description": "Skontrolujte svoj e-mail a zadajte potvrdzovací kód.",
+      "email_label": "E-mail",
       "resend_code": "Znovu odoslať kód",
       "verify_code": "Overiť kód",
       "email_sent": "E-mail bol úspešne odoslaný",

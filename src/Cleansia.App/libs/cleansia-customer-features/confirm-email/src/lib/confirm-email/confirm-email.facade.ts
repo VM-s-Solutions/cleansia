@@ -2,7 +2,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { CustomerAuthService, CustomerClient } from '@cleansia/customer-services';
+import { CustomerAuthService } from '@cleansia/customer-services';
 import { loadCustomerUser } from '@cleansia/customer-stores';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
@@ -10,7 +10,6 @@ import { takeUntil } from 'rxjs';
 
 @Injectable()
 export class ConfirmEmailFacade extends UnsubscribeControlDirective {
-  private readonly customerClient = inject(CustomerClient);
   private readonly router = inject(Router);
   private readonly authService = inject(CustomerAuthService);
   private readonly store = inject(Store);
@@ -18,16 +17,25 @@ export class ConfirmEmailFacade extends UnsubscribeControlDirective {
 
   readonly isResendDisabled = signal(false);
   readonly resendCodeTimeout = signal(30);
+  readonly emailKnown = signal(false);
 
   formGroup: FormGroup = this.createConfirmEmailFormGroup();
 
+  setEmail(email: string): void {
+    this.formGroup.get('email')?.setValue(email);
+    this.emailKnown.set(true);
+  }
+
   confirmEmail(): void {
     if (this.formGroup.invalid) {
+      this.snackbarService.showErrorTranslated(
+        'validation.common.not_all_fields_filled'
+      );
       return;
     }
 
-    const code = this.formGroup.value.code;
-    this.authService.confirmUserEmail(code).pipe(
+    const { code, email } = this.formGroup.value;
+    this.authService.confirmUserEmail(code, email).pipe(
       takeUntil(this.destroyed$)
     ).subscribe({
       next: () => {
@@ -41,7 +49,15 @@ export class ConfirmEmailFacade extends UnsubscribeControlDirective {
     });
   }
 
-  resendCode(email: string): void {
+  resendCode(): void {
+    const emailControl = this.formGroup.get('email');
+    if (!emailControl || emailControl.invalid) {
+      this.snackbarService.showErrorTranslated(
+        'validation.common.not_all_fields_filled'
+      );
+      return;
+    }
+
     this.isResendDisabled.set(true);
     this.resendCodeTimeout.set(30);
 
@@ -54,7 +70,7 @@ export class ConfirmEmailFacade extends UnsubscribeControlDirective {
       }
     }, 1000);
 
-    this.authService.resendEmailConfirmation(email).pipe(
+    this.authService.resendEmailConfirmation(emailControl.value).pipe(
       takeUntil(this.destroyed$)
     ).subscribe({
       next: () => {
@@ -75,6 +91,10 @@ export class ConfirmEmailFacade extends UnsubscribeControlDirective {
         Validators.required,
         Validators.minLength(6),
         Validators.maxLength(6),
+      ]),
+      email: new FormControl<string | null>(null, [
+        Validators.required,
+        Validators.email,
       ]),
     });
   }

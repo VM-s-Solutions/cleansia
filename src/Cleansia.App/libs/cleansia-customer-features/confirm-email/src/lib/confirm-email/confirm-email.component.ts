@@ -2,12 +2,13 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import {
   CleansiaBrandNameComponent,
   CleansiaButtonComponent,
   CleansiaCodeInputComponent,
   CleansiaDynamicBackgroundComponent,
+  CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { selectCustomerLoading } from '@cleansia/customer-stores';
@@ -28,6 +29,7 @@ import { ConfirmEmailFacade } from './confirm-email.facade';
     CleansiaBrandNameComponent,
     CleansiaCodeInputComponent,
     CleansiaDynamicBackgroundComponent,
+    CleansiaTextInputComponent,
   ],
   providers: [ConfirmEmailFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,7 +37,6 @@ import { ConfirmEmailFacade } from './confirm-email.facade';
 export class ConfirmEmailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly store = inject(Store);
-  private readonly router = inject(Router);
   protected readonly facade = inject(ConfirmEmailFacade);
 
   protected readonly loading = toSignal(this.store.select(selectCustomerLoading));
@@ -45,18 +46,15 @@ export class ConfirmEmailComponent implements OnInit {
     return `00:${t > 9 ? t : '0' + t}`;
   });
 
-  email!: string;
-
   ngOnInit(): void {
-    if (!this.route.snapshot.queryParamMap.get('email')) {
-      return;
+    const email = this.route.snapshot.queryParamMap.get('email');
+    if (email) {
+      this.facade.setEmail(email);
     }
-
-    this.email = this.route.snapshot.queryParamMap.get('email') || '';
   }
 
   onResendCode(): void {
-    this.facade.resendCode(this.email);
+    this.facade.resendCode();
   }
 
   onVerifyCode(): void {

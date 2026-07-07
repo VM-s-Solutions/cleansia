@@ -13,6 +13,18 @@
       <div class="cleansia-email-confirm__description">
         <p>{{ 'pages.email_confirm.description' | translate }}</p>
       </div>
+      @if (!facade.emailKnown()) {
+      <div class="cleansia-email-confirm__form-control">
+        <cleansia-text-input
+          [label]="'pages.email_confirm.email_label' | translate"
+          [floatVariant]="'on'"
+          formControlName="email"
+          dataType="email"
+          [required]="true"
+          [showErrors]="true"
+        />
+      </div>
+      }
       <div class="cleansia-email-confirm__form-control">
         <cleansia-code-input
           formControlName="code"

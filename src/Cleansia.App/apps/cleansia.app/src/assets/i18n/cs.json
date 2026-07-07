@@ -1198,6 +1198,7 @@
     "email_confirm": {
       "title": "Potvrzení e-mailu",
       "description": "Na váš e-mail jsme odeslali 6místný ověřovací kód. Zadejte ho níže pro ověření vašeho účtu.",
+      "email_label": "Email",
       "resend_code": "Odeslat kód",
       "verify_code": "Potvrdit kód",
       "email_sent": "E-mail byl úspěšně odeslán",

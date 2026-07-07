@@ -15628,8 +15628,8 @@ export interface IAssignedEmployeeDto {
 }
 
 export enum BillingInterval {
-    Monthly = "Monthly",
-    Yearly = "Yearly",
+    Monthly = 1,
+    Yearly = 2,
 }
 
 export class BulkCreateEmployeePayConfigsCommand implements IBulkCreateEmployeePayConfigsCommand {
@@ -20075,11 +20075,11 @@ export interface IFeatureFlagDto {
 }
 
 export enum FiscalErrorKind {
-    None = "None",
-    Transient = "Transient",
-    Permanent = "Permanent",
-    Configuration = "Configuration",
-    Unknown = "Unknown",
+    None = 0,
+    Transient = 1,
+    Permanent = 2,
+    Configuration = 3,
+    Unknown = 4,
 }
 
 export class FiscalFailureDto implements IFiscalFailureDto {

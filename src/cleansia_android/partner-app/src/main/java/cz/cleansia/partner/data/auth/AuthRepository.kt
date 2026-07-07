@@ -42,8 +42,8 @@ interface AuthRepository {
         language: String,
     ): ApiResult<Boolean>
 
-    /** Confirms an email via the 6-digit code emailed at registration. Returns the issued JWT. */
-    suspend fun confirmEmail(code: String): ApiResult<LoginOutcome>
+    /** Confirms the given email via the 6-digit code emailed at registration. Returns the issued JWT. */
+    suspend fun confirmEmail(email: String, code: String): ApiResult<LoginOutcome>
 
     /** Resends the confirmation code to the given address. */
     suspend fun resendConfirmation(email: String, language: String): ApiResult<Boolean>
@@ -165,9 +165,9 @@ class AuthRepositoryImpl @Inject constructor(
         return response.map { it ?: false }
     }
 
-    override suspend fun confirmEmail(code: String): ApiResult<LoginOutcome> {
+    override suspend fun confirmEmail(email: String, code: String): ApiResult<LoginOutcome> {
         val result = safeApiCall(json) {
-            authApi.authConfirmUserEmail(ConfirmUserEmailCommand(code = code))
+            authApi.authConfirmUserEmail(ConfirmUserEmailCommand(code = code, email = email))
         }
         if (result is ApiResult.Error) return ApiResult.Error(result.error)
         val body = (result as ApiResult.Success).data
@@ -176,11 +176,11 @@ class AuthRepositoryImpl @Inject constructor(
             // Server returned 200 but no token — treat as failure so UI shows
             // a generic error rather than navigating into the app with no
             // session.
-            return ApiResult.Success(LoginOutcome.UnverifiedEmail(email = body.email.orEmpty(), hasToken = false))
+            return ApiResult.Success(LoginOutcome.UnverifiedEmail(email = body.email ?: email, hasToken = false))
         }
 
         persistTokens(body)
-        persistProfile(body, fallbackEmail = body.email.orEmpty())
+        persistProfile(body, fallbackEmail = email)
 
         // Device registration is driven by PushTokenSessionObserver
         // (see login() — same reasoning).

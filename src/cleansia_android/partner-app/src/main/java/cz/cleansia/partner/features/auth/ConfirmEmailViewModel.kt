@@ -46,9 +46,9 @@ class ConfirmEmailViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             // Email comes from the just-stored profile (login persisted it
-            // even when the email wasn't yet confirmed). Used only for the
-            // resend call + screen subtitle, not for the confirm call itself
-            // — the confirm endpoint matches on the active session.
+            // even when the email wasn't yet confirmed). Used for the resend
+            // call, the screen subtitle, and the confirm call — the backend
+            // validates the code against the address it was issued to.
             userProfileStore.current()?.let { profile ->
                 _uiState.update { it.copy(email = profile.email) }
             }
@@ -63,10 +63,16 @@ class ConfirmEmailViewModel @Inject constructor(
     fun confirmEmail() {
         val state = _uiState.value
         if (state.code.length != 6) return
+        if (state.email.isBlank()) {
+            _uiState.update {
+                it.copy(error = context.getString(R.string.error_generic))
+            }
+            return
+        }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            when (val result = authRepository.confirmEmail(state.code)) {
+            when (val result = authRepository.confirmEmail(email = state.email, code = state.code)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isLoading = false, isConfirmationSuccessful = true) }
                 }

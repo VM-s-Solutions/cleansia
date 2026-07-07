@@ -70,6 +70,7 @@ object AuthModule {
         HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.HEADERS
             else HttpLoggingInterceptor.Level.NONE
+            redactHeader("Authorization")
         }
 
     @Provides

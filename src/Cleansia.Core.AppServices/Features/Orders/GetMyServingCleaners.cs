@@ -25,10 +25,7 @@ public class GetMyServingCleaners
             var userId = userSessionProvider.GetUserId()!;
             var rows = await orderRepository.GetQueryable()
                 .Where(o => o.UserId == userId
-                    && o.OrderStatusHistory
-                        .OrderByDescending(s => s.CreatedOn)
-                        .Select(s => s.Status)
-                        .FirstOrDefault() == OrderStatus.Completed)
+                    && o.CurrentStatus == OrderStatus.Completed)
                 .Include(o => o.AssignedEmployees)
                     .ThenInclude(e => e.Employee)
                         .ThenInclude(emp => emp!.User)

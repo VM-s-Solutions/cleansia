@@ -98,22 +98,22 @@ public class NewJobsDigestService(
                 // takeable state. This avoids re-notifying about orders that
                 // sat in Pending/Confirmed across many sweeps.
                 var newJobsQuery = orderRepository.GetQueryableIgnoringTenant()
-                    .Include(o => o.CustomerAddress)
-                    .Include(o => o.AssignedEmployees)
-                    .Include(o => o.OrderStatusHistory)
                     .Where(o => o.CustomerAddress != null
                         && o.CustomerAddress.CountryId == cleaner.WorkCountryId
                         && o.AssignedEmployees.Count < o.MaxEmployees
                         && o.AssignedEmployees.All(ae => ae.EmployeeId != cleaner.EmployeeId))
-                    // Latest status track must be in the available set AND
-                    // newer than the watermark. EF translates this into a
-                    // correlated subquery; it's the same shape the
-                    // available-orders spec already uses.
-                    .Where(o => o.OrderStatusHistory
-                        .OrderByDescending(s => s.CreatedOn)
-                        .Take(1)
-                        .Any(s => AvailableStatuses.Contains(s.Status)
-                            && s.CreatedOn > sinceUtc));
+                    // Current status must be in the available set (the persisted,
+                    // index-served Orders.CurrentStatus column — same migration as the
+                    // available-orders spec; pre-backfill NULL rows are excluded) AND the
+                    // latest status track must be newer than the watermark, which still
+                    // needs the correlated latest-history subquery because the column
+                    // carries no transition timestamp.
+                    .Where(o => o.CurrentStatus != null
+                        && AvailableStatuses.Contains(o.CurrentStatus.Value)
+                        && o.OrderStatusHistory
+                            .OrderByDescending(s => s.CreatedOn)
+                            .Take(1)
+                            .Any(s => s.CreatedOn > sinceUtc));
 
                 // Pull just enough to make a decision: count + min/max
                 // cleaning times we'd need for the not-busy filter. Pulling

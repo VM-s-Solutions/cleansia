@@ -1,4 +1,3 @@
-using System.Diagnostics.Metrics;
 using System.Net;
 using System.Net.Http.Headers;
 using Cleansia.Core.Clients.Abstractions;
@@ -12,6 +11,7 @@ using Moq;
 
 namespace Cleansia.Tests.Integration;
 
+[Collection("IntegrationFailureMeter")]
 public class MapboxGeocoding429RetryAfterTests
 {
     private const string ValidFeatureJson =
@@ -22,7 +22,7 @@ public class MapboxGeocoding429RetryAfterTests
     [Fact]
     public async Task AC1_RateLimit_429_Is_Classified_Transient_And_Metered()
     {
-        var measurements = CaptureFailureMetrics(out var listener);
+        var measurements = FailureMetricsCapture.Start(out var listener);
         GeoCoordinates? result;
         using (listener)
         {
@@ -52,7 +52,7 @@ public class MapboxGeocoding429RetryAfterTests
     [Fact]
     public async Task AC2_ServiceUnavailable_503_Is_Transient_With_The_Distinct_Event()
     {
-        var measurements = CaptureFailureMetrics(out var listener);
+        var measurements = FailureMetricsCapture.Start(out var listener);
         var logger = new CapturingLogger<MapboxGeocodingService>();
         GeoCoordinates? result;
         using (listener)
@@ -71,7 +71,7 @@ public class MapboxGeocoding429RetryAfterTests
     [Fact]
     public async Task AC2_Timeout_TaskCanceled_Is_Classified_Timeout_With_The_Distinct_Event()
     {
-        var measurements = CaptureFailureMetrics(out var listener);
+        var measurements = FailureMetricsCapture.Start(out var listener);
         var logger = new CapturingLogger<MapboxGeocodingService>();
         GeoCoordinates? result;
         using (listener)
@@ -167,36 +167,6 @@ public class MapboxGeocoding429RetryAfterTests
         services.AddInfrastructureServices();
         services.AddHttpClient("Mapbox").ConfigurePrimaryHttpMessageHandler(() => primaryHandler);
         return services.BuildServiceProvider();
-    }
-
-    private static List<(string? Provider, string? Class)> CaptureFailureMetrics(out MeterListener listener)
-    {
-        var sink = new List<(string?, string?)>();
-        listener = new MeterListener();
-        listener.InstrumentPublished = (instrument, l) =>
-        {
-            if (instrument.Meter.Name == IntegrationFailureMetrics.MeterName)
-            {
-                l.EnableMeasurementEvents(instrument);
-            }
-        };
-        listener.SetMeasurementEventCallback<long>((instrument, _, tags, _) =>
-        {
-            if (instrument.Name != IntegrationFailureMetrics.FailureCounterName)
-            {
-                return;
-            }
-            string? provider = null;
-            string? failureClass = null;
-            foreach (var tag in tags)
-            {
-                if (tag.Key == "provider") provider = tag.Value as string;
-                if (tag.Key == "class") failureClass = tag.Value as string;
-            }
-            sink.Add((provider, failureClass));
-        });
-        listener.Start();
-        return sink;
     }
 
     private sealed class ResponderHandler(Func<HttpRequestMessage, HttpResponseMessage> responder) : HttpMessageHandler

@@ -96,10 +96,17 @@ public class TimerScheduleConfigTests
 
     private static IConfiguration BuildProductionDefaults()
     {
-        var functionsDir = Path.GetFullPath(
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Cleansia.Functions"));
+        // Walk up to the solution directory instead of a fixed ..\..\..\.. hop count, so the
+        // lookup survives a non-default test output path (bin depth is a build detail).
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null && dir.GetFiles("*.sln").Length == 0)
+        {
+            dir = dir.Parent;
+        }
 
-        var appSettings = Path.Combine(functionsDir, "appsettings.json");
+        Assert.False(dir is null, "Could not locate the solution directory from the test base directory.");
+
+        var appSettings = Path.Combine(dir!.FullName, "Cleansia.Functions", "appsettings.json");
 
         Assert.True(
             File.Exists(appSettings),

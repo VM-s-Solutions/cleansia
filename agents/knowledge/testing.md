@@ -110,6 +110,13 @@ These are the areas where a bug costs money, breaks the law, or leaks data. Each
   the HTTP status + body. Cover the auth/ownership rejection explicitly.
 - **Frontend:** test the **facade** (signal transitions, error→snackbar mapping) over the component
   where possible; assert the three states (empty/loading/error) render.
+- **Process-global meters** (e.g. `IntegrationFailureMetrics`): a `MeterListener` hears every
+  parallel test in the process. Two hermeticity strategies, chosen by what you assert on: unique
+  synthetic tag values + listener-side filtering (see `IntegrationFailureMetricsTests`), or — when
+  the assertion is on a REAL provider/tag value that a foreign test could also emit — membership in
+  the serial `IntegrationFailureMeter` collection (filtering cannot help there; the foreign
+  measurement carries the same tag). Either way the sink must be a `ConcurrentQueue`, never a plain
+  `List` (callbacks arrive on foreign threads mid-assertion).
 
 ## Anti-patterns (Reviewer rejects)
 

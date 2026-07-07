@@ -1,4 +1,3 @@
-using System.Diagnostics.Metrics;
 using System.Net;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Clients.Abstractions;
@@ -19,6 +18,7 @@ namespace Cleansia.Tests.Integration;
 /// not) is proven at the named-client layer; this test pins the adapter-side behavior: exactly one
 /// SDK call, and a recorded metric.
 /// </summary>
+[Collection("IntegrationFailureMeter")]
 public class EmailServiceBoundaryClassificationTests
 {
     private const string Recipient = "user@example.com";
@@ -31,7 +31,7 @@ public class EmailServiceBoundaryClassificationTests
         HttpStatusCode status, IntegrationFailureClass expectedClass)
     {
         var spy = new AttemptCountingHandler(status);
-        var measurements = CaptureFailureMetrics(out var listener);
+        var measurements = FailureMetricsCapture.Start(out var listener);
         using (listener)
         {
             var service = BuildService(spy);
@@ -70,38 +70,6 @@ public class EmailServiceBoundaryClassificationTests
             NullLogger<EmailService>.Instance,
             httpClientFactory.Object,
             translations.Object);
-    }
-
-    private static List<(string? Provider, string? Class)> CaptureFailureMetrics(out MeterListener listener)
-    {
-        var sink = new List<(string?, string?)>();
-        listener = new MeterListener();
-        listener.InstrumentPublished = (instrument, l) =>
-        {
-            if (instrument.Meter.Name == IntegrationFailureMetrics.MeterName)
-            {
-                l.EnableMeasurementEvents(instrument);
-            }
-        };
-        listener.SetMeasurementEventCallback<long>((instrument, _, tags, _) =>
-        {
-            if (instrument.Name != IntegrationFailureMetrics.FailureCounterName)
-            {
-                return;
-            }
-
-            string? provider = null;
-            string? failureClass = null;
-            foreach (var tag in tags)
-            {
-                if (tag.Key == "provider") provider = tag.Value as string;
-                if (tag.Key == "class") failureClass = tag.Value as string;
-            }
-
-            sink.Add((provider, failureClass));
-        });
-        listener.Start();
-        return sink;
     }
 
     private sealed class AttemptCountingHandler(HttpStatusCode status) : HttpMessageHandler

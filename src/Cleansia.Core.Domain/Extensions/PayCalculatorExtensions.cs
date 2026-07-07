@@ -24,7 +24,14 @@ public static class PayCalculatorExtensions
 
     public static (decimal basePay, decimal extrasPay, decimal expensesPay, decimal totalPay, string breakdown) CalculateAggregatedPay(
         this IEnumerable<EmployeePayConfig> configs,
-        Order order)
+        Order order) =>
+        configs.CalculateAggregatedPay(order.Rooms, order.Bathrooms, order.TravelDistance);
+
+    public static (decimal basePay, decimal extrasPay, decimal expensesPay, decimal totalPay, string breakdown) CalculateAggregatedPay(
+        this IEnumerable<EmployeePayConfig> configs,
+        int rooms,
+        int bathrooms,
+        decimal? travelDistance)
     {
         var configList = configs.ToList();
 
@@ -32,14 +39,14 @@ public static class PayCalculatorExtensions
         var extrasPay = 0m;
         var expensesPay = 0m;
 
-        var extraRooms = Math.Max(0, order.Rooms - 1);
+        var extraRooms = Math.Max(0, rooms - 1);
 
         foreach (var config in configList)
         {
             basePay += config.BasePay;
             extrasPay += config.ExtraPerRoom * extraRooms;
-            extrasPay += config.ExtraPerBathroom * order.Bathrooms;
-            expensesPay += config.DistanceRatePerKm * (order.TravelDistance ?? 0m);
+            extrasPay += config.ExtraPerBathroom * bathrooms;
+            expensesPay += config.DistanceRatePerKm * (travelDistance ?? 0m);
         }
 
         var totalPay = basePay + extrasPay + expensesPay;

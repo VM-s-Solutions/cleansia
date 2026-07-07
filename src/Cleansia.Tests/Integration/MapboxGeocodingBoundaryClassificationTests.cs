@@ -1,4 +1,3 @@
-using System.Diagnostics.Metrics;
 using System.Net;
 using Cleansia.Core.Clients.Abstractions;
 using Cleansia.Infra.Common.Configuration.Interfaces;
@@ -14,6 +13,7 @@ namespace Cleansia.Tests.Integration;
 /// (recorded on the owner-alert counter), not a routine swallowed Warning. The 429 rate-limit policy
 /// is a separate ticket; here a 429 only classifies + degrades, it is not given a bespoke retry.
 /// </summary>
+[Collection("IntegrationFailureMeter")]
 public class MapboxGeocodingBoundaryClassificationTests
 {
     [Theory]
@@ -22,7 +22,7 @@ public class MapboxGeocodingBoundaryClassificationTests
     public async Task Auth_Failure_Degrades_To_Null_And_Records_The_Owner_Alert_Metric(
         HttpStatusCode status, IntegrationFailureClass expectedClass)
     {
-        var measurements = CaptureFailureMetrics(out var listener);
+        var measurements = FailureMetricsCapture.Start(out var listener);
         GeoCoordinates? result;
         using (listener)
         {
@@ -70,38 +70,6 @@ public class MapboxGeocodingBoundaryClassificationTests
 
         return new MapboxGeocodingService(
             httpClientFactory.Object, config.Object, NullLogger<MapboxGeocodingService>.Instance);
-    }
-
-    private static List<(string? Provider, string? Class)> CaptureFailureMetrics(out MeterListener listener)
-    {
-        var sink = new List<(string?, string?)>();
-        listener = new MeterListener();
-        listener.InstrumentPublished = (instrument, l) =>
-        {
-            if (instrument.Meter.Name == IntegrationFailureMetrics.MeterName)
-            {
-                l.EnableMeasurementEvents(instrument);
-            }
-        };
-        listener.SetMeasurementEventCallback<long>((instrument, _, tags, _) =>
-        {
-            if (instrument.Name != IntegrationFailureMetrics.FailureCounterName)
-            {
-                return;
-            }
-
-            string? provider = null;
-            string? failureClass = null;
-            foreach (var tag in tags)
-            {
-                if (tag.Key == "provider") provider = tag.Value as string;
-                if (tag.Key == "class") failureClass = tag.Value as string;
-            }
-
-            sink.Add((provider, failureClass));
-        });
-        listener.Start();
-        return sink;
     }
 
     private sealed class FixedStatusHandler(HttpStatusCode status) : HttpMessageHandler

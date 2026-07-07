@@ -48,23 +48,15 @@ public class GetCustomerOrders
             var filter = specification.SatisfiedBy();
 
             var totalItems = await orderRepository.GetCountAsync(filter, cancellationToken);
-            var items = await orderRepository
+            // Server-side projection onto exactly the columns the list DTO reads — the previous
+            // full-graph Include set paid ~8 split queries per page for mostly unread columns.
+            var rows = await orderRepository
                 .GetPagedSort<OrderSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
-                .Include(o => o.OrderStatusHistory)
-                .Include(o => o.Currency)
-                .Include(o => o.SelectedPackages)
-                    .ThenInclude(sp => sp.Package)
-                .Include(o => o.SelectedServices)
-                    .ThenInclude(sp => sp.Service)
-                        .ThenInclude(s => s.Category)
-                .Include(o => o.CustomerAddress)
-                .Include(o => o.AssignedEmployees)
-                    .ThenInclude(ae => ae.Employee)
-                        .ThenInclude(e => e!.User)
+                .SelectOrderListRows()
                 .AsSplitQuery()
-                .AsNoTracking()
-                .Select(order => order.MapToDto())
                 .ToListAsync(cancellationToken);
+
+            var items = rows.Select(row => row.MapToDto()).ToList();
 
             return items.MapToDto(totalItems, request);
         }

@@ -93,37 +93,25 @@ public class GetPagedOrders
             var filter = specification.SatisfiedBy();
 
             var totalItems = await orderRepository.GetCountAsync(filter, cancellationToken);
-            // Includes only what the OrderListItem mapper actually
-            // reads. The previous version pulled Employee+User per
-            // assigned employee, but the mapper only emits the
-            // OrderEmployee row id (line 46 in OrderMappers) — those
-            // two ThenIncludes were paying for ~2 split queries of
-            // wasted columns per page. AssignedEmployees stays so
-            // we can count + emit ids; Employee/User chains gone.
+            // Server-side projection onto exactly the columns the list DTO reads (plus the
+            // sidecar fields this handler needs: assignee ids, travel distance, address id) —
+            // the previous full-graph Include set paid ~7 split queries per page for mostly
+            // unread columns.
             var orders = await orderRepository
                 .GetPagedSort<OrderSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
-                .Include(o => o.OrderStatusHistory)
-                .Include(o => o.Currency)
-                .Include(o => o.SelectedPackages)
-                    .ThenInclude(sp => sp.Package)
-                .Include(o => o.SelectedServices)
-                    .ThenInclude(sp => sp.Service)
-                        .ThenInclude(s => s.Category)
-                .Include(o => o.CustomerAddress)
-                .Include(o => o.AssignedEmployees)
+                .SelectOrderListRows()
                 .AsSplitQuery()
-                .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
             // Pay-config lookups for the caller — only when we have an
             // employee id. For admins the per-row pay is not meaningful so we
             // leave it null.
             var serviceIdsAcrossPage = orders
-                .SelectMany(o => o.SelectedServices.Select(s => s.ServiceId))
+                .SelectMany(o => o.SelectedServices.Select(s => s.Id))
                 .Distinct()
                 .ToList();
             var packageIdsAcrossPage = orders
-                .SelectMany(o => o.SelectedPackages.Select(p => p.PackageId))
+                .SelectMany(o => o.SelectedPackages.Select(p => p.Id))
                 .Distinct()
                 .ToList();
 
@@ -208,10 +196,10 @@ public class GetPagedOrders
             // CustomerAddress but null coords gets geocoded in the background;
             // next call sees the populated row.
             var addressIdsToBackfill = orders
-                .Where(o => o.CustomerAddress != null
-                    && o.CustomerAddress.Latitude == null
-                    && o.CustomerAddress.Longitude == null)
-                .Select(o => o.CustomerAddress!.Id)
+                .Where(o => o.Address != null
+                    && o.Address.Latitude == null
+                    && o.Address.Longitude == null)
+                .Select(o => o.Address!.Id)
                 .Distinct()
                 .ToList();
 

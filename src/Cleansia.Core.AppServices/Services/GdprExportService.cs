@@ -43,7 +43,9 @@ public class GdprExportService(
             .AsNoTracking()
             .Select(o => new GdprExportOrderDto(
                 o.Id, o.DisplayOrderNumber, o.CustomerName, o.CustomerEmail,
-                o.OrderStatusHistory.OrderByDescending(s => s.CreatedOn).ThenByDescending(s => s.Sequence).First().Status,
+                // Projection, not a filter: a pre-backfill NULL column must still export the
+                // order's true status, so it falls back to the authoritative history subquery.
+                o.CurrentStatus ?? o.OrderStatusHistory.OrderByDescending(s => s.CreatedOn).ThenByDescending(s => s.Sequence).First().Status,
                 o.TotalPrice, o.CleaningDateTime, o.CreatedOn))
             .ToListAsync(cancellationToken);
 

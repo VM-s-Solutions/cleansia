@@ -104,13 +104,8 @@ public class StartOrder
 
             var hasInProgressOrder = await _orderRepository
                 .GetQueryable()
-                .Include(o => o.OrderStatusHistory)
-                .Include(o => o.AssignedEmployees)
                 .Where(o => o.AssignedEmployees.Any(ae => ae.EmployeeId == employeeId))
-                .AnyAsync(o => o.OrderStatusHistory
-                    .OrderByDescending(h => h.CreatedOn)
-                    .ThenByDescending(h => h.Sequence)
-                    .FirstOrDefault()!.Status == OrderStatus.InProgress, cancellationToken);
+                .AnyAsync(o => o.CurrentStatus == OrderStatus.InProgress, cancellationToken);
 
             return !hasInProgressOrder;
         }

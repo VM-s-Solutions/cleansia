@@ -1,11 +1,11 @@
-﻿BEGIN TRANSACTION;
+BEGIN TRANSACTION;
 
 -- Temporarily defer foreign key constraint checks (Azure-compatible)
 SET CONSTRAINTS ALL DEFERRED;
 
--- 1. EXTENSION + FUNCTIONS (unchanged)
-
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- 1. FUNCTIONS
+-- (No pgcrypto: Azure Postgres blocks it unless allow-listed. generate_ulid() below uses
+--  core md5(random()) for its random bytes instead of pgcrypto's gen_random_bytes.)
 
 CREATE 
 OR REPLACE FUNCTION generate_ulid() RETURNS TEXT AS $inner$ DECLARE base32_chars TEXT := '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
@@ -21,7 +21,7 @@ BEGIN timestamp := EXTRACT(
 ) * 1000;
 IF timestamp > 281474976710655 THEN RAISE EXCEPTION 'Timestamp too large for ULID';
 END IF;
-random_bytes := gen_random_bytes(10);
+random_bytes := SUBSTRING(DECODE(MD5(RANDOM()::TEXT || CLOCK_TIMESTAMP()::TEXT), 'hex') FROM 1 FOR 10);
 value := timestamp;
 FOR i IN 1..10 LOOP ulid := SUBSTRING(
   base32_chars 
@@ -160,6 +160,91 @@ FROM (VALUES
   ('Ústí nad Labem',    '40'),
   ('Pardubice',         '53')
 ) AS city(name, zip_prefix);
+
+-- 3c. SERVICE CITIES — Prague-region name variants.
+-- The serviced check is an EXACT (case-insensitive) name match
+-- (ServiceCityRepository.CityIsServicedAsync: Name.ToLower() == input), so
+-- the single 'Praha' row above does NOT cover what real addresses carry:
+--   • 'Prague' — the English exonym Mapbox geocoding returns in the en locale
+--     (the seeded customer addresses use it too);
+--   • 'Praha N' / 'Prague N' — the administrative-district forms geocoders and
+--     users commonly produce ('Praha 5', 'Prague 2', …).
+-- Without these variants a booking in Prague fails city.not_serviced purely
+-- on the spelling of the city the address picker happened to emit.
+--
+-- ZipPrefix: districts 1-10 carry their natural postal prefix (Praha 1 = 110xx
+-- … Praha 9 = 190xx, Praha 10 = 10xxx); districts 11-22 span mixed ranges of
+-- the old postal districts, so they get the generic Prague '1' (unenforced in
+-- v1 either way — see the note above).
+--
+-- Idempotent (NOT EXISTS per name), so this block can be re-run standalone
+-- against a database that already holds the base list above.
+INSERT INTO public."ServiceCities" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
+  "TenantId", "CountryId", "Name", "ZipPrefix"
+)
+SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+       NULL,
+       (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
+       city.name, city.zip_prefix
+FROM (VALUES
+  -- English exonym
+  ('Prague',     '1'),
+  -- Czech district forms
+  ('Praha 1',    '11'),
+  ('Praha 2',    '12'),
+  ('Praha 3',    '13'),
+  ('Praha 4',    '14'),
+  ('Praha 5',    '15'),
+  ('Praha 6',    '16'),
+  ('Praha 7',    '17'),
+  ('Praha 8',    '18'),
+  ('Praha 9',    '19'),
+  ('Praha 10',   '10'),
+  ('Praha 11',   '1'),
+  ('Praha 12',   '1'),
+  ('Praha 13',   '1'),
+  ('Praha 14',   '1'),
+  ('Praha 15',   '1'),
+  ('Praha 16',   '1'),
+  ('Praha 17',   '1'),
+  ('Praha 18',   '1'),
+  ('Praha 19',   '1'),
+  ('Praha 20',   '1'),
+  ('Praha 21',   '1'),
+  ('Praha 22',   '1'),
+  -- English district forms (mixed-locale geocoder output)
+  ('Prague 1',   '11'),
+  ('Prague 2',   '12'),
+  ('Prague 3',   '13'),
+  ('Prague 4',   '14'),
+  ('Prague 5',   '15'),
+  ('Prague 6',   '16'),
+  ('Prague 7',   '17'),
+  ('Prague 8',   '18'),
+  ('Prague 9',   '19'),
+  ('Prague 10',  '10'),
+  ('Prague 11',  '1'),
+  ('Prague 12',  '1'),
+  ('Prague 13',  '1'),
+  ('Prague 14',  '1'),
+  ('Prague 15',  '1'),
+  ('Prague 16',  '1'),
+  ('Prague 17',  '1'),
+  ('Prague 18',  '1'),
+  ('Prague 19',  '1'),
+  ('Prague 20',  '1'),
+  ('Prague 21',  '1'),
+  ('Prague 22',  '1')
+) AS city(name, zip_prefix)
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM public."ServiceCities" sc
+  WHERE sc."CountryId" = (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1)
+    AND LOWER(sc."Name") = LOWER(city.name)
+    AND sc."TenantId" IS NULL
+);
 
 -- 4. EMAIL TRANSLATIONS
 INSERT INTO public."EmailTranslations" (
@@ -1150,10 +1235,17 @@ VALUES
 -- Insert Order Status Tracks (Order history)
 -- Status: 0=New, 1=Pending, 2=Confirmed, 3=OnTheWay, 4=InProgress, 5=Completed, 6=Cancelled
 -- NOTE: seed values below use 1,2,4,5,6 (skipping the optional OnTheWay step).
+-- Sequence (NOT NULL, T-0341) is computed per order in CreatedOn order via ROW_NUMBER over
+-- the VALUES rows below (already authored in status order), keeping this seed valid against
+-- the OrderStatusTrack.Sequence column.
 INSERT INTO public."OrderStatusHistory" (
-  "Id", "IsActive","CreatedBy", "CreatedOn", "Status", "OrderId"
+  "Id", "IsActive", "CreatedBy", "CreatedOn", "Status", "OrderId", "Sequence"
 )
-VALUES
+SELECT
+  v."Id", v."IsActive", v."CreatedBy", v."CreatedOn", v."Status", v."OrderId",
+  (ROW_NUMBER() OVER (PARTITION BY v."OrderId" ORDER BY v."CreatedOn"))::int
+FROM (
+  VALUES
   -- Order 1: Pending -> Confirmed -> InProgress -> Completed
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '45 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '44 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1)),
@@ -1240,7 +1332,20 @@ VALUES
 
   -- Order 18: Pending -> Confirmed
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '3 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0018' LIMIT 1)),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '2 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0018' LIMIT 1));
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '2 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0018' LIMIT 1))
+) AS v("Id", "IsActive", "CreatedBy", "CreatedOn", "Status", "OrderId");
+
+-- The raw history INSERT above bypasses Order.AddOrderStatus, which is the seam that
+-- maintains the denormalized Orders.CurrentStatus column, so backfill it here with the
+-- same latest-by-CreatedOn-then-Sequence rule (idempotent, same UPDATE as the migration).
+UPDATE public."Orders" o
+SET "CurrentStatus" = h."Status"
+FROM (
+  SELECT DISTINCT ON ("OrderId") "OrderId", "Status"
+  FROM public."OrderStatusHistory"
+  ORDER BY "OrderId", "CreatedOn" DESC, "Sequence" DESC
+) h
+WHERE h."OrderId" = o."Id";
 
 -- 13. PAY PERIODS
 -- Creating monthly pay periods for the last 3 months and upcoming month

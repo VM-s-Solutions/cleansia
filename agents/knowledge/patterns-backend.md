@@ -337,6 +337,31 @@ public class UpdateXxx
 - `IUserSessionProvider.GetUserId()` for identity (S1). Ownership check in the handler (S3).
 - `manual_step: ef-migration` (schema) and `manual_step: nswag-regen` (DTO/endpoint) — owner-only.
 
+## Order status reads & list projections (the CurrentStatus discipline)
+
+`Orders.CurrentStatus` is a persisted denormalization of the latest `OrderStatusHistory` row,
+written ONLY at the `Order.AddOrderStatus` seam (CreatedOn-desc, Sequence-desc rule);
+`OrderStatusHistory` stays the authoritative audit trail. Two read rules, pinned by
+`OrderCurrentStatusPersistenceTests` / `ColdPathCurrentStatusQueryTests`:
+
+- **Filters/counts read the column and exclude NULL** — `o.CurrentStatus == OrderStatus.X` or
+  `o.CurrentStatus != null && set.Contains(o.CurrentStatus.Value)`. Index-served; pre-backfill
+  NULL rows are closed by the idempotent backfill (seed script + the deploy runbook's re-run).
+- **Projections fall back** — a NULL column must still emit the row's true status:
+  `o.CurrentStatus ?? o.OrderStatusHistory.OrderByDescending(s => s.CreatedOn)
+  .ThenByDescending(s => s.Sequence).Select(s => (OrderStatus?)s.Status).FirstOrDefault()`
+  (GDPR export, `SelectOrderListRows`).
+
+Never write the column outside `AddOrderStatus`, and never hand-roll a new latest-history status
+subquery — filter on the column; project with the fallback.
+
+The order LIST queries (`GetPagedOrders`/`GetCustomerOrders`) do not materialize entity graphs:
+they project server-side via `OrderMappers.SelectOrderListRows()` into the backend-only
+`OrderListRow` records and map with `MapToDto(OrderListRow)`; the wire DTO stays `OrderListItem`.
+Any change to the list shape must keep `OrderListProjectionEquivalenceTests` (JSON-equivalence
+against the retained entity-mapper path) green — that test is the contract that the projection
+and the entity path emit identical DTO values.
+
 ## B8 — the refund money path (ADR-0006 seam + ADR-0009 policy)
 
 A refund is the one side effect with both money and fiscal consequences, so it has a frozen contract:

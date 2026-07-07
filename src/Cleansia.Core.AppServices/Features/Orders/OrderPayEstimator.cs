@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Orders;
@@ -24,11 +25,46 @@ internal static class OrderPayEstimator
         Order order,
         string employeeId,
         IReadOnlyList<EmployeePayConfig> serviceConfigs,
+        IReadOnlyList<EmployeePayConfig> packageConfigs) =>
+        Estimate(
+            order.SelectedServices.Select(s => s.ServiceId).ToHashSet(),
+            order.SelectedPackages.Select(p => p.PackageId).ToHashSet(),
+            order.Rooms,
+            order.Bathrooms,
+            order.TravelDistance,
+            employeeId,
+            serviceConfigs,
+            packageConfigs);
+
+    /// <summary>
+    /// Projection-row twin of the entity overload for the list handler, which no longer
+    /// materializes Order entities. Same math, one implementation.
+    /// </summary>
+    public static decimal? Estimate(
+        OrderListRow order,
+        string employeeId,
+        IReadOnlyList<EmployeePayConfig> serviceConfigs,
+        IReadOnlyList<EmployeePayConfig> packageConfigs) =>
+        Estimate(
+            order.SelectedServices.Select(s => s.Id).ToHashSet(),
+            order.SelectedPackages.Select(p => p.Id).ToHashSet(),
+            order.Rooms,
+            order.Bathrooms,
+            order.TravelDistance,
+            employeeId,
+            serviceConfigs,
+            packageConfigs);
+
+    private static decimal? Estimate(
+        HashSet<string> orderServiceIds,
+        HashSet<string> orderPackageIds,
+        int rooms,
+        int bathrooms,
+        decimal? travelDistance,
+        string employeeId,
+        IReadOnlyList<EmployeePayConfig> serviceConfigs,
         IReadOnlyList<EmployeePayConfig> packageConfigs)
     {
-        var orderServiceIds = order.SelectedServices.Select(s => s.ServiceId).ToHashSet();
-        var orderPackageIds = order.SelectedPackages.Select(p => p.PackageId).ToHashSet();
-
         var matchedServiceConfigs = serviceConfigs
             .Where(c => c.ServiceId != null && orderServiceIds.Contains(c.ServiceId))
             .GroupBy(c => c.ServiceId)
@@ -45,7 +81,7 @@ internal static class OrderPayEstimator
             return null;
         }
 
-        var (_, _, _, totalPay, _) = allConfigs.CalculateAggregatedPay(order);
+        var (_, _, _, totalPay, _) = allConfigs.CalculateAggregatedPay(rooms, bathrooms, travelDistance);
         return totalPay;
     }
 }

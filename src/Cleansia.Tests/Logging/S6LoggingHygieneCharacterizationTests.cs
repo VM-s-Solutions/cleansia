@@ -28,6 +28,10 @@ namespace Cleansia.Tests.Logging;
 /// the message-template string (string-coupled log assertions are a rejected anti-pattern), and that no
 /// PII/secret VALUE rides along in the rendered message above Debug.
 /// </summary>
+// The EmailService test drives a real BadRequest send, which records ("SendGrid", Permanent) on the
+// process-global IntegrationFailureMetrics meter — a real-provider emission must never overlap the
+// boundary listeners serialized in this collection.
+[Collection("IntegrationFailureMeter")]
 public class S6LoggingHygieneCharacterizationTests
 {
     // ── Functions: SendPushNotificationHandler raw messageText (AC2) ────────────────────────────────

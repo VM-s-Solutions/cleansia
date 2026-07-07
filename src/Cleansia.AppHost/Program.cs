@@ -32,30 +32,40 @@ var storage = builder.AddAzureStorage("storage")
         .WithTablePort(10002));
 var queues = storage.AddQueues("QueueStorageConnectionString");
 
+// One-shot migrator: the ONLY startup actor allowed to touch the schema. Every app project
+// below waits for its COMPLETION (exit 0), not merely for the Postgres container being
+// healthy — WaitFor(cleansiaDb) alone let the hosts' background jobs (outbox drainer,
+// fiscal sweep, Hangfire) race the in-process migration and crash on missing tables.
+// A non-zero exit (failed migration) keeps every dependent stopped instead of letting it
+// run against a half-migrated schema.
+var migrations = builder.AddProject<Projects.Cleansia_MigrationService>("migrations")
+    .WithReference(cleansiaDb)
+    .WaitFor(cleansiaDb);
+
 var partnerApi = builder.AddProject<Projects.Cleansia_Web_Partner>("partner-api")
     .WithEndpoint("http", e => { e.Port = 5000; e.IsProxied = false; })
     .WithEndpoint("https", e => { e.Port = 8000; e.IsProxied = false; })
     .WithReference(cleansiaDb)
     .WithReference(queues)
-    .WaitFor(cleansiaDb);
+    .WaitForCompletion(migrations);
 
 var adminApi = builder.AddProject<Projects.Cleansia_Web_Admin>("admin-api")
     .WithEndpoint("http", e => { e.Port = 5001; e.IsProxied = false; })
     .WithReference(cleansiaDb)
     .WithReference(queues)
-    .WaitFor(cleansiaDb);
+    .WaitForCompletion(migrations);
 
 var partnerMobileApi = builder.AddProject<Projects.Cleansia_Web_Mobile_Partner>("partner-mobile-api")
     .WithEndpoint("http", e => { e.Port = 5002; e.IsProxied = false; })
     .WithReference(cleansiaDb)
     .WithReference(queues)
-    .WaitFor(cleansiaDb);
+    .WaitForCompletion(migrations);
 
 var customerApi = builder.AddProject<Projects.Cleansia_Web_Customer>("customer-api")
     .WithEndpoint("http", e => { e.Port = 5003; e.IsProxied = false; })
     .WithReference(cleansiaDb)
     .WithReference(queues)
-    .WaitFor(cleansiaDb);
+    .WaitForCompletion(migrations);
 
 // Dedicated host for the customer mobile app (Android, future iOS). Mirrors
 // the partner-Mobile host shape: body-token JWT, no cookies, no CSRF — native
@@ -66,11 +76,11 @@ var customerMobileApi = builder.AddProject<Projects.Cleansia_Web_Mobile_Customer
     .WithEndpoint("http", e => { e.Port = 5004; e.IsProxied = false; })
     .WithReference(cleansiaDb)
     .WithReference(queues)
-    .WaitFor(cleansiaDb);
+    .WaitForCompletion(migrations);
 
 var functions = builder.AddProject<Projects.Cleansia_Functions>("functions")
     .WithReference(cleansiaDb)
     .WithReference(queues)
-    .WaitFor(cleansiaDb);
+    .WaitForCompletion(migrations);
 
 builder.Build().Run();

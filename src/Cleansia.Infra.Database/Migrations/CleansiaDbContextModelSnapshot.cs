@@ -2838,6 +2838,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasColumnType("character varying(26)");
 
+                    b.Property<int?>("CurrentStatus")
+                        .HasColumnType("integer");
+
                     b.Property<string>("CustomerAddressId")
                         .IsRequired()
                         .HasColumnType("character varying(26)");
@@ -2981,15 +2984,23 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("CustomerAddressId");
 
+                    b.HasIndex("CustomerPhone");
+
                     b.HasIndex("PromoCodeId");
 
                     b.HasIndex("RecurringTemplateId");
+
+                    b.HasIndex("StripePaymentIntentId");
 
                     b.HasIndex("TenantId");
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("CurrentStatus", "CleaningDateTime");
+
                     b.HasIndex("PaymentStatus", "CreatedOn");
+
+                    b.HasIndex("PaymentType", "CreatedOn");
 
                     b.ToTable("Orders");
                 });

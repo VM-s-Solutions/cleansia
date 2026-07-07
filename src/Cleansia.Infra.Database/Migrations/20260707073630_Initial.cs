@@ -1007,6 +1007,7 @@ namespace Cleansia.Infra.Database.Migrations
                     RecurringTemplateId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     RecurringReminderSentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     Extras = table.Column<string>(type: "text", nullable: false),
+                    CurrentStatus = table.Column<int>(type: "integer", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
@@ -2825,14 +2826,29 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "CurrencyId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Orders_CurrentStatus_CleaningDateTime",
+                table: "Orders",
+                columns: new[] { "CurrentStatus", "CleaningDateTime" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Orders_CustomerAddressId",
                 table: "Orders",
                 column: "CustomerAddressId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Orders_CustomerPhone",
+                table: "Orders",
+                column: "CustomerPhone");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Orders_PaymentStatus_CreatedOn",
                 table: "Orders",
                 columns: new[] { "PaymentStatus", "CreatedOn" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_PaymentType_CreatedOn",
+                table: "Orders",
+                columns: new[] { "PaymentType", "CreatedOn" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_PromoCodeId",
@@ -2843,6 +2859,11 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_Orders_RecurringTemplateId",
                 table: "Orders",
                 column: "RecurringTemplateId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_StripePaymentIntentId",
+                table: "Orders",
+                column: "StripePaymentIntentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_TenantId",

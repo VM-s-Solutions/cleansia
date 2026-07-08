@@ -40,9 +40,14 @@ source: phase/ios-fix2 fix-round-5 (A-shell+home + C-orders-i18n reviews) — iO
   separate concern (backend snapshot — see T-0394); recent-booking titles that use order-snapshot names (no
   translations) stay raw on BOTH platforms.
 
+- [ ] **AC4 ("+ N more" suffix)** — the recent-booking / order-again title suffix is hardcoded English on
+  Android (`HomeTab.kt:977` `"$first + $remaining more"`). iOS fix-round 6 localized it via
+  `L10n.Orders.servicesMore`; Android should route the suffix through a plural/string resource so the whole
+  title renders in the app language (mirror `orders_services_more`).
+
 ## Out of scope
 - Order-detail name localization (backend snapshot — T-0394).
-- iOS (already done in fix-round 5).
+- iOS (already done in fix-rounds 5–6, incl. the "+ N more" suffix).
 
 ## Status log
 - 2026-07-08 — filed `proposed` by pm from the fix-round-5 reviews. Small: the helper exists; it's two call-site

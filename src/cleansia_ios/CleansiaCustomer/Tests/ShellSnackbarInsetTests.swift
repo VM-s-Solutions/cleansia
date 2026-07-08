@@ -7,13 +7,22 @@ final class ShellSnackbarInsetTests: XCTestCase {
         XCTAssertEqual(ShellSnackbarInset.inset(pathDepth: 0), ShellSnackbarInset.overShellBar)
     }
 
-    func testClearanceClearsTheSystemBarAndTheFloatingFab() {
+    func testClearanceClearsTheSystemBarAndTheDockedFab() {
         XCTAssertGreaterThan(ShellSnackbarInset.overShellBar, BookFabMetrics.systemTabBarHeight)
         XCTAssertGreaterThanOrEqual(ShellSnackbarInset.overShellBar, BookFabMetrics.chromeEnvelope)
     }
 
-    func testRecomputedInsetIsTheBarPlusFabEnvelopePlusGap() {
-        XCTAssertEqual(ShellSnackbarInset.overShellBar, 129)
+    func testDockedFabCenterSitsOnTheTabBarTopEdge() {
+        XCTAssertEqual(BookFabMetrics.bottomPadding + BookFabMetrics.size / 2, BookFabMetrics.systemTabBarHeight)
+    }
+
+    func testDockedFabHalfOverlapsTheBar() {
+        XCTAssertEqual(BookFabMetrics.bottomPadding, BookFabMetrics.systemTabBarHeight - BookFabMetrics.size / 2)
+        XCTAssertGreaterThan(BookFabMetrics.chromeEnvelope, BookFabMetrics.systemTabBarHeight)
+    }
+
+    func testRecomputedInsetIsTheDockedFabTopEdgePlusGap() {
+        XCTAssertEqual(ShellSnackbarInset.overShellBar, 89)
     }
 
     func testPushedChildrenUseTheDefaultInset() {

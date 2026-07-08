@@ -48,8 +48,9 @@ struct CustomerShellView: View {
             // Tab roots only — a pushed child covers the shell, so the FAB (like
             // Android's, which lives on the covered MainShell) is gone on detail
             // screens. Horizontally centered over the gap between tabs 2 and 3 and
-            // raised above the 49pt tab bar, so it clears every tab tap-target on
-            // both the iPhone 17 (26.x) and iPhone 14 (16.4).
+            // center-docked onto the 49pt tab bar's top edge, so it overlaps the
+            // bar center without covering a tab icon on either the iPhone 17
+            // (26.x) or iPhone 14 (16.4).
             if model.path.isEmpty {
                 bookFab
             }

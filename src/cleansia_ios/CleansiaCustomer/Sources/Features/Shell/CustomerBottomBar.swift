@@ -4,17 +4,17 @@ import SwiftUI
 /// Bottom-chrome geometry for the tab roots, measured from the safe-area bottom
 /// so one set of constants holds on both the iPhone 17 (26.x, 34pt indicator)
 /// and iPhone 14 (16.4) runtimes without a per-device branch. The stock system
-/// tab bar is ~49pt; the Book FAB is horizontally centered and floats a fixed
-/// gap above the bar, so it sits over the dead gap between tabs 2 and 3 and
-/// never overlaps a tab tap-target.
+/// tab bar is ~49pt; the Book FAB is horizontally centered over the dead gap
+/// between tabs 2 and 3 and center-docked onto the bar's top edge — half the
+/// disc rises above the bar, half overlaps it — so it never covers a tab icon.
 enum BookFabMetrics {
     static let systemTabBarHeight: CGFloat = 49
     static let size: CGFloat = 56
-    static let gapAboveBar: CGFloat = 12
 
-    /// The FAB's bottom edge above the safe-area bottom — clear of the tab bar.
+    /// The FAB's bottom edge above the safe-area bottom. Docked so the disc's
+    /// vertical center lands on the tab bar's top edge (a center-docked FAB).
     static var bottomPadding: CGFloat {
-        systemTabBarHeight + gapAboveBar
+        systemTabBarHeight - size / 2
     }
 
     /// The FAB's top edge — the tallest point of the tab-root bottom chrome.

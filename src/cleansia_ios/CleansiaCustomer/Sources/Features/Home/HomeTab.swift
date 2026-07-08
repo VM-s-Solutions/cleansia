@@ -169,6 +169,8 @@ struct HomeTab: View {
 /// `HomeTab.kt:313-365`). The bell opens the interim notifications inbox; the
 /// row is center-aligned so the bell sits mid-height against the two-line
 /// address block, matching Android's `verticalAlignment = CenterVertically`.
+/// The pin leading and the bell's visible-disc trailing both land on the
+/// `Spacing.ml` content gutter shared by the cards below.
 private struct AddressTopBar: View {
     let displayedAddress: String?
     let onAddressTap: () -> Void
@@ -216,7 +218,7 @@ private struct AddressTopBar: View {
             .accessibilityLabel(Text(verbatim: L10n.NotificationsInbox.title))
         }
         .padding(.leading, Spacing.ml)
-        .padding(.trailing, Spacing.xs)
+        .padding(.trailing, Spacing.m)
         .padding(.top, Spacing.s)
         .padding(.bottom, Spacing.xxs)
     }

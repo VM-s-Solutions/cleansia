@@ -51,7 +51,6 @@ struct PromoCodeSheet: View {
             message: { resultBlock }
         )
         .snackbarHost(snackbar, bottomInset: SnackbarController.defaultBottomInset)
-        .presentationDetents([.medium])
     }
 
     private var isError: Bool {

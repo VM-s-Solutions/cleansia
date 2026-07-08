@@ -43,17 +43,28 @@ final class AnimatedMascotPlaybackTests: XCTestCase {
         ))
     }
 
-    func testHoldsFinalFrameWhenOneShotCompletesUninterrupted() {
-        XCTAssertTrue(AnimatedMascotPlayback.shouldReapplyHeldFrame(loop: false, superseded: false))
+    func testPinsFinalFrameOnUpdateAfterOneShotCompletes() {
+        XCTAssertTrue(AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(
+            loop: false, hasCompletedFrame: true, superseded: false
+        ))
     }
 
-    func testDoesNotHoldFinalFrameWhileLooping() {
-        XCTAssertFalse(AnimatedMascotPlayback.shouldReapplyHeldFrame(loop: true, superseded: false))
+    func testDoesNotPinBeforeOneShotHasCompleted() {
+        XCTAssertFalse(AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(
+            loop: false, hasCompletedFrame: false, superseded: false
+        ))
     }
 
-    func testDoesNotHoldFinalFrameWhenSupersededByNewerRun() {
-        XCTAssertFalse(AnimatedMascotPlayback.shouldReapplyHeldFrame(loop: false, superseded: true))
-        XCTAssertFalse(AnimatedMascotPlayback.shouldReapplyHeldFrame(loop: true, superseded: true))
+    func testNeverPinsFinalFrameWhileLooping() {
+        XCTAssertFalse(AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(
+            loop: true, hasCompletedFrame: true, superseded: false
+        ))
+    }
+
+    func testDoesNotPinFinalFrameWhenSupersededByNewerRun() {
+        XCTAssertFalse(AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(
+            loop: false, hasCompletedFrame: true, superseded: true
+        ))
     }
 
     func testCurrentGenerationIsNotSuperseded() {

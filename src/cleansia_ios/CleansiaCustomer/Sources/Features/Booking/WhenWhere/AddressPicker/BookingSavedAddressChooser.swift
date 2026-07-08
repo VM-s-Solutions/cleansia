@@ -192,6 +192,7 @@ private struct SavedAddressListPane: View {
             Spacer()
         }
         .padding(.horizontal, Spacing.xs)
+        .padding(.top, Spacing.m)
     }
 
     private var emptyState: some View {

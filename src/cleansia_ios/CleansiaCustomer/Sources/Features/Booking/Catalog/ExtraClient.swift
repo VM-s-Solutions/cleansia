@@ -34,11 +34,19 @@ private extension ExtraListItem {
 }
 
 extension CatalogExtra {
-    var localizedName: String {
-        CatalogLocalization.name(translations: translations, fallback: name)
+    func localizedName(for locale: Locale) -> String {
+        CatalogLocalization.name(
+            translations: translations,
+            fallback: name,
+            languageCode: CatalogLocalization.languageCode(for: locale)
+        )
     }
 
-    var localizedDescription: String? {
-        CatalogLocalization.description(translations: translations, fallback: description)
+    func localizedDescription(for locale: Locale) -> String? {
+        CatalogLocalization.description(
+            translations: translations,
+            fallback: description,
+            languageCode: CatalogLocalization.languageCode(for: locale)
+        )
     }
 }

@@ -31,6 +31,7 @@ struct ExtrasCard: View {
 }
 
 private struct ExtraRow: View {
+    @Environment(\.locale) private var locale
     let extra: CatalogExtra
     let selected: Bool
     let currencyCode: String
@@ -40,11 +41,11 @@ private struct ExtraRow: View {
         Button(action: onToggle) {
             HStack(spacing: Spacing.s) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(extra.localizedName)
+                    Text(extra.localizedName(for: locale))
                         .font(CleansiaTypography.bodyMedium)
                         .fontWeight(.semibold)
                         .foregroundColor(CleansiaColors.onSurface)
-                    if let description = extra.localizedDescription, !description.isBlank {
+                    if let description = extra.localizedDescription(for: locale), !description.isBlank {
                         Text(description)
                             .font(CleansiaTypography.labelMedium)
                             .foregroundColor(CleansiaColors.onSurfaceVariant)
@@ -312,9 +313,9 @@ struct CodeEntryRow: View {
             ZStack {
                 Circle()
                     .fill(CleansiaColors.primary.opacity(0.15))
-                    .frame(width: 36, height: 36)
+                    .frame(width: 32, height: 32)
                 Image(systemName: systemImage)
-                    .font(.system(size: 18))
+                    .font(.system(size: 16))
                     .foregroundColor(CleansiaColors.primary)
             }
             VStack(alignment: .leading, spacing: 2) {
@@ -331,7 +332,7 @@ struct CodeEntryRow: View {
             trailingGlyph
         }
         .padding(.horizontal, Spacing.m)
-        .padding(.vertical, Spacing.s)
+        .padding(.vertical, Spacing.xs)
         .frame(maxWidth: .infinity)
         .background(CleansiaColors.surface)
         .overlay(

@@ -66,6 +66,7 @@ struct CategoryChip: View {
 }
 
 struct ServiceRow: View {
+    @Environment(\.locale) private var locale
     let service: CatalogService
     let selected: Bool
     let onToggle: () -> Void
@@ -101,11 +102,11 @@ struct ServiceRow: View {
 
     private var details: some View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
-            Text(service.localizedName)
+            Text(service.localizedName(for: locale))
                 .font(CleansiaTypography.titleMedium)
                 .foregroundColor(CleansiaColors.onSurface)
                 .lineLimit(1)
-            if let description = service.localizedDescription, !description.isEmpty {
+            if let description = service.localizedDescription(for: locale), !description.isEmpty {
                 Text(description)
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
@@ -127,6 +128,7 @@ struct ServiceRow: View {
 }
 
 struct PackageCard: View {
+    @Environment(\.locale) private var locale
     let pkg: CatalogPackage
     let selected: Bool
     let onToggle: () -> Void
@@ -135,7 +137,7 @@ struct PackageCard: View {
         Button(action: onToggle) {
             VStack(alignment: .leading, spacing: Spacing.xxs) {
                 HStack {
-                    Text(pkg.localizedName)
+                    Text(pkg.localizedName(for: locale))
                         .font(CleansiaTypography.titleMedium)
                         .foregroundColor(CleansiaColors.onPrimary)
                         .lineLimit(1)
@@ -144,13 +146,13 @@ struct PackageCard: View {
                         SelectionBadge(selected: true, onPrimary: true)
                     }
                 }
-                if let description = pkg.localizedDescription, !description.isEmpty {
+                if let description = pkg.localizedDescription(for: locale), !description.isEmpty {
                     Text(description)
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onPrimary.opacity(0.9))
                         .lineLimit(1)
                 }
-                if let summary = pkg.includesSummary {
+                if let summary = pkg.includesSummary(for: locale) {
                     Text(summary)
                         .font(CleansiaTypography.labelMedium)
                         .foregroundColor(CleansiaColors.onPrimary.opacity(0.85))

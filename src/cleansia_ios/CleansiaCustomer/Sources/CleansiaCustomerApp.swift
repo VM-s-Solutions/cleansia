@@ -24,6 +24,7 @@ struct CleansiaCustomerApp: App {
             CustomerRootView(container: container, preferences: preferences)
                 .environmentObject(sessionManager)
                 .environment(\.snackbarController, container.snackbar)
+                .environment(\.savedAddressRepository, container.savedAddressRepository)
                 .environment(\.locale, preferences.locale)
                 .preferredColorScheme(preferences.theme.colorScheme)
                 .snackbarHost(container.snackbar)

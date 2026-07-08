@@ -40,6 +40,7 @@ struct ServicesStep: View {
 }
 
 private struct CatalogContentView: View {
+    @Environment(\.locale) private var locale
     let catalog: Catalog
     let state: BookingState
     let onUpdate: ((BookingState) -> BookingState) -> Void
@@ -117,7 +118,7 @@ private struct CatalogContentView: View {
                         }
                         ForEach(categories) { category in
                             CategoryChip(
-                                label: category.localizedName,
+                                label: category.localizedName(for: locale),
                                 systemImage: CategoryPalette.symbol(for: category.slug),
                                 tint: CategoryPalette.tint(for: category.slug),
                                 selected: activeCategorySlug == category.slug

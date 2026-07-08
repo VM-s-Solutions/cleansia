@@ -6,6 +6,20 @@ import XCTest
 final class BookingPrefillTests: XCTestCase {
     // MARK: - hydratedWithPreferred (BookingBottomSheet.kt:270-282)
 
+    private func address(id: String, street: String) -> SavedAddress {
+        SavedAddress(
+            id: id,
+            label: "Home",
+            street: street,
+            city: "Prague",
+            zipCode: "11000",
+            country: "Czechia",
+            latitude: 50,
+            longitude: 14,
+            isDefault: false
+        )
+    }
+
     func testHydrationFillsABlankAddressFromThePreferred() {
         let preferred = SavedAddressFixtures.address(id: "a")
         let state = BookingPrefill.hydratedWithPreferred(BookingState(), preferred: preferred)
@@ -14,6 +28,7 @@ final class BookingPrefillTests: XCTestCase {
         XCTAssertEqual(state.city, "Prague")
         XCTAssertEqual(state.zipCode, "11000")
         XCTAssertEqual(state.savedAddressId, "a")
+        XCTAssertEqual(state.hydratedFromSavedId, "a")
     }
 
     func testHydrationNeverOverwritesATypedStreet() {
@@ -28,6 +43,51 @@ final class BookingPrefillTests: XCTestCase {
     func testHydrationWithoutAPreferredIsANoOp() {
         let state = BookingPrefill.hydratedWithPreferred(BookingState(), preferred: nil)
         XCTAssertEqual(state, BookingState())
+    }
+
+    func testReHydratesWhenTheStillAutoHydratedDraftsPreferredChanged() {
+        let seeded = BookingPrefill.hydratedWithPreferred(BookingState(), preferred: address(id: "a", street: "Main 1"))
+
+        let reHydrated = BookingPrefill.hydratedWithPreferred(seeded, preferred: address(id: "b", street: "Second 2"))
+
+        XCTAssertEqual(reHydrated.street, "Second 2")
+        XCTAssertEqual(reHydrated.savedAddressId, "b")
+        XCTAssertEqual(reHydrated.hydratedFromSavedId, "b")
+    }
+
+    func testDoesNotReHydrateAHandPickedAddress() {
+        var handPicked = BookingPrefill.hydratedWithPreferred(
+            BookingState(),
+            preferred: address(id: "a", street: "Main 1")
+        )
+        // Map/search pick clears both ids — the hand-edit marker.
+        handPicked.street = "Picked 9"
+        handPicked.savedAddressId = nil
+        handPicked.hydratedFromSavedId = nil
+
+        let after = BookingPrefill.hydratedWithPreferred(handPicked, preferred: address(id: "b", street: "Second 2"))
+
+        XCTAssertEqual(after.street, "Picked 9")
+        XCTAssertNil(after.savedAddressId)
+    }
+
+    func testUnchangedPreferredDoesNotRewriteAnAlreadyHydratedDraft() {
+        let seeded = BookingPrefill.hydratedWithPreferred(BookingState(), preferred: address(id: "a", street: "Main 1"))
+
+        let again = BookingPrefill.hydratedWithPreferred(seeded, preferred: address(id: "a", street: "Main 1"))
+
+        XCTAssertEqual(again, seeded)
+    }
+
+    func testShouldHydrateDecisionMatrix() {
+        var blank = BookingState()
+        XCTAssertTrue(BookingPrefill.shouldHydrate(blank, preferred: address(id: "a", street: "Main 1")))
+
+        blank.street = "Filled"
+        blank.savedAddressId = "a"
+        blank.hydratedFromSavedId = "a"
+        XCTAssertTrue(BookingPrefill.shouldHydrate(blank, preferred: address(id: "b", street: "x")))
+        XCTAssertFalse(BookingPrefill.shouldHydrate(blank, preferred: address(id: "a", street: "x")))
     }
 
     // MARK: - withPackage (BookingBottomSheet.kt:390-399 — union, keeps the rest)

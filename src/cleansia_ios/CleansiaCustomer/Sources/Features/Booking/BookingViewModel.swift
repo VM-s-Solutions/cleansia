@@ -151,6 +151,7 @@ final class BookingViewModel: ViewModel {
             next.zipCode = address.zipCode
             next.countryIsoCode = address.countryIsoCode
             next.savedAddressId = nil
+            next.hydratedFromSavedId = nil
             return next
         }
     }

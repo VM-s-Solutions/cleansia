@@ -60,10 +60,26 @@ final class OrdersListViewModel: ViewModel {
     /// only runs once, so a booking created since then would leave the cache
     /// stale (`OrdersTab.kt:141-147`).
     func onAppear() async {
+        await backgroundRefresh()
+    }
+
+    /// A `.page` TabView keeps its tab views alive, so `.task`/`.onAppear` do
+    /// not re-fire on tab re-selection the way Android's HorizontalPager
+    /// re-runs `LaunchedEffect(Unit)`. Returning to the foreground (reopening
+    /// the app, or after placing an order elsewhere) is the reliable seam to
+    /// re-sync — same gated background refresh, never a spinner.
+    func onForeground() async {
+        await backgroundRefresh()
+    }
+
+    private func backgroundRefresh() async {
         guard !repository.loading else { return }
         await runRefresh(.backgroundRefreshing)
     }
 
+    /// Pull-to-refresh forces a network fetch: `OrderRepository.refresh()` hits
+    /// `getMyOrders` every time (no staleness window short-circuits it), so a
+    /// pull always re-syncs against the backend.
     func pullToRefresh() async {
         await runRefresh(.userRefreshing)
     }
@@ -85,7 +101,7 @@ final class OrdersListViewModel: ViewModel {
         defer { refreshPhase = .idle }
         if case let .failure(error) = await repository.refresh() {
             snackbar.showApiError(error)
-            if state.loadedValue == nil {
+            if !error.isCancellation, state.loadedValue == nil {
                 state = .error(error)
             }
         }

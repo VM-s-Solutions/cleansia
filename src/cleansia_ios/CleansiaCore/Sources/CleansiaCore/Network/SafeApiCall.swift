@@ -7,7 +7,7 @@ public func apiResult<T>(
     do {
         return try await .success(body())
     } catch is CancellationError {
-        return .failure(ApiError(code: "network.cancelled"))
+        return .failure(ApiError(code: ApiError.cancelledCode))
     } catch {
         return .failure(mapError(error))
     }
@@ -15,8 +15,8 @@ public func apiResult<T>(
 
 public extension ApiError {
     static func from(_ error: Error) -> ApiError {
-        if error is CancellationError {
-            return ApiError(code: "network.cancelled")
+        if isCancellation(error) {
+            return ApiError(code: cancelledCode)
         }
         if let urlError = error as? URLError {
             return ApiError(code: "network.unreachable", message: urlError.localizedDescription)

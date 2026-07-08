@@ -4,6 +4,7 @@ import SwiftUI
 
 struct OrdersTab: View {
     @StateObject private var vm: OrdersListViewModel
+    @Environment(\.scenePhase) private var scenePhase
     let onOrderClick: (String) -> Void
     let onBookCleaning: () -> Void
 
@@ -31,6 +32,9 @@ struct OrdersTab: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(CleansiaColors.background.ignoresSafeArea())
         .task { await vm.onAppear() }
+        .onChange(of: scenePhase) { phase in
+            if phase == .active { Task { await vm.onForeground() } }
+        }
     }
 
     @ViewBuilder
@@ -192,7 +196,8 @@ struct OrderListCard: View {
             .padding(Spacing.m)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.large))
+        .background(CleansiaColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
         .overlay(
             RoundedRectangle(cornerRadius: CornerRadius.large)
                 .stroke(CleansiaColors.outlineVariant, lineWidth: 1)

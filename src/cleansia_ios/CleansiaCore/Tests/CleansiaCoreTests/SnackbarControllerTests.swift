@@ -63,6 +63,19 @@ final class SnackbarControllerTests: XCTestCase {
         XCTAssertFalse(controller.current?.text.isEmpty ?? true)
     }
 
+    func testShowApiErrorDropsCancellationSilently() {
+        let controller = SnackbarController()
+        controller.showApiError(ApiError(code: ApiError.cancelledCode))
+        XCTAssertNil(controller.current)
+    }
+
+    func testShowApiErrorLeavesAnExistingMessageWhenACancellationArrives() {
+        let controller = SnackbarController()
+        controller.showError("real failure")
+        controller.showApiError(ApiError(code: ApiError.cancelledCode))
+        XCTAssertEqual(controller.current?.text, "real failure")
+    }
+
     func testAutoDismissDurationIsLongerForErrors() {
         let error = SnackbarMessage(text: "e", severity: .error)
         let info = SnackbarMessage(text: "i", severity: .info)

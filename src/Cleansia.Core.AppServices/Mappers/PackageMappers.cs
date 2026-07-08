@@ -27,7 +27,8 @@ public static class PackageMappers
             EstimatedTime: package.IncludedServices.Sum(s => s.Service.EstimatedTime),
             CurrencyCode: currencyCode,
             IncludedServices: package.IncludedServices.Select(s => s.Service.Name),
-            IncludedServiceItems: package.IncludedServices.Select(s => new PackageServiceRef(s.Service.Id, s.Service.Name))
+            IncludedServiceItems: package.IncludedServices.Select(s => new PackageServiceRef(s.Service.Id, s.Service.Name)),
+            Translations: package.Translations.ToDictionary()
         );
     }
 

@@ -1,3 +1,5 @@
+using Cleansia.Core.Domain.Internationalization;
+
 namespace Cleansia.Core.AppServices.Features.Services.DTOs;
 
 public record ServiceDetails(
@@ -5,4 +7,5 @@ public record ServiceDetails(
     string Name,
     string Description,
     int EstimatedTime,
-    string CurrencyCode);
+    string CurrencyCode,
+    Dictionary<string, Translation> Translations);

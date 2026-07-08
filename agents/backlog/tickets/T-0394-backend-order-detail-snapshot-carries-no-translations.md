@@ -1,7 +1,7 @@
 ---
 id: T-0394
 title: "Backend — order-DETAIL service/package snapshot carries no translations, so order-detail names render frozen-English in every non-English app"
-status: proposed
+status: in-review
 size: M
 owner: backend
 created: 2026-07-08
@@ -13,7 +13,9 @@ adrs: []
 layers: [backend, db, ios, android]
 security_touching: false
 priority: medium
-manual_steps: []
+manual_steps:
+  - nswag-regen (web partner/admin/customer TS clients — ServiceDetails/PackageDetails now carry `translations`, surfaced via GetOrderDetails on every web host)
+  - android-client-regen + Android OrderDetail wiring parity (the shared spec customer-mobile-api.json was re-dumped in-branch; Android must regen its Kotlin client and localize OrderServicesCard/OrderPackagesCard the same way iOS now does — AC3 parity)
 sprint: 12
 source: phase/ios-fix2 fix-round-5 C-orders-i18n review (minor, CASE b disclosed by the implementer)
 ---
@@ -56,6 +58,35 @@ source: phase/ios-fix2 fix-round-5 C-orders-i18n review (minor, CASE b disclosed
 - 2026-07-08 — filed `proposed` by pm from the fix-round-5 C-orders-i18n review. The client did the localizable
   half (list); this is the server-snapshot half that no client can fix. Medium priority: order-detail is a
   secondary surface, and the English name is at least correct, just not translated.
+- 2026-07-08 — backend implemented option **(a)** + iOS vertical done (`in-review`). Details:
+  - **Backend (done):** added `Translations` (`Dictionary<string, Translation>`, last positional — same type +
+    `.ToDictionary()` idiom as `ServiceListItem`/`PackageListItem`) to `ServiceDetails` + `PackageDetails`;
+    populated in `ServiceMappers.MapToDetails` / `PackageMappers.MapToDetails` from
+    `service.Translations.ToDictionary()` / `package.Translations.ToDictionary()`. The order-detail path
+    (`OrderMappers.MapToDetail` → `MapToDetails`) already loads `Service`/`Package` via
+    `OrderRepository.GetByIdAsync`, and `Translations` is a serialized JSON `text` column that materializes
+    eagerly with the entity — **no Include change needed** (verified). New unit test
+    `OrderDetailMapperTranslationsTests` (3 cases: service dict, package dict, untranslated→empty-dict +
+    English-name fallback). `dotnet test Cleansia.Tests` = **1779 passed, 0 failed**; `dotnet build` green.
+  - **Spec re-dump (done, in-branch):** `src/cleansia_android/openapi/customer-mobile-api.json` re-dumped
+    against a disposable Postgres (docker/colima `postgres:16`, `dbContext.Migrate()` + seed on Development
+    boot, fetched `http://localhost:5004/swagger/v1/swagger.json`) — same disposable-postgres approach as
+    T-0370 (`5252bfb9`). Semantic diff = **exactly** `+translations` on `ServiceDetails` + `PackageDetails`
+    (`{type:object, additionalProperties:$ref Translation, nullable}` — identical to `ServiceListItem`), no
+    path/other-schema drift. Spec NOT hand-edited.
+  - **iOS (done):** regenerated `CleansiaCustomerApi` (gitignored) via `generate-api-clients.sh customer` —
+    both models now carry `translations: [String: Translation]?`. Wired `OrderServicesCard`/`OrderPackagesCard`
+    (`OrderDetailDetailsCards.swift`) to `@Environment(\.locale)` + new `OrdersFormat.localizedCatalogName` /
+    `localizedCatalogDescription` helpers (reuse `OrdersFormat`'s existing `localizedName`/`nonBlank` idiom —
+    same resolution as the order-list `servicesSummary` + Home `recentBookingTitle`), keeping the frozen
+    English snapshot as the fallback for pre-change orders. 4 new `OrdersFormatTests`. swiftformat --lint = 0,
+    swiftlint --strict = 0, `xcodebuild test` CleansiaCustomer iPhone 17/iOS 26.3 = **485 passed**, build-only
+    iPhone 14/iOS 16.4 = **BUILD SUCCEEDED**.
+  - **Remaining (owner manual_steps):** (1) web NSwag regen (partner/admin/customer TS clients — same detail
+    DTOs surface on the web hosts); (2) Android Kotlin client regen from the re-dumped shared spec + the
+    Android OrderDetail card wiring for AC3 parity. The order-detail package `includedServices`/
+    `includedServiceItems` sub-line stays English (those DTOs carry no per-item translations — out of scope,
+    matches the ticket's name-focus).
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

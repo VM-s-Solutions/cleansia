@@ -136,9 +136,13 @@ struct DeleteAccountView: View {
                         .progressViewStyle(.circular)
                         .tint(CleansiaColors.onError)
                 } else {
-                    Text(L10n.DeleteAccount.confirmButton)
-                        .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(CleansiaColors.onError)
+                    HStack(spacing: Spacing.xs) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text(L10n.DeleteAccount.confirmButton)
+                            .font(CleansiaTypography.titleMedium)
+                    }
+                    .foregroundColor(CleansiaColors.onError)
                 }
             }
             .frame(maxWidth: .infinity, minHeight: 52)

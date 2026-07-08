@@ -60,6 +60,7 @@ struct SubscribePlusScreen: View {
         }
         .background(CleansiaColors.background.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             await vm.load()
             if selectedPlanCode.isEmpty {
@@ -171,6 +172,7 @@ private struct HeroBlock: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
+            .ignoresSafeArea(edges: .top)
         )
     }
 

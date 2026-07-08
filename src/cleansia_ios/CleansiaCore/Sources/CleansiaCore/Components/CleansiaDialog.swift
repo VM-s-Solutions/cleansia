@@ -47,14 +47,14 @@ public struct CleansiaDialog<Content: View>: View {
 
             VStack(spacing: 0) {
                 if let icon {
+                    let accent = destructive ? CleansiaColors.error : CleansiaColors.primary
                     ZStack {
                         Circle()
-                            .fill(destructive ? CleansiaColors.errorContainer : CleansiaColors.primaryContainer)
+                            .fill(accent.opacity(0.15))
                             .frame(width: 56, height: 56)
                         Image(systemName: icon)
                             .font(.system(size: 28))
-                            .foregroundColor(destructive ? CleansiaColors.onErrorContainer : CleansiaColors
-                                .onPrimaryContainer)
+                            .foregroundColor(accent)
                     }
                     .padding(.bottom, Spacing.m)
                 }

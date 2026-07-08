@@ -32,6 +32,7 @@ struct RecentBookingsSection: View {
 }
 
 private struct RecentBookingRow: View {
+    @Environment(\.locale) private var locale
     let order: OrderListItem
     let onTap: () -> Void
 
@@ -77,7 +78,7 @@ private struct RecentBookingRow: View {
     }
 
     private var recentSubtitle: String {
-        let when = OrdersFormat.dateTime(order.cleaningDateTime)
+        let when = OrdersFormat.dateTime(order.cleaningDateTime, locale: locale)
         let price = OrdersFormat.price(order.totalPrice ?? 0, currencyCode: order.currency?.code)
         return "\(when) · \(price)"
     }

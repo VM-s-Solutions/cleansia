@@ -42,7 +42,26 @@ final class HomeSectionsTests: XCTestCase {
             CatalogFixtures.package(id: "p3"),
             CatalogFixtures.package(id: "p4")
         ]
-        XCTAssertEqual(HomeSections.popularPackages(packages).map(\.id), ["p1", "p2", "p3"])
+        XCTAssertEqual(HomeSections.popularPackages(packages, languageCode: "en").map(\.id), ["p1", "p2", "p3"])
+    }
+
+    func testPopularPackagesLocalizesNameToTheAppLanguageWithFallback() {
+        let package = CatalogPackage(
+            id: "p1",
+            name: "Standard cleaning",
+            description: nil,
+            price: 1500,
+            translations: [
+                "ru": CatalogTranslation(name: "Стандартная уборка", description: nil),
+                "cs": CatalogTranslation(name: "Standardní úklid", description: nil)
+            ],
+            includedServices: []
+        )
+        XCTAssertEqual(HomeSections.popularPackages([package], languageCode: "ru").first?.name, "Стандартная уборка")
+        XCTAssertEqual(HomeSections.popularPackages([package], languageCode: "cs").first?.name, "Standardní úklid")
+        // No translation for the language → the default (English) name.
+        XCTAssertEqual(HomeSections.popularPackages([package], languageCode: "sk").first?.name, "Standard cleaning")
+        XCTAssertEqual(HomeSections.popularPackages([package], languageCode: "en").first?.name, "Standard cleaning")
     }
 
     // MARK: - activeRecurring (HomeTab.kt:163-165 — active only, top 3)

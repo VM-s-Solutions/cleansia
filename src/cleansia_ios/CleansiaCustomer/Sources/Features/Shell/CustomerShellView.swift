@@ -35,7 +35,7 @@ struct CustomerShellView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
+        ZStack(alignment: .bottom) {
             CleansiaColors.background.ignoresSafeArea()
             NavigationStack(path: $model.path) {
                 tabs
@@ -47,8 +47,9 @@ struct CustomerShellView: View {
             }
             // Tab roots only — a pushed child covers the shell, so the FAB (like
             // Android's, which lives on the covered MainShell) is gone on detail
-            // screens. Anchored to the device safe area so it clears the 49pt tab
-            // bar identically on the iPhone 17 (26.x) and iPhone 14 (16.4).
+            // screens. Horizontally centered over the gap between tabs 2 and 3 and
+            // raised above the 49pt tab bar, so it clears every tab tap-target on
+            // both the iPhone 17 (26.x) and iPhone 14 (16.4).
             if model.path.isEmpty {
                 bookFab
             }
@@ -113,6 +114,7 @@ struct CustomerShellView: View {
                 membershipRepository: container.membershipRepository,
                 savedAddressRepository: container.savedAddressRepository,
                 bookingVM: bookingVM,
+                settings: container.appSettings,
                 snackbar: snackbar,
                 onBookCleaning: openBooking,
                 onOpenAddressManager: { model.isAddressManagerPresented = true },
@@ -169,7 +171,6 @@ struct CustomerShellView: View {
 
     private var bookFab: some View {
         BookFab(action: openBooking)
-            .padding(.trailing, BookFabMetrics.trailingMargin)
             .padding(.bottom, BookFabMetrics.bottomPadding)
     }
 

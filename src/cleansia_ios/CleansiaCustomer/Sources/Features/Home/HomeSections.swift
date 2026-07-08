@@ -12,9 +12,28 @@ enum HomeSections {
             ?? addresses.first
     }
 
-    /// Non-blank ids, top 3 in catalog order (`HomeTab.kt:149-153`).
-    static func popularPackages(_ packages: [CatalogPackage]) -> [CatalogPackage] {
-        Array(packages.filter { !$0.id.isEmpty }.prefix(3))
+    /// Non-blank ids, top 3 in catalog order, each name resolved to the app
+    /// language (`HomeTab.kt:149-153`). Home reuses booking's catalog
+    /// localization (`ServicesStep.kt:104-118` — `translations[lang]?.name`),
+    /// so the same package reads identically on Home and in the booking sheet.
+    static func popularPackages(_ packages: [CatalogPackage], languageCode: String) -> [CatalogPackage] {
+        packages
+            .filter { !$0.id.isEmpty }
+            .prefix(3)
+            .map { package in
+                CatalogPackage(
+                    id: package.id,
+                    name: CatalogLocalization.name(
+                        translations: package.translations,
+                        fallback: package.name,
+                        languageCode: languageCode
+                    ),
+                    description: package.description,
+                    price: package.price,
+                    translations: package.translations,
+                    includedServices: package.includedServices
+                )
+            }
     }
 
     /// Active templates, top 3 (`HomeTab.kt:163-165`).

@@ -49,10 +49,14 @@ private struct RecentBookingRow: View {
                 }
                 VStack(alignment: .leading, spacing: Spacing.hair) {
                     HStack(spacing: Spacing.xs) {
-                        Text(HomeSections.recentBookingTitle(order, fallback: L10n.Home.recentFallbackTitle))
-                            .font(CleansiaTypography.titleMedium)
-                            .foregroundColor(CleansiaColors.onSurface)
-                            .lineLimit(1)
+                        Text(HomeSections.recentBookingTitle(
+                            order,
+                            fallback: L10n.Home.recentFallbackTitle,
+                            languageCode: CatalogLocalization.languageCode(for: locale)
+                        ))
+                        .font(CleansiaTypography.titleMedium)
+                        .foregroundColor(CleansiaColors.onSurface)
+                        .lineLimit(1)
                         if let label = HomeSections.statusChipLabel(order) {
                             OrderStatusPill(label: label, color: OrderStatusPresentation.color(order.orderStatus))
                         }

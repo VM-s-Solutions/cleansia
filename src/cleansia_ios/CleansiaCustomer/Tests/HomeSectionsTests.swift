@@ -141,20 +141,42 @@ final class HomeSectionsTests: XCTestCase {
 
     // MARK: - recentBookingTitle (HomeTab.kt:971-978 — services first, then packages, "+ N more")
 
-    func testRecentBookingTitleUsesTheFirstServiceName() {
+    func testRecentBookingTitleAppendsTheLocalizedMoreSuffix() {
         var order = OrderFixtures.listItem(id: "o1", statusValue: 5)
         order.selectedServices = [ServiceListItem(id: "s1", name: "Deep clean")]
         order.selectedPackages = [PackageListItem(id: "p1", name: "Move-out")]
-        XCTAssertEqual(HomeSections.recentBookingTitle(order, fallback: "Cleaning"), "Deep clean + 1 more")
+        XCTAssertEqual(
+            HomeSections.recentBookingTitle(order, fallback: "Cleaning", languageCode: "en"),
+            "Deep clean \(L10n.Orders.servicesMore(1))"
+        )
     }
 
     func testRecentBookingTitleSkipsBlankNamesAndFallsBack() {
         var order = OrderFixtures.listItem(id: "o1", statusValue: 5)
         order.selectedServices = [ServiceListItem(id: "s1", name: " ")]
-        XCTAssertEqual(HomeSections.recentBookingTitle(order, fallback: "Cleaning"), "Cleaning")
+        XCTAssertEqual(HomeSections.recentBookingTitle(order, fallback: "Cleaning", languageCode: "en"), "Cleaning")
 
         order.selectedPackages = [PackageListItem(id: "p1", name: "Move-out")]
-        XCTAssertEqual(HomeSections.recentBookingTitle(order, fallback: "Cleaning"), "Move-out")
+        XCTAssertEqual(HomeSections.recentBookingTitle(order, fallback: "Cleaning", languageCode: "en"), "Move-out")
+    }
+
+    func testRecentBookingTitleLocalizesLineNamesToTheAppLanguageWithFallback() {
+        var order = OrderFixtures.listItem(id: "o1", statusValue: 5)
+        order.selectedServices = [ServiceListItem(
+            id: "s1",
+            name: "Deep clean",
+            translations: ["ru": Translation(name: "Глубокая уборка"), "cs": Translation(name: "Hloubkový úklid")]
+        )]
+        XCTAssertEqual(
+            HomeSections.recentBookingTitle(order, fallback: "Cleaning", languageCode: "ru"),
+            "Глубокая уборка"
+        )
+        XCTAssertEqual(
+            HomeSections.recentBookingTitle(order, fallback: "Cleaning", languageCode: "cs"),
+            "Hloubkový úklid"
+        )
+        // No translation for the language → the frozen English snapshot name.
+        XCTAssertEqual(HomeSections.recentBookingTitle(order, fallback: "Cleaning", languageCode: "sk"), "Deep clean")
     }
 
     // MARK: - statusChipLabel (HomeTab.kt:1021-1023 — mapped label, else wire name, else hidden)

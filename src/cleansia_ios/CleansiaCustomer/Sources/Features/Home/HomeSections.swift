@@ -72,14 +72,30 @@ enum HomeSections {
     }
 
     /// First service name, then first package name, "+ N more" suffix
-    /// (`recentBookingTitle`, `HomeTab.kt:971-978`).
-    static func recentBookingTitle(_ order: OrderListItem, fallback: String) -> String {
-        let serviceNames = (order.selectedServices ?? []).compactMap { $0.name?.nonBlank }
-        let packageNames = (order.selectedPackages ?? []).compactMap { $0.name?.nonBlank }
+    /// (`recentBookingTitle`, `HomeTab.kt:971-978`). Line names resolve to
+    /// `languageCode`'s snapshot translation when present, else the frozen
+    /// English name, and the suffix routes through the same localized key as
+    /// the Orders-tab summary (`OrdersFormat.servicesSummary`) so both render
+    /// wholly in the app language.
+    static func recentBookingTitle(_ order: OrderListItem, fallback: String, languageCode: String) -> String {
+        let serviceNames = (order.selectedServices ?? []).compactMap {
+            localizedLineName($0.name, translations: $0.translations, languageCode: languageCode)
+        }
+        let packageNames = (order.selectedPackages ?? []).compactMap {
+            localizedLineName($0.name, translations: $0.translations, languageCode: languageCode)
+        }
         let names = serviceNames + packageNames
         guard let first = names.first else { return fallback }
         let remaining = names.count - 1
-        return remaining > 0 ? "\(first) + \(remaining) more" : first
+        return remaining > 0 ? "\(first) \(L10n.Orders.servicesMore(remaining))" : first
+    }
+
+    private static func localizedLineName(
+        _ fallback: String?,
+        translations: [String: Translation]?,
+        languageCode: String
+    ) -> String? {
+        translations?[languageCode]?.name?.nonBlank ?? fallback?.nonBlank
     }
 
     /// Mapped status label, else the wire name, else nil → chip hidden

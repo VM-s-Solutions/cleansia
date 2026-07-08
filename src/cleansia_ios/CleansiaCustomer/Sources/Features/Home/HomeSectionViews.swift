@@ -55,6 +55,7 @@ struct TrustStrip: View {
 /// Single-tap rebook of the most recent Completed order (`OrderAgainCard`,
 /// `HomeTab.kt:679-745`).
 struct OrderAgainCard: View {
+    @Environment(\.locale) private var locale
     let order: OrderListItem
     let onTap: () -> Void
 
@@ -73,10 +74,14 @@ struct OrderAgainCard: View {
                     Text(L10n.Home.orderAgainTitle)
                         .font(CleansiaTypography.labelMedium)
                         .foregroundColor(CleansiaColors.primary)
-                    Text(HomeSections.recentBookingTitle(order, fallback: L10n.Home.orderAgainFallbackTitle))
-                        .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(CleansiaColors.onSurface)
-                        .lineLimit(1)
+                    Text(HomeSections.recentBookingTitle(
+                        order,
+                        fallback: L10n.Home.orderAgainFallbackTitle,
+                        languageCode: CatalogLocalization.languageCode(for: locale)
+                    ))
+                    .font(CleansiaTypography.titleMedium)
+                    .foregroundColor(CleansiaColors.onSurface)
+                    .lineLimit(1)
                     if let when = HomeSections.orderAgainWhen(order.cleaningDateTime) {
                         Text(L10n.Home.orderAgainSubtitle(when))
                             .font(CleansiaTypography.bodyMedium)

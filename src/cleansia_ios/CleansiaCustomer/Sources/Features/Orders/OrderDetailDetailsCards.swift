@@ -3,6 +3,7 @@ import CleansiaCustomerApi
 import SwiftUI
 
 struct CleaningDetailsCard: View {
+    @Environment(\.locale) private var locale
     let order: OrderItem
 
     private var activeExtras: [String] {
@@ -21,7 +22,10 @@ struct CleaningDetailsCard: View {
                 value: (order.estimatedTime ?? 0) > 0 ? L10n.OrderDetail.durationMinutes(order.estimatedTime ?? 0) : "—"
             )
             if let completedAt = order.completedAt {
-                OrderInfoRow(label: L10n.OrderDetail.completedAt, value: OrdersFormat.dateTime(completedAt))
+                OrderInfoRow(
+                    label: L10n.OrderDetail.completedAt,
+                    value: OrdersFormat.dateTime(completedAt, locale: locale)
+                )
             }
             if !activeExtras.isEmpty {
                 Text(L10n.OrderDetail.extras)

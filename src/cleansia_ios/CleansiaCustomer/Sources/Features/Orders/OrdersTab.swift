@@ -152,6 +152,7 @@ private struct OrderFilterChip: View {
 }
 
 struct OrderListCard: View {
+    @Environment(\.locale) private var locale
     let order: OrderListItem
 
     var body: some View {
@@ -171,9 +172,13 @@ struct OrderListCard: View {
                         color: OrderStatusPresentation.color(order.orderStatus)
                     )
                 }
-                Text(OrdersFormat.dateRange(order.cleaningDateTime, estimatedMinutes: order.estimatedTime ?? 0))
-                    .font(CleansiaTypography.titleLarge)
-                    .foregroundColor(CleansiaColors.onBackground)
+                Text(OrdersFormat.dateRange(
+                    order.cleaningDateTime,
+                    estimatedMinutes: order.estimatedTime ?? 0,
+                    locale: locale
+                ))
+                .font(CleansiaTypography.titleLarge)
+                .foregroundColor(CleansiaColors.onBackground)
 
                 if let address = order.customerAddress, !address.isBlank {
                     Label(address, systemImage: "mappin.and.ellipse")
@@ -183,7 +188,7 @@ struct OrderListCard: View {
                 }
 
                 HStack(alignment: .firstTextBaseline) {
-                    Text(OrdersFormat.servicesSummary(order))
+                    Text(OrdersFormat.servicesSummary(order, locale: locale))
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurface)
                         .lineLimit(2)

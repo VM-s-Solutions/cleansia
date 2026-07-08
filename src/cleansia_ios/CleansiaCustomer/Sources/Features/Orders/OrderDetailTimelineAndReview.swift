@@ -27,6 +27,7 @@ struct OrderTimelineCard: View {
 }
 
 private struct TimelineRow: View {
+    @Environment(\.locale) private var locale
     let entry: OrderStatusTrackDto
     let isLast: Bool
 
@@ -46,7 +47,7 @@ private struct TimelineRow: View {
                 Text(OrderStatusPresentation.label(entry.status))
                     .font(CleansiaTypography.titleMedium)
                     .foregroundColor(CleansiaColors.onSurface)
-                Text(OrdersFormat.dateTime(entry.createdOn))
+                Text(OrdersFormat.dateTime(entry.createdOn, locale: locale))
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             }

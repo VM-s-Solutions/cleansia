@@ -3,6 +3,7 @@ import CleansiaCustomerApi
 import SwiftUI
 
 struct OrderHeroCard: View {
+    @Environment(\.locale) private var locale
     let order: OrderItem
 
     private var hasDiscount: Bool {
@@ -29,9 +30,13 @@ struct OrderHeroCard: View {
                     }
                 }
             }
-            Text(OrdersFormat.dateRange(order.cleaningDateTime, estimatedMinutes: order.estimatedTime ?? 0))
-                .font(CleansiaTypography.headlineSmall)
-                .foregroundColor(CleansiaColors.onBackground)
+            Text(OrdersFormat.dateRange(
+                order.cleaningDateTime,
+                estimatedMinutes: order.estimatedTime ?? 0,
+                locale: locale
+            ))
+            .font(CleansiaTypography.headlineSmall)
+            .foregroundColor(CleansiaColors.onBackground)
 
             HStack(alignment: .lastTextBaseline, spacing: Spacing.xs) {
                 Text(OrdersFormat.price(order.totalPrice ?? 0, currencyCode: order.currency?.code))

@@ -70,6 +70,28 @@ enum OrdersFormat {
         return remaining > 0 ? "\(base) \(L10n.Orders.servicesMore(remaining))" : base
     }
 
+    /// Order-DETAIL catalog line name resolved to `locale`'s snapshot translation
+    /// when the order carries one, else the frozen English snapshot name (or "—").
+    /// Same resolution the order-list `servicesSummary` uses, exposed for the
+    /// order-detail service/package cards.
+    static func localizedCatalogName(
+        _ fallback: String?,
+        translations: [String: Translation]?,
+        locale: Locale = .current
+    ) -> String {
+        let languageCode = locale.language.languageCode?.identifier ?? "en"
+        return localizedName(fallback, translations: translations, languageCode: languageCode) ?? "—"
+    }
+
+    static func localizedCatalogDescription(
+        _ fallback: String?,
+        translations: [String: Translation]?,
+        locale: Locale = .current
+    ) -> String? {
+        let languageCode = locale.language.languageCode?.identifier ?? "en"
+        return translations?[languageCode]?.description?.nonBlank ?? fallback?.nonBlank
+    }
+
     private static func localizedName(
         _ fallback: String?,
         translations: [String: Translation]?,

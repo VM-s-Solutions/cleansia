@@ -46,6 +46,7 @@ private struct ExtrasFlow: View {
 }
 
 struct OrderServicesCard: View {
+    @Environment(\.locale) private var locale
     let services: [ServiceDetails]
 
     var body: some View {
@@ -55,10 +56,18 @@ struct OrderServicesCard: View {
                 if index > 0 { Divider().background(CleansiaColors.outlineVariant) }
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: Spacing.hair) {
-                        Text(service.name ?? "—")
-                            .font(CleansiaTypography.titleMedium)
-                            .foregroundColor(CleansiaColors.onSurface)
-                        if let description = service.description, !description.isBlank {
+                        Text(OrdersFormat.localizedCatalogName(
+                            service.name,
+                            translations: service.translations,
+                            locale: locale
+                        ))
+                        .font(CleansiaTypography.titleMedium)
+                        .foregroundColor(CleansiaColors.onSurface)
+                        if let description = OrdersFormat.localizedCatalogDescription(
+                            service.description,
+                            translations: service.translations,
+                            locale: locale
+                        ) {
                             Text(description)
                                 .font(CleansiaTypography.bodyMedium)
                                 .foregroundColor(CleansiaColors.onSurfaceVariant)
@@ -76,6 +85,7 @@ struct OrderServicesCard: View {
 }
 
 struct OrderPackagesCard: View {
+    @Environment(\.locale) private var locale
     let packages: [PackageDetails]
 
     var body: some View {
@@ -85,10 +95,18 @@ struct OrderPackagesCard: View {
                 if index > 0 { Divider().background(CleansiaColors.outlineVariant) }
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: Spacing.hair) {
-                        Text(package.name ?? "—")
-                            .font(CleansiaTypography.titleMedium)
-                            .foregroundColor(CleansiaColors.onSurface)
-                        if let description = package.description, !description.isBlank {
+                        Text(OrdersFormat.localizedCatalogName(
+                            package.name,
+                            translations: package.translations,
+                            locale: locale
+                        ))
+                        .font(CleansiaTypography.titleMedium)
+                        .foregroundColor(CleansiaColors.onSurface)
+                        if let description = OrdersFormat.localizedCatalogDescription(
+                            package.description,
+                            translations: package.translations,
+                            locale: locale
+                        ) {
                             Text(description)
                                 .font(CleansiaTypography.bodyMedium)
                                 .foregroundColor(CleansiaColors.onSurfaceVariant)

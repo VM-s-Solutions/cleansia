@@ -46,6 +46,57 @@ final class OrdersFormatTests: XCTestCase {
 
         XCTAssertEqual(OrdersFormat.servicesSummary(order, locale: ruLocale), "Move-Out")
     }
+
+    func testLocalizedCatalogNameUsesDetailTranslationForAppLocale() {
+        let service = ServiceDetails(name: "Deep Clean", translations: ["ru": Translation(name: "Глубокая уборка")])
+
+        XCTAssertEqual(
+            OrdersFormat.localizedCatalogName(service.name, translations: service.translations, locale: ruLocale),
+            "Глубокая уборка"
+        )
+        XCTAssertEqual(
+            OrdersFormat.localizedCatalogName(service.name, translations: service.translations, locale: enLocale),
+            "Deep Clean"
+        )
+    }
+
+    func testLocalizedCatalogNameFallsBackToFrozenSnapshotWhenLocaleMissing() {
+        let package = PackageDetails(name: "Move-Out", translations: ["cs": Translation(name: "Vystěhování")])
+
+        XCTAssertEqual(
+            OrdersFormat.localizedCatalogName(package.name, translations: package.translations, locale: ruLocale),
+            "Move-Out"
+        )
+    }
+
+    func testLocalizedCatalogNameEmDashWhenNothingPresent() {
+        XCTAssertEqual(OrdersFormat.localizedCatalogName(nil, translations: nil, locale: enLocale), "—")
+    }
+
+    func testLocalizedCatalogDescriptionPrefersTranslationThenFallback() {
+        let service = ServiceDetails(
+            description: "English desc",
+            translations: ["ru": Translation(name: "Имя", description: "Русское описание")]
+        )
+
+        XCTAssertEqual(
+            OrdersFormat.localizedCatalogDescription(
+                service.description,
+                translations: service.translations,
+                locale: ruLocale
+            ),
+            "Русское описание"
+        )
+        XCTAssertEqual(
+            OrdersFormat.localizedCatalogDescription(
+                service.description,
+                translations: service.translations,
+                locale: enLocale
+            ),
+            "English desc"
+        )
+        XCTAssertNil(OrdersFormat.localizedCatalogDescription(nil, translations: nil, locale: enLocale))
+    }
 }
 
 private extension Character {

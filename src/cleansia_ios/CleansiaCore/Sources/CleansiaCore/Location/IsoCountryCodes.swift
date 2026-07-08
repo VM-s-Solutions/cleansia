@@ -14,7 +14,6 @@ import Foundation
 /// mapping for every alpha-3 code in the backend Countries seed so the
 /// constant cannot drift silently.
 public enum IsoCountryCodes {
-
     /// "CZE"/"cze" → "cz"; "cz" stays "cz"; unknown codes pass through
     /// lowercased; nil → "".
     public static func toAlpha2(_ code: String?) -> String {

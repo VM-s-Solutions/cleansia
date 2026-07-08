@@ -24,8 +24,8 @@ final class AddressSectionViewModel: ViewModel {
     let saved = PassthroughSubject<Void, Never>()
 
     private(set) var employeeId = ""
-    // nil = the serviced-countries fetch failed (UNKNOWN) — not the same as
-    // a loaded-but-empty list, which is the server saying "none serviced".
+    /// nil = the serviced-countries fetch failed (UNKNOWN) — not the same as
+    /// a loaded-but-empty list, which is the server saying "none serviced".
     private var countries: [CountryListItem]?
 
     private let client: PartnerProfileClient
@@ -57,7 +57,7 @@ final class AddressSectionViewModel: ViewModel {
 
     func load() async {
         state = .loading
-        countries = (await client.getServicedCountries()).valueOrNil
+        countries = await (client.getServicedCountries()).valueOrNil
         switch await client.getCurrentEmployee() {
         case let .success(employee):
             employeeId = employee.id ?? ""
@@ -142,9 +142,9 @@ final class AddressSectionViewModel: ViewModel {
         )
     }
 
-    // The geocoder gives alpha-2 ("sk"), the backend stores alpha-3 ("SVK");
-    // only the Core normaliser matches them — a prefix heuristic doesn't
-    // ("svk" does not start with "sk").
+    /// The geocoder gives alpha-2 ("sk"), the backend stores alpha-3 ("SVK");
+    /// only the Core normaliser matches them — a prefix heuristic doesn't
+    /// ("svk" does not start with "sk").
     private func resolveCountryId(for isoCode: String) -> String? {
         let code = IsoCountryCodes.toAlpha2(isoCode)
         guard !code.isEmpty else { return nil }

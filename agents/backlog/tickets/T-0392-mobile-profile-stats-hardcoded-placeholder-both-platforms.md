@@ -69,7 +69,11 @@ savings, and the Profile tab has **no** orders view-model injected for a booking
 
 ## Out of scope
 - Redesigning the Profile hero/stats layout (ADR-0022-adjacent shell work is done; this is data only).
-- Fixing only one platform (would re-introduce the drift this ticket exists to prevent).
+- Fixing only one platform (would re-introduce the drift this ticket exists to prevent) — **EXCEPTION,
+  owner-authorized 2026-07-08:** the owner explicitly disliked the fabricated strings on iOS ("I don't like the
+  hardcoded strings"), so fix-round 5 **hid the iOS StatsCard as an interim**. This is a *tracked, deliberate*
+  one-platform change (not the silent drift the rule forbids): Android still shows the placeholder card until
+  this ticket lands the real cross-platform stats (or symmetrically hides it). See the status log.
 
 ## Implementation notes
 - iOS `ProfileStats.androidParity` + its doc comment are the placeholder seam; the Profile tab currently has
@@ -83,6 +87,13 @@ savings, and the Profile tab has **no** orders view-model injected for a booking
   faithful Android-parity placeholder for this round (owner asked for the Android design; no per-user source
   exists on the contract), and the divergence-avoidance rule routes the real fix here as cross-platform work.
   Medium priority: user-visible on every install, but non-blocking (cosmetic-until-real).
+- 2026-07-08 (fix-round 5) — **owner-authorized interim divergence recorded.** On the 5th device pass the owner
+  said "I don't like the hardcoded strings," so fix-round 5 **hid the iOS Profile StatsCard** (removed
+  `ProfileStats`/`StatsCard`/`StatItem`/`StatDivider`, reflowed the hero). The round-5 D-review correctly flagged
+  this as iOS↔Android drift vs this ticket's plan-of-record; resolution per its option (b) — logged here as a
+  deliberate exception, NOT undone. **Android still shows the placeholder card.** When this ticket is worked:
+  either wire real cross-platform stats OR hide Android's `StatsCard` symmetrically so the two converge again.
+  Bumping toward the top of the follow-up queue since the platforms are now visibly diverged.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

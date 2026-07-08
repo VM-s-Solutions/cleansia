@@ -62,6 +62,12 @@ source: phase/ios-fix2 fix-round-4 owner remark #7 — reported on iOS, confirme
 - 2026-07-08 — filed `proposed` by pm from phase/ios-fix2 fix-round-4 owner remark #7. Confirmed the iOS bell is
   faithful Android parity (both inert; no feed feature exists), so it was correctly NOT hacked iOS-only in the
   fix round. Medium priority: a visible dead-tap on the most-seen screen, but a genuine feature (not a fix).
+- 2026-07-08 (fix-round 5) — owner re-flagged the dead bell, so **option (b) was implemented on iOS**: the bell
+  is now a live Button opening a `NotificationsInboxSheet` with a "No notifications yet" empty state (mascot +
+  5-locale keys `notifications_inbox_*`). This is a **tracked iOS-first interim** per the owner's repeated
+  request. **Android still wires `onNotificationClick = {}` (dead).** Remaining scope: (1) mirror the interim
+  empty-state on Android (Home `HomeTab.kt:228`) to re-converge, then (2) the real inbox feed (AC1/AC2). iOS AC3
+  (empty-state parity) is effectively done on iOS.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

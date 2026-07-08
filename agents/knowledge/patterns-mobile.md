@@ -320,6 +320,17 @@ one general store; **secrets (token, device id) in `AppSettingsStore`** or **set
 language) in the Keychain** — the Keychain holds only the security-load-bearing device id + the session
 (header-parity §2/§6), `UserDefaults` holds non-secret prefs that must reset on reinstall (DataStore parity).
 
+**App language for user-facing content — the ONE source (iOS, round-5 C-review + fix2):** the selected
+in-app language is injected app-wide as `.environment(\.locale, preferences.locale)` (root view;
+`preferences.locale == Locale(identifier: settings.languageTag)`), so it follows the **in-app** switch, not
+the device. **Views read `@Environment(\.locale)`**; a **non-View** (ViewModel) that needs it reads
+`settings.languageTag` — both resolve to the same tag. **Never `Locale.current`** for content that follows the
+in-app language (it follows the DEVICE). Pure formatters/localizers take an explicit `locale:` / `for locale:`
+param threaded from the caller's `@Environment(\.locale)` — never default to `.current` at a call site
+(e.g. `OrdersFormat.dateRange/dateTime`, `Catalog{Service,Package,Category,Extra}.localizedName(for:)`).
+**Deviations a reviewer rejects:** a View date/name that renders `Locale.current` (device) while a sibling
+renders the app language; a device-defaulting `localizedName` computed accessor kept as a call-site footgun.
+
 **Top-level audience state may carry a payload (ADR-0020 fold-in, sprint-12 §7.5 Decision 2, reviewer #26b):**
 a flat-enum `Route` case may take an associated value when a nav input must reach the destination — e.g.
 `case verifyEmail(email: String?)` threads the ConfirmEmail resend email (the iOS analogue of Android reading

@@ -19,6 +19,13 @@ enum AnimatedMascotPlayback {
     static func isSuperseded(generation: Int, activeGeneration: Int) -> Bool {
         generation != activeGeneration
     }
+
+    /// Whether to re-apply the retained final frame once a run's animation
+    /// block tears down: only for a one-shot that is still the current run.
+    /// A looping run never ends; a superseded run must yield to its successor.
+    static func shouldReapplyHeldFrame(loop: Bool, superseded: Bool) -> Bool {
+        !loop && !superseded
+    }
 }
 
 /// Plays an animated WebP mascot bundled as an asset-catalog data asset,
@@ -78,6 +85,7 @@ private struct AnimatedImageView: UIViewRepresentable {
         private var activeData: Data?
         private var activeLoop: Bool?
         private var activeGeneration = 0
+        private var heldLastFrame: UIImage?
 
         func animateIfNeeded(_ representable: AnimatedImageView, on view: UIImageView) {
             guard AnimatedMascotPlayback.shouldRestart(
@@ -107,15 +115,34 @@ private struct AnimatedImageView: UIViewRepresentable {
                     stop.pointee = true
                     return
                 }
-                view.image = UIImage(cgImage: cgImage)
+                let frame = UIImage(cgImage: cgImage)
+                view.image = frame
+                heldLastFrame = frame
                 if AnimatedMascotPlayback.shouldStop(loop: loop, frameIndex: index, frameCount: frameCount) {
                     stop.pointee = true
+                    reapplyHeldFrameAfterTeardown(on: view, generation: generation, loop: loop)
                 }
             }
             let status = CGAnimateImageDataWithBlock(data as CFData, nil, frameHandler)
             if status != noErr {
                 view.image = staticFrame(from: source)
                     ?? UIImage(named: representable.fallback.rawValue, in: representable.bundle, with: nil)
+            }
+        }
+
+        private func reapplyHeldFrameAfterTeardown(on view: UIImageView, generation: Int, loop: Bool) {
+            // CGAnimateImageDataWithBlock clears the image view when it tears down
+            // after a one-shot ends, dropping the frozen final frame on device.
+            // Re-set the retained last frame after teardown so the ending pose holds.
+            DispatchQueue.main.async { [weak view, weak self] in
+                guard let view, let self else { return }
+                let superseded = AnimatedMascotPlayback.isSuperseded(
+                    generation: generation, activeGeneration: activeGeneration
+                )
+                guard AnimatedMascotPlayback.shouldReapplyHeldFrame(loop: loop, superseded: superseded),
+                      let frame = heldLastFrame
+                else { return }
+                view.image = frame
             }
         }
 

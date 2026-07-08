@@ -12,6 +12,8 @@ public struct CleansiaDialog<Content: View>: View {
     private let onDismiss: () -> Void
     private let content: Content?
 
+    @State private var presented = false
+
     public init(
         title: String,
         confirmLabel: String,
@@ -40,6 +42,7 @@ public struct CleansiaDialog<Content: View>: View {
         ZStack {
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
+                .opacity(presented ? 1 : 0)
                 .onTapGesture(perform: onDismiss)
 
             VStack(spacing: 0) {
@@ -98,6 +101,11 @@ public struct CleansiaDialog<Content: View>: View {
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
             .shadow(radius: 24)
             .padding(.horizontal, Spacing.l)
+            .scaleEffect(presented ? 1 : 0.85)
+            .opacity(presented ? 1 : 0)
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.62)) { presented = true }
         }
     }
 }

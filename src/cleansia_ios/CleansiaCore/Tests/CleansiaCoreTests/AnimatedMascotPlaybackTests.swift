@@ -43,6 +43,19 @@ final class AnimatedMascotPlaybackTests: XCTestCase {
         ))
     }
 
+    func testHoldsFinalFrameWhenOneShotCompletesUninterrupted() {
+        XCTAssertTrue(AnimatedMascotPlayback.shouldReapplyHeldFrame(loop: false, superseded: false))
+    }
+
+    func testDoesNotHoldFinalFrameWhileLooping() {
+        XCTAssertFalse(AnimatedMascotPlayback.shouldReapplyHeldFrame(loop: true, superseded: false))
+    }
+
+    func testDoesNotHoldFinalFrameWhenSupersededByNewerRun() {
+        XCTAssertFalse(AnimatedMascotPlayback.shouldReapplyHeldFrame(loop: false, superseded: true))
+        XCTAssertFalse(AnimatedMascotPlayback.shouldReapplyHeldFrame(loop: true, superseded: true))
+    }
+
     func testCurrentGenerationIsNotSuperseded() {
         XCTAssertFalse(AnimatedMascotPlayback.isSuperseded(generation: 2, activeGeneration: 2))
     }

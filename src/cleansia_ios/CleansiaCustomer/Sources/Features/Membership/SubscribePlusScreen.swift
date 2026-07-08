@@ -206,33 +206,45 @@ private struct PlanSwitcher: View {
     let plans: [MembershipPlan]
     let selectedCode: String
     let onSelect: (String) -> Void
+    @Namespace private var thumb
 
     var body: some View {
-        HStack(spacing: Spacing.xs) {
+        HStack(spacing: 0) {
             ForEach(plans) { plan in
-                let selected = plan.code == selectedCode
-                Button { onSelect(plan.code) } label: {
-                    HStack(spacing: Spacing.xs) {
-                        Text(plan.isAnnual ? L10n.Membership.planAnnual : L10n.Membership.planMonthly)
-                            .font(CleansiaTypography.titleMedium)
-                            .foregroundColor(selected ? MembershipPalette.slate900 : .white)
-                        if plan.savingsPercentVsMonthly > 0 {
-                            Text(verbatim: "−\(Int(plan.savingsPercentVsMonthly))%")
-                                .font(CleansiaTypography.labelSmall)
-                                .foregroundColor(selected ? MembershipPalette.slate900 : MembershipPalette.sky400)
-                        }
-                    }
-                    .padding(.horizontal, Spacing.m)
-                    .padding(.vertical, Spacing.s)
-                    .background(
-                        selected ? MembershipPalette.sky400 : Color.white.opacity(0.10),
-                        in: Capsule()
-                    )
-                }
-                .buttonStyle(.plain)
+                segment(plan)
             }
         }
+        .padding(3)
+        .background(Color.white.opacity(0.10), in: Capsule())
         .frame(maxWidth: .infinity)
+        .animation(.spring(response: 0.32, dampingFraction: 0.72), value: selectedCode)
+    }
+
+    private func segment(_ plan: MembershipPlan) -> some View {
+        let selected = plan.code == selectedCode
+        return Button { onSelect(plan.code) } label: {
+            HStack(spacing: Spacing.xxs) {
+                Text(plan.isAnnual ? L10n.Membership.planAnnual : L10n.Membership.planMonthly)
+                    .font(CleansiaTypography.titleMedium)
+                    .foregroundColor(selected ? MembershipPalette.slate900 : .white)
+                if plan.savingsPercentVsMonthly > 0 {
+                    Text(verbatim: "−\(Int(plan.savingsPercentVsMonthly))%")
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(selected ? MembershipPalette.slate900 : MembershipPalette.sky400)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, Spacing.s)
+            .background {
+                if selected {
+                    Capsule()
+                        .fill(MembershipPalette.sky400)
+                        .matchedGeometryEffect(id: "thumb", in: thumb)
+                }
+            }
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 }
 

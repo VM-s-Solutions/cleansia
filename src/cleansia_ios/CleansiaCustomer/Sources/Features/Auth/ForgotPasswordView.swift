@@ -56,7 +56,7 @@ private struct ForgotPasswordContent: View {
             }
             .padding(Spacing.s)
 
-            ScrollView {
+            CenteredAuthScroll {
                 VStack(spacing: 0) {
                     AuthHeaderImage()
 
@@ -103,8 +103,7 @@ private struct ForgotPasswordContent: View {
                     }
                 }
                 .padding(.horizontal, Spacing.l)
-                .padding(.bottom, Spacing.xl)
-                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.xl)
             }
         }
         .background(CleansiaColors.background.ignoresSafeArea())

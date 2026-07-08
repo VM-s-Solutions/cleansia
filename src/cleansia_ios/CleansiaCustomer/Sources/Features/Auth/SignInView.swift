@@ -67,7 +67,7 @@ private struct SignInContent: View {
     }
 
     var body: some View {
-        ScrollView {
+        CenteredAuthScroll {
             VStack(spacing: 0) {
                 AuthHeaderImage(size: 160)
 
@@ -136,9 +136,7 @@ private struct SignInContent: View {
                 }
             }
             .padding(.horizontal, Spacing.l)
-            .padding(.top, 64)
-            .padding(.bottom, Spacing.xl)
-            .frame(maxWidth: .infinity)
+            .padding(.vertical, Spacing.xl)
         }
         .background(CleansiaColors.background.ignoresSafeArea())
     }

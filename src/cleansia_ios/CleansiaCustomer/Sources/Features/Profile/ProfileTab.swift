@@ -15,18 +15,21 @@ struct ProfileTab: View {
 
     @State private var showSignOutDialog = false
 
+    private var tierLabel: String {
+        membershipVM.current?.hasMembership == true ? L10n.Profile.tierPlus : L10n.Profile.tierRegular
+    }
+
     var body: some View {
         ZStack {
             CleansiaColors.background.ignoresSafeArea()
             ScrollView {
                 VStack(spacing: Spacing.l) {
-                    Text(L10n.Shell.profile)
-                        .font(CleansiaTypography.headlineMedium)
-                        .foregroundColor(CleansiaColors.onBackground)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, Spacing.ml)
-
-                    ProfileHero(user: profileVM.currentUser, onEdit: { onOpen(.editProfile(showBookingHint: false)) })
+                    ProfileHeader(
+                        user: profileVM.currentUser,
+                        tier: tierLabel,
+                        stats: .androidParity,
+                        onEdit: { onOpen(.editProfile(showBookingHint: false)) }
+                    )
 
                     MembershipManagementCard(vm: membershipVM, onSubscribeClick: { onOpen(Self.subscribeRoute) })
                         .padding(.horizontal, Spacing.m)
@@ -187,8 +190,39 @@ private struct DeleteAccountRow: View {
     }
 }
 
-private struct ProfileHero: View {
+/// Placeholder profile stats — Android's `features/profile/ProfileTab.kt`
+/// hardcodes the identical `3 / 320 Kč / "Feb 2025"`; no per-user bookings-count
+/// / saved-amount / member-since exists on the mobile contract. Rendered to match
+/// Android surface-for-surface until those sources land. `"Feb 2025"` is a
+/// non-localized literal on both platforms — the real cross-platform fix (wire
+/// bookings, backend member-since/savings field, locale-format the date) is T-0392.
+struct ProfileStats: Equatable {
+    let bookings: String
+    let saved: String
+    let memberSince: String
+
+    static let androidParity = ProfileStats(bookings: "3", saved: "320 Kč", memberSince: "Feb 2025")
+}
+
+private struct ProfileHeader: View {
     let user: CurrentUserProfile?
+    let tier: String
+    let stats: ProfileStats
+    let onEdit: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HeroGradient(user: user, tier: tier, onEdit: onEdit)
+            StatsCard(stats: stats)
+                .padding(.horizontal, Spacing.ml)
+                .padding(.top, -28)
+        }
+    }
+}
+
+private struct HeroGradient: View {
+    let user: CurrentUserProfile?
+    let tier: String
     let onEdit: () -> Void
 
     private var initials: String {
@@ -198,36 +232,135 @@ private struct ProfileHero: View {
     }
 
     var body: some View {
-        VStack(spacing: Spacing.s) {
-            ZStack {
-                Circle()
-                    .fill(CleansiaColors.primaryContainer)
-                    .frame(width: 88, height: 88)
-                Text(initials)
-                    .font(CleansiaTypography.headlineMedium)
-                    .foregroundColor(CleansiaColors.onPrimaryContainer)
+        VStack(alignment: .leading, spacing: Spacing.m) {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white)
+                        .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 3))
+                        .frame(width: 72, height: 72)
+                    Text(initials)
+                        .font(CleansiaTypography.headlineSmall)
+                        .foregroundColor(CleansiaColors.primary)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(user?.fullName ?? "")
+                        .font(CleansiaTypography.headlineSmall)
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                    if let email = user?.email, !email.isEmpty {
+                        Text(email)
+                            .font(CleansiaTypography.bodyMedium)
+                            .foregroundColor(.white.opacity(0.85))
+                            .lineLimit(1)
+                    }
+                    TierBadge(tier: tier)
+                        .padding(.top, Spacing.xxs)
+                }
+                Spacer(minLength: 0)
             }
-            Text(user?.fullName ?? "")
-                .font(CleansiaTypography.titleLarge)
-                .foregroundColor(CleansiaColors.onSurface)
-            if let email = user?.email, !email.isEmpty {
-                Text(email)
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+            HStack {
+                Spacer()
+                EditProfileChip(onEdit: onEdit)
             }
-            CleansiaOutlinedButton(L10n.Profile.rowEditProfile, size: .small, action: onEdit)
-                .fixedSize()
-                .padding(.top, Spacing.xs)
+        }
+        .padding(.horizontal, Spacing.ml)
+        .padding(.top, Spacing.m)
+        .padding(.bottom, 36)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom))
+    }
+}
+
+private struct TierBadge: View {
+    let tier: String
+
+    var body: some View {
+        HStack(spacing: Spacing.xxs) {
+            Image(systemName: "crown.fill")
+                .font(.system(size: 10))
+            Text(tier)
+                .font(CleansiaTypography.labelSmall)
+        }
+        .foregroundColor(.white)
+        .padding(.horizontal, Spacing.xs)
+        .padding(.vertical, 3)
+        .background(Color.white.opacity(0.22), in: Capsule())
+    }
+}
+
+private struct EditProfileChip: View {
+    let onEdit: () -> Void
+
+    var body: some View {
+        Button(action: onEdit) {
+            HStack(spacing: Spacing.xxs) {
+                Image(systemName: "pencil")
+                    .font(.system(size: 12, weight: .semibold))
+                Text(L10n.Profile.rowEditProfile)
+                    .font(CleansiaTypography.labelLarge)
+            }
+            .foregroundColor(.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, Spacing.xs)
+            .background(Color.white.opacity(0.22), in: Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct StatsCard: View {
+    let stats: ProfileStats
+
+    var body: some View {
+        HStack(spacing: 0) {
+            StatItem(value: stats.bookings, label: L10n.Profile.statBookings)
+            StatDivider()
+            StatItem(value: stats.saved, label: L10n.Profile.statSaved)
+            StatDivider()
+            StatItem(value: stats.memberSince, label: L10n.Profile.statMemberSince)
+        }
+        .padding(.vertical, Spacing.m)
+        .padding(.horizontal, Spacing.s)
+        .background(CleansiaColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+    }
+}
+
+private struct StatItem: View {
+    let value: String
+    let label: String
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(CleansiaTypography.titleMedium)
+                .foregroundColor(CleansiaColors.onBackground)
+                .lineLimit(1)
+            Text(label)
+                .font(CleansiaTypography.labelSmall)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, Spacing.l)
+    }
+}
+
+private struct StatDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(CleansiaColors.outlineVariant)
+            .frame(width: 1, height: 32)
+            .padding(.horizontal, Spacing.xxs)
     }
 }
 
 #if DEBUG
-    struct ProfileHero_Previews: PreviewProvider {
+    struct ProfileHeader_Previews: PreviewProvider {
         static var previews: some View {
-            ProfileHero(
+            ProfileHeader(
                 user: CurrentUserProfile(
                     id: "user-1",
                     email: "jane@example.com",
@@ -238,6 +371,8 @@ private struct ProfileHero: View {
                     preferredLanguageCode: "en",
                     isEmailConfirmed: true
                 ),
+                tier: "Regular",
+                stats: .androidParity,
                 onEdit: {}
             )
             .background(CleansiaColors.background)

@@ -3,12 +3,17 @@ import XCTest
 @testable import CleansiaCustomer
 
 final class ShellSnackbarInsetTests: XCTestCase {
-    func testShellRootLiftsAboveTheBarComposite() {
+    func testShellRootLiftsAboveTheBottomChrome() {
         XCTAssertEqual(ShellSnackbarInset.inset(pathDepth: 0), ShellSnackbarInset.overShellBar)
     }
 
-    func testClearanceExceedsTheBarCompositeHeight() {
-        XCTAssertGreaterThan(ShellSnackbarInset.overShellBar, 88)
+    func testClearanceClearsTheSystemBarAndTheFloatingFab() {
+        XCTAssertGreaterThan(ShellSnackbarInset.overShellBar, BookFabMetrics.systemTabBarHeight)
+        XCTAssertGreaterThanOrEqual(ShellSnackbarInset.overShellBar, BookFabMetrics.chromeEnvelope)
+    }
+
+    func testRecomputedInsetIsTheBarPlusFabEnvelopePlusGap() {
+        XCTAssertEqual(ShellSnackbarInset.overShellBar, 129)
     }
 
     func testPushedChildrenUseTheDefaultInset() {

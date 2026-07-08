@@ -1,13 +1,17 @@
 import CleansiaCore
 import Foundation
 
-/// The `SnackbarInsetScope(88.dp)` parity (`MainShell.kt:244-246`): while the
-/// shell root is visible, snackbars must clear the pill+FAB composite — 88pt
-/// of layout (64 pill + 12+12 padding; the 74pt FAB rides up to the composite
-/// top) + a 12pt visible gap. Pushed children hide the bar, so the default
-/// inset applies again.
+/// Lifts a tab-root snackbar above the bottom chrome — the stock system tab bar
+/// plus the floating Book FAB above it (ADR-0022 supersede, 2026-07-08: the
+/// native `TabView` replaces the pill composite). The stock bar self-insets
+/// scroll content, but the global snackbar host sits at the app root outside the
+/// tab bar, so it is lifted explicitly. Measured from the safe-area bottom (the
+/// host respects the safe area), so one constant holds across devices — the
+/// Android `SnackbarInsetScope` clearing the whole bar+FAB composite. Pushed
+/// children cover the chrome, so the default inset applies again.
 enum ShellSnackbarInset {
-    static let overShellBar: CGFloat = 100
+    static let snackbarGap: CGFloat = 12
+    static let overShellBar: CGFloat = BookFabMetrics.chromeEnvelope + snackbarGap
 
     static func inset(pathDepth: Int) -> CGFloat {
         pathDepth == 0 ? overShellBar : SnackbarController.defaultBottomInset

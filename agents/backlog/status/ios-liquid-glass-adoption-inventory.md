@@ -1,5 +1,11 @@
 # iOS Liquid Glass adoption inventory — phase/ios-fix1 (for PM re-homing into a follow-up ticket)
 
+> **RETIRED for the customer bar family — 2026-07-08 (phase/ios-fix2, ADR-0022 owner supersede).** The pill+FAB
+> glass composite rendered corrupted on a real iOS 26 iPhone 17; the customer shell is now the stock `TabView` +
+> a solid-primary floating Book FAB (no glass branch). The two "ADOPTED NOW" rows below and the T-0376 harvest
+> follow-up are void. Zero glass surfaces remain in either app; the `.cleansiaGlass` Core-helper hoist (principle
+> 4) no longer has a trigger.
+
 - **Author:** ios (phase/ios-fix1, owner glass-parity request on the customer bottom bar)
 - **Date:** 2026-07-04
 - **Implemented in this phase:** the bar family only (`CustomerBottomBar` pill + Book FAB — see below).

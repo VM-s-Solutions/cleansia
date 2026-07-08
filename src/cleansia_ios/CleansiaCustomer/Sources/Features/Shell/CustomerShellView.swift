@@ -1,5 +1,6 @@
 import CleansiaCore
 import SwiftUI
+import UIKit
 
 struct CustomerShellView: View {
     @StateObject var model = CustomerShellModel()
@@ -34,19 +35,23 @@ struct CustomerShellView: View {
     }
 
     var body: some View {
-        NavigationStack(path: $model.path) {
-            pager
-                .safeAreaInset(edge: .bottom) {
-                    CustomerBottomBar(
-                        selection: model.selection,
-                        onSelect: { model.select($0) },
-                        onBook: openBooking
-                    )
-                }
-                .toolbar(.hidden, for: .navigationBar)
-                .navigationDestination(for: ShellRoute.self) { route in
-                    destination(route)
-                }
+        ZStack(alignment: .bottomTrailing) {
+            CleansiaColors.background.ignoresSafeArea()
+            NavigationStack(path: $model.path) {
+                tabs
+                    .background(InteractivePopGestureEnabler())
+                    .toolbar(.hidden, for: .navigationBar)
+                    .navigationDestination(for: ShellRoute.self) { route in
+                        destination(route)
+                    }
+            }
+            // Tab roots only — a pushed child covers the shell, so the FAB (like
+            // Android's, which lives on the covered MainShell) is gone on detail
+            // screens. Anchored to the device safe area so it clears the 49pt tab
+            // bar identically on the iPhone 17 (26.x) and iPhone 14 (16.4).
+            if model.path.isEmpty {
+                bookFab
+            }
         }
         .tint(CleansiaColors.primary)
         .sheet(isPresented: $model.isBookingPresented) {
@@ -99,7 +104,7 @@ struct CustomerShellView: View {
         if await needsOnboarding { onNeedsOnboarding() }
     }
 
-    private var pager: some View {
+    private var tabs: some View {
         TabView(selection: $model.selection) {
             HomeTab(
                 orderRepository: container.orderRepository,
@@ -125,6 +130,7 @@ struct CustomerShellView: View {
                 },
                 onManageRecurring: { model.path.append(ShellRoute.recurringList) }
             )
+            .tabItem { tabLabel(.home) }
             .tag(CustomerShellTab.home)
 
             OrdersTab(
@@ -133,6 +139,7 @@ struct CustomerShellView: View {
                 onOrderClick: { model.path.append(ShellRoute.orderDetail($0)) },
                 onBookCleaning: openBooking
             )
+            .tabItem { tabLabel(.orders) }
             .tag(CustomerShellTab.orders)
 
             RewardsTab(
@@ -141,6 +148,7 @@ struct CustomerShellView: View {
                 snackbar: snackbar,
                 onOpenActivity: { model.path.append(ShellRoute.rewardsActivity) }
             )
+            .tabItem { tabLabel(.rewards) }
             .tag(CustomerShellTab.rewards)
 
             ProfileTab(
@@ -150,11 +158,30 @@ struct CustomerShellView: View {
                 onOpen: { model.path.append($0) },
                 onSignOut: signOut
             )
+            .tabItem { tabLabel(.profile) }
             .tag(CustomerShellTab.profile)
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
     }
 
+    private func tabLabel(_ tab: CustomerShellTab) -> some View {
+        Label(tab.label, systemImage: tab.systemImage)
+    }
+
+    private var bookFab: some View {
+        BookFab(action: openBooking)
+            .padding(.trailing, BookFabMetrics.trailingMargin)
+            .padding(.bottom, BookFabMetrics.bottomPadding)
+    }
+
+    private func signOut() {
+        Task {
+            await container.authClient.logout()
+            onSignedOut()
+        }
+    }
+}
+
+extension CustomerShellView {
     @ViewBuilder
     private func destination(_ route: ShellRoute) -> some View {
         switch route {
@@ -317,11 +344,40 @@ struct CustomerShellView: View {
             onCreated: { model.pop() }
         )
     }
+}
 
-    private func signOut() {
-        Task {
-            await container.authClient.logout()
-            onSignedOut()
+/// Restores the swipe-to-go-back gesture that `.toolbar(.hidden, for:
+/// .navigationBar)` on the shell root otherwise disables: hiding the bar leaves
+/// the shell's `interactivePopGestureRecognizer` without a delegate, so UIKit
+/// stops firing it. Re-pointing the delegate re-enables the swipe while the bar
+/// stays hidden, and gating on the stack depth keeps the root from swiping into
+/// an empty stack. Scoped to the shell's own navigation controller.
+private struct InteractivePopGestureEnabler: UIViewControllerRepresentable {
+    func makeUIViewController(context _: Context) -> GestureController {
+        GestureController()
+    }
+
+    /// Re-assert on every update as well: if this controller attaches before the
+    /// ancestor UINavigationController joins the parent chain, `navigationController`
+    /// is nil at `didMove` and the swipe would stay dead with no retry.
+    func updateUIViewController(_ controller: GestureController, context _: Context) {
+        controller.reassertGesture()
+    }
+
+    final class GestureController: UIViewController, UIGestureRecognizerDelegate {
+        override func didMove(toParent parent: UIViewController?) {
+            super.didMove(toParent: parent)
+            reassertGesture()
+        }
+
+        func reassertGesture() {
+            guard let gesture = navigationController?.interactivePopGestureRecognizer else { return }
+            gesture.delegate = self
+            gesture.isEnabled = true
+        }
+
+        func gestureRecognizerShouldBegin(_: UIGestureRecognizer) -> Bool {
+            (navigationController?.viewControllers.count ?? 0) > 1
         }
     }
 }

@@ -14,12 +14,15 @@ struct CustomerRootView: View {
     }
 
     var body: some View {
-        content
-            .task {
-                for await _ in sessionManager.forcedSignOutStream {
-                    route = .login
-                }
+        ZStack {
+            CleansiaColors.background.ignoresSafeArea()
+            content
+        }
+        .task {
+            for await _ in sessionManager.forcedSignOutStream {
+                route = .login
             }
+        }
     }
 
     @ViewBuilder

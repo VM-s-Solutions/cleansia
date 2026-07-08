@@ -20,32 +20,36 @@ struct ProfileTab: View {
     }
 
     var body: some View {
-        ZStack {
-            CleansiaColors.background.ignoresSafeArea()
-            ScrollView {
-                VStack(spacing: Spacing.l) {
-                    ProfileHeader(
-                        user: profileVM.currentUser,
-                        tier: tierLabel,
-                        onEdit: { onOpen(.editProfile(showBookingHint: false)) }
-                    )
+        GeometryReader { proxy in
+            ZStack {
+                CleansiaColors.background.ignoresSafeArea()
+                ScrollView {
+                    VStack(spacing: Spacing.l) {
+                        ProfileHeader(
+                            user: profileVM.currentUser,
+                            tier: tierLabel,
+                            topInset: proxy.safeAreaInsets.top,
+                            onEdit: { onOpen(.editProfile(showBookingHint: false)) }
+                        )
 
-                    MembershipManagementCard(vm: membershipVM, onSubscribeClick: { onOpen(Self.subscribeRoute) })
+                        MembershipManagementCard(vm: membershipVM, onSubscribeClick: { onOpen(Self.subscribeRoute) })
+                            .padding(.horizontal, Spacing.m)
+
+                        sectionGroup(title: L10n.Profile.groupAccount, rows: accountRows)
+                        sectionGroup(title: L10n.Profile.groupPreferences, rows: preferenceRows)
+                        sectionGroup(title: L10n.Profile.groupSupport, rows: supportRows)
+
+                        DeleteAccountRow(onTap: { onOpen(.deleteAccount) })
+                            .padding(.horizontal, Spacing.m)
+
+                        CleansiaOutlinedButton(L10n.Profile.signOut, size: .medium) {
+                            showSignOutDialog = true
+                        }
                         .padding(.horizontal, Spacing.m)
-
-                    sectionGroup(title: L10n.Profile.groupAccount, rows: accountRows)
-                    sectionGroup(title: L10n.Profile.groupPreferences, rows: preferenceRows)
-                    sectionGroup(title: L10n.Profile.groupSupport, rows: supportRows)
-
-                    DeleteAccountRow(onTap: { onOpen(.deleteAccount) })
-                        .padding(.horizontal, Spacing.m)
-
-                    CleansiaOutlinedButton(L10n.Profile.signOut, size: .medium) {
-                        showSignOutDialog = true
+                        .padding(.bottom, Spacing.xxl)
                     }
-                    .padding(.horizontal, Spacing.m)
-                    .padding(.bottom, Spacing.xxl)
                 }
+                .ignoresSafeArea(.container, edges: .top)
             }
         }
         .overlay { signOutOverlay }
@@ -201,19 +205,21 @@ private struct DeleteAccountRow: View {
 private struct ProfileHeader: View {
     let user: CurrentUserProfile?
     let tier: String
+    var topInset: CGFloat = 0
     let onEdit: () -> Void
 
     var body: some View {
         // The stats card (bookings / saved / member-since) is intentionally hidden:
         // no per-user source exists on the mobile contract, so any values would be
         // fabricated. T-0392 wires the real stats and restores the card here.
-        HeroGradient(user: user, tier: tier, onEdit: onEdit)
+        HeroGradient(user: user, tier: tier, topInset: topInset, onEdit: onEdit)
     }
 }
 
 private struct HeroGradient: View {
     let user: CurrentUserProfile?
     let tier: String
+    var topInset: CGFloat = 0
     let onEdit: () -> Void
 
     private var initials: String {
@@ -256,12 +262,11 @@ private struct HeroGradient: View {
             }
         }
         .padding(.horizontal, Spacing.ml)
-        .padding(.top, Spacing.m)
+        .padding(.top, Spacing.m + topInset)
         .padding(.bottom, Spacing.m)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea(edges: .top)
         )
     }
 }

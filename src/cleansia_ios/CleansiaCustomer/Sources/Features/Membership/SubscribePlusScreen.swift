@@ -29,36 +29,40 @@ struct SubscribePlusScreen: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: Spacing.l) {
-                    HeroBlock(
-                        plans: vm.plans,
-                        selectedPlanCode: selectedPlanCode,
-                        selectedPlan: selectedPlan,
-                        onSelectPlan: { selectedPlanCode = $0 },
-                        onBack: onBack
-                    )
-                    SocialProofTile()
-                    PerksSection()
-                    Color.clear.frame(height: 140)
+        GeometryReader { proxy in
+            ZStack(alignment: .bottom) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: Spacing.l) {
+                        HeroBlock(
+                            plans: vm.plans,
+                            selectedPlanCode: selectedPlanCode,
+                            selectedPlan: selectedPlan,
+                            topInset: proxy.safeAreaInsets.top,
+                            onSelectPlan: { selectedPlanCode = $0 },
+                            onBack: onBack
+                        )
+                        SocialProofTile()
+                        PerksSection()
+                        Color.clear.frame(height: 140)
+                    }
                 }
-            }
-            if vm.canSubscribe {
-                StickyCtaBar(
-                    label: (selectedPlan?.trialPeriodDays ?? 0) > 0
-                        ? L10n.Membership.ctaStartTrial : L10n.Membership.ctaSubscribe,
-                    disclosure: disclosure,
-                    enabled: !vm.submitState.isSubmitting && !selectedPlanCode.isEmpty,
-                    onTap: subscribe
+                .ignoresSafeArea(.container, edges: .top)
+                if vm.canSubscribe {
+                    StickyCtaBar(
+                        label: (selectedPlan?.trialPeriodDays ?? 0) > 0
+                            ? L10n.Membership.ctaStartTrial : L10n.Membership.ctaSubscribe,
+                        disclosure: disclosure,
+                        enabled: !vm.submitState.isSubmitting && !selectedPlanCode.isEmpty,
+                        onTap: subscribe
+                    )
+                }
+                BusyMascotOverlay(
+                    visible: vm.submitState.isSubmitting,
+                    message: L10n.Membership.busySubscribePlus
                 )
             }
-            BusyMascotOverlay(
-                visible: vm.submitState.isSubmitting,
-                message: L10n.Membership.busySubscribePlus
-            )
+            .background(CleansiaColors.background.ignoresSafeArea())
         }
-        .background(CleansiaColors.background.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .task {
@@ -119,6 +123,7 @@ private struct HeroBlock: View {
     let plans: [MembershipPlan]
     let selectedPlanCode: String
     let selectedPlan: MembershipPlan?
+    var topInset: CGFloat = 0
     let onSelectPlan: (String) -> Void
     let onBack: () -> Void
 
@@ -157,7 +162,9 @@ private struct HeroBlock: View {
                 }
                 Spacer().frame(height: 56)
             }
-            .padding(Spacing.ml)
+            .padding(.horizontal, Spacing.ml)
+            .padding(.bottom, Spacing.ml)
+            .padding(.top, Spacing.ml + topInset)
             Mascot.waving.image
                 .resizable()
                 .scaledToFit()
@@ -172,7 +179,6 @@ private struct HeroBlock: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .ignoresSafeArea(edges: .top)
         )
     }
 
@@ -208,18 +214,33 @@ private struct PlanSwitcher: View {
     let plans: [MembershipPlan]
     let selectedCode: String
     let onSelect: (String) -> Void
-    @Namespace private var thumb
+
+    private static let height: CGFloat = 44
+
+    private var selectedIndex: Int {
+        plans.firstIndex { $0.code == selectedCode } ?? 0
+    }
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(plans) { plan in
-                segment(plan)
+        GeometryReader { geo in
+            let segmentWidth = geo.size.width / CGFloat(max(plans.count, 1))
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(MembershipPalette.sky400)
+                    .frame(width: segmentWidth)
+                    .offset(x: segmentWidth * CGFloat(selectedIndex))
+                    .animation(.spring(response: 0.28, dampingFraction: 0.86), value: selectedIndex)
+                HStack(spacing: 0) {
+                    ForEach(plans) { plan in
+                        segment(plan).frame(width: segmentWidth)
+                    }
+                }
             }
         }
+        .frame(height: Self.height)
         .padding(3)
         .background(Color.white.opacity(0.10), in: Capsule())
         .frame(maxWidth: .infinity)
-        .animation(.spring(response: 0.32, dampingFraction: 0.72), value: selectedCode)
     }
 
     private func segment(_ plan: MembershipPlan) -> some View {
@@ -235,15 +256,7 @@ private struct PlanSwitcher: View {
                         .foregroundColor(selected ? MembershipPalette.slate900 : MembershipPalette.sky400)
                 }
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Spacing.s)
-            .background {
-                if selected {
-                    Capsule()
-                        .fill(MembershipPalette.sky400)
-                        .matchedGeometryEffect(id: "thumb", in: thumb)
-                }
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)

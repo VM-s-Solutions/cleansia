@@ -28,7 +28,6 @@ final class HomeTabViewModel: ViewModel {
     private let membershipRepository: MembershipRepository
     private let savedAddressRepository: SavedAddressRepository
     private let catalogSource: BookingViewModel
-    private let settings: AppSettingsStore
     private let snackbar: SnackbarController
     private var cancellables: Set<AnyCancellable> = []
 
@@ -39,7 +38,6 @@ final class HomeTabViewModel: ViewModel {
         membershipRepository: MembershipRepository,
         savedAddressRepository: SavedAddressRepository,
         catalogSource: BookingViewModel,
-        settings: AppSettingsStore,
         snackbar: SnackbarController
     ) {
         self.orderRepository = orderRepository
@@ -48,7 +46,6 @@ final class HomeTabViewModel: ViewModel {
         self.membershipRepository = membershipRepository
         self.savedAddressRepository = savedAddressRepository
         self.catalogSource = catalogSource
-        self.settings = settings
         self.snackbar = snackbar
         super.init()
         orderRepository.$orders.assign(to: &$recentOrders)
@@ -78,7 +75,7 @@ final class HomeTabViewModel: ViewModel {
     }
 
     var popularPackages: [CatalogPackage] {
-        HomeSections.popularPackages(packages, languageCode: settings.languageTag)
+        HomeSections.popularPackages(packages)
     }
 
     var activeRecurring: [RecurringTemplate] {

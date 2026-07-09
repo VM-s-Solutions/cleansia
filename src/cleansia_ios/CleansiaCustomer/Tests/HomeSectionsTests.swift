@@ -42,10 +42,10 @@ final class HomeSectionsTests: XCTestCase {
             CatalogFixtures.package(id: "p3"),
             CatalogFixtures.package(id: "p4")
         ]
-        XCTAssertEqual(HomeSections.popularPackages(packages, languageCode: "en").map(\.id), ["p1", "p2", "p3"])
+        XCTAssertEqual(HomeSections.popularPackages(packages).map(\.id), ["p1", "p2", "p3"])
     }
 
-    func testPopularPackagesLocalizesNameToTheAppLanguageWithFallback() {
+    func testPopularPackagesPreservesNamesAndTranslationsForRenderTimeLocalization() {
         let package = CatalogPackage(
             id: "p1",
             name: "Standard cleaning",
@@ -57,11 +57,14 @@ final class HomeSectionsTests: XCTestCase {
             ],
             includedServices: []
         )
-        XCTAssertEqual(HomeSections.popularPackages([package], languageCode: "ru").first?.name, "Стандартная уборка")
-        XCTAssertEqual(HomeSections.popularPackages([package], languageCode: "cs").first?.name, "Standardní úklid")
-        // No translation for the language → the default (English) name.
-        XCTAssertEqual(HomeSections.popularPackages([package], languageCode: "sk").first?.name, "Standard cleaning")
-        XCTAssertEqual(HomeSections.popularPackages([package], languageCode: "en").first?.name, "Standard cleaning")
+        let selected = HomeSections.popularPackages([package]).first
+        // The selector no longer freezes a language — it hands the card the raw
+        // package so the view localizes reactively via localizedName(for:).
+        XCTAssertEqual(selected?.name, "Standard cleaning")
+        XCTAssertEqual(selected?.translations["ru"]?.name, "Стандартная уборка")
+        XCTAssertEqual(selected?.localizedName(for: Locale(identifier: "ru")), "Стандартная уборка")
+        XCTAssertEqual(selected?.localizedName(for: Locale(identifier: "cs")), "Standardní úklid")
+        XCTAssertEqual(selected?.localizedName(for: Locale(identifier: "sk")), "Standard cleaning")
     }
 
     // MARK: - activeRecurring (HomeTab.kt:163-165 — active only, top 3)

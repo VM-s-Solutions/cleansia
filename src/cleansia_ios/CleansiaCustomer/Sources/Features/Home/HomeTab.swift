@@ -29,7 +29,6 @@ struct HomeTab: View {
         membershipRepository: MembershipRepository,
         savedAddressRepository: SavedAddressRepository,
         bookingVM: BookingViewModel,
-        settings: AppSettingsStore,
         snackbar: SnackbarController,
         onBookCleaning: @escaping () -> Void,
         onOpenAddressManager: @escaping () -> Void,
@@ -49,7 +48,6 @@ struct HomeTab: View {
             membershipRepository: membershipRepository,
             savedAddressRepository: savedAddressRepository,
             catalogSource: bookingVM,
-            settings: settings,
             snackbar: snackbar
         ))
         self.onBookCleaning = onBookCleaning
@@ -94,11 +92,9 @@ struct HomeTab: View {
                 Spacer().frame(height: Spacing.xs)
 
                 UpsellCarousel(
-                    slides: UpsellSlide.slides(
-                        isPlus: vm.isPlus,
-                        hasAnyOrders: vm.hasAnyOrders,
-                        showSetupRecurring: vm.showSetupRecurringSlide
-                    ),
+                    isPlus: vm.isPlus,
+                    hasAnyOrders: vm.hasAnyOrders,
+                    showSetupRecurring: vm.showSetupRecurringSlide,
                     onAction: handleUpsell
                 )
                 Spacer().frame(height: Spacing.ml)
@@ -172,6 +168,7 @@ struct HomeTab: View {
 /// The pin leading and the bell's visible-disc trailing both land on the
 /// `Spacing.ml` content gutter shared by the cards below.
 private struct AddressTopBar: View {
+    @Environment(\.locale) private var locale
     let displayedAddress: String?
     let onAddressTap: () -> Void
     let onNotificationTap: () -> Void
@@ -221,6 +218,7 @@ private struct AddressTopBar: View {
         .padding(.trailing, Spacing.m)
         .padding(.top, Spacing.s)
         .padding(.bottom, Spacing.xxs)
+        .id(locale.identifier)
     }
 }
 

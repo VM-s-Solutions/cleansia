@@ -15,6 +15,8 @@ struct HomeSectionTitle: View {
 /// Insured / Vetted / Same-day (`TrustStrip`, `HomeTab.kt:626-668`) — the
 /// fallback when there is no completed order to rebook.
 struct TrustStrip: View {
+    @Environment(\.locale) private var locale
+
     var body: some View {
         HStack(spacing: 0) {
             trustItem(icon: "shield", label: L10n.Home.trustInsured)
@@ -30,6 +32,7 @@ struct TrustStrip: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
         )
+        .id(locale.identifier)
     }
 
     private var divider: some View {
@@ -109,6 +112,7 @@ struct OrderAgainCard: View {
 /// Active recurring schedules mini-list with a Manage link — Plus-only
 /// (`RecurringSchedulesSection`, `HomeTab.kt:753-852`).
 struct RecurringSchedulesSection: View {
+    @Environment(\.locale) private var locale
     let templates: [RecurringTemplate]
     let onManage: () -> Void
 
@@ -129,6 +133,7 @@ struct RecurringSchedulesSection: View {
                 }
             }
         }
+        .id(locale.identifier)
     }
 }
 
@@ -181,6 +186,7 @@ private struct RecurringScheduleRow: View {
 /// Top-3 catalog packages, single tap → booking sheet with the package seeded
 /// (`PopularPackagesSection`, `HomeTab.kt:861-928`).
 struct PopularPackagesSection: View {
+    @Environment(\.locale) private var locale
     let packages: [CatalogPackage]
     let onPackageTap: (String) -> Void
 
@@ -194,10 +200,12 @@ struct PopularPackagesSection: View {
             }
             .fixedSize(horizontal: false, vertical: true)
         }
+        .id(locale.identifier)
     }
 }
 
 private struct PopularPackageCard: View {
+    @Environment(\.locale) private var locale
     let package: CatalogPackage
     let onTap: () -> Void
 
@@ -212,7 +220,7 @@ private struct PopularPackageCard: View {
                         .font(.system(size: 18))
                         .foregroundColor(CleansiaColors.primary)
                 }
-                Text(package.name)
+                Text(package.localizedName(for: locale))
                     .font(CleansiaTypography.labelLarge)
                     .foregroundColor(CleansiaColors.onSurface)
                     .multilineTextAlignment(.leading)

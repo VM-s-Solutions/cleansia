@@ -4,9 +4,10 @@ import SwiftUI
 /// Bottom-chrome geometry for the tab roots, measured from the safe-area bottom
 /// so one set of constants holds on both the iPhone 17 (26.x, 34pt indicator)
 /// and iPhone 14 (16.4) runtimes without a per-device branch. The stock system
-/// tab bar is ~49pt; the Book FAB is horizontally centered over the dead gap
-/// between tabs 2 and 3 and center-docked onto the bar's top edge — half the
-/// disc rises above the bar, half overlaps it — so it never covers a tab icon.
+/// tab bar is ~49pt; the Book FAB docks over the reserved center `.book`
+/// placeholder slot (screen-center of the five bar slots) and center-docks onto
+/// the bar's top edge — half the disc rises above the bar, half overlaps it — so
+/// it never covers a real tab icon.
 enum BookFabMetrics {
     static let systemTabBarHeight: CGFloat = 49
     static let size: CGFloat = 56

@@ -8,8 +8,24 @@ final class CustomerShellModel: ViewModel {
     @Published var isBookingPresented = false
     @Published var isAddressManagerPresented = false
 
+    private var lastRealTab: CustomerShellTab = .home
+
     func book() {
         isBookingPresented = true
+    }
+
+    /// Resolves a stock `TabView` selection change. The center `.book` slot is a
+    /// placeholder the docked FAB reserves for even spacing, never a real
+    /// destination: selecting it snaps back to the tab the user came from and
+    /// reports `true` so the caller opens booking — the bar center mirrors the
+    /// FAB. Real tabs pass through and are remembered as the snap-back target.
+    func resolveSelection() -> Bool {
+        guard selection == .book else {
+            lastRealTab = selection
+            return false
+        }
+        selection = lastRealTab
+        return true
     }
 
     /// Programmatic cross-tab jumps (Home's "see all orders" → Orders, the

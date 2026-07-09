@@ -47,10 +47,11 @@ struct CustomerShellView: View {
             }
             // Tab roots only — a pushed child covers the shell, so the FAB (like
             // Android's, which lives on the covered MainShell) is gone on detail
-            // screens. Horizontally centered over the gap between tabs 2 and 3 and
-            // center-docked onto the 49pt tab bar's top edge, so it overlaps the
-            // bar center without covering a tab icon on either the iPhone 17
-            // (26.x) or iPhone 14 (16.4).
+            // screens. A blank `.book` placeholder tab reserves the center of the
+            // five bar slots, so the FAB docks on its own evenly-spaced slot
+            // (screen-center) rather than crammed into a gap. Center-docked onto
+            // the 49pt tab bar's top edge so it overlaps the bar center without
+            // covering a real tab icon on the iPhone 17 (26.x) or iPhone 14 (16.4).
             if model.path.isEmpty {
                 bookFab
             }
@@ -84,6 +85,9 @@ struct CustomerShellView: View {
             )
             .snackbarHost(snackbar, bottomInset: Spacing.m)
         }
+        .onChange(of: model.selection) { _ in
+            if model.resolveSelection() { openBooking() }
+        }
         .task { await prefetch() }
         .onAppear { snackbar.setBottomInset(ShellSnackbarInset.inset(pathDepth: model.path.count)) }
         .onChange(of: model.path.count) { depth in
@@ -115,7 +119,6 @@ struct CustomerShellView: View {
                 membershipRepository: container.membershipRepository,
                 savedAddressRepository: container.savedAddressRepository,
                 bookingVM: bookingVM,
-                settings: container.appSettings,
                 snackbar: snackbar,
                 onBookCleaning: openBooking,
                 onOpenAddressManager: { model.isAddressManagerPresented = true },
@@ -144,6 +147,11 @@ struct CustomerShellView: View {
             )
             .tabItem { tabLabel(.orders) }
             .tag(CustomerShellTab.orders)
+
+            Color.clear
+                .tabItem { tabLabel(.book) }
+                .tag(CustomerShellTab.book)
+                .accessibilityHidden(true)
 
             RewardsTab(
                 loyaltyRepository: container.loyaltyRepository,

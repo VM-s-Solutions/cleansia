@@ -193,7 +193,7 @@ private struct BookingSheetContent: View {
                 .fixedSize()
         }
         .padding(.horizontal, Spacing.m)
-        .padding(.top, Spacing.m)
+        .padding(.top, Spacing.l)
     }
 
     private var stepBody: some View {

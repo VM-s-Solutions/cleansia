@@ -180,6 +180,11 @@ private struct HeroBlock: View {
                 endPoint: .bottom
             )
         )
+        // The GeometryReader safe-area inset settles 0 → real on first layout; an
+        // ambient transaction would animate that top-padding change into a visible
+        // slide. Pin it so the header paints in its final position (round-6 fix
+        // intact; iOS fix-round 8).
+        .animation(nil, value: topInset)
     }
 
     @ViewBuilder

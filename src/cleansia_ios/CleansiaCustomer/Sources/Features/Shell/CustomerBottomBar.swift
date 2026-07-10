@@ -10,7 +10,14 @@ import SwiftUI
 /// it never covers a real tab icon.
 enum BookFabMetrics {
     static let systemTabBarHeight: CGFloat = 49
-    static let size: CGFloat = 56
+
+    /// Primary-action disc — sized big for prominence but still clearing the two
+    /// adjacent tab icons on the narrowest iOS-16 device (iPhone SE-width, 375pt):
+    /// the five bar slots put those neighbours 75pt (2/10 · 375) from the
+    /// center-docked FAB, so a 33pt radius stops 42pt short of each slot center —
+    /// well outside the ~15pt tab-icon half-width. 68pt clears too, with a thinner
+    /// margin.
+    static let size: CGFloat = 66
 
     /// The FAB's bottom edge above the safe-area bottom. Docked so the disc's
     /// vertical center lands on the tab bar's top edge (a center-docked FAB).
@@ -34,7 +41,7 @@ struct BookFab: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "bubbles.and.sparkles")
-                .font(.system(size: 24, weight: .semibold))
+                .font(.system(size: 28, weight: .semibold))
                 .foregroundColor(CleansiaColors.onPrimary)
                 .frame(width: BookFabMetrics.size, height: BookFabMetrics.size)
                 .background(Circle().fill(CleansiaColors.primary))

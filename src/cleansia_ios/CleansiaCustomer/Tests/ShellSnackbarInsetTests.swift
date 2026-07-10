@@ -22,7 +22,19 @@ final class ShellSnackbarInsetTests: XCTestCase {
     }
 
     func testRecomputedInsetIsTheDockedFabTopEdgePlusGap() {
-        XCTAssertEqual(ShellSnackbarInset.overShellBar, 89)
+        XCTAssertEqual(ShellSnackbarInset.overShellBar, 94)
+    }
+
+    func testPrimaryFabIsLargerThanASecondaryDisc() {
+        XCTAssertGreaterThanOrEqual(BookFabMetrics.size, 64)
+    }
+
+    func testPrimaryFabClearsAdjacentTabIconsOnNarrowestDevice() {
+        let narrowestWidth: CGFloat = 375
+        let slotSpacing = narrowestWidth * 0.2
+        let gapToAdjacentSlotCenter = slotSpacing - BookFabMetrics.size / 2
+        let tabIconHalfWidth: CGFloat = 15
+        XCTAssertGreaterThan(gapToAdjacentSlotCenter, tabIconHalfWidth)
     }
 
     func testPushedChildrenUseTheDefaultInset() {

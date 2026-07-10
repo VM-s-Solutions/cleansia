@@ -51,6 +51,15 @@ final class CustomerDevicesViewModelTests: XCTestCase {
         XCTAssertEqual(vm.state.loadedValue, [thisDevice, otherDevice])
     }
 
+    func testLoadEmptySuccessTransitionsToLoadedEmptyNotError() async {
+        client.myDevicesResult = .success([])
+        let vm = makeVM()
+        await vm.load()
+        XCTAssertEqual(vm.state.loadedValue, [])
+        if case .error = vm.state { XCTFail("empty backend must render the empty state, not error") }
+        XCTAssertNil(snackbar.current)
+    }
+
     func testLoadFailureTransitionsToErrorAndSnackbars() async {
         client.myDevicesResult = .failure(ApiError(httpStatus: 500))
         let vm = makeVM()

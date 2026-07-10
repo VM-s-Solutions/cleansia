@@ -68,6 +68,7 @@ struct WhenWhereStep: View {
                 },
                 onDismiss: { showAddressChooser = false }
             )
+            .environment(\.bookingAddressSaveOffered, true)
         }
         .onAppear(perform: pruneStaleTime)
         .onChange(of: viewModel.state.selectedDate) { _ in pruneStaleTime() }

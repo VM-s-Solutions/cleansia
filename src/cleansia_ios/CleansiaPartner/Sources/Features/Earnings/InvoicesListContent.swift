@@ -13,7 +13,10 @@ struct InvoicesListContent: View {
             ScrollView {
                 VStack(spacing: Spacing.m) {
                     InvoicesSummaryCard(invoices: invoices)
-                    ForEach(invoices) { invoice in
+                    // Explicit `id:` — the CI-pinned openapi-generator (7.10.0, Android-matching) does not
+                    // emit Identifiable on generated models; newer local generators do. Relying on the
+                    // conformance compiles locally and breaks CI.
+                    ForEach(invoices, id: \.id) { invoice in
                         InvoiceCard(invoice: invoice, onOpen: onOpenInvoice)
                     }
                 }

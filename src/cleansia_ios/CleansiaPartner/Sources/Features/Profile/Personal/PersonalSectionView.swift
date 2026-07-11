@@ -40,6 +40,12 @@ struct PersonalSectionView: View {
                     label: L10n.Profile.lastName,
                     errorText: vm.form.lastNameError
                 )
+                BirthDateField(
+                    birthDate: $vm.form.birthDate,
+                    label: L10n.Profile.birthDate,
+                    placeholder: L10n.Profile.birthDatePlaceholder,
+                    errorText: vm.form.birthDateError
+                )
                 CleansiaTextField(
                     value: $vm.form.phone,
                     label: L10n.Profile.phone,

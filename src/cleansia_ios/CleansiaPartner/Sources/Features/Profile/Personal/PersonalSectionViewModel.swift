@@ -14,6 +14,7 @@ final class PersonalSectionViewModel: ViewModel {
         var email: String
         var firstNameError: String?
         var lastNameError: String?
+        var birthDateError: String?
     }
 
     @Published private(set) var state: UiState<Void> = .loading
@@ -61,6 +62,7 @@ final class PersonalSectionViewModel: ViewModel {
         guard !action.isSubmitting else { return }
         form.firstNameError = nil
         form.lastNameError = nil
+        form.birthDateError = nil
 
         var hasError = false
         if form.firstName.isBlank {
@@ -69,6 +71,10 @@ final class PersonalSectionViewModel: ViewModel {
         }
         if form.lastName.isBlank {
             form.lastNameError = L10n.Profile.errorLastNameRequired
+            hasError = true
+        }
+        if form.birthDate == nil {
+            form.birthDateError = L10n.Profile.errorBirthDateRequired
             hasError = true
         }
         if hasError { return }

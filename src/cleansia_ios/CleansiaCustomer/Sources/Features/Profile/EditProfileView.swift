@@ -50,7 +50,11 @@ struct EditProfileView: View {
                         errorText: missingFieldError(phone, message: L10n.EditProfile.phoneRequired),
                         keyboardType: .phonePad
                     )
-                    BirthDateField(birthDate: $birthDate)
+                    BirthDateField(
+                        birthDate: $birthDate,
+                        label: L10n.EditProfile.birthDate,
+                        placeholder: L10n.EditProfile.birthDatePlaceholder
+                    )
 
                     CleansiaPrimaryButton(
                         L10n.EditProfile.save,
@@ -102,55 +106,5 @@ private struct BookingHintBanner: View {
         .padding(Spacing.m)
         .background(CleansiaColors.primaryContainer)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
-    }
-}
-
-private struct BirthDateField: View {
-    @Binding var birthDate: Date?
-    @State private var showPicker = false
-
-    private static let formatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        return formatter
-    }()
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text(L10n.EditProfile.birthDate)
-                .font(CleansiaTypography.labelMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-            Button {
-                showPicker = true
-            } label: {
-                HStack {
-                    Text(birthDate.map { Self.formatter.string(from: $0) } ?? L10n.EditProfile.birthDatePlaceholder)
-                        .font(CleansiaTypography.bodyLarge)
-                        .foregroundColor(birthDate == nil ? CleansiaColors.onSurfaceVariant : CleansiaColors.onSurface)
-                    Spacer()
-                    Image(systemName: "calendar")
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                }
-                .padding(Spacing.m)
-                .background(CleansiaColors.surface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: CornerRadius.small)
-                        .stroke(CleansiaColors.outline, lineWidth: 1)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
-            }
-            .buttonStyle(.plain)
-        }
-        .sheet(isPresented: $showPicker) {
-            DatePicker(
-                L10n.EditProfile.birthDate,
-                selection: Binding(get: { birthDate ?? Date() }, set: { birthDate = $0 }),
-                in: ...Date(),
-                displayedComponents: .date
-            )
-            .datePickerStyle(.graphical)
-            .padding()
-            .presentationDetents([.medium])
-        }
     }
 }

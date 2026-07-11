@@ -274,12 +274,24 @@ extension L10n {
             localized("onboarding_step_bank")
         }
 
+        static var birthDate: String {
+            localized("birth_date")
+        }
+
+        static var birthDatePlaceholder: String {
+            localized("birth_date_placeholder")
+        }
+
         static var errorFirstNameRequired: String {
             localized("profile_error_first_name_required")
         }
 
         static var errorLastNameRequired: String {
             localized("profile_error_last_name_required")
+        }
+
+        static var errorBirthDateRequired: String {
+            localized("profile_error_birth_date_required")
         }
 
         static var errorProfileNotLoaded: String {

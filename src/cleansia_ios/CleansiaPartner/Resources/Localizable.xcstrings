@@ -1055,6 +1055,76 @@
         }
       }
     },
+    "birth_date_placeholder": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyberte datum"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a date"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите дату"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyberte dátum"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виберіть дату"
+          }
+        }
+      }
+    },
+    "birth_date": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datum narození"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date of birth"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дата рождения"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dátum narodenia"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дата народження"
+          }
+        }
+      }
+    },
     "bonus": {
       "localizations": {
         "cs": {
@@ -8735,6 +8805,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Спершу виберіть адресу на карті"
+          }
+        }
+      }
+    },
+    "profile_error_birth_date_required": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datum narození je povinné"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date of birth is required"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дата рождения обязательна"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dátum narodenia je povinný"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дата народження обов'язкова"
           }
         }
       }

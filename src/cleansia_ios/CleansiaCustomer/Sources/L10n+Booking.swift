@@ -334,5 +334,17 @@ extension L10n {
             case nil: localized("error_referral_generic")
             }
         }
+
+        static var packageIncludes: String {
+            localized("booking_package_includes")
+        }
+
+        static var addToBooking: String {
+            localized("details_add_to_booking")
+        }
+
+        static var removeFromBooking: String {
+            localized("details_remove_from_booking")
+        }
     }
 }

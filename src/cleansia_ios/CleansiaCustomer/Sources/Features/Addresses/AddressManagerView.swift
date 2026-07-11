@@ -89,6 +89,7 @@ private struct AddressManagerHeader: View {
             Spacer()
         }
         .padding(.horizontal, Spacing.xs)
+        .padding(.top, Spacing.m)
     }
 }
 

@@ -15,36 +15,41 @@ struct ProfileTab: View {
 
     @State private var showSignOutDialog = false
 
+    private var tierLabel: String {
+        membershipVM.current?.hasMembership == true ? L10n.Profile.tierPlus : L10n.Profile.tierRegular
+    }
+
     var body: some View {
-        ZStack {
-            CleansiaColors.background.ignoresSafeArea()
-            ScrollView {
-                VStack(spacing: Spacing.l) {
-                    Text(L10n.Shell.profile)
-                        .font(CleansiaTypography.headlineMedium)
-                        .foregroundColor(CleansiaColors.onBackground)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, Spacing.ml)
+        GeometryReader { proxy in
+            ZStack {
+                CleansiaColors.background.ignoresSafeArea()
+                ScrollView {
+                    VStack(spacing: Spacing.l) {
+                        ProfileHeader(
+                            user: profileVM.currentUser,
+                            tier: tierLabel,
+                            topInset: proxy.safeAreaInsets.top,
+                            onEdit: { onOpen(.editProfile(showBookingHint: false)) }
+                        )
 
-                    ProfileHero(user: profileVM.currentUser, onEdit: { onOpen(.editProfile(showBookingHint: false)) })
+                        MembershipManagementCard(vm: membershipVM, onSubscribeClick: { onOpen(Self.subscribeRoute) })
+                            .padding(.horizontal, Spacing.m)
 
-                    MembershipManagementCard(vm: membershipVM, onSubscribeClick: { onOpen(Self.subscribeRoute) })
+                        sectionGroup(title: L10n.Profile.groupAccount, rows: accountRows)
+                        sectionGroup(title: L10n.Profile.groupPreferences, rows: preferenceRows)
+                        sectionGroup(title: L10n.Profile.groupSupport, rows: supportRows)
+
+                        DeleteAccountRow(onTap: { onOpen(.deleteAccount) })
+                            .padding(.horizontal, Spacing.m)
+
+                        CleansiaOutlinedButton(L10n.Profile.signOut, size: .medium) {
+                            showSignOutDialog = true
+                        }
                         .padding(.horizontal, Spacing.m)
-
-                    sectionGroup(title: L10n.Profile.groupAccount, rows: accountRows)
-                    sectionGroup(title: L10n.Profile.groupPreferences, rows: preferenceRows)
-                    sectionGroup(title: L10n.Profile.groupSupport, rows: supportRows)
-
-                    DeleteAccountRow(onTap: { onOpen(.deleteAccount) })
-                        .padding(.horizontal, Spacing.m)
-
-                    CleansiaOutlinedButton(L10n.Profile.signOut, size: .medium) {
-                        showSignOutDialog = true
+                        .padding(.bottom, Spacing.xxl)
                     }
-                    .padding(.horizontal, Spacing.m)
-                    .padding(.bottom, Spacing.xxl)
                 }
-                .padding(.top, Spacing.m)
+                .ignoresSafeArea(.container, edges: .top)
             }
         }
         .overlay { signOutOverlay }
@@ -178,17 +183,43 @@ private struct DeleteAccountRow: View {
 
     var body: some View {
         Button(role: .destructive, action: onTap) {
-            Text(L10n.Profile.deleteAccount)
-                .font(CleansiaTypography.bodyLarge)
-                .foregroundColor(CleansiaColors.error)
-                .frame(maxWidth: .infinity)
-                .padding(Spacing.m)
+            HStack(spacing: Spacing.xs) {
+                Image(systemName: "trash")
+                    .font(.system(size: 16, weight: .semibold))
+                Text(L10n.Profile.deleteAccount)
+                    .font(CleansiaTypography.labelLarge)
+            }
+            .foregroundColor(CleansiaColors.error)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(CleansiaColors.error.opacity(0.12), in: RoundedRectangle(cornerRadius: CornerRadius.large))
+            .overlay {
+                RoundedRectangle(cornerRadius: CornerRadius.large)
+                    .stroke(CleansiaColors.error.opacity(0.4), lineWidth: 1)
+            }
         }
+        .buttonStyle(.plain)
     }
 }
 
-private struct ProfileHero: View {
+private struct ProfileHeader: View {
     let user: CurrentUserProfile?
+    let tier: String
+    var topInset: CGFloat = 0
+    let onEdit: () -> Void
+
+    var body: some View {
+        // The stats card (bookings / saved / member-since) is intentionally hidden:
+        // no per-user source exists on the mobile contract, so any values would be
+        // fabricated. T-0392 wires the real stats and restores the card here.
+        HeroGradient(user: user, tier: tier, topInset: topInset, onEdit: onEdit)
+    }
+}
+
+private struct HeroGradient: View {
+    let user: CurrentUserProfile?
+    let tier: String
+    var topInset: CGFloat = 0
     let onEdit: () -> Void
 
     private var initials: String {
@@ -198,36 +229,89 @@ private struct ProfileHero: View {
     }
 
     var body: some View {
-        VStack(spacing: Spacing.s) {
-            ZStack {
-                Circle()
-                    .fill(CleansiaColors.primaryContainer)
-                    .frame(width: 88, height: 88)
-                Text(initials)
-                    .font(CleansiaTypography.headlineMedium)
-                    .foregroundColor(CleansiaColors.onPrimaryContainer)
+        VStack(alignment: .leading, spacing: Spacing.m) {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white)
+                        .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 3))
+                        .frame(width: 72, height: 72)
+                    Text(initials)
+                        .font(CleansiaTypography.headlineSmall)
+                        .foregroundColor(CleansiaColors.primary)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(user?.fullName ?? "")
+                        .font(CleansiaTypography.headlineSmall)
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                    if let email = user?.email, !email.isEmpty {
+                        Text(email)
+                            .font(CleansiaTypography.bodyMedium)
+                            .foregroundColor(.white.opacity(0.85))
+                            .lineLimit(1)
+                    }
+                    TierBadge(tier: tier)
+                        .padding(.top, Spacing.xxs)
+                }
+                Spacer(minLength: 0)
             }
-            Text(user?.fullName ?? "")
-                .font(CleansiaTypography.titleLarge)
-                .foregroundColor(CleansiaColors.onSurface)
-            if let email = user?.email, !email.isEmpty {
-                Text(email)
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+            HStack {
+                Spacer()
+                EditProfileChip(onEdit: onEdit)
             }
-            CleansiaOutlinedButton(L10n.Profile.rowEditProfile, size: .small, action: onEdit)
-                .fixedSize()
-                .padding(.top, Spacing.xs)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, Spacing.l)
+        .padding(.horizontal, Spacing.ml)
+        .padding(.top, Spacing.m + topInset)
+        .padding(.bottom, Spacing.m)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom)
+        )
+    }
+}
+
+private struct TierBadge: View {
+    let tier: String
+
+    var body: some View {
+        HStack(spacing: Spacing.xxs) {
+            Image(systemName: "crown.fill")
+                .font(.system(size: 10))
+            Text(tier)
+                .font(CleansiaTypography.labelSmall)
+        }
+        .foregroundColor(.white)
+        .padding(.horizontal, Spacing.xs)
+        .padding(.vertical, 3)
+        .background(Color.white.opacity(0.22), in: Capsule())
+    }
+}
+
+private struct EditProfileChip: View {
+    let onEdit: () -> Void
+
+    var body: some View {
+        Button(action: onEdit) {
+            HStack(spacing: Spacing.xxs) {
+                Image(systemName: "pencil")
+                    .font(.system(size: 12, weight: .semibold))
+                Text(L10n.Profile.rowEditProfile)
+                    .font(CleansiaTypography.labelLarge)
+            }
+            .foregroundColor(.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, Spacing.xs)
+            .background(Color.white.opacity(0.22), in: Capsule())
+        }
+        .buttonStyle(.plain)
     }
 }
 
 #if DEBUG
-    struct ProfileHero_Previews: PreviewProvider {
+    struct ProfileHeader_Previews: PreviewProvider {
         static var previews: some View {
-            ProfileHero(
+            ProfileHeader(
                 user: CurrentUserProfile(
                     id: "user-1",
                     email: "jane@example.com",
@@ -238,6 +322,7 @@ private struct ProfileHero: View {
                     preferredLanguageCode: "en",
                     isEmailConfirmed: true
                 ),
+                tier: "Regular",
                 onEdit: {}
             )
             .background(CleansiaColors.background)

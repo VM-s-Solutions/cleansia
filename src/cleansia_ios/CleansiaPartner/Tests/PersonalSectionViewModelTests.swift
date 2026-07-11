@@ -14,6 +14,11 @@ final class PersonalSectionViewModelTests: XCTestCase {
         snackbar = SnackbarController()
     }
 
+    private let someBirthDate = OpenAPIDateWithoutTime(
+        wrappedDate: Date(timeIntervalSince1970: 662_688_000),
+        timezone: .current
+    )
+
     private func makeVM() -> PersonalSectionViewModel {
         PersonalSectionViewModel(client: client, snackbar: snackbar)
     }
@@ -24,7 +29,8 @@ final class PersonalSectionViewModelTests: XCTestCase {
             email: "jana@example.com",
             firstName: "Jana",
             lastName: "Nováková",
-            phoneNumber: "+420123"
+            phoneNumber: "+420123",
+            birthDate: someBirthDate
         ))
         let vm = makeVM()
         await vm.load()
@@ -35,6 +41,7 @@ final class PersonalSectionViewModelTests: XCTestCase {
         XCTAssertEqual(vm.form.lastName, "Nováková")
         XCTAssertEqual(vm.form.email, "jana@example.com")
         XCTAssertEqual(vm.form.phone, "+420123")
+        XCTAssertEqual(vm.form.birthDate, someBirthDate.wrappedDate)
     }
 
     func testLoadFailureSetsErrorAndSnackbars() async {
@@ -47,7 +54,12 @@ final class PersonalSectionViewModelTests: XCTestCase {
     }
 
     func testSaveSuccessEmitsSavedEffect() async {
-        client.employeeResult = .success(EmployeeItem(id: "emp-1", firstName: "Jana", lastName: "N"))
+        client.employeeResult = .success(EmployeeItem(
+            id: "emp-1",
+            firstName: "Jana",
+            lastName: "N",
+            birthDate: someBirthDate
+        ))
         let vm = makeVM()
         await vm.load()
 
@@ -72,8 +84,41 @@ final class PersonalSectionViewModelTests: XCTestCase {
         XCTAssertNil(client.personalCommand)
     }
 
-    func testSaveApiFailureSetsActionErrorAndSnackbars() async {
+    func testSaveWithoutBirthDateSetsFieldErrorAndSkipsNetwork() async {
         client.employeeResult = .success(EmployeeItem(id: "emp-1", firstName: "Jana", lastName: "N"))
+        let vm = makeVM()
+        await vm.load()
+        await vm.save()
+
+        XCTAssertNotNil(vm.form.birthDateError)
+        XCTAssertNil(vm.form.firstNameError)
+        XCTAssertNil(vm.form.lastNameError)
+        XCTAssertNil(client.personalCommand)
+        XCTAssertEqual(vm.action, .idle)
+    }
+
+    func testSaveSendsBirthDateOnCommand() async {
+        client.employeeResult = .success(EmployeeItem(
+            id: "emp-1",
+            firstName: "Jana",
+            lastName: "N",
+            birthDate: someBirthDate
+        ))
+        let vm = makeVM()
+        await vm.load()
+        await vm.save()
+
+        XCTAssertEqual(client.personalCommand?.birthDate, someBirthDate)
+        XCTAssertNil(vm.form.birthDateError)
+    }
+
+    func testSaveApiFailureSetsActionErrorAndSnackbars() async {
+        client.employeeResult = .success(EmployeeItem(
+            id: "emp-1",
+            firstName: "Jana",
+            lastName: "N",
+            birthDate: someBirthDate
+        ))
         client.personalUpdateResult = .failure(ApiError(httpStatus: 400))
         let vm = makeVM()
         await vm.load()

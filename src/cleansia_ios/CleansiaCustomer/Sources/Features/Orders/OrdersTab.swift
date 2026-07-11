@@ -4,6 +4,7 @@ import SwiftUI
 
 struct OrdersTab: View {
     @StateObject private var vm: OrdersListViewModel
+    @Environment(\.scenePhase) private var scenePhase
     let onOrderClick: (String) -> Void
     let onBookCleaning: () -> Void
 
@@ -31,6 +32,9 @@ struct OrdersTab: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(CleansiaColors.background.ignoresSafeArea())
         .task { await vm.onAppear() }
+        .onChange(of: scenePhase) { phase in
+            if phase == .active { Task { await vm.onForeground() } }
+        }
     }
 
     @ViewBuilder
@@ -148,6 +152,7 @@ private struct OrderFilterChip: View {
 }
 
 struct OrderListCard: View {
+    @Environment(\.locale) private var locale
     let order: OrderListItem
 
     var body: some View {
@@ -167,9 +172,13 @@ struct OrderListCard: View {
                         color: OrderStatusPresentation.color(order.orderStatus)
                     )
                 }
-                Text(OrdersFormat.dateRange(order.cleaningDateTime, estimatedMinutes: order.estimatedTime ?? 0))
-                    .font(CleansiaTypography.titleLarge)
-                    .foregroundColor(CleansiaColors.onBackground)
+                Text(OrdersFormat.dateRange(
+                    order.cleaningDateTime,
+                    estimatedMinutes: order.estimatedTime ?? 0,
+                    locale: locale
+                ))
+                .font(CleansiaTypography.titleLarge)
+                .foregroundColor(CleansiaColors.onBackground)
 
                 if let address = order.customerAddress, !address.isBlank {
                     Label(address, systemImage: "mappin.and.ellipse")
@@ -179,7 +188,7 @@ struct OrderListCard: View {
                 }
 
                 HStack(alignment: .firstTextBaseline) {
-                    Text(OrdersFormat.servicesSummary(order))
+                    Text(OrdersFormat.servicesSummary(order, locale: locale))
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurface)
                         .lineLimit(2)
@@ -192,7 +201,8 @@ struct OrderListCard: View {
             .padding(Spacing.m)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.large))
+        .background(CleansiaColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
         .overlay(
             RoundedRectangle(cornerRadius: CornerRadius.large)
                 .stroke(CleansiaColors.outlineVariant, lineWidth: 1)

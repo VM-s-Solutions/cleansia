@@ -36,4 +36,22 @@ final class CustomerGeneratedErrorTests: XCTestCase {
 
         XCTAssertEqual(error.code, "network.unreachable")
     }
+
+    /// The literal "cancelled" toast the owner hit: a superseded request the
+    /// generated client wraps as `ErrorResponse.error(-1, …, URLError.cancelled)`,
+    /// whose `localizedDescription` is "cancelled". It must map to the silent
+    /// marker, never a shown message.
+    func testCancelledRequestWrappedByTheGeneratedClientMapsToTheSilentMarker() {
+        let error = ApiError.fromGenerated(ErrorResponse.error(-1, nil, nil, URLError(.cancelled)))
+
+        XCTAssertEqual(error.code, ApiError.cancelledCode)
+        XCTAssertTrue(error.isCancellation)
+        XCTAssertNotEqual(error.message, "cancelled")
+    }
+
+    func testRawSwiftCancellationMapsToTheSilentMarker() {
+        let error = ApiError.fromGenerated(CancellationError())
+
+        XCTAssertTrue(error.isCancellation)
+    }
 }

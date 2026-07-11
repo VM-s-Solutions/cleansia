@@ -18,6 +18,7 @@ struct HomeTab: View {
     let onRebookOrder: (String) -> Void
     let onSetupRecurring: () -> Void
     let onManageRecurring: () -> Void
+    @State private var showNotifications = false
 
     /// All callbacks + sources are REQUIRED: an optional-defaulted callback
     /// here means a silently inert CTA — the failure class this phase fixed.
@@ -71,6 +72,9 @@ struct HomeTab: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(CleansiaColors.background.ignoresSafeArea())
+        .sheet(isPresented: $showNotifications) {
+            NotificationsInboxSheet()
+        }
         .task { await vm.runFirstPaintCeiling() }
         .task { await vm.refreshMembershipIfNeeded() }
         .task { await vm.refreshCatalogIfNeeded() }
@@ -82,16 +86,15 @@ struct HomeTab: View {
             VStack(alignment: .leading, spacing: 0) {
                 AddressTopBar(
                     displayedAddress: vm.displayedAddress?.oneLine,
-                    onAddressTap: onOpenAddressManager
+                    onAddressTap: onOpenAddressManager,
+                    onNotificationTap: { showNotifications = true }
                 )
                 Spacer().frame(height: Spacing.xs)
 
                 UpsellCarousel(
-                    slides: UpsellSlide.slides(
-                        isPlus: vm.isPlus,
-                        hasAnyOrders: vm.hasAnyOrders,
-                        showSetupRecurring: vm.showSetupRecurringSlide
-                    ),
+                    isPlus: vm.isPlus,
+                    hasAnyOrders: vm.hasAnyOrders,
+                    showSetupRecurring: vm.showSetupRecurringSlide,
                     onAction: handleUpsell
                 )
                 Spacer().frame(height: Spacing.ml)
@@ -159,15 +162,19 @@ struct HomeTab: View {
 }
 
 /// "Cleaning at / <address> ▾" + the notification bell (`AddressTopBar`,
-/// `HomeTab.kt:313-365`). The bell is rendered but inert — Android wires
-/// `onNotificationClick = {}` (`HomeTab.kt:228`); a notifications feed is
-/// separate future work on both platforms.
+/// `HomeTab.kt:313-365`). The bell opens the interim notifications inbox; the
+/// row is center-aligned so the bell sits mid-height against the two-line
+/// address block, matching Android's `verticalAlignment = CenterVertically`.
+/// The pin leading and the bell's visible-disc trailing both land on the
+/// `Spacing.ml` content gutter shared by the cards below.
 private struct AddressTopBar: View {
+    @Environment(\.locale) private var locale
     let displayedAddress: String?
     let onAddressTap: () -> Void
+    let onNotificationTap: () -> Void
 
     var body: some View {
-        HStack(spacing: Spacing.xs) {
+        HStack(alignment: .center, spacing: Spacing.xs) {
             Button(action: onAddressTap) {
                 HStack(spacing: 6) {
                     Image(systemName: "mappin.and.ellipse")
@@ -194,22 +201,24 @@ private struct AddressTopBar: View {
             }
             .buttonStyle(.plain)
 
-            ZStack {
-                Circle()
-                    .fill(CleansiaColors.surface)
-                    .frame(width: 40, height: 40)
-                Circle()
-                    .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
-                    .frame(width: 40, height: 40)
+            Button(action: onNotificationTap) {
                 Image(systemName: "bell")
                     .font(.system(size: 18))
                     .foregroundColor(CleansiaColors.onSurface)
+                    .frame(width: 40, height: 40)
+                    .background(Circle().fill(CleansiaColors.surface))
+                    .overlay(Circle().stroke(CleansiaColors.outlineVariant, lineWidth: 1))
+                    .padding(Spacing.xxs)
+                    .contentShape(Circle())
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text(verbatim: L10n.NotificationsInbox.title))
         }
         .padding(.leading, Spacing.ml)
-        .padding(.trailing, Spacing.xs)
+        .padding(.trailing, Spacing.m)
         .padding(.top, Spacing.s)
         .padding(.bottom, Spacing.xxs)
+        .id(locale.identifier)
     }
 }
 
@@ -217,8 +226,8 @@ private struct AddressTopBar: View {
     struct AddressTopBar_Previews: PreviewProvider {
         static var previews: some View {
             VStack(spacing: 0) {
-                AddressTopBar(displayedAddress: "Zenklova 6, Praha", onAddressTap: {})
-                AddressTopBar(displayedAddress: nil, onAddressTap: {})
+                AddressTopBar(displayedAddress: "Zenklova 6, Praha", onAddressTap: {}, onNotificationTap: {})
+                AddressTopBar(displayedAddress: nil, onAddressTap: {}, onNotificationTap: {})
             }
             .background(CleansiaColors.background)
             .previewLayout(.sizeThatFits)

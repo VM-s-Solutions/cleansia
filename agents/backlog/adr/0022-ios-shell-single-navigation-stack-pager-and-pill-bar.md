@@ -180,3 +180,42 @@ Accepted 2026-07-02. Challenges 1 and 3 rebutted with evidence; challenge 2 conc
 structure); challenge 4 conceded as sequencing, bounded by the PM-filed partner follow-up. The living doc
 (`agents/architecture/decisions/ios-app-architecture.md`), `ios-app-review-checklist.md` §G, and
 `patterns-mobile.md` are updated in the same change.
+
+## Owner-directed supersede — 2026-07-08 (phase/ios-fix2, customer 4th device pass)
+
+D2's `.page`-style pager and D3's custom pill/FAB composite are **retired for the customer shell**. On a real
+iOS 26 iPhone 17 the `CustomerBottomBar` renders corrupted (an oversized, glowing FAB bleeding over a barely
+visible pill); it was only ever verified fine on iOS 18. The owner directed: restore "the native bottom nav bar
+menu that was in the beginning."
+
+What changes (customer shell only):
+- The `TabView` drops `.tabViewStyle(.page(...))` and becomes the **stock SwiftUI `TabView` + `.tabItem`** (same 4
+  tabs, same SF symbols + titles; liquid-glass natively on iOS 26, classic below). Tab-**swipe** is given up
+  (owner-accepted); the `selection` binding is kept intact so programmatic/cross-tab jumps still work.
+- The pill/FAB composite is deleted. The **Book FAB survives** as a solid-primary floating disc: a
+  `ZStack(alignment: .bottomTrailing)` sibling of the shell `NavigationStack`, shown **only when
+  `model.path.isEmpty`** (so it vanishes on pushed detail screens — the load-bearing half of the child-screen
+  parity below), with bottom/trailing padding from `BookFabMetrics` measured off the safe-area bottom, so it can
+  never overlap a tab item on 16.4 or 26.x. No glass branch — the glass FAB was the corruption source.
+- The Liquid Glass amendment (2026-07-03) is void for the bar family: no glass on either the (now absent) pill or
+  the FAB.
+
+What is preserved (unchanged by this supersede):
+- **D1/D2 topology:** still exactly ONE shell `NavigationStack` + the type-erased `ShellRoute` `NavigationPath`
+  (the iOS-16 crash fix). Only the bar/pager *presentation* changed.
+- **Child-screen parity:** with the single shell stack the `TabView` is the stack root, so a pushed child covers
+  the whole shell — the system tab bar + FAB disappear on detail screens by construction, matching Android where
+  the `NavHost` hosts detail destinations *above* `MainShell` (the bar is not a persistent scaffold). No
+  `.toolbar(.hidden, for: .tabBar)` is needed or added.
+- **Snackbar clearance** recomputed: the pager-era 100pt lift is replaced by `49 (system bar) + 12 (gap) + 56
+  (FAB) + 12 (gap) = 129pt`, still measured from the safe-area bottom, still Android's "clear the whole bar+FAB"
+  intent.
+
+Also fixed in the same pass: black status-bar/home-indicator bands in dark mode (paint
+`CleansiaColors.background.ignoresSafeArea()` behind the root switch + shell), and dead swipe-to-go-back on pushed
+screens (the root's hidden navigation bar left `interactivePopGestureRecognizer` without a delegate — a scoped
+`UINavigationController` shim re-points it and gates on stack depth).
+
+Partner (D4) is untouched: it was already on the stock `TabView` interim, so no regression. The partner
+pill/pager follow-up (T-0376) is effectively cancelled by this supersede — flag for the PM to retire it rather
+than build the pill it was scoped to port.

@@ -147,6 +147,7 @@ private struct AddressSection: View {
 }
 
 private struct ServicesSection: View {
+    @Environment(\.locale) private var locale
     let catalog: Catalog
     let selectedServiceIds: Set<String>
     let selectedPackageIds: Set<String>
@@ -161,7 +162,10 @@ private struct ServicesSection: View {
                     .font(CleansiaTypography.labelLarge)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
                 ForEach(catalog.packages) { package in
-                    SelectableRow(text: package.localizedName, selected: selectedPackageIds.contains(package.id)) {
+                    SelectableRow(
+                        text: package.localizedName(for: locale),
+                        selected: selectedPackageIds.contains(package.id)
+                    ) {
                         onTogglePackage(package.id)
                     }
                 }
@@ -171,7 +175,10 @@ private struct ServicesSection: View {
                     .font(CleansiaTypography.labelLarge)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
                 ForEach(catalog.services) { service in
-                    SelectableRow(text: service.localizedName, selected: selectedServiceIds.contains(service.id)) {
+                    SelectableRow(
+                        text: service.localizedName(for: locale),
+                        selected: selectedServiceIds.contains(service.id)
+                    ) {
                         onToggleService(service.id)
                     }
                 }

@@ -3,8 +3,12 @@ import XCTest
 
 @MainActor
 final class CustomerShellSelectionTests: XCTestCase {
-    func testTabOrderMirrorsAndroidMainTab() {
-        XCTAssertEqual(CustomerShellTab.allCases, [.home, .orders, .rewards, .profile])
+    func testNavigationTabsMirrorAndroidMainTab() {
+        XCTAssertEqual(CustomerShellTab.navigationTabs, [.home, .orders, .rewards, .profile])
+    }
+
+    func testBookPlaceholderSitsInTheCenterOfTheBarSlots() {
+        XCTAssertEqual(CustomerShellTab.allCases, [.home, .orders, .book, .rewards, .profile])
     }
 
     func testDefaultSelectionIsHome() {
@@ -18,8 +22,13 @@ final class CustomerShellSelectionTests: XCTestCase {
         XCTAssertEqual(CustomerShellTab.profile.systemImage, "person")
     }
 
-    func testEachTabResolvesNonEmptyLabel() {
-        for tab in CustomerShellTab.allCases {
+    func testBookPlaceholderHasNoLabelOrSystemImage() {
+        XCTAssertTrue(CustomerShellTab.book.label.isEmpty)
+        XCTAssertTrue(CustomerShellTab.book.systemImage.isEmpty)
+    }
+
+    func testEachNavigationTabResolvesNonEmptyLabel() {
+        for tab in CustomerShellTab.navigationTabs {
             XCTAssertFalse(tab.label.isEmpty)
         }
     }
@@ -29,5 +38,32 @@ final class CustomerShellSelectionTests: XCTestCase {
         XCTAssertFalse(model.isBookingPresented)
         model.book()
         XCTAssertTrue(model.isBookingPresented)
+    }
+
+    func testSelectingTheCenterPlaceholderOpensBookingAndSnapsBack() {
+        let model = CustomerShellModel()
+        model.selection = .orders
+        XCTAssertFalse(model.resolveSelection())
+
+        model.selection = .book
+        XCTAssertTrue(model.resolveSelection())
+        XCTAssertEqual(model.selection, .orders)
+    }
+
+    func testResolvingARealTabNeverOpensBooking() {
+        let model = CustomerShellModel()
+        model.selection = .rewards
+        XCTAssertFalse(model.resolveSelection())
+        XCTAssertEqual(model.selection, .rewards)
+    }
+
+    func testCenterPlaceholderSnapsBackToTheMostRecentRealTab() {
+        let model = CustomerShellModel()
+        model.selection = .profile
+        _ = model.resolveSelection()
+
+        model.selection = .book
+        XCTAssertTrue(model.resolveSelection())
+        XCTAssertEqual(model.selection, .profile)
     }
 }

@@ -1,6 +1,7 @@
 import CleansiaCore
 import CleansiaCustomerApi
 import Foundation
+import os
 
 @MainActor
 final class CustomerAppContainer: AppContainer {
@@ -144,6 +145,11 @@ final class CustomerAppContainer: AppContainer {
     }
 
     func installGeneratedClientAuth() {
+        #if DEBUG
+            let stripeState = StripeConfig.isCardPaymentAvailable ? "configured" : "empty"
+            Logger(subsystem: "cz.cleansia.customer", category: "config")
+                .debug("Stripe key: \(stripeState, privacy: .public)")
+        #endif
         let bridge = GeneratedClientAuthBridge(
             headerAdapter: authStack.headerAdapter,
             tokenStore: authStack.spine.tokenStore,

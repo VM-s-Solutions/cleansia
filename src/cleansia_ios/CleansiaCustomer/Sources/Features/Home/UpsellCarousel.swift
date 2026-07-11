@@ -8,12 +8,23 @@ private let upsellCardHeight: CGFloat = 180
 /// Android custom dot row below (active dot grows wide) rather than the stock
 /// overlaid `UIPageControl`.
 struct UpsellCarousel: View {
-    let slides: [UpsellSlide]
+    @Environment(\.locale) private var locale
+    let isPlus: Bool
+    let hasAnyOrders: Bool
+    let showSetupRecurring: Bool
     let onAction: (UpsellSlide.Action) -> Void
 
     @State private var selection = 0
 
     private static let autoRotateSeconds: UInt64 = 6
+
+    /// Rebuilt each render so the per-slide `L10n` strings re-resolve against the
+    /// live `L10n.bundle` on an in-app language switch, rather than freezing at
+    /// the parent's first paint (the trust-strip/loyalty live-i18n fix, applied
+    /// to the carousel — the `.id(locale.identifier)` below drives the re-run).
+    private var slides: [UpsellSlide] {
+        UpsellSlide.slides(isPlus: isPlus, hasAnyOrders: hasAnyOrders, showSetupRecurring: showSetupRecurring)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -27,21 +38,22 @@ struct UpsellCarousel: View {
             .frame(height: upsellCardHeight)
 
             if slides.count > 1 {
-                dotRow
+                dotRow(count: slides.count)
                     .padding(.top, 10)
             }
         }
+        .id(locale.identifier)
         .onChange(of: slides.count) { count in
             selection = min(selection, max(count - 1, 0))
         }
         .task(id: AutoRotateKey(count: slides.count, page: selection)) {
-            await autoAdvance()
+            await autoAdvance(count: slides.count)
         }
     }
 
-    private var dotRow: some View {
+    private func dotRow(count: Int) -> some View {
         HStack(spacing: 0) {
-            ForEach(slides.indices, id: \.self) { index in
+            ForEach(0 ..< count, id: \.self) { index in
                 Capsule()
                     .fill(index == selection ? CleansiaColors.primary : CleansiaColors.outlineVariant)
                     .frame(width: index == selection ? 24 : 8, height: 8)
@@ -56,11 +68,11 @@ struct UpsellCarousel: View {
     /// current page restarts the countdown after any page change, so a user
     /// swipe earns a fresh 6s before the next advance (the Android
     /// pause-while-touching intent, without a drag-state hook TabView lacks).
-    private func autoAdvance() async {
-        guard slides.count > 1 else { return }
+    private func autoAdvance(count: Int) async {
+        guard count > 1 else { return }
         try? await Task.sleep(nanoseconds: Self.autoRotateSeconds * 1_000_000_000)
         guard !Task.isCancelled else { return }
-        withAnimation { selection = (selection + 1) % slides.count }
+        withAnimation { selection = (selection + 1) % count }
     }
 
     private struct AutoRotateKey: Equatable {
@@ -125,12 +137,16 @@ private struct UpsellSlideCard: View {
         static var previews: some View {
             Group {
                 UpsellCarousel(
-                    slides: UpsellSlide.slides(isPlus: false, hasAnyOrders: false, showSetupRecurring: false),
+                    isPlus: false,
+                    hasAnyOrders: false,
+                    showSetupRecurring: false,
                     onAction: { _ in }
                 )
                 .previewDisplayName("Free, no orders")
                 UpsellCarousel(
-                    slides: UpsellSlide.slides(isPlus: true, hasAnyOrders: true, showSetupRecurring: true),
+                    isPlus: true,
+                    hasAnyOrders: true,
+                    showSetupRecurring: true,
                     onAction: { _ in }
                 )
                 .previewDisplayName("Plus, no recurring")

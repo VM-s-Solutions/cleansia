@@ -32,6 +32,7 @@ public final class SnackbarController: ObservableObject {
     }
 
     public func showApiError(_ error: ApiError) {
+        if error.isCancellation { return }
         show(SnackbarMessage(text: localizer.message(for: error), severity: .error))
     }
 

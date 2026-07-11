@@ -45,6 +45,28 @@ final class HomeSectionsTests: XCTestCase {
         XCTAssertEqual(HomeSections.popularPackages(packages).map(\.id), ["p1", "p2", "p3"])
     }
 
+    func testPopularPackagesPreservesNamesAndTranslationsForRenderTimeLocalization() {
+        let package = CatalogPackage(
+            id: "p1",
+            name: "Standard cleaning",
+            description: nil,
+            price: 1500,
+            translations: [
+                "ru": CatalogTranslation(name: "Стандартная уборка", description: nil),
+                "cs": CatalogTranslation(name: "Standardní úklid", description: nil)
+            ],
+            includedServices: []
+        )
+        let selected = HomeSections.popularPackages([package]).first
+        // The selector no longer freezes a language — it hands the card the raw
+        // package so the view localizes reactively via localizedName(for:).
+        XCTAssertEqual(selected?.name, "Standard cleaning")
+        XCTAssertEqual(selected?.translations["ru"]?.name, "Стандартная уборка")
+        XCTAssertEqual(selected?.localizedName(for: Locale(identifier: "ru")), "Стандартная уборка")
+        XCTAssertEqual(selected?.localizedName(for: Locale(identifier: "cs")), "Standardní úklid")
+        XCTAssertEqual(selected?.localizedName(for: Locale(identifier: "sk")), "Standard cleaning")
+    }
+
     // MARK: - activeRecurring (HomeTab.kt:163-165 — active only, top 3)
 
     func testActiveRecurringFiltersInactiveAndTakesThree() {
@@ -122,20 +144,42 @@ final class HomeSectionsTests: XCTestCase {
 
     // MARK: - recentBookingTitle (HomeTab.kt:971-978 — services first, then packages, "+ N more")
 
-    func testRecentBookingTitleUsesTheFirstServiceName() {
+    func testRecentBookingTitleAppendsTheLocalizedMoreSuffix() {
         var order = OrderFixtures.listItem(id: "o1", statusValue: 5)
         order.selectedServices = [ServiceListItem(id: "s1", name: "Deep clean")]
         order.selectedPackages = [PackageListItem(id: "p1", name: "Move-out")]
-        XCTAssertEqual(HomeSections.recentBookingTitle(order, fallback: "Cleaning"), "Deep clean + 1 more")
+        XCTAssertEqual(
+            HomeSections.recentBookingTitle(order, fallback: "Cleaning", languageCode: "en"),
+            "Deep clean \(L10n.Orders.servicesMore(1))"
+        )
     }
 
     func testRecentBookingTitleSkipsBlankNamesAndFallsBack() {
         var order = OrderFixtures.listItem(id: "o1", statusValue: 5)
         order.selectedServices = [ServiceListItem(id: "s1", name: " ")]
-        XCTAssertEqual(HomeSections.recentBookingTitle(order, fallback: "Cleaning"), "Cleaning")
+        XCTAssertEqual(HomeSections.recentBookingTitle(order, fallback: "Cleaning", languageCode: "en"), "Cleaning")
 
         order.selectedPackages = [PackageListItem(id: "p1", name: "Move-out")]
-        XCTAssertEqual(HomeSections.recentBookingTitle(order, fallback: "Cleaning"), "Move-out")
+        XCTAssertEqual(HomeSections.recentBookingTitle(order, fallback: "Cleaning", languageCode: "en"), "Move-out")
+    }
+
+    func testRecentBookingTitleLocalizesLineNamesToTheAppLanguageWithFallback() {
+        var order = OrderFixtures.listItem(id: "o1", statusValue: 5)
+        order.selectedServices = [ServiceListItem(
+            id: "s1",
+            name: "Deep clean",
+            translations: ["ru": Translation(name: "Глубокая уборка"), "cs": Translation(name: "Hloubkový úklid")]
+        )]
+        XCTAssertEqual(
+            HomeSections.recentBookingTitle(order, fallback: "Cleaning", languageCode: "ru"),
+            "Глубокая уборка"
+        )
+        XCTAssertEqual(
+            HomeSections.recentBookingTitle(order, fallback: "Cleaning", languageCode: "cs"),
+            "Hloubkový úklid"
+        )
+        // No translation for the language → the frozen English snapshot name.
+        XCTAssertEqual(HomeSections.recentBookingTitle(order, fallback: "Cleaning", languageCode: "sk"), "Deep clean")
     }
 
     // MARK: - statusChipLabel (HomeTab.kt:1021-1023 — mapped label, else wire name, else hidden)

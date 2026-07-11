@@ -79,6 +79,20 @@ final class OrdersListViewModelTests: XCTestCase {
         XCTAssertEqual(vm.refreshPhase, .idle)
     }
 
+    func testEachTabActivationForcesAFreshNetworkFetch() async {
+        let client = FakeOrderClient()
+        client.pages = [OrdersPage(items: [OrderFixtures.listItem(id: "a", statusValue: 2)], total: 1)]
+        let (vm, _) = makeVM(client)
+
+        await vm.onAppear()
+        await vm.onForeground()
+
+        // No staleness window short-circuits refresh: every activation re-hits
+        // page 0 against the backend.
+        XCTAssertEqual(client.pageRequests.filter { $0.offset == 0 }.count, 2)
+        XCTAssertEqual(vm.state.loadedValue?.map(\.id), ["a"])
+    }
+
     func testEmptyLoadedRendersAsEmptyLoadedNotError() async {
         let client = FakeOrderClient()
         client.pages = [OrdersPage(items: [], total: 0)]
@@ -97,6 +111,17 @@ final class OrdersListViewModelTests: XCTestCase {
         await vm.retry()
 
         if case .error = vm.state {} else { XCTFail("expected error state") }
+    }
+
+    func testCancelledFirstLoadStaysLoadingNotError() async {
+        let client = FakeOrderClient()
+        client.pageError = ApiError(code: ApiError.cancelledCode)
+        let (vm, _) = makeVM(client)
+
+        await vm.retry()
+
+        if case .error = vm.state { XCTFail("a cancelled first-load must not flip to error") }
+        if case .loading = vm.state {} else { XCTFail("a cancelled first-load should stay loading") }
     }
 
     func testRefreshFailureWhileLoadedStaysLoaded() async {

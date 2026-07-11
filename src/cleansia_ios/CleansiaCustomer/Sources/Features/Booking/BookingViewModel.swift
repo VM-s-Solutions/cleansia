@@ -72,6 +72,10 @@ final class BookingViewModel: ViewModel {
         currentStep >= BookingStepGate.totalSteps
     }
 
+    var isQuoting: Bool {
+        quoteState == .quoting
+    }
+
     func update(_ transform: (BookingState) -> BookingState) {
         state = transform(state)
     }
@@ -151,6 +155,7 @@ final class BookingViewModel: ViewModel {
             next.zipCode = address.zipCode
             next.countryIsoCode = address.countryIsoCode
             next.savedAddressId = nil
+            next.hydratedFromSavedId = nil
             return next
         }
     }

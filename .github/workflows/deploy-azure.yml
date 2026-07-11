@@ -245,14 +245,24 @@ jobs:
 
       - name: Bicep deploy (provision/update)
         if: inputs.mode == 'deploy'
+        # One blanket retry: PG flexible server reports transient ServerIsBusy when a
+        # configurations/* write races the server's own async update on a re-deploy;
+        # ARM template deployments are idempotent, so a second attempt is safe.
         run: |
-          az deployment group create \
-            --resource-group rg-cleansia-${{ matrix.region }}-${{ inputs.env }} \
-            --template-file deploy/bicep/main.bicep \
-            --parameters ${{ inputs.bicepparamFile }} \
-            --parameters postgresAdministratorPassword="$POSTGRES_ADMIN_PASSWORD" \
-                         adminIpAddress="$ADMIN_IP_ADDRESS" \
-                         ciPrincipalId="$CI_PRINCIPAL_ID"
+          deploy() {
+            az deployment group create \
+              --resource-group rg-cleansia-${{ matrix.region }}-${{ inputs.env }} \
+              --template-file deploy/bicep/main.bicep \
+              --parameters ${{ inputs.bicepparamFile }} \
+              --parameters postgresAdministratorPassword="$POSTGRES_ADMIN_PASSWORD" \
+                           adminIpAddress="$ADMIN_IP_ADDRESS" \
+                           ciPrincipalId="$CI_PRINCIPAL_ID"
+          }
+          if ! deploy; then
+            echo "::warning::First provision attempt failed (often the transient PG ServerIsBusy) — retrying once in 3 minutes."
+            sleep 180
+            deploy
+          fi
         env:
           POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
           ADMIN_IP_ADDRESS: ${{ secrets.ADMIN_IP_ADDRESS }}

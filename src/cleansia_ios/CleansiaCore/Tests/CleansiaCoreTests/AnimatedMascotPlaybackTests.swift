@@ -43,6 +43,30 @@ final class AnimatedMascotPlaybackTests: XCTestCase {
         ))
     }
 
+    func testPinsFinalFrameOnUpdateAfterOneShotCompletes() {
+        XCTAssertTrue(AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(
+            loop: false, hasCompletedFrame: true, superseded: false
+        ))
+    }
+
+    func testDoesNotPinBeforeOneShotHasCompleted() {
+        XCTAssertFalse(AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(
+            loop: false, hasCompletedFrame: false, superseded: false
+        ))
+    }
+
+    func testNeverPinsFinalFrameWhileLooping() {
+        XCTAssertFalse(AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(
+            loop: true, hasCompletedFrame: true, superseded: false
+        ))
+    }
+
+    func testDoesNotPinFinalFrameWhenSupersededByNewerRun() {
+        XCTAssertFalse(AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(
+            loop: false, hasCompletedFrame: true, superseded: true
+        ))
+    }
+
     func testCurrentGenerationIsNotSuperseded() {
         XCTAssertFalse(AnimatedMascotPlayback.isSuperseded(generation: 2, activeGeneration: 2))
     }

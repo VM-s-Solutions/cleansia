@@ -2,9 +2,8 @@ import CleansiaCustomerApi
 import Foundation
 
 enum OrdersFormat {
-    /// Price + currency suffix, mirroring `OrderFormatters.kt:98-116` (grouped,
-    /// no fraction digits; CZK/EUR/USD/GBP get their symbol, others the raw
-    /// code — never crashes on an unknown currency).
+    /// Price + currency suffix (grouped, no fraction digits; CZK/EUR/USD/GBP get
+    /// their symbol, others the raw code — never crashes on an unknown currency).
     static func price(_ amount: Double, currencyCode: String?) -> String {
         let code = currencyCode?.nonBlank ?? "CZK"
         let formatter = NumberFormatter()
@@ -23,21 +22,22 @@ enum OrdersFormat {
     }
 
     /// "Mon 1 Jul · 10:00–12:00" — date + start–end window (`estimatedMinutes`
-    /// drives the end). No estimate → just the start date-time
-    /// (`OrderFormatters.kt:69-91`).
-    static func dateRange(_ date: Date?, estimatedMinutes: Int) -> String {
+    /// drives the end). No estimate → just the start date-time. Weekday/month
+    /// names render in `locale` (the app-selected language, not the device one).
+    static func dateRange(_ date: Date?, estimatedMinutes: Int, locale: Locale = .current) -> String {
         guard let date else { return "—" }
         if estimatedMinutes <= 0 {
-            return shortDateTime.string(from: date)
+            return formatter(template: shortDateTimeTemplate, locale: locale).string(from: date)
         }
         let end = date.addingTimeInterval(Double(estimatedMinutes) * 60)
-        let datePart = mediumDate.string(from: date)
-        return "\(datePart) · \(timeOnly.string(from: date))–\(timeOnly.string(from: end))"
+        let datePart = formatter(template: mediumDateTemplate, locale: locale).string(from: date)
+        let time = formatter(template: timeOnlyTemplate, locale: locale)
+        return "\(datePart) · \(time.string(from: date))–\(time.string(from: end))"
     }
 
-    static func dateTime(_ date: Date?) -> String {
+    static func dateTime(_ date: Date?, locale: Locale = .current) -> String {
         guard let date else { return "—" }
-        return shortDateTime.string(from: date)
+        return formatter(template: shortDateTimeTemplate, locale: locale).string(from: date)
     }
 
     /// "Eco Products" from "eco_products"/"ecoProducts" (`prettifyExtraKey`).
@@ -51,17 +51,53 @@ enum OrdersFormat {
         }.joined(separator: " ")
     }
 
-    /// Up to 2 package names then service names, "+ N more" suffix
-    /// (`OrdersTab.kt:520-534`).
-    static func servicesSummary(_ order: OrderListItem) -> String {
-        let packages = (order.selectedPackages ?? []).compactMap { $0.name?.nonBlank }
-        let services = (order.selectedServices ?? []).compactMap { $0.name?.nonBlank }
+    /// Up to 2 package names then service names, "+ N more" suffix. Names resolve
+    /// to `locale`'s translation when the snapshot carries one, else the frozen
+    /// English name.
+    static func servicesSummary(_ order: OrderListItem, locale: Locale = .current) -> String {
+        let languageCode = locale.language.languageCode?.identifier ?? "en"
+        let packages = (order.selectedPackages ?? []).compactMap {
+            localizedName($0.name, translations: $0.translations, languageCode: languageCode)
+        }
+        let services = (order.selectedServices ?? []).compactMap {
+            localizedName($0.name, translations: $0.translations, languageCode: languageCode)
+        }
         let combined = packages + services
         guard !combined.isEmpty else { return "—" }
         let shown = Array(combined.prefix(2))
         let remaining = combined.count - shown.count
         let base = shown.joined(separator: ", ")
         return remaining > 0 ? "\(base) \(L10n.Orders.servicesMore(remaining))" : base
+    }
+
+    /// Order-DETAIL catalog line name resolved to `locale`'s snapshot translation
+    /// when the order carries one, else the frozen English snapshot name (or "—").
+    /// Same resolution the order-list `servicesSummary` uses, exposed for the
+    /// order-detail service/package cards.
+    static func localizedCatalogName(
+        _ fallback: String?,
+        translations: [String: Translation]?,
+        locale: Locale = .current
+    ) -> String {
+        let languageCode = locale.language.languageCode?.identifier ?? "en"
+        return localizedName(fallback, translations: translations, languageCode: languageCode) ?? "—"
+    }
+
+    static func localizedCatalogDescription(
+        _ fallback: String?,
+        translations: [String: Translation]?,
+        locale: Locale = .current
+    ) -> String? {
+        let languageCode = locale.language.languageCode?.identifier ?? "en"
+        return translations?[languageCode]?.description?.nonBlank ?? fallback?.nonBlank
+    }
+
+    private static func localizedName(
+        _ fallback: String?,
+        translations: [String: Translation]?,
+        languageCode: String
+    ) -> String? {
+        translations?[languageCode]?.name?.nonBlank ?? fallback?.nonBlank
     }
 
     private static func insertCamelSpaces(_ text: String) -> String {
@@ -76,26 +112,26 @@ enum OrdersFormat {
         return result
     }
 
-    private static let shortDateTime: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = .current
-        formatter.setLocalizedDateFormatFromTemplate("EEE d MMM HH:mm")
-        return formatter
-    }()
+    private static let shortDateTimeTemplate = "EEE d MMM HH:mm"
+    private static let mediumDateTemplate = "EEE d MMM"
+    private static let timeOnlyTemplate = "HH:mm"
 
-    private static let mediumDate: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = .current
-        formatter.setLocalizedDateFormatFromTemplate("EEE d MMM")
-        return formatter
-    }()
+    private static let cacheLock = NSLock()
+    private nonisolated(unsafe) static var formatterCache: [String: DateFormatter] = [:]
 
-    private static let timeOnly: DateFormatter = {
+    private static func formatter(template: String, locale: Locale) -> DateFormatter {
+        let key = "\(locale.identifier)|\(template)"
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+        if let cached = formatterCache[key] {
+            return cached
+        }
         let formatter = DateFormatter()
-        formatter.locale = .current
-        formatter.setLocalizedDateFormatFromTemplate("HH:mm")
+        formatter.locale = locale
+        formatter.setLocalizedDateFormatFromTemplate(template)
+        formatterCache[key] = formatter
         return formatter
-    }()
+    }
 }
 
 private extension String {

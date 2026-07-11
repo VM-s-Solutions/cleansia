@@ -28,4 +28,12 @@ final class PartnerGeneratedErrorTests: XCTestCase {
 
         XCTAssertEqual(error.code, "network.unreachable")
     }
+
+    func testCancelledRequestWrappedByTheGeneratedClientMapsToTheSilentMarker() {
+        let error = ApiError.fromGenerated(ErrorResponse.error(-1, nil, nil, URLError(.cancelled)))
+
+        XCTAssertEqual(error.code, ApiError.cancelledCode)
+        XCTAssertTrue(error.isCancellation)
+        XCTAssertNotEqual(error.message, "cancelled")
+    }
 }

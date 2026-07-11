@@ -17,11 +17,26 @@ struct CodeSheetShell<Message: View>: View {
     let onCancel: () -> Void
     @ViewBuilder let message: () -> Message
 
+    @State private var contentHeight: CGFloat = 320
+
     private var canApply: Bool {
         !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isSubmitting
     }
 
     var body: some View {
+        content
+            .frame(maxWidth: .infinity)
+            .fixedSize(horizontal: false, vertical: true)
+            .background(GeometryReader { proxy in
+                Color.clear.preference(key: CodeSheetHeightKey.self, value: proxy.size.height)
+            })
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(CleansiaColors.surface.ignoresSafeArea())
+            .onPreferenceChange(CodeSheetHeightKey.self) { contentHeight = $0 }
+            .presentationDetents([.height(contentHeight)])
+    }
+
+    private var content: some View {
         VStack(spacing: Spacing.m) {
             Text(title)
                 .font(CleansiaTypography.titleLarge)
@@ -49,8 +64,6 @@ struct CodeSheetShell<Message: View>: View {
             message()
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer()
-
             if isValid {
                 CleansiaPrimaryButton(doneTitle, action: onDone)
             } else {
@@ -59,7 +72,13 @@ struct CodeSheetShell<Message: View>: View {
             }
         }
         .padding(Spacing.l)
-        .background(CleansiaColors.surface.ignoresSafeArea())
+    }
+}
+
+private struct CodeSheetHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 

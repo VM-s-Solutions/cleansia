@@ -3,10 +3,11 @@ import SwiftUI
 
 struct WhenWhereStep: View {
     @ObservedObject var viewModel: BookingViewModel
+    @Environment(\.savedAddressRepository) private var savedAddressRepository
     let geocoding: GeocodingService
     let mapProvider: MapProvider
 
-    @State private var showAddressPicker = false
+    @State private var showAddressChooser = false
 
     private let days = BookingTimeSlots.days()
 
@@ -27,7 +28,7 @@ struct WhenWhereStep: View {
                 SelectAddressRow(
                     street: viewModel.state.street,
                     city: viewModel.state.city,
-                    action: { showAddressPicker = true }
+                    action: { showAddressChooser = true }
                 )
                 .padding(.horizontal, Spacing.l)
                 .padding(.top, Spacing.s)
@@ -51,16 +52,23 @@ struct WhenWhereStep: View {
             }
             .padding(.vertical, Spacing.m)
         }
-        .fullScreenCover(isPresented: $showAddressPicker) {
-            BookingAddressPickerView(
+        .fullScreenCover(isPresented: $showAddressChooser) {
+            BookingSavedAddressChooserView(
+                repository: savedAddressRepository,
+                currentSavedAddressId: viewModel.state.savedAddressId,
                 geocoding: geocoding,
                 mapProvider: mapProvider,
-                onConfirmed: { address in
-                    viewModel.applyAddress(address)
-                    showAddressPicker = false
+                onPickSaved: { address in
+                    viewModel.update { BookingSavedAddressApply.applied($0, address: address) }
+                    showAddressChooser = false
                 },
-                onBack: { showAddressPicker = false }
+                onPickNew: { address in
+                    viewModel.applyAddress(address)
+                    showAddressChooser = false
+                },
+                onDismiss: { showAddressChooser = false }
             )
+            .environment(\.bookingAddressSaveOffered, true)
         }
         .onAppear(perform: pruneStaleTime)
         .onChange(of: viewModel.state.selectedDate) { _ in pruneStaleTime() }

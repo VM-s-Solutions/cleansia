@@ -5,19 +5,30 @@ import Foundation
 /// the `BookingBottomSheet.kt` hydration/prefill/rebook effects (:270-282,
 /// :305-374, :390-399), lifted out so the shell wiring stays logic-free.
 enum BookingPrefill {
-    /// Fill the address fields from the preferred saved address, only when the
-    /// user hasn't typed one (`state.street.isBlank()` — the Android guard).
+    /// Seed the address from the preferred saved address. Android resets the
+    /// draft on every fresh open and then hydrates a blank street; iOS keeps a
+    /// session-lived draft, so it re-hydrates when the preferred selection has
+    /// changed AND the current address is still the one auto-hydration seeded
+    /// (never overwriting a hand-picked address). A blank street always seeds.
     /// The Android copy also assigns `countryIsoCode`, but server-loaded saved
     /// addresses carry an empty ISO there; iOS keeps the current value —
     /// `savedAddressId` drives the submit either way.
     static func hydratedWithPreferred(_ state: BookingState, preferred: SavedAddress?) -> BookingState {
-        guard let preferred, state.street.isBlank else { return state }
+        guard let preferred, shouldHydrate(state, preferred: preferred) else { return state }
         var next = state
         next.street = preferred.street
         next.city = preferred.city
         next.zipCode = preferred.zipCode
         next.savedAddressId = preferred.id
+        next.hydratedFromSavedId = preferred.id
         return next
+    }
+
+    static func shouldHydrate(_ state: BookingState, preferred: SavedAddress) -> Bool {
+        if state.street.isBlank { return true }
+        let stillAutoHydrated = state.savedAddressId != nil
+            && state.savedAddressId == state.hydratedFromSavedId
+        return stillAutoHydrated && preferred.id != state.savedAddressId
     }
 
     /// Popular-package tap → union into the selection; everything else keeps
@@ -71,6 +82,7 @@ enum BookingPrefill {
         next.city = order.address?.city ?? ""
         next.zipCode = order.address?.zipCode ?? ""
         next.savedAddressId = matchedSaved?.id
+        next.hydratedFromSavedId = nil
         return (next, droppedAny)
     }
 }

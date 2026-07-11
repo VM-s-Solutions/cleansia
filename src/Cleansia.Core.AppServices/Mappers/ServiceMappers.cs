@@ -35,7 +35,8 @@ public static class ServiceMappers
             Name: service.Name,
             Description: service.Description,
             EstimatedTime: service.EstimatedTime,
-            CurrencyCode: currencyCode);
+            CurrencyCode: currencyCode,
+            Translations: service.Translations.ToDictionary());
     }
 
     public static AdminServiceDetailDto MapToAdminDetail(this Service service)

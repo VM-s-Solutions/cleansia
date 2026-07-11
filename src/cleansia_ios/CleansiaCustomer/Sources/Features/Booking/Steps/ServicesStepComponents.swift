@@ -66,6 +66,7 @@ struct CategoryChip: View {
 }
 
 struct ServiceRow: View {
+    @Environment(\.locale) private var locale
     let service: CatalogService
     let selected: Bool
     let onToggle: () -> Void
@@ -101,11 +102,11 @@ struct ServiceRow: View {
 
     private var details: some View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
-            Text(service.localizedName)
+            Text(service.localizedName(for: locale))
                 .font(CleansiaTypography.titleMedium)
                 .foregroundColor(CleansiaColors.onSurface)
                 .lineLimit(1)
-            if let description = service.localizedDescription, !description.isEmpty {
+            if let description = service.localizedDescription(for: locale), !description.isEmpty {
                 Text(description)
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
@@ -126,61 +127,84 @@ struct ServiceRow: View {
     }
 }
 
+/// Package cards cycle the three brand gradients by index (ServicesStep.kt
+/// `accentForIndex`), so a shelf of packages reads as layered brand tiers
+/// rather than one flat blue.
+enum PackageAccent {
+    static func gradient(for index: Int) -> BrandGradient {
+        switch index % 3 {
+        case 0: .blue
+        case 1: .purple
+        default: .cyan
+        }
+    }
+}
+
 struct PackageCard: View {
+    @Environment(\.locale) private var locale
     let pkg: CatalogPackage
+    let accent: BrandGradient
     let selected: Bool
-    let onToggle: () -> Void
+    let onOpen: () -> Void
 
     var body: some View {
-        Button(action: onToggle) {
+        Button(action: onOpen) {
             VStack(alignment: .leading, spacing: Spacing.xxs) {
                 HStack {
-                    Text(pkg.localizedName)
+                    Text(pkg.localizedName(for: locale))
                         .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(CleansiaColors.onPrimary)
+                        .foregroundColor(.white)
                         .lineLimit(1)
                     Spacer()
                     if selected {
-                        SelectionBadge(selected: true, onPrimary: true)
+                        checkBadge
                     }
                 }
-                if let description = pkg.localizedDescription, !description.isEmpty {
+                if let description = pkg.localizedDescription(for: locale), !description.isEmpty {
                     Text(description)
                         .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.onPrimary.opacity(0.9))
+                        .foregroundColor(.white.opacity(0.9))
                         .lineLimit(1)
                 }
-                if let summary = pkg.includesSummary {
+                if let summary = pkg.includesSummary(for: locale) {
                     Text(summary)
                         .font(CleansiaTypography.labelMedium)
-                        .foregroundColor(CleansiaColors.onPrimary.opacity(0.85))
+                        .foregroundColor(.white.opacity(0.85))
                         .lineLimit(1)
                 }
                 Spacer(minLength: Spacing.xxs)
                 Text(BookingPricing.formatTotal(pkg.price, currencyCode: "CZK"))
                     .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.onPrimary)
+                    .foregroundColor(.white)
             }
             .padding(Spacing.s)
             .frame(width: 240, height: 150, alignment: .topLeading)
-            .background(CleansiaColors.primary)
+            .background(accent.linearGradient)
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
         }
         .buttonStyle(.plain)
+    }
+
+    private var checkBadge: some View {
+        Image(systemName: "checkmark")
+            .font(.system(size: 12, weight: .bold))
+            .foregroundColor(accent.colors.first ?? CleansiaColors.primary)
+            .frame(width: 22, height: 22)
+            .background(Color.white)
+            .clipShape(Circle())
     }
 }
 
 struct SelectionBadge: View {
     let selected: Bool
-    var onPrimary = false
 
     var body: some View {
         if selected {
             Image(systemName: "checkmark")
                 .font(.system(size: 12, weight: .bold))
-                .foregroundColor(onPrimary ? CleansiaColors.primary : CleansiaColors.onPrimary)
+                .foregroundColor(CleansiaColors.onPrimary)
                 .frame(width: 22, height: 22)
-                .background(onPrimary ? CleansiaColors.surface : CleansiaColors.primary)
+                .background(CleansiaColors.primary)
                 .clipShape(Circle())
         }
     }

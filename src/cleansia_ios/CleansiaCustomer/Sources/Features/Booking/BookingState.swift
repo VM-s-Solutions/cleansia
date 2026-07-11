@@ -12,6 +12,11 @@ struct BookingState: Equatable {
     var zipCode: String = ""
     var countryIsoCode: String = ""
     var savedAddressId: String?
+    /// The saved-address id the last preferred-address hydration seeded. Lets a
+    /// re-open re-hydrate a still-auto-hydrated draft when the user's preferred
+    /// selection changed, while leaving a hand-picked address untouched
+    /// (`BookingBottomSheet.kt:270-282` reset-then-hydrate parity).
+    var hydratedFromSavedId: String?
     var selectedDate: String = ""
     var selectedTime: String = ""
     var selectedInstant: Date?

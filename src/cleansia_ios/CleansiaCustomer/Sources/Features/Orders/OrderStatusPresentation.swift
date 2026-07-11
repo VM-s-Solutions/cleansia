@@ -3,16 +3,19 @@ import CleansiaCustomerApi
 import SwiftUI
 
 enum OrderStatusPresentation {
-    /// Localized label for a status `Code`, falling back to the wire `name`
-    /// then "—" for an unknown value (`orderStatusLabelRes` parity — keeps a
-    /// future backend status renderable without a phantom translation).
+    /// Localized label for a status `Code`. An unmapped status renders "—" in
+    /// production so a non-localized backend wire name ("New", "Cancelled")
+    /// never leaks into a translated build; the raw name surfaces in DEBUG only
+    /// as a diagnostic for a future backend status.
     static func label(_ code: Code?) -> String {
         if let status = code?.toOrderStatus() {
             return L10n.Orders.statusLabel(status)
         }
-        if let name = code?.name?.nonBlankValue {
-            return name
-        }
+        #if DEBUG
+            if let name = code?.name?.nonBlankValue {
+                return name
+            }
+        #endif
         return "—"
     }
 
@@ -31,8 +34,10 @@ enum OrderStatusPresentation {
     }
 }
 
-private extension String {
-    var nonBlankValue: String? {
-        isBlank ? nil : self
+#if DEBUG
+    private extension String {
+        var nonBlankValue: String? {
+            isBlank ? nil : self
+        }
     }
-}
+#endif

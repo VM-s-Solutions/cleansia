@@ -193,7 +193,7 @@ private struct BookingSheetContent: View {
                 .fixedSize()
         }
         .padding(.horizontal, Spacing.m)
-        .padding(.top, Spacing.xs)
+        .padding(.top, Spacing.l)
     }
 
     private var stepBody: some View {
@@ -238,6 +238,7 @@ private struct BookingSheetContent: View {
                 CleansiaPrimaryButton(
                     totalDisplay.map(L10n.Booking.continuePrice) ?? L10n.Booking.continueAction,
                     trailingIcon: "arrow.right",
+                    loading: viewModel.isQuoting,
                     enabled: canContinue,
                     action: onContinue
                 )

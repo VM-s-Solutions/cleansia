@@ -5,6 +5,7 @@ import SwiftUI
 /// The 3 most recent bookings with a See-all link (`RecentBookingsSection`,
 /// `HomeTab.kt:932-1055`).
 struct RecentBookingsSection: View {
+    @Environment(\.locale) private var locale
     let orders: [OrderListItem]
     let onOrderTap: (String) -> Void
     let onSeeAll: () -> Void
@@ -28,10 +29,12 @@ struct RecentBookingsSection: View {
                 }
             }
         }
+        .id(locale.identifier)
     }
 }
 
 private struct RecentBookingRow: View {
+    @Environment(\.locale) private var locale
     let order: OrderListItem
     let onTap: () -> Void
 
@@ -48,10 +51,14 @@ private struct RecentBookingRow: View {
                 }
                 VStack(alignment: .leading, spacing: Spacing.hair) {
                     HStack(spacing: Spacing.xs) {
-                        Text(HomeSections.recentBookingTitle(order, fallback: L10n.Home.recentFallbackTitle))
-                            .font(CleansiaTypography.titleMedium)
-                            .foregroundColor(CleansiaColors.onSurface)
-                            .lineLimit(1)
+                        Text(HomeSections.recentBookingTitle(
+                            order,
+                            fallback: L10n.Home.recentFallbackTitle,
+                            languageCode: CatalogLocalization.languageCode(for: locale)
+                        ))
+                        .font(CleansiaTypography.titleMedium)
+                        .foregroundColor(CleansiaColors.onSurface)
+                        .lineLimit(1)
                         if let label = HomeSections.statusChipLabel(order) {
                             OrderStatusPill(label: label, color: OrderStatusPresentation.color(order.orderStatus))
                         }
@@ -77,7 +84,7 @@ private struct RecentBookingRow: View {
     }
 
     private var recentSubtitle: String {
-        let when = OrdersFormat.dateTime(order.cleaningDateTime)
+        let when = OrdersFormat.dateTime(order.cleaningDateTime, locale: locale)
         let price = OrdersFormat.price(order.totalPrice ?? 0, currencyCode: order.currency?.code)
         return "\(when) · \(price)"
     }
@@ -87,11 +94,13 @@ private struct RecentBookingRow: View {
 /// `HomeTab.kt:1074-1135`). Callers gate on `HomeSections.showMilestone`; the
 /// body double-checks so it is safe to render directly.
 struct MilestoneProgressCard: View {
+    @Environment(\.locale) private var locale
     let account: LoyaltyAccount
 
     var body: some View {
         if let nextTier = LoyaltyTier(value: account.nextTier), let pointsToNext = account.pointsToNextTier {
             card(nextTier: nextTier, pointsToNext: pointsToNext)
+                .id(locale.identifier)
         }
     }
 
@@ -142,6 +151,7 @@ struct MilestoneProgressCard: View {
 /// Static seasonal suggestion routing into the booking flow (`SeasonalCard`,
 /// `HomeTab.kt:1140-1184`).
 struct SeasonalCard: View {
+    @Environment(\.locale) private var locale
     let onTap: () -> Void
 
     var body: some View {
@@ -177,6 +187,7 @@ struct SeasonalCard: View {
             )
         }
         .buttonStyle(.plain)
+        .id(locale.identifier)
     }
 }
 

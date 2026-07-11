@@ -31,6 +31,7 @@ struct ExtrasCard: View {
 }
 
 private struct ExtraRow: View {
+    @Environment(\.locale) private var locale
     let extra: CatalogExtra
     let selected: Bool
     let currencyCode: String
@@ -40,11 +41,11 @@ private struct ExtraRow: View {
         Button(action: onToggle) {
             HStack(spacing: Spacing.s) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(extra.localizedName)
+                    Text(extra.localizedName(for: locale))
                         .font(CleansiaTypography.bodyMedium)
                         .fontWeight(.semibold)
                         .foregroundColor(CleansiaColors.onSurface)
-                    if let description = extra.localizedDescription, !description.isBlank {
+                    if let description = extra.localizedDescription(for: locale), !description.isBlank {
                         Text(description)
                             .font(CleansiaTypography.labelMedium)
                             .foregroundColor(CleansiaColors.onSurfaceVariant)
@@ -58,6 +59,7 @@ private struct ExtraRow: View {
             }
             .padding(.horizontal, Spacing.s)
             .padding(.vertical, Spacing.s)
+            .frame(maxWidth: .infinity)
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.medium)
                     .stroke(
@@ -65,6 +67,7 @@ private struct ExtraRow: View {
                         lineWidth: selected ? 2 : 1
                     )
             )
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -272,6 +275,7 @@ struct PaymentOption: View {
                     )
             )
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -290,54 +294,79 @@ struct CodeEntryRow: View {
         !appliedCode.isBlank
     }
 
+    /// The whole row taps through to `onTap`, and the clear-X is a sibling Button
+    /// overlaid on the trailing edge rather than a gesture nested inside the row
+    /// Button's label — sibling hit regions don't nest, so the X fires `onClear`
+    /// exactly once and never double-fires with the row tap.
     var body: some View {
-        HStack(spacing: Spacing.s) {
-            Button(action: onTap) {
-                HStack(spacing: Spacing.s) {
-                    ZStack {
-                        Circle()
-                            .fill(CleansiaColors.primary.opacity(0.15))
-                            .frame(width: 36, height: 36)
-                        Image(systemName: systemImage)
-                            .font(.system(size: 18))
-                            .foregroundColor(CleansiaColors.primary)
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(title)
-                            .font(CleansiaTypography.titleMedium)
-                            .foregroundColor(CleansiaColors.onSurface)
-                        if hasApplied {
-                            Text(appliedText(appliedCode.uppercased()))
-                                .font(CleansiaTypography.labelMedium)
-                                .foregroundColor(CleansiaColors.primary)
-                        }
-                    }
-                    Spacer()
-                    if !hasApplied {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    }
-                }
-            }
-            .buttonStyle(.plain)
+        ZStack(alignment: .trailing) {
+            Button(action: onTap) { rowContent }
+                .buttonStyle(.plain)
             if hasApplied {
-                Button(action: onClear) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                }
-                .accessibilityLabel(clearLabel)
+                clearButton
             }
         }
+    }
+
+    private var rowContent: some View {
+        HStack(spacing: Spacing.s) {
+            ZStack {
+                Circle()
+                    .fill(CleansiaColors.primary.opacity(0.15))
+                    .frame(width: 32, height: 32)
+                Image(systemName: systemImage)
+                    .font(.system(size: 16))
+                    .foregroundColor(CleansiaColors.primary)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(CleansiaTypography.titleMedium)
+                    .foregroundColor(CleansiaColors.onSurface)
+                if hasApplied {
+                    Text(appliedText(appliedCode.uppercased()))
+                        .font(CleansiaTypography.labelMedium)
+                        .foregroundColor(CleansiaColors.primary)
+                }
+            }
+            Spacer(minLength: Spacing.s)
+            trailingGlyph
+        }
         .padding(.horizontal, Spacing.m)
-        .padding(.vertical, Spacing.s)
+        .padding(.vertical, Spacing.xs)
+        .frame(maxWidth: .infinity)
         .background(CleansiaColors.surface)
         .overlay(
             RoundedRectangle(cornerRadius: CornerRadius.medium)
                 .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+        .contentShape(Rectangle())
+    }
+
+    @ViewBuilder
+    private var trailingGlyph: some View {
+        if hasApplied {
+            clearIcon.hidden()
+        } else {
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+        }
+    }
+
+    private var clearButton: some View {
+        Button(action: onClear) { clearIcon }
+            .buttonStyle(.plain)
+            .padding(.trailing, Spacing.m)
+            .accessibilityLabel(clearLabel)
+    }
+
+    private var clearIcon: some View {
+        Image(systemName: "xmark")
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundColor(CleansiaColors.onSurfaceVariant)
+            .padding(Spacing.xs)
+            .contentShape(Rectangle())
     }
 }
 

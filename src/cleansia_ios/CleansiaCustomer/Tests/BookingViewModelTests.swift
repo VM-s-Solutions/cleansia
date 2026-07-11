@@ -274,6 +274,24 @@ final class BookingViewModelTests: XCTestCase {
         XCTAssertEqual(vm.quoteState, .idle)
     }
 
+    func testIsQuotingTracksQuoteStateSoContinueCanShowALoader() async {
+        let quote = FakeQuoteClient(result: .success(BookingQuote(totalPrice: 1200, currencyCode: "CZK")))
+        let scheduler = TestScheduler.dispatch
+        let vm = makeVM(quote: quote, scheduler: scheduler)
+
+        XCTAssertFalse(vm.isQuoting)
+
+        vm.update { var s = $0
+            s.selectedServiceIds = ["s-1"]
+            return s
+        }
+        scheduler.advance(by: .milliseconds(400))
+        XCTAssertTrue(vm.isQuoting)
+
+        await drainQuote()
+        XCTAssertFalse(vm.isQuoting)
+    }
+
     func testSelectionMutationsUpdateState() {
         let vm = BookingViewModel()
         vm.update { var s = $0

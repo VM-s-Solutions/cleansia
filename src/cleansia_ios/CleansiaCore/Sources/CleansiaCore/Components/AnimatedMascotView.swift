@@ -19,6 +19,14 @@ enum AnimatedMascotPlayback {
     static func isSuperseded(generation: Int, activeGeneration: Int) -> Bool {
         generation != activeGeneration
     }
+
+    /// Whether a layout/update pass should re-assert the pinned final frame.
+    /// Only for a completed one-shot that is still the current run: a looping
+    /// run has no final frame, an un-finished run hasn't captured one yet, and
+    /// a superseded run must yield the view to its successor.
+    static func shouldPinFinalFrameOnUpdate(loop: Bool, hasCompletedFrame: Bool, superseded: Bool) -> Bool {
+        !loop && hasCompletedFrame && !superseded
+    }
 }
 
 /// Plays an animated WebP mascot bundled as an asset-catalog data asset,
@@ -78,6 +86,8 @@ private struct AnimatedImageView: UIViewRepresentable {
         private var activeData: Data?
         private var activeLoop: Bool?
         private var activeGeneration = 0
+        private var pinnedFinalFrame: UIImage?
+        private var completedGeneration: Int?
 
         func animateIfNeeded(_ representable: AnimatedImageView, on view: UIImageView) {
             guard AnimatedMascotPlayback.shouldRestart(
@@ -85,10 +95,15 @@ private struct AnimatedImageView: UIViewRepresentable {
                 activeLoop: activeLoop,
                 data: representable.data,
                 loop: representable.loop
-            ) else { return }
+            ) else {
+                reassertPinnedFinalFrame(loop: representable.loop, on: view)
+                return
+            }
             activeData = representable.data
             activeLoop = representable.loop
             activeGeneration += 1
+            pinnedFinalFrame = nil
+            completedGeneration = nil
             start(representable, on: view, generation: activeGeneration)
         }
 
@@ -108,15 +123,59 @@ private struct AnimatedImageView: UIViewRepresentable {
                     return
                 }
                 view.image = UIImage(cgImage: cgImage)
+                // CGAnimateImageDataWithBlock ignores the WebP's baked-in loop count and
+                // repeats forever, so the one-shot must stop itself on the final frame.
                 if AnimatedMascotPlayback.shouldStop(loop: loop, frameIndex: index, frameCount: frameCount) {
                     stop.pointee = true
+                    completeOneShot(
+                        source: source, frameIndex: index, delivered: cgImage,
+                        on: view, generation: generation
+                    )
                 }
             }
             let status = CGAnimateImageDataWithBlock(data as CFData, nil, frameHandler)
             if status != noErr {
-                view.image = staticFrame(from: source)
+                let fallback = staticFrame(from: source)
                     ?? UIImage(named: representable.fallback.rawValue, in: representable.bundle, with: nil)
+                view.image = fallback
+                if !loop, let fallback { pin(fallback, generation: generation, on: view) }
             }
+        }
+
+        /// Freezes the ending pose so it survives SwiftUI relayout and view reuse.
+        /// The block's own last frame is transient — a later `updateUIView`, or a
+        /// fresh `UIImageView` SwiftUI hands us after the one-shot ends, leaves the
+        /// view imageless. Pinning the decoded final frame and re-asserting it on
+        /// every update keeps the mascot on screen indefinitely.
+        private func completeOneShot(
+            source: CGImageSource?,
+            frameIndex: Int,
+            delivered: CGImage,
+            on view: UIImageView,
+            generation: Int
+        ) {
+            let finalFrame = source
+                .flatMap { CGImageSourceCreateImageAtIndex($0, max(frameIndex, 0), nil) }
+                .map(UIImage.init(cgImage:)) ?? UIImage(cgImage: delivered)
+            pin(finalFrame, generation: generation, on: view)
+            DispatchQueue.main.async { [weak self, weak view] in
+                guard let self, let view else { return }
+                reassertPinnedFinalFrame(loop: false, on: view)
+            }
+        }
+
+        private func pin(_ frame: UIImage, generation: Int, on view: UIImageView) {
+            pinnedFinalFrame = frame
+            completedGeneration = generation
+            view.image = frame
+        }
+
+        private func reassertPinnedFinalFrame(loop: Bool, on view: UIImageView) {
+            let superseded = completedGeneration != activeGeneration
+            guard AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(
+                loop: loop, hasCompletedFrame: pinnedFinalFrame != nil, superseded: superseded
+            ), let frame = pinnedFinalFrame, view.image !== frame else { return }
+            view.image = frame
         }
 
         private func staticFrame(from source: CGImageSource?) -> UIImage? {

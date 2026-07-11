@@ -40,11 +40,13 @@ struct ServicesStep: View {
 }
 
 private struct CatalogContentView: View {
+    @Environment(\.locale) private var locale
     let catalog: Catalog
     let state: BookingState
     let onUpdate: ((BookingState) -> BookingState) -> Void
 
     @State private var activeCategorySlug: String?
+    @State private var detailPackage: CatalogPackage?
 
     private var categories: [CatalogCategory] {
         var seen = Set<String>()
@@ -78,6 +80,14 @@ private struct CatalogContentView: View {
             }
             .padding(.vertical, Spacing.s)
         }
+        .sheet(item: $detailPackage) { pkg in
+            PackageDetailsSheet(
+                pkg: pkg,
+                isSelected: state.selectedPackageIds.contains(pkg.id),
+                onToggle: { togglePackage(pkg.id) },
+                onDismiss: { detailPackage = nil }
+            )
+        }
     }
 
     private var packagesSection: some View {
@@ -86,11 +96,12 @@ private struct CatalogContentView: View {
                 .padding(.horizontal, Spacing.ml)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Spacing.s) {
-                    ForEach(catalog.packages) { pkg in
+                    ForEach(Array(catalog.packages.enumerated()), id: \.element.id) { index, pkg in
                         PackageCard(
                             pkg: pkg,
+                            accent: PackageAccent.gradient(for: index),
                             selected: state.selectedPackageIds.contains(pkg.id),
-                            onToggle: { togglePackage(pkg.id) }
+                            onOpen: { detailPackage = pkg }
                         )
                     }
                 }
@@ -117,7 +128,7 @@ private struct CatalogContentView: View {
                         }
                         ForEach(categories) { category in
                             CategoryChip(
-                                label: category.localizedName,
+                                label: category.localizedName(for: locale),
                                 systemImage: CategoryPalette.symbol(for: category.slug),
                                 tint: CategoryPalette.tint(for: category.slug),
                                 selected: activeCategorySlug == category.slug

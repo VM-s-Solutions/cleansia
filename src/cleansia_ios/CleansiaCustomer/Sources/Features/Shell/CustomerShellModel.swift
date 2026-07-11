@@ -8,14 +8,31 @@ final class CustomerShellModel: ViewModel {
     @Published var isBookingPresented = false
     @Published var isAddressManagerPresented = false
 
+    private var lastRealTab: CustomerShellTab = .home
+
     func book() {
         isBookingPresented = true
     }
 
-    /// Pill taps animate the pager — the `animateScrollToPage` parity
-    /// (`MainShell.kt:97-99`).
+    /// Resolves a stock `TabView` selection change. The center `.book` slot is a
+    /// placeholder the docked FAB reserves for even spacing, never a real
+    /// destination: selecting it snaps back to the tab the user came from and
+    /// reports `true` so the caller opens booking — the bar center mirrors the
+    /// FAB. Real tabs pass through and are remembered as the snap-back target.
+    func resolveSelection() -> Bool {
+        guard selection == .book else {
+            lastRealTab = selection
+            return false
+        }
+        selection = lastRealTab
+        return true
+    }
+
+    /// Programmatic cross-tab jumps (Home's "see all orders" → Orders, the
+    /// referral card → Rewards). Tab-bar taps drive the selection binding
+    /// directly through the stock `TabView`.
     func select(_ tab: CustomerShellTab) {
-        withAnimation { selection = tab }
+        selection = tab
     }
 
     /// The T-0313 success→OrderDetail fold: jump to the Orders tab and open the

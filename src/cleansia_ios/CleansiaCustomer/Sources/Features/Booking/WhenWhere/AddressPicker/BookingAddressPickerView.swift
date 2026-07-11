@@ -9,6 +9,12 @@ struct BookingAddressPickerView: View {
         span: MKCoordinateSpan(latitudeDelta: defaultSpan, longitudeDelta: defaultSpan)
     )
     @FocusState private var searchFocused: Bool
+    @State private var reviewing: GeocodedAddress?
+    @State private var saving = false
+
+    @Environment(\.savedAddressRepository) private var repository
+    @Environment(\.snackbarController) private var snackbar
+    @Environment(\.bookingAddressSaveOffered) private var saveOffered
 
     private let mapProvider: MapProvider
     private let onConfirmed: (GeocodedAddress) -> Void
@@ -31,6 +37,24 @@ struct BookingAddressPickerView: View {
     }
 
     var body: some View {
+        Group {
+            if let reviewing {
+                BookingAddressReviewPane(
+                    picked: reviewing,
+                    saving: saving,
+                    onBack: { self.reviewing = nil },
+                    onConfirm: { label, save, setAsDefault in
+                        persist(reviewing, label: label, save: save, setAsDefault: setAsDefault)
+                    }
+                )
+            } else {
+                mapContent
+            }
+        }
+        .navigationBarHidden(true)
+    }
+
+    private var mapContent: some View {
         ZStack {
             mapProvider.pickerMap(region: $region, showsUserLocation: false)
                 .ignoresSafeArea()
@@ -50,11 +74,42 @@ struct BookingAddressPickerView: View {
                 )
             }
         }
-        .navigationBarHidden(true)
         .onReceive(vm.recenter) { coordinate in
             region.center = CLLocationCoordinate2D(latitude: coordinate.latitude, longitude: coordinate.longitude)
         }
-        .onReceive(vm.confirmed, perform: onConfirmed)
+        .onReceive(vm.confirmed, perform: handleConfirm)
+    }
+
+    private func handleConfirm(_ address: GeocodedAddress) {
+        guard saveOffered, repository != nil else {
+            onConfirmed(address)
+            return
+        }
+        reviewing = address
+    }
+
+    private func persist(_ address: GeocodedAddress, label: String, save: Bool, setAsDefault: Bool) {
+        guard
+            let draft = BookingNewAddressSave.draft(
+                from: address,
+                label: label,
+                save: save,
+                setAsDefault: setAsDefault,
+                fallbackLabel: L10n.AddressManager.fallbackLabel
+            ),
+            let repository
+        else {
+            onConfirmed(address)
+            return
+        }
+        saving = true
+        Task { @MainActor in
+            if case let .failure(error) = await repository.add(draft) {
+                snackbar.showApiError(error)
+            }
+            saving = false
+            onConfirmed(address)
+        }
     }
 
     private var topBar: some View {

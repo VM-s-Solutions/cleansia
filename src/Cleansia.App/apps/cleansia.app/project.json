@@ -80,12 +80,20 @@
     "serve": {
       "continuous": true,
       "executor": "@angular/build:dev-server",
+      "options": {
+        "port": 4202,
+        "proxyConfig": "apps/cleansia.app/proxy.conf.json"
+      },
       "configurations": {
         "production": {
           "buildTarget": "cleansia.app:build:production"
         },
         "development": {
           "buildTarget": "cleansia.app:build:development"
+        },
+        "devremote": {
+          "buildTarget": "cleansia.app:build:development",
+          "proxyConfig": "apps/cleansia.app/proxy.devremote.conf.json"
         }
       },
       "defaultConfiguration": "development"
@@ -111,7 +119,7 @@
       "executor": "@nx/web:file-server",
       "options": {
         "buildTarget": "cleansia.app:build",
-        "port": 4200,
+        "port": 4202,
         "staticFilePath": "dist/apps/cleansia.app/browser",
         "spa": true
       }

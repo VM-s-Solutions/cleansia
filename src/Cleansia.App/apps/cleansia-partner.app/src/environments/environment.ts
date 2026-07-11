@@ -1,7 +1,11 @@
 export const environment = {
   apiHost: 'localhost',
   apiPort: '5000',
-  apiBaseUrl: 'http://localhost:5000',
+  // Empty on purpose: /api is same-origin, served by the dev-server proxy
+  // (proxy.conf.json → local Partner API :5000; --configuration=devremote →
+  // the deployed dev API). The auth cookie is SameSite=Strict, so the
+  // browser must see one origin — never put an absolute URL back here.
+  apiBaseUrl: '',
   apiProtocol: 'http',
   isDevelopment: true,
   blobStorageUrl: 'http://127.0.0.1:10000/devstoreaccount1',

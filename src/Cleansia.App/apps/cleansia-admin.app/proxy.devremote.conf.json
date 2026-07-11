@@ -1,0 +1,7 @@
+{
+  "/api": {
+    "target": "https://api-cleansia-admin-weu-dev.azurewebsites.net",
+    "secure": true,
+    "changeOrigin": true
+  }
+}

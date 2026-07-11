@@ -1,14 +1,13 @@
-import { inject, Injectable } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AdminAuthService, JwtTokenResponse } from '@cleansia/admin-services';
-import { loadUserCurrent, selectLoading } from '@cleansia/admin-stores';
+import { loadUserCurrent } from '@cleansia/admin-stores';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 @Injectable()
 export class AdminLoginFacade extends UnsubscribeControlDirective {
@@ -19,7 +18,9 @@ export class AdminLoginFacade extends UnsubscribeControlDirective {
   private readonly snackbarService = inject(SnackbarService);
 
   formGroup = this.createFormGroup();
-  loading = toSignal(this.store.select(selectLoading));
+  // Local on purpose: the global selectLoading flag is flipped by every HTTP
+  // call in the app, so binding it here froze the button during unrelated boot requests.
+  readonly loading = signal(false);
 
   login() {
     if (this.formGroup.invalid) {
@@ -30,10 +31,12 @@ export class AdminLoginFacade extends UnsubscribeControlDirective {
     const email = this.formGroup.get('email')?.value;
     const password = this.formGroup.get('password')?.value;
     const rememberMe = this.formGroup.get('rememberMe')?.value;
+    this.loading.set(true);
     this.authService
       .login(email, password, rememberMe)
       .pipe(
         takeUntil(this.destroyed$),
+        finalize(() => this.loading.set(false)),
         catchError((error) => {
           this.handleLoginError(error);
           return of(null);

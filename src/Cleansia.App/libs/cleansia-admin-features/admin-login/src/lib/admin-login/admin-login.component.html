@@ -44,7 +44,7 @@
           [style]="'raised-button'"
           [title]="'global.actions.login' | translate"
           (clickFn)="facade.login()"
-          [loading]="facade.loading() ?? false"
+          [loading]="facade.loading()"
         />
       </div>
     </form>

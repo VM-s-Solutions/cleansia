@@ -1,0 +1,7 @@
+{
+  "^/api(?!/mapbox)": {
+    "target": "http://localhost:5003",
+    "secure": true,
+    "changeOrigin": true
+  }
+}

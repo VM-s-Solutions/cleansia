@@ -3,7 +3,7 @@ import { nxE2EPreset } from '@nx/playwright/preset';
 import { defineConfig, devices } from '@playwright/test';
 
 // For CI, you may want to set BASE_URL to the deployed application.
-const baseURL = process.env['BASE_URL'] || 'http://localhost:4200';
+const baseURL = process.env['BASE_URL'] || 'http://localhost:4202';
 
 /**
  * Read environment variables from file.
@@ -27,7 +27,7 @@ export default defineConfig({
      generous. `reuseExistingServer` lets a warm `nx serve` be reused. */
   webServer: {
     command: 'npx nx run cleansia.app:serve',
-    url: 'http://localhost:4200',
+    url: 'http://localhost:4202',
     reuseExistingServer: true,
     timeout: 300_000,
     cwd: workspaceRoot,

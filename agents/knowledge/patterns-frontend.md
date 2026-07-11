@@ -76,6 +76,11 @@ export class CompanyInfoListFacade extends UnsubscribeControlDirective {
 }
 ```
 
+Per-action `loading` is always a **facade-local signal** like this. Never bind a specific button or
+form to the store's global `selectLoading` — that flag is flipped by `LoadingInterceptorFn` for
+*every* HTTP request in the app, so any slow unrelated call (boot-time code loads, translation
+fetches) freezes the control (the admin login button stuck-loading bug).
+
 `UnsubscribeControlDirective` is literally:
 
 ```ts
@@ -289,3 +294,15 @@ plus the orthogonal `type:*` rules. A cross-app client import is therefore a **l
 (`libs/core/<app>-services/src/index.ts`) are **hand-maintained** (not generated — NSwag only emits
 `client/<app>-client.ts`); re-exporting an already-generated DTO through the barrel is normal frontend
 work, **not** a `nswag-regen` step.
+
+## Dev API base URL — relative on purpose (one-origin cookie auth)
+
+Auth is an HttpOnly cookie with `SameSite=Strict`, so the browser must see **one origin**. Dev
+`environment.ts` sets `apiBaseUrl: ''` and the dev server proxies `/api` server-side
+(`apps/<app>/proxy.conf.json` → local API; `--configuration=devremote` →
+`proxy.devremote.conf.json` → the deployed dev API). All three auth interceptors treat a relative
+URL containing `/api/` as "our API". Never point dev `apiBaseUrl` at an absolute host to fix a 401 —
+that reintroduces the cross-site cookie failure — and never weaken the cookie attributes. The
+customer app is SSR: its server render resolves the relative base against the incoming request
+origin in `app.config.server.ts` (via the `REQUEST` token), so SSR fetches also flow through the
+proxy. Full run-mode docs: `src/Cleansia.App/CLAUDE.md`.

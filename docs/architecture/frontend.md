@@ -144,7 +144,7 @@ apps/<app>/src/environments/
 export const environment = {
   apiHost: 'localhost',
   apiPort: '5003',
-  apiBaseUrl: 'http://localhost:5003',
+  apiBaseUrl: '', // dev is RELATIVE on purpose — see note below
   apiProtocol: 'http',
   isDevelopment: true,
   blobStorageUrl: 'http://127.0.0.1:10000/devstoreaccount1',
@@ -153,6 +153,14 @@ export const environment = {
   bugReportUrl: '',
 };
 ```
+
+::: warning Dev `apiBaseUrl` is relative on purpose
+Auth is an HttpOnly cookie with `SameSite=Strict`, so the browser must see one origin. In dev the
+Angular dev server proxies `/api` server-side (`apps/<app>/proxy.conf.json` → local API;
+`nx serve <app> --configuration=devremote` → `proxy.devremote.conf.json` → the deployed dev API).
+Do not put an absolute API URL back into a dev `environment.ts` — that reintroduces the cross-site
+cookie 401. Staging/prod keep absolute URLs. Details: `src/Cleansia.App/CLAUDE.md`.
+:::
 
 ## SSR Setup
 

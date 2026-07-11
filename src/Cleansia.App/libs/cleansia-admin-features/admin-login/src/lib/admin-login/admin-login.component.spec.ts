@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { AdminAuthService } from '@cleansia/admin-services';
+import { CleansiaButtonComponent } from '@cleansia/components';
 import { SnackbarService } from '@cleansia/services';
 import { provideMockStore } from '@ngrx/store/testing';
 import { TranslateModule } from '@ngx-translate/core';
@@ -14,7 +16,7 @@ describe('AdminLoginComponent', () => {
     await TestBed.configureTestingModule({
       imports: [AdminLoginComponent, TranslateModule.forRoot()],
       providers: [
-        provideMockStore({ initialState: { loading: { loading: false } } }),
+        provideMockStore({ initialState: { loading: { loading: true } } }),
         provideRouter([]),
         {
           provide: AdminAuthService,
@@ -38,5 +40,14 @@ describe('AdminLoginComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('renders the login button interactive even while global HTTP loading is on', () => {
+    const button = fixture.debugElement.query(
+      By.directive(CleansiaButtonComponent)
+    ).componentInstance as CleansiaButtonComponent;
+
+    expect(button.loading()).toBe(false);
+    expect(button.disabled()).toBe(false);
   });
 });

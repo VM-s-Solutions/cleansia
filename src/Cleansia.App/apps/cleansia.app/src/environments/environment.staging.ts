@@ -1,3 +1,5 @@
+// apiBaseUrl here is also the target of proxy.devremote.conf.json — keep the
+// two in sync when the deployed dev host changes.
 export const environment = {
   apiHost: 'api-cleansia-customer-weu-dev.azurewebsites.net',
   apiPort: '443',

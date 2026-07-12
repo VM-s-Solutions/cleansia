@@ -155,17 +155,7 @@ private struct AvailableOrderRow: View {
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                         .lineLimit(1)
                 }
-                ScopeChips(order: order)
-                if isHotDeal || isStartingSoon {
-                    HStack(spacing: Spacing.xs) {
-                        if isHotDeal {
-                            DecisionBadge(icon: "flame.fill", label: L10n.Orders.topPay, tint: CleansiaColors.error)
-                        }
-                        if isStartingSoon {
-                            DecisionBadge(icon: "clock", label: L10n.Orders.startsSoon, tint: CleansiaColors.primary)
-                        }
-                    }
-                }
+                OrderChipsRow(order: order, isHotDeal: isHotDeal, isStartingSoon: isStartingSoon)
                 TakeButton(isTaking: isTaking, onTake: onTake)
             }
             .ordersCard()
@@ -248,7 +238,10 @@ private struct ActiveOrderRow: View {
 
     var body: some View {
         VStack(spacing: Spacing.s) {
-            CompactOrderRow(order: order, onOpen: onOpen)
+            Button(action: onOpen) {
+                CompactOrderRowContent(order: order)
+            }
+            .buttonStyle(.plain)
             if let labels = swipeLabels {
                 SlideToConfirm(
                     idleLabel: labels.idle,
@@ -258,6 +251,7 @@ private struct ActiveOrderRow: View {
                 )
             }
         }
+        .ordersCard()
     }
 
     private var swipeLabels: (idle: String, busy: String)? {

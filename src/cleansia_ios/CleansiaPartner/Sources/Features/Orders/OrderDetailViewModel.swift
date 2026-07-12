@@ -18,6 +18,18 @@ enum OrderAction: Equatable {
         case .complete: .completeOrder
         }
     }
+
+    /// Take stays silent — the action visibly flips. The slide transitions
+    /// confirm out loud: their only passive cue is a quiet label swap, which
+    /// cleaners read as a failed swipe. One mapping for the list AND the detail.
+    var successFeedback: String? {
+        switch self {
+        case .notifyOnTheWay: L10n.Orders.customerNotifiedOnTheWay
+        case .start: L10n.Orders.orderStartedToast
+        case .complete: L10n.Orders.orderCompletedToast
+        case .take: nil
+        }
+    }
 }
 
 @MainActor
@@ -108,22 +120,24 @@ final class OrderDetailViewModel: ViewModel {
         actionState = .submitting
         inFlightAction = action
 
-        let result = await block()
-        inFlightAction = nil
-        switch result {
+        switch await block() {
         case .success:
-            if action == .complete {
-                snackbar.showSuccess(L10n.Orders.orderCompletedToast)
+            if let confirmation = action.successFeedback {
+                snackbar.showSuccess(confirmation)
             }
-            actionState = .idle
-            // Invalidate the list panes this mutation changed (the Slice-B
-            // mapping), then re-fetch the canonical detail.
             staleness.invalidatePanes(for: action.mutation)
             staleness.invalidateOrder(orderId)
+            // Held through the refetch: the footer stays locked-busy until it
+            // re-renders with the NEW action, so a second swipe in the gap
+            // can't re-fire the already-applied transition.
             await fetch()
+            actionState = .idle
+            inFlightAction = nil
         case let .failure(error):
-            // O4: clean reject — surface the message, keep the screen, refresh
-            // so a stale "takeable" state corrects (e.g. already-taken order).
+            // O4: clean reject — release immediately (retry springs back),
+            // surface the message, keep the screen, refresh so a stale
+            // "takeable" state corrects (e.g. already-taken order).
+            inFlightAction = nil
             snackbar.showApiError(error)
             actionState = .error(ApiErrorLocalizer().message(for: error))
             staleness.invalidateOrder(orderId)

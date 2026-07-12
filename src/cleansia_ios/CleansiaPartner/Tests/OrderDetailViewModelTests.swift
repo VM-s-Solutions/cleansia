@@ -163,8 +163,79 @@ final class OrderDetailViewModelTests: XCTestCase {
         let vm = makeVM()
         await vm.load()
         await vm.complete()
-        XCTAssertNotNil(snackbar.current)
+        XCTAssertEqual(snackbar.current?.severity, .success)
+        XCTAssertEqual(snackbar.current?.text, L10n.Orders.orderCompletedToast)
         XCTAssertEqual(vm.actionState, .idle)
+    }
+
+    // MARK: success feedback — the detail confirms the same transitions as the list
+
+    func testStartSuccessShowsStartedToast() async {
+        client.byIdResult = .success(loadedItem(status: 3))
+        let vm = makeVM()
+        await vm.load()
+
+        await vm.start()
+
+        XCTAssertEqual(snackbar.current?.severity, .success)
+        XCTAssertEqual(snackbar.current?.text, L10n.Orders.orderStartedToast)
+    }
+
+    func testNotifyOnTheWaySuccessShowsNotifiedToast() async {
+        client.byIdResult = .success(loadedItem(status: 2))
+        let vm = makeVM()
+        await vm.load()
+
+        await vm.notifyOnTheWay()
+
+        XCTAssertEqual(snackbar.current?.severity, .success)
+        XCTAssertEqual(snackbar.current?.text, L10n.Orders.customerNotifiedOnTheWay)
+    }
+
+    func testTakeSuccessStaysSilent() async {
+        client.byIdResult = .success(loadedItem(status: 2, isMine: false))
+        let vm = makeVM()
+        await vm.load()
+
+        await vm.take()
+
+        XCTAssertNil(snackbar.current)
+    }
+
+    // MARK: the in-flight hold across the post-success refetch
+
+    func testInFlightHeldThroughThePostSuccessRefetch() async {
+        client.byIdResult = .success(loadedItem(status: 3))
+        let vm = makeVM()
+        await vm.load()
+
+        var inFlightDuringRefetch: OrderAction?
+        var submittingDuringRefetch = false
+        client.onGetById = {
+            inFlightDuringRefetch = vm.inFlightAction
+            submittingDuringRefetch = vm.actionState.isSubmitting
+        }
+        await vm.start()
+
+        XCTAssertEqual(inFlightDuringRefetch, .start)
+        XCTAssertTrue(submittingDuringRefetch)
+        XCTAssertNil(vm.inFlightAction)
+        XCTAssertEqual(vm.actionState, .idle)
+    }
+
+    func testFailureReleasesBeforeTheCorrectiveRefetch() async {
+        client.byIdResult = .success(loadedItem(status: 3))
+        let vm = makeVM()
+        await vm.load()
+        client.commandResult = .failure(ApiError(httpStatus: 409))
+
+        var inFlightDuringRefetch: OrderAction? = .start
+        client.onGetById = { inFlightDuringRefetch = vm.inFlightAction }
+        await vm.start()
+
+        XCTAssertNil(inFlightDuringRefetch)
+        XCTAssertNil(vm.inFlightAction)
+        guard case .error = vm.actionState else { return XCTFail("expected action error") }
     }
 
     func testActionFailureSurfacesErrorAndKeepsScreen() async {

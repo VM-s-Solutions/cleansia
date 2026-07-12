@@ -30,6 +30,18 @@ final class EarningsFormatTests: XCTestCase {
         XCTAssertEqual(EarningsFormat.currencySymbol("ZZZ"), "ZZZ")
     }
 
+    func testCurrencySymbolUsesLocaleDisplaySymbol() {
+        XCTAssertEqual(EarningsFormat.currencySymbol("CZK", locale: Locale(identifier: "cs_CZ")), "Kč")
+        XCTAssertEqual(EarningsFormat.currencySymbol("USD", locale: Locale(identifier: "en_US")), "$")
+        XCTAssertEqual(EarningsFormat.currencySymbol("CZK", locale: Locale(identifier: "en_US")), "CZK")
+    }
+
+    func testCurrencySymbolHonorsCodeWhenLocaleIdentifierCarriesKeywords() {
+        let locale = Locale(identifier: "en_US@rg=czzzzz")
+        XCTAssertEqual(EarningsFormat.currencySymbol("CZK", locale: locale), "CZK")
+        XCTAssertEqual(EarningsFormat.currencySymbol("EUR", locale: locale), "€")
+    }
+
     func testCurrencySymbolNilForEmptyOrNil() {
         XCTAssertNil(EarningsFormat.currencySymbol(nil))
         XCTAssertNil(EarningsFormat.currencySymbol(""))

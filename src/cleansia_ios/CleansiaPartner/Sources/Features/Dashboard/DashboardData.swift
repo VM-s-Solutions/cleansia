@@ -38,7 +38,11 @@ struct DashboardData: Equatable {
         return Int(delta / Double(lastMonthCompletedOrders) * 100)
     }
 
-    static func from(stats: DashboardStatsDto, firstName: String?) -> DashboardData {
+    static func from(
+        stats: DashboardStatsDto,
+        preview: AvailableJobsPreviewResponse?,
+        firstName: String?
+    ) -> DashboardData {
         let payPeriod: PayPeriod? = {
             guard let start = stats.currentPayPeriodStart, let end = stats.currentPayPeriodEnd else { return nil }
             return PayPeriod(
@@ -61,8 +65,14 @@ struct DashboardData: Equatable {
             thisMonthCompletedOrders: stats.thisMonthCompletedOrders ?? 0,
             averageRating: stats.averageRating,
             ratingCount: stats.ratingCount ?? 0,
-            hero: .empty
+            hero: hero(from: preview)
         )
+    }
+
+    private static func hero(from preview: AvailableJobsPreviewResponse?) -> DashboardHero {
+        let jobCount = preview?.totalAvailableCount ?? 0
+        guard jobCount > 0 else { return .empty }
+        return .availableWork(jobCount: jobCount, potentialEarnings: preview?.totalPotentialEarnings ?? 0)
     }
 }
 

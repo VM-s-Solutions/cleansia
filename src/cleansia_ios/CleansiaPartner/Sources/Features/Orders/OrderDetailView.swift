@@ -40,6 +40,7 @@ struct OrderDetailView: View {
     var body: some View {
         content
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .tabBar)
             .task { await vm.load() }
             .task { await photosVM.load() }
             .onReceive(notesVM.mutated) { Task { await vm.load() } }
@@ -74,7 +75,6 @@ struct OrderDetailView: View {
                 photosVM: photosVM
             )
         }
-        .ignoresSafeArea(edges: .top)
     }
 
     @ViewBuilder

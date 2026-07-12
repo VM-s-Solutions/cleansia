@@ -45,9 +45,11 @@ struct ProfileView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
+            // Bar hidden at the hub root only — the gradient hero runs under the
+            // status bar (customer-shell pattern); every pushed destination sets
+            // its own title, so their bars stay visible.
             content
-                .navigationTitle(L10n.Profile.title)
-                .navigationBarTitleDisplayMode(.inline)
+                .toolbar(.hidden, for: .navigationBar)
                 .navigationDestination(for: ProfileRoute.self, destination: destination)
         }
         .task { await vm.load() }

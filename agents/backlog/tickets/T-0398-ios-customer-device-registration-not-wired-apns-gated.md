@@ -61,3 +61,4 @@ source: phase/ios-fix2 fix-round-8 slice E investigation (owner remark: the Devi
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-13 — owner enrolling in the paid Apple Program (T-0342), unblocking the APNs gate. The CODE half here (wire the customer push/device stack like partner: PushTokenRegistrar + PushSessionObserver + a CustomerDeviceRegistrationClient + startPush() + a CustomerAppDelegate) is now dispatch-ready; it registers-on-login regardless of APNs and starts delivering the customer device row + notifications the moment T-0342's key is in place. Ready to implement on request.

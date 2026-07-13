@@ -62,3 +62,4 @@ effect once (2) is done.
 - 2026-06-28 — filed from the T-0311 push gate (§3B). T-0311 lands the registration code + entitlement;
   this is the owner Apple-provisioning gate for end-to-end delivery. Numbered T-0342 (T-0341 is the backend
   status-history flaky-test ticket).
+- 2026-07-13 — **owner decided to enroll in the paid Apple Developer Program** (partner device pass: empty devices page + no cleaning-update notifications, both the personal-team APNs wall). ACTIVE. Order: enroll -> create the APNs .p8 key (Keys, +Apple Push Notifications service; note Key ID + Team ID) -> upload it to Firebase Cloud Messaging (APNs Authentication Key) for BOTH iOS bundle IDs -> `git checkout` the two project.yml strips (re-adds aps-environment + SIWA) + regenerate + select the PAID team in Xcode -> rebuild on device. Backend FCM->APNs dispatcher already live (order-status pushes wired). PARTNER works once this lands (already wired); CUSTOMER also needs T-0398.

@@ -332,6 +332,16 @@ param threaded from the caller's `@Environment(\.locale)` — never default to `
 (e.g. `OrdersFormat.dateRange/dateTime`, `Catalog{Service,Package,Category,Extra}.localizedName(for:)`).
 **Deviations a reviewer rejects:** a View date/name that renders `Locale.current` (device) while a sibling
 renders the app language; a device-defaulting `localizedName` computed accessor kept as a call-site footgun.
+**Re-rendering on the in-app switch (iOS fix3, partner Orders/OrderDetail/Dashboard):** injecting the root
+`\.environment(\.locale, …)` is necessary but NOT sufficient — a view only re-runs its body when a dependency
+it *reads* changes. A view that renders a per-locale value (a threaded `locale:` date/name) re-runs for free.
+A **pure-`L10n` view** (segmented tab `Picker`, a status/payment pill, a section-title card) that reads no
+per-locale value will **freeze at the old language** until interacted with, because nothing it observes
+changed — give it `@Environment(\.locale)` + `.id(locale.identifier)` so the body re-runs and the `L10n`
+strings re-resolve. The segmented `Picker` in particular **must** carry `.id(locale.identifier)`: the underlying
+`UISegmentedControl` caches its rendered segment titles, so a plain body re-run alone does not re-localize them.
+The partner `OrdersFormat`/`DashboardFormat`/`EarningsFormat` date helpers all take `locale:` (default `.current`)
+and are threaded from each date-bearing view's `@Environment(\.locale)`, mirroring the customer `OrdersFormat`.
 
 **Top-level audience state may carry a payload (ADR-0020 fold-in, sprint-12 §7.5 Decision 2, reviewer #26b):**
 a flat-enum `Route` case may take an associated value when a nav input must reach the destination — e.g.

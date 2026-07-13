@@ -51,7 +51,7 @@ public actor PushTokenRegistrar: SessionScopedCache {
             PushLog.log.notice("device already registered with this token (dedup skip)")
             return
         }
-        PushLog.log.notice("registering device (platform=\(platform, privacy: .public))")
+        PushLog.log.notice("registering device with the backend")
         let result = await client.register(
             RegisterDeviceRequest(
                 deviceId: deviceIdProvider.deviceId,

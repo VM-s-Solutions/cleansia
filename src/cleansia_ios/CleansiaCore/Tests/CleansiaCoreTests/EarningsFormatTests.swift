@@ -66,4 +66,12 @@ final class EarningsFormatTests: XCTestCase {
         let date = Date(timeIntervalSince1970: 1_750_000_000)
         XCTAssertFalse(EarningsFormat.shortDate(date)?.isEmpty ?? true)
     }
+
+    func testShortDateLocalizesMonthPerAppLocale() {
+        let date = Date(timeIntervalSince1970: 1_623_758_400)
+        XCTAssertNotEqual(
+            EarningsFormat.shortDate(date, locale: Locale(identifier: "ru")),
+            EarningsFormat.shortDate(date, locale: Locale(identifier: "en"))
+        )
+    }
 }

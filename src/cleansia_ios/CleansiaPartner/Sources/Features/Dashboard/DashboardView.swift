@@ -58,6 +58,7 @@ private struct DashboardErrorView: View {
 }
 
 struct DashboardContent: View {
+    @Environment(\.locale) private var locale
     let data: DashboardData
     let onOpenEarnings: () -> Void
     let onOpenOrders: () -> Void
@@ -65,11 +66,16 @@ struct DashboardContent: View {
     var body: some View {
         ScrollView {
             VStack(spacing: Spacing.m) {
-                GreetingBar(firstName: data.firstName)
+                GreetingBar(firstName: data.firstName, locale: locale)
                 HeroCard(hero: data.hero, currencyCode: data.currencyCode, onOpenOrders: onOpenOrders)
                 WeeklyEarningsCard(data: data, onClick: onOpenEarnings)
                 if let period = data.payPeriod {
-                    PayPeriodCard(period: period, currencyCode: data.currencyCode, onClick: onOpenEarnings)
+                    PayPeriodCard(
+                        period: period,
+                        currencyCode: data.currencyCode,
+                        locale: locale,
+                        onClick: onOpenEarnings
+                    )
                 }
                 LastMonthCard(data: data)
             }
@@ -80,6 +86,7 @@ struct DashboardContent: View {
 
 private struct GreetingBar: View {
     let firstName: String?
+    let locale: Locale
 
     var body: some View {
         HStack(spacing: Spacing.s) {
@@ -91,7 +98,7 @@ private struct GreetingBar: View {
                 Text(DashboardGreeting.text(firstName: firstName))
                     .font(CleansiaTypography.titleLarge)
                     .foregroundColor(CleansiaColors.onBackground)
-                Text(DashboardGreeting.dateLine())
+                Text(DashboardGreeting.dateLine(locale: locale))
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             }

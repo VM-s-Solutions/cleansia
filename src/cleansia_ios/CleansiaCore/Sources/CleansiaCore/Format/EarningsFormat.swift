@@ -24,10 +24,10 @@ public enum EarningsFormat {
         return Locale(components: components).currencySymbol ?? code
     }
 
-    public static func shortDate(_ date: Date?) -> String? {
+    public static func shortDate(_ date: Date?, locale: Locale = .current) -> String? {
         guard let date else { return nil }
         let formatter = DateFormatter()
-        formatter.locale = .current
+        formatter.locale = locale
         formatter.timeZone = .current
         formatter.setLocalizedDateFormatFromTemplate("d MMM yyyy")
         return formatter.string(from: date)

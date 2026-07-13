@@ -67,6 +67,7 @@ struct WeeklyEarningsCard: View {
 struct PayPeriodCard: View {
     let period: DashboardData.PayPeriod
     let currencyCode: String?
+    let locale: Locale
     let onClick: () -> Void
 
     private var progress: PayPeriodProgress {
@@ -91,7 +92,7 @@ struct PayPeriodCard: View {
                 ProgressView(value: progress.fraction)
                     .tint(CleansiaColors.primary)
                 if let payout = period.nextPayoutDate {
-                    Text(L10n.Dashboard.nextPayout(DashboardFormat.payoutDate(payout)))
+                    Text(L10n.Dashboard.nextPayout(DashboardFormat.payoutDate(payout, locale: locale)))
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
@@ -104,6 +105,7 @@ struct PayPeriodCard: View {
 }
 
 struct LastMonthCard: View {
+    @Environment(\.locale) private var locale
     let data: DashboardData
 
     var body: some View {
@@ -130,6 +132,7 @@ struct LastMonthCard: View {
         }
         .cardPadding()
         .padding(.horizontal, Spacing.m)
+        .id(locale.identifier)
     }
 }
 

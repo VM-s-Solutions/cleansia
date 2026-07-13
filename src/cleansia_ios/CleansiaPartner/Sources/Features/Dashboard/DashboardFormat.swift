@@ -28,9 +28,9 @@ enum DashboardFormat {
         return String(format: "%.1f", value)
     }
 
-    static func payoutDate(_ date: Date) -> String {
+    static func payoutDate(_ date: Date, locale: Locale = .current) -> String {
         let formatter = DateFormatter()
-        formatter.locale = .current
+        formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate("EEE d MMM")
         return formatter.string(from: date)
     }

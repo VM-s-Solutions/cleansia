@@ -18,9 +18,9 @@ enum DashboardGreeting {
         }
     }
 
-    static func dateLine(now: Date = Date()) -> String {
+    static func dateLine(now: Date = Date(), locale: Locale = .current) -> String {
         let formatter = DateFormatter()
-        formatter.locale = .current
+        formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate("EEEE d MMM")
         return formatter.string(from: now)
     }

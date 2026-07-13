@@ -4,9 +4,8 @@ import FirebaseMessaging
 import UIKit
 import UserNotifications
 
-final class PartnerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
+final class CustomerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
     weak var registrar: (any PushRegistrar)?
-    var onTap: ((PartnerNotificationDestination) -> Void)?
     private(set) var firebaseConfigured = false
 
     func application(
@@ -52,18 +51,5 @@ final class PartnerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificat
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
         completionHandler([.banner, .sound])
-    }
-
-    func userNotificationCenter(
-        _: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse,
-        withCompletionHandler completionHandler: @escaping () -> Void
-    ) {
-        let userInfo = response.notification.request.content.userInfo
-        if let destination = PartnerNotificationDeepLink.resolve(userInfo) {
-            let onTap = onTap
-            Task { @MainActor in onTap?(destination) }
-        }
-        completionHandler()
     }
 }

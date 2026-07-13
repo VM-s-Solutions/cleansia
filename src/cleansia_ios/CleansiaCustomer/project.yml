@@ -32,6 +32,9 @@ packages:
   # scripts/generate-api-clients.sh after a mobile-spec refresh; never hand-edit.
   CleansiaCustomerApi:
     path: ../CleansiaCustomerApi
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: 11.0.0
   GoogleSignIn:
     url: https://github.com/google/GoogleSignIn-iOS
     from: 7.1.0
@@ -48,6 +51,13 @@ targets:
       - path: Sources
       - path: Resources
       - path: PrivacyInfo.xcprivacy
+      # Owner-local, gitignored FCM config. The folder is committed (empty); the
+      # owner drops GoogleService-Info.plist here. Absent → no-plist build still
+      # compiles and simply runs without push (see GoogleServicePlist gate).
+      - path: Firebase
+        optional: true
+        excludes:
+          - ".gitkeep"
     info:
       path: Info.plist
       properties:
@@ -79,11 +89,6 @@ targets:
           - Nunito-Regular.ttf
           - Nunito-SemiBold.ttf
           - Nunito-Bold.ttf
-    entitlements:
-      path: CleansiaCustomer.entitlements
-      properties:
-        com.apple.developer.applesignin:
-          - Default
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cz.cleansia.customer
@@ -92,6 +97,9 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1"
         API_BASE_URL: https:/$()/api-cleansia-customer-mobile-weu-dev.azurewebsites.net
+        # T-0403: push (aps-environment) via CleansiaCustomer.entitlements so the FCM device token
+        # registers. Sign in with Apple is intentionally NOT here yet — it re-lands with the full
+        # flow + the App-ID capability in T-0344.
         CODE_SIGN_ENTITLEMENTS: CleansiaCustomer.entitlements
         # Owner-provisioned Google iOS OAuth client; empty until then →
         # graceful .notConfigured (no crash) and no Google button round-trip.
@@ -106,6 +114,10 @@ targets:
     dependencies:
       - package: CleansiaCore
       - package: CleansiaCustomerApi
+      - package: Firebase
+        product: FirebaseCore
+      - package: Firebase
+        product: FirebaseMessaging
       - package: GoogleSignIn
         product: GoogleSignIn
       - package: StripePaymentSheet

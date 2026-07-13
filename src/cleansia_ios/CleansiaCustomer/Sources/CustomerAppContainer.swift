@@ -1,5 +1,6 @@
 import CleansiaCore
 import CleansiaCustomerApi
+import Combine
 import Foundation
 import os
 
@@ -96,6 +97,11 @@ final class CustomerAppContainer: AppContainer {
     let notificationPreferencesClient: NotificationPreferencesClient = LiveNotificationPreferencesClient()
     let changePasswordClient: ChangePasswordClient = LiveChangePasswordClient()
 
+    let pushRegistrar: any PushRegistrar = UNUserNotificationPushRegistrar()
+    private let pushTokenRegistrar: PushTokenRegistrar
+    private let pushSessionObserver: PushSessionObserver
+    private let hasSessionSubject: CurrentValueSubject<Bool, Never>
+
     init(
         snackbar: SnackbarController,
         apiBaseURL: URL = AppConfig.apiBaseURL
@@ -127,6 +133,13 @@ final class CustomerAppContainer: AppContainer {
         )
         self.userProfileRepository = userProfileRepository
         devicesClient = LiveCustomerDevicesClient(deviceIdProvider: authStack.deviceIdProvider)
+        let pushTokenRegistrar = PushTokenRegistrar(
+            client: CustomerDeviceRegistrationClient(),
+            deviceIdProvider: authStack.deviceIdProvider
+        )
+        self.pushTokenRegistrar = pushTokenRegistrar
+        pushSessionObserver = PushSessionObserver(registrar: pushTokenRegistrar)
+        hasSessionSubject = CurrentValueSubject(false)
         base = BaseAppContainer(
             apiBaseURL: apiBaseURL,
             snackbar: snackbar,
@@ -142,6 +155,27 @@ final class CustomerAppContainer: AppContainer {
         sessionScopedCaches.register(disputeRepository)
         sessionScopedCaches.register(savedAddressRepository)
         sessionScopedCaches.register(userProfileRepository)
+        sessionScopedCaches.register(pushTokenRegistrar)
+        authStack.spine.setPreLogout { [pushTokenRegistrar] in
+            await pushTokenRegistrar.unregisterDevice()
+        }
+    }
+
+    func startPush() {
+        hasSessionSubject.send(hasValidSession)
+        pushSessionObserver.attach(
+            hasSession: hasSessionSubject.eraseToAnyPublisher(),
+            apnsToken: pushRegistrar.apnsToken
+        )
+        Task {
+            if await pushRegistrar.requestAuthorization() {
+                pushRegistrar.registerForRemoteNotifications()
+            }
+        }
+    }
+
+    func updatePushSession(hasSession: Bool) {
+        hasSessionSubject.send(hasSession)
     }
 
     func installGeneratedClientAuth() {

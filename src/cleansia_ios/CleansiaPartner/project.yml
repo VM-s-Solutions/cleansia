@@ -32,6 +32,9 @@ packages:
   # scripts/generate-api-clients.sh after a mobile-spec refresh; never hand-edit.
   CleansiaPartnerApi:
     path: ../CleansiaPartnerApi
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: 11.0.0
 
 targets:
   CleansiaPartner:
@@ -42,6 +45,13 @@ targets:
       - path: Sources
       - path: Resources
       - path: PrivacyInfo.xcprivacy
+      # Owner-local, gitignored FCM config. The folder is committed (empty); the
+      # owner drops GoogleService-Info.plist here. Absent → no-plist build still
+      # compiles and simply runs without push (see GoogleServicePlist gate).
+      - path: Firebase
+        optional: true
+        excludes:
+          - ".gitkeep"
     info:
       path: Info.plist
       properties:
@@ -83,6 +93,10 @@ targets:
     dependencies:
       - package: CleansiaCore
       - package: CleansiaPartnerApi
+      - package: Firebase
+        product: FirebaseCore
+      - package: Firebase
+        product: FirebaseMessaging
 
   CleansiaPartnerTests:
     type: bundle.unit-test

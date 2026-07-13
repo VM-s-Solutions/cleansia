@@ -3,6 +3,7 @@ import SwiftUI
 
 @main
 struct CleansiaCustomerApp: App {
+    @UIApplicationDelegateAdaptor(CustomerAppDelegate.self) private var appDelegate
     @StateObject private var snackbar: SnackbarController
     @StateObject private var sessionManager: SessionManager
     @StateObject private var preferences: CustomerPreferencesModel
@@ -28,6 +29,10 @@ struct CleansiaCustomerApp: App {
                 .environment(\.locale, preferences.locale)
                 .preferredColorScheme(preferences.theme.colorScheme)
                 .snackbarHost(container.snackbar)
+                .task {
+                    appDelegate.registrar = container.pushRegistrar
+                    container.startPush()
+                }
         }
     }
 }

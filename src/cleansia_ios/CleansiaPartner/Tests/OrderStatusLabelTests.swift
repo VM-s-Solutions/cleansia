@@ -1,3 +1,4 @@
+import CleansiaPartnerApi
 import XCTest
 @testable import CleansiaPartner
 
@@ -12,14 +13,25 @@ final class OrderStatusLabelTests: XCTestCase {
         XCTAssertEqual(OrderStatusLabel.prettify("New"), "New")
     }
 
-    func testLabelPrefersNameWhenPresent() {
-        XCTAssertEqual(OrderStatusLabel.label(name: "OnTheWay", value: 3), "On the way")
+    func testLabelUsesLocalizedStatusForKnownValueIgnoringWireName() {
+        // A known numeric status wins over the raw wire name so a non-localized
+        // backend name ("OnTheWay") never leaks into a translated build.
+        XCTAssertEqual(OrderStatusLabel.label(name: "OnTheWay", value: 3), L10n.Orders.statusLabel(._3))
+        XCTAssertEqual(OrderStatusLabel.label(name: "ZZZ", value: 4), L10n.Orders.statusLabel(._4))
     }
 
-    func testLabelFallsBackToValueWhenNameMissing() {
-        // value 5 → Completed (localized en)
-        XCTAssertEqual(OrderStatusLabel.label(name: nil, value: 5), "Completed")
-        XCTAssertEqual(OrderStatusLabel.label(name: "  ", value: 2), "Confirmed")
+    func testLabelMapsEachKnownValueToLocalizedLabel() {
+        XCTAssertEqual(OrderStatusLabel.label(name: nil, value: 5), L10n.Orders.statusLabel(._5))
+        XCTAssertEqual(OrderStatusLabel.label(name: "  ", value: 2), L10n.Orders.statusLabel(._2))
+    }
+
+    func testLabelForUnknownValueUsesPrettifiedNameInDebugElseDash() {
+        let result = OrderStatusLabel.label(name: "FutureStatus", value: 99)
+        #if DEBUG
+            XCTAssertEqual(result, "Future status")
+        #else
+            XCTAssertEqual(result, "—")
+        #endif
     }
 
     func testLabelDashWhenNameAndValueMissing() {

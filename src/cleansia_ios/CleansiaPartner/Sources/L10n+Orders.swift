@@ -213,6 +213,14 @@ extension L10n {
             format("payment_method_value", value)
         }
 
+        static var paymentMethodCash: String {
+            localized("payment_method_cash")
+        }
+
+        static var paymentMethodCard: String {
+            localized("payment_method_card")
+        }
+
         static var paymentStatusPaid: String {
             localized("payment_status_paid")
         }

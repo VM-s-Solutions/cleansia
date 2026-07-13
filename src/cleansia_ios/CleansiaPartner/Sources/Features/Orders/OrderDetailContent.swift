@@ -3,6 +3,7 @@ import CleansiaPartnerApi
 import SwiftUI
 
 struct OrderDetailContent: View {
+    @Environment(\.locale) private var locale
     let order: OrderDetail
     var primaryAction: OrderPrimaryAction = .none
     var inFlightAction: OrderAction?
@@ -55,11 +56,11 @@ struct OrderDetailContent: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            OrderDetailCompactHeader(order: order)
+            OrderDetailCompactHeader(order: order, locale: locale)
             ScrollView {
                 VStack(spacing: Spacing.m) {
                     OrderTrackerHero(status: order.status)
-                    OrderMetadataRow(order: order)
+                    OrderMetadataRow(order: order, locale: locale)
                     if showAccessCard, let access = order.accessInstructions {
                         AccessCard(instructions: access)
                     }
@@ -93,7 +94,7 @@ struct OrderDetailContent: View {
                         )
                     }
                     PaymentCard(order: order)
-                    StatusTimelineView(history: order.statusHistory)
+                    StatusTimelineView(history: order.statusHistory, locale: locale)
                 }
                 .padding(.horizontal, Spacing.m)
                 .padding(.vertical, Spacing.m)
@@ -112,6 +113,7 @@ struct OrderDetailContent: View {
 /// status pill, date, pay (the compact-header parity).
 private struct OrderDetailCompactHeader: View {
     let order: OrderDetail
+    let locale: Locale
 
     var body: some View {
         HStack(alignment: .top) {
@@ -122,7 +124,7 @@ private struct OrderDetailCompactHeader: View {
                         .foregroundColor(CleansiaColors.onSurface)
                     OrderStatusPill(status: order.status)
                 }
-                Text(OrdersFormat.relativeDateTime(order.cleaningDateTime))
+                Text(OrdersFormat.relativeDateTime(order.cleaningDateTime, locale: locale))
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             }
@@ -139,6 +141,7 @@ private struct OrderDetailCompactHeader: View {
 }
 
 struct OrderStatusPill: View {
+    @Environment(\.locale) private var locale
     let status: OrderStatus?
 
     var body: some View {
@@ -148,6 +151,7 @@ struct OrderStatusPill: View {
             .padding(.horizontal, Spacing.xs)
             .padding(.vertical, 2)
             .background(tint.opacity(0.14), in: Capsule())
+            .id(locale.identifier)
     }
 
     private var tint: Color {
@@ -188,10 +192,11 @@ private struct OrderTrackerHero: View {
 
 private struct OrderMetadataRow: View {
     let order: OrderDetail
+    let locale: Locale
 
     var body: some View {
         HStack {
-            Label(OrdersFormat.relativeDateTime(order.cleaningDateTime), systemImage: "calendar")
+            Label(OrdersFormat.relativeDateTime(order.cleaningDateTime, locale: locale), systemImage: "calendar")
                 .font(CleansiaTypography.bodyMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
             Spacer()

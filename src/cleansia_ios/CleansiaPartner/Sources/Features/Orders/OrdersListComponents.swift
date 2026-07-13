@@ -185,12 +185,13 @@ struct CompactOrderRow: View {
 /// it and the slide control inside ONE bordered card (the Android
 /// `ActiveOrderRow` Surface parity).
 struct CompactOrderRowContent: View {
+    @Environment(\.locale) private var locale
     let order: OrderListItem
 
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(OrdersFormat.timeOnly(order.cleaningDateTime))
+                Text(OrdersFormat.timeOnly(order.cleaningDateTime, locale: locale))
                     .font(CleansiaTypography.titleMedium)
                     .foregroundColor(CleansiaColors.onSurface)
                 Text(OrdersFormat.compactSubtitle(order))

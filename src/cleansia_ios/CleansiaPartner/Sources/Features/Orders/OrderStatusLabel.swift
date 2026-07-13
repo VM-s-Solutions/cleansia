@@ -2,16 +2,22 @@ import CleansiaPartnerApi
 import Foundation
 
 /// Human-readable label for a timeline status entry. The backend ships status
-/// names as enum-friendly strings ("OnTheWay", "InProgress", …); we prettify
-/// them ("OnTheWay" → "On the way", "InProgress" → "In progress") and fall back
-/// to the numeric value → localized label when the name is missing (the
-/// `labelForStatusName` parity, StatusTimeline.kt:149-164).
+/// names as non-localized enum strings ("OnTheWay", "InProgress", …); we resolve
+/// the numeric value to the localized label so a wire name never leaks into a
+/// translated build (mirrors the customer `OrderStatusPresentation`). An unknown
+/// status renders "—" in production; the prettified raw name surfaces in DEBUG
+/// only as a diagnostic for a future backend status.
 enum OrderStatusLabel {
     static func label(name: String?, value: Int?) -> String {
-        if let name = name?.trimmingCharacters(in: .whitespaces), !name.isEmpty {
-            return prettify(name)
+        if let status = value.flatMap(OrderStatus.init(rawValue:)) {
+            return L10n.Orders.statusLabel(status)
         }
-        return L10n.Orders.statusLabel(value.flatMap(OrderStatus.init(rawValue:)))
+        #if DEBUG
+            if let name = name?.trimmingCharacters(in: .whitespaces), !name.isEmpty {
+                return prettify(name)
+            }
+        #endif
+        return "—"
     }
 
     /// Insert a space between a lower→upper camel boundary and upper-case the

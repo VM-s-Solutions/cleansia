@@ -35,6 +35,10 @@ struct CleansiaPartnerApp: App {
                         pushNavigation?.pendingDestination = destination
                     }
                     container.startPush()
+                    // The registration-token delegate does not fire for a cached token
+                    // (re-install), so pull it explicitly once APNs has had a moment to settle.
+                    try? await Task.sleep(nanoseconds: 3_000_000_000)
+                    appDelegate.requestFcmToken()
                 }
         }
     }

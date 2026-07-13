@@ -59,4 +59,33 @@ final class CustomerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifica
     ) {
         completionHandler([.banner, .sound])
     }
+
+    /// Explicitly asks Firebase for the current FCM registration token and forwards it.
+    /// The `didReceiveRegistrationToken` delegate only fires on a NEW/refreshed token, so a
+    /// cached token (common after re-install) never triggers registration; this pulls it
+    /// proactively. Firebase resolves the token once the swizzled APNs token is in place;
+    /// on failure it logs the concrete reason (e.g. no APNs token = a provisioning gap).
+    func requestFcmToken() {
+        guard firebaseConfigured else {
+            PushLog.log.error("FCM token requested but Firebase is not configured")
+            return
+        }
+        Messaging.messaging().token { [weak self] token, error in
+            if let error {
+                PushLog.log.error("FCM token fetch FAILED: \(String(describing: error), privacy: .public)")
+                return
+            }
+            guard let token, !token.isEmpty else {
+                PushLog.log.error("FCM token fetch returned empty")
+                return
+            }
+            PushLog.log.notice("FCM token fetched explicitly (len=\(token.count, privacy: .public))")
+            guard let self, let registrar else { return }
+            let forwarder = PushTokenForwarder(
+                registrar: registrar,
+                isFirebaseConfigured: { [weak self] in self?.firebaseConfigured ?? false }
+            )
+            Task { @MainActor in forwarder.forward(fcmToken: token) }
+        }
+    }
 }

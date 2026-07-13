@@ -17,6 +17,9 @@ final class PartnerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificat
             FirebaseApp.configure()
             Messaging.messaging().delegate = self
             firebaseConfigured = true
+            PushLog.log.notice("Firebase configured (GoogleService-Info.plist present)")
+        } else {
+            PushLog.log.error("Firebase NOT configured: GoogleService-Info.plist missing from the app bundle")
         }
         UNUserNotificationCenter.current().delegate = self
         return true
@@ -26,7 +29,11 @@ final class PartnerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificat
         _: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
-        guard firebaseConfigured else { return }
+        guard firebaseConfigured else {
+            PushLog.log.error("APNs token arrived but Firebase is not configured")
+            return
+        }
+        PushLog.log.notice("APNs device token received; handed to Firebase Messaging")
         Messaging.messaging().apnsToken = deviceToken
     }
 

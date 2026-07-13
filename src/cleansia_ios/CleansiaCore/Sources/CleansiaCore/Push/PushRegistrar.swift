@@ -33,6 +33,7 @@ public protocol PushRegistrar: AnyObject {
 
         public func requestAuthorization() async -> Bool {
             let granted = try? await center.requestAuthorization(options: [.alert, .badge, .sound])
+            PushLog.log.notice("notification permission granted=\(granted ?? false, privacy: .public)")
             return granted ?? false
         }
 
@@ -41,6 +42,7 @@ public protocol PushRegistrar: AnyObject {
         }
 
         public func reportRegistered(token: String) {
+            PushLog.log.notice("push registration token received (len=\(token.count, privacy: .public))")
             tokenSubject.send(token)
         }
     }

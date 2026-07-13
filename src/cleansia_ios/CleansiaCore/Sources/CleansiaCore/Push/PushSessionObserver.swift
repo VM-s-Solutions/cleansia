@@ -18,7 +18,11 @@ public final class PushSessionObserver: @unchecked Sendable {
             .map { session, token in session ? token : nil }
             .removeDuplicates()
             .sink { [registrar] token in
-                guard let token else { return }
+                guard let token else {
+                    PushLog.log.notice("register skipped: session invalid or no token yet")
+                    return
+                }
+                PushLog.log.notice("register: session valid + token present -> ensureRegistered")
                 Task { await registrar.ensureRegistered(token: token) }
             }
     }

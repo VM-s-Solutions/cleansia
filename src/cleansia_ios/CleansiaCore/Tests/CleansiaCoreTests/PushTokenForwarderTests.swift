@@ -97,8 +97,6 @@ private final class FakePushRegistrar: PushRegistrar {
         true
     }
 
-    func registerForRemoteNotifications() {}
-
     func reportRegistered(token: String) {
         subject.send(token)
     }

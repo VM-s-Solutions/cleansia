@@ -47,26 +47,16 @@ public actor PushTokenRegistrar: SessionScopedCache {
     }
 
     public func ensureRegistered(token: String) async {
-        guard token != tokenStore.read() else {
-            PushLog.log.notice("device already registered with this token (dedup skip)")
-            return
-        }
-        let deviceId = deviceIdProvider.deviceId
-        let idPrefix = String(deviceId.prefix(8))
-        let tokenLen = token.count
-        PushLog.log.notice(
-            "registering device with the backend (deviceId=\(idPrefix, privacy: .public)…, tokenLen=\(tokenLen, privacy: .public))"
-        )
+        guard token != tokenStore.read() else { return }
         let result = await client.register(
             RegisterDeviceRequest(
-                deviceId: deviceId,
+                deviceId: deviceIdProvider.deviceId,
                 deviceToken: token,
                 platform: platform
             )
         )
         switch result {
         case .success:
-            PushLog.log.notice("device register SUCCEEDED")
             tokenStore.write(token)
         case let .failure(error):
             PushLog.log.error("device register FAILED: \(String(describing: error), privacy: .public)")

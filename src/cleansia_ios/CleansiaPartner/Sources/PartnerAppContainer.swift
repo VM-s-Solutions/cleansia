@@ -131,24 +131,18 @@ final class PartnerAppContainer: AppContainer {
     /// current token state (cold-start-into-authed-session parity) and pushed
     /// forward by `updatePushSession(hasSession:)` at each session transition.
     func startPush() {
-        let seeded = hasValidSession
-        PushLog.log.notice("startPush: attaching observer, seeding session=\(seeded, privacy: .public)")
-        hasSessionSubject.send(seeded)
+        hasSessionSubject.send(hasValidSession)
         pushSessionObserver.attach(
             hasSession: hasSessionSubject.eraseToAnyPublisher(),
             apnsToken: pushRegistrar.apnsToken
         )
-        Task {
-            if await pushRegistrar.requestAuthorization() {
-                pushRegistrar.registerForRemoteNotifications()
-            } else {
-                PushLog.log.error("startPush: notification permission NOT granted — APNs registration not requested")
-            }
-        }
+        // Alert-display permission only — APNs registration itself happens in
+        // the app delegate's didFinishLaunching (deferring it there gets
+        // silently dropped by iOS).
+        Task { _ = await pushRegistrar.requestAuthorization() }
     }
 
     func updatePushSession(hasSession: Bool) {
-        PushLog.log.notice("updatePushSession -> \(hasSession, privacy: .public)")
         hasSessionSubject.send(hasSession)
     }
 

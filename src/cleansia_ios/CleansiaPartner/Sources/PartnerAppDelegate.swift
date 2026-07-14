@@ -10,9 +10,19 @@ final class PartnerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificat
     private(set) var firebaseConfigured = false
 
     func application(
-        _: UIApplication,
+        _ application: UIApplication,
         didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        // APNs registration MUST happen here, directly in didFinishLaunching
+        // (Apple's documented pattern). Proven empirically on device + simulator:
+        // deferring this call into the async permission flow makes iOS silently
+        // drop it — no token, no failure callback, nothing reaches apsd. A
+        // minimal probe app registering here got a token in ~1s on the same
+        // simulator where the deferred flow produced nothing. Registration does
+        // not require notification permission (that gates alert DISPLAY only,
+        // and is still requested in startPush).
+        PushLog.log.notice("didFinishLaunching: requesting APNs registration")
+        application.registerForRemoteNotifications()
         if GoogleServicePlist.isPresent {
             FirebaseApp.configure()
             Messaging.messaging().delegate = self

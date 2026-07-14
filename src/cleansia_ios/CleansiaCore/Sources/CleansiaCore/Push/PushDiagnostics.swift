@@ -36,13 +36,21 @@ public enum PushDiagnostics {
     /// Logs the running build's push provisioning on the push channel, with an
     /// actionable message when it is missing. Call once at launch.
     public static func logApsEnvironment() {
-        if let env = apsEnvironment() {
+        #if targetEnvironment(simulator)
+            // Simulators carry no embedded.mobileprovision; their push entitlement
+            // lives in the binary's __entitlements section instead, and Apple
+            // Silicon simulators DO receive real APNs tokens. Nothing to check here.
             PushLog.log
-                .notice("Push IS provisioned — aps-environment in the embedded profile = \(env, privacy: .public)")
-        } else {
-            PushLog.log.error(
-                "Push is NOT provisioned for this build — the embedded provisioning profile has no aps-environment (or there is no profile). This is why iOS issues no APNs token AND no failure on a device. Fix: in Xcode → Signing & Capabilities, select your paid Team, add the Push Notifications capability (registers it on the App ID), then clean-rebuild on the device."
-            )
-        }
+                .notice("simulator build — no embedded profile (expected); sim push uses the __entitlements section")
+        #else
+            if let env = apsEnvironment() {
+                PushLog.log
+                    .notice("Push IS provisioned — aps-environment in the embedded profile = \(env, privacy: .public)")
+            } else {
+                PushLog.log.error(
+                    "Push is NOT provisioned for this build — the embedded provisioning profile has no aps-environment (or there is no profile). This is why iOS issues no APNs token AND no failure on a device. Fix: in Xcode → Signing & Capabilities, select your paid Team, add the Push Notifications capability (registers it on the App ID), then clean-rebuild on the device."
+                )
+            }
+        #endif
     }
 }

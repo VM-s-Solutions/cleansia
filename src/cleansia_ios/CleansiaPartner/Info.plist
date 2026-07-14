@@ -20,6 +20,8 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>Cleansia uses the camera to capture before and after photos of your cleaning jobs.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

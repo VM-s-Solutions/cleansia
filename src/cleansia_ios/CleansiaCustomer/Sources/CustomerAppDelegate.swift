@@ -23,6 +23,9 @@ final class CustomerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifica
         UNUserNotificationCenter.current().delegate = self
         // Ground truth: is the push entitlement actually in the signed binary?
         PushDiagnostics.logApsEnvironment()
+        // Dev builds fetch their token via SANDBOX APNs — a separate channel from
+        // the production one other apps use. Prove reachability directly.
+        ApnsReachabilityProbe.run()
         return true
     }
 
@@ -88,7 +91,7 @@ final class CustomerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifica
             }
             guard retriesLeft > 0 else {
                 PushLog.log.error(
-                    "FCM token STILL unavailable: iOS never issued an APNs token — and it reported NO registration failure. That silence means the Simulator (which does not vend APNs tokens): run on a PHYSICAL device. On a device instead, a failure would have been logged, pointing at the App-ID Push capability / provisioning profile. Last error: \(String(describing: error), privacy: .public)"
+                    "FCM token STILL unavailable: the OS accepted the registration request but never completed the APNs handshake (no token, no failure). Provisioning was verified at launch, so this is the SANDBOX APNs connection (dev builds use courier.sandbox.push.apple.com — separate from the production channel other apps use). Check the 'APNs probe' verdicts above; try cellular with Wi-Fi OFF; toggle Airplane Mode; on the Mac, Console.app → this device → filter 'apsd' shows the courier errors. Last error: \(String(describing: error), privacy: .public)"
                 )
                 return
             }

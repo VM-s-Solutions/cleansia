@@ -32,6 +32,7 @@ import androidx.navigation.toRoute
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
+import cz.cleansia.core.auth.SessionEvent
 import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.partner.api.model.RegistrationCompletionStatus
@@ -41,6 +42,7 @@ import cz.cleansia.partner.features.auth.ConfirmEmailScreen
 import cz.cleansia.partner.features.auth.ForgotPasswordScreen
 import cz.cleansia.partner.features.auth.LoginScreen
 import cz.cleansia.partner.features.auth.RegisterScreen
+import cz.cleansia.partner.features.auth.SessionViewModel
 import cz.cleansia.partner.features.devices.DevicesScreen
 import cz.cleansia.partner.features.earnings.EarningsSummaryScreen
 import cz.cleansia.partner.features.invoices.InvoiceDetailScreen
@@ -67,6 +69,22 @@ import javax.inject.Inject
 
 @Composable
 fun PartnerNavHost(navController: NavHostController) {
+    // Root-level session observer — reacts to forced sign-outs (refresh
+    // failure, server revoked session) by kicking back to Login and clearing
+    // the entire back stack.
+    val sessionVm: SessionViewModel = hiltViewModel()
+    LaunchedEffect(Unit) {
+        sessionVm.events.collect { event ->
+            when (event) {
+                is SessionEvent.ForcedSignOut -> {
+                    navController.navigate(NavRoute.Login) {
+                        popUpTo(navController.graph.id) { inclusive = true }
+                    }
+                }
+            }
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = NavRoute.Splash,
@@ -169,7 +187,7 @@ fun PartnerNavHost(navController: NavHostController) {
                 onOpenNotifications = { navController.navigate(NavRoute.Notifications) },
                 onSignedOut = {
                     navController.navigate(NavRoute.Login) {
-                        popUpTo(NavRoute.Main) { inclusive = true }
+                        popUpTo(navController.graph.id) { inclusive = true }
                     }
                 },
                 // Pass the Main backstack entry so MainScaffold can observe
@@ -201,7 +219,7 @@ fun PartnerNavHost(navController: NavHostController) {
                 },
                 onSignedOut = {
                     navController.navigate(NavRoute.Login) {
-                        popUpTo(NavRoute.RegistrationLock) { inclusive = true }
+                        popUpTo(navController.graph.id) { inclusive = true }
                     }
                 },
             )
@@ -305,7 +323,7 @@ fun PartnerNavHost(navController: NavHostController) {
                 onNavigateToDevices = { navController.navigate(NavRoute.Devices) },
                 onSignedOut = {
                     navController.navigate(NavRoute.Login) {
-                        popUpTo(NavRoute.Profile) { inclusive = true }
+                        popUpTo(navController.graph.id) { inclusive = true }
                     }
                 },
             )

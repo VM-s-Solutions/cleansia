@@ -38,6 +38,15 @@ public protocol PushRegistrar: AnyObject {
         }
 
         public func registerForRemoteNotifications() {
+            // Confirms the call actually reaches UIKit on the main thread. If this
+            // logs but no didRegister/didFail callback follows, the OS/APNs (or the
+            // Firebase swizzle) is the culprit, not our call path. Hoisted to a local
+            // so the Logger autoclosure doesn't need an explicit `self` capture
+            // (which swiftformat would strip, breaking the build).
+            let alreadyRegistered = application.isRegisteredForRemoteNotifications
+            PushLog.log.notice(
+                "requesting APNs registration from the OS (isRegistered before=\(alreadyRegistered, privacy: .public))"
+            )
             application.registerForRemoteNotifications()
         }
 

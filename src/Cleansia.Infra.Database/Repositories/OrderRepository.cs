@@ -213,15 +213,36 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .CountAsync(ct);
     }
 
+    // An assigned order occupies the cleaner's time only while it is a live commitment;
+    // terminal orders (Completed, Cancelled) free the slot.
+    private static readonly OrderStatus[] SlotBlockingStatuses =
+    [
+        OrderStatus.New,
+        OrderStatus.Pending,
+        OrderStatus.Confirmed,
+        OrderStatus.OnTheWay,
+        OrderStatus.InProgress,
+    ];
+
     public async Task<bool> HasOverlappingOrderAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct)
     {
         var newStart = cleaningDateTime;
         var newEnd = cleaningDateTime.AddMinutes(estimatedTimeMinutes);
 
+        // Unlike the availability filters, a pre-backfill NULL CurrentStatus row cannot be
+        // excluded here — that would fail OPEN (an active legacy order stops blocking and the
+        // cleaner gets double-booked), so NULL falls back to the authoritative latest-history
+        // rule (CreatedOn desc, Sequence desc); non-null rows stay on the indexed column.
         return await GetDbSet()
             .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId) &&
                        o.CleaningDateTime < newEnd &&
-                       o.CleaningDateTime.AddMinutes(o.EstimatedTime) > newStart)
+                       o.CleaningDateTime.AddMinutes(o.EstimatedTime) > newStart &&
+                       ((o.CurrentStatus != null && SlotBlockingStatuses.Contains(o.CurrentStatus.Value)) ||
+                        (o.CurrentStatus == null && o.OrderStatusHistory
+                            .OrderByDescending(s => s.CreatedOn)
+                            .ThenByDescending(s => s.Sequence)
+                            .Take(1)
+                            .Any(s => SlotBlockingStatuses.Contains(s.Status)))))
             .AnyAsync(ct);
     }
 

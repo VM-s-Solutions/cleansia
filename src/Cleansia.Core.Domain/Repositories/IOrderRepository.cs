@@ -72,7 +72,11 @@ public interface IOrderRepository : IRepository<Order, string>
     Task<int> GetEmployeeOrderCountThisWeekAsync(string employeeId, CancellationToken ct);
 
     /// <summary>
-    /// Checks if an employee has an overlapping order at the given date/time range.
+    /// True when the employee is assigned to an order whose scheduled window
+    /// ([CleaningDateTime, +EstimatedTime)) overlaps the given one AND whose current status is a
+    /// live commitment (New, Pending, Confirmed, OnTheWay, InProgress). Terminal orders
+    /// (Completed, Cancelled) no longer occupy the cleaner's time. Backs the TakeOrder
+    /// time-conflict rule and the new-jobs digest's not-busy filter.
     /// </summary>
     Task<bool> HasOverlappingOrderAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct);
 

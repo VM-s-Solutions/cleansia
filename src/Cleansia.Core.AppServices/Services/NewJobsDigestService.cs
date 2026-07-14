@@ -23,7 +23,7 @@ namespace Cleansia.Core.AppServices.Services;
 ///   - The order's status flipped to one of the available states AFTER the
 ///     cleaner's last digest watermark (so old already-notified orders
 ///     don't re-trigger)
-///   - The cleaner has no overlapping in-progress order at the order's
+///   - The cleaner has no overlapping live-commitment order at the order's
 ///     cleaning time (see <see cref="IOrderRepository.HasOverlappingOrderAsync"/>)
 ///
 /// Throttling: this method IS the rate-limit — the timer's 30-min cadence
@@ -130,7 +130,7 @@ public class NewJobsDigestService(
                 }
 
                 // Not-busy filter: drop orders that overlap one of the
-                // cleaner's existing in-progress orders. Per-order check —
+                // cleaner's existing live-commitment orders. Per-order check —
                 // expensive in the worst case but bounded by how many new
                 // orders matched the country filter for THIS cleaner.
                 var takeable = 0;

@@ -351,9 +351,19 @@ written ONLY at the `Order.AddOrderStatus` seam (CreatedOn-desc, Sequence-desc r
   `o.CurrentStatus ?? o.OrderStatusHistory.OrderByDescending(s => s.CreatedOn)
   .ThenByDescending(s => s.Sequence).Select(s => (OrderStatus?)s.Status).FirstOrDefault()`
   (GDPR export, `SelectOrderListRows`).
+- **Exception: fail-closed conflict predicates also fall back** — a filter whose NULL-exclusion
+  would fail OPEN (e.g. the overlap/time-conflict check: skipping a pre-backfill row would let an
+  active legacy order stop blocking and double-book the cleaner) must not exclude NULL; it reads
+  the column for non-null rows and falls back to the latest-history subquery (same
+  CreatedOn-desc/Sequence-desc rule) for NULL rows only (`HasOverlappingOrderAsync`, pinned by
+  `HasOverlappingOrderStatusTests`).
 
 Never write the column outside `AddOrderStatus`, and never hand-roll a new latest-history status
-subquery — filter on the column; project with the fallback.
+subquery — filter on the column; project with the fallback. The **only** sanctioned exception is
+the fail-closed case above: the fallback runs for NULL rows only, non-null rows stay on the indexed
+column, the subquery uses the same CreatedOn-desc/Sequence-desc rule, and the call site carries a
+comment naming the fail-open risk plus a status-matrix test pinning it (mirror
+`HasOverlappingOrderAsync`). A latest-history subquery without all four is still a violation.
 
 The order LIST queries (`GetPagedOrders`/`GetCustomerOrders`) do not materialize entity graphs:
 they project server-side via `OrderMappers.SelectOrderListRows()` into the backend-only

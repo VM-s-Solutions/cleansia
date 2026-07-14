@@ -32,9 +32,8 @@ struct CleansiaCustomerApp: App {
                 .task {
                     appDelegate.registrar = container.pushRegistrar
                     container.startPush()
-                    // The registration-token delegate does not fire for a cached token
-                    // (re-install), so pull it explicitly once APNs has had a moment to settle.
-                    try? await Task.sleep(nanoseconds: 3_000_000_000)
+                    // The registration-token delegate misses cached tokens; pull it
+                    // explicitly and let it retry as the APNs token settles.
                     appDelegate.requestFcmToken()
                 }
         }

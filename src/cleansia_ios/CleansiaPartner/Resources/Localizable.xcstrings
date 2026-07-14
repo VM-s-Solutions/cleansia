@@ -10442,6 +10442,822 @@
         }
       }
     },
+    "push.dispute.reply.body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podpora odpověděla na vaši stížnost. Klepnutím si ji přečtete."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Support responded to your dispute. Tap to read it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поддержка ответила на вашу жалобу. Нажмите, чтобы прочитать."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podpora odpovedala na vašu sťažnosť. Ťuknutím si ju prečítate."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Підтримка відповіла на вашу скаргу. Торкніться, щоб прочитати."
+          }
+        }
+      }
+    },
+    "push.dispute.reply.title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podpora odpověděla"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Support replied"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поддержка ответила"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podpora odpovedala"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Підтримка відповіла"
+          }
+        }
+      }
+    },
+    "push.loyalty.tier_upgrade.body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosáhli jste nové věrnostní úrovně — nové výhody na vás čekají."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You reached a new loyalty tier — your new perks are waiting."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы достигли нового уровня лояльности — новые привилегии уже ждут."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosiahli ste novú vernostnú úroveň — nové výhody čakajú."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ви досягли нового рівня лояльності — нові переваги вже чекають."
+          }
+        }
+      }
+    },
+    "push.loyalty.tier_upgrade.title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nová úroveň!"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You leveled up!"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы перешли на новый уровень!"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Postup na novú úroveň!"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ви перейшли на новий рівень!"
+          }
+        }
+      }
+    },
+    "push.membership.cancellation_effective.body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše předplatné skončilo. Obnovte ho a vraťte si výhody Plus."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your subscription has ended. Resubscribe to keep your Plus perks."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша подписка завершилась. Возобновите её, чтобы вернуть привилегии Plus."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše predplatné skončilo. Obnovte ho a získajte späť výhody Plus."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша підписка завершилася. Поновіть її, щоб повернути переваги Plus."
+          }
+        }
+      }
+    },
+    "push.membership.cancellation_effective.title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia Plus skončilo"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia Plus has ended"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia Plus завершён"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia Plus skončilo"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia Plus завершено"
+          }
+        }
+      }
+    },
+    "push.membership.expiring_soon.body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše předplatné se obnoví za 3 dny. Plán spravujete v aplikaci."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your subscription renews in 3 days. Manage your plan in the app."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша подписка продлится через 3 дня. Управляйте планом в приложении."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše predplatné sa obnoví o 3 dni. Plán spravujete v aplikácii."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша підписка поновиться через 3 дні. Керуйте планом у застосунку."
+          }
+        }
+      }
+    },
+    "push.membership.expiring_soon.title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia Plus se brzy obnoví"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia Plus is renewing soon"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia Plus скоро продлится"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia Plus sa čoskoro obnoví"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia Plus скоро поновиться"
+          }
+        }
+      }
+    },
+    "push.order.cancelled.body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka č. %1$@ byla zrušena. Klepnutím zobrazíte podrobnosti."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job #%1$@ has been cancelled. Tap for details."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ №%1$@ отменён. Нажмите, чтобы посмотреть детали."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazka č. %1$@ bola zrušená. Ťuknutím zobrazíte podrobnosti."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення №%1$@ скасовано. Торкніться, щоб переглянути деталі."
+          }
+        }
+      }
+    },
+    "push.order.cancelled.title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka zrušena"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job cancelled"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ отменён"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazka zrušená"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення скасовано"
+          }
+        }
+      }
+    },
+    "push.order.completed.body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka č. %1$@ je dokončena. Klepnutím zobrazíte souhrn."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job #%1$@ is complete. Tap to see the summary."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ №%1$@ завершён. Нажмите, чтобы посмотреть сводку."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazka č. %1$@ je dokončená. Ťuknutím zobrazíte súhrn."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення №%1$@ завершено. Торкніться, щоб переглянути підсумок."
+          }
+        }
+      }
+    },
+    "push.order.completed.title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka dokončena"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job completed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ завершён"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazka dokončená"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення завершено"
+          }
+        }
+      }
+    },
+    "push.order.confirmed.body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka č. %1$@ je potvrzena. Klepnutím zobrazíte podrobnosti."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job #%1$@ is confirmed. Tap to see the details."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ №%1$@ подтверждён. Нажмите, чтобы посмотреть детали."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazka č. %1$@ je potvrdená. Ťuknutím zobrazíte podrobnosti."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення №%1$@ підтверджено. Торкніться, щоб переглянути деталі."
+          }
+        }
+      }
+    },
+    "push.order.confirmed.title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka potvrzena"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job confirmed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ подтверждён"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazka potvrdená"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення підтверджено"
+          }
+        }
+      }
+    },
+    "push.order.in_progress.body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka č. %1$@ právě probíhá. Klepnutím ji můžete sledovat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job #%1$@ is underway. Tap to follow along."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ №%1$@ выполняется. Нажмите, чтобы следить за ним."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazka č. %1$@ práve prebieha. Ťuknutím ju môžete sledovať."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення №%1$@ виконується. Торкніться, щоб стежити за ним."
+          }
+        }
+      }
+    },
+    "push.order.in_progress.title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka probíhá"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job in progress"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ выполняется"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazka prebieha"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення виконується"
+          }
+        }
+      }
+    },
+    "push.order.new_available.body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nové zakázky ve vašem okolí: %1$@. Klepnutím je zobrazíte."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New jobs near you: %1$@. Tap to view."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новые заказы рядом с вами: %1$@. Нажмите, чтобы посмотреть."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nové zákazky vo vašom okolí: %1$@. Ťuknutím ich zobrazíte."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нові замовлення поруч із вами: %1$@. Торкніться, щоб переглянути."
+          }
+        }
+      }
+    },
+    "push.order.new_available.title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nové dostupné zakázky"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New jobs available"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новые доступные заказы"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nové dostupné zákazky"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нові доступні замовлення"
+          }
+        }
+      }
+    },
+    "push.order.on_the_way.body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš uklízeč míří k rezervaci #%1$@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your cleaner is heading to your booking #%1$@."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш клинер направляется к заказу #%1$@."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš upratovač smeruje k rezervácii #%1$@."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш клінер прямує до замовлення #%1$@."
+          }
+        }
+      }
+    },
+    "push.order.on_the_way.title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uklízeč je na cestě"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleaner is on the way"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клинер в пути"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upratovač je na ceste"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клінер у дорозі"
+          }
+        }
+      }
+    },
+    "push.order.refunded.body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše vrácení peněz za rezervaci #%1$@ se zpracovává."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your refund for booking #%1$@ is being processed."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Возврат за заказ #%1$@ обрабатывается."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše vrátenie peňazí za rezerváciu #%1$@ sa spracováva."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повернення коштів за замовлення #%1$@ обробляється."
+          }
+        }
+      }
+    },
+    "push.order.refunded.title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vrácení peněz na cestě"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refund on its way"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Возврат средств"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vrátenie peňazí"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повернення коштів"
+          }
+        }
+      }
+    },
+    "push.recurring.scheduled.body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše opakovaná rezervace #%1$@ je zítra. Klepněte pro potvrzení a platbu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your recurring booking #%1$@ is tomorrow. Tap to confirm and pay."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваше повторяющееся бронирование #%1$@ завтра. Нажмите, чтобы подтвердить и оплатить."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša opakovaná rezervácia #%1$@ je zajtra. Ťuknite pre potvrdenie a platbu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваше повторюване замовлення #%1$@ заплановано на завтра. Натисніть, щоб підтвердити та сплатити."
+          }
+        }
+      }
+    },
+    "push.recurring.scheduled.title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potvrďte zítřejší úklid"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm tomorrow's cleaning"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подтвердите завтрашнюю уборку"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potvrďte zajtrajšie upratovanie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Підтвердіть завтрашнє прибирання"
+          }
+        }
+      }
+    },
     "register": {
       "localizations": {
         "cs": {

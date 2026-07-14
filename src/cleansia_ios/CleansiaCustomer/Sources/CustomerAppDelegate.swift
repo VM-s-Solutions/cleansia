@@ -6,6 +6,7 @@ import UserNotifications
 
 final class CustomerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
     weak var registrar: (any PushRegistrar)?
+    var onTap: ((CustomerNotificationDestination) -> Void)?
     private(set) var firebaseConfigured = false
 
     func application(
@@ -95,5 +96,18 @@ final class CustomerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifica
                 self?.requestFcmToken(retriesLeft: retriesLeft - 1)
             }
         }
+    }
+
+    func userNotificationCenter(
+        _: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let userInfo = response.notification.request.content.userInfo
+        if let destination = CustomerNotificationDeepLink.resolve(userInfo) {
+            let onTap = onTap
+            Task { @MainActor in onTap?(destination) }
+        }
+        completionHandler()
     }
 }

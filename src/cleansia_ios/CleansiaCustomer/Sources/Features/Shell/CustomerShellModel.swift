@@ -52,6 +52,16 @@ final class CustomerShellModel: ViewModel {
         path = NavigationPath([ShellRoute.editProfile(showBookingHint: showBookingHint)])
     }
 
+    /// A push-notification tap replaces whatever the user was doing: any open
+    /// modal sheet is dismissed (the pushed destination would otherwise be
+    /// invisible under it), then the plan's tab + stack land the destination.
+    func applyPushTap(_ plan: CustomerPushTapRouting.Plan) {
+        isBookingPresented = false
+        isAddressManagerPresented = false
+        selection = plan.tab
+        path = NavigationPath(plan.routes)
+    }
+
     func pop() {
         if !path.isEmpty { path.removeLast() }
     }

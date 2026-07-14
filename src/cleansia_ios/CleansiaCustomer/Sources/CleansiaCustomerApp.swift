@@ -7,6 +7,7 @@ struct CleansiaCustomerApp: App {
     @StateObject private var snackbar: SnackbarController
     @StateObject private var sessionManager: SessionManager
     @StateObject private var preferences: CustomerPreferencesModel
+    @StateObject private var pushNavigation = PushNavigationModel()
     private let container: CustomerAppContainer
 
     init() {
@@ -24,6 +25,7 @@ struct CleansiaCustomerApp: App {
         WindowGroup {
             CustomerRootView(container: container, preferences: preferences)
                 .environmentObject(sessionManager)
+                .environmentObject(pushNavigation)
                 .environment(\.snackbarController, container.snackbar)
                 .environment(\.savedAddressRepository, container.savedAddressRepository)
                 .environment(\.locale, preferences.locale)
@@ -31,6 +33,9 @@ struct CleansiaCustomerApp: App {
                 .snackbarHost(container.snackbar)
                 .task {
                     appDelegate.registrar = container.pushRegistrar
+                    appDelegate.onTap = { [weak pushNavigation] destination in
+                        pushNavigation?.pendingDestination = destination
+                    }
                     container.startPush()
                     // The registration-token delegate misses cached tokens; pull it
                     // explicitly and let it retry as the APNs token settles.

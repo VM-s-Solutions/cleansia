@@ -8,6 +8,7 @@ struct CustomerShellView: View {
     @StateObject private var membershipVM: MembershipViewModel
     @StateObject private var profileVM: ProfileViewModel
     @ObservedObject private var preferences: CustomerPreferencesModel
+    @EnvironmentObject private var pushNavigation: PushNavigationModel
     @Environment(\.snackbarController) var snackbar
     let container: CustomerAppContainer
     private let onSignedOut: () -> Void
@@ -88,8 +89,19 @@ struct CustomerShellView: View {
         .onChange(of: model.selection) { _ in
             if model.resolveSelection() { openBooking() }
         }
+        .onChange(of: pushNavigation.pendingDestination) { destination in
+            guard let destination else { return }
+            model.applyPushTap(CustomerPushTapRouting.plan(for: destination))
+            _ = pushNavigation.consume()
+        }
         .task { await prefetch() }
-        .onAppear { snackbar.setBottomInset(ShellSnackbarInset.inset(pathDepth: model.path.count)) }
+        .onAppear {
+            if let destination = pushNavigation.pendingDestination {
+                model.applyPushTap(CustomerPushTapRouting.plan(for: destination))
+                _ = pushNavigation.consume()
+            }
+            snackbar.setBottomInset(ShellSnackbarInset.inset(pathDepth: model.path.count))
+        }
         .onChange(of: model.path.count) { depth in
             snackbar.setBottomInset(ShellSnackbarInset.inset(pathDepth: depth))
         }

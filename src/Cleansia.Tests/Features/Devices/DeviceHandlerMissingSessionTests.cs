@@ -45,7 +45,7 @@ public class DeviceHandlerMissingSessionTests
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.UserNotFound, result.Error!.Message);
         _deviceRepository.Verify(
-            r => r.GetByUserAndDeviceIdAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            r => r.GetByUserAndDeviceIdIncludingInactiveAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 

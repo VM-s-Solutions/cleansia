@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
+using Cleansia.Core.AppServices.Features.Devices;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Users;
@@ -7,6 +8,7 @@ using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using TestConstants = Cleansia.TestUtilities.Constants;
@@ -218,6 +220,68 @@ public class RefreshTokenFlowTests(PostgresContainerFixture fixture) : BaseInteg
     }
 
     [Fact]
+    public async Task RevokedDevice_RefreshIsRejected_WhileSiblingDeviceStillRotates()
+    {
+        const string deviceA = "device-A";
+        const string deviceB = "device-B";
+        string? refreshB = null;
+
+        await TestMethod(
+            arrange: SeedConfirmedSessionUser,
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var accessor = provider.GetRequiredService<IHttpContextAccessor>();
+
+                // The refresh token's DeviceId is stamped from the X-Device-Id header through the
+                // real RequestMetadataProvider — the same path a mobile login takes.
+                accessor.HttpContext = HttpContextWithDeviceId(deviceA);
+                var loginA = await Login(mediator);
+                var refreshA = loginA.Value.RefreshToken!;
+                var registeredA = await mediator.Send(
+                    new RegisterDevice.Command(deviceA, "push-token-a", "android"));
+
+                accessor.HttpContext = HttpContextWithDeviceId(deviceB);
+                var loginB = await Login(mediator);
+                refreshB = loginB.Value.RefreshToken!;
+                await mediator.Send(new RegisterDevice.Command(deviceB, "push-token-b", "android"));
+
+                await mediator.Send(new RevokeDevice.Command(registeredA.Value.DeviceId));
+
+                accessor.HttpContext = HttpContextWithDeviceId(deviceA);
+                var revokedRefresh = await Refresh(mediator, refreshA);
+
+                accessor.HttpContext = HttpContextWithDeviceId(deviceB);
+                var siblingRefresh = await Refresh(mediator, refreshB!);
+
+                return (Revoked: revokedRefresh, Sibling: siblingRefresh);
+            },
+            assert: async (CleansiaDbContext context,
+                (BusinessResult<JwtTokenResponse> Revoked, BusinessResult<JwtTokenResponse> Sibling) result) =>
+            {
+                Assert.False(result.Revoked.IsSuccess);
+                Assert.NotNull(result.Revoked.Error);
+                Assert.Equal(BusinessErrorMessage.InvalidRefreshToken, result.Revoked.Error!.Message);
+
+                Assert.True(result.Sibling.IsSuccess);
+                Assert.False(string.IsNullOrEmpty(result.Sibling.Value.RefreshToken));
+                Assert.NotEqual(refreshB, result.Sibling.Value.RefreshToken);
+
+                var tokens = await context.RefreshTokens.ToListAsync();
+
+                var tokenA = tokens.Single(t => t.DeviceId == deviceA);
+                Assert.Equal("device_revoked", tokenA.RevokedReason);
+                Assert.NotNull(tokenA.RevokedAt);
+
+                var tokensB = tokens.Where(t => t.DeviceId == deviceB).OrderBy(t => t.CreatedOn).ToList();
+                Assert.Equal(2, tokensB.Count);
+                Assert.Equal("rotated", tokensB[0].RevokedReason);
+                Assert.Equal(tokensB[1].Id, tokensB[0].ReplacedByTokenId);
+                Assert.Null(tokensB[1].RevokedAt);
+            });
+    }
+
+    [Fact]
     public async Task Logout_UnknownToken_IsIdempotent()
     {
         await TestMethod(
@@ -264,6 +328,31 @@ public class RefreshTokenFlowTests(PostgresContainerFixture fixture) : BaseInteg
         user.ConfirmEmail();
         context.Users.Add(user);
         await context.CommitAsync(CancellationToken.None);
+    }
+
+    private static async Task SeedConfirmedSessionUser(CleansiaDbContext context)
+    {
+        context.Languages.Add(Language.Create("en", "English"));
+        await context.SaveChangesAsync();
+
+        var user = User.CreateWithPassword(
+            email: TestConstants.TestUserSession.TestUserEmail,
+            password: TestConstants.TestUserSession.TestUserPassword,
+            firstName: TestConstants.TestUserSession.TestFirstName,
+            lastName: TestConstants.TestUserSession.TestLastName);
+        // RegisterDevice/RevokeDevice resolve the caller from IUserSessionProvider (the harness
+        // pins it to TestUserId), so the seeded owner must BE that session user.
+        user.Id = TestConstants.TestUserSession.TestUserId;
+        user.ConfirmEmail();
+        context.Users.Add(user);
+        await context.CommitAsync(CancellationToken.None);
+    }
+
+    private static DefaultHttpContext HttpContextWithDeviceId(string deviceId)
+    {
+        var context = new DefaultHttpContext();
+        context.Request.Headers["X-Device-Id"] = deviceId;
+        return context;
     }
 
     private static string HashToken(string raw)

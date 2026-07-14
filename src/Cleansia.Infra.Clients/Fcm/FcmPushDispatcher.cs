@@ -59,20 +59,7 @@ public class FcmPushDispatcher(
             };
         }
 
-        var payload = new Dictionary<string, string>(data) { ["event_key"] = eventKey };
-
-        var message = new MulticastMessage
-        {
-            Tokens = deviceTokens.ToArray(),
-            Data = payload,
-            // Android-specific: high-priority so transactional events
-            // wake the device immediately. Marketing pushes (Promo) should
-            // override this — caller controls per-event.
-            Android = new AndroidConfig
-            {
-                Priority = Priority.High,
-            },
-        };
+        var message = FcmMessageFactory.Build(deviceTokens, eventKey, data);
 
         BatchResponse response;
         try

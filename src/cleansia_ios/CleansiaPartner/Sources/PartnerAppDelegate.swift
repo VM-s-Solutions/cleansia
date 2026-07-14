@@ -22,6 +22,8 @@ final class PartnerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificat
             PushLog.log.error("Firebase NOT configured: GoogleService-Info.plist missing from the app bundle")
         }
         UNUserNotificationCenter.current().delegate = self
+        // Ground truth: is the push entitlement actually in the signed binary?
+        PushDiagnostics.logApsEnvironment()
         return true
     }
 

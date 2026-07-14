@@ -40,7 +40,10 @@ final class CustomerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifica
         _: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
-        NSLog("APNs registration failed: %@", error.localizedDescription)
+        // A failure here (typically "no valid 'aps-environment' entitlement
+        // string found") is the definitive sign that Push is not provisioned
+        // on the App ID / profile — not a code problem.
+        PushLog.log.error("APNs registration FAILED: \(error.localizedDescription, privacy: .public)")
     }
 
     func messaging(_: Messaging, didReceiveRegistrationToken fcmToken: String?) {

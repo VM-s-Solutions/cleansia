@@ -162,7 +162,9 @@ final class CustomerAppContainer: AppContainer {
     }
 
     func startPush() {
-        hasSessionSubject.send(hasValidSession)
+        let seeded = hasValidSession
+        PushLog.log.notice("startPush: attaching observer, seeding session=\(seeded, privacy: .public)")
+        hasSessionSubject.send(seeded)
         pushSessionObserver.attach(
             hasSession: hasSessionSubject.eraseToAnyPublisher(),
             apnsToken: pushRegistrar.apnsToken
@@ -170,11 +172,14 @@ final class CustomerAppContainer: AppContainer {
         Task {
             if await pushRegistrar.requestAuthorization() {
                 pushRegistrar.registerForRemoteNotifications()
+            } else {
+                PushLog.log.error("startPush: notification permission NOT granted — APNs registration not requested")
             }
         }
     }
 
     func updatePushSession(hasSession: Bool) {
+        PushLog.log.notice("updatePushSession -> \(hasSession, privacy: .public)")
         hasSessionSubject.send(hasSession)
     }
 

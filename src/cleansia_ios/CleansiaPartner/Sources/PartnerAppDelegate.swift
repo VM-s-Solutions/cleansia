@@ -53,7 +53,13 @@ final class PartnerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificat
     }
 
     func messaging(_: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        guard let registrar else { return }
+        let tokenLen = fcmToken?.count ?? 0
+        PushLog.log.notice("messaging delegate fired (fcm tokenLen=\(tokenLen, privacy: .public))")
+        guard let registrar else {
+            // Recovered later by the requestFcmToken pull, but never drop silently.
+            PushLog.log.error("messaging delegate DROPPED the token: registrar not attached yet")
+            return
+        }
         let forwarder = PushTokenForwarder(
             registrar: registrar,
             isFirebaseConfigured: { [weak self] in self?.firebaseConfigured ?? false }

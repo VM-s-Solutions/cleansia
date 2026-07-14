@@ -19,13 +19,15 @@ public enum PushDiagnostics {
               // The file is a CMS blob wrapping a plain-text XML plist; slice it out.
               let raw = String(data: data, encoding: .isoLatin1),
               let start = raw.range(of: "<?xml"),
-              let end = raw.range(of: "</plist>") else {
+              let end = raw.range(of: "</plist>")
+        else {
             return nil
         }
         let plistText = String(raw[start.lowerBound ..< end.upperBound])
         guard let plistData = plistText.data(using: .isoLatin1),
               let plist = try? PropertyListSerialization.propertyList(from: plistData, format: nil) as? [String: Any],
-              let entitlements = plist["Entitlements"] as? [String: Any] else {
+              let entitlements = plist["Entitlements"] as? [String: Any]
+        else {
             return nil
         }
         return entitlements["aps-environment"] as? String
@@ -35,7 +37,8 @@ public enum PushDiagnostics {
     /// actionable message when it is missing. Call once at launch.
     public static func logApsEnvironment() {
         if let env = apsEnvironment() {
-            PushLog.log.notice("Push IS provisioned — aps-environment in the embedded profile = \(env, privacy: .public)")
+            PushLog.log
+                .notice("Push IS provisioned — aps-environment in the embedded profile = \(env, privacy: .public)")
         } else {
             PushLog.log.error(
                 "Push is NOT provisioned for this build — the embedded provisioning profile has no aps-environment (or there is no profile). This is why iOS issues no APNs token AND no failure on a device. Fix: in Xcode → Signing & Capabilities, select your paid Team, add the Push Notifications capability (registers it on the App ID), then clean-rebuild on the device."

@@ -14,7 +14,16 @@ public struct PushTokenForwarder {
     }
 
     public func forward(fcmToken: String?) {
-        guard isFirebaseConfigured(), let token = fcmToken, !token.isEmpty else { return }
+        // Every drop is logged — a silent return here hides the break point.
+        guard isFirebaseConfigured() else {
+            PushLog.log.error("forward DROPPED: Firebase not configured")
+            return
+        }
+        guard let token = fcmToken, !token.isEmpty else {
+            PushLog.log.error("forward DROPPED: fcm token nil/empty")
+            return
+        }
+        PushLog.log.notice("forward: fcm token (len=\(token.count, privacy: .public)) -> registrar")
         registrar.reportRegistered(token: token)
     }
 }

@@ -45,6 +45,10 @@ the handler's `IAuditContext` snapshot), a snapshot carrying **raw subject PII**
 best-effort *success*-audit are ADR-0012 violations (the success row must ride the action's commit;
 only *failures* are written out-of-band and must never re-throw into the caller's error).
 
+**Token lifetime (ADR-0024).** The access-token TTL on a host that issues device-bound sessions is a
+security bound, not a tuning knob — changing `AccessTokenExpMinutes` on a mobile host requires a
+superseding ADR (it *is* the device-revocation latency; pinned by TC-REVOKE-TTL-4's raw-file test).
+
 ## S3 — Resource-by-id endpoints must check ownership
 
 Anything that takes a resource id and operates on it must verify the caller owns the resource —

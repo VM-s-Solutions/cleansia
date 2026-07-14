@@ -9,7 +9,7 @@ updated: 2026-07-15
 depends_on: []
 blocks: []
 stories: []
-adrs: []
+adrs: [ADR-0024]
 layers: [architect, backend]
 security_touching: true
 priority: high
@@ -31,14 +31,43 @@ source: owner report (revoked iPhone from the sim; iPhone stayed logged in) + re
 > access for up to a day.
 
 ## Decision to make (architect)
-- **A (recommended, minimal):** drop `AccessTokenExpMinutes` on the mobile hosts to 15–60 min.
+**DECIDED — ADR-0024 accepted 2026-07-15 (panel: challenge/defense/verdict trail in the ADR).**
+Option **A** at **30 min**, mobile hosts only, config-only. B and C recorded as deferred escalations
+with named revisit triggers (ADR-0024 D3). AC1 is satisfied by the ADR.
+
+- **A (CHOSEN, minimal):** drop `AccessTokenExpMinutes` on the mobile hosts to **30** min.
   Refresh is already solid (rotation + theft-cascade + forced-logout on refresh failure verified on
   iOS and Android customer). Revocation latency becomes ≤ TTL. Config-only; no code.
-- **B (immediate revocation):** per-request device/session validation (cached `Device.IsActive`
-  lookup or jti denylist). Real cost per request; decide if the product needs instant kill.
-- **C (UX upgrade, later):** push-driven force-logout on `device_revoked` — the FCM queue pipeline
-  exists; needs a session/device event in `NotificationEventCatalog` + client handling (relates to
-  T-0404 receive-side work on iOS).
+- **B (deferred):** per-request device/session validation. Trigger: a real incident where ≤ 30 min
+  residual access caused harm, or a compliance/product demand for instant kill.
+- **C (deferred):** push-driven force-logout on `device_revoked`. Trigger: T-0404 (iOS receive-side)
+  closing. Not a security control — UX layer over A only.
+
+## Ratified implementation instruction (backend lane — from the ADR-0024 verdict)
+**Config change (exactly four files, value `30`, key `JwtSettings:AccessTokenExpMinutes`):**
+1. `src/Cleansia.Web.Mobile.Partner/appsettings.json` (line 23)
+2. `src/Cleansia.Web.Mobile.Partner/appsettings.Production.json` (line 20)
+3. `src/Cleansia.Web.Mobile.Customer/appsettings.json` (line 23)
+4. `src/Cleansia.Web.Mobile.Customer/appsettings.Production.json` (line 20)
+
+**No code change** in `TokenService.cs` / `RefreshToken.cs` / `RefreshTokenService.cs` / any
+`ServiceExtensions.cs` (ClockSkew stays `Zero`) / any client / `deploy/bicep/**`. Web hosts'
+appsettings stay byte-identical.
+
+**Test contract (AC2/AC3 — full definitions in ADR-0024 §"How a reviewer verifies compliance"):**
+- **TC-REVOKE-TTL-1** — integration: login `X-Device-Id: A` → `RevokeDevice(A)` → A's refresh →
+  `BusinessErrorMessage.InvalidRefreshToken`; device B's refresh still rotates (extends
+  `RefreshTokenFlowTests`, which lacks the `device_revoked` reason today).
+- **TC-REVOKE-TTL-2** — boot a mobile host with `AccessTokenExpMinutes` overridden to a fractional
+  value (~`0.05` ≈ 3 s; the setting is a `double`), login, authed call OK, wait past expiry, same
+  call → 401. Do NOT try a fake-clock/boundary test: minting uses raw `DateTime.UtcNow`
+  (`TokenService.cs:74`) and this ticket must not touch that file.
+- **TC-REVOKE-TTL-3** — re-run/extend the existing client forced-signout pins as AC2 evidence.
+- **TC-REVOKE-TTL-4** — plain xUnit raw-file pin (NOT a HostTests bound-config assertion — the
+  HostTests overlay pins 15 and would mask the value): parse the four files above as JSON, assert
+  `30`; also assert the three web hosts' six appsettings files still carry `1440`.
+- **TC-REVOKE-TTL-5** — `RevokeByDeviceAsync_Leaves_A_Null_DeviceId_Token_Alive` stays green,
+  unedited.
 
 ## Acceptance criteria
 - [ ] **AC1** — ADR records the chosen latency posture (TTL value and/or per-request check) and why.
@@ -55,6 +84,13 @@ source: owner report (revoked iPhone from the sim; iPhone stayed logged in) + re
 
 ## Status log
 - 2026-07-15 — filed `proposed` from the owner's report + the session-revocation audit.
+- 2026-07-15 — **ADR-0024 accepted** by the architect panel (challenger + lead; amendments A1–A5:
+  429-vs-transport honesty, burst-window NAT math, admin-host separability in the web follow-up,
+  D4.5/D4.6 residues, TC-2/TC-4 re-specified to feasible mechanisms). AC1 done. Backend lane
+  unblocked — see "Ratified implementation instruction" above. Living doc
+  `agents/architecture/decisions/auth-sessions.md` updated to accepted state. PM to file the four
+  follow-up tickets listed in the ADR Verdict (client refresh classification; web/admin TTL;
+  password-change session revocation; TimeProvider minting) + the `security-rules.md` catalog line.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

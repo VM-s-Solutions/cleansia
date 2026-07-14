@@ -5,7 +5,7 @@ status: proposed
 size: M
 owner: architect
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-07-15
 depends_on: []
 blocks: []
 stories: []
@@ -56,6 +56,28 @@ source: phase/web-fix1 — the deployed-web 401 root cause (owner chose the loca
 ## Status log
 - 2026-07-11 — filed `proposed` from the phase/web-fix1 root cause + owner decision (devremote for dev; no SWA
   SKU spend). This ticket is the enabler for ANY deployed web URL to authenticate.
+- 2026-07-15 — **AC2 infra enabler authored, default-off** (zero behavior change until a param file opts in):
+  `customDomains` param in `main.bicep` (map of host token → hostname, default `{}`) →
+  `modules/appServiceCustomDomain.bicep` (hostname binding → free managed cert → SNI flip, the two-phase
+  sequenced in ONE deployment via the nested `appServiceSniBinding.bicep`) + `staticWebApp.bicep` grew an
+  optional `customDomain` (cname-delegation; SWA manages its own TLS). Setting a frontend key auto-aligns
+  platform CORS + app-level `CorsOrigins__n` + `customerWebBaseUrl` (SendGrid links, Stripe redirects).
+  Recommended per-env hostnames live commented-out in `weu.dev.bicepparam`/`weu.prod.bicepparam`; owner
+  runbook (DNS records, deploy sequence, Google OAuth origins) = `deploy/AZURE-DEV-RUNBOOK.md` §12.
+  No workflow change needed — the hostnames ride the existing `.bicepparam` files.
+  **Flag for AC1 (architect):** admin `environment.prod.ts` sends auth to `api.cleansia.cz` (the PARTNER
+  API) whose committed prod `CorsOrigins` lacks `admin.cleansia.cz` — ratify or fix that pairing before
+  prod cut-over. AC3 (deployed web build configs) untouched: `environment.staging.ts` still targets the
+  `azurewebsites.net` hosts (correct for devremote; a deployed-dev web build needs a same-site config).
+- 2026-07-15 — reviewer verdict CHANGES → fixed (tracker tokens stripped from bicep source comments;
+  `@minLength(1)` on the module `hostname` params; ticket front-matter date; conditional-evaluation
+  comment reworded). **Reviewer's mandatory gate before anyone uncomments a `customDomains` param
+  block:** run a SERVER-SIDE what-if with a POPULATED `customDomains` param first (e.g. dispatch
+  Deploy to DEV → mode=`what-if` with the param block uncommented on a branch, or
+  `az deployment group what-if … --parameters 'customDomains={"ssr":"dev.cleansia.cz"}'`) — the opt-in
+  `toObject`/lambda path (`corsOriginsAppSettings`, main.bicep) is compiler-unverified locally (no
+  bicep CLI on the authoring machine; binary download denied), so the default-off template is the only
+  path exercised until a server-side compile proves the populated one.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->

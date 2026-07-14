@@ -44,8 +44,26 @@ param ciPrincipalId = ''
 // ── Alerting (ADR-0015 D3) — the ops email the dev Action Group notifies (not a secret) ─────────────
 param alertEmail = 'cmisa695@gmail.com'
 
+// ── Custom domains (deployed-web same-site enabler) — OFF until the owner creates the DNS records ───
+// Deployed web cookie auth needs the frontends + APIs on ONE registrable domain (SameSite=Strict;
+// the Azure default hostnames are PSL-separated sites). Uncomment — any subset works — ONLY AFTER the
+// DNS records (CNAME + asuid TXT per hostname) exist: deploy/AZURE-DEV-RUNBOOK.md §12. The dev set
+// below mirrors the prod shape (appsettings.Production.json / environment.prod.ts) under the dev zone.
+// The mobile API hosts are body-token (no cookies/CORS) and need no custom domain.
+// param customDomains = {
+//   ssr: 'dev.cleansia.cz'
+//   'swa-partner': 'partner.dev.cleansia.cz'
+//   'swa-admin': 'admin.dev.cleansia.cz'
+//   'api-partner': 'api.dev.cleansia.cz'
+//   'api-admin': 'api-admin.dev.cleansia.cz'
+//   'api-customer': 'api-customer.dev.cleansia.cz'
+// }
+
 // ── Tags applied to every resource (commonTags in main.bicep adds project/region/env/managedBy) ──────
 param tags = {
   costCenter: 'cleansia-dev'
   environment: 'dev'
 }
+
+// Flip ONLY after the Key Vault secret Fcm--ServiceAccountJson exists (push runbook §0):
+// param fcmSecretProvisioned = true

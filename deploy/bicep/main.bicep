@@ -75,6 +75,31 @@ param ciPrincipalId string = ''
 @description('Ops email the alerts Action Group notifies (ADR-0015 D3). Empty string SKIPS the alerts module entirely (prod supplies its own address when it goes live).')
 param alertEmail string = ''
 
+@description('''
+Custom hostnames under the ONE registrable domain (cleansia.cz), keyed by host token. Default {} =
+no custom domains — zero behavior change. This is the same-site enabler for deployed web cookie auth:
+the HttpOnly SameSite=Strict auth cookies only flow when frontend + API share a registrable
+domain, and the Azure default hostnames (*.azurewebsites.net / *.azurestaticapps.net) are
+PSL-separated sites, so a deployed web URL cannot authenticate without these.
+
+Recognized keys (any subset; values are bare hostnames, no scheme):
+  api-partner | api-admin | api-customer | api-partner-mobile | api-customer-mobile   (the API hosts)
+  ssr | ssr-www                                                    (the customer SSR; www = prod only)
+  swa-partner | swa-admin                                                             (the two SPAs)
+
+Setting any frontend key (ssr/ssr-www/swa-*) also folds that origin into the browser-host CORS (both
+the App Service platform CORS and the app-level CorsOrigins app settings) and, for `ssr`, moves
+customerWebBaseUrl (SendGrid links + Stripe redirects) onto the custom domain.
+
+DNS is the hard precondition: the CNAME (or apex A) + asuid TXT records must exist BEFORE a deploy
+that sets an entry, or the deployment fails at the binding/validation step — the records, the
+recommended per-env hostnames, and the owner sequence live in deploy/AZURE-DEV-RUNBOOK.md §12.
+''')
+param customDomains object = {}
+
+@description('Set true ONLY after the Key Vault secret Fcm--ServiceAccountJson exists — it wires FCM__ServiceAccountJson onto the Functions host. Default false keeps the push dispatcher in its clean disabled no-op instead of dead-lettering on an unresolvable KV reference.')
+param fcmSecretProvisioned bool = false
+
 @description('Resource tags applied to every resource.')
 param tags object = {}
 
@@ -213,18 +238,43 @@ func kvRef(vaultUri string, secretName string) string =>
   '@Microsoft.KeyVault(SecretUri=${vaultUri}/secrets/${secretName})'
 
 // Browser host (SPA/SSR) CORS origins — the dev SWA + SSR default hostnames, not localhost (D3).
-var browserCorsOrigins = [
+// When customDomains adds same-site frontend hostnames they are APPENDED — the default hostnames keep
+// serving during the cut-over, nothing is removed. Every map lookup is defensively contains()-guarded
+// so an absent key can never surface as a lookup failure.
+var frontendCustomDomainKeys = [
+  'ssr'
+  'ssr-www'
+  'swa-partner'
+  'swa-admin'
+]
+var customFrontendOriginCandidates = [
+  for key in frontendCustomDomainKeys: contains(customDomains, key) ? 'https://${customDomains[key]}' : ''
+]
+var customFrontendOrigins = filter(customFrontendOriginCandidates, origin => !empty(origin))
+var browserCorsOrigins = concat([
   'https://${staticWebApps[0].outputs.defaultHostName}'
   'https://${staticWebApps[1].outputs.defaultHostName}'
   'https://${ssr.outputs.defaultHostName}'
-]
+], customFrontendOrigins)
+
+// App-level CORS must AGREE with the platform CORS above: the hosts read `CorsOrigins` from config,
+// and a deployed host runs the Production JSON whose origins are the PROD cleansia.cz set — a dev
+// custom-domain frontend would pass platform CORS yet be refused by the app. When (and only when)
+// customDomains adds frontend origins, the FULL origin list is emitted as indexed app settings
+// (CorsOrigins__0..n), which override the JSON entries by index; the emitted list (>= 3 entries) is
+// always at least as long as the committed arrays (<= 2), so no stale JSON tail can leak through the
+// index merge (.NET merges JSON config arrays BY INDEX). Empty customDomains emits nothing — zero
+// behavior change.
+var corsOriginsAppSettings = empty(customFrontendOrigins) ? {} : toObject(range(0, length(browserCorsOrigins)), i => 'CorsOrigins__${i}', i => browserCorsOrigins[i])
 
 // App settings shared by every API host: DB + Storage + JWT + SendGrid + Sentry + Mapbox Key Vault
 // references, plus the (non-secret) App Insights connection string. The `__` -> `:` App Service
 // mapping means the app reads its existing config keys with no code change (ADR-0015 D4).
 // The customer SSR host — the base for customer-facing links in emails/Stripe redirects (reset
-// password, order status, checkout success/cancel). Dev: the SSR default hostname.
-var customerWebBaseUrl = 'https://${ssr.outputs.defaultHostName}'
+// password, order status, checkout success/cancel). The SSR default hostname until the `ssr` custom
+// domain is configured — then the links move onto it.
+var ssrCustomHost = contains(customDomains, 'ssr') ? customDomains.ssr : ''
+var customerWebBaseUrl = empty(ssrCustomHost) ? 'https://${ssr.outputs.defaultHostName}' : 'https://${ssrCustomHost}'
 
 // SendGrid email config — ONE shared definition consumed by BOTH the API hosts and the Functions app
 // (the Functions container ships an appsettings.json with only cron schedules, so it receives ZERO
@@ -268,6 +318,21 @@ var apiBaseSettings = union({
   ForwardedHeaders__ForwardLimit: '1'
 }, sendGridSettings)
 
+// FCM push dispatch — the Functions queue consumer is the ONLY dispatcher; FcmPushDispatcher is a
+// deliberate no-op while this is unset, so pushes are silently ACKed until the secret exists. Value:
+// the Firebase service-account JSON (raw or base64 — the dispatcher auto-detects), owner-populated in
+// Key Vault (Firebase Console → Project settings → Service accounts → Generate new private key; note
+// the GCP org policy iam.disableServiceAccountKeyCreation must allow key creation for that SA).
+// Param-gated DEFAULT-OFF because ORDER MATTERS: an unresolvable KV reference hands the app the
+// literal reference string, which fails init as TRANSIENT and dead-letters every push instead of the
+// clean disabled no-op. Flip fcmSecretProvisioned in the .bicepparam only AFTER the Key Vault secret
+// Fcm--ServiceAccountJson exists.
+var fcmSettings = fcmSecretProvisioned
+  ? {
+      FCM__ServiceAccountJson: kvRef(keyVaultUri, 'Fcm--ServiceAccountJson')
+    }
+  : {}
+
 var stripeSettings = {
   Stripe__SecretKey: kvRef(keyVaultUri, 'Stripe--SecretKey')
   Stripe__WebhookSecret: kvRef(keyVaultUri, 'Stripe--WebhookSecret')
@@ -306,7 +371,10 @@ module apiAppServices 'modules/appService.bicep' = [
       location: location
       appServicePlanId: appServicePlan.outputs.id
       linuxFxVersion: apiLinuxFxVersion
-      appSettings: host.needsStripe ? union(apiBaseSettings, fiscalSettings, stripeSettings) : union(apiBaseSettings, fiscalSettings)
+      // union() with {} is a no-op, so each host receives exactly the blocks its flags select: Stripe
+      // for the payment initiators, the app-level CORS override for browser hosts (empty until
+      // customDomains adds frontend origins — see corsOriginsAppSettings).
+      appSettings: union(apiBaseSettings, fiscalSettings, host.needsStripe ? stripeSettings : {}, host.browserFacing ? corsOriginsAppSettings : {})
       corsAllowedOrigins: host.browserFacing ? browserCorsOrigins : []
       httpsOnly: true
       alwaysOn: false
@@ -314,6 +382,63 @@ module apiAppServices 'modules/appService.bicep' = [
     }
   }
 ]
+
+// ---------------------------------------------------------------------------------------------------
+// Custom domains (the same-site enabler for deployed web cookie auth) — hostname binding + managed
+// certificate + SNI flip per configured customDomains entry, layered onto the hosts above.
+// Default-off: an absent key deploys NOTHING for that host. DNS (CNAME/A + asuid TXT) must exist
+// before an entry is set — the records + owner sequence live in deploy/AZURE-DEV-RUNBOOK.md §12. The
+// SWA domains are NOT here — each staticWebApp module binds its own (SWA validates via the CNAME and
+// manages its own TLS).
+// ---------------------------------------------------------------------------------------------------
+
+module apiCustomDomains 'modules/appServiceCustomDomain.bicep' = [
+  for (host, i) in apiHosts: if (contains(customDomains, 'api-${host.audience}')) {
+    name: 'domain-api-${host.audience}'
+    params: {
+      siteName: apiSiteNames[i]
+      hostname: contains(customDomains, 'api-${host.audience}') ? customDomains['api-${host.audience}'] : ''
+      appServicePlanId: appServicePlan.outputs.id
+      location: location
+      tags: commonTags
+    }
+    dependsOn: [
+      apiAppServices[i]
+    ]
+  }
+]
+
+module ssrCustomDomain 'modules/appServiceCustomDomain.bicep' = if (contains(customDomains, 'ssr')) {
+  name: 'domain-ssr'
+  params: {
+    siteName: ssrSiteName
+    hostname: ssrCustomHost
+    appServicePlanId: appServicePlan.outputs.id
+    location: location
+    tags: commonTags
+  }
+  dependsOn: [
+    ssr
+  ]
+}
+
+// www (prod: www.cleansia.cz) binds the SAME site as `ssr`, so it chains after it — App Service 409s
+// concurrent host-level writes to one site. The dependsOn on a condition-false module is ignored by
+// ARM, so ssr-www also deploys standalone.
+module ssrWwwCustomDomain 'modules/appServiceCustomDomain.bicep' = if (contains(customDomains, 'ssr-www')) {
+  name: 'domain-ssr-www'
+  params: {
+    siteName: ssrSiteName
+    hostname: contains(customDomains, 'ssr-www') ? customDomains['ssr-www'] : ''
+    appServicePlanId: appServicePlan.outputs.id
+    location: location
+    tags: commonTags
+  }
+  dependsOn: [
+    ssr
+    ssrCustomDomain
+  ]
+}
 
 // ---------------------------------------------------------------------------------------------------
 // Compute plan + the customer SSR App Service (Node) — the sixth appService instantiation.
@@ -365,6 +490,8 @@ module staticWebApps 'modules/staticWebApp.bicep' = [
       name: 'swa-cleansia-${audience}-${region}-${env}'
       location: staticWebAppLocation
       skuName: staticWebAppSku
+      // Same-site enabler — '' (key absent, the default) binds no custom domain.
+      customDomain: contains(customDomains, 'swa-${audience}') ? customDomains['swa-${audience}'] : ''
       tags: commonTags
     }
   }
@@ -390,7 +517,7 @@ module functionApp 'modules/functionApp.bicep' = {
     storageAccountName: storage.outputs.storageAccountName
     storageAccountId: storage.outputs.storageAccountId
     appInsightsConnectionString: appInsights.outputs.connectionString
-    extraAppSettings: union(sendGridSettings, fiscalSettings, {
+    extraAppSettings: union(sendGridSettings, fiscalSettings, fcmSettings, {
       Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
     })
     tags: commonTags

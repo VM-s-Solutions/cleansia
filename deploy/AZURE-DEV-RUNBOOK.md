@@ -538,8 +538,114 @@ P4 secrets → P5 what-if, then deploy → P6 SWA tokens + final deploy + smoke 
 
 ---
 
+## 12. Custom domains under `cleansia.cz` — deployed web cookie auth (T-0400)
+
+> **Why:** the web apps authenticate with HttpOnly **`SameSite=Strict`** cookies, which only flow when
+> the frontend and the API share a **registrable domain**. The Azure default hostnames
+> (`*.azurewebsites.net`, `*.azurestaticapps.net`) are all Public-Suffix-List-separated sites, so a
+> **deployed** web URL can never authenticate on them — by design. Local dev uses the shipped
+> `devremote` proxy (`npx nx serve <app> --configuration=devremote`) and needs none of this. This
+> section is the enabler for **any deployed web URL**: put the frontends + browser-facing APIs on
+> `cleansia.cz` subdomains and the existing cookies just work — no cookie attribute changes
+> (the cookies are host-only; no `Domain` attribute exists or is needed).
+>
+> Everything is **default-off**: the Bicep `customDomains` param defaults to `{}` (zero change); each
+> `.bicepparam` carries the recommended set commented out. **The DNS records must exist BEFORE the
+> deploy that sets them** — that ordering is the only "two-phase" you own; the template itself
+> sequences the App Service three-step (hostname binding → free managed certificate → SNI flip) inside
+> one deployment (`modules/appServiceCustomDomain.bicep`).
+
+### The per-env hostname set (mirrors the committed prod config shape)
+
+| `customDomains` key | Site | **dev** hostname | **prod** hostname (already assumed by `appsettings.Production.json` / `environment.prod.ts`) |
+|---|---|---|---|
+| `ssr` | `web-cleansia-customer-weu-<env>` | `dev.cleansia.cz` | `cleansia.cz` *(apex — A record, see below)* |
+| `ssr-www` | same SSR site | — (skip) | `www.cleansia.cz` |
+| `swa-partner` | `swa-cleansia-partner-weu-<env>` | `partner.dev.cleansia.cz` | `partner.cleansia.cz` |
+| `swa-admin` | `swa-cleansia-admin-weu-<env>` | `admin.dev.cleansia.cz` | `admin.cleansia.cz` |
+| `api-partner` | `api-cleansia-partner-weu-<env>` | `api.dev.cleansia.cz` | `api.cleansia.cz` |
+| `api-admin` | `api-cleansia-admin-weu-<env>` | `api-admin.dev.cleansia.cz` | `api-admin.cleansia.cz` |
+| `api-customer` | `api-cleansia-customer-weu-<env>` | `api-customer.dev.cleansia.cz` | `api-customer.cleansia.cz` |
+| `api-partner-mobile` / `api-customer-mobile` | the two mobile hosts | **not needed** | **not needed** (body-token — no cookies, no browser CORS) |
+
+### 12.1 — DNS records (at the `cleansia.cz` DNS provider, BEFORE deploying)
+
+Fetch the App Service **domain verification id** once — it is the same for every app in the
+subscription (SWAs don't need it; their CNAME is the validation):
+
+```bash
+az webapp show -g rg-cleansia-weu-dev -n web-cleansia-customer-weu-dev \
+  --query customDomainVerificationId -o tsv
+```
+
+Per hostname:
+
+| Hostname type | Records |
+|---|---|
+| **Subdomain on an App Service** (`dev.cleansia.cz`, `api*.dev.cleansia.cz`, prod `www`/`api*`) | `CNAME <hostname>` → the site's default hostname (e.g. `dev` → `web-cleansia-customer-weu-dev.azurewebsites.net`) **and** `TXT asuid.<hostname>` → the verification id |
+| **Subdomain on a Static Web App** (`partner[.dev]`, `admin[.dev]`) | `CNAME <hostname>` → the SWA default hostname (read it from the deployment outputs `partnerSpaHostName` / `adminSpaHostName`) — the CNAME **is** the validation, nothing else |
+| **Apex `cleansia.cz`** (prod SSR only) | `A @` → the SSR's inbound IP (`az webapp show -g rg-cleansia-weu-prod -n web-cleansia-customer-weu-prod --query inboundIpAddress -o tsv`) **and** `TXT asuid` → the verification id. ⚠️ the inbound IP can change if the site is deleted/recreated — re-check after any re-provision |
+
+Managed certificates are free and **auto-renew only while these records stay in place** — never
+delete them after cut-over. No wildcards: one hostname = one binding = one cert.
+
+### 12.2 — Deploy (the one-deploy sequence)
+
+1. Wait for DNS propagation (`nslookup dev.cleansia.cz` etc. resolves to Azure).
+2. Uncomment/adjust the `customDomains` block in the stage's param file
+   ([`weu.dev.bicepparam`](bicep/weu.dev.bicepparam) / [`weu.prod.bicepparam`](bicep/weu.prod.bicepparam))
+   — any subset of keys works; start with one host if you want to derisk.
+3. Merge to `master` (dev auto-deploys) or dispatch the workflow (`what-if` first shows exactly the
+   bindings/certs it would add). Prod: the usual `Deploy to PRO` what-if → deploy → approve flow (§11).
+4. **If the provision step fails at a `hostNameBindings`/certificate/customDomains resource:** the DNS
+   record is missing or not yet propagated. Fix DNS and simply **re-run the deploy** — the whole
+   sequence is idempotent (already-bound hostnames and issued certs are no-ops).
+5. Known transient: every re-deploy briefly re-PUTs each App Service binding without SSL before the
+   SNI flip restores it — a few seconds of HTTPS blip on the **custom** hostnames per deploy (the
+   default hostnames are unaffected). Expected; not a failure.
+
+Setting a frontend key auto-aligns, in the same deploy: the App Service **platform CORS** on the
+browser-facing APIs, the **app-level `CorsOrigins__n`** app settings (the deployed hosts otherwise run
+`appsettings.Production.json`, whose origins are the prod set), and — when `ssr` is set — the
+**SendGrid link base + Stripe success/cancel redirect bases** (`customerWebBaseUrl`).
+
+### 12.3 — Google OAuth authorized origins (IMP-1)
+
+In **Google Cloud Console → APIs & Services → Credentials → the OAuth 2.0 client**, add every new
+**frontend** origin to *Authorized JavaScript origins* (e.g. `https://dev.cleansia.cz`,
+`https://partner.dev.cleansia.cz`, `https://admin.dev.cleansia.cz`; prod: `https://cleansia.cz`,
+`https://www.cleansia.cz`, `https://partner.cleansia.cz`, `https://admin.cleansia.cz`) — otherwise
+GSI fails with an "origin not allowed" 403. API hostnames are not needed there.
+
+### 12.4 — What does NOT auto-align (flag to the team, not shell work)
+
+- **Deployed web build configs (T-0400 AC3)** — the SPA/SSR builds deployed to the custom domains must
+  call the same-site API origins: `environment.prod.ts` already carries the prod table above;
+  a *deployed-dev* web build needs a build config pointing at the `*.dev.cleansia.cz` API origins
+  (today's `environment.staging.ts` targets the raw `azurewebsites.net` hosts — correct for the local
+  devremote proxy, cross-site if served deployed).
+- **Admin auth cross-host** — `environment.prod.ts` (admin) sends auth to `api.cleansia.cz` (the
+  partner API), whose committed prod `CorsOrigins` does **not** include `admin.cleansia.cz`; the
+  architect must ratify or fix that pairing in T-0400 AC1/AC3 before prod cut-over.
+- **Cookies** — nothing to change: host-only (no `Domain` attribute), `HttpOnly`/`Secure`/`Strict`
+  untouched; same-site is exactly what the subdomains provide.
+- **JWT issuer** (`Jwt--Issuer` derived secret) stays on the partner API default hostname — it is an
+  opaque matched string, not a reachable URL; changing it is optional and must be done on both
+  issue + validate sides at once.
+
+### 12.5 — Smoke (T-0400 AC4)
+
+- [ ] `https://<frontend custom domain>` loads over TLS (managed cert, no warning).
+- [ ] Log in there in a **stock** browser (no third-party-cookie exceptions): the response `Set-Cookie`
+      lands, and subsequent API calls send it (DevTools → the API request → Cookies) — 200s, no 401.
+- [ ] A password-reset email links to the custom customer domain (proves `customerWebBaseUrl` flipped).
+
+---
+
 ## Related owner steps (separate from this runbook, do when convenient)
 
+- **Custom domains under `cleansia.cz` (§12)** — required before **any deployed web URL** can
+  authenticate (T-0400); dev is optional (local `devremote` covers dev testing), prod is required.
 - **Rotate the exposed Mapbox token** before putting it in Key Vault (it was live-exposed earlier).
 - **Mobile-spec regen** — needed before the iOS *feature* waves (not Phase 0).
 - **Admin client regen** — unblocks T-0295 (employee-page audit drill-in).

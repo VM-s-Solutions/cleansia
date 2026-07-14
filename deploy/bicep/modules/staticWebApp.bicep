@@ -20,6 +20,9 @@ param location string
 ])
 param skuName string = 'Free'
 
+@description('Optional custom hostname under the apex site — the same-site enabler for deployed web cookie auth (e.g. partner.dev.cleansia.cz). Empty (default) = no custom domain — zero behavior change. SUBDOMAINS ONLY (cname-delegation): the owner CNAME to the default hostname must exist BEFORE deploying — it doubles as the validation; SWA then issues + renews its own TLS certificate (no Microsoft.Web/certificates, no SNI flip — unlike the App Service hosts). Free tier allows 2 custom domains per app.')
+param customDomain string = ''
+
 @description('Resource tags applied to the Static Web App.')
 param tags object = {}
 
@@ -34,6 +37,17 @@ resource staticWebApp 'Microsoft.Web/staticSites@2023-12-01' = {
   properties: {
     // App content is pushed from CI via the deploy token (no repo build wiring here — ADR-0015 D5).
     allowConfigFileUpdates: true
+  }
+}
+
+// Custom domain — deployed only when the orchestrator passes a hostname. Validation is the
+// CNAME itself (cname-delegation), so this resource FAILS the deployment if the owner's CNAME does not
+// exist/has not propagated yet — fix DNS and re-run (idempotent).
+resource swaCustomDomain 'Microsoft.Web/staticSites/customDomains@2023-12-01' = if (!empty(customDomain)) {
+  parent: staticWebApp
+  name: customDomain
+  properties: {
+    validationMethod: 'cname-delegation'
   }
 }
 

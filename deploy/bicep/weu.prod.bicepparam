@@ -56,6 +56,25 @@ param adminIpAddress = '0.0.0.0'
 param ciPrincipalId = ''
 
 // ---------------------------------------------------------------------------------------------------
+// Custom domains (deployed-web same-site enabler) — OFF until the owner creates the prod DNS records.
+// This is the shape the committed prod config ALREADY assumes (appsettings.Production.json CorsOrigins
+// + environment.prod.ts apiBaseUrl): frontends + APIs same-site under cleansia.cz, SameSite=Strict
+// untouched. Uncomment ONLY AFTER the DNS records exist — subdomains need CNAME + asuid TXT; the apex
+// (cleansia.cz) needs an A record + asuid TXT: deploy/AZURE-DEV-RUNBOOK.md §12. The mobile API hosts
+// are body-token (no cookies/CORS) and need no custom domain.
+// ---------------------------------------------------------------------------------------------------
+
+// param customDomains = {
+//   ssr: 'cleansia.cz'
+//   'ssr-www': 'www.cleansia.cz'
+//   'swa-partner': 'partner.cleansia.cz'
+//   'swa-admin': 'admin.cleansia.cz'
+//   'api-partner': 'api.cleansia.cz'
+//   'api-admin': 'api-admin.cleansia.cz'
+//   'api-customer': 'api-customer.cleansia.cz'
+// }
+
+// ---------------------------------------------------------------------------------------------------
 // Resource tags.
 // ---------------------------------------------------------------------------------------------------
 
@@ -66,3 +85,6 @@ param tags = {
   costCenter: 'platform'
   managedBy: 'bicep'
 }
+
+// Flip ONLY after the Key Vault secret Fcm--ServiceAccountJson exists (push runbook §0):
+// param fcmSecretProvisioned = true

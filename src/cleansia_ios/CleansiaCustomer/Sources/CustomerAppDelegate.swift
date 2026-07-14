@@ -86,7 +86,7 @@ final class CustomerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifica
             }
             guard retriesLeft > 0 else {
                 PushLog.log.error(
-                    "FCM token STILL unavailable: iOS never issued an APNs token. Enable Push Notifications on the App ID + confirm the provisioning profile includes it. Last error: \(String(describing: error), privacy: .public)"
+                    "FCM token STILL unavailable: iOS never issued an APNs token — and it reported NO registration failure. That silence means the Simulator (which does not vend APNs tokens): run on a PHYSICAL device. On a device instead, a failure would have been logged, pointing at the App-ID Push capability / provisioning profile. Last error: \(String(describing: error), privacy: .public)"
                 )
                 return
             }

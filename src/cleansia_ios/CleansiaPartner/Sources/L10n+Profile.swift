@@ -2,10 +2,6 @@ import Foundation
 
 extension L10n {
     enum Profile {
-        static var title: String {
-            localized("profile")
-        }
-
         static var groupAccount: String {
             localized("profile_group_account")
         }

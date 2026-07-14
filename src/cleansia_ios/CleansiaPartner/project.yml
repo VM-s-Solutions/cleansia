@@ -32,6 +32,9 @@ packages:
   # scripts/generate-api-clients.sh after a mobile-spec refresh; never hand-edit.
   CleansiaPartnerApi:
     path: ../CleansiaPartnerApi
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: 11.0.0
 
 targets:
   CleansiaPartner:
@@ -42,6 +45,13 @@ targets:
       - path: Sources
       - path: Resources
       - path: PrivacyInfo.xcprivacy
+      # Owner-local, gitignored FCM config. The folder is committed (empty); the
+      # owner drops GoogleService-Info.plist here. Absent → no-plist build still
+      # compiles and simply runs without push (see GoogleServicePlist gate).
+      - path: Firebase
+        optional: true
+        excludes:
+          - ".gitkeep"
     info:
       path: Info.plist
       properties:
@@ -58,6 +68,15 @@ targets:
           UIColorName: SplashBackground
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        # T-0403 debug: Firebase's app-delegate swizzling proxy is the only
+        # foreign machinery between our registerForRemoteNotifications call and
+        # UIKit, and the device syslog showed the registration generating ZERO
+        # system traffic (no SpringBoard handling, no apsd token request). We
+        # integrate Messaging manually anyway (we set Messaging.apnsToken in
+        # didRegister..., own the MessagingDelegate + UNUserNotificationCenter
+        # delegate, and pull the token explicitly), so the proxy is pure risk:
+        # disable it per Firebase's own manual-integration guidance.
+        FirebaseAppDelegateProxyEnabled: false
         API_BASE_URL: $(API_BASE_URL)
         NSCameraUsageDescription: Cleansia uses the camera to capture before and after photos of your cleaning jobs.
         NSPhotoLibraryUsageDescription: Cleansia needs access to your photos so you can attach before and after photos to your jobs.
@@ -83,6 +102,10 @@ targets:
     dependencies:
       - package: CleansiaCore
       - package: CleansiaPartnerApi
+      - package: Firebase
+        product: FirebaseCore
+      - package: Firebase
+        product: FirebaseMessaging
 
   CleansiaPartnerTests:
     type: bundle.unit-test

@@ -294,7 +294,65 @@ final class OrdersListViewModelTests: XCTestCase {
 
         await vm.runInlineAction(.take, on: .sample(id: "o1", status: ._2))
 
-        XCTAssertNotNil(snackbar.current)
+        XCTAssertEqual(snackbar.current?.severity, .error)
+        XCTAssertNil(vm.inFlightActionOrderId)
+    }
+
+    // MARK: slide-transition feedback — every successful list transition confirms
+
+    func testNotifyOnTheWaySuccessShowsSuccessSnackbar() async {
+        client.pagedResult = .success([.sample(id: "o1", status: ._2)])
+        let vm = makeVM()
+        await vm.selectTab(.active)
+
+        await vm.runInlineAction(.notifyOnTheWay, on: .sample(id: "o1", status: ._2))
+
+        XCTAssertEqual(snackbar.current?.severity, .success)
+        XCTAssertEqual(snackbar.current?.text, L10n.Orders.customerNotifiedOnTheWay)
+    }
+
+    func testStartSuccessShowsSuccessSnackbar() async {
+        client.pagedResult = .success([.sample(id: "o1", status: ._3)])
+        let vm = makeVM()
+        await vm.selectTab(.active)
+
+        await vm.runInlineAction(.start, on: .sample(id: "o1", status: ._3))
+
+        XCTAssertEqual(snackbar.current?.severity, .success)
+        XCTAssertEqual(snackbar.current?.text, L10n.Orders.orderStartedToast)
+    }
+
+    func testCompleteSuccessShowsSuccessSnackbar() async {
+        client.pagedResult = .success([.sample(id: "o1", status: ._4)])
+        let vm = makeVM()
+        await vm.selectTab(.active)
+
+        await vm.runInlineAction(.complete, on: .sample(id: "o1", status: ._4))
+
+        XCTAssertEqual(snackbar.current?.severity, .success)
+        XCTAssertEqual(snackbar.current?.text, L10n.Orders.orderCompletedToast)
+    }
+
+    func testTakeSuccessStaysSilent() async {
+        client.pagedResult = .success([.sample(id: "o1", status: ._2)])
+        let vm = makeVM()
+        await vm.onAppear()
+
+        await vm.runInlineAction(.take, on: .sample(id: "o1", status: ._2))
+
+        XCTAssertNil(snackbar.current)
+    }
+
+    func testInFlightHeldUntilSuccessRefreshCompletes() async {
+        client.pagedResult = .success([.sample(id: "o1", status: ._2)])
+        let vm = makeVM()
+        await vm.selectTab(.active)
+
+        var inFlightDuringRefresh: String?
+        client.onGetPaged = { inFlightDuringRefresh = vm.inFlightActionOrderId }
+        await vm.runInlineAction(.notifyOnTheWay, on: .sample(id: "o1", status: ._2))
+
+        XCTAssertEqual(inFlightDuringRefresh, "o1")
         XCTAssertNil(vm.inFlightActionOrderId)
     }
 

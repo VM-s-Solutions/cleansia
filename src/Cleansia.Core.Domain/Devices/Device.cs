@@ -36,10 +36,29 @@ public class Device : Auditable, ITenantEntity
         };
     }
 
-    public void UpdateToken(string deviceToken)
+    /// <summary>
+    /// Re-registers this device for the owning user: refreshes the push token and
+    /// last-active stamp and — critically — reactivates the row. Logout soft-deletes
+    /// the device (IsActive=false) but leaves it physically present, and (UserId,
+    /// DeviceId) is uniquely indexed across active AND inactive rows, so the next
+    /// login must RECLAIM this tombstone rather than insert a colliding duplicate.
+    /// Registration only runs after the OS grants notification permission, so
+    /// notifications are (re)enabled here too — matching <see cref="Create"/>.
+    /// </summary>
+    public void MarkRegistered(string deviceToken)
     {
         DeviceToken = deviceToken;
         LastActiveAt = DateTimeOffset.UtcNow;
+
+        // Reactivate + (re)enable ONLY on the reclaim transition (a logged-out
+        // tombstone coming back). Reaching an already-active row is a routine
+        // token refresh on launch/rotation — it must not clobber a user's
+        // disabled flag once an OS-revoke-report path exists.
+        if (!IsActive)
+        {
+            NotificationsEnabled = true;
+            IsActive = true;
+        }
     }
 
     public void UpdateLastActive()

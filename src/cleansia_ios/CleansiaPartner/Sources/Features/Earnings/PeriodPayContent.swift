@@ -115,6 +115,7 @@ private struct JobsCard: View {
 }
 
 private struct JobRow: View {
+    @Environment(\.locale) private var locale
     let line: OrderEmployeePayDto
     let currencyCode: String?
 
@@ -127,7 +128,7 @@ private struct JobRow: View {
                 Text(orderNumber)
                     .font(CleansiaTypography.bodyLarge)
                     .foregroundColor(CleansiaColors.onSurface)
-                if let date = EarningsFormat.shortDate(line.createdOn) {
+                if let date = EarningsFormat.shortDate(line.createdOn, locale: locale) {
                     Text(date)
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)

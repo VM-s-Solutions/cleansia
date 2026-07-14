@@ -59,14 +59,15 @@ private struct InvoicesSummaryCard: View {
 }
 
 private struct InvoiceCard: View {
+    @Environment(\.locale) private var locale
     let invoice: EmployeeInvoiceDto
     let onOpen: (String) -> Void
 
     private var dateLine: String? {
-        if let paid = EarningsFormat.shortDate(invoice.paidAt) {
+        if let paid = EarningsFormat.shortDate(invoice.paidAt, locale: locale) {
             return L10n.Invoices.cardPaidOn(paid)
         }
-        if let generated = EarningsFormat.shortDate(invoice.generatedAt) {
+        if let generated = EarningsFormat.shortDate(invoice.generatedAt, locale: locale) {
             return L10n.Invoices.cardGeneratedOn(generated)
         }
         return nil

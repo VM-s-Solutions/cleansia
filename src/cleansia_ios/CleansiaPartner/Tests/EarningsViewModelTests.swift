@@ -17,6 +17,10 @@ final class EarningsViewModelTests: XCTestCase {
             return statsResult
         }
 
+        func getAvailableJobsPreview(limit _: Int) async -> ApiResult<AvailableJobsPreviewResponse> {
+            .success(AvailableJobsPreviewResponse())
+        }
+
         func getCurrentEmployee() async -> ApiResult<EmployeeItem> {
             employeeResult
         }

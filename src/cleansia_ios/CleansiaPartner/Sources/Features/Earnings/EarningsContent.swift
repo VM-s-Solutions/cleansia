@@ -131,6 +131,7 @@ struct PayPeriodWindow {
 }
 
 private struct PayPeriodCardView: View {
+    @Environment(\.locale) private var locale
     let period: PayPeriodWindow
 
     var body: some View {
@@ -160,7 +161,7 @@ private struct PayPeriodCardView: View {
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                     Spacer()
-                    Text(EarningsFormat.shortDate(payout) ?? "")
+                    Text(EarningsFormat.shortDate(payout, locale: locale) ?? "")
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurface)
                 }
@@ -170,8 +171,8 @@ private struct PayPeriodCardView: View {
     }
 
     private var rangeLine: String {
-        let start = EarningsFormat.shortDate(period.start) ?? ""
-        let end = EarningsFormat.shortDate(period.end) ?? ""
+        let start = EarningsFormat.shortDate(period.start, locale: locale) ?? ""
+        let end = EarningsFormat.shortDate(period.end, locale: locale) ?? ""
         return "\(start) – \(end)"
     }
 }

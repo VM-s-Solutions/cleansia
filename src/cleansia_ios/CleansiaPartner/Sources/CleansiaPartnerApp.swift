@@ -35,6 +35,9 @@ struct CleansiaPartnerApp: App {
                         pushNavigation?.pendingDestination = destination
                     }
                     container.startPush()
+                    // The registration-token delegate misses cached tokens; pull it
+                    // explicitly and let it retry as the APNs token settles.
+                    appDelegate.requestFcmToken()
                 }
         }
     }

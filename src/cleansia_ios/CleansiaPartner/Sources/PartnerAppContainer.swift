@@ -136,11 +136,10 @@ final class PartnerAppContainer: AppContainer {
             hasSession: hasSessionSubject.eraseToAnyPublisher(),
             apnsToken: pushRegistrar.apnsToken
         )
-        Task {
-            if await pushRegistrar.requestAuthorization() {
-                pushRegistrar.registerForRemoteNotifications()
-            }
-        }
+        // Alert-display permission only — APNs registration itself happens in
+        // the app delegate's didFinishLaunching (deferring it there gets
+        // silently dropped by iOS).
+        Task { _ = await pushRegistrar.requestAuthorization() }
     }
 
     func updatePushSession(hasSession: Bool) {

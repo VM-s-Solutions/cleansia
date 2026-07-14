@@ -8,11 +8,18 @@ final class DashboardViewModelTests: XCTestCase {
     private final class FakeDashboardClient: PartnerDashboardClient {
         var statsResult: ApiResult<DashboardStatsDto> = .success(DashboardStatsDto())
         var employeeResult: ApiResult<EmployeeItem> = .success(EmployeeItem())
+        var previewResult: ApiResult<AvailableJobsPreviewResponse> = .success(AvailableJobsPreviewResponse())
         private(set) var statsEmployeeId: String??
+        private(set) var previewLimit: Int?
 
         func getStats(employeeId: String?) async -> ApiResult<DashboardStatsDto> {
             statsEmployeeId = .some(employeeId)
             return statsResult
+        }
+
+        func getAvailableJobsPreview(limit: Int) async -> ApiResult<AvailableJobsPreviewResponse> {
+            previewLimit = limit
+            return previewResult
         }
 
         func getCurrentEmployee() async -> ApiResult<EmployeeItem> {
@@ -97,5 +104,43 @@ final class DashboardViewModelTests: XCTestCase {
         XCTAssertEqual(data.weekCompletedCount, 0)
         XCTAssertNil(data.payPeriod)
         XCTAssertNil(data.averageRating)
+    }
+
+    func testAvailableJobsPreviewMapsToAvailableWorkHero() async {
+        client.previewResult = .success(AvailableJobsPreviewResponse(
+            totalPotentialEarnings: 650,
+            totalAvailableCount: 2
+        ))
+
+        let vm = makeViewModel()
+        await vm.load()
+
+        guard let data = vm.state.loadedValue else { return XCTFail("expected loaded") }
+        XCTAssertEqual(data.hero, .availableWork(jobCount: 2, potentialEarnings: 650))
+        XCTAssertEqual(client.previewLimit, 5)
+    }
+
+    func testZeroAvailableJobsMapsToEmptyHero() async {
+        client.previewResult = .success(AvailableJobsPreviewResponse(
+            totalPotentialEarnings: 0,
+            totalAvailableCount: 0
+        ))
+
+        let vm = makeViewModel()
+        await vm.load()
+
+        XCTAssertEqual(vm.state.loadedValue?.hero, .empty)
+    }
+
+    func testPreviewFailureStillLoadsWithEmptyHero() async {
+        client.statsResult = .success(DashboardStatsDto(weekEarnings: 100))
+        client.previewResult = .failure(ApiError(httpStatus: 500))
+
+        let vm = makeViewModel()
+        await vm.load()
+
+        guard let data = vm.state.loadedValue else { return XCTFail("expected loaded despite preview failure") }
+        XCTAssertEqual(data.hero, .empty)
+        XCTAssertEqual(data.weekEarnings, 100)
     }
 }

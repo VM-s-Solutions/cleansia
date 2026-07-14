@@ -66,6 +66,7 @@ struct OrdersRootView: View {
 
 struct OrdersListView: View {
     @ObservedObject var vm: OrdersListViewModel
+    @Environment(\.locale) private var locale
 
     var body: some View {
         VStack(spacing: 0) {
@@ -96,6 +97,9 @@ struct OrdersListView: View {
     }
 
     private var tabPicker: some View {
+        // The segmented control caches its rendered segment titles, so it does
+        // not re-localize on an in-app language switch from a plain body re-run;
+        // keying it on the locale forces a fresh control with the new labels.
         Picker("", selection: tabBinding) {
             Text(L10n.Orders.available).tag(OrdersTab.available)
             Text(L10n.Orders.active).tag(OrdersTab.active)
@@ -103,6 +107,7 @@ struct OrdersListView: View {
         }
         .pickerStyle(.segmented)
         .padding(.horizontal, Spacing.m)
+        .id(locale.identifier)
     }
 
     private var tabBinding: Binding<OrdersTab> {

@@ -95,6 +95,7 @@ private struct BreakdownCard: View {
 }
 
 private struct PeriodCard: View {
+    @Environment(\.locale) private var locale
     let invoice: EmployeeInvoiceDetailDto
     let onOpenPeriodPay: ((String, String?) -> Void)?
 
@@ -156,13 +157,13 @@ private struct PeriodCard: View {
 
     private var dateRows: some View {
         VStack(spacing: Spacing.xs) {
-            if let generated = EarningsFormat.shortDate(invoice.generatedAt) {
+            if let generated = EarningsFormat.shortDate(invoice.generatedAt, locale: locale) {
                 DateRow(label: L10n.Invoices.periodGenerated, value: generated)
             }
-            if let approved = EarningsFormat.shortDate(invoice.approvedAt) {
+            if let approved = EarningsFormat.shortDate(invoice.approvedAt, locale: locale) {
                 DateRow(label: L10n.Invoices.periodApproved, value: approved)
             }
-            if let paid = EarningsFormat.shortDate(invoice.paidAt) {
+            if let paid = EarningsFormat.shortDate(invoice.paidAt, locale: locale) {
                 DateRow(label: L10n.Invoices.periodPaid, value: paid)
             }
         }

@@ -101,22 +101,29 @@ final class OrdersListViewModel: ViewModel {
     /// the list response carried for that row; never a synthesized/echoed id.
     func runInlineAction(_ action: OrderPrimaryAction, on order: OrderListItem) async {
         guard inFlightActionOrderId == nil, let orderId = order.id else { return }
-        guard let mutation = action.orderAction?.mutation else { return }
+        guard let orderAction = action.orderAction else { return }
 
         inFlightActionOrderId = orderId
         let result = await command(for: action, orderId: orderId)
-        inFlightActionOrderId = nil
 
         switch result {
         case .success:
-            staleness.invalidatePanes(for: mutation)
+            if let confirmation = orderAction.successFeedback {
+                snackbar.showSuccess(confirmation)
+            }
+            staleness.invalidatePanes(for: orderAction.mutation)
             staleness.invalidateOrder(orderId)
-            await refreshAffectedPanes(mutation)
+            // Held through the refresh: the row's slider stays locked-busy
+            // until it re-renders with the NEW action, so a second swipe in
+            // the gap can't re-fire the already-applied transition.
+            await refreshAffectedPanes(orderAction.mutation)
+            inFlightActionOrderId = nil
         case let .failure(error):
-            // O4: clean reject (e.g. already-taken) — surface + refresh the
-            // current pane so the stale "takeable" row corrects.
+            // O4: clean reject (e.g. already-taken) — spring the slider back,
+            // surface, and refresh the current pane so the stale row corrects.
+            inFlightActionOrderId = nil
             snackbar.showApiError(error)
-            staleness.invalidatePanes(for: mutation)
+            staleness.invalidatePanes(for: orderAction.mutation)
             await fetch(tab.pane, phase: .backgroundRefreshing)
         }
     }

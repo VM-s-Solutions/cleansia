@@ -119,6 +119,7 @@ private struct AvailableSummaryRow: View {
 }
 
 private struct AvailableOrderRow: View {
+    @Environment(\.locale) private var locale
     let order: OrderListItem
     let distanceKm: Double?
     let isHotDeal: Bool
@@ -136,7 +137,7 @@ private struct AvailableOrderRow: View {
         Button(action: onOpen) {
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 HStack(alignment: .top) {
-                    Text(OrdersFormat.relativeDateTime(order.cleaningDateTime))
+                    Text(OrdersFormat.relativeDateTime(order.cleaningDateTime, locale: locale))
                         .font(CleansiaTypography.titleMedium)
                         .foregroundColor(CleansiaColors.onSurface)
                     Spacer()
@@ -155,17 +156,7 @@ private struct AvailableOrderRow: View {
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                         .lineLimit(1)
                 }
-                ScopeChips(order: order)
-                if isHotDeal || isStartingSoon {
-                    HStack(spacing: Spacing.xs) {
-                        if isHotDeal {
-                            DecisionBadge(icon: "flame.fill", label: L10n.Orders.topPay, tint: CleansiaColors.error)
-                        }
-                        if isStartingSoon {
-                            DecisionBadge(icon: "clock", label: L10n.Orders.startsSoon, tint: CleansiaColors.primary)
-                        }
-                    }
-                }
+                OrderChipsRow(order: order, isHotDeal: isHotDeal, isStartingSoon: isStartingSoon)
                 TakeButton(isTaking: isTaking, onTake: onTake)
             }
             .ordersCard()
@@ -248,7 +239,10 @@ private struct ActiveOrderRow: View {
 
     var body: some View {
         VStack(spacing: Spacing.s) {
-            CompactOrderRow(order: order, onOpen: onOpen)
+            Button(action: onOpen) {
+                CompactOrderRowContent(order: order)
+            }
+            .buttonStyle(.plain)
             if let labels = swipeLabels {
                 SlideToConfirm(
                     idleLabel: labels.idle,
@@ -258,6 +252,7 @@ private struct ActiveOrderRow: View {
                 )
             }
         }
+        .ordersCard()
     }
 
     private var swipeLabels: (idle: String, busy: String)? {
@@ -273,6 +268,7 @@ private struct ActiveOrderRow: View {
 // MARK: - History
 
 private struct HistoryPane: View {
+    @Environment(\.locale) private var locale
     let orders: [OrderListItem]
     let period: CompletedPeriod
     let onPeriod: (CompletedPeriod) -> Void
@@ -292,7 +288,7 @@ private struct HistoryPane: View {
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             }
             ForEach(grouped, id: \.0) { day, rows in
-                Section(OrdersFormat.dayHeader(day)) {
+                Section(OrdersFormat.dayHeader(day, locale: locale)) {
                     ForEach(rows, id: \.id) { order in
                         CompactOrderRow(order: order, onOpen: { onOpen(order) }).ordersRow()
                     }

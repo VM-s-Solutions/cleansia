@@ -9,21 +9,25 @@ public enum EarningsFormat {
         money(amount, currencyCode: currencyCode, fractionDigits: 0)
     }
 
-    public static func currencySymbol(_ code: String?) -> String? {
+    public static func currencySymbol(_ code: String?, locale: Locale = .current) -> String? {
         guard let code, !code.isEmpty else { return nil }
-        // Locale's @currency override resolves an UNKNOWN code to the current
-        // locale's default symbol, not the code — so gate on the ISO list and
-        // fall back to the raw code when it isn't recognized (Android parity:
+        // ISO gate: unknown codes fall back to the raw code (Android parity:
         // Currency.getInstance throws for unknown codes → raw-code fallback).
         guard Locale.commonISOCurrencyCodes.contains(code) else { return code }
-        let locale = Locale(identifier: "\(Locale.current.identifier)@currency=\(code)")
-        return locale.currencySymbol ?? code
+        // Locale.Components, NOT identifier concatenation: device locales
+        // often already carry keywords (e.g. "en_US@rg=czzzzz" when region
+        // differs from language), and "…@rg=czzzzz@currency=CZK" is malformed
+        // — the override is dropped and the symbol collapses to the base
+        // locale's currency ("$").
+        var components = Locale.Components(locale: locale)
+        components.currency = Locale.Currency(code)
+        return Locale(components: components).currencySymbol ?? code
     }
 
-    public static func shortDate(_ date: Date?) -> String? {
+    public static func shortDate(_ date: Date?, locale: Locale = .current) -> String? {
         guard let date else { return nil }
         let formatter = DateFormatter()
-        formatter.locale = .current
+        formatter.locale = locale
         formatter.timeZone = .current
         formatter.setLocalizedDateFormatFromTemplate("d MMM yyyy")
         return formatter.string(from: date)

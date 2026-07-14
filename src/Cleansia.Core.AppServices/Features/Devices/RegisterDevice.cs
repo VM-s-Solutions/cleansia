@@ -39,11 +39,14 @@ public static class RegisterDevice
                     new Error(nameof(userId), BusinessErrorMessage.UserNotFound));
             }
 
-            var existingDevice = await deviceRepository.GetByUserAndDeviceIdAsync(userId, request.DeviceId, cancellationToken);
+            // Include inactive rows: a prior logout soft-deletes the device but leaves
+            // it under the unique (UserId, DeviceId) index, so re-registration must
+            // reclaim (reactivate) that row rather than INSERT a colliding duplicate.
+            var existingDevice = await deviceRepository.GetByUserAndDeviceIdIncludingInactiveAsync(userId, request.DeviceId, cancellationToken);
 
             if (existingDevice is not null)
             {
-                existingDevice.UpdateToken(request.DeviceToken);
+                existingDevice.MarkRegistered(request.DeviceToken);
                 return BusinessResult.Success(new Response(existingDevice.Id));
             }
 

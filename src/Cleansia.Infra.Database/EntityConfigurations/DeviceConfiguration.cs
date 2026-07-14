@@ -22,15 +22,18 @@ public class DeviceConfiguration : AuditableEntityConfiguration<Device, string>
         // Uniqueness is scoped to (UserId, DeviceId), NOT to DeviceId
         // alone. ANDROID_ID — the source of DeviceId on Android — is
         // stable across app reinstalls and shared across the same
-        // signing key, so two different users on the same physical
-        // device legitimately produce two rows. The previous global
-        // unique on DeviceId alone caused INSERTs to collide when a
-        // different user signed in on a handset where a stale row from
-        // a prior account still existed; the handler's per-(user,
-        // device) lookup couldn't see the old row, tried to insert,
-        // and tripped the index. Orphan rows from prior users
-        // accumulate but no longer block; a cleanup job by
-        // LastActiveAt can prune them later.
+        // signing key, so two DIFFERENT users on the same physical
+        // device legitimately produce two rows.
+        //
+        // The index spans active AND inactive rows (no IsActive filter).
+        // A logout soft-deletes (IsActive=false) but keeps the row, so a
+        // SAME-user re-login would collide on re-INSERT. RegisterDevice
+        // therefore looks up INCLUDING inactive rows
+        // (GetByUserAndDeviceIdIncludingInactiveAsync) and RECLAIMS the
+        // tombstone via Device.MarkRegistered (reactivate + refresh token)
+        // — never a second INSERT — so there is at most one row per
+        // (UserId, DeviceId) and the retention sweep (which only prunes
+        // IsActive rows) never needs to reclaim it.
         builder.HasIndex(d => d.UserId);
         builder.HasIndex(d => new { d.UserId, d.DeviceId }).IsUnique();
 

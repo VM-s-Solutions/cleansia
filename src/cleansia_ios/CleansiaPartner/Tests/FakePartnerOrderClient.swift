@@ -40,18 +40,27 @@ final class FakePartnerOrderClient: PartnerOrderClient {
     var suspendCommands = false
     private var commandGate: CheckedContinuation<Void, Never>?
 
+    /// Invoked at the top of every `getPaged` — lets a test observe VM state
+    /// mid-refresh (e.g. the in-flight hold across the post-success refetch).
+    var onGetPaged: (() -> Void)?
+
+    /// Same observation hook for `getById` (the detail VM's refetch).
+    var onGetById: (() -> Void)?
+
     func currentEmployeeId() async -> ApiResult<String> {
         employeeIdCallCount += 1
         return employeeIdResult
     }
 
     func getPaged(_ query: OrderPageQuery) async -> ApiResult<[OrderListItem]> {
+        onGetPaged?()
         getPagedCallCount += 1
         queries.append(query)
         return pagedResult
     }
 
     func getById(orderId _: String) async -> ApiResult<OrderItem> {
+        onGetById?()
         getByIdCallCount += 1
         return byIdResult
     }

@@ -11,7 +11,7 @@ extension View {
             .listRowBackground(Color.clear)
     }
 
-    /// The bordered card surface used by Available/History rows.
+    /// The bordered card surface shared by the Available/Active/History rows.
     func ordersCard() -> some View {
         padding(Spacing.m)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -75,20 +75,66 @@ struct OrdersSearchField: View {
     }
 }
 
-struct ScopeChips: View {
+/// One flowing row of scope chips (rooms · baths · extras) and decision
+/// badges (top pay · starts soon): badges sit inline with the chips and wrap
+/// onto a new line only when the card runs out of width.
+struct OrderChipsRow: View {
     let order: OrderListItem
+    let isHotDeal: Bool
+    let isStartingSoon: Bool
 
     var body: some View {
         let rooms = order.rooms ?? 0
         let baths = order.bathrooms ?? 0
         let extras = order.extras?.values.filter { $0 }.count ?? 0
-        if rooms > 0 || baths > 0 || extras > 0 {
-            HStack(spacing: Spacing.xxs) {
+        if rooms > 0 || baths > 0 || extras > 0 || isHotDeal || isStartingSoon {
+            ChipFlow(spacing: Spacing.xxs) {
                 if rooms > 0 { ScopeChip(text: OrdersFormat.rooms(rooms)) }
                 if baths > 0 { ScopeChip(text: OrdersFormat.baths(baths)) }
                 if extras > 0 { ScopeChip(text: OrdersFormat.extras(extras)) }
+                if isHotDeal {
+                    DecisionBadge(icon: "flame.fill", label: L10n.Orders.topPay, tint: CleansiaColors.error)
+                }
+                if isStartingSoon {
+                    DecisionBadge(icon: "clock", label: L10n.Orders.startsSoon, tint: CleansiaColors.primary)
+                }
             }
         }
+    }
+}
+
+struct ChipFlow: Layout {
+    var spacing: CGFloat = Spacing.xxs
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) -> CGSize {
+        let rows = rows(for: subviews, in: proposal.width ?? .infinity)
+        let width = rows.map(\.width).max() ?? 0
+        let height = rows.map(\.height).reduce(0, +) + spacing * CGFloat(max(rows.count - 1, 0))
+        return CGSize(width: proposal.width ?? width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: Subviews, cache _: inout ()) {
+        var rowTop = bounds.minY
+        for row in rows(for: subviews, in: bounds.width) {
+            var cursorX = bounds.minX
+            for index in row.indices {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                subviews[index].place(
+                    at: CGPoint(x: cursorX, y: rowTop + (row.height - size.height) / 2),
+                    proposal: .unspecified
+                )
+                cursorX += size.width + spacing
+            }
+            rowTop += row.height + spacing
+        }
+    }
+
+    private func rows(for subviews: Subviews, in maxWidth: CGFloat) -> [ChipFlowPacking.Row] {
+        ChipFlowPacking.rows(
+            sizes: subviews.map { $0.sizeThatFits(.unspecified) },
+            spacing: spacing,
+            maxWidth: maxWidth
+        )
     }
 }
 
@@ -128,27 +174,39 @@ struct CompactOrderRow: View {
 
     var body: some View {
         Button(action: onOpen) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(OrdersFormat.timeOnly(order.cleaningDateTime))
-                        .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(CleansiaColors.onSurface)
-                    Text(OrdersFormat.compactSubtitle(order))
-                        .font(CleansiaTypography.labelMedium)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                        .lineLimit(1)
-                }
-                Spacer()
-                Text(OrdersFormat.pay(order))
-                    .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.primary)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12))
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-            }
-            .ordersCard()
+            CompactOrderRowContent(order: order)
+                .ordersCard()
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// The bare time · subtitle · pay line, card-less so the Active row can put
+/// it and the slide control inside ONE bordered card (the Android
+/// `ActiveOrderRow` Surface parity).
+struct CompactOrderRowContent: View {
+    @Environment(\.locale) private var locale
+    let order: OrderListItem
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(OrdersFormat.timeOnly(order.cleaningDateTime, locale: locale))
+                    .font(CleansiaTypography.titleMedium)
+                    .foregroundColor(CleansiaColors.onSurface)
+                Text(OrdersFormat.compactSubtitle(order))
+                    .font(CleansiaTypography.labelMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .lineLimit(1)
+            }
+            Spacer()
+            Text(OrdersFormat.pay(order))
+                .font(CleansiaTypography.titleMedium)
+                .foregroundColor(CleansiaColors.primary)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12))
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+        }
     }
 }
 

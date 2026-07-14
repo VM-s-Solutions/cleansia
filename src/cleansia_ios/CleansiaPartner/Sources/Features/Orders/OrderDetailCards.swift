@@ -41,6 +41,7 @@ struct OrderSectionCard<Content: View>: View {
 }
 
 struct AccessCard: View {
+    @Environment(\.locale) private var locale
     let instructions: String
 
     var body: some View {
@@ -55,10 +56,12 @@ struct AccessCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.m)
         .background(CleansiaColors.warningStar.opacity(0.12), in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+        .id(locale.identifier)
     }
 }
 
 struct CustomerCard: View {
+    @Environment(\.locale) private var locale
     let order: OrderDetail
 
     private var addressLine: String? {
@@ -83,6 +86,7 @@ struct CustomerCard: View {
                 contactActions
             }
         }
+        .id(locale.identifier)
     }
 
     @ViewBuilder
@@ -122,6 +126,7 @@ private struct ContactChip: View {
 }
 
 struct ScopeCard: View {
+    @Environment(\.locale) private var locale
     let order: OrderDetail
 
     private var roomsLine: String {
@@ -163,6 +168,7 @@ struct ScopeCard: View {
                 }
             }
         }
+        .id(locale.identifier)
     }
 
     private func sectionLabel(_ text: String) -> some View {
@@ -192,6 +198,7 @@ private struct ScopeLine: View {
 }
 
 struct FromCustomerNotesCard: View {
+    @Environment(\.locale) private var locale
     let order: OrderDetail
 
     var body: some View {
@@ -201,6 +208,7 @@ struct FromCustomerNotesCard: View {
                 noteBlock(L10n.Orders.noteSpecialLabel, order.specialInstructions)
             }
         }
+        .id(locale.identifier)
     }
 
     @ViewBuilder
@@ -219,6 +227,7 @@ struct FromCustomerNotesCard: View {
 }
 
 struct PaymentCard: View {
+    @Environment(\.locale) private var locale
     let order: OrderDetail
 
     private var payment: OrderDetailPayment {
@@ -239,7 +248,7 @@ struct PaymentCard: View {
                     paymentRow(L10n.Orders.paymentTotal, total, emphasis: true)
                 }
                 HStack {
-                    Text(L10n.Orders.paymentMethod(methodName))
+                    Text(L10n.Orders.paymentMethod(PaymentPresentation.methodLabel(payment.methodName)))
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                     Spacer()
@@ -247,11 +256,7 @@ struct PaymentCard: View {
                 }
             }
         }
-    }
-
-    private var methodName: String {
-        let name = payment.methodName?.trimmingCharacters(in: .whitespaces) ?? ""
-        return name.isEmpty ? "—" : name
+        .id(locale.identifier)
     }
 
     private func paymentRow(_ label: String, _ amount: Double, emphasis: Bool) -> some View {
@@ -283,8 +288,8 @@ struct PaymentCard: View {
 }
 
 /// Colour-coded payment-status pill: green happy-path, amber pending, red
-/// failed/refunded, neutral fallback (the `PaymentStatusPill` parity). The
-/// backend `name` is shown verbatim when present, else a localized fallback.
+/// failed/refunded, neutral fallback (the `PaymentStatusPill` parity). The label
+/// resolves the raw wire status to a localized key via `PaymentPresentation`.
 private struct PaymentStatusPill: View {
     let statusName: String?
 
@@ -306,11 +311,7 @@ private struct PaymentStatusPill: View {
     }
 
     private var label: String {
-        if let statusName, !statusName.isEmpty { return statusName }
-        if key.contains("pending") { return L10n.Orders.paymentStatusPending }
-        if key.contains("failed") || key.contains("refund") { return L10n.Orders.paymentStatusFailed }
-        if key.contains("paid") { return L10n.Orders.paymentStatusPaid }
-        return "—"
+        PaymentPresentation.statusLabel(statusName)
     }
 
     var body: some View {

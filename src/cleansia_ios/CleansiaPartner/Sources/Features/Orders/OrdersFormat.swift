@@ -76,23 +76,25 @@ enum OrdersFormat {
             ?? "#\(order.displayOrderNumber ?? "")"
     }
 
-    static func relativeDateTime(_ date: Date?) -> String {
+    /// Weekday/month names render in `locale` (the app-selected language, not the
+    /// device one); "Today"/"Tomorrow" prefixes still resolve from the L10n bundle.
+    static func relativeDateTime(_ date: Date?, locale: Locale = .current) -> String {
         guard let date else { return "—" }
         let calendar = Calendar.current
-        let time = timeFormatter.string(from: date)
+        let time = templateFormatter("HH:mm", locale: locale).string(from: date)
         if calendar.isDateInToday(date) { return "\(L10n.Orders.dayToday) \(time)" }
         if calendar.isDateInTomorrow(date) { return "\(L10n.Orders.dayTomorrow) \(time)" }
-        return mediumDateTimeFormatter.string(from: date)
+        return templateFormatter("EEE d MMM HH:mm", locale: locale).string(from: date)
     }
 
-    static func timeOnly(_ date: Date?) -> String {
+    static func timeOnly(_ date: Date?, locale: Locale = .current) -> String {
         guard let date else { return "—" }
-        return timeFormatter.string(from: date)
+        return templateFormatter("HH:mm", locale: locale).string(from: date)
     }
 
-    static func dayHeader(_ date: Date?) -> String {
+    static func dayHeader(_ date: Date?, locale: Locale = .current) -> String {
         guard let date else { return L10n.Orders.unscheduled }
-        return mediumDateFormatter.string(from: date)
+        return mediumDateFormatter(locale: locale).string(from: date)
     }
 
     private static func distanceString(_ kilometres: Double) -> String {
@@ -109,24 +111,30 @@ enum OrdersFormat {
         return value
     }
 
-    private static let timeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = .current
-        formatter.setLocalizedDateFormatFromTemplate("HH:mm")
-        return formatter
-    }()
+    private static let cacheLock = NSLock()
+    private nonisolated(unsafe) static var templateCache: [String: DateFormatter] = [:]
+    private nonisolated(unsafe) static var mediumDateCache: [String: DateFormatter] = [:]
 
-    private static let mediumDateTimeFormatter: DateFormatter = {
+    private static func templateFormatter(_ template: String, locale: Locale) -> DateFormatter {
+        let key = "\(locale.identifier)|\(template)"
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+        if let cached = templateCache[key] { return cached }
         let formatter = DateFormatter()
-        formatter.locale = .current
-        formatter.setLocalizedDateFormatFromTemplate("EEE d MMM HH:mm")
+        formatter.locale = locale
+        formatter.setLocalizedDateFormatFromTemplate(template)
+        templateCache[key] = formatter
         return formatter
-    }()
+    }
 
-    private static let mediumDateFormatter: DateFormatter = {
+    private static func mediumDateFormatter(locale: Locale) -> DateFormatter {
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+        if let cached = mediumDateCache[locale.identifier] { return cached }
         let formatter = DateFormatter()
-        formatter.locale = .current
+        formatter.locale = locale
         formatter.dateStyle = .medium
+        mediumDateCache[locale.identifier] = formatter
         return formatter
-    }()
+    }
 }

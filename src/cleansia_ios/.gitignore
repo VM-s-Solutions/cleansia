@@ -14,5 +14,9 @@ CleansiaCustomer/CleansiaCustomer.xcodeproj/
 CleansiaPartnerApi/
 CleansiaCustomerApi/
 
+# Firebase config — owner-local, per-app; never committed (contains the
+# project's sender id / API key). Owner drops it into each app's Firebase/ folder.
+**/GoogleService-Info.plist
+
 # macOS
 .DS_Store

@@ -35,6 +35,10 @@ extension L10n.Orders {
         L10n.localized("order_completed_toast")
     }
 
+    static var orderStartedToast: String {
+        L10n.localized("order_started")
+    }
+
     static var afterPhotosRequired: String {
         L10n.localized("error_key_order_after_photos_required")
     }

@@ -85,7 +85,7 @@ public struct SnapSheet<Background: View, Content: View>: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .ignoresSafeArea()
 
-                sheet
+                sheet(bottomOverhang: currentTop)
                     .frame(height: height)
                     .offset(y: currentTop)
                     .gesture(dragGesture(containerHeight: height))
@@ -95,12 +95,16 @@ public struct SnapSheet<Background: View, Content: View>: View {
         }
     }
 
-    private var sheet: some View {
+    /// The full-height frame hangs `bottomOverhang` points below the container
+    /// once offset; insetting the content by the same amount keeps the bottom
+    /// row (the sticky footer) pinned inside the visible area at every anchor.
+    private func sheet(bottomOverhang: CGFloat) -> some View {
         VStack(spacing: 0) {
             DragHandle()
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
+        .padding(.bottom, bottomOverhang)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(
             UnevenRoundedRectangle(

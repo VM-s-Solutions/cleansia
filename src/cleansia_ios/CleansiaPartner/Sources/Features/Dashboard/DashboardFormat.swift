@@ -1,3 +1,4 @@
+import CleansiaCore
 import Foundation
 
 struct PayPeriodProgress {
@@ -13,7 +14,7 @@ enum DashboardFormat {
     static func money(_ amount: Double, currencyCode: String?, fallback: String = "—") -> String {
         if amount <= 0 { return fallback }
         let rounded = roundedThousands(amount)
-        guard let symbol = currencySymbol(currencyCode), !symbol.isEmpty else { return rounded }
+        guard let symbol = EarningsFormat.currencySymbol(currencyCode), !symbol.isEmpty else { return rounded }
         return "\(rounded) \(symbol)"
     }
 
@@ -27,9 +28,9 @@ enum DashboardFormat {
         return String(format: "%.1f", value)
     }
 
-    static func payoutDate(_ date: Date) -> String {
+    static func payoutDate(_ date: Date, locale: Locale = .current) -> String {
         let formatter = DateFormatter()
-        formatter.locale = .current
+        formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate("EEE d MMM")
         return formatter.string(from: date)
     }
@@ -51,11 +52,5 @@ enum DashboardFormat {
         formatter.maximumFractionDigits = 0
         formatter.groupingSeparator = "\u{202F}"
         return formatter.string(from: NSNumber(value: amount)) ?? String(format: "%.0f", amount)
-    }
-
-    private static func currencySymbol(_ code: String?) -> String? {
-        guard let code, !code.isEmpty else { return nil }
-        let locale = Locale(identifier: "\(Locale.current.identifier)@currency=\(code)")
-        return locale.currencySymbol ?? code
     }
 }

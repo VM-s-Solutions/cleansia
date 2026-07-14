@@ -55,8 +55,11 @@ public actor PushTokenRegistrar: SessionScopedCache {
                 platform: platform
             )
         )
-        if case .success = result {
+        switch result {
+        case .success:
             tokenStore.write(token)
+        case let .failure(error):
+            PushLog.log.error("device register FAILED: \(String(describing: error), privacy: .public)")
         }
     }
 

@@ -21,11 +21,14 @@ final class DashboardViewModel: ViewModel {
 
         switch await client.getStats(employeeId: employeeId) {
         case let .success(stats):
-            state = .loaded(DashboardData.from(stats: stats, firstName: firstName))
+            let preview = try? await client.getAvailableJobsPreview(limit: Self.previewLimit).get()
+            state = .loaded(DashboardData.from(stats: stats, preview: preview, firstName: firstName))
         case let .failure(error):
             state = .error(error)
         }
     }
+
+    private static let previewLimit = 5
 }
 
 private extension ApiResult where Success == EmployeeItem {

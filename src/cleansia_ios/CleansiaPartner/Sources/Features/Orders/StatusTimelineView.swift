@@ -33,6 +33,7 @@ enum StatusTimelineFormat {
 
 struct StatusTimelineView: View {
     let history: [OrderStatusTrackDto]
+    let locale: Locale
 
     private var entries: [StatusTimelineEntry] {
         StatusTimelineFormat.entries(from: history)
@@ -43,10 +44,11 @@ struct StatusTimelineView: View {
             OrderSectionCard(title: L10n.Orders.statusTimelineSectionTitle, systemImage: "clock.arrow.circlepath") {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(entries.enumerated()), id: \.offset) { index, entry in
-                        TimelineRow(entry: entry, isLast: index == entries.count - 1)
+                        TimelineRow(entry: entry, isLast: index == entries.count - 1, locale: locale)
                     }
                 }
             }
+            .id(locale.identifier)
         }
     }
 }
@@ -54,6 +56,7 @@ struct StatusTimelineView: View {
 private struct TimelineRow: View {
     let entry: StatusTimelineEntry
     let isLast: Bool
+    let locale: Locale
 
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.s) {
@@ -70,7 +73,7 @@ private struct TimelineRow: View {
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(entry.isCurrent ? CleansiaColors.onSurface : CleansiaColors.onSurfaceVariant)
                 if let timestamp = entry.timestamp {
-                    Text(OrdersFormat.relativeDateTime(timestamp))
+                    Text(OrdersFormat.relativeDateTime(timestamp, locale: locale))
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }

@@ -14,84 +14,106 @@ struct ProfileHubContent: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: Spacing.m) {
-                ProfileHero(employee: employee, contractStatus: data.contractStatus)
-
-                SectionGroup(title: L10n.Profile.groupAccount) {
-                    ProfileSectionRow(
-                        icon: "person",
-                        title: L10n.Profile.personal,
-                        summary: displayName,
-                        onTap: { onOpen(.personal(onboarding: false)) }
-                    )
-                    RowDivider()
-                    ProfileSectionRow(
-                        icon: "mappin.and.ellipse",
-                        title: L10n.Profile.address,
-                        summary: displayAddress,
-                        onTap: { onOpen(.address(onboarding: false)) }
-                    )
-                    RowDivider()
-                    ProfileSectionRow(
-                        icon: "phone",
-                        title: L10n.Profile.emergencyContact,
-                        summary: displayEmergency,
-                        onTap: { onOpen(.emergency) }
-                    )
+        GeometryReader { proxy in
+            ZStack {
+                CleansiaColors.background.ignoresSafeArea()
+                ScrollView {
+                    VStack(spacing: Spacing.l) {
+                        ProfileHero(
+                            employee: employee,
+                            contractStatus: data.contractStatus,
+                            topInset: proxy.safeAreaInsets.top
+                        )
+                        sectionGroup(title: L10n.Profile.groupAccount, rows: accountRows)
+                        sectionGroup(title: L10n.Profile.groupWorkLegal, rows: workLegalRows)
+                        sectionGroup(title: L10n.Profile.groupPreferences, rows: preferenceRows)
+                        LogoutRow(onTap: onLogout)
+                            .padding(.horizontal, Spacing.m)
+                            .padding(.bottom, Spacing.xxl)
+                    }
                 }
-
-                SectionGroup(title: L10n.Profile.groupWorkLegal) {
-                    ProfileSectionRow(
-                        icon: "person.text.rectangle",
-                        title: L10n.Profile.identification,
-                        summary: employee.passportId.nonBlankOrNil ?? L10n.Profile.noData,
-                        onTap: { onOpen(.identification(onboarding: false)) }
-                    )
-                    RowDivider()
-                    ProfileSectionRow(
-                        icon: "building.columns",
-                        title: L10n.Profile.bankDetails,
-                        summary: employee.iban.nonBlankOrNil ?? L10n.Profile.noData,
-                        onTap: { onOpen(.bank(onboarding: false)) }
-                    )
-                    RowDivider()
-                    ProfileSectionRow(
-                        icon: "doc.text",
-                        title: L10n.Profile.myDocuments,
-                        summary: L10n.Profile.documentsSummary,
-                        onTap: { onOpen(.documents) }
-                    )
-                }
-
-                SectionGroup(title: L10n.Profile.groupPreferences) {
-                    ProfileSectionRow(
-                        icon: "globe",
-                        title: L10n.Profile.language,
-                        summary: languageSummary,
-                        onTap: { onOpen(.language) }
-                    )
-                    RowDivider()
-                    ProfileSectionRow(
-                        icon: "moon",
-                        title: L10n.Profile.theme,
-                        summary: themeSummary,
-                        onTap: { onOpen(.theme) }
-                    )
-                    RowDivider()
-                    ProfileSectionRow(
-                        icon: "laptopcomputer.and.iphone",
-                        title: L10n.Devices.title,
-                        summary: L10n.Profile.devicesSummary,
-                        onTap: { onOpen(.devices) }
-                    )
-                }
-
-                LogoutRow(onTap: onLogout)
+                .ignoresSafeArea(.container, edges: .top)
             }
-            .padding(Spacing.m)
         }
-        .background(CleansiaColors.background.ignoresSafeArea())
+    }
+
+    private var accountRows: [ProfileHubRowItem] {
+        [
+            ProfileHubRowItem(
+                icon: "person",
+                title: L10n.Profile.personal,
+                summary: displayName,
+                route: .personal(onboarding: false)
+            ),
+            ProfileHubRowItem(
+                icon: "mappin.and.ellipse",
+                title: L10n.Profile.address,
+                summary: displayAddress,
+                route: .address(onboarding: false)
+            ),
+            ProfileHubRowItem(
+                icon: "phone",
+                title: L10n.Profile.emergencyContact,
+                summary: displayEmergency,
+                route: .emergency
+            )
+        ]
+    }
+
+    private var workLegalRows: [ProfileHubRowItem] {
+        [
+            ProfileHubRowItem(
+                icon: "person.text.rectangle",
+                title: L10n.Profile.identification,
+                summary: employee.passportId.nonBlankOrNil ?? L10n.Profile.noData,
+                route: .identification(onboarding: false)
+            ),
+            ProfileHubRowItem(
+                icon: "building.columns",
+                title: L10n.Profile.bankDetails,
+                summary: employee.iban.nonBlankOrNil ?? L10n.Profile.noData,
+                route: .bank(onboarding: false)
+            ),
+            ProfileHubRowItem(
+                icon: "doc.text",
+                title: L10n.Profile.myDocuments,
+                summary: L10n.Profile.documentsSummary,
+                route: .documents
+            )
+        ]
+    }
+
+    private var preferenceRows: [ProfileHubRowItem] {
+        [
+            ProfileHubRowItem(icon: "globe", title: L10n.Profile.language, summary: languageSummary, route: .language),
+            ProfileHubRowItem(icon: "moon", title: L10n.Profile.theme, summary: themeSummary, route: .theme),
+            ProfileHubRowItem(
+                icon: "laptopcomputer.and.iphone",
+                title: L10n.Devices.title,
+                summary: L10n.Profile.devicesSummary,
+                route: .devices
+            )
+        ]
+    }
+
+    private func sectionGroup(title: String, rows: [ProfileHubRowItem]) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            Text(title.uppercased())
+                .font(CleansiaTypography.labelSmall)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .padding(.horizontal, Spacing.m)
+            VStack(spacing: 0) {
+                ForEach(rows.indices, id: \.self) { index in
+                    ProfileSectionRow(item: rows[index], onTap: { onOpen(rows[index].route) })
+                    if index < rows.count - 1 {
+                        Divider().padding(.leading, Spacing.xl)
+                    }
+                }
+            }
+            .background(CleansiaColors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+            .padding(.horizontal, Spacing.m)
+        }
     }
 
     private var displayName: String {
@@ -116,38 +138,54 @@ struct ProfileHubContent: View {
     }
 }
 
+private struct ProfileHubRowItem {
+    let icon: String
+    let title: String
+    let summary: String
+    let route: ProfileRoute
+}
+
 private struct ProfileHero: View {
     let employee: EmployeeItem
     let contractStatus: ContractStatus?
+    var topInset: CGFloat = 0
 
     var body: some View {
-        HStack(spacing: Spacing.m) {
+        HStack(spacing: 14) {
             ZStack {
                 Circle()
-                    .fill(CleansiaColors.primaryContainer.opacity(0.4))
-                    .frame(width: 80, height: 80)
+                    .fill(Color.white)
+                    .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 3))
+                    .frame(width: 72, height: 72)
                 Text(initials)
                     .font(CleansiaTypography.headlineSmall)
                     .foregroundColor(CleansiaColors.primary)
             }
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(name)
-                    .font(CleansiaTypography.titleLarge)
-                    .foregroundColor(CleansiaColors.onSurface)
+                    .font(CleansiaTypography.headlineSmall)
+                    .foregroundColor(.white)
                     .lineLimit(1)
                 if let email = employee.email.nonBlankOrNil {
                     Text(email)
                         .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .foregroundColor(.white.opacity(0.85))
                         .lineLimit(1)
                 }
                 if let contractStatus {
                     ContractStatusChip(status: contractStatus)
+                        .padding(.top, Spacing.xxs)
                 }
             }
-            Spacer()
+            Spacer(minLength: 0)
         }
+        .padding(.horizontal, Spacing.ml)
+        .padding(.top, Spacing.m + topInset)
+        .padding(.bottom, Spacing.m)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom)
+        )
     }
 
     private var name: String {
@@ -166,6 +204,8 @@ private struct ProfileHero: View {
     }
 }
 
+/// Unlike the customer TierBadge (white translucent capsule), the chip keeps
+/// Android's semantic palette — color encodes the contract state.
 private struct ContractStatusChip: View {
     let status: ContractStatus
 
@@ -218,29 +258,8 @@ private struct ContractStatusChip: View {
     private static let amberContent = Color(red: 0.48, green: 0.30, blue: 0.0)
 }
 
-private struct SectionGroup<Content: View>: View {
-    let title: String
-    @ViewBuilder let content: () -> Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text(title.uppercased())
-                .font(CleansiaTypography.labelSmall)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .padding(.leading, Spacing.xs)
-            VStack(spacing: 0) {
-                content()
-            }
-            .background(CleansiaColors.surface)
-            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
-        }
-    }
-}
-
 private struct ProfileSectionRow: View {
-    let icon: String
-    let title: String
-    let summary: String
+    let item: ProfileHubRowItem
     let onTap: () -> Void
 
     var body: some View {
@@ -250,35 +269,29 @@ private struct ProfileSectionRow: View {
                     Circle()
                         .fill(CleansiaColors.primary.opacity(0.12))
                         .frame(width: 32, height: 32)
-                    Image(systemName: icon)
+                    Image(systemName: item.icon)
                         .font(.system(size: 16))
                         .foregroundColor(CleansiaColors.primary)
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
+                    Text(item.title)
                         .font(CleansiaTypography.titleMedium)
                         .foregroundColor(CleansiaColors.onSurface)
-                    Text(summary)
+                    Text(item.summary)
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                         .lineLimit(1)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             }
             .padding(.horizontal, Spacing.m)
             .padding(.vertical, Spacing.s + 2)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-    }
-}
-
-private struct RowDivider: View {
-    var body: some View {
-        Divider()
-            .background(CleansiaColors.outline.opacity(0.5))
-            .padding(.horizontal, Spacing.m)
     }
 }
 
@@ -286,20 +299,21 @@ private struct LogoutRow: View {
     let onTap: () -> Void
 
     var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: Spacing.m) {
+        Button(role: .destructive, action: onTap) {
+            HStack(spacing: Spacing.xs) {
                 Image(systemName: "rectangle.portrait.and.arrow.right")
-                    .font(.system(size: 18))
-                    .foregroundColor(CleansiaColors.error)
+                    .font(.system(size: 16, weight: .semibold))
                 Text(L10n.Profile.logout)
-                    .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.error)
-                Spacer()
+                    .font(CleansiaTypography.labelLarge)
             }
-            .padding(Spacing.m)
+            .foregroundColor(CleansiaColors.error)
             .frame(maxWidth: .infinity)
-            .background(CleansiaColors.errorContainer.opacity(0.4))
-            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+            .padding(.vertical, 14)
+            .background(CleansiaColors.error.opacity(0.12), in: RoundedRectangle(cornerRadius: CornerRadius.large))
+            .overlay {
+                RoundedRectangle(cornerRadius: CornerRadius.large)
+                    .stroke(CleansiaColors.error.opacity(0.4), lineWidth: 1)
+            }
         }
         .buttonStyle(.plain)
     }
@@ -333,7 +347,6 @@ private extension String? {
                 onOpen: { _ in },
                 onLogout: {}
             )
-            .background(CleansiaColors.background)
         }
     }
 #endif

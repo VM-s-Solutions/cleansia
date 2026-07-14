@@ -175,14 +175,15 @@ Every backend error key in `BusinessErrorMessage` must have a corresponding fron
 ## Order Lifecycle
 
 ```
-New (0) → Pending (1) → Confirmed (2) → InProgress (3) → Completed (4)
+New (0) → Pending (1) → Confirmed (2) → OnTheWay (3) → InProgress (4) → Completed (5)
               ↓
-          Cancelled (5)
+          Cancelled (6)
 ```
 
 - `New`: Order just created
 - `Pending`: Card payment initiated (waiting for Stripe webhook)
 - `Confirmed`: Cleaner took the order (or cash payment auto-confirmed)
+- `OnTheWay`: Cleaner is en route to the address
 - `InProgress`: Cleaner started work
 - `Completed`: Cleaner finished
 

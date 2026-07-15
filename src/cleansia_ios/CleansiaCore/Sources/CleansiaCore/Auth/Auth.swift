@@ -206,11 +206,29 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
 
     public func logout() async {
         let preLogout = lock.withLock { self.preLogout }
-        await preLogout?()
-        if let refreshToken = tokenStore.current()?.refreshToken, !refreshToken.isEmpty {
+        let refreshToken = tokenStore.current()?.refreshToken
+        // Server cleanup (device unregister + refresh-token revoke) is
+        // best-effort and HARD-CAPPED: logout is a local promise to the user
+        // and must never hang the UI on a dead session or a cold backend
+        // (observed: minutes of frozen "Log out" against the idle dev host —
+        // URLSession's default 60 s/request timeout across two serial calls).
+        // On timeout the server-side refresh token dies by natural expiry.
+        await Self.withBoundedWait(seconds: 5) { [weak self] in
+            await preLogout?()
+            guard let self, let refreshToken, !refreshToken.isEmpty else { return }
             await postExpectingNoBody(path: "api/Auth/Logout", body: LogoutRequest(token: refreshToken))
         }
         await signOutLocal()
+    }
+
+    /// Runs `work` but returns after at most `seconds`, cancelling the overrun.
+    private static func withBoundedWait(seconds: Double, _ work: @escaping @Sendable () async -> Void) async {
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { await work() }
+            group.addTask { try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000)) }
+            await group.next()
+            group.cancelAll()
+        }
     }
 
     public func signOutLocal() async {

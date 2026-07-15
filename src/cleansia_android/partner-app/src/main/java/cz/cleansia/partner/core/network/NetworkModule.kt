@@ -6,6 +6,7 @@ import cz.cleansia.core.auth.AuthInterceptor
 import cz.cleansia.core.auth.DeviceIdProvider
 import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.core.auth.RefreshClient
+import cz.cleansia.core.auth.RefreshResult
 import cz.cleansia.core.auth.SessionManager
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.auth.TokenStore
@@ -175,7 +176,7 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideRefreshClient(authApi: AuthApi): RefreshClient = object : RefreshClient {
-        override suspend fun refresh(refreshToken: String): TokenStore.Tokens? {
+        override suspend fun refresh(refreshToken: String): RefreshResult {
             // The partner-mobile-api enriches `RequiredAudience = "Mobile"` server-side
             // (see Cleansia.Web.Mobile.Partner/Controllers/AuthController.cs:106), so we
             // only need to send the refresh token itself. `RequiredProfile = null`
@@ -183,24 +184,31 @@ object NetworkModule {
             // was issued for, the server checks it against the refresh-token record.
             val response = runCatching {
                 authApi.authRefreshToken(RefreshTokenCommand(token = refreshToken))
-            }.getOrNull() ?: return null
+            }.getOrNull() ?: return RefreshResult.Unavailable
 
-            val body = response.body() ?: return null
-            if (!response.isSuccessful || body.token.isNullOrBlank()) return null
+            if (!response.isSuccessful) {
+                val errorBody = runCatching { response.errorBody()?.string() }.getOrNull()
+                return RefreshResult.classifyHttpFailure(response.code(), errorBody)
+            }
 
-            val access = body.token!!
+            val body = response.body() ?: return RefreshResult.Unavailable
+            val access = body.token
+            if (access.isNullOrBlank()) return RefreshResult.Unavailable
+
             val accessExp = JwtDecoder.extractExpiryMillis(access)
                 ?: (System.currentTimeMillis() + 15 * 60 * 1000L)
-            val refresh = body.refreshToken ?: return null
+            val refresh = body.refreshToken ?: return RefreshResult.Unavailable
             val refreshExp = body.refreshTokenExpiresAt
                 ?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() }
                 ?: (System.currentTimeMillis() + 24 * 60 * 60 * 1000L)
 
-            return TokenStore.Tokens(
-                accessToken = access,
-                accessTokenExpiresAt = accessExp,
-                refreshToken = refresh,
-                refreshTokenExpiresAt = refreshExp,
+            return RefreshResult.Success(
+                TokenStore.Tokens(
+                    accessToken = access,
+                    accessTokenExpiresAt = accessExp,
+                    refreshToken = refresh,
+                    refreshTokenExpiresAt = refreshExp,
+                ),
             )
         }
     }

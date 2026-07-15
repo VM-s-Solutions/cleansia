@@ -1,6 +1,7 @@
 package cz.cleansia.customer.core.auth
 
 import cz.cleansia.core.auth.ForcedSignOutReason
+import cz.cleansia.core.auth.RefreshResult
 import cz.cleansia.core.auth.SessionManager
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.auth.TokenStore
@@ -288,10 +289,10 @@ class AuthRepositoryTest {
         }
     }
 
-    // ── refresh() (RefreshClient impl) ──
+    // ── refresh() (RefreshClient impl) — terminal vs retryable classification ──
 
     @Test
-    fun refresh_givenSuccessfulResponse_returnsTokens() = kotlinx.coroutines.test.runTest {
+    fun refresh_givenSuccessfulResponse_returnsSuccessWithTokens() = kotlinx.coroutines.test.runTest {
         val dto = JwtTokenResponseDto(
             token = "h.p.s",
             isEmailConfirmed = true,
@@ -301,22 +302,50 @@ class AuthRepositoryTest {
         coEvery { api.refreshToken(any()) } returns Response.success(dto)
 
         val result = newRepository().refresh("old-r")
-        assertTrue(result is TokenStore.Tokens)
-        assertEquals("new-r", result?.refreshToken)
+        assertTrue("expected Success but was $result", result is RefreshResult.Success)
+        assertEquals("new-r", (result as RefreshResult.Success).tokens.refreshToken)
     }
 
     @Test
-    fun refresh_whenApiThrows_returnsNullSwallowsException() = kotlinx.coroutines.test.runTest {
+    fun refresh_whenApiThrows_returnsUnavailable() = kotlinx.coroutines.test.runTest {
         coEvery { api.refreshToken(any()) } throws java.io.IOException("boom")
-        val result = newRepository().refresh("r")
-        assertEquals(null, result)
+        assertEquals(RefreshResult.Unavailable, newRepository().refresh("r"))
     }
 
     @Test
-    fun refresh_givenNon2xxResponse_returnsNull() = kotlinx.coroutines.test.runTest {
+    fun refresh_given401_returnsRejected() = kotlinx.coroutines.test.runTest {
         val errBody = "".toResponseBody("application/json".toMediaType())
         coEvery { api.refreshToken(any()) } returns Response.error(401, errBody)
-        val result = newRepository().refresh("r")
-        assertEquals(null, result)
+        assertEquals(RefreshResult.Rejected, newRepository().refresh("r"))
+    }
+
+    @Test
+    fun refresh_given429_returnsUnavailable() = kotlinx.coroutines.test.runTest {
+        val errBody = "".toResponseBody("application/json".toMediaType())
+        coEvery { api.refreshToken(any()) } returns Response.error(429, errBody)
+        assertEquals(RefreshResult.Unavailable, newRepository().refresh("r"))
+    }
+
+    @Test
+    fun refresh_given500_returnsUnavailable() = kotlinx.coroutines.test.runTest {
+        val errBody = "".toResponseBody("application/json".toMediaType())
+        coEvery { api.refreshToken(any()) } returns Response.error(500, errBody)
+        assertEquals(RefreshResult.Unavailable, newRepository().refresh("r"))
+    }
+
+    @Test
+    fun refresh_givenBusinessRejectionBody_returnsRejected() = kotlinx.coroutines.test.runTest {
+        val errBody = """{"code":"Token","message":"auth.invalid_refresh_token"}"""
+            .toResponseBody("application/json".toMediaType())
+        coEvery { api.refreshToken(any()) } returns Response.error(400, errBody)
+        assertEquals(RefreshResult.Rejected, newRepository().refresh("r"))
+    }
+
+    @Test
+    fun refresh_givenSuccessWithUnusableBody_returnsUnavailable() = kotlinx.coroutines.test.runTest {
+        // Missing refreshToken → toTokens() null → unknown/unparseable is retryable, not a sign-out.
+        val dto = JwtTokenResponseDto(token = "h.p.s", isEmailConfirmed = true, refreshToken = null)
+        coEvery { api.refreshToken(any()) } returns Response.success(dto)
+        assertEquals(RefreshResult.Unavailable, newRepository().refresh("r"))
     }
 }

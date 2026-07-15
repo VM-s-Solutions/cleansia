@@ -1,6 +1,7 @@
 package cz.cleansia.customer.core.auth
 
 import cz.cleansia.core.auth.RefreshClient
+import cz.cleansia.core.auth.RefreshResult
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.auth.SessionManager
 import cz.cleansia.core.auth.AuthAuthenticator
@@ -132,17 +133,18 @@ class AuthRepository(
 
     // ─── RefreshClient impl (called by AuthAuthenticator) ───
 
-    override suspend fun refresh(refreshToken: String): TokenStore.Tokens? {
+    override suspend fun refresh(refreshToken: String): RefreshResult {
         val response = networkCall(TAG) { api.refreshToken(RefreshTokenRequest(refreshToken)) }
-            ?: return null
+            ?: return RefreshResult.Unavailable
 
         if (!response.isSuccessful) {
-            Log.i(TAG, "Refresh endpoint rejected token with ${response.code()}")
-            return null
+            Log.i(TAG, "Refresh endpoint answered ${response.code()}")
+            val errorBody = runCatching { response.errorBody()?.string() }.getOrNull()
+            return RefreshResult.classifyHttpFailure(response.code(), errorBody)
         }
 
-        val body = response.body() ?: return null
-        return body.toTokens()
+        val tokens = response.body()?.toTokens() ?: return RefreshResult.Unavailable
+        return RefreshResult.Success(tokens)
     }
 
     // ─── Internal helpers ───

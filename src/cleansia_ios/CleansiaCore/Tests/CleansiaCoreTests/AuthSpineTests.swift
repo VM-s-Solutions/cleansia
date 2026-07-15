@@ -200,12 +200,12 @@ final class SessionRefresherTests: XCTestCase {
             refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
         ))
         let client = CountingRefreshClient(
-            result: RefreshedTokens(
+            .refreshed(RefreshedTokens(
                 accessToken: "new",
                 accessTokenExpiresAt: Date(timeIntervalSinceNow: 900),
                 refreshToken: "r1",
                 refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
-            )
+            ))
         )
         let sessionManager = await SessionManager()
         let refresher = SessionRefresher(
@@ -236,7 +236,7 @@ final class SessionRefresherTests: XCTestCase {
             refreshToken: "r1",
             refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
         ))
-        let client = CountingRefreshClient(result: nil)
+        let client = CountingRefreshClient(.rejected)
         let sessionManager = await SessionManager()
         let refresher = SessionRefresher(
             tokenStore: store,
@@ -254,7 +254,7 @@ final class SessionRefresherTests: XCTestCase {
         XCTAssertEqual(tokens.accessToken, "current")
     }
 
-    func testRefreshFailureSignsOutAndClearsCaches() async {
+    func testRejectedRefreshSignsOutAndClearsCaches() async {
         let store = InMemoryTokenStore()
         store.save(.init(
             accessToken: "old",
@@ -262,7 +262,7 @@ final class SessionRefresherTests: XCTestCase {
             refreshToken: "r0",
             refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
         ))
-        let client = CountingRefreshClient(result: nil)
+        let client = CountingRefreshClient(.rejected)
         let sessionManager = await SessionManager()
         let registry = SessionScopedCacheRegistry()
         let cache = SpyCache()
@@ -283,6 +283,103 @@ final class SessionRefresherTests: XCTestCase {
         XCTAssertEqual(reason, .sessionExpired)
     }
 
+    func testRejectedRefreshFiresForcedSignOutStream() async {
+        let store = InMemoryTokenStore()
+        store.save(.init(
+            accessToken: "old",
+            accessTokenExpiresAt: Date(timeIntervalSince1970: 0),
+            refreshToken: "r0",
+            refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
+        ))
+        let client = CountingRefreshClient(.rejected)
+        let sessionManager = await SessionManager()
+        let refresher = SessionRefresher(
+            tokenStore: store,
+            refreshClient: client,
+            sessionManager: sessionManager,
+            sessionScopedCaches: SessionScopedCacheRegistry()
+        )
+        let stream = await sessionManager.forcedSignOutStream
+        let listener = Task<ForcedSignOutReason?, Never> {
+            for await reason in stream {
+                return reason
+            }
+            return nil
+        }
+        try? await Task.sleep(nanoseconds: 10_000_000)
+
+        let outcome = await refresher.refresh(triggeredBy: "old")
+
+        guard case .signedOut = outcome else { return XCTFail("expected sign-out") }
+        let reason = await listener.value
+        XCTAssertEqual(reason, .sessionExpired)
+    }
+
+    func testRetryableFailureKeepsSessionAndDoesNotForceSignOut() async {
+        let store = InMemoryTokenStore()
+        let original = AuthTokens(
+            accessToken: "old",
+            accessTokenExpiresAt: Date(timeIntervalSince1970: 0),
+            refreshToken: "r0",
+            refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
+        )
+        store.save(original)
+        let client = CountingRefreshClient(.retryable)
+        let sessionManager = await SessionManager()
+        let registry = SessionScopedCacheRegistry()
+        let cache = SpyCache()
+        registry.register(cache)
+        let refresher = SessionRefresher(
+            tokenStore: store,
+            refreshClient: client,
+            sessionManager: sessionManager,
+            sessionScopedCaches: registry
+        )
+
+        let outcome = await refresher.refresh(triggeredBy: "old")
+
+        XCTAssertEqual(outcome, .unavailable)
+        XCTAssertEqual(store.current(), original)
+        XCTAssertEqual(cache.clearCount, 0)
+        let reason = await sessionManager.lastReasonForTest
+        XCTAssertNil(reason)
+    }
+
+    func testRetryableFailureDoesNotLatchSubsequentRefreshSucceeds() async {
+        let store = InMemoryTokenStore()
+        store.save(.init(
+            accessToken: "old",
+            accessTokenExpiresAt: Date(timeIntervalSince1970: 0),
+            refreshToken: "r0",
+            refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
+        ))
+        let client = CountingRefreshClient(
+            .retryable,
+            .refreshed(RefreshedTokens(
+                accessToken: "new",
+                accessTokenExpiresAt: Date(timeIntervalSinceNow: 900),
+                refreshToken: "r1",
+                refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
+            ))
+        )
+        let sessionManager = await SessionManager()
+        let refresher = SessionRefresher(
+            tokenStore: store,
+            refreshClient: client,
+            sessionManager: sessionManager,
+            sessionScopedCaches: SessionScopedCacheRegistry()
+        )
+
+        let first = await refresher.refresh(triggeredBy: "old")
+        let second = await refresher.refresh(triggeredBy: "old")
+
+        XCTAssertEqual(first, .unavailable)
+        XCTAssertEqual(client.callCount, 2)
+        guard case let .refreshed(tokens) = second else { return XCTFail("expected refreshed") }
+        XCTAssertEqual(tokens.accessToken, "new")
+        XCTAssertEqual(store.current()?.refreshToken, "r1")
+    }
+
     func testExpiredRefreshTokenSignsOutWithoutCallingServer() async {
         let store = InMemoryTokenStore()
         store.save(.init(
@@ -291,7 +388,7 @@ final class SessionRefresherTests: XCTestCase {
             refreshToken: "r0",
             refreshTokenExpiresAt: Date(timeIntervalSince1970: 0)
         ))
-        let client = CountingRefreshClient(result: nil)
+        let client = CountingRefreshClient(.rejected)
         let sessionManager = await SessionManager()
         let refresher = SessionRefresher(
             tokenStore: store,
@@ -305,6 +402,47 @@ final class SessionRefresherTests: XCTestCase {
         XCTAssertEqual(client.callCount, 0)
         guard case .signedOut = outcome else { return XCTFail("expected sign-out") }
         XCTAssertNil(store.current())
+    }
+}
+
+final class RefreshCallClassificationTests: XCTestCase {
+    func testAuthRejectionStatusesAreTerminal() {
+        XCTAssertEqual(RefreshCallResult.classify(ApiError(httpStatus: 401)), .rejected)
+        XCTAssertEqual(RefreshCallResult.classify(ApiError(httpStatus: 403)), .rejected)
+    }
+
+    func testRefreshTokenBusinessRejectionsAreTerminal() {
+        XCTAssertEqual(
+            RefreshCallResult.classify(ApiError(code: "auth.invalid_refresh_token", httpStatus: 400)),
+            .rejected
+        )
+        XCTAssertEqual(
+            RefreshCallResult.classify(ApiError(code: "auth.refresh_token_reused", httpStatus: 400)),
+            .rejected
+        )
+    }
+
+    func testTransportFailuresAreRetryable() {
+        XCTAssertEqual(RefreshCallResult.classify(ApiError(code: "network.unreachable")), .retryable)
+        XCTAssertEqual(RefreshCallResult.classify(ApiError(code: "network.no_response")), .retryable)
+    }
+
+    func testServerErrorAndThrottleStatusesAreRetryable() {
+        for status in [429, 500, 502, 503] {
+            XCTAssertEqual(
+                RefreshCallResult.classify(ApiError(httpStatus: status)),
+                .retryable,
+                "\(status) must not kill the session"
+            )
+        }
+    }
+
+    func testUnknownNonAuthAnswersFailOpenAsRetryable() {
+        XCTAssertEqual(RefreshCallResult.classify(ApiError(httpStatus: 400)), .retryable)
+        XCTAssertEqual(
+            RefreshCallResult.classify(ApiError(code: "common.required", httpStatus: 400)),
+            .retryable
+        )
     }
 }
 
@@ -355,11 +493,11 @@ private final class InMemoryTokenStore: TokenStore, @unchecked Sendable {
 
 private final class CountingRefreshClient: AuthRefreshing, @unchecked Sendable {
     private let lock = NSLock()
-    private let result: RefreshedTokens?
+    private var results: [RefreshCallResult]
     private var calls = 0
 
-    init(result: RefreshedTokens?) {
-        self.result = result
+    init(_ results: RefreshCallResult...) {
+        self.results = results
     }
 
     var callCount: Int {
@@ -368,9 +506,10 @@ private final class CountingRefreshClient: AuthRefreshing, @unchecked Sendable {
         return calls
     }
 
-    func refresh(refreshToken _: String) async -> RefreshedTokens? {
+    func refresh(refreshToken _: String) async -> RefreshCallResult {
         lock.lock()
         calls += 1
+        let result = results.count > 1 ? results.removeFirst() : results[0]
         lock.unlock()
         try? await Task.sleep(nanoseconds: 5_000_000)
         return result

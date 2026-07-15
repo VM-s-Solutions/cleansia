@@ -1,11 +1,45 @@
 import Foundation
 
+/// One refresh-endpoint call, classified per the cross-platform session contract
+/// (identical on Android). `.rejected` is terminal: the endpoint answered with an
+/// auth rejection — HTTP 401/403 or a parseable invalid/expired/revoked
+/// refresh-token business error — so the session is dead. `.retryable` is every
+/// other failure (transport: unreachable/timeout/DNS/TLS; HTTP 5xx; HTTP 429; any
+/// unknown non-auth answer): fail-open for the session — tokens are kept, the
+/// caller surfaces its own failure, and the next trigger retries. The server
+/// still rejects a genuinely bad token on that next call.
+public enum RefreshCallResult: Equatable, Sendable {
+    case refreshed(RefreshedTokens)
+    case rejected
+    case retryable
+}
+
+public extension RefreshCallResult {
+    static func classify(_ error: ApiError) -> RefreshCallResult {
+        if error.httpStatus == 401 || error.httpStatus == 403 {
+            return .rejected
+        }
+        if let code = error.code, rejectionCodes.contains(code) {
+            return .rejected
+        }
+        return .retryable
+    }
+
+    static let rejectionCodes: Set<String> = [
+        "auth.invalid_refresh_token",
+        "auth.refresh_token_reused"
+    ]
+}
+
 public protocol AuthRefreshing: Sendable {
-    func refresh(refreshToken: String) async -> RefreshedTokens?
+    func refresh(refreshToken: String) async -> RefreshCallResult
 }
 
 public enum RefreshOutcome: Equatable, Sendable {
     case refreshed(AuthTokens)
+    /// The refresh could not complete but the session survives: tokens kept, no
+    /// forced sign-out, and the next trigger runs a fresh attempt.
+    case unavailable
     case signedOut
 }
 
@@ -57,19 +91,22 @@ public actor SessionRefresher {
             return .signedOut
         }
 
-        guard let refreshed = await refreshClient.refresh(refreshToken: tokens.refreshToken) else {
+        switch await refreshClient.refresh(refreshToken: tokens.refreshToken) {
+        case .rejected:
             await forceSignOut(.sessionExpired)
             return .signedOut
+        case .retryable:
+            return .unavailable
+        case let .refreshed(refreshed):
+            let next = AuthTokens(
+                accessToken: refreshed.accessToken,
+                accessTokenExpiresAt: refreshed.accessTokenExpiresAt,
+                refreshToken: refreshed.refreshToken,
+                refreshTokenExpiresAt: refreshed.refreshTokenExpiresAt
+            )
+            tokenStore.save(next)
+            return .refreshed(next)
         }
-
-        let next = AuthTokens(
-            accessToken: refreshed.accessToken,
-            accessTokenExpiresAt: refreshed.accessTokenExpiresAt,
-            refreshToken: refreshed.refreshToken,
-            refreshTokenExpiresAt: refreshed.refreshTokenExpiresAt
-        )
-        tokenStore.save(next)
-        return .refreshed(next)
     }
 
     private func forceSignOut(_ reason: ForcedSignOutReason) async {

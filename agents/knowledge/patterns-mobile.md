@@ -168,6 +168,15 @@ class OrderRepository @Inject constructor(
 other throwable. API services are provided per feature via a Hilt `@Module @InstallIn(SingletonComponent::class) object`
 using `@AuthRetrofit` (main) vs `@NoAuthRetrofit` (refresh-only) qualifiers.
 
+The 401-refresh path classifies failure via the sealed `cz.cleansia.core.auth.RefreshResult`
+(the cross-platform rule — iOS `SessionRefresher` mirrors it): **terminal** (sign out) = the refresh
+endpoint answered with an auth rejection — HTTP 401/403 or a parseable business rejection
+(`auth.invalid_refresh_token` / `auth.refresh_token_reused`); **retryable** (keep tokens, fail only
+the triggering request, next 401 retries) = IOException/timeout/DNS/TLS, HTTP 5xx, HTTP 429, or any
+unknown/unparseable answer (fail-open for the session only — every call re-validates the access token
+server-side). Per-app `RefreshClient` impls map non-2xx through `RefreshResult.classifyHttpFailure`;
+collapsing refresh failures to a bare null/sign-out is a defect.
+
 ## Shared UI & theme
 
 Use `cz.cleansia.core.ui.components.*` — `CleansiaPrimaryButton`, `CleansiaOutlinedButton`,
@@ -214,7 +223,7 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | two OkHttp clients (`@NoAuthOkHttp` refresh vs `@AuthOkHttp`) | the `AuthApiClient` holds **two `URLSession`s** — an authed session + a separate no-auth `.ephemeral` session used for `/api/Auth/*` (login/refresh/forgot) so a 401-on-refresh can't loop; `AuthNetworkBoundary` in `Core/DI` is the generic lazy-seam variant kept for surfaces that need the boundary made explicit |
 | `Set<SessionScopedCache>` Hilt multibinding (`SessionScopedModule`) | a `SessionScopedCacheRegistry` in `Core/Auth` — repos `register` themselves (held weakly); both sign-out and the 401-refresh path call `clearAll()`, so the two clear-paths can't drift |
 | `AuthInterceptor` anon path-skip (one hardcoded list) | `HeaderAdapter` takes an injected `AnonymousAllowList` (`Core/Auth`) — **host-specific**: `.partner` is auth-only; `.customer` adds the guest-booking surface (`Service/Package/Extra GetOverview`, `Membership/GetPlans`, `Order/{Quote,CreateOrder,Lookup,LookupBatch}`, `Payment/CreateOrder`, `Referral/Validate`). Same case-insensitive path-contains match as Android; `Logout` is never anon. **`AnonymousAllowList` also carries a `dualUsePaths` set** (`isDualUse(path:)`) — `.customer` = `Order/{Quote,CreateOrder}` + `Payment/CreateOrder`; `HeaderAdapter` attaches the Bearer when `isDualUse OR !isAnonymous`, so a dual-use path is Bearer-iff-token (signed-in carries it for tier/membership pricing + user binding; true guest stays tokenless). Pure-anon + guest-read paths stay tokenless even signed-in; `.partner` has none (T-0332) |
-| `AuthAuthenticator` `synchronized(this)` single-flight 401-refresh | `actor SessionRefresher` (`Core/Auth`): coalesces concurrent 401s into ONE network refresh (queued callers reuse the freshly-stored token), **replaces** the stored refresh token every refresh (theft-detection), and on failure/expiry wipes the `TokenStore` + `clearAll()` caches + emits `ForcedSignOut` via the `SessionManager` (no retry) |
+| `AuthAuthenticator` `synchronized(this)` single-flight 401-refresh | `actor SessionRefresher` (`Core/Auth`): coalesces concurrent 401s into ONE network refresh (queued callers reuse the freshly-stored token), **replaces** the stored refresh token every refresh (theft-detection). Refresh failure is **classified, not nil-collapsed** (`RefreshCallResult`, the cross-platform contract): **terminal** = refresh-token expiry or an auth rejection (HTTP 401/403 or the parseable `auth.invalid_refresh_token`/`auth.refresh_token_reused` business key) → wipe `TokenStore` + `clearAll()` caches + emit `ForcedSignOut` via the `SessionManager`; **retryable** = transport/5xx/429/any unknown non-auth answer → `RefreshOutcome.unavailable`: tokens kept, the failing call surfaces its own error, the next trigger re-attempts (fail-open — the server still rejects a bad token next call). A refresh path that signs out on a transient failure is a defect |
 | `BuildConfig.API_BASE_URL` | per-app `AppConfig.apiBaseURL` reading the `API_BASE_URL` Info.plist key (set from the build setting; each app points at its own `…-mobile-…` host) |
 | `ui.theme.Spacing` / `CleansiaShapes` | `Spacing` + `CornerRadius` enums in `Core/DesignSystem` (same 8-pt scale + 6/12/16/24/32 corners + a `pill`) |
 | Material `colorScheme.*` (per-app `lightColorScheme`/`darkColorScheme`) | `CleansiaColors` in `Core/DesignSystem` — the **same Material slot names** (`primary`/`onPrimary`/`surface`/`outline`/`error`…) as `Color.dynamic(light:dark:)`, so components read 1:1 with the Compose source; the sky/slate ramp is `Palette` (internal) |

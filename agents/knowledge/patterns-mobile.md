@@ -206,13 +206,21 @@ flags a `@Singleton` with a `StateFlow`/`DataStore` cache field that isn't a mem
 check is infeasible for the line-based checker (Kotlin/Swift type-graph resolution) — see `enforcement.md`.
 
 The 401-refresh path classifies failure via the sealed `cz.cleansia.core.auth.RefreshResult`
-(the cross-platform rule — iOS `SessionRefresher` mirrors it): **terminal** (sign out) = the refresh
-endpoint answered with an auth rejection — HTTP 401/403 or a parseable business rejection
-(`auth.invalid_refresh_token` / `auth.refresh_token_reused`); **retryable** (keep tokens, fail only
-the triggering request, next 401 retries) = IOException/timeout/DNS/TLS, HTTP 5xx, HTTP 429, or any
-unknown/unparseable answer (fail-open for the session only — every call re-validates the access token
-server-side). Per-app `RefreshClient` impls map non-2xx through `RefreshResult.classifyHttpFailure`;
-collapsing refresh failures to a bare null/sign-out is a defect.
+(the cross-platform rule — iOS `SessionRefresher` mirrors it): **terminal** (sign out) = the stored
+refresh token is locally dead **before any call** (expired by its stored expiry, or empty — iOS
+`Auth.persist` can store `refreshToken: ""` when a response omits it, so `SessionRefresher.performRefresh`
+short-circuits both without a round-trip), **or** the refresh endpoint answered with an auth rejection
+— HTTP 401/403 or a parseable business rejection (`auth.invalid_refresh_token` /
+`auth.refresh_token_reused`). The rejection key is matched **cross-platform but by mechanism-specific means** — Android scans the
+**raw whole body** (`errorBody.contains`); iOS scans the parsed `ApiError.code` (exact — populated from
+ProblemDetails `errors`-key → `errorCode` → **`type`**) plus the free-text `message` (substring). These
+are equivalent for every wire shape the backend emits (401, or the key in `type`/`detail`); iOS's
+rejected-set is a strict subset, so it is never *more* aggressive. Either way a rejection riding a
+non-401 status still ends the session. **Retryable** (keep tokens, fail only the triggering request, next 401
+retries) = IOException/timeout/DNS/TLS, HTTP 5xx, HTTP 429, or any unknown/unparseable answer (fail-open
+for the session only — every call re-validates the access token server-side). Per-app `RefreshClient`
+impls map non-2xx through `RefreshResult.classifyHttpFailure`; collapsing refresh failures to a bare
+null/sign-out is a defect.
 
 ## Shared UI & theme
 

@@ -403,6 +403,39 @@ final class SessionRefresherTests: XCTestCase {
         guard case .signedOut = outcome else { return XCTFail("expected sign-out") }
         XCTAssertNil(store.current())
     }
+
+    func testEmptyStoredRefreshTokenSignsOutWithoutCallingServer() async {
+        // Auth.persist can store `refreshToken: ""` when a response omits it;
+        // an empty token is locally-expired-terminal — no rejection round-trip.
+        let store = InMemoryTokenStore()
+        store.save(.init(
+            accessToken: "old",
+            accessTokenExpiresAt: Date(timeIntervalSince1970: 0),
+            refreshToken: "",
+            refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
+        ))
+        let client = CountingRefreshClient(.refreshed(
+            RefreshedTokens(
+                accessToken: "should-not-be-used",
+                accessTokenExpiresAt: Date(timeIntervalSinceNow: 9999),
+                refreshToken: "r-new",
+                refreshTokenExpiresAt: Date(timeIntervalSinceNow: 9999)
+            )
+        ))
+        let sessionManager = await SessionManager()
+        let refresher = SessionRefresher(
+            tokenStore: store,
+            refreshClient: client,
+            sessionManager: sessionManager,
+            sessionScopedCaches: SessionScopedCacheRegistry()
+        )
+
+        let outcome = await refresher.refresh(triggeredBy: "old")
+
+        XCTAssertEqual(client.callCount, 0, "empty refresh token must not hit the server")
+        guard case .signedOut = outcome else { return XCTFail("expected sign-out") }
+        XCTAssertNil(store.current())
+    }
 }
 
 final class RefreshCallClassificationTests: XCTestCase {
@@ -419,6 +452,27 @@ final class RefreshCallClassificationTests: XCTestCase {
         XCTAssertEqual(
             RefreshCallResult.classify(ApiError(code: "auth.refresh_token_reused", httpStatus: 400)),
             .rejected
+        )
+    }
+
+    func testRejectionKeyBorneOnMessageBodyIsTerminal() {
+        // Parity with Android's whole-body substring scan: the business key can
+        // ride the free-text message (ProblemDetails detail/title), not only the
+        // exact `code`. A non-401 status must still classify terminal.
+        XCTAssertEqual(
+            RefreshCallResult.classify(ApiError(message: "auth.invalid_refresh_token", httpStatus: 400)),
+            .rejected
+        )
+        XCTAssertEqual(
+            RefreshCallResult.classify(
+                ApiError(message: "Refresh rejected: auth.refresh_token_reused", httpStatus: 409)
+            ),
+            .rejected
+        )
+        // Boundary: a benign non-rejection message stays retryable (fail-open).
+        XCTAssertEqual(
+            RefreshCallResult.classify(ApiError(message: "Something went wrong", httpStatus: 400)),
+            .retryable
         )
     }
 

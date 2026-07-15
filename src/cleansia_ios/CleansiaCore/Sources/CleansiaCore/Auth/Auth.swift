@@ -307,7 +307,13 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
     private func decodeError(data: Data, status: Int) -> ApiError {
         if let problem = try? decoder.decode(ProblemDetails.self, from: data) {
             return ApiError(
-                code: problem.firstErrorKey ?? problem.errorCode,
+                // `?? problem.type`: the API base controller writes the business
+                // key into ProblemDetails `type` (CreateProblemDetails), so a
+                // refresh rejection can arrive with the key ONLY in `type` (no
+                // `errors` dict). Mirrors ApiError.fromProblemDetails' chain so
+                // RefreshCallResult.classify can see it — else it misclassifies
+                // a genuine rejection as retryable.
+                code: problem.firstErrorKey ?? problem.errorCode ?? problem.type,
                 message: problem.detail ?? problem.title,
                 httpStatus: status
             )

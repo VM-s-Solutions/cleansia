@@ -19,7 +19,14 @@ public extension RefreshCallResult {
         if error.httpStatus == 401 || error.httpStatus == 403 {
             return .rejected
         }
-        if let code = error.code, rejectionCodes.contains(code) {
+        // Parity with Android's whole-body substring scan
+        // (AuthAuthenticator.classifyHttpFailure): a rejection can ride a
+        // non-401 status with the business key in the ProblemDetails code/type
+        // (→ `code`, via decodeError's `?? problem.type`) or the free-text body
+        // (→ `message`). Match either so a real rejection still ends the session.
+        if rejectionCodes.contains(where: { key in
+            error.code == key || (error.message?.contains(key) ?? false)
+        }) {
             return .rejected
         }
         return .retryable
@@ -86,7 +93,11 @@ public actor SessionRefresher {
     }
 
     private func performRefresh(current tokens: AuthTokens) async -> RefreshOutcome {
-        if tokens.isRefreshExpired() {
+        // Empty stored refresh token is locally-expired-terminal: Auth.persist
+        // can store `refreshToken: ""` when a login/refresh response omits it,
+        // and posting "" to the endpoint would only draw a rejection round-trip.
+        // Treat it as a dead session, exactly like an expired one.
+        if tokens.refreshToken.isEmpty || tokens.isRefreshExpired() {
             await forceSignOut(.sessionExpired)
             return .signedOut
         }

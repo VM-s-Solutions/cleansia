@@ -34,6 +34,10 @@ import cz.cleansia.partner.api.model.OrderItem
  * name. Packages do carry `price`, so we surface it. Extras come back
  * as a slug→bool map; we filter to active slugs and map them to the
  * same emoji + name pair the customer wizard uses.
+ *
+ * Service/package names resolve to the device locale via
+ * [localizedScopeName], degrading to the stored English name when the
+ * backend didn't send that translation.
  */
 @Composable
 fun ScopeCard(
@@ -43,7 +47,9 @@ fun ScopeCard(
     val rooms = order.rooms ?: 0
     val baths = order.bathrooms ?: 0
     val services = order.selectedServices.orEmpty()
-        .mapNotNull { it.name?.takeIf { n -> n.isNotBlank() } }
+        .mapNotNull { svc ->
+            localizedScopeName(svc.translations, svc.name)?.takeIf { it.isNotBlank() }
+        }
     val packages = order.selectedPackages.orEmpty()
     val activeExtras = order.extras.orEmpty()
         .filterValues { it }
@@ -82,7 +88,8 @@ fun ScopeCard(
                 packages.forEach { pkg ->
                     val priceLabel = pkg.price?.let { formatOrderPrice(it, currencyCode) }
                     ScopeLineItem(
-                        label = pkg.name?.takeIf { it.isNotBlank() } ?: "—",
+                        label = localizedScopeName(pkg.translations, pkg.name)
+                            ?.takeIf { it.isNotBlank() } ?: "—",
                         value = priceLabel,
                     )
                 }

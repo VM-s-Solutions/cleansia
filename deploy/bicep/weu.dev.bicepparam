@@ -65,5 +65,3 @@ param tags = {
   environment: 'dev'
 }
 
-// Flip ONLY after the Key Vault secret Fcm--ServiceAccountJson exists (push runbook §0):
-// param fcmSecretProvisioned = true

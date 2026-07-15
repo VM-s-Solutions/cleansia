@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
+using Npgsql;
 
 namespace Cleansia.HostTests.Infrastructure;
 
@@ -28,7 +29,14 @@ public sealed class HostTestApplicationFactory<TEntryPoint> : WebApplicationFact
 
     public HostTestApplicationFactory(string connectionString)
     {
-        _connectionString = connectionString;
+        // Cap this host's Npgsql pool. Many hosts boot against the one shared test container over the
+        // serial run; an unbounded pool per host (default max 100) let the aggregate cross the
+        // container's connection ceiling. A small cap per host is plenty for a test's request volume
+        // and keeps the total bounded regardless of how many hosts a class boots.
+        _connectionString = new NpgsqlConnectionStringBuilder(connectionString)
+        {
+            MaxPoolSize = 20,
+        }.ConnectionString;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

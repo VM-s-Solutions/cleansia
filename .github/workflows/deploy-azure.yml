@@ -228,6 +228,19 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      # fcmSecretProvisioned tracks whether the FIREBASE_SERVICE_ACCOUNT_JSON GitHub secret is set for
+      # this Environment. The secret-push step below writes Fcm--ServiceAccountJson to Key Vault in the
+      # SAME run, so deriving the Bicep param from the secret's PRESENCE (known here, before both steps)
+      # keeps provisioning and the secret write consistent — the KV reference is wired iff the secret is
+      # about to exist, never before. Set the secret once per Environment to enable iOS/Android push.
+      - name: Resolve FCM provisioning flag
+        run: |
+          if [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" ]; then
+            echo "FCM_PROVISIONED=true" >> "$GITHUB_ENV"
+          else
+            echo "FCM_PROVISIONED=false" >> "$GITHUB_ENV"
+          fi
+
       - name: Bicep what-if (non-mutating preview)
         if: inputs.mode == 'what-if'
         run: |
@@ -237,7 +250,8 @@ jobs:
             --parameters ${{ inputs.bicepparamFile }} \
             --parameters postgresAdministratorPassword="$POSTGRES_ADMIN_PASSWORD" \
                          adminIpAddress="$ADMIN_IP_ADDRESS" \
-                         ciPrincipalId="$CI_PRINCIPAL_ID"
+                         ciPrincipalId="$CI_PRINCIPAL_ID" \
+                         fcmSecretProvisioned="$FCM_PROVISIONED"
         env:
           POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
           ADMIN_IP_ADDRESS: ${{ secrets.ADMIN_IP_ADDRESS }}
@@ -256,7 +270,8 @@ jobs:
               --parameters ${{ inputs.bicepparamFile }} \
               --parameters postgresAdministratorPassword="$POSTGRES_ADMIN_PASSWORD" \
                            adminIpAddress="$ADMIN_IP_ADDRESS" \
-                           ciPrincipalId="$CI_PRINCIPAL_ID"
+                           ciPrincipalId="$CI_PRINCIPAL_ID" \
+                           fcmSecretProvisioned="$FCM_PROVISIONED"
           }
           if ! deploy; then
             echo "::warning::First provision attempt failed (often the transient PG ServerIsBusy) — retrying once in 3 minutes."
@@ -297,6 +312,7 @@ jobs:
           SENDGRID_ORDER_STATUS_UPDATE_TEMPLATE_ID: ${{ secrets.SENDGRID_ORDER_STATUS_UPDATE_TEMPLATE_ID }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
         run: |
           # Grant the CI principal (this OIDC app's service principal) Secrets Officer on the vault.
           CI_OID="$(az ad signed-in-user show --query id -o tsv 2>/dev/null || true)"
@@ -335,6 +351,11 @@ jobs:
           set_secret "SendGrid--OrderStatusUpdateTemplateId"   "$SENDGRID_ORDER_STATUS_UPDATE_TEMPLATE_ID"
           set_secret "Sentry--Dsn"                  "$SENTRY_DSN"
           set_secret "Mapbox--GeocodingAccessToken" "$MAPBOX_TOKEN"
+          # FCM push dispatch. The Functions host binds FCM__ServiceAccountJson only when the Bicep
+          # fcmSecretProvisioned param is true (see the provision step) — which is itself driven by
+          # whether this GitHub secret is set, so the KV reference is never wired before the secret
+          # exists (an unresolvable reference would dead-letter every push, not no-op cleanly).
+          set_secret "Fcm--ServiceAccountJson"      "$FIREBASE_SERVICE_ACCOUNT_JSON"
 
   # ===========================================================================================
   # Migrate — committed EF migrations applied BEFORE any deploy (ADR-0015 D5). Runs after provision

@@ -32,7 +32,7 @@ public class TokenService(
         user.RecordLogin(timeProvider.GetUtcNow());
 
         var employeeId = await ResolveEmployeeIdAsync(user, cancellationToken);
-        var accessToken = GenerateAccessToken(user, employeeId, audience);
+        var accessToken = GenerateAccessToken(user, employeeId, audience, requestMetadata.DeviceId);
         var refresh = refreshTokenService.Issue(
             userId: user.Id,
             rememberMe: rememberMe,
@@ -61,7 +61,7 @@ public class TokenService(
         return employee?.Id;
     }
 
-    private string GenerateAccessToken(User user, string? employeeId, string audience)
+    private string GenerateAccessToken(User user, string? employeeId, string audience, string? deviceId)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret));
@@ -70,7 +70,7 @@ public class TokenService(
         {
             Issuer = jwtSettings.Issuer,
             Audience = audience,
-            Subject = new ClaimsIdentity(user.SetClaims(employeeId)),
+            Subject = new ClaimsIdentity(user.SetClaims(employeeId, deviceId)),
             Expires = DateTime.UtcNow.AddMinutes(jwtSettings.AccessTokenExpMinutes),
             SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
         };

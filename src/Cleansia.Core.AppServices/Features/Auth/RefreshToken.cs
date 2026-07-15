@@ -101,7 +101,7 @@ public class RefreshToken
             }
 
             var audience = issued.Record.Audience ?? string.Empty;
-            var accessToken = GenerateAccessToken(user, employeeId, audience, jwtSettings);
+            var accessToken = GenerateAccessToken(user, employeeId, audience, issued.Record.DeviceId, jwtSettings);
 
             return BusinessResult.Success(new JwtTokenResponse(
                 Token: accessToken,
@@ -113,7 +113,7 @@ public class RefreshToken
                 Role: user.Profile.ToString()));
         }
 
-        private static string GenerateAccessToken(User user, string? employeeId, string audience, IJwtSettings jwtSettings)
+        private static string GenerateAccessToken(User user, string? employeeId, string audience, string? deviceId, IJwtSettings jwtSettings)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret));
@@ -121,7 +121,7 @@ public class RefreshToken
             {
                 Issuer = jwtSettings.Issuer,
                 Audience = audience,
-                Subject = new ClaimsIdentity(user.SetClaims(employeeId)),
+                Subject = new ClaimsIdentity(user.SetClaims(employeeId, deviceId)),
                 Expires = DateTime.UtcNow.AddMinutes(jwtSettings.AccessTokenExpMinutes),
                 SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
             };

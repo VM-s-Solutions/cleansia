@@ -4,7 +4,11 @@
 - **Date:** 2026-07-15
 - **Supersedes:** — (no prior ADR governs token lifetimes; ADR-0001's per-host refresh pin and
   ADR-0003's `auth` rate-limit policy are **untouched and load-bearing** here)
-- **Superseded by:** —
+- **Superseded by:** ADR-0026 **partially** (2026-07-15, accepted — panel verdict, conditional on
+  the owner's ≤ 30 s ratification) — only **D2** (the "TTL is the
+  bound / no per-request read path" contract) and **D3-B** (option B's deferral; its named trigger —
+  a product demand for instant revocation — was exercised by the owner's directive). **D1 (30-min
+  TTL) stands unchanged as the backstop bound**; D3-C (push = UX only) is reaffirmed by ADR-0026.
 - **Applies to:** backend config (mobile hosts) | mobile clients (behavioral, no code change)
 - **Ticket:** T-0405 (`security_touching: true`, priority high, owner-prioritized) · related:
   T-0406 (Android partner forced-signout collector), T-0403/T-0404 (iOS push receive-side),

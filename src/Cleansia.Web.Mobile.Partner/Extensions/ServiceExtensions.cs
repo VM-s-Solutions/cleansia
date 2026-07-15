@@ -5,6 +5,7 @@ using Microsoft.OpenApi;
 using System.Text;
 using Cleansia.Config;
 using Cleansia.Config.Services;
+using Cleansia.Config.Services.DeviceRevocation;
 using Cleansia.Infra.Database;
 using Cleansia.Web.Mobile.Partner.Middlewares;
 using Cleansia.Web.Mobile.Partner.SwaggerSchemaFilters;
@@ -28,6 +29,7 @@ public static class ServiceExtensions
             .AddApiVersioningServices()
             .AddSwagger()
             .AddJwt(configuration)
+            .AddDeviceRevocationEnforcement(configuration)
             .AddCleansiaAuthorization(configuration);
     }
 
@@ -182,6 +184,8 @@ public static class ServiceExtensions
                     {
                         claimsIdentity.AddClaim(new Claim(ClaimTypes.Role, roleClaim.Value));
                     }
+
+                    context.EnforceDeviceRevocation();
                     return Task.CompletedTask;
                 }
             };

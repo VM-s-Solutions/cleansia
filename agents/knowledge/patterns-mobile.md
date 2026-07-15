@@ -168,6 +168,43 @@ class OrderRepository @Inject constructor(
 other throwable. API services are provided per feature via a Hilt `@Module @InstallIn(SingletonComponent::class) object`
 using `@AuthRetrofit` (main) vs `@NoAuthRetrofit` (refresh-only) qualifiers.
 
+**Joining the `SessionScopedCache` multibinding (three non-obvious rules).** ANY `@Singleton` holding
+per-user state — a cached `StateFlow`, a persistent DataStore, OR a bare freshness watermark — is a
+member and must `clear()` on sign-out; leaving one out leaks the prior user's data to the next account
+on a shared device (a security defect). (1) A repo bound behind an **interface** needs a SECOND binding
+— `@Binds @IntoSet abstract fun bindXAsCache(impl: XImpl): SessionScopedCache` alongside the primary
+`@Binds …: XInterface` (the `@IntoSet` binds the impl, not the interface); a plain in-app repo just
+adds one `@Binds @IntoSet` line to the app's `SessionScopedModule`. (2) A repo holding a
+[`Staleness`](../../src/cleansia_android/core/src/main/java/cz/cleansia/core/freshness/Staleness.kt)
+watermark (or a `Map`/`ConcurrentHashMap` of them) must `reset()` it from `clear()` — per `Staleness`'s
+own doc — else a stale-window `refresh(force=false)` no-ops and shows the next user cached data; drop
+per-key maps entirely (`.clear()`), reset fixed instances in place. (3) A repo that is **itself** a
+member yet also needs to iterate the whole set (e.g. customer `UserRepository.deleteAccount()` wiping
+everything) injects `Provider<Set<@JvmSuppressWildcards SessionScopedCache>>` and calls `.get()` — the
+same lazy cycle-breaker `AuthAuthenticator`/partner `AuthRepository` use; a direct `Set<…>` inject is a
+self-referential Dagger cycle. Never hand-maintain a partial clear-list — iterate the set so
+sign-out, forced-401, and account-deletion can't drift.
+
+**This is a security law, not a style rule — `security-rules.md` S11 (`consistency.md` E9 = the mechanism
++ allowlist).** The wipe set is iterated on **all three** triggers — voluntary sign-out, the
+authenticator's forced-401 (revoked/reset session), and account-deletion — so membership is what stops
+the prior user's data reaching the next account on a shared device. **The ONE sanctioned way to leave a
+per-user-looking `@Singleton` out is the named, reason-annotated allowlist in `consistency.md` E9**
+(device-level / public caches only): `CatalogRepository` (the *public* services/packages catalog —
+identical for every user, anonymous-fetchable), the `ServiceAreaDataSource`s (public serviced-cities),
+`AppSettingsStore`/`AppSettingsRepository` (device UI prefs; per-user onboarding is keyed *by userId*),
+and the transient `OrderEventBus`/`SnackbarController`/`PushTokenSessionObserver` (`replay=0` buses /
+delegators). A **stateless** pass-through (no cache field) needs no allowlist entry — carry a `//
+Stateless — nothing cached, so no SessionScopedCache` comment (as `DeviceManagementRepository`/
+`PaymentRepository`/`PeriodPayRepositoryImpl` do). A per-user holder that is in **neither** the set nor
+the allowlist is an S11 violation. Enforcement: the `check-consistency.mjs` **E9** warn-only advisory
+flags a `@Singleton` with a `StateFlow`/`DataStore` cache field that isn't a member and isn't allowlisted
+(non-blocking — a Room-backed cache it can't see slips past it, so it prompts, it does not gate); the
+**hard** guard is a roster-equality assertion test (`SessionScopedModuleTest` / iOS
+`SessionScopedCacheRegistryTest`) that is **specified but not yet built** (today's `AuthRepositoryTest`/
+`PushLogoutClearsTests` only exercise `clearAll()` with an injected set). A full static "is this per-user"
+check is infeasible for the line-based checker (Kotlin/Swift type-graph resolution) — see `enforcement.md`.
+
 The 401-refresh path classifies failure via the sealed `cz.cleansia.core.auth.RefreshResult`
 (the cross-platform rule — iOS `SessionRefresher` mirrors it): **terminal** (sign out) = the refresh
 endpoint answered with an auth rejection — HTTP 401/403 or a parseable business rejection

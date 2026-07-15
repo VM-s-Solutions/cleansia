@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 /**
- * Tests for the B10 dispute transition-guard rule in check-consistency.mjs.
+ * Tests for the B10 dispute transition-guard rule and the E9 session-wipe-set advisory in
+ * check-consistency.mjs.
  *
  * Dependency-free (Node's built-in assert + child_process), matching the tool itself. Writes
- * throwaway .cs fixtures under a temp dir inside the repo, runs the checker scoped to that dir via
- * --paths=, and asserts on the B10 findings. The temp dir is removed on exit.
+ * throwaway .cs/.kt fixtures under a temp dir inside the repo, runs the checker scoped to that dir
+ * via --paths=, and asserts on the findings. B10 is a hard gate (exit 1); E9 is WARN-only (exit 0,
+ * printed for the Reviewer). The temp dir is removed on exit.
  *
  * Run: node agents/tools/check-consistency.test.mjs
  */
@@ -260,6 +262,105 @@ public class RogueService
     assert.equal(r.code, 1, "checker must exit 1 on a violation");
 });
 
+// Run the checker over a single Kotlin fixture under src/cleansia_android/... and return
+// { code, out, e9 }. E9 is WARN-only (non-blocking), so a flagged fixture must exit 0.
+function runKt(code, fileName = "Fixture.kt") {
+    const root = mkdtempSync(join(REPO, ".e9-fixture-"));
+    try {
+        // The checker's mobile default root is src/cleansia_android; scope with --paths= to the temp dir.
+        const sub = join(root, "app");
+        mkdirSync(sub, { recursive: true });
+        writeFileSync(join(sub, fileName), code, "utf8");
+        const rel = relative(REPO, root).split(sep).join("/");
+        let rc = 0;
+        let out = "";
+        try {
+            out = execFileSync(
+                process.execPath,
+                [TOOL, "mobile", `--paths=${rel}`],
+                { encoding: "utf8" },
+            );
+        } catch (e) {
+            rc = e.status ?? 1;
+            out = (e.stdout ?? "") + (e.stderr ?? "");
+        }
+        return { code: rc, out, e9: out.split(/\r?\n/).filter((l) => /\bE9\b/.test(l)) };
+    } finally {
+        rmSync(root, { recursive: true, force: true });
+    }
+}
+
+// E9 — session-wipe-set membership (WARN-only).
+test("E9 flags a @Singleton StateFlow cache holder NOT implementing SessionScopedCache", () => {
+    const r = runKt(`package x
+import javax.inject.Singleton
+import kotlinx.coroutines.flow.MutableStateFlow
+@Singleton
+class ProfileRepository @Inject constructor(private val api: Api) {
+    private val _me = MutableStateFlow<Me?>(null)
+}`);
+    assert.equal(r.e9.length, 1, `expected 1 E9, got: ${r.out}`);
+    assert.equal(r.code, 0, "E9 is WARN-only — must not fail the build");
+});
+
+test("E9 does NOT flag a member (: SessionScopedCache on the class line)", () => {
+    const r = runKt(`package x
+import javax.inject.Singleton
+import cz.cleansia.core.auth.SessionScopedCache
+import kotlinx.coroutines.flow.MutableStateFlow
+@Singleton
+class OrderRepository @Inject constructor(private val api: Api) : SessionScopedCache {
+    private val _orders = MutableStateFlow<List<Order>>(emptyList())
+    override suspend fun clear() {}
+}`);
+    assert.equal(r.e9.length, 0, `expected 0 E9, got: ${r.out}`);
+});
+
+test("E9 does NOT flag a member bound behind an interface (: Repo, SessionScopedCache)", () => {
+    const r = runKt(`package x
+import javax.inject.Singleton
+import cz.cleansia.core.auth.SessionScopedCache
+import kotlinx.coroutines.flow.MutableStateFlow
+@Singleton
+class OrdersRepositoryImpl @Inject constructor(private val api: Api) : OrdersRepository, SessionScopedCache {
+    private val _orders = MutableStateFlow<List<Order>>(emptyList())
+    override suspend fun clear() {}
+}`);
+    assert.equal(r.e9.length, 0, `expected 0 E9, got: ${r.out}`);
+});
+
+test("E9 does NOT flag an allowlisted public cache (CatalogRepository)", () => {
+    const r = runKt(`package x
+import javax.inject.Singleton
+import kotlinx.coroutines.flow.MutableStateFlow
+@Singleton
+class CatalogRepository @Inject constructor(private val api: Api) {
+    private val _services = MutableStateFlow<List<Svc>>(emptyList())
+}`);
+    assert.equal(r.e9.length, 0, `expected 0 E9 (allowlisted), got: ${r.out}`);
+});
+
+test("E9 does NOT flag a stateless pass-through (no cache field)", () => {
+    const r = runKt(`package x
+import javax.inject.Singleton
+@Singleton
+class PaymentRepository @Inject constructor(private val api: Api) {
+    suspend fun createIntent(id: String): ApiResult<Resp> = safeApiCall { api.create(id) }
+}`);
+    assert.equal(r.e9.length, 0, `expected 0 E9 (no cache field), got: ${r.out}`);
+});
+
+test("E9 does NOT flag a replay=0 SharedFlow event bus (retains nothing)", () => {
+    const r = runKt(`package x
+import javax.inject.Singleton
+import kotlinx.coroutines.flow.MutableSharedFlow
+@Singleton
+class SomeEventBus @Inject constructor() {
+    private val _events = MutableSharedFlow<Ev>(replay = 0, extraBufferCapacity = 8)
+}`);
+    assert.equal(r.e9.length, 0, `expected 0 E9 (SharedFlow, not a StateFlow cache), got: ${r.out}`);
+});
+
 let failed = 0;
 for (const [name, fn] of cases) {
     try {
@@ -272,7 +373,7 @@ for (const [name, fn] of cases) {
 }
 console.log(
     failed === 0
-        ? `\nB10 rule: ${cases.length} passed`
-        : `\nB10 rule: ${failed}/${cases.length} FAILED`,
+        ? `\ncheck-consistency rules (B10 + E9): ${cases.length} passed`
+        : `\ncheck-consistency rules (B10 + E9): ${failed}/${cases.length} FAILED`,
 );
 process.exit(failed === 0 ? 0 : 1);

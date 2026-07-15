@@ -38,6 +38,14 @@ const add = (file, line, rule, msg) =>
         `${relative(REPO, file).split(sep).join("/")}:${line}  ${rule}  ${msg}`,
     );
 
+// Advisory (warn-only) findings — heuristics that can't be a hard gate (e.g. E9, which needs a
+// type-graph the line-scanner lacks). These NEVER set the exit code; they print so the Reviewer looks.
+const advisories = [];
+const warn = (file, line, rule, msg) =>
+    advisories.push(
+        `${relative(REPO, file).split(sep).join("/")}:${line}  ${rule}  ${msg}`,
+    );
+
 function walk(
     dir,
     exts,
@@ -252,6 +260,33 @@ function checkDisputeWrites(roots) {
     return files.length;
 }
 
+// E9 — session-wipe-set membership (security-rules.md S11 / consistency.md E9).
+// A per-user @Singleton cache MUST implement SessionScopedCache (Android) so it is flushed on
+// sign-out / forced-401 / account-deletion; leaving one out leaks the prior user's data to the next
+// account on a shared device. A full "is this @Singleton per-user?" decision needs Kotlin type-graph
+// resolution this line-scanner can't do (see enforcement.md) — so this is a WARN-only heuristic:
+// flag a @Singleton class that declares a *cache field* (StateFlow / DataStore / Staleness watermark)
+// but does NOT list SessionScopedCache on its class declaration, unless it is on the reason-annotated
+// allowlist below. This is non-blocking: a Room-DAO-backed (or otherwise field-invisible) per-user cache
+// slips past it, so it prompts the Reviewer, it does not gate. The HARD gate is a roster-equality
+// assertion test (SessionScopedModuleTest / SessionScopedCacheRegistryTest) — SPECIFIED, not yet built
+// (enforcement.md). This SESSION_WIPE_ALLOW mirrors the consistency.md E9 allowlist — keep them in sync.
+// Keyed by class name; each entry states WHY it is not per-user.
+const SESSION_WIPE_ALLOW = new Map([
+    // Public / device-level caches — value is identical for every user, so nothing to leak.
+    ["CatalogRepository", "public services/packages/extras catalog — anonymous-fetchable, no account data"],
+    ["CustomerServiceAreaDataSource", "public serviced-countries/cities — device-level, not per-user"],
+    ["PartnerServiceAreaDataSource", "public serviced-countries/cities — device-level, not per-user"],
+    ["AppSettingsStore", "device UI prefs (lang/theme/onboarding); per-user onboarding keyed by userId"],
+    ["AppSettingsRepository", "device UI prefs (lang/theme/onboarding); per-user onboarding keyed by userId"],
+    // Transient buses / delegators — hold no retained state across a session boundary.
+    ["OrderEventBus", "SharedFlow(replay=0) event bus — retains nothing after emit"],
+    ["SnackbarController", "SharedFlow(replay=0) UI channel — retains nothing after emit"],
+    ["PushTokenSessionObserver", "delegates to PushTokenRepository, which IS in the wipe set"],
+]);
+// A @Singleton is a *cache holder* if its body declares any of these (a retained per-user surface).
+const CACHE_FIELD_RE = /\b(MutableStateFlow\s*<|DataStore\s*<|preferencesDataStore\b|=\s*Staleness\s*\(|ConcurrentHashMap\s*<[^>]*Staleness)/;
+
 // ---------------------------------------------------------------------------- FRONTEND (C, D)
 function checkFrontend(roots) {
     const all = roots.flatMap((r) => walk(dir(r), [".ts"]));
@@ -398,6 +433,44 @@ function checkMobile(roots) {
             !/@HiltViewModel/.test(text)
         )
             add(f, 1, "E3", "ViewModel is not annotated @HiltViewModel");
+
+        // E9 (WARN-only) — a @Singleton cache holder that isn't in the session-wipe set (S11).
+        // Find each `@Singleton` and the next `class <Name>` declaration; read that class's body up
+        // to the next top-level `class`/EOF; if it declares a cache field but its declaration line(s)
+        // don't name SessionScopedCache and it's not allowlisted, warn. ViewModels are exempt (they
+        // are not @Singleton and hold no cross-session cache). See enforcement.md for why WARN-only.
+        for (let i = 0; i < lines.length; i++) {
+            if (!/^\s*@Singleton\b/.test(lines[i])) continue;
+            // find the class declaration following the annotation (skip other annotations/blank lines)
+            let d = i + 1;
+            while (d < lines.length && !/\bclass\s+\w+/.test(lines[d]) && d - i < 8) d++;
+            const decl = lines[d] || "";
+            const nameM = decl.match(/\bclass\s+(\w+)/);
+            if (!nameM) continue;
+            const className = nameM[1];
+            // the declaration may wrap over several lines before the `{` opening the body
+            let openIdx = d;
+            while (openIdx < lines.length && !/\{/.test(lines[openIdx]) && openIdx - d < 10) openIdx++;
+            const declText = lines.slice(d, openIdx + 1).join(" ");
+            if (/\bSessionScopedCache\b/.test(declText)) continue; // already a member
+            if (SESSION_WIPE_ALLOW.has(className)) continue; // reason-annotated exclusion
+            // scan the class body (until the next @Singleton or a top-level `class ` at column 0)
+            let end = openIdx + 1;
+            while (
+                end < lines.length &&
+                !/^@Singleton\b/.test(lines[end]) &&
+                !/^(?:internal |private |public |abstract |sealed |data )*class\s+\w/.test(lines[end])
+            )
+                end++;
+            const body = lines.slice(openIdx, end).join("\n");
+            if (CACHE_FIELD_RE.test(body))
+                warn(
+                    f,
+                    d + 1,
+                    "E9",
+                    `@Singleton '${className}' holds a cache field but is not in the SessionScopedCache wipe set and not on the consistency.md E9 allowlist — confirm it is per-user (join the set) or add a reason-annotated allowlist entry (S11)`,
+                );
+        }
     }
     return files.length;
 }
@@ -426,6 +499,10 @@ if (onlyStacks.includes("frontend"))
 if (onlyStacks.includes("mobile"))
     scanned += checkMobile(custom || DEFAULTS.mobile);
 
+if (advisories.length) {
+    console.log(`consistency: ${advisories.length} advisory warning(s) (non-blocking)`);
+    for (const w of advisories.sort()) console.log("  " + w);
+}
 if (violations.length === 0) {
     console.log(
         `consistency: OK (${scanned} files scanned, stacks: ${onlyStacks.join(", ")})`,

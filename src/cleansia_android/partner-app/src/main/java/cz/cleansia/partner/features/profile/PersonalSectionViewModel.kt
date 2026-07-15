@@ -30,6 +30,7 @@ data class PersonalForm(
     val email: String = "",
     val firstNameError: String? = null,
     val lastNameError: String? = null,
+    val birthDateError: String? = null,
 )
 
 sealed interface PersonalSectionUiState {
@@ -84,7 +85,7 @@ class PersonalSectionViewModel @Inject constructor(
 
     fun onFirstNameChange(v: String) = updateForm { it.copy(firstName = v, firstNameError = null) }
     fun onLastNameChange(v: String) = updateForm { it.copy(lastName = v, lastNameError = null) }
-    fun onBirthDateChange(v: String) = updateForm { it.copy(birthDate = v) }
+    fun onBirthDateChange(v: String) = updateForm { it.copy(birthDate = v, birthDateError = null) }
     fun onPhoneChange(v: String) = updateForm { it.copy(phone = v) }
     fun onEmailChange(v: String) = updateForm { it.copy(email = v) }
 
@@ -100,6 +101,10 @@ class PersonalSectionViewModel @Inject constructor(
             updateForm { it.copy(lastNameError = appContext.getString(R.string.error_last_name_required)) }
             hasError = true
         }
+        if (form.birthDate.isBlank()) {
+            updateForm { it.copy(birthDateError = appContext.getString(R.string.error_birth_date_required)) }
+            hasError = true
+        }
         if (hasError) return
         if (form.employeeId.isBlank()) {
             snackbar.showError(appContext.getString(R.string.error_profile_not_loaded))
@@ -112,7 +117,7 @@ class PersonalSectionViewModel @Inject constructor(
                 employeeId = form.employeeId,
                 firstName = form.firstName.trim(),
                 lastName = form.lastName.trim(),
-                birthDate = form.birthDate.takeIf { it.isNotBlank() },
+                birthDate = form.birthDate,
                 phone = form.phone.takeIf { it.isNotBlank() },
                 email = form.email.takeIf { it.isNotBlank() },
             )

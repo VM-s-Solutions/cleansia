@@ -226,7 +226,6 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun signOutLocal() {
         tokenStore.clear()
-        userProfileStore.clear()
         sessionScopedCaches.get().forEach { it.clear() }
     }
 

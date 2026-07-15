@@ -9,6 +9,7 @@ import cz.cleansia.customer.api.model.UpdateCurrentUserCommand
 import cz.cleansia.customer.core.auth.ApiErrorParser
 import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.core.auth.SessionManager
+import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.disputes.DisputeRepository
@@ -44,7 +45,7 @@ class UserRepository @Inject constructor(
     private val loyaltyRepository: LoyaltyRepository,
     private val referralRepository: ReferralRepository,
     @ApplicationContext private val appContext: Context,
-) {
+) : SessionScopedCache {
     /**
      * Cached current-user snapshot. Screens observe this; call [refreshCurrentUser]
      * to trigger a fetch. Emits null while the first fetch is in flight and
@@ -76,6 +77,10 @@ class UserRepository @Inject constructor(
                 !user.phoneNumber.isNullOrBlank()
         }
         .stateIn(derivedScope, SharingStarted.Eagerly, initialValue = false)
+
+    override suspend fun clear() {
+        _currentUser.value = null
+    }
 
     /** Fetch the authenticated user's profile and update the cached [currentUser]. */
     suspend fun refreshCurrentUser(): ApiResult<Unit> {

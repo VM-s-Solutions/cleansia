@@ -586,6 +586,7 @@
     <string name="error_passwords_not_match">Паролі не збігаються</string>
     <string name="error_first_name_required">Ім\'я обов\'язкове</string>
     <string name="error_last_name_required">Прізвище обов\'язкове</string>
+    <string name="error_birth_date_required">Дата народження обов\'язкова</string>
     <string name="error_terms_required">Ви повинні прийняти Умови та положення</string>
 
     <!-- Profile section validation -->

@@ -586,6 +586,7 @@
     <string name="error_passwords_not_match">Heslá sa nezhodujú</string>
     <string name="error_first_name_required">Meno je povinné</string>
     <string name="error_last_name_required">Priezvisko je povinné</string>
+    <string name="error_birth_date_required">Dátum narodenia je povinný</string>
     <string name="error_terms_required">Musíte prijať obchodné podmienky</string>
 
     <!-- Profile section validation -->

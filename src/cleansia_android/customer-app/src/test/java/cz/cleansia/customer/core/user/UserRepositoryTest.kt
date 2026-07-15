@@ -13,6 +13,7 @@ import cz.cleansia.customer.core.referral.ReferralRepository
 import cz.cleansia.core.auth.ForcedSignOutReason
 import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.core.auth.SessionManager
+import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
@@ -242,6 +243,20 @@ class UserRepositoryTest {
         assertTrue(error is ApiError.Server)
         assertEquals(serverMessage, error.getUserMessage())
         verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    // ── clear() (SessionScopedCache) ──
+
+    @Test
+    fun clear_viaSessionScopedCache_nullsTheCachedUserSnapshot() = runTest {
+        coEvery { userApi.userGetCurrentUser(query = null) } returns Response.success(profile())
+        val repo = newRepo()
+        repo.refreshCurrentUser()
+
+        val cache: SessionScopedCache = repo
+        cache.clear()
+
+        assertNull(repo.currentUser.value)
     }
 
     // ── deleteAccount() ──

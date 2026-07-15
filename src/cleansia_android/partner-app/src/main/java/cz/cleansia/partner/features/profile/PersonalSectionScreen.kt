@@ -125,6 +125,7 @@ fun PersonalSectionScreen(
                     value = form.birthDate,
                     onValueChange = viewModel::onBirthDateChange,
                     enabled = !saving,
+                    errorText = form.birthDateError,
                 )
             }
             Spacer(Modifier.height(Spacing.M))
@@ -245,6 +246,7 @@ private fun BirthDateField(
     value: String,
     onValueChange: (String) -> Unit,
     enabled: Boolean,
+    errorText: String? = null,
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
@@ -252,42 +254,54 @@ private fun BirthDateField(
         runCatching { LocalDate.parse(value, isoDateFormatter) }.getOrNull()
     }
     val displayText = parsed?.format(displayDateFormatter).orEmpty()
+    val isError = errorText != null
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.outline,
-                RoundedCornerShape(12.dp),
-            )
-            .clickable(enabled = enabled) { showDialog = true }
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-    ) {
-        Column {
-            Text(
-                text = stringResource(R.string.birth_date),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(2.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
+    Column {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .border(
+                    1.dp,
+                    if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
+                    RoundedCornerShape(12.dp),
+                )
+                .clickable(enabled = enabled) { showDialog = true }
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+        ) {
+            Column {
                 Text(
-                    text = displayText.ifBlank { stringResource(R.string.birth_date_placeholder) },
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                    color = if (displayText.isBlank())
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
+                    text = stringResource(R.string.birth_date),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isError) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Icon(
-                    imageVector = Icons.Outlined.CalendarMonth,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
+                Spacer(Modifier.height(2.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = displayText.ifBlank { stringResource(R.string.birth_date_placeholder) },
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                        color = if (displayText.isBlank())
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Icon(
+                        imageVector = Icons.Outlined.CalendarMonth,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
             }
+        }
+        if (errorText != null) {
+            Text(
+                text = errorText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp),
+            )
         }
     }
 

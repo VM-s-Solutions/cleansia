@@ -586,6 +586,7 @@
     <string name="error_passwords_not_match">Passwords do not match</string>
     <string name="error_first_name_required">First name is required</string>
     <string name="error_last_name_required">Last name is required</string>
+    <string name="error_birth_date_required">Date of birth is required</string>
     <string name="error_terms_required">You must accept the terms and conditions</string>
 
     <!-- Profile section validation -->

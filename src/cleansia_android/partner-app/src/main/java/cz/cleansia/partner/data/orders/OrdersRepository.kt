@@ -19,6 +19,7 @@ import cz.cleansia.partner.api.model.StartOrderCommand
 import cz.cleansia.partner.api.model.TakeOrderCommand
 import cz.cleansia.partner.api.model.UpdateOrderIssueCommand
 import cz.cleansia.partner.api.model.UpdateOrderNoteCommand
+import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
@@ -145,7 +146,7 @@ enum class OrdersMutation { TakeOrder, NotifyOnTheWay, StartOrder, CompleteOrder
 class OrdersRepositoryImpl @Inject constructor(
     private val orderApi: OrderApi,
     private val json: Json,
-) : OrdersRepository {
+) : OrdersRepository, SessionScopedCache {
 
     // Per-order freshness watermarks. A separate Staleness instance per
     // orderId means a mutation on order A doesn't force order B's detail
@@ -189,6 +190,14 @@ class OrdersRepositoryImpl @Inject constructor(
             OrdersMutation.CompleteOrder -> listOf(OrdersPane.Active, OrdersPane.History)
         }
         affected.forEach { stalenessFor(it).reset() }
+    }
+
+    override suspend fun clear() {
+        // Drop the per-order watermarks entirely — the orderIds belonged to the
+        // previous account and must not gate the next user's first fetch as
+        // "fresh". Pane watermarks are fixed instances, so reset in place.
+        orderStaleness.clear()
+        paneStaleness.values.forEach { it.reset() }
     }
 
     override suspend fun getPaged(

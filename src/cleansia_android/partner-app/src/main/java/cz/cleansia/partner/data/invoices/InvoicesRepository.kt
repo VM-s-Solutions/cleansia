@@ -1,5 +1,6 @@
 package cz.cleansia.partner.data.invoices
 
+import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.partner.api.client.EmployeePayrollApi
 import cz.cleansia.partner.api.model.EmployeeInvoiceDetailDto
@@ -46,7 +47,7 @@ interface InvoicesRepository {
 class InvoicesRepositoryImpl @Inject constructor(
     private val payrollApi: EmployeePayrollApi,
     private val json: Json,
-) : InvoicesRepository {
+) : InvoicesRepository, SessionScopedCache {
 
     /**
      * Watermark for the my-invoices cache. Stamped on every successful
@@ -83,6 +84,10 @@ class InvoicesRepositoryImpl @Inject constructor(
     override fun getMyInvoicesStaleness(): Staleness = myInvoicesStaleness
 
     override fun invalidateMyInvoices() {
+        myInvoicesStaleness.reset()
+    }
+
+    override suspend fun clear() {
         myInvoicesStaleness.reset()
     }
 }

@@ -14,6 +14,7 @@ import cz.cleansia.partner.api.model.UpdateBankDetailsCommand
 import cz.cleansia.partner.api.model.UpdateEmergencyContactCommand
 import cz.cleansia.partner.api.model.UpdateIdentificationInfoCommand
 import cz.cleansia.partner.api.model.UpdatePersonalInfoCommand
+import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
@@ -132,7 +133,7 @@ interface ProfileRepository {
 class ProfileRepositoryImpl @Inject constructor(
     private val employeeApi: EmployeeApi,
     private val json: Json,
-) : ProfileRepository {
+) : ProfileRepository, SessionScopedCache {
 
     /**
      * Watermark for the registration-status cache. Stamped on every
@@ -158,6 +159,10 @@ class ProfileRepositoryImpl @Inject constructor(
             }
 
     override fun getRegistrationStatusStaleness(): Staleness = registrationStatusStaleness
+
+    override suspend fun clear() {
+        registrationStatusStaleness.reset()
+    }
 
     override suspend fun updatePersonalInfo(
         employeeId: String,

@@ -1,5 +1,6 @@
 package cz.cleansia.customer.core.notifications
 
+import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
 import javax.inject.Inject
@@ -14,17 +15,27 @@ import kotlinx.serialization.json.Json
  * upsert-on-read + replace-all on write, so the repo is essentially a
  * snapshot cache of the most recent payload - fetch once on screen open,
  * write the full payload on each toggle change.
+ *
+ * Per-user snapshot, so it joins the [SessionScopedCache] multibinding: without
+ * the wipe the next account on a shared device briefly sees the prior user's
+ * toggles, and a quick toggle would race the prior payload into a replace-all
+ * PUT under the new user's session.
  */
 @Singleton
 class NotificationPreferencesRepository @Inject constructor(
     private val api: NotificationPreferencesApi,
     private val json: Json,
-) {
+) : SessionScopedCache {
     private val _preferences = MutableStateFlow<NotificationPreferencesPayload?>(null)
     val preferences: StateFlow<NotificationPreferencesPayload?> = _preferences.asStateFlow()
 
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
+
+    override suspend fun clear() {
+        _preferences.value = null
+        _loading.value = false
+    }
 
     /**
      * Fetch from the server. Lazy-creates the row backend-side if missing,

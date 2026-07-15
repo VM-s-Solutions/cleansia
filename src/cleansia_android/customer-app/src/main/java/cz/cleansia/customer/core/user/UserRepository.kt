@@ -11,16 +11,12 @@ import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.core.auth.SessionManager
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.auth.TokenStore
-import cz.cleansia.customer.core.data.AddressRepository
-import cz.cleansia.customer.core.disputes.DisputeRepository
-import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
-import cz.cleansia.customer.core.orders.OrderRepository
-import cz.cleansia.customer.core.referral.ReferralRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import javax.inject.Provider
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,11 +35,10 @@ class UserRepository @Inject constructor(
     private val gdprApi: GdprApi,
     private val tokenStore: TokenStore,
     private val sessionManager: SessionManager,
-    private val addressRepository: AddressRepository,
-    private val orderRepository: OrderRepository,
-    private val disputeRepository: DisputeRepository,
-    private val loyaltyRepository: LoyaltyRepository,
-    private val referralRepository: ReferralRepository,
+    // Late-bound via Provider: this repo is itself a SessionScopedCache member,
+    // so eagerly injecting the Set it belongs to would be a self-referential
+    // Dagger cycle. .get() resolves the fully-built set at delete time.
+    private val sessionScopedCaches: Provider<Set<@JvmSuppressWildcards SessionScopedCache>>,
     @ApplicationContext private val appContext: Context,
 ) : SessionScopedCache {
     /**
@@ -153,12 +148,11 @@ class UserRepository @Inject constructor(
             return httpError(resp.errorBody(), resp.code())
         }
 
-        _currentUser.value = null
-        orderRepository.clear()
-        addressRepository.clear()
-        disputeRepository.clear()
-        loyaltyRepository.clear()
-        referralRepository.clear()
+        // Wipe every session-scoped cache through the same multibinding sign-out
+        // uses — the hand-list previously missed Membership/Recurring/PushToken,
+        // leaving the deleted account's data for the next user on this device.
+        // The set includes this repo, so its own snapshot is nulled here too.
+        sessionScopedCaches.get().forEach { it.clear() }
         tokenStore.clear()
         sessionManager.emitForcedSignOut(ForcedSignOutReason.UserInitiated)
         return ApiResult.Success(Unit)

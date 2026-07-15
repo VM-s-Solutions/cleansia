@@ -5,11 +5,6 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.api.client.GdprApi
 import cz.cleansia.customer.api.client.UserApi
 import cz.cleansia.customer.api.model.MyProfileDto
-import cz.cleansia.customer.core.data.AddressRepository
-import cz.cleansia.customer.core.disputes.DisputeRepository
-import cz.cleansia.customer.core.loyalty.LoyaltyRepository
-import cz.cleansia.customer.core.orders.OrderRepository
-import cz.cleansia.customer.core.referral.ReferralRepository
 import cz.cleansia.core.auth.ForcedSignOutReason
 import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.core.auth.SessionManager
@@ -59,11 +54,8 @@ class UserRepositoryTest {
     private lateinit var gdprApi: GdprApi
     private lateinit var tokenStore: TokenStore
     private lateinit var sessionManager: SessionManager
-    private lateinit var addressRepository: AddressRepository
-    private lateinit var orderRepository: OrderRepository
-    private lateinit var disputeRepository: DisputeRepository
-    private lateinit var loyaltyRepository: LoyaltyRepository
-    private lateinit var referralRepository: ReferralRepository
+    private lateinit var cacheA: SessionScopedCache
+    private lateinit var cacheB: SessionScopedCache
     private lateinit var snackbar: SnackbarController
     private lateinit var appContext: Context
 
@@ -78,11 +70,8 @@ class UserRepositoryTest {
         gdprApi = mockk()
         tokenStore = mockk(relaxed = true)
         sessionManager = mockk(relaxed = true)
-        addressRepository = mockk(relaxed = true)
-        orderRepository = mockk(relaxed = true)
-        disputeRepository = mockk(relaxed = true)
-        loyaltyRepository = mockk(relaxed = true)
-        referralRepository = mockk(relaxed = true)
+        cacheA = mockk(relaxed = true)
+        cacheB = mockk(relaxed = true)
         // Standalone mock the repo never receives — asserts the repo never
         // surfaces a snackbar (the snackbar lives in the consuming ViewModel).
         snackbar = mockk(relaxed = true)
@@ -113,18 +102,21 @@ class UserRepositoryTest {
         unmockkObject(JwtDecoder)
     }
 
-    private fun newRepo() = UserRepository(
-        userApi = userApi,
-        gdprApi = gdprApi,
-        tokenStore = tokenStore,
-        sessionManager = sessionManager,
-        addressRepository = addressRepository,
-        orderRepository = orderRepository,
-        disputeRepository = disputeRepository,
-        loyaltyRepository = loyaltyRepository,
-        referralRepository = referralRepository,
-        appContext = appContext,
-    )
+    // The real multibinding includes UserRepository itself; model that by
+    // seeding the provided set with the built repo alongside the two mock
+    // caches, mirroring the deleteAccount path iterating the whole set.
+    private fun newRepo(): UserRepository {
+        lateinit var repo: UserRepository
+        repo = UserRepository(
+            userApi = userApi,
+            gdprApi = gdprApi,
+            tokenStore = tokenStore,
+            sessionManager = sessionManager,
+            sessionScopedCaches = { setOf(repo, cacheA, cacheB) },
+            appContext = appContext,
+        )
+        return repo
+    }
 
     private fun profile() = MyProfileDto(
         email = "a@b.com",
@@ -262,19 +254,36 @@ class UserRepositoryTest {
     // ── deleteAccount() ──
 
     @Test
-    fun deleteAccount_givenSuccess_clearsCachesAndEmitsForcedSignOut() = runTest {
+    fun deleteAccount_givenSuccess_clearsEverySessionScopedCacheAndEmitsForcedSignOut() = runTest {
         coEvery { gdprApi.gdprDeleteMyAccount() } returns Response.success(Unit)
+        // Prime the snapshot so we can assert the repo's own clear() ran via
+        // the multibinding iteration (it's a member of the injected set).
+        coEvery { userApi.userGetCurrentUser(query = null) } returns Response.success(profile())
+        val repo = newRepo()
+        repo.refreshCurrentUser()
+        assertEquals(userId, repo.currentUser.value?.id)
 
-        val result = newRepo().deleteAccount()
+        val result = repo.deleteAccount()
 
         assertTrue("expected Success but got: $result", result is ApiResult.Success)
-        coVerify { orderRepository.clear() }
-        coVerify { addressRepository.clear() }
-        coVerify { disputeRepository.clear() }
-        coVerify { loyaltyRepository.clear() }
-        coVerify { referralRepository.clear() }
+        // Every member of the multibinding is wiped — the hand-list previously
+        // missed Membership/Recurring/PushToken. cacheA/cacheB stand in for the
+        // full set; the repo's own snapshot proves it cleared itself too.
+        coVerify { cacheA.clear() }
+        coVerify { cacheB.clear() }
+        assertNull(repo.currentUser.value)
         verify { tokenStore.clear() }
         verify { sessionManager.emitForcedSignOut(ForcedSignOutReason.UserInitiated) }
+    }
+
+    @Test
+    fun deleteAccount_whenApiThrows_doesNotClearSessionScopedCaches() = runTest {
+        coEvery { gdprApi.gdprDeleteMyAccount() } throws java.io.IOException("boom")
+
+        newRepo().deleteAccount()
+
+        coVerify(exactly = 0) { cacheA.clear() }
+        coVerify(exactly = 0) { cacheB.clear() }
     }
 
     @Test

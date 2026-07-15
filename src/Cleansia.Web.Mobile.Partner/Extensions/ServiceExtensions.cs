@@ -6,6 +6,7 @@ using System.Text;
 using Cleansia.Config;
 using Cleansia.Config.Services;
 using Cleansia.Config.Services.DeviceRevocation;
+using Cleansia.Config.Services.UserRevocation;
 using Cleansia.Infra.Database;
 using Cleansia.Web.Mobile.Partner.Middlewares;
 using Cleansia.Web.Mobile.Partner.SwaggerSchemaFilters;
@@ -30,6 +31,7 @@ public static class ServiceExtensions
             .AddSwagger()
             .AddJwt(configuration)
             .AddDeviceRevocationEnforcement(configuration)
+            .AddUserRevocationEnforcement(configuration)
             .AddCleansiaAuthorization(configuration);
     }
 
@@ -186,6 +188,7 @@ public static class ServiceExtensions
                     }
 
                     context.EnforceDeviceRevocation();
+                    context.EnforceUserRevocation();
                     return Task.CompletedTask;
                 }
             };

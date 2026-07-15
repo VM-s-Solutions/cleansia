@@ -73,4 +73,19 @@ public class RefreshTokenRepository(CleansiaDbContext context)
                 (t.RevokedAt == null && t.ExpiresAt <= olderThan))
             .ExecuteDeleteAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<UserPasswordReset>> GetPasswordResetsSinceAsync(DateTimeOffset cutoff, CancellationToken cancellationToken)
+    {
+        // Background, tenant-less, cross-tenant-by-design read (the sanctioned T-0245 pattern): the
+        // directory refresher has no JWT context and user ids are globally unique, so IgnoreQueryFilters
+        // is required and safe (see GetByTokenHashAsync). Reason is "password_reset" ALONE (never
+        // "password_changed" — ADR-0027 D3). The RevokedAt != null guard makes the .Value inside Max
+        // non-null before the group-by aggregate translates server-side.
+        return await context.RefreshTokens
+            .IgnoreQueryFilters()
+            .Where(t => t.RevokedReason == "password_reset" && t.RevokedAt != null && t.RevokedAt >= cutoff)
+            .GroupBy(t => t.UserId)
+            .Select(g => new UserPasswordReset(g.Key, g.Max(t => t.RevokedAt!.Value)))
+            .ToListAsync(cancellationToken);
+    }
 }

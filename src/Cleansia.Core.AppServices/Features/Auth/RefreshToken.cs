@@ -93,6 +93,19 @@ public class RefreshToken
                     new Error(nameof(Command.Token), BusinessErrorMessage.InvalidRefreshToken));
             }
 
+            // Persist the rotation only now that every accept/reject gate has passed — a rejected
+            // refresh must not rotate. This flush is where the fail-closed concurrency check fires: a
+            // revoke that raced this rotation makes it throw, so the new token never escapes revocation.
+            try
+            {
+                await refreshTokenService.CommitRotationAsync(cancellationToken);
+            }
+            catch (RefreshTokenValidationException)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(Command.Token), BusinessErrorMessage.InvalidRefreshToken));
+            }
+
             string? employeeId = null;
             if (user.Profile == UserProfile.Employee)
             {

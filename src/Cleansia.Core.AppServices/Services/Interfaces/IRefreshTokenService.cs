@@ -20,8 +20,20 @@ public interface IRefreshTokenService
     /// the entire chain and throws with <see cref="RefreshTokenValidationException.IsTheftSignal"/> = true.
     /// The rotated token inherits the existing row's device id (header is a fallback only for
     /// pre-existing rows rotated for the first time) so a rotated session stays revocable.
+    /// The rotation is STAGED only — call <see cref="CommitRotationAsync"/> once the caller's own
+    /// accept/reject gates have passed to persist it (a rejected refresh must not rotate). That commit
+    /// is where the fail-closed concurrency check fires.
     /// </summary>
     Task<IssuedRefreshToken> RotateAsync(string rawToken, string? deviceLabel, string? ipAddress, CancellationToken cancellationToken, string? deviceId = null);
+
+    /// <summary>
+    /// Persists a staged <see cref="RotateAsync"/> rotation. Fails closed against a concurrent revoke:
+    /// the parent row's xmin concurrency token makes a rotation that raced a revoke throw
+    /// <see cref="RefreshTokenValidationException"/> (the whole rotation rolls back, so the new token
+    /// never escapes the revocation) rather than persist a live token. Must be called only after the
+    /// caller's gates have accepted the refresh.
+    /// </summary>
+    Task CommitRotationAsync(CancellationToken cancellationToken);
 
     /// <summary>Revokes a single refresh token. Used by logout. Silently no-ops on unknown/revoked tokens.</summary>
     Task RevokeAsync(string rawToken, string reason, CancellationToken cancellationToken);

@@ -120,7 +120,36 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
 
         ApplySqliteDateTimeOffsetCompatibility(modelBuilder);
 
+        ApplyRefreshTokenConcurrencyToken(modelBuilder);
+
         ApplyTenantQueryFilters(modelBuilder);
+    }
+
+    /// <summary>
+    /// Maps the Postgres system column <c>xmin</c> as an optimistic-concurrency token on
+    /// <see cref="RefreshToken"/> so a rotation racing a concurrent revoke fails closed: whichever
+    /// transaction commits second against the shared parent row throws
+    /// <see cref="Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException"/> and rolls back — the
+    /// revoke wins and the rotation's freshly-issued child token is never persisted. <c>xmin</c> is a
+    /// built-in system column, so this needs no schema change / migration.
+    ///
+    /// <para>Guarded by provider name: <c>xmin</c> is Npgsql-only, so this is a strict no-op on the
+    /// SQLite test backend (which has no system row version) — the unit tests keep running unchanged.</para>
+    /// </summary>
+    private void ApplyRefreshTokenConcurrencyToken(ModelBuilder modelBuilder)
+    {
+        if (Database.ProviderName != "Npgsql.EntityFrameworkCore.PostgreSQL")
+        {
+            return;
+        }
+
+        // A uint, OnAddOrUpdate concurrency-token property is auto-mapped to the built-in `xmin` system
+        // column by NpgsqlPostgresModelFinalizingConvention (no real column, no DDL, no migration).
+        // Declared as a shadow property so the domain RefreshToken entity carries no EF concern.
+        modelBuilder.Entity<RefreshToken>()
+            .Property<uint>("xmin")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
     }
 
     /// <summary>

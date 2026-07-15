@@ -67,7 +67,8 @@ public class AdminAuthController(
     }
 
     // Credential mutation: covered by the controller-level "auth" rate limit; the handler keys the
-    // subject off the session (the command carries no user id).
+    // subject off the session (the command carries no user id). The refresh cookie is enriched in
+    // so the handler revokes every OTHER session but spares the one performing the change.
     [Permission(Policy.CanChangeOwnPassword)]
     [HttpPost("ChangePassword")]
     [ProducesResponseType(typeof(ChangeOwnPassword.Response), StatusCodes.Status200OK)]
@@ -77,7 +78,8 @@ public class AdminAuthController(
         [FromBody] ChangeOwnPassword.Command command,
         CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(command, cancellationToken);
+        var enriched = command with { CurrentRefreshToken = RefreshTokenFromCookieOrBody(command.CurrentRefreshToken) };
+        var result = await Mediator.Send(enriched, cancellationToken);
         return HandleResult<ChangeOwnPassword.Response>(result);
     }
 }

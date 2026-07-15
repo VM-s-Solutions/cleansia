@@ -33,6 +33,17 @@ public interface IRefreshTokenService
     /// </summary>
     Task RevokeByDeviceAsync(string userId, string deviceId, string reason, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Revokes every active refresh token a user holds — the credential-rotation kill switch
+    /// (ADR-0024 D4.6: without this, a hijacker's refresh chain outlives a password change).
+    /// <paramref name="exceptRawToken"/>, when supplied, spares exactly the session performing
+    /// the change: a password CHANGE passes the caller's own refresh token so they stay signed
+    /// in; a password RESET passes null (the caller proves control via the emailed code, not a
+    /// live session — after a takeover the attacker's sessions are the very thing being killed).
+    /// Persistence rides the caller's unit of work. No-ops when nothing matches.
+    /// </summary>
+    Task RevokeAllForUserAsync(string userId, string reason, string? exceptRawToken, CancellationToken cancellationToken);
+
     /// <summary>Hashes a raw token using SHA-256 hex — exposed for tests and for the validator that checks existence.</summary>
     string HashToken(string rawToken);
 }

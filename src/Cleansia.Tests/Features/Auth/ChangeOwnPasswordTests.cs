@@ -2,6 +2,7 @@ using System.Reflection;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Repositories;
@@ -36,6 +37,7 @@ public class ChangeOwnPasswordTests
 
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
+    private readonly Mock<IRefreshTokenService> _refreshTokens = new();
 
     private static User BuildAdmin(string id, string rawPassword)
     {
@@ -159,7 +161,9 @@ public class ChangeOwnPasswordTests
         _userRepository.Verify(r => r.GetByIdAsync(OtherAdminId, It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    // The wire shape itself offers no field an attacker could point at another account.
+    // The wire shape itself offers no field an attacker could point at another account —
+    // CurrentRefreshToken is the caller's OWN cookie value (server-enriched), and the revocation
+    // it feeds is scoped to the caller's userId, so it cannot reach another account either way.
     [Fact]
     public void Command_Carries_No_Client_Supplied_Subject_Identifier()
     {
@@ -169,7 +173,53 @@ public class ChangeOwnPasswordTests
             .OrderBy(n => n)
             .ToArray();
 
-        Assert.Equal(["CurrentPassword", "NewPassword"], propertyNames);
+        Assert.Equal(["CurrentPassword", "CurrentRefreshToken", "NewPassword"], propertyNames);
+    }
+
+    // A rotated credential must end every session the old one minted — except the session
+    // performing the change (revoke all-OTHER; the reset flow is the revoke-ALL counterpart).
+    [Fact]
+    public async Task Successful_Change_Revokes_All_Other_Sessions_Sparing_The_Callers()
+    {
+        ArrangeCaller();
+        const string callerRefreshToken = "raw-refresh-of-the-changing-session";
+
+        var result = await InvokeHandler(
+            new ChangeOwnPassword.Command(CurrentPassword, NewPassword, callerRefreshToken));
+
+        Assert.True(result.IsSuccess);
+        _refreshTokens.Verify(
+            s => s.RevokeAllForUserAsync(CallerId, "password_changed", callerRefreshToken, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Wrong_Current_Password_Revokes_No_Sessions()
+    {
+        ArrangeCaller();
+
+        var result = await InvokeHandler(new ChangeOwnPassword.Command("WrongPass1", NewPassword));
+
+        Assert.True(result.IsFailure);
+        _refreshTokens.Verify(
+            s => s.RevokeAllForUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Locked_Account_Revokes_No_Sessions()
+    {
+        var caller = BuildAdmin(CallerId, CurrentPassword);
+        caller.Merge(new UserMockFactory.UserPartial { LockoutEndsAt = DateTimeOffset.UtcNow.AddMinutes(10) });
+        _session.Setup(s => s.GetUserId()).Returns(CallerId);
+        _userRepository.Setup(r => r.GetByIdAsync(CallerId, It.IsAny<CancellationToken>())).ReturnsAsync(caller);
+
+        var result = await InvokeHandler(new ChangeOwnPassword.Command(CurrentPassword, NewPassword));
+
+        Assert.True(result.IsFailure);
+        _refreshTokens.Verify(
+            s => s.RevokeAllForUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -214,7 +264,7 @@ public class ChangeOwnPasswordTests
     {
         var handlerType = typeof(ChangeOwnPassword).GetNestedType("Handler", BindingFlags.NonPublic | BindingFlags.Public);
         Assert.NotNull(handlerType);
-        var handler = Activator.CreateInstance(handlerType!, _userRepository.Object, _session.Object)!;
+        var handler = Activator.CreateInstance(handlerType!, _userRepository.Object, _session.Object, _refreshTokens.Object)!;
         var task = (Task<BusinessResult<ChangeOwnPassword.Response>>)handlerType!.GetMethod("Handle")!
             .Invoke(handler, [command, CancellationToken.None])!;
         return await task;

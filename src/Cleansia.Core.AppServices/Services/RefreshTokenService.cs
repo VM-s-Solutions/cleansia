@@ -132,6 +132,17 @@ public class RefreshTokenService(
         }
     }
 
+    public async Task RevokeAllForUserAsync(string userId, string reason, string? exceptRawToken, CancellationToken cancellationToken)
+    {
+        var sparedHash = string.IsNullOrWhiteSpace(exceptRawToken) ? null : HashToken(exceptRawToken);
+        var active = await repository.GetActiveByUserIdAsync(userId, cancellationToken);
+        var now = DateTimeOffset.UtcNow;
+        foreach (var token in active.Where(t => sparedHash is null || t.TokenHash != sparedHash))
+        {
+            token.Revoke(reason, now);
+        }
+    }
+
     public string HashToken(string rawToken)
     {
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(rawToken));

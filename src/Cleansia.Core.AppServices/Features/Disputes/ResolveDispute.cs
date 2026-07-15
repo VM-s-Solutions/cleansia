@@ -112,6 +112,10 @@ public class ResolveDispute
                                 Args: new Dictionary<string, string>
                                 {
                                     ["orderId"] = dispute.OrderId,
+                                    // Display-only, resolved AFTER the Stripe refund settled: a missing
+                                    // Order must degrade to the factory's tolerated empty loc-arg, never
+                                    // throw and unwind the resolution while the money already moved.
+                                    ["orderNumber"] = dispute.Order?.DisplayOrderNumber ?? string.Empty,
                                     ["disputeId"] = dispute.Id,
                                 },
                                 TenantId: dispute.TenantId)),

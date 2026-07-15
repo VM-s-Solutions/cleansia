@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
@@ -42,8 +43,9 @@ public class ResolveDisputeRefundSeamTests
     private ResolveDispute.Handler CreateHandler() =>
         new(_disputeRepository.Object, _session.Object, _refundService.Object, _pending.Object, _auditContext);
 
-    private static Dispute NewPendingDispute() =>
-        new(
+    private static Dispute NewPendingDispute()
+    {
+        var dispute = new Dispute(
             orderId: OrderId,
             userId: "customer-1",
             reason: DisputeReason.Other,
@@ -52,6 +54,32 @@ public class ResolveDisputeRefundSeamTests
         {
             Id = DisputeId,
         };
+
+        // GetForUpdateAsync materializes the Order reference nav; the mock mirrors that contract
+        // (EF-only nav — attached by reflection, same as the Order.Receipt arranges).
+        typeof(Dispute).GetProperty(nameof(Dispute.Order))!.SetValue(dispute, NewOrder());
+        return dispute;
+    }
+
+    private static Order NewOrder()
+    {
+        var order = Order.Create(
+            customerName: "Cust",
+            customerEmail: "c@x.test",
+            customerPhone: "+420123456789",
+            customerAddress: null!,
+            rooms: 2,
+            bathrooms: 1,
+            extras: new Dictionary<string, bool>(),
+            cleaningDateTime: DateTime.UtcNow.AddDays(5),
+            paymentType: PaymentType.Card,
+            totalPrice: 1000m,
+            currencyId: "currency-1",
+            paymentStatus: PaymentStatus.Paid,
+            userId: "customer-1");
+        order.Id = OrderId;
+        return order;
+    }
 
     private Dispute ArrangeDispute()
     {
@@ -107,6 +135,33 @@ public class ResolveDisputeRefundSeamTests
                 e.Payload.EventKey == NotificationEventCatalog.OrderRefunded
                 && e.Payload.UserId == "customer-1"),
             It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Resolve_RefundNotification_Args_CarryTheOrdersDisplayNumber()
+    {
+        var dispute = ArrangeDispute();
+        _refundService
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(new RefundResult(
+                "refund-1", $"refund:{OrderId}:dispute:{DisputeId}", 250m, RefundStatus.Succeeded, false)));
+        QueueEnvelope<SendPushNotificationMessage>? captured = null;
+        _pending
+            .Setup(p => p.Enqueue(
+                QueueNames.NotificationsDispatch,
+                It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(),
+                It.IsAny<string>()))
+            .Callback<string, QueueEnvelope<SendPushNotificationMessage>, string>((_, envelope, _) => captured = envelope);
+
+        var result = await CreateHandler().Handle(
+            new ResolveDispute.Command(DisputeId, 250m, "approved"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(captured);
+        Assert.False(string.IsNullOrEmpty(dispute.Order.DisplayOrderNumber));
+        Assert.Equal(dispute.Order.DisplayOrderNumber, captured!.Payload.Args["orderNumber"]);
+        Assert.Equal(OrderId, captured.Payload.Args["orderId"]);
+        Assert.Equal(DisputeId, captured.Payload.Args["disputeId"]);
     }
 
     [Fact]

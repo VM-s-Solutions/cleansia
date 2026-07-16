@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { isLocalStorageAvailable } from '@cleansia/utils';
 import { TranslateModule } from '@ngx-translate/core';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
@@ -183,7 +184,7 @@ export class CleansiaCookieConsentComponent implements OnInit {
   }
 
   static getConsentStatus(storageKey = 'cleansia-cookie-consent'): CookieConsentStatus {
-    if (typeof localStorage === 'undefined') return 'pending';
+    if (!isLocalStorageAvailable()) return 'pending';
     const stored = localStorage.getItem(storageKey);
     if (stored === 'accepted' || stored === 'custom') return stored as CookieConsentStatus;
     if (stored === 'declined') return 'declined';
@@ -191,14 +192,14 @@ export class CleansiaCookieConsentComponent implements OnInit {
   }
 
   static hasAcceptedCookies(storageKey = 'cleansia-cookie-consent'): boolean {
-    if (typeof localStorage === 'undefined') return false;
+    if (!isLocalStorageAvailable()) return false;
     const stored = localStorage.getItem(storageKey);
     return stored === 'accepted' || stored === 'custom';
   }
 
   static getPreferences(storageKey = 'cleansia-cookie-consent'): CookiePreferences {
     const defaults: CookiePreferences = { necessary: true, analytics: false, marketing: false, preferences: false };
-    if (typeof localStorage === 'undefined') return defaults;
+    if (!isLocalStorageAvailable()) return defaults;
     try {
       const stored = localStorage.getItem(`${storageKey}-preferences`);
       return stored ? { ...defaults, ...JSON.parse(stored), necessary: true } : defaults;

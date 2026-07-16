@@ -27,6 +27,23 @@ html {
   min-height: 100dvh;
 }
 
+// PrimeNG keeps a closed dialog shell in the DOM as an empty element with
+// role="alertdialog" and no accessible name, which fails a11y audits. A
+// closed shell has no child nodes (comments don't count for :empty), so this
+// removes it from the accessibility tree until it actually opens.
+p-dialog:empty {
+  display: none;
+}
+
+// The primeicons stylesheet and font load async; until then a `.pi` icon is
+// an empty zero-width inline element. Reserving the glyph's 1em advance
+// keeps the layout from shifting when the font pops in.
+.pi {
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+}
+
 .cleansia-app-main {
   flex: 1 0 auto;
 }

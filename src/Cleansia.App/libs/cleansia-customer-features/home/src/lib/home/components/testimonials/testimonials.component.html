@@ -7,7 +7,6 @@
     <div class="cl-reviews">
       @for (t of testimonials; track t.author; let idx = $index) {
       <div class="cl-reviews__card animate-on-scroll" [class]="'delay-' + (idx + 1)">
-        <div class="cl-reviews__quote" aria-hidden="true">"</div>
         <div class="cl-reviews__stars">
           @for (star of [1,2,3,4,5]; track star) {
           <i class="pi pi-star-fill"></i>
@@ -15,7 +14,6 @@
         </div>
         <p class="cl-reviews__text">{{ t.text | translate }}</p>
         <div class="cl-reviews__author">
-          <img [src]="t.avatar" alt="Avatar" class="cl-reviews__avatar" loading="lazy" />
           <div>
             <div class="cl-reviews__name">{{ t.author | translate }}</div>
             <div class="cl-reviews__role">{{ t.role | translate }}</div>

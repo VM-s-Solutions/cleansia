@@ -1,6 +1,9 @@
-<div class="order-wizard">
-  <!-- Hero Header -->
-  <div class="order-wizard__hero">
+<!-- Hero Header — full-bleed band, matches the track-order page -->
+<div class="order-wizard__hero">
+  <div class="order-wizard__hero-bubble order-wizard__hero-bubble--1" aria-hidden="true"></div>
+  <div class="order-wizard__hero-bubble order-wizard__hero-bubble--2" aria-hidden="true"></div>
+  <div class="order-wizard__hero-bubble order-wizard__hero-bubble--3" aria-hidden="true"></div>
+  <div class="order-wizard__hero-inner">
     <h1 class="order-wizard__hero-title">
       {{ 'pages.order.hero_title' | translate }}
     </h1>
@@ -22,7 +25,14 @@
       </div>
     </div>
   </div>
+  <div class="order-wizard__hero-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
+      <path d="M0,40 C280,100 720,0 1440,60 L1440,100 L0,100 Z" />
+    </svg>
+  </div>
+</div>
 
+<div class="order-wizard">
   <!-- Custom Stepper -->
   <div class="order-wizard__stepper">
     @for (step of facade.steps; track step; let i = $index) {
@@ -119,7 +129,7 @@
           }
 
           <div class="order-wizard__card-grid">
-            @for (service of facade.filteredServices(); track service.id) {
+            @for (service of facade.filteredServices(); track service.id; let idx = $index) {
             <button
               type="button"
               class="order-wizard__selection-card"
@@ -128,28 +138,28 @@
               [attr.aria-label]="'aria.select_service' | translate: { name: getTranslation(service, 'name') }"
               (click)="toggleService(service.id!)"
             >
-              @if (isServiceSelected(service.id!)) {
-              <div class="order-wizard__selection-check">
+              <div class="order-wizard__selection-check" aria-hidden="true">
                 <i class="pi pi-check"></i>
               </div>
-              }
               <div class="order-wizard__selection-icon">
-                <i class="pi pi-home"></i>
+                <i [class]="getServiceIcon(idx)"></i>
               </div>
-              <h3 class="order-wizard__selection-name">
-                {{ getTranslation(service, 'name') }}
-              </h3>
-              <p class="order-wizard__selection-desc">
-                {{ getTranslation(service, 'description') }}
-              </p>
-              <div class="order-wizard__selection-price">
-                {{ formatPrice(service.basePrice) }}
-                @if (service.perRoomPrice > 0) {
-                <span class="order-wizard__selection-per-room">
-                  + {{ formatPrice(service.perRoomPrice) }}
-                  {{ 'pages.services.per_room' | translate }}
-                </span>
-                }
+              <div class="order-wizard__selection-body">
+                <h3 class="order-wizard__selection-name">
+                  {{ getTranslation(service, 'name') }}
+                </h3>
+                <p class="order-wizard__selection-desc">
+                  {{ getTranslation(service, 'description') }}
+                </p>
+                <div class="order-wizard__selection-price">
+                  {{ formatPrice(service.basePrice) }}
+                  @if (service.perRoomPrice > 0) {
+                  <span class="order-wizard__selection-per-room">
+                    + {{ formatPrice(service.perRoomPrice) }}
+                    {{ 'pages.services.per_room' | translate }}
+                  </span>
+                  }
+                </div>
               </div>
             </button>
             }
@@ -229,7 +239,7 @@
             {{ 'pages.order.packages_section_title' | translate }}
           </h2>
           <div class="order-wizard__card-grid">
-            @for (pkg of facade.packages(); track pkg.id) {
+            @for (pkg of facade.packages(); track pkg.id; let idx = $index) {
             <button
               type="button"
               class="order-wizard__selection-card"
@@ -238,32 +248,32 @@
               [attr.aria-label]="'aria.select_package' | translate: { name: getTranslation(pkg, 'name') }"
               (click)="togglePackage(pkg.id!)"
             >
-              @if (isPackageSelected(pkg.id!)) {
-              <div class="order-wizard__selection-check">
+              <div class="order-wizard__selection-check" aria-hidden="true">
                 <i class="pi pi-check"></i>
               </div>
-              }
               <div class="order-wizard__selection-icon">
-                <i class="pi pi-star"></i>
+                <i [class]="getPackageIcon(idx)"></i>
               </div>
-              <h3 class="order-wizard__selection-name">
-                {{ getTranslation(pkg, 'name') }}
-              </h3>
-              <p class="order-wizard__selection-desc">
-                {{ getTranslation(pkg, 'description') }}
-              </p>
-              @if (pkg.includedServices && pkg.includedServices.length > 0) {
-              <ul class="order-wizard__selection-included">
-                @for (svc of pkg.includedServices; track svc.name) {
-                <li>
-                  <i class="pi pi-check"></i>
-                  {{ getTranslation(svc, 'name') }}
-                </li>
+              <div class="order-wizard__selection-body">
+                <h3 class="order-wizard__selection-name">
+                  {{ getTranslation(pkg, 'name') }}
+                </h3>
+                <p class="order-wizard__selection-desc">
+                  {{ getTranslation(pkg, 'description') }}
+                </p>
+                @if (pkg.includedServices && pkg.includedServices.length > 0) {
+                <ul class="order-wizard__selection-included">
+                  @for (svc of pkg.includedServices; track svc.name) {
+                  <li>
+                    <i class="pi pi-check"></i>
+                    {{ getTranslation(svc, 'name') }}
+                  </li>
+                  }
+                </ul>
                 }
-              </ul>
-              }
-              <div class="order-wizard__selection-price">
-                {{ formatPrice(pkg.price) }}
+                <div class="order-wizard__selection-price">
+                  {{ formatPrice(pkg.price) }}
+                </div>
               </div>
             </button>
             }

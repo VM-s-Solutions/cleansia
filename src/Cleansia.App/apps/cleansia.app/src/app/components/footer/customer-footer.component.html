@@ -3,7 +3,7 @@
     <div class="cl-newsletter-wrap">
       <div class="cl-newsletter">
         <div class="cl-newsletter__mascot">
-          <img src="assets/images/mascot/mascot-ready.png" alt="Cleaning mascot" loading="lazy" />
+          <img src="assets/images/mascot/mascot-ready.webp" alt="Cleaning mascot" width="300" height="300" loading="lazy" />
         </div>
         <div class="cl-newsletter__content">
           <h3>{{ 'pages.home.footer.newsletter_title' | translate }}</h3>
@@ -19,7 +19,7 @@
                 required
               />
             </div>
-            <button type="submit" pButton [label]="'pages.home.footer.newsletter_button' | translate" class="p-button-rounded cl-btn-primary"></button>
+            <button type="submit" pButton class="cl-btn-primary">{{ 'pages.home.footer.newsletter_button' | translate }}</button>
           </form>
           <small class="cl-newsletter__note">
             {{ 'pages.home.footer.unsubscribe_note' | translate }}
@@ -43,7 +43,7 @@
         </div>
       </div>
       <div class="cl-footer__col">
-        <h4>{{ 'pages.home.footer.company' | translate }}</h4>
+        <h3 class="cl-footer__col-title">{{ 'pages.home.footer.company' | translate }}</h3>
         <ul>
           <li><a routerLink="/">{{ 'nav.home' | translate }}</a></li>
           <li><a routerLink="/services">{{ 'nav.services' | translate }}</a></li>
@@ -51,7 +51,7 @@
         </ul>
       </div>
       <div class="cl-footer__col">
-        <h4>{{ 'pages.home.footer.support' | translate }}</h4>
+        <h3 class="cl-footer__col-title">{{ 'pages.home.footer.support' | translate }}</h3>
         <ul>
           @if (isAnonymous()) {
             <li><a routerLink="/orders/lookup">{{ 'pages.order_lookup.entry_link' | translate }}</a></li>
@@ -61,7 +61,7 @@
         </ul>
       </div>
       <div class="cl-footer__col">
-        <h4>{{ 'pages.home.footer.contacts' | translate }}</h4>
+        <h3 class="cl-footer__col-title">{{ 'pages.home.footer.contacts' | translate }}</h3>
         <div class="cl-footer__col__actions">
           <div class="cl-footer__contact">
             <i class="pi pi-phone"></i>

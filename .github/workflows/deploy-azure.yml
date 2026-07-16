@@ -234,8 +234,15 @@ jobs:
       # keeps provisioning and the secret write consistent — the KV reference is wired iff the secret is
       # about to exist, never before. Set the secret once per Environment to enable iOS/Android push.
       - name: Resolve FCM provisioning flag
+        # The secret MUST come in via env, never inlined as ${{ secrets.* }} into the script body:
+        # the service-account value is multiline JSON, and GitHub substitutes it as literal text before
+        # the shell runs, so an inlined `[ -n "${{ secrets.X }}" ]` splits across the embedded newlines
+        # and the JSON's quotes collide with the test's — the condition never evaluates true and the
+        # Function App silently never receives FCM__ServiceAccountJson. Reading a quoted env var is safe.
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
         run: |
-          if [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" ]; then
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
             echo "FCM_PROVISIONED=true" >> "$GITHUB_ENV"
           else
             echo "FCM_PROVISIONED=false" >> "$GITHUB_ENV"

@@ -11,33 +11,31 @@ $border: #e2e8f0;
 $bg-alt: #f8fafc;
 $white: #ffffff;
 $green: #16a34a;
-$shadow-card: 0 2px 16px rgba(0, 0, 0, 0.06);
 $max-width: 800px;
 $font-heading: 'Poppins', sans-serif;
 
 .track-order {
   max-width: $max-width;
   margin: 0 auto;
-  padding: 2rem 2rem 4rem;
+  padding: 1rem 2rem 4rem;
 
   cleansia-title {
     text-align: center;
   }
 
   &__subtitle {
-    color: $text-muted;
+    color: var(--cl-text-secondary, $text-muted);
     text-align: center;
     font-size: 0.95rem;
-    margin: -0.5rem 0 2rem !important;
+    margin: 0.75rem 0 2rem !important;
   }
 
   // ─── FORM CARD ───
   &__form-card {
-    background: $white;
-    border: 1px solid $border;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
     border-radius: 1rem;
     padding: 1.5rem;
-    box-shadow: $shadow-card;
     margin-bottom: 1.5rem;
   }
 
@@ -68,7 +66,7 @@ $font-heading: 'Poppins', sans-serif;
     align-items: center;
     gap: 0.5rem;
     border: 1px solid $border;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     padding: 0 0.75rem;
     transition: border-color 0.2s;
 
@@ -78,7 +76,7 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     i {
-      color: $text-muted;
+      color: var(--cl-text-secondary);
       font-size: 0.85rem;
     }
 
@@ -136,7 +134,7 @@ $font-heading: 'Poppins', sans-serif;
     border: 1px solid rgba($primary, 0.12);
     border-radius: 0.75rem;
     padding: 1rem 1.25rem;
-    color: $text-muted;
+    color: var(--cl-text-secondary);
     font-size: 0.85rem;
 
     i {
@@ -152,8 +150,8 @@ $font-heading: 'Poppins', sans-serif;
   // ─── GUEST BANNER ───
   &__guest-banner {
     display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
+    align-items: center;
+    gap: 1rem;
     background: $primary-lighter;
     border: 1px solid rgba($primary, 0.15);
     border-radius: 0.75rem;
@@ -165,12 +163,21 @@ $font-heading: 'Poppins', sans-serif;
     > i {
       color: $primary;
       font-size: 1.1rem;
-      margin-top: 0.1rem;
+      flex-shrink: 0;
     }
+  }
 
-    p {
-      margin: 0 0 0.5rem !important;
-    }
+  &__guest-banner-text {
+    flex: 1;
+    margin: 0 !important;
+    line-height: 1.6;
+  }
+
+  &__guest-banner-divider {
+    align-self: stretch;
+    width: 1px;
+    background: rgba($primary, 0.25);
+    flex-shrink: 0;
   }
 
   &__guest-banner-link {
@@ -196,7 +203,7 @@ $font-heading: 'Poppins', sans-serif;
     justify-content: center;
     gap: 0.5rem;
     padding: 2rem;
-    color: $text-muted;
+    color: var(--cl-text-secondary);
     font-size: 0.9rem;
 
     i { font-size: 1.2rem; color: $primary; }
@@ -218,10 +225,9 @@ $font-heading: 'Poppins', sans-serif;
 
   // ─── ORDER CARD ───
   &__order-card {
-    background: $white;
-    border: 1px solid $border;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
     border-radius: 1rem;
-    box-shadow: $shadow-card;
     padding: 1.25rem 1.5rem;
     margin-bottom: 1rem;
   }
@@ -251,7 +257,7 @@ $font-heading: 'Poppins', sans-serif;
 
   &__order-card-date {
     font-size: 0.78rem;
-    color: $text-muted;
+    color: var(--cl-text-secondary);
   }
 
   &__order-card-badges {
@@ -274,7 +280,7 @@ $font-heading: 'Poppins', sans-serif;
     font-size: 0.82rem;
     color: $text-body;
 
-    i { color: $text-muted; font-size: 0.8rem; }
+    i { color: var(--cl-text-secondary); font-size: 0.8rem; }
   }
 
   &__order-card-items {
@@ -291,7 +297,7 @@ $font-heading: 'Poppins', sans-serif;
     font-size: 0.75rem;
     font-weight: 500;
     padding: 0.2rem 0.6rem;
-    border-radius: 1rem;
+    border-radius: 0.75rem;
   }
 
   &__order-card-footer {
@@ -327,7 +333,7 @@ $font-heading: 'Poppins', sans-serif;
     padding: 0.65rem;
     margin-bottom: 1.5rem;
     border: 1px dashed $border;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     background: transparent;
     color: $primary;
     font-size: 0.85rem;
@@ -336,7 +342,7 @@ $font-heading: 'Poppins', sans-serif;
     transition: background 0.2s, border-color 0.2s;
 
     &:hover {
-      background: $primary-lighter;
+      background: rgba($primary, 0.07);
       border-color: $primary;
     }
   }
@@ -352,10 +358,9 @@ $font-heading: 'Poppins', sans-serif;
 
   // ─── RESULT CARD ───
   &__result {
-    background: $white;
-    border: 1px solid $border;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
     border-radius: 1rem;
-    box-shadow: $shadow-card;
     overflow: hidden;
   }
 
@@ -379,7 +384,7 @@ $font-heading: 'Poppins', sans-serif;
 
   &__result-date {
     font-size: 0.8rem;
-    color: $text-muted;
+    color: var(--cl-text-secondary);
   }
 
   // ─── SECTIONS ───
@@ -421,7 +426,7 @@ $font-heading: 'Poppins', sans-serif;
 
     label {
       font-size: 0.75rem;
-      color: $text-muted;
+      color: var(--cl-text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
@@ -450,7 +455,7 @@ $font-heading: 'Poppins', sans-serif;
     justify-content: space-between;
     align-items: center;
     padding: 1rem 1.5rem;
-    background: $bg-alt;
+    background: var(--surface-ground);
     font-size: 1rem;
 
     span {
@@ -478,7 +483,7 @@ $font-heading: 'Poppins', sans-serif;
 
     small {
       font-size: 0.75rem;
-      color: $text-muted;
+      color: var(--cl-text-secondary);
     }
   }
 
@@ -496,12 +501,27 @@ $font-heading: 'Poppins', sans-serif;
       color: $primary;
     }
   }
+
+  // ─── BUTTONS — colored ghost, no fill ───
+  .p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):not(.p-button-success):not(.p-button-warn) {
+    background: transparent;
+    border: 1px solid $primary;
+    color: $primary;
+    border-radius: 0.75rem;
+    box-shadow: none;
+
+    &:not(:disabled):hover {
+      background: rgba($primary, 0.07);
+      border-color: $primary-dark;
+      color: $primary-dark;
+    }
+  }
 }
 
 // ─── RESPONSIVE ───
 @media (max-width: 768px) {
   .track-order {
-    padding: 1.5rem 1rem 3rem;
+    padding: 1rem 1rem 3rem;
 
     &__form {
       flex-direction: column;
@@ -553,6 +573,10 @@ $font-heading: 'Poppins', sans-serif;
     &__form-card {
       background: #1e293b;
       border-color: #334155;
+    }
+
+    &__field label {
+      color: #e2e8f0;
     }
 
     &__input-wrap {
@@ -709,7 +733,7 @@ $font-heading: 'Poppins', sans-serif;
       color: #38bdf8;
 
       &:hover {
-        background: rgba(56, 189, 248, 0.06);
+        background: rgba(56, 189, 248, 0.1);
         border-color: #38bdf8;
       }
     }
@@ -717,5 +741,120 @@ $font-heading: 'Poppins', sans-serif;
     &__form-title {
       color: #e2e8f0;
     }
+
+    .p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):not(.p-button-success):not(.p-button-warn) {
+      border-color: #38bdf8;
+      color: #38bdf8;
+
+      &:not(:disabled):hover {
+        background: rgba(56, 189, 248, 0.1);
+        border-color: #7dd3fc;
+        color: #7dd3fc;
+      }
+    }
+  }
+}
+
+// ─── PAGE HERO (matches the landing hero language) ───
+.track-order__hero {
+  position: relative;
+  overflow: hidden;
+  background: $primary-lighter;
+  padding: 3.5rem 2rem 4.5rem;
+  text-align: center;
+  z-index: 1;
+}
+
+.track-order__hero-inner {
+  position: relative;
+  z-index: 2;
+  max-width: $max-width;
+  margin: 0 auto;
+}
+
+.track-order__title {
+  font-family: $font-heading;
+  font-size: clamp(1.6rem, 3.5vw, 2.25rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  margin: 0;
+}
+
+.track-order__hero .track-order__subtitle {
+  margin: 0.75rem 0 0 !important;
+}
+
+.track-order__hero-bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba($primary, 0.05);
+  border: 1px solid rgba($primary, 0.07);
+  z-index: 0;
+  animation: cl-float-bubble 12s ease-in-out infinite;
+
+  &--1 {
+    width: 150px;
+    height: 150px;
+    top: -30px;
+    right: -20px;
+  }
+  &--2 {
+    width: 90px;
+    height: 90px;
+    top: 40%;
+    left: -30px;
+    animation-delay: -4s;
+  }
+  &--3 {
+    width: 60px;
+    height: 60px;
+    bottom: 18%;
+    right: 14%;
+    animation-delay: -8s;
+  }
+}
+
+.track-order__hero-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  line-height: 0;
+  z-index: 1;
+
+  svg {
+    width: 100%;
+    height: 40px;
+    display: block;
+
+    path {
+      fill: var(--surface-ground);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .track-order__hero {
+    padding: 2.5rem 1.5rem 3.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track-order__hero-bubble {
+    animation: none;
+  }
+}
+
+:root.dark-mode {
+  .track-order__hero {
+    background: #0f172a;
+  }
+  .track-order__title {
+    color: #e2e8f0;
+  }
+  .track-order__hero-bubble {
+    background: rgba(56, 189, 248, 0.04);
+    border-color: rgba(56, 189, 248, 0.06);
   }
 }

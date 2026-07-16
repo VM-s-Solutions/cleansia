@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /profile
+Disallow: /orders
+Disallow: /saved-addresses
+Disallow: /disputes
+Disallow: /rewards
+Disallow: /checkout

@@ -2,6 +2,16 @@ $primary: #0284c7;
 
 .customer-navbar {
   height: 64px;
+  // Layout duplicated from the PrimeFlex utility classes on purpose:
+  // PrimeFlex loads async, so anything the first paint depends on must be
+  // in this (bundled) stylesheet or the whole header reflows when the
+  // utilities arrive — a full-page layout shift.
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: var(--surface-overlay, #ffffff);
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 4px 5px 0 rgba(0, 0, 0, 0.04);
   transition: transform 0.3s ease;
 
   &--hidden {
@@ -11,31 +21,113 @@ $primary: #0284c7;
   &__inner {
     max-width: 1400px;
     margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    padding: 0 1.5rem;
   }
 
   &__left {
     flex: 1;
     min-width: 0;
+    display: none;
+    align-items: center;
+  }
+
+  &__brand-mobile {
+    display: block;
   }
 
   &__center {
     flex: 0 0 auto;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
   }
 
   &__right {
     flex: 1;
     min-width: 0;
+    display: none;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  &__hamburger {
+    display: flex;
+    align-items: center;
+  }
+
+  &__menu-anchor {
+    position: relative;
+  }
+
+  @media (min-width: 768px) {
+    &__left {
+      display: flex;
+    }
+    &__brand-mobile {
+      display: none;
+    }
+    &__center {
+      display: flex;
+    }
+    &__right {
+      display: flex;
+    }
+    &__hamburger {
+      display: none;
+    }
+  }
+
+  @media (min-width: 992px) {
+    &__inner {
+      padding: 0 3rem;
+    }
   }
 
   &__link {
+    position: relative;
+    padding: 0.35rem 0;
     color: var(--text-color-secondary, #64748b);
     font-weight: 500;
     cursor: pointer;
     transition: color 0.15s ease;
     text-decoration: none;
 
+    // Animated underline — scales in on hover, stays on the active page
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 2px;
+      border-radius: 2px;
+      background: $primary;
+      transform: scaleX(0);
+      transform-origin: center;
+      transition: transform 0.2s ease;
+    }
+
     &:hover {
       color: var(--text-color, #1e293b);
+
+      &::after {
+        transform: scaleX(1);
+      }
+    }
+
+    &--active,
+    &--active:hover {
+      color: $primary;
+
+      &::after {
+        transform: scaleX(1);
+      }
     }
   }
 
@@ -85,16 +177,21 @@ $primary: #0284c7;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
     z-index: 100;
     padding: 0.375rem 0;
-    // Hidden by default — CSS transition for open/close
+    // Hidden by default — CSS transition for open/close. `visibility` keeps
+    // the closed menu out of the accessibility tree and tab order; its 0.2s
+    // delay lets the fade-out finish before the menu is hidden.
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
     transform: translateY(-8px);
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
 
     &--visible {
       opacity: 1;
+      visibility: visible;
       pointer-events: auto;
       transform: translateY(0);
+      transition: opacity 0.2s ease, transform 0.2s ease;
     }
   }
 
@@ -351,6 +448,13 @@ $primary: #0284c7;
       color: var(--text-color, #1e293b);
       background: var(--surface-hover, #f1f5f9);
     }
+
+    &--active,
+    &--active:hover {
+      color: $primary;
+      background: var(--primary-50, #f0f9ff);
+      font-weight: 600;
+    }
   }
 
   // =============================
@@ -408,6 +512,21 @@ $primary: #0284c7;
 // =============================
 :root.dark-mode {
   .customer-navbar {
+    &__link::after {
+      background: #38bdf8;
+    }
+
+    &__link--active,
+    &__link--active:hover {
+      color: #38bdf8;
+    }
+
+    &__mobile-link--active,
+    &__mobile-link--active:hover {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+    }
+
     &__dropdown {
       background: #1e293b;
       border-color: #334155;

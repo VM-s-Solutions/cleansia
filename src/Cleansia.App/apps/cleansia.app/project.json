@@ -9,7 +9,9 @@
     "build": {
       "executor": "@angular/build:application",
       "dependsOn": [],
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "dist/apps/cleansia.app",
         "index": "apps/cleansia.app/src/index.html",
@@ -18,17 +20,26 @@
         "ssr": {
           "entry": "apps/cleansia.app/server.ts"
         },
-        "polyfills": ["zone.js"],
+        "polyfills": [
+          "zone.js"
+        ],
         "tsConfig": "apps/cleansia.app/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
-        "assets": ["apps/cleansia.app/src/assets"],
+        "assets": [
+          "apps/cleansia.app/src/assets",
+          {
+            "glob": "robots.txt",
+            "input": "apps/cleansia.app/src/root-assets",
+            "output": "/"
+          }
+        ],
         "styles": [
           "apps/cleansia.app/src/styles.scss",
           "libs/shared/assets/src/styles/cleansia-customer.scss"
         ]
       },
       "configurations": {
-      "production": {
+        "production": {
           "optimization": true,
           "outputHashing": "all",
           "sourceMap": false,
@@ -109,7 +120,9 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
       "options": {
         "jestConfig": "apps/cleansia.app/jest.config.ts"
       }

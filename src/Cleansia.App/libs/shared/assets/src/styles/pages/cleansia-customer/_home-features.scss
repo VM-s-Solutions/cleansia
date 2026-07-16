@@ -11,67 +11,70 @@ cleansia-features {
 .cl-features {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
+  gap: 1.5rem;
 
   &__card {
     background: var(--surface-card);
-    border-radius: $radius-xl;
-    padding: 2.75rem 2rem 2.25rem;
-    box-shadow: $shadow-card;
+    border-radius: $radius-lg;
+    padding: 2.25rem 1.75rem 2rem;
     text-align: center;
     border: 1px solid var(--surface-border);
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.4s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 
     &:hover {
-      transform: translateY(-4px);
+      border-color: rgba($primary, 0.35);
+      box-shadow: $shadow-lg;
+      transform: translateY(-2px);
     }
   }
 
   &__icon-wrap {
-    width: 76px;
-    height: 76px;
-    border-radius: 1.25rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 1.75rem;
+    margin: 0 auto 1.5rem;
+    background: $primary-lighter;
     i {
-      font-size: 1.8rem;
+      font-size: 1.4rem;
+      color: $primary;
     }
 
     &--blue {
-      background: linear-gradient(135deg, $primary-light, $primary-lighter);
+      background: $primary-light;
       i {
-        color: $primary;
+        color: $primary-dark;
       }
     }
+
     &--green {
-      background: linear-gradient(135deg, $green-light, #f0fdf4);
+      background: $green-light;
       i {
         color: $green;
       }
     }
+
     &--amber {
-      background: linear-gradient(135deg, #fef3c7, #fffbeb);
+      background: #fef3c7;
       i {
-        color: $amber;
+        color: #d97706;
       }
     }
   }
 
   &__card-title {
     font-family: $font-heading;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: var(--text-color);
-    margin: 0 0 1rem;
+    margin: 0 0 0.75rem;
   }
 
   &__card-desc {
     font-size: 0.95rem;
-    color: var(--text-color-secondary);
+    color: var(--cl-text-secondary);
     line-height: 1.7;
     margin: 0;
   }
@@ -81,18 +84,35 @@ cleansia-features {
 // Dark Mode — Features
 // =============================
 :root.dark-mode {
+  .cl-features__card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+
   .cl-features__icon-wrap {
+    background: rgba(56, 189, 248, 0.1);
+    i {
+      color: #38bdf8;
+    }
+
     &--blue {
-      background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(56, 189, 248, 0.06));
-      i { color: #38bdf8; }
+      background: rgba(56, 189, 248, 0.12);
+      i {
+        color: #7dd3fc;
+      }
     }
+
     &--green {
-      background: linear-gradient(135deg, rgba(22, 163, 74, 0.12), rgba(22, 163, 74, 0.06));
-      i { color: #4ade80; }
+      background: rgba(22, 163, 74, 0.15);
+      i {
+        color: #4ade80;
+      }
     }
+
     &--amber {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.06));
-      i { color: #fbbf24; }
+      background: rgba(245, 158, 11, 0.15);
+      i {
+        color: #fbbf24;
+      }
     }
   }
 }

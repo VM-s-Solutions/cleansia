@@ -19,4 +19,11 @@ public record MyProfileDto(
     DateOnly? BirthDate,
     BlobFileDto? ProfilePhoto,
     string? PreferredLanguageCode,
-    string? PreferredLanguageName);
+    string? PreferredLanguageName,
+    // Profile hero stats (T-0392). MemberSince is the account creation date;
+    // TotalBookings/TotalSavings/SavingsCurrencyCode come from the user's orders
+    // (savings = tier+promo+membership discounts on non-cancelled orders).
+    DateTimeOffset MemberSince,
+    int TotalBookings,
+    decimal TotalSavings,
+    string? SavingsCurrencyCode);

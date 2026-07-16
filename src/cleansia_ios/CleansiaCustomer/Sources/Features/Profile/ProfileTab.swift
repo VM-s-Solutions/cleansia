@@ -29,7 +29,6 @@ struct ProfileTab: View {
                             user: profileVM.currentUser,
                             tier: tierLabel,
                             bookings: profileVM.bookingsCount,
-                            saved: profileVM.savedCount,
                             topInset: proxy.safeAreaInsets.top,
                             onEdit: { onOpen(.editProfile(showBookingHint: false)) }
                         )
@@ -208,19 +207,18 @@ private struct ProfileHeader: View {
     let user: CurrentUserProfile?
     let tier: String
     let bookings: Int
-    let saved: Int
     var topInset: CGFloat = 0
     let onEdit: () -> Void
 
     var body: some View {
         // Hero + a floating stats card overlapping its lip (Android parity).
-        // Only stats with a REAL per-user source are shown: bookings (the
-        // server-side order grand total) and saved (saved-address count).
-        // Member-since stays hidden until the mobile profile DTO carries a
-        // created date (T-0392 backend follow-up) — never a fabricated value.
+        // Interim: only Bookings has a real per-user source on the current
+        // mobile contract. Money-saved and member-since join the card once the
+        // profile DTO carries them (T-0392 backend + client regen) — never a
+        // fabricated or address-count stand-in.
         VStack(spacing: 0) {
             HeroGradient(user: user, tier: tier, topInset: topInset, onEdit: onEdit)
-            ProfileStatsCard(bookings: bookings, saved: saved)
+            ProfileStatsCard(bookings: bookings)
                 .padding(.horizontal, Spacing.ml)
                 // Overlap must not exceed the hero's Spacing.m bottom lip, or
                 // the card's hit region crops the Edit Profile chip's tap area.
@@ -230,31 +228,21 @@ private struct ProfileHeader: View {
     }
 }
 
-/// The two real profile stats, side by side in a floating surface card.
+/// The real profile stats in a floating surface card. Interim: Bookings only.
 private struct ProfileStatsCard: View {
     let bookings: Int
-    let saved: Int
 
     var body: some View {
-        HStack(spacing: 0) {
-            statColumn(value: "\(bookings)", label: L10n.Profile.statBookings)
-            // A 1pt separator that tracks the taller column (Dynamic Type safe)
-            // rather than a fixed-height stub.
-            Rectangle()
-                .fill(CleansiaColors.outlineVariant)
-                .frame(width: 1)
-                .padding(.vertical, Spacing.xxs)
-            statColumn(value: "\(saved)", label: L10n.Profile.statSaved)
-        }
-        .padding(.vertical, Spacing.m)
-        .frame(maxWidth: .infinity)
-        .background(CleansiaColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
-        .overlay(
-            RoundedRectangle(cornerRadius: CornerRadius.large)
-                .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.08), radius: 12, y: 4)
+        statColumn(value: "\(bookings)", label: L10n.Profile.statBookings)
+            .padding(.vertical, Spacing.m)
+            .frame(maxWidth: .infinity)
+            .background(CleansiaColors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.large)
+                    .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.08), radius: 12, y: 4)
     }
 
     private func statColumn(value: String, label: String) -> some View {
@@ -379,7 +367,6 @@ private struct EditProfileChip: View {
                 ),
                 tier: "Regular",
                 bookings: 12,
-                saved: 3,
                 onEdit: {}
             )
             .background(CleansiaColors.background)

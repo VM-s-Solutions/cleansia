@@ -80,8 +80,7 @@ struct CustomerRootView: View {
             repository: container.userProfileRepository,
             settings: container.appSettings,
             snackbar: container.snackbar,
-            orderRepository: container.orderRepository,
-            savedAddressRepository: container.savedAddressRepository
+            orderRepository: container.orderRepository
         )
     }
 

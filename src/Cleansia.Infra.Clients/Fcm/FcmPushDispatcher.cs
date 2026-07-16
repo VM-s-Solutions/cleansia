@@ -83,6 +83,18 @@ public class FcmPushDispatcher(
             var item = response.Responses[i];
             if (item.IsSuccess) continue;
 
+            // Surface WHY FCM rejected this token — without this a caller only sees the "{Failure}
+            // failed" count and cannot tell an APNs-config problem from a stale token. The
+            // MessagingErrorCode is the actionable diagnostic: ThirdPartyAuthError = the APNs auth
+            // key/cert in Firebase is wrong/missing/expired or not authorised for the bundle;
+            // Unregistered/SenderIdMismatch = stale or wrong-project/wrong-environment token;
+            // Unavailable/Internal = transient. S6-safe: the error code + the SDK's fixed technical
+            // message carry no user content; the token is identified only by its fan-out index.
+            logger.LogWarning(
+                "FCM rejected token #{Index}/{Total} for event {EventKey}: {ErrorCode} — {Detail}",
+                i + 1, response.Responses.Count, eventKey,
+                item.Exception?.MessagingErrorCode, item.Exception?.Message);
+
             // A dead-token code means the row should be pruned; transient codes leave it in place so
             // FCM can succeed on a retry from the queue.
             if (IntegrationFailureClassifier.IsDeadFcmToken(item.Exception?.MessagingErrorCode))

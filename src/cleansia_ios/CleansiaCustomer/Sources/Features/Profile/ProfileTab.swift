@@ -222,8 +222,10 @@ private struct ProfileHeader: View {
             HeroGradient(user: user, tier: tier, topInset: topInset, onEdit: onEdit)
             ProfileStatsCard(bookings: bookings, saved: saved)
                 .padding(.horizontal, Spacing.ml)
-                .offset(y: -Spacing.l)
-                .padding(.bottom, -Spacing.l)
+                // Overlap must not exceed the hero's Spacing.m bottom lip, or
+                // the card's hit region crops the Edit Profile chip's tap area.
+                .offset(y: -Spacing.m)
+                .padding(.bottom, -Spacing.m)
         }
     }
 }
@@ -236,9 +238,12 @@ private struct ProfileStatsCard: View {
     var body: some View {
         HStack(spacing: 0) {
             statColumn(value: "\(bookings)", label: L10n.Profile.statBookings)
+            // A 1pt separator that tracks the taller column (Dynamic Type safe)
+            // rather than a fixed-height stub.
             Rectangle()
                 .fill(CleansiaColors.outlineVariant)
-                .frame(width: 1, height: 32)
+                .frame(width: 1)
+                .padding(.vertical, Spacing.xxs)
             statColumn(value: "\(saved)", label: L10n.Profile.statSaved)
         }
         .padding(.vertical, Spacing.m)

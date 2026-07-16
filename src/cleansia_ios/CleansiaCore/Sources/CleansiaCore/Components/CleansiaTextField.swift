@@ -53,7 +53,13 @@ public struct CleansiaTextField: View {
                     .font(floating ? CleansiaTypography.labelMedium : CleansiaTypography.bodyLarge)
                     .foregroundColor(floating ? floatingLabelColor : CleansiaColors.onSurfaceVariant)
                     .offset(y: floating ? -14 : 0)
-                    .animation(.easeOut(duration: 0.15), value: floating)
+                    // Animate the float on FOCUS, not on the derived `floating`
+                    // state. Keying on `floating` animated the label whenever the
+                    // value arrived programmatically (pre-fill / async binding),
+                    // so on first appearance the hint visibly "dragged" into place
+                    // instead of rendering already-floated. Focus is the real
+                    // user-interaction trigger; programmatic value changes now snap.
+                    .animation(.easeOut(duration: 0.15), value: focused)
 
                 HStack {
                     field
@@ -69,6 +75,7 @@ public struct CleansiaTextField: View {
                     }
                 }
                 .offset(y: floating ? 8 : 0)
+                .animation(.easeOut(duration: 0.15), value: focused)
             }
             .padding(.horizontal, Spacing.m)
             .frame(minHeight: 56)

@@ -1,5 +1,6 @@
 package cz.cleansia.partner.data.dashboard
 
+import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.partner.api.client.DashboardApi
 import cz.cleansia.partner.api.model.AvailableJobsPreviewResponse
@@ -78,7 +79,7 @@ interface DashboardRepository {
 class DashboardRepositoryImpl @Inject constructor(
     private val dashboardApi: DashboardApi,
     private val json: Json,
-) : DashboardRepository {
+) : DashboardRepository, SessionScopedCache {
 
     private val _snapshot = MutableStateFlow(DashboardSnapshot())
     override val snapshot: StateFlow<DashboardSnapshot> = _snapshot.asStateFlow()
@@ -137,6 +138,11 @@ class DashboardRepositoryImpl @Inject constructor(
     }
 
     override fun invalidate() {
+        staleness.reset()
+    }
+
+    override suspend fun clear() {
+        _snapshot.value = DashboardSnapshot()
         staleness.reset()
     }
 

@@ -1,11 +1,9 @@
 name: Deploy Docs
 
+# DEACTIVATED (owner request 2026-07-15): the automatic push trigger is disabled so docs
+# changes no longer spin a deploy. Left runnable on demand via the Actions tab. To re-enable
+# automatic deploys, restore the `push:` trigger (branches: master, paths: docs/**).
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - "docs/**"
   workflow_dispatch:
 
 jobs:

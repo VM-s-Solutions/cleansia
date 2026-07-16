@@ -9,6 +9,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -127,5 +128,21 @@ class NotificationPreferencesRepositoryTest {
 
         assertTrue(result is ApiResult.Error)
         assertEquals(previous, repo.preferences.value)
+    }
+
+    // clear() (SessionScopedCache)
+
+    @Test
+    fun clear_viaSessionScopedCache_wipesTheSnapshot() = runTest {
+        coEvery { api.getMine() } returns Response.success(payload(promo = true))
+        val repo = newRepo()
+        repo.refresh()
+        assertNotNull(repo.preferences.value)
+
+        val cache: cz.cleansia.core.auth.SessionScopedCache = repo
+        cache.clear()
+
+        assertNull(repo.preferences.value)
+        assertEquals(false, repo.loading.value)
     }
 }

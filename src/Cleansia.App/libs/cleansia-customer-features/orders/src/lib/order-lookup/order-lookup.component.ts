@@ -10,7 +10,6 @@ import { Router } from '@angular/router';
 import {
   CleansiaButtonComponent,
   CleansiaScrollTopComponent,
-  CleansiaTitleComponent,
 } from '@cleansia/components';
 import {
   CleansiaCustomerRoute,
@@ -39,7 +38,6 @@ import { TrackOrderFacade } from '../track-order/track-order.facade';
     TranslatePipe,
     CleansiaButtonComponent,
     CleansiaScrollTopComponent,
-    CleansiaTitleComponent,
   ],
   templateUrl: './order-lookup.component.html',
   providers: [TrackOrderFacade],

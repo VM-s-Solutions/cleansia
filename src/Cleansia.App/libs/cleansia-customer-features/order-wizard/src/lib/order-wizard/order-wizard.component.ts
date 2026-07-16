@@ -285,6 +285,22 @@ export class OrderWizardComponent implements OnInit {
     return formatPrice(price);
   }
 
+  // Same icon rotation as the services-catalog page so both card sets read
+  // as one system.
+  private readonly serviceIcons = [
+    'pi pi-home', 'pi pi-briefcase', 'pi pi-car',
+    'pi pi-wrench', 'pi pi-building', 'pi pi-cog',
+  ];
+  private readonly packageIcons = ['pi pi-home', 'pi pi-star', 'pi pi-crown'];
+
+  getServiceIcon(index: number): string {
+    return this.serviceIcons[index % this.serviceIcons.length];
+  }
+
+  getPackageIcon(index: number): string {
+    return this.packageIcons[index] ?? this.packageIcons[0];
+  }
+
   onNextStep(): void {
     this.facade.nextStep();
   }

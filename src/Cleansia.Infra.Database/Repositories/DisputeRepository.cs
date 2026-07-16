@@ -55,6 +55,7 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
     public Task<Dispute?> GetForUpdateAsync(string disputeId, CancellationToken cancellationToken)
     {
         return GetDbSet()
+            .Include(d => d.Order)
             .FirstOrDefaultAsync(d => d.Id == disputeId, cancellationToken);
     }
 

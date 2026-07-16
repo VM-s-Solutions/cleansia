@@ -71,6 +71,10 @@ export class CleansiaLanguageSwitcherComponent implements OnInit {
     this.translate.use(lang);
     if (this.isBrowser) {
       localStorage.setItem(PREFERRED_LANGUAGE_KEY, lang);
+      // Cookie mirrors localStorage so SSR renders the next visit in the
+      // chosen language instead of English.
+      document.cookie = `${PREFERRED_LANGUAGE_KEY}=${lang}; path=/; max-age=31536000; SameSite=Lax`;
+      document.documentElement.lang = lang;
     }
   }
 }

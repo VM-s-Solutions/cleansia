@@ -1,11 +1,11 @@
 ---
 id: T-0403
 title: "iOS — integrate Firebase Messaging so the apps register an FCM token (backend dispatches via FCM; iOS currently sends a raw APNs token FCM can't target)"
-status: proposed
+status: done
 size: M
 owner: ios
 created: 2026-07-13
-updated: 2026-07-13
+updated: 2026-07-15
 depends_on: [T-0342]
 blocks: []
 stories: []
@@ -54,3 +54,4 @@ source: phase/ios-fix3 push investigation — the FCM-token/raw-APNs mismatch su
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
 - 2026-07-13 — CODE LANDED (phase/ios-fix3, bb30cd1f). firebase-ios-sdk 11.15.0 (min-iOS 12) in both apps; APNs token → Messaging → FCM registration token → /api/Device/Register via the existing PushRegistrar seam; customer push stack fully wired (folds T-0398); customer aps-environment entitlement added (SIWA left to T-0344). GoogleService-Info.plist gitignored + owner-local; FirebaseApp.configure() gated on plist presence (no-plist builds compile + run without push). Core 303 (+5 PushTokenForwarderTests); both apps build on iPhone 17/iOS 26 + the 16.4 floor. REMAINING (owner): drop each GoogleService-Info.plist into <app>/Firebase/, select the paid team, rebuild on a real device → verify via a Firebase Console test push then a real order-status change. The free-team capability strips are RETIRED (committed config now carries push).
+- 2026-07-15 — **DONE.** Both GoogleService-Info.plist present + bundled (`Firebase/` source path in each project.yml); FirebaseCore+FirebaseMessaging resolved; registration verified end-to-end on the iPhone 17 simulator → `device register SUCCEEDED` (real device row on dev). The blocker that made it *look* non-functional through several rounds was NOT this integration but a call-site bug — `registerForRemoteNotifications()` was deferred into an async permission flow and iOS silently dropped it; fixed by calling it directly in `didFinishLaunching` (commit 22bb7beb) + `FirebaseAppDelegateProxyEnabled=NO` (manual integration) + the backend re-registration tombstone-reclaim fix. Owner confirmed working on a physical device. Delivery (sending) still needs the Firebase service-account credential on the Functions host + T-0404 for iOS *display* — those are separate tickets, not T-0403.

@@ -4592,6 +4592,12 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasColumnType("character varying(26)");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ExpiresAt")

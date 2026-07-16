@@ -31,7 +31,7 @@ public final class GeneratedClientAuthBridge: @unchecked Sendable {
         switch await sessionRefresher.refresh(triggeredBy: staleAccessToken) {
         case let .refreshed(tokens):
             tokens.accessToken
-        case .signedOut:
+        case .unavailable, .signedOut:
             nil
         }
     }

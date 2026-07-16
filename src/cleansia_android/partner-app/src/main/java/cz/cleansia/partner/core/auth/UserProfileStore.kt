@@ -1,30 +1,60 @@
 package cz.cleansia.partner.core.auth
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import cz.cleansia.core.auth.SessionScopedCache
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
+import javax.inject.Qualifier
 import javax.inject.Singleton
 
 private val Context.userProfileDataStore by preferencesDataStore(name = "partner_user_profile")
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class UserProfileDataStore
+
+@Module
+@InstallIn(SingletonComponent::class)
+object UserProfileStoreModule {
+
+    @Provides
+    @Singleton
+    @UserProfileDataStore
+    fun provideUserProfileDataStore(
+        @ApplicationContext context: Context,
+    ): DataStore<Preferences> = context.userProfileDataStore
+}
 
 /**
  * Non-sensitive profile fields persisted alongside the [:core TokenStore].
  * Tokens themselves stay in the encrypted store; this holds the human-readable
  * identity (userId / email / role flags) the UI needs without unsealing the
  * token on every read.
+ *
+ * Joins the [SessionScopedCache] multibinding so both sign-out paths (voluntary
+ * and authenticator-forced) wipe the persisted identity — otherwise the prior
+ * user's profile would survive a forced sign-out and leak to the next user on
+ * a shared device.
  */
 @Singleton
 class UserProfileStore @Inject constructor(
-    @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context,
-) {
+    @UserProfileDataStore private val dataStore: DataStore<Preferences>,
+) : SessionScopedCache {
 
-    val profile: Flow<UserProfileData?> = context.userProfileDataStore.data.map { prefs ->
+    val profile: Flow<UserProfileData?> = dataStore.data.map { prefs ->
         val userId = prefs[KEY_USER_ID] ?: return@map null
         val email = prefs[KEY_EMAIL] ?: return@map null
         UserProfileData(
@@ -42,7 +72,7 @@ class UserProfileStore @Inject constructor(
     suspend fun current(): UserProfileData? = profile.first()
 
     suspend fun save(profile: UserProfileData) {
-        context.userProfileDataStore.edit { prefs ->
+        dataStore.edit { prefs ->
             prefs[KEY_USER_ID] = profile.userId
             prefs[KEY_EMAIL] = profile.email
             prefs[KEY_EMAIL_CONFIRMED] = profile.isEmailConfirmed
@@ -55,20 +85,20 @@ class UserProfileStore @Inject constructor(
     }
 
     suspend fun updateEmployeeId(employeeId: String?) {
-        context.userProfileDataStore.edit { prefs ->
+        dataStore.edit { prefs ->
             employeeId?.let { prefs[KEY_EMPLOYEE_ID] = it } ?: prefs.remove(KEY_EMPLOYEE_ID)
         }
     }
 
     suspend fun updateName(firstName: String?, lastName: String?) {
-        context.userProfileDataStore.edit { prefs ->
+        dataStore.edit { prefs ->
             firstName?.let { prefs[KEY_FIRST_NAME] = it } ?: prefs.remove(KEY_FIRST_NAME)
             lastName?.let { prefs[KEY_LAST_NAME] = it } ?: prefs.remove(KEY_LAST_NAME)
         }
     }
 
-    suspend fun clear() {
-        context.userProfileDataStore.edit { it.clear() }
+    override suspend fun clear() {
+        dataStore.edit { it.clear() }
     }
 
     private companion object {

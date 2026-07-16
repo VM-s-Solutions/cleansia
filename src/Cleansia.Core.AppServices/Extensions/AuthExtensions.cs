@@ -12,8 +12,9 @@ public static class AuthExtensions
     }
 
     public const string EmployeeIdClaimType = "employee_id";
+    public const string DeviceIdClaimType = "device_id";
 
-    public static IEnumerable<Claim> SetClaims(this User user, string? employeeId = null)
+    public static IEnumerable<Claim> SetClaims(this User user, string? employeeId = null, string? deviceId = null)
     {
         yield return new Claim(ClaimTypes.NameIdentifier, user.Id.ToString());
         yield return new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}");
@@ -28,6 +29,11 @@ public static class AuthExtensions
         if (!string.IsNullOrEmpty(employeeId))
         {
             yield return new Claim(EmployeeIdClaimType, employeeId);
+        }
+
+        if (!string.IsNullOrEmpty(deviceId))
+        {
+            yield return new Claim(DeviceIdClaimType, deviceId);
         }
     }
 }

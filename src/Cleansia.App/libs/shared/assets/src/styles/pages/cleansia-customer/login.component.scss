@@ -1,3 +1,5 @@
+@use './home-variables' as *;
+
 .cleansia-login {
   display: flex;
   flex-direction: column;
@@ -5,6 +7,7 @@
   align-items: center;
   padding: 2rem;
   min-height: auto;
+  font-family: $font-body;
 
   a {
     color: var(--cleansia-primary);
@@ -20,28 +23,42 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    color: var(--cleansia-black);
-    text-transform: uppercase;
     text-align: center;
+
+    .cleansia-title--default {
+      font-family: $font-heading;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: $text-dark;
+    }
   }
 
   &__login-card,
   &__confirmation-card {
     width: 100%;
-    background-color: var(--cleansia-white);
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0px 4px 10px var(--cleansia-black-100);
     display: flex;
     flex-direction: column;
     row-gap: 1.1rem;
 
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: 16px;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: var(--surface-card);
+    border-radius: $radius-lg;
+    overflow: hidden;
+    border: 1px solid var(--surface-border);
+    box-shadow: $shadow-lg;
+  }
+
+  // Landing-style primary action — same gradient pill as the home page CTAs
+  &__user-actions .p-button:not(.p-button-outlined):not(.p-button-text) {
+    background: linear-gradient(135deg, $primary-dark 0%, $primary 100%);
+    border-color: transparent;
+    border-radius: 999px;
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba($primary, 0.3);
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, $primary-darker 0%, $primary-dark 100%);
+      box-shadow: 0 8px 20px rgba($primary, 0.38);
+    }
   }
 
   &__mascot {
@@ -133,15 +150,17 @@
   .cleansia-login {
     &__login-card,
     &__confirmation-card {
-      background: rgba(30, 41, 59, 0.85);
+      background: #1e293b;
       border: 1px solid #334155;
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
 
-    &__header {
+    &__header .cleansia-title--default {
       color: #e2e8f0;
+    }
+
+    &__user-actions .p-button:not(.p-button-outlined):not(.p-button-text) {
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
     }
 
     &__brand-name-container {

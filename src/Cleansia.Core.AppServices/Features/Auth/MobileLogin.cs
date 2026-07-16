@@ -6,6 +6,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
@@ -39,11 +40,24 @@ public class MobileLogin
     internal class Handler(
         ITokenService tokenService,
         IUserRepository userRepository,
-        IHostAudienceProvider hostAudience)
+        IHostAudienceProvider hostAudience,
+        IRequestMetadataProvider requestMetadata,
+        ILogger<Handler> logger)
         : ICommandHandler<Command, JwtTokenResponse>
     {
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
         {
+            // Evidence gate for a future required-header login validator: mobile hosts should always
+            // carry X-Device-Id so a session stays device-revocable. Not yet enforced — claim-less
+            // tokens pass the device directory by design during transition — so we only warn (host +
+            // audience, never the subject's email/PII, per S6) to measure how many logins lack it.
+            if (string.IsNullOrWhiteSpace(requestMetadata.DeviceId))
+            {
+                logger.LogWarning(
+                    "Mobile login without an X-Device-Id header on audience {Audience}.",
+                    hostAudience.Audience);
+            }
+
             var user = await userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
             if (user is null || !user.IsActive)
             {

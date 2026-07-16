@@ -28,7 +28,8 @@ public class RefreshToken : Auditable, ITenantEntity
 
     public DateTimeOffset? RevokedAt { get; private set; }
 
-    /// <summary>One of: "rotated", "logout", "admin", "security".</summary>
+    /// <summary>One of: "rotated", "logout", "admin", "security", "device_revoked",
+    /// "password_changed", "password_reset".</summary>
     [MaxLength(20)]
     public string? RevokedReason { get; private set; }
 

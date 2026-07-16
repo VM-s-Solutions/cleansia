@@ -7987,6 +7987,13 @@
               "$ref": "#/components/schemas/PackageServiceRef"
             },
             "nullable": true
+          },
+          "translations": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Translation"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8690,6 +8697,13 @@
           },
           "currencyCode": {
             "type": "string",
+            "nullable": true
+          },
+          "translations": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Translation"
+            },
             "nullable": true
           }
         },

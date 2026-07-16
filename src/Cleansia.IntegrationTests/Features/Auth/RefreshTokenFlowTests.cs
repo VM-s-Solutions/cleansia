@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
+using System.IdentityModel.Tokens.Jwt;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ using TestConstants = Cleansia.TestUtilities.Constants;
 using RefreshTokenEntity = Cleansia.Core.Domain.Users.RefreshToken;
 using RefreshTokenCmd = Cleansia.Core.AppServices.Features.Auth.RefreshToken;
 using LogoutCmd = Cleansia.Core.AppServices.Features.Auth.Logout;
+using ResetPasswordCmd = Cleansia.Core.AppServices.Features.Users.ChangePassword;
 
 namespace Cleansia.IntegrationTests.Features.Auth;
 
@@ -281,6 +283,106 @@ public class RefreshTokenFlowTests(PostgresContainerFixture fixture) : BaseInteg
             });
     }
 
+    // Password CHANGE (authenticated) revokes all-OTHER sessions: the hijacker's parallel
+    // session dies with "password_changed" while the session performing the change (the
+    // cookie-enriched CurrentRefreshToken) survives and still rotates (ADR-0024 D4.6).
+    [Fact]
+    public async Task PasswordChange_RevokesOtherSessions_WhileTheChangingSessionStillRotates()
+    {
+        string? otherSession = null;
+        string? currentSession = null;
+
+        await TestMethod(
+            arrange: SeedConfirmedSessionUser,
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                otherSession = (await Login(mediator)).Value.RefreshToken!;
+                currentSession = (await Login(mediator)).Value.RefreshToken!;
+
+                var change = await mediator.Send(new ChangeOwnPassword.Command(
+                    TestConstants.TestUserSession.TestUserPassword, "BrandNew123", currentSession));
+                Assert.True(change.IsSuccess);
+
+                var other = await Refresh(mediator, otherSession!);
+                var current = await Refresh(mediator, currentSession!);
+                return (Other: other, Current: current);
+            },
+            assert: async (CleansiaDbContext context,
+                (BusinessResult<JwtTokenResponse> Other, BusinessResult<JwtTokenResponse> Current) result) =>
+            {
+                Assert.False(result.Other.IsSuccess);
+                Assert.Equal(BusinessErrorMessage.InvalidRefreshToken, result.Other.Error!.Message);
+
+                Assert.True(result.Current.IsSuccess);
+                Assert.False(string.IsNullOrEmpty(result.Current.Value.RefreshToken));
+
+                var tokens = await context.RefreshTokens.ToListAsync();
+                var revoked = tokens.Single(t => t.TokenHash == HashToken(otherSession!));
+                var spared = tokens.Single(t => t.TokenHash == HashToken(currentSession!));
+
+                Assert.Equal("password_changed", revoked.RevokedReason);
+                Assert.NotNull(revoked.RevokedAt);
+                Assert.Equal("rotated", spared.RevokedReason);
+                Assert.Single(tokens.Where(t => t.IsAlive));
+            });
+    }
+
+    // Password RESET completion revokes ALL sessions — the caller proves control via the emailed
+    // code, not a live session, so after an account takeover the attacker's sessions die too.
+    [Fact]
+    public async Task PasswordResetCompletion_RevokesEverySession()
+    {
+        string rawResetCode = null!;
+
+        await TestMethod(
+            arrange: async (CleansiaDbContext context) =>
+            {
+                context.Languages.Add(Language.Create("en", "English"));
+                await context.SaveChangesAsync();
+
+                var user = User.CreateWithPassword(
+                    email: TestConstants.TestUserSession.TestUserEmail,
+                    password: TestConstants.TestUserSession.TestUserPassword,
+                    firstName: TestConstants.TestUserSession.TestFirstName,
+                    lastName: TestConstants.TestUserSession.TestLastName);
+                user.ConfirmEmail();
+                rawResetCode = user.UpdateResetPasswordToken();
+                context.Users.Add(user);
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var sessionA = (await Login(mediator)).Value.RefreshToken!;
+                var sessionB = (await Login(mediator)).Value.RefreshToken!;
+
+                var reset = await mediator.Send(new ResetPasswordCmd.Command(
+                    TestConstants.TestUserSession.TestUserEmail, "BrandNew123", rawResetCode));
+                Assert.True(reset.IsSuccess);
+
+                var refreshA = await Refresh(mediator, sessionA);
+                var refreshB = await Refresh(mediator, sessionB);
+                return (A: refreshA, B: refreshB);
+            },
+            assert: async (CleansiaDbContext context,
+                (BusinessResult<JwtTokenResponse> A, BusinessResult<JwtTokenResponse> B) result) =>
+            {
+                Assert.False(result.A.IsSuccess);
+                Assert.Equal(BusinessErrorMessage.InvalidRefreshToken, result.A.Error!.Message);
+                Assert.False(result.B.IsSuccess);
+                Assert.Equal(BusinessErrorMessage.InvalidRefreshToken, result.B.Error!.Message);
+
+                var tokens = await context.RefreshTokens.ToListAsync();
+                Assert.Equal(2, tokens.Count);
+                Assert.All(tokens, t =>
+                {
+                    Assert.Equal("password_reset", t.RevokedReason);
+                    Assert.NotNull(t.RevokedAt);
+                });
+            });
+    }
+
     [Fact]
     public async Task Logout_UnknownToken_IsIdempotent()
     {
@@ -302,6 +404,40 @@ public class RefreshTokenFlowTests(PostgresContainerFixture fixture) : BaseInteg
     // ─── Typed MediatR helpers ───
     // MediatR's Send<T> is weakly typed; wrap it so we get a concrete BusinessResult
     // everywhere without inline casts.
+
+    [Fact]
+    public async Task Refresh_StampsTheDeviceIdFromThePersistedRecord_NotTheRequestHeader()
+    {
+        const string deviceA = "device-A";
+        const string forgedHeaderDeviceB = "device-B";
+
+        await TestMethod(
+            arrange: SeedConfirmedSessionUser,
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var accessor = provider.GetRequiredService<IHttpContextAccessor>();
+
+                // Log in and rotate the refresh token on device A.
+                accessor.HttpContext = HttpContextWithDeviceId(deviceA);
+                var loginA = await Login(mediator);
+
+                // A hostile client sends a DIFFERENT device id on the refresh call. The rotated
+                // access token's device_id claim must still be device A (from the persisted refresh
+                // record), never the forged header — otherwise a revoked device could re-badge its
+                // token to an unrevoked device on refresh and escape the revocation directory.
+                accessor.HttpContext = HttpContextWithDeviceId(forgedHeaderDeviceB);
+                return await Refresh(mediator, loginA.Value.RefreshToken!);
+            },
+            assert: (CleansiaDbContext _, BusinessResult<JwtTokenResponse> refreshed) =>
+            {
+                Assert.True(refreshed.IsSuccess);
+                var claims = new JwtSecurityTokenHandler().ReadJwtToken(refreshed.Value.Token).Claims;
+                var deviceIdClaim = claims.SingleOrDefault(c => c.Type == "device_id")?.Value;
+                Assert.Equal(deviceA, deviceIdClaim);
+                return Task.CompletedTask;
+            });
+    }
 
     private static async Task<BusinessResult<JwtTokenResponse>> Login(IMediator mediator) =>
         await mediator.Send(new Login.Command(

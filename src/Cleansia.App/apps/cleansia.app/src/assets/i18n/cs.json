@@ -126,11 +126,19 @@
       "reset": "Resetovat",
       "retry": "Zkusit znovu",
       "go_back": "Zpět",
-      "go_home": "Na úvodní stránku"
+      "go_home": "Na úvodní stránku",
+      "remove": "Odebrat"
     },
     "user": {
       "remember_me": "Zapamatovat si mě"
-    }
+    },
+    "cancel": "Zrušit",
+    "next_page": "Následující stránka",
+    "no_data": "Žádná data k zobrazení",
+    "of": "z",
+    "page": "Stránka {{page}}",
+    "previous_page": "Předchozí stránka",
+    "rows_per_page": "Řádků na stránku"
   },
   "auth": {
     "login": {
@@ -430,6 +438,8 @@
         "title": "Jak to funguje",
         "badge": "Jak to funguje",
         "subtitle": "Pár kliknutí, jasná cena a profesionální úklid přímo u vás doma.",
+        "you_do": "Co uděláte vy",
+        "we_do": "Co zařídíme my",
         "step1": "Vyberte službu",
         "step1_desc": "Úklid domácnosti, čištění čalounění nebo pravidelná péče. Přesně podle vašich potřeb.",
         "step2": "Zadejte detaily",
@@ -450,10 +460,14 @@
       "benefits": {
         "title": "Co získáte s naší službou",
         "badge": "Rozdíl",
-        "b1": "Méně starostí — Objednávku zadáte online bez prodlev, telefonátů a zbytečného vyjednávání.",
-        "b2": "Více času pro sebe — O úklid se postaráme za vás, zatímco se můžete soustředit na důležitější věci.",
-        "b3": "Profesionální přístup — Zkušený tým, ověřené postupy a důraz na detail.",
-        "b4": "Čistý a svěží domov — Výsledky, které jsou vidět a cítit."
+        "b1_title": "Méně starostí",
+        "b1_desc": "Objednávku zadáte online bez prodlev, telefonátů a zbytečného vyjednávání.",
+        "b2_title": "Více času pro sebe",
+        "b2_desc": "O úklid se postaráme za vás, zatímco se můžete soustředit na důležitější věci.",
+        "b3_title": "Profesionální přístup",
+        "b3_desc": "Zkušený tým, ověřené postupy a důraz na detail.",
+        "b4_title": "Čistý a svěží domov",
+        "b4_desc": "Výsledky, které jsou vidět a cítit."
       },
       "extra_services": {
         "s1": {
@@ -524,6 +538,7 @@
         "title": "Často kladené otázky",
         "badge": "FAQ",
         "desc": "Nenašli jste odpověď? Kontaktujte nás a rádi vám pomůžeme.",
+        "contact_button": "Kontaktujte nás",
         "q1": {
           "question": "Vyjíždíte i mimo Prahu?",
           "answer": "Ano, pokrýváme i okolní oblasti do přibližně 30 km od Prahy. Pro vzdálenější lokality nás kontaktujte — řešení najdeme."
@@ -1206,6 +1221,7 @@
     },
     "order_lookup": {
       "title": "Vyhledat objednávku",
+      "subtitle": "Zadejte potvrzovací kód a e-mail použitý při objednávce — vaši objednávku najdeme.",
       "confirmation_code": "Potvrzovací kód",
       "email": "E-mail použitý při objednávce",
       "submit": "Najít objednávku",
@@ -1272,6 +1288,37 @@
       "suggestion_url": "Zkontrolujte správnost URL adresy",
       "suggestion_contact": "Kontaktujte nás, pokud problém přetrvává",
       "go_home": "Na domovskou stránku"
+    },
+    "availability": {
+      "add_time_slot": "Přidat časový slot",
+      "apply": "Použít",
+      "custom": "Vlastní",
+      "edit_hours": "Upravit hodiny",
+      "end_time": "Čas konce",
+      "legend_custom": "Vlastní hodiny",
+      "legend_off": "Volno",
+      "legend_working": "Pracovní",
+      "mark_exception": "Označit jako výjimku",
+      "mark_unavailable": "Tento den bude označen jako nedostupný.",
+      "mon_fri_9_5": "Po-Pá 9-17",
+      "mon_sat_8_4": "Po-So 8-16",
+      "no_days_selected": "Vyberte pracovní dny pro nastavení rozvrhu",
+      "quick_setup": "Rychlé nastavení",
+      "remove_exception": "Odebrat výjimku",
+      "schedule_setup": "Nastavení rozvrhu",
+      "schedule_setup_desc": "Vyberte pracovní dny a nastavte své hodiny.",
+      "set_custom_hours": "Nastavit vlastní hodiny",
+      "start_time": "Čas začátku",
+      "weekly_schedule": "Týdenní rozvrh",
+      "working_days": "Pracovní dny",
+      "working_hours": "Pracovní hodiny"
+    },
+    "file": {
+      "accepted": "Povolené",
+      "click_to_select": "Klikněte pro výběr souborů",
+      "max_size": "Max. velikost",
+      "or_drag_drop": "nebo přetáhněte",
+      "selected_files": "Vybrané soubory"
     }
   },
   "validation": {
@@ -1288,7 +1335,17 @@
       "phone_number": "Neplatný formát telefonního čísla",
       "confirm_password": "Hesla se neshodují",
       "no_whitespace": "Pole nesmí obsahovat mezery",
-      "zip_code": "Neplatný formát PSČ"
+      "zip_code": "Neplatný formát PSČ",
+      "alphabetic_only": "Pole může obsahovat pouze písmena",
+      "alphanumeric_only": "Pole může obsahovat pouze písmena a číslice",
+      "iban": "Neplatný formát IBAN",
+      "lower_threshold_incorrect_range": "Dolní hodnota je mimo povolený rozsah",
+      "max": "Hodnota nesmí být větší než {{ max }}",
+      "min": "Hodnota musí být alespoň {{ min }}",
+      "national_id": "Neplatný formát rodného čísla",
+      "tax_id": "Neplatný formát IČO",
+      "upper_threshold_incorrect_range": "Horní hodnota je mimo povolený rozsah",
+      "url": "Neplatný formát URL"
     },
     "file": {
       "required": "Soubory jsou povinné",
@@ -1643,5 +1700,9 @@
     "increase_rooms": "Zvýšit počet pokojů",
     "decrease_bathrooms": "Snížit počet koupelen",
     "increase_bathrooms": "Zvýšit počet koupelen"
+  },
+  "help": {
+    "dismiss": "Rozumím, nezobrazovat znovu",
+    "show_help": "Zobrazit nápovědu"
   }
 }

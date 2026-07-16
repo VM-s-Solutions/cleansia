@@ -17,7 +17,6 @@ import { Store } from '@ngrx/store';
 import { CleansiaScrollTopComponent } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
 
-import { FloatingBgComponent } from './components/floating-bg/floating-bg.component';
 import { HeroComponent } from './components/hero/hero.component';
 import { FeaturesComponent } from './components/features/features.component';
 import { ProcessComponent } from './components/process/process.component';
@@ -33,7 +32,6 @@ import { CtaComponent } from './components/cta/cta.component';
   templateUrl: './home.component.html',
   standalone: true,
   imports: [
-    FloatingBgComponent,
     HeroComponent,
     FeaturesComponent,
     ProcessComponent,
@@ -96,7 +94,19 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private observeAll(): void {
-    const elements = this.el.nativeElement.querySelectorAll('.animate-on-scroll:not(.section-visible)');
-    elements.forEach((el: Element) => this.observer!.observe(el));
+    const elements = this.el.nativeElement.querySelectorAll(
+      '.animate-on-scroll:not(.section-visible):not(.anim-pending)'
+    );
+    const viewportBottom = window.innerHeight;
+    elements.forEach((el: Element) => {
+      // Only elements below the fold start hidden — above-the-fold content
+      // stays visible so the server-rendered paint is never blanked out.
+      if (el.getBoundingClientRect().top > viewportBottom) {
+        el.classList.add('anim-pending');
+        this.observer!.observe(el);
+      } else {
+        el.classList.add('section-visible');
+      }
+    });
   }
 }

@@ -22,10 +22,17 @@ namespace Cleansia.HostTests.Infrastructure;
 /// </summary>
 public sealed class HostTestPostgresFixture : IAsyncLifetime
 {
+    // max_connections is raised well above Postgres's default 100 because the serial host-test run
+    // boots many WebApplicationFactory hosts against this ONE container — each host carries its own
+    // Npgsql pool, and the device-revocation refresher (a BackgroundService) holds a polling
+    // connection per booted mobile host on top. The aggregate live-connection count crossed 100 and
+    // a late test failed with "53300: too many clients already". This is a test container, so a
+    // generous cap is free; the per-host pool is also bounded in the connection string below.
     private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:16")
         .WithDatabase("cleansia_hosttests")
         .WithUsername("hosttests")
         .WithPassword("hosttests")
+        .WithCommand("-c", "max_connections=400")
         .Build();
 
     private Respawner? _respawner;

@@ -93,6 +93,19 @@ public class RefreshToken
                     new Error(nameof(Command.Token), BusinessErrorMessage.InvalidRefreshToken));
             }
 
+            // Persist the rotation only now that every accept/reject gate has passed — a rejected
+            // refresh must not rotate. This flush is where the fail-closed concurrency check fires: a
+            // revoke that raced this rotation makes it throw, so the new token never escapes revocation.
+            try
+            {
+                await refreshTokenService.CommitRotationAsync(cancellationToken);
+            }
+            catch (RefreshTokenValidationException)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(Command.Token), BusinessErrorMessage.InvalidRefreshToken));
+            }
+
             string? employeeId = null;
             if (user.Profile == UserProfile.Employee)
             {
@@ -101,7 +114,7 @@ public class RefreshToken
             }
 
             var audience = issued.Record.Audience ?? string.Empty;
-            var accessToken = GenerateAccessToken(user, employeeId, audience, jwtSettings);
+            var accessToken = GenerateAccessToken(user, employeeId, audience, issued.Record.DeviceId, jwtSettings);
 
             return BusinessResult.Success(new JwtTokenResponse(
                 Token: accessToken,
@@ -113,7 +126,7 @@ public class RefreshToken
                 Role: user.Profile.ToString()));
         }
 
-        private static string GenerateAccessToken(User user, string? employeeId, string audience, IJwtSettings jwtSettings)
+        private static string GenerateAccessToken(User user, string? employeeId, string audience, string? deviceId, IJwtSettings jwtSettings)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret));
@@ -121,7 +134,7 @@ public class RefreshToken
             {
                 Issuer = jwtSettings.Issuer,
                 Audience = audience,
-                Subject = new ClaimsIdentity(user.SetClaims(employeeId)),
+                Subject = new ClaimsIdentity(user.SetClaims(employeeId, deviceId)),
                 Expires = DateTime.UtcNow.AddMinutes(jwtSettings.AccessTokenExpMinutes),
                 SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
             };

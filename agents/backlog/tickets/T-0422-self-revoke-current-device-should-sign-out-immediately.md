@@ -1,21 +1,22 @@
 ---
-id: T-0414
+id: T-0422
 title: "Mobile — revoking the CURRENT device from the Devices page should sign the user out locally, immediately"
 status: proposed
 size: S
 owner: ios
 created: 2026-07-15
 updated: 2026-07-15
-depends_on: []
+depends_on: [T-0414]
 blocks: []
 stories: []
-adrs: [ADR-0024]
+adrs: [ADR-0024, ADR-0026]
 layers: [ios, android]
 security_touching: false
-priority: medium
+priority: low
 manual_steps: []
 sprint: 12
-source: owner report — deleted own device from its own Devices page, stayed logged in as a zombie until the ≤30-min TTL bit
+source: owner report — deleted own device from its own Devices page, stayed logged in as a zombie
+note: renumbered from T-0414 (that ID was taken by ADR-0026's server-side immediate revocation); this is the CLIENT-side complement — sign the revoking device out at 0s instead of waiting for the ≤30s directory
 ---
 
 > **Owner-observed:** deleting *your own* device from the Devices page leaves you logged in with a

@@ -25,11 +25,12 @@ public interface IDisputeRepository : IRepository<Dispute, string>
     Task<Dispute?> GetDisputeWithDetailsAsync(string disputeId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Tracked, include-free fetch for write handlers that mutate one scalar or append one child row
+    /// Tracked, collection-free fetch for write handlers that mutate one scalar or append one child row
     /// (status change, message append, resolve). The dispute aggregate's mutating methods don't read
     /// its collections, so loading them is pure over-fetch; EF tracks an appended child without
-    /// pre-loading the collection. Preserves the exact <c>UserId</c>/<c>TenantId</c> the handlers
-    /// auth-check against.
+    /// pre-loading the collection. Carries the <c>Order</c> reference nav (read-only single-row join —
+    /// no caller mutates it) so the resolve path can put the order's display number on the refund push.
+    /// Preserves the exact <c>UserId</c>/<c>TenantId</c> the handlers auth-check against.
     /// </summary>
     Task<Dispute?> GetForUpdateAsync(string disputeId, CancellationToken cancellationToken);
 

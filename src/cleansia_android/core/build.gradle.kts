@@ -41,6 +41,14 @@ android {
         compose = true
         buildConfig = false
     }
+
+    testOptions {
+        // Pure-JVM unit tests can't link against android.jar — calls into
+        // android.util.Log etc. blow up with "Method X not mocked." This flag
+        // makes those return zero/null/false instead, which is what we want
+        // for fire-and-forget logging calls inside classes under test.
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {

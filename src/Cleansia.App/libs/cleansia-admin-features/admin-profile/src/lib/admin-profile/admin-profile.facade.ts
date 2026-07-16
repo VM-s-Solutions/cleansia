@@ -25,6 +25,9 @@ export class AdminProfileFacade extends UnsubscribeControlDirective {
     const command = new ChangeOwnPasswordCommand({
       currentPassword: data.currentPassword,
       newPassword: data.newPassword,
+      // Server-enriched from the HttpOnly refresh cookie so the change spares the caller's own
+      // session; the value sent here is ignored. Empty satisfies the generated required field.
+      currentRefreshToken: '',
     });
 
     this.adminClient.adminAuthClient

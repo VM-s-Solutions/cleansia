@@ -68,6 +68,14 @@ public abstract class BaseIntegrationTest : BaseTransactionalPostgresSqlTest<Cle
         {
             var options = new DbContextOptionsBuilder<CleansiaDbContext>()
                 .UseNpgsql(Fixture.GetConnectionString(), x => x.MigrationsAssembly(AssemblyReference.Assembly))
+                // The model can sit slightly ahead of the latest committed migration (a snapshot the
+                // owner regenerates manually — NO ef here; e.g. the RefreshToken xmin concurrency token,
+                // which maps to a Postgres system column and needs no DDL). Demote the pending-model-
+                // changes guard from error to no-op so the migration-defined schema still applies. This
+                // is DB-setup plumbing in the TEST fixture only; it mirrors HostTestPostgresFixture and
+                // touches no production DbContext configuration.
+                .ConfigureWarnings(w => w.Ignore(
+                    Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning))
                 .Options;
             await using var dbContext = new CleansiaDbContext(options);
             var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();

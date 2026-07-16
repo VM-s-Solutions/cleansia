@@ -86,5 +86,3 @@ param tags = {
   managedBy: 'bicep'
 }
 
-// Flip ONLY after the Key Vault secret Fcm--ServiceAccountJson exists (push runbook §0):
-// param fcmSecretProvisioned = true

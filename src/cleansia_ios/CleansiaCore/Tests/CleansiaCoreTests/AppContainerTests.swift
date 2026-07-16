@@ -275,8 +275,8 @@ private final class StubAuthSpine: AuthSpine, @unchecked Sendable {
         .success(.authenticated)
     }
 
-    func refresh(refreshToken _: String) async -> RefreshedTokens? {
-        nil
+    func refresh(refreshToken _: String) async -> RefreshCallResult {
+        .retryable
     }
 }
 
@@ -314,8 +314,8 @@ private final class StubLoginClient: LoginClient {
 }
 
 private final class StubRefreshClient: RefreshClient {
-    func refresh(refreshToken _: String) async -> RefreshedTokens? {
-        nil
+    func refresh(refreshToken _: String) async -> RefreshCallResult {
+        .retryable
     }
 }
 

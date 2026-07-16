@@ -219,6 +219,45 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   message from `R.string.*` (reusing the existing `error_*_required`/`error_email_invalid` keys + one new
   `error_password_rules`), ×5 locales. **Also RESOLVED for the profile section VMs (T-0337):** the literals
   in `Personal/Address/Identification/Bank/Emergency` section VMs moved to `R.string.*` ×5.
+- **E9.** **Every per-user cache is in the session-wipe set** (the security law is `security-rules.md`
+  **S11** — this is its mobile mechanism + allowlist). A `@Singleton` (Android) / long-lived injected
+  class (iOS) that holds **per-user state** (a cached `StateFlow`/`@Published`, a DataStore/`UserDefaults`
+  row, a `Staleness` watermark, or a `Map` of these) **MUST** join the wipe set: Android — implement
+  `SessionScopedCache` + `@Binds @IntoSet … : SessionScopedCache`; iOS — conform + `register(self)` with
+  the `SessionScopedCacheRegistry`. The set is iterated on **all three** wipe-triggers (sign-out,
+  authenticator forced-401, account-deletion) — never a hand-maintained partial clear-list (§`patterns-mobile.md`
+  "three non-obvious rules"). ✗ *Don't* leave a per-user holder out — it leaks the prior user's data to
+  the next account on a shared device.
+
+  **The allowlist (the ONE sanctioned exclusion — device-level / public caches).** A `@Singleton` that
+  caches state whose value is **the same for every user** (public/anonymous-fetchable, or device-scoped)
+  is legitimately out of the wipe set, but **only** with a named, reason-annotated entry here. A stateless
+  pass-through (no cache field) is trivially out and needs no entry — carry a `// Stateless — nothing
+  cached, so no SessionScopedCache` comment instead (as `DeviceManagementRepository`/`PaymentRepository`
+  do). Current allowlist (verified 2026-07-15):
+
+  | Class | Platform | Holds cached state? | Why it is NOT per-user (reason required) |
+  |---|---|---|---|
+  | `CatalogRepository` (customer) | Android | **Yes** (`_services`/`_packages`/`_extras` `StateFlow`) | The **public** services/packages/extras catalog — identical for every user, anonymous-fetchable (guest booking). No account data. Re-fetched on booking entry; a stale catalog is not a cross-account leak. |
+  | `CustomerServiceAreaDataSource` / `PartnerServiceAreaDataSource` | Android | No (caches in the shared `ServiceAreaProvider`) | Public serviced-countries/cities list — device-level, not per-user. |
+  | `AppSettingsStore` / `AppSettingsRepository` | Android/iOS | **Yes** (language/theme/onboarding) | **Device**-level UI prefs (survive uninstall parity is DataStore/`UserDefaults`). Per-user onboarding is keyed **by userId** (`hasSeenOnboarding(userId:)`) so it is already user-partitioned, not a shared bucket. No account content. |
+  | `OrderEventBus` / `SnackbarController` / `PushTokenSessionObserver` | Android | No (`SharedFlow(replay=0)` / delegates) | Transient event buses hold nothing after emit; the observer delegates to `PushTokenRepository` (which **is** in the set). |
+
+  **Enforcement (see §`enforcement.md` — why a full static check is infeasible):** a cross-file "is this
+  `@Singleton` per-user AND not in the multibinding" check needs Kotlin/Swift type-graph resolution the
+  line-based `check-consistency.mjs` cannot do. Two layers, one **live today** and one **specified**:
+  - **Live (warn-only advisory):** `check-consistency.mjs` rule **E9** flags a `@Singleton` that declares
+    a cache field (`MutableStateFlow<`/`DataStore<`/`Staleness()`) but does **not** list `SessionScopedCache`
+    on its class declaration and is **not** on the allowlist above. It is **non-blocking** (a Room-DAO- or
+    other-backed per-user cache the field-regex can't see would slip past it), so it prompts the Reviewer,
+    it does not gate. The allowlist above is duplicated as `SESSION_WIPE_ALLOW` in the tool — **keep the two
+    in sync** when adding an entry.
+  - **Specified, NOT yet built (the hard gate):** a **roster-equality assertion test** —
+    `SessionScopedModuleTest` (Android, per app) / `SessionScopedCacheRegistryTest` (iOS) — that asserts the
+    production wipe set **equals** a hardcoded expected roster, so a new per-user repo that neither joins the
+    set nor lands on the allowlist fails a real test (the existing `AuthRepositoryTest`/`PushLogoutClearsTests`
+    only exercise `clearAll()` with an *injected* set — they do not check the real multibinding's membership).
+    Filed as a small follow-up ticket (§`enforcement.md`).
 
 ---
 

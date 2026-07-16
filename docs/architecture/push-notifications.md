@@ -4,20 +4,24 @@ Gotchas the next developer will hit unless documented.
 
 ## 0. Azure (deployed envs) — provisioning the FCM credential
 
-The Functions host is the only dispatcher. Bicep wires
-`FCM__ServiceAccountJson` as a Key Vault reference to secret **`Fcm--ServiceAccountJson`**
-(main.bicep `fcmSettings`). Owner steps, **in this order**:
+The Functions host is the only dispatcher. Bicep wires `FCM__ServiceAccountJson` as a Key
+Vault reference to secret **`Fcm--ServiceAccountJson`** (main.bicep `fcmSettings`), gated by
+the `fcmSecretProvisioned` param — which the deploy pipeline sets automatically from the
+GitHub secret's presence. **The whole flow is driven by one GitHub secret; no manual Azure or
+Bicep step.** Owner steps:
 
 1. Firebase Console → Project settings → Service accounts → **Generate new private key**.
    If it fails: the GCP org policy `iam.disableServiceAccountKeyCreation` blocks key
    creation — add an org-policy exception for the `firebase-adminsdk` service account first.
-2. Put the key into Key Vault (raw JSON or base64 — the dispatcher auto-detects):
-   `az keyvault secret set --vault-name <kv> --name Fcm--ServiceAccountJson --file firebase-key.json`
-3. Only then flip `param fcmSecretProvisioned = true` in `deploy/bicep/weu.dev.bicepparam`
-   (and later `weu.prod.bicepparam`) and merge — the setting is param-gated DEFAULT-OFF because
-   **an unresolvable KV reference is worse than no setting**: the app receives the literal
-   `@Microsoft.KeyVault(...)` string, init fails as TRANSIENT, and every push dead-letters to
-   the poison queue instead of the clean disabled no-op.
+2. Add the key's JSON as the GitHub Environment secret **`FIREBASE_SERVICE_ACCOUNT_JSON`**
+   (same place as `SENDGRID_API_KEY` etc. — per Environment: `dev`, later `prod`). Paste the
+   raw JSON; the dispatcher auto-detects raw-or-base64.
+3. That's it. On the next deploy, the pipeline (`deploy-azure.yml`) resolves
+   `fcmSecretProvisioned=true` because the secret is set, writes `Fcm--ServiceAccountJson` to
+   Key Vault in the same run, and Bicep wires the reference — so the KV reference is never
+   created before the secret exists (an unresolvable reference would dead-letter every push).
+   When the secret is absent, the param stays `false` and the dispatcher runs its clean
+   disabled no-op.
 4. Verify end to end: change an order status → the push arrives on a registered **Android**
    device (iOS display is gated on the T-0404 APNs alert work — a Firebase-console test push
    CAN display on iOS and gives a false "works"; the real events are data-only).

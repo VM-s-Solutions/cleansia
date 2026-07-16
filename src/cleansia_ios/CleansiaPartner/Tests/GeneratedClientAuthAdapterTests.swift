@@ -117,8 +117,8 @@ private struct FixedDeviceId: DeviceIdProviding {
 }
 
 private struct NeverRefresher: AuthRefreshing {
-    func refresh(refreshToken _: String) async -> RefreshedTokens? {
-        nil
+    func refresh(refreshToken _: String) async -> RefreshCallResult {
+        .retryable
     }
 }
 
@@ -130,15 +130,15 @@ private actor CountingRefresher: AuthRefreshing {
         self.newAccessToken = newAccessToken
     }
 
-    func refresh(refreshToken _: String) async -> RefreshedTokens? {
+    func refresh(refreshToken _: String) async -> RefreshCallResult {
         calls += 1
         let future = Date(timeIntervalSinceNow: 9999)
-        return RefreshedTokens(
+        return .refreshed(RefreshedTokens(
             accessToken: newAccessToken,
             accessTokenExpiresAt: future,
             refreshToken: "r-rotated",
             refreshTokenExpiresAt: future
-        )
+        ))
     }
 }
 

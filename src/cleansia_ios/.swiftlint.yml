@@ -42,13 +42,17 @@ line_length:
   ignores_comments: true
   ignores_urls: true
 
+# `swiftlint --strict` (CI) promotes WARNINGS to hard failures, so the warning
+# tier IS the enforced cap. Set it to the error tier we actually want to block
+# on (large test suites + composite SwiftUI views legitimately run long); the
+# error tier stays higher as a hard ceiling.
 file_length:
-  warning: 400
-  error: 600
+  warning: 600
+  error: 800
 
 type_body_length:
-  warning: 300
-  error: 400
+  warning: 400
+  error: 500
 
 function_body_length:
   warning: 60

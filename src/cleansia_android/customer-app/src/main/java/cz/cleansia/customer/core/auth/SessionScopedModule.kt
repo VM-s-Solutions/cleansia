@@ -7,9 +7,11 @@ import cz.cleansia.customer.core.disputes.DisputeRepository
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.core.notifications.PushTokenRepository
+import cz.cleansia.customer.core.notifications.NotificationPreferencesRepository
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import cz.cleansia.customer.core.referral.ReferralRepository
+import cz.cleansia.customer.core.user.UserRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -56,4 +58,12 @@ abstract class SessionScopedModule {
 
     @Binds @IntoSet
     abstract fun bindPushTokenRepository(impl: PushTokenRepository): SessionScopedCache
+
+    @Binds @IntoSet
+    abstract fun bindUserRepository(impl: UserRepository): SessionScopedCache
+
+    @Binds @IntoSet
+    abstract fun bindNotificationPreferencesRepository(
+        impl: NotificationPreferencesRepository,
+    ): SessionScopedCache
 }

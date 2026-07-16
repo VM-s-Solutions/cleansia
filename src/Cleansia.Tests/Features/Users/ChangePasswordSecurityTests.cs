@@ -1,6 +1,7 @@
 using System.Reflection;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Users;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -143,12 +144,31 @@ public class ChangePasswordSecurityTests
         Assert.Null(user.ResetPasswordCodeExpiresAt);
     }
 
+    // Reset completion is the account-takeover recovery path: the caller proves control via the
+    // emailed code, not a live session, so EVERY refresh token dies — no session is spared
+    // (unlike the authenticated change, which keeps the caller's own session).
+    [Fact]
+    public async Task Handler_Revokes_Every_Session_On_Reset_Completion()
+    {
+        var raw = SecurityTokens.Generate();
+        var user = UserWithResetToken(RightEmail, SecurityTokens.Hash(raw), DateTimeOffset.UtcNow.AddMinutes(15));
+        var refreshTokens = new Mock<IRefreshTokenService>();
+
+        var result = await InvokeHandler(
+            RepoFor(user).Object, new ChangePassword.Command(RightEmail, NewPassword, raw), refreshTokens.Object);
+
+        Assert.True(result.IsSuccess);
+        refreshTokens.Verify(
+            s => s.RevokeAllForUserAsync(user.Id, "password_reset", null, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
     private static async Task<BusinessResult<ChangePassword.Response>> InvokeHandler(
-        IUserRepository repo, ChangePassword.Command command)
+        IUserRepository repo, ChangePassword.Command command, IRefreshTokenService? refreshTokenService = null)
     {
         var handlerType = typeof(ChangePassword).GetNestedType("Handler", BindingFlags.NonPublic | BindingFlags.Public);
         Assert.NotNull(handlerType);
-        var handler = Activator.CreateInstance(handlerType!, repo)!;
+        var handler = Activator.CreateInstance(handlerType!, repo, refreshTokenService ?? Mock.Of<IRefreshTokenService>())!;
         var handleMethod = handlerType!.GetMethod("Handle");
         Assert.NotNull(handleMethod);
         var task = (Task<BusinessResult<ChangePassword.Response>>)handleMethod!.Invoke(

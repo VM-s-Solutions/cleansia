@@ -28,8 +28,9 @@ It line-scans source for the project-specific rules that ESLint/analyzers can't 
   `BehaviorSubject`), C3 (`.subscribe()` has `takeUntil(this.destroyed$)`), C7 (component is OnPush),
   D2 (forms use `fb.nonNullable.group`), and an `any` ban.
 - **Mobile:** E1 (no flag-bag `data class …UiState`), E3 (`@HiltViewModel`), E5 (repo returns
-  `ApiResult<T>`, not a nullable body), E6 (ViewModel flows use `collectAsStateWithLifecycle`), and a
-  hardcoded-`Text("…")` ban.
+  `ApiResult<T>`, not a nullable body), E6 (ViewModel flows use `collectAsStateWithLifecycle`), a
+  hardcoded-`Text("…")` ban, and **E9 (WARN-only)** — a `@Singleton` cache holder not in the
+  `SessionScopedCache` wipe set (S11; see below).
 
 ```bash
 node agents/tools/check-consistency.mjs              # all stacks; exit 1 on any violation
@@ -42,6 +43,31 @@ The checks are **heuristic and line-based** — a clean run is *necessary, not s
 Reviewer still reads the diff. They are intentionally tuned to minimize false positives (e.g. E6
 only flags *ViewModel* flows, not a sheet's local `mutableStateOf`; B1 allows a bare `ICommand` for
 operations with nothing to return and only flags raw-scalar returns).
+
+### E9 — session-wipe-set membership (S11) — WARN-only, plus a specified hard gate
+
+The `SessionScopedCache` wipe rule (`security-rules.md` **S11** / `consistency.md` **E9**) recurred 5+
+times (`PushTokenRepository`, `NotificationFeedCache`, `UserProfileStore`, customer `UserRepository`,
+and the T-0416 Dashboard/Orders/Invoices/Profile/OrderChecklist/NotificationPreferences stragglers)
+with no mechanical guard. A *full* static check ("is this `@Singleton` per-user AND not in the
+multibinding?") needs Kotlin/Swift **type-graph resolution** — cross-file constructor-injection and
+supertype analysis — which this dependency-free line-scanner cannot do. So E9 is deliberately **two
+layers**:
+
+- **Live now — E9 warn-only advisory** (`check-consistency.mjs`, mobile): flags a `@Singleton` whose
+  body declares a cache field (`MutableStateFlow<` / `DataStore<` / `Staleness()`) but whose class
+  declaration does **not** name `SessionScopedCache`, cross-checked against a reason-annotated allowlist
+  (`SESSION_WIPE_ALLOW` — mirrors the `consistency.md` E9 table; **keep them in sync**). It prints under
+  a `consistency: N advisory warning(s) (non-blocking)` header and **never sets the exit code**, because
+  it has known blind spots (a Room-DAO- or other-backed per-user cache with no matching field regex slips
+  past). It is a *prompt for the Reviewer*, not a gate. Covered by `check-consistency.test.mjs` (E9 cases).
+- **Specified, NOT yet built — the hard gate:** a **roster-equality assertion test**
+  (`SessionScopedModuleTest` per Android app, `SessionScopedCacheRegistryTest` on iOS) asserting the
+  production wipe set **equals** a hardcoded expected roster, so a forgotten new per-user repo fails a
+  real test. Today's `AuthRepositoryTest` / `PushLogoutClearsTests` only exercise `clearAll()` with an
+  *injected* set — they do not check the real multibinding's membership. **Follow-up ticket to file:**
+  *"Add SessionScopedCache roster-equality tests (Android per-app + iOS) — the S11/E9 hard gate"*
+  (`layers: [mobile]`, small; architect-signed rule already in place).
 
 ### Baseline (run on 2026-06-01): ~187 pre-existing violations
 

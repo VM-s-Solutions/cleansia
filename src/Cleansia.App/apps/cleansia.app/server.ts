@@ -2,12 +2,14 @@ import { AngularNodeAppEngine, createNodeRequestHandler, isMainModule, writeResp
 import { ɵsetAngularAppEngineManifest } from '@angular/ssr';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import compression from 'compression';
 import express from 'express';
 
 const serverDistFolder = dirname(fileURLToPath(import.meta.url));
 const browserDistFolder = resolve(serverDistFolder, '../browser');
 
 const app = express();
+app.use(compression());
 
 let angularApp: AngularNodeAppEngine | undefined;
 let manifestLoaded = false;
@@ -16,7 +18,11 @@ async function getAngularApp(): Promise<AngularNodeAppEngine> {
   if (!manifestLoaded) {
     const manifestPath = pathToFileURL(resolve(serverDistFolder, 'angular-app-engine-manifest.mjs')).href;
     const engineManifest = await import(manifestPath);
-    ɵsetAngularAppEngineManifest(engineManifest.default);
+    // @angular/ssr >= 19.2.16 (SSRF fix) iterates manifest.allowedHosts
+    // unconditionally, but @angular/build < 19.2.16 emits a manifest without
+    // it — default the field so the engine doesn't crash on startup. Hosts
+    // are authorized at runtime via the NG_ALLOWED_HOSTS env var.
+    ɵsetAngularAppEngineManifest({ allowedHosts: [], ...engineManifest.default });
     manifestLoaded = true;
   }
   return (angularApp ??= new AngularNodeAppEngine());
@@ -103,12 +109,66 @@ app.use(
   }),
 );
 
+// Micro-cache for the anonymous landing page: '/' is identical for every
+// visitor without a session (auth state is resolved client-side), and the
+// SSR render costs ~250ms per request. 60s of staleness is invisible for a
+// marketing page but turns TTFB into a static-file read.
+// SSR renders in the Accept-Language language, so the cache is keyed by the
+// same resolution — one entry per supported language, not one global page.
+const LANDING_CACHE_TTL_MS = 60_000;
+const LANDING_LANGUAGES = new Set(['cs', 'en', 'sk', 'uk', 'ru']);
+const landingCache = new Map<string, { body: Buffer; headers: [string, string][]; expires: number }>();
+
+function resolveLandingLanguage(acceptLanguage: string | undefined): string {
+  for (const part of (acceptLanguage ?? '').split(',')) {
+    const primary = part.split(';')[0]?.trim().split('-')[0]?.toLowerCase();
+    if (primary && LANDING_LANGUAGES.has(primary)) {
+      return primary;
+    }
+  }
+  return 'en';
+}
+
 app.use('{*path}', (req, res, next) => {
+  const cacheable = req.path === '/' && req.method === 'GET' && !req.headers.cookie;
+  const cacheKey = resolveLandingLanguage(req.headers['accept-language']);
+
+  const cached = cacheable ? landingCache.get(cacheKey) : undefined;
+  if (cached && cached.expires > Date.now()) {
+    res.status(200);
+    for (const [key, value] of cached.headers) {
+      res.setHeader(key, value);
+    }
+    res.send(cached.body);
+    return;
+  }
+
   getAngularApp()
-    .then((engine) => engine.handle(req))
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
+    .then(async (engine) => {
+      const response = await engine.handle(req);
+      if (!response) {
+        next();
+        return;
+      }
+      if (cacheable && response.status === 200) {
+        response.headers.set('vary', 'Accept-Language');
+        const body = Buffer.from(await response.clone().arrayBuffer());
+        // A transient SSR failure still responds 200 with the bare app shell;
+        // caching that would serve the broken page to every visitor of this
+        // language for the whole TTL. The landing page always contains the
+        // hero section, so its absence marks a render to skip.
+        if (body.includes('cl-hero')) {
+          const headers: [string, string][] = [];
+          response.headers.forEach((value, key) => {
+            if (!['set-cookie', 'content-length'].includes(key.toLowerCase())) {
+              headers.push([key, value]);
+            }
+          });
+          landingCache.set(cacheKey, { body, headers, expires: Date.now() + LANDING_CACHE_TTL_MS });
+        }
+      }
+      await writeResponseToNodeResponse(response, res);
+    })
     .catch(next);
 });
 

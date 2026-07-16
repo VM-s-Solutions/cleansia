@@ -2,6 +2,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -94,7 +95,8 @@ public class ChangePassword
     public record Response(string Id);
 
     internal class Handler(
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        IRefreshTokenService refreshTokenService)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -102,6 +104,13 @@ public class ChangePassword
             var user = await userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
             user!.UpdatePassword(command.NewPassword);
             user.ClearResetPasswordToken();
+
+            // Reset completion is the account-takeover recovery path: the caller proves control
+            // via the emailed code, not a live session, so EVERY refresh token dies — including
+            // whatever sessions an attacker minted with the old credential (ADR-0024 D4.6;
+            // keep-none, unlike the authenticated change which spares the caller's session).
+            await refreshTokenService.RevokeAllForUserAsync(
+                user.Id, "password_reset", exceptRawToken: null, cancellationToken);
 
             return BusinessResult.Success(new Response(Id: user.Id));
         }

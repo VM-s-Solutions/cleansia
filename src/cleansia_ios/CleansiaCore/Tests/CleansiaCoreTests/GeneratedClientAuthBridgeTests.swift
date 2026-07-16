@@ -17,15 +17,21 @@ final class GeneratedClientAuthBridgeTests: XCTestCase {
             self.newAccessToken = newAccessToken
         }
 
-        func refresh(refreshToken _: String) async -> RefreshedTokens? {
+        func refresh(refreshToken _: String) async -> RefreshCallResult {
             calls += 1
             let future = Date(timeIntervalSinceNow: 9999)
-            return RefreshedTokens(
+            return .refreshed(RefreshedTokens(
                 accessToken: newAccessToken,
                 accessTokenExpiresAt: future,
                 refreshToken: "r-rotated",
                 refreshTokenExpiresAt: future
-            )
+            ))
+        }
+    }
+
+    private struct RetryableRefresher: AuthRefreshing {
+        func refresh(refreshToken _: String) async -> RefreshCallResult {
+            .retryable
         }
     }
 
@@ -139,6 +145,27 @@ final class GeneratedClientAuthBridgeTests: XCTestCase {
         XCTAssertEqual(attempts, 1)
         let calls = await refresher.calls
         XCTAssertEqual(calls, 0)
+    }
+
+    func testExecuteWithRetrySurfacesOriginal401WhenRefreshIsRetryable() async {
+        let store = MemTokenStore(tokens(access: "access-1"))
+        let bridge = makeBridge(store: store, refresher: RetryableRefresher())
+
+        var attempts = 0
+        do {
+            _ = try await bridge.executeWithRetry(
+                attempt: { () async throws -> Int in
+                    attempts += 1
+                    throw FakeStatus(401)
+                },
+                unauthorizedStatus: { ($0 as? FakeStatus)?.code }
+            )
+            XCTFail("expected throw")
+        } catch {
+            XCTAssertEqual((error as? FakeStatus)?.code, 401)
+        }
+        XCTAssertEqual(attempts, 1)
+        XCTAssertEqual(store.current()?.accessToken, "access-1", "tokens survive a retryable refresh failure")
     }
 
     func testConcurrent401sCoalesceIntoOneRefresh() async {

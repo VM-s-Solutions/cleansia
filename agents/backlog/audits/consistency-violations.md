@@ -212,6 +212,29 @@ remove before PROD.
 - **Proposed ticket:** ~~`ADR + migrate customer-app repos to ApiResult<T> and unify mobile structure`~~
   **DONE — E5/ApiResult (T-0197) + E7 structure (T-0266). All §E mobile-consistency rules resolved.**
 
+### F17 — per-user `@Singleton` cache not in the `SessionScopedCache` wipe set (S11 / E9) [major] [type: security] — **T-0417**
+- **Rule:** `security-rules.md` **S11** (the security law) / `consistency.md` **E9** (mobile mechanism +
+  allowlist). Codified by **T-0417** after the wipe-membership miss recurred 5+ times: `PushTokenRepository`,
+  `NotificationFeedCache`, `UserProfileStore`, customer `UserRepository`, and the T-0416 stragglers
+  (Dashboard/Orders/Invoices/Profile/OrderChecklist/NotificationPreferences repos) — all since fixed to
+  join the set.
+- **Baseline (run 2026-07-15, `check-consistency.mjs mobile` E9 advisory + manual `@Singleton` sweep of
+  both Android apps): ZERO outstanding violations — the class is provably CLOSED.** Every `@Singleton`
+  holding per-user state implements `SessionScopedCache` and is in the multibinding (customer
+  `SessionScopedModule` + partner feature modules `AuthModule`/`NotificationsModule`/`DashboardModule`/
+  `OrdersModule`/`InvoicesModule`/`ProfileModule`/`ChecklistModule`; `PushTokenRepository` in `:core`).
+  iOS parity: all customer feature repos conform + self-`register` with the `SessionScopedCacheRegistry`.
+- **Allowlisted NON-violations (cache-holding but NOT per-user — recorded reasons in `consistency.md` E9):**
+  `CatalogRepository` (public catalog `StateFlow`), the two `ServiceAreaDataSource`s (public serviced-cities),
+  `AppSettingsStore`/`AppSettingsRepository` (device UI prefs; per-user onboarding keyed by userId),
+  `OrderEventBus`/`SnackbarController`/`PushTokenSessionObserver` (`replay=0` buses / delegators).
+- **Stateless NON-violations (no cache field — no entry needed):** `PaymentRepository`,
+  `PeriodPayRepositoryImpl`, `DeviceManagementRepository`, partner `DevicesRepositoryImpl`.
+- **Enforcement:** E9 warn-only advisory live in `check-consistency.mjs` (mobile) + tests in
+  `check-consistency.test.mjs`; the roster-equality **hard gate** (`SessionScopedModuleTest` /
+  `SessionScopedCacheRegistryTest`) is **specified, not yet built** — follow-up ticket in `enforcement.md`.
+- **STATUS: rule codified + baseline clean. No canonicalization sweep needed (nothing to fix).**
+
 ---
 
 ## Not-issues (intentional — do not re-flag)

@@ -106,8 +106,8 @@ private struct StubDeviceId: DeviceIdProviding {
 }
 
 private struct NoRefresh: AuthRefreshing {
-    func refresh(refreshToken _: String) async -> RefreshedTokens? {
-        nil
+    func refresh(refreshToken _: String) async -> RefreshCallResult {
+        .retryable
     }
 }
 

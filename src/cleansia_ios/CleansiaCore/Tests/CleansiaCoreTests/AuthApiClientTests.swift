@@ -105,20 +105,84 @@ final class AuthApiClientTests: XCTestCase {
             return (200, Data(body.utf8))
         }
 
-        let refreshed = await client.refresh(refreshToken: "r1")
+        let result = await client.refresh(refreshToken: "r1")
 
-        XCTAssertEqual(refreshed?.accessToken, access)
-        XCTAssertEqual(refreshed?.refreshToken, "r2")
+        guard case let .refreshed(refreshed) = result else { return XCTFail("expected refreshed") }
+        XCTAssertEqual(refreshed.accessToken, access)
+        XCTAssertEqual(refreshed.refreshToken, "r2")
     }
 
-    func testRefreshFailureReturnsNil() async throws {
-        let store = MemTokenStore()
-        let client = try makeClient(store: store)
-        MockURLProtocol.handler = { _ in (401, Data("{}".utf8)) }
+    func testRefreshAuthRejectionStatusesAreTerminal() async throws {
+        let client = try makeClient(store: MemTokenStore())
+        for status in [401, 403] {
+            MockURLProtocol.handler = { _ in (status, Data("{}".utf8)) }
 
-        let refreshed = await client.refresh(refreshToken: "r1")
+            let result = await client.refresh(refreshToken: "r1")
 
-        XCTAssertNil(refreshed)
+            XCTAssertEqual(result, .rejected, "\(status) is a terminal auth rejection")
+        }
+    }
+
+    func testRefreshBusinessRejectionKeysAreTerminal() async throws {
+        let client = try makeClient(store: MemTokenStore())
+        for key in ["auth.invalid_refresh_token", "auth.refresh_token_reused"] {
+            MockURLProtocol.handler = { _ in
+                let body = #"{"title":"Validation Error","type":"\#(key)","errors":{"Token":"\#(key)"}}"#
+                return (400, Data(body.utf8))
+            }
+
+            let result = await client.refresh(refreshToken: "r1")
+
+            XCTAssertEqual(result, .rejected, "\(key) is a terminal auth rejection")
+        }
+    }
+
+    func testRefreshTypeOnlyRejectionBodyIsTerminal() async throws {
+        // Real .NET ProblemDetails wire shape: the business key lives ONLY in
+        // `type` (CreateProblemDetails: Type = error.Code) — no `errors` dict,
+        // no top-level `code` — on a non-401 status. Regression for the
+        // `?? problem.type` fold: without it, firstErrorKey/errorCode are both
+        // absent, `code` is nil, and this misclassifies as retryable.
+        let client = try makeClient(store: MemTokenStore())
+        for key in ["auth.invalid_refresh_token", "auth.refresh_token_reused"] {
+            MockURLProtocol.handler = { _ in
+                let body = #"{"title":"Unauthorized","type":"\#(key)","status":400}"#
+                return (400, Data(body.utf8))
+            }
+
+            let result = await client.refresh(refreshToken: "r1")
+
+            XCTAssertEqual(result, .rejected, "\(key) in `type` only is still terminal")
+        }
+    }
+
+    func testRefreshServerErrorAndThrottleStatusesAreRetryable() async throws {
+        let client = try makeClient(store: MemTokenStore())
+        for status in [429, 500, 502, 503] {
+            MockURLProtocol.handler = { _ in (status, Data("{}".utf8)) }
+
+            let result = await client.refresh(refreshToken: "r1")
+
+            XCTAssertEqual(result, .retryable, "\(status) must not destroy the session")
+        }
+    }
+
+    func testRefreshTransportFailureIsRetryable() async throws {
+        let client = try makeClient(store: MemTokenStore())
+        MockURLProtocol.handler = nil
+
+        let result = await client.refresh(refreshToken: "r1")
+
+        XCTAssertEqual(result, .retryable)
+    }
+
+    func testRefreshOkWithoutTokensFailsOpenAsRetryable() async throws {
+        let client = try makeClient(store: MemTokenStore())
+        MockURLProtocol.handler = { _ in (200, Data(#"{"token":""}"#.utf8)) }
+
+        let result = await client.refresh(refreshToken: "r1")
+
+        XCTAssertEqual(result, .retryable)
     }
 
     func testLogoutClearsTokensAndSessionCaches() async throws {

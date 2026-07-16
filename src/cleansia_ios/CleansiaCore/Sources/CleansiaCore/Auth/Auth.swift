@@ -236,24 +236,29 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         await sessionScopedCaches.clearAll()
     }
 
-    public func refresh(refreshToken: String) async -> RefreshedTokens? {
+    public func refresh(refreshToken: String) async -> RefreshCallResult {
         let body = RefreshTokenRequest(token: refreshToken)
         let result: ApiResult<JwtTokenResponseDto> = await post(
             path: "api/Auth/RefreshToken",
             body: body,
             useNoAuthSession: true
         )
-        guard case let .success(dto) = result, let access = dto.token, !access.isEmpty,
-              let rotatedRefresh = dto.refreshToken, !rotatedRefresh.isEmpty
-        else {
-            return nil
+        switch result {
+        case let .failure(error):
+            return RefreshCallResult.classify(error)
+        case let .success(dto):
+            guard let access = dto.token, !access.isEmpty,
+                  let rotatedRefresh = dto.refreshToken, !rotatedRefresh.isEmpty
+            else {
+                return .retryable
+            }
+            return .refreshed(RefreshedTokens(
+                accessToken: access,
+                accessTokenExpiresAt: accessExpiry(from: access),
+                refreshToken: rotatedRefresh,
+                refreshTokenExpiresAt: refreshExpiry(from: dto.refreshTokenExpiresAt, lifetime: .shortLived)
+            ))
         }
-        return RefreshedTokens(
-            accessToken: access,
-            accessTokenExpiresAt: accessExpiry(from: access),
-            refreshToken: rotatedRefresh,
-            refreshTokenExpiresAt: refreshExpiry(from: dto.refreshTokenExpiresAt, lifetime: .shortLived)
-        )
     }
 
     private func post<Response: Decodable>(
@@ -320,7 +325,13 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
     private func decodeError(data: Data, status: Int) -> ApiError {
         if let problem = try? decoder.decode(ProblemDetails.self, from: data) {
             return ApiError(
-                code: problem.firstErrorKey ?? problem.errorCode,
+                // `?? problem.type`: the API base controller writes the business
+                // key into ProblemDetails `type` (CreateProblemDetails), so a
+                // refresh rejection can arrive with the key ONLY in `type` (no
+                // `errors` dict). Mirrors ApiError.fromProblemDetails' chain so
+                // RefreshCallResult.classify can see it — else it misclassifies
+                // a genuine rejection as retryable.
+                code: problem.firstErrorKey ?? problem.errorCode ?? problem.type,
                 message: problem.detail ?? problem.title,
                 httpStatus: status
             )

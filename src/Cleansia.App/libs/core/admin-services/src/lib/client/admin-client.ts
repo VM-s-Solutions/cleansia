@@ -15867,6 +15867,7 @@ export interface ICategoryDto {
 export class ChangeOwnPasswordCommand implements IChangeOwnPasswordCommand {
     currentPassword!: string | undefined;
     newPassword!: string | undefined;
+    currentRefreshToken!: string | undefined;
 
     constructor(data?: IChangeOwnPasswordCommand) {
         if (data) {
@@ -15881,6 +15882,7 @@ export class ChangeOwnPasswordCommand implements IChangeOwnPasswordCommand {
         if (Data) {
             this.currentPassword = Data["currentPassword"];
             this.newPassword = Data["newPassword"];
+            this.currentRefreshToken = Data["currentRefreshToken"];
         }
     }
 
@@ -15895,6 +15897,7 @@ export class ChangeOwnPasswordCommand implements IChangeOwnPasswordCommand {
         data = typeof data === 'object' ? data : {};
         data["currentPassword"] = this.currentPassword;
         data["newPassword"] = this.newPassword;
+        data["currentRefreshToken"] = this.currentRefreshToken;
         return data;
     }
 }
@@ -15902,6 +15905,7 @@ export class ChangeOwnPasswordCommand implements IChangeOwnPasswordCommand {
 export interface IChangeOwnPasswordCommand {
     currentPassword: string | undefined;
     newPassword: string | undefined;
+    currentRefreshToken: string | undefined;
 }
 
 export class ChangeOwnPasswordResponse implements IChangeOwnPasswordResponse {
@@ -23213,6 +23217,7 @@ export class PackageDetails implements IPackageDetails {
     currencyCode!: string | undefined;
     includedServices!: string[] | undefined;
     includedServiceItems!: PackageServiceRef[] | undefined;
+    translations!: { [key: string]: Translation; } | undefined;
 
     constructor(data?: IPackageDetails) {
         if (data) {
@@ -23240,6 +23245,13 @@ export class PackageDetails implements IPackageDetails {
                 this.includedServiceItems = [] as any;
                 for (let item of Data["includedServiceItems"])
                     this.includedServiceItems!.push(PackageServiceRef.fromJS(item));
+            }
+            if (Data["translations"]) {
+                this.translations = {} as any;
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
+                }
             }
         }
     }
@@ -23269,6 +23281,13 @@ export class PackageDetails implements IPackageDetails {
             for (let item of this.includedServiceItems)
                 data["includedServiceItems"].push(item ? item.toJSON() : undefined as any);
         }
+        if (this.translations) {
+            data["translations"] = {};
+            for (let key in this.translations) {
+                if (this.translations.hasOwnProperty(key))
+                    (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
+            }
+        }
         return data;
     }
 }
@@ -23282,6 +23301,7 @@ export interface IPackageDetails {
     currencyCode: string | undefined;
     includedServices: string[] | undefined;
     includedServiceItems: PackageServiceRef[] | undefined;
+    translations: { [key: string]: Translation; } | undefined;
 }
 
 export class PackageListItem implements IPackageListItem {
@@ -26578,6 +26598,7 @@ export class ServiceDetails implements IServiceDetails {
     description!: string | undefined;
     estimatedTime!: number;
     currencyCode!: string | undefined;
+    translations!: { [key: string]: Translation; } | undefined;
 
     constructor(data?: IServiceDetails) {
         if (data) {
@@ -26595,6 +26616,13 @@ export class ServiceDetails implements IServiceDetails {
             this.description = Data["description"];
             this.estimatedTime = Data["estimatedTime"];
             this.currencyCode = Data["currencyCode"];
+            if (Data["translations"]) {
+                this.translations = {} as any;
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
+                }
+            }
         }
     }
 
@@ -26612,6 +26640,13 @@ export class ServiceDetails implements IServiceDetails {
         data["description"] = this.description;
         data["estimatedTime"] = this.estimatedTime;
         data["currencyCode"] = this.currencyCode;
+        if (this.translations) {
+            data["translations"] = {};
+            for (let key in this.translations) {
+                if (this.translations.hasOwnProperty(key))
+                    (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
+            }
+        }
         return data;
     }
 }
@@ -26622,6 +26657,7 @@ export interface IServiceDetails {
     description: string | undefined;
     estimatedTime: number;
     currencyCode: string | undefined;
+    translations: { [key: string]: Translation; } | undefined;
 }
 
 export class ServiceListItem implements IServiceListItem {

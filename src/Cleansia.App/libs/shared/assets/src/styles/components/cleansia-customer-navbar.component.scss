@@ -508,6 +508,41 @@ $primary: #0284c7;
 }
 
 // =============================
+// Dev banner stacking (dev environments only)
+// =============================
+// The shared <cleansia-dev-banner> sits above the navbar in the DOM, but the
+// navbar is fixed at top: 0 and paints in the same spot. Pin the banner to the
+// viewport top and push the navbar (and everything offset against its 64px
+// height) down by the banner height so the two stack instead of overlapping.
+// Guarded on .customer-navbar so the banner keeps its in-flow behavior in the
+// sidebar apps (partner/admin). The tripled class out-specifies the banner's
+// component-scoped (emulated-encapsulation) rules.
+$dev-banner-height: 30px;
+
+body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: $dev-banner-height;
+  padding-block: 0;
+}
+
+body:has(.cleansia-dev-banner) {
+  .customer-navbar {
+    top: $dev-banner-height;
+  }
+
+  .customer-navbar-spacer {
+    height: 64px + $dev-banner-height;
+  }
+
+  .customer-navbar__mobile-menu {
+    top: 64px + $dev-banner-height;
+  }
+}
+
+// =============================
 // Dark Mode — Navbar
 // =============================
 :root.dark-mode {

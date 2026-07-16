@@ -24,12 +24,14 @@
     flex-direction: column;
     border: 1px solid var(--surface-border);
     position: relative;
-    transition: border-color 0.2s ease;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     cursor: pointer;
     height: 100%;
 
     &:hover {
       border-color: rgba($primary, 0.35);
+      transform: translateY(-3px);
+      box-shadow: $shadow-lg;
 
       .cl-services__nav-arrow {
         opacity: 1;
@@ -71,10 +73,12 @@
     padding: 0.25rem 0.7rem;
   }
 
+  // Rounded-square icon tile — same shape/size as the services-catalog and
+  // order-wizard cards so all card surfaces read as one family.
   &__icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
+    width: 52px;
+    height: 52px;
+    border-radius: 0.75rem;
     background: $primary-lighter;
     display: flex;
     align-items: center;
@@ -96,8 +100,8 @@
 
   &__price {
     font-family: $font-heading;
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 1.05rem;
+    font-weight: 700;
     color: $primary;
     margin-bottom: 0.9rem;
   }
@@ -172,6 +176,10 @@
 
   .cl-services__nav-arrow i {
     color: #38bdf8;
+  }
+
+  .cl-services__card:hover {
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
   }
 
   .cl-services__teasers::after {

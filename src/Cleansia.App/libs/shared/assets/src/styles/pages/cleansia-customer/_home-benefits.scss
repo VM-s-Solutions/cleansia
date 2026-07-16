@@ -77,9 +77,10 @@
     font-weight: 600;
     color: var(--text-color);
     line-height: 1.35;
-    // Optically centers a one-line title against the 38px circle while
-    // keeping every card's text block anchored to the same top edge.
-    padding-top: 0.4rem;
+    // Centers a one-line title against the 38px circle while keeping every
+    // card's text block anchored to the same top edge:
+    // (38px circle − 1.35 line-height × 14px) / 2 ≈ 9.5px = 0.68rem.
+    padding-top: 0.68rem;
     margin: 0 0 0.35rem;
   }
 

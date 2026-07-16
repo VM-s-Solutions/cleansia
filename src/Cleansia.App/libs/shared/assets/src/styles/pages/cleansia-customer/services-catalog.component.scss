@@ -2,6 +2,8 @@
 // Design tokens matching home page
 $primary: #0284c7;
 $primary-dark: #0369a1;
+$primary-darker: #075985;
+$white: #ffffff;
 $primary-lighter: #f0f9ff;
 $primary-light: #e0f2fe;
 $primary-accent: #38bdf8;
@@ -207,10 +209,12 @@ $font-heading: 'Poppins', sans-serif;
     border-radius: 1rem;
     padding: 1.75rem 1.5rem 1.5rem;
     position: relative;
-    transition: border-color 0.2s ease;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 
     &:hover {
       border-color: rgba($primary, 0.35);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
     }
 
     &--highlighted {
@@ -219,17 +223,24 @@ $font-heading: 'Poppins', sans-serif;
     }
   }
 
+  // Pill straddling the card's top border — the card has no overflow:hidden,
+  // so the badge can hang half outside without clipping.
   &__package-badge {
     position: absolute;
-    top: -1px;
+    top: 0;
     left: 50%;
-    transform: translateX(-50%);
-    color: $primary;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, $primary-dark 0%, $primary 100%);
+    color: $white;
+    padding: 0.35rem 1rem;
+    border-radius: 999px;
+    box-shadow: 0 4px 10px rgba($primary, 0.3);
     font-family: $font-heading;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+    white-space: nowrap;
   }
 
   &__package-icon {
@@ -331,8 +342,12 @@ $font-heading: 'Poppins', sans-serif;
     grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
     gap: 2rem;
 
-    @media (max-width: 400px) {
+    // Below the 2-column threshold the auto-fill grid collapses to one
+    // edge-to-edge column — cap and center it like the packages grid.
+    @media (max-width: 767px) {
       grid-template-columns: 1fr;
+      max-width: 480px;
+      margin: 0 auto;
     }
   }
 
@@ -341,16 +356,16 @@ $font-heading: 'Poppins', sans-serif;
     gap: 1.5rem;
     background: var(--surface-card);
     border: 1px solid var(--surface-border);
-    border-left: 4px solid $primary-light;
     border-radius: 1rem;
     padding: 1.75rem;
-    transition: border-color 0.2s ease;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     position: relative;
     overflow: hidden;
 
     &:hover {
       border-color: rgba($primary, 0.35);
-      border-left-color: $primary;
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
     }
   }
 
@@ -468,6 +483,9 @@ $font-heading: 'Poppins', sans-serif;
     @media (max-width: 991px) {
       grid-template-columns: 1fr;
       max-height: 120px;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
     }
   }
 
@@ -500,15 +518,21 @@ $font-heading: 'Poppins', sans-serif;
   // Same delegation: visual treatment lives on the inner `<p-button>` via
   // PrimeNG props. Removing the wrapper-level border eliminates the cyan
   // double-ring that was visible around the "view all" buttons.
-  &__view-all-btn {
+  // The compound selectors out-rank the default `full-width` size class
+  // (width: 100% !important) and the host's min-width: 100%, so these
+  // standalone CTAs stay content-sized pills instead of stretching.
+  &__view-all-btn.cleansia-button,
+  &__cta-button.cleansia-button {
     display: inline-flex;
+    width: auto !important;
+    min-width: 0;
   }
 
   // ─── CTA BANNER ───
   &__cta-banner {
     background: $primary-lighter;
     border-radius: 1rem;
-    padding: 4rem 2rem;
+    padding: 3rem 2rem;
     text-align: center;
     margin-top: 1rem;
     position: relative;
@@ -527,14 +551,8 @@ $font-heading: 'Poppins', sans-serif;
     font-size: 1rem;
     color: var(--cl-text-secondary);
     max-width: 500px;
-    margin: 0 auto 2rem !important;
+    margin: 0 auto 1.75rem !important;
     line-height: 1.7;
-  }
-
-  // Wrapper only controls inline-flex layout so the icon-arrow text still
-  // aligns inside the host.
-  &__cta-button {
-    display: inline-flex;
   }
 
   // ─── EMPTY STATE ───
@@ -621,18 +639,52 @@ $font-heading: 'Poppins', sans-serif;
     }
   }
 
-  // ─── BUTTONS — colored ghost, no fill ───
+  // ─── BUTTONS — landing-page CTA language ───
+  // Filled primary carries the brand gradient pill with a colored glow
+  // (mirrors .cl-btn-primary on the home page); outlined/secondary actions get
+  // a tinted brand outline pill (mirrors .cl-btn-outline) instead of PrimeNG's
+  // grey default.
   .p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):not(.p-button-success):not(.p-button-warn) {
-    background: transparent;
-    border: 1px solid $primary;
-    color: $primary;
-    border-radius: 0.75rem;
-    box-shadow: none;
+    background: linear-gradient(135deg, $primary-dark 0%, $primary 100%);
+    border: 1px solid transparent;
+    color: $white;
+    border-radius: 999px;
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba($primary, 0.3);
+    transition: box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
 
     &:not(:disabled):hover {
-      background: rgba($primary, 0.07);
-      border-color: $primary-dark;
-      color: $primary-dark;
+      background: linear-gradient(135deg, $primary-darker 0%, $primary-dark 100%);
+      border-color: transparent;
+      color: $white;
+      box-shadow: 0 8px 20px rgba($primary, 0.38);
+      transform: translateY(-1px);
+    }
+
+    &:not(:disabled):active {
+      transform: translateY(0);
+      box-shadow: 0 4px 10px rgba($primary, 0.3);
+    }
+  }
+
+  .p-button.p-button-outlined,
+  .p-button.p-button-secondary {
+    background: var(--surface-card);
+    border: 1px solid rgba($primary, 0.4);
+    color: $primary-dark;
+    border-radius: 999px;
+    font-weight: 600;
+    box-shadow: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+
+    &:not(:disabled):hover {
+      background: $primary-lighter;
+      border-color: $primary;
+      color: $primary-darker;
+    }
+
+    &:not(:disabled):active {
+      background: $primary-light;
     }
   }
 }
@@ -720,7 +772,8 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     &__package-badge {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
+      padding: 0.3rem 0.85rem;
     }
 
     &__service-card {
@@ -777,7 +830,7 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     &__cta-banner {
-      padding: 3rem 1.5rem;
+      padding: 2.5rem 1.5rem;
     }
   }
 }
@@ -817,7 +870,7 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     &__package-badge {
-      color: #38bdf8;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
     }
 
     &__package-price .price,
@@ -842,12 +895,9 @@ $font-heading: 'Poppins', sans-serif;
       background: rgba(56, 189, 248, 0.1);
     }
 
-    &__service-card {
-      border-left-color: rgba(56, 189, 248, 0.2);
-
-      &:hover {
-        border-left-color: #38bdf8;
-      }
+    &__package-card:hover,
+    &__service-card:hover {
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
     }
 
     &__cta-banner {
@@ -865,13 +915,27 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     .p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):not(.p-button-success):not(.p-button-warn) {
-      border-color: #38bdf8;
-      color: #38bdf8;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+
+      &:not(:disabled):hover {
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+      }
+    }
+
+    .p-button.p-button-outlined,
+    .p-button.p-button-secondary {
+      background: transparent;
+      border-color: rgba(56, 189, 248, 0.45);
+      color: #7dd3fc;
 
       &:not(:disabled):hover {
         background: rgba(56, 189, 248, 0.1);
         border-color: #7dd3fc;
-        color: #7dd3fc;
+        color: #bae6fd;
+      }
+
+      &:not(:disabled):active {
+        background: rgba(56, 189, 248, 0.18);
       }
     }
   }

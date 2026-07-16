@@ -223,17 +223,24 @@ $font-heading: 'Poppins', sans-serif;
     }
   }
 
+  // Pill straddling the card's top border — the card has no overflow:hidden,
+  // so the badge can hang half outside without clipping.
   &__package-badge {
     position: absolute;
-    top: -1px;
+    top: 0;
     left: 50%;
-    transform: translateX(-50%);
-    color: $primary;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, $primary-dark 0%, $primary 100%);
+    color: $white;
+    padding: 0.35rem 1rem;
+    border-radius: 999px;
+    box-shadow: 0 4px 10px rgba($primary, 0.3);
     font-family: $font-heading;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+    white-space: nowrap;
   }
 
   &__package-icon {
@@ -335,8 +342,12 @@ $font-heading: 'Poppins', sans-serif;
     grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
     gap: 2rem;
 
-    @media (max-width: 400px) {
+    // Below the 2-column threshold the auto-fill grid collapses to one
+    // edge-to-edge column — cap and center it like the packages grid.
+    @media (max-width: 767px) {
       grid-template-columns: 1fr;
+      max-width: 480px;
+      margin: 0 auto;
     }
   }
 
@@ -472,6 +483,9 @@ $font-heading: 'Poppins', sans-serif;
     @media (max-width: 991px) {
       grid-template-columns: 1fr;
       max-height: 120px;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
     }
   }
 
@@ -504,15 +518,21 @@ $font-heading: 'Poppins', sans-serif;
   // Same delegation: visual treatment lives on the inner `<p-button>` via
   // PrimeNG props. Removing the wrapper-level border eliminates the cyan
   // double-ring that was visible around the "view all" buttons.
-  &__view-all-btn {
+  // The compound selectors out-rank the default `full-width` size class
+  // (width: 100% !important) and the host's min-width: 100%, so these
+  // standalone CTAs stay content-sized pills instead of stretching.
+  &__view-all-btn.cleansia-button,
+  &__cta-button.cleansia-button {
     display: inline-flex;
+    width: auto !important;
+    min-width: 0;
   }
 
   // ─── CTA BANNER ───
   &__cta-banner {
     background: $primary-lighter;
     border-radius: 1rem;
-    padding: 4rem 2rem;
+    padding: 3rem 2rem;
     text-align: center;
     margin-top: 1rem;
     position: relative;
@@ -531,14 +551,8 @@ $font-heading: 'Poppins', sans-serif;
     font-size: 1rem;
     color: var(--cl-text-secondary);
     max-width: 500px;
-    margin: 0 auto 2rem !important;
+    margin: 0 auto 1.75rem !important;
     line-height: 1.7;
-  }
-
-  // Wrapper only controls inline-flex layout so the icon-arrow text still
-  // aligns inside the host.
-  &__cta-button {
-    display: inline-flex;
   }
 
   // ─── EMPTY STATE ───
@@ -758,7 +772,8 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     &__package-badge {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
+      padding: 0.3rem 0.85rem;
     }
 
     &__service-card {
@@ -815,7 +830,7 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     &__cta-banner {
-      padding: 3rem 1.5rem;
+      padding: 2.5rem 1.5rem;
     }
   }
 }
@@ -855,7 +870,7 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     &__package-badge {
-      color: #38bdf8;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
     }
 
     &__package-price .price,

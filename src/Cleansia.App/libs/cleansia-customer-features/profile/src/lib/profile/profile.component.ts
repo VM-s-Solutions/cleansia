@@ -26,7 +26,7 @@ import {
   UpdateCurrentUserCommand,
   UpdateSavedAddressCommand,
 } from '@cleansia/customer-services';
-import { ThemeService } from '@cleansia/services';
+import { persistPreferredLanguage, ThemeService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -406,7 +406,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   onLanguageChange(lang: string): void {
     this.translate.use(lang);
     if (this.isBrowser) {
-      localStorage.setItem('preferred_language', lang);
+      persistPreferredLanguage(lang);
     }
   }
 

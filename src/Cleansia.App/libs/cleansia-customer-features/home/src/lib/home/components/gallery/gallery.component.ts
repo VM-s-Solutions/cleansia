@@ -20,9 +20,9 @@ export class GalleryComponent {
   private readonly cdr = inject(ChangeDetectorRef);
 
   beforeAfterPairs = [
-    { id: 'sofa', before: 'assets/images/gallery/before-sofa.jpg', after: 'assets/images/gallery/after-sofa.jpg', label: 'pages.home.before_after.label_sofa' },
-    { id: 'carpet', before: 'assets/images/gallery/before-carpet.jpg', after: 'assets/images/gallery/after-carpet.jpg', label: 'pages.home.before_after.label_carpet' },
-    { id: 'mattress', before: 'assets/images/gallery/before-mattress.jpg', after: 'assets/images/gallery/after-mattress.jpg', label: 'pages.home.before_after.label_mattress' },
+    { id: 'sofa', before: 'assets/images/gallery/before-sofa.webp', after: 'assets/images/gallery/after-sofa.webp', label: 'pages.home.before_after.label_sofa' },
+    { id: 'carpet', before: 'assets/images/gallery/before-carpet.webp', after: 'assets/images/gallery/after-carpet.webp', label: 'pages.home.before_after.label_carpet' },
+    { id: 'mattress', before: 'assets/images/gallery/before-mattress.webp', after: 'assets/images/gallery/after-mattress.webp', label: 'pages.home.before_after.label_mattress' },
   ];
 
   private sliderPositions = new Map<string, number>();

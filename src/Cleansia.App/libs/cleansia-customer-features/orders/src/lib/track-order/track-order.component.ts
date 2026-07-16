@@ -11,7 +11,6 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   CleansiaButtonComponent,
   CleansiaScrollTopComponent,
-  CleansiaTitleComponent,
 } from '@cleansia/components';
 import {
   LookupOrderResponse,
@@ -45,7 +44,6 @@ import { TrackOrderFacade } from './track-order.facade';
     TimelineModule,
     CleansiaButtonComponent,
     CleansiaScrollTopComponent,
-    CleansiaTitleComponent,
     OrderStatusSeverityPipe,
     OrderStatusLabelPipe,
     PaymentStatusSeverityPipe,

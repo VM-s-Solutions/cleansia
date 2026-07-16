@@ -4,11 +4,10 @@
 // CTA
 // =============================
 .cl-cta {
-  background: linear-gradient(180deg, $bg-alt 0%, $primary-lighter 100%);
-  padding: 4rem 2rem 6rem;
+  background: linear-gradient(180deg, $primary-lighter 0%, $primary-light 100%);
+  padding: 5.5rem 2rem;
   text-align: center;
   position: relative;
-  overflow: hidden;
   z-index: 1;
 
   &__inner {
@@ -20,19 +19,17 @@
 
   &__title {
     font-family: $font-heading;
-    background: linear-gradient(135deg, $text-heading 0%, $primary 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-size: clamp(1.5rem, 3vw, 2.25rem);
-    font-weight: 700;
-    margin-bottom: 1rem;
+    color: $text-dark;
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.75rem;
   }
 
   &__desc {
-    color: $text-muted;
+    color: var(--cl-text-secondary);
     font-size: 1rem;
-    margin-bottom: 1rem !important;
+    margin-bottom: 1.5rem !important;
     line-height: 1.7;
   }
 }
@@ -42,7 +39,7 @@
 // =============================
 @media (max-width: 768px) {
   .cl-cta {
-    padding: 3rem 1.5rem 6rem;
+    padding: 4rem 1.5rem;
   }
 }
 
@@ -51,20 +48,10 @@
 // =============================
 :root.dark-mode {
   .cl-cta {
-    background: linear-gradient(
-      180deg,
-      var(--surface-card) 0%,
-      rgba(56, 189, 248, 0.04) 100%
-    );
+    background: linear-gradient(180deg, #0f172a 0%, #082f49 100%);
 
     &__title {
-      background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-    }
-
-    &__desc {
-      color: #94a3b8;
+      color: #e2e8f0;
     }
   }
 }

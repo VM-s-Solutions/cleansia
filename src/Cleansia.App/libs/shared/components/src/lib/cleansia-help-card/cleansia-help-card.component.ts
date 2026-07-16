@@ -12,6 +12,7 @@ import {
   signal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { isLocalStorageAvailable } from '@cleansia/utils';
 import { TranslateModule } from '@ngx-translate/core';
 
 export interface HelpStep {
@@ -134,13 +135,13 @@ export class CleansiaHelpCardComponent implements OnInit {
 
   /** Check if help is dismissed (for external use) */
   static isHelpDismissed(storageKey: string): boolean {
-    if (typeof localStorage === 'undefined') return false;
+    if (!isLocalStorageAvailable()) return false;
     return localStorage.getItem(storageKey) === 'true';
   }
 
   /** Restore help from external call */
   static restoreHelp(storageKey: string): void {
-    if (typeof localStorage === 'undefined') return;
+    if (!isLocalStorageAvailable()) return;
     localStorage.removeItem(storageKey);
   }
 }

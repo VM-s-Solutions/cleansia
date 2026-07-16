@@ -126,11 +126,19 @@
       "reset": "Obnoviť",
       "retry": "Skúsiť znova",
       "go_back": "Vrátiť sa",
-      "go_home": "Na úvodnú stránku"
+      "go_home": "Na úvodnú stránku",
+      "remove": "Odstrániť"
     },
     "user": {
       "remember_me": "Zapamätať si ma"
-    }
+    },
+    "cancel": "Zrušiť",
+    "next_page": "Nasledujúca stránka",
+    "no_data": "Žiadne údaje na zobrazenie",
+    "of": "z",
+    "page": "Stránka {{page}}",
+    "previous_page": "Predchádzajúca stránka",
+    "rows_per_page": "Riadkov na stránku"
   },
   "auth": {
     "login": {
@@ -430,6 +438,8 @@
         "title": "Ako to funguje",
         "badge": "Ako to funguje",
         "subtitle": "Pár kliknutí, jasná cena a profesionálne upratovanie priamo u vás doma.",
+        "you_do": "Čo urobíte vy",
+        "we_do": "Čo zariadime my",
         "step1": "Vyberte si službu",
         "step1_desc": "Upratovanie domácnosti, čistenie čalúnenia alebo pravidelná starostlivosť. Presne podľa vašich potrieb.",
         "step2": "Zadajte detaily",
@@ -450,10 +460,14 @@
       "benefits": {
         "title": "Čo získate s našou službou",
         "badge": "Rozdiel",
-        "b1": "Menej starostí — Objednávku zadáte online bez oneskorení, telefonátov a zbytočného vyjednávania.",
-        "b2": "Viac času pre seba — O upratovanie sa postaráme za vás, zatiaľ čo sa môžete sústrediť na dôležitejšie veci.",
-        "b3": "Profesionálny prístup — Skúsený tím, overené postupy a dôraz na detail.",
-        "b4": "Čistý a sviež domov — Výsledky, ktoré sú vidieť a cítiť."
+        "b1_title": "Menej starostí",
+        "b1_desc": "Objednávku zadáte online bez oneskorení, telefonátov a zbytočného vyjednávania.",
+        "b2_title": "Viac času pre seba",
+        "b2_desc": "O upratovanie sa postaráme za vás, zatiaľ čo sa môžete sústrediť na dôležitejšie veci.",
+        "b3_title": "Profesionálny prístup",
+        "b3_desc": "Skúsený tím, overené postupy a dôraz na detail.",
+        "b4_title": "Čistý a sviež domov",
+        "b4_desc": "Výsledky, ktoré sú vidieť a cítiť."
       },
       "extra_services": {
         "s1": {
@@ -524,6 +538,7 @@
         "title": "Často kladené otázky",
         "badge": "FAQ",
         "desc": "Nenašli ste odpoveď? Kontaktujte náš tím a radi vám pomôžeme.",
+        "contact_button": "Kontaktujte nás",
         "q1": {
           "question": "Chodíte aj mimo Prahy?",
           "answer": "Áno, pokrývame aj okolité oblasti do približne 30 km od Prahy. Pre vzdialenejšie lokality nás kontaktujte — riešenie nájdeme."
@@ -1206,6 +1221,7 @@
     },
     "order_lookup": {
       "title": "Vyhľadať objednávku",
+      "subtitle": "Zadajte potvrdzovací kód a e-mail použitý pri objednávke — vašu objednávku nájdeme.",
       "confirmation_code": "Potvrdzovací kód",
       "email": "E-mail použitý pri objednávke",
       "submit": "Nájsť moju objednávku",
@@ -1272,6 +1288,37 @@
       "suggestion_url": "Skontrolujte správnosť adresy URL",
       "suggestion_contact": "Ak problém pretrváva, kontaktujte nás",
       "go_home": "Na úvodnú stránku"
+    },
+    "availability": {
+      "add_time_slot": "Pridať časový slot",
+      "apply": "Použiť",
+      "custom": "Vlastné",
+      "edit_hours": "Upraviť hodiny",
+      "end_time": "Čas konca",
+      "legend_custom": "Vlastné hodiny",
+      "legend_off": "Voľno",
+      "legend_working": "Pracovný",
+      "mark_exception": "Označiť ako výnimku",
+      "mark_unavailable": "Tento deň bude označený ako nedostupný.",
+      "mon_fri_9_5": "Po-Pi 9-17",
+      "mon_sat_8_4": "Po-So 8-16",
+      "no_days_selected": "Vyberte pracovné dni pre nastavenie rozvrhu",
+      "quick_setup": "Rýchle nastavenie",
+      "remove_exception": "Odstrániť výnimku",
+      "schedule_setup": "Nastavenie rozvrhu",
+      "schedule_setup_desc": "Vyberte pracovné dni a nastavte si hodiny.",
+      "set_custom_hours": "Nastaviť vlastné hodiny",
+      "start_time": "Čas začiatku",
+      "weekly_schedule": "Týždenný rozvrh",
+      "working_days": "Pracovné dni",
+      "working_hours": "Pracovné hodiny"
+    },
+    "file": {
+      "accepted": "Povolené",
+      "click_to_select": "Kliknite pre výber súborov",
+      "max_size": "Max. veľkosť",
+      "or_drag_drop": "alebo pretiahnite",
+      "selected_files": "Vybrané súbory"
     }
   },
   "validation": {
@@ -1288,7 +1335,17 @@
       "phone_number": "Neplatný formát telefónneho čísla",
       "confirm_password": "Heslá sa nezhodujú",
       "no_whitespace": "Pole nesmie obsahovať medzery",
-      "zip_code": "Neplatný formát PSČ"
+      "zip_code": "Neplatný formát PSČ",
+      "alphabetic_only": "Pole môže obsahovať iba písmená",
+      "alphanumeric_only": "Pole môže obsahovať iba písmená a číslice",
+      "iban": "Neplatný formát IBAN",
+      "lower_threshold_incorrect_range": "Dolná hodnota je mimo povolený rozsah",
+      "max": "Hodnota nesmie byť väčšia ako {{ max }}",
+      "min": "Hodnota musí byť aspoň {{ min }}",
+      "national_id": "Neplatný formát čísla občianskeho preukazu",
+      "tax_id": "Neplatný formát IČO",
+      "upper_threshold_incorrect_range": "Horná hodnota je mimo povolený rozsah",
+      "url": "Neplatný formát URL"
     },
     "file": {
       "required": "Súbory sú povinné",
@@ -1643,5 +1700,9 @@
     "increase_rooms": "Zvýšiť počet izieb",
     "decrease_bathrooms": "Znížiť počet kúpeľní",
     "increase_bathrooms": "Zvýšiť počet kúpeľní"
+  },
+  "help": {
+    "dismiss": "Rozumiem, nezobrazovať znova",
+    "show_help": "Zobraziť nápovedu"
   }
 }

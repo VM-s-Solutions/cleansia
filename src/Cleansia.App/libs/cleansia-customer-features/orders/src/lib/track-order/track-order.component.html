@@ -1,17 +1,28 @@
-<div class="track-order">
-  <cleansia-title [title]="'pages.track_order.title' | translate" />
-  <p class="track-order__subtitle">{{ 'pages.track_order.subtitle' | translate }}</p>
+<section class="track-order__hero">
+  <div class="track-order__hero-bubble track-order__hero-bubble--1" aria-hidden="true"></div>
+  <div class="track-order__hero-bubble track-order__hero-bubble--2" aria-hidden="true"></div>
+  <div class="track-order__hero-bubble track-order__hero-bubble--3" aria-hidden="true"></div>
+  <div class="track-order__hero-inner">
+    <h1 class="track-order__title">{{ 'pages.track_order.title' | translate }}</h1>
+    <p class="track-order__subtitle">{{ 'pages.track_order.subtitle' | translate }}</p>
+  </div>
+  <div class="track-order__hero-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
+      <path d="M0,40 C280,100 720,0 1440,60 L1440,100 L0,100 Z" />
+    </svg>
+  </div>
+</section>
 
+<div class="track-order">
   <!-- Guest banner -->
   <div class="track-order__guest-banner">
     <i class="pi pi-info-circle"></i>
-    <div>
-      <p>{{ 'pages.track_order.guest_limit' | translate }}</p>
-      <a [routerLink]="'/' + routes.REGISTER" class="track-order__guest-banner-link">
-        <i class="pi pi-user-plus"></i>
-        {{ 'pages.track_order.guest_cta' | translate }}
-      </a>
-    </div>
+    <p class="track-order__guest-banner-text">{{ 'pages.track_order.guest_limit' | translate }}</p>
+    <span class="track-order__guest-banner-divider" aria-hidden="true"></span>
+    <a [routerLink]="'/' + routes.REGISTER" class="track-order__guest-banner-link">
+      <i class="pi pi-user-plus"></i>
+      {{ 'pages.track_order.guest_cta' | translate }}
+    </a>
   </div>
 
   <!-- Loading -->

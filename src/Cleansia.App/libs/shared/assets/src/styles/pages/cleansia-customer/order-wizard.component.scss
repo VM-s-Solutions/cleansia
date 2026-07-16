@@ -441,12 +441,15 @@ $font-heading: 'Poppins', sans-serif;
     border: 1px solid var(--surface-border);
     border-radius: 1rem;
     cursor: pointer;
-    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease,
+      transform 0.2s ease;
     background: var(--surface-card);
     height: 100%;
 
     &:hover {
       border-color: rgba($primary, 0.35);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
     }
 
     &:focus-visible {
@@ -460,6 +463,12 @@ $font-heading: 'Poppins', sans-serif;
       // 1px ring on top of the 1px border — reads as a 2px selected border
       // without shifting the card contents.
       box-shadow: 0 0 0 1px $primary;
+
+      // :hover alone out-specifies --selected, so restate the ring under the
+      // hover lift or selecting a card would drop it while hovered.
+      &:hover {
+        box-shadow: 0 0 0 1px $primary, 0 8px 20px rgba(15, 23, 42, 0.07);
+      }
     }
   }
 
@@ -538,8 +547,10 @@ $font-heading: 'Poppins', sans-serif;
 
   &__selection-included {
     list-style: none;
-    padding: 0;
-    margin: 0 0 0.9rem;
+    padding: 0 !important;
+    // !important: the global `ul` reset in common/font.scss zeroes margins with
+    // !important, which left the list sitting flush on the price divider below.
+    margin: 0 0 0.9rem !important;
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
@@ -2011,10 +2022,15 @@ $font-heading: 'Poppins', sans-serif;
         background: rgba(56, 189, 248, 0.06);
         border-color: #38bdf8;
         box-shadow: 0 0 0 1px #38bdf8;
+
+        &:hover {
+          box-shadow: 0 0 0 1px #38bdf8, 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
       }
 
       &:hover {
         border-color: #475569;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
       }
     }
 

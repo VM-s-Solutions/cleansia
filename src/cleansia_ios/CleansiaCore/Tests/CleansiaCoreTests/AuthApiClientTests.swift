@@ -137,6 +137,25 @@ final class AuthApiClientTests: XCTestCase {
         }
     }
 
+    func testRefreshTypeOnlyRejectionBodyIsTerminal() async throws {
+        // Real .NET ProblemDetails wire shape: the business key lives ONLY in
+        // `type` (CreateProblemDetails: Type = error.Code) — no `errors` dict,
+        // no top-level `code` — on a non-401 status. Regression for the
+        // `?? problem.type` fold: without it, firstErrorKey/errorCode are both
+        // absent, `code` is nil, and this misclassifies as retryable.
+        let client = try makeClient(store: MemTokenStore())
+        for key in ["auth.invalid_refresh_token", "auth.refresh_token_reused"] {
+            MockURLProtocol.handler = { _ in
+                let body = #"{"title":"Unauthorized","type":"\#(key)","status":400}"#
+                return (400, Data(body.utf8))
+            }
+
+            let result = await client.refresh(refreshToken: "r1")
+
+            XCTAssertEqual(result, .rejected, "\(key) in `type` only is still terminal")
+        }
+    }
+
     func testRefreshServerErrorAndThrottleStatusesAreRetryable() async throws {
         let client = try makeClient(store: MemTokenStore())
         for status in [429, 500, 502, 503] {

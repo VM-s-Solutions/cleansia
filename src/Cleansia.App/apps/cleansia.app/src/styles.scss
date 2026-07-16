@@ -53,7 +53,10 @@ body {
   min-height: 100vh;
   margin: 0;
   padding: 0;
-  scroll-behavior: smooth;
+  // No `scroll-behavior: smooth` here: it turns the router's scroll-to-top on
+  // navigation into an animation that gets cut short by the incoming page,
+  // stranding the viewport mid-page. In-page scrolls opt into smooth via
+  // scrollTo/scrollIntoView({ behavior: 'smooth' }) instead.
   background-color: var(--surface-ground, #f3f4f6);
   font-family: var(
     --font-family,

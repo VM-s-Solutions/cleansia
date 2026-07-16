@@ -6,7 +6,7 @@ import UserNotifications
 
 final class PartnerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
     weak var registrar: (any PushRegistrar)?
-    var onTap: ((PartnerNotificationDestination) -> Void)?
+    let pushTap = PushTapBuffer<PartnerNotificationDestination>()
     private(set) var firebaseConfigured = false
 
     func application(
@@ -105,8 +105,9 @@ final class PartnerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificat
     ) {
         let userInfo = response.notification.request.content.userInfo
         if let destination = PartnerNotificationDeepLink.resolve(userInfo) {
-            let onTap = onTap
-            Task { @MainActor in onTap?(destination) }
+            // Buffer, don't fire into a possibly-nil handler: on a cold launch
+            // this runs before the SwiftUI .task wires pushTap.onTap.
+            Task { @MainActor in pushTap.deliver(destination) }
         }
         completionHandler()
     }

@@ -6,6 +6,11 @@ import Foundation
 final class ProfileViewModel: ViewModel {
     @Published private(set) var refreshState: ActionState = .idle
     @Published private(set) var saveState: ActionState = .idle
+    // The two profile-hero stats that have a REAL per-user source, bridged from
+    // the shared caches (both already primed by the shell's prefetch). Member-
+    // since has no mobile-contract source yet, so it is not surfaced (T-0392).
+    @Published private(set) var bookingsCount = 0
+    @Published private(set) var savedCount = 0
 
     let saved = PassthroughSubject<Void, Never>()
 
@@ -14,10 +19,19 @@ final class ProfileViewModel: ViewModel {
     private let snackbar: SnackbarController
     private let localizer = ApiErrorLocalizer()
 
-    init(repository: UserProfileRepository, settings: AppSettingsStore, snackbar: SnackbarController) {
+    init(
+        repository: UserProfileRepository,
+        settings: AppSettingsStore,
+        snackbar: SnackbarController,
+        orderRepository: OrderRepository,
+        savedAddressRepository: SavedAddressRepository
+    ) {
         self.repository = repository
         self.settings = settings
         self.snackbar = snackbar
+        super.init()
+        orderRepository.$totalRecords.assign(to: &$bookingsCount)
+        savedAddressRepository.$addresses.map(\.count).assign(to: &$savedCount)
     }
 
     var currentUser: CurrentUserProfile? {

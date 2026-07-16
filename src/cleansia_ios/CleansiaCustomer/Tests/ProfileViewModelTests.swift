@@ -7,19 +7,25 @@ final class ProfileViewModelTests: XCTestCase {
     private var client: FakeUserProfileClient!
     private var repository: UserProfileRepository!
     private var snackbar: SnackbarController!
+    private var orderRepository: OrderRepository!
+    private var savedAddressRepository: SavedAddressRepository!
 
     override func setUp() {
         super.setUp()
         client = FakeUserProfileClient()
         repository = UserProfileRepository(client: client)
         snackbar = SnackbarController()
+        orderRepository = OrderRepository(client: FakeOrderClient())
+        savedAddressRepository = SavedAddressRepository(client: FakeSavedAddressClient(), defaults: scratchDefaults())
     }
 
     private func makeVM() -> ProfileViewModel {
         ProfileViewModel(
             repository: repository,
             settings: UserDefaultsAppSettingsStore(defaults: scratchDefaults()),
-            snackbar: snackbar
+            snackbar: snackbar,
+            orderRepository: orderRepository,
+            savedAddressRepository: savedAddressRepository
         )
     }
 
@@ -152,7 +158,13 @@ final class ProfileViewModelTests: XCTestCase {
         client.currentUserResult = .success(ProfileFixtures.user(id: "user-7", phoneNumber: nil))
         client.updateResult = .success(())
         let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults(), localeLanguageCode: { "cs" })
-        let vm = ProfileViewModel(repository: repository, settings: settings, snackbar: snackbar)
+        let vm = ProfileViewModel(
+            repository: repository,
+            settings: settings,
+            snackbar: snackbar,
+            orderRepository: orderRepository,
+            savedAddressRepository: savedAddressRepository
+        )
         await vm.refresh()
 
         var completed = false
@@ -173,7 +185,13 @@ final class ProfileViewModelTests: XCTestCase {
         client.currentUserResult = .success(ProfileFixtures.user(phoneNumber: nil))
         client.updateResult = .success(())
         let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults(), localeLanguageCode: { "uk" })
-        let vm = ProfileViewModel(repository: repository, settings: settings, snackbar: snackbar)
+        let vm = ProfileViewModel(
+            repository: repository,
+            settings: settings,
+            snackbar: snackbar,
+            orderRepository: orderRepository,
+            savedAddressRepository: savedAddressRepository
+        )
         await vm.refresh()
 
         await vm.completeOnboarding(phoneNumber: "+420111", birthDate: nil)
@@ -185,7 +203,13 @@ final class ProfileViewModelTests: XCTestCase {
         client.currentUserResult = .success(ProfileFixtures.user(id: "user-7", phoneNumber: nil))
         client.updateResult = .failure(ApiError(httpStatus: 400))
         let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults())
-        let vm = ProfileViewModel(repository: repository, settings: settings, snackbar: snackbar)
+        let vm = ProfileViewModel(
+            repository: repository,
+            settings: settings,
+            snackbar: snackbar,
+            orderRepository: orderRepository,
+            savedAddressRepository: savedAddressRepository
+        )
         await vm.refresh()
 
         var completed = false
@@ -203,7 +227,13 @@ final class ProfileViewModelTests: XCTestCase {
     func testSkipOnboardingMarksSeenForTheLoadedUser() async {
         client.currentUserResult = .success(ProfileFixtures.user(id: "user-7"))
         let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults())
-        let vm = ProfileViewModel(repository: repository, settings: settings, snackbar: snackbar)
+        let vm = ProfileViewModel(
+            repository: repository,
+            settings: settings,
+            snackbar: snackbar,
+            orderRepository: orderRepository,
+            savedAddressRepository: savedAddressRepository
+        )
         await vm.refresh()
 
         vm.skipOnboarding()
@@ -214,7 +244,13 @@ final class ProfileViewModelTests: XCTestCase {
 
     func testSkipOnboardingWithoutLoadedUserMarksNothing() {
         let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults())
-        let vm = ProfileViewModel(repository: repository, settings: settings, snackbar: snackbar)
+        let vm = ProfileViewModel(
+            repository: repository,
+            settings: settings,
+            snackbar: snackbar,
+            orderRepository: orderRepository,
+            savedAddressRepository: savedAddressRepository
+        )
 
         vm.skipOnboarding()
 
@@ -224,7 +260,13 @@ final class ProfileViewModelTests: XCTestCase {
     func testNeedsOnboardingTriggersOnIncompleteUnseenProfileAfterAForcedRefresh() async {
         client.currentUserResult = .success(ProfileFixtures.user(id: "user-7", phoneNumber: nil))
         let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults())
-        let vm = ProfileViewModel(repository: repository, settings: settings, snackbar: snackbar)
+        let vm = ProfileViewModel(
+            repository: repository,
+            settings: settings,
+            snackbar: snackbar,
+            orderRepository: orderRepository,
+            savedAddressRepository: savedAddressRepository
+        )
 
         let needed = await vm.needsOnboarding()
 
@@ -245,7 +287,13 @@ final class ProfileViewModelTests: XCTestCase {
         client.currentUserResult = .success(ProfileFixtures.user(id: "user-7", phoneNumber: nil))
         let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults())
         settings.markOnboardingSeen(userId: "user-7")
-        let vm = ProfileViewModel(repository: repository, settings: settings, snackbar: snackbar)
+        let vm = ProfileViewModel(
+            repository: repository,
+            settings: settings,
+            snackbar: snackbar,
+            orderRepository: orderRepository,
+            savedAddressRepository: savedAddressRepository
+        )
 
         let neededForSeenUser = await vm.needsOnboarding()
         XCTAssertFalse(neededForSeenUser)

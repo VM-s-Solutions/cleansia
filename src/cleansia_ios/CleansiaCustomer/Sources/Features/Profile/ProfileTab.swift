@@ -28,6 +28,8 @@ struct ProfileTab: View {
                         ProfileHeader(
                             user: profileVM.currentUser,
                             tier: tierLabel,
+                            bookings: profileVM.bookingsCount,
+                            saved: profileVM.savedCount,
                             topInset: proxy.safeAreaInsets.top,
                             onEdit: { onOpen(.editProfile(showBookingHint: false)) }
                         )
@@ -205,14 +207,62 @@ private struct DeleteAccountRow: View {
 private struct ProfileHeader: View {
     let user: CurrentUserProfile?
     let tier: String
+    let bookings: Int
+    let saved: Int
     var topInset: CGFloat = 0
     let onEdit: () -> Void
 
     var body: some View {
-        // The stats card (bookings / saved / member-since) is intentionally hidden:
-        // no per-user source exists on the mobile contract, so any values would be
-        // fabricated. T-0392 wires the real stats and restores the card here.
-        HeroGradient(user: user, tier: tier, topInset: topInset, onEdit: onEdit)
+        // Hero + a floating stats card overlapping its lip (Android parity).
+        // Only stats with a REAL per-user source are shown: bookings (the
+        // server-side order grand total) and saved (saved-address count).
+        // Member-since stays hidden until the mobile profile DTO carries a
+        // created date (T-0392 backend follow-up) — never a fabricated value.
+        VStack(spacing: 0) {
+            HeroGradient(user: user, tier: tier, topInset: topInset, onEdit: onEdit)
+            ProfileStatsCard(bookings: bookings, saved: saved)
+                .padding(.horizontal, Spacing.ml)
+                .offset(y: -Spacing.l)
+                .padding(.bottom, -Spacing.l)
+        }
+    }
+}
+
+/// The two real profile stats, side by side in a floating surface card.
+private struct ProfileStatsCard: View {
+    let bookings: Int
+    let saved: Int
+
+    var body: some View {
+        HStack(spacing: 0) {
+            statColumn(value: "\(bookings)", label: L10n.Profile.statBookings)
+            Rectangle()
+                .fill(CleansiaColors.outlineVariant)
+                .frame(width: 1, height: 32)
+            statColumn(value: "\(saved)", label: L10n.Profile.statSaved)
+        }
+        .padding(.vertical, Spacing.m)
+        .frame(maxWidth: .infinity)
+        .background(CleansiaColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.large)
+                .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.08), radius: 12, y: 4)
+    }
+
+    private func statColumn(value: String, label: String) -> some View {
+        VStack(spacing: Spacing.xxs) {
+            Text(value)
+                .font(CleansiaTypography.headlineSmall)
+                .fontWeight(.bold)
+                .foregroundColor(CleansiaColors.onSurface)
+            Text(label)
+                .font(CleansiaTypography.labelMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -323,6 +373,8 @@ private struct EditProfileChip: View {
                     isEmailConfirmed: true
                 ),
                 tier: "Regular",
+                bookings: 12,
+                saved: 3,
                 onEdit: {}
             )
             .background(CleansiaColors.background)

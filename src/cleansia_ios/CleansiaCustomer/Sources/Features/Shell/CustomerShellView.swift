@@ -31,7 +31,9 @@ struct CustomerShellView: View {
         _profileVM = StateObject(wrappedValue: ProfileViewModel(
             repository: container.userProfileRepository,
             settings: container.appSettings,
-            snackbar: container.snackbar
+            snackbar: container.snackbar,
+            orderRepository: container.orderRepository,
+            savedAddressRepository: container.savedAddressRepository
         ))
     }
 

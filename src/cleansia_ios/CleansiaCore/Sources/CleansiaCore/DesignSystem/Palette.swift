@@ -33,4 +33,8 @@ enum Palette {
     static let errorText = Color(hex: 0xB91C1C)
     static let warningStar = Color(hex: 0xF59E0B)
     static let darkError = Color(hex: 0xFCA5A5)
+    /// Deep error-family red for dark-mode "container" surfaces (Material-3 dark
+    /// errorContainer). Pairs with darkError as the on-color. Replaces the stray
+    /// sky800 (blue) that dark errorContainer used to resolve to (T-0396).
+    static let darkErrorContainer = Color(hex: 0x8C1D18)
 }

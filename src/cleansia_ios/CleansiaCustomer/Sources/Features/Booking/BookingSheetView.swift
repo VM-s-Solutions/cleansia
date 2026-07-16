@@ -9,6 +9,7 @@ struct BookingSheetView: View {
     let geocoding: GeocodingService
     let mapProvider: MapProvider
     let paymentSheet: PaymentSheetPresenting
+    let orderClient: OrderClient
     let onDismiss: () -> Void
     let onViewOrder: (String) -> Void
     let onCompleteProfile: () -> Void
@@ -20,6 +21,7 @@ struct BookingSheetView: View {
         geocoding: GeocodingService,
         mapProvider: MapProvider,
         paymentSheet: PaymentSheetPresenting,
+        orderClient: OrderClient,
         onDismiss: @escaping () -> Void,
         onViewOrder: @escaping (String) -> Void = { _ in },
         onCompleteProfile: @escaping () -> Void = {}
@@ -28,6 +30,7 @@ struct BookingSheetView: View {
         self.geocoding = geocoding
         self.mapProvider = mapProvider
         self.paymentSheet = paymentSheet
+        self.orderClient = orderClient
         self.onDismiss = onDismiss
         self.onViewOrder = onViewOrder
         self.onCompleteProfile = onCompleteProfile
@@ -38,6 +41,13 @@ struct BookingSheetView: View {
             if let success {
                 BookingSuccessView(
                     confirmationCode: success.confirmationCode,
+                    orderId: success.orderId,
+                    loadOrder: { [orderClient] id in
+                        if case let .success(order) = await orderClient.getById(orderId: id) {
+                            return order
+                        }
+                        return nil
+                    },
                     onViewOrder: success.orderId.isBlank ? nil : {
                         vm.reset()
                         self.success = nil
@@ -260,6 +270,7 @@ private struct BookingSheetContent: View {
                 geocoding: CLGeocoderGeocodingService(),
                 mapProvider: PreviewMapProvider(),
                 paymentSheet: StripePaymentController(),
+                orderClient: LiveOrderClient(),
                 onDismiss: {}
             )
         }

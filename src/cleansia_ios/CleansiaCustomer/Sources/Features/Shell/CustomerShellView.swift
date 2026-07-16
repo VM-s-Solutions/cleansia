@@ -64,6 +64,7 @@ struct CustomerShellView: View {
                 geocoding: container.geocodingService,
                 mapProvider: container.mapProvider,
                 paymentSheet: StripePaymentController(),
+                orderClient: container.orderClient,
                 onDismiss: { model.isBookingPresented = false },
                 onViewOrder: { orderId in
                     model.isBookingPresented = false

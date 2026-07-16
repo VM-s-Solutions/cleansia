@@ -33,7 +33,7 @@ struct CleansiaCustomerApp: App {
                 .snackbarHost(container.snackbar)
                 .task {
                     appDelegate.registrar = container.pushRegistrar
-                    appDelegate.onTap = { [weak pushNavigation] destination in
+                    appDelegate.pushTap.onTap = { [weak pushNavigation] destination in
                         pushNavigation?.pendingDestination = destination
                     }
                     container.startPush()

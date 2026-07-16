@@ -9,14 +9,8 @@ cleansia-hero {
 // Hero
 // =============================
 .cl-hero {
-  background-color: $primary-lighter;
-  background-image: linear-gradient(
-    135deg,
-    $primary-lighter 0%,
-    $primary-light 40%,
-    rgba($primary-accent, 0.1) 100%
-  );
-  padding: 7rem 2rem 10rem;
+  background: linear-gradient(160deg, $primary-light 0%, $primary-lighter 55%, $white 100%);
+  padding: 6rem 2rem 8rem;
   position: relative;
   overflow: hidden;
   z-index: 1;
@@ -44,15 +38,13 @@ cleansia-hero {
     align-items: center;
     align-self: flex-start;
     gap: 0.5rem;
-    background: rgba($primary, 0.08);
     color: $primary;
-    padding: 0.5rem 1.25rem;
-    border-radius: 2rem;
     font-family: $font-heading;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 600;
-    margin-bottom: 2rem !important;
-    border: 1px solid rgba($primary, 0.1);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1.25rem !important;
     i {
       font-size: 0.85rem;
     }
@@ -60,31 +52,37 @@ cleansia-hero {
 
   &__subtitle {
     font-size: clamp(1rem, 2vw, 1.1rem);
-    color: var(--text-color-secondary);
-    line-height: 1.8;
-    margin-bottom: 2.5rem;
+    color: var(--cl-text-secondary);
+    line-height: 1.7;
+    margin-bottom: 2rem;
     max-width: 500px;
   }
 
   &__buttons {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
     margin-bottom: 2.5rem;
   }
 
   &__trust {
     display: flex;
-    gap: 1.75rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
   }
 
+  // Chips: whole badges wrap as one unit — never mid-text
   &__trust-item {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.85rem;
-    color: var(--text-color-secondary);
+    gap: 0.45rem;
+    white-space: nowrap;
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    background: rgba($white, 0.75);
+    border: 1px solid rgba($primary, 0.18);
+    font-size: 0.82rem;
+    color: $text-heading;
     font-weight: 600;
     i {
       color: $primary;
@@ -92,131 +90,75 @@ cleansia-hero {
     }
   }
 
-  // Decorative floating bubbles
+  // Soft floating bubbles — the only decoration in the hero, kept subtle
   &__bubble {
     position: absolute;
     border-radius: 50%;
-    background: rgba($primary, 0.06);
-    border: 1px solid rgba($primary, 0.08);
+    background: rgba($primary, 0.08);
+    border: 1px solid rgba($primary, 0.12);
     z-index: 0;
+    animation: cl-float-bubble 12s ease-in-out infinite;
 
     &--1 {
       width: 180px;
       height: 180px;
       top: -40px;
       right: -30px;
-      animation: float-bubble 8s ease-in-out infinite;
     }
     &--2 {
-      width: 120px;
-      height: 120px;
+      width: 110px;
+      height: 110px;
       top: 30%;
       left: -40px;
-      animation: float-bubble 10s ease-in-out infinite;
-      animation-delay: -3s;
+      animation-delay: -4s;
     }
     &--3 {
-      width: 80px;
-      height: 80px;
-      bottom: 20%;
-      right: 10%;
-      animation: float-bubble 7s ease-in-out infinite;
-      animation-delay: -5s;
+      width: 70px;
+      height: 70px;
+      bottom: 22%;
+      right: 12%;
+      animation-delay: -8s;
     }
     &--4 {
-      width: 60px;
-      height: 60px;
-      top: 15%;
-      left: 30%;
-      animation: float-bubble 9s ease-in-out infinite;
-      animation-delay: -2s;
-      background: rgba($primary-accent, 0.05);
-    }
-    &--5 {
-      width: 140px;
-      height: 140px;
-      bottom: 10%;
-      left: 15%;
-      animation: float-bubble 12s ease-in-out infinite;
-      animation-delay: -7s;
+      width: 130px;
+      height: 130px;
+      bottom: 8%;
+      left: 16%;
+      animation-delay: -6s;
       background: rgba($primary-accent, 0.04);
     }
   }
 
   &__image {
     flex: 0 0 auto;
-    max-width: 400px;
+    width: min(100%, 400px);
     position: relative;
 
     img {
       width: 100%;
       height: auto;
+      aspect-ratio: 1 / 1;
       display: block;
-      filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.1));
+      filter: drop-shadow(0 12px 24px rgba(12, 74, 110, 0.12));
       position: relative;
       z-index: 2;
     }
   }
-
-  &__float-card {
-    position: absolute;
-    z-index: 3;
-    border-radius: $radius;
-    padding: 0.65rem 1.1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-family: $font-heading;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--text-color);
-    box-shadow: $shadow-md;
-    white-space: nowrap;
-
-    i {
-      font-size: 1rem;
-    }
-
-    &--left {
-      bottom: 12%;
-      left: -15%;
-      animation: float-card 5s ease-in-out infinite;
-      i {
-        color: $green;
-      }
-    }
-    &--right {
-      top: 8%;
-      right: -10%;
-      animation: float-card 5s ease-in-out infinite;
-      animation-delay: 2.5s;
-      i {
-        color: $primary;
-      }
-    }
-  }
 }
 
-@keyframes float-card {
+@keyframes cl-float-bubble {
   0%,
   100% {
-    transform: translateY(0);
+    transform: translate(0, 0);
   }
   50% {
-    transform: translateY(-10px);
+    transform: translate(8px, -14px);
   }
 }
 
-@keyframes float-bubble {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(10px, -15px) scale(1.03);
-  }
-  66% {
-    transform: translate(-8px, 8px) scale(0.97);
+@media (prefers-reduced-motion: reduce) {
+  .cl-hero__bubble {
+    animation: none;
   }
 }
 
@@ -225,27 +167,26 @@ cleansia-hero {
 // =============================
 :root.dark-mode {
   .cl-hero {
-    background: linear-gradient(
-      135deg,
-      #0f172a 0%,
-      #1e293b 40%,
-      rgba(56, 189, 248, 0.06) 100%
-    );
+    background: linear-gradient(160deg, #082f49 0%, #0f172a 65%);
   }
 
   .cl-hero__tagline {
-    background: rgba(56, 189, 248, 0.1);
-    border-color: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+  }
+
+  .cl-hero__trust-item {
+    background: rgba(30, 41, 59, 0.75);
+    border-color: rgba(56, 189, 248, 0.25);
+    color: #e2e8f0;
+
+    i {
+      color: #38bdf8;
+    }
   }
 
   .cl-hero__bubble {
-    background: rgba(56, 189, 248, 0.04);
-    border-color: rgba(56, 189, 248, 0.06);
-  }
-
-  .cl-hero__float-card {
-    background: #1e293b;
-    border: 1px solid #334155;
+    background: rgba(56, 189, 248, 0.06);
+    border-color: rgba(56, 189, 248, 0.1);
   }
 }
 
@@ -254,11 +195,14 @@ cleansia-hero {
 // =============================
 @media (max-width: 768px) {
   .cl-hero {
-    padding: 4rem 1.5rem 7rem;
+    padding: 4rem 1.5rem 6rem;
     &__inner {
       flex-direction: column;
       text-align: center;
       gap: 2.5rem;
+    }
+    &__tagline {
+      align-self: center;
     }
     &__subtitle {
       margin-left: auto;
@@ -271,10 +215,7 @@ cleansia-hero {
       justify-content: center;
     }
     &__image {
-      max-width: 260px;
-    }
-    &__float-card {
-      display: none;
+      width: min(100%, 260px);
     }
   }
 }

@@ -1,175 +1,124 @@
 @use './home-variables' as *;
 
 // =============================
-// Process (Professional Roadmap)
+// Process — two horizontal step tracks ("what you do" / "what we do")
 // =============================
-.cl-roadmap {
-  position: relative;
-  max-width: 800px;
+.cl-process {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  max-width: 960px;
   margin: 0 auto;
 
-  &__path {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    pointer-events: none;
+  &__track-label {
+    font-family: $font-heading;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: $primary;
+    text-align: center;
+    margin: 0 0 1.5rem;
+  }
 
-    path {
-      stroke: rgba($primary, 0.35);
-      stroke-width: 3;
-    }
-
-    .cl-roadmap__dot {
-      fill: $primary;
-      opacity: 0.4;
-    }
+  &__steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
   }
 
   &__step {
     position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    gap: 1.75rem;
-    margin-bottom: 3.5rem;
+    text-align: center;
 
-    &--1 {
-      justify-content: flex-start;
-      padding-left: 12%;
-    }
-    &--2 {
-      justify-content: flex-end;
-      padding-right: 8%;
-    }
-    &--3 {
-      justify-content: flex-start;
-      padding-left: 6%;
-    }
-    &--4 {
-      justify-content: flex-end;
-      padding-right: 12%;
-    }
-    &--5 {
-      justify-content: flex-start;
-      padding-left: 16%;
-    }
-    &--6 {
-      justify-content: flex-end;
-      padding-right: 10%;
-    }
-
-    &:last-child {
-      margin-bottom: 0;
+    // Progress line between circle centers — spans the grid gap so it meets
+    // the next step's circle instead of stopping at the column edge.
+    &:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      top: 21px;
+      left: calc(50% + 30px);
+      width: calc(100% + 2rem - 60px);
+      height: 2px;
+      border-radius: 1px;
+      background: linear-gradient(90deg, rgba($primary, 0.35), rgba($primary, 0.12));
     }
   }
 
-  &__pin {
-    flex-shrink: 0;
-    width: 56px;
-    height: 56px;
-    position: relative;
+  &__marker {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.1rem;
+  }
+
+  &__num {
     display: flex;
     align-items: center;
     justify-content: center;
-
-    span {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      background: var(--surface-card);
-      border: 2px solid $primary;
-      color: $primary;
-      font-family: $font-heading;
-      font-size: 1.05rem;
-      font-weight: 700;
-      box-shadow: 0 4px 12px rgba($primary, 0.12);
-      transform: none;
-      position: relative;
-      z-index: 2;
-    }
-  }
-
-  &__pin-point {
-    display: none;
-  }
-
-  &__text {
-    max-width: 320px;
-    background: var(--surface-card);
-    border-radius: $radius;
-    padding: 1.25rem 1.5rem;
-    box-shadow: $shadow-card;
-    border: 1px solid var(--surface-border);
-
-    &--left {
-      text-align: right;
-    }
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: $primary;
+    border: 1px solid $primary;
+    color: $white;
+    font-family: $font-heading;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1;
+    flex-shrink: 0;
   }
 
   &__name {
     font-family: $font-heading;
-    font-size: 1.05rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-color);
-    margin: 0 0 0.35rem;
+    margin: 0 0 0.4rem;
   }
 
   &__desc {
-    font-size: 0.88rem;
-    color: var(--text-color-secondary);
+    font-size: 0.9rem;
+    color: var(--cl-text-secondary);
     line-height: 1.65;
     margin: 0;
   }
 }
 
 // =============================
-// Responsive — Process
+// Dark Mode — Process
 // =============================
-@media (max-width: 1024px) {
-  .cl-roadmap {
-    &__path {
-      display: none;
-    }
-
-    &__step {
-      padding-left: 0 !important;
-      padding-right: 0 !important;
-      justify-content: flex-start !important;
-    }
-
-    &__text--left {
-      text-align: left;
-    }
+:root.dark-mode {
+  .cl-process__track-label {
+    color: #38bdf8;
+  }
+  .cl-process__step:not(:last-child)::before {
+    background: linear-gradient(90deg, rgba(56, 189, 248, 0.4), rgba(56, 189, 248, 0.12));
+  }
+  .cl-process__num {
+    background: #0ea5e9;
+    border-color: #38bdf8;
+    color: #ffffff;
   }
 }
 
+// =============================
+// Responsive — Process
+// =============================
 @media (max-width: 768px) {
-  .cl-roadmap {
-    &__path {
+  .cl-process {
+    gap: 2.5rem;
+
+    &__steps {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    &__step:not(:last-child)::before {
       display: none;
     }
 
-    &__step {
-      padding-left: 0 !important;
-      padding-right: 0 !important;
-      justify-content: center !important;
-      margin-bottom: 2.5rem;
-    }
-
-    &__text,
-    &__text--left {
-      text-align: left;
-    }
-    &__pin span {
-      width: 48px;
-      height: 48px;
-      font-size: 1rem;
+    &__marker {
+      margin-bottom: 0.75rem;
     }
   }
 }

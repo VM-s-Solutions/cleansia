@@ -126,11 +126,19 @@
       "reset": "Reset",
       "retry": "Retry",
       "go_back": "Go Back",
-      "go_home": "Go to Home"
+      "go_home": "Go to Home",
+      "remove": "Remove"
     },
     "user": {
       "remember_me": "Remember me"
-    }
+    },
+    "cancel": "Cancel",
+    "next_page": "Next page",
+    "no_data": "No data to display",
+    "of": "of",
+    "page": "Page {{page}}",
+    "previous_page": "Previous page",
+    "rows_per_page": "Rows per page"
   },
   "auth": {
     "login": {
@@ -430,6 +438,8 @@
         "title": "How it works",
         "badge": "How It Works",
         "subtitle": "A few clicks, a clear price and professional cleaning right at your home.",
+        "you_do": "What you do",
+        "we_do": "What we do",
         "step1": "Choose a service",
         "step1_desc": "Household cleaning, upholstery cleaning or regular care. Exactly according to your needs.",
         "step2": "Enter details",
@@ -450,10 +460,14 @@
       "benefits": {
         "title": "What you get with our service",
         "badge": "The Difference",
-        "b1": "Less worries — You can place your order online without delays, calls and unnecessary negotiations.",
-        "b2": "More time for yourself — We will take care of the cleaning for you, while you can focus on more important things.",
-        "b3": "Professional approach — Experienced team, proven procedures and attention to detail.",
-        "b4": "Clean and fresh home — Results that can be seen and felt."
+        "b1_title": "Less worries",
+        "b1_desc": "You can place your order online without delays, calls and unnecessary negotiations.",
+        "b2_title": "More time for yourself",
+        "b2_desc": "We will take care of the cleaning for you, while you can focus on more important things.",
+        "b3_title": "Professional approach",
+        "b3_desc": "Experienced team, proven procedures and attention to detail.",
+        "b4_title": "Clean and fresh home",
+        "b4_desc": "Results that can be seen and felt."
       },
       "extra_services": {
         "s1": {
@@ -524,6 +538,7 @@
         "title": "Frequently Asked Questions",
         "badge": "FAQ",
         "desc": "Can't find the answer you're looking for? Get in touch with our team and we'll be happy to help.",
+        "contact_button": "Contact Us",
         "q1": {
           "question": "Do you also travel outside Prague?",
           "answer": "Yes, we cover surrounding areas up to approximately 30 km from Prague. For more distant locations, contact us — we will find a solution."
@@ -1206,6 +1221,7 @@
     },
     "order_lookup": {
       "title": "Look up your order",
+      "subtitle": "Enter your confirmation code and the email you used for booking — we'll find your order.",
       "confirmation_code": "Confirmation code",
       "email": "Email used for booking",
       "submit": "Find my order",
@@ -1272,6 +1288,37 @@
       "suggestion_url": "Check the URL for typos",
       "suggestion_contact": "Contact us if the problem persists",
       "go_home": "Go to Home"
+    },
+    "availability": {
+      "add_time_slot": "Add Time Slot",
+      "apply": "Apply",
+      "custom": "Custom",
+      "edit_hours": "Edit Hours",
+      "end_time": "End Time",
+      "legend_custom": "Custom hours",
+      "legend_off": "Day off",
+      "legend_working": "Working",
+      "mark_exception": "Mark as Exception",
+      "mark_unavailable": "This day will be marked as unavailable.",
+      "mon_fri_9_5": "Mon-Fri 9-5",
+      "mon_sat_8_4": "Mon-Sat 8-4",
+      "no_days_selected": "Select working days to set up your schedule",
+      "quick_setup": "Quick Setup",
+      "remove_exception": "Remove Exception",
+      "schedule_setup": "Schedule Setup",
+      "schedule_setup_desc": "Select working days and set your hours.",
+      "set_custom_hours": "Set custom hours",
+      "start_time": "Start Time",
+      "weekly_schedule": "Weekly Schedule",
+      "working_days": "Working Days",
+      "working_hours": "Working Hours"
+    },
+    "file": {
+      "accepted": "Accepted",
+      "click_to_select": "Click to select files",
+      "max_size": "Max size",
+      "or_drag_drop": "or drag and drop",
+      "selected_files": "Selected Files"
     }
   },
   "validation": {
@@ -1288,7 +1335,17 @@
       "phone_number": "Invalid phone number format",
       "confirm_password": "Passwords do not match",
       "no_whitespace": "Field cannot contain whitespace characters",
-      "zip_code": "Invalid zip code format"
+      "zip_code": "Invalid zip code format",
+      "alphabetic_only": "Field must contain only alphabetic characters",
+      "alphanumeric_only": "Field must contain only alphanumeric characters",
+      "iban": "Invalid IBAN format",
+      "lower_threshold_incorrect_range": "Lower value is out of the allowed range",
+      "max": "Value must be at most {{ max }}",
+      "min": "Value must be at least {{ min }}",
+      "national_id": "Invalid national ID format",
+      "tax_id": "Invalid tax ID format",
+      "upper_threshold_incorrect_range": "Upper value is out of the allowed range",
+      "url": "Invalid URL format"
     },
     "file": {
       "required": "Files are required",
@@ -1643,5 +1700,9 @@
     "increase_rooms": "Increase rooms",
     "decrease_bathrooms": "Decrease bathrooms",
     "increase_bathrooms": "Increase bathrooms"
+  },
+  "help": {
+    "dismiss": "Got it, don't show again",
+    "show_help": "Show Help"
   }
 }

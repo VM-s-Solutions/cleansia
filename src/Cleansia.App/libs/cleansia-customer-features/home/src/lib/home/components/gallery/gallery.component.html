@@ -16,10 +16,10 @@
           (touchstart)="onSliderTouchStart($event, pair.id)"
         >
           <div class="cl-slider__after">
-            <img [src]="pair.after" [alt]="pair.label + ' - After'" loading="lazy" />
+            <img [src]="pair.after" [alt]="pair.label + ' - After'" width="800" height="600" loading="lazy" />
           </div>
           <div class="cl-slider__before" [style.width.%]="getSliderPosition(pair.id)">
-            <img [src]="pair.before" [alt]="pair.label + ' - Before'" loading="lazy" />
+            <img [src]="pair.before" [alt]="pair.label + ' - Before'" width="800" height="600" loading="lazy" />
           </div>
           <div class="cl-slider__divider" [style.left.%]="getSliderPosition(pair.id)">
             <div class="cl-slider__handle">

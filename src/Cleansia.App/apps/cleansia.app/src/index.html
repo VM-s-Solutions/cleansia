@@ -18,22 +18,22 @@
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Cleansia - Professional cleaning services in Prague and surroundings. Book your cleaning today!" />
-    <link rel="icon" type="image/x-icon" href="assets/logos/Logo.ico" />
+    <link rel="icon" type="image/png" href="assets/logos/favicon-32.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- display=optional: text renders immediately with the metric-compatible
+         fallback and never reflows when the web font arrives (zero CLS). -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Poppins:wght@500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Poppins:wght@500;600;700&display=optional"
       rel="stylesheet"
       media="print"
       onload="this.media='all'"
     />
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet" /></noscript>
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Poppins:wght@500;600;700&display=optional" rel="stylesheet" /></noscript>
     <!-- Font Awesome removed — using PrimeIcons instead -->
-    <link
-      rel="preload"
-      as="style"
-      href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@6.6.6/css/flag-icons.min.css"
-    />
+    <!-- CDN stylesheets load async via the media="print" swap. No rel=preload
+         here on purpose: preload forces HIGH priority, which starves the
+         LCP hero image on slow connections. -->
     <link
       rel="stylesheet"
       media="print"
@@ -47,11 +47,6 @@
     /></noscript>
 
     <link
-      rel="preload"
-      as="style"
-      href="https://cdn.jsdelivr.net/npm/primeflex@4.0.0/primeflex.min.css"
-    />
-    <link
       rel="stylesheet"
       media="print"
       onload="this.media='all'"
@@ -62,11 +57,6 @@
         rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/primeflex@4.0.0/primeflex.min.css"
     /></noscript>
-    <link
-      rel="preload"
-      as="style"
-      href="https://cdn.jsdelivr.net/npm/primeicons@7.0.0/primeicons.css"
-    />
     <link
       rel="stylesheet"
       media="print"

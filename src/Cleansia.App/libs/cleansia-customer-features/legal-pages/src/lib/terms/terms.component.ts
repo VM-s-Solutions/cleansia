@@ -1,11 +1,10 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { CleansiaTitleComponent } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'cleansia-customer-terms',
   standalone: true,
-  imports: [TranslatePipe, CleansiaTitleComponent],
+  imports: [TranslatePipe],
   templateUrl: './terms.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

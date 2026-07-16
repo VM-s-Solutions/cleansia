@@ -2,7 +2,15 @@
   <div class="cl-section__inner">
     <div class="cl-benefits">
       <div class="cl-benefits__image animate-on-scroll from-left">
-        <img src="assets/images/mascot/mascot-idea.png" alt="Cleaning illustration" loading="lazy" />
+        <img
+          src="assets/images/mascot/mascot-idea.webp"
+          srcset="assets/images/mascot/mascot-idea-480.webp 480w, assets/images/mascot/mascot-idea.webp 720w"
+          sizes="(max-width: 768px) 240px, 360px"
+          alt="Cleaning illustration"
+          width="720"
+          height="720"
+          loading="lazy"
+        />
       </div>
       <div class="cl-benefits__content">
         <div class="cl-section__header cl-section__header--left animate-on-scroll">
@@ -13,25 +21,29 @@
           <div class="cl-benefits__card animate-on-scroll delay-1">
             <div class="cl-benefits__card-num">01</div>
             <div class="cl-benefits__card-body">
-              <p class="cl-benefits__card-text">{{ 'pages.home.benefits.b1' | translate }}</p>
+              <h3 class="cl-benefits__card-title">{{ 'pages.home.benefits.b1_title' | translate }}</h3>
+              <p class="cl-benefits__card-text">{{ 'pages.home.benefits.b1_desc' | translate }}</p>
             </div>
           </div>
           <div class="cl-benefits__card animate-on-scroll delay-2">
             <div class="cl-benefits__card-num">02</div>
             <div class="cl-benefits__card-body">
-              <p class="cl-benefits__card-text">{{ 'pages.home.benefits.b2' | translate }}</p>
+              <h3 class="cl-benefits__card-title">{{ 'pages.home.benefits.b2_title' | translate }}</h3>
+              <p class="cl-benefits__card-text">{{ 'pages.home.benefits.b2_desc' | translate }}</p>
             </div>
           </div>
           <div class="cl-benefits__card animate-on-scroll delay-3">
             <div class="cl-benefits__card-num">03</div>
             <div class="cl-benefits__card-body">
-              <p class="cl-benefits__card-text">{{ 'pages.home.benefits.b3' | translate }}</p>
+              <h3 class="cl-benefits__card-title">{{ 'pages.home.benefits.b3_title' | translate }}</h3>
+              <p class="cl-benefits__card-text">{{ 'pages.home.benefits.b3_desc' | translate }}</p>
             </div>
           </div>
           <div class="cl-benefits__card animate-on-scroll delay-4">
             <div class="cl-benefits__card-num">04</div>
             <div class="cl-benefits__card-body">
-              <p class="cl-benefits__card-text">{{ 'pages.home.benefits.b4' | translate }}</p>
+              <h3 class="cl-benefits__card-title">{{ 'pages.home.benefits.b4_title' | translate }}</h3>
+              <p class="cl-benefits__card-text">{{ 'pages.home.benefits.b4_desc' | translate }}</p>
             </div>
           </div>
         </div>

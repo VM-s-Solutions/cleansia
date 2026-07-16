@@ -19,8 +19,13 @@
 
   &__desc {
     font-size: 0.95rem;
-    color: $text-muted;
+    color: var(--cl-text-secondary);
     line-height: 1.8;
+    margin: 0 0 1.5rem;
+  }
+
+  &__cta {
+    margin-top: 0;
   }
 
   &__right {
@@ -31,7 +36,7 @@
 
 .cl-faq__answer {
   font-size: 0.95rem;
-  color: $text-muted;
+  color: var(--cl-text-secondary);
   line-height: 1.7;
   margin: 0;
 }
@@ -42,14 +47,23 @@
 @media (max-width: 1024px) {
   .cl-faq-layout {
     flex-direction: column;
+    align-items: center;
     gap: 2rem;
     &__left {
       flex: none;
       position: static;
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
       text-align: center;
       .cl-title {
         text-align: center;
       }
+    }
+    &__right {
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto;
     }
   }
 }
@@ -68,27 +82,36 @@
     color: #94a3b8;
   }
 
+  // Same flat divider list as light mode — no card boxes, text stays on one
+  // left edge (header and answer share PrimeNG's panel padding).
   .cl-section--faq {
     .p-accordion {
       .p-accordionpanel {
-        background: #1e293b;
-        border: 1px solid #334155;
-        border-radius: 1rem;
-        margin-bottom: 0.5rem;
+        background: transparent;
+        border: 0;
+        border-bottom: 1px solid #334155;
+        border-radius: 0;
+        margin-bottom: 0;
+
+        &:last-child {
+          border-bottom: 0;
+        }
       }
 
       .p-accordionheader {
         background: transparent;
         color: #e2e8f0;
+        text-align: left;
 
         &:hover {
-          background: rgba(255, 255, 255, 0.04);
+          background: transparent;
+          color: #7dd3fc;
         }
       }
 
       .p-accordioncontent-content {
         background: transparent;
-        border-top: 1px solid #334155;
+        border: 0;
       }
     }
   }

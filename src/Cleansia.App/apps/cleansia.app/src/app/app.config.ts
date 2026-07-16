@@ -20,6 +20,7 @@ import {
   PLATFORM_ID,
   provideZoneChangeDetection,
 } from '@angular/core';
+import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, Router, withInMemoryScrolling } from '@angular/router';
@@ -55,6 +56,10 @@ registerLocaleData(localeRu);
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
+    // Reuse the server-rendered DOM instead of destroying and re-rendering it
+    // on bootstrap — without this every SSR page repaints from scratch (huge
+    // layout shift). Also transfer-caches SSR HTTP responses into the page.
+    provideClientHydration(withEventReplay()),
     provideRouter(appRoutes, withInMemoryScrolling({ scrollPositionRestoration: 'top' })),
     provideAnimationsAsync(),
     providePrimeNG({

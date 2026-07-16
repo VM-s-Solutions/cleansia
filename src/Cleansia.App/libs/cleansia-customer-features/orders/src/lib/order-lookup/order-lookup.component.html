@@ -1,6 +1,20 @@
-<div class="track-order">
-  <cleansia-title [title]="'pages.order_lookup.title' | translate" />
+<!-- Hero band — same visual language as the track-order page (shared styles) -->
+<section class="track-order__hero">
+  <div class="track-order__hero-bubble track-order__hero-bubble--1" aria-hidden="true"></div>
+  <div class="track-order__hero-bubble track-order__hero-bubble--2" aria-hidden="true"></div>
+  <div class="track-order__hero-bubble track-order__hero-bubble--3" aria-hidden="true"></div>
+  <div class="track-order__hero-inner">
+    <h1 class="track-order__title">{{ 'pages.order_lookup.title' | translate }}</h1>
+    <p class="track-order__subtitle">{{ 'pages.order_lookup.subtitle' | translate }}</p>
+  </div>
+  <div class="track-order__hero-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
+      <path d="M0,40 C280,100 720,0 1440,60 L1440,100 L0,100 Z" />
+    </svg>
+  </div>
+</section>
 
+<div class="track-order">
   <div class="track-order__form-card">
     <div class="track-order__form">
       <div class="track-order__field">

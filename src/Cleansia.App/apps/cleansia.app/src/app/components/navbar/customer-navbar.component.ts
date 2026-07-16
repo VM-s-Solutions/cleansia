@@ -209,6 +209,14 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
     this.userMenuOpen.set(false);
   }
 
+  // Links are real routerLink anchors (crawlable hrefs); this only has to
+  // cover the same-URL click, where no NavigationEnd fires to close menus.
+  closeMenus(): void {
+    this.mobileMenuOpen.set(false);
+    this.userMenuOpen.set(false);
+    this.settingsMenuOpen.set(false);
+  }
+
   logout(): void {
     this.userMenuOpen.set(false);
     this.dialogService

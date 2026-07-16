@@ -14,8 +14,6 @@ $green: #16a34a;
 $border: #e2e8f0;
 $bg-alt: #f8fafc;
 $white: #ffffff;
-$shadow-card: 0 2px 16px rgba(0, 0, 0, 0.06);
-$shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.1);
 $max-width: 1200px;
 $font-heading: 'Poppins', sans-serif;
 
@@ -24,65 +22,115 @@ $font-heading: 'Poppins', sans-serif;
   margin: 0 auto;
   padding: 0 2rem 6rem;
 
-  // ─── HERO HEADER ───
+  // ─── HERO HEADER (full-bleed band, matches the track-order page) ───
   &__hero {
+    position: relative;
+    overflow: hidden;
     text-align: center;
-    padding: 3rem 1rem 2.5rem;
-    margin-bottom: 2rem;
-    background: linear-gradient(180deg, $primary-lighter 0%, transparent 100%);
-    border-radius: 0 0 2rem 2rem;
+    padding: 4rem 2rem 5.5rem;
+    background: $primary-lighter;
+    z-index: 1;
+  }
+
+  &__hero-inner {
+    position: relative;
+    z-index: 2;
+    max-width: $max-width;
+    margin: 0 auto;
   }
 
   &__hero-title {
     font-family: $font-heading;
-    font-size: clamp(1.8rem, 4vw, 2.75rem);
-    font-weight: 700;
-    background: linear-gradient(135deg, $text-heading 0%, $primary 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-size: clamp(1.6rem, 3.5vw, 2.25rem);
+    font-weight: 600;
+    color: $text-dark;
     letter-spacing: -0.02em;
-    line-height: 1.2;
+    line-height: 1.25;
     margin: 0 0 1rem !important;
   }
 
   &__hero-subtitle {
     font-size: clamp(0.95rem, 1.5vw, 1.1rem);
-    color: $text-muted;
+    color: var(--cl-text-secondary);
     max-width: 600px;
-    margin: 0 auto 2rem !important;
-    line-height: 1.8;
+    margin: 0 auto 1.5rem !important;
+    line-height: 1.7;
     text-align: center;
   }
 
   &__hero-badges {
     display: flex;
     justify-content: center;
-    gap: 1rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
   }
 
+  // Chips matching the home hero trust badges — whole badge wraps as one unit
   &__hero-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.45rem 1.25rem;
-    background: linear-gradient(
-      135deg,
-      rgba($primary, 0.08),
-      rgba($primary, 0.15)
-    );
-    border: 1px solid rgba($primary, 0.1);
-    border-radius: 2rem;
-    font-family: $font-heading;
-    font-size: 0.75rem;
+    gap: 0.45rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    background: rgba($white, 0.75);
+    border: 1px solid rgba($primary, 0.18);
+    font-size: 0.82rem;
     font-weight: 600;
-    color: $primary;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    color: $text-heading;
+    white-space: nowrap;
 
     i {
+      color: $primary;
       font-size: 0.9rem;
+    }
+  }
+
+  &__hero-bubble {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba($primary, 0.05);
+    border: 1px solid rgba($primary, 0.07);
+    z-index: 0;
+    animation: cl-float-bubble 12s ease-in-out infinite;
+
+    &--1 {
+      width: 150px;
+      height: 150px;
+      top: -30px;
+      right: -20px;
+    }
+    &--2 {
+      width: 90px;
+      height: 90px;
+      top: 40%;
+      left: -30px;
+      animation-delay: -4s;
+    }
+    &--3 {
+      width: 60px;
+      height: 60px;
+      bottom: 18%;
+      right: 14%;
+      animation-delay: -8s;
+    }
+  }
+
+  &__hero-wave {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    line-height: 0;
+    z-index: 1;
+
+    svg {
+      width: 100%;
+      height: 40px;
+      display: block;
+
+      path {
+        fill: var(--surface-ground);
+      }
     }
   }
 
@@ -118,7 +166,6 @@ $font-heading: 'Poppins', sans-serif;
     cursor: default;
     flex-shrink: 0;
     position: relative;
-    transition: transform 0.2s ease;
 
     &:disabled {
       cursor: default;
@@ -127,28 +174,16 @@ $font-heading: 'Poppins', sans-serif;
     &:focus-visible {
       outline: 2px solid $primary;
       outline-offset: 2px;
-      border-radius: 0.5rem;
+      border-radius: 0.75rem;
     }
 
     &--completed {
       cursor: pointer;
 
       &:hover {
-        transform: translateY(-2px);
-
-        .order-wizard__stepper-icon {
-          box-shadow: 0 4px 12px rgba($green, 0.35);
-        }
-
         .order-wizard__stepper-label {
           color: color-mix(in srgb, $green, black 10%);
         }
-      }
-    }
-
-    &--active {
-      .order-wizard__stepper-icon {
-        box-shadow: 0 4px 16px rgba($primary, 0.3);
       }
     }
   }
@@ -167,17 +202,15 @@ $font-heading: 'Poppins', sans-serif;
     transition: all 0.3s ease;
 
     .order-wizard__stepper-item--active & {
-      background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+      background: $primary;
       border-color: $primary;
       color: $white;
-      box-shadow: 0 4px 16px rgba($primary, 0.3);
     }
 
     .order-wizard__stepper-item--completed & {
       background: $green;
       border-color: $green;
       color: $white;
-      box-shadow: 0 0 0 3px rgba($green, 0.2), 0 2px 8px rgba($green, 0.25);
     }
   }
 
@@ -235,34 +268,30 @@ $font-heading: 'Poppins', sans-serif;
 
   // ─── SECTIONS ───
   &__section {
-    background: $white;
-    border: 1px solid $border;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
     border-radius: 1rem;
     padding: 2rem;
-    box-shadow: $shadow-card;
   }
 
   &__section-title {
     font-family: $font-heading;
     font-size: 1.25rem;
     font-weight: 700;
-    background: linear-gradient(135deg, $text-heading 0%, $primary 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: $text-dark;
     display: flex;
     align-items: center;
     gap: 0.75rem;
     margin: 0 0 1.5rem !important;
 
     i {
-      -webkit-text-fill-color: $primary;
+      color: $primary;
       font-size: 1.2rem;
     }
   }
 
   &__section-note {
-    color: $text-muted;
+    color: var(--cl-text-secondary);
     font-size: 0.9rem;
     margin: -1rem 0 1.5rem !important;
   }
@@ -278,7 +307,7 @@ $font-heading: 'Poppins', sans-serif;
 
   &__filter-label {
     font-size: 0.85rem;
-    color: $text-muted;
+    color: var(--cl-text-secondary);
     font-weight: 600;
     flex-shrink: 0;
   }
@@ -306,9 +335,9 @@ $font-heading: 'Poppins', sans-serif;
     align-items: center;
     gap: 0.4rem;
     padding: 0.45rem 0.95rem;
-    border-radius: 999px;
-    border: 1.5px solid $border;
-    background: $white;
+    border-radius: 0.75rem;
+    border: 1.5px solid var(--surface-border);
+    background: var(--surface-card);
     color: $text-body;
     font-size: 0.85rem;
     font-weight: 600;
@@ -322,19 +351,19 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     &:hover {
-      border-color: $primary-accent;
+      border-color: rgba($primary, 0.35);
       color: $primary-dark;
     }
 
     &--selected {
-      background: $primary;
-      border-color: $primary;
-      color: $white;
+      background: $primary-lighter;
+      border-color: rgba($primary, 0.3);
+      color: $primary;
 
       &:hover {
-        background: $primary-dark;
-        border-color: $primary-dark;
-        color: $white;
+        background: $primary-lighter;
+        border-color: $primary;
+        color: $primary-dark;
       }
     }
   }
@@ -345,7 +374,7 @@ $font-heading: 'Poppins', sans-serif;
     gap: 0.5rem;
     margin: 0 0 1rem;
     padding: 0.5rem 0.85rem;
-    border-radius: 0.6rem;
+    border-radius: 0.75rem;
     background: $primary-lighter;
     color: $text-heading;
     font-size: 0.85rem;
@@ -366,9 +395,9 @@ $font-heading: 'Poppins', sans-serif;
     gap: 0.3rem;
     margin-left: 0.4rem;
     padding: 0.25rem 0.6rem;
-    border-radius: 999px;
+    border-radius: 0.75rem;
     border: 1px solid rgba($primary, 0.25);
-    background: $white;
+    background: transparent;
     color: $primary;
     font-size: 0.75rem;
     font-weight: 600;
@@ -380,16 +409,19 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     &:hover {
-      background: $primary;
-      color: $white;
-      border-color: $primary;
+      background: rgba($primary, 0.07);
+      color: $primary-dark;
+      border-color: $primary-dark;
     }
   }
 
   // ─── SELECTION CARDS (Services & Packages) ───
+  // Horizontal cards matching the services-catalog card language: icon block
+  // left, left-aligned content, price footer pinned to the bottom, and an
+  // always-visible checkbox ring top-right that fills when selected.
   &__card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1rem;
     align-items: stretch;
   }
@@ -401,21 +433,20 @@ $font-heading: 'Poppins', sans-serif;
     width: 100%;
     position: relative;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 1rem 0.75rem;
-    border: 2px solid $border;
-    border-radius: 0.875rem;
+    align-items: flex-start;
+    text-align: left;
+    gap: 1rem;
+    padding: 1.25rem;
+    padding-right: 3.25rem; // clears the checkbox ring
+    border: 1px solid var(--surface-border);
+    border-radius: 1rem;
     cursor: pointer;
-    transition: all 0.25s ease;
-    background: $white;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    background: var(--surface-card);
     height: 100%;
 
     &:hover {
-      border-color: $primary-accent;
-      box-shadow: $shadow-hover;
-      transform: translateY(-2px);
+      border-color: rgba($primary, 0.35);
     }
 
     &:focus-visible {
@@ -426,76 +457,99 @@ $font-heading: 'Poppins', sans-serif;
     &--selected {
       border-color: $primary;
       background: $primary-lighter;
-      box-shadow: 0 4px 20px rgba($primary, 0.15);
+      // 1px ring on top of the 1px border — reads as a 2px selected border
+      // without shifting the card contents.
+      box-shadow: 0 0 0 1px $primary;
     }
   }
 
+  // Empty ring = "you can pick me"; fills with the brand color when selected.
   &__selection-check {
     position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
-    width: 28px;
-    height: 28px;
+    top: 1rem;
+    right: 1rem;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: $primary;
-    color: $white;
+    border: 2px solid var(--surface-border);
+    background: transparent;
+    color: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+
+    .order-wizard__selection-card--selected & {
+      background: $primary;
+      border-color: $primary;
+      color: $white;
+    }
   }
 
   &__selection-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: linear-gradient(
-      135deg,
-      $primary-lighter 0%,
-      $primary-light 100%
-    );
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: 0.75rem;
+    background: $primary-lighter;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 0.625rem !important;
 
     i {
-      font-size: 1.2rem;
+      font-size: 1.25rem;
       color: $primary;
     }
+
+    // The card tint would swallow the icon block — bump it one shade.
+    .order-wizard__selection-card--selected & {
+      background: $primary-light;
+    }
+  }
+
+  &__selection-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
   }
 
   &__selection-name {
     font-family: $font-heading;
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 600;
-    color: $text-heading;
+    color: var(--text-color);
     margin: 0 0 0.35rem !important;
   }
 
   &__selection-desc {
-    font-size: 0.8rem;
-    color: $text-muted;
-    line-height: 1.45;
-    margin: 0 0 0.625rem !important;
+    font-size: 0.85rem;
+    color: var(--cl-text-secondary);
+    line-height: 1.55;
+    margin: 0 0 0.9rem !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   &__selection-included {
     list-style: none;
     padding: 0;
-    margin: 0.5rem 0 1rem;
-    flex: 1;
+    margin: 0 0 0.9rem;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: 0.4rem;
+    gap: 0.35rem;
 
     li {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      font-size: 0.85rem;
-      color: $text-muted;
+      font-size: 0.82rem;
+      color: var(--cl-text-secondary);
 
       i {
         color: $green;
@@ -505,19 +559,23 @@ $font-heading: 'Poppins', sans-serif;
   }
 
   &__selection-price {
+    margin-top: auto;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--surface-border);
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
     font-family: $font-heading;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: $primary;
-    margin-top: auto;
   }
 
   &__selection-per-room {
-    display: block;
     font-size: 0.75rem;
     font-weight: 500;
-    color: $text-muted;
-    margin-top: 0.25rem !important;
+    color: var(--cl-text-secondary);
   }
 
   // ─── COUNTERS (+/- buttons) ───
@@ -567,9 +625,9 @@ $font-heading: 'Poppins', sans-serif;
     font-size: 0.9rem;
 
     &:hover:not(:disabled) {
-      background: $primary;
-      color: $white;
-      border-color: $primary;
+      background: rgba($primary, 0.07);
+      color: $primary-dark;
+      border-color: $primary-dark;
     }
 
     &:disabled {
@@ -613,7 +671,7 @@ $font-heading: 'Poppins', sans-serif;
     background: $white;
 
     &:hover {
-      border-color: $primary-accent;
+      border-color: rgba($primary, 0.35);
     }
 
     &:focus-visible {
@@ -651,7 +709,7 @@ $font-heading: 'Poppins', sans-serif;
 
     span {
       font-size: 0.8rem;
-      color: $text-muted;
+      color: var(--cl-text-secondary);
     }
   }
 
@@ -662,19 +720,12 @@ $font-heading: 'Poppins', sans-serif;
 
   &__saved-address-badge {
     display: inline-block;
-    padding: 0.1rem 0.5rem;
-    background: linear-gradient(
-      135deg,
-      rgba($primary, 0.08),
-      rgba($primary, 0.15)
-    );
-    border-radius: 1rem;
     font-family: $font-heading;
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     font-weight: 600;
     color: $primary;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     width: fit-content;
   }
 
@@ -732,7 +783,7 @@ $font-heading: 'Poppins', sans-serif;
 
     span {
       font-size: 0.8rem;
-      color: $text-muted;
+      color: var(--cl-text-secondary);
     }
   }
 
@@ -742,7 +793,7 @@ $font-heading: 'Poppins', sans-serif;
     border: 1px dashed $border;
     border-radius: 0.75rem;
     background: $bg-alt;
-    color: $text-muted;
+    color: var(--cl-text-secondary);
     font-size: 0.85rem;
     font-style: italic;
   }
@@ -757,7 +808,7 @@ $font-heading: 'Poppins', sans-serif;
     align-items: center;
     margin-top: 0.5rem;
     padding: 0.75rem 0.875rem;
-    border-radius: 0.625rem;
+    border-radius: 0.75rem;
     background: rgba(220, 38, 38, 0.08);
     color: #b91c1c;
     font-size: 0.85rem;
@@ -824,7 +875,7 @@ $font-heading: 'Poppins', sans-serif;
 
   &__time-hint {
     font-size: 0.85rem;
-    color: $text-light;
+    color: var(--cl-text-secondary);
     margin-bottom: 0.5rem;
   }
 
@@ -842,7 +893,7 @@ $font-heading: 'Poppins', sans-serif;
   &__time-slot {
     padding: 0.65rem 0.5rem;
     border: 1px solid $border;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     background: $white;
     color: $text-body;
     font-size: 0.85rem;
@@ -857,7 +908,7 @@ $font-heading: 'Poppins', sans-serif;
 
     // Only apply hover when the button is actually interactable — not disabled.
     &:hover:not(:disabled) {
-      border-color: $primary-accent;
+      border-color: rgba($primary, 0.35);
       background: $primary-lighter;
     }
 
@@ -876,7 +927,6 @@ $font-heading: 'Poppins', sans-serif;
       border-color: $primary;
       color: $white;
       font-weight: 600;
-      box-shadow: 0 2px 8px rgba($primary, 0.3);
 
       &:hover {
         background: $primary-dark;
@@ -911,7 +961,7 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     &--unavailable {
-      color: $text-muted;
+      color: var(--cl-text-secondary);
     }
   }
 
@@ -936,12 +986,11 @@ $font-heading: 'Poppins', sans-serif;
     border: 2px solid $border;
     border-radius: 1rem;
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
     background: $white;
 
     &:hover {
-      border-color: $primary-accent;
-      box-shadow: $shadow-hover;
+      border-color: rgba($primary, 0.35);
     }
 
     &:focus-visible {
@@ -952,7 +1001,6 @@ $font-heading: 'Poppins', sans-serif;
     &--selected {
       border-color: $primary;
       background: $primary-lighter;
-      box-shadow: 0 4px 20px rgba($primary, 0.15);
     }
   }
 
@@ -960,11 +1008,7 @@ $font-heading: 'Poppins', sans-serif;
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: linear-gradient(
-      135deg,
-      $primary-lighter 0%,
-      $primary-light 100%
-    );
+    background: $primary-lighter;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -986,7 +1030,7 @@ $font-heading: 'Poppins', sans-serif;
 
   &__payment-card-desc {
     font-size: 0.85rem;
-    color: $text-muted;
+    color: var(--cl-text-secondary);
     margin: 0 !important;
   }
 
@@ -1009,7 +1053,7 @@ $font-heading: 'Poppins', sans-serif;
   &__summary-card {
     background: $bg-alt;
     border: 1px solid $border;
-    border-radius: 0.75rem;
+    border-radius: 1rem;
     overflow: hidden;
     margin-bottom: 1rem !important;
 
@@ -1061,11 +1105,12 @@ $font-heading: 'Poppins', sans-serif;
     font-weight: 600;
     cursor: pointer;
     padding: 0.25rem 0.75rem;
-    border-radius: 1rem;
+    border-radius: 0.75rem;
     transition: all 0.2s ease;
 
     &:hover {
-      background: $primary-lighter;
+      background: rgba($primary, 0.07);
+      color: $primary-dark;
     }
   }
 
@@ -1093,7 +1138,7 @@ $font-heading: 'Poppins', sans-serif;
   &__summary-card-subtitle {
     margin: 0;
     padding: 0.85rem 1.25rem 0.25rem;
-    color: $text-muted;
+    color: var(--cl-text-secondary);
     font-size: 0.85rem;
     line-height: 1.4;
   }
@@ -1113,20 +1158,15 @@ $font-heading: 'Poppins', sans-serif;
     padding: 0.85rem 1rem;
     border: 1px solid $border;
     background: $white;
-    border-radius: 0.85rem;
+    border-radius: 0.75rem;
     text-align: left;
     cursor: pointer;
     transition:
       background 0.18s ease,
-      border-color 0.18s ease,
-      box-shadow 0.18s ease,
-      transform 0.18s ease;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+      border-color 0.18s ease;
 
     &:hover {
-      border-color: rgba($primary, 0.4);
-      box-shadow: 0 4px 14px rgba($primary, 0.08);
-      transform: translateY(-1px);
+      border-color: rgba($primary, 0.35);
     }
 
     &:focus-visible {
@@ -1137,7 +1177,6 @@ $font-heading: 'Poppins', sans-serif;
     &--selected {
       background: rgba($primary, 0.06);
       border-color: $primary;
-      box-shadow: 0 4px 14px rgba($primary, 0.12);
     }
   }
 
@@ -1180,7 +1219,7 @@ $font-heading: 'Poppins', sans-serif;
 
   &__extra-card-desc {
     font-size: 0.8rem;
-    color: $text-muted;
+    color: var(--cl-text-secondary);
     line-height: 1.4;
   }
 
@@ -1191,7 +1230,7 @@ $font-heading: 'Poppins', sans-serif;
     color: $text-heading;
     background: $bg-alt;
     padding: 0.3rem 0.65rem;
-    border-radius: 999px;
+    border-radius: 0.75rem;
     white-space: nowrap;
     transition:
       background 0.18s ease,
@@ -1272,10 +1311,9 @@ $font-heading: 'Poppins', sans-serif;
   &__cancel-policy-inline {
     margin-top: 1rem;
     padding: 0.85rem 1rem;
-    background: $white;
-    border: 1px solid $border;
-    border-radius: 0.65rem;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 0.75rem;
   }
 
   &__cancel-policy-inline-title {
@@ -1308,17 +1346,16 @@ $font-heading: 'Poppins', sans-serif;
     gap: 0.75rem;
     padding: 0.875rem 1rem;
     border: 1px solid $border;
-    border-radius: 12px;
+    border-radius: 0.75rem;
     background: $white;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease;
     margin-bottom: 0.75rem;
 
     &:hover,
     &:focus-visible {
       background: $primary-lighter;
-      border-color: $primary;
-      box-shadow: $shadow-card;
+      border-color: rgba($primary, 0.35);
       outline: none;
     }
 
@@ -1341,14 +1378,14 @@ $font-heading: 'Poppins', sans-serif;
 
     &-applied {
       font-size: 0.85rem;
-      color: $text-muted;
+      color: var(--cl-text-secondary);
       margin-top: 2px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
 
     &-action {
-      color: $text-muted;
+      color: var(--cl-text-secondary);
       display: inline-flex;
       align-items: center;
     }
@@ -1357,7 +1394,7 @@ $font-heading: 'Poppins', sans-serif;
       background: transparent;
       border: none;
       cursor: pointer;
-      color: $text-muted;
+      color: var(--cl-text-secondary);
       padding: 0.375rem;
       border-radius: 50%;
       display: inline-flex;
@@ -1412,18 +1449,17 @@ $font-heading: 'Poppins', sans-serif;
   }
 
   &__sidebar-card {
-    background: $white;
-    border: 1px solid $border;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
     border-radius: 1rem;
     padding: 1.5rem;
-    box-shadow: $shadow-card;
   }
 
   &__sidebar-title {
     font-family: $font-heading;
     font-size: 0.85rem;
     font-weight: 600;
-    color: $text-muted;
+    color: var(--cl-text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin: 0 0 0.5rem !important;
@@ -1433,15 +1469,12 @@ $font-heading: 'Poppins', sans-serif;
     font-family: $font-heading;
     font-size: 2.25rem;
     font-weight: 700;
-    background: linear-gradient(135deg, $text-heading 0%, $primary 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: $text-dark;
     margin-bottom: 1rem !important;
   }
 
   &__sidebar-breakdown {
-    border-top: 1px solid $border;
+    border-top: 1px solid var(--surface-border);
     padding-top: 1rem;
     margin-bottom: 1rem !important;
   }
@@ -1464,7 +1497,7 @@ $font-heading: 'Poppins', sans-serif;
     &--express {
       margin-top: 0.5rem;
       padding-top: 0.6rem;
-      border-top: 1px dashed $border;
+      border-top: 1px dashed var(--surface-border);
       color: $primary-accent;
 
       span:last-child {
@@ -1478,7 +1511,7 @@ $font-heading: 'Poppins', sans-serif;
     &--discount {
       margin-top: 0.5rem;
       padding-top: 0.6rem;
-      border-top: 1px dashed $border;
+      border-top: 1px dashed var(--surface-border);
       color: $green;
 
       span:last-child {
@@ -1488,7 +1521,7 @@ $font-heading: 'Poppins', sans-serif;
   }
 
   &__sidebar-badges {
-    border-top: 1px solid $border;
+    border-top: 1px solid var(--surface-border);
     padding-top: 1rem;
     display: flex;
     flex-direction: column;
@@ -1501,7 +1534,7 @@ $font-heading: 'Poppins', sans-serif;
     gap: 0.5rem;
     font-size: 0.75rem;
     font-weight: 500;
-    color: $text-muted;
+    color: var(--cl-text-secondary);
 
     i {
       color: $green;
@@ -1516,9 +1549,9 @@ $font-heading: 'Poppins', sans-serif;
     bottom: 0;
     left: 0;
     right: 0;
-    background: $white;
-    border-top: 1px solid $border;
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+    background: var(--surface-card);
+    border-top: 1px solid var(--surface-border);
+    box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.08);
     padding: 0.75rem 1.5rem;
     z-index: 1100;
     flex-direction: column;
@@ -1555,7 +1588,7 @@ $font-heading: 'Poppins', sans-serif;
   &__mobile-price-label {
     font-size: 0.8rem;
     font-weight: 500;
-    color: $text-muted;
+    color: var(--cl-text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -1569,7 +1602,7 @@ $font-heading: 'Poppins', sans-serif;
 
   &__mobile-price-chevron {
     font-size: 0.875rem;
-    color: $text-muted;
+    color: var(--cl-text-secondary);
     transition: transform 0.2s ease;
   }
 
@@ -1618,7 +1651,7 @@ $font-heading: 'Poppins', sans-serif;
 
   &__mobile-price-detail {
     font-size: 0.75rem;
-    color: $text-muted;
+    color: var(--cl-text-secondary);
     padding-left: 0.5rem;
     margin-top: -0.25rem;
   }
@@ -1626,7 +1659,7 @@ $font-heading: 'Poppins', sans-serif;
   // ─── SIDEBAR DETAIL ───
   &__sidebar-detail {
     font-size: 0.75rem;
-    color: $text-muted;
+    color: var(--cl-text-secondary);
     padding-left: 0.5rem;
     margin-top: -0.25rem;
   }
@@ -1652,7 +1685,7 @@ $font-heading: 'Poppins', sans-serif;
     padding: 0 1rem 5rem;
 
     &__hero {
-      padding: 2rem 1rem 2rem;
+      padding: 3rem 1.5rem 4.5rem;
     }
 
     &__hero-title {
@@ -1667,10 +1700,6 @@ $font-heading: 'Poppins', sans-serif;
       width: 36px;
       height: 36px;
       font-size: 0.85rem;
-
-      .order-wizard__stepper-item--completed & {
-        box-shadow: 0 0 0 3px rgba($green, 0.25), 0 2px 8px rgba($green, 0.3);
-      }
     }
 
     &__stepper-item--completed {
@@ -1689,45 +1718,49 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     &__card-grid {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: 1fr;
       gap: 0.75rem;
     }
 
     &__selection-card {
-      padding: 0.75rem 0.5rem;
+      padding: 1rem;
+      padding-right: 2.75rem;
+      gap: 0.75rem;
     }
 
     &__selection-icon {
-      width: 36px;
-      height: 36px;
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
 
       i {
-        font-size: 1rem;
+        font-size: 1.05rem;
       }
     }
 
     &__selection-name {
-      font-size: 0.8rem;
-    }
-
-    &__selection-desc {
-      font-size: 0.7rem;
-      margin-bottom: 0.4rem !important;
-    }
-
-    &__selection-price {
       font-size: 0.9rem;
     }
 
+    &__selection-desc {
+      font-size: 0.78rem;
+      margin-bottom: 0.6rem !important;
+    }
+
+    &__selection-price {
+      font-size: 0.95rem;
+      padding-top: 0.6rem;
+    }
+
     &__selection-per-room {
-      font-size: 0.65rem;
+      font-size: 0.68rem;
     }
 
     &__selection-check {
       width: 22px;
       height: 22px;
-      top: 0.5rem;
-      right: 0.5rem;
+      top: 0.75rem;
+      right: 0.75rem;
       font-size: 0.65rem;
     }
 
@@ -1795,29 +1828,36 @@ $font-heading: 'Poppins', sans-serif;
 :root.dark-mode {
   .order-wizard {
     &__hero {
-      background: linear-gradient(
-        180deg,
-        rgba(56, 189, 248, 0.04) 0%,
-        transparent 100%
-      );
+      background: #0f172a;
     }
 
     &__hero-title,
     &__section-title,
     &__sidebar-price {
-      background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
+      color: #e2e8f0;
+    }
+
+    &__section-title i {
+      color: #38bdf8;
     }
 
     &__hero-badge {
-      background: linear-gradient(
-        135deg,
-        rgba(56, 189, 248, 0.1),
-        rgba(56, 189, 248, 0.18)
-      );
-      border-color: rgba(56, 189, 248, 0.15);
-      color: #38bdf8;
+      background: rgba(30, 41, 59, 0.75);
+      border-color: rgba(56, 189, 248, 0.25);
+      color: #e2e8f0;
+
+      i {
+        color: #38bdf8;
+      }
+    }
+
+    &__hero-bubble {
+      background: rgba(56, 189, 248, 0.04);
+      border-color: rgba(56, 189, 248, 0.06);
+    }
+
+    &__hero-wave svg path {
+      fill: var(--surface-ground);
     }
 
     &__section {
@@ -1836,14 +1876,14 @@ $font-heading: 'Poppins', sans-serif;
       }
 
       &--selected {
-        background: #38bdf8;
-        border-color: #38bdf8;
-        color: #0c1119;
+        background: rgba(56, 189, 248, 0.1);
+        border-color: rgba(56, 189, 248, 0.25);
+        color: #38bdf8;
 
         &:hover {
-          background: #7dd3fc;
-          border-color: #7dd3fc;
-          color: #0c1119;
+          background: rgba(56, 189, 248, 0.1);
+          border-color: #38bdf8;
+          color: #7dd3fc;
         }
       }
     }
@@ -1863,9 +1903,15 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     &__filter-clear {
-      background: #172033;
+      background: transparent;
       border-color: rgba(56, 189, 248, 0.3);
       color: #7dd3fc;
+
+      &:hover {
+        background: rgba(56, 189, 248, 0.1);
+        border-color: #7dd3fc;
+        color: #7dd3fc;
+      }
     }
 
     &__stepper-icon {
@@ -1874,13 +1920,27 @@ $font-heading: 'Poppins', sans-serif;
       color: #64748b;
     }
 
-    &__stepper-item--completed &__stepper-icon {
+    // NOTE: a doubled `&` here would re-inject `:root.dark-mode` as a
+    // descendant and the selector would never match — spell out the inner
+    // class names instead.
+    &__stepper-item--active .order-wizard__stepper-icon {
+      background: #0ea5e9;
+      border-color: #38bdf8;
+      color: #ffffff;
+      box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.25);
+    }
+
+    &__stepper-item--active .order-wizard__stepper-label {
+      color: #7dd3fc;
+    }
+
+    &__stepper-item--completed .order-wizard__stepper-icon {
       background: #15803d;
       border-color: #16a34a;
       color: #ffffff;
     }
 
-    &__stepper-item--completed &__stepper-label {
+    &__stepper-item--completed .order-wizard__stepper-label {
       color: #4ade80;
     }
 
@@ -1916,11 +1976,6 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     &__saved-address-badge {
-      background: linear-gradient(
-        135deg,
-        rgba(56, 189, 248, 0.1),
-        rgba(56, 189, 248, 0.18)
-      );
       color: #38bdf8;
     }
 
@@ -1955,6 +2010,7 @@ $font-heading: 'Poppins', sans-serif;
       &--selected {
         background: rgba(56, 189, 248, 0.06);
         border-color: #38bdf8;
+        box-shadow: 0 0 0 1px #38bdf8;
       }
 
       &:hover {
@@ -1963,11 +2019,7 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     &__selection-icon {
-      background: linear-gradient(
-        135deg,
-        rgba(56, 189, 248, 0.1),
-        rgba(56, 189, 248, 0.18)
-      );
+      background: rgba(56, 189, 248, 0.1);
     }
 
     &__selection-name {
@@ -1988,6 +2040,28 @@ $font-heading: 'Poppins', sans-serif;
       }
     }
 
+    // Checkbox ring + price footer — dark mirrors of the selection card bits.
+    // (Inner selectors spelled out: a trailing `&` here would re-inject
+    // `:root.dark-mode` in descendant position and never match.)
+    &__selection-check {
+      border-color: #475569;
+    }
+
+    &__selection-card--selected .order-wizard__selection-check {
+      background: #38bdf8;
+      border-color: #38bdf8;
+      color: #0c1119;
+    }
+
+    &__selection-price {
+      color: #38bdf8;
+      border-top-color: #334155;
+    }
+
+    &__selection-card--selected .order-wizard__selection-icon {
+      background: rgba(56, 189, 248, 0.18);
+    }
+
     &__counter-controls {
       background: #172033;
       border-color: #334155;
@@ -1997,6 +2071,12 @@ $font-heading: 'Poppins', sans-serif;
       background: #1e293b;
       border-color: #334155;
       color: #38bdf8;
+
+      &:hover:not(:disabled) {
+        background: rgba(56, 189, 248, 0.1);
+        border-color: #7dd3fc;
+        color: #7dd3fc;
+      }
     }
 
     &__counter-value {
@@ -2044,11 +2124,7 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     &__payment-card-icon {
-      background: linear-gradient(
-        135deg,
-        rgba(56, 189, 248, 0.1),
-        rgba(56, 189, 248, 0.18)
-      );
+      background: rgba(56, 189, 248, 0.1);
     }
 
     &__payment-card-title {
@@ -2085,17 +2161,14 @@ $font-heading: 'Poppins', sans-serif;
     &__extra-card {
       background: #172033;
       border-color: #334155;
-      box-shadow: none;
 
       &:hover {
         border-color: rgba(56, 189, 248, 0.5);
-        box-shadow: 0 4px 14px rgba(56, 189, 248, 0.12);
       }
 
       &--selected {
         background: rgba(56, 189, 248, 0.1);
         border-color: #38bdf8;
-        box-shadow: 0 4px 14px rgba(56, 189, 248, 0.18);
       }
     }
 
@@ -2167,7 +2240,6 @@ $font-heading: 'Poppins', sans-serif;
     &__cancel-policy-inline {
       background: #1e293b;
       border-color: #334155;
-      box-shadow: none;
     }
 
     &__cancel-policy-inline-title {
@@ -2228,10 +2300,6 @@ $font-heading: 'Poppins', sans-serif;
     }
 
     &__stepper-item--completed:hover {
-      .order-wizard__stepper-icon {
-        box-shadow: 0 4px 12px rgba(#4ade80, 0.3);
-      }
-
       .order-wizard__stepper-label {
         color: #86efac;
       }
@@ -2266,6 +2334,17 @@ $font-heading: 'Poppins', sans-serif;
         color: #f87171;
       }
     }
+
+    .p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):not(.p-button-success):not(.p-button-warn) {
+      border-color: #38bdf8;
+      color: #38bdf8;
+
+      &:not(:disabled):hover {
+        background: rgba(56, 189, 248, 0.1);
+        border-color: #7dd3fc;
+        color: #7dd3fc;
+      }
+    }
   }
 }
 
@@ -2274,7 +2353,7 @@ $font-heading: 'Poppins', sans-serif;
   .p-inputtext,
   .p-select {
     border-color: #e2e8f0;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     transition: all 0.2s ease;
 
     &:hover {
@@ -2294,7 +2373,7 @@ $font-heading: 'Poppins', sans-serif;
   .p-datepicker {
     border-radius: 0.75rem;
     border-color: #e2e8f0;
-    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 
     table td > span {
       width: 2.5rem;
@@ -2305,7 +2384,7 @@ $font-heading: 'Poppins', sans-serif;
 
   .p-textarea {
     border-color: #e2e8f0;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     transition: all 0.2s ease;
 
     &:hover {
@@ -2315,6 +2394,21 @@ $font-heading: 'Poppins', sans-serif;
     &:focus {
       border-color: #0284c7;
       box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+    }
+  }
+
+  // ─── BUTTONS — colored ghost, no fill ───
+  .p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):not(.p-button-success):not(.p-button-warn) {
+    background: transparent;
+    border: 1px solid $primary;
+    color: $primary;
+    border-radius: 0.75rem;
+    box-shadow: none;
+
+    &:not(:disabled):hover {
+      background: rgba($primary, 0.07);
+      border-color: $primary-dark;
+      color: $primary-dark;
     }
   }
 }

@@ -1,4 +1,5 @@
-import { Injectable, Signal, computed, inject, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, Signal, computed, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { SavedAddressStore } from '@cleansia/customer-stores';
 import {
@@ -29,6 +30,9 @@ export class CustomerAuthService {
   private readonly translate = inject(TranslateService);
   private readonly savedAddressStore = inject(SavedAddressStore);
   private readonly cookieKeys = inject(AUTH_COOKIE_KEYS);
+  // Guard storage access by platform, not `typeof localStorage` — Node 22+
+  // exposes a global localStorage whose methods throw during SSR.
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   // Reactive session flag. Auth tokens are HttpOnly cookies — JS can't
   // observe them, so we track session existence via the CSRF token (which
@@ -178,15 +182,15 @@ export class CustomerAuthService {
    * the HttpOnly auth cookie's signature).
    */
   getCsrfToken(): string | null {
-    return typeof localStorage === 'undefined'
-      ? null
-      : localStorage.getItem(this.cookieKeys.csrfToken);
+    return this.isBrowser
+      ? localStorage.getItem(this.cookieKeys.csrfToken)
+      : null;
   }
 
   /** True if the server-issued refresh token hasn't expired yet (per the
    *  exp we persisted from the login response). */
   hasValidRefreshToken(): boolean {
-    if (typeof localStorage === 'undefined') return false;
+    if (!this.isBrowser) return false;
     const expStr = localStorage.getItem(this.cookieKeys.refreshTokenExp);
     if (!expStr) return false;
     return Date.now() < new Date(expStr).getTime();
@@ -196,9 +200,9 @@ export class CustomerAuthService {
    *  response. Source-of-truth for permission decisions stays server-side;
    *  this is a UI hint only. */
   getRole(): string | null {
-    return typeof localStorage === 'undefined'
-      ? null
-      : localStorage.getItem(this.cookieKeys.role);
+    return this.isBrowser
+      ? localStorage.getItem(this.cookieKeys.role)
+      : null;
   }
 
   setSession(authResult: JwtTokenResponse): void {
@@ -227,7 +231,7 @@ export class CustomerAuthService {
   }
 
   removeSession(): void {
-    if (typeof localStorage !== 'undefined') {
+    if (this.isBrowser) {
       localStorage.removeItem(this.cookieKeys.refreshTokenExp);
       localStorage.removeItem(this.cookieKeys.csrfToken);
       localStorage.removeItem(this.cookieKeys.role);

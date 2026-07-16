@@ -1,0 +1,153 @@
+// Legal pages (privacy + terms) — hero band + section cards matching the
+// services/order page language.
+$primary: #0284c7;
+$primary-lighter: #f0f9ff;
+$text-dark: #0f172a;
+$max-width: 900px;
+$font-heading: 'Poppins', sans-serif;
+
+.legal-page {
+  max-width: $max-width;
+  margin: 0 auto;
+  padding: 2rem 2rem 4rem;
+
+  // Hero rules live on flat BEM classes: the band renders full-bleed
+  // OUTSIDE the .legal-page container (same structure as track-order).
+  &__hero {
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    padding: 3.5rem 2rem 5rem;
+    background: $primary-lighter;
+    z-index: 1;
+  }
+
+  &__hero-inner {
+    position: relative;
+    z-index: 2;
+    max-width: $max-width;
+    margin: 0 auto;
+  }
+
+  &__title {
+    font-family: $font-heading;
+    font-size: clamp(1.6rem, 3.5vw, 2.25rem);
+    font-weight: 600;
+    color: $text-dark;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    margin: 0 0 1rem;
+  }
+
+  &__intro {
+    font-size: clamp(0.95rem, 1.5vw, 1.05rem);
+    color: var(--cl-text-secondary);
+    max-width: 620px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  &__hero-bubble {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba($primary, 0.05);
+    border: 1px solid rgba($primary, 0.07);
+    z-index: 0;
+    animation: cl-float-bubble 12s ease-in-out infinite;
+
+    &--1 {
+      width: 130px;
+      height: 130px;
+      top: -30px;
+      right: -20px;
+    }
+    &--2 {
+      width: 80px;
+      height: 80px;
+      bottom: 25%;
+      left: -25px;
+      animation-delay: -4s;
+    }
+  }
+
+  &__hero-wave {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    line-height: 0;
+    z-index: 1;
+
+    svg {
+      width: 100%;
+      height: 36px;
+      display: block;
+
+      path {
+        fill: var(--surface-ground);
+      }
+    }
+  }
+
+  &__section {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 1rem;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1rem;
+  }
+
+  &__section-title {
+    font-family: $font-heading;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 0.6rem;
+  }
+
+  &__section-text {
+    font-size: 0.95rem;
+    color: var(--cl-text-secondary);
+    line-height: 1.75;
+    margin: 0;
+  }
+}
+
+// ─── RESPONSIVE ───
+@media (max-width: 768px) {
+  .legal-page {
+    padding: 1.5rem 1.5rem 3rem;
+
+    &__hero {
+      padding: 2.75rem 1.5rem 4rem;
+    }
+
+    &__section {
+      padding: 1.25rem 1.25rem;
+    }
+  }
+}
+
+// =============================
+// Dark Mode — Legal pages
+// =============================
+:root.dark-mode {
+  .legal-page {
+    &__hero {
+      background: #0f172a;
+    }
+
+    &__title {
+      color: #e2e8f0;
+    }
+
+    &__hero-bubble {
+      background: rgba(56, 189, 248, 0.04);
+      border-color: rgba(56, 189, 248, 0.06);
+    }
+
+    &__hero-wave svg path {
+      fill: var(--surface-ground);
+    }
+  }
+}

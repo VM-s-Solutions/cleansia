@@ -22,7 +22,7 @@ import {
 } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { provideRouter, Router } from '@angular/router';
+import { provideRouter, Router, withInMemoryScrolling } from '@angular/router';
 import {
   ADMIN_INTERCEPTORS_FN,
   ADMINAPIBASEURL,
@@ -54,7 +54,7 @@ registerLocaleData(localeRu);
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(appRoutes),
+    provideRouter(appRoutes, withInMemoryScrolling({ scrollPositionRestoration: 'top' })),
     provideAnimationsAsync(),
     providePrimeNG({
       theme: { preset: CleansiaPreset, options: { darkModeSelector: false } },

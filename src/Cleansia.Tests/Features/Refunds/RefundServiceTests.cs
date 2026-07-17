@@ -145,6 +145,29 @@ public class RefundServiceTests
         Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
     }
 
+    [Fact]
+    public async Task IssueRefund_QuantizesAmountToTwoDecimals_AtTheSeam_SoStripeAndLedgerAgree()
+    {
+        // A caller passing a >2dp amount (e.g. dispute resolution, whose validator only requires >= 0)
+        // must not re-open the ledger<->Stripe cent divergence T-0355 kills: the Refund row
+        // (numeric(18,2), rounds) and Stripe ((long)(amount*100), truncates) must see the SAME 2dp value.
+        // The seam rounds in Refund.Create, so every caller is covered — not just CancelOrder.
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+        ArrangeConsumed(0m);
+        CaptureAddedRefund(out var added);
+
+        var result = await CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 50.005m, RefundReason.CustomerCancellation, ActorId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var row = Assert.Single(added);
+        Assert.Equal(50.01m, row.Amount);          // persisted 2dp, away-from-zero (not 50.005)
+        Assert.Equal(50.01m, _stripe.LastAmount);  // Stripe re-driven at the same 2dp value
+        Assert.Equal(50.01m, result.Value!.Amount);
+    }
+
     // Web non-regression (T-0348): a Checkout-Session order routes through the SESSION refund surface,
     // never the new PaymentIntent path.
     [Fact]

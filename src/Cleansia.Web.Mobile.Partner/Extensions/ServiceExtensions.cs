@@ -144,59 +144,7 @@ public static class ServiceExtensions
     }
     public static IServiceCollection AddJwt(this IServiceCollection services, IConfiguration configuration)
     {
-        var secret = Encoding.UTF8.GetBytes(configuration["JwtSettings:Secret"]!);
-        var issuer = configuration["JwtSettings:Issuer"] ?? "cleansia";
-
-        services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidIssuer = issuer,
-                ValidateAudience = true,
-                ValidAudience = JwtAudiences.Mobile,
-                ValidateIssuerSigningKey = true,
-                ValidateActor = false,
-                ValidateLifetime = true,
-                IssuerSigningKey = new SymmetricSecurityKey(secret),
-                ClockSkew = TimeSpan.Zero,
-            };
-            options.Events = new JwtBearerEvents()
-            {
-                OnAuthenticationFailed = context => Task.CompletedTask,
-                OnTokenValidated = context =>
-                {
-                    if (context.Principal?.Identity is not ClaimsIdentity claimsIdentity)
-                    {
-                        return Task.CompletedTask;
-                    }
-
-                    var roleClaims = claimsIdentity.FindAll("role").ToList();
-                    if (!roleClaims.Any())
-                    {
-                        roleClaims = claimsIdentity.FindAll("roles").ToList();
-                    }
-
-                    foreach (var roleClaim in roleClaims)
-                    {
-                        claimsIdentity.AddClaim(new Claim(ClaimTypes.Role, roleClaim.Value));
-                    }
-
-                    context.EnforceDeviceRevocation();
-                    context.EnforceUserRevocation();
-                    return Task.CompletedTask;
-                }
-            };
-        });
-
-        // Authorization policies (default policy + all physical policies + the duplicate-free
-        // AdminOnly) are now registered once by the shared AddCleansiaAuthorization (ADR-0001 §D4).
-        // AddJwt keeps ONLY the JWT bearer setup.
-        return services;
+        // Shared with the customer mobile host — the only difference was the audience (T-0420).
+        return services.AddCleansiaMobileJwt(configuration, JwtAudiences.Mobile);
     }
 }

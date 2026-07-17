@@ -11,7 +11,8 @@ import javax.inject.Singleton
 /**
  * Device self-service over GET /api/Device/Mine + DELETE /api/Device/{rowId}.
  * Sends THIS install's stable device id as `currentDeviceId` so the backend
- * can flag the row the user is holding (the screen hides revoke for it).
+ * can flag the row the user is holding (the screen badges it "This device"
+ * and turns its revoke into an instant sign-out).
  * Stateless - nothing cached, so no [cz.cleansia.core.auth.SessionScopedCache].
  */
 @Singleton

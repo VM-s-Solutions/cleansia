@@ -31,6 +31,8 @@ fun EmergencySectionScreen(
     SectionScaffold(
         title = stringResource(R.string.emergency_contact),
         isLoading = uiState is EmergencySectionUiState.Loading,
+        isError = uiState is EmergencySectionUiState.Error,
+        onRetry = viewModel::retry,
         onNavigateBack = onNavigateBack,
     ) {
         val form = (uiState as? EmergencySectionUiState.Loaded)?.form ?: EmergencyForm()

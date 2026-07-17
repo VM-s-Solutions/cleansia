@@ -1,5 +1,6 @@
 package cz.cleansia.customer.core.orders
 
+import cz.cleansia.customer.core.catalog.TranslationDto
 import cz.cleansia.customer.core.user.CodeDto
 import kotlinx.serialization.Serializable
 
@@ -200,6 +201,8 @@ data class OrderServiceSummaryDto(
     val description: String? = null,
     val basePrice: Double = 0.0,
     val perRoomPrice: Double = 0.0,
+    /** Per-language name/description overrides keyed by 2-letter code (T-0395). */
+    val translations: Map<String, TranslationDto>? = null,
 )
 
 /** Mirrors backend `ServiceDetails` (used inside OrderItem). */
@@ -210,6 +213,8 @@ data class OrderServiceDetailsDto(
     val description: String? = null,
     val estimatedTime: Int = 0,
     val currencyCode: String? = null,
+    /** Per-language name/description overrides keyed by 2-letter code (T-0395). */
+    val translations: Map<String, TranslationDto>? = null,
 )
 
 /** Mirrors backend `PackageListItem` (used inside OrderListItem). */
@@ -219,6 +224,8 @@ data class OrderPackageSummaryDto(
     val name: String? = null,
     val description: String? = null,
     val price: Double = 0.0,
+    /** Per-language name/description overrides keyed by 2-letter code (T-0395). */
+    val translations: Map<String, TranslationDto>? = null,
 )
 
 /** Mirrors backend `PackageDetails` (used inside OrderItem). */
@@ -231,6 +238,8 @@ data class OrderPackageDetailsDto(
     val estimatedTime: Int = 0,
     val currencyCode: String? = null,
     val includedServices: List<String>? = null,
+    /** Per-language name/description overrides keyed by 2-letter code (T-0395). */
+    val translations: Map<String, TranslationDto>? = null,
 )
 
 /** Mirrors backend `CurrencyListItem`. */

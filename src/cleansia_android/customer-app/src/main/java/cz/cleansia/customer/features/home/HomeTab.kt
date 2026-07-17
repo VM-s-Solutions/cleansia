@@ -210,6 +210,9 @@ fun HomeTab(
         firstPaintReady = true
     }
 
+    // Interim notifications inbox — the Home bell opens an empty-state sheet (T-0393), matching iOS.
+    var showNotifications by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
     if (!firstPaintReady) {
         HomeSkeleton(modifier = modifier)
         return
@@ -226,9 +229,13 @@ fun HomeTab(
         AddressTopBar(
             displayedAddress = displayed?.oneLine,
             onAddressClick = onOpenAddressManager,
-            onNotificationClick = {},
+            onNotificationClick = { showNotifications = true },
         )
         Spacer(Modifier.height(8.dp))
+
+        if (showNotifications) {
+            NotificationsInboxSheet(onDismiss = { showNotifications = false })
+        }
 
         // 2. Smart upsell carousel — Plus / first-booking / referral / book /
         // setup-recurring. Slides hide based on user state.
@@ -967,15 +974,27 @@ private fun RecentBookingsSection(
 /**
  * Extract a human-readable title for the row: first service name, falling back
  * to the first package name, with "+ N more" suffix if the order has multiple
- * items. Defensive against the fully-nullable wire shape.
+ * items. Names resolve to the active locale's translation when the order
+ * snapshot carries one (T-0395). Defensive against the fully-nullable wire shape.
  */
+@Composable
 private fun recentBookingTitle(order: OrderListItemDto, fallback: String): String {
-    val names = (order.selectedServices.orEmpty().mapNotNull { it.name?.takeIf { n -> n.isNotBlank() } } +
-        order.selectedPackages.orEmpty().mapNotNull { it.name?.takeIf { n -> n.isNotBlank() } })
+    val names = (
+        order.selectedServices.orEmpty().mapNotNull { svc ->
+            svc.name?.takeIf { it.isNotBlank() }?.let { localizedName(svc.translations, it) }
+        } +
+            order.selectedPackages.orEmpty().mapNotNull { pkg ->
+                pkg.name?.takeIf { it.isNotBlank() }?.let { localizedName(pkg.translations, it) }
+            }
+        )
     if (names.isEmpty()) return fallback
     val first = names.first()
     val remaining = names.size - 1
-    return if (remaining > 0) "$first + $remaining more" else first
+    return if (remaining > 0) {
+        "$first ${stringResource(R.string.orders_services_more, remaining)}"
+    } else {
+        first
+    }
 }
 
 @Composable

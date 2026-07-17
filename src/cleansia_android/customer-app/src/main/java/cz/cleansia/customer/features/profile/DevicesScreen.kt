@@ -66,9 +66,10 @@ import java.util.Locale
 
 /**
  * "Your devices" self-service — lists every device registered to the
- * account, flags the one the user is holding, and lets them revoke any
- * OTHER device (kills its push registration and its session). Read path is
- * GET /api/Device/Mine; revoke is DELETE /api/Device/{rowId}.
+ * account, flags the one the user is holding, and lets them revoke any of
+ * them (kills its push registration and its session). Revoking the current
+ * device doubles as an instant sign-out. Read path is GET /api/Device/Mine;
+ * revoke is DELETE /api/Device/{rowId}.
  */
 @Composable
 fun DevicesScreen(
@@ -88,7 +89,7 @@ fun DevicesScreen(
         onBack = onBack,
         onRetry = viewModel::load,
         onRevokeRequested = { deviceToRevoke = it },
-        onRevokeConfirmed = { viewModel.revoke(it.id) },
+        onRevokeConfirmed = { viewModel.revoke(it) },
         onRevokeDismissed = { deviceToRevoke = null },
     )
 }
@@ -166,11 +167,20 @@ fun DevicesScreenContent(
     deviceToRevoke?.let { device ->
         CleansiaDialog(
             onDismiss = onRevokeDismissed,
-            title = stringResource(R.string.devices_revoke_dialog_title),
-            message = stringResource(R.string.devices_revoke_dialog_message, platformLabel(device.platform)),
+            title = stringResource(
+                if (device.isCurrent) R.string.devices_self_revoke_dialog_title else R.string.devices_revoke_dialog_title,
+            ),
+            message = if (device.isCurrent) {
+                // Revoking your own device signs you out immediately — say so.
+                stringResource(R.string.devices_self_revoke_dialog_message)
+            } else {
+                stringResource(R.string.devices_revoke_dialog_message, platformLabel(device.platform))
+            },
             icon = Icons.AutoMirrored.Outlined.Logout,
             destructive = true,
-            confirmLabel = stringResource(R.string.devices_revoke_dialog_confirm),
+            confirmLabel = stringResource(
+                if (device.isCurrent) R.string.devices_self_revoke_dialog_confirm else R.string.devices_revoke_dialog_confirm,
+            ),
             confirmEnabled = revokeState !is ActionState.Submitting,
             onConfirm = { onRevokeConfirmed(device) },
             dismissLabel = stringResource(R.string.common_cancel),
@@ -234,14 +244,21 @@ private fun DeviceCard(device: UserDeviceDto, onRevoke: () -> Unit) {
                 )
             }
         }
-        if (!device.isCurrent) {
-            IconButton(onClick = onRevoke) {
-                Icon(
-                    imageVector = Icons.Outlined.DeleteOutline,
-                    contentDescription = stringResource(R.string.devices_revoke_action),
-                    tint = MaterialTheme.colorScheme.error,
-                )
-            }
+        // The current device is revocable too: it reads as "sign out this device now"
+        // (distinct icon + dialog copy) and ends the session at 0s instead of leaving a zombie
+        // session for the ≤30s revocation directory to catch.
+        IconButton(onClick = onRevoke) {
+            Icon(
+                imageVector = if (device.isCurrent) {
+                    Icons.AutoMirrored.Outlined.Logout
+                } else {
+                    Icons.Outlined.DeleteOutline
+                },
+                contentDescription = stringResource(
+                    if (device.isCurrent) R.string.devices_self_revoke_action else R.string.devices_revoke_action,
+                ),
+                tint = MaterialTheme.colorScheme.error,
+            )
         }
     }
 }

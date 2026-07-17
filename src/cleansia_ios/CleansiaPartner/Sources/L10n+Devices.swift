@@ -38,6 +38,23 @@ extension L10n {
             localized("devices_revoke_dialog_confirm")
         }
 
+        /// Self-revoke (the CURRENT device) — distinct copy: it signs you out immediately.
+        static var selfRevokeButton: String {
+            localized("devices_self_revoke_action")
+        }
+
+        static var selfRevokeDialogTitle: String {
+            localized("devices_self_revoke_dialog_title")
+        }
+
+        static var selfRevokeDialogMessage: String {
+            localized("devices_self_revoke_dialog_message")
+        }
+
+        static var selfRevokeDialogConfirm: String {
+            localized("devices_self_revoke_dialog_confirm")
+        }
+
         static var revokeSuccess: String {
             localized("devices_revoke_success")
         }

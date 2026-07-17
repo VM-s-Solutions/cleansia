@@ -82,6 +82,13 @@ jobs:
       # rules, failing CI on code that passed a dev's older local lint (the docComments
       # + redundantEmptyView drift we hit twice). Devs: match this version locally
       # (`brew install swiftformat` then check `--version`, or download the same release).
+      # Installed into a dedicated dir PREPENDED to PATH (via GITHUB_PATH), NOT
+      # /usr/local/bin: the Apple-Silicon runner image ships its own brew
+      # swiftformat in /opt/homebrew/bin, which sits earlier in PATH and
+      # silently shadowed the /usr/local/bin pin — the lint then ran whatever
+      # version the image bundled (0.62.1 flagged 94 files that are clean under
+      # the pinned 0.60.1). The lint steps below also assert the version so any
+      # future shadowing fails loudly at the install, not as mystery lint churn.
       - name: Install SwiftFormat (pinned 0.60.1)
         run: |
           set -euo pipefail
@@ -89,14 +96,18 @@ jobs:
             https://github.com/nicklockwood/SwiftFormat/releases/download/0.60.1/swiftformat.zip
           unzip -o /tmp/swiftformat.zip -d /tmp/swiftformat-bin
           BIN="$(find /tmp/swiftformat-bin -name swiftformat -type f -perm -u+x | head -1)"
-          sudo install "$BIN" /usr/local/bin/swiftformat
-          swiftformat --version
+          mkdir -p "$RUNNER_TEMP/pinned-tools"
+          install "$BIN" "$RUNNER_TEMP/pinned-tools/swiftformat"
+          echo "$RUNNER_TEMP/pinned-tools" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/pinned-tools/swiftformat" --version
 
       # SwiftLint is PINNED for the same reason as SwiftFormat: the runner
       # image's bundled swiftlint drifts, and a version bump can add a rule that
       # fails CI on code a dev linted clean locally. 0.65.0 is the version this
       # tree is verified clean against; match it locally (`brew install
-      # swiftlint`, or download the same release) before pushing.
+      # swiftlint`, or download the same release) before pushing. Same
+      # pinned-tools dir as SwiftFormat so this pin cannot be PATH-shadowed
+      # either.
       - name: Install SwiftLint (pinned 0.65.0)
         run: |
           set -euo pipefail
@@ -104,8 +115,9 @@ jobs:
             https://github.com/realm/SwiftLint/releases/download/0.65.0/portable_swiftlint.zip
           unzip -o /tmp/swiftlint.zip -d /tmp/swiftlint-bin
           BIN="$(find /tmp/swiftlint-bin -name swiftlint -type f -perm -u+x | head -1)"
-          sudo install "$BIN" /usr/local/bin/swiftlint
-          swiftlint version
+          mkdir -p "$RUNNER_TEMP/pinned-tools"
+          install "$BIN" "$RUNNER_TEMP/pinned-tools/swiftlint"
+          "$RUNNER_TEMP/pinned-tools/swiftlint" version
 
       # The generated business client (CleansiaPartnerApi / CleansiaCustomerApi) is
       # gitignored and machine-owned — regenerate it from the committed mobile specs
@@ -120,12 +132,23 @@ jobs:
           (cd CleansiaPartner  && xcodegen generate)
           (cd CleansiaCustomer && xcodegen generate)
 
-      # ADR-0016 blocking quality gate — same bar developers run locally.
+      # ADR-0016 blocking quality gate — same bar developers run locally. Each
+      # step first asserts the PINNED version actually resolved (see the
+      # install-step comment: the image's /opt/homebrew tools once shadowed the
+      # pin and linted with a drifted version).
       - name: SwiftFormat (lint)
-        run: swiftformat --lint .
+        run: |
+          set -euo pipefail
+          command -v swiftformat
+          test "$(swiftformat --version)" = "0.60.1"
+          swiftformat --lint .
 
       - name: SwiftLint (strict)
-        run: swiftlint lint --strict
+        run: |
+          set -euo pipefail
+          command -v swiftlint
+          swiftlint version | grep -qx "0.65.0"
+          swiftlint lint --strict
 
       # Pick whichever iPhone simulator this runner's Xcode actually ships, so the
       # destination doesn't break when the image's device list changes.

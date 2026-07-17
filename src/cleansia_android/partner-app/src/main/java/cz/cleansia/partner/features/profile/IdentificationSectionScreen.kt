@@ -63,6 +63,8 @@ fun IdentificationSectionScreen(
     SectionScaffold(
         title = stringResource(R.string.identification_title),
         isLoading = uiState is IdentificationSectionUiState.Loading,
+        isError = uiState is IdentificationSectionUiState.Error,
+        onRetry = viewModel::retry,
         onNavigateBack = onNavigateBack,
         headerSlot = if (!onboarding) null else ({
             cz.cleansia.partner.features.profile.OnboardingChainHeader(

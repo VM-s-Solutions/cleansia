@@ -35,7 +35,10 @@ struct DevicesView: View {
         .onReceive(vm.revoked) { deviceToRevoke = nil }
         .onReceive(vm.signedOut) {
             Task {
-                await authClient.logout()
+                // Local wipe only: the self-revoke already killed this device's session
+                // server-side, so the full logout()'s server call would be a redundant round
+                // trip that only delays landing on the login screen.
+                await authClient.signOutLocal()
                 onSignedOut()
             }
         }
@@ -56,12 +59,19 @@ struct DevicesContent: View {
             CleansiaColors.background.ignoresSafeArea()
             content
             if let device = deviceToRevoke {
+                // Self-revoke gets distinct copy: revoking THIS device signs you out now.
                 CleansiaDialog(
-                    title: L10n.Devices.revokeDialogTitle,
-                    confirmLabel: L10n.Devices.revokeDialogConfirm,
+                    title: device.isCurrent
+                        ? L10n.Devices.selfRevokeDialogTitle
+                        : L10n.Devices.revokeDialogTitle,
+                    confirmLabel: device.isCurrent
+                        ? L10n.Devices.selfRevokeDialogConfirm
+                        : L10n.Devices.revokeDialogConfirm,
                     onConfirm: { onRevokeConfirmed(device) },
                     onDismiss: onRevokeDismissed,
-                    message: L10n.Devices.revokeDialogMessage(platformLabel(device.platform)),
+                    message: device.isCurrent
+                        ? L10n.Devices.selfRevokeDialogMessage
+                        : L10n.Devices.revokeDialogMessage(platformLabel(device.platform)),
                     dismissLabel: L10n.cancel,
                     icon: "rectangle.portrait.and.arrow.right",
                     destructive: true,
@@ -134,16 +144,15 @@ private struct DeviceCard: View {
                 }
             }
             Spacer()
-            // D7a: the revoke control is rendered ONLY for OTHER devices.
-            // The current row shows the "This device" chip and no trash.
-            if !device.isCurrent {
-                Button(action: onRevoke) {
-                    Image(systemName: "trash")
-                        .foregroundColor(CleansiaColors.error)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.Devices.revokeButton)
+            // The current row is revocable too — it reads as "sign out this device now" (distinct
+            // icon + dialog copy) and ends the session at 0s instead of leaving a zombie session
+            // for the ≤30s revocation directory to catch.
+            Button(action: onRevoke) {
+                Image(systemName: device.isCurrent ? "rectangle.portrait.and.arrow.right" : "trash")
+                    .foregroundColor(CleansiaColors.error)
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(device.isCurrent ? L10n.Devices.selfRevokeButton : L10n.Devices.revokeButton)
         }
         .padding(Spacing.l)
         .frame(maxWidth: .infinity)

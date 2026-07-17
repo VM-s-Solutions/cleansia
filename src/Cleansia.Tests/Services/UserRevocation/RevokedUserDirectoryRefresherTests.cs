@@ -139,6 +139,8 @@ public class RevokedUserDirectoryRefresherTests
         public Task<RefreshToken?> GetByTokenHashAsync(string tokenHash, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<IReadOnlyList<RefreshToken>> GetActiveByUserIdAsync(string userId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<int> RevokeChainAsync(string rootTokenId, string reason, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<int> BulkRevokeIgnoringConcurrencyAsync(RefreshTokenRevocationScope scope, string reason, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public void DetachModifiedTracked() => throw new NotSupportedException();
         public Task<int> DeleteStaleAsync(DateTimeOffset olderThan, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<bool> ExistsAsync(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<bool> ExistWithIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken) => throw new NotSupportedException();

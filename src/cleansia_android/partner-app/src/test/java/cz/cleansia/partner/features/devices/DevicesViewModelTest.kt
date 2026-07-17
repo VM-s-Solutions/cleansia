@@ -8,10 +8,15 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.core.devices.DevicesRepository
 import cz.cleansia.partner.core.devices.RevokeDeviceResponse
 import cz.cleansia.partner.core.devices.UserDeviceDto
+import cz.cleansia.core.auth.ForcedSignOutReason
+import cz.cleansia.core.auth.SessionEvent
+import cz.cleansia.core.auth.SessionManager
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.partner.data.auth.AuthRepository
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -31,6 +36,8 @@ class DevicesViewModelTest {
     val mainRule = MainDispatcherRule()
 
     private lateinit var repository: DevicesRepository
+    private lateinit var authRepository: AuthRepository
+    private lateinit var sessionManager: SessionManager
     private lateinit var snackbar: SnackbarController
     private lateinit var errorTranslator: cz.cleansia.partner.core.network.ApiErrorTranslator
     private lateinit var appContext: Context
@@ -53,6 +60,8 @@ class DevicesViewModelTest {
     @Before
     fun setUp() {
         repository = mockk()
+        authRepository = mockk(relaxed = true)
+        sessionManager = SessionManager()
         snackbar = mockk(relaxed = true)
         errorTranslator = mockk()
         appContext = mockk(relaxed = true)
@@ -61,7 +70,8 @@ class DevicesViewModelTest {
         every { appContext.getString(R.string.devices_revoke_retry_hint) } returns "retry hint"
     }
 
-    private fun viewModel() = DevicesViewModel(repository, errorTranslator, snackbar, appContext)
+    private fun viewModel() =
+        DevicesViewModel(repository, authRepository, sessionManager, errorTranslator, snackbar, appContext)
 
     @Test
     fun `load transitions Loading to Loaded with devices`() = runTest {
@@ -94,7 +104,7 @@ class DevicesViewModelTest {
         advanceUntilIdle()
 
         vm.revoked.test {
-            vm.revoke("row-2")
+            vm.revoke(otherDevice)
             advanceUntilIdle()
             assertEquals("row-2", awaitItem())
         }
@@ -102,6 +112,52 @@ class DevicesViewModelTest {
         assertEquals(ActionState.Idle, vm.revokeState.value)
         assertEquals(DevicesUiState.Loaded(listOf(thisDevice)), vm.state.value)
         verify { snackbar.showSuccess("Device removed") }
+        // Revoking ANOTHER device must never end our own session.
+        coVerify(exactly = 0) { authRepository.signOutLocal() }
+    }
+
+    @Test
+    fun `revoking the current device wipes locally and emits the forced sign-out`() = runTest {
+        coEvery { repository.getMyDevices() } returns ApiResult.Success(listOf(thisDevice, otherDevice))
+        coEvery { repository.revoke("row-1") } returns ApiResult.Success(RevokeDeviceResponse(success = true))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        // Self-revoke = local-only sign-out at 0s: signOutLocal() (never the redundant server
+        // logout - the revoke already killed the session) + a forced-sign-out event the
+        // never-unmounting nav-root observer turns into the Login navigation. No success
+        // snackbar - the login screen appearing is the feedback.
+        sessionManager.events.test {
+            vm.revoke(thisDevice)
+            advanceUntilIdle()
+            assertEquals(
+                SessionEvent.ForcedSignOut(ForcedSignOutReason.UserInitiated),
+                awaitItem(),
+            )
+        }
+
+        coVerify(exactly = 1) { authRepository.signOutLocal() }
+        coVerify(exactly = 0) { authRepository.logout() }
+        verify(exactly = 0) { snackbar.showSuccess(any()) }
+        assertEquals(ActionState.Idle, vm.revokeState.value)
+    }
+
+    @Test
+    fun `failed self-revoke keeps the session - no local sign-out`() = runTest {
+        coEvery { repository.getMyDevices() } returns ApiResult.Success(listOf(thisDevice, otherDevice))
+        coEvery { repository.revoke("row-1") } returns
+            ApiResult.Error(ApiError.BadRequest("nope", code = null, validationErrors = null, errorKey = "device.not_found"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.revoke(thisDevice)
+        advanceUntilIdle()
+
+        // The server still holds our session; wiping locally would strand the user for no reason.
+        coVerify(exactly = 0) { authRepository.signOutLocal() }
+        assertTrue(vm.revokeState.value is ActionState.Error)
     }
 
     @Test
@@ -113,7 +169,7 @@ class DevicesViewModelTest {
         val vm = viewModel()
         advanceUntilIdle()
 
-        vm.revoke("row-2")
+        vm.revoke(otherDevice)
         advanceUntilIdle()
 
         assertTrue(vm.revokeState.value is ActionState.Error)
@@ -133,8 +189,8 @@ class DevicesViewModelTest {
         val vm = viewModel()
         advanceUntilIdle()
 
-        vm.revoke("row-2")
-        vm.revoke("row-2")
+        vm.revoke(otherDevice)
+        vm.revoke(otherDevice)
         advanceUntilIdle()
 
         assertEquals(1, revokeCalls)

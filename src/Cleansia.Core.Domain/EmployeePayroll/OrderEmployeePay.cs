@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Users;
 
@@ -30,6 +31,15 @@ public class OrderEmployeePay : Auditable, ITenantEntity
 
     public decimal DeductionPay { get; private set; } = 0;
 
+    // The pay-config min/max bounds captured at calculation time. TotalPay is the CLAMPED core
+    // (base+extras+expenses bounded to [MinPay, MaxPay]) plus bonus minus deduction. Persisting the
+    // bounds is what lets the mutators below re-apply the clamp — recomputing TotalPay purely from the
+    // raw components would silently undo it (T-0362). 0 == unbounded on that edge (mirrors the
+    // calculator's `> 0` guard in PayCalculatorExtensions.ApplyMinMaxClamp).
+    public decimal MinPay { get; private set; } = 0;
+
+    public decimal MaxPay { get; private set; } = 0;
+
     [Required]
     public decimal TotalPay { get; private set; }
 
@@ -58,6 +68,8 @@ public class OrderEmployeePay : Auditable, ITenantEntity
         decimal bonusPay = 0,
         decimal deductionPay = 0,
         decimal totalPay = 0,
+        decimal minPay = 0,
+        decimal maxPay = 0,
         string? notes = null,
         string? payBreakdown = null)
     {
@@ -91,6 +103,8 @@ public class OrderEmployeePay : Auditable, ITenantEntity
             ExpensesPay = expensesPay,
             BonusPay = bonusPay,
             DeductionPay = deductionPay,
+            MinPay = minPay,
+            MaxPay = maxPay,
             TotalPay = totalPay,
             Notes = notes,
             PayBreakdown = payBreakdown
@@ -115,12 +129,7 @@ public class OrderEmployeePay : Auditable, ITenantEntity
         ExpensesPay = expensesPay;
         BonusPay = bonusPay;
         DeductionPay = deductionPay;
-        TotalPay = basePay + extrasPay + expensesPay + bonusPay - deductionPay;
-
-        if (TotalPay < 0)
-        {
-            TotalPay = 0;
-        }
+        RecomputeTotalPay();
 
         if (notes != null)
         {
@@ -138,7 +147,7 @@ public class OrderEmployeePay : Auditable, ITenantEntity
         }
 
         BonusPay += bonusAmount;
-        TotalPay = BasePay + ExtrasPay + ExpensesPay + BonusPay - DeductionPay;
+        RecomputeTotalPay();
 
         if (notes != null)
         {
@@ -156,12 +165,7 @@ public class OrderEmployeePay : Auditable, ITenantEntity
         }
 
         DeductionPay += deductionAmount;
-        TotalPay = BasePay + ExtrasPay + ExpensesPay + BonusPay - DeductionPay;
-
-        if (TotalPay < 0)
-        {
-            TotalPay = 0;
-        }
+        RecomputeTotalPay();
 
         if (notes != null)
         {
@@ -169,6 +173,20 @@ public class OrderEmployeePay : Auditable, ITenantEntity
         }
 
         return this;
+    }
+
+    /// <summary>
+    /// The single source of truth for TotalPay once components change: clamp the core
+    /// (base+extras+expenses) to the persisted [MinPay, MaxPay] bounds — the SAME clamp the calculator
+    /// applied at creation — then add bonus and subtract deduction, floored at 0. Reuses
+    /// <see cref="PayCalculatorExtensions.ApplyMinMaxClamp"/> so the &gt;0-guard and min&gt;max-throw
+    /// semantics stay identical to calc time (T-0362).
+    /// </summary>
+    private void RecomputeTotalPay()
+    {
+        var clampedCore = PayCalculatorExtensions.ApplyMinMaxClamp(
+            BasePay + ExtrasPay + ExpensesPay, MinPay, MaxPay);
+        TotalPay = Math.Max(0m, clampedCore + BonusPay - DeductionPay);
     }
 
     public OrderEmployeePay Approve(string approvedBy)

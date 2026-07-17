@@ -133,6 +133,10 @@ public class CalculateOrderPay
 
             var (basePay, extrasPay, expensesPay, totalPay, breakdown) = payConfigs.CalculateAggregatedPay(order);
 
+            // Persist the same clamp bounds that produced totalPay so any later bonus/deduction
+            // adjustment re-clamps the core identically instead of silently dropping the clamp (T-0362).
+            var (minPay, maxPay) = payConfigs.AggregateBounds();
+
             var orderEmployeePay = OrderEmployeePay.Create(
                 orderId: command.OrderId,
                 employeeId: command.EmployeeId,
@@ -141,6 +145,8 @@ public class CalculateOrderPay
                 extrasPay: extrasPay,
                 expensesPay: expensesPay,
                 totalPay: totalPay,
+                minPay: minPay,
+                maxPay: maxPay,
                 payBreakdown: breakdown);
 
             orderEmployeePayRepository.Add(orderEmployeePay);

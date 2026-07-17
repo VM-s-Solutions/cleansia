@@ -65,6 +65,7 @@ import cz.cleansia.customer.ui.format.orderStatusColor
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.customer.core.orders.OrderListItemDto
 import cz.cleansia.customer.core.orders.OrderRepositoryEntryPoint
+import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Poppins
@@ -519,8 +520,14 @@ private fun StatusPill(label: String, color: Color) {
  */
 @Composable
 private fun servicesSummary(order: OrderListItemDto): String {
-    val packageNames = order.selectedPackages.orEmpty().mapNotNull { it.name?.takeIf { n -> n.isNotBlank() } }
-    val serviceNames = order.selectedServices.orEmpty().mapNotNull { it.name?.takeIf { n -> n.isNotBlank() } }
+    // Resolve each name to the active locale's translation when the order snapshot
+    // carries one, falling back to the frozen default name (T-0395, iOS parity).
+    val packageNames = order.selectedPackages.orEmpty().mapNotNull { pkg ->
+        pkg.name?.takeIf { it.isNotBlank() }?.let { localizedName(pkg.translations, it) }
+    }
+    val serviceNames = order.selectedServices.orEmpty().mapNotNull { svc ->
+        svc.name?.takeIf { it.isNotBlank() }?.let { localizedName(svc.translations, it) }
+    }
     val combined = packageNames + serviceNames
     if (combined.isEmpty()) return "—"
     val shown = combined.take(2)

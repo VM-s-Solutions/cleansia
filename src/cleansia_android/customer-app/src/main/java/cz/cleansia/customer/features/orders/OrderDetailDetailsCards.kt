@@ -38,6 +38,8 @@ import cz.cleansia.customer.core.orders.AssignedEmployeeDto
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.core.orders.OrderPackageDetailsDto
 import cz.cleansia.customer.core.orders.OrderServiceDetailsDto
+import cz.cleansia.customer.features.booking.localizedDescription
+import cz.cleansia.customer.features.booking.localizedName
 
 /* ── Cleaning details ── */
 
@@ -141,11 +143,11 @@ internal fun ServicesCard(services: List<OrderServiceDetailsDto>) {
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = svc.name ?: "—",
+                        text = svc.name?.let { localizedName(svc.translations, it) } ?: "—",
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
-                    svc.description?.takeIf { it.isNotBlank() }?.let { desc ->
+                    localizedDescription(svc.translations, svc.description)?.takeIf { it.isNotBlank() }?.let { desc ->
                         Text(
                             text = desc,
                             style = MaterialTheme.typography.bodySmall,
@@ -194,11 +196,11 @@ internal fun PackagesCard(packages: List<OrderPackageDetailsDto>) {
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = pkg.name ?: "—",
+                        text = pkg.name?.let { localizedName(pkg.translations, it) } ?: "—",
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
-                    pkg.description?.takeIf { it.isNotBlank() }?.let { desc ->
+                    localizedDescription(pkg.translations, pkg.description)?.takeIf { it.isNotBlank() }?.let { desc ->
                         Text(
                             text = desc,
                             style = MaterialTheme.typography.bodySmall,

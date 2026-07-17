@@ -210,6 +210,9 @@ fun HomeTab(
         firstPaintReady = true
     }
 
+    // Interim notifications inbox — the Home bell opens an empty-state sheet (T-0393), matching iOS.
+    var showNotifications by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
     if (!firstPaintReady) {
         HomeSkeleton(modifier = modifier)
         return
@@ -226,9 +229,13 @@ fun HomeTab(
         AddressTopBar(
             displayedAddress = displayed?.oneLine,
             onAddressClick = onOpenAddressManager,
-            onNotificationClick = {},
+            onNotificationClick = { showNotifications = true },
         )
         Spacer(Modifier.height(8.dp))
+
+        if (showNotifications) {
+            NotificationsInboxSheet(onDismiss = { showNotifications = false })
+        }
 
         // 2. Smart upsell carousel — Plus / first-booking / referral / book /
         // setup-recurring. Slides hide based on user state.

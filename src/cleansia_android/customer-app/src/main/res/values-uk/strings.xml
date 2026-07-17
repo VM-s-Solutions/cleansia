@@ -1167,4 +1167,7 @@
     <string name="devices_revoke_success">Пристрій видалено</string>
     <string name="devices_revoke_retry_hint">Не вдалося видалити – спробуйте ще раз.</string>
     <string name="error_device_not_found">Цей пристрій більше не зареєстрований.</string>
+    <string name="notifications_inbox_title">Сповіщення</string>
+    <string name="notifications_inbox_empty_title">Поки немає сповіщень</string>
+    <string name="notifications_inbox_empty_subtitle">Ми повідомимо вас, коли з’явиться новина про ваші прибирання.</string>
 </resources>

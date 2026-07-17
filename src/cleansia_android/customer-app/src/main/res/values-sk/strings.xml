@@ -1167,4 +1167,7 @@
     <string name="devices_revoke_success">Zariadenie odobraté</string>
     <string name="devices_revoke_retry_hint">Nepodarilo sa odobrať – skúste to znova.</string>
     <string name="error_device_not_found">Toto zariadenie už nie je registrované.</string>
+    <string name="notifications_inbox_title">Oznámenia</string>
+    <string name="notifications_inbox_empty_title">Zatiaľ žiadne oznámenia</string>
+    <string name="notifications_inbox_empty_subtitle">Dáme vám vedieť, keď sa objaví novinka o vašich upratovaniach.</string>
 </resources>

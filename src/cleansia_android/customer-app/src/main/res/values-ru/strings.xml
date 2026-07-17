@@ -1167,4 +1167,7 @@
     <string name="devices_revoke_success">Устройство удалено</string>
     <string name="devices_revoke_retry_hint">Не удалось удалить – попробуйте ещё раз.</string>
     <string name="error_device_not_found">Это устройство больше не зарегистрировано.</string>
+    <string name="notifications_inbox_title">Уведомления</string>
+    <string name="notifications_inbox_empty_title">Пока нет уведомлений</string>
+    <string name="notifications_inbox_empty_subtitle">Мы сообщим вам, когда появятся новости о ваших уборках.</string>
 </resources>

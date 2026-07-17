@@ -1191,4 +1191,7 @@
     <string name="devices_revoke_success">Device removed</string>
     <string name="devices_revoke_retry_hint">Couldn\'t remove — please try again.</string>
     <string name="error_device_not_found">This device is no longer registered.</string>
+    <string name="notifications_inbox_title">Notifications</string>
+    <string name="notifications_inbox_empty_title">No notifications yet</string>
+    <string name="notifications_inbox_empty_subtitle">We\'ll let you know when there\'s an update about your cleanings.</string>
 </resources>

@@ -50,8 +50,21 @@ public sealed class RefundService(
         Refund refund;
         if (existing is not null)
         {
-            // A prior Pending/Failed attempt exists — reuse its row + amount (do NOT insert a second) and
-            // re-drive Stripe with the same key below.
+            // A prior Pending/Failed attempt exists — reuse its row (do NOT insert a second) and re-drive
+            // Stripe with the same key below. But RE-CHECK the live refundable ceiling first: RefundKeys are
+            // per-purpose, so a different-purpose refund (e.g. an admin refund) may have SUCCEEDED since this
+            // row was created, dropping TotalPrice - consumed below the row's frozen amount. Re-driving the
+            // stale amount would over-refund; clamp it to the live ceiling (or fail if nothing remains).
+            var consumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
+                order.Id, cancellationToken);
+            var refundable = order.TotalPrice - consumed;
+            if (refundable <= 0m)
+            {
+                return BusinessResult.Failure<RefundResult>(new Error(
+                    nameof(request.Amount), BusinessErrorMessage.RefundNothingRefundable));
+            }
+
+            existing.ClampAmountTo(refundable);
             refund = existing;
         }
         else

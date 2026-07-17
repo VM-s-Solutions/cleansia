@@ -94,4 +94,20 @@ public class Refund : Auditable, ITenantEntity
         ConfirmedOn = confirmedOnUtc;
         return this;
     }
+
+    /// <summary>
+    /// Lower this refund's amount to at most <paramref name="maxAmount"/> before a re-drive, so a stale
+    /// frozen amount can never exceed the live refundable ceiling (the cross-key over-refund guard,
+    /// T-0354). Only ever decreases the amount, and only meaningful while the refund has not yet
+    /// Succeeded — the re-drive caller only reaches this for a Pending/Failed row.
+    /// </summary>
+    public Refund ClampAmountTo(decimal maxAmount)
+    {
+        if (maxAmount < Amount)
+        {
+            Amount = maxAmount;
+        }
+
+        return this;
+    }
 }

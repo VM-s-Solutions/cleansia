@@ -365,6 +365,37 @@ public class RefundServiceTests
     }
 
     [Fact]
+    public async Task IssueRefund_RedriveWithNonZeroConsumed_ClampsToLiveCeiling_NotTheStaleFrozenAmount()
+    {
+        // A prior Pending cancel refund froze 1000 (the full ceiling at the time). Since then a
+        // DIFFERENT-purpose refund succeeded, consuming 700, so the live ceiling is now 1000 - 700 = 300.
+        // Re-driving the stale 1000 would over-refund; the guard clamps the re-drive to the live ceiling
+        // (T-0354). The existing re-drive test uses ArrangeConsumed(0m), leaving this cross-key gap untested.
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(700m);
+
+        var key = $"refund:{OrderId}:cancel";
+        var pending = Refund.Create(
+            OrderId, key, 1000m, "CZK", RefundReason.CustomerCancellation, RefundSource.AppRefund);
+        _refundRepository
+            .Setup(r => r.GetByRefundKeyAsync(key, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pending);
+        _refundRepository
+            .Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 1000m, RefundReason.CustomerCancellation, ActorId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(300m, result.Value!.Amount);             // clamped, not the frozen 1000
+        Assert.Equal(300m, pending.Amount);                    // the reused row was clamped down
+        Assert.Equal(300m, _stripe.LastAmount);                // Stripe re-driven at the clamped amount
+        Assert.Equal(RefundStatus.Succeeded, pending.Status);
+    }
+
+    [Fact]
     public async Task IssueRefund_ConcurrentDoubleIssue_LoserCatches23505_ResolvesToExisting_NoSecondStripeRefund()
     {
         var order = CreateCardPaidOrder(1000m);

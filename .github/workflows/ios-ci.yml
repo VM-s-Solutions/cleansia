@@ -48,10 +48,13 @@ jobs:
           sudo xcode-select -s "$NEWEST"
           xcodebuild -version
 
-      # xcodegen + xcbeautify are not on the runner image (swiftlint usually is);
-      # installing them keeps CI independent of image drift.
+      # xcodegen + xcbeautify are not on the runner image; installing them keeps
+      # CI independent of image drift. SwiftLint is NOT brew-installed here — it
+      # is pinned below (like SwiftFormat + openapi-generator), because the
+      # runner image's bundled swiftlint version drifts and a new default/rule
+      # silently fails CI on code that passed a dev's local lint.
       - name: Install toolchain
-        run: brew install xcodegen swiftlint xcbeautify
+        run: brew install xcodegen xcbeautify
 
       # openapi-generator is PINNED (not brew-latest) for the same reason as
       # SwiftFormat below: the generated business clients are wire-load-bearing,
@@ -88,6 +91,21 @@ jobs:
           BIN="$(find /tmp/swiftformat-bin -name swiftformat -type f -perm -u+x | head -1)"
           sudo install "$BIN" /usr/local/bin/swiftformat
           swiftformat --version
+
+      # SwiftLint is PINNED for the same reason as SwiftFormat: the runner
+      # image's bundled swiftlint drifts, and a version bump can add a rule that
+      # fails CI on code a dev linted clean locally. 0.65.0 is the version this
+      # tree is verified clean against; match it locally (`brew install
+      # swiftlint`, or download the same release) before pushing.
+      - name: Install SwiftLint (pinned 0.65.0)
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/swiftlint.zip \
+            https://github.com/realm/SwiftLint/releases/download/0.65.0/portable_swiftlint.zip
+          unzip -o /tmp/swiftlint.zip -d /tmp/swiftlint-bin
+          BIN="$(find /tmp/swiftlint-bin -name swiftlint -type f -perm -u+x | head -1)"
+          sudo install "$BIN" /usr/local/bin/swiftlint
+          swiftlint version
 
       # The generated business client (CleansiaPartnerApi / CleansiaCustomerApi) is
       # gitignored and machine-owned — regenerate it from the committed mobile specs

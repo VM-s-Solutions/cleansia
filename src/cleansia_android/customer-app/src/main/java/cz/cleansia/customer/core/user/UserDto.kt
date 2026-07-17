@@ -50,6 +50,14 @@ data class CurrentUser(
     /** ISO-8601 yyyy-MM-dd, or null if not set. */
     val birthDate: String?,
     val preferredLanguageCode: String?,
+    /** Account creation instant — the profile hero "member since"; null if unknown. */
+    val memberSince: kotlinx.datetime.Instant? = null,
+    /** Total orders the user has placed. */
+    val totalBookings: Int = 0,
+    /** Realized money saved (tier + promo + membership discounts), in [savingsCurrencyCode]. */
+    val totalSavings: Double = 0.0,
+    /** Currency code for [totalSavings]; null when the user has no realized orders. */
+    val savingsCurrencyCode: String? = null,
 ) {
     val fullName: String get() = "$firstName $lastName".trim()
     val initials: String get() =
@@ -70,4 +78,8 @@ internal fun MyProfileDto.toCurrentUser(userId: String): CurrentUser = CurrentUs
     phoneNumber = phoneNumber,
     birthDate = birthDate?.toString(),
     preferredLanguageCode = preferredLanguageCode,
+    memberSince = memberSince,
+    totalBookings = totalBookings ?: 0,
+    totalSavings = totalSavings ?: 0.0,
+    savingsCurrencyCode = savingsCurrencyCode,
 )

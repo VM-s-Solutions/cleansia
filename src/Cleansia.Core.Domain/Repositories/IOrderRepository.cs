@@ -89,6 +89,16 @@ public interface IOrderRepository : IRepository<Order, string>
     Task<bool> UserHasCompletedOrderWithEmployeeAsync(string userId, string employeeId, CancellationToken ct);
 
     /// <summary>
+    /// The customer profile hero stats for <paramref name="userId"/> (T-0392):
+    /// total bookings placed, total money saved (tier + promo + membership
+    /// discounts summed over the user's non-cancelled orders), and the currency
+    /// code of the user's most recent order. Returns
+    /// <see cref="CustomerProfileStats.Empty"/> semantics for a user with no
+    /// orders (zeros, null currency).
+    /// </summary>
+    Task<CustomerProfileStats> GetCustomerProfileStatsAsync(string userId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Cross-tenant lookup by order id. ONLY for use by Stripe webhook handlers
     /// and other system-level triggers that have no tenant context but need to
     /// resolve an order from a trusted external id (e.g. Stripe metadata).

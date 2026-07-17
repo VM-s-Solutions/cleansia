@@ -33,4 +33,10 @@ enum Palette {
     static let errorText = Color(hex: 0xB91C1C)
     static let warningStar = Color(hex: 0xF59E0B)
     static let darkError = Color(hex: 0xFCA5A5)
+    /// Deep error-family red (Tailwind red-900) for dark-mode "container"
+    /// surfaces — the natural pair for darkError (red-300) on-color, staying in
+    /// this palette's Tailwind red ramp (errorBg=red-100, errorText=red-700).
+    /// Replaces the stray sky800 (blue) dark errorContainer used to resolve to
+    /// (T-0396). Architect to confirm the shade.
+    static let darkErrorContainer = Color(hex: 0x7F1D1D)
 }

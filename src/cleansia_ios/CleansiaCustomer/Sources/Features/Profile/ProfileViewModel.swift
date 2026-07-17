@@ -6,6 +6,12 @@ import Foundation
 final class ProfileViewModel: ViewModel {
     @Published private(set) var refreshState: ActionState = .idle
     @Published private(set) var saveState: ActionState = .idle
+    /// Bookings is the only profile-hero stat with a REAL per-user source on the
+    /// current mobile contract (the shell prefetch primes it). Money-saved and
+    /// member-since arrive once the profile DTO carries them (T-0392 backend +
+    /// client regen); until then the card shows Bookings alone rather than a
+    /// fabricated or address-count stand-in.
+    @Published private(set) var bookingsCount = 0
 
     let saved = PassthroughSubject<Void, Never>()
 
@@ -14,10 +20,17 @@ final class ProfileViewModel: ViewModel {
     private let snackbar: SnackbarController
     private let localizer = ApiErrorLocalizer()
 
-    init(repository: UserProfileRepository, settings: AppSettingsStore, snackbar: SnackbarController) {
+    init(
+        repository: UserProfileRepository,
+        settings: AppSettingsStore,
+        snackbar: SnackbarController,
+        orderRepository: OrderRepository
+    ) {
         self.repository = repository
         self.settings = settings
         self.snackbar = snackbar
+        super.init()
+        orderRepository.$totalRecords.assign(to: &$bookingsCount)
     }
 
     var currentUser: CurrentUserProfile? {

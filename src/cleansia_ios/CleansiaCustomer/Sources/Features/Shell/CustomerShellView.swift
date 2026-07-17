@@ -31,7 +31,8 @@ struct CustomerShellView: View {
         _profileVM = StateObject(wrappedValue: ProfileViewModel(
             repository: container.userProfileRepository,
             settings: container.appSettings,
-            snackbar: container.snackbar
+            snackbar: container.snackbar,
+            orderRepository: container.orderRepository
         ))
     }
 
@@ -64,6 +65,7 @@ struct CustomerShellView: View {
                 geocoding: container.geocodingService,
                 mapProvider: container.mapProvider,
                 paymentSheet: StripePaymentController(),
+                orderClient: container.orderClient,
                 onDismiss: { model.isBookingPresented = false },
                 onViewOrder: { orderId in
                     model.isBookingPresented = false

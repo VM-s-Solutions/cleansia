@@ -63,7 +63,7 @@ public class RefreshTokenService(
             // ONLY on success (ADR-0002 D4). Without this explicit commit the security revocation
             // would be silently rolled back and every stolen-chain token would stay valid. Retry on an
             // xmin collision (a rotation racing this chain revoke) so it can't be outraced into a 500.
-            await CommitStagedChainRevokeWithRetryAsync("security", cancellationToken);
+            await CommitStagedChainRevokeWithRetryAsync(existing.Id, existing.UserId, "security", cancellationToken);
             logger.LogWarning(
                 "Refresh token rotation-reuse detected for user {UserId}. Revoked {Count} tokens in the chain.",
                 existing.UserId, count);
@@ -142,11 +142,17 @@ public class RefreshTokenService(
                 return;
             }
             revoke(existing);
-        }, cancellationToken);
+        }, new RefreshTokenRevocationScope { TokenHash = hash }, cancellationToken);
     }
 
     public async Task RevokeByDeviceAsync(string userId, string deviceId, string reason, CancellationToken cancellationToken)
     {
+        // A null/blank device id must fail LOUDLY: the tracked predicate below would silently match
+        // nothing, but the bulk fallback's scope would silently drop the DeviceId narrowing and widen
+        // to every session of the user — same input, opposite semantics (T-0421 review F2). The sole
+        // caller passes a required entity field, so this is a programming-error tripwire, not a path.
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+
         // Match on the stable device id captured at issue/rotation time. The null-guard is
         // load-bearing: a token with no DeviceId (pre-existing, or a client that never sent
         // X-Device-Id) must never match, so it survives until natural expiry rather than
@@ -158,7 +164,7 @@ public class RefreshTokenService(
             {
                 revoke(token);
             }
-        }, cancellationToken);
+        }, new RefreshTokenRevocationScope { UserId = userId, DeviceId = deviceId }, cancellationToken);
     }
 
     public async Task RevokeAllForUserAsync(string userId, string reason, string? exceptRawToken, CancellationToken cancellationToken)
@@ -175,7 +181,7 @@ public class RefreshTokenService(
             {
                 revoke(token);
             }
-        }, cancellationToken);
+        }, new RefreshTokenRevocationScope { UserId = userId, SparedTokenHash = sparedHash }, cancellationToken);
     }
 
     // Stages a revoke (via the caller's predicate) then commits, riding the caller's own unit of work
@@ -194,6 +200,7 @@ public class RefreshTokenService(
     private async Task CommitRevokeWithRetryAsync(
         string reason,
         Func<Action<RefreshToken>, CancellationToken, Task> stage,
+        RefreshTokenRevocationScope bulkFallbackScope,
         CancellationToken cancellationToken)
     {
         const int maxAttempts = 5;
@@ -215,15 +222,25 @@ public class RefreshTokenService(
                     await entry.ReloadAsync(cancellationToken);
                 }
             }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Retry budget exhausted (T-0421a). Propagating would be fail-OPEN for a kill switch:
+                // 500 + rollback = every targeted token stays alive. Land the revoke set-based instead.
+                await FailClosedBulkRevokeAsync(bulkFallbackScope, reason, cancellationToken);
+                return;
+            }
         }
     }
 
     // Commit-only retry for a revoke that was already staged by the repository (the rotation-reuse chain
-    // revoke). Same idempotent fail-to-success contract; the conflicted rows are reloaded and re-revoked.
-    private async Task CommitStagedChainRevokeWithRetryAsync(string reason, CancellationToken cancellationToken)
+    // revoke). Same idempotent fail-to-success contract as CommitRevokeWithRetryAsync.
+    private async Task CommitStagedChainRevokeWithRetryAsync(
+        string rootTokenId,
+        string userId,
+        string reason,
+        CancellationToken cancellationToken)
     {
         const int maxAttempts = 5;
-        var now = DateTimeOffset.UtcNow;
         for (var attempt = 1; ; attempt++)
         {
             try
@@ -233,16 +250,55 @@ public class RefreshTokenService(
             }
             catch (DbUpdateConcurrencyException ex) when (attempt < maxAttempts)
             {
+                // Reload the conflicted rows first (fresh xmin; a row the race already revoked —
+                // e.g. marked "rotated" with its forensic ReplacedByTokenId — reloads as dead and is
+                // then left untouched), then RE-RUN the full chain walk instead of only re-revoking
+                // the conflicted entries (T-0421b): the racing rotation that caused this collision may
+                // have inserted a NEW child token the original walk never saw. The re-read stages it
+                // too — the same no-rotation-child-escapes contract the other revoke paths get from
+                // re-running their stage predicate. Re-revoking an already-staged instance is an
+                // idempotent same-values overwrite.
                 foreach (var entry in ex.Entries)
                 {
                     await entry.ReloadAsync(cancellationToken);
-                    if (entry.Entity is RefreshToken { RevokedAt: null } token)
-                    {
-                        token.Revoke(reason, now);
-                    }
                 }
+                await repository.RevokeChainAsync(rootTokenId, reason, cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // The chain walk revokes every live token of the chain's user, so the user-wide scope
+                // is the exact set-based restatement (T-0421a).
+                await FailClosedBulkRevokeAsync(
+                    new RefreshTokenRevocationScope { UserId = userId }, reason, cancellationToken);
+                return;
             }
         }
+    }
+
+    // The last resort after maxAttempts consecutive xmin collisions on the same target rows — an
+    // active race (exactly what a token thief keeping a stolen session refreshing would produce) or
+    // pathological contention. Order matters, and the non-atomicity is deliberate:
+    //  1. Detach the stale tracked revoke marks so no later commit can collide on RefreshToken again.
+    //  2. Land the set-based revoke that ignores optimistic concurrency and VERIFIES termination —
+    //     BulkRevokeIgnoringConcurrencyAsync loops revoke-then-verify on fresh snapshots until zero
+    //     live rows remain in scope, closing the statement-overlap escape (T-0421 review F1), and
+    //     throws rather than report a revocation that provably did not complete.
+    //  3. THEN commit the command's sibling staged changes (e.g. ChangePassword's new hash). If that
+    //     commit still fails the revoke has already landed — the failure mode is "tokens dead + the
+    //     caller retries", never "tokens alive" (ADR-0024 D4.6 requires exactly this direction: a
+    //     revoke without the password change is safe; a password change without the revoke is not,
+    //     and the reverse order could roll the revoke back with the sibling failure).
+    private async Task FailClosedBulkRevokeAsync(
+        RefreshTokenRevocationScope scope,
+        string reason,
+        CancellationToken cancellationToken)
+    {
+        repository.DetachModifiedTracked();
+        var revoked = await repository.BulkRevokeIgnoringConcurrencyAsync(scope, reason, cancellationToken);
+        logger.LogWarning(
+            "Refresh-token revoke retry budget exhausted; fail-closed bulk revoke ended {Count} token(s) (reason: {Reason}).",
+            revoked, reason);
+        await unitOfWork.CommitAsync(cancellationToken);
     }
 
     public string HashToken(string rawToken)

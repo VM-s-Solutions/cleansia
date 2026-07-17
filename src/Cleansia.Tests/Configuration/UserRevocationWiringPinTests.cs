@@ -54,7 +54,14 @@ public class UserRevocationWiringPinTests
         var wiring = ReadServiceExtensions(hostProject);
 
         Assert.Contains("AddUserRevocationEnforcement", wiring);
-        Assert.Contains("EnforceUserRevocation", wiring);
+        // T-0420 (ADR-0026 CH-10) moved the per-request OnTokenValidated hook into the SHARED mobile
+        // JWT registration, so the pin follows the indirection: the host must call the shared
+        // registration, and the shared registration must still run BOTH revocation checks on every
+        // validated token.
+        Assert.Contains("AddCleansiaMobileJwt", wiring);
+        var shared = ReadSharedMobileJwtSource();
+        Assert.Contains("EnforceUserRevocation", shared);
+        Assert.Contains("EnforceDeviceRevocation", shared);
     }
 
     [Theory]
@@ -71,6 +78,9 @@ public class UserRevocationWiringPinTests
         // per-request-adjacent revocation directory without tripping this test.
         Assert.DoesNotContain("AddDeviceRevocationEnforcement", wiring);
         Assert.DoesNotContain("EnforceDeviceRevocation", wiring);
+        // Nor via the T-0420 indirection: the shared mobile JWT registration carries both
+        // OnTokenValidated revocation hooks, so a web host must never call it either.
+        Assert.DoesNotContain("AddCleansiaMobileJwt", wiring);
     }
 
     [Fact]
@@ -89,6 +99,14 @@ public class UserRevocationWiringPinTests
         var solutionDir = RequireSolutionDirectory();
         var path = Path.Combine(solutionDir, hostProject, "Extensions", "ServiceExtensions.cs");
         Assert.True(File.Exists(path), $"ServiceExtensions not found: {path}");
+        return File.ReadAllText(path);
+    }
+
+    private static string ReadSharedMobileJwtSource()
+    {
+        var solutionDir = RequireSolutionDirectory();
+        var path = Path.Combine(solutionDir, "Cleansia.Config", "Services", "ServiceExtensions.cs");
+        Assert.True(File.Exists(path), $"Shared mobile JWT registration not found: {path}");
         return File.ReadAllText(path);
     }
 

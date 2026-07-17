@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Microsoft.AspNetCore.Http;
 
@@ -120,11 +122,28 @@ public class AuthCookieConfig
     public bool RequireSecure { get; init; } = true;
 
     /// <summary>
-    /// Resolves the CSRF session-key from the issued token response. By
-    /// default we use the <see cref="JwtTokenResponse.UserId"/> as a stable
-    /// per-user value; once jti is added to the JWT it can switch to that
-    /// for tighter rotation.
+    /// Resolves the CSRF session-key from the issued token response. Uses the access token's
+    /// <c>jti</c> (unique per issuance) so the derived CSRF token ROTATES with the session rather
+    /// than being pinned to the stable user id (T-0356) — matching the validation side, which reads
+    /// jti from the same token via <c>CsrfTokenService.GetSessionKey</c>. Falls back to the user id
+    /// for a legacy token carrying no jti.
     /// </summary>
     public Func<JwtTokenResponse, string> SessionKeyForCsrf { get; init; }
-        = response => response.UserId ?? string.Empty;
+        = response => ExtractJti(response.Token) ?? response.UserId ?? string.Empty;
+
+    private static string? ExtractJti(string? token)
+    {
+        if (string.IsNullOrEmpty(token))
+        {
+            return null;
+        }
+
+        var handler = new JwtSecurityTokenHandler();
+        if (!handler.CanReadToken(token))
+        {
+            return null;
+        }
+
+        return handler.ReadJwtToken(token).Claims.FirstOrDefault(c => c.Type == "jti")?.Value;
+    }
 }

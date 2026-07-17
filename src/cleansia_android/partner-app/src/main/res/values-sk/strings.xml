@@ -76,7 +76,7 @@
     <string name="back">Späť</string>
 
     <!-- Password rules -->
-    <string name="register_pw_min_length">Aspoň 8 znakov</string>
+    <string name="register_pw_min_length">Aspoň 12 znakov</string>
     <string name="register_pw_letter">Obsahuje písmeno</string>
     <string name="register_pw_number">Obsahuje číslo</string>
     <string name="register_pw_match">Heslá sa zhodujú</string>
@@ -581,7 +581,7 @@
     <string name="error_email_required">E-mail je povinný</string>
     <string name="error_email_invalid">Zadajte platný e-mail</string>
     <string name="error_password_required">Heslo je povinné</string>
-    <string name="error_password_min_length">Heslo musí mať aspoň 8 znakov</string>
+    <string name="error_password_min_length">Heslo musí mať aspoň 12 znakov</string>
     <string name="error_password_rules">Heslo musí mať aspoň 8 znakov, písmeno a číslo</string>
     <string name="error_passwords_not_match">Heslá sa nezhodujú</string>
     <string name="error_first_name_required">Meno je povinné</string>

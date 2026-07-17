@@ -55,6 +55,20 @@ public class TokenServiceRecordLoginTests
     }
 
     [Fact]
+    public async Task GenerateTokenAsync_AccessTokenClock_RidesTheInjectedTimeProvider()
+    {
+        // T-0410: the whole access-token clock (nbf + exp) is derived from TimeProvider, so expiry
+        // boundaries are unit-testable without real waits (and can't drift from NotBefore).
+        var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { Profile = UserProfile.Customer });
+
+        var response = await CreateSut().GenerateTokenAsync(user, rememberMe: false, Audience);
+
+        var jwt = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().ReadJwtToken(response.Token);
+        Assert.Equal(Now.UtcDateTime, jwt.ValidFrom);
+        Assert.Equal(Now.UtcDateTime.AddMinutes(15), jwt.ValidTo);
+    }
+
+    [Fact]
     public async Task GenerateTokenAsync_When_Email_Unconfirmed_Does_Not_Record_Login()
     {
         var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { Profile = UserProfile.Customer });

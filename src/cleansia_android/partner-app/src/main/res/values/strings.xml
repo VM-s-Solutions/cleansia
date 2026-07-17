@@ -76,7 +76,7 @@
     <string name="back">Back</string>
 
     <!-- Password rules — shown live under the Register screen's password fields. -->
-    <string name="register_pw_min_length">At least 8 characters</string>
+    <string name="register_pw_min_length">At least 12 characters</string>
     <string name="register_pw_letter">Contains a letter</string>
     <string name="register_pw_number">Contains a number</string>
     <string name="register_pw_match">Passwords match</string>
@@ -581,7 +581,7 @@
     <string name="error_email_required">Email is required</string>
     <string name="error_email_invalid">Please enter a valid email</string>
     <string name="error_password_required">Password is required</string>
-    <string name="error_password_min_length">Password must be at least 8 characters</string>
+    <string name="error_password_min_length">Password must be at least 12 characters</string>
     <string name="error_password_rules">Password must be at least 8 characters with a letter and a number</string>
     <string name="error_passwords_not_match">Passwords do not match</string>
     <string name="error_first_name_required">First name is required</string>

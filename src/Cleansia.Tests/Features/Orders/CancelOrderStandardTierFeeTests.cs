@@ -127,4 +127,31 @@ public class CancelOrderStandardTierFeeTests
         Assert.Equal(BookingPolicy.LastMinuteCancellationFeeRate, order.CancellationFeeRate);
         Assert.Equal(500m, order.CancellationRefundAmount);
     }
+
+    [Fact]
+    public async Task Refund_RoundsToTwoDecimals_AwayFromZero_AtTheTruncationBoundary()
+    {
+        // 100.01 × (1 − 0.50) = 50.005 — a 3rd-decimal .5 boundary. Unrounded, the
+        // Refund row (numeric(18,2)) and Stripe ((long)(amount*100) truncation)
+        // would disagree by a cent (50.01 vs 50.00). The source-rounding fix
+        // (T-0355) pins one value, away-from-zero, that every reader shares.
+        var order = ArrangeAcceptedCardPaidOrder(DateTime.UtcNow.AddHours(1), totalPrice: 100.01m);
+
+        RefundRequest? issued = null;
+        _refundService
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((RefundRequest req, CancellationToken _) =>
+            {
+                issued = req;
+                return BusinessResult.Success(new RefundResult(
+                    "refund-1", $"refund:{req.OrderId}:cancel", req.Amount, RefundStatus.Succeeded, false));
+            });
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(50.01m, result.Value!.RefundAmount);
+        Assert.Equal(50.01m, order.CancellationRefundAmount);
+        Assert.Equal(50.01m, issued!.Amount);
+    }
 }

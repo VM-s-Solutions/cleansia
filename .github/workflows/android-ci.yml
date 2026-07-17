@@ -1,15 +1,15 @@
 name: Android CI
 
-# Also runs on pushes to master: direct-to-master commits used to bypass this
-# gate entirely (pull_request-only) — the same hole backend-ci and ios-ci already
-# closed. Paths-scoped to the Android tree so backend/frontend/iOS changes skip it.
+# Runs on EVERY pull request (not path-scoped) so the Android build + unit
+# suites are always a visible pre-merge gate — a green check on every PR, not
+# just Android-touching ones (a path-scoped PR check silently skips and is easy
+# to miss vs a failing one). Pushes to master stay path-scoped so a non-Android
+# merge doesn't re-run the Android build post-merge; this also closes the
+# direct-to-master hole (pull_request-only used to let master pushes bypass it).
 on:
   pull_request:
     branches:
       - '*'
-    paths:
-      - 'src/cleansia_android/**'
-      - '.github/workflows/android-ci.yml'
   push:
     branches:
       - master

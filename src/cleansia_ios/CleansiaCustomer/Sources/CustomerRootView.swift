@@ -79,8 +79,7 @@ struct CustomerRootView: View {
         ProfileViewModel(
             repository: container.userProfileRepository,
             settings: container.appSettings,
-            snackbar: container.snackbar,
-            orderRepository: container.orderRepository
+            snackbar: container.snackbar
         )
     }
 

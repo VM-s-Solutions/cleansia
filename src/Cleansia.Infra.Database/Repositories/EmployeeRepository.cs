@@ -16,6 +16,15 @@ public class EmployeeRepository(CleansiaDbContext context) : BaseRepository<Empl
             .FirstOrDefaultAsync(e => e.User != null && e.User.Email == email, cancellationToken);
     }
 
+    public Task<Employee?> GetByUserEmailIgnoringTenantAsync(string email, CancellationToken cancellationToken = default)
+    {
+        // Same by-email match as GetByUserEmailAsync but bypassing the tenant filter, so a
+        // tenant-stamped employee still resolves on the tenant-less token-minting paths (T-0361).
+        return GetQueryableIgnoringTenant()
+            .Include(e => e.User)
+            .FirstOrDefaultAsync(e => e.User != null && e.User.Email == email, cancellationToken);
+    }
+
     public Task<bool> ExistsWithUserEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         return GetDbSet()

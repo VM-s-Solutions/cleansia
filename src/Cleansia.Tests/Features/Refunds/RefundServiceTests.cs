@@ -145,6 +145,29 @@ public class RefundServiceTests
         Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
     }
 
+    [Fact]
+    public async Task IssueRefund_QuantizesAmountToTwoDecimals_AtTheSeam_SoStripeAndLedgerAgree()
+    {
+        // A caller passing a >2dp amount (e.g. dispute resolution, whose validator only requires >= 0)
+        // must not re-open the ledger<->Stripe cent divergence T-0355 kills: the Refund row
+        // (numeric(18,2), rounds) and Stripe ((long)(amount*100), truncates) must see the SAME 2dp value.
+        // The seam rounds in Refund.Create, so every caller is covered — not just CancelOrder.
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+        ArrangeConsumed(0m);
+        CaptureAddedRefund(out var added);
+
+        var result = await CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 50.005m, RefundReason.CustomerCancellation, ActorId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var row = Assert.Single(added);
+        Assert.Equal(50.01m, row.Amount);          // persisted 2dp, away-from-zero (not 50.005)
+        Assert.Equal(50.01m, _stripe.LastAmount);  // Stripe re-driven at the same 2dp value
+        Assert.Equal(50.01m, result.Value!.Amount);
+    }
+
     // Web non-regression (T-0348): a Checkout-Session order routes through the SESSION refund surface,
     // never the new PaymentIntent path.
     [Fact]
@@ -362,6 +385,37 @@ public class RefundServiceTests
         Assert.Equal(RefundStatus.Succeeded, pending.Status);     // the existing row is now succeeded
         Assert.Equal(PaymentStatus.PartiallyRefunded, order.PaymentStatus);
         _refundRepository.Verify(r => r.Add(It.IsAny<Refund>()), Times.Never); // reused, not a 2nd row
+    }
+
+    [Fact]
+    public async Task IssueRefund_RedriveWithNonZeroConsumed_ClampsToLiveCeiling_NotTheStaleFrozenAmount()
+    {
+        // A prior Pending cancel refund froze 1000 (the full ceiling at the time). Since then a
+        // DIFFERENT-purpose refund succeeded, consuming 700, so the live ceiling is now 1000 - 700 = 300.
+        // Re-driving the stale 1000 would over-refund; the guard clamps the re-drive to the live ceiling
+        // (T-0354). The existing re-drive test uses ArrangeConsumed(0m), leaving this cross-key gap untested.
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(700m);
+
+        var key = $"refund:{OrderId}:cancel";
+        var pending = Refund.Create(
+            OrderId, key, 1000m, "CZK", RefundReason.CustomerCancellation, RefundSource.AppRefund);
+        _refundRepository
+            .Setup(r => r.GetByRefundKeyAsync(key, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pending);
+        _refundRepository
+            .Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 1000m, RefundReason.CustomerCancellation, ActorId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(300m, result.Value!.Amount);             // clamped, not the frozen 1000
+        Assert.Equal(300m, pending.Amount);                    // the reused row was clamped down
+        Assert.Equal(300m, _stripe.LastAmount);                // Stripe re-driven at the clamped amount
+        Assert.Equal(RefundStatus.Succeeded, pending.Status);
     }
 
     [Fact]

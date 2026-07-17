@@ -71,7 +71,14 @@ public class Refund : Auditable, ITenantEntity
         {
             OrderId = orderId,
             RefundKey = refundKey,
-            Amount = amount,
+            // Quantize to 2 dp at the money seam (away-from-zero) so EVERY caller
+            // — cancel, dispute resolution, admin partial refund, re-drive — is
+            // covered: the row persists numeric(18,2) (rounds) while Stripe
+            // truncates (long)(amount*100), and an unrounded amount makes the two
+            // diverge by a cent and skews the Refunded/PartiallyRefunded check
+            // (T-0355). Bounded by the caller's ceiling clamp, so this never
+            // rounds above what's refundable.
+            Amount = Math.Round(amount, 2, MidpointRounding.AwayFromZero),
             Currency = currency,
             Reason = reason,
             Source = source,
@@ -92,6 +99,25 @@ public class Refund : Auditable, ITenantEntity
         StripeRefundId = stripeRefundId;
         Status = RefundStatus.Succeeded;
         ConfirmedOn = confirmedOnUtc;
+        return this;
+    }
+
+    /// <summary>
+    /// Lower this refund's amount to at most <paramref name="maxAmount"/> before a re-drive, so a stale
+    /// frozen amount can never exceed the live refundable ceiling (the cross-key over-refund guard,
+    /// T-0354). Only ever decreases the amount, and only meaningful while the refund has not yet
+    /// Succeeded — the re-drive caller only reaches this for a Pending/Failed row.
+    /// </summary>
+    public Refund ClampAmountTo(decimal maxAmount)
+    {
+        // Same 2 dp seam-rounding as Create so a re-drive can never persist a
+        // sub-cent amount (the ceiling is already 2 dp, so this is defensive).
+        var ceiling = Math.Round(maxAmount, 2, MidpointRounding.AwayFromZero);
+        if (ceiling < Amount)
+        {
+            Amount = ceiling;
+        }
+
         return this;
     }
 }

@@ -28,7 +28,6 @@ struct ProfileTab: View {
                         ProfileHeader(
                             user: profileVM.currentUser,
                             tier: tierLabel,
-                            bookings: profileVM.bookingsCount,
                             topInset: proxy.safeAreaInsets.top,
                             onEdit: { onOpen(.editProfile(showBookingHint: false)) }
                         )
@@ -206,43 +205,66 @@ private struct DeleteAccountRow: View {
 private struct ProfileHeader: View {
     let user: CurrentUserProfile?
     let tier: String
-    let bookings: Int
     var topInset: CGFloat = 0
     let onEdit: () -> Void
 
     var body: some View {
-        // Hero + a floating stats card overlapping its lip (Android parity).
-        // Interim: only Bookings has a real per-user source on the current
-        // mobile contract. Money-saved and member-since join the card once the
-        // profile DTO carries them (T-0392 backend + client regen) — never a
-        // fabricated or address-count stand-in.
+        // Hero + a floating stats card overlapping its lip (Android parity), now
+        // fed by the real profile DTO stats (T-0392): bookings placed, money
+        // saved (formatted in the savings currency), and member-since.
         VStack(spacing: 0) {
             HeroGradient(user: user, tier: tier, topInset: topInset, onEdit: onEdit)
-            ProfileStatsCard(bookings: bookings)
-                .padding(.horizontal, Spacing.ml)
-                // Overlap must not exceed the hero's Spacing.m bottom lip, or
-                // the card's hit region crops the Edit Profile chip's tap area.
-                .offset(y: -Spacing.m)
-                .padding(.bottom, -Spacing.m)
+            ProfileStatsCard(
+                bookings: user?.totalBookings ?? 0,
+                saved: OrdersFormat.price(user?.totalSavings ?? 0, currencyCode: user?.savingsCurrencyCode),
+                memberSince: Self.memberSince(user?.memberSince)
+            )
+            .padding(.horizontal, Spacing.ml)
+            // Overlap must not exceed the hero's Spacing.m bottom lip, or the
+            // card's hit region crops the Edit Profile chip's tap area.
+            .offset(y: -Spacing.m)
+            .padding(.bottom, -Spacing.m)
         }
+    }
+
+    /// Account-creation date → "MMM yyyy" (e.g. "Feb 2025"); em dash if unknown.
+    private static func memberSince(_ date: Date?) -> String {
+        guard let date else { return "—" }
+        return date.formatted(.dateTime.month(.abbreviated).year())
     }
 }
 
-/// The real profile stats in a floating surface card. Interim: Bookings only.
+/// The three real profile stats, side by side in a floating surface card.
 private struct ProfileStatsCard: View {
     let bookings: Int
+    let saved: String
+    let memberSince: String
 
     var body: some View {
-        statColumn(value: "\(bookings)", label: L10n.Profile.statBookings)
-            .padding(.vertical, Spacing.m)
-            .frame(maxWidth: .infinity)
-            .background(CleansiaColors.surface)
-            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
-            .overlay(
-                RoundedRectangle(cornerRadius: CornerRadius.large)
-                    .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
-            )
-            .shadow(color: Color.black.opacity(0.08), radius: 12, y: 4)
+        HStack(spacing: 0) {
+            statColumn(value: "\(bookings)", label: L10n.Profile.statBookings)
+            divider
+            statColumn(value: saved, label: L10n.Profile.statSaved)
+            divider
+            statColumn(value: memberSince, label: L10n.Profile.statMemberSince)
+        }
+        .padding(.vertical, Spacing.m)
+        .frame(maxWidth: .infinity)
+        .background(CleansiaColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.large)
+                .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.08), radius: 12, y: 4)
+    }
+
+    /// A 1pt separator that tracks the taller column (Dynamic Type safe).
+    private var divider: some View {
+        Rectangle()
+            .fill(CleansiaColors.outlineVariant)
+            .frame(width: 1)
+            .padding(.vertical, Spacing.xxs)
     }
 
     private func statColumn(value: String, label: String) -> some View {
@@ -251,9 +273,12 @@ private struct ProfileStatsCard: View {
                 .font(CleansiaTypography.headlineSmall)
                 .fontWeight(.bold)
                 .foregroundColor(CleansiaColors.onSurface)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
             Text(label)
                 .font(CleansiaTypography.labelMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
     }
@@ -363,10 +388,13 @@ private struct EditProfileChip: View {
                     phoneNumber: "+420123",
                     birthDate: nil,
                     preferredLanguageCode: "en",
-                    isEmailConfirmed: true
+                    isEmailConfirmed: true,
+                    memberSince: nil,
+                    totalBookings: 12,
+                    totalSavings: 320,
+                    savingsCurrencyCode: "CZK"
                 ),
                 tier: "Regular",
-                bookings: 12,
                 onEdit: {}
             )
             .background(CleansiaColors.background)

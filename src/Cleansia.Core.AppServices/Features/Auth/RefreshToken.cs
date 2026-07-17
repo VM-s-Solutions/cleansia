@@ -48,7 +48,8 @@ public class RefreshToken
         IUserRepository userRepository,
         IEmployeeRepository employeeRepository,
         IRequestMetadataProvider requestMetadata,
-        IJwtSettings jwtSettings)
+        IJwtSettings jwtSettings,
+        TimeProvider timeProvider)
         : ICommandHandler<Command, JwtTokenResponse>
     {
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
@@ -109,12 +110,14 @@ public class RefreshToken
             string? employeeId = null;
             if (user.Profile == UserProfile.Employee)
             {
-                var employee = await employeeRepository.GetByUserEmailAsync(user.Email, cancellationToken);
+                // Tenant-ignoring: refresh runs with no tenant claim, so the tenant-scoped read would
+                // miss a tenant-stamped employee and mint a token without employee_id (T-0361).
+                var employee = await employeeRepository.GetByUserEmailIgnoringTenantAsync(user.Email, cancellationToken);
                 employeeId = employee?.Id;
             }
 
             var audience = issued.Record.Audience ?? string.Empty;
-            var accessToken = GenerateAccessToken(user, employeeId, audience, issued.Record.DeviceId, jwtSettings);
+            var accessToken = GenerateAccessToken(user, employeeId, audience, issued.Record.DeviceId, jwtSettings, timeProvider);
 
             return BusinessResult.Success(new JwtTokenResponse(
                 Token: accessToken,
@@ -126,16 +129,20 @@ public class RefreshToken
                 Role: user.Profile.ToString()));
         }
 
-        private static string GenerateAccessToken(User user, string? employeeId, string audience, string? deviceId, IJwtSettings jwtSettings)
+        private static string GenerateAccessToken(User user, string? employeeId, string audience, string? deviceId, IJwtSettings jwtSettings, TimeProvider timeProvider)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret));
+            // Whole token clock on TimeProvider (T-0410) — NotBefore/IssuedAt share Expires' base.
+            var now = timeProvider.GetUtcNow().UtcDateTime;
             var descriptor = new SecurityTokenDescriptor
             {
                 Issuer = jwtSettings.Issuer,
                 Audience = audience,
                 Subject = new ClaimsIdentity(user.SetClaims(employeeId, deviceId)),
-                Expires = DateTime.UtcNow.AddMinutes(jwtSettings.AccessTokenExpMinutes),
+                NotBefore = now,
+                IssuedAt = now,
+                Expires = now.AddMinutes(jwtSettings.AccessTokenExpMinutes),
                 SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
             };
             var token = tokenHandler.CreateToken(descriptor);

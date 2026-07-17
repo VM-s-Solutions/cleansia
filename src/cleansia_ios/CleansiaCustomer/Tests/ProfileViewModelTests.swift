@@ -7,22 +7,19 @@ final class ProfileViewModelTests: XCTestCase {
     private var client: FakeUserProfileClient!
     private var repository: UserProfileRepository!
     private var snackbar: SnackbarController!
-    private var orderRepository: OrderRepository!
 
     override func setUp() {
         super.setUp()
         client = FakeUserProfileClient()
         repository = UserProfileRepository(client: client)
         snackbar = SnackbarController()
-        orderRepository = OrderRepository(client: FakeOrderClient())
     }
 
     private func makeVM() -> ProfileViewModel {
         ProfileViewModel(
             repository: repository,
             settings: UserDefaultsAppSettingsStore(defaults: scratchDefaults()),
-            snackbar: snackbar,
-            orderRepository: orderRepository
+            snackbar: snackbar
         )
     }
 
@@ -158,8 +155,7 @@ final class ProfileViewModelTests: XCTestCase {
         let vm = ProfileViewModel(
             repository: repository,
             settings: settings,
-            snackbar: snackbar,
-            orderRepository: orderRepository
+            snackbar: snackbar
         )
         await vm.refresh()
 
@@ -184,8 +180,7 @@ final class ProfileViewModelTests: XCTestCase {
         let vm = ProfileViewModel(
             repository: repository,
             settings: settings,
-            snackbar: snackbar,
-            orderRepository: orderRepository
+            snackbar: snackbar
         )
         await vm.refresh()
 
@@ -201,8 +196,7 @@ final class ProfileViewModelTests: XCTestCase {
         let vm = ProfileViewModel(
             repository: repository,
             settings: settings,
-            snackbar: snackbar,
-            orderRepository: orderRepository
+            snackbar: snackbar
         )
         await vm.refresh()
 
@@ -224,8 +218,7 @@ final class ProfileViewModelTests: XCTestCase {
         let vm = ProfileViewModel(
             repository: repository,
             settings: settings,
-            snackbar: snackbar,
-            orderRepository: orderRepository
+            snackbar: snackbar
         )
         await vm.refresh()
 
@@ -240,8 +233,7 @@ final class ProfileViewModelTests: XCTestCase {
         let vm = ProfileViewModel(
             repository: repository,
             settings: settings,
-            snackbar: snackbar,
-            orderRepository: orderRepository
+            snackbar: snackbar
         )
 
         vm.skipOnboarding()
@@ -255,8 +247,7 @@ final class ProfileViewModelTests: XCTestCase {
         let vm = ProfileViewModel(
             repository: repository,
             settings: settings,
-            snackbar: snackbar,
-            orderRepository: orderRepository
+            snackbar: snackbar
         )
 
         let needed = await vm.needsOnboarding()
@@ -281,8 +272,7 @@ final class ProfileViewModelTests: XCTestCase {
         let vm = ProfileViewModel(
             repository: repository,
             settings: settings,
-            snackbar: snackbar,
-            orderRepository: orderRepository
+            snackbar: snackbar
         )
 
         let neededForSeenUser = await vm.needsOnboarding()

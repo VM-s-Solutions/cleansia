@@ -57,7 +57,9 @@ public class TokenService(
         {
             return null;
         }
-        var employee = await employeeRepository.GetByUserEmailAsync(user.Email, cancellationToken);
+        // Tenant-ignoring: login runs with no tenant claim yet, so the tenant-scoped read would
+        // miss a tenant-stamped employee and mint a token without employee_id (T-0361).
+        var employee = await employeeRepository.GetByUserEmailIgnoringTenantAsync(user.Email, cancellationToken);
         return employee?.Id;
     }
 
@@ -66,12 +68,18 @@ public class TokenService(
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret));
 
+        // The whole token clock rides TimeProvider (T-0410): NotBefore/IssuedAt must share the same
+        // base as Expires, otherwise a controlled clock (tests) can put Expires before the real-now
+        // NotBefore and the handler rejects it. Prod uses TimeProvider.System, so values are unchanged.
+        var now = timeProvider.GetUtcNow().UtcDateTime;
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Issuer = jwtSettings.Issuer,
             Audience = audience,
             Subject = new ClaimsIdentity(user.SetClaims(employeeId, deviceId)),
-            Expires = DateTime.UtcNow.AddMinutes(jwtSettings.AccessTokenExpMinutes),
+            NotBefore = now,
+            IssuedAt = now,
+            Expires = now.AddMinutes(jwtSettings.AccessTokenExpMinutes),
             SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
         };
         var token = tokenHandler.CreateToken(tokenDescriptor);

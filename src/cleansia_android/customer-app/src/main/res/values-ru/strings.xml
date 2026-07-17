@@ -113,7 +113,7 @@
     <string name="home_reorder_cta">Заказать снова</string>
 
     <!-- Home — hero carousel -->
-    <string name="home_hero_greeting">С возвращением, Michael</string>
+    <string name="home_hero_greeting">С возвращением</string>
     <string name="home_hero_prompt">Готовы к безупречно чистому дому?</string>
     <string name="home_hero_cta">Заказать за 30 секунд</string>
 

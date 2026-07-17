@@ -73,6 +73,7 @@ import cz.cleansia.customer.ui.format.orderStatusColor
 import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
 import cz.cleansia.customer.core.loyalty.LoyaltyTier
 import cz.cleansia.customer.core.orders.OrderListItemDto
+import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.features.orders.OrderStatus
@@ -912,7 +913,7 @@ private fun PopularPackageCard(
         }
         Spacer(Modifier.height(10.dp))
         Text(
-            text = pkg.name.orEmpty(),
+            text = localizedName(pkg.translations, pkg.name.orEmpty()),
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,

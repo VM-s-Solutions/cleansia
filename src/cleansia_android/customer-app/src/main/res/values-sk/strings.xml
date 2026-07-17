@@ -113,7 +113,7 @@
     <string name="home_reorder_cta">Objednať znova</string>
 
     <!-- Home — hero carousel -->
-    <string name="home_hero_greeting">Vitajte späť, Michael</string>
+    <string name="home_hero_greeting">Vitajte späť</string>
     <string name="home_hero_prompt">Tešíte sa na čistý domov?</string>
     <string name="home_hero_cta">Rezervovať za 30 sekúnd</string>
 

@@ -238,6 +238,15 @@ remove before PROD.
 ---
 
 ## Not-issues (intentional — do not re-flag)
+- **B10 in TEST files (13 hits, baselined 2026-07-17):** running `check-consistency.mjs
+  --paths=src/Cleansia.Tests` surfaces 13 direct Dispute/receipt state-writes
+  (`DisputeTransitionTests`, `ResolveDisputeRefundSeamTests`, `UpdateDisputeStatusHandlerTests`,
+  `HandleChargebackNotificationTests` ×3, `FiscalModeReceiptServiceMatrixTests` ×6,
+  `ReceiptServiceFiscalIdempotencyTokenTests`). These are SANCTIONED: tests must construct
+  specific dispute/fiscal states directly to exercise the guards themselves — routing them
+  through `CanTransitionTo`/`UpdateStatus` would make the guard untestable. The default B10
+  roots deliberately exclude `src/Cleansia.Tests`, so the standard run stays clean; reviewers
+  running with custom `--paths` over tests should treat these 13 as this baseline, not new debt.
 - `GetPagedOrders` materialize-then-map loop: required for per-row pay estimation with pre-loaded
   configs (A6 documented exception).
 - Handler fetch-and-guard (`if (x is null) return Failure`) on Update/Delete: the canonical guard at

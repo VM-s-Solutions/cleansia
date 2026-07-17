@@ -4,11 +4,11 @@ using Cleansia.Core.Clients.Abstractions;
 namespace Cleansia.Tests.Integration;
 
 /// <summary>
-/// T-0144 / ADR-0005 D2 — the closed failure-classification taxonomy
+/// ADR-0005 D2 — the closed failure-classification taxonomy
 /// (<see cref="IntegrationFailureClass"/>) that every outbound integration codes against.
 /// This ticket seeds the single ADR-frozen classifier in
 /// <c>Cleansia.Core.Clients.Abstractions</c> (D2.1) and wires the Stripe + SendGrid boundaries
-/// to it; T-0145/BLIND-6 generalises the per-provider mappers on top of THIS taxonomy (it does
+/// to it; the per-provider mappers are generalised on top of THIS taxonomy (that work does
 /// not introduce a second one).
 ///
 /// AC5 boundary test, written test-first (RED until the classifier exists): a simulated transient

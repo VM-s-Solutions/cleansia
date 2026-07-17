@@ -258,6 +258,13 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
     set nor lands on the allowlist fails a real test (the existing `AuthRepositoryTest`/`PushLogoutClearsTests`
     only exercise `clearAll()` with an *injected* set — they do not check the real multibinding's membership).
     Filed as a small follow-up ticket (§`enforcement.md`).
+- **E10.** **Every `HttpLoggingInterceptor` redacts the Authorization header.** A provider that builds
+  `HttpLoggingInterceptor()` MUST call `redactHeader("Authorization")` in the same `.apply` block —
+  a DEBUG build at `Level.HEADERS` otherwise prints live bearer tokens to logcat, where any
+  on-device log collector (or a copied bug report) picks them up. Both existing providers
+  (customer `AuthModule`, partner `NetworkModule`) comply; the rule guards the NEXT provider.
+  **Live (blocking):** `check-consistency.mjs` rule **E10** flags any `.kt` file constructing the
+  interceptor without the redact call.
 
 ---
 

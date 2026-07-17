@@ -10,6 +10,7 @@ import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.data.auth.AuthRepository
+import cz.cleansia.partner.data.auth.LoginOutcome
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,8 +74,16 @@ class ConfirmEmailViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             when (val result = authRepository.confirmEmail(email = state.email, code = state.code)) {
-                is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, isConfirmationSuccessful = true) }
+                is ApiResult.Success -> when (result.data) {
+                    // Only a real session counts: the repo maps a 200-without-token to
+                    // UnverifiedEmail(hasToken = false), and navigating into the app on
+                    // that would strand the user sessionless.
+                    is LoginOutcome.Authenticated ->
+                        _uiState.update { it.copy(isLoading = false, isConfirmationSuccessful = true) }
+                    else -> {
+                        snackbar.showError(context.getString(R.string.error_generic))
+                        _uiState.update { it.copy(isLoading = false) }
+                    }
                 }
                 is ApiResult.Error -> {
                     snackbar.showError(errorTranslator.translate(result.error))

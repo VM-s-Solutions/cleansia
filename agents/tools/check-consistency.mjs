@@ -388,6 +388,19 @@ function checkMobile(roots) {
     for (const f of files) {
         const lines = read(f);
         const text = lines.join("\n");
+        // E10 — every HttpLoggingInterceptor construction must redact the Authorization header,
+        // or a DEBUG/HEADERS build logs live bearer tokens to logcat. File-level: the redactHeader
+        // call rides the same .apply block as the constructor.
+        if (/HttpLoggingInterceptor\s*\(/.test(text) &&
+            !/redactHeader\(\s*"Authorization"\s*\)/.test(text)) {
+            const n = lines.findIndex((l) => /HttpLoggingInterceptor\s*\(/.test(l)) + 1;
+            add(
+                f,
+                n,
+                "E10",
+                'HttpLoggingInterceptor without redactHeader("Authorization") — a HEADERS-level build logs bearer tokens',
+            );
+        }
         lines.forEach((ln, i) => {
             const n = i + 1;
             if (/data class\s+\w*UiState\b/.test(ln))

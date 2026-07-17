@@ -72,6 +72,16 @@ jobs:
         with:
           dotnet-version: 10.x
 
+      # NuGet package cache — keyed on the central package versions file + csprojs, so a
+      # dependency bump misses once and everything else restores from cache instead of nuget.org.
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('src/Directory.Packages.props', 'src/**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
       - name: Restore dependencies
         run: dotnet restore Cleansia.Api.sln
         working-directory: ./src
@@ -142,6 +152,32 @@ jobs:
           name: customer-mobile-api
           path: ./src/publish/customer-mobile-api
 
+      # The EF migrations bundle is built HERE, where the solution is already restored and
+      # built, and shipped to migrate-database as an artifact — that job used to re-restore
+      # the entire solution just to produce this one self-contained executable. Gated on
+      # deploy mode: what-if runs no migrations, so it should not pay for the bundle either.
+      - name: Install EF Core tools
+        if: inputs.mode == 'deploy'
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Build EF migrations bundle
+        if: inputs.mode == 'deploy'
+        run: |
+          dotnet ef migrations bundle \
+            --project Cleansia.Infra.Database/Cleansia.Infra.Database.csproj \
+            --startup-project Cleansia.Web.Partner/Cleansia.Web.Partner.csproj \
+            --configuration Release \
+            --output ./efbundle \
+            --force
+        working-directory: ./src
+
+      - name: Upload EF bundle artifact
+        if: inputs.mode == 'deploy'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ef-bundle
+          path: ./src/efbundle
+
   build-angular:
     name: Build Angular Apps
     runs-on: ubuntu-latest
@@ -166,16 +202,27 @@ jobs:
         run: npm ci
         working-directory: ./src/Cleansia.App
 
+      # Nx computation cache — content-hashed per task, so an unchanged app restores its build
+      # output instead of recompiling all three bundles. Keyed to the SHA so every run saves a
+      # fresh entry; restore-keys pulls the most recent prior run's cache.
+      - name: Cache Nx computation cache
+        uses: actions/cache@v4
+        with:
+          path: ./src/Cleansia.App/.nx/cache
+          key: nx-${{ runner.os }}-${{ inputs.env }}-${{ github.sha }}
+          restore-keys: |
+            nx-${{ runner.os }}-${{ inputs.env }}-
+
       - name: Build Customer App
-        run: npx nx build cleansia.app --configuration=$NX_BUILD_CONFIGURATION --skip-nx-cache
+        run: npx nx build cleansia.app --configuration=$NX_BUILD_CONFIGURATION
         working-directory: ./src/Cleansia.App
 
       - name: Build Partner App
-        run: npx nx build cleansia-partner.app --configuration=$NX_BUILD_CONFIGURATION --skip-nx-cache
+        run: npx nx build cleansia-partner.app --configuration=$NX_BUILD_CONFIGURATION
         working-directory: ./src/Cleansia.App
 
       - name: Build Admin App
-        run: npx nx build cleansia-admin.app --configuration=$NX_BUILD_CONFIGURATION --skip-nx-cache
+        run: npx nx build cleansia-admin.app --configuration=$NX_BUILD_CONFIGURATION
         working-directory: ./src/Cleansia.App
 
       - name: Prepare Customer SSR package.json
@@ -387,27 +434,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+      # The self-contained bundle was built in build-dotnet (a `needs` of this job) — download
+      # it instead of re-restoring the whole solution here. The artifact transfer drops the
+      # exec bit; the Apply step's chmod restores it.
+      - name: Download EF bundle artifact
+        uses: actions/download-artifact@v4
         with:
-          dotnet-version: 10.x
-
-      - name: Install EF Core tools
-        run: dotnet tool install --global dotnet-ef
-
-      - name: Restore packages
-        run: dotnet restore Cleansia.Api.sln
-        working-directory: ./src
-
-      - name: Build EF migrations bundle
-        run: |
-          dotnet ef migrations bundle \
-            --project Cleansia.Infra.Database/Cleansia.Infra.Database.csproj \
-            --startup-project Cleansia.Web.Partner/Cleansia.Web.Partner.csproj \
-            --configuration Release \
-            --output ./efbundle \
-            --force
-        working-directory: ./src
+          name: ef-bundle
+          path: ./src
 
       - name: Login to Azure
         uses: azure/login@v2

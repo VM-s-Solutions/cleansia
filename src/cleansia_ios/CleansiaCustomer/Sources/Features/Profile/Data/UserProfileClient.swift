@@ -11,6 +11,12 @@ struct CurrentUserProfile: Equatable {
     let birthDate: Date?
     let preferredLanguageCode: String?
     let isEmailConfirmed: Bool
+    // Profile hero stats (T-0392). memberSince is the account creation date;
+    // totalSavings is the realized money saved, in savingsCurrencyCode.
+    var memberSince: Date?
+    var totalBookings: Int = 0
+    var totalSavings: Double = 0
+    var savingsCurrencyCode: String?
 
     var isComplete: Bool {
         !firstName.isBlank && !lastName.isBlank && !email.isBlank && !(phoneNumber ?? "").isBlank
@@ -87,7 +93,11 @@ private extension MyProfileDto {
             phoneNumber: phoneNumber,
             birthDate: birthDate?.wrappedDate,
             preferredLanguageCode: preferredLanguageCode,
-            isEmailConfirmed: isEmailConfirmed ?? false
+            isEmailConfirmed: isEmailConfirmed ?? false,
+            memberSince: memberSince,
+            totalBookings: totalBookings ?? 0,
+            totalSavings: totalSavings ?? 0,
+            savingsCurrencyCode: savingsCurrencyCode
         )
     }
 }

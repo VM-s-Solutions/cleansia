@@ -14537,6 +14537,41 @@
           }
         }
       }
+    },
+    "splash_tagline": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your jobs, schedule and pay — in one place"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše zakázky, rozvrh i výplata — na jednom místě"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše zákazky, rozvrh aj výplata — na jednom mieste"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваші замовлення, графік і оплата — в одному місці"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваши заказы, график и оплата — в одном месте"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

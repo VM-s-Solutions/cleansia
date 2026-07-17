@@ -1,6 +1,12 @@
 import Foundation
 
 enum L10n {
+    enum Splash {
+        static var tagline: String {
+            localized("splash_tagline")
+        }
+    }
+
     static var welcomeBack: String {
         localized("welcome_back")
     }

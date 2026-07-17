@@ -110,7 +110,12 @@ public class CancelOrder
                 hasBeenAccepted,
                 freeCancellationHoursOverride: policy.FreeCancellationHours);
 
-            var refundAmount = order.TotalPrice * (1m - feeRate);
+            // Round to the currency's 2 dp at the source (away-from-zero): the
+            // Refund row persists numeric(18,2) (rounds) while Stripe truncates
+            // (long)(amount*100), so an unrounded value can make the ledger and
+            // Stripe diverge by a cent and skew the Refunded/PartiallyRefunded
+            // comparison. Rounding once here makes every downstream reader agree.
+            var refundAmount = Math.Round(order.TotalPrice * (1m - feeRate), 2, MidpointRounding.AwayFromZero);
 
             order.Cancel(
                 cancelledAtUtc: now,

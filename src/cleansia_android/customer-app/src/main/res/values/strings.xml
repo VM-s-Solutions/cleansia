@@ -113,7 +113,7 @@
     <string name="home_reorder_cta">Rebook</string>
 
     <!-- Home — hero carousel -->
-    <string name="home_hero_greeting">Welcome back, Michael</string>
+    <string name="home_hero_greeting">Welcome back</string>
     <string name="home_hero_prompt">Ready for a spotless home?</string>
     <string name="home_hero_cta">Book in 30 seconds</string>
 

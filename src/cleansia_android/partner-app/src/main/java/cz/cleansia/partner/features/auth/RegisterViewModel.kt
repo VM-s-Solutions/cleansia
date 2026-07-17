@@ -37,7 +37,7 @@ data class RegisterUiState(
     val termsError: String? = null,
     val isRegistrationSuccessful: Boolean = false,
 ) {
-    val passwordHasMinLength get() = password.length >= 8
+    val passwordHasMinLength get() = password.length >= 12
     val passwordHasLetter get() = password.any { it.isLetter() }
     val passwordHasNumber get() = password.any { it.isDigit() }
     val passwordsMatch get() = password.isNotEmpty() && password == confirmPassword

@@ -76,7 +76,7 @@
     <string name="back">Назад</string>
 
     <!-- Password rules -->
-    <string name="register_pw_min_length">Не менше 8 символів</string>
+    <string name="register_pw_min_length">Не менше 12 символів</string>
     <string name="register_pw_letter">Містить літеру</string>
     <string name="register_pw_number">Містить цифру</string>
     <string name="register_pw_match">Паролі збігаються</string>
@@ -581,7 +581,7 @@
     <string name="error_email_required">Електронна пошта обов\'язкова</string>
     <string name="error_email_invalid">Будь ласка, введіть дійсну електронну адресу</string>
     <string name="error_password_required">Пароль обов\'язковий</string>
-    <string name="error_password_min_length">Пароль повинен містити щонайменше 8 символів</string>
+    <string name="error_password_min_length">Пароль повинен містити щонайменше 12 символів</string>
     <string name="error_password_rules">Пароль повинен містити щонайменше 8 символів, літеру та цифру</string>
     <string name="error_passwords_not_match">Паролі не збігаються</string>
     <string name="error_first_name_required">Ім\'я обов\'язкове</string>

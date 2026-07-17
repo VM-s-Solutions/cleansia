@@ -8118,6 +8118,22 @@
           "preferredLanguageName": {
             "type": "string",
             "nullable": true
+          },
+          "memberSince": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "totalBookings": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalSavings": {
+            "type": "number",
+            "format": "double"
+          },
+          "savingsCurrencyCode": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

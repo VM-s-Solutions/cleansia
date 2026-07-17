@@ -49,6 +49,17 @@ public class OrderEmployeePayEntityConfiguration : AuditableEntityConfiguration<
             .HasPrecision(18, 2)
             .HasDefaultValue(0);
 
+        // The clamp bounds captured at pay-calculation time (T-0362). 0 == unbounded on that edge.
+        builder.Property(e => e.MinPay)
+            .IsRequired()
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0);
+
+        builder.Property(e => e.MaxPay)
+            .IsRequired()
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0);
+
         builder.Property(e => e.TotalPay)
             .IsRequired()
             .HasPrecision(18, 2);

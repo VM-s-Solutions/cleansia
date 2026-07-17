@@ -51,6 +51,27 @@ public static class PayCalculatorExtensions
 
         var totalPay = basePay + extrasPay + expensesPay;
 
+        var (minimumFloor, maximumCeiling) = configList.AggregateBounds();
+
+        totalPay = ApplyMinMaxClamp(totalPay, minimumFloor, maximumCeiling);
+
+        var breakdown = $"Base: {basePay:F2}, Extras: {extrasPay:F2}, Expenses: {expensesPay:F2}";
+
+        return (basePay, extrasPay, expensesPay, totalPay, breakdown);
+    }
+
+    /// <summary>
+    /// The aggregated clamp bounds for a set of pay configs: the floor is the highest positive
+    /// MinimumPay (the strongest guarantee wins) and the ceiling is the lowest positive MaximumPay (the
+    /// tightest cap wins); 0 on either edge means "no bound" and mirrors the <c>&gt; 0</c> guard in
+    /// <see cref="ApplyMinMaxClamp"/>. Exposed so <c>CalculateOrderPay</c> can persist the exact same
+    /// bounds on the OrderEmployeePay row it creates, keeping the entity's later re-clamp faithful to
+    /// what was applied here (T-0362).
+    /// </summary>
+    public static (decimal minPay, decimal maxPay) AggregateBounds(this IEnumerable<EmployeePayConfig> configs)
+    {
+        var configList = configs as IReadOnlyCollection<EmployeePayConfig> ?? configs.ToList();
+
         var minimumFloor = configList
             .Where(c => c.MinimumPay > 0)
             .Select(c => c.MinimumPay)
@@ -63,14 +84,10 @@ public static class PayCalculatorExtensions
             .DefaultIfEmpty(0m)
             .Min();
 
-        totalPay = ApplyMinMaxClamp(totalPay, minimumFloor, maximumCeiling);
-
-        var breakdown = $"Base: {basePay:F2}, Extras: {extrasPay:F2}, Expenses: {expensesPay:F2}";
-
-        return (basePay, extrasPay, expensesPay, totalPay, breakdown);
+        return (minimumFloor, maximumCeiling);
     }
 
-    private static decimal ApplyMinMaxClamp(decimal totalPay, decimal minimumPay, decimal maximumPay)
+    public static decimal ApplyMinMaxClamp(decimal totalPay, decimal minimumPay, decimal maximumPay)
     {
         if (minimumPay > 0 && maximumPay > 0 && minimumPay > maximumPay)
         {

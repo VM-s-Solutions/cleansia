@@ -1261,6 +1261,23 @@
     <string name="devices_self_revoke_dialog_confirm">Odhlásiť</string>
     <string name="error_device_not_found">Toto zariadenie už nie je registrované.</string>
 
+    <string name="error_auth_too_many_attempts">Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova.</string>
+    <string name="error_company_not_found">Informácie o spoločnosti neboli nájdené</string>
+    <string name="error_country_not_existing_id">Krajina nebola nájdená</string>
+    <string name="error_currency_invalid">Neplatná mena</string>
+    <string name="error_dispute_max_length_exceeded">Bola prekročená maximálna dĺžka</string>
+    <string name="error_employee_not_approved">Váš účet zatiaľ nebol schválený.</string>
+    <string name="error_gdpr_consent_already_granted">Tento súhlas už bol udelený.</string>
+    <string name="error_gdpr_consent_not_found">Súhlas nebol nájdený.</string>
+    <string name="error_gdpr_deletion_already_pending">Vymazanie účtu už prebieha.</string>
+    <string name="error_gdpr_deletion_blocked_by_invoice">Účet zatiaľ nie je možné vymazať — existuje nevybavená faktúra.</string>
+    <string name="error_gdpr_deletion_blocked_by_order">Účet zatiaľ nie je možné vymazať — existuje aktívna objednávka.</string>
+    <string name="error_language_not_found">Jazyk nebol nájdený</string>
+    <string name="error_order_selected_package_invalid">Vybraný balíček je neplatný</string>
+    <string name="error_order_selected_services_invalid">Vybrané služby sú neplatné</string>
+    <string name="error_payroll_invoice_not_found">Faktúra nebola nájdená</string>
+    <string name="error_payroll_pay_period_not_found">Výplatné obdobie nebolo nájdené</string>
+    <string name="error_receipt_not_found">Účtenka nebola nájdená</string>
     <!-- ── Výplata za obdobie (iba na čítanie) ── -->
     <string name="period_pay_title">Výplata za obdobie</string>
     <string name="period_pay_hero_label">Celkom za obdobie</string>

@@ -1291,6 +1291,23 @@
     <string name="devices_self_revoke_dialog_confirm">Sign out</string>
     <string name="error_device_not_found">This device is no longer registered.</string>
 
+    <string name="error_auth_too_many_attempts">Too many attempts with this code. Request a new code and try again.</string>
+    <string name="error_company_not_found">Company information not found</string>
+    <string name="error_country_not_existing_id">Country not found</string>
+    <string name="error_currency_invalid">Invalid currency</string>
+    <string name="error_dispute_max_length_exceeded">Maximum length exceeded</string>
+    <string name="error_employee_not_approved">Your account hasn\'t been approved yet.</string>
+    <string name="error_gdpr_consent_already_granted">This consent has already been granted.</string>
+    <string name="error_gdpr_consent_not_found">Consent not found.</string>
+    <string name="error_gdpr_deletion_already_pending">Account deletion is already in progress.</string>
+    <string name="error_gdpr_deletion_blocked_by_invoice">Your account can\'t be deleted yet — there is an open invoice.</string>
+    <string name="error_gdpr_deletion_blocked_by_order">Your account can\'t be deleted yet — there is an active order.</string>
+    <string name="error_language_not_found">Language not found</string>
+    <string name="error_order_selected_package_invalid">Selected package is invalid</string>
+    <string name="error_order_selected_services_invalid">Selected services are invalid</string>
+    <string name="error_payroll_invoice_not_found">Invoice not found</string>
+    <string name="error_payroll_pay_period_not_found">Pay period not found</string>
+    <string name="error_receipt_not_found">Receipt not found</string>
     <!-- ── Period pay (read-only) ── -->
     <string name="period_pay_title">Period pay</string>
     <string name="period_pay_hero_label">Period total</string>

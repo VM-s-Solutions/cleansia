@@ -1281,6 +1281,23 @@
     <string name="devices_self_revoke_dialog_confirm">Odhlásit</string>
     <string name="error_device_not_found">Toto zařízení už není registrované.</string>
 
+    <string name="error_auth_too_many_attempts">Příliš mnoho pokusů s tímto kódem. Vyžádejte si nový kód a zkuste to znovu.</string>
+    <string name="error_company_not_found">Informace o společnosti nenalezeny</string>
+    <string name="error_country_not_existing_id">Země nenalezena</string>
+    <string name="error_currency_invalid">Neplatná měna</string>
+    <string name="error_dispute_max_length_exceeded">Překročena maximální délka</string>
+    <string name="error_employee_not_approved">Váš účet zatím nebyl schválen.</string>
+    <string name="error_gdpr_consent_already_granted">Tento souhlas již byl udělen.</string>
+    <string name="error_gdpr_consent_not_found">Souhlas nenalezen.</string>
+    <string name="error_gdpr_deletion_already_pending">Smazání účtu již probíhá.</string>
+    <string name="error_gdpr_deletion_blocked_by_invoice">Účet zatím nelze smazat — existuje nevyřízená faktura.</string>
+    <string name="error_gdpr_deletion_blocked_by_order">Účet zatím nelze smazat — existuje aktivní objednávka.</string>
+    <string name="error_language_not_found">Jazyk nenalezen</string>
+    <string name="error_order_selected_package_invalid">Vybraný balíček je neplatný</string>
+    <string name="error_order_selected_services_invalid">Vybrané služby jsou neplatné</string>
+    <string name="error_payroll_invoice_not_found">Faktura nenalezena</string>
+    <string name="error_payroll_pay_period_not_found">Platební období nenalezeno</string>
+    <string name="error_receipt_not_found">Potvrzení nenalezeno</string>
     <!-- ── Výplata za období (pouze pro čtení) ── -->
     <string name="period_pay_title">Výplata za období</string>
     <string name="period_pay_hero_label">Celkem za období</string>

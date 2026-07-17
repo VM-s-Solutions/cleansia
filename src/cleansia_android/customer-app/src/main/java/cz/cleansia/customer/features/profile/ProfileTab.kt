@@ -68,6 +68,8 @@ import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.ui.theme.Sky600
 import cz.cleansia.customer.ui.theme.asList
+import kotlinx.datetime.toJavaLocalDateTime
+import kotlinx.datetime.toLocalDateTime
 
 private data class ProfileRow(
     val key: String,
@@ -94,9 +96,9 @@ fun ProfileTab(
     val lastName = user?.lastName ?: ""
     val email = user?.email ?: ""
     val tier = "Regular"
-    val totalBookings = 3
-    val savedCzk = 320
-    val memberSince = "Feb 2025"
+    val totalBookings = user?.totalBookings ?: 0
+    val savedDisplay = formatSaved(user?.totalSavings ?: 0.0, user?.savingsCurrencyCode)
+    val memberSince = formatMemberSince(user?.memberSince)
 
     val accountRows = listOf(
         ProfileRow("addresses", Icons.Outlined.Home, R.string.profile_row_addresses),
@@ -151,7 +153,7 @@ fun ProfileTab(
             ) {
                 StatsCard(
                     totalBookings = totalBookings,
-                    savedCzk = savedCzk,
+                    saved = savedDisplay,
                     memberSince = memberSince,
                 )
             }
@@ -356,8 +358,29 @@ private fun TierBadge(tier: String) {
 
 /* ── Floating stats card — overlaps the hero bottom lip ── */
 
+/** "%.0f Kč" style, mirroring the booking total formatter; symbol-less when the
+ *  user has no realized orders (currency null). */
+private fun formatSaved(amount: Double, currencyCode: String?): String {
+    val symbol = when (currencyCode?.uppercase()) {
+        "CZK" -> "Kč"
+        "EUR" -> "€"
+        "USD" -> "$"
+        null -> null
+        else -> currencyCode
+    }
+    return if (symbol == null) "%.0f".format(amount) else "%.0f %s".format(amount, symbol)
+}
+
+/** Account-creation instant → "MMM yyyy" (e.g. "Feb 2025"); em dash if unknown. */
+private fun formatMemberSince(instant: kotlinx.datetime.Instant?): String =
+    instant
+        ?.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+        ?.toJavaLocalDateTime()
+        ?.format(java.time.format.DateTimeFormatter.ofPattern("MMM yyyy", java.util.Locale.getDefault()))
+        ?: "—"
+
 @Composable
-private fun StatsCard(totalBookings: Int, savedCzk: Int, memberSince: String) {
+private fun StatsCard(totalBookings: Int, saved: String, memberSince: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -375,7 +398,7 @@ private fun StatsCard(totalBookings: Int, savedCzk: Int, memberSince: String) {
         )
         StatDivider()
         StatItem(
-            value = "$savedCzk Kč",
+            value = saved,
             label = stringResource(R.string.profile_stat_saved),
             modifier = Modifier.weight(1f).fillMaxHeight(),
         )

@@ -1,4 +1,7 @@
 ﻿using System.Security.Claims;
+using System.Text;
+using Cleansia.Config.Services.DeviceRevocation;
+using Cleansia.Config.Services.UserRevocation;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
@@ -10,6 +13,7 @@ using Cleansia.Infra.Database;
 using Cleansia.Infra.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -84,6 +88,69 @@ public static class ServiceExtensions
             .AddPolicy(PhysicalPolicy.Deny, p => p.RequireAssertion(_ => false));
 
         services.AddSingleton<IStartupFilter, AuthorizationCompletenessStartupFilter>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// The single JWT-bearer registration shared by the two mobile hosts (customer + partner) — their
+    /// AddJwt bodies were byte-identical except the audience (ADR-0026 CH-10). Validates
+    /// issuer/audience/lifetime/signing-key with zero clock skew, maps <c>role</c>/<c>roles</c> claims
+    /// to <see cref="ClaimTypes.Role"/>, and runs the device + user revocation kill switches on every
+    /// validated token. Callers pass their own audience (<c>JwtAudiences.Customer</c> / <c>.Mobile</c>).
+    /// </summary>
+    public static IServiceCollection AddCleansiaMobileJwt(
+        this IServiceCollection services, IConfiguration configuration, string validAudience)
+    {
+        var secret = Encoding.UTF8.GetBytes(configuration["JwtSettings:Secret"]!);
+        var issuer = configuration["JwtSettings:Issuer"] ?? "cleansia";
+
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = issuer,
+                ValidateAudience = true,
+                ValidAudience = validAudience,
+                ValidateIssuerSigningKey = true,
+                ValidateActor = false,
+                ValidateLifetime = true,
+                IssuerSigningKey = new SymmetricSecurityKey(secret),
+                ClockSkew = TimeSpan.Zero,
+            };
+            options.Events = new JwtBearerEvents
+            {
+                OnAuthenticationFailed = context => Task.CompletedTask,
+                OnTokenValidated = context =>
+                {
+                    if (context.Principal?.Identity is not ClaimsIdentity claimsIdentity)
+                    {
+                        return Task.CompletedTask;
+                    }
+
+                    var roleClaims = claimsIdentity.FindAll("role").ToList();
+                    if (!roleClaims.Any())
+                    {
+                        roleClaims = claimsIdentity.FindAll("roles").ToList();
+                    }
+
+                    foreach (var roleClaim in roleClaims)
+                    {
+                        claimsIdentity.AddClaim(new Claim(ClaimTypes.Role, roleClaim.Value));
+                    }
+
+                    context.EnforceDeviceRevocation();
+                    context.EnforceUserRevocation();
+                    return Task.CompletedTask;
+                },
+            };
+        });
 
         return services;
     }

@@ -87,6 +87,8 @@ fun PersonalSectionScreen(
     SectionScaffold(
         title = stringResource(R.string.personal),
         isLoading = uiState is PersonalSectionUiState.Loading,
+        isError = uiState is PersonalSectionUiState.Error,
+        onRetry = viewModel::retry,
         onNavigateBack = onNavigateBack,
         headerSlot = if (onboarding) {
             {

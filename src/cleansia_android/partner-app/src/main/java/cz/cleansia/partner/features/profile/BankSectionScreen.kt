@@ -35,6 +35,8 @@ fun BankSectionScreen(
     SectionScaffold(
         title = stringResource(R.string.bank_details),
         isLoading = uiState is BankSectionUiState.Loading,
+        isError = uiState is BankSectionUiState.Error,
+        onRetry = viewModel::retry,
         onNavigateBack = onNavigateBack,
         headerSlot = if (!onboarding) null else ({
             OnboardingChainHeader(

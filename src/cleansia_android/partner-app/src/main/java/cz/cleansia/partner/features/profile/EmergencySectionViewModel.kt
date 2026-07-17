@@ -54,6 +54,8 @@ class EmergencySectionViewModel @Inject constructor(
 
     init { load() }
 
+    fun retry() = load()
+
     private fun load() {
         viewModelScope.launch {
             _uiState.value = EmergencySectionUiState.Loading

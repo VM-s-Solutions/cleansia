@@ -93,6 +93,8 @@ fun AddressSectionScreen(
     SectionScaffold(
         title = stringResource(R.string.address),
         isLoading = uiState is AddressSectionUiState.Loading,
+        isError = uiState is AddressSectionUiState.Error,
+        onRetry = viewModel::retry,
         onNavigateBack = onNavigateBack,
         headerSlot = if (onboarding) {
             {

@@ -25,6 +25,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.text.style.TextAlign
+import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 
@@ -41,6 +45,8 @@ fun SectionScaffold(
     title: String,
     isLoading: Boolean,
     onNavigateBack: () -> Unit,
+    isError: Boolean = false,
+    onRetry: (() -> Unit)? = null,
     headerSlot: (@Composable ColumnScope.() -> Unit)? = null,
     form: @Composable ColumnScope.() -> Unit,
 ) {
@@ -80,6 +86,10 @@ fun SectionScaffold(
                 Spacer(Modifier.height(80.dp))
                 CircularProgressIndicator()
             }
+        } else if (isError && onRetry != null) {
+            // The load failed. Before, the Error state fell through to an empty editable form with no
+            // way to recover; render a message + retry instead (T-0353).
+            ErrorRetry(onRetry = onRetry, paddingValues = paddingValues)
         } else {
             Column(
                 modifier = Modifier
@@ -97,5 +107,29 @@ fun SectionScaffold(
                 form()
             }
         }
+    }
+}
+
+@Composable
+private fun ErrorRetry(onRetry: () -> Unit, paddingValues: PaddingValues) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = stringResource(R.string.error_generic),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(Spacing.L))
+        CleansiaPrimaryButton(
+            text = stringResource(R.string.retry),
+            onClick = onRetry,
+        )
     }
 }

@@ -52,6 +52,8 @@ class BankSectionViewModel @Inject constructor(
 
     init { load() }
 
+    fun retry() = load()
+
     private fun load() {
         viewModelScope.launch {
             _uiState.value = BankSectionUiState.Loading

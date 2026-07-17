@@ -220,8 +220,11 @@ private struct OrderMetadataRow: View {
             customerPhone: "+420 777 123 456",
             rooms: 3,
             bathrooms: 2,
-            services: ["Standard clean", "Window clean"],
-            packages: [OrderDetailPackage(name: "Deep clean", price: 800)],
+            services: [
+                OrderDetailService(id: "svc-standard", name: "Standard clean"),
+                OrderDetailService(id: "svc-window", name: "Window clean")
+            ],
+            packages: [OrderDetailPackage(id: "pkg-deep", name: "Deep clean", price: 800)],
             extras: ["inside-oven", "interior-windows"],
             customerNotes: "Cat is friendly.",
             specialInstructions: "Use the eco products under the sink.",

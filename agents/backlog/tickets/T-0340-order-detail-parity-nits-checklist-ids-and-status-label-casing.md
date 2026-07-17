@@ -1,11 +1,11 @@
 ---
 id: T-0340
 title: "Order-detail parity nits: iOS checklist stable-id keying + Android status-label casing convergence"
-status: proposed
+status: done
 size: S
 owner: pm
 created: 2026-06-27
-updated: 2026-06-27
+updated: 2026-07-17
 depends_on: [T-0307]
 blocks: []
 stories: []
@@ -62,3 +62,11 @@ tabs land (T-0309/T-0310) or in a one-line cleanup here.
 ## Status log
 - 2026-06-27 — filed from the T-0307 Slice E review (Findings 2 + 3). Both dormant; deferred to keep the final
   T-0307 slice scoped. iOS Slice E ships index-keyed (limitation noted in-code) + the iOS "On the way" form.
+
+## Status log
+- 2026-07-17 — all 3 nits shipped on `feature/i18n-cluster-3`: stable-id checklist keying (OrderDetailService
+  + id on OrderDetailPackage, threaded from the wire dtos; ticks now reorder-proof, old index-keyed ticks
+  orphan once — dormant), Android `labelForStatusName` lowercases camel-boundary words (converged on
+  "On the way"/"In progress", pinned by the new `StatusTimelineLabelTest` mirroring iOS's
+  `OrderStatusLabelTests`), and the stale "coming in T-0307" preview literal swept. Partner iOS
+  BUILD SUCCEEDED; Android partner tests green.

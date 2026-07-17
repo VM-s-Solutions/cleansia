@@ -23,7 +23,7 @@ struct PlaceholderDestination: View {
 #if DEBUG
     struct PlaceholderDestination_Previews: PreviewProvider {
         static var previews: some View {
-            PlaceholderDestination(systemImage: "list.clipboard", text: "Orders — coming in T-0307")
+            PlaceholderDestination(systemImage: "list.clipboard", text: "Nothing here yet")
                 .background(CleansiaColors.background)
         }
     }

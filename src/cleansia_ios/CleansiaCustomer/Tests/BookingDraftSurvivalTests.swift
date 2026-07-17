@@ -24,6 +24,7 @@ final class BookingDraftSurvivalTests: XCTestCase {
             geocoding: CLGeocoderGeocodingService(),
             mapProvider: PreviewMapProvider(),
             paymentSheet: FakePaymentSheetPresenter(),
+            orderClient: FakeOrderClient(),
             onDismiss: {},
             onViewOrder: { _ in },
             onCompleteProfile: {}

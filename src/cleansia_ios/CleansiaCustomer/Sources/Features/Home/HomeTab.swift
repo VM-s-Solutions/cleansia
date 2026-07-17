@@ -66,10 +66,16 @@ struct HomeTab: View {
         Group {
             if vm.firstPaintReady {
                 content
+                    .transition(.opacity)
             } else {
                 HomeSkeleton()
+                    .transition(.opacity)
             }
         }
+        // Cross-fade the skeleton→content reveal instead of a hard cut, so the
+        // dashboard resolves in (Wolt/Bolt feel) rather than popping. The gate
+        // still flips exactly once per tab session (`firstPaintReady`).
+        .animation(.easeInOut(duration: 0.3), value: vm.firstPaintReady)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(CleansiaColors.background.ignoresSafeArea())
         .sheet(isPresented: $showNotifications) {

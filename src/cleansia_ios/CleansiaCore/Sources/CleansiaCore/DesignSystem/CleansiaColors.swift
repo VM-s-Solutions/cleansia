@@ -29,8 +29,8 @@ public enum CleansiaColors {
 
     public static let error = Color.dynamic(light: Palette.errorText, dark: Palette.darkError)
     public static let onError = Color.dynamic(light: .white, dark: Palette.errorText)
-    public static let errorContainer = Color.dynamic(light: Palette.errorBg, dark: Palette.sky800)
-    public static let onErrorContainer = Palette.errorText
+    public static let errorContainer = Color.dynamic(light: Palette.errorBg, dark: Palette.darkErrorContainer)
+    public static let onErrorContainer = Color.dynamic(light: Palette.errorText, dark: Palette.darkError)
 
     public static let successText = Palette.successText
     public static let successBg = Palette.successBg

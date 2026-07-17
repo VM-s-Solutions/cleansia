@@ -57,7 +57,9 @@ public class TokenService(
         {
             return null;
         }
-        var employee = await employeeRepository.GetByUserEmailAsync(user.Email, cancellationToken);
+        // Tenant-ignoring: login runs with no tenant claim yet, so the tenant-scoped read would
+        // miss a tenant-stamped employee and mint a token without employee_id (T-0361).
+        var employee = await employeeRepository.GetByUserEmailIgnoringTenantAsync(user.Email, cancellationToken);
         return employee?.Id;
     }
 

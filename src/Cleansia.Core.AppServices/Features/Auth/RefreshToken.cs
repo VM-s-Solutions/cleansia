@@ -109,7 +109,9 @@ public class RefreshToken
             string? employeeId = null;
             if (user.Profile == UserProfile.Employee)
             {
-                var employee = await employeeRepository.GetByUserEmailAsync(user.Email, cancellationToken);
+                // Tenant-ignoring: refresh runs with no tenant claim, so the tenant-scoped read would
+                // miss a tenant-stamped employee and mint a token without employee_id (T-0361).
+                var employee = await employeeRepository.GetByUserEmailIgnoringTenantAsync(user.Email, cancellationToken);
                 employeeId = employee?.Id;
             }
 

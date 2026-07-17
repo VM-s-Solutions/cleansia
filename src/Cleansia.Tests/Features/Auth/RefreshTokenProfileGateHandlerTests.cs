@@ -40,7 +40,8 @@ public class RefreshTokenProfileGateHandlerTests
             _userRepository.Object,
             _employeeRepository.Object,
             _requestMetadata.Object,
-            _jwtSettings.Object)!;
+            _jwtSettings.Object,
+            TimeProvider.System)!;
 
         var handleMethod = handlerType.GetMethod("Handle")!;
         var task = (Task<BusinessResult<JwtTokenResponse>>)handleMethod.Invoke(handler, [command, CancellationToken.None])!;

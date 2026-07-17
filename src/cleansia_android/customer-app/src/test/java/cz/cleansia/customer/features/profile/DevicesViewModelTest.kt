@@ -6,11 +6,13 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.auth.AuthRepository
 import cz.cleansia.customer.core.devices.DeviceManagementRepository
 import cz.cleansia.customer.core.devices.UserDeviceDto
 import cz.cleansia.customer.testing.MainDispatcherRule
 import cz.cleansia.customer.ui.state.ActionState
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -30,6 +32,7 @@ class DevicesViewModelTest {
     val mainRule = MainDispatcherRule()
 
     private lateinit var repository: DeviceManagementRepository
+    private lateinit var authRepository: AuthRepository
     private lateinit var snackbar: SnackbarController
     private lateinit var appContext: Context
 
@@ -53,6 +56,7 @@ class DevicesViewModelTest {
     @Before
     fun setUp() {
         repository = mockk()
+        authRepository = mockk(relaxed = true)
         snackbar = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
         every { appContext.getString(R.string.devices_revoke_success) } returns "Device removed"
@@ -66,7 +70,7 @@ class DevicesViewModelTest {
         every { resources.getIdentifier(any(), any(), any()) } returns 0
     }
 
-    private fun viewModel() = DevicesViewModel(repository, snackbar, appContext)
+    private fun viewModel() = DevicesViewModel(repository, authRepository, snackbar, appContext)
 
     @Test
     fun `load transitions Loading to Loaded with devices`() = runTest {
@@ -114,7 +118,7 @@ class DevicesViewModelTest {
         advanceUntilIdle()
 
         vm.revoked.test {
-            vm.revoke("row-2")
+            vm.revoke(otherDevice)
             advanceUntilIdle()
             assertEquals("row-2", awaitItem())
         }
@@ -122,6 +126,45 @@ class DevicesViewModelTest {
         assertEquals(ActionState.Idle, vm.revokeState.value)
         assertEquals(DevicesUiState.Loaded(listOf(thisDevice)), vm.state.value)
         verify { snackbar.showSuccess("Device removed") }
+        // Revoking ANOTHER device must never end our own session.
+        coVerify(exactly = 0) { authRepository.signOutLocal() }
+    }
+
+    @Test
+    fun `revoking the current device signs out locally instead of filtering the list`() = runTest {
+        coEvery { repository.getMyDevices() } returns ApiResult.Success(listOf(thisDevice, otherDevice))
+        coEvery { repository.revoke("row-1") } returns ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.revoke(thisDevice)
+        advanceUntilIdle()
+
+        // Self-revoke = local-only sign-out at 0s: the wipe emits ForcedSignOut, which the
+        // nav root routes to SignIn. The full logout() would re-call the server against an
+        // already-dead session. No success snackbar - the login screen appearing is the
+        // feedback.
+        coVerify(exactly = 1) { authRepository.signOutLocal() }
+        coVerify(exactly = 0) { authRepository.logout() }
+        verify(exactly = 0) { snackbar.showSuccess(any()) }
+        assertEquals(ActionState.Idle, vm.revokeState.value)
+    }
+
+    @Test
+    fun `failed self-revoke keeps the session - no local sign-out`() = runTest {
+        coEvery { repository.getMyDevices() } returns ApiResult.Success(listOf(thisDevice, otherDevice))
+        coEvery { repository.revoke("row-1") } returns ApiResult.Error(ApiError.Server(500, serverMessage))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.revoke(thisDevice)
+        advanceUntilIdle()
+
+        // The server still holds our session; wiping locally would strand the user for no reason.
+        coVerify(exactly = 0) { authRepository.signOutLocal() }
+        assertTrue(vm.revokeState.value is ActionState.Error)
     }
 
     @Test
@@ -132,7 +175,7 @@ class DevicesViewModelTest {
         val vm = viewModel()
         advanceUntilIdle()
 
-        vm.revoke("row-2")
+        vm.revoke(otherDevice)
         advanceUntilIdle()
 
         assertTrue(vm.revokeState.value is ActionState.Error)
@@ -149,7 +192,7 @@ class DevicesViewModelTest {
         val vm = viewModel()
         advanceUntilIdle()
 
-        vm.revoke("row-2")
+        vm.revoke(otherDevice)
         advanceUntilIdle()
 
         assertTrue(vm.revokeState.value is ActionState.Error)
@@ -169,8 +212,8 @@ class DevicesViewModelTest {
         val vm = viewModel()
         advanceUntilIdle()
 
-        vm.revoke("row-2")
-        vm.revoke("row-2")
+        vm.revoke(otherDevice)
+        vm.revoke(otherDevice)
         advanceUntilIdle()
 
         assertEquals(1, revokeCalls)

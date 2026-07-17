@@ -8,6 +8,7 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
+import cz.cleansia.customer.core.auth.AuthRepository
 import cz.cleansia.customer.core.devices.DeviceManagementRepository
 import cz.cleansia.customer.core.devices.UserDeviceDto
 import cz.cleansia.customer.ui.state.ActionState
@@ -31,6 +32,7 @@ sealed interface DevicesUiState {
 @HiltViewModel
 class DevicesViewModel @Inject constructor(
     private val repository: DeviceManagementRepository,
+    private val authRepository: AuthRepository,
     private val snackbar: SnackbarController,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
@@ -61,17 +63,26 @@ class DevicesViewModel @Inject constructor(
         }
     }
 
-    fun revoke(deviceRowId: String) {
+    fun revoke(device: UserDeviceDto) {
         if (_revokeState.value is ActionState.Submitting) return
         _revokeState.value = ActionState.Submitting
         viewModelScope.launch {
-            when (val result = repository.revoke(deviceRowId)) {
+            when (val result = repository.revoke(device.id)) {
                 is ApiResult.Success -> {
-                    snackbar.showSuccess(appContext.getString(R.string.devices_revoke_success))
                     _revokeState.value = ActionState.Idle
-                    _revoked.emit(deviceRowId)
-                    (_state.value as? DevicesUiState.Loaded)?.let { loaded ->
-                        _state.value = DevicesUiState.Loaded(loaded.devices.filterNot { it.id == deviceRowId })
+                    _revoked.emit(device.id)
+                    if (device.isCurrent) {
+                        // Revoking THIS device killed our own session server-side; don't wait for
+                        // the ≤30s revocation directory to bounce us — sign out at 0s. Local wipe
+                        // ONLY (the server logout would be a redundant round trip against an
+                        // already-dead session); the emitted ForcedSignOut routes the nav root to
+                        // SignIn. No snackbar: the login screen appearing is the feedback.
+                        authRepository.signOutLocal()
+                    } else {
+                        snackbar.showSuccess(appContext.getString(R.string.devices_revoke_success))
+                        (_state.value as? DevicesUiState.Loaded)?.let { loaded ->
+                            _state.value = DevicesUiState.Loaded(loaded.devices.filterNot { it.id == device.id })
+                        }
                     }
                 }
                 is ApiResult.Error -> {

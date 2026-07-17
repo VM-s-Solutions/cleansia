@@ -1166,6 +1166,10 @@
     <string name="devices_revoke_dialog_confirm">Удалить</string>
     <string name="devices_revoke_success">Устройство удалено</string>
     <string name="devices_revoke_retry_hint">Не удалось удалить – попробуйте ещё раз.</string>
+    <string name="devices_self_revoke_action">Выйти с этого устройства</string>
+    <string name="devices_self_revoke_dialog_title">Выйти с этого устройства?</string>
+    <string name="devices_self_revoke_dialog_message">Это устройство будет удалено, и вы сразу выйдете из аккаунта.</string>
+    <string name="devices_self_revoke_dialog_confirm">Выйти</string>
     <string name="error_device_not_found">Это устройство больше не зарегистрировано.</string>
     <string name="notifications_inbox_title">Уведомления</string>
     <string name="notifications_inbox_empty_title">Пока нет уведомлений</string>

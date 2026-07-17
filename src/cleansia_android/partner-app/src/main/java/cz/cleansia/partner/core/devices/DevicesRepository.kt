@@ -11,7 +11,8 @@ interface DevicesRepository {
     /**
      * The stable per-install id of THIS handset — the same id push
      * registration uses. Sent as `currentDeviceId` so the backend can flag
-     * the row the caller is on; the screen hides revoke for that row.
+     * the row the caller is on; the screen badges that row "This device"
+     * and turns its revoke into an instant sign-out.
      */
     val currentDeviceId: String
 

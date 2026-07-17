@@ -435,6 +435,8 @@ fun PartnerNavHost(navController: NavHostController) {
         }
 
         composable<NavRoute.Devices> {
+            // Self-revoke sign-out rides the root-level forced-sign-out observer above — no
+            // per-screen wiring needed.
             DevicesScreen(onNavigateBack = { navController.popBackStack() })
         }
 

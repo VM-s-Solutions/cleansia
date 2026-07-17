@@ -1169,6 +1169,10 @@
     <string name="devices_revoke_dialog_confirm">Odebrat</string>
     <string name="devices_revoke_success">Zařízení odebráno</string>
     <string name="devices_revoke_retry_hint">Nepodařilo se odebrat – zkuste to znovu.</string>
+    <string name="devices_self_revoke_action">Odhlásit toto zařízení</string>
+    <string name="devices_self_revoke_dialog_title">Odhlásit toto zařízení?</string>
+    <string name="devices_self_revoke_dialog_message">Toto zařízení bude odebráno a budete okamžitě odhlášeni.</string>
+    <string name="devices_self_revoke_dialog_confirm">Odhlásit</string>
     <string name="error_device_not_found">Toto zařízení už není registrované.</string>
     <string name="notifications_inbox_title">Oznámení</string>
     <string name="notifications_inbox_empty_title">Zatím žádná oznámení</string>

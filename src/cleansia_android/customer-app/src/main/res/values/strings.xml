@@ -1190,6 +1190,10 @@
     <string name="devices_revoke_dialog_confirm">Remove</string>
     <string name="devices_revoke_success">Device removed</string>
     <string name="devices_revoke_retry_hint">Couldn\'t remove — please try again.</string>
+    <string name="devices_self_revoke_action">Sign out this device</string>
+    <string name="devices_self_revoke_dialog_title">Sign out this device?</string>
+    <string name="devices_self_revoke_dialog_message">This device will be removed and you\'ll be signed out immediately.</string>
+    <string name="devices_self_revoke_dialog_confirm">Sign out</string>
     <string name="error_device_not_found">This device is no longer registered.</string>
     <string name="notifications_inbox_title">Notifications</string>
     <string name="notifications_inbox_empty_title">No notifications yet</string>

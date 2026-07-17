@@ -131,6 +131,19 @@ class AuthRepository(
         sessionManager.emitForcedSignOut(ForcedSignOutReason.UserInitiated)
     }
 
+    /**
+     * Wipes local state only and routes to SignIn via the forced-sign-out bus — for flows where
+     * the server ALREADY revoked this device's session (e.g. self-revoke on the Devices page).
+     * Deliberately skips [logout]'s server calls: the revoke deactivated the device row and
+     * revoked its refresh tokens, so the push unregister + logout POST would be redundant round
+     * trips that only delay the sign-out (offline they'd block on two full timeouts).
+     */
+    suspend fun signOutLocal() {
+        sessionScopedCaches.forEach { it.clear() }
+        tokenStore.clear()
+        sessionManager.emitForcedSignOut(ForcedSignOutReason.UserInitiated)
+    }
+
     // ─── RefreshClient impl (called by AuthAuthenticator) ───
 
     override suspend fun refresh(refreshToken: String): RefreshResult {

@@ -46,6 +46,7 @@
   </Folder>
   <Folder Name="/00 Aspire/">
     <Project Path="Cleansia.AppHost/Cleansia.AppHost.csproj" />
+    <Project Path="Cleansia.MigrationService/Cleansia.MigrationService.csproj" />
     <Project Path="Cleansia.ServiceDefaults/Cleansia.ServiceDefaults.csproj" />
   </Folder>
 </Solution>

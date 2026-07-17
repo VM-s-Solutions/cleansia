@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Features.Users.DTOs;
+using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.AppServices.Mappers;
@@ -24,7 +25,7 @@ public static class UserMappers
                 PreferredLanguageName: user.PreferredLanguage?.Name);
     }
 
-    public static MyProfileDto? MapToMyProfileDto(this User? user)
+    public static MyProfileDto? MapToMyProfileDto(this User? user, CustomerProfileStats? stats = null)
     {
         return user is null
             ? null
@@ -39,7 +40,11 @@ public static class UserMappers
                 BirthDate: user.BirthDate,
                 ProfilePhoto: user.ProfilePhotoName?.MapToDto(),
                 PreferredLanguageCode: user.PreferredLanguageCode,
-                PreferredLanguageName: user.PreferredLanguage?.Name);
+                PreferredLanguageName: user.PreferredLanguage?.Name,
+                MemberSince: user.CreatedOn,
+                TotalBookings: stats?.TotalBookings ?? 0,
+                TotalSavings: stats?.TotalSavings ?? 0m,
+                SavingsCurrencyCode: stats?.SavingsCurrencyCode);
     }
 
     public static UserItem? MapToDetailDto(this User? user)

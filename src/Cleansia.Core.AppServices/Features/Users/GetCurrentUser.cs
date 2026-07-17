@@ -26,13 +26,15 @@ public class GetCurrentUser
 
     public class Handler(
         IUserRepository userRepository,
+        IOrderRepository orderRepository,
         IUserSessionProvider userSessionProvider)
         : IQueryHandler<Query, MyProfileDto>
     {
         public async Task<BusinessResult<MyProfileDto>> Handle(Query query, CancellationToken cancellationToken)
         {
             var user = await userRepository.GetByEmailNoTrackingAsync(userSessionProvider.GetUserEmail()!, cancellationToken);
-            return BusinessResult.Success(user!.MapToMyProfileDto()!);
+            var stats = await orderRepository.GetCustomerProfileStatsAsync(user!.Id, cancellationToken);
+            return BusinessResult.Success(user.MapToMyProfileDto(stats)!);
         }
     }
 }

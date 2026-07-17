@@ -71,6 +71,51 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .CountAsync(cancellationToken);
     }
 
+    public async Task<CustomerProfileStats> GetCustomerProfileStatsAsync(string userId, CancellationToken cancellationToken)
+    {
+        // One repository call for the profile hero card: bookings placed, money
+        // saved, and the currency to render it in. GetDbSet() carries the tenant
+        // filter; UserId scopes to the caller. No Includes — aggregates and a
+        // projection only.
+        var userOrders = GetDbSet().Where(o => o.UserId == userId);
+
+        // Bookings = every order the user placed, any status.
+        var totalBookings = await userOrders.CountAsync(cancellationToken);
+
+        // Realized savings come only from orders the customer actually stands to
+        // benefit from: not Cancelled, and not (fully or partially) Refunded —
+        // a refund gives the money back, so nothing was saved. `CurrentStatus !=
+        // Cancelled` keeps EF's C# null semantics (an IS NULL arm), so a fresh
+        // null-status order still counts.
+        var realizedOrders = userOrders.Where(o =>
+            o.CurrentStatus != OrderStatus.Cancelled
+            && o.PaymentStatus != PaymentStatus.Refunded
+            && o.PaymentStatus != PaymentStatus.PartiallyRefunded);
+
+        // Discount amounts are denominated in each order's OWN currency, so we
+        // report a single figure in ONE currency — the user's most recent
+        // realized order — and sum only the orders in that currency. Summing
+        // across currencies would add unlike units (CZK + EUR); for this
+        // single-country-per-user product that currency is stable, and this
+        // keeps the hero stat a correct, correctly-labelled scalar.
+        var savingsCurrencyCode = await realizedOrders
+            .OrderByDescending(o => o.CreatedOn)
+            .Select(o => o.Currency.Code)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var totalSavings = savingsCurrencyCode is null
+            ? 0m
+            : await realizedOrders
+                .Where(o => o.Currency.Code == savingsCurrencyCode)
+                .SumAsync(
+                    o => (o.TierDiscountAmount ?? 0m)
+                        + (o.PromoDiscountAmount ?? 0m)
+                        + (o.MembershipDiscountAmount ?? 0m),
+                    cancellationToken);
+
+        return new CustomerProfileStats(totalBookings, totalSavings, savingsCurrencyCode);
+    }
+
     public async Task<CompletedOrderWindowCounts> CountCompletedForEmployeeWindowsAsync(
         string employeeId,
         DateTime thisMonthStart, DateTime thisMonthEnd,

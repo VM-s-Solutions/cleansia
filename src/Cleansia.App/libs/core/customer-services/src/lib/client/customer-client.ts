@@ -9967,6 +9967,10 @@ export class MyProfileDto implements IMyProfileDto {
     profilePhoto!: BlobFileDto;
     preferredLanguageCode!: string | undefined;
     preferredLanguageName!: string | undefined;
+    memberSince!: Date;
+    totalBookings!: number;
+    totalSavings!: number;
+    savingsCurrencyCode!: string | undefined;
 
     constructor(data?: IMyProfileDto) {
         if (data) {
@@ -9990,6 +9994,10 @@ export class MyProfileDto implements IMyProfileDto {
             this.profilePhoto = Data["profilePhoto"] ? BlobFileDto.fromJS(Data["profilePhoto"]) : undefined as any;
             this.preferredLanguageCode = Data["preferredLanguageCode"];
             this.preferredLanguageName = Data["preferredLanguageName"];
+            this.memberSince = Data["memberSince"] ? new Date(Data["memberSince"].toString()) : undefined as any;
+            this.totalBookings = Data["totalBookings"];
+            this.totalSavings = Data["totalSavings"];
+            this.savingsCurrencyCode = Data["savingsCurrencyCode"];
         }
     }
 
@@ -10013,6 +10021,10 @@ export class MyProfileDto implements IMyProfileDto {
         data["profilePhoto"] = this.profilePhoto ? this.profilePhoto.toJSON() : undefined as any;
         data["preferredLanguageCode"] = this.preferredLanguageCode;
         data["preferredLanguageName"] = this.preferredLanguageName;
+        data["memberSince"] = this.memberSince ? this.memberSince.toISOString() : undefined as any;
+        data["totalBookings"] = this.totalBookings;
+        data["totalSavings"] = this.totalSavings;
+        data["savingsCurrencyCode"] = this.savingsCurrencyCode;
         return data;
     }
 }
@@ -10029,6 +10041,10 @@ export interface IMyProfileDto {
     profilePhoto: BlobFileDto;
     preferredLanguageCode: string | undefined;
     preferredLanguageName: string | undefined;
+    memberSince: Date;
+    totalBookings: number;
+    totalSavings: number;
+    savingsCurrencyCode: string | undefined;
 }
 
 export class NotificationPreferencesDto implements INotificationPreferencesDto {
@@ -10850,6 +10866,7 @@ export class PackageDetails implements IPackageDetails {
     currencyCode!: string | undefined;
     includedServices!: string[] | undefined;
     includedServiceItems!: PackageServiceRef[] | undefined;
+    translations!: { [key: string]: Translation; } | undefined;
 
     constructor(data?: IPackageDetails) {
         if (data) {
@@ -10877,6 +10894,13 @@ export class PackageDetails implements IPackageDetails {
                 this.includedServiceItems = [] as any;
                 for (let item of Data["includedServiceItems"])
                     this.includedServiceItems!.push(PackageServiceRef.fromJS(item));
+            }
+            if (Data["translations"]) {
+                this.translations = {} as any;
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
+                }
             }
         }
     }
@@ -10906,6 +10930,13 @@ export class PackageDetails implements IPackageDetails {
             for (let item of this.includedServiceItems)
                 data["includedServiceItems"].push(item ? item.toJSON() : undefined as any);
         }
+        if (this.translations) {
+            data["translations"] = {};
+            for (let key in this.translations) {
+                if (this.translations.hasOwnProperty(key))
+                    (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
+            }
+        }
         return data;
     }
 }
@@ -10919,6 +10950,7 @@ export interface IPackageDetails {
     currencyCode: string | undefined;
     includedServices: string[] | undefined;
     includedServiceItems: PackageServiceRef[] | undefined;
+    translations: { [key: string]: Translation; } | undefined;
 }
 
 export class PackageListItem implements IPackageListItem {
@@ -12201,6 +12233,7 @@ export class ServiceDetails implements IServiceDetails {
     description!: string | undefined;
     estimatedTime!: number;
     currencyCode!: string | undefined;
+    translations!: { [key: string]: Translation; } | undefined;
 
     constructor(data?: IServiceDetails) {
         if (data) {
@@ -12218,6 +12251,13 @@ export class ServiceDetails implements IServiceDetails {
             this.description = Data["description"];
             this.estimatedTime = Data["estimatedTime"];
             this.currencyCode = Data["currencyCode"];
+            if (Data["translations"]) {
+                this.translations = {} as any;
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
+                }
+            }
         }
     }
 
@@ -12235,6 +12275,13 @@ export class ServiceDetails implements IServiceDetails {
         data["description"] = this.description;
         data["estimatedTime"] = this.estimatedTime;
         data["currencyCode"] = this.currencyCode;
+        if (this.translations) {
+            data["translations"] = {};
+            for (let key in this.translations) {
+                if (this.translations.hasOwnProperty(key))
+                    (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
+            }
+        }
         return data;
     }
 }
@@ -12245,6 +12292,7 @@ export interface IServiceDetails {
     description: string | undefined;
     estimatedTime: number;
     currencyCode: string | undefined;
+    translations: { [key: string]: Translation; } | undefined;
 }
 
 export class ServiceListItem implements IServiceListItem {

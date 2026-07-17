@@ -77,6 +77,19 @@ rules WHEN the shared pill is harvested to `CleansiaCore`: at the SECOND call si
 - 2026-07-03 — filed `proposed` by pm at the phase/ios-fix1 close — the ADR-0022 D4-mandated follow-up
   (dedup-checked: not previously filed). Medium priority: no crash (T-0369 fixed that), pure
   brand/interaction parity; the interim stock bar is ADR-recorded. Not dispatched.
+- 2026-07-17 — ios: STOPPED without code per the ticket's own out-of-scope rule ("if implementation
+  forces a D2/D3 deviation, STOP and route to the architect first"). ADR-0022's owner-directed
+  supersede (2026-07-08, phase/ios-fix2, `365fd221`) retired the D2 pager + D3 pill/FAB composite for
+  the customer shell (pill corrupted on the owner's iOS 26 device; stock `TabView` restored) and states
+  this ticket "is effectively cancelled by this supersede — flag for the PM to retire it". The harvest
+  source is gone from the tree (`CustomerBottomBar.swift` now holds only the surviving `BookFab`;
+  customer shell is stock `TabView`), so AC2/AC3/AC4 are unimplementable as scoped and the ≥2-call-sites
+  harvest premise no longer holds (one prospective call site). Both shells currently match on the stock
+  bar — building the partner pill would create the cross-app divergence this ticket existed to remove.
+  Routed to the PM to retire (or the architect to re-scope, e.g. a stock-TabView-parity leg: partner
+  D2 single-shell-stack topology only, if still wanted). Note for the PM/architect: the INDEX row and
+  the living-doc rows (`ios-app-architecture.md:79-80,895`) still describe the pre-supersede pill
+  mandate — stale against the ADR's 2026-07-08 supersede section.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

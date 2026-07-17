@@ -11,7 +11,11 @@ public static class RegisterDevice
 {
     public record Command(
         string DeviceId,
-        string DeviceToken,
+        // Optional: a device can register BEFORE the OS grants push permission (or before APNs
+        // provisioning exists at all) — the row then carries an empty token, shows up on the
+        // Devices page and is revocable, and the push dispatcher skips it until a later
+        // re-register upgrades it with a real token.
+        string? DeviceToken,
         string Platform
     ) : ICommand<Response>;
 
@@ -20,7 +24,6 @@ public static class RegisterDevice
         public Validator()
         {
             RuleFor(x => x.DeviceId).NotEmpty();
-            RuleFor(x => x.DeviceToken).NotEmpty();
             RuleFor(x => x.Platform).NotEmpty().Must(p => p is "android" or "ios").WithMessage(BusinessErrorMessage.InvalidPlatform);
         }
     }
@@ -44,13 +47,17 @@ public static class RegisterDevice
             // reclaim (reactivate) that row rather than INSERT a colliding duplicate.
             var existingDevice = await deviceRepository.GetByUserAndDeviceIdIncludingInactiveAsync(userId, request.DeviceId, cancellationToken);
 
+            // Blank and null both mean token-less; the column is non-null, so "" is the
+            // canonical stored form (the dispatcher's IsNullOrEmpty filter treats it as absent).
+            var deviceToken = string.IsNullOrWhiteSpace(request.DeviceToken) ? string.Empty : request.DeviceToken;
+
             if (existingDevice is not null)
             {
-                existingDevice.MarkRegistered(request.DeviceToken);
+                existingDevice.MarkRegistered(deviceToken);
                 return BusinessResult.Success(new Response(existingDevice.Id));
             }
 
-            var device = Device.Create(userId, request.Platform, request.DeviceToken, request.DeviceId);
+            var device = Device.Create(userId, request.Platform, deviceToken, request.DeviceId);
             deviceRepository.Add(device);
 
             return BusinessResult.Success(new Response(device.Id));

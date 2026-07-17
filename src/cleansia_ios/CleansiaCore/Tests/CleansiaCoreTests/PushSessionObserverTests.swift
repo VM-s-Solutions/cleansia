@@ -69,6 +69,79 @@ final class PushSessionObserverTests: XCTestCase {
         XCTAssertEqual(client.registerCallCount, 1, "the registrar cache short-circuits the duplicate pair")
     }
 
+    func testSessionWithoutTokenRegistersTokenless() async {
+        let (registrar, client) = makeRegistrar()
+        let observer = PushSessionObserver(registrar: registrar)
+        let hasSession = CurrentValueSubject<Bool, Never>(true)
+        let apnsToken = CurrentValueSubject<String?, Never>(nil)
+
+        observer.attach(hasSession: hasSession.eraseToAnyPublisher(), apnsToken: apnsToken.eraseToAnyPublisher())
+
+        await client.waitForRegisters(1)
+        XCTAssertEqual(
+            client.registeredTokens,
+            [""],
+            "a live session registers the device before any APNs token exists"
+        )
+    }
+
+    func testFreshLoginWithoutTokenRegistersTokenless() async {
+        let (registrar, client) = makeRegistrar()
+        let observer = PushSessionObserver(registrar: registrar)
+        let hasSession = CurrentValueSubject<Bool, Never>(false)
+        let apnsToken = CurrentValueSubject<String?, Never>(nil)
+        observer.attach(hasSession: hasSession.eraseToAnyPublisher(), apnsToken: apnsToken.eraseToAnyPublisher())
+
+        await client.settle()
+        XCTAssertEqual(client.registeredTokens, [])
+
+        hasSession.send(true)
+
+        await client.waitForRegisters(1)
+        XCTAssertEqual(client.registeredTokens, [""])
+    }
+
+    func testTokenArrivalUpgradesTokenlessRegistration() async {
+        let (registrar, client) = makeRegistrar()
+        let observer = PushSessionObserver(registrar: registrar)
+        let hasSession = CurrentValueSubject<Bool, Never>(true)
+        let apnsToken = CurrentValueSubject<String?, Never>(nil)
+        observer.attach(hasSession: hasSession.eraseToAnyPublisher(), apnsToken: apnsToken.eraseToAnyPublisher())
+        await client.waitForRegisters(1)
+
+        apnsToken.send("apns-1")
+
+        await client.waitForRegisters(2)
+        XCTAssertEqual(client.registeredTokens, ["", "apns-1"], "a real token re-registers over the token-less row")
+    }
+
+    func testSignedOutWithoutTokenDoesNotRegister() async {
+        let (registrar, client) = makeRegistrar()
+        let observer = PushSessionObserver(registrar: registrar)
+        let hasSession = CurrentValueSubject<Bool, Never>(false)
+        let apnsToken = CurrentValueSubject<String?, Never>(nil)
+
+        observer.attach(hasSession: hasSession.eraseToAnyPublisher(), apnsToken: apnsToken.eraseToAnyPublisher())
+
+        await client.settle()
+        XCTAssertEqual(client.registeredTokens, [])
+    }
+
+    func testLogoutAfterTokenlessRegisterStopsReRegistration() async {
+        let (registrar, client) = makeRegistrar()
+        let observer = PushSessionObserver(registrar: registrar)
+        let hasSession = CurrentValueSubject<Bool, Never>(true)
+        let apnsToken = CurrentValueSubject<String?, Never>(nil)
+        observer.attach(hasSession: hasSession.eraseToAnyPublisher(), apnsToken: apnsToken.eraseToAnyPublisher())
+        await client.waitForRegisters(1)
+
+        hasSession.send(false)
+        apnsToken.send("apns-2")
+        await client.settle()
+
+        XCTAssertEqual(client.registeredTokens, [""], "no register fires while signed out, token-less or not")
+    }
+
     func testLogoutStopsReRegistration() async {
         let (registrar, client) = makeRegistrar()
         let observer = PushSessionObserver(registrar: registrar)

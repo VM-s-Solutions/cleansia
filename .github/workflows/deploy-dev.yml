@@ -3,22 +3,21 @@ name: Deploy to DEV
 # THIN caller for the shared pipeline (deploy-azure.yml) — the entire build/provision/migrate/deploy
 # flow lives there so dev and prod cannot drift. This file owns only what is dev-specific:
 #
-# - DEV trigger is HYBRID: auto-deploys on every push to master (dev tracks master), AND a manual
-#   "Run workflow" button (Actions tab) with a mode choice (`deploy` = provision/update + deploy;
-#   `what-if` = a non-mutating Bicep preview that changes nothing). It NEVER runs inside a PR.
-#   A push to master always means `deploy`; only the manual dispatch can pick `what-if`.
-#   (Prod — deploy-pro.yml — is dispatch-only behind the reviewer-protected `prod-weu` Environment;
-#   it never auto-deploys.)
-# - The effective mode is computed once in the `resolve` job (push → deploy; dispatch → the chosen
-#   input) and passed to the reusable workflow as the `mode` input.
+# - DEV trigger is MANUAL (owner request 2026-07-17): dispatch-only via the
+#   "Run workflow" button (Actions tab) with a mode choice (`deploy` =
+#   provision/update + deploy; `what-if` = a non-mutating Bicep preview that
+#   changes nothing). It no longer auto-deploys on every push to master — a dev
+#   deploy is now a deliberate button press, like prod (deploy-pro.yml). To
+#   restore auto-deploy-on-master, add back the `push: branches: [master]`
+#   trigger below and the resolve job already handles push → deploy.
+# - The effective mode is computed once in the `resolve` job (dispatch → the
+#   chosen input; a push, if the trigger is ever restored, → deploy) and passed
+#   to the reusable workflow as the `mode` input.
 # - Concurrency stays caller-level: one dev deploy at a time, newest wins.
 # - `secrets: inherit` + the reusable jobs' `environment: dev-weu` resolve every secret by NAME from
 #   the dev-weu GitHub Environment; no secret value is in this file (ADR-0015 D4).
 
 on:
-  push:
-    branches:
-      - master
   workflow_dispatch:
     inputs:
       mode:

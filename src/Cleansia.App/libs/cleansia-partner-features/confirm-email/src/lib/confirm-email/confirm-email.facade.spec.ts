@@ -3,7 +3,7 @@ import { PartnerAuthService } from '@cleansia/partner-services';
 import { loadUserCurrent } from '@cleansia/partner-stores';
 import { SnackbarService } from '@cleansia/services';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { ConfirmEmailFacade } from './confirm-email.facade';
 
 describe('ConfirmEmailFacade (partner)', () => {
@@ -15,6 +15,8 @@ describe('ConfirmEmailFacade (partner)', () => {
   };
   let snackbar: {
     showErrorTranslated: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showApiError: jest.Mock;
   };
 
   beforeEach(() => {
@@ -24,6 +26,8 @@ describe('ConfirmEmailFacade (partner)', () => {
     };
     snackbar = {
       showErrorTranslated: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showApiError: jest.fn(),
     };
 
     TestBed.configureTestingModule({
@@ -119,6 +123,39 @@ describe('ConfirmEmailFacade (partner)', () => {
     expect(authService.resendEmailConfirmation).not.toHaveBeenCalled();
     expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
       'validation.common.not_all_fields_filled'
+    );
+    expect(facade.isResendDisabled()).toBe(false);
+  });
+
+  it('keeps the email field visible when the query param is not a valid email', () => {
+    facade.setEmail('not-an-email');
+
+    expect(facade.emailKnown()).toBe(false);
+    expect(facade.formGroup.get('email')?.value).toBe('not-an-email');
+  });
+
+  it('on resend success: shows the success snackbar', () => {
+    authService.resendEmailConfirmation.mockReturnValue(of(true));
+    facade.setEmail('jan@example.com');
+
+    facade.resendCode();
+
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+      'auth.confirm_email.resend_success'
+    );
+  });
+
+  it('on resend error: surfaces the error and resets the cooldown', () => {
+    authService.resendEmailConfirmation.mockReturnValue(
+      throwError(() => new Error('down'))
+    );
+    facade.setEmail('jan@example.com');
+
+    facade.resendCode();
+
+    expect(snackbar.showApiError).toHaveBeenCalledWith(
+      expect.any(Error),
+      'auth.confirm_email.resend_error'
     );
     expect(facade.isResendDisabled()).toBe(false);
   });

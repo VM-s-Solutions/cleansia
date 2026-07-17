@@ -20,8 +20,15 @@ export class ConfirmEmailFacade extends UnsubscribeControlDirective {
   formGroup: FormGroup = this.createConfirmEmailFormGroup();
 
   setEmail(email: string): void {
-    this.formGroup.get('email')?.setValue(email);
-    this.emailKnown.set(true);
+    const emailControl = this.formGroup.get('email');
+    if (!emailControl) {
+      return;
+    }
+    emailControl.setValue(email);
+    // The query param is caller-controlled: only hide the email field when the
+    // value actually passes the validators — a mangled/forged link otherwise
+    // locks the user behind an invisible invalid control.
+    this.emailKnown.set(emailControl.valid);
   }
 
   confirmEmail(): void {
@@ -65,7 +72,17 @@ export class ConfirmEmailFacade extends UnsubscribeControlDirective {
 
     this.authService.resendEmailConfirmation(emailControl.value).pipe(
       takeUntil(this.destroyed$)
-    ).subscribe();
+    ).subscribe({
+      next: () => {
+        this.snackbarService.showSuccessTranslated('auth.confirm_email.resend_success');
+      },
+      error: (err) => {
+        this.snackbarService.showApiError(err, 'auth.confirm_email.resend_error');
+        clearInterval(interval);
+        this.isResendDisabled.set(false);
+        this.resendCodeTimeout.set(30);
+      },
+    });
   }
 
   private createConfirmEmailFormGroup(): FormGroup {

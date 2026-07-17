@@ -1393,7 +1393,11 @@
         "passwords_match": "Passwords match"
       }
     },
-    "refresh_token_reused": "Your session was used elsewhere. Please sign in again."
+    "refresh_token_reused": "Your session was used elsewhere. Please sign in again.",
+    "confirm_email": {
+      "resend_success": "Confirmation email sent!",
+      "resend_error": "Failed to resend confirmation email. Please try again."
+    }
   },
   "gdpr": {
     "deletion_already_pending": "A deletion request is already in progress.",

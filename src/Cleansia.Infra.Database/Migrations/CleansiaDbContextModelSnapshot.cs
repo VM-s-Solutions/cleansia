@@ -2611,6 +2611,76 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("ProcessedMessages", (string)null);
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Notifications.UserNotification", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("ArgsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EventKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("ReadOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedOn")
+                        .HasDatabaseName("IX_UserNotifications_CreatedOn");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("UserId", "CreatedOn")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_UserNotifications_UserId_CreatedOn");
+
+                    b.HasIndex("UserId", "EventKey")
+                        .HasDatabaseName("IX_UserNotifications_UserId_EventKey_Unread")
+                        .HasFilter("\"ReadOn\" IS NULL");
+
+                    b.ToTable("UserNotifications", (string)null);
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Notifications.UserNotificationPreferences", b =>
                 {
                     b.Property<string>("Id")
@@ -5292,6 +5362,15 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("MembershipPlan");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Notifications.UserNotification", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Notifications.UserNotificationPreferences", b =>

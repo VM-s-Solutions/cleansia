@@ -1295,6 +1295,35 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "UserNotifications",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    UserId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    EventKey = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    ArgsJson = table.Column<string>(type: "jsonb", nullable: false),
+                    ReadOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserNotifications", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserNotifications_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PackageServices",
                 columns: table => new
                 {
@@ -3257,6 +3286,28 @@ namespace Cleansia.Infra.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserNotifications_CreatedOn",
+                table: "UserNotifications",
+                column: "CreatedOn");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserNotifications_TenantId",
+                table: "UserNotifications",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserNotifications_UserId_CreatedOn",
+                table: "UserNotifications",
+                columns: new[] { "UserId", "CreatedOn" },
+                descending: new[] { false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserNotifications_UserId_EventKey_Unread",
+                table: "UserNotifications",
+                columns: new[] { "UserId", "EventKey" },
+                filter: "\"ReadOn\" IS NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Users_AppleId",
                 table: "Users",
                 column: "AppleId",
@@ -3440,6 +3491,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "UserNotificationPreferences");
+
+            migrationBuilder.DropTable(
+                name: "UserNotifications");
 
             migrationBuilder.DropTable(
                 name: "Carts");

@@ -35,6 +35,7 @@ class CleansiaFirebaseMessagingService : FirebaseMessagingService() {
 
     @Inject lateinit var pushTokenRepository: PushTokenRepository
     @Inject lateinit var orderEventBus: OrderEventBus
+    @Inject lateinit var notificationFeedRepository: NotificationFeedRepository
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -81,11 +82,15 @@ class CleansiaFirebaseMessagingService : FirebaseMessagingService() {
             val serverBody = data["body"]?.takeIf { it.isNotBlank() } ?: return
             Triple(serverTitle, serverBody, NotificationCategoryDto.Promo)
         } else {
-            val (titleRes, bodyRes, category) = templateFor(eventKey) ?: return
+            val template = NotificationTemplates.templateFor(eventKey) ?: return
+            // Feed-scoped event: the producer wrote a UserNotification row in the
+            // same transaction, so bump the bell badge locally instead of refetching.
+            // Promo is excluded (no feed row v1) and unknown keys returned above.
+            notificationFeedRepository.onPushReceived()
             Triple(
-                getString(titleRes),
-                formatBody(bodyRes, eventKey, data),
-                category,
+                getString(template.titleRes),
+                NotificationTemplates.formatBody(this, eventKey, template.bodyRes, data),
+                template.category,
             )
         }
         val channelId = NotificationChannels.channelIdFor(category)
@@ -123,111 +128,4 @@ class CleansiaFirebaseMessagingService : FirebaseMessagingService() {
         manager.notify(tag, eventKey.hashCode(), notification)
     }
 
-    /**
-     * Map an event_key from the FCM payload to (title, body, category).
-     * Returns `null` when the key is unknown — silently drop rather than
-     * surface a phantom notification.
-     */
-    private fun templateFor(eventKey: String): Triple<Int, Int, NotificationCategoryDto>? = when (eventKey) {
-        "order.confirmed" -> Triple(
-            R.string.notification_order_confirmed_title,
-            R.string.notification_order_confirmed_body,
-            NotificationCategoryDto.OrderUpdates,
-        )
-        "order.on_the_way" -> Triple(
-            R.string.notification_order_on_the_way_title,
-            R.string.notification_order_on_the_way_body,
-            NotificationCategoryDto.OrderUpdates,
-        )
-        "order.in_progress" -> Triple(
-            R.string.notification_order_in_progress_title,
-            R.string.notification_order_in_progress_body,
-            NotificationCategoryDto.OrderUpdates,
-        )
-        "order.completed" -> Triple(
-            R.string.notification_order_completed_title,
-            R.string.notification_order_completed_body,
-            NotificationCategoryDto.OrderCompleted,
-        )
-        "order.cancelled" -> Triple(
-            R.string.notification_order_cancelled_title,
-            R.string.notification_order_cancelled_body,
-            NotificationCategoryDto.OrderCancelled,
-        )
-        "order.refunded" -> Triple(
-            R.string.notification_order_refunded_title,
-            R.string.notification_order_refunded_body,
-            NotificationCategoryDto.RefundIssued,
-        )
-        "dispute.reply" -> Triple(
-            R.string.notification_dispute_reply_title,
-            R.string.notification_dispute_reply_body,
-            NotificationCategoryDto.DisputeReply,
-        )
-        "recurring.scheduled" -> Triple(
-            R.string.notification_recurring_scheduled_title,
-            R.string.notification_recurring_scheduled_body,
-            NotificationCategoryDto.RecurringScheduled,
-        )
-        "loyalty.tier_upgrade" -> Triple(
-            R.string.notification_loyalty_tier_upgrade_title,
-            R.string.notification_loyalty_tier_upgrade_body,
-            NotificationCategoryDto.TierUpgrade,
-        )
-        "membership.expiring_soon" -> Triple(
-            R.string.notification_membership_expiring_title,
-            R.string.notification_membership_expiring_body,
-            NotificationCategoryDto.MembershipExpiring,
-        )
-        "membership.cancellation_effective" -> Triple(
-            R.string.notification_membership_cancelled_title,
-            R.string.notification_membership_cancelled_body,
-            NotificationCategoryDto.MembershipCancelled,
-        )
-        else -> null
-    }
-
-    /**
-     * Format the body string with the args we expect for the given event.
-     * String.format with the right positional args per template.
-     */
-    private fun formatBody(bodyRes: Int, eventKey: String, data: Map<String, String>): String {
-        return when (eventKey) {
-            "order.confirmed",
-            "order.on_the_way",
-            "order.in_progress",
-            "order.completed",
-            "order.cancelled",
-            "order.refunded",
-            "recurring.scheduled" -> {
-                val orderNumber = data["orderNumber"].orEmpty()
-                getString(bodyRes, orderNumber)
-            }
-            "loyalty.tier_upgrade" -> {
-                // Body carries a localized tier name. The wire `tier` arg is the
-                // enum's .ToString() value ("SilverMopper", "GoldPolisher", etc.)
-                // — map to a localized label so the user sees "Silver Mopper"
-                // not the enum identifier.
-                val tierLabel = data["tier"]?.let { resolveTierLabel(it) } ?: ""
-                getString(bodyRes, tierLabel)
-            }
-            "dispute.reply",
-            "membership.expiring_soon",
-            "membership.cancellation_effective" -> getString(bodyRes)
-            else -> getString(bodyRes)
-        }
-    }
-
-    /**
-     * Map the backend LoyaltyTier enum identifier (sent as `tier` arg on the
-     * loyalty.tier_upgrade push) to a localized human label. Unknown values
-     * fall back to the raw enum string so the user still sees something.
-     */
-    private fun resolveTierLabel(enumName: String): String = when (enumName) {
-        "BronzeCleaner" -> getString(R.string.loyalty_tier_bronze_cleaner)
-        "SilverMopper" -> getString(R.string.loyalty_tier_silver_mopper)
-        "GoldPolisher" -> getString(R.string.loyalty_tier_gold_polisher)
-        "PlatinumSparkler" -> getString(R.string.loyalty_tier_platinum_sparkler)
-        else -> enumName
-    }
 }

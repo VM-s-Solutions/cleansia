@@ -402,6 +402,33 @@ seam's name/shape — no ADR required beyond what ADR-0002/0025 already settle.
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
 
+## Status log (feed — Android customer)
+- 2026-07-18 — Android CUSTOMER feed UI shipped on `feature/i18n-cluster-3` (FD-AC5/6/8/9 + AC11's
+  Android half). Surface for the iOS 1:1 port:
+  - **Wire:** hand-written `NotificationFeedApi` (`GET Paged?pageNumber&pageSize=20` /
+    `GET UnreadCount` / `POST MarkRead {id}` / `POST MarkAllRead {upToCreatedOn}` — `audience`
+    omitted, server-enriched). `NotificationFeedRepository` (`@Singleton`, `ApiResult`, joins the
+    `SessionScopedCache` wipe set) owns the unread count as a hot flow.
+  - **Badge (FD-AC5):** bell shows the count ("99+" cap, hidden at 0; a11y label "Notifications,
+    N unread"); refetched on Home ON_START (covers Home entry + app foreground); FCM receipt of any
+    feed-scoped key bumps it locally (+1, no refetch; promo + unknown keys excluded).
+  - **Inbox (FD-AC6/8):** the bell's `NotificationsInboxSheet` is now the real feed —
+    sealed Loading/Error(retry)/Loaded, mascot empty state for zero rows, newest-first paged list
+    with scroll-triggered load-more. On open: fetch page 1, then `MarkAllRead` with `upToCreatedOn`
+    = the newest FETCHED row's `createdOn` (fires only when ≥1 row fetched), then badge refresh;
+    fetched-unread rows keep their dot for the session. Rows render title/body from
+    `NotificationTemplates` — the SAME templates the push display uses (extracted from
+    `CleansiaFirebaseMessagingService`), device locale, args substituted (incl. `args.tier` label
+    per FCH-5); unknown `eventKey` rows are hidden (drop-parity). Relative timestamps via platform
+    `DateUtils` (localized for free).
+  - **Tap (FD-AC9):** `NotificationDeepLink.resolve(eventKey, args)` — the push-tap resolver,
+    now shared — maps `order.*`/`recurring.scheduled`→OrderDetail(orderId), `dispute.reply`→
+    DisputeDetail, `membership.*`→SubscribePlus, `loyalty.tier_upgrade`→RewardsActivity; null →
+    mark-read only. Unread tap = optimistic dot clear + local badge decrement + idempotent
+    single MarkRead; navigation via VM effect → NavHost.
+  - **Tests:** 10 VM + 9 repo unit tests (watermark-from-fetched-row, unknown-key hidden,
+    optimistic mark-read, error states, badge flow, session clear). Partner UIs remain T-0430.
+
 ## Status log (feed backend)
 - 2026-07-18 — feed v1 BACKEND shipped on `feature/i18n-cluster-3` (entity + producer seam over 18
   sites + dual-host NotificationController + retention/GDPR; 31 new tests; adversarial review held

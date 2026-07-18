@@ -1209,4 +1209,8 @@
     <string name="notifications_inbox_title">Сповіщення</string>
     <string name="notifications_inbox_empty_title">Поки немає сповіщень</string>
     <string name="notifications_inbox_empty_subtitle">Ми повідомимо вас, коли з’явиться новина про ваші прибирання.</string>
+    <string name="notifications_inbox_error_message">Не вдалося завантажити сповіщення.</string>
+    <string name="notifications_inbox_error_retry">Спробувати знову</string>
+    <string name="notifications_bell_unread_content_description">Сповіщення, непрочитаних: %1$d</string>
+    <string name="notifications_badge_overflow">99+</string>
 </resources>

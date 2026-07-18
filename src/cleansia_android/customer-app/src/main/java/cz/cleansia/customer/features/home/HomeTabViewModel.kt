@@ -8,6 +8,7 @@ import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import cz.cleansia.customer.core.memberships.MembershipRepository
+import cz.cleansia.customer.core.notifications.NotificationFeedRepository
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,6 +34,7 @@ class HomeTabViewModel @Inject constructor(
     val membershipRepository: MembershipRepository,
     val catalogRepository: CatalogRepository,
     val recurringBookingRepository: RecurringBookingRepository,
+    val notificationFeedRepository: NotificationFeedRepository,
     private val snackbar: SnackbarController,
 ) : ViewModel() {
 
@@ -42,5 +44,14 @@ class HomeTabViewModel @Inject constructor(
                 if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
             }
         }
+    }
+
+    /**
+     * Refetch the bell's unread count. Silent on failure — the badge is
+     * ambient chrome; a stale (or absent) count self-heals on the next
+     * foreground/Home entry and on every inbox open.
+     */
+    fun refreshNotificationBadge() {
+        viewModelScope.launch { notificationFeedRepository.refreshUnreadCount() }
     }
 }

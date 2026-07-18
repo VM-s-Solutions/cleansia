@@ -1212,4 +1212,8 @@
     <string name="notifications_inbox_title">Oznámení</string>
     <string name="notifications_inbox_empty_title">Zatím žádná oznámení</string>
     <string name="notifications_inbox_empty_subtitle">Dáme vám vědět, až se objeví novinka o vašich úklidech.</string>
+    <string name="notifications_inbox_error_message">Oznámení se nepodařilo načíst.</string>
+    <string name="notifications_inbox_error_retry">Zkusit znovu</string>
+    <string name="notifications_bell_unread_content_description">Oznámení, nepřečtených: %1$d</string>
+    <string name="notifications_badge_overflow">99+</string>
 </resources>

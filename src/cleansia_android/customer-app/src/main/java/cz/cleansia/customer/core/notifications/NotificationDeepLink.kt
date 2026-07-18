@@ -40,32 +40,40 @@ object NotificationDeepLink {
      */
     fun resolve(intent: Intent?): Any? {
         val eventKey = intent?.getStringExtra(EXTRA_EVENT_KEY) ?: return null
-        return when (eventKey) {
-            "order.confirmed",
-            "order.in_progress",
-            "order.completed",
-            "order.cancelled",
-            "order.refunded",
-            "order.on_the_way",
-            // recurring.scheduled also carries an orderId — the materialized
-            // Pending order the customer needs to confirm + pay for. Route to
-            // the Order Detail so the Confirm CTA is right there. Wave 3.3 adds
-            // the actual confirm flow; today the user lands on the standard
-            // detail screen.
-            "recurring.scheduled" -> {
-                val orderId = intent.getStringExtra(EXTRA_ARG_ORDER_ID) ?: return null
-                Routes.OrderDetail(orderId)
-            }
-            "dispute.reply" -> {
-                val disputeId = intent.getStringExtra(EXTRA_ARG_DISPUTE_ID) ?: return null
-                Routes.DisputeDetail(disputeId)
-            }
-            "membership.expiring_soon",
-            "membership.cancellation_effective" -> Routes.SubscribePlus
-            "loyalty.tier_upgrade" -> Routes.RewardsActivity
-            // promo.new_sitewide intentionally lands on Home — there's no
-            // single screen that's right for "see the new offer".
-            else -> null
+        val args = buildMap {
+            intent.getStringExtra(EXTRA_ARG_ORDER_ID)?.let { put("orderId", it) }
+            intent.getStringExtra(EXTRA_ARG_DISPUTE_ID)?.let { put("disputeId", it) }
         }
+        return resolve(eventKey, args)
+    }
+
+    /**
+     * The event_key + args → typed-route mapping itself — shared by the push
+     * tap path above and the notifications inbox feed, so both surfaces land
+     * on identical destinations. Returns `null` for events with no single
+     * right screen; feed callers just mark the row read in that case.
+     */
+    fun resolve(eventKey: String, args: Map<String, String>): Any? = when (eventKey) {
+        "order.confirmed",
+        "order.in_progress",
+        "order.completed",
+        "order.cancelled",
+        "order.refunded",
+        "order.on_the_way",
+        // recurring.scheduled also carries an orderId — the materialized
+        // Pending order the customer needs to confirm + pay for. Route to
+        // the Order Detail so the Confirm CTA is right there. Wave 3.3 adds
+        // the actual confirm flow; today the user lands on the standard
+        // detail screen.
+        "recurring.scheduled" ->
+            args["orderId"]?.takeIf { it.isNotBlank() }?.let { Routes.OrderDetail(it) }
+        "dispute.reply" ->
+            args["disputeId"]?.takeIf { it.isNotBlank() }?.let { Routes.DisputeDetail(it) }
+        "membership.expiring_soon",
+        "membership.cancellation_effective" -> Routes.SubscribePlus
+        "loyalty.tier_upgrade" -> Routes.RewardsActivity
+        // promo.new_sitewide intentionally lands on Home — there's no
+        // single screen that's right for "see the new offer".
+        else -> null
     }
 }

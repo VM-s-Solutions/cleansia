@@ -1209,4 +1209,8 @@
     <string name="notifications_inbox_title">Уведомления</string>
     <string name="notifications_inbox_empty_title">Пока нет уведомлений</string>
     <string name="notifications_inbox_empty_subtitle">Мы сообщим вам, когда появятся новости о ваших уборках.</string>
+    <string name="notifications_inbox_error_message">Не удалось загрузить уведомления.</string>
+    <string name="notifications_inbox_error_retry">Попробовать снова</string>
+    <string name="notifications_bell_unread_content_description">Уведомления, непрочитанных: %1$d</string>
+    <string name="notifications_badge_overflow">99+</string>
 </resources>

@@ -1233,4 +1233,8 @@
     <string name="notifications_inbox_title">Notifications</string>
     <string name="notifications_inbox_empty_title">No notifications yet</string>
     <string name="notifications_inbox_empty_subtitle">We\'ll let you know when there\'s an update about your cleanings.</string>
+    <string name="notifications_inbox_error_message">Couldn\'t load your notifications.</string>
+    <string name="notifications_inbox_error_retry">Try again</string>
+    <string name="notifications_bell_unread_content_description">Notifications, %1$d unread</string>
+    <string name="notifications_badge_overflow">99+</string>
 </resources>

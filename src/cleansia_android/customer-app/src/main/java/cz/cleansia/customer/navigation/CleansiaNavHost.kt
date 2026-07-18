@@ -358,6 +358,9 @@ fun CleansiaNavHost(
                 onManageRecurring = {
                     navController.navigate(Routes.RecurringBookings)
                 },
+                onOpenNotificationRoute = { route ->
+                    navController.navigate(route)
+                },
                 rebookOrderId = pendingRebookOrderId,
                 onRebookConsumed = { pendingRebookOrderId = null },
             )

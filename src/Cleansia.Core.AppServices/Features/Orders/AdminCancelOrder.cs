@@ -55,6 +55,8 @@ public class AdminCancelOrder
             var order = await orderRepository
                 .GetQueryable()
                 .Include(o => o.OrderStatusHistory)
+                .Include(o => o.AssignedEmployees)
+                    .ThenInclude(ae => ae.Employee)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order == null)
@@ -128,6 +130,11 @@ public class AdminCancelOrder
                         cancellationToken);
                 }
             }
+
+            // Every cleaner who accepted this job is told it's off (partner-targeted event; skips
+            // legacy assignments with no linked User) — mirrors the customer CancelOrder path.
+            await OrderAssignmentCancellationNotifier.NotifyAssignedEmployeesOfCancellationAsync(
+                order, notificationProducer, cancellationToken);
 
             await loyaltyService.RevokeForCancelledOrderAsync(order.Id, cancellationToken);
 

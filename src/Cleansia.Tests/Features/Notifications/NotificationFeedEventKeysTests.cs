@@ -1,3 +1,4 @@
+using System.Linq;
 using Cleansia.Core.Domain.Notifications;
 
 namespace Cleansia.Tests.Features.Notifications;
@@ -12,13 +13,32 @@ namespace Cleansia.Tests.Features.Notifications;
 public class NotificationFeedEventKeysTests
 {
     [Fact]
-    public void Every_Feed_Key_Resolves_To_A_Notification_Category()
+    public void Every_Feed_Key_Is_A_Known_Catalog_Const()
     {
+        var catalogKeys = typeof(NotificationEventCatalog)
+            .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(f => f is { IsLiteral: true, FieldType: { } t } && t == typeof(string))
+            .Select(f => (string)f.GetRawConstantValue()!)
+            .ToHashSet();
+
         foreach (var key in NotificationFeedEventKeys.Customer.Concat(NotificationFeedEventKeys.Partner))
         {
-            Assert.True(
-                NotificationEventCatalog.GetCategoryFor(key) is not null,
-                $"Feed key '{key}' does not resolve to a NotificationCategory — the keyset drifted from the catalog.");
+            Assert.True(catalogKeys.Contains(key),
+                $"Feed key '{key}' is not a NotificationEventCatalog const — the keyset drifted from the catalog.");
+        }
+    }
+
+    [Fact]
+    public void Assignment_Cancelled_Is_The_One_Deliberately_Non_Mutable_Feed_Key()
+    {
+        // A cancellation of an accepted job must not be silenceable, so it maps to no category
+        // (the producer's mute gate is skipped). Every OTHER feed key stays mutable.
+        Assert.Null(NotificationEventCatalog.GetCategoryFor(NotificationEventCatalog.OrderAssignmentCancelled));
+        foreach (var key in NotificationFeedEventKeys.Customer
+                     .Concat(NotificationFeedEventKeys.Partner)
+                     .Where(k => k != NotificationEventCatalog.OrderAssignmentCancelled))
+        {
+            Assert.NotNull(NotificationEventCatalog.GetCategoryFor(key));
         }
     }
 
@@ -30,9 +50,11 @@ public class NotificationFeedEventKeysTests
     }
 
     [Fact]
-    public void Partner_Keyset_Is_Exactly_The_New_Jobs_Digest()
+    public void Partner_Keyset_Is_The_New_Jobs_Digest_Plus_Assignment_Cancelled()
     {
-        Assert.Equal([NotificationEventCatalog.NewJobsAvailable], NotificationFeedEventKeys.Partner);
+        Assert.Equal(
+            [NotificationEventCatalog.NewJobsAvailable, NotificationEventCatalog.OrderAssignmentCancelled],
+            NotificationFeedEventKeys.Partner);
     }
 
     [Fact]

@@ -1147,6 +1147,8 @@
     <string name="notification_membership_cancelled_title">Cleansia Plus skončilo</string>
     <string name="notification_membership_cancelled_body">Vaše predplatné skončilo. Obnovte ho a získajte späť výhody Plus.</string>
 
+    <string name="notification_order_assignment_cancelled_title">Zákazka zrušená</string>
+    <string name="notification_order_assignment_cancelled_body">Zákazka, ktorú ste prijali, bola zrušená: #%1$s. Ťuknutím zobrazíte detaily.</string>
     <!-- ── Vaše zariadenia ── -->
     <string name="profile_row_devices">Vaše zariadenia</string>
     <string name="devices_title">Vaše zariadenia</string>

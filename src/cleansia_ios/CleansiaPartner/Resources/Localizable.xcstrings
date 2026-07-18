@@ -14776,6 +14776,76 @@
           }
         }
       }
+    },
+    "push.order.assignment_cancelled.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job cancelled"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka zrušena"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazka zrušená"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення скасовано"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ отменён"
+          }
+        }
+      }
+    },
+    "push.order.assignment_cancelled.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A job you accepted was cancelled: #%1$@. Tap for details."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka, kterou jste přijali, byla zrušena: #%1$@. Klepnutím zobrazíte detaily."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazka, ktorú ste prijali, bola zrušená: #%1$@. Ťuknutím zobrazíte detaily."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення, яке ви прийняли, скасовано: #%1$@. Торкніться, щоб переглянути деталі."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ, который вы приняли, отменён: #%1$@. Нажмите, чтобы посмотреть детали."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -19,6 +19,28 @@ final class NotificationFeedTemplatesTests: XCTestCase {
         XCTAssertTrue(rendered.body.contains("3"))
     }
 
+    func testAssignmentCancelledRowRendersWithTheOrderNumber() throws {
+        let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "order.assignment_cancelled",
+            args: ["orderNumber": "A-2201", "orderId": "ord-1"]
+        ))
+        XCTAssertEqual(rendered.title, L10n.localized("push.order.assignment_cancelled.title"))
+        XCTAssertEqual(
+            rendered.body,
+            String(format: L10n.localized("push.order.assignment_cancelled.body"), "A-2201")
+        )
+        // The order number is substituted, not left as a raw %1$@.
+        XCTAssertTrue(rendered.body.contains("A-2201"))
+        XCTAssertFalse(rendered.body.contains("%"))
+    }
+
+    func testAssignmentCancelledTapResolvesToTheOrderDetail() {
+        let destination = PartnerNotificationDeepLink.resolve(
+            eventKey: "order.assignment_cancelled", orderId: "ord-1"
+        )
+        XCTAssertEqual(destination, .order(orderId: "ord-1"))
+    }
+
     func testUnknownEventKeyHidesTheRow() {
         XCTAssertNil(NotificationFeedTemplates.render(eventKey: "order.confirmed", args: [:]))
         XCTAssertNil(NotificationFeedTemplates.render(eventKey: "promo.new_sitewide", args: [:]))

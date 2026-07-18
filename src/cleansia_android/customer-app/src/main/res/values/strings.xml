@@ -1171,6 +1171,8 @@
     <string name="notification_membership_cancelled_title">Cleansia Plus has ended</string>
     <string name="notification_membership_cancelled_body">Your subscription has ended. Resubscribe to keep your Plus perks.</string>
 
+    <string name="notification_order_assignment_cancelled_title">Job cancelled</string>
+    <string name="notification_order_assignment_cancelled_body">A job you accepted was cancelled: #%1$s. Tap for details.</string>
     <!-- ── Your devices ── -->
     <string name="profile_row_devices">Your devices</string>
     <string name="devices_title">Your devices</string>

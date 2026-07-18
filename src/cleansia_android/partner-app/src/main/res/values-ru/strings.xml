@@ -1245,6 +1245,8 @@
     <string name="notification_new_jobs_title">Новые доступные заказы</string>
     <string name="notification_new_jobs_body">Рядом доступно %1$d новых заказов. Нажмите, чтобы посмотреть.</string>
 
+    <string name="notification_order_assignment_cancelled_title">Заказ отменён</string>
+    <string name="notification_order_assignment_cancelled_body">Заказ, который вы приняли, отменён: #%1$s. Нажмите, чтобы посмотреть детали.</string>
     <!-- ── Ваши устройства ── -->
     <string name="devices_title">Ваши устройства</string>
     <string name="profile_devices_summary">Управление устройствами, на которых выполнен вход</string>

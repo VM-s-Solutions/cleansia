@@ -1147,6 +1147,8 @@
     <string name="notification_membership_cancelled_title">Cleansia Plus завершено</string>
     <string name="notification_membership_cancelled_body">Ваша підписка завершилася. Поновіть її, щоб повернути переваги Plus.</string>
 
+    <string name="notification_order_assignment_cancelled_title">Замовлення скасовано</string>
+    <string name="notification_order_assignment_cancelled_body">Замовлення, яке ви прийняли, скасовано: #%1$s. Торкніться, щоб переглянути деталі.</string>
     <!-- ── Ваші пристрої ── -->
     <string name="profile_row_devices">Ваші пристрої</string>
     <string name="devices_title">Ваші пристрої</string>

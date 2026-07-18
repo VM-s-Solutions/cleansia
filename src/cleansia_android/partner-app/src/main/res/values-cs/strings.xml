@@ -1262,6 +1262,8 @@
     <string name="notification_new_jobs_title">Nové dostupné zakázky</string>
     <string name="notification_new_jobs_body">Ve vašem okolí je %1$d nových zakázek. Klepnutím je zobrazíte.</string>
 
+    <string name="notification_order_assignment_cancelled_title">Zakázka zrušena</string>
+    <string name="notification_order_assignment_cancelled_body">Zakázka, kterou jste přijali, byla zrušena: #%1$s. Klepnutím zobrazíte detaily.</string>
     <!-- ── Vaše zařízení ── -->
     <string name="devices_title">Vaše zařízení</string>
     <string name="profile_devices_summary">Správa přihlášených zařízení</string>

@@ -57,6 +57,8 @@ public class CancelOrder
             var order = await orderRepository
                 .GetQueryable()
                 .Include(o => o.OrderStatusHistory)
+                .Include(o => o.AssignedEmployees)
+                    .ThenInclude(ae => ae.Employee)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order == null)
@@ -149,6 +151,12 @@ public class CancelOrder
                         cancellationToken);
                 }
             }
+
+            // Tell every cleaner who ACCEPTED this job that it's off — they hear nothing today.
+            // Distinct partner event (not the customer order.cancelled) so the audience keysets stay
+            // disjoint; skips legacy assignments with no linked User.
+            await OrderAssignmentCancellationNotifier.NotifyAssignedEmployeesOfCancellationAsync(
+                order, notificationProducer, cancellationToken);
 
             await loyaltyService.RevokeForCancelledOrderAsync(order.Id, cancellationToken);
 

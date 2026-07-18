@@ -29,6 +29,14 @@ public static class NotificationEventCatalog
     /// </summary>
     public const string NewJobsAvailable = "order.new_available";
 
+    /// <summary>
+    /// Partner-targeted: a job the cleaner ACCEPTED was cancelled (by the customer or an admin).
+    /// A dedicated key, NOT the customer <c>order.cancelled</c>, so the audience feed keysets stay
+    /// disjoint. Args: <c>orderNumber</c> (loc) + <c>orderId</c> (deep link). Non-mutable
+    /// (GetCategoryFor returns null) — a cancellation must not be silenceable.
+    /// </summary>
+    public const string OrderAssignmentCancelled = "order.assignment_cancelled";
+
     public static NotificationCategory? GetCategoryFor(string eventKey) => eventKey switch
     {
         OrderConfirmed => NotificationCategory.OrderUpdates,

@@ -1245,6 +1245,8 @@
     <string name="notification_new_jobs_title">Нові доступні замовлення</string>
     <string name="notification_new_jobs_body">Поруч з вами доступно %1$d нових замовлень. Торкніться, щоб переглянути.</string>
 
+    <string name="notification_order_assignment_cancelled_title">Замовлення скасовано</string>
+    <string name="notification_order_assignment_cancelled_body">Замовлення, яке ви прийняли, скасовано: #%1$s. Торкніться, щоб переглянути деталі.</string>
     <!-- ── Ваші пристрої ── -->
     <string name="devices_title">Ваші пристрої</string>
     <string name="profile_devices_summary">Керування пристроями, на яких виконано вхід</string>

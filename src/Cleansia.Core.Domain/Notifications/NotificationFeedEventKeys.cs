@@ -43,6 +43,7 @@ public static class NotificationFeedEventKeys
     public static readonly IReadOnlyList<string> Partner =
     [
         NotificationEventCatalog.NewJobsAvailable,
+        NotificationEventCatalog.OrderAssignmentCancelled,
     ];
 
     public static IReadOnlyList<string> For(NotificationFeedAudience audience) => audience switch

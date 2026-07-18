@@ -75,6 +75,11 @@ object NotificationTemplates {
             R.string.notification_membership_cancelled_body,
             NotificationCategoryDto.MembershipCancelled,
         )
+        "order.assignment_cancelled" -> Template(
+            R.string.notification_order_assignment_cancelled_title,
+            R.string.notification_order_assignment_cancelled_body,
+            NotificationCategoryDto.OrderUpdates,
+        )
         else -> null
     }
 
@@ -90,6 +95,7 @@ object NotificationTemplates {
             "order.completed",
             "order.cancelled",
             "order.refunded",
+            "order.assignment_cancelled",
             "recurring.scheduled" -> {
                 val orderNumber = args["orderNumber"].orEmpty()
                 context.getString(bodyRes, orderNumber)

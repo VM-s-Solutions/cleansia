@@ -5,7 +5,8 @@ import Foundation
 /// only; customer keys never reach this host.
 enum PartnerFeedEventKeys {
     static let all: Set<String> = [
-        "order.new_available"
+        "order.new_available",
+        "order.assignment_cancelled"
     ]
 
     static func contains(_ eventKey: String) -> Bool {
@@ -47,6 +48,8 @@ enum NotificationFeedTemplates {
         switch eventKey {
         case "order.new_available":
             String(format: L10n.localized("push.\(eventKey).body"), args["count"] ?? "")
+        case "order.assignment_cancelled":
+            String(format: L10n.localized("push.\(eventKey).body"), args["orderNumber"] ?? "")
         default:
             L10n.localized("push.\(eventKey).body")
         }

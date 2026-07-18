@@ -46,6 +46,11 @@ object NotificationTemplates {
             R.string.notification_dispute_reply_body,
             NotificationChannels.CHANNEL_DISPUTE_REPLY,
         )
+        "order.assignment_cancelled" -> Template(
+            R.string.notification_order_assignment_cancelled_title,
+            R.string.notification_order_assignment_cancelled_body,
+            NotificationChannels.CHANNEL_ORDER_UPDATES,
+        )
         "order.new_available" -> Template(
             R.string.notification_new_jobs_title,
             R.string.notification_new_jobs_body,
@@ -65,6 +70,7 @@ object NotificationTemplates {
             "order.in_progress",
             "order.completed",
             "order.cancelled",
+            "order.assignment_cancelled",
             -> context.getString(bodyRes, args["orderNumber"].orEmpty())
             "order.new_available" -> {
                 val count = args["count"]?.toIntOrNull() ?: 1

@@ -1220,6 +1220,10 @@
 
     <!-- ── Push-уведомления (FCM) ── -->
     <string name="notifications_empty">Пока нет уведомлений. Обновления заказов появятся здесь.</string>
+    <string name="notifications_inbox_error_message">Не удалось загрузить уведомления.</string>
+    <string name="notifications_inbox_error_retry">Попробовать снова</string>
+    <string name="notifications_bell_unread_content_description">Уведомления, непрочитанных: %1$d</string>
+    <string name="notifications_badge_overflow">99+</string>
 
     <string name="notification_channel_order_updates_name">Обновления заказов</string>
     <string name="notification_channel_order_updates_desc">Уведомления, когда заказ подтверждён, начат, завершён или отменён.</string>

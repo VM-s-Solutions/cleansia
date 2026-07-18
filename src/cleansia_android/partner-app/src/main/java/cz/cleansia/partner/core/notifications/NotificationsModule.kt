@@ -4,15 +4,12 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.room.Room
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.notifications.DeviceRegistrationClient
 import cz.cleansia.core.notifications.PushTokenDataStore
 import cz.cleansia.core.notifications.PushTokenRepository
 import cz.cleansia.partner.api.client.DeviceApi as GenDeviceApi
 import cz.cleansia.partner.core.network.AuthRetrofit
-import cz.cleansia.partner.core.notifications.db.NotificationDao
-import cz.cleansia.partner.core.notifications.db.NotificationDatabase
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -43,23 +40,14 @@ object NotificationsModule {
 
     @Provides
     @Singleton
-    fun provideNotificationDatabase(
-        @ApplicationContext context: Context,
-    ): NotificationDatabase = Room.databaseBuilder(
-        context,
-        NotificationDatabase::class.java,
-        "partner_notifications.db",
-    ).build()
-
-    @Provides
-    @Singleton
-    fun provideNotificationDao(db: NotificationDatabase): NotificationDao = db.notificationDao()
+    fun provideNotificationFeedApi(@AuthRetrofit retrofit: Retrofit): NotificationFeedApi =
+        retrofit.create(NotificationFeedApi::class.java)
 }
 
 /**
  * Binds the partner [DeviceRegistrationClient] and joins [PushTokenRepository]
- * + [NotificationFeedCache] to the [SessionScopedCache] multibinding so their
- * `clear()` runs on every sign-out alongside the other per-user caches.
+ * + [NotificationFeedRepository] to the [SessionScopedCache] multibinding so
+ * their `clear()` runs on every sign-out alongside the other per-user caches.
  * Separate abstract module because @Binds can't live in an `object` module.
  */
 @Module
@@ -76,5 +64,5 @@ abstract class NotificationsBindingsModule {
 
     @Binds
     @IntoSet
-    abstract fun bindNotificationFeedCache(impl: NotificationFeedCache): SessionScopedCache
+    abstract fun bindNotificationFeedRepository(impl: NotificationFeedRepository): SessionScopedCache
 }

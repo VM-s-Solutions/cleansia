@@ -10,44 +10,28 @@ import com.google.firebase.messaging.RemoteMessage
 import cz.cleansia.core.notifications.PushTokenRepository
 import cz.cleansia.partner.MainActivity
 import cz.cleansia.partner.R
-import cz.cleansia.partner.core.notifications.db.NotificationDao
-import cz.cleansia.partner.core.notifications.db.NotificationRecord
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Receives FCM data payloads and turns them into local Android notifications
- * plus a row in the in-app notifications feed. Mirrors the customer-app
- * service. We use data-only payloads (no `notification` field) so:
+ * Receives FCM data payloads and turns them into local Android notifications.
+ * We use data-only payloads (no `notification` field) so:
  *  - The client owns the title/body text (no PII shipped to FCM).
  *  - The lock-screen text is whatever WE choose to show.
  *  - The same payload shape works for foreground and background delivery.
  *
+ * The in-app feed is server-backed ([NotificationFeedRepository]): the producer
+ * wrote a UserNotification row in the same transaction that dispatched this
+ * push, so we bump the bell badge locally instead of persisting a row here.
+ *
  * Hilt-injected via [AndroidEntryPoint]; the service is process-scoped by
  * Android so the singleton [PushTokenRepository] is reachable for onNewToken.
- *
- * TODO(backend): the backend currently dispatches every push to the order's
- * customer UserId only — there are NO partner-targeted dispatches yet (see
- * NotificationEventCatalog.cs; the order.* and dispute.reply events all target
- * order.UserId). The keys wired below are the order-lifecycle events the cleaner WOULD
- * receive once the backend fans out to the assigned employee's UserId. Keys
- * that still need backend confirmation / a new dispatch site:
- *   - order.available  (a new unassigned job the cleaner can take)
- *   - order.assigned   (a job was assigned to this cleaner)
- *   - invoice.generated / payperiod.invoice_generated (pay-period invoice ready)
- * Add their templates + channels here once the backend ships them.
  */
 @AndroidEntryPoint
 class CleansiaFirebaseMessagingService : FirebaseMessagingService() {
 
     @Inject lateinit var pushTokenRepository: PushTokenRepository
-    @Inject lateinit var notificationDao: NotificationDao
-
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    @Inject lateinit var notificationFeedRepository: NotificationFeedRepository
 
     override fun onNewToken(token: String) {
         // FCM rotated the token; push the new value into the repository's
@@ -61,25 +45,15 @@ class CleansiaFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         val data = message.data
         val eventKey = data["event_key"] ?: return
-        val template = templateFor(eventKey) ?: return
+        val template = NotificationTemplates.templateFor(eventKey) ?: return
+
+        // Feed-scoped event: the server row already exists, so bump the bell
+        // badge locally instead of refetching. Unknown keys returned above.
+        notificationFeedRepository.onPushReceived()
 
         val orderId = data["orderId"]?.takeIf { it.isNotBlank() }
         val title = getString(template.titleRes)
-        val body = formatBody(template.bodyRes, eventKey, data)
-
-        // Persist to the feed first so the row exists even if the OS suppresses
-        // the system notification (permission denied, channel muted).
-        scope.launch {
-            notificationDao.insert(
-                NotificationRecord(
-                    eventKey = eventKey,
-                    title = title,
-                    body = body,
-                    orderId = orderId,
-                    timestamp = System.currentTimeMillis(),
-                ),
-            )
-        }
+        val body = NotificationTemplates.formatBody(this, eventKey, template.bodyRes, data)
 
         showNotification(eventKey, template.channelId, title, body, data, orderId)
     }
@@ -123,66 +97,4 @@ class CleansiaFirebaseMessagingService : FirebaseMessagingService() {
         val tag = orderId ?: eventKey
         manager.notify(tag, eventKey.hashCode(), notification)
     }
-
-    /**
-     * Map an event_key to its (title, body, channel) template. Returns `null`
-     * for unknown keys — silently drop rather than surface a phantom
-     * notification. Customer-only events (loyalty / membership / promo /
-     * recurring / refund) are intentionally absent.
-     */
-    private fun templateFor(eventKey: String): Template? = when (eventKey) {
-        "order.confirmed" -> Template(
-            R.string.notification_order_confirmed_title,
-            R.string.notification_order_confirmed_body,
-            NotificationChannels.CHANNEL_ORDER_UPDATES,
-        )
-        "order.in_progress" -> Template(
-            R.string.notification_order_in_progress_title,
-            R.string.notification_order_in_progress_body,
-            NotificationChannels.CHANNEL_ORDER_UPDATES,
-        )
-        "order.completed" -> Template(
-            R.string.notification_order_completed_title,
-            R.string.notification_order_completed_body,
-            NotificationChannels.CHANNEL_ORDER_UPDATES,
-        )
-        "order.cancelled" -> Template(
-            R.string.notification_order_cancelled_title,
-            R.string.notification_order_cancelled_body,
-            NotificationChannels.CHANNEL_ORDER_UPDATES,
-        )
-        "dispute.reply" -> Template(
-            R.string.notification_dispute_reply_title,
-            R.string.notification_dispute_reply_body,
-            NotificationChannels.CHANNEL_DISPUTE_REPLY,
-        )
-        "order.new_available" -> Template(
-            R.string.notification_new_jobs_title,
-            R.string.notification_new_jobs_body,
-            NotificationChannels.CHANNEL_NEW_JOBS,
-        )
-        else -> null
-    }
-
-    /**
-     * Order events carry `orderNumber` for the body's positional arg; dispute
-     * replies have no arg.
-     */
-    private fun formatBody(bodyRes: Int, eventKey: String, data: Map<String, String>): String =
-        when (eventKey) {
-            "order.confirmed",
-            "order.in_progress",
-            "order.completed",
-            "order.cancelled",
-            -> getString(bodyRes, data["orderNumber"].orEmpty())
-            "order.new_available" -> {
-                // Backend sends `count` as a decimal-string. Fall back to 1 if
-                // missing so the string doesn't render "%d new jobs" literally.
-                val count = data["count"]?.toIntOrNull() ?: 1
-                getString(bodyRes, count)
-            }
-            else -> getString(bodyRes)
-        }
-
-    private data class Template(val titleRes: Int, val bodyRes: Int, val channelId: String)
 }

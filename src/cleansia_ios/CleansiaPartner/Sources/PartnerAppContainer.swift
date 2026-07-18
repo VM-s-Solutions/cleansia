@@ -75,6 +75,8 @@ final class PartnerAppContainer: AppContainer {
     let geocodingService: GeocodingService = CLGeocoderGeocodingService()
     let mapProvider: MapProvider = MapKitMapProvider()
     let pushRegistrar: any PushRegistrar = UNUserNotificationPushRegistrar()
+    let notificationFeedClient: NotificationFeedClient
+    let notificationBadge: NotificationBadgeModel
 
     private let authStack: PartnerAuthStack
     private let pushTokenRegistrar: PushTokenRegistrar
@@ -95,6 +97,9 @@ final class PartnerAppContainer: AppContainer {
         // DeviceIdProvider the HeaderAdapter stamps as X-Device-Id.
         let devicesClient = LivePartnerDevicesClient(deviceIdProvider: authStack.deviceIdProvider)
         self.devicesClient = devicesClient
+        let notificationFeedClient = LiveNotificationFeedClient()
+        self.notificationFeedClient = notificationFeedClient
+        notificationBadge = NotificationBadgeModel(client: notificationFeedClient)
         let pushTokenRegistrar = PushTokenRegistrar(
             client: PartnerDeviceRegistrationClient(),
             deviceIdProvider: authStack.deviceIdProvider
@@ -117,6 +122,7 @@ final class PartnerAppContainer: AppContainer {
         }
         sessionScopedCaches.register(ordersStaleness)
         sessionScopedCaches.register(invoicesStaleness)
+        sessionScopedCaches.register(notificationBadge)
         sessionScopedCaches.register(pushTokenRegistrar)
         // Rule 3: the authed Device/Unregister DELETE runs while the Bearer is
         // still live, before logout() wipes the token. The local cache clear()

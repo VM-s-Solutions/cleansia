@@ -1217,6 +1217,10 @@
 
     <!-- ── Push notifikácie (FCM) ── -->
     <string name="notifications_empty">Zatiaľ žiadne oznámenia. Aktualizácie zákaziek sa zobrazia tu.</string>
+    <string name="notifications_inbox_error_message">Oznámenia sa nepodarilo načítať.</string>
+    <string name="notifications_inbox_error_retry">Skúsiť znova</string>
+    <string name="notifications_bell_unread_content_description">Oznámenia, neprečítaných: %1$d</string>
+    <string name="notifications_badge_overflow">99+</string>
 
     <string name="notification_channel_order_updates_name">Aktualizácie zákaziek</string>
     <string name="notification_channel_order_updates_desc">Upozornenia, keď je zákazka potvrdená, začatá, dokončená alebo zrušená.</string>

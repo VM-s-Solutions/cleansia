@@ -1247,6 +1247,10 @@
 
     <!-- ── Push notifications (FCM) ── -->
     <string name="notifications_empty">No notifications yet. Job updates will show up here.</string>
+    <string name="notifications_inbox_error_message">Couldn\'t load your notifications.</string>
+    <string name="notifications_inbox_error_retry">Try again</string>
+    <string name="notifications_bell_unread_content_description">Notifications, %1$d unread</string>
+    <string name="notifications_badge_overflow">99+</string>
 
     <string name="notification_channel_order_updates_name">Job updates</string>
     <string name="notification_channel_order_updates_desc">Updates when a job is confirmed, started, completed, or cancelled.</string>

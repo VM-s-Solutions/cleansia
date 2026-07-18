@@ -56,8 +56,14 @@ struct PartnerShellView: View {
         TabView(selection: $model.selection) {
             DashboardView(
                 client: container.dashboardClient,
+                notificationBadge: container.notificationBadge,
+                notificationFeedClient: container.notificationFeedClient,
+                snackbar: container.snackbar,
                 onOpenEarnings: { model.selectEarnings() },
-                onOpenOrders: { model.selectOrders() }
+                onOpenOrders: { model.selectOrders() },
+                // Feed-row taps land exactly where a push tap does — the same
+                // resolver, the same routing plan (FD-AC9).
+                onNotificationDestination: { apply(PushTapRouting.plan(for: $0)) }
             )
             .tabItem { Label(ShellTab.dashboard.label, systemImage: ShellTab.dashboard.systemImage) }
             .tag(ShellTab.dashboard)

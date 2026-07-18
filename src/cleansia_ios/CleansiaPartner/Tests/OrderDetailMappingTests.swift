@@ -70,8 +70,8 @@ final class OrderDetailMappingTests: XCTestCase {
         let detail = OrderDetail(makeItem())
         XCTAssertEqual(detail.rooms, 3)
         XCTAssertEqual(detail.bathrooms, 2)
-        XCTAssertEqual(detail.services, ["Standard clean"]) // blank dropped
-        XCTAssertEqual(detail.packages, [OrderDetailPackage(name: "Deep clean", price: 800)])
+        XCTAssertEqual(detail.services, [OrderDetailService(id: nil, name: "Standard clean")]) // blank dropped
+        XCTAssertEqual(detail.packages, [OrderDetailPackage(id: nil, name: "Deep clean", price: 800)])
         XCTAssertEqual(detail.extras, ["inside-oven", "interior-windows"]) // false dropped, sorted
     }
 

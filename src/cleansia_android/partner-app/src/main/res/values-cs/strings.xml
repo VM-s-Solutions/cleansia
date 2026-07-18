@@ -1237,6 +1237,10 @@
 
     <!-- ── Push notifikace (FCM) ── -->
     <string name="notifications_empty">Zatím žádná oznámení. Aktualizace zakázek se zobrazí zde.</string>
+    <string name="notifications_inbox_error_message">Oznámení se nepodařilo načíst.</string>
+    <string name="notifications_inbox_error_retry">Zkusit znovu</string>
+    <string name="notifications_bell_unread_content_description">Oznámení, nepřečtených: %1$d</string>
+    <string name="notifications_badge_overflow">99+</string>
 
     <string name="notification_channel_order_updates_name">Aktualizace zakázek</string>
     <string name="notification_channel_order_updates_desc">Upozornění, když je zakázka potvrzena, zahájena, dokončena nebo zrušena.</string>

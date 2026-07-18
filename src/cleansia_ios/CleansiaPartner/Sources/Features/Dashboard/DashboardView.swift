@@ -3,23 +3,52 @@ import SwiftUI
 
 struct DashboardView: View {
     @StateObject private var vm: DashboardViewModel
+    @ObservedObject private var notificationBadge: NotificationBadgeModel
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var showNotifications = false
+    private let notificationFeedClient: NotificationFeedClient
+    private let snackbar: SnackbarController
     let onOpenEarnings: () -> Void
     let onOpenOrders: () -> Void
+    let onNotificationDestination: (PartnerNotificationDestination) -> Void
 
     init(
         client: PartnerDashboardClient,
+        notificationBadge: NotificationBadgeModel,
+        notificationFeedClient: NotificationFeedClient,
+        snackbar: SnackbarController,
         onOpenEarnings: @escaping () -> Void = {},
-        onOpenOrders: @escaping () -> Void = {}
+        onOpenOrders: @escaping () -> Void = {},
+        onNotificationDestination: @escaping (PartnerNotificationDestination) -> Void = { _ in }
     ) {
         _vm = StateObject(wrappedValue: DashboardViewModel(client: client))
+        self.notificationBadge = notificationBadge
+        self.notificationFeedClient = notificationFeedClient
+        self.snackbar = snackbar
         self.onOpenEarnings = onOpenEarnings
         self.onOpenOrders = onOpenOrders
+        self.onNotificationDestination = onNotificationDestination
     }
 
     var body: some View {
         content
             .background(CleansiaColors.background.ignoresSafeArea())
+            .sheet(isPresented: $showNotifications) {
+                NotificationsInboxSheet(
+                    client: notificationFeedClient,
+                    badge: notificationBadge,
+                    snackbar: snackbar,
+                    onDestination: onNotificationDestination
+                )
+                .snackbarHost(snackbar, bottomInset: Spacing.m)
+            }
             .task { await vm.load() }
+            .task { await notificationBadge.refresh() }
+            .onChange(of: scenePhase) { phase in
+                if phase == .active {
+                    Task { await notificationBadge.refresh() }
+                }
+            }
     }
 
     @ViewBuilder
@@ -31,7 +60,13 @@ struct DashboardView: View {
         case let .error(error):
             DashboardErrorView(error: error) { Task { await vm.load() } }
         case let .loaded(data):
-            DashboardContent(data: data, onOpenEarnings: onOpenEarnings, onOpenOrders: onOpenOrders)
+            DashboardContent(
+                data: data,
+                unreadBadge: notificationBadge.badgeLabel,
+                onOpenEarnings: onOpenEarnings,
+                onOpenOrders: onOpenOrders,
+                onNotificationTap: { showNotifications = true }
+            )
         }
     }
 }
@@ -60,13 +95,34 @@ private struct DashboardErrorView: View {
 struct DashboardContent: View {
     @Environment(\.locale) private var locale
     let data: DashboardData
+    let unreadBadge: String?
     let onOpenEarnings: () -> Void
     let onOpenOrders: () -> Void
+    let onNotificationTap: () -> Void
+
+    init(
+        data: DashboardData,
+        unreadBadge: String? = nil,
+        onOpenEarnings: @escaping () -> Void,
+        onOpenOrders: @escaping () -> Void,
+        onNotificationTap: @escaping () -> Void = {}
+    ) {
+        self.data = data
+        self.unreadBadge = unreadBadge
+        self.onOpenEarnings = onOpenEarnings
+        self.onOpenOrders = onOpenOrders
+        self.onNotificationTap = onNotificationTap
+    }
 
     var body: some View {
         ScrollView {
             VStack(spacing: Spacing.m) {
-                GreetingBar(firstName: data.firstName, locale: locale)
+                GreetingBar(
+                    firstName: data.firstName,
+                    locale: locale,
+                    unreadBadge: unreadBadge,
+                    onNotificationTap: onNotificationTap
+                )
                 HeroCard(hero: data.hero, currencyCode: data.currencyCode, onOpenOrders: onOpenOrders)
                 WeeklyEarningsCard(data: data, onClick: onOpenEarnings)
                 if let period = data.payPeriod {
@@ -87,6 +143,8 @@ struct DashboardContent: View {
 private struct GreetingBar: View {
     let firstName: String?
     let locale: Locale
+    let unreadBadge: String?
+    let onNotificationTap: () -> Void
 
     var body: some View {
         HStack(spacing: Spacing.s) {
@@ -103,8 +161,45 @@ private struct GreetingBar: View {
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             }
             Spacer()
+            NotificationBell(unreadBadge: unreadBadge, onTap: onNotificationTap)
         }
         .padding(.horizontal, Spacing.m)
+    }
+}
+
+/// The dashboard notification bell carrying the unread badge ("99+" capped,
+/// hidden at zero — FD-AC5); opens the notifications inbox.
+private struct NotificationBell: View {
+    let unreadBadge: String?
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            Image(systemName: "bell")
+                .font(.system(size: 18))
+                .foregroundColor(CleansiaColors.onSurface)
+                .frame(width: 40, height: 40)
+                .background(Circle().fill(CleansiaColors.surface))
+                .overlay(Circle().stroke(CleansiaColors.outlineVariant, lineWidth: 1))
+                .overlay(alignment: .topTrailing) {
+                    if let unreadBadge {
+                        Text(verbatim: unreadBadge)
+                            .font(CleansiaTypography.labelSmall)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(CleansiaColors.error, in: Capsule())
+                            .offset(x: 4, y: -2)
+                    }
+                }
+                .padding(Spacing.xxs)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(verbatim: L10n.NotificationsInbox.title))
+        .accessibilityValue(
+            Text(verbatim: unreadBadge.map { L10n.NotificationsInbox.unreadA11y($0) } ?? "")
+        )
     }
 }
 

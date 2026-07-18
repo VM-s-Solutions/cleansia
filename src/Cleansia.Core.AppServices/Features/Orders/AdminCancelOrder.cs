@@ -5,8 +5,6 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -48,7 +46,7 @@ public class AdminCancelOrder
         IUserSessionProvider userSessionProvider,
         IRefundService refundService,
         ILoyaltyService loyaltyService,
-        IPendingDispatch pending
+        INotificationProducer notificationProducer
     ) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -117,21 +115,17 @@ public class AdminCancelOrder
 
                 if (refundInitiated && !string.IsNullOrEmpty(order.UserId))
                 {
-                    pending.Enqueue(
-                        QueueNames.NotificationsDispatch,
-                        new QueueEnvelope<SendPushNotificationMessage>(
-                            MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderRefunded, order.Id),
-                            order.TenantId,
-                            new SendPushNotificationMessage(
-                                UserId: order.UserId,
-                                EventKey: NotificationEventCatalog.OrderRefunded,
-                                Args: new Dictionary<string, string>
-                                {
-                                    ["orderId"] = order.Id,
-                                    ["orderNumber"] = order.DisplayOrderNumber,
-                                },
-                                TenantId: order.TenantId)),
-                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderRefunded, order.Id));
+                    await notificationProducer.NotifyAsync(
+                        order.UserId,
+                        NotificationEventCatalog.OrderRefunded,
+                        new Dictionary<string, string>
+                        {
+                            ["orderId"] = order.Id,
+                            ["orderNumber"] = order.DisplayOrderNumber,
+                        },
+                        order.TenantId,
+                        order.Id,
+                        cancellationToken);
                 }
             }
 

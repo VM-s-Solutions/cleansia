@@ -173,7 +173,7 @@ audience keyset passed by the host.
 |---|---|
 | `GET api/Notification/Paged?pageNumber&pageSize` | `PagedData<UserNotificationDto>`, `CreatedOn` desc; `pageSize` default 20, cap 50 |
 | `GET api/Notification/UnreadCount` | `UnreadNotificationCountDto(int Count)` — cheap partial-index count |
-| `POST api/Notification/MarkRead` | body `{ id }` → `BusinessResult`; row must belong to the caller AND the host keyset, else `notification.not_found`; idempotent (first `ReadOn` wins) |
+| `POST api/Notification/MarkRead` | body `{ id }` → `BusinessResult`; row must belong to the caller AND the host keyset, else `general.not_found`; idempotent (first `ReadOn` wins) |
 | `POST api/Notification/MarkAllRead` | body `{ upToCreatedOn? }` *(revised per FCH-1)* → `BusinessResult`; marks the caller's unread rows in the host keyset with `CreatedOn <= upToCreatedOn` (null = all) |
 
 `UserNotificationDto(Guid Id, string EventKey, IDictionary<string, string> Args, DateTime CreatedOn,
@@ -269,7 +269,7 @@ DateTime? ReadOn)` — record, positional. **No server-side title/body/deepLink 
   Given a row is created after the fetch, Then it remains unread and is counted on the next badge
   fetch.
 - [ ] **FD-AC7 (single mark-read + S1)** — Given a row belongs to user A, When user B — or user A via
-  the wrong host audience — calls `MarkRead` on it, Then `notification.not_found` and the row is
+  the wrong host audience — calls `MarkRead` on it, Then `general.not_found` and the row is
   unchanged; And When user A calls `MarkRead` twice on their own row, Then both succeed and `ReadOn`
   keeps the first timestamp.
 - [ ] **FD-AC8 (client render, device locale)** — Given a row `order.completed` with
@@ -401,3 +401,14 @@ seam's name/shape — no ADR required beyond what ADR-0002/0025 already settle.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+
+## Status log (feed backend)
+- 2026-07-18 — feed v1 BACKEND shipped on `feature/i18n-cluster-3` (entity + producer seam over 18
+  sites + dual-host NotificationController + retention/GDPR; 31 new tests; adversarial review held
+  on every attack class, 3 minor items closed). **PM reconciliation:** D3/FD-AC7's
+  `notification.not_found` is amended to the existing `general.not_found` — it is already localized
+  ×5 on web, both Android apps and the iOS catalog (the error-i18n sweep), a not-found needs no
+  finer semantics here, and minting a new key would ripple translations for zero user benefit.
+  MANUAL_STEPS pending (owner): fold the `UserNotifications` table into the Initial migration;
+  re-dump both mobile specs + regen clients. Mobile UI lanes: customer inbox next (this ticket),
+  partner UIs = T-0430, new partner events = T-0431.

@@ -1,11 +1,10 @@
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -42,7 +41,7 @@ public class AddDisputeMessage
     public class Handler(
         IDisputeRepository disputeRepository,
         IUserSessionProvider userSessionProvider,
-        IPendingDispatch pending) : ICommandHandler<Command>
+        INotificationProducer notificationProducer) : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
         {
@@ -76,20 +75,16 @@ public class AddDisputeMessage
             if (isStaffMessage && !string.IsNullOrEmpty(dispute.UserId))
             {
                 // Subject for the push dedup key is the dispute (no order on this path).
-                pending.Enqueue(
-                    QueueNames.NotificationsDispatch,
-                    new QueueEnvelope<SendPushNotificationMessage>(
-                        MessageKeys.Push(dispute.UserId, NotificationEventCatalog.DisputeReply, dispute.Id),
-                        dispute.TenantId,
-                        new SendPushNotificationMessage(
-                            UserId: dispute.UserId,
-                            EventKey: NotificationEventCatalog.DisputeReply,
-                            Args: new Dictionary<string, string>
-                            {
-                                ["disputeId"] = dispute.Id,
-                            },
-                            TenantId: dispute.TenantId)),
-                    MessageKeys.Push(dispute.UserId, NotificationEventCatalog.DisputeReply, dispute.Id));
+                await notificationProducer.NotifyAsync(
+                    dispute.UserId,
+                    NotificationEventCatalog.DisputeReply,
+                    new Dictionary<string, string>
+                    {
+                        ["disputeId"] = dispute.Id,
+                    },
+                    dispute.TenantId,
+                    dispute.Id,
+                    cancellationToken);
             }
 
             return BusinessResult.Success();

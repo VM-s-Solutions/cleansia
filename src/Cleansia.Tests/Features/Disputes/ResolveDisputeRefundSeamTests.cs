@@ -7,8 +7,6 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using Moq;
 
@@ -20,7 +18,8 @@ namespace Cleansia.Tests.Features.Disputes;
 /// raw IStripeClientFactory. The dispute is marked Resolved with its RefundAmount; a retried resolve
 /// collapses on the per-dispute RefundKey so exactly one Stripe refund results; an already-terminal
 /// dispute is never re-resolved (its recorded refund is never overwritten); and a successful refund
-/// dispatches the refund-success notification via IPendingDispatch (ADR-0002 D1), never a direct queue send.
+/// records the refund-success notification via the shared INotificationProducer seam, never a direct
+/// queue send.
 /// </summary>
 public class ResolveDisputeRefundSeamTests
 {
@@ -31,7 +30,7 @@ public class ResolveDisputeRefundSeamTests
     private readonly Mock<IDisputeRepository> _disputeRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IRefundService> _refundService = new();
-    private readonly Mock<IPendingDispatch> _pending = new();
+    private readonly Mock<INotificationProducer> _producer = new();
 
     public ResolveDisputeRefundSeamTests()
     {
@@ -41,7 +40,7 @@ public class ResolveDisputeRefundSeamTests
     private readonly AuditContext _auditContext = new();
 
     private ResolveDispute.Handler CreateHandler() =>
-        new(_disputeRepository.Object, _session.Object, _refundService.Object, _pending.Object, _auditContext);
+        new(_disputeRepository.Object, _session.Object, _refundService.Object, _producer.Object, _auditContext);
 
     private static Dispute NewPendingDispute()
     {
@@ -117,7 +116,7 @@ public class ResolveDisputeRefundSeamTests
     }
 
     [Fact]
-    public async Task Resolve_WithSuccessfulRefund_DispatchesRefundNotificationViaPendingDispatch()
+    public async Task Resolve_WithSuccessfulRefund_RecordsRefundNotificationViaTheSeam()
     {
         ArrangeDispute();
         _refundService
@@ -129,12 +128,13 @@ public class ResolveDisputeRefundSeamTests
             new ResolveDispute.Command(DisputeId, 250m, "approved"), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        _pending.Verify(p => p.Enqueue(
-            QueueNames.NotificationsDispatch,
-            It.Is<QueueEnvelope<SendPushNotificationMessage>>(e =>
-                e.Payload.EventKey == NotificationEventCatalog.OrderRefunded
-                && e.Payload.UserId == "customer-1"),
-            It.IsAny<string>()), Times.Once);
+        _producer.Verify(p => p.NotifyAsync(
+            "customer-1",
+            NotificationEventCatalog.OrderRefunded,
+            It.IsAny<Dictionary<string, string>>(),
+            It.IsAny<string?>(),
+            OrderId,
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -145,23 +145,24 @@ public class ResolveDisputeRefundSeamTests
             .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(new RefundResult(
                 "refund-1", $"refund:{OrderId}:dispute:{DisputeId}", 250m, RefundStatus.Succeeded, false)));
-        QueueEnvelope<SendPushNotificationMessage>? captured = null;
-        _pending
-            .Setup(p => p.Enqueue(
-                QueueNames.NotificationsDispatch,
-                It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(),
-                It.IsAny<string>()))
-            .Callback<string, QueueEnvelope<SendPushNotificationMessage>, string>((_, envelope, _) => captured = envelope);
+        Dictionary<string, string>? capturedArgs = null;
+        _producer
+            .Setup(p => p.NotifyAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Callback<string, string, Dictionary<string, string>, string?, string?, CancellationToken>(
+                (_, _, args, _, _, _) => capturedArgs = args)
+            .Returns(Task.CompletedTask);
 
         var result = await CreateHandler().Handle(
             new ResolveDispute.Command(DisputeId, 250m, "approved"), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.NotNull(captured);
+        Assert.NotNull(capturedArgs);
         Assert.False(string.IsNullOrEmpty(dispute.Order.DisplayOrderNumber));
-        Assert.Equal(dispute.Order.DisplayOrderNumber, captured!.Payload.Args["orderNumber"]);
-        Assert.Equal(OrderId, captured.Payload.Args["orderId"]);
-        Assert.Equal(DisputeId, captured.Payload.Args["disputeId"]);
+        Assert.Equal(dispute.Order.DisplayOrderNumber, capturedArgs!["orderNumber"]);
+        Assert.Equal(OrderId, capturedArgs["orderId"]);
+        Assert.Equal(DisputeId, capturedArgs["disputeId"]);
     }
 
     [Fact]
@@ -176,10 +177,9 @@ public class ResolveDisputeRefundSeamTests
         await CreateHandler().Handle(
             new ResolveDispute.Command(DisputeId, 250m, "approved"), CancellationToken.None);
 
-        _pending.Verify(p => p.Enqueue(
-            It.IsAny<string>(),
-            It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(),
-            It.IsAny<string>()), Times.Never);
+        _producer.Verify(p => p.NotifyAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
+            It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

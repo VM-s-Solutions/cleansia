@@ -1,12 +1,11 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -84,7 +83,7 @@ public class NotifyOnTheWay
 
     public class Handler(
         IOrderRepository orderRepository,
-        IPendingDispatch pending)
+        INotificationProducer notificationProducer)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -98,21 +97,17 @@ public class NotifyOnTheWay
 
             if (!string.IsNullOrEmpty(order.UserId))
             {
-                pending.Enqueue(
-                    QueueNames.NotificationsDispatch,
-                    new QueueEnvelope<SendPushNotificationMessage>(
-                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderOnTheWay, order.Id),
-                        order.TenantId,
-                        new SendPushNotificationMessage(
-                            UserId: order.UserId,
-                            EventKey: NotificationEventCatalog.OrderOnTheWay,
-                            Args: new Dictionary<string, string>
-                            {
-                                ["orderId"] = order.Id,
-                                ["orderNumber"] = order.DisplayOrderNumber,
-                            },
-                            TenantId: order.TenantId)),
-                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderOnTheWay, order.Id));
+                await notificationProducer.NotifyAsync(
+                    order.UserId,
+                    NotificationEventCatalog.OrderOnTheWay,
+                    new Dictionary<string, string>
+                    {
+                        ["orderId"] = order.Id,
+                        ["orderNumber"] = order.DisplayOrderNumber,
+                    },
+                    order.TenantId,
+                    order.Id,
+                    cancellationToken);
             }
 
             return BusinessResult.Success(new Response(

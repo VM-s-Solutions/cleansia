@@ -1,12 +1,11 @@
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Moq;
 
 namespace Cleansia.Tests.Features.Disputes;
@@ -32,12 +31,12 @@ public class AddDisputeMessageHandlerTests
 
     private readonly Mock<IDisputeRepository> _disputeRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
-    // ADR-0002 D1/D5 — the handler now records intent via IPendingDispatch (post-commit dispatch)
-    // instead of calling IQueueClient.SendAsync directly inside the handler (the F2/SEC-W1 fix).
-    private readonly Mock<IPendingDispatch> _pending = new();
+    // The handler records the notification via the shared INotificationProducer seam (feed row +
+    // outbox push in one call), never a direct queue send inside the handler.
+    private readonly Mock<INotificationProducer> _producer = new();
 
     private AddDisputeMessage.Handler CreateHandler() =>
-        new(_disputeRepository.Object, _session.Object, _pending.Object);
+        new(_disputeRepository.Object, _session.Object, _producer.Object);
 
     private void SetCaller(string sub, UserProfile role)
     {
@@ -82,10 +81,14 @@ public class AddDisputeMessageHandlerTests
         Assert.False(message.IsStaffMessage);
         Assert.Equal(CustomerSub, message.AuthorId);
         // Customer-authored message must NOT notify anyone.
-        _pending.Verify(p => p.Enqueue(
-            It.IsAny<string>(), It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(), It.IsAny<string>()),
-            Times.Never);
+        VerifyNoNotification();
     }
+
+    private void VerifyNoNotification() =>
+        _producer.Verify(p => p.NotifyAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
+            It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
 
     [Fact]
     public async Task Customer_Messaging_Another_Customers_Dispute_Is_Denied()
@@ -122,9 +125,7 @@ public class AddDisputeMessageHandlerTests
         Assert.True(result.IsSuccess);
         var message = Assert.Single(dispute.Messages);
         Assert.False(message.IsStaffMessage);
-        _pending.Verify(p => p.Enqueue(
-            It.IsAny<string>(), It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(), It.IsAny<string>()),
-            Times.Never);
+        VerifyNoNotification();
     }
 
     [Fact]
@@ -142,9 +143,7 @@ public class AddDisputeMessageHandlerTests
 
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.DisputeNotOwnedByUser, result.Error!.Message);
-        _pending.Verify(p => p.Enqueue(
-            It.IsAny<string>(), It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(), It.IsAny<string>()),
-            Times.Never);
+        VerifyNoNotification();
     }
 
     [Fact]
@@ -164,14 +163,15 @@ public class AddDisputeMessageHandlerTests
         var message = Assert.Single(dispute.Messages);
         Assert.True(message.IsStaffMessage);
         Assert.Equal(AdminSub, message.AuthorId);
-        // The staff→customer push is now RECORDED (post-commit dispatch) wrapped in a QueueEnvelope
-        // with the frozen push key push:{UserId}:{EventKey}:{disputeId}.
-        _pending.Verify(p => p.Enqueue(
-            QueueNames.NotificationsDispatch,
-            It.Is<QueueEnvelope<SendPushNotificationMessage>>(e =>
-                e.Payload.UserId == CustomerSub
-                && e.MessageKey == MessageKeys.Push(CustomerSub, NotificationEventCatalog.DisputeReply, DisputeId)),
-            MessageKeys.Push(CustomerSub, NotificationEventCatalog.DisputeReply, DisputeId)),
+        // The staff→customer notification goes through the shared seam, addressed to the dispute
+        // owner with the dispute as the dedup subject.
+        _producer.Verify(p => p.NotifyAsync(
+            CustomerSub,
+            NotificationEventCatalog.DisputeReply,
+            It.Is<Dictionary<string, string>>(a => a["disputeId"] == DisputeId),
+            It.IsAny<string?>(),
+            DisputeId,
+            It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }

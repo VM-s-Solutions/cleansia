@@ -4,7 +4,6 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
 using MockQueryable;
@@ -36,7 +35,7 @@ public class CancelOrderRefundWiringTests
     private readonly Mock<IRefundService> _refundService = new();
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
     private readonly Mock<ICancellationPolicyResolver> _policyResolver = new();
-    private readonly Mock<IPendingDispatch> _pending = new();
+    private readonly Mock<INotificationProducer> _producer = new();
 
     public CancelOrderRefundWiringTests()
     {
@@ -62,7 +61,7 @@ public class CancelOrderRefundWiringTests
             _refundService.Object,
             _loyaltyService.Object,
             _policyResolver.Object,
-            _pending.Object);
+            _producer.Object);
 
     private void Arrange(Order order) =>
         _orderRepository

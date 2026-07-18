@@ -2,8 +2,6 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -19,7 +17,7 @@ public sealed class LoyaltyService(
     ILoyaltyAccountRepository loyaltyAccountRepository,
     ILoyaltyTierConfigRepository loyaltyTierConfigRepository,
     ILoyaltyTransactionRepository loyaltyTransactionRepository,
-    IPendingDispatch pendingDispatch,
+    INotificationProducer notificationProducer,
     ILogger<LoyaltyService> logger) : ILoyaltyService
 {
     private const string SystemActor = "system";
@@ -71,25 +69,19 @@ public sealed class LoyaltyService(
         // by the cancellation push if relevant).
         if (account.CurrentTier > previousTier)
         {
-            // The push gates on the caller's (CompleteOrder's) commit: the row is written into the shared
-            // scoped unit of work and reaches the wire only if the grant persists, so a rolled-back grant
-            // never sends a phantom tier-upgrade push.
-            var messageKey = MessageKeys.Push(
-                order.UserId, NotificationEventCatalog.LoyaltyTierUpgrade, orderId);
-            pendingDispatch.Enqueue(
-                QueueNames.NotificationsDispatch,
-                new QueueEnvelope<SendPushNotificationMessage>(
-                    messageKey,
-                    order.TenantId,
-                    new SendPushNotificationMessage(
-                        UserId: order.UserId,
-                        EventKey: NotificationEventCatalog.LoyaltyTierUpgrade,
-                        Args: new Dictionary<string, string>
-                        {
-                            ["tier"] = account.CurrentTier.ToString(),
-                        },
-                        TenantId: order.TenantId)),
-                messageKey);
+            // The notification gates on the caller's (CompleteOrder's) commit: feed row + outbox row
+            // are written into the shared scoped unit of work and become durable only if the grant
+            // persists, so a rolled-back grant never records a phantom tier upgrade.
+            await notificationProducer.NotifyAsync(
+                order.UserId,
+                NotificationEventCatalog.LoyaltyTierUpgrade,
+                new Dictionary<string, string>
+                {
+                    ["tier"] = account.CurrentTier.ToString(),
+                },
+                order.TenantId,
+                orderId,
+                cancellationToken);
         }
     }
 

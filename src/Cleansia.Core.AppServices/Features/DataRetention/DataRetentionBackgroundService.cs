@@ -16,6 +16,7 @@ public class DataRetentionBackgroundService(
     IOrderRepository orderRepository,
     IUserConsentRepository userConsentRepository,
     IEmployeeDocumentRepository employeeDocumentRepository,
+    IUserNotificationRepository userNotificationRepository,
     IAppConfigurationProvider configProvider,
     IBlobContainerClientFactory blobClientFactory,
     ILogger<DataRetentionBackgroundService> logger)
@@ -40,6 +41,7 @@ public class DataRetentionBackgroundService(
         await RunSafeAsync("OrderCustomerPii", CleanOrderCustomerPiiAsync, cancellationToken);
         await RunSafeAsync("WithdrawnConsents", CleanWithdrawnConsentsAsync, cancellationToken);
         await RunSafeAsync("SupersededDocuments", CleanSupersededDocumentsAsync, cancellationToken);
+        await RunSafeAsync("UserNotifications", CleanUserNotificationsAsync, cancellationToken);
 
         logger.LogInformation("Data retention job completed");
     }
@@ -235,5 +237,55 @@ public class DataRetentionBackgroundService(
 
         logger.LogInformation("Purged {Total} superseded documents older than {Days} days",
             totalDeleted, days);
+    }
+
+    private async Task CleanUserNotificationsAsync(CancellationToken ct)
+    {
+        var daysStr = await configProvider.GetTenantSettingAsync(RetentionDefaults.NotificationsDaysKey, ct);
+        var days = int.TryParse(daysStr, out var d) ? d : RetentionDefaults.DefaultNotificationsDays;
+        var cutoff = DateTimeOffset.UtcNow.AddDays(-days);
+
+        var totalDeleted = 0;
+
+        while (true)
+        {
+            var batch = await userNotificationRepository.GetQueryableIgnoringTenant()
+                .Where(n => n.CreatedOn < cutoff)
+                .Take(RetentionDefaults.BatchSize)
+                .ToListAsync(ct);
+
+            if (batch.Count == 0) break;
+
+            userNotificationRepository.RemoveRange(batch);
+            await userNotificationRepository.CommitAsync(ct);
+
+            totalDeleted += batch.Count;
+        }
+
+        // Runaway cap: for any user beyond the newest MaxNotificationsPerUser rows, hard-delete
+        // the overflow regardless of age (abuse guard, not a UX cap).
+        var overCapUsers = await userNotificationRepository.GetQueryableIgnoringTenant()
+            .GroupBy(n => n.UserId)
+            .Where(g => g.Count() > RetentionDefaults.MaxNotificationsPerUser)
+            .Select(g => g.Key)
+            .ToListAsync(ct);
+
+        foreach (var userId in overCapUsers)
+        {
+            var overflow = await userNotificationRepository.GetQueryableIgnoringTenant()
+                .Where(n => n.UserId == userId)
+                .OrderByDescending(n => n.CreatedOn)
+                .Skip(RetentionDefaults.MaxNotificationsPerUser)
+                .ToListAsync(ct);
+
+            userNotificationRepository.RemoveRange(overflow);
+            await userNotificationRepository.CommitAsync(ct);
+
+            totalDeleted += overflow.Count;
+        }
+
+        logger.LogInformation(
+            "Deleted {Total} user notifications (window: {Days} days, cap: {Cap}/user)",
+            totalDeleted, days, RetentionDefaults.MaxNotificationsPerUser);
     }
 }

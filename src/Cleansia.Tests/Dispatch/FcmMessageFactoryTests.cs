@@ -122,7 +122,8 @@ public class FcmMessageFactoryTests
 
     public static TheoryData<string, Dictionary<string, string>> UnmappedEvents => new()
     {
-        { "promo.new_sitewide", new Dictionary<string, string> { ["title"] = "Spring sale", ["body"] = "20% off this week" } },
+        // promo.new_sitewide is NO LONGER here — it now gets its own literal-alert branch (T-0412);
+        // a genuinely unknown future event still ships data-only.
         { "totally.unknown_future_event", new Dictionary<string, string> { ["orderId"] = "ord-1" } },
     };
 
@@ -136,6 +137,106 @@ public class FcmMessageFactoryTests
         Assert.Null(message.Apns);
         AssertDataEquals(new Dictionary<string, string>(args) { ["event_key"] = eventKey }, message.Data);
     }
+
+    // ── TC-PROMO-1 — the sitewide-promo literal pass-through (marketing posture) ──────────────
+
+    [Fact]
+    public void Promo_Carries_Literal_Title_Body_At_Passive_Priority_Five_With_No_Sound()
+    {
+        var message = FcmMessageFactory.Build(
+            Tokens,
+            "promo.new_sitewide",
+            new Dictionary<string, string> { ["title"] = "Spring sale", ["body"] = "20% off this week" });
+
+        Assert.NotNull(message.Apns);
+        // Literal title/body — the admin authored them; NOT loc-keys.
+        Assert.Equal("Spring sale", message.Apns!.Aps.Alert.Title);
+        Assert.Equal("20% off this week", message.Apns.Aps.Alert.Body);
+        Assert.Null(message.Apns.Aps.Alert.TitleLocKey);
+        Assert.Null(message.Apns.Aps.Alert.LocKey);
+        // Marketing posture: opportune delivery, passive, silent.
+        Assert.Equal("5", message.Apns.Headers["apns-priority"]);
+        Assert.Equal("passive", message.Apns.Aps.CustomData["interruption-level"]);
+        Assert.Null(message.Apns.Aps.Sound);
+        Assert.Equal("promo.new_sitewide", message.Apns.Aps.ThreadId);
+        // Data payload still intact for the in-app feed.
+        AssertDataEquals(
+            new Dictionary<string, string> { ["title"] = "Spring sale", ["body"] = "20% off this week", ["event_key"] = "promo.new_sitewide" },
+            message.Data);
+    }
+
+    [Theory]
+    [InlineData("", "has body")]
+    [InlineData("has title", "")]
+    [InlineData("   ", "has body")]
+    public void Promo_With_Blank_Title_Or_Body_Ships_Data_Only(string title, string body)
+    {
+        var message = FcmMessageFactory.Build(
+            Tokens,
+            "promo.new_sitewide",
+            new Dictionary<string, string> { ["title"] = title, ["body"] = body });
+
+        // Drop-parity with Android's isNotBlank guard — no half-rendered alert.
+        Assert.Null(message.Apns);
+    }
+
+    // ── TC-PROMO-2 (tripwire) — ONLY promo.new_sitewide gets a LITERAL alert ──────────────────
+
+    [Fact]
+    public void No_Event_Other_Than_Promo_Produces_A_Literal_Title_Alert()
+    {
+        // Guards the event-scoped decision: a future producer that happens to send title/body must
+        // NOT silently start displaying on iOS. Every catalog event carries title+body here; only
+        // promo.new_sitewide may surface them as a literal Alert.Title — everyone else is either
+        // data-only or a loc-key alert.
+        foreach (var eventKey in AllCatalogEventKeys())
+        {
+            var message = FcmMessageFactory.Build(
+                Tokens,
+                eventKey,
+                new Dictionary<string, string> { ["title"] = "x", ["body"] = "y", ["orderNumber"] = "A-1", ["count"] = "1" });
+
+            if (eventKey == "promo.new_sitewide")
+            {
+                Assert.NotNull(message.Apns);
+                Assert.Equal("x", message.Apns!.Aps.Alert.Title);
+            }
+            else if (message.Apns is not null)
+            {
+                // Mapped loc-key events use LocKeys, never a literal Title.
+                Assert.Null(message.Apns.Aps.Alert.Title);
+                Assert.NotNull(message.Apns.Aps.Alert.TitleLocKey);
+            }
+        }
+    }
+
+    // ── TC-PROMO-3 — APNs 4096-byte budget with worst-case (Cyrillic ×2 on the wire) ──────────
+
+    [Fact]
+    public void Promo_Alert_Stays_Within_The_Apns_Payload_Budget_At_Max_Length_Cyrillic()
+    {
+        // Admin title/body are length-capped; Cyrillic is 2 bytes/char in UTF-8 AND the text now
+        // rides the wire twice (aps.alert + the data payload the feed reads), so pin the worst case.
+        var title = new string('Я', 120);
+        var body = new string('Ж', 800);
+        var message = FcmMessageFactory.Build(
+            Tokens,
+            "promo.new_sitewide",
+            new Dictionary<string, string> { ["title"] = title, ["body"] = body });
+
+        var apsBytes = System.Text.Encoding.UTF8.GetByteCount(title) + System.Text.Encoding.UTF8.GetByteCount(body);
+        var dataBytes = System.Text.Encoding.UTF8.GetByteCount(title) + System.Text.Encoding.UTF8.GetByteCount(body)
+                        + System.Text.Encoding.UTF8.GetByteCount("promo.new_sitewide");
+        // Even doubled, well under Apple's 4096-byte alert-push ceiling.
+        Assert.True(apsBytes + dataBytes < 4096, $"payload {apsBytes + dataBytes}B exceeds the APNs budget");
+        Assert.NotNull(message.Apns);
+    }
+
+    private static IEnumerable<string> AllCatalogEventKeys() =>
+        typeof(Cleansia.Core.Domain.Notifications.NotificationEventCatalog)
+            .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(f => f is { IsLiteral: true, FieldType: { } t } && t == typeof(string))
+            .Select(f => (string)f.GetRawConstantValue()!);
 
     // ── TC-PUSH-APNS-3 — missing-arg tolerance: empty-string substitution, never dropped ─────
 

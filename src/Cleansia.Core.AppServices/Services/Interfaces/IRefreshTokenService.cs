@@ -36,7 +36,12 @@ public interface IRefreshTokenService
     Task CommitRotationAsync(CancellationToken cancellationToken);
 
     /// <summary>Revokes a single refresh token. Used by logout. Silently no-ops on unknown/revoked tokens.</summary>
-    Task RevokeAsync(string rawToken, string reason, CancellationToken cancellationToken);
+    /// <param name="callerUserId">The AUTHENTICATED caller's user id (Logout is [Authorize]).
+    /// When the presented token is a ROTATED one owned by this caller, the revoke walks the
+    /// token's successor chain so the session the logout was about actually ends — without it a
+    /// thief who rotated a stolen token just before the victim's logout keeps the live successor
+    /// indefinitely (no revocation directory fires for this case). Null skips the walk.</param>
+    Task RevokeAsync(string rawToken, string reason, CancellationToken cancellationToken, string? callerUserId = null);
 
     /// <summary>
     /// Revokes every active refresh token a user holds for a given device, via the same

@@ -22,6 +22,14 @@ public class RefreshTokenRepository(CleansiaDbContext context)
             .FirstOrDefaultAsync(t => t.TokenHash == tokenHash, cancellationToken);
     }
 
+    public Task<RefreshToken?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken)
+    {
+        // IgnoreQueryFilters(): see GetByTokenHashAsync — chain rows are null-stamped.
+        return context.RefreshTokens
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<RefreshToken>> GetActiveByUserIdAsync(string userId, CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;

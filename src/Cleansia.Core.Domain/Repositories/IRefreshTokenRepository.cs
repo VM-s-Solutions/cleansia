@@ -13,6 +13,14 @@ public interface IRefreshTokenRepository : IRepository<RefreshToken, string>
     /// </summary>
     Task<RefreshToken?> GetByTokenHashAsync(string tokenHash, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Point lookup by primary key that bypasses the tenant filter — the successor-chain walk
+    /// follows <c>ReplacedByTokenId</c> links across rows that are null-TenantId-stamped (same
+    /// rationale as <see cref="GetByTokenHashAsync"/>: the ambient filter would hide the caller's
+    /// own rows on a tenant-claimed request).
+    /// </summary>
+    Task<RefreshToken?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken);
+
     /// <summary>All non-revoked, non-expired tokens for a user. Used by "log out everywhere".</summary>
     Task<IReadOnlyList<RefreshToken>> GetActiveByUserIdAsync(string userId, CancellationToken cancellationToken);
 

@@ -126,9 +126,53 @@ public class RefreshTokenService(
         }
     }
 
-    public async Task RevokeAsync(string rawToken, string reason, CancellationToken cancellationToken)
+    public async Task RevokeAsync(string rawToken, string reason, CancellationToken cancellationToken, string? callerUserId = null)
     {
         var hash = HashToken(rawToken);
+
+        // A ROTATED token owned by the caller gets the successor-chain walk instead of the silent
+        // no-op: a thief who rotated a stolen token just before the victim's logout would otherwise
+        // keep the live successor indefinitely — no revocation directory fires for this case, the
+        // sliding expiry renews forever, and the deactivated device row hides the kill handle. The
+        // walk stays SESSION-scoped (a rotation chain never crosses devices), so the benign client
+        // race — logout POSTing a token its own refresh just rotated — ends as a clean logout of
+        // exactly that session, never an all-device sign-out. Ownership-gated and response-invariant:
+        // only the token's own account can trigger (or observe) the side effect.
+        var presented = await repository.GetByTokenHashAsync(hash, cancellationToken);
+        if (presented is { RevokedReason: "rotated" } &&
+            callerUserId is not null &&
+            presented.UserId == callerUserId)
+        {
+            var revokedCount = 0;
+            // Exhaustion escalates to the USER-wide bulk scope deliberately: five consecutive xmin
+            // collisions on one session's chain means rotations are being machine-gunned against a
+            // logout — theft-grade pressure the benign one-shot race can never produce.
+            await CommitRevokeWithRetryAsync("logout_chain", async (revoke, ct) =>
+            {
+                revokedCount = 0;
+                var current = await repository.GetByTokenHashAsync(hash, ct);
+                var visited = new HashSet<string>();
+                while (current?.ReplacedByTokenId is { } nextId && visited.Add(nextId))
+                {
+                    current = await repository.GetByIdIgnoringTenantAsync(nextId, ct);
+                    if (current is { RevokedAt: null })
+                    {
+                        revoke(current);
+                        revokedCount++;
+                    }
+                }
+            }, new RefreshTokenRevocationScope { UserId = callerUserId }, cancellationToken);
+
+            if (revokedCount > 0)
+            {
+                logger.LogWarning(
+                    "Logout presented a rotated refresh token for user {UserId}; revoked {Count} live successor(s). " +
+                    "A spike beyond the known client-race rate is a theft signal.",
+                    callerUserId, revokedCount);
+            }
+            return;
+        }
+
         // Idempotent, retry-on-conflict revoke: a token carries an xmin concurrency token, so a
         // concurrent rotation of the same row would make the commit throw. A revoke ending the token
         // dead is the whole goal, so we retry to success rather than surfacing a 500 (S7a idempotency).

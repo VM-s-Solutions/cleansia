@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -21,14 +22,19 @@ public class Logout
 
     public record Command(string Token) : ICommand<bool>;
 
-    internal class Handler(IRefreshTokenService refreshTokenService)
+    internal class Handler(
+        IRefreshTokenService refreshTokenService,
+        IUserSessionProvider userSessionProvider)
         : ICommandHandler<Command, bool>
     {
         public async Task<BusinessResult<bool>> Handle(Command command, CancellationToken cancellationToken)
         {
             if (!string.IsNullOrEmpty(command.Token))
             {
-                await refreshTokenService.RevokeAsync(command.Token, reason: "logout", cancellationToken);
+                // The caller id gates the rotated-token successor walk to the token's own
+                // account (host-agnostic ownership check; the endpoint is [Authorize]).
+                await refreshTokenService.RevokeAsync(
+                    command.Token, reason: "logout", cancellationToken, userSessionProvider.GetUserId());
             }
             return BusinessResult.Success(true);
         }

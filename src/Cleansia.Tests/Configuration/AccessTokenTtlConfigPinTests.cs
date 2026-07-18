@@ -20,7 +20,9 @@ public class AccessTokenTtlConfigPinTests
     [InlineData("Cleansia.Web.Mobile.Partner", 30d)]
     [InlineData("Cleansia.Web.Mobile.Customer", 30d)]
     [InlineData("Cleansia.Web.Partner", 1440d)]
-    [InlineData("Cleansia.Web.Admin", 1440d)]
+    // Web.Admin is a short-TTL SPA — the web revocation bound (no device directory reaches
+    // cookie sessions); the value is ADR-0030-governed, not the generic web 1440 (T-0409).
+    [InlineData("Cleansia.Web.Admin", 15d)]
     [InlineData("Cleansia.Web.Customer", 1440d)]
     public void AccessTokenExpMinutes_Is_Pinned_Per_Host(string hostProject, double expectedMinutes)
     {

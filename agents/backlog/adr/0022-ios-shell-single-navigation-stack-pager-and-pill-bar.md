@@ -219,3 +219,19 @@ screens (the root's hidden navigation bar left `interactivePopGestureRecognizer`
 Partner (D4) is untouched: it was already on the stock `TabView` interim, so no regression. The partner
 pill/pager follow-up (T-0376) is effectively cancelled by this supersede — flag for the PM to retire it rather
 than build the pill it was scoped to port.
+
+### D2-remnant resolved — 2026-07-19 (T-0429, architect AC4 ratification, record-only)
+
+The single shell `NavigationStack` (D2) was retired WITH the pager, not merely by association. D2 was
+required because pushed children living inside `.page` tabs would be swipeable between tabs mid-flow
+(the reason this ADR's Alternative 3 rejected per-tab stacks); with the pager gone that objection
+evaporates. The customer kept the single stack post-supersede for two CUSTOMER-SPECIFIC drivers the
+partner lacks — the iOS-16 sibling-typed-`NavigationPath` crash (already neutralized on partner by D4:
+`PartnerRootView` is a flat switch and every per-tab path is a `NavigationPath`), and genuine cross-tab
+route de-duplication (`orderDetail`/`subscribePlus` pushed from three customer tabs). The partner's
+`OrderRoute`/`EarningsRoute`/`ProfileRoute` are each pushed only within their own tab, so a merged
+`ShellRoute` would be a god-enum without de-dup AND is structurally ill-defined: `ProfileRoute` is
+shared with the out-of-shell `RegistrationLock` audience state, which a shell-level route cannot own.
+**Verdict: the partner shell is FINAL on the stock `TabView` + per-tab `NavigationStack`s** (already
+ratified on the merits, §7.7 D1 / §7.9 / §7.12 "mirror the tree, not the mechanism"). No refactor,
+no code change, no device test. This entry closes the D2 remnant; T-0429 is closed.

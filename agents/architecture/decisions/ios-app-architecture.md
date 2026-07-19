@@ -77,7 +77,7 @@ pixel-cloning Material or into an iOS redesign:
 | Android (Compose / Material) | iOS-native | identical (parity) |
 |---|---|---|
 | customer shell: `HorizontalPager` + floating-pill `CustomBottomBar` + center `BookFab` (`MainShell.kt:363-474`) | ONE shell-level `NavigationStack` + `TabView(selection:)` `.tabViewStyle(.page(indexDisplayMode: .never))` pager (tab roots only) + the custom `CustomerBottomBar` pill/FAB composite via `.safeAreaInset(edge: .bottom)` — **ADR-0022**; the pill+FAB is **BRANDING**, never a component swap | same 4 tabs/order, swipe-between-tabs, pill+FAB signature, ONE back stack, bar hidden on child push |
-| partner shell: `HorizontalPager` + `FloatingIslandBottomBar` (4 even slots, no FAB — `MainScaffold.kt:106,144`) | the same ADR-0022 shape, partner pill variant (PM-filed follow-up; recorded interim after the crash fix = stock `TabView` + per-tab `NavigationPath` stacks) | same tabs, same order |
+| partner shell: `HorizontalPager` + `FloatingIslandBottomBar` (4 even slots, no FAB — `MainScaffold.kt:106,144`) | **FINAL: stock `TabView` + per-tab `NavigationStack`s** — the ADR-0022 pill/pager was superseded (2026-07-08) and the D2 single-stack remnant was architect-ratified as premise-void (T-0429): per-tab stacks are the idiomatic end state under the stock bar. The pill was never a component swap; it's retired | same tabs, same order |
 | `ModalBottomSheet` / AnchoredDraggable booking sheet | `.sheet` + `.presentationDetents` | same 3 steps + content + snap intent |
 | Material `DatePicker`/`TimePicker` | native `DatePicker` (`.graphical`/`.wheel`/`.compact`) | same field + label + placement |
 | Material `TextField` | native `TextField`/`SecureField` | same fields/labels/error strings ×5 |

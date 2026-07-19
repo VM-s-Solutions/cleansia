@@ -14846,6 +14846,76 @@
           }
         }
       }
+    },
+    "push.payroll.invoice_paid.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've been paid"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Byli jste vyplaceni"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boli ste vyplatení"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вам виплачено"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вам выплачено"
+          }
+        }
+      }
+    },
+    "push.payroll.invoice_paid.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your invoice for the latest pay period has been paid. Tap to view."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše faktura za poslední výplatní období byla proplacena. Klepnutím zobrazíte."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša faktúra za posledné výplatné obdobie bola uhradená. Ťuknutím zobrazíte."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш рахунок за останній розрахунковий період оплачено. Торкніться, щоб переглянути."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш счёт за последний расчётный период оплачен. Нажмите, чтобы посмотреть."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -19,6 +19,7 @@ struct PartnerShellView: View {
     @ObservedObject private var preferences: PreferencesModel
     @EnvironmentObject private var pushNavigation: PushNavigationModel
     @State private var deepLinkOrderId: String?
+    @State private var deepLinkInvoiceId: String?
     private let container: PartnerAppContainer
     private let onSignedOut: () -> Void
 
@@ -48,8 +49,13 @@ struct PartnerShellView: View {
     }
 
     private func apply(_ plan: PushTapRouting.Plan) {
-        model.selectOrders()
-        deepLinkOrderId = plan.orderId
+        if plan.selectEarningsTab {
+            model.selectEarnings()
+            deepLinkInvoiceId = plan.invoiceId
+        } else {
+            model.selectOrders()
+            deepLinkOrderId = plan.orderId
+        }
     }
 
     private var tabs: some View {
@@ -83,7 +89,8 @@ struct PartnerShellView: View {
                 dashboardClient: container.dashboardClient,
                 payrollClient: container.payrollClient,
                 invoicesStaleness: container.invoicesStaleness,
-                snackbar: container.snackbar
+                snackbar: container.snackbar,
+                deepLinkInvoiceId: $deepLinkInvoiceId
             )
             .tabItem { Label(ShellTab.invoices.label, systemImage: ShellTab.invoices.systemImage) }
             .tag(ShellTab.invoices)

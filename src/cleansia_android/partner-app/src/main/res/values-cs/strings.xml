@@ -1264,6 +1264,8 @@
 
     <string name="notification_order_assignment_cancelled_title">Zakázka zrušena</string>
     <string name="notification_order_assignment_cancelled_body">Zakázka, kterou jste přijali, byla zrušena: #%1$s. Klepnutím zobrazíte detaily.</string>
+    <string name="notification_payroll_invoice_paid_title">Byli jste vyplaceni</string>
+    <string name="notification_payroll_invoice_paid_body">Vaše faktura za poslední výplatní období byla proplacena. Klepnutím zobrazíte.</string>
     <!-- ── Vaše zařízení ── -->
     <string name="devices_title">Vaše zařízení</string>
     <string name="profile_devices_summary">Správa přihlášených zařízení</string>

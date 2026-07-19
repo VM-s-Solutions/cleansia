@@ -1149,6 +1149,8 @@
 
     <string name="notification_order_assignment_cancelled_title">Замовлення скасовано</string>
     <string name="notification_order_assignment_cancelled_body">Замовлення, яке ви прийняли, скасовано: #%1$s. Торкніться, щоб переглянути деталі.</string>
+    <string name="notification_payroll_invoice_paid_title">Вам виплачено</string>
+    <string name="notification_payroll_invoice_paid_body">Ваш рахунок за останній розрахунковий період оплачено. Торкніться, щоб переглянути.</string>
     <!-- ── Ваші пристрої ── -->
     <string name="profile_row_devices">Ваші пристрої</string>
     <string name="devices_title">Ваші пристрої</string>

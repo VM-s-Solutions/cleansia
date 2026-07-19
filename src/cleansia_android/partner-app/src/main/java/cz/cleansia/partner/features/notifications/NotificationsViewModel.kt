@@ -132,7 +132,8 @@ class NotificationsViewModel @Inject constructor(
             repository.decrementUnread()
             viewModelScope.launch { repository.markRead(item.id) }
         }
-        NotificationDeepLink.resolve(item.eventKey, item.args["orderId"])?.let { _openRoute.tryEmit(it) }
+        NotificationDeepLink.resolve(item.eventKey, item.args["orderId"], item.args["invoiceId"])
+            ?.let { _openRoute.tryEmit(it) }
     }
 
     /**

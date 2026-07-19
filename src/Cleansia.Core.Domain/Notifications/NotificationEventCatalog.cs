@@ -37,6 +37,14 @@ public static class NotificationEventCatalog
     /// </summary>
     public const string OrderAssignmentCancelled = "order.assignment_cancelled";
 
+    /// <summary>
+    /// Partner-targeted: the cleaner's invoice for a pay period has been marked PAID. The
+    /// "you've been paid" moment — the highest-value, most-actionable payroll signal. Args:
+    /// <c>invoiceId</c> (deep link only; title/body are argless). Non-mutable (GetCategoryFor
+    /// returns null) — a payment confirmation must not be silenceable.
+    /// </summary>
+    public const string InvoicePaid = "payroll.invoice_paid";
+
     public static NotificationCategory? GetCategoryFor(string eventKey) => eventKey switch
     {
         OrderConfirmed => NotificationCategory.OrderUpdates,

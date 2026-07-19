@@ -1,4 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.Domain.Notifications;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -50,13 +52,29 @@ public class MarkInvoicePaid
     }
 
     public class Handler(
-        IEmployeeInvoiceRepository invoiceRepository)
+        IEmployeeInvoiceRepository invoiceRepository,
+        INotificationProducer notificationProducer)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var invoice = await invoiceRepository.GetByIdAsync(command.InvoiceId, cancellationToken);
             invoice!.MarkAsPaid(command.BankTransferNote, command.AdminNotes);
+
+            // "You've been paid" — the cleaner's highest-value payroll signal (GetByIdAsync already
+            // loads Employee.User). Skips a legacy invoice with no linked user. Feed row + push ride
+            // this command's unit of work via the producer seam.
+            var employeeUserId = invoice.Employee?.UserId;
+            if (!string.IsNullOrEmpty(employeeUserId))
+            {
+                await notificationProducer.NotifyAsync(
+                    employeeUserId,
+                    NotificationEventCatalog.InvoicePaid,
+                    new Dictionary<string, string> { ["invoiceId"] = invoice.Id },
+                    invoice.TenantId,
+                    invoice.Id,
+                    cancellationToken);
+            }
 
             return BusinessResult.Success(new Response(command.InvoiceId));
         }

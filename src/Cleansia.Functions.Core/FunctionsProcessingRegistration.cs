@@ -54,6 +54,9 @@ public static class FunctionsProcessingRegistration
         services.AddScoped<SendRecurringOrderRemindersHandler>();
         services.AddScoped<SendNewJobsDigestTimerHandler>();
         services.AddScoped<ExpireStaleReferralsHandler>();
+        // ADR-0029 — the direct-APNs live-activity dispatch consumer + its 24h stale-token janitor.
+        services.AddScoped<SendLiveActivityUpdateHandler>();
+        services.AddScoped<LiveActivityJanitorTimerHandler>();
 
         // ADR-0002 D3 (F3) — the per-queue -poison consumers. Each records a durable DeadLetter row +
         // LogError + acks; IDeadLetterStore is registered in AddCoreBindings → AddRepositories.
@@ -63,6 +66,7 @@ public static class FunctionsProcessingRegistration
         services.AddScoped<SitewidePromoFanoutPoisonHandler>();
         services.AddScoped<CalculateOrderPayPoisonHandler>();
         services.AddScoped<SendEmailPoisonHandler>();
+        services.AddScoped<LiveActivityDispatchPoisonHandler>();
 
         return services;
     }

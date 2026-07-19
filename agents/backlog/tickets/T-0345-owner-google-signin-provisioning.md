@@ -5,7 +5,7 @@ status: proposed
 size: S
 owner: owner
 created: 2026-06-28
-updated: 2026-06-28
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -56,3 +56,4 @@ broken").
 ## Status log
 - 2026-06-28 — filed from the Q-IOS-04 ruling (§7.14 D5). Backend is config-only; iOS reuses the live
   `GoogleAuth` endpoint 1:1.
+- 2026-07-19 — owner deferred 2026-07-19 — will provision Google sign-in slightly later. Code stays live and ready; no code change pending. Kept owner-blocked.

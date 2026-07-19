@@ -78,3 +78,4 @@ repo change CAN do — and this ticket does — is (a) make the next occurrence 
   `FunctionsProcessingRegistration.AddFunctionsProcessing()` called by BOTH Program.cs and the test — the
   test now resolves the REAL registration set, so a handler added but not registered fails CI. Adversarial
   review otherwise clean (audit/PII + secret-wiring dimensions: zero findings). 2016/2016.
+- 2026-07-19 — owner POSTPONED the redeploy 2026-07-19 — dev Functions host stays 503 (notifications/emails/receipts remain down on dev) until the owner dispatches Deploy to DEV. Code + health check + alert are committed and ready; recovery is one deploy away whenever the owner chooses.

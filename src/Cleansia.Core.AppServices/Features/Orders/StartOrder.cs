@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -113,6 +114,7 @@ public class StartOrder
         IOrderRepository orderRepository,
         IEmailService emailService,
         INotificationProducer notificationProducer,
+        ILiveActivityProducer liveActivityProducer,
         ILogger<Handler> logger)
         : ICommandHandler<Command, Response>
     {
@@ -137,6 +139,9 @@ public class StartOrder
 
             var statusTrack = OrderStatusTrack.Create(OrderStatus.InProgress, order);
             order.AddOrderStatus(statusTrack);
+
+            await liveActivityProducer.NotifyOrderTransitionAsync(
+                order, LiveActivityEventKeys.Update, statusTrack, cancellationToken);
 
             try
             {

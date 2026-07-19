@@ -103,6 +103,9 @@ param fcmSecretProvisioned bool = false
 @description('Set true ONLY after the Key Vault secrets Fiscal--CzechEet2--ApiKey and Fiscal--CzechEet2--CertificatePassword exist — it swaps the two empty fiscal placeholder app settings for Key Vault references (same shape as fcmSecretProvisioned). Default false keeps the settings as literal empty strings: a KV reference to a missing secret does NOT degrade to empty — the app receives the raw reference string as the config value.')
 param fiscalSecretProvisioned bool = false
 
+@description('Set true ONLY after the Key Vault secrets Apns--KeyId, Apns--TeamId, and Apns--PrivateKeyPem exist (seeded from the SAME team-scoped .p8 already in backend custody for ordinary push — no new key) — it wires the six APNS__* live-activity app settings (ADR-0029 D1) onto the Functions host as KV references + the literal bundle id/sandbox and flips APNS__Enabled on. Default false emits NOTHING (union with an empty object) so the dev Functions host is byte-unchanged and the channel binds Enabled=false by C# default — the whole live-activity pipeline ships INERT. Same order-matters gate as fcmSecretProvisioned: an unresolvable KV reference hands the app the raw reference string, so keep this false until the three secrets exist AND the iOS lane (LA-5) ships.')
+param apnsSecretProvisioned bool = false
+
 // ---------------------------------------------------------------------------------------------------
 // Prod reliability posture (T-0359). Every knob defaults to the dev value, so a dev deploy with the
 // unchanged weu.dev.bicepparam is behavior-identical; weu.prod.bicepparam flips them. Full rationale,
@@ -414,6 +417,25 @@ var fcmSettings = fcmSecretProvisioned
     }
   : {}
 
+// Direct-APNs live-activity channel (ADR-0029 D1) — the Functions dispatch consumer is the ONLY
+// sender; ApnsLiveActivityClient is a deliberate Skipped-ack no-op while APNS:Enabled is false. Same
+// param-gated DEFAULT-OFF shape as fcmSettings (empty object → union no-op → dev byte-unchanged, and
+// the app binds APNS:Enabled=false by C# default). Flipping apnsSecretProvisioned binds the three
+// secrets as KV references + the literal bundle id / sandbox switch AND enables the channel — flip it
+// only after the secrets exist and the iOS widget (LA-5) ships. UseSandbox tracks env (dev builds get
+// sandbox activity tokens; prod is production APNs). The owner seeds Apns--KeyId/TeamId/PrivateKeyPem
+// from the SAME .p8 already in backend custody for ordinary push — no new key, no new custody surface.
+var apnsSettings = apnsSecretProvisioned
+  ? {
+      APNS__Enabled: 'true'
+      APNS__KeyId: kvRef(keyVaultUri, 'Apns--KeyId')
+      APNS__TeamId: kvRef(keyVaultUri, 'Apns--TeamId')
+      APNS__PrivateKeyPem: kvRef(keyVaultUri, 'Apns--PrivateKeyPem')
+      APNS__CustomerBundleId: 'cz.cleansia.customer'
+      APNS__UseSandbox: env == 'prod' ? 'false' : 'true'
+    }
+  : {}
+
 var stripeSettings = {
   Stripe__SecretKey: kvRef(keyVaultUri, 'Stripe--SecretKey')
   Stripe__WebhookSecret: kvRef(keyVaultUri, 'Stripe--WebhookSecret')
@@ -619,7 +641,7 @@ module functionApp 'modules/functionApp.bicep' = {
     storageAccountId: storage.outputs.storageAccountId
     appInsightsConnectionString: appInsights.outputs.connectionString
     virtualNetworkSubnetId: privateNetworkingEnabled ? privateNetworking!.outputs.appSubnetId : ''
-    extraAppSettings: union(sendGridSettings, fiscalSettings, fcmSettings, {
+    extraAppSettings: union(sendGridSettings, fiscalSettings, fcmSettings, apnsSettings, {
       Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
     })
     tags: commonTags

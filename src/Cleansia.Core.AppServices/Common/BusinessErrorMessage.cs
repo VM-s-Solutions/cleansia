@@ -277,6 +277,9 @@ public static class BusinessErrorMessage
     public const string InvalidPlatform = "device.invalid_platform";
     public const string DeviceNotFound = "device.not_found";
 
+    // Live Activity (iOS lock-screen / Dynamic Island)
+    public const string LiveActivityOrderNotActive = "live_activity.order_not_active";
+
     // Feature Flag
     public const string FeatureFlagNotFound = "feature_flag.not_found";
     public const string FeatureFlagAlreadyExists = "feature_flag.already_exists";

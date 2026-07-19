@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Devices;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Devices;
+using Cleansia.Core.Domain.LiveActivities;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using Moq;
@@ -17,11 +18,15 @@ public class RevokeDeviceHandlerTests
 
     private readonly Mock<IDeviceRepository> _deviceRepository = new();
     private readonly Mock<IRefreshTokenService> _refreshTokenService = new();
+    private readonly Mock<ILiveActivityTokenRepository> _liveActivityTokenRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
 
     public RevokeDeviceHandlerTests()
     {
         _session.Setup(s => s.GetUserId()).Returns(CallerUserId);
+        _liveActivityTokenRepository
+            .Setup(r => r.GetByUserAndDeviceAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<LiveActivityToken>());
     }
 
     private Device ArrangeOwnedDevice()
@@ -39,7 +44,7 @@ public class RevokeDeviceHandlerTests
         var handlerType = typeof(RevokeDevice).GetNestedType("Handler", BindingFlags.NonPublic | BindingFlags.Public);
         Assert.NotNull(handlerType);
         var handler = Activator.CreateInstance(
-            handlerType!, _deviceRepository.Object, _refreshTokenService.Object, _session.Object)!;
+            handlerType!, _deviceRepository.Object, _refreshTokenService.Object, _liveActivityTokenRepository.Object, _session.Object)!;
         var handleMethod = handlerType!.GetMethod("Handle");
         Assert.NotNull(handleMethod);
         var task = (Task<BusinessResult<RevokeDevice.Response>>)handleMethod!.Invoke(
@@ -74,6 +79,25 @@ public class RevokeDeviceHandlerTests
         Assert.Equal(BusinessErrorMessage.DeviceNotFound, result.Error!.Message);
         _deviceRepository.Verify(r => r.Deactivate(It.IsAny<Device>()), Times.Never);
         _deviceRepository.Verify(r => r.Remove(It.IsAny<Device>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Revoking_Own_Device_Hard_Deletes_Its_Live_Activity_Tokens()
+    {
+        var device = ArrangeOwnedDevice();
+        var tokens = new[]
+        {
+            LiveActivityToken.Create(CallerUserId, device.DeviceId, orderId: null, "push-to-start", tenantId: null),
+            LiveActivityToken.Create(CallerUserId, device.DeviceId, "order-1", "update-tok", tenantId: null),
+        };
+        _liveActivityTokenRepository
+            .Setup(r => r.GetByUserAndDeviceAsync(CallerUserId, device.DeviceId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(tokens);
+
+        var result = await InvokeHandler(OwnedId);
+
+        Assert.True(result.IsSuccess);
+        _liveActivityTokenRepository.Verify(r => r.RemoveRange(tokens), Times.Once);
     }
 
     [Fact]

@@ -28,6 +28,17 @@ public static class MessageKeys
     /// <summary>calculate-order-pay → <c>pay:{OrderId}:{EmployeeId}</c> (one pay row per order per cleaner).</summary>
     public static string Pay(string orderId, string employeeId) => $"pay:{orderId}:{employeeId}";
 
+    /// <summary>
+    /// live-activity-dispatch → <c>liveactivity:{OrderId}:{EventKey}:{Sequence}</c> (one activity send
+    /// per order per transition). <paramref name="sequence"/> is the transition's
+    /// <c>OrderStatusTrack.Sequence</c> — a pure function of domain state, never a timestamp or Guid.
+    /// The Sequence segment is DEFENSIVE (ADR-0029 RV-4): no current code path re-appends the same
+    /// (order, event) — <c>AdminOverrideOrderStatus</c> rejects same-status revisits — but a frozen key
+    /// stays collision-free if any future handler ever does.
+    /// </summary>
+    public static string LiveActivity(string orderId, string eventKey, int sequence) =>
+        $"liveactivity:{orderId}:{eventKey}:{sequence}";
+
     /// <summary>generate-invoice → <c>invoice:{PayPeriodId}:{EmployeeId}</c> (one invoice per employee per period).</summary>
     public static string Invoice(string payPeriodId, string employeeId) => $"invoice:{payPeriodId}:{employeeId}";
 

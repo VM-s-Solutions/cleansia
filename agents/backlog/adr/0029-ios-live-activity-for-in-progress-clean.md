@@ -1,14 +1,15 @@
 # ADR-0029 — iOS Live Activity for the in-progress clean: a direct-APNs `liveactivity` channel beside FCM, driven by the order-status seam (OnTheWay→start, InProgress→update, terminal→end), with a dedicated per-order `LiveActivityToken` registration (not `Device`) and a customer-app-only v1
 
-- **Status:** **proposed (ratification-ready)** — panel consensus 2026-07-17 (see Verdict) +
-  code-drift re-verification round 2026-07-19 (see "Re-verification round"). The former hard gate is
-  now **substantially resolved**: the owner's APNs `.p8` is uploaded, delivered as a backend secret,
-  and **confirmed working for ordinary push against the live dev environment** — the same team-scoped
-  key signs `liveactivity` sends, so no new key and no new custody *decision* remain, only the
-  mechanical `APNS:*` config binding (Dependencies §1). What still holds this at `proposed`:
-  owner ratification of the product choices (timing floors, v1 exclusions — "Owner ratification
-  questions" Q2/Q3, each with a recommended default). Once accepted it becomes immutable — supersede,
-  never edit.
+- **Status:** **ACCEPTED — owner-ratified 2026-07-19** (immutable from here — supersede, never edit).
+  The owner greenlit the feature and its execution. Ratified product choices (the Q2/Q3 recommended
+  defaults, accepted as-is): **start** the activity when the cleaner is **OnTheWay**, **update** on
+  InProgress, **end** on the terminal transition with a **30-minute linger** after Completed and an
+  immediate dismiss on Cancelled; **customer app only** for v1 (no partner, no Android, no map-ETA).
+  The `.p8` gate is resolved (same team-scoped key signs `liveactivity`); only the mechanical `APNS:*`
+  config binding remains. Implementation is underway on `feature/payroll-invoice-paid-notify` per the
+  T-0427 LA-1…LA-5 slices — the backend pipeline (LA-1…LA-4) ships INERT behind `APNS:Enabled=false`;
+  the iOS widget (LA-5) is gated on the owner applying the widget-target `project.yml` diff + a spec
+  regen. Panel consensus 2026-07-17 + the 2026-07-19 code-drift re-verification stand.
 - **Date:** 2026-07-17 (drafted) · 2026-07-19 (hardened against the shipped producer-seam/feed code)
 - **Supersedes:** — (extends the push architecture without touching it: ADR-0002's dispatch contract,
   ADR-0023's consumer boundary, and ADR-0025's FCM alert wire shape are **byte-unchanged**; this ADR
@@ -784,3 +785,49 @@ ratification is a yes/no, not a design session. Implementation remains gated on 
   with recommended defaults. Implementation plan drafted as slices LA-1…LA-5 appended to T-0427
   (build starts only on acceptance). Status → **`proposed (ratification-ready)`** — the owner
   ratifies.
+
+---
+
+## Amendment A1 — 2026-07-20 (implementation refinements ratified — architect, LA-1…LA-4 review)
+
+*(Bounded amendment per `agents/backlog/adr/README.md` §"Dated appended sections". The decision body
+above is unchanged; this records three implementation refinements the shipped LA-1…LA-4 code adopted
+that read as deviations against the frozen prose, so a future audit sees them as ratified, not drift.
+None changes a chosen option, threshold, scope, or the security posture — each preserves the ADR's
+invariant one layer down or is a platform-forced mechanical necessity.)*
+
+**A1(a) — the producer performs the token-existence gate; D2's "producers do NOT check token
+existence" is refined, not violated.** D2 (and reviewer-compliance item 3) say the producer always
+enqueues and the consumer no-ops on zero rows, so *no handler branches on token existence*. The
+landed `LiveActivityProducer` instead runs a cheap `HasTokensForOrderAsync(userId, orderId)`
+(`OrderId == orderId OR OrderId == null`) and skips the enqueue when the user holds no activity token —
+so the vast majority of orders (Android / web / an iOS install that never registered) generate **zero
+queue traffic**, not one message per transition that the consumer then discards. The invariant D2
+actually protects is preserved: the **status handlers stay branch-free** (they call the producer
+unconditionally); the gate lives one layer down in the single tripwire-pinned producer seam, not in any
+status handler. The consumer **retains** its zero-row no-op (belt-and-suspenders). RULING: **KEEP** —
+the efficiency is real and the "no handler branches on token existence" compliance item holds verbatim.
+
+**A1(b) — the end-event consumer reads the order's persisted `CurrentStatus` to disambiguate Completed
+vs Cancelled.** Both terminal transitions share `EventKey == end` but differ in content-state `status`
+and dismissal window (Completed → `+30 min` linger; Cancelled → `now`). The message wire contract is
+the S6 allowlist (`{UserId, OrderId, EventKey, OrderNumber, ScheduledStart, ScheduledEnd,
+TransitionAtUtc, TenantId}`, D4) and deliberately carries **no** order status, so it cannot itself say
+which terminal it is. `SendLiveActivityUpdateHandler` therefore reads `Order.CurrentStatus`
+(`Order.cs` persisted-status seam) on the `end` branch only. RULING: **KEEP** — the alternative
+(adding a status field to the message) would widen the S6-pinned wire shape for a value the consumer
+can read authoritatively from the domain; the extra read is `end`-only and cross-tenant-override-safe.
+
+**A1(c) — a SINGLE `apnsSecretProvisioned` bicep param both binds the `APNS:*` settings AND enables the
+channel; Dependencies §1's two-step "bind with `Enabled=false`, enable later" is collapsed.** App
+Service **replaces the entire appSettings array on every deploy**, so a manually-flipped `APNS__Enabled`
+would be wiped by the next `az deployment` — the enable **must** be param-driven. The landed bicep gates
+the six `APNS__*` settings (KV refs + literals + `APNS__Enabled=true`) behind one `apnsSecretProvisioned`
+flag (default `false` → union no-op → dev Functions host byte-unchanged → channel INERT by the C#
+`Enabled=false` default). The ADR's inert-ship intent (Dependencies §3) is fully preserved — dev is
+never enabled — but the bind-then-enable *interim* is not separately reachable through this one gate.
+RULING: **KEEP** — platform-forced; the two-step in the prose assumed a mutable-appSettings model App
+Service does not provide.
+
+*Ratified by the architect as the ruling of the LA-1…LA-4 implementation review. — architect,
+2026-07-20.*

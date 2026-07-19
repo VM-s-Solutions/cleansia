@@ -62,3 +62,4 @@ shipping a possibly-broken first frame.
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
 - 2026-07-19 — **frontmatter reconciled (proposed → blocked)** — OWNER-GATED confirmed: this is a real-hardware probe (owner's iPhone) + an empirical AC2 verdict; the codebase is already in the exact color-only baseline the ticket describes (UIColorName only, no UIImageName; probe asset present in both apps). No code work exists until the probe runs.
+- 2026-07-19 — owner 2026-07-19 — will run the real-device launch-image probe once everything is shipped. Stays owner-gated.

@@ -75,6 +75,29 @@ endpoint surface); no `optimizer`. **Routing:** `[ios]`. **Suggested home:** aft
 attaches to must exist first).
 
 ## Status log
+- 2026-07-19 — **backend (serviced-cities endpoint) — already shipped; unblock confirmed, tests added**
+  on `feature/payroll-invoice-paid-notify`. Investigated the domain per the "mobile client doesn't
+  expose serviced cities" blocker: "serviced" for cities is modeled exactly like countries — a
+  `ServiceCity : Auditable` entity (`Core.Domain/ServiceAreas/ServiceCity.cs`, `CountryId` FK →
+  `Country`, `Name`, unused-by-design `ZipPrefix`; `IsActive` = the serviced flag), an
+  `IServiceCityRepository` (`GetByCountryAsync`/`GetAllActiveAsync`/`CityIsServicedAsync`), and the
+  `GetServiceCities` CQRS query (`Core.AppServices/Features/ServiceAreas/GetServiceCities.cs`, flat
+  `IEnumerable<ServiceCityDto>` shape mirroring `GetServicedCountries`, optional `CountryId` scope).
+  **The backend read endpoint already exists and is exposed on BOTH mobile hosts** — partner
+  (`Web.Mobile.Partner/Controllers/ServiceCityController.cs`) and customer
+  (`Web.Mobile.Customer/Controllers/ServiceCityController.cs`), plus `Web.Customer` (AllowAnonymous)
+  and `Web.Admin` (CRUD) — landed 2026-05-31 (commit `1d154849`), and Android's generated client
+  already consumes it (`ServiceCityApi`). So the "no serviced-cities endpoint" note was about the
+  **iOS generated client**, not the backend: the backend needs no new work. The one genuine gap —
+  `GetServiceCities` had zero test coverage — is now closed: added
+  `Cleansia.Tests/Features/ServiceAreas/GetServiceCitiesHandlerTests.cs` (5 tests: unscoped
+  all-active list + full DTO projection, `CountryId` scoping / correct repo path, empty-`CountryId`
+  treated as unscoped, empty-set, null-ZipPrefix + missing-Country-nav projection). Build clean;
+  `dotnet test src/Cleansia.Tests` green 2021/2021 (2016 baseline + 5). **MANUAL_STEP (owner, still
+  gates AC2):** regen the customer + partner mobile specs and their generated clients
+  (`npm run generate-*-client` / spec dump) so iOS gains the `getServiceCities` client the
+  `ServiceAreaProvider`'s `loadCities()`/`isCityServiced()` city-half will consume. The iOS/Android
+  city-level `ServiceAreaRow` wiring is the regen-gated follow-up (NOT built here).
 - 2026-07-19 — **in_progress** on `feature/payroll-invoice-paid-notify` (ios) — **the endpoint-free half
   SHIPPED; the city-level half stays endpoint-gated.** **Shipped:** (1) the **countries-only**
   `ServiceAreaProvider` Core seam — `CleansiaCore/ServiceArea/` (`ServiceAreaProvider` **actor** with the

@@ -95,6 +95,20 @@ public class PoisonHandlerTests
             Times.Once);
     }
 
+    [Fact]
+    public async Task LiveActivityDispatchPoison_Records_DeadLetter_And_Does_Not_Throw()
+    {
+        var handler = new LiveActivityDispatchPoisonHandler(
+            _store.Object, NullLogger<LiveActivityDispatchPoisonHandler>.Instance);
+        const string body = "{\"messageKey\":\"liveactivity:ORDER-1:end:2\",\"payload\":{\"orderId\":\"ORDER-1\"}}";
+
+        await handler.HandleAsync(body, CancellationToken.None);
+
+        _store.Verify(
+            s => s.RecordAsync(QueueNames.LiveActivityDispatch, body, It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
     // ── a poison consumer NEVER re-poisons: even if the store throws, the consumer must NOT
     //     swallow it into a silent loss... the store owns its own commit/retry, but the poison
     //     consumer's contract is "no throw on a NORMAL record". Here we assert the happy-path no-throw

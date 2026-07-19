@@ -1,6 +1,7 @@
 using System.Reflection;
 using Cleansia.Core.AppServices.Features.Devices;
 using Cleansia.Core.Domain.Devices;
+using Cleansia.Core.Domain.LiveActivities;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using Moq;
@@ -14,11 +15,15 @@ public class UnregisterDeviceHandlerTests
     private const string MissingDeviceId = "device-missing-2";
 
     private readonly Mock<IDeviceRepository> _deviceRepository = new();
+    private readonly Mock<ILiveActivityTokenRepository> _liveActivityTokenRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
 
     public UnregisterDeviceHandlerTests()
     {
         _session.Setup(s => s.GetUserId()).Returns(CallerUserId);
+        _liveActivityTokenRepository
+            .Setup(r => r.GetByUserAndDeviceAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<LiveActivityToken>());
     }
 
     private Device ArrangeDevice(string deviceId)
@@ -34,7 +39,7 @@ public class UnregisterDeviceHandlerTests
     {
         var handlerType = typeof(UnregisterDevice).GetNestedType("Handler", BindingFlags.NonPublic | BindingFlags.Public);
         Assert.NotNull(handlerType);
-        var handler = Activator.CreateInstance(handlerType!, _deviceRepository.Object, _session.Object)!;
+        var handler = Activator.CreateInstance(handlerType!, _deviceRepository.Object, _liveActivityTokenRepository.Object, _session.Object)!;
         var handleMethod = handlerType!.GetMethod("Handle");
         Assert.NotNull(handleMethod);
         var task = (Task<BusinessResult<UnregisterDevice.Response>>)handleMethod!.Invoke(
@@ -64,5 +69,23 @@ public class UnregisterDeviceHandlerTests
         Assert.True(result.Value.Success);
         _deviceRepository.Verify(r => r.Deactivate(It.IsAny<Device>()), Times.Never);
         _deviceRepository.Verify(r => r.Remove(It.IsAny<Device>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Sign_Out_Hard_Deletes_The_Devices_Live_Activity_Tokens()
+    {
+        ArrangeDevice(KnownDeviceId);
+        var tokens = new[]
+        {
+            LiveActivityToken.Create(CallerUserId, KnownDeviceId, orderId: null, "push-to-start", tenantId: null),
+        };
+        _liveActivityTokenRepository
+            .Setup(r => r.GetByUserAndDeviceAsync(CallerUserId, KnownDeviceId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(tokens);
+
+        var result = await InvokeHandler(KnownDeviceId);
+
+        Assert.True(result.IsSuccess);
+        _liveActivityTokenRepository.Verify(r => r.RemoveRange(tokens), Times.Once);
     }
 }

@@ -70,7 +70,8 @@ public sealed class AuditSensitiveSnapshotTests
         var order = BuildOrder("order-ovr", OrderStatus.Confirmed);
         orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
 
-        var handler = new AdminOverrideOrderStatus.Handler(orderRepository.Object, AdminSession(), auditContext);
+        var handler = new AdminOverrideOrderStatus.Handler(
+            orderRepository.Object, AdminSession(), auditContext, new Mock<ILiveActivityProducer>().Object);
         var result = await handler.Handle(
             new AdminOverrideOrderStatus.Command("order-ovr", OrderStatus.OnTheWay), CancellationToken.None);
 

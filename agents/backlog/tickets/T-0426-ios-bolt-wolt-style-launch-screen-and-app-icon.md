@@ -5,7 +5,7 @@ status: proposed
 size: S
 owner: ios
 created: 2026-07-16
-updated: 2026-07-16
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -88,3 +88,4 @@ skeuomorphic, drop shadow, rounded corners, border, frame, watermark, busy detai
 Wordmark: generate separately or set the existing Poppins-Bold "Cleansia" text in white — do NOT ask
 the generator for text (it garbles type). Launch screen = the chosen glyph centered on the
 #0284C7→#38BDF8 gradient (matches the shipped SplashBrandingView).
+- 2026-07-19 — owner deferred 2026-07-19 — will run the OpenArt prompt pack later. Prompt pack + brand hexes remain in-ticket, ready.

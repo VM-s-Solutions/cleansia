@@ -156,6 +156,7 @@ public class CompleteOrder
         IOrderRepository orderRepository,
         IPendingDispatch pending,
         INotificationProducer notificationProducer,
+        ILiveActivityProducer liveActivityProducer,
         IEmailService emailService,
         ILoyaltyService loyaltyService,
         IReferralService referralService,
@@ -217,6 +218,9 @@ public class CompleteOrder
 
             var completedStatusTrack = OrderStatusTrack.Create(OrderStatus.Completed, order);
             order.AddOrderStatus(completedStatusTrack);
+
+            await liveActivityProducer.NotifyOrderTransitionAsync(
+                order, LiveActivityEventKeys.End, completedStatusTrack, cancellationToken);
 
             if (order.Receipt is null)
             {

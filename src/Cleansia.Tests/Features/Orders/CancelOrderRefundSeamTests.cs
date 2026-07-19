@@ -31,6 +31,7 @@ public class CancelOrderRefundSeamTests
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
     private readonly Mock<ICancellationPolicyResolver> _policyResolver = new();
     private readonly Mock<INotificationProducer> _producer = new();
+    private readonly Mock<ILiveActivityProducer> _liveActivityProducer = new();
 
     public CancelOrderRefundSeamTests()
     {
@@ -51,7 +52,8 @@ public class CancelOrderRefundSeamTests
             _refundService.Object,
             _loyaltyService.Object,
             _policyResolver.Object,
-            _producer.Object);
+            _producer.Object,
+            _liveActivityProducer.Object);
 
     private Order ArrangeCardPaidPendingOrder()
     {

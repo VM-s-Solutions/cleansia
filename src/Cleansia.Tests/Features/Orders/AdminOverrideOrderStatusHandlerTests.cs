@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -31,9 +32,10 @@ public class AdminOverrideOrderStatusHandlerTests
     }
 
     private readonly AuditContext _auditContext = new();
+    private readonly Mock<ILiveActivityProducer> _liveActivityProducer = new();
 
     private AdminOverrideOrderStatus.Handler CreateHandler() =>
-        new(_orderRepository.Object, _session.Object, _auditContext);
+        new(_orderRepository.Object, _session.Object, _auditContext, _liveActivityProducer.Object);
 
     private Order ArrangeOrder(params OrderStatus[] history)
     {

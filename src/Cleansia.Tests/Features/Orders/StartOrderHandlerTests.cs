@@ -26,6 +26,7 @@ public class StartOrderHandlerTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IEmailService> _emailService = new();
     private readonly Mock<INotificationProducer> _producer = new();
+    private readonly Mock<ILiveActivityProducer> _liveActivityProducer = new();
     private readonly Mock<ILogger<StartOrder.Handler>> _logger = new();
 
     private StartOrder.Handler CreateHandler() =>
@@ -33,6 +34,7 @@ public class StartOrderHandlerTests
             _orderRepository.Object,
             _emailService.Object,
             _producer.Object,
+            _liveActivityProducer.Object,
             _logger.Object);
 
     private Order ArrangeOrder()

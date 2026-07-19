@@ -39,6 +39,15 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!-- ADR-0029 TC-LA-6 — the shared Live Activity content-state wire fixture, asserted backend-side by
+       LiveActivityPayloadFactoryTests and (in LA-5) by the iOS ContentState decoding test. Copied beside
+       the test DLL so the fixture is read from AppContext.BaseDirectory. -->
+  <ItemGroup>
+    <None Include="Functions\Fixtures\live-activity-content-state.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Cleansia.Core.AppServices\Cleansia.Core.AppServices.csproj" />
     <ProjectReference Include="..\Cleansia.Config\Cleansia.Config.csproj" />

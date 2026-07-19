@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.Documents;
 using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.LiveActivities;
 using Cleansia.Core.Domain.ServiceAreas;
 using Cleansia.Core.Domain.InvoiceTemplates;
 using Cleansia.Core.Domain.Bookings;
@@ -305,6 +306,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<FiscalCounter> FiscalCounters { get; set; }
     public virtual DbSet<CompanyInfo> CompanyInfo { get; set; }
     public virtual DbSet<Device> Devices { get; set; }
+    public virtual DbSet<LiveActivityToken> LiveActivityTokens { get; set; }
     public virtual DbSet<Dispute> Disputes { get; set; }
     public virtual DbSet<DisputeMessage> DisputeMessages { get; set; }
     public virtual DbSet<DisputeEvidence> DisputeEvidence { get; set; }

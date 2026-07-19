@@ -16,6 +16,7 @@ namespace Cleansia.Tests.Features.Devices;
 public class DeviceHandlerMissingSessionTests
 {
     private readonly Mock<IDeviceRepository> _deviceRepository = new();
+    private readonly Mock<ILiveActivityTokenRepository> _liveActivityTokenRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
 
     public DeviceHandlerMissingSessionTests()
@@ -27,7 +28,18 @@ public class DeviceHandlerMissingSessionTests
     {
         var handlerType = featureType.GetNestedType("Handler", BindingFlags.NonPublic | BindingFlags.Public);
         Assert.NotNull(handlerType);
-        var handler = Activator.CreateInstance(handlerType!, _deviceRepository.Object, _session.Object)!;
+
+        // Resolve constructor args by type so handlers with differing collaborator sets (RegisterDevice
+        // vs UnregisterDevice's live-activity cascade) both construct from the same map.
+        var dependencies = new Dictionary<Type, object>
+        {
+            [typeof(IDeviceRepository)] = _deviceRepository.Object,
+            [typeof(ILiveActivityTokenRepository)] = _liveActivityTokenRepository.Object,
+            [typeof(IUserSessionProvider)] = _session.Object,
+        };
+        var ctor = handlerType!.GetConstructors().Single();
+        var args = ctor.GetParameters().Select(p => dependencies[p.ParameterType]).ToArray();
+        var handler = Activator.CreateInstance(handlerType!, args)!;
         var handleMethod = handlerType!.GetMethod("Handle");
         Assert.NotNull(handleMethod);
         var task = (Task<BusinessResult<TResponse>>)handleMethod!.Invoke(

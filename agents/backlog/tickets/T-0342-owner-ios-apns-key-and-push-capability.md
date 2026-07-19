@@ -1,11 +1,11 @@
 ---
 id: T-0342
 title: "Owner: iOS APNs auth key (.p8) + Push Notifications capability/provisioning"
-status: proposed
+status: done
 size: S
 owner: owner
 created: 2026-06-28
-updated: 2026-06-28
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -63,3 +63,4 @@ effect once (2) is done.
   this is the owner Apple-provisioning gate for end-to-end delivery. Numbered T-0342 (T-0341 is the backend
   status-history flaky-test ticket).
 - 2026-07-13 — **owner decided to enroll in the paid Apple Developer Program** (partner device pass: empty devices page + no cleaning-update notifications, both the personal-team APNs wall). ACTIVE. Order: enroll -> create the APNs .p8 key (Keys, +Apple Push Notifications service; note Key ID + Team ID) -> upload it to Firebase Cloud Messaging (APNs Authentication Key) for BOTH iOS bundle IDs -> `git checkout` the two project.yml strips (re-adds aps-environment + SIWA) + regenerate + select the PAID team in Xcode -> rebuild on device. Backend FCM->APNs dispatcher already live (order-status pushes wired). PARTNER works once this lands (already wired); CUSTOMER also needs T-0398.
+- 2026-07-19 — **frontmatter reconciled (proposed → done)** — OWNER CONFIRMED 2026-07-19: the APNs .p8 is created, uploaded, and push works end-to-end against DEV (earlier sessions). Push-only key is correct; the same key serves Live Activity. Nothing left on the push key.

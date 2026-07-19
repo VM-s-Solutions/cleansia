@@ -77,4 +77,28 @@ public class MessageKeyTests
     {
         Assert.Equal("invoice:PERIOD-1:EMP-2", MessageKeys.Invoice("PERIOD-1", "EMP-2"));
     }
+
+    [Fact]
+    public void LiveActivity_Key_Follows_Frozen_Formula()
+    {
+        Assert.Equal("liveactivity:ORDER-1:start:3", MessageKeys.LiveActivity("ORDER-1", "start", 3));
+    }
+
+    [Fact]
+    public void LiveActivity_Key_Is_Deterministic_For_Same_Inputs()
+    {
+        Assert.Equal(
+            MessageKeys.LiveActivity("ORDER-1", "update", 4),
+            MessageKeys.LiveActivity("ORDER-1", "update", 4));
+    }
+
+    [Fact]
+    public void LiveActivity_Key_Distinct_Sequence_Yields_Distinct_Key()
+    {
+        // The defensive Sequence segment (ADR-0029 RV-4): a hypothetical re-append of the same
+        // (order, event) at a new sequence must never collide with the earlier claim.
+        Assert.NotEqual(
+            MessageKeys.LiveActivity("ORDER-1", "end", 5),
+            MessageKeys.LiveActivity("ORDER-1", "end", 6));
+    }
 }

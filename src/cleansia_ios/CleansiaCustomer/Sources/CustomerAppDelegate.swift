@@ -7,6 +7,7 @@ import UserNotifications
 final class CustomerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
     weak var registrar: (any PushRegistrar)?
     let pushTap = PushTapBuffer<CustomerNotificationDestination>()
+    var onForegroundPush: (@MainActor (_ eventKey: String) -> Void)?
     private(set) var firebaseConfigured = false
 
     func application(
@@ -65,9 +66,15 @@ final class CustomerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotifica
 
     func userNotificationCenter(
         _: UNUserNotificationCenter,
-        willPresent _: UNNotification,
+        willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        // A push landing while the app is open bumps the bell badge locally
+        // (FD-AC5) — no refetch; the badge model drops non-feed event keys.
+        let userInfo = notification.request.content.userInfo
+        if let eventKey = userInfo[CustomerNotificationDeepLink.eventKeyField] as? String {
+            Task { @MainActor in onForegroundPush?(eventKey) }
+        }
         completionHandler([.banner, .sound])
     }
 

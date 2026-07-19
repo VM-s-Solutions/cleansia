@@ -6,8 +6,6 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -114,7 +112,7 @@ public class StartOrder
     public class Handler(
         IOrderRepository orderRepository,
         IEmailService emailService,
-        IPendingDispatch pending,
+        INotificationProducer notificationProducer,
         ILogger<Handler> logger)
         : ICommandHandler<Command, Response>
     {
@@ -153,21 +151,17 @@ public class StartOrder
 
             if (!string.IsNullOrEmpty(order.UserId))
             {
-                pending.Enqueue(
-                    QueueNames.NotificationsDispatch,
-                    new QueueEnvelope<SendPushNotificationMessage>(
-                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderInProgress, order.Id),
-                        order.TenantId,
-                        new SendPushNotificationMessage(
-                            UserId: order.UserId,
-                            EventKey: NotificationEventCatalog.OrderInProgress,
-                            Args: new Dictionary<string, string>
-                            {
-                                ["orderId"] = order.Id,
-                                ["orderNumber"] = order.DisplayOrderNumber,
-                            },
-                            TenantId: order.TenantId)),
-                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderInProgress, order.Id));
+                await notificationProducer.NotifyAsync(
+                    order.UserId,
+                    NotificationEventCatalog.OrderInProgress,
+                    new Dictionary<string, string>
+                    {
+                        ["orderId"] = order.Id,
+                        ["orderNumber"] = order.DisplayOrderNumber,
+                    },
+                    order.TenantId,
+                    order.Id,
+                    cancellationToken);
             }
 
             return BusinessResult.Success(new Response(

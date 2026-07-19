@@ -1,7 +1,7 @@
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -31,7 +31,7 @@ public class AdminLoyaltyGrantIdempotencyTests
     private readonly Mock<ILoyaltyAccountRepository> _accountRepository = new();
     private readonly Mock<ILoyaltyTierConfigRepository> _tierConfigRepository = new();
     private readonly Mock<ILoyaltyTransactionRepository> _transactionRepository = new();
-    private readonly Mock<IPendingDispatch> _pendingDispatch = new();
+    private readonly Mock<INotificationProducer> _producer = new();
 
     private LoyaltyService CreateService() =>
         new(
@@ -39,7 +39,7 @@ public class AdminLoyaltyGrantIdempotencyTests
             _accountRepository.Object,
             _tierConfigRepository.Object,
             _transactionRepository.Object,
-            _pendingDispatch.Object,
+            _producer.Object,
             NullLogger<LoyaltyService>.Instance);
 
     // EnsureForUserAsync / GetByUserIdAsync return the same instance across calls, so points

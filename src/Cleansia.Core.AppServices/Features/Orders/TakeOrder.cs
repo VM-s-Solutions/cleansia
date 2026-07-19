@@ -7,8 +7,6 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -167,7 +165,7 @@ public class TakeOrder
         IOrderRepository orderRepository,
         IEmployeeRepository employeeRepository,
         IOrderAccessService orderAccessService,
-        IPendingDispatch pending,
+        INotificationProducer notificationProducer,
         IEmailService emailService,
         ILogger<Handler> logger)
         : ICommandHandler<Command, Response>
@@ -199,21 +197,17 @@ public class TakeOrder
 
             if (statusChanged && !string.IsNullOrEmpty(order.UserId))
             {
-                pending.Enqueue(
-                    QueueNames.NotificationsDispatch,
-                    new QueueEnvelope<SendPushNotificationMessage>(
-                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderConfirmed, order.Id),
-                        order.TenantId,
-                        new SendPushNotificationMessage(
-                            UserId: order.UserId,
-                            EventKey: NotificationEventCatalog.OrderConfirmed,
-                            Args: new Dictionary<string, string>
-                            {
-                                ["orderId"] = order.Id,
-                                ["orderNumber"] = order.DisplayOrderNumber,
-                            },
-                            TenantId: order.TenantId)),
-                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderConfirmed, order.Id));
+                await notificationProducer.NotifyAsync(
+                    order.UserId,
+                    NotificationEventCatalog.OrderConfirmed,
+                    new Dictionary<string, string>
+                    {
+                        ["orderId"] = order.Id,
+                        ["orderNumber"] = order.DisplayOrderNumber,
+                    },
+                    order.TenantId,
+                    order.Id,
+                    cancellationToken);
             }
 
             if (statusChanged && !string.IsNullOrEmpty(order.CustomerEmail))

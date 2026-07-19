@@ -309,25 +309,32 @@ private fun CompactGreetingBar(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.NotificationsNone,
-                    contentDescription = stringResource(R.string.notifications),
+                    contentDescription = if (unreadCount > 0) {
+                        stringResource(R.string.notifications_bell_unread_content_description, unreadCount)
+                    } else {
+                        stringResource(R.string.notifications)
+                    },
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
-            // Unread dot — presence-only (no count) keeps the bell uncluttered;
-            // the feed itself shows what's new. Bordered with the background so
-            // it reads as a floating pip over the bell.
             if (unreadCount > 0) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(top = 6.dp, end = 6.dp)
-                        .size(10.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.background)
-                        .padding(1.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.error),
-                )
+                        .background(MaterialTheme.colorScheme.error, CircleShape)
+                        .padding(horizontal = 4.dp, vertical = 1.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = if (unreadCount > 99) {
+                            stringResource(R.string.notifications_badge_overflow)
+                        } else {
+                            unreadCount.toString()
+                        },
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onError,
+                    )
+                }
             }
         }
     }

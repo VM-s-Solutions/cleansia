@@ -131,6 +131,8 @@ struct CustomerShellView: View {
                 loyaltyRepository: container.loyaltyRepository,
                 membershipRepository: container.membershipRepository,
                 savedAddressRepository: container.savedAddressRepository,
+                notificationBadge: container.notificationBadge,
+                notificationFeedClient: container.notificationFeedClient,
                 bookingVM: bookingVM,
                 snackbar: snackbar,
                 onBookCleaning: openBooking,
@@ -147,7 +149,10 @@ struct CustomerShellView: View {
                 onSetupRecurring: {
                     model.path = NavigationPath([ShellRoute.recurringList, ShellRoute.createRecurring(orderId: nil)])
                 },
-                onManageRecurring: { model.path.append(ShellRoute.recurringList) }
+                onManageRecurring: { model.path.append(ShellRoute.recurringList) },
+                // Feed-row taps land exactly where a push tap does — the same
+                // resolver, the same routing plan (FD-AC9).
+                onNotificationDestination: { model.applyPushTap(CustomerPushTapRouting.plan(for: $0)) }
             )
             .tabItem { tabLabel(.home) }
             .tag(CustomerShellTab.home)

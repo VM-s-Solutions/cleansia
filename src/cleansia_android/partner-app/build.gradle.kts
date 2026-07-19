@@ -288,14 +288,6 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging.ktx)
 
-    // Room — local notifications-feed store. The FCM service writes a record
-    // on every received push; the NotificationsScreen reads them back as a
-    // Flow. Room (not DataStore) because the feed is a growing list with
-    // per-row read-state, queried newest-first.
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
-
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

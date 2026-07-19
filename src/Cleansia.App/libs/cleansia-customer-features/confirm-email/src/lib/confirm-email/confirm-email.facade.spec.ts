@@ -72,6 +72,13 @@ describe('ConfirmEmailFacade (customer)', () => {
     );
   });
 
+  it('keeps the email field visible when the query param is not a valid email', () => {
+    facade.setEmail('not-an-email');
+
+    expect(facade.emailKnown()).toBe(false);
+    expect(facade.formGroup.get('email')?.value).toBe('not-an-email');
+  });
+
   it('marks the email as known once navigation provides it', () => {
     expect(facade.emailKnown()).toBe(false);
 

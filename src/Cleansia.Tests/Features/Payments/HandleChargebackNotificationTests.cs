@@ -51,6 +51,7 @@ public class HandleChargebackNotificationTests
     private readonly Mock<IStripeSubscriptionWebhookHandler> _subscriptionHandler = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
     private readonly Mock<IPendingDispatch> _pending = new();
+    private readonly Mock<INotificationProducer> _producer = new();
 
     public HandleChargebackNotificationTests()
     {
@@ -76,6 +77,7 @@ public class HandleChargebackNotificationTests
             _subscriptionHandler.Object,
             _tenantProvider.Object,
             _pending.Object,
+            _producer.Object,
             NullLogger<HandlePaymentNotification.Handler>.Instance)!;
 
     private static Order ArrangeOrder()

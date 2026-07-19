@@ -19,13 +19,14 @@ struct ChecklistGroups: Equatable {
 
 enum ChecklistBuilder {
     static func items(for order: OrderDetail) -> ChecklistGroups {
-        // Keyed by position; stable under the server's fixed service/package
-        // ordering. Proper stable-id keying is a filed follow-up.
-        let services = order.services.enumerated().map { index, name in
-            ChecklistItem(id: "service:\(index):\(name)", label: name, glyph: nil)
+        // Keyed by the stable backend id (Android parity — CleaningChecklist.kt keys
+        // by service.id/package.id) so persisted ticks survive a list reorder; the
+        // name is the defensive fallback for a row the wire sent without an id.
+        let services = order.services.map { svc in
+            ChecklistItem(id: "service:\(svc.id ?? svc.name)", label: svc.name, glyph: nil)
         }
-        let packages = order.packages.enumerated().map { index, pkg in
-            ChecklistItem(id: "package:\(index):\(pkg.name)", label: pkg.name, glyph: nil)
+        let packages = order.packages.map { pkg in
+            ChecklistItem(id: "package:\(pkg.id ?? pkg.name)", label: pkg.name, glyph: nil)
         }
         let extras = order.extras.map { slug in
             ChecklistItem(id: "extra:\(slug)", label: OrderExtras.name(slug), glyph: OrderExtras.emoji(slug))

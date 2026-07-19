@@ -5,8 +5,6 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -52,7 +50,7 @@ public class ResolveDispute
         IDisputeRepository disputeRepository,
         IUserSessionProvider userSessionProvider,
         IRefundService refundService,
-        IPendingDispatch pending,
+        INotificationProducer notificationProducer,
         IAuditContext auditContext) : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
@@ -101,25 +99,21 @@ public class ResolveDispute
 
                 if (refund.IsSuccess && !string.IsNullOrEmpty(dispute.UserId))
                 {
-                    pending.Enqueue(
-                        QueueNames.NotificationsDispatch,
-                        new QueueEnvelope<SendPushNotificationMessage>(
-                            MessageKeys.Push(dispute.UserId, NotificationEventCatalog.OrderRefunded, dispute.OrderId),
-                            dispute.TenantId,
-                            new SendPushNotificationMessage(
-                                UserId: dispute.UserId,
-                                EventKey: NotificationEventCatalog.OrderRefunded,
-                                Args: new Dictionary<string, string>
-                                {
-                                    ["orderId"] = dispute.OrderId,
-                                    // Display-only, resolved AFTER the Stripe refund settled: a missing
-                                    // Order must degrade to the factory's tolerated empty loc-arg, never
-                                    // throw and unwind the resolution while the money already moved.
-                                    ["orderNumber"] = dispute.Order?.DisplayOrderNumber ?? string.Empty,
-                                    ["disputeId"] = dispute.Id,
-                                },
-                                TenantId: dispute.TenantId)),
-                        MessageKeys.Push(dispute.UserId, NotificationEventCatalog.OrderRefunded, dispute.OrderId));
+                    await notificationProducer.NotifyAsync(
+                        dispute.UserId,
+                        NotificationEventCatalog.OrderRefunded,
+                        new Dictionary<string, string>
+                        {
+                            ["orderId"] = dispute.OrderId,
+                            // Display-only, resolved AFTER the Stripe refund settled: a missing
+                            // Order must degrade to the factory's tolerated empty loc-arg, never
+                            // throw and unwind the resolution while the money already moved.
+                            ["orderNumber"] = dispute.Order?.DisplayOrderNumber ?? string.Empty,
+                            ["disputeId"] = dispute.Id,
+                        },
+                        dispute.TenantId,
+                        dispute.OrderId,
+                        cancellationToken);
                 }
             }
 

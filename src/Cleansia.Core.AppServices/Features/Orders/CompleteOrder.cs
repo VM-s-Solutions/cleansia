@@ -155,6 +155,7 @@ public class CompleteOrder
     public class Handler(
         IOrderRepository orderRepository,
         IPendingDispatch pending,
+        INotificationProducer notificationProducer,
         IEmailService emailService,
         ILoyaltyService loyaltyService,
         IReferralService referralService,
@@ -233,21 +234,17 @@ public class CompleteOrder
             // Skip for guest orders (no UserId → no device).
             if (!string.IsNullOrEmpty(order.UserId))
             {
-                pending.Enqueue(
-                    QueueNames.NotificationsDispatch,
-                    new QueueEnvelope<SendPushNotificationMessage>(
-                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderCompleted, order.Id),
-                        order.TenantId,
-                        new SendPushNotificationMessage(
-                            UserId: order.UserId,
-                            EventKey: NotificationEventCatalog.OrderCompleted,
-                            Args: new Dictionary<string, string>
-                            {
-                                ["orderId"] = order.Id,
-                                ["orderNumber"] = order.DisplayOrderNumber,
-                            },
-                            TenantId: order.TenantId)),
-                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderCompleted, order.Id));
+                await notificationProducer.NotifyAsync(
+                    order.UserId,
+                    NotificationEventCatalog.OrderCompleted,
+                    new Dictionary<string, string>
+                    {
+                        ["orderId"] = order.Id,
+                        ["orderNumber"] = order.DisplayOrderNumber,
+                    },
+                    order.TenantId,
+                    order.Id,
+                    cancellationToken);
             }
 
             try

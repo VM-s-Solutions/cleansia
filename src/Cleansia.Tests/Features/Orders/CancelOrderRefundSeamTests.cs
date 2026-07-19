@@ -6,8 +6,6 @@ using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using MockQueryable;
 using Moq;
@@ -19,7 +17,8 @@ namespace Cleansia.Tests.Features.Orders;
 /// un-keyed Stripe refund — it delegates the money call to <see cref="IRefundService"/> with
 /// Reason=CustomerCancellation and the amount <c>order.Cancel(...)</c> computes. The confirm-then-record
 /// payment-status flip lives in the seam (a Stripe failure reports RefundInitiated=false and the handler
-/// never flips PaymentStatus itself), and the ADR-0002 OrderRefunded notification enqueue stays here.
+/// never flips PaymentStatus itself), and the OrderRefunded notification is recorded through the shared
+/// INotificationProducer seam.
 /// </summary>
 public class CancelOrderRefundSeamTests
 {
@@ -31,7 +30,7 @@ public class CancelOrderRefundSeamTests
     private readonly Mock<IRefundService> _refundService = new();
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
     private readonly Mock<ICancellationPolicyResolver> _policyResolver = new();
-    private readonly Mock<IPendingDispatch> _pending = new();
+    private readonly Mock<INotificationProducer> _producer = new();
 
     public CancelOrderRefundSeamTests()
     {
@@ -52,7 +51,7 @@ public class CancelOrderRefundSeamTests
             _refundService.Object,
             _loyaltyService.Object,
             _policyResolver.Object,
-            _pending.Object);
+            _producer.Object);
 
     private Order ArrangeCardPaidPendingOrder()
     {
@@ -130,12 +129,13 @@ public class CancelOrderRefundSeamTests
 
         Assert.True(result.IsSuccess);
         Assert.True(result.Value!.RefundInitiated);
-        _pending.Verify(p => p.Enqueue(
-            QueueNames.NotificationsDispatch,
-            It.Is<QueueEnvelope<SendPushNotificationMessage>>(e =>
-                e.Payload.EventKey == NotificationEventCatalog.OrderRefunded
-                && e.Payload.UserId == UserId),
-            MessageKeys.Push(UserId, NotificationEventCatalog.OrderRefunded, OrderId)),
+        _producer.Verify(p => p.NotifyAsync(
+            UserId,
+            NotificationEventCatalog.OrderRefunded,
+            It.IsAny<Dictionary<string, string>>(),
+            It.IsAny<string?>(),
+            OrderId,
+            It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -155,8 +155,9 @@ public class CancelOrderRefundSeamTests
         Assert.False(result.Value!.RefundInitiated);
         Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
         Assert.Equal(order.CancellationRefundAmount!.Value, result.Value.RefundAmount);
-        _pending.Verify(p => p.Enqueue(
-            It.IsAny<string>(), It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(), It.IsAny<string>()),
+        _producer.Verify(p => p.NotifyAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
+            It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -181,10 +182,13 @@ public class CancelOrderRefundSeamTests
                 It.Is<RefundRequest>(r => r.Reason == RefundReason.CustomerCancellation),
                 It.IsAny<CancellationToken>()),
             Times.Once);
-        _pending.Verify(p => p.Enqueue(
-            QueueNames.NotificationsDispatch,
-            It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(),
-            MessageKeys.Push(UserId, NotificationEventCatalog.OrderRefunded, OrderId)),
+        _producer.Verify(p => p.NotifyAsync(
+            UserId,
+            NotificationEventCatalog.OrderRefunded,
+            It.IsAny<Dictionary<string, string>>(),
+            It.IsAny<string?>(),
+            OrderId,
+            It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }

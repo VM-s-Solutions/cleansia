@@ -10,7 +10,7 @@ using Microsoft.Extensions.Hosting;
 namespace Cleansia.Tests.Integration;
 
 /// <summary>
-/// T-0144 / ADR-0005 D1.2 + D2 boundary behavior, end-to-end through the named client's
+/// ADR-0005 D1.2 + D2 boundary behavior, end-to-end through the named client's
 /// resilience pipeline (the same <c>.AddStandardResilienceHandler()</c> the production
 /// registration attaches). The spy primary handler counts outbound attempts so we can prove:
 ///   • a simulated TRANSIENT failure (HTTP 503) is RETRIED (&gt; 1 attempt) — Transient class;

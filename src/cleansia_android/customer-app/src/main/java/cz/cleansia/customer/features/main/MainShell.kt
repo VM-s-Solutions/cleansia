@@ -80,6 +80,8 @@ fun MainShell(
     onSetupRecurring: () -> Unit = {},
     /** Tap on "Manage" / open a specific recurring schedule from Home. */
     onManageRecurring: () -> Unit = {},
+    /** Tap on a notifications-inbox row with a deep link. Receives a typed `Routes.X` value. */
+    onOpenNotificationRoute: (Any) -> Unit = {},
     // Wave 3 Phase R1 — set externally (NavHost) when the user taps "Book again"
     // on an order detail screen. When non-null, MainShell opens the booking
     // sheet on the next composition with this order id so the sheet can pre-fill.
@@ -279,6 +281,7 @@ fun MainShell(
                     },
                     onSetupRecurring = onSetupRecurring,
                     onManageRecurring = onManageRecurring,
+                    onOpenNotificationRoute = onOpenNotificationRoute,
                 )
                 MainTab.Orders -> OrdersTab(
                     onOrderClick = onOrderClick,

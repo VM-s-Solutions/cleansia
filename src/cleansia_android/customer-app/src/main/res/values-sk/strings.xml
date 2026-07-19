@@ -1147,6 +1147,8 @@
     <string name="notification_membership_cancelled_title">Cleansia Plus skončilo</string>
     <string name="notification_membership_cancelled_body">Vaše predplatné skončilo. Obnovte ho a získajte späť výhody Plus.</string>
 
+    <string name="notification_order_assignment_cancelled_title">Zákazka zrušená</string>
+    <string name="notification_order_assignment_cancelled_body">Zákazka, ktorú ste prijali, bola zrušená: #%1$s. Ťuknutím zobrazíte detaily.</string>
     <!-- ── Vaše zariadenia ── -->
     <string name="profile_row_devices">Vaše zariadenia</string>
     <string name="devices_title">Vaše zariadenia</string>
@@ -1171,7 +1173,46 @@
     <string name="devices_self_revoke_dialog_message">Toto zariadenie bude odobraté a budete okamžite odhlásení.</string>
     <string name="devices_self_revoke_dialog_confirm">Odhlásiť</string>
     <string name="error_device_not_found">Toto zariadenie už nie je registrované.</string>
+    <string name="error_address_mapbox_coords_required">Vyberte prosím adresu z návrhov.</string>
+    <string name="error_auth_invalid_apple_token">Neplatný Apple token</string>
+    <string name="error_auth_too_many_attempts">Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova.</string>
+    <string name="error_company_not_found">Informácie o spoločnosti neboli nájdené</string>
+    <string name="error_country_not_existing_id">Krajina nebola nájdená</string>
+    <string name="error_currency_invalid">Neplatná mena</string>
+    <string name="error_device_invalid_platform">Nepodporovaná platforma zariadenia.</string>
+    <string name="error_dispute_already_exists">Reklamácia pre túto objednávku už existuje</string>
+    <string name="error_dispute_max_length_exceeded">Bola prekročená maximálna dĺžka</string>
+    <string name="error_dispute_not_found">Reklamácia nebola nájdená</string>
+    <string name="error_dispute_not_owned_by_user">Táto reklamácia patrí k inému účtu.</string>
+    <string name="error_file_required">Súbor je povinný</string>
+    <string name="error_gdpr_consent_already_granted">Tento súhlas už bol udelený.</string>
+    <string name="error_gdpr_consent_not_found">Súhlas nebol nájdený.</string>
+    <string name="error_gdpr_deletion_blocked_by_invoice">Účet zatiaľ nie je možné vymazať — existuje nevybavená faktúra.</string>
+    <string name="error_gdpr_deletion_blocked_by_order">Účet zatiaľ nie je možné vymazať — existuje aktívna objednávka.</string>
+    <string name="error_general_not_found">Zdroj nebol nájdený</string>
+    <string name="error_language_not_found">Jazyk nebol nájdený</string>
+    <string name="error_membership_already_active">Už máte aktívne členstvo.</string>
+    <string name="error_membership_not_found">Členstvo nebolo nájdené.</string>
+    <string name="error_membership_plan_not_found">Plán členstva sa nenašiel.</string>
+    <string name="error_membership_swap_same_plan">Tento plán už máte.</string>
+    <string name="error_order_not_completed">Objednávku možno hodnotiť až po dokončení.</string>
+    <string name="error_order_preferred_employee_not_eligible">Vybraná upratovačka nie je pre túto objednávku k dispozícii.</string>
+    <string name="error_order_total_price_positive">Celková cena musí byť kladná</string>
+    <string name="error_receipt_not_found">Účtenka nebola nájdená</string>
+    <string name="error_recurring_booking_ends_on_before_start">Dátum ukončenia musí byť po dátume začiatku.</string>
+    <string name="error_recurring_booking_no_services_or_packages">Vyberte aspoň jednu službu alebo balíček.</string>
+    <string name="error_recurring_booking_not_found">Pravidelné upratovanie sa nenašlo.</string>
+    <string name="error_recurring_booking_not_owned_by_user">Toto pravidelné upratovanie patrí k inému účtu.</string>
+    <string name="error_recurring_booking_saved_address_not_found">Vybraná adresa už neexistuje.</string>
+    <string name="error_recurring_booking_starts_on_in_past">Dátum začiatku nemôže byť v minulosti.</string>
+    <string name="error_refund_failed">Vrátenie peňazí sa nepodarilo. Skúste to prosím znova.</string>
+    <string name="error_refund_nothing_refundable">Na tejto objednávke už nie je čo vrátiť.</string>
+    <string name="error_refund_order_not_refundable">Túto objednávku nie je možné vrátiť.</string>
     <string name="notifications_inbox_title">Oznámenia</string>
     <string name="notifications_inbox_empty_title">Zatiaľ žiadne oznámenia</string>
     <string name="notifications_inbox_empty_subtitle">Dáme vám vedieť, keď sa objaví novinka o vašich upratovaniach.</string>
+    <string name="notifications_inbox_error_message">Oznámenia sa nepodarilo načítať.</string>
+    <string name="notifications_inbox_error_retry">Skúsiť znova</string>
+    <string name="notifications_bell_unread_content_description">Oznámenia, neprečítaných: %1$d</string>
+    <string name="notifications_badge_overflow">99+</string>
 </resources>

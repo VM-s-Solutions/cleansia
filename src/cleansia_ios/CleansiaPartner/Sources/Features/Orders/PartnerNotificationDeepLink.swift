@@ -22,6 +22,7 @@ enum PartnerNotificationDeepLink {
              "order.completed",
              "order.cancelled",
              "order.on_the_way",
+             "order.assignment_cancelled",
              "dispute.reply":
             guard let orderId else { return nil }
             return .order(orderId: orderId)

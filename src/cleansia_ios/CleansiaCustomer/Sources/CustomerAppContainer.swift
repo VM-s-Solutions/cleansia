@@ -93,6 +93,8 @@ final class CustomerAppContainer: AppContainer {
 
     let userProfileRepository: UserProfileRepository
     let devicesClient: CustomerDevicesClient
+    let notificationFeedClient: NotificationFeedClient
+    let notificationBadge: NotificationBadgeModel
     let gdprDeleteClient: GdprDeleteClient = LiveGdprDeleteClient()
     let notificationPreferencesClient: NotificationPreferencesClient = LiveNotificationPreferencesClient()
     let changePasswordClient: ChangePasswordClient = LiveChangePasswordClient()
@@ -133,6 +135,9 @@ final class CustomerAppContainer: AppContainer {
         )
         self.userProfileRepository = userProfileRepository
         devicesClient = LiveCustomerDevicesClient(deviceIdProvider: authStack.deviceIdProvider)
+        let notificationFeedClient = LiveNotificationFeedClient()
+        self.notificationFeedClient = notificationFeedClient
+        notificationBadge = NotificationBadgeModel(client: notificationFeedClient)
         let pushTokenRegistrar = PushTokenRegistrar(
             client: CustomerDeviceRegistrationClient(),
             deviceIdProvider: authStack.deviceIdProvider
@@ -155,6 +160,7 @@ final class CustomerAppContainer: AppContainer {
         sessionScopedCaches.register(disputeRepository)
         sessionScopedCaches.register(savedAddressRepository)
         sessionScopedCaches.register(userProfileRepository)
+        sessionScopedCaches.register(notificationBadge)
         sessionScopedCaches.register(pushTokenRegistrar)
         authStack.spine.setPreLogout { [pushTokenRegistrar] in
             await pushTokenRegistrar.unregisterDevice()

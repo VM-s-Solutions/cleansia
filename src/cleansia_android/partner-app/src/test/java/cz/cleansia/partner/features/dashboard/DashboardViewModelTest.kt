@@ -6,8 +6,9 @@ import cz.cleansia.partner.api.model.DashboardStatsDto
 import cz.cleansia.partner.core.auth.UserProfileData
 import cz.cleansia.partner.core.auth.UserProfileStore
 import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.notifications.db.NotificationDao
+import cz.cleansia.partner.core.notifications.NotificationFeedRepository
 import cz.cleansia.partner.data.dashboard.DashboardRepository
 import cz.cleansia.partner.data.dashboard.DashboardSnapshot
 import cz.cleansia.partner.features.dashboard.DashboardUiState
@@ -20,7 +21,6 @@ import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -39,7 +39,7 @@ class DashboardViewModelTest {
     private lateinit var userProfileStore: UserProfileStore
     private lateinit var snackbar: SnackbarController
     private lateinit var errorTranslator: ApiErrorTranslator
-    private lateinit var notificationDao: NotificationDao
+    private lateinit var notificationFeedRepository: NotificationFeedRepository
 
     private val snapshotFlow = MutableStateFlow(DashboardSnapshot())
     private val stats = mockk<DashboardStatsDto>()
@@ -61,16 +61,17 @@ class DashboardViewModelTest {
         userProfileStore = mockk()
         snackbar = mockk(relaxed = true)
         errorTranslator = mockk()
-        notificationDao = mockk()
+        notificationFeedRepository = mockk(relaxUnitFun = true)
         every { dashboardRepository.snapshot } returns snapshotFlow
-        every { notificationDao.observeUnreadCount() } returns flowOf(0)
+        every { notificationFeedRepository.unreadCount } returns MutableStateFlow(0)
+        coEvery { notificationFeedRepository.refreshUnreadCount() } returns ApiResult.Success(0)
         every { errorTranslator.translate(any()) } returns "translated error"
         coEvery { userProfileStore.current() } returns profile
         coEvery { dashboardRepository.refresh(any(), any()) } returns null
     }
 
     private fun viewModel() =
-        DashboardViewModel(dashboardRepository, userProfileStore, snackbar, errorTranslator, notificationDao)
+        DashboardViewModel(dashboardRepository, userProfileStore, snackbar, errorTranslator, notificationFeedRepository)
 
     @Test
     fun `refreshing with no stats yields Loading then Loaded once data arrives`() = runTest {

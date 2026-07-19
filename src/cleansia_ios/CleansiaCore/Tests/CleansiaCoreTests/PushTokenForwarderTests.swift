@@ -12,49 +12,53 @@ final class PushTokenForwarderTests: XCTestCase {
 
         chain.forwarder.forward(fcmToken: "fcm-abc")
 
-        await chain.client.waitForRegisters(1)
+        await chain.client.waitForRegisters(2)
         XCTAssertEqual(
             chain.client.registeredRequests,
-            [RegisterDeviceRequest(deviceId: deviceId, deviceToken: "fcm-abc", platform: "ios")]
+            [
+                RegisterDeviceRequest(deviceId: deviceId, deviceToken: "", platform: "ios"),
+                RegisterDeviceRequest(deviceId: deviceId, deviceToken: "fcm-abc", platform: "ios")
+            ],
+            "the session-start token-less register precedes the forwarded-token upgrade"
         )
     }
 
-    func testFirebaseNotConfiguredDoesNotRegister() async {
+    func testFirebaseNotConfiguredForwardsNothing() async {
         let chain = makeChain(isFirebaseConfigured: false)
 
         chain.forwarder.forward(fcmToken: "fcm-abc")
 
         await chain.client.settle()
-        XCTAssertEqual(chain.client.registerCallCount, 0)
+        XCTAssertEqual(chain.client.registeredTokens, [""], "only the session-start token-less register fires")
     }
 
-    func testNilTokenDoesNotRegister() async {
+    func testNilTokenForwardsNothing() async {
         let chain = makeChain(isFirebaseConfigured: true)
 
         chain.forwarder.forward(fcmToken: nil)
 
         await chain.client.settle()
-        XCTAssertEqual(chain.client.registerCallCount, 0)
+        XCTAssertEqual(chain.client.registeredTokens, [""])
     }
 
-    func testEmptyTokenDoesNotRegister() async {
+    func testEmptyTokenForwardsNothing() async {
         let chain = makeChain(isFirebaseConfigured: true)
 
         chain.forwarder.forward(fcmToken: "")
 
         await chain.client.settle()
-        XCTAssertEqual(chain.client.registerCallCount, 0)
+        XCTAssertEqual(chain.client.registeredTokens, [""])
     }
 
     func testRefreshedTokenReRegisters() async {
         let chain = makeChain(isFirebaseConfigured: true)
 
         chain.forwarder.forward(fcmToken: "fcm-1")
-        await chain.client.waitForRegisters(1)
-        chain.forwarder.forward(fcmToken: "fcm-2")
         await chain.client.waitForRegisters(2)
+        chain.forwarder.forward(fcmToken: "fcm-2")
+        await chain.client.waitForRegisters(3)
 
-        XCTAssertEqual(chain.client.registeredTokens, ["fcm-1", "fcm-2"])
+        XCTAssertEqual(chain.client.registeredTokens, ["", "fcm-1", "fcm-2"])
     }
 
     private func makeChain(isFirebaseConfigured: Bool) -> Chain {

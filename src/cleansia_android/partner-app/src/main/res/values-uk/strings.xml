@@ -1220,6 +1220,10 @@
 
     <!-- ── Push-сповіщення (FCM) ── -->
     <string name="notifications_empty">Поки що немає сповіщень. Оновлення замовлень з\'являтимуться тут.</string>
+    <string name="notifications_inbox_error_message">Не вдалося завантажити сповіщення.</string>
+    <string name="notifications_inbox_error_retry">Спробувати знову</string>
+    <string name="notifications_bell_unread_content_description">Сповіщення, непрочитаних: %1$d</string>
+    <string name="notifications_badge_overflow">99+</string>
 
     <string name="notification_channel_order_updates_name">Оновлення замовлень</string>
     <string name="notification_channel_order_updates_desc">Сповіщення, коли замовлення підтверджено, розпочато, завершено або скасовано.</string>
@@ -1241,6 +1245,8 @@
     <string name="notification_new_jobs_title">Нові доступні замовлення</string>
     <string name="notification_new_jobs_body">Поруч з вами доступно %1$d нових замовлень. Торкніться, щоб переглянути.</string>
 
+    <string name="notification_order_assignment_cancelled_title">Замовлення скасовано</string>
+    <string name="notification_order_assignment_cancelled_body">Замовлення, яке ви прийняли, скасовано: #%1$s. Торкніться, щоб переглянути деталі.</string>
     <!-- ── Ваші пристрої ── -->
     <string name="devices_title">Ваші пристрої</string>
     <string name="profile_devices_summary">Керування пристроями, на яких виконано вхід</string>
@@ -1264,6 +1270,23 @@
     <string name="devices_self_revoke_dialog_confirm">Вийти</string>
     <string name="error_device_not_found">Цей пристрій більше не зареєстрований.</string>
 
+    <string name="error_auth_too_many_attempts">Забагато спроб із цим кодом. Запросіть новий код і спробуйте ще раз.</string>
+    <string name="error_company_not_found">Інформацію про компанію не знайдено</string>
+    <string name="error_country_not_existing_id">Країну не знайдено</string>
+    <string name="error_currency_invalid">Недійсна валюта</string>
+    <string name="error_dispute_max_length_exceeded">Перевищено максимальну довжину</string>
+    <string name="error_employee_not_approved">Ваш обліковий запис ще не схвалено.</string>
+    <string name="error_gdpr_consent_already_granted">Цю згоду вже надано.</string>
+    <string name="error_gdpr_consent_not_found">Згоду не знайдено.</string>
+    <string name="error_gdpr_deletion_already_pending">Видалення облікового запису вже триває.</string>
+    <string name="error_gdpr_deletion_blocked_by_invoice">Обліковий запис поки не можна видалити — є незакритий рахунок.</string>
+    <string name="error_gdpr_deletion_blocked_by_order">Обліковий запис поки не можна видалити — є активне замовлення.</string>
+    <string name="error_language_not_found">Мову не знайдено</string>
+    <string name="error_order_selected_package_invalid">Обраний пакет є недійсним</string>
+    <string name="error_order_selected_services_invalid">Обрані послуги є недійсними</string>
+    <string name="error_payroll_invoice_not_found">Рахунок не знайдено</string>
+    <string name="error_payroll_pay_period_not_found">Розрахунковий період не знайдено</string>
+    <string name="error_receipt_not_found">Квитанцію не знайдено</string>
     <!-- ── Оплата за період (лише читання) ── -->
     <string name="period_pay_title">Оплата за період</string>
     <string name="period_pay_hero_label">Усього за період</string>

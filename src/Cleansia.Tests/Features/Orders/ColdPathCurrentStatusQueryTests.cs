@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -213,34 +214,34 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
                 It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var pendingDispatch = new Mock<IPendingDispatch>();
-        QueueEnvelope<SendPushNotificationMessage>? envelope = null;
-        pendingDispatch
-            .Setup(p => p.Enqueue(
-                QueueNames.NotificationsDispatch,
-                It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(),
-                It.IsAny<string>()))
-            .Callback((string _, QueueEnvelope<SendPushNotificationMessage> e, string _) => envelope = e);
+        var producer = new Mock<INotificationProducer>();
+        (string UserId, Dictionary<string, string> Args)? notified = null;
+        producer
+            .Setup(p => p.NotifyAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Callback<string, string, Dictionary<string, string>, string?, string?, CancellationToken>(
+                (userId, _, args, _, _, _) => notified = (userId, args))
+            .Returns(Task.CompletedTask);
 
         var digest = new NewJobsDigestService(
             new EmployeeRepository(ctx),
             orderRepository.Object,
             new UserNotificationPreferencesRepository(ctx),
-            pendingDispatch.Object,
+            producer.Object,
             Mock.Of<IUnitOfWork>(),
             NullLogger<NewJobsDigestService>.Instance);
 
         await digest.SendDigestsAsync(CancellationToken.None);
 
-        pendingDispatch.Verify(
-            p => p.Enqueue(
-                QueueNames.NotificationsDispatch,
-                It.IsAny<QueueEnvelope<SendPushNotificationMessage>>(),
-                It.IsAny<string>()),
+        producer.Verify(
+            p => p.NotifyAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
             Times.Once);
-        Assert.NotNull(envelope);
-        Assert.Equal("user-cold-digest", envelope!.Payload.UserId);
-        Assert.Equal("1", envelope.Payload.Args["count"]);
+        Assert.NotNull(notified);
+        Assert.Equal("user-cold-digest", notified!.Value.UserId);
+        Assert.Equal("1", notified.Value.Args["count"]);
     }
 
     // ── GDPR export: a projection, so a pre-backfill NULL column must still export the true

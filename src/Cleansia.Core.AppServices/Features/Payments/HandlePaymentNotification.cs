@@ -118,6 +118,7 @@ public class HandlePaymentNotification
         IStripeSubscriptionWebhookHandler subscriptionWebhookHandler,
         ITenantProvider tenantProvider,
         IPendingDispatch pending,
+        INotificationProducer notificationProducer,
         ILogger<Handler> logger) : ICommandHandler<Command, string>
     {
         public async Task<BusinessResult<string>> Handle(Command command, CancellationToken cancellationToken)
@@ -265,21 +266,17 @@ public class HandlePaymentNotification
 
             if (!string.IsNullOrEmpty(order.UserId))
             {
-                pending.Enqueue(
-                    QueueNames.NotificationsDispatch,
-                    new QueueEnvelope<SendPushNotificationMessage>(
-                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderConfirmed, order.Id),
-                        order.TenantId,
-                        new SendPushNotificationMessage(
-                            UserId: order.UserId,
-                            EventKey: NotificationEventCatalog.OrderConfirmed,
-                            Args: new Dictionary<string, string>
-                            {
-                                ["orderId"] = order.Id,
-                                ["orderNumber"] = order.DisplayOrderNumber,
-                            },
-                            TenantId: order.TenantId)),
-                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderConfirmed, order.Id));
+                await notificationProducer.NotifyAsync(
+                    order.UserId,
+                    NotificationEventCatalog.OrderConfirmed,
+                    new Dictionary<string, string>
+                    {
+                        ["orderId"] = order.Id,
+                        ["orderNumber"] = order.DisplayOrderNumber,
+                    },
+                    order.TenantId,
+                    order.Id,
+                    cancellationToken);
             }
 
             logger.LogInformation("Successfully processed payment webhook for order {OrderId}", orderId);
@@ -300,21 +297,17 @@ public class HandlePaymentNotification
 
             if (!string.IsNullOrEmpty(order.UserId))
             {
-                pending.Enqueue(
-                    QueueNames.NotificationsDispatch,
-                    new QueueEnvelope<SendPushNotificationMessage>(
-                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderCancelled, order.Id),
-                        order.TenantId,
-                        new SendPushNotificationMessage(
-                            UserId: order.UserId,
-                            EventKey: NotificationEventCatalog.OrderCancelled,
-                            Args: new Dictionary<string, string>
-                            {
-                                ["orderId"] = order.Id,
-                                ["orderNumber"] = order.DisplayOrderNumber,
-                            },
-                            TenantId: order.TenantId)),
-                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderCancelled, order.Id));
+                await notificationProducer.NotifyAsync(
+                    order.UserId,
+                    NotificationEventCatalog.OrderCancelled,
+                    new Dictionary<string, string>
+                    {
+                        ["orderId"] = order.Id,
+                        ["orderNumber"] = order.DisplayOrderNumber,
+                    },
+                    order.TenantId,
+                    order.Id,
+                    cancellationToken);
             }
 
             logger.LogInformation("Cancelled order {OrderId} due to expired Stripe checkout session", orderId);

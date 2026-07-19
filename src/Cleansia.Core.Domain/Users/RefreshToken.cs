@@ -28,8 +28,10 @@ public class RefreshToken : Auditable, ITenantEntity
 
     public DateTimeOffset? RevokedAt { get; private set; }
 
-    /// <summary>One of: "rotated", "logout", "admin", "security", "device_revoked",
-    /// "password_changed", "password_reset".</summary>
+    /// <summary>One of: "rotated", "logout", "logout_chain" (a rotated token's successors
+    /// revoked because their owner logged out with the stale parent — deliberately distinct from
+    /// "rotated", which drives reuse-theft detection, and from "password_reset", the ADR-0027 poll
+    /// predicate), "admin", "security", "device_revoked", "password_changed", "password_reset".</summary>
     [MaxLength(20)]
     public string? RevokedReason { get; private set; }
 

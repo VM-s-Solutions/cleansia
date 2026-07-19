@@ -1220,6 +1220,10 @@
 
     <!-- ── Push-уведомления (FCM) ── -->
     <string name="notifications_empty">Пока нет уведомлений. Обновления заказов появятся здесь.</string>
+    <string name="notifications_inbox_error_message">Не удалось загрузить уведомления.</string>
+    <string name="notifications_inbox_error_retry">Попробовать снова</string>
+    <string name="notifications_bell_unread_content_description">Уведомления, непрочитанных: %1$d</string>
+    <string name="notifications_badge_overflow">99+</string>
 
     <string name="notification_channel_order_updates_name">Обновления заказов</string>
     <string name="notification_channel_order_updates_desc">Уведомления, когда заказ подтверждён, начат, завершён или отменён.</string>
@@ -1241,6 +1245,8 @@
     <string name="notification_new_jobs_title">Новые доступные заказы</string>
     <string name="notification_new_jobs_body">Рядом доступно %1$d новых заказов. Нажмите, чтобы посмотреть.</string>
 
+    <string name="notification_order_assignment_cancelled_title">Заказ отменён</string>
+    <string name="notification_order_assignment_cancelled_body">Заказ, который вы приняли, отменён: #%1$s. Нажмите, чтобы посмотреть детали.</string>
     <!-- ── Ваши устройства ── -->
     <string name="devices_title">Ваши устройства</string>
     <string name="profile_devices_summary">Управление устройствами, на которых выполнен вход</string>
@@ -1264,6 +1270,23 @@
     <string name="devices_self_revoke_dialog_confirm">Выйти</string>
     <string name="error_device_not_found">Это устройство больше не зарегистрировано.</string>
 
+    <string name="error_auth_too_many_attempts">Слишком много попыток с этим кодом. Запросите новый код и попробуйте ещё раз.</string>
+    <string name="error_company_not_found">Информация о компании не найдена</string>
+    <string name="error_country_not_existing_id">Страна не найдена</string>
+    <string name="error_currency_invalid">Недействительная валюта</string>
+    <string name="error_dispute_max_length_exceeded">Превышена максимальная длина</string>
+    <string name="error_employee_not_approved">Ваш аккаунт ещё не одобрен.</string>
+    <string name="error_gdpr_consent_already_granted">Это согласие уже предоставлено.</string>
+    <string name="error_gdpr_consent_not_found">Согласие не найдено.</string>
+    <string name="error_gdpr_deletion_already_pending">Удаление аккаунта уже выполняется.</string>
+    <string name="error_gdpr_deletion_blocked_by_invoice">Аккаунт пока нельзя удалить — есть незакрытый счёт.</string>
+    <string name="error_gdpr_deletion_blocked_by_order">Аккаунт пока нельзя удалить — есть активный заказ.</string>
+    <string name="error_language_not_found">Язык не найден</string>
+    <string name="error_order_selected_package_invalid">Выбранный пакет недействителен</string>
+    <string name="error_order_selected_services_invalid">Выбранные услуги недействительны</string>
+    <string name="error_payroll_invoice_not_found">Счёт не найден</string>
+    <string name="error_payroll_pay_period_not_found">Расчётный период не найден</string>
+    <string name="error_receipt_not_found">Квитанция не найдена</string>
     <!-- ── Оплата за период (только чтение) ── -->
     <string name="period_pay_title">Оплата за период</string>
     <string name="period_pay_hero_label">Итого за период</string>

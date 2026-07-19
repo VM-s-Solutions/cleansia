@@ -607,3 +607,37 @@ targets' `Localizable.xcstrings` (never CleansiaCore's); the customer deep-link 
 (`didReceive` + `CustomerNotificationDeepLink` + navigation seam) mirroring the partner shape;
 extend `PartnerNotificationDeepLinkTests` for the alert-carrying `userInfo` shape; same release
 train as (or earlier than) the backend map activation per D5's gate.
+
+---
+
+## Amendment A1 (2026-07-18, T-0412) — `promo.new_sitewide` literal pass-through
+
+The base ADR structurally excluded `promo.new_sitewide` from the D2 display map (no fixed
+template — the admin authors title/body per campaign), which left iOS customers with **no promo
+push at all** while Android renders the server-authored text. This amendment adds exactly one
+event-scoped exception, decided by the T-0412 panel (author → challenger → lead, `## Decision
+(panel)` in the ticket).
+
+**Amended:** `FcmMessageFactory.BuildApns` gains a branch keyed on
+`NotificationEventCatalog.PromoNewSitewide` **and that key only** that emits a LITERAL
+`aps.alert` (`Title`/`Body` from the wire `title`/`body`, blank/missing → no alert = Android
+drop-parity), at `apns-priority: 5` + `interruption-level: passive` + **no sound** (the iOS analog
+of Android's `IMPORTANCE_LOW` promo channel; the correct App-Review posture for marketing). The
+D2 12-event loc-key map, the D3 `{orderNumber, count}` allowlist, and every other verification are
+**untouched** — this is a supersede-IN-PART of the single `TC-PUSH-APNS-2` assertion that promo
+ships data-only.
+
+**Explicitly NOT adopted (the challenger's rejected generalization):** a generic "any unmapped
+event carrying title/body displays literally" fallback. That would convert the display map from a
+gate into a suggestion — any future producer naming its args `title`/`body` would silently surface
+on iOS with no client-first or S6 review. A whole-catalog tripwire test pins that the literal
+branch fires for `promo.new_sitewide` and nothing else.
+
+**Accepted limitation:** the literal text is single-language per send (the fanout picks the
+recipient's stored `PreferredLanguageCode`, en fallback) — identical to Android, and the admin
+form enforces all 5 locales non-empty, so cross-platform divergence is zero. The eventual
+device-locale fix (all-locales-in-payload + client-side selection) is the first genuine use case
+for the `mutable-content`/NSE seam the base ADR left open.
+
+**Promo opt-in:** unchanged and already correct — the fanout targets only `Where(p => p.Promo)`,
+domain default `false`, both apps' toggles default-off. Nothing built here.

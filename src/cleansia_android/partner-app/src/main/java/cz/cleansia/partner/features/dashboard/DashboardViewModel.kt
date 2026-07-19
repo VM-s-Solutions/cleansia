@@ -8,7 +8,7 @@ import cz.cleansia.partner.api.model.DashboardStatsDto
 import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.core.auth.UserProfileStore
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.notifications.db.NotificationDao
+import cz.cleansia.partner.core.notifications.NotificationFeedRepository
 import cz.cleansia.partner.data.dashboard.DashboardRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,16 +52,12 @@ class DashboardViewModel @Inject constructor(
     private val userProfileStore: UserProfileStore,
     private val snackbar: SnackbarController,
     private val errorTranslator: ApiErrorTranslator,
-    notificationDao: NotificationDao,
+    private val notificationFeedRepository: NotificationFeedRepository,
 ) : ViewModel() {
 
-    /** Unread push count driving the bell badge. Cleared when the feed opens. */
-    val unreadNotifications: StateFlow<Int> = notificationDao.observeUnreadCount()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = 0,
-        )
+    /** Server unread count driving the bell badge; refetched on entry/resume,
+     * bumped locally by the FCM receive path, cleared when the feed opens. */
+    val unreadNotifications: StateFlow<Int> = notificationFeedRepository.unreadCount
 
     // firstName comes from the cached user profile, not the dashboard
     // network call — so the greeting renders immediately, independent
@@ -105,12 +101,22 @@ class DashboardViewModel @Inject constructor(
     init {
         viewModelScope.launch { _firstName.value = userProfileStore.current()?.firstName }
         load(RefreshSource.INIT)
+        refreshNotificationBadge()
     }
 
     /** Pull-to-refresh — always hits the network, surfaces as isUserRefreshing. */
     fun refresh() = load(RefreshSource.USER_PULL)
 
-    fun onResume() = load(RefreshSource.RESUME)
+    fun onResume() {
+        load(RefreshSource.RESUME)
+        refreshNotificationBadge()
+    }
+
+    /** Silent on failure — the badge is ambient chrome that self-heals on the
+     * next resume and on every feed open. */
+    private fun refreshNotificationBadge() {
+        viewModelScope.launch { notificationFeedRepository.refreshUnreadCount() }
+    }
 
     private fun load(source: RefreshSource) {
         viewModelScope.launch {

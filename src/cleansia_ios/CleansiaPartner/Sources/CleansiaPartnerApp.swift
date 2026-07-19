@@ -34,6 +34,9 @@ struct CleansiaPartnerApp: App {
                     appDelegate.pushTap.onTap = { [weak pushNavigation] destination in
                         pushNavigation?.pendingDestination = destination
                     }
+                    appDelegate.onForegroundPush = { [weak badge = container.notificationBadge] eventKey in
+                        badge?.notePushReceived(eventKey: eventKey)
+                    }
                     container.startPush()
                     // The registration-token delegate misses cached tokens; pull it
                     // explicitly and let it retry as the APNs token settles.

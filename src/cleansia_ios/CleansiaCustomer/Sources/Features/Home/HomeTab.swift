@@ -8,6 +8,8 @@ import SwiftUI
 /// milestone, seasonal card, behind the first-paint skeleton gate.
 struct HomeTab: View {
     @StateObject private var vm: HomeTabViewModel
+    @ObservedObject private var notificationBadge: NotificationBadgeModel
+    private let notificationFeedClient: NotificationFeedClient
     let onBookCleaning: () -> Void
     let onOpenAddressManager: () -> Void
     let onOrderClick: (String) -> Void
@@ -18,6 +20,9 @@ struct HomeTab: View {
     let onRebookOrder: (String) -> Void
     let onSetupRecurring: () -> Void
     let onManageRecurring: () -> Void
+    let onNotificationDestination: (CustomerNotificationDestination) -> Void
+    @Environment(\.snackbarController) private var snackbar
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showNotifications = false
 
     /// All callbacks + sources are REQUIRED: an optional-defaulted callback
@@ -28,6 +33,8 @@ struct HomeTab: View {
         loyaltyRepository: LoyaltyRepository,
         membershipRepository: MembershipRepository,
         savedAddressRepository: SavedAddressRepository,
+        notificationBadge: NotificationBadgeModel,
+        notificationFeedClient: NotificationFeedClient,
         bookingVM: BookingViewModel,
         snackbar: SnackbarController,
         onBookCleaning: @escaping () -> Void,
@@ -39,7 +46,8 @@ struct HomeTab: View {
         onBookPackage: @escaping (String) -> Void,
         onRebookOrder: @escaping (String) -> Void,
         onSetupRecurring: @escaping () -> Void,
-        onManageRecurring: @escaping () -> Void
+        onManageRecurring: @escaping () -> Void,
+        onNotificationDestination: @escaping (CustomerNotificationDestination) -> Void
     ) {
         _vm = StateObject(wrappedValue: HomeTabViewModel(
             orderRepository: orderRepository,
@@ -50,6 +58,8 @@ struct HomeTab: View {
             catalogSource: bookingVM,
             snackbar: snackbar
         ))
+        self.notificationBadge = notificationBadge
+        self.notificationFeedClient = notificationFeedClient
         self.onBookCleaning = onBookCleaning
         self.onOpenAddressManager = onOpenAddressManager
         self.onOrderClick = onOrderClick
@@ -60,6 +70,7 @@ struct HomeTab: View {
         self.onRebookOrder = onRebookOrder
         self.onSetupRecurring = onSetupRecurring
         self.onManageRecurring = onManageRecurring
+        self.onNotificationDestination = onNotificationDestination
     }
 
     var body: some View {
@@ -79,12 +90,24 @@ struct HomeTab: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(CleansiaColors.background.ignoresSafeArea())
         .sheet(isPresented: $showNotifications) {
-            NotificationsInboxSheet()
+            NotificationsInboxSheet(
+                client: notificationFeedClient,
+                badge: notificationBadge,
+                snackbar: snackbar,
+                onDestination: onNotificationDestination
+            )
+            .snackbarHost(snackbar, bottomInset: Spacing.m)
         }
         .task { await vm.runFirstPaintCeiling() }
         .task { await vm.refreshMembershipIfNeeded() }
         .task { await vm.refreshCatalogIfNeeded() }
+        .task { await notificationBadge.refresh() }
         .task(id: vm.isPlus) { await vm.refreshRecurringIfPlus(vm.isPlus) }
+        .onChange(of: scenePhase) { phase in
+            if phase == .active {
+                Task { await notificationBadge.refresh() }
+            }
+        }
     }
 
     private var content: some View {
@@ -92,6 +115,7 @@ struct HomeTab: View {
             VStack(alignment: .leading, spacing: 0) {
                 AddressTopBar(
                     displayedAddress: vm.displayedAddress?.oneLine,
+                    unreadBadge: notificationBadge.badgeLabel,
                     onAddressTap: onOpenAddressManager,
                     onNotificationTap: { showNotifications = true }
                 )
@@ -168,7 +192,8 @@ struct HomeTab: View {
 }
 
 /// "Cleaning at / <address> ▾" + the notification bell (`AddressTopBar`,
-/// `HomeTab.kt:313-365`). The bell opens the interim notifications inbox; the
+/// `HomeTab.kt:313-365`). The bell opens the notifications inbox and carries
+/// the unread badge ("99+" capped, hidden at zero — FD-AC5); the
 /// row is center-aligned so the bell sits mid-height against the two-line
 /// address block, matching Android's `verticalAlignment = CenterVertically`.
 /// The pin leading and the bell's visible-disc trailing both land on the
@@ -176,6 +201,7 @@ struct HomeTab: View {
 private struct AddressTopBar: View {
     @Environment(\.locale) private var locale
     let displayedAddress: String?
+    let unreadBadge: String?
     let onAddressTap: () -> Void
     let onNotificationTap: () -> Void
 
@@ -214,11 +240,25 @@ private struct AddressTopBar: View {
                     .frame(width: 40, height: 40)
                     .background(Circle().fill(CleansiaColors.surface))
                     .overlay(Circle().stroke(CleansiaColors.outlineVariant, lineWidth: 1))
+                    .overlay(alignment: .topTrailing) {
+                        if let unreadBadge {
+                            Text(verbatim: unreadBadge)
+                                .font(CleansiaTypography.labelSmall)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(CleansiaColors.error, in: Capsule())
+                                .offset(x: 4, y: -2)
+                        }
+                    }
                     .padding(Spacing.xxs)
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(Text(verbatim: L10n.NotificationsInbox.title))
+            .accessibilityValue(
+                Text(verbatim: unreadBadge.map { L10n.NotificationsInbox.unreadA11y($0) } ?? "")
+            )
         }
         .padding(.leading, Spacing.ml)
         .padding(.trailing, Spacing.m)
@@ -232,8 +272,13 @@ private struct AddressTopBar: View {
     struct AddressTopBar_Previews: PreviewProvider {
         static var previews: some View {
             VStack(spacing: 0) {
-                AddressTopBar(displayedAddress: "Zenklova 6, Praha", onAddressTap: {}, onNotificationTap: {})
-                AddressTopBar(displayedAddress: nil, onAddressTap: {}, onNotificationTap: {})
+                AddressTopBar(
+                    displayedAddress: "Zenklova 6, Praha",
+                    unreadBadge: "3",
+                    onAddressTap: {},
+                    onNotificationTap: {}
+                )
+                AddressTopBar(displayedAddress: nil, unreadBadge: nil, onAddressTap: {}, onNotificationTap: {})
             }
             .background(CleansiaColors.background)
             .previewLayout(.sizeThatFits)

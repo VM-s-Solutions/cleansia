@@ -94,7 +94,7 @@ public sealed class BucketBPerIterationOutboxTests : IDisposable
         await using var ctx = NewContext();
         var handler = new AutoCancelStaleRecurringOrders.Handler(
             new OrderRepository(ctx),
-            new OutboxPendingDispatch(ctx),
+            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
             ctx,
             NullLogger<AutoCancelStaleRecurringOrders.Handler>.Instance);
 

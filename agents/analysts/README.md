@@ -7,7 +7,7 @@ finalized. See `../process/documentation.md` for structure and diagram conventio
 `../process/deliberation.md` for how stories are defended before they land here.
 
 Domains: `orders-booking`, `payments-fiscal`, `pay-payroll`, `employees`, `identity-auth`,
-`catalog-config`, `loyalty-growth`, `disputes-addresses`.
+`catalog-config`, `loyalty-growth`, `disputes-addresses`, `notifications`.
 
 Each `<domain>.md` cross-links the matching `../architecture/decisions/*.md` (architect view) and the
 `docs/architecture/*` (dev/published view) for the same area.

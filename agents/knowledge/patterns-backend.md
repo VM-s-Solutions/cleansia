@@ -392,6 +392,24 @@ A refund is the one side effect with both money and fiscal consequences, so it h
 - **Partial loyalty clawback** uses the per-refund-keyed `ILoyaltyService.RevokeForPartialRefundAsync`
   (cumulative-capped, `UserId==null` skip), **not** the one-shot `RevokeForCancelledOrderAsync` mirror.
 
+## User notifications — ONE seam, never a hand-rolled push (T-0393 FD-AC12)
+
+Every user-facing notification (push + in-app feed row) is produced through
+**`INotificationProducer.NotifyAsync(userId, eventKey, args, tenantId, subject, ct)`**
+(`Core.AppServices/Services/NotificationProducer.cs`). One call records BOTH halves into the
+caller's scoped unit of work — the `UserNotification` feed row (for feed-scoped events, per the
+`NotificationFeedEventKeys` audience keysets beside `NotificationEventCatalog`) and the outbox push
+row — so both commit atomically with the domain change and neither exists on rollback.
+**Constructing `new SendPushNotificationMessage(...)` anywhere else is a violation**, mechanically
+pinned by `SendPushNotificationSeamTripwireTests` (allowed sites: the seam, the sitewide-promo
+fan-out, the record's own file). Rules the seam encodes: category mutes gate the PUSH (checked by
+the dispatch consumer), never the feed row — except the new-jobs digest, whose producer skips muted
+cleaners entirely; the digest collapses onto the user's single UNREAD `order.new_available` row
+(`RefreshDigest`); `subject` is the `MessageKeys.Push` dedup segment (order/dispute/membership id).
+Feed reads/marks are always scoped to the calling mobile host's audience keyset — the host
+controller overwrites the `Audience` field server-side (S1-style enrichment); never trust it from
+the client.
+
 ## Queue-consumer idempotency — the claim-ordering rule (ADR-0002 D2.2 · ADR-0010 · ADR-0023)
 
 Every effect-realizing queue consumer MUST assert its terminal effect has not already happened

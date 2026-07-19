@@ -9,7 +9,7 @@ using Microsoft.Extensions.Hosting;
 namespace Cleansia.Tests.Integration;
 
 /// <summary>
-/// T-0144 / BLIND-5 / ADR-0005 D1 — Stripe and SendGrid must be routed through
+/// ADR-0005 D1 — Stripe and SendGrid must be routed through
 /// <see cref="IHttpClientFactory"/> so they inherit the standard resilience handler
 /// (and, in a real host, OTel <c>AddHttpClientInstrumentation</c>) instead of newing a
 /// fresh SDK socket per call. ADR-0005 verification #2 ("pooled handler present"):

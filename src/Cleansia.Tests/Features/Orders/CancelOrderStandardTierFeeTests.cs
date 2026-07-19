@@ -7,7 +7,6 @@ using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using MockQueryable;
 using Moq;
@@ -34,7 +33,7 @@ public class CancelOrderStandardTierFeeTests
     private readonly Mock<IRefundService> _refundService = new();
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
-    private readonly Mock<IPendingDispatch> _pending = new();
+    private readonly Mock<INotificationProducer> _producer = new();
 
     public CancelOrderStandardTierFeeTests()
     {
@@ -58,7 +57,7 @@ public class CancelOrderStandardTierFeeTests
             _refundService.Object,
             _loyaltyService.Object,
             new CancellationPolicyResolver(_membershipRepository.Object),
-            _pending.Object);
+            _producer.Object);
 
     private Order ArrangeAcceptedCardPaidOrder(DateTime cleaningUtc, decimal totalPrice)
     {

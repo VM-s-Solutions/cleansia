@@ -66,6 +66,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.core.format.formatOrderPrice
@@ -104,6 +107,8 @@ fun HomeTab(
     onSetupRecurring: () -> Unit = {},
     /** Tap on a recurring-schedule row. Routes to the management screen. */
     onManageRecurring: () -> Unit = {},
+    /** Tap on an inbox row with a deep link. Receives a typed `Routes.X` value. */
+    onOpenNotificationRoute: (Any) -> Unit = {},
     viewModel: HomeTabViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
 ) {
     val repo = viewModel.addressRepository
@@ -210,8 +215,15 @@ fun HomeTab(
         firstPaintReady = true
     }
 
-    // Interim notifications inbox — the Home bell opens an empty-state sheet (T-0393), matching iOS.
+    // Notifications inbox behind the Home bell. Badge = server unread count,
+    // refetched on Home entry + app foreground (both hit ON_START) and bumped
+    // locally by the FCM receive path while the app runs.
     var showNotifications by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val unreadNotifications by viewModel.notificationFeedRepository.unreadCount
+        .collectAsStateWithLifecycle()
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        viewModel.refreshNotificationBadge()
+    }
 
     if (!firstPaintReady) {
         HomeSkeleton(modifier = modifier)
@@ -228,13 +240,20 @@ fun HomeTab(
         // 1. Address bar + bell
         AddressTopBar(
             displayedAddress = displayed?.oneLine,
+            unreadCount = unreadNotifications,
             onAddressClick = onOpenAddressManager,
             onNotificationClick = { showNotifications = true },
         )
         Spacer(Modifier.height(8.dp))
 
         if (showNotifications) {
-            NotificationsInboxSheet(onDismiss = { showNotifications = false })
+            NotificationsInboxSheet(
+                onDismiss = { showNotifications = false },
+                onOpenRoute = { route ->
+                    showNotifications = false
+                    onOpenNotificationRoute(route)
+                },
+            )
         }
 
         // 2. Smart upsell carousel — Plus / first-booking / referral / book /
@@ -320,6 +339,7 @@ fun HomeTab(
 @Composable
 private fun AddressTopBar(
     displayedAddress: String?,
+    unreadCount: Int,
     onAddressClick: () -> Unit,
     onNotificationClick: () -> Unit,
 ) {
@@ -359,14 +379,44 @@ private fun AddressTopBar(
             }
         }
         IconButton(onClick = onNotificationClick) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(MaterialTheme.colorScheme.surface, CircleShape)
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Outlined.NotificationsNone, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+            Box(modifier = Modifier.size(40.dp)) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(MaterialTheme.colorScheme.surface, CircleShape)
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Outlined.NotificationsNone,
+                        contentDescription = if (unreadCount > 0) {
+                            stringResource(R.string.notifications_bell_unread_content_description, unreadCount)
+                        } else {
+                            stringResource(R.string.notifications_inbox_title)
+                        },
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                if (unreadCount > 0) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .background(MaterialTheme.colorScheme.error, RoundedCornerShape(999.dp))
+                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = if (unreadCount > 99) {
+                                stringResource(R.string.notifications_badge_overflow)
+                            } else {
+                                unreadCount.toString()
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onError,
+                        )
+                    }
+                }
             }
         }
     }

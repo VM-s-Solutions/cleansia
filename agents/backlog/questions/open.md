@@ -493,3 +493,39 @@ _No open Wave-1 *planning* questions remain._
   blast-radius trigger fires. The Bicep is RG-scoped, so a later per-region subscription is a deployment-target
   parameter, not a rewrite.
 - Answer: _(owner fills in — confirm one subscription until a trigger, or require per-region subscriptions)_
+
+### Q-FEED-01 — [blocking: no] Do sitewide promo pushes appear in the customer notifications feed?
+- Raised by: analyst (T-0393 — feed design panel, D2)
+- Owner: owner
+- Resolve-by: post-prod
+- Date: 2026-07-17
+- Question: When the notifications inbox ships, should `promo.new_sitewide` (admin-authored marketing
+  pushes) also appear as feed rows in the customer inbox — or does the feed stay transactional-only?
+- Why it matters: promo is the only event carrying literal server-authored text (no client template —
+  the feed row would have to freeze the rendered `title`/`body`, unlike every other event), its Promo
+  category defaults to **off** (marketing consent), and iOS promo *push* display is already its own
+  deferred marketing ticket (ADR-0025 verdict, CH-1). Putting marketing into the inbox is a product
+  stance, not a technical one.
+- Default taken (non-blocking): **excluded from feed v1**; revisit together with the ADR-0025 promo
+  iOS-display follow-up ticket so marketing surfaces are decided once, coherently.
+- Answer: _(owner fills in)_
+
+### Q-FEED-02 — [blocking: no] Partner-targeted notification events (job assignment / customer cancellation / invoice ready)?
+- Raised by: analyst (T-0393 — feed design panel, D2)
+- Owner: owner
+- Resolve-by: post-prod
+- Date: 2026-07-17
+- Question: Should the platform add partner-targeted notification events — e.g. `order.assigned`
+  (admin assigns a job), a customer/admin cancellation of a job the cleaner already accepted, and
+  `invoice.generated` (pay-period invoice ready)? Today the ONLY partner-targeted dispatch is the
+  `order.new_available` 30-min digest; every `order.*`/`dispute.reply` producer targets the order's
+  customer (the partner Android app documents this gap in a TODO —
+  `partner-app/.../CleansiaFirebaseMessagingService.kt:33-42`, with templates already pre-wired).
+- Why it matters: a cleaner whose accepted job is cancelled by the customer currently learns nothing
+  until they look at their schedule — an operational gap, not just a nicety. Each new event needs a
+  producer + `NotificationCategory` + client templates ×2 platforms ×5 locales, so it is real scoped
+  work, and which events partners get is a product call.
+- Default taken (non-blocking): **not invented inside T-0393** — the feed v1 shows only events that
+  exist. Recommended: a dedicated follow-up ticket (the T-0393 notify seam gives any new producer a
+  feed row for free; the cancellation-of-accepted-job event is the highest-impact candidate).
+- Answer: _(owner fills in)_

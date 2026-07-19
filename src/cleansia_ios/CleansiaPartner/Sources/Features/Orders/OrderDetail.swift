@@ -18,7 +18,7 @@ struct OrderDetail: Equatable {
 
     let rooms: Int
     let bathrooms: Int
-    let services: [String]
+    let services: [OrderDetailService]
     let packages: [OrderDetailPackage]
     let extras: [String]
 
@@ -49,7 +49,16 @@ struct OrderDetailAddress: Equatable {
     }
 }
 
-struct OrderDetailPackage: Equatable {
+/// Name + the stable backend id: the checklist persists ticks under id-based keys
+/// (Android parity — order-independent), and the id is optional only because the
+/// wire marks it nullable; a nil id falls back to name-keying.
+struct OrderDetailService: Equatable, Hashable {
+    let id: String?
+    let name: String
+}
+
+struct OrderDetailPackage: Equatable, Hashable {
+    let id: String?
     let name: String
     let price: Double?
 }
@@ -106,9 +115,10 @@ extension OrderDetail {
         bathrooms = item.bathrooms ?? 0
         services = item.selectedServices?.compactMap { service in
             service.name.flatMap { $0.isEmpty ? nil : $0 }
+                .map { OrderDetailService(id: service.id, name: $0) }
         } ?? []
         packages = item.selectedPackages?.map { pkg in
-            OrderDetailPackage(name: pkg.name.flatMap { $0.isEmpty ? nil : $0 } ?? "—", price: pkg.price)
+            OrderDetailPackage(id: pkg.id, name: pkg.name.flatMap { $0.isEmpty ? nil : $0 } ?? "—", price: pkg.price)
         } ?? []
         extras = item.extras?.filter(\.value).keys.sorted() ?? []
 

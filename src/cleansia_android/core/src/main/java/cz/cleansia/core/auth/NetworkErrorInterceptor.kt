@@ -32,17 +32,18 @@ class NetworkErrorInterceptor(
             chain.proceed(request)
         } catch (e: IOException) {
             if (!shouldSurfaceToast(chain, request, e)) {
-                Log.w(TAG, "Suppressed toast for ${request.url}: ${e.message}")
+                // Path only — a full URL can carry query params (emails, codes) into release logs.
+                Log.w(TAG, "Suppressed toast for ${request.url.encodedPath}: ${e.message}")
                 throw e
             }
             snackbarController.showErrorKey(networkErrorStringRes)
-            Log.w(TAG, "Network error on ${request.url}: ${e.message}")
+            Log.w(TAG, "Network error on ${request.url.encodedPath}: ${e.message}")
             throw e
         }
 
         if (response.code in 500..599) {
             snackbarController.showErrorKey(serverErrorStringRes)
-            Log.w(TAG, "Server ${response.code} on ${request.url}")
+            Log.w(TAG, "Server ${response.code} on ${request.url.encodedPath}")
         }
 
         return response

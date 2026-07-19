@@ -1147,6 +1147,8 @@
     <string name="notification_membership_cancelled_title">Cleansia Plus завершено</string>
     <string name="notification_membership_cancelled_body">Ваша підписка завершилася. Поновіть її, щоб повернути переваги Plus.</string>
 
+    <string name="notification_order_assignment_cancelled_title">Замовлення скасовано</string>
+    <string name="notification_order_assignment_cancelled_body">Замовлення, яке ви прийняли, скасовано: #%1$s. Торкніться, щоб переглянути деталі.</string>
     <!-- ── Ваші пристрої ── -->
     <string name="profile_row_devices">Ваші пристрої</string>
     <string name="devices_title">Ваші пристрої</string>
@@ -1171,7 +1173,46 @@
     <string name="devices_self_revoke_dialog_message">Цей пристрій буде видалено, і ви одразу вийдете з облікового запису.</string>
     <string name="devices_self_revoke_dialog_confirm">Вийти</string>
     <string name="error_device_not_found">Цей пристрій більше не зареєстрований.</string>
+    <string name="error_address_mapbox_coords_required">Будь ласка, виберіть адресу з підказок.</string>
+    <string name="error_auth_invalid_apple_token">Недійсний токен Apple</string>
+    <string name="error_auth_too_many_attempts">Забагато спроб із цим кодом. Запросіть новий код і спробуйте ще раз.</string>
+    <string name="error_company_not_found">Інформацію про компанію не знайдено</string>
+    <string name="error_country_not_existing_id">Країну не знайдено</string>
+    <string name="error_currency_invalid">Недійсна валюта</string>
+    <string name="error_device_invalid_platform">Непідтримувана платформа пристрою.</string>
+    <string name="error_dispute_already_exists">Суперечка для цього замовлення вже існує</string>
+    <string name="error_dispute_max_length_exceeded">Перевищено максимальну довжину</string>
+    <string name="error_dispute_not_found">Суперечку не знайдено</string>
+    <string name="error_dispute_not_owned_by_user">Ця суперечка належить іншому обліковому запису.</string>
+    <string name="error_file_required">Файл є обов\'язковим</string>
+    <string name="error_gdpr_consent_already_granted">Цю згоду вже надано.</string>
+    <string name="error_gdpr_consent_not_found">Згоду не знайдено.</string>
+    <string name="error_gdpr_deletion_blocked_by_invoice">Обліковий запис поки не можна видалити — є незакритий рахунок.</string>
+    <string name="error_gdpr_deletion_blocked_by_order">Обліковий запис поки не можна видалити — є активне замовлення.</string>
+    <string name="error_general_not_found">Ресурс не знайдено</string>
+    <string name="error_language_not_found">Мову не знайдено</string>
+    <string name="error_membership_already_active">У вас уже є активне членство.</string>
+    <string name="error_membership_not_found">Членство не знайдено.</string>
+    <string name="error_membership_plan_not_found">План членства не знайдено.</string>
+    <string name="error_membership_swap_same_plan">У вас уже є цей план.</string>
+    <string name="error_order_not_completed">Оцінити замовлення можна лише після завершення.</string>
+    <string name="error_order_preferred_employee_not_eligible">Вибраний клінер недоступний для цього замовлення.</string>
+    <string name="error_order_total_price_positive">Загальна вартість повинна бути додатною</string>
+    <string name="error_receipt_not_found">Квитанцію не знайдено</string>
+    <string name="error_recurring_booking_ends_on_before_start">Дата завершення має бути після дати початку.</string>
+    <string name="error_recurring_booking_no_services_or_packages">Виберіть принаймні одну послугу або пакет.</string>
+    <string name="error_recurring_booking_not_found">Регулярне прибирання не знайдено.</string>
+    <string name="error_recurring_booking_not_owned_by_user">Це регулярне прибирання належить іншому обліковому запису.</string>
+    <string name="error_recurring_booking_saved_address_not_found">Вибрана адреса більше не існує.</string>
+    <string name="error_recurring_booking_starts_on_in_past">Дата початку не може бути в минулому.</string>
+    <string name="error_refund_failed">Не вдалося обробити повернення. Спробуйте ще раз.</string>
+    <string name="error_refund_nothing_refundable">У цьому замовленні більше немає чого повертати.</string>
+    <string name="error_refund_order_not_refundable">Це замовлення не підлягає поверненню.</string>
     <string name="notifications_inbox_title">Сповіщення</string>
     <string name="notifications_inbox_empty_title">Поки немає сповіщень</string>
     <string name="notifications_inbox_empty_subtitle">Ми повідомимо вас, коли з’явиться новина про ваші прибирання.</string>
+    <string name="notifications_inbox_error_message">Не вдалося завантажити сповіщення.</string>
+    <string name="notifications_inbox_error_retry">Спробувати знову</string>
+    <string name="notifications_bell_unread_content_description">Сповіщення, непрочитаних: %1$d</string>
+    <string name="notifications_badge_overflow">99+</string>
 </resources>

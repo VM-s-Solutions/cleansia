@@ -1393,7 +1393,11 @@
         "passwords_match": "Heslá sa zhodujú"
       }
     },
-    "refresh_token_reused": "Vaša relácia bola použitá inde. Prihláste sa, prosím, znova."
+    "refresh_token_reused": "Vaša relácia bola použitá inde. Prihláste sa, prosím, znova.",
+    "confirm_email": {
+      "resend_success": "Potvrdzovací e-mail odoslaný!",
+      "resend_error": "Nepodarilo sa znovu odoslať potvrdzovací e-mail. Skúste to prosím znova."
+    }
   },
   "gdpr": {
     "deletion_already_pending": "Žiadosť o vymazanie už prebieha.",

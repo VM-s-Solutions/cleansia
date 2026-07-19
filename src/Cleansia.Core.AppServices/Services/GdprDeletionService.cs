@@ -26,6 +26,7 @@ public class GdprDeletionService(
     ISavedAddressRepository savedAddressRepository,
     IOrderEmployeePayRepository orderEmployeePayRepository,
     IRecurringBookingTemplateRepository recurringBookingTemplateRepository,
+    IUserNotificationRepository userNotificationRepository,
     IStripeClient stripeClient,
     IBlobContainerClientFactory blobClientFactory,
     ILogger<GdprDeletionService> logger)
@@ -192,6 +193,11 @@ public class GdprDeletionService(
 
         var devices = await deviceRepository.GetByUserIdAsync(user.Id, ct);
         deviceRepository.RemoveRange(devices);
+
+        var notifications = await userNotificationRepository
+            .GetFiltered(n => n.UserId == user.Id)
+            .ToListAsync(ct);
+        userNotificationRepository.RemoveRange(notifications);
 
         if (user.Cart is not null)
             cartRepository.Remove(user.Cart);

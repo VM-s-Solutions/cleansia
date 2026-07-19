@@ -36,6 +36,7 @@ public static class FcmMessageFactory
             [NotificationEventCatalog.OrderRefunded] = OrderNumberArg,
             [NotificationEventCatalog.RecurringScheduled] = OrderNumberArg,
             [NotificationEventCatalog.NewJobsAvailable] = CountArg,
+            [NotificationEventCatalog.OrderAssignmentCancelled] = OrderNumberArg,
             [NotificationEventCatalog.DisputeReply] = NoArgs,
             [NotificationEventCatalog.LoyaltyTierUpgrade] = NoArgs,
             [NotificationEventCatalog.MembershipExpiringSoon] = NoArgs,
@@ -64,6 +65,36 @@ public static class FcmMessageFactory
 
     private static ApnsConfig? BuildApns(string eventKey, IReadOnlyDictionary<string, string> data)
     {
+        // promo.new_sitewide has no fixed template (the admin authors title/body per campaign), so it
+        // is deliberately OUT of the loc-key display map. It gets its own literal pass-through instead
+        // — scoped to THIS event ONLY (a generic "any unmapped event with title/body" fallback would
+        // turn the ADR-0025 display map from a gate into a suggestion). Blank/missing title or body →
+        // null (invisible on iOS), drop-parity with Android's isNotBlank guard. Marketing posture:
+        // apns-priority 5 (opportune delivery, never 10) + interruption-level passive (no sound, no
+        // screen wake — the iOS analog of Android's IMPORTANCE_LOW promo channel).
+        if (eventKey == NotificationEventCatalog.PromoNewSitewide)
+        {
+            var title = data.GetValueOrDefault("title");
+            var body = data.GetValueOrDefault("body");
+            if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(body))
+            {
+                return null;
+            }
+
+            return new ApnsConfig
+            {
+                Headers = new Dictionary<string, string> { ["apns-priority"] = "5" },
+                Aps = new Aps
+                {
+                    Alert = new ApsAlert { Title = title, Body = body },
+                    // FirebaseAdmin .NET exposes no first-class interruption-level; it rides the raw
+                    // aps dictionary via CustomData. No Sound: passive promos must not wake or chime.
+                    CustomData = new Dictionary<string, object> { ["interruption-level"] = "passive" },
+                    ThreadId = eventKey,
+                },
+            };
+        }
+
         if (!ApnsDisplayMap.TryGetValue(eventKey, out var argNames))
         {
             return null;

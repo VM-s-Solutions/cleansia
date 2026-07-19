@@ -146,7 +146,7 @@ private fun TimelineDot(isCurrent: Boolean) {
  * we use them verbatim with light prettification. Fallback walks the
  * numeric value in case future seed data drops the name.
  */
-private fun labelForStatusName(name: String?, value: Int?): String {
+internal fun labelForStatusName(name: String?, value: Int?): String {
     val resolved = name?.takeIf { it.isNotBlank() }
         ?: when (value) {
             OrderStatus._0.value -> "New"
@@ -158,7 +158,9 @@ private fun labelForStatusName(name: String?, value: Int?): String {
             else -> "—"
         }
     // "OnTheWay" → "On the way", "InProgress" → "In progress" for readability.
+    // The split-out words are lowercased so the label reads as a sentence — the
+    // iOS OrderStatusLabel.prettify parity (both platforms converge on this form).
     return resolved
-        .replace(Regex("([a-z])([A-Z])"), "$1 $2")
+        .replace(Regex("([a-z])([A-Z])")) { m -> "${m.groupValues[1]} ${m.groupValues[2].lowercase()}" }
         .replaceFirstChar { it.uppercase() }
 }

@@ -37,7 +37,7 @@ public class RegisterDeviceHandlerTests
             .ReturnsAsync(device);
     }
 
-    private async Task<BusinessResult<RegisterDevice.Response>> InvokeHandler(string deviceId, string token, string platform)
+    private async Task<BusinessResult<RegisterDevice.Response>> InvokeHandler(string deviceId, string? token, string platform)
     {
         var handlerType = typeof(RegisterDevice).GetNestedType("Handler", BindingFlags.NonPublic | BindingFlags.Public);
         Assert.NotNull(handlerType);
@@ -100,6 +100,54 @@ public class RegisterDeviceHandlerTests
         Assert.Equal(NewToken, device.DeviceToken);
         Assert.True(device.NotificationsEnabled);
         // Never a second INSERT — that is what would collide on the unique index.
+        _deviceRepository.Verify(r => r.Add(It.IsAny<Device>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task A_TokenLess_Register_Inserts_The_Row_With_An_Empty_Token()
+    {
+        // Pre-APNs (or pre-permission) the client registers with no push token at all —
+        // the row must still exist so the Devices page lists it and revocation can target
+        // it; the dispatcher's IsNullOrEmpty filter keeps it out of push sends.
+        ArrangeLookup(null);
+        Device? added = null;
+        _deviceRepository.Setup(r => r.Add(It.IsAny<Device>())).Callback<Device>(d => added = d);
+
+        var result = await InvokeHandler(DeviceId, null, "ios");
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(added);
+        Assert.Equal(string.Empty, added!.DeviceToken);
+        Assert.True(added.IsActive);
+    }
+
+    [Fact]
+    public async Task A_TokenLess_ReRegister_Keeps_The_Existing_Real_Token()
+    {
+        // An app relaunch before the push permission resolves re-registers token-less;
+        // that must never wipe the real token a previous register stored.
+        var device = Device.Create(CallerUserId, "ios", OldToken, DeviceId);
+        ArrangeLookup(device);
+
+        var result = await InvokeHandler(DeviceId, "  ", "ios");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OldToken, device.DeviceToken);
+        Assert.True(device.IsActive);
+        _deviceRepository.Verify(r => r.Add(It.IsAny<Device>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task A_Real_Token_Upgrades_A_TokenLess_Row()
+    {
+        // The APNs token arriving later must upgrade the placeholder row in place.
+        var device = Device.Create(CallerUserId, "ios", string.Empty, DeviceId);
+        ArrangeLookup(device);
+
+        var result = await InvokeHandler(DeviceId, NewToken, "ios");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(NewToken, device.DeviceToken);
         _deviceRepository.Verify(r => r.Add(It.IsAny<Device>()), Times.Never);
     }
 

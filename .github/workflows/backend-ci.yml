@@ -46,6 +46,16 @@ jobs:
         with:
           dotnet-version: 10.x
 
+      # NuGet package cache — keyed on the central package versions file + csprojs, so a
+      # dependency bump misses once and everything else restores from cache instead of nuget.org.
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('src/Directory.Packages.props', 'src/**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
       - name: Restore dependencies
         run: dotnet restore Cleansia.Api.sln
         working-directory: ./src

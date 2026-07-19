@@ -4,7 +4,6 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
 using Microsoft.Extensions.Logging;
 using MockQueryable;
 using Moq;
@@ -26,14 +25,14 @@ public class StartOrderHandlerTests
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IEmailService> _emailService = new();
-    private readonly Mock<IPendingDispatch> _pending = new();
+    private readonly Mock<INotificationProducer> _producer = new();
     private readonly Mock<ILogger<StartOrder.Handler>> _logger = new();
 
     private StartOrder.Handler CreateHandler() =>
         new(
             _orderRepository.Object,
             _emailService.Object,
-            _pending.Object,
+            _producer.Object,
             _logger.Object);
 
     private Order ArrangeOrder()

@@ -5,8 +5,6 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -50,7 +48,7 @@ public class CancelOrder
         IRefundService refundService,
         ILoyaltyService loyaltyService,
         ICancellationPolicyResolver cancellationPolicyResolver,
-        IPendingDispatch pending
+        INotificationProducer notificationProducer
     ) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -59,6 +57,8 @@ public class CancelOrder
             var order = await orderRepository
                 .GetQueryable()
                 .Include(o => o.OrderStatusHistory)
+                .Include(o => o.AssignedEmployees)
+                    .ThenInclude(ae => ae.Employee)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order == null)
@@ -138,25 +138,25 @@ public class CancelOrder
 
                 if (refundInitiated && !string.IsNullOrEmpty(order.UserId))
                 {
-                    // ADR-0002: record intent (in-memory, infallible) — the actual send happens
-                    // post-commit in PostCommitDispatchBehavior and its failures are logged+swallowed there.
-                    pending.Enqueue(
-                        QueueNames.NotificationsDispatch,
-                        new QueueEnvelope<SendPushNotificationMessage>(
-                            MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderRefunded, order.Id),
-                            order.TenantId,
-                            new SendPushNotificationMessage(
-                                UserId: order.UserId,
-                                EventKey: NotificationEventCatalog.OrderRefunded,
-                                Args: new Dictionary<string, string>
-                                {
-                                    ["orderId"] = order.Id,
-                                    ["orderNumber"] = order.DisplayOrderNumber,
-                                },
-                                TenantId: order.TenantId)),
-                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderRefunded, order.Id));
+                    await notificationProducer.NotifyAsync(
+                        order.UserId,
+                        NotificationEventCatalog.OrderRefunded,
+                        new Dictionary<string, string>
+                        {
+                            ["orderId"] = order.Id,
+                            ["orderNumber"] = order.DisplayOrderNumber,
+                        },
+                        order.TenantId,
+                        order.Id,
+                        cancellationToken);
                 }
             }
+
+            // Tell every cleaner who ACCEPTED this job that it's off — they hear nothing today.
+            // Distinct partner event (not the customer order.cancelled) so the audience keysets stay
+            // disjoint; skips legacy assignments with no linked User.
+            await OrderAssignmentCancellationNotifier.NotifyAssignedEmployeesOfCancellationAsync(
+                order, notificationProducer, cancellationToken);
 
             await loyaltyService.RevokeForCancelledOrderAsync(order.Id, cancellationToken);
 

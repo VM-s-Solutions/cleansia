@@ -1,3 +1,4 @@
+using Cleansia.Config.Services;
 using Cleansia.Config.RateLimiting;
 using Cleansia.ServiceDefaults;
 using Microsoft.AspNetCore.Builder;
@@ -122,6 +123,10 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
         services.AddSwaggerGen();
 
         services.AddServiceDefaults(Configuration, Environment);
+
+        // /health (the App Service probe path) gains the real dependency checks; /alive stays
+        // liveness-only. See ReadinessHealthChecks for the Unhealthy-vs-Degraded rationale.
+        services.AddCleansiaReadinessChecks();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IServiceProvider serviceProvider)

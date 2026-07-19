@@ -38,7 +38,8 @@ cleansia/
 │   ├── Cleansia.Config/                # Shared startup base, DI registration
 │   ├── Cleansia.Web/                   # Partner API (port 5000)
 │   ├── Cleansia.Web.Admin/             # Admin API (port 5001)
-│   ├── Cleansia.Web.Mobile/            # Mobile API (port 5002)
+│   ├── Cleansia.Web.Mobile.Customer/   # Customer Mobile API (port 5002)
+│   ├── Cleansia.Web.Mobile.Partner/    # Partner Mobile API
 │   ├── Cleansia.Web.Customer/          # Customer API (port 5003)
 │   ├── Cleansia.Functions/             # Azure Functions (receipt, invoice, cleanup)
 │   ├── Cleansia.Tests/                 # Unit tests (xUnit)
@@ -68,7 +69,8 @@ dotnet run --project src/Cleansia.AppHost
 # Run individual API
 dotnet run --project src/Cleansia.Web              # Partner API :5000
 dotnet run --project src/Cleansia.Web.Admin         # Admin API :5001
-dotnet run --project src/Cleansia.Web.Mobile        # Mobile API :5002
+dotnet run --project src/Cleansia.Web.Mobile.Customer  # Customer Mobile API :5002
+dotnet run --project src/Cleansia.Web.Mobile.Partner   # Partner Mobile API
 dotnet run --project src/Cleansia.Web.Customer      # Customer API :5003
 
 # Run tests

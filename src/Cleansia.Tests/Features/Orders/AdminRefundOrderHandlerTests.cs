@@ -6,8 +6,6 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Infra.Common.Validations;
 using MockQueryable;
@@ -32,7 +30,7 @@ public class AdminRefundOrderHandlerTests
     private readonly Mock<IRefundRepository> _refundRepository = new();
     private readonly Mock<IRefundService> _refundService = new();
     private readonly Mock<IUserSessionProvider> _session = new();
-    private readonly Mock<IPendingDispatch> _pending = new();
+    private readonly Mock<INotificationProducer> _producer = new();
 
     public AdminRefundOrderHandlerTests()
     {
@@ -47,7 +45,7 @@ public class AdminRefundOrderHandlerTests
             _refundRepository.Object,
             _refundService.Object,
             _session.Object,
-            _pending.Object,
+            _producer.Object,
             _auditContext);
 
     private Order ArrangeOrder(
@@ -278,7 +276,7 @@ public class AdminRefundOrderHandlerTests
     }
 
     [Fact]
-    public async Task Admin_RefundOnly_Success_EnqueuesOrderRefundedNotification()
+    public async Task Admin_RefundOnly_Success_RecordsOrderRefundedNotification()
     {
         ArrangeOrder(OrderStatus.Confirmed);
         ArrangeSeamSuccess(amount: 1000m);
@@ -288,12 +286,13 @@ public class AdminRefundOrderHandlerTests
             new AdminRefundOrder.Command(OrderId), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        _pending.Verify(p => p.Enqueue(
-            QueueNames.NotificationsDispatch,
-            It.Is<QueueEnvelope<SendPushNotificationMessage>>(e =>
-                e.Payload.EventKey == NotificationEventCatalog.OrderRefunded
-                && e.Payload.UserId == OwnerUserId),
-            MessageKeys.Push(OwnerUserId, NotificationEventCatalog.OrderRefunded, OrderId)),
+        _producer.Verify(p => p.NotifyAsync(
+            OwnerUserId,
+            NotificationEventCatalog.OrderRefunded,
+            It.IsAny<Dictionary<string, string>>(),
+            It.IsAny<string?>(),
+            OrderId,
+            It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }

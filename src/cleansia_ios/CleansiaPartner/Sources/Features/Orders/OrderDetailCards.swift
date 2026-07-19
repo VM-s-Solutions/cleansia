@@ -145,10 +145,10 @@ struct ScopeCard: View {
 
                 if !order.services.isEmpty || !order.packages.isEmpty {
                     sectionLabel(L10n.Orders.scopeServicesLabel)
-                    ForEach(order.services, id: \.self) { name in
-                        ScopeLine(label: name, value: nil)
+                    ForEach(order.services, id: \.self) { service in
+                        ScopeLine(label: service.name, value: nil)
                     }
-                    ForEach(order.packages, id: \.name) { pkg in
+                    ForEach(order.packages, id: \.self) { pkg in
                         ScopeLine(label: pkg.name, value: pkg.price.map {
                             OrdersFormat.money($0, symbol: order.currencySymbol)
                         })

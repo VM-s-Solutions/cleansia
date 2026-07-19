@@ -12,6 +12,7 @@
 
 	<ItemGroup>
 	  <PackageReference Include="Asp.Versioning.Mvc" />
+	  <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
 	  <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
 	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
 	  <PackageReference Include="Swashbuckle.AspNetCore" />

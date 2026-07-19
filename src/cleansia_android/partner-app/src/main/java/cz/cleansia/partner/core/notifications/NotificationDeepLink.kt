@@ -56,6 +56,7 @@ object NotificationDeepLink {
         "order.cancelled",
         "order.on_the_way",
         "dispute.reply",
+        "order.assignment_cancelled",
         -> orderId?.takeIf { it.isNotBlank() }?.let { NavRoute.OrderDetail(orderId = it) }
         // Digest — no single order to open. Land on the bottom-nav
         // scaffold (Main). NavRoute.Orders is a nested tab inside Main,

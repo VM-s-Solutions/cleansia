@@ -48,6 +48,11 @@ object NotificationsModule {
     fun provideNotificationPreferencesApi(
         genNotificationPreferencesApi: GenNotificationPreferencesApi,
     ): NotificationPreferencesApi = NotificationPreferencesApi(genNotificationPreferencesApi)
+
+    @Provides
+    @Singleton
+    fun provideNotificationFeedApi(@AuthRetrofit retrofit: Retrofit): NotificationFeedApi =
+        retrofit.create(NotificationFeedApi::class.java)
 }
 
 @Module

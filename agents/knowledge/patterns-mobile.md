@@ -647,8 +647,14 @@ ADRs/records — no new ADR.** (The in-app feed / bell badge / persistence / tem
 - **Lifecycle (b):** register/clear is a Core **`PushSessionObserver`** — the `PushTokenSessionObserver.kt` parity:
   **registration is a PROPERTY of session×token state, not an event** —
   `combine(session, token).filterNotNull().distinctUntilChanged() → ensureRegistered` (`:56-64`), attached once from the
-  App (the `MainActivity.onCreate` parity). `ensureRegistered` **short-circuits on the persisted last-registered token**
-  (`UserDefaults`, NOT Keychain — the `PushTokenDataStore` parity; not a secret) and **persists on success only**.
+  App (the `MainActivity.onCreate` parity). **Recorded iOS divergence (T-0398 AC2):** where Android `filterNotNull`s
+  the token (FCM always yields one), iOS maps a live session with **no APNs token yet to the canonical token-less
+  register `""`** (`session ? (token ?? "") : nil`) — the device row must exist (Devices page, remote revocation)
+  even when push permission or APNs provisioning never yields a token; a later real token re-registers and upgrades
+  the row, and the backend never lets a token-less re-register wipe a stored real token (`RegisterDevice` blank-
+  normalizes; the dispatcher skips empty-token rows). `ensureRegistered` **short-circuits on the persisted
+  last-registered token** (`UserDefaults`, NOT Keychain — the `PushTokenDataStore` parity; not a secret) and
+  **persists on success only**.
   **`unregisterDevice()` is invoked from `AuthApiClient.logout()` BEFORE the `TokenStore` wipe** (best-effort — the
   `Device/Unregister` DELETE needs the Bearer; the `AuthRepository.kt:210-225` ordering) and the local `clear()` is the
   **`SessionScopedCache`** run by the registry on **both** sign-out paths (user logout + forced-401). **The

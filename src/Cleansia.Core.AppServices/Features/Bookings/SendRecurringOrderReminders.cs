@@ -1,10 +1,9 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
-using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -48,7 +47,7 @@ public class SendRecurringOrderReminders
 
     public class Handler(
         IOrderRepository orderRepository,
-        IPendingDispatch pendingDispatch,
+        INotificationProducer notificationProducer,
         IUnitOfWork unitOfWork,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
@@ -75,23 +74,17 @@ public class SendRecurringOrderReminders
             {
                 try
                 {
-                    var messageKey = MessageKeys.Push(
-                        order.UserId!, NotificationEventCatalog.RecurringScheduled, order.Id);
-                    pendingDispatch.Enqueue(
-                        QueueNames.NotificationsDispatch,
-                        new QueueEnvelope<SendPushNotificationMessage>(
-                            messageKey,
-                            order.TenantId,
-                            new SendPushNotificationMessage(
-                                UserId: order.UserId!,
-                                EventKey: NotificationEventCatalog.RecurringScheduled,
-                                Args: new Dictionary<string, string>
-                                {
-                                    ["orderId"] = order.Id,
-                                    ["orderNumber"] = order.DisplayOrderNumber,
-                                },
-                                TenantId: order.TenantId)),
-                        messageKey);
+                    await notificationProducer.NotifyAsync(
+                        order.UserId!,
+                        NotificationEventCatalog.RecurringScheduled,
+                        new Dictionary<string, string>
+                        {
+                            ["orderId"] = order.Id,
+                            ["orderNumber"] = order.DisplayOrderNumber,
+                        },
+                        order.TenantId,
+                        order.Id,
+                        cancellationToken);
 
                     order.MarkRecurringReminderSent(now);
 

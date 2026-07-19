@@ -1,2 +1,3 @@
 "NSCameraUsageDescription" = "Cleansia používa fotoaparát, aby ste mohli k sťažnosti priložiť fotografické dôkazy.";
 "NSPhotoLibraryUsageDescription" = "Cleansia potrebuje prístup k vašim fotkám, aby ste mohli k sťažnosti priložiť fotografické dôkazy.";
+"NSLocationWhenInUseUsageDescription" = "Cleansia používa vašu polohu na vycentrovanie mapy na vašu aktuálnu pozíciu pri zadávaní adresy.";

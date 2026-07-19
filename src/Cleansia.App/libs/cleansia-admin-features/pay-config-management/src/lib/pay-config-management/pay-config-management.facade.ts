@@ -1,11 +1,10 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { AdminClient, EmployeePayConfigDto } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
-import { PayConfigListItem } from './pay-config-management.models';
-import { AdminPayConfigService } from '../admin-pay-config.service';
 
 export interface PayConfigFilterParams {
   serviceId?: string;
@@ -14,12 +13,12 @@ export interface PayConfigFilterParams {
 
 @Injectable()
 export class PayConfigManagementFacade extends UnsubscribeControlDirective {
-  private readonly payConfigService = inject(AdminPayConfigService);
+  private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
-  readonly payConfigs = signal<PayConfigListItem[]>([]);
+  readonly payConfigs = signal<EmployeePayConfigDto[]>([]);
   readonly loading = signal<boolean>(false);
   readonly initialLoading = signal<boolean>(true);
   readonly totalRecords = signal<number>(0);
@@ -32,12 +31,15 @@ export class PayConfigManagementFacade extends UnsubscribeControlDirective {
     this.loading.set(true);
     const filterParams = this.currentFilter();
 
-    this.payConfigService
+    this.adminClient.adminPayConfigClient
       .getPaged(
+        undefined,
+        filterParams?.serviceId || undefined,
+        filterParams?.packageId || undefined,
+        undefined,
+        undefined,
         this.currentOffset(),
-        this.currentLimit(),
-        filterParams?.serviceId,
-        filterParams?.packageId
+        this.currentLimit()
       )
       .pipe(
         takeUntil(this.destroyed$),
@@ -46,7 +48,7 @@ export class PayConfigManagementFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.payConfigs.set(response.data || []);
+          this.payConfigs.set(response.data ?? []);
           this.totalRecords.set(response.total || 0);
         }
         if (this.initialLoading()) {
@@ -85,16 +87,16 @@ export class PayConfigManagementFacade extends UnsubscribeControlDirective {
     this.router.navigate([CleansiaAdminRoute.PAY_CONFIG_MANAGEMENT, 'create']);
   }
 
-  navigateToEdit(payConfig: PayConfigListItem): void {
+  navigateToEdit(payConfig: EmployeePayConfigDto): void {
     if (payConfig.id) {
       this.router.navigate([CleansiaAdminRoute.PAY_CONFIG_MANAGEMENT, payConfig.id, 'edit']);
     }
   }
 
-  deletePayConfig(payConfig: PayConfigListItem): void {
+  deletePayConfig(payConfig: EmployeePayConfigDto): void {
     if (!payConfig.id) return;
 
-    this.payConfigService
+    this.adminClient.adminPayConfigClient
       .delete(payConfig.id)
       .pipe(
         takeUntil(this.destroyed$),

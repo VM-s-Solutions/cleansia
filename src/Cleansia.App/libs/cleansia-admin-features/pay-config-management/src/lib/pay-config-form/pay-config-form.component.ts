@@ -34,7 +34,6 @@ import {
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { PayConfigFormData, PayConfigFormFacade } from './pay-config-form.facade';
-import { AdminPayConfigService } from '../admin-pay-config.service';
 
 @Component({
   selector: 'cleansia-admin-pay-config-form',
@@ -54,7 +53,7 @@ import { AdminPayConfigService } from '../admin-pay-config.service';
   ],
   templateUrl: './pay-config-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [PayConfigFormFacade, AdminPayConfigService],
+  providers: [PayConfigFormFacade],
 })
 export class PayConfigFormComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);

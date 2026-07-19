@@ -1,11 +1,15 @@
 # ADR-0029 — iOS Live Activity for the in-progress clean: a direct-APNs `liveactivity` channel beside FCM, driven by the order-status seam (OnTheWay→start, InProgress→update, terminal→end), with a dedicated per-order `LiveActivityToken` registration (not `Device`) and a customer-app-only v1
 
-- **Status:** **draft — awaiting owner ratification** (panel consensus reached 2026-07-17 — see
-  Verdict; ratification items listed in "Owner ratification questions". Not `accepted`: the ADR
-  commissions a new owner secret-delivery step and two owner-visible product choices, and the whole
-  feature is **unbuildable end-to-end before T-0342** — this ADR exists so implementation starts the
-  day provisioning lands. Once accepted it becomes immutable — supersede, never edit.)
-- **Date:** 2026-07-17
+- **Status:** **proposed (ratification-ready)** — panel consensus 2026-07-17 (see Verdict) +
+  code-drift re-verification round 2026-07-19 (see "Re-verification round"). The former hard gate is
+  now **substantially resolved**: the owner's APNs `.p8` is uploaded, delivered as a backend secret,
+  and **confirmed working for ordinary push against the live dev environment** — the same team-scoped
+  key signs `liveactivity` sends, so no new key and no new custody *decision* remain, only the
+  mechanical `APNS:*` config binding (Dependencies §1). What still holds this at `proposed`:
+  owner ratification of the product choices (timing floors, v1 exclusions — "Owner ratification
+  questions" Q2/Q3, each with a recommended default). Once accepted it becomes immutable — supersede,
+  never edit.
+- **Date:** 2026-07-17 (drafted) · 2026-07-19 (hardened against the shipped producer-seam/feed code)
 - **Supersedes:** — (extends the push architecture without touching it: ADR-0002's dispatch contract,
   ADR-0023's consumer boundary, and ADR-0025's FCM alert wire shape are **byte-unchanged**; this ADR
   adds a *parallel* channel, queue, consumer, and registration surface)
@@ -20,9 +24,11 @@
 - **Applies to:** backend (`Cleansia.Infra.Clients` new `Apns/`, `Cleansia.Core.Domain` new entity,
   customer mobile host endpoint, Functions new consumer) | ios (customer app + **new Widget Extension
   target**) — partner app, Android, and all web hosts untouched
-- **Ticket:** T-0427 (`architect, ios, backend`, size L) · **depends_on:** **T-0342 (owner APNs `.p8`
-  + Push capability — the hard gate; see Dependencies)**, T-0403 ✅ (FCM tokens — done), T-0404 ✅
-  (alert display — code done; the alert channel stays the source-of-truth notification path)
+- **Ticket:** T-0427 (`architect, ios, backend`, size L) · **depends_on:** T-0342 (**substantially
+  resolved 2026-07-19** — `.p8` uploaded, in backend secret custody, ordinary push confirmed working
+  on live dev; residual = `APNS:*` config binding + widget provisioning, see Dependencies), T-0403 ✅
+  (FCM tokens — done), T-0404 ✅ (alert display — done; the alert channel stays the source-of-truth
+  notification path)
 
 > **One decision:** *how the customer iOS app gets a Wolt/Uber-style lock-screen + Dynamic Island
 > live status for an in-progress cleaning order, updated remotely while the app is not running.*
@@ -39,23 +45,38 @@
 
 ## Context
 
-### What exists (verified in the working tree, 2026-07-17)
+### What exists (verified in the working tree 2026-07-17; re-verified + corrected 2026-07-19)
 
-- **The alert push path is complete in code.** Producers enqueue
-  `QueueEnvelope<SendPushNotificationMessage>` on `notifications-dispatch` via `IPendingDispatch`
-  (e.g. `NotifyOnTheWay.cs:101`, `StartOrder.cs:156`); the Functions consumer
-  (`SendPushNotificationHandler.cs`) claims the D2.1 key (Mode A, claim-first), gates on
-  preferences, fans out via the only `IPushDispatcher` (`FcmPushDispatcher`), and prunes
-  FCM-rejected tokens. ADR-0025 added the per-platform APNs **alert** block (loc-keys) inside that
-  FCM message. Delivery awaits the owner's APNs key upload (T-0342) + the Functions Firebase
-  credential.
+- **The alert push path is complete in code AND delivering.** Producers call the **shared notify
+  seam `INotificationProducer.NotifyAsync`** (`NotificationProducer.cs` — one call atomically
+  records the in-app feed row for feed-scoped events *and* enqueues the
+  `QueueEnvelope<SendPushNotificationMessage>` on `notifications-dispatch` via the
+  `IPendingDispatch` the producer holds; constructing the message anywhere else is forbidden by a
+  raw-file tripwire test, `SendPushNotificationSeamTripwireTests.cs`). The status handlers hold
+  `INotificationProducer`, **not** `IPendingDispatch` (`NotifyOnTheWay.cs:86,100`,
+  `StartOrder.cs:115,154`, `CompleteOrder.cs:237`) — the 2026-07-17 draft predated this
+  consolidation; D2's producer-seam shape is corrected accordingly (a **sibling seam**, not a bare
+  enqueue). The Functions consumer (`SendPushNotificationHandler.cs`) claims the D2.1 key (Mode A,
+  claim-first), gates on preferences, fans out via the only `IPushDispatcher`
+  (`FcmPushDispatcher`), and prunes FCM-rejected tokens. ADR-0025's `FcmMessageFactory` builds the
+  per-platform APNs **alert** block (loc-keys) inside that FCM message. **Delivery is live:** the
+  owner's `.p8` is uploaded, the backend secret is provisioned, and ordinary push is confirmed
+  working on the owner's iPhone against the dev environment.
 - **The order-status seam is single and clean.** Every transition appends through
   `Order.AddOrderStatus` (`Order.cs:344` — "the single append seam", with persisted `CurrentStatus`
   and a deterministic `OrderStatusTrack.Sequence`). The handlers that append the in-service
-  transitions — `NotifyOnTheWay` (OnTheWay), `StartOrder` (InProgress), `CompleteOrder` (Completed),
-  the cancel/override handlers (Cancelled) — are the exact sites that already enqueue the alert
-  push. Lifecycle: `New(0) → Pending(1) → Confirmed(2) → OnTheWay(3) → InProgress(4) → Completed(5)`,
-  `Cancelled(6)`.
+  transitions: `NotifyOnTheWay` (OnTheWay), `StartOrder` (InProgress), `CompleteOrder` (Completed),
+  `CancelOrder` / `AdminCancelOrder` (Cancelled), and `AdminOverrideOrderStatus` (any **strict
+  forward** lifecycle move — `AdminOverrideOrderStatus.cs:96-105` rejects same-state, backward, and
+  off-lifecycle targets, so **Cancelled is unreachable through the override** and a same-status
+  revisit is impossible at this seam). Two 2026-07-19 corrections to the draft's "the exact sites
+  that already enqueue the alert push" claim: (a) `AdminOverrideOrderStatus` produces **no**
+  notification today (it appends status + audit only) — for this feature it gains its *first*
+  producer call, because a customer's lock-screen card must not miss an admin-driven
+  Completed/InProgress; (b) `CancelOrder`/`AdminCancelOrder` notify the customer only on the
+  refund branch (`order.refunded`, conditional) — the activity **end** enqueue therefore sits
+  unconditionally beside `AddOrderStatus`, never inside the refund conditional. Lifecycle:
+  `New(0) → Pending(1) → Confirmed(2) → OnTheWay(3) → InProgress(4) → Completed(5)`, `Cancelled(6)`.
 - **The registration surface is `Device`** (`Device.cs`): `(UserId, DeviceId)` unique across
   active+inactive rows, soft-delete tombstone reclaim, token-less registration allowed (T-0398),
   `NotificationsEnabled` kill switch, and — critically — it is a **shared partner+customer surface**
@@ -126,12 +147,28 @@
 
 ### Decision
 
-D1-A. One new adapter (`ApnsLiveActivityClient` behind a `ILiveActivityPushClient` port defined in
-Core abstractions, mirroring `IPushDispatcher`'s placement), one new config block
-(`Apns: Enabled, KeyId, TeamId, PrivateKeyPem, CustomerBundleId, UseSandbox`), zero change to the
-FCM path. Whether the HTTP/2+ES256 plumbing is hand-rolled or wrapped by a maintained library
-(e.g. dotAPNS) is an **implementation choice inside this contract** — the port, taxonomy, pooling,
-and config shape above are what this ADR pins (challenger CH-D1-2).
+D1-A. One new adapter (`ApnsLiveActivityClient` behind an `ILiveActivityPushClient` port in
+`Cleansia.Core.Clients.Abstractions/Apns/` — the exact placement `IPushDispatcher` has in
+`.../Fcm/`), one new config block, zero change to the FCM path. Whether the HTTP/2+ES256 plumbing
+is hand-rolled or wrapped by a maintained library (e.g. dotAPNS) is an **implementation choice
+inside this contract** — the port, taxonomy, pooling, and config shape below are what this ADR pins
+(challenger CH-D1-2).
+
+**Config contract (pinned 2026-07-19, platform conventions applied).** `IApnsConfig` in
+`Cleansia.Infra.Common/Configuration/Interfaces/` + `ApnsConfig : AutoBindConfig(configuration,
+"APNS")` in `Cleansia.Infra.Common/Configuration/`, registered in
+`Cleansia.Config/Configurations/ConfigurationExtensions.AddConfigurationBindings` — byte-for-byte
+the `IFcmConfig`/`FcmConfig`("FCM") archetype. The exact keys (host + Functions app settings;
+binder is case-insensitive):
+
+| Key | Meaning | Default |
+|---|---|---|
+| `APNS:Enabled` | Master switch. `false` → the client reports **Skipped** and the consumer **acks** (the exact `result.Skipped` inert-ship semantics `FcmPushDispatcher`/`SendPushNotificationHandler` implement). Lets the already-provisioned key sit in config with the channel off until the iOS lane ships. | `false` |
+| `APNS:KeyId` | The 10-char Apple Key ID of the `.p8` (from T-0342's key-creation step — the owner noted it at creation). | empty |
+| `APNS:TeamId` | The Apple Developer Team ID (paid team, enrolled 2026-07-13). | empty |
+| `APNS:PrivateKeyPem` | The `.p8` content. Raw PEM or base64-wrapped — same dual-accept convention as `FCM:ServiceAccountJson`. **The same key material already delivered as a backend secret for ordinary push** — a config binding, not a new custody surface. Missing/empty while `Enabled=true` → treated as Skipped + a startup `LogWarning`, never a crash (the FCM "deliberately unconfigured" pattern). | empty |
+| `APNS:CustomerBundleId` | `cz.cleansia.customer` — the `apns-topic` is derived as `{CustomerBundleId}.push-type.liveactivity`, never hardcoded. | empty |
+| `APNS:UseSandbox` | `true` → `api.sandbox.push.apple.com` (dev — the owner's iPhone runs dev builds, which get sandbox activity tokens); `false` → `api.push.apple.com`. | `true` in dev, `false` in prod |
 
 ---
 
@@ -145,7 +182,8 @@ and config shape above are what this ADR pins (challenger CH-D1-2).
 | `OnTheWay` (`NotifyOnTheWay`) | **start** — `event: start` to the push-to-start token (iOS 17.2+); 16.1–17.1 fall back to **local start on next app foreground** while status ∈ {OnTheWay, InProgress} | initial `content-state: onTheWay` |
 | `InProgress` (`StartOrder`) | **update** to each per-order update token | `content-state: inProgress` |
 | `Completed` (`CompleteOrder`) | **end** — final `content-state: completed`, `dismissal-date = now + 30 min` (final state stays glanceable, then leaves) | owner-ratified window |
-| `Cancelled` (CancelOrder / AdminCancelOrder / AdminOverrideOrderStatus) | **end** — `content-state: cancelled`, `dismissal-date = now` (immediate dismissal; a dead order must not linger) | pre-service cancels no-op (no token rows exist yet) |
+| `Cancelled` (CancelOrder / AdminCancelOrder — **corrected 2026-07-19:** `AdminOverrideOrderStatus` is strict-forward-only and rejects Cancelled, `AdminOverrideOrderStatus.cs:96-103`) | **end** — `content-state: cancelled`, `dismissal-date = now` (immediate dismissal; a dead order must not linger). Enqueued **unconditionally** beside `AddOrderStatus` — the existing customer alert on cancel is refund-conditional and must not gate the end-push | pre-service cancels no-op (no token rows exist yet) |
+| Any forward move via `AdminOverrideOrderStatus` (OnTheWay / InProgress / Completed) | the same event the organic handler would send (start / update / end) | **added 2026-07-19:** this handler produces no alert push today — the activity enqueue is its *first* producer call, so the lock-screen card tracks admin-driven transitions too |
 
 - **Staleness (revised per CH-D2-3):** every start/update sets
   `stale-date = max(now + 4 h, scheduledEnd + 1 h)` — a 6-hour booked clean never renders stale
@@ -157,21 +195,40 @@ and config shape above are what this ADR pins (challenger CH-D1-2).
 - **Ordering:** the APNs payload's mandatory `timestamp` is set to the transition's
   `OrderStatusTrack.CreatedOn` — ActivityKit discards updates older than the last applied, so
   queue-redelivery or cross-transition races cannot regress the lock screen (CH-D2-4).
-- **Producer seam:** the same handlers that already enqueue the alert push enqueue a
-  `QueueEnvelope<SendLiveActivityUpdateMessage>` (UserId, OrderId, EventKey, the display args +
-  transition timestamp) on a **new queue `live-activity-dispatch`** — one added `pending.Enqueue`
-  call per handler, no new collaborator (the `IPendingDispatch` they already hold). Producers do
-  **not** check whether tokens exist (they cannot, cheaply); the consumer no-ops on zero rows,
-  exactly as the push consumer no-ops on zero devices.
-- **Consumer:** a new Functions handler `SendLiveActivityUpdateHandler` — **Mode A claim-first**
-  (ADR-0002 D2.2) on a new deterministic key
-  `MessageKeys.LiveActivity(orderId, eventKey, sequence)` (the `OrderStatusTrack.Sequence` makes an
-  admin-override revisit of the same status a distinct send — CH-D2-4); resolves the order's
-  `LiveActivityToken` rows; builds the ActivityKit payload; sends per token via the D1 client;
-  prunes 410s; deletes the order's rows after a **successful terminal send**. It is a **sibling** of
-  `SendPushNotificationHandler`, never a modification of it (ADR-0023's boundary logic applies by
-  construction: separate queue, separate claim keyspace, separate failure domain — an FCM outage
-  cannot retry-storm APNs, and vice versa).
+- **Producer seam (reshaped 2026-07-19 to the shipped consolidation):** the status handlers no
+  longer hold `IPendingDispatch` — they hold the shared notify seam `INotificationProducer`
+  (tripwire-pinned). The live-activity channel gets the **sibling seam, same archetype**: a small
+  `ILiveActivityProducer` (`Cleansia.Core.AppServices/Services/`, holding `IPendingDispatch`) whose
+  one method `NotifyOrderTransitionAsync(order, eventKey, transitionAtUtc, ct)` builds and enqueues
+  the `QueueEnvelope<SendLiveActivityUpdateMessage>` (UserId, OrderId, EventKey, orderNumber +
+  schedule display args, transition timestamp, TenantId) on the **new queue
+  `live-activity-dispatch`** (`QueueNames.LiveActivityDispatch`). Six producer sites — the five
+  notify-seam handlers plus `AdminOverrideOrderStatus` — each gain **one collaborator + one call**
+  (2 → 3-ish collaborators; nowhere near the 8-service smell). It is deliberately **not** a second
+  method on `INotificationProducer`: that seam's contract is "feed row + push, atomically, gated by
+  notification preferences" — an activity is none of those (D4), and entangling them re-creates the
+  channel coupling ADR-0023 exists to forbid. Constructing `SendLiveActivityUpdateMessage` outside
+  `LiveActivityProducer` is forbidden by a **second raw-file tripwire test** (the
+  `SendPushNotificationSeamTripwireTests` pattern verbatim). Producers do **not** check whether
+  tokens exist (they cannot, cheaply); the consumer no-ops on zero rows, exactly as the push
+  consumer no-ops on zero devices.
+- **Consumer:** a new Functions handler `SendLiveActivityUpdateHandler` (`Cleansia.Functions.Core/
+  Handlers/`, thin `[QueueTrigger]` shell in `Cleansia.Functions/Functions/`) — **Mode A
+  claim-first** (ADR-0002 D2.2) on a new deterministic key
+  `MessageKeys.LiveActivity(orderId, eventKey, sequence)` →
+  `liveactivity:{orderId}:{eventKey}:{sequence}` (an **added** frozen D2.1 formula in
+  `MessageKeys.cs` — additions are this ADR's job; *changes* stay superseding-ADR-only).
+  **Corrected rationale 2026-07-19:** `AdminOverrideOrderStatus` rejects same-status revisits, so
+  no code path can currently produce the same `(orderId, eventKey)` twice — the `Sequence` segment
+  is *defensive* (a pure-function key that stays collision-free if any future handler ever
+  re-appends a status), not load-bearing today (CH-D2-4 stands, weakened honestly). The consumer
+  resolves the order's `LiveActivityToken` rows; builds the ActivityKit payload; sends per token
+  via the D1 client; prunes 410s; deletes the order's rows after a **successful terminal send**. It
+  is a **sibling** of `SendPushNotificationHandler`, never a modification of it (ADR-0023's
+  boundary logic applies by construction: separate queue, separate claim keyspace, separate failure
+  domain — an FCM outage cannot retry-storm APNs, and vice versa). Per ADR-0002 D3 (F3) the queue
+  gets its own poison pair: `live-activity-dispatch-poison` + `LiveActivityDispatchPoisonHandler`
+  (DeadLetter row + LogError + ack — the `NotificationsDispatchPoisonHandler` archetype).
 - **Lost-update residual (CH-D2-2, accepted):** Mode A is at-most-once-after-the-marker; a crash
   between claim and send loses that one activity update. A lost mid-flight update is healed by the
   next transition; a lost **terminal** update leaves a zombie card bounded by `stale-date` styling,
@@ -277,21 +334,33 @@ and config shape above are what this ADR pins (challenger CH-D1-2).
   frequent-updates entitlement (transition cadence is ~4 events per order — not needed); iOS
   < 16.1 (silent no-op — availability-gated, the ADR-0014 16.0 floor is untouched); marketing/promo
   content in activities (S6 + the T-0412 promo channel is separate).
-- **New iOS target:** `CleansiaCustomerWidgets` (Widget Extension) via `project.yml` (xcodegen) +
-  `NSSupportsLiveActivities` on the app target. **MANUAL_STEP:** owner re-runs xcodegen after pull
-  (standing rule); the extension needs its own provisioning profile under the owner's paid account
-  — rides the T-0342 provisioning session.
+- **New iOS target:** `CleansiaCustomerWidgets` (Widget Extension, xcodegen `type: app-extension`,
+  `NSExtensionPointIdentifier: com.apple.widgetkit-extension`, bundle id
+  `cz.cleansia.customer.widgets`, deploymentTarget 16.1 — an embedded extension may floor higher
+  than its 16.0 host app; on a 16.0 device it simply never loads) + `NSSupportsLiveActivities: true`
+  on the **app** target's Info properties. **MANUAL_STEP (refined 2026-07-19):**
+  `CleansiaCustomer/project.yml` is **owner-modified working tree** (it carries the owner's Stripe
+  publishable key; standing rule: agents never checkout/stage it) — the implementation ticket specs
+  the exact `project.yml` diff **verbatim** (T-0427 slice LA-5) and **the owner applies it**, then
+  re-runs xcodegen (standing post-pull rule). Extension provisioning rides Dependencies §1.
 
 ---
 
 ## Dependencies (stated explicitly — the gate structure)
 
-1. **T-0342 (owner)** — the APNs `.p8` auth key + Push Notifications capability. **Hard gate; the
-   feature is unbuildable end-to-end before it.** The same team-scoped key serves both channels —
-   **but T-0342 as written uploads it to the Firebase console only. This ADR commissions the
-   additional owner step: deliver the `.p8` PEM + KeyId + TeamId as backend secrets**
-   (Functions/host config `Apns:*`) — same key, second delivery location. Plus: Widget-Extension
-   provisioning + `NSSupportsLiveActivities`, one xcodegen session.
+1. **T-0342 (owner) — SUBSTANTIALLY RESOLVED 2026-07-19.** The APNs `.p8` is created, uploaded,
+   **delivered as a backend secret, and confirmed working for ordinary push** (dev environment
+   live; the owner's iPhone runs against DEV). An APNs auth key is team-scoped and
+   push-type-agnostic — the **same key signs `liveactivity` sends; no new key, no new custody
+   decision**. What remains is mechanical + provisioning, not gating architecture:
+   - **(owner, config)** bind the existing key material into the D1 config keys — `APNS:KeyId`,
+     `APNS:TeamId`, `APNS:PrivateKeyPem`, `APNS:CustomerBundleId=cz.cleansia.customer`,
+     `APNS:UseSandbox=true` (dev), leaving `APNS:Enabled=false` until the iOS lane ships
+     (**MANUAL_STEP**, minutes — the secret already exists in backend custody).
+   - **(owner, Apple)** Widget-Extension provisioning: the `cz.cleansia.customer.widgets` bundle id
+     signs under the paid team (automatic signing typically auto-registers it) — riding the
+     standing post-pull xcodegen session, plus applying the `project.yml` diff (see D4
+     MANUAL_STEP).
 2. **T-0403 ✅ / T-0404 ✅ (code)** — the alert channel this sits beside; the alert path stays the
    authoritative notification, the activity is glanceable state. No ordering constraint between
    the two channels' deploys (they share no wire, queue, or consumer).
@@ -310,8 +379,9 @@ and config shape above are what this ADR pins (challenger CH-D1-2).
 - The APNs adapter is the platform's fourth outbound client under the *same* ADR-0005 contract —
   no new resilience vocabulary; and it is the natural home for any future direct-APNs need
   (broadcast channels, partner activities, VoIP-class pushes) — the seam earns its keep beyond v1.
-- The producer cost is one `Enqueue` per status handler — no new collaborator, no handler-count
-  smell.
+- The producer cost is one `ILiveActivityProducer` collaborator + one call per status handler (six
+  sites), mirroring the shipped `INotificationProducer` archetype — no handler-count smell, and the
+  envelope/key construction stays in exactly one tripwire-pinned file per channel.
 - Zero coupling between channels' failure domains; dev/CI stays no-op by config exactly like FCM.
 
 **More expensive / accepted residuals:**
@@ -333,12 +403,19 @@ and config shape above are what this ADR pins (challenger CH-D1-2).
 
 **Mechanical:**
 1. `FcmPushDispatcher`, `IPushDispatcher`, `SendPushNotificationHandler`, `Device`,
-   `RegisterDevice` — all byte-unchanged (grep/diff). The new consumer is a sibling file, not an
-   edit.
+   `RegisterDevice`, **`INotificationProducer`/`NotificationProducer` and its tripwire test** — all
+   byte-unchanged (grep/diff). The new consumer and the new producer seam are sibling files, not
+   edits.
 2. The APNs client lives in `Cleansia.Infra.Clients/Apns/`, is registered via a named
    `IHttpClientFactory` client (pooled handler, HTTP/2), and no other site constructs an APNs call.
-3. Producers: exactly the status handlers named in D2 gain one `Enqueue` to
-   `QueueNames.LiveActivityDispatch`; no handler branches on country, platform, or token existence.
+   Its port is `Cleansia.Core.Clients.Abstractions/Apns/ILiveActivityPushClient.cs`; its config
+   binds only the six `APNS:*` keys pinned in D1.
+3. Producers: exactly the six handlers named in D2 (`NotifyOnTheWay`, `StartOrder`,
+   `CompleteOrder`, `CancelOrder`, `AdminCancelOrder`, `AdminOverrideOrderStatus`) gain one
+   `ILiveActivityProducer` call; the cancel-path call sits **outside** the refund conditional; no
+   handler branches on country, platform, or token existence; `SendLiveActivityUpdateMessage` is
+   constructed only in `LiveActivityProducer` (raw-file tripwire, the
+   `SendPushNotificationSeamTripwireTests` pattern).
 4. `LiveActivityToken` implements `ITenantEntity` and is covered by the global query filter; the
    register command validates order ownership in the **validator**, not the handler.
 5. The content-state builder's allowlist: no name, address, free-text, or internal-id field can
@@ -352,8 +429,10 @@ and config shape above are what this ADR pins (challenger CH-D1-2).
    `onTheWay`; update carries `content-state` + `timestamp` = transition time; completed end
    carries `dismissal-date ≈ now+30 min`; cancelled end carries `dismissal-date = now`.
 8. **TC-LA-1** — stale-date rule: `max(now + 4 h, scheduledEnd + 1 h)` at boundary values.
-9. **TC-LA-2** — idempotency: same `(orderId, eventKey, sequence)` claims once; an
-   admin-override revisit (new sequence) produces a distinct key.
+9. **TC-LA-2** — idempotency: same `(orderId, eventKey, sequence)` claims once (redelivery
+   short-circuits); distinct sequences produce distinct keys (the defensive segment — no current
+   code path revisits a status, `AdminOverrideOrderStatus.cs:96-103`, but the key must stay
+   collision-free if one ever does).
 10. **TC-LA-3** — taxonomy: 410/BadDeviceToken prunes the row and acks; 403 re-mints once then
     throws; 429/5xx throw (redelivery); `Apns:Enabled=false` → Skipped-ack, rows untouched.
 11. **TC-LA-4** — terminal send success deletes the order's token rows; failure leaves them (the
@@ -387,15 +466,22 @@ and config shape above are what this ADR pins (challenger CH-D1-2).
 
 ---
 
-## Owner ratification questions (why this stays `draft`)
+## Owner ratification questions (why this stays `proposed`)
 
-1. **The second channel + second secret location:** approve delivering the T-0342 `.p8` (+ KeyId +
-   TeamId) into backend config as well as the Firebase console. Same key, new custody surface.
-2. **Product choices:** start at OnTheWay (not at Confirmed); completed card lingers 30 min;
-   cancelled dismisses immediately; remote start requires iOS 17.2+ (older iOS 16.1+ devices get
-   the open-app fallback). Any of these is a one-line change pre-acceptance.
-3. **v1 exclusions stand:** no partner activities, no Android Live-Updates parity, no live map/ETA
-   (each is its own future ticket).
+1. **~~The second channel + second secret location~~ — RESOLVED BY CONDUCT 2026-07-19.** The owner
+   already delivered the `.p8` as a backend secret and it is confirmed working for ordinary push
+   against live dev. The same team-scoped key signs `liveactivity` sends; nothing new to approve —
+   only the mechanical `APNS:*` binding (Dependencies §1 MANUAL_STEP).
+2. **Product choices — OPEN, with recommended defaults (ratify or one-line-change each):**
+   start at OnTheWay, not Confirmed (*recommended: keep* — the ~8 h ActivityKit budget makes a
+   Confirmed-time start structurally dead for next-day bookings, CH-D2-1); completed card lingers
+   **30 min** (*recommended: keep* — glanceable receipt without lock-screen squatting); cancelled
+   dismisses **immediately** (*recommended: keep* — a dead order must not linger); remote start
+   requires **iOS 17.2+**, 16.1–17.1 get the open-app-during-service-window fallback (*recommended:
+   accept* — platform floor, not a choice we control; shrinks with OS adoption).
+3. **v1 exclusions — OPEN, recommended: stand.** No partner activities, no Android
+   Live-Updates parity, no live map/ETA (each is its own future ticket; the map/ETA additionally
+   requires a cleaner-location stream that does not exist and is a consent feature of its own).
 
 ---
 
@@ -583,4 +669,118 @@ against this shape, and the ADR flips to `accepted` the day the owner ratifies +
 `agents/architecture/decisions/push-notifications.md` (§Roles affected); PM slices T-0427 into the
 backend lane (entity/migration MANUAL_STEP, endpoint, queue+consumer, APNs client, TC-LA-0..6) and
 the iOS lane (widget target + xcodegen MANUAL_STEP, token observers, registration, TC-LA-7, QA
-matrix) — backend deployable inert (`Apns:Enabled=false`) ahead of the iOS train.
+matrix) — backend deployable inert (`APNS:Enabled=false`) ahead of the iOS train. *(2026-07-19: the
+slice specs are drafted and appended to T-0427 — implementation still starts only on acceptance.)*
+
+---
+
+## Re-verification round (2026-07-19 — code drift since the 2026-07-17 draft)
+
+*(Second panel round, convened because two things moved under the draft: the notifications
+feed + producer-seam consolidation (`INotificationProducer` + tripwire) shipped, and the owner's
+`.p8` was delivered as a backend secret and confirmed working for ordinary push on live dev. Author
+re-grounded every named seam in the working tree; challenges steelmanned below; lead ruled.)*
+
+**Drift corrected in the body (author, evidence at file:line):**
+- **Producer mechanism** — handlers hold `INotificationProducer`, not `IPendingDispatch`
+  (`NotifyOnTheWay.cs:86`, `StartOrder.cs:115`); D2's "one added `pending.Enqueue`, no new
+  collaborator" was stale → reshaped to the sibling `ILiveActivityProducer` seam + second tripwire.
+- **`AdminOverrideOrderStatus`** is strict-forward-only and **rejects Cancelled**
+  (`AdminOverrideOrderStatus.cs:96-105`) and produces **no notification today** → the Cancelled row
+  names CancelOrder/AdminCancelOrder only; the override gains its *first* producer call for
+  forward moves; the claim-key `Sequence` rationale downgraded from load-bearing to defensive.
+- **Cancel alerts are refund-conditional** (`CancelOrder.cs:139-152`) → the activity end-enqueue is
+  pinned *outside* the conditional.
+- **The `.p8` gate** — T-0342's remaining substance collapsed from "commission a new custody step"
+  to "bind six `APNS:*` config keys" (now enumerated exactly, D1) + extension provisioning.
+- **Port/config placement made exact** — `Cleansia.Core.Clients.Abstractions/Apns/`,
+  `ApnsConfig : AutoBindConfig("APNS")` in Infra.Common, registered in `ConfigurationExtensions`.
+- **Poison pair added** — `live-activity-dispatch-poison` + handler (ADR-0002 D3/F3 requires it;
+  the draft omitted it; every shipped queue has one, `Program.cs:85-90`).
+
+### RV-1 (challenger) — A second producer seam re-fragments what the consolidation just unified.
+The platform just collapsed ALL push production into one tripwire-pinned seam so no producer can
+ship a push without its feed row. Adding `ILiveActivityProducer` puts a second enqueue seam beside
+it — the next developer must know which of two seams to call. Why not a second method on
+`INotificationProducer` so there is still exactly one producer-facing surface?
+
+**Defense — REBUT.** The consolidation's invariant is *"feed row + alert push, atomically, gated by
+notification preferences"* — an activity update has **none** of those parts: no feed row (it is not
+an inbox item), no preference gating (D4, deliberate), a different queue, key, and failure domain.
+Folding it into `INotificationProducer` would make that interface's contract disjunctive ("does the
+atomic feed+push thing, OR silently something entirely different"), force the notify seam to know
+ActivityKit vocabulary, and re-couple the two channels' retry semantics at the exact boundary
+ADR-0023 keeps separate. What the consolidation actually killed was *N ad-hoc construction sites
+per message type* — and this ADR applies that same cure to the new channel: **one construction site
+per channel, each tripwire-pinned**. Two seams for two channels is the pattern, not a regression.
+
+### RV-2 (challenger) — The override handler gains a producer call the alert channel doesn't have:
+now an admin override moves the lock-screen card but sends no push — an inconsistency shipped by
+design. Either both channels fire there or neither; picking one smells arbitrary.
+
+**Defense — REBUT (asymmetry is the point).** An alert is an *event*; a Live Activity is *state*.
+Missing an event notification for an admin override is a product gap (real, pre-existing, not
+commissioned here — the PM can ticket it independently); a stateful card left saying "in progress"
+after the order was overridden to Completed is a **lie pinned to the lock screen** — the exact
+CH-D2-2 trust surface, now self-inflicted. State must converge on every transition source; events
+may be curated. Cost: one collaborator in a handler that has three.
+
+### RV-3 (challenger) — `APNS:Enabled` invents a second disable idiom; FCM disables on empty
+credential. Two conventions for the same concept is how config drifts.
+
+**Defense — REBUT with the changed fact.** FCM's empty-credential idiom worked because the secret
+and the feature arrived together. Here the secret **already exists in backend custody today**
+(delivered for ordinary push) while the iOS lane is unbuilt — under the FCM idiom, binding the
+`APNS:*` keys would light the channel the moment ops copies the secret, with zero client code to
+receive it. `Enabled=false` is the deliberate inert-ship lever the backend-first deploy depends on
+(Dependencies §3); the empty-credential no-op is *retained* as the second guard (both map to the
+same Skipped-ack semantics). Divergence acknowledged and priced: one boolean, documented in the D1
+table, mirrored nowhere else.
+
+### RV-4 (challenger) — The claim key carries a `Sequence` segment whose justifying scenario was
+just proven impossible (`targetRank <= currentRank` rejects revisits). Frozen formulas should not
+carry dead segments.
+
+**Defense — CONCEDE the rationale, KEEP the segment.** The 07-17 rationale ("admin-override
+revisit") was wrong and the body now says so. The segment stays because the formula is **frozen on
+ship** (MessageKeys doc: changing a formula is a superseding ADR) — a defensive segment costs
+nothing now; removing it and later needing it costs an ADR + a dual-read migration. Pure-function
+property intact (`Sequence` is deterministic domain state, not a timestamp).
+
+### Checked again and found sound (named — silence is not assent)
+- `Order.AddOrderStatus` still the single append seam at `Order.cs:344`; `OrderStatusTrack.Sequence`
+  deterministic (`OrderStatusTrack.cs:17`).
+- `SendPushNotificationHandler.cs` matches the draft's Mode-A/claim-first/Skipped-ack description
+  verbatim (claim at :90, Skipped-ack at :149, prune at :176) — the sibling-consumer blueprint holds.
+- `Cleansia.Infra.Clients` holds exactly Fcm/SendGrid/Stripe — `Apns/` is genuinely new; the
+  ADR-0005 contract reference is current.
+- `Device`/`DeviceController` (customer mobile host) unchanged as the alert registration surface —
+  D3's "don't overload `Device`" analysis unaffected by the drift.
+- The `AutoBindConfig` + `ConfigurationExtensions` config archetype is as assumed (verified
+  `FcmConfig.cs`, `ConfigurationExtensions.cs:17`).
+
+### Lead ruling (2026-07-19)
+RV-1/RV-2/RV-3 **DEFENDED** with evidence; RV-4 **CONCEDED + REVISED** (rationale corrected in
+place, segment retained with the honest justification). Zero blocking challenges. The 2026-07-17
+consensus **stands on the corrected body**. Status advances `draft` → **`proposed
+(ratification-ready)`**: ratification Q1 is resolved by the owner's own conduct (key delivered +
+working); Q2/Q3 remain the owner's product calls, each carrying a recommended default so
+ratification is a yes/no, not a design session. Implementation remains gated on acceptance.
+
+---
+
+## Status log
+
+- 2026-07-17 — drafted; panel round 1 (11 challenges: 5 defended, 5 conceded+revised, 1
+  conceded-with-condition); consensus; status `draft — awaiting owner ratification`.
+- 2026-07-19 — **hardened against the shipped codebase + re-verification panel round.** Corrected
+  drift: producer seam reshaped to a sibling `ILiveActivityProducer` beside the shipped
+  `INotificationProducer` consolidation (+ second tripwire); `AdminOverrideOrderStatus` reality
+  (forward-only, no Cancelled, no existing notify call) folded into D2's map and the claim-key
+  rationale; cancel-path enqueue pinned outside the refund conditional; poison queue pair added
+  (ADR-0002 D3/F3); exact `APNS:*` config keys + `IApnsConfig` placement pinned. Resolved the `.p8`
+  gate: the key is uploaded, in backend secret custody, and confirmed working for ordinary push on
+  live dev — same key serves `liveactivity`; ratification Q1 closed by conduct. Q2/Q3 stay OPEN
+  with recommended defaults. Implementation plan drafted as slices LA-1…LA-5 appended to T-0427
+  (build starts only on acceptance). Status → **`proposed (ratification-ready)`** — the owner
+  ratifies.

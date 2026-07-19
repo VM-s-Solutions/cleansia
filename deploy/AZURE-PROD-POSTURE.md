@@ -45,11 +45,15 @@ Vault references would swap a broken instance into production.
   per instance). If prod shows memory-driven recycling (502/503 + worker restarts in App Insights),
   step the plan SKU to **S2 or P0v3** rather than tuning processes.
 
-**Workflow follow-up (owner/CI step — outside this ticket's file surface):** the prod deploy jobs in
-`.github/workflows/deploy-azure.yml` must, for prod only, pass `slot-name: staging` to
-`azure/webapps-deploy@v3` and follow with
-`az webapp deployment slot swap -g rg-cleansia-weu-prod -n <site> --slot staging`. Until that lands,
-the prod pipeline still deploys straight to the production site — functional, just not zero-downtime.
+**Workflow step (authored):** the six web-host deploy jobs in `.github/workflows/deploy-azure.yml`
+now run the full slot flow whenever `inputs.env == 'prod'`: deploy the artifact to the `staging` slot
+(`slot-name: staging` on `azure/webapps-deploy@v3`), **warm it** (curl the slot's health endpoint —
+`/health` for the five APIs, `/` for the SSR since the Node host has no health probe — retrying up to
+5 minutes and FAILING the job rather than swapping a cold/broken slot), then
+`az webapp deployment slot swap … --slot staging --target-slot production`. The SSR's startup command
+is set on the staging slot for prod (`appCommandLine` swaps with the slot). Dev keeps deploying
+straight to the production site (B-series has no slots — path unchanged), and the Functions host keeps
+its slotless container-set + restart deploy (the queue double-consumption rule above).
 
 ## 2. Autoscale (`autoscaleEnabled`, bounds)
 

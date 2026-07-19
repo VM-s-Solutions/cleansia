@@ -511,6 +511,74 @@
         }
       }
     },
+    "address_picker_location_denied": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro vycentrování mapy je potřeba povolit polohu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location permission needed to center the map."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для центрирования карты нужно разрешение на геолокацию."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pre vycentrovanie mapy je potrebné povoliť polohu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для центрування карти потрібен дозвіл на геолокацію."
+          }
+        }
+      }
+    },
+    "address_picker_location_unavailable": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Polohu se nepodařilo zjistit. Zkuste to znovu nebo špendlík umístěte ručně."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't get your location. Try again or move the pin manually."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось определить местоположение. Попробуйте снова или поставьте булавку вручную."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Polohu sa nepodarilo zistiť. Skúste to znova alebo umiestnite špendlík ručne."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося визначити місцезнаходження. Спробуйте ще раз або поставте шпильку вручну."
+          }
+        }
+      }
+    },
     "address_picker_looking_up": {
       "localizations": {
         "cs": {
@@ -541,6 +609,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Пошук…"
+          }
+        }
+      }
+    },
+    "address_picker_my_location": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moje poloha"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My location"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Моё местоположение"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moja poloha"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Моє місце"
           }
         }
       }

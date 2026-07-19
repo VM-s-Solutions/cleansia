@@ -23,8 +23,13 @@ final class OrderDetailMappingTests: XCTestCase {
         item.customerPhone = "+420 777 111 222"
         item.rooms = 3
         item.bathrooms = 2
-        item.selectedServices = [ServiceDetails(name: "Standard clean"), ServiceDetails(name: "")]
-        item.selectedPackages = [PackageDetails(name: "Deep clean", price: 800)]
+        item.selectedServices = [
+            ServiceDetails(name: "Standard clean", translations: ["cs": Translation(name: "Standardní úklid")]),
+            ServiceDetails(name: "")
+        ]
+        item.selectedPackages = [
+            PackageDetails(name: "Deep clean", price: 800, translations: ["cs": Translation(name: "Hloubkový úklid")])
+        ]
         item.extras = ["inside-oven": true, "interior-windows": true, "skipped": false]
         item.notes = "Cat is friendly."
         item.specialInstructions = "Eco products only."
@@ -70,8 +75,21 @@ final class OrderDetailMappingTests: XCTestCase {
         let detail = OrderDetail(makeItem())
         XCTAssertEqual(detail.rooms, 3)
         XCTAssertEqual(detail.bathrooms, 2)
-        XCTAssertEqual(detail.services, [OrderDetailService(id: nil, name: "Standard clean")]) // blank dropped
-        XCTAssertEqual(detail.packages, [OrderDetailPackage(id: nil, name: "Deep clean", price: 800)])
+        XCTAssertEqual(detail.services, [
+            OrderDetailService(
+                id: nil,
+                name: "Standard clean",
+                translations: ["cs": Translation(name: "Standardní úklid")]
+            )
+        ]) // blank dropped
+        XCTAssertEqual(detail.packages, [
+            OrderDetailPackage(
+                id: nil,
+                name: "Deep clean",
+                price: 800,
+                translations: ["cs": Translation(name: "Hloubkový úklid")]
+            )
+        ])
         XCTAssertEqual(detail.extras, ["inside-oven", "interior-windows"]) // false dropped, sorted
     }
 

@@ -1,16 +1,15 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { AdminClient } from '@cleansia/admin-services';
+import {
+  AdminClient,
+  CreatePayConfigCommand,
+  EmployeePayConfigDto,
+  UpdatePayConfigCommand,
+} from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
-import {
-  AdminPayConfigService,
-  CreatePayConfigCommand,
-  UpdatePayConfigCommand,
-} from '../admin-pay-config.service';
-import { PayConfigListItem } from '../pay-config-management/pay-config-management.models';
 
 export interface ServiceOption {
   id: string;
@@ -43,12 +42,11 @@ export interface PayConfigFormData {
 @Injectable()
 export class PayConfigFormFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
-  private readonly payConfigService = inject(AdminPayConfigService);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
-  readonly payConfig = signal<PayConfigListItem | null>(null);
+  readonly payConfig = signal<EmployeePayConfigDto | null>(null);
   readonly loading = signal<boolean>(false);
   readonly saving = signal<boolean>(false);
   readonly services = signal<ServiceOption[]>([]);
@@ -58,8 +56,8 @@ export class PayConfigFormFacade extends UnsubscribeControlDirective {
   loadPayConfig(payConfigId: string): void {
     this.loading.set(true);
 
-    this.payConfigService
-      .getById(payConfigId)
+    this.adminClient.adminPayConfigClient
+      .details(payConfigId)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null)),
@@ -131,7 +129,8 @@ export class PayConfigFormFacade extends UnsubscribeControlDirective {
   createPayConfig(data: PayConfigFormData): void {
     this.saving.set(true);
 
-    const command: CreatePayConfigCommand = {
+    const command = new CreatePayConfigCommand({
+      employeeId: undefined,
       serviceId: data.serviceId || undefined,
       packageId: data.packageId || undefined,
       basePay: data.basePay,
@@ -142,9 +141,9 @@ export class PayConfigFormFacade extends UnsubscribeControlDirective {
       maximumPay: data.maximumPay,
       currencyId: data.currencyId,
       description: data.description || undefined,
-    };
+    });
 
-    this.payConfigService
+    this.adminClient.adminPayConfigClient
       .create(command)
       .pipe(
         takeUntil(this.destroyed$),
@@ -164,7 +163,7 @@ export class PayConfigFormFacade extends UnsubscribeControlDirective {
   updatePayConfig(payConfigId: string, data: PayConfigFormData): void {
     this.saving.set(true);
 
-    const command: UpdatePayConfigCommand = {
+    const command = new UpdatePayConfigCommand({
       payConfigId,
       basePay: data.basePay,
       extraPerRoom: data.extraPerRoom,
@@ -173,9 +172,9 @@ export class PayConfigFormFacade extends UnsubscribeControlDirective {
       minimumPay: data.minimumPay,
       maximumPay: data.maximumPay,
       description: data.description || undefined,
-    };
+    });
 
-    this.payConfigService
+    this.adminClient.adminPayConfigClient
       .update(payConfigId, command)
       .pipe(
         takeUntil(this.destroyed$),

@@ -24,6 +24,8 @@
 	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>Cleansia uses the camera to capture before and after photos of your cleaning jobs.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Cleansia uses your location to center the map on your current position when you set your address.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Cleansia needs access to your photos so you can attach before and after photos to your jobs.</string>
 	<key>UIAppFonts</key>

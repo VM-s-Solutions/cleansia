@@ -54,3 +54,37 @@ Dev work is small once these land.
 
 ## Status log
 - 2026-07-16 — filed from the remarks-sweep; blocked on owner artwork.
+- 2026-07-19 — owner will generate the artwork with OpenArt (Lottie for animation later, OpenArt first).
+  Prompt pack delivered (below) using the live brand palette: primary #0284C7 (sky600), accent #38BDF8
+  (sky400), tint #E0F2FE (sky100). Still blocked on the owner picking/generating the artwork.
+
+## OpenArt prompt pack (2026-07-19)
+
+Settings for ALL prompts: 1024×1024, flat vector / minimal style model if available; generate 4+
+variants per prompt. iOS masks its own corners — the icon must be a FULL-BLEED SQUARE: no rounded
+corners, no transparency, no drop shadows, no text.
+
+**Prompt A — minimal glyph (recommended for the app icon):**
+"Minimal flat vector app icon, a single stylized water droplet merging with a sparkle/shine
+four-point star, soft geometric shapes, deep sky blue #0284C7 background, the droplet-sparkle glyph
+in white with a light blue #38BDF8 inner accent, centered, generous padding, flat design, no
+gradients except a subtle vertical shift from #0284C7 to #38BDF8, no text, no border, no rounded
+corners, clean modern SaaS branding, dribbble style"
+
+**Prompt B — bubble motif:**
+"Flat vector logo mark for a home-cleaning service app, three overlapping soap bubbles forming an
+upward arc suggesting freshness and motion, white and #E0F2FE bubbles with #38BDF8 outlines on a
+solid #0284C7 square background, one small four-point sparkle highlight, minimal, geometric,
+perfectly centered, no text, no shadow, flat modern app icon"
+
+**Prompt C — C-lettermark (survives a rebrand poorly — only if the name stays):**
+"Minimalist letter C logo formed by a swooshing cleaning-wipe motion trail ending in a small
+sparkle, flat vector, white mark centered on a #0284C7 to #38BDF8 diagonal gradient square, bold
+rounded terminals, no text besides the C shape, no border, modern fintech-grade simplicity"
+
+**Negative prompt (all):** "text, words, letters (except prompt C's mark), photorealistic, 3D render,
+skeuomorphic, drop shadow, rounded corners, border, frame, watermark, busy details, hands, people"
+
+Wordmark: generate separately or set the existing Poppins-Bold "Cleansia" text in white — do NOT ask
+the generator for text (it garbles type). Launch screen = the chosen glyph centered on the
+#0284C7→#38BDF8 gradient (matches the shipped SplashBrandingView).

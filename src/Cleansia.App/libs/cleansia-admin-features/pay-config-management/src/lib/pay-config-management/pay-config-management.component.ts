@@ -21,9 +21,9 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Subject, takeUntil } from 'rxjs';
+import { EmployeePayConfigDto } from '@cleansia/admin-services';
 import { PayConfigManagementFacade } from './pay-config-management.facade';
-import { PayConfigListItem, getPayConfigTableDefinition } from './pay-config-management.models';
-import { AdminPayConfigService } from '../admin-pay-config.service';
+import { getPayConfigTableDefinition } from './pay-config-management.models';
 
 @Component({
   selector: 'cleansia-admin-pay-config-management',
@@ -40,7 +40,7 @@ import { AdminPayConfigService } from '../admin-pay-config.service';
   ],
   templateUrl: './pay-config-management.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [PayConfigManagementFacade, ConfirmationService, AdminPayConfigService],
+  providers: [PayConfigManagementFacade, ConfirmationService],
 })
 export class PayConfigManagementComponent implements AfterViewInit, OnDestroy {
   private readonly router = inject(Router);
@@ -48,8 +48,8 @@ export class PayConfigManagementComponent implements AfterViewInit, OnDestroy {
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  payConfigColumns!: TableColumn<PayConfigListItem>[];
-  payConfigActions!: TableAction<PayConfigListItem>[];
+  payConfigColumns!: TableColumn<EmployeePayConfigDto>[];
+  payConfigActions!: TableAction<EmployeePayConfigDto>[];
 
   private destroy$ = new Subject<void>();
 
@@ -92,11 +92,11 @@ export class PayConfigManagementComponent implements AfterViewInit, OnDestroy {
     this.facade.navigateToCreate();
   }
 
-  editPayConfig(payConfig: PayConfigListItem): void {
+  editPayConfig(payConfig: EmployeePayConfigDto): void {
     this.facade.navigateToEdit(payConfig);
   }
 
-  confirmDelete(payConfig: PayConfigListItem): void {
+  confirmDelete(payConfig: EmployeePayConfigDto): void {
     this.confirmationService.confirm({
       message: this.translate.instant('pages.pay_config_management.delete_confirm'),
       header: this.translate.instant('pages.pay_config_management.delete'),

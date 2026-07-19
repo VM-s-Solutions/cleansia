@@ -1,2 +1,3 @@
 "NSCameraUsageDescription" = "Cleansia использует камеру для съёмки фотографий до и после уборки.";
 "NSPhotoLibraryUsageDescription" = "Cleansia требуется доступ к вашим фотографиям, чтобы вы могли прикреплять к заказам фото до и после уборки.";
+"NSLocationWhenInUseUsageDescription" = "Cleansia использует ваше местоположение, чтобы центрировать карту на вашей текущей позиции при вводе адреса.";

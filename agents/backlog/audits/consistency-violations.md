@@ -252,3 +252,10 @@ remove before PROD.
 - Handler fetch-and-guard (`if (x is null) return Failure`) on Update/Delete: the canonical guard at
   point-of-use, **not** redundant validation (B4).
 - Customer-app vs partner-app notification storage difference (Room in partner only): intentional.
+- **F12 — employee-management C3 baseline (registered 2026-07-19, round-3 review):** 7 pre-existing
+  `.subscribe()`-without-`takeUntil(this.destroyed$)` hits in
+  `libs/cleansia-admin-features/employee-management`: `employee-detail.facade.ts:153,205`,
+  `employee-documents.facade.ts:138,155,175`, `employee-management.facade.ts:188,256`. Predate the
+  T-0295 drill-in round (that diff touched only `employee-detail.component.{ts,html}` — verified via
+  `git diff master`). Treat as this baseline, not new debt, until a canonicalization ticket sweeps
+  the lib; line numbers may drift with unrelated edits — match by facade + subscription site.

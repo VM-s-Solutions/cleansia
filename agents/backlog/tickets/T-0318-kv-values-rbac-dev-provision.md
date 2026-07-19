@@ -1,11 +1,11 @@
 ---
 id: T-0318
 title: OWNER — Key Vault values + RBAC grants + run/approve the first dev az deployment
-status: blocked
+status: done
 size: M
 owner: pm
 created: 2026-06-23
-updated: 2026-06-23
+updated: 2026-07-19
 depends_on: [T-0315, T-0316, T-0317]
 blocks: [T-0320]
 stories: []
@@ -33,14 +33,14 @@ enabler.
 
 ## Acceptance criteria
 
-- [ ] **AC1 — Key Vault secret values populated.** The owner populates the dev Key Vault secrets the
+- [x] **AC1 — Key Vault secret values populated.** The owner populates the dev Key Vault secrets the
   Bicep references by name: the **DB connection string**, **`Jwt--Key`**, **Stripe TEST keys** (never
   live), **SendGrid** key, **Sentry** DSN, **Storage** connection string, **Mapbox** token. No value is
   committed to the repo (the Bicep carries names only).
-- [ ] **AC2 — RBAC grants applied.** The CI principal is granted **Key Vault Secrets Officer**; the MI
+- [x] **AC2 — RBAC grants applied.** The CI principal is granted **Key Vault Secrets Officer**; the MI
   role assignments the Bicep declares (each host MI = Secrets User; Storage data roles; AcrPull) are in
   place.
-- [ ] **AC3 — First dev provision run/approved.** The owner runs (or approves the workflow's `provision`
+- [x] **AC3 — First dev provision run/approved.** The owner runs (or approves the workflow's `provision`
   job which runs) `az deployment group create --resource-group rg-cleansia-weu-dev --parameters
   weu.dev.bicepparam` and it completes — the five API hosts + SSR + 2 SWAs + Functions(ACR) + Postgres +
   Storage + Key Vault + App Insights exist in `rg-cleansia-weu-dev`.
@@ -74,6 +74,18 @@ T-0320's smoke confirms the env is healthy.
   `security_touching: true` (secret values + RBAC); `manual_steps: [kv-secret-values, rbac-grants,
   az-deployment]`. **Held until the owner confirms the dev provision is complete.** Surfaced on the OWNER
   PROVISIONING CHECKLIST relayed to the owner.
+- 2026-07-19 — blocked → **done** (reconciled by backend — **owner completed the dev provision weeks
+  ago**; the ticket record was stale; his iPhone runs against DEV). Live-host evidence (2026-07-19):
+  all five API hosts return **200 "Healthy"** at `/health` (`api-cleansia-{partner,admin,customer,
+  partner-mobile,customer-mobile}-weu-dev.azurewebsites.net`) — the health checks pass only when the
+  hosts' Key Vault references RESOLVE, which proves the KV values exist AND the MI Secrets User grants
+  are in place (AC1+AC2); the SSR (`web-cleansia-customer-weu-dev`) returns 200; a bad-credential
+  `POST /api/Auth/Login` on both mobile hosts returns a 400 business error — a full pipeline + live
+  Postgres round-trip. The hosts existing at all = the first provision completed (AC3). Note: the
+  Functions host root returns 503 (tracked on T-0320's smoke results, not a provision gap — the
+  resource exists and receives container deploys).
 
 ## Review
 <!-- no agent work product — this is an owner provisioning step; verified by the owner confirming the dev env is provisioned -->
+- 2026-07-19 backend: reconciled to reality — owner-completed; live-host evidence in the status log
+  and the full smoke record on T-0320.

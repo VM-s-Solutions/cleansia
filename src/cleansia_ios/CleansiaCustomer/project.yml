@@ -88,6 +88,7 @@ targets:
         STRIPE_PUBLISHABLE_KEY: $(STRIPE_PUBLISHABLE_KEY)
         NSCameraUsageDescription: Cleansia uses the camera so you can attach photo evidence to a dispute.
         NSPhotoLibraryUsageDescription: Cleansia needs access to your photos so you can attach photo evidence to a dispute.
+        NSLocationWhenInUseUsageDescription: Cleansia uses your location to center the map on your current position when you set your address.
         CFBundleURLTypes:
           - CFBundleURLSchemes:
               - $(GID_REVERSED_CLIENT_ID)

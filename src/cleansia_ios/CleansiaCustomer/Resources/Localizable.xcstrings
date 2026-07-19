@@ -841,6 +841,111 @@
         }
       }
     },
+    "address_picker_my_location" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moje poloha"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My location"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Моё местоположение"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moja poloha"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Моє місцеположення"
+          }
+        }
+      }
+    },
+    "address_picker_my_location_denied" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Přístup k poloze byl zamítnut. Povolte ho v Nastavení."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location permission denied. Enable it in Settings to use My location."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступ к местоположению запрещён. Включите его в Настройках."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prístup k polohe bol zamietnutý. Povoľte ho v Nastaveniach."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступ до місцезнаходження заборонено. Увімкніть його в Налаштуваннях."
+          }
+        }
+      }
+    },
+    "address_picker_my_location_unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Polohu se nepodařilo získat. Zkontrolujte, zda je zapnuté GPS, a zkuste to znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't get your location. Make sure GPS is on and try again."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось получить местоположение. Убедитесь, что GPS включён, и попробуйте снова."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Polohu sa nepodarilo získať. Skontrolujte, či je zapnuté GPS, a skúste to znova."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося отримати місцеположення. Перевірте, чи увімкнено GPS, і спробуйте знову."
+          }
+        }
+      }
+    },
     "address_picker_no_results" : {
       "extractionState" : "stale",
       "localizations" : {

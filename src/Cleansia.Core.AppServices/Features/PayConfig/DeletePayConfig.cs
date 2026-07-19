@@ -43,8 +43,8 @@ public class DeletePayConfig
             var config = await _payConfigRepository.GetByIdAsync(payConfigId, cancellationToken);
             if (config == null) return false;
 
-            // Check if any order pays were calculated using this config
-            // This is a simple check - in reality you might want to track which config was used
+            // Deliberately coarse: pay rows don't record which config produced them, so ANY
+            // existing order pay blocks deletion rather than guessing.
             var hasOrderPays = await _orderEmployeePayRepository.GetAll()
                 .AnyAsync(cancellationToken);
 

@@ -1,13 +1,11 @@
 namespace Cleansia.Core.AppServices.Features.Dashboard.DTOs;
 
 public record DashboardStatsDto(
-    // ─── Headline counts ───
     int AvailableOrdersCount,
     int MyActiveOrdersCount,
     int ThisMonthCompletedOrders,
     int LastMonthCompletedOrders,
 
-    // ─── Money snapshots (mobile dashboard) ───
     // Today / week / last-month / current-pay-period — the four temporal
     // slices the cleaner reads when they open the app.
     decimal TodayEarnings,
@@ -17,7 +15,6 @@ public record DashboardStatsDto(
     decimal LastMonthEarnings,
     decimal CurrentPeriodEarnings,
 
-    // ─── Pay-period context ───
     // Drives the dashboard's pay-period progress bar + "Next payout: …" line.
     // Nullable so the field stays valid for accounts not yet attached to an
     // active period.
@@ -25,7 +22,6 @@ public record DashboardStatsDto(
     DateTime? CurrentPayPeriodEnd,
     DateTime? NextPayoutDate,
 
-    // ─── Quality signal ───
     // Average across all OrderReviews where the rated order had this
     // employee assigned. Null when the cleaner has never been reviewed.
     double? AverageRating,
@@ -33,7 +29,6 @@ public record DashboardStatsDto(
 
     string? LatestInvoiceStatus,
 
-    // ─── Display currency ───
     // ISO code of the employee's preferred currency (e.g. "CZK", "EUR").
     // Clients use this to format any of the money fields on this DTO —
     // device locale alone is wrong (a Czech cleaner on a US-locale

@@ -1,11 +1,11 @@
 ---
 id: T-0423
 title: "iOS — tapping an order notification from a COLD launch is dropped (lands on Home instead of the order)"
-status: proposed
+status: done
 size: S
 owner: ios
 created: 2026-07-16
-updated: 2026-07-16
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -54,3 +54,7 @@ is assigned:
 
 ## Status log
 - 2026-07-16 — filed from the remarks-sweep cold-launch root cause.
+- 2026-07-19 — **closed as already shipped** — the exact specced fix landed in `4ab99d80` (PR #120):
+  Core `PushTapBuffer<Destination>` (main-actor, buffer-before-`onTap`, flush-on-`didSet`, latest-wins)
+  wired in BOTH `CustomerAppDelegate` and `PartnerAppDelegate`, consumed by both apps' SwiftUI layers.
+  AC3 pinned by the 4 `PushTapBufferTests`. The ticket row was stale, not the fix.

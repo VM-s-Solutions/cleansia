@@ -217,8 +217,13 @@ the type name is the label by default, or freeze it with `[AuditAction("admin.us
 ResourceType="AdminUser")]` on the `Command` record (rename-proof; `Sensitive=true` for the
 before/after subset; `Audited=false` to opt a noisy command out). The five sensitive money/state
 handlers additionally push a typed, pre-redacted snapshot to scoped `IAuditContext.RecordChange(...)` —
-the behavior never computes a diff or references a domain type (T-0284). Never set an
-`AdminActionAudit` to `Modified`/`Deleted` (append-only, init-only).
+the behavior never computes a diff or references a domain type (T-0284). `RecordChange` is also the
+mechanism when the correct resource id is NOT on the command — the employee-affecting admin actions
+(`employee.approve/reject/update/availability.update`, T-0436) key their row on the loaded
+`employee.UserId` (the drill-in subject), never the `Employee.Id` the command carries; when the changed
+values are themselves the subject's PII (profile edit), the snapshot is ids-only, before == after
+(mirrors `gdpr.user.delete`). Never set an `AdminActionAudit` to `Modified`/`Deleted` (append-only,
+init-only).
 
 ## Entities (from `Core.Domain/Common/`)
 

@@ -325,7 +325,13 @@ Production uses the EF Core migrations bundle, built and executed in the CI/CD p
       --self-contained
 
 - name: Apply migrations
-  run: ./efbundle --connection "${{ secrets.DB_CONNECTION_STRING }}"
+  run: |
+    # The connection string comes from Key Vault (the same secret the runtime hosts resolve),
+    # so a password rotation touches one place.
+    DB_CONNECTION_STRING="$(az keyvault secret show \
+      --vault-name kv-cleansia-<region>-<env> \
+      --name ConnectionStrings--cleansia-db --query value -o tsv)"
+    ./efbundle --connection "$DB_CONNECTION_STRING"
 ```
 
 ### Creating a New Migration

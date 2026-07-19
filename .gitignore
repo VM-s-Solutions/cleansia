@@ -524,3 +524,4 @@ src/Cleansia.App/apps/cleansia.app/src/environments/environment.ts
 
 # dotnet-ef on macOS emits a literal-backslash build-host dir (not bin/Debug)
 **/*bin\\Debug*/
+graphify-out/

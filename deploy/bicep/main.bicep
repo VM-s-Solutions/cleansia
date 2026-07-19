@@ -100,6 +100,9 @@ param customDomains object = {}
 @description('Set true ONLY after the Key Vault secret Fcm--ServiceAccountJson exists — it wires FCM__ServiceAccountJson onto the Functions host. Default false keeps the push dispatcher in its clean disabled no-op instead of dead-lettering on an unresolvable KV reference.')
 param fcmSecretProvisioned bool = false
 
+@description('Set true ONLY after the Key Vault secrets Fiscal--CzechEet2--ApiKey and Fiscal--CzechEet2--CertificatePassword exist — it swaps the two empty fiscal placeholder app settings for Key Vault references (same shape as fcmSecretProvisioned). Default false keeps the settings as literal empty strings: a KV reference to a missing secret does NOT degrade to empty — the app receives the raw reference string as the config value.')
+param fiscalSecretProvisioned bool = false
+
 // ---------------------------------------------------------------------------------------------------
 // Prod reliability posture (T-0359). Every knob defaults to the dev value, so a dev deploy with the
 // unchanged weu.dev.bicepparam is behavior-identical; weu.prod.bicepparam flips them. Full rationale,
@@ -423,19 +426,31 @@ var stripeSettings = {
 }
 
 // Fiscal (Czech EET) config the app binds. Disabled in dev (Fiscal:CzechEet2:Enabled=false), so these
-// are empty placeholders wired for completeness — the section binds without gaps and enabling fiscal
-// later is a matter of supplying the values (the sensitive ones via KV/CI at that point). No live
-// fiscal secret is committed.
-var fiscalSettings = {
-  Fiscal__CzechEet2__Enabled: 'false'
-  Fiscal__CzechEet2__ApiUrl: ''
-  Fiscal__CzechEet2__ApiKey: ''
-  Fiscal__CzechEet2__CertificatePath: ''
-  Fiscal__CzechEet2__CertificatePassword: ''
-  Fiscal__CzechEet2__TaxpayerIdentifier: ''
-  Fiscal__CzechEet2__BusinessPremiseId: ''
-  Fiscal__CzechEet2__CashRegisterId: ''
-}
+// are empty placeholders wired for completeness — the section binds without gaps. The two SECRET
+// fields (ApiKey, CertificatePassword) are param-gated exactly like fcmSettings: while
+// fiscalSecretProvisioned is false they stay the literal empty strings (unchanged dev behavior);
+// once the Key Vault secrets exist and the flag flips, they become KV references — so enabling
+// fiscal can never route a live secret through a Bicep literal. The gate matters because an
+// unresolvable KV reference hands the app the raw reference string, not an empty value.
+var fiscalSettings = union(
+  {
+    Fiscal__CzechEet2__Enabled: 'false'
+    Fiscal__CzechEet2__ApiUrl: ''
+    Fiscal__CzechEet2__CertificatePath: ''
+    Fiscal__CzechEet2__TaxpayerIdentifier: ''
+    Fiscal__CzechEet2__BusinessPremiseId: ''
+    Fiscal__CzechEet2__CashRegisterId: ''
+  },
+  fiscalSecretProvisioned
+    ? {
+        Fiscal__CzechEet2__ApiKey: kvRef(keyVaultUri, 'Fiscal--CzechEet2--ApiKey')
+        Fiscal__CzechEet2__CertificatePassword: kvRef(keyVaultUri, 'Fiscal--CzechEet2--CertificatePassword')
+      }
+    : {
+        Fiscal__CzechEet2__ApiKey: ''
+        Fiscal__CzechEet2__CertificatePassword: ''
+      }
+)
 
 // ---------------------------------------------------------------------------------------------------
 // The five API App Services — the reusable appService module, once per host (ADR-0015 D1/D2).
@@ -640,9 +655,10 @@ module roleAssignments 'modules/roleAssignments.bicep' = {
 }
 
 // Bicep-DERIVABLE Key Vault secrets — values computed from resources this deployment creates (the
-// storage key, the Postgres FQDN + password param, deterministic JWT issuer/audience), so the owner
-// no longer hand-populates them. The 6 EXTERNAL secrets (Jwt--Key, Stripe--*, SendGrid, Sentry, Mapbox)
-// are NOT here — a CI step pushes those from the dev-weu GitHub-Environment secrets (ADR-0015 D4).
+// storage key, the Postgres FQDN + password param), so the owner no longer hand-populates them. The
+// EXTERNAL secrets (Jwt--Key, Stripe--*, SendGrid, Sentry, Mapbox) are NOT here — a CI step pushes
+// those from the dev-weu GitHub-Environment secrets (ADR-0015 D4). JWT issuer/audience are
+// deliberately NOT written either — see the rationale in modules/derivedSecrets.bicep.
 module derivedSecrets 'modules/derivedSecrets.bicep' = {
   name: 'derivedSecrets'
   params: {
@@ -651,7 +667,6 @@ module derivedSecrets 'modules/derivedSecrets.bicep' = {
     postgresFqdn: postgres.outputs.fullyQualifiedDomainName
     postgresAdministratorLogin: postgresAdministratorLogin
     postgresAdministratorPassword: postgresAdministratorPassword
-    jwtIssuer: 'https://${apiAppServices[0].outputs.defaultHostName}'
   }
 }
 
@@ -671,6 +686,7 @@ module alerts 'modules/alerts.bicep' = if (!empty(alertEmail)) {
     region: region
     alertEmail: alertEmail
     siteNames: concat(apiSiteNames, [ssrSiteName])
+    functionsSiteName: 'func-cleansia-${region}-${env}'
     postgresServerName: 'pg-cleansia-${region}-${env}'
     appInsightsName: 'appi-cleansia-${region}-${env}'
     tags: commonTags
@@ -680,6 +696,7 @@ module alerts 'modules/alerts.bicep' = if (!empty(alertEmail)) {
     ssr
     postgres
     appInsights
+    functionApp
   ]
 }
 

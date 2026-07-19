@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Employees;
 
+[AuditAction("employee.approve", ResourceType = "User")]
 public class ApproveEmployee
 {
     public class Validator : AbstractValidator<Command>
@@ -73,10 +75,15 @@ public class ApproveEmployee
 
     public record Response(string EmployeeId, DateTimeOffset ApprovedAt);
 
+    // Keyed on the USER id (the audited subject the employee drill-in filters on), never the Employee
+    // id. The admin's free-text notes are excluded — they could carry subject PII.
+    public record ContractSnapshot(string UserId, string EmployeeId, ContractStatus Status, string? WorkCountryId);
+
     public class Handler(
         IEmployeeRepository employeeRepository,
         IUserRepository userRepository,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        IAuditContext auditContext)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -111,8 +118,17 @@ public class ApproveEmployee
                     BusinessErrorMessage.EmployeeProfileIncomplete));
             }
 
+            var statusBefore = employee.ContractStatus;
+            var workCountryBefore = employee.WorkCountryId;
+
             employee.AssignWorkCountry(command.WorkCountryId);
             employee.Approve(adminUser.Id, command.Notes);
+
+            auditContext.RecordChange(
+                "User",
+                employee.UserId,
+                new ContractSnapshot(employee.UserId, employee.Id, statusBefore, workCountryBefore),
+                new ContractSnapshot(employee.UserId, employee.Id, employee.ContractStatus, employee.WorkCountryId));
 
             return BusinessResult.Success(new Response(employee.Id, employee.ApprovedAt!.Value));
         }

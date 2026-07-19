@@ -141,6 +141,11 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
       // visibility timeout and come back with DequeueCount > 1. Only Consumption plans get an external
       // scale controller; on this shared B2 the warm host IS the queue scaler.
       alwaysOn: true
+      // The GET /api/health probe (HealthFunction). App Service pings it and RECYCLES an instance that
+      // returns non-200 — self-healing for the class of failure behind the 2026-07-18 outage (host up but
+      // a dependency down), and it exposes the HealthCheckStatus metric the alerts module watches. Points
+      // at the app's only HTTP route; timers/queues are unaffected.
+      healthCheckPath: '/api/health'
       // Pull the image from ACR using the Function App's managed identity (AcrPull granted in
       // roleAssignments.bicep). No registry admin user, no registry password in config.
       acrUseManagedIdentityCreds: true

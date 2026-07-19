@@ -35,11 +35,11 @@ param createEmptySecretPlaceholders bool = false
 
 // Secret NAMES the platform reads (ADR-0015 D4 inventory). Values are owner-populated post-deploy
 // via the portal / `az keyvault secret set` or a Secrets-Officer CI step. NO value is ever committed.
+// Jwt--Issuer / Jwt--Audience are NOT in this inventory: no app setting references them — the hosts
+// validate with the code-side issuer fallback + constant audiences (see modules/derivedSecrets.bicep).
 var secretNames = [
   'ConnectionStrings--cleansia-db'
   'Jwt--Key'
-  'Jwt--Issuer'
-  'Jwt--Audience'
   'Csrf--Secret'
   'Stripe--SecretKey'
   'Stripe--WebhookSecret'

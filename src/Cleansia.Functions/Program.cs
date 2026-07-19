@@ -1,10 +1,8 @@
 using System.Reflection;
 using Cleansia.Config;
+using Cleansia.Config.Health;
 using Cleansia.Core.AppServices.Authentication;
-using Cleansia.Core.AppServices.Features.DataRetention;
-using Cleansia.Core.AppServices.Services;
-using Cleansia.Core.AppServices.Services.Interfaces;
-using Cleansia.Functions.Core.Handlers;
+using Cleansia.Functions.Core;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,55 +37,14 @@ var host = new HostBuilder()
         // tokens but DI still validates the ctor at startup.
         services.AddSingleton<IHostAudienceProvider>(new HostAudienceProvider("cleansia.functions"));
 
-        services.AddScoped<IPayPeriodBackgroundService, PayPeriodBackgroundService>();
-        services.AddScoped<IPeriodReminderBackgroundService, PeriodReminderBackgroundService>();
-        services.AddScoped<INewJobsDigestService, NewJobsDigestService>();
-        services.AddScoped<IDataRetentionBackgroundService, DataRetentionBackgroundService>();
-        services.AddScoped<IRefreshTokenCleanupService, RefreshTokenCleanupService>();
+        // The GET /api/health probe body (HealthFunction is its thin HTTP shell). Scoped — it resolves
+        // the scoped CleansiaDbContext for its database probe. Stays here (a Cleansia.Config type the
+        // Functions.Core registration extension deliberately doesn't reference).
+        services.AddScoped<FunctionsHealthCheck>();
 
-        // ADR-0002 D5 step 1 — the testable consumer bodies live in
-        // Cleansia.Functions.Core. The [Function] trigger shells (Functions/*.cs) stay in this
-        // Exe so the Worker SDK source-gen still discovers all 16 triggers, and resolve their
-        // Core handler via DI. Scoped because the handlers pull scoped repos / IUnitOfWork.
-        services.AddScoped<GenerateReceiptHandler>();
-        services.AddScoped<GenerateInvoiceHandler>();
-        services.AddScoped<SendPushNotificationHandler>();
-        services.AddScoped<SendEmailHandler>();
-        services.AddScoped<CalculateOrderPayHandler>();
-        services.AddScoped<SendSitewidePromoFanoutHandler>();
-        services.AddScoped<PayPeriodTimerHandler>();
-        services.AddScoped<DataRetentionTimerHandler>();
-        services.AddScoped<PeriodReminderTimerHandler>();
-        services.AddScoped<RetryFailedFiscalRegistrationsHandler>();
-        // ADR-0002 D3.4 — the dispatch reconciliation timer body (sibling to
-        // RetryFailedFiscalRegistrations; the [TimerTrigger] shell is FiscalReconciliationFunction).
-        services.AddScoped<FiscalReconciliationTimerHandler>();
-        // The single dedicated outbox drainer body. This host is the ONE place the outbox is drained
-        // (the [TimerTrigger] singleton shell is OutboxDrainerFunction); the host still keeps the
-        // post-commit dispatch behavior so an in-Function command writes a durable row.
-        services.AddScoped<OutboxDrainerTimerHandler>();
-        // The outbox retention prune body (deletes already-terminal Dispatched outbox / old processed-inbox
-        // rows; the [TimerTrigger] shell is PruneOutboxFunction). Pure table-growth hygiene.
-        services.AddScoped<PruneOutboxTimerHandler>();
-        services.AddScoped<AutoCancelStaleRecurringOrdersHandler>();
-        services.AddScoped<CleanupStalePendingOrdersHandler>();
-        services.AddScoped<MaterializeRecurringBookingsHandler>();
-        services.AddScoped<RefreshTokenCleanupTimerHandler>();
-        services.AddScoped<SendMembershipLifecycleNotificationsHandler>();
-        services.AddScoped<SendRecurringOrderRemindersHandler>();
-        services.AddScoped<SendNewJobsDigestTimerHandler>();
-        services.AddScoped<ExpireStaleReferralsHandler>();
-
-        // ADR-0002 D3 (F3) — the per-queue -poison consumers. Each [QueueTrigger]
-        // "<queue>-poison" shell (Functions/*PoisonFunction.cs) resolves its Core handler here; the
-        // handler records a durable DeadLetter row (IDeadLetterStore) + LogError (alert) + acks. The
-        // store itself (IDeadLetterStore) is registered in AddCoreBindings → AddRepositories.
-        services.AddScoped<GenerateReceiptPoisonHandler>();
-        services.AddScoped<GenerateInvoicePoisonHandler>();
-        services.AddScoped<NotificationsDispatchPoisonHandler>();
-        services.AddScoped<SitewidePromoFanoutPoisonHandler>();
-        services.AddScoped<CalculateOrderPayPoisonHandler>();
-        services.AddScoped<SendEmailPoisonHandler>();
+        // The background services + every per-trigger handler — the ONE registration list, shared with
+        // FunctionsHostStartupGuardTests so a handler added but not registered fails CI, not production.
+        services.AddFunctionsProcessing();
     })
     .Build();
 

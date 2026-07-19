@@ -121,4 +121,6 @@ detail surface; adds no endpoint/authz; the route it links to is already gated).
   (`AdminDeleteUserAccount`) — so the history renders empty for any employee never GDPR-deleted. The
   AC3 status-log wording ("renders the employee's actual audited rows") overstated present coverage.
   Follow-up filed: **T-0436** (record User-typed rows from the other employee-affecting admin actions
-  so the drill-in has content).
+  so the drill-in has content). Coverage added by T-0436 (2026-07-19): `employee.approve` /
+  `employee.reject` / `employee.update` / `employee.availability.update` now each record a
+  (User, User.Id) row via `RecordChange`, so the drill-in has content for normal employees.

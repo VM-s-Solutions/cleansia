@@ -1,11 +1,11 @@
 ---
 id: T-0394
 title: "Backend — order-DETAIL service/package snapshot carries no translations, so order-detail names render frozen-English in every non-English app"
-status: in-review
+status: done
 size: M
 owner: backend
 created: 2026-07-08
-updated: 2026-07-08
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -90,3 +90,4 @@ source: phase/ios-fix2 fix-round-5 C-orders-i18n review (minor, CASE b disclosed
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (in-review → done)** — resolved-as-shipped: backend half landed in Phase/ios-fix2 #107 (ServiceDetails/PackageDetails Translations).

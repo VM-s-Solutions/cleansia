@@ -76,6 +76,7 @@ final class CustomerAppContainer: AppContainer {
 
     let geocodingService: GeocodingService = CLGeocoderGeocodingService()
     let mapProvider: MapProvider = MapKitMapProvider()
+    let serviceArea = ServiceAreaProvider(dataSource: CustomerServiceAreaDataSource())
 
     let orderClient: OrderClient
     let orderEventBus = OrderEventBus()

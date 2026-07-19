@@ -55,7 +55,8 @@ public sealed class RefreshTokenServiceLogoutChainTests : IDisposable
         jwt.SetupGet(s => s.RefreshTokenExpDays).Returns(30);
         jwt.SetupGet(s => s.RefreshTokenShortExpDays).Returns(1);
         return new RefreshTokenService(
-            new RefreshTokenRepository(ctx), ctx, jwt.Object, NullLogger<RefreshTokenService>.Instance);
+            new RefreshTokenRepository(ctx), ctx, jwt.Object, NullLogger<RefreshTokenService>.Instance,
+            TimeProvider.System);
     }
 
     private async Task SeedUsersAsync()
@@ -98,7 +99,7 @@ public sealed class RefreshTokenServiceLogoutChainTests : IDisposable
 
     private static string Hash(string raw) => new RefreshTokenService(
         Mock.Of<IRefreshTokenRepository>(), Mock.Of<Cleansia.Core.Domain.SeedWork.IUnitOfWork>(),
-        Mock.Of<IJwtSettings>(), NullLogger<RefreshTokenService>.Instance).HashToken(raw);
+        Mock.Of<IJwtSettings>(), NullLogger<RefreshTokenService>.Instance, TimeProvider.System).HashToken(raw);
 
     private async Task<RefreshToken?> ByRawAsync(string raw)
     {

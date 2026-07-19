@@ -16,6 +16,14 @@ param region string = 'weu'
 ])
 param env string
 
+@description('Ingestion sampling percentage on the component (T-0359 prod posture). Dev = 100 (no sampling; the property is omitted, matching the pre-seam shape). Prod defaults to 50 to halve ingestion cost at go-live traffic — overridable; the .NET SDK adaptive sampling layers on top.')
+@minValue(1)
+@maxValue(100)
+param samplingPercentage int = env == 'prod' ? 50 : 100
+
+@description('Log Analytics daily ingestion cap in GB (T-0359 prod posture). Dev keeps its historical 1 GB cap; prod defaults to a 5 GB runaway-cost breaker instead of the previous uncapped {}. 0 = uncapped. When the cap is hit, ingestion STOPS until the next UTC day — alerts go blind — so it is a breaker, not a budget.')
+param dailyCapGb int = env == 'prod' ? 5 : 1
+
 @description('Tags applied to every resource.')
 param tags object = {}
 
@@ -35,9 +43,9 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
     features: {
       enableLogAccessUsingOnlyResourcePermissions: true
     }
-    workspaceCapping: env == 'prod' ? {} : {
-      dailyQuotaGb: 1
-    }
+    workspaceCapping: dailyCapGb > 0 ? {
+      dailyQuotaGb: dailyCapGb
+    } : {}
   }
 }
 
@@ -51,6 +59,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
     WorkspaceResourceId: logAnalytics.id
     IngestionMode: 'LogAnalytics'
     DisableLocalAuth: false
+    SamplingPercentage: samplingPercentage == 100 ? null : samplingPercentage
     publicNetworkAccessForIngestion: 'Enabled'
     publicNetworkAccessForQuery: 'Enabled'
   }

@@ -208,16 +208,18 @@ private struct ProfileHeader: View {
     var topInset: CGFloat = 0
     let onEdit: () -> Void
 
+    @Environment(\.locale) private var locale
+
     var body: some View {
-        // Hero + a floating stats card overlapping its lip (Android parity), now
-        // fed by the real profile DTO stats (T-0392): bookings placed, money
-        // saved (formatted in the savings currency), and member-since.
+        // Hero + a floating stats card overlapping its lip (Android parity),
+        // fed by the real profile DTO stats: bookings placed, money saved
+        // (formatted in the savings currency), and member-since.
         VStack(spacing: 0) {
             HeroGradient(user: user, tier: tier, topInset: topInset, onEdit: onEdit)
             ProfileStatsCard(
                 bookings: user?.totalBookings ?? 0,
-                saved: OrdersFormat.price(user?.totalSavings ?? 0, currencyCode: user?.savingsCurrencyCode),
-                memberSince: Self.memberSince(user?.memberSince)
+                saved: ProfileStatsFormat.saved(user?.totalSavings ?? 0, currencyCode: user?.savingsCurrencyCode),
+                memberSince: ProfileStatsFormat.memberSince(user?.memberSince, locale: locale)
             )
             .padding(.horizontal, Spacing.ml)
             // Overlap must not exceed the hero's Spacing.m bottom lip, or the
@@ -225,12 +227,6 @@ private struct ProfileHeader: View {
             .offset(y: -Spacing.m)
             .padding(.bottom, -Spacing.m)
         }
-    }
-
-    /// Account-creation date → "MMM yyyy" (e.g. "Feb 2025"); em dash if unknown.
-    private static func memberSince(_ date: Date?) -> String {
-        guard let date else { return "—" }
-        return date.formatted(.dateTime.month(.abbreviated).year())
     }
 }
 

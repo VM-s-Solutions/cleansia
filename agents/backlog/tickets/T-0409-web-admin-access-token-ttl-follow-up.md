@@ -1,11 +1,11 @@
 ---
 id: T-0409
 title: "Web-admin access-token TTL follow-up (ADR-0024 A3): drop Web.Admin 1440 → 15 min — on web the TTL is the ONLY revocation bound; the admin SPA refresh path absorbs it after one interceptor fix (stale X-CSRF-Token on the 401-replay)"
-status: proposed
+status: done
 size: S
 owner: architect
 created: 2026-07-17
-updated: 2026-07-17
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -327,3 +327,4 @@ partner-web (plain SPA) can ride the admin mechanics once this flip proves out i
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → done)** — code shipped on feature/i18n-cluster-3 (merged): Web.Admin TTL 15 min + the CSRF replay-restamp fix; PROD cut-over remains gated on T-0400 custom domains (owner).

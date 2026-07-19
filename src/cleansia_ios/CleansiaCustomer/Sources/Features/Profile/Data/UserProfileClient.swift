@@ -11,7 +11,7 @@ struct CurrentUserProfile: Equatable {
     let birthDate: Date?
     let preferredLanguageCode: String?
     let isEmailConfirmed: Bool
-    // Profile hero stats (T-0392). memberSince is the account creation date;
+    // Profile hero stats. memberSince is the account creation date;
     // totalSavings is the realized money saved, in savingsCurrencyCode.
     var memberSince: Date?
     var totalBookings: Int = 0
@@ -83,7 +83,7 @@ extension UpdateCurrentUserCommand {
     }
 }
 
-private extension MyProfileDto {
+extension MyProfileDto {
     func toDomain(id: String) -> CurrentUserProfile {
         CurrentUserProfile(
             id: id,

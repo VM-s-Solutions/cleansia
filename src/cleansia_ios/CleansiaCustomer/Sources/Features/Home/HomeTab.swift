@@ -139,40 +139,56 @@ struct HomeTab: View {
                     }
                 }
                 .padding(.horizontal, Spacing.ml)
+                .transition(.opacity)
                 Spacer().frame(height: Spacing.l)
 
                 if vm.showRecurringSection {
-                    RecurringSchedulesSection(templates: vm.activeRecurring, onManage: onManageRecurring)
-                        .padding(.horizontal, Spacing.ml)
-                    Spacer().frame(height: Spacing.l)
+                    Group {
+                        RecurringSchedulesSection(templates: vm.activeRecurring, onManage: onManageRecurring)
+                            .padding(.horizontal, Spacing.ml)
+                        Spacer().frame(height: Spacing.l)
+                    }
+                    .transition(.opacity)
                 }
 
                 if !vm.popularPackages.isEmpty {
-                    PopularPackagesSection(packages: vm.popularPackages, onPackageTap: onBookPackage)
-                        .padding(.horizontal, Spacing.ml)
-                    Spacer().frame(height: Spacing.l)
+                    Group {
+                        PopularPackagesSection(packages: vm.popularPackages, onPackageTap: onBookPackage)
+                            .padding(.horizontal, Spacing.ml)
+                        Spacer().frame(height: Spacing.l)
+                    }
+                    .transition(.opacity)
                 }
 
                 if vm.showRecent {
-                    RecentBookingsSection(
-                        orders: vm.recentForDisplay,
-                        onOrderTap: onOrderClick,
-                        onSeeAll: onSeeAllOrders
-                    )
-                    .padding(.horizontal, Spacing.ml)
-                    Spacer().frame(height: Spacing.l)
+                    Group {
+                        RecentBookingsSection(
+                            orders: vm.recentForDisplay,
+                            onOrderTap: onOrderClick,
+                            onSeeAll: onSeeAllOrders
+                        )
+                        .padding(.horizontal, Spacing.ml)
+                        Spacer().frame(height: Spacing.l)
+                    }
+                    .transition(.opacity)
                 }
 
                 if let account = vm.milestoneAccount {
-                    MilestoneProgressCard(account: account)
-                        .padding(.horizontal, Spacing.ml)
-                    Spacer().frame(height: Spacing.m)
+                    Group {
+                        MilestoneProgressCard(account: account)
+                            .padding(.horizontal, Spacing.ml)
+                        Spacer().frame(height: Spacing.m)
+                    }
+                    .transition(.opacity)
                 }
 
                 SeasonalCard(onTap: onBookCleaning)
                     .padding(.horizontal, Spacing.ml)
             }
             .padding(.top, Spacing.s)
+            // One animation keyed on the section fingerprint: any late-arriving
+            // section crossfades in instead of shoving the layout down.
+            .animation(.easeInOut(duration: 0.3), value: vm.sectionVisibility)
         }
     }
 

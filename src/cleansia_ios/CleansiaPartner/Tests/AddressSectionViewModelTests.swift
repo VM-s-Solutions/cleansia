@@ -15,7 +15,11 @@ final class AddressSectionViewModelTests: XCTestCase {
     }
 
     private func makeVM() -> AddressSectionViewModel {
-        AddressSectionViewModel(client: client, snackbar: snackbar)
+        AddressSectionViewModel(
+            client: client,
+            serviceArea: ServiceAreaProvider(dataSource: PartnerServiceAreaDataSource(client: client)),
+            snackbar: snackbar
+        )
     }
 
     private func sampleAddress(isoCode: String = "cz") -> GeocodedAddress {
@@ -160,6 +164,21 @@ final class AddressSectionViewModelTests: XCTestCase {
         XCTAssertEqual(client.servicedCountriesCallCount, 2)
         XCTAssertEqual(client.addressCommand?.countryId, "sk-id")
         XCTAssertEqual(vm.serviceAreaStatus, .countryServiced)
+    }
+
+    func testSaveReusesTheLoadTimeCountriesWithoutRefetching() async {
+        client.servicedCountriesResult = .success([
+            CountryListItem(id: "cz-id", isoCode: "CZE", name: "Czechia")
+        ])
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
+        let vm = makeVM()
+        await vm.load()
+        vm.applyPick(sampleAddress())
+
+        await vm.save()
+
+        XCTAssertEqual(client.servicedCountriesCallCount, 1)
+        XCTAssertNotNil(client.addressCommand)
     }
 
     func testSaveWithUnknownCountriesNeverClaimsNotServiced() async {

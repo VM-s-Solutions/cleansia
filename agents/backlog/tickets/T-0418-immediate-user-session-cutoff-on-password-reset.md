@@ -1,11 +1,11 @@
 ---
 id: T-0418
 title: "Security — password RESET must lock the intruder out ~immediately: sibling RevokedUserDirectory (userId-keyed) fed from the persisted password_reset refresh-token rows fails any mobile access token whose iat predates the reset, within the ≤ 30 s poll bound (ADR-0027 / ADR-0026 X1)"
-status: ready
+status: done
 size: M
 owner: architect
 created: 2026-07-15
-updated: 2026-07-15
+updated: 2026-07-19
 depends_on: [T-0414]
 blocks: []
 stories: []
@@ -207,3 +207,4 @@ source: ADR-0026 verdict instruction X1 / challenger CH-13 — T-0407 makes rese
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (ready → done)** — shipped `f7c89d5e` (ADR-0027 accepted): RevokedUserDirectory on password reset.

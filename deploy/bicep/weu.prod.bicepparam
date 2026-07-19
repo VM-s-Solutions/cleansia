@@ -38,6 +38,36 @@ param postgresSkuTier = 'GeneralPurpose'
 param storageSku = 'Standard_ZRS'
 
 // ---------------------------------------------------------------------------------------------------
+// Prod reliability posture (T-0359) — the seams the dev Bicep deliberately leaves off. Every value is
+// overridable here; rationale + the flip sequences live in deploy/AZURE-PROD-POSTURE.md.
+// ---------------------------------------------------------------------------------------------------
+
+// Swap-based zero-downtime deploys: a "staging" slot on each web host (S1 supports slots; B2 does
+// not). The prod deploy workflow must target the slot + swap — see AZURE-PROD-POSTURE.md §1.
+param deploymentSlotsEnabled = true
+
+// CPU-driven scale on the shared S1 plan: 1..3 instances, +1 above 70% avg CPU / -1 below 30%.
+param autoscaleEnabled = true
+param autoscaleMinInstances = 1
+param autoscaleMaxInstances = 3
+
+// Postgres resilience. geoRedundantBackup is IMMUTABLE after server create — it must be Enabled on
+// the FIRST prod provision or never (flipping later replaces the server).
+param postgresHighAvailabilityMode = 'ZoneRedundant'
+param postgresGeoRedundantBackup = 'Enabled'
+param postgresBackupRetentionDays = 35
+
+// Nightly ACR purge: sha-tagged images older than 30 days go, the newest 10 per repo survive.
+param acrImageRetentionEnabled = true
+param acrImageRetentionDays = 30
+
+// Q-INFRA-03 (VNet + private endpoints for Postgres/Storage) is DELIBERATELY NOT flipped here — it
+// is the authored-but-owner-gated flag: enabling it cuts the CI migration path (the GitHub runner's
+// temporary firewall rule needs public access) and direct admin psql until the owner provides a
+// private path. Prerequisites + sequence: deploy/AZURE-PROD-POSTURE.md §6.
+// param privateNetworkingEnabled = true
+
+// ---------------------------------------------------------------------------------------------------
 // Postgres admin LOGIN (non-secret). The PASSWORD is supplied on the CLI at deploy time (see header).
 // ---------------------------------------------------------------------------------------------------
 

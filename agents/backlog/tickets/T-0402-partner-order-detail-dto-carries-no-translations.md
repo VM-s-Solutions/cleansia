@@ -1,11 +1,11 @@
 ---
 id: T-0402
 title: "Backend/mobile — partner order-detail DTO carries no translations (service/package names frozen-English), the partner analogue of T-0394"
-status: proposed
+status: blocked
 size: M
 owner: backend
 created: 2026-07-13
-updated: 2026-07-13
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -45,3 +45,4 @@ source: phase/ios-fix3 partner localization round — the customer T-0394 patter
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → blocked)** — backend half done `bcd375d5` (premise superseded — the wire already emits translations). REMAINING is regen-gated (owner MANUAL_STEP): partner-mobile spec re-dump + 3 partner client regens, then wire ScopeCard/mobile cards.

@@ -102,6 +102,7 @@ struct PartnerShellView: View {
                 snackbar: container.snackbar,
                 geocoding: container.geocodingService,
                 mapProvider: container.mapProvider,
+                serviceArea: container.serviceArea,
                 preferences: preferences,
                 onSignedOut: onSignedOut
             )

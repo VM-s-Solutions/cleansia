@@ -382,6 +382,8 @@
     <string name="profile_stat_favorite">Избранный</string>
     <string name="profile_stat_saved">Сохранено</string>
     <string name="profile_stat_member_since">Участник с</string>
+    <string name="profile_tier_plus">Plus</string>
+    <string name="profile_tier_regular">Обычный</string>
     <string name="profile_section_account">Учётная запись</string>
     <string name="profile_section_personal">Личное</string>
     <string name="profile_section_contact">Контакты</string>

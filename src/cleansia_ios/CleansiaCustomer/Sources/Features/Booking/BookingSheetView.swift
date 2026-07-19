@@ -8,8 +8,10 @@ struct BookingSheetView: View {
     @State private var slideResetCount = 0
     let geocoding: GeocodingService
     let mapProvider: MapProvider
+    let serviceArea: ServiceAreaProvider?
     let paymentSheet: PaymentSheetPresenting
     let orderClient: OrderClient
+    let warmOrders: @Sendable () async -> Void
     let onDismiss: () -> Void
     let onViewOrder: (String) -> Void
     let onCompleteProfile: () -> Void
@@ -20,8 +22,10 @@ struct BookingSheetView: View {
         vm: BookingViewModel,
         geocoding: GeocodingService,
         mapProvider: MapProvider,
+        serviceArea: ServiceAreaProvider? = nil,
         paymentSheet: PaymentSheetPresenting,
         orderClient: OrderClient,
+        warmOrders: @escaping @Sendable () async -> Void = {},
         onDismiss: @escaping () -> Void,
         onViewOrder: @escaping (String) -> Void = { _ in },
         onCompleteProfile: @escaping () -> Void = {}
@@ -29,8 +33,10 @@ struct BookingSheetView: View {
         self.vm = vm
         self.geocoding = geocoding
         self.mapProvider = mapProvider
+        self.serviceArea = serviceArea
         self.paymentSheet = paymentSheet
         self.orderClient = orderClient
+        self.warmOrders = warmOrders
         self.onDismiss = onDismiss
         self.onViewOrder = onViewOrder
         self.onCompleteProfile = onCompleteProfile
@@ -48,6 +54,7 @@ struct BookingSheetView: View {
                         }
                         return nil
                     },
+                    warmOrders: warmOrders,
                     onViewOrder: success.orderId.isBlank ? nil : {
                         vm.reset()
                         self.success = nil
@@ -64,6 +71,7 @@ struct BookingSheetView: View {
                     viewModel: vm,
                     geocoding: geocoding,
                     mapProvider: mapProvider,
+                    serviceArea: serviceArea,
                     slideResetTrigger: slideResetCount,
                     onLeading: {
                         if !vm.back() { onDismiss() }
@@ -127,6 +135,7 @@ private struct BookingSheetContent: View {
     @ObservedObject var viewModel: BookingViewModel
     let geocoding: GeocodingService
     let mapProvider: MapProvider
+    let serviceArea: ServiceAreaProvider?
     let slideResetTrigger: Int
     let onLeading: () -> Void
     let onContinue: () -> Void
@@ -210,7 +219,12 @@ private struct BookingSheetContent: View {
         ZStack {
             switch step {
             case 1: ServicesStep(viewModel: viewModel)
-            case 2: WhenWhereStep(viewModel: viewModel, geocoding: geocoding, mapProvider: mapProvider)
+            case 2: WhenWhereStep(
+                    viewModel: viewModel,
+                    geocoding: geocoding,
+                    mapProvider: mapProvider,
+                    serviceArea: serviceArea
+                )
             default: ConfirmStep(viewModel: viewModel)
             }
         }

@@ -133,13 +133,20 @@ final class HomeSectionsTests: XCTestCase {
         XCTAssertFalse(HomeSections.showMilestone(nil))
     }
 
-    // MARK: - firstPaintReady (HomeTab.kt:196-203)
+    // MARK: - firstPaintReady (HomeTab.kt:196-203, widened to every Home source)
 
-    func testFirstPaintReadyNeedsAllThreeSources() {
-        XCTAssertTrue(HomeSections.firstPaintReady(ordersLoaded: true, membershipReady: true, packagesReady: true))
-        XCTAssertFalse(HomeSections.firstPaintReady(ordersLoaded: false, membershipReady: true, packagesReady: true))
-        XCTAssertFalse(HomeSections.firstPaintReady(ordersLoaded: true, membershipReady: false, packagesReady: true))
-        XCTAssertFalse(HomeSections.firstPaintReady(ordersLoaded: true, membershipReady: true, packagesReady: false))
+    func testFirstPaintReadyNeedsEverySource() {
+        XCTAssertTrue(ready())
+        XCTAssertFalse(ready(ordersLoaded: false))
+        XCTAssertFalse(ready(membershipReady: false))
+        XCTAssertFalse(ready(packagesReady: false))
+        XCTAssertFalse(ready(loyaltyLoaded: false))
+    }
+
+    func testFirstPaintReadyRequiresRecurringOnlyForPlusMembers() {
+        XCTAssertFalse(ready(isPlus: true, recurringLoaded: false))
+        XCTAssertTrue(ready(isPlus: true, recurringLoaded: true))
+        XCTAssertTrue(ready(isPlus: false, recurringLoaded: false))
     }
 
     // MARK: - recentBookingTitle (HomeTab.kt:971-978 — services first, then packages, "+ N more")
@@ -209,6 +216,24 @@ final class HomeSectionsTests: XCTestCase {
         XCTAssertNotNil(formatted)
         XCTAssertFalse(formatted?.isEmpty ?? true)
         XCTAssertNil(HomeSections.orderAgainWhen(nil))
+    }
+
+    private func ready(
+        ordersLoaded: Bool = true,
+        membershipReady: Bool = true,
+        packagesReady: Bool = true,
+        loyaltyLoaded: Bool = true,
+        isPlus: Bool = false,
+        recurringLoaded: Bool = false
+    ) -> Bool {
+        HomeSections.firstPaintReady(HomeSections.FirstPaintSources(
+            ordersLoaded: ordersLoaded,
+            membershipReady: membershipReady,
+            packagesReady: packagesReady,
+            loyaltyLoaded: loyaltyLoaded,
+            isPlus: isPlus,
+            recurringLoaded: recurringLoaded
+        ))
     }
 
     private func account(nextTier: Int?, pointsToNext: Int?) -> LoyaltyAccount {

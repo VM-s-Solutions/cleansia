@@ -51,9 +51,31 @@ enum HomeSections {
         return account.nextTier != nil && account.pointsToNextTier != nil
     }
 
-    /// First-paint skeleton gate (`HomeTab.kt:196-203`).
-    static func firstPaintReady(ordersLoaded: Bool, membershipReady: Bool, packagesReady: Bool) -> Bool {
-        ordersLoaded && membershipReady && packagesReady
+    struct FirstPaintSources: Equatable {
+        let ordersLoaded: Bool
+        let membershipReady: Bool
+        let packagesReady: Bool
+        let loyaltyLoaded: Bool
+        let isPlus: Bool
+        let recurringLoaded: Bool
+    }
+
+    /// First-paint skeleton gate — Android's orders+membership+packages gate
+    /// (`HomeTab.kt:196-203`) widened to every Home source so the reveal lands
+    /// fully populated instead of shoving sections in one-by-one.
+    static func firstPaintReady(_ sources: FirstPaintSources) -> Bool {
+        sources.ordersLoaded && sources.membershipReady && sources.packagesReady
+            && sources.loyaltyLoaded && (!sources.isPlus || sources.recurringLoaded)
+    }
+
+    /// One Equatable fingerprint of the conditional sections, so the view can
+    /// key a single crossfade animation on any section appearing/disappearing.
+    struct SectionVisibility: Equatable {
+        let orderAgain: Bool
+        let recurring: Bool
+        let packages: Bool
+        let recent: Bool
+        let milestone: Bool
     }
 
     /// First service name, then first package name, "+ N more" suffix

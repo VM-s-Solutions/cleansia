@@ -100,6 +100,63 @@ param customDomains object = {}
 @description('Set true ONLY after the Key Vault secret Fcm--ServiceAccountJson exists — it wires FCM__ServiceAccountJson onto the Functions host. Default false keeps the push dispatcher in its clean disabled no-op instead of dead-lettering on an unresolvable KV reference.')
 param fcmSecretProvisioned bool = false
 
+// ---------------------------------------------------------------------------------------------------
+// Prod reliability posture (T-0359). Every knob defaults to the dev value, so a dev deploy with the
+// unchanged weu.dev.bicepparam is behavior-identical; weu.prod.bicepparam flips them. Full rationale,
+// override guidance, and the owner flip sequence: deploy/AZURE-PROD-POSTURE.md.
+// ---------------------------------------------------------------------------------------------------
+
+@description('Deploy a "staging" slot on each web host (the 5 APIs + the SSR) for swap-based zero-downtime deploys. Needs a Standard+ plan SKU (prod S1) — B-series rejects slot creation, so dev stays false. The Functions host deliberately gets NO slot: a warm staging Functions container would compete for the same queue messages as production.')
+param deploymentSlotsEnabled bool = false
+
+@description('Enable the CPU-driven autoscale rule on the shared plan. Needs Standard+ (prod S1); dev B2 stays a fixed single instance.')
+param autoscaleEnabled bool = false
+
+@description('Autoscale instance floor. 1 keeps prod cost-lean; raise to 2 for instance redundancy.')
+param autoscaleMinInstances int = 1
+
+@description('Autoscale instance ceiling. S1 allows up to 10.')
+param autoscaleMaxInstances int = 3
+
+@description('Postgres high availability. Dev = Disabled; prod = ZoneRedundant (requires the GeneralPurpose tier — Burstable rejects HA).')
+@allowed([
+  'Disabled'
+  'SameZone'
+  'ZoneRedundant'
+])
+param postgresHighAvailabilityMode string = 'Disabled'
+
+@description('Postgres geo-redundant backup. IMMUTABLE after server create — prod must set it at provision time; flipping it later forces a server replacement.')
+@allowed([
+  'Disabled'
+  'Enabled'
+])
+param postgresGeoRedundantBackup string = 'Disabled'
+
+@description('Postgres backup retention in days (7-35). Dev = 7; prod = 35.')
+@minValue(7)
+@maxValue(35)
+param postgresBackupRetentionDays int = 7
+
+@description('Enable the nightly ACR purge task (CI pushes one sha-tagged image per deploy and nothing ever deletes them). Dev may flip this on too — the accumulation bites the Basic registry in dev first.')
+param acrImageRetentionEnabled bool = false
+
+@description('ACR purge age cutoff in days (the newest 10 tags per repo always survive as rollback targets).')
+param acrImageRetentionDays int = 30
+
+@description('''
+The Q-INFRA-03 hardening seam: VNet + private endpoints for Postgres and Storage. When true it
+deploys modules/privateNetworking.bicep, VNet-integrates every App Service/Functions host, flips
+Postgres publicNetworkAccess to Disabled (the dev-accepted 0.0.0.0 allow-Azure-services rule and the
+admin-IP rule disappear with it), and sets the Storage network ACL default to Deny.
+
+DELIBERATELY LEFT false EVEN IN THE PROD PARAM FILE — a documented flag, not a default: flipping it
+breaks the CI migration path (the GitHub runner's temporary firewall rule needs public access) and
+direct admin psql until the owner provides a private path. Prerequisites + sequence:
+deploy/AZURE-PROD-POSTURE.md.
+''')
+param privateNetworkingEnabled bool = false
+
 @description('Resource tags applied to every resource.')
 param tags object = {}
 
@@ -198,6 +255,7 @@ module storage 'modules/storage.bicep' = {
     region: region
     stage: env
     skuName: storageSku
+    networkDefaultAction: privateNetworkingEnabled ? 'Deny' : 'Allow'
     tags: commonTags
   }
 }
@@ -208,6 +266,8 @@ module acr 'modules/acr.bicep' = {
     location: location
     region: region
     env: env
+    imageRetentionEnabled: acrImageRetentionEnabled
+    imageRetentionDays: acrImageRetentionDays
     tags: commonTags
   }
 }
@@ -220,9 +280,27 @@ module postgres 'modules/postgres.bicep' = {
     stage: env
     skuName: postgresSkuName
     skuTier: postgresSkuTier
+    highAvailabilityMode: postgresHighAvailabilityMode
+    geoRedundantBackup: postgresGeoRedundantBackup
+    backupRetentionDays: postgresBackupRetentionDays
+    publicNetworkAccess: privateNetworkingEnabled ? 'Disabled' : 'Enabled'
     administratorLogin: postgresAdministratorLogin
     administratorPassword: postgresAdministratorPassword
     adminIpAddress: adminIpAddress
+    tags: commonTags
+  }
+}
+
+// The Q-INFRA-03 seam, materialized only when the flag is on: VNet + private endpoints + private DNS
+// for Postgres/Storage. The app subnet id it outputs is what VNet-integrates every host below.
+module privateNetworking 'modules/privateNetworking.bicep' = if (privateNetworkingEnabled) {
+  name: 'privateNetworking'
+  params: {
+    location: location
+    region: region
+    env: env
+    postgresServerId: postgres.outputs.serverId
+    storageAccountId: storage.outputs.storageAccountId
     tags: commonTags
   }
 }
@@ -377,7 +455,10 @@ module apiAppServices 'modules/appService.bicep' = [
       appSettings: union(apiBaseSettings, fiscalSettings, host.needsStripe ? stripeSettings : {}, host.browserFacing ? corsOriginsAppSettings : {})
       corsAllowedOrigins: host.browserFacing ? browserCorsOrigins : []
       httpsOnly: true
-      alwaysOn: false
+      // Prod (S1) keeps the hosts warm; dev (B2) keeps the cost posture — an idle host may unload.
+      alwaysOn: env == 'prod'
+      stagingSlotEnabled: deploymentSlotsEnabled
+      virtualNetworkSubnetId: privateNetworkingEnabled ? privateNetworking!.outputs.appSubnetId : ''
       tags: commonTags
     }
   }
@@ -451,6 +532,9 @@ module appServicePlan 'modules/appServicePlan.bicep' = {
     region: region
     stage: env
     skuName: appServicePlanSku
+    autoscaleEnabled: autoscaleEnabled
+    autoscaleMinInstances: autoscaleMinInstances
+    autoscaleMaxInstances: autoscaleMaxInstances
     tags: commonTags
   }
 }
@@ -467,7 +551,9 @@ module ssr 'modules/appService.bicep' = {
     }
     corsAllowedOrigins: []
     httpsOnly: true
-    alwaysOn: false
+    alwaysOn: env == 'prod'
+    stagingSlotEnabled: deploymentSlotsEnabled
+    virtualNetworkSubnetId: privateNetworkingEnabled ? privateNetworking!.outputs.appSubnetId : ''
     // The Angular SSR (Node) host has no /health endpoint — disable the probe so Azure doesn't recycle it.
     healthCheckPath: ''
     tags: commonTags
@@ -517,6 +603,7 @@ module functionApp 'modules/functionApp.bicep' = {
     storageAccountName: storage.outputs.storageAccountName
     storageAccountId: storage.outputs.storageAccountId
     appInsightsConnectionString: appInsights.outputs.connectionString
+    virtualNetworkSubnetId: privateNetworkingEnabled ? privateNetworking!.outputs.appSubnetId : ''
     extraAppSettings: union(sendGridSettings, fiscalSettings, fcmSettings, {
       Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
     })
@@ -543,6 +630,11 @@ module roleAssignments 'modules/roleAssignments.bicep' = {
     appPrincipalIds: [for i in range(0, length(apiHosts)): apiAppServices[i].outputs.principalId]
     ssrPrincipalId: ssr.outputs.principalId
     functionsPrincipalId: functionApp.outputs.principalId
+    // Staging-slot MIs (empty strings when slots are off, filtered in the module) — a slot must hold
+    // the same Key Vault/Storage grants BEFORE its first swap or it would swap in unable to resolve
+    // its config.
+    apiSlotPrincipalIds: [for i in range(0, length(apiHosts)): apiAppServices[i].outputs.stagingSlotPrincipalId]
+    ssrSlotPrincipalId: ssr.outputs.stagingSlotPrincipalId
     ciPrincipalId: ciPrincipalId
   }
 }
@@ -589,6 +681,22 @@ module alerts 'modules/alerts.bicep' = if (!empty(alertEmail)) {
     postgres
     appInsights
   ]
+}
+
+// Poison-queue alerting (T-0360) — the deferred half of alerts.bicep: queue diagnostic settings into
+// the workspace + the scheduled-query rule over them, attached to the exported Action Group. Same
+// gate as alerts (no alert email = no alerting at all).
+module queueAlerts 'modules/queueAlerts.bicep' = if (!empty(alertEmail)) {
+  name: 'queueAlerts'
+  params: {
+    env: env
+    region: region
+    location: location
+    storageAccountName: storage.outputs.storageAccountName
+    logAnalyticsWorkspaceId: appInsights.outputs.logAnalyticsId
+    actionGroupId: alerts!.outputs.actionGroupId
+    tags: commonTags
+  }
 }
 
 // ---------------------------------------------------------------------------------------------------

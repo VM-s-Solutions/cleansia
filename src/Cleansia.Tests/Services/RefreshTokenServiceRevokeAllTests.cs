@@ -60,7 +60,8 @@ public sealed class RefreshTokenServiceRevokeAllTests : IDisposable
             new RefreshTokenRepository(ctx),
             ctx,
             jwt.Object,
-            NullLogger<RefreshTokenService>.Instance);
+            NullLogger<RefreshTokenService>.Instance,
+            TimeProvider.System);
     }
 
     private static RefreshToken NewToken(string id, string userId, string hash, string? deviceId)

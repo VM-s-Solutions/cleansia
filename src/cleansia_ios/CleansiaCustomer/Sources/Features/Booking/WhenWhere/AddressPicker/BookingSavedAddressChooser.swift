@@ -78,6 +78,7 @@ struct BookingSavedAddressChooserView: View {
     private let currentSavedAddressId: String?
     private let geocoding: GeocodingService
     private let mapProvider: MapProvider
+    private let serviceArea: ServiceAreaProvider?
     private let onPickSaved: (SavedAddress) -> Void
     private let onPickNew: (GeocodedAddress) -> Void
     private let onDismiss: () -> Void
@@ -94,6 +95,7 @@ struct BookingSavedAddressChooserView: View {
         currentSavedAddressId: String?,
         geocoding: GeocodingService,
         mapProvider: MapProvider,
+        serviceArea: ServiceAreaProvider? = nil,
         onPickSaved: @escaping (SavedAddress) -> Void,
         onPickNew: @escaping (GeocodedAddress) -> Void,
         onDismiss: @escaping () -> Void
@@ -102,6 +104,7 @@ struct BookingSavedAddressChooserView: View {
         self.currentSavedAddressId = currentSavedAddressId
         self.geocoding = geocoding
         self.mapProvider = mapProvider
+        self.serviceArea = serviceArea
         self.onPickSaved = onPickSaved
         self.onPickNew = onPickNew
         self.onDismiss = onDismiss
@@ -136,6 +139,7 @@ struct BookingSavedAddressChooserView: View {
             BookingAddressPickerView(
                 geocoding: geocoding,
                 mapProvider: mapProvider,
+                serviceArea: serviceArea,
                 onConfirmed: onPickNew,
                 onBack: { pane = .list }
             )

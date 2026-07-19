@@ -144,6 +144,18 @@ final class BookingViewModelTests: XCTestCase {
         XCTAssertEqual(catalog.callCount, 1)
     }
 
+    func testConcurrentLoadCatalogFetchesOnce() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.populated))
+        let vm = makeVM(catalog: catalog, scheduler: .dispatch)
+
+        async let first: Void = vm.loadCatalog()
+        async let second: Void = vm.loadCatalog()
+        _ = await (first, second)
+
+        XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.populated)
+        XCTAssertEqual(catalog.callCount, 1)
+    }
+
     func testQuoteStaysIdleWithNoSelection() async {
         let quote = FakeQuoteClient()
         let scheduler = TestScheduler.dispatch

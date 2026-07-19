@@ -30,6 +30,7 @@ final class BookingViewModel: ViewModel {
 
     var lastQuoteRequest: QuoteRequest?
     private var quoteTask: Task<Void, Never>?
+    private var catalogLoad: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -105,9 +106,19 @@ final class BookingViewModel: ViewModel {
         quoteTask?.cancel()
     }
 
+    /// Single-flight: the shell prefetch and Home's catalog task can race at
+    /// shell entry — the second caller joins the in-flight load instead of
+    /// re-fetching (which would transiently flap `catalogState` back to loading).
     func loadCatalog() async {
         if case .loaded = catalogState { return }
-        await fetchCatalog()
+        if let inFlight = catalogLoad {
+            await inFlight.value
+            return
+        }
+        let load = Task { await fetchCatalog() }
+        catalogLoad = load
+        await load.value
+        catalogLoad = nil
     }
 
     func retryCatalog() async {

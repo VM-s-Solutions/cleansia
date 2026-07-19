@@ -235,3 +235,20 @@ shared with the out-of-shell `RegistrationLock` audience state, which a shell-le
 **Verdict: the partner shell is FINAL on the stock `TabView` + per-tab `NavigationStack`s** (already
 ratified on the merits, §7.7 D1 / §7.9 / §7.12 "mirror the tree, not the mechanism"). No refactor,
 no code change, no device test. This entry closes the D2 remnant; T-0429 is closed.
+
+### Erratum ratified — 2026-07-19 (T-0379, architect)
+
+The bracketed in-body note at D3 (*"[transcription-corrected 2026-07-03: this line originally said
+64pt, but its own cited source `MainShell.kt:456-462` is `Modifier.size(74.dp)` + a 34dp icon — D3's
+copy-Android-exactly ruling governs]"*, commit `fef5745c`) is **RATIFIED as a signed erratum**, not
+reversed into a supersede. Grounds: it corrects a mis-transcribed NUMBER whose true value was already
+fixed by the ADR's own cited source and its own "copy Android exactly" ruling — no decision content
+(option, threshold, scope, alternative, rationale) changed, so a superseding ADR would carry zero
+decision value while leaving the wrong digit standing in the text readers copy from. The
+supersede-never-edit concern (that "erratum" becomes a discretionary loophole) is answered by
+bounding the class and recording the convention in `agents/backlog/adr/README.md`: an in-body
+annotation is permissible ONLY for a transcription erratum determinable from the ADR's own cited
+source, must be dated + bracketed + self-describing, and requires this architect ratification —
+anything touching meaning still demands a supersede. The dev-slice edit was procedurally out of lane
+(architect-owned artifact) but substantively correct; this signature closes it.
+— architect, 2026-07-19, T-0379 AC1.

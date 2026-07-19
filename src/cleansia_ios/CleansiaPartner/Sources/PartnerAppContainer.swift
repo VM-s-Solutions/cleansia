@@ -74,6 +74,7 @@ final class PartnerAppContainer: AppContainer {
     let cleaningChecklistStore: CleaningChecklistStore = UserDefaultsCleaningChecklistStore()
     let geocodingService: GeocodingService = CLGeocoderGeocodingService()
     let mapProvider: MapProvider = MapKitMapProvider()
+    lazy var serviceArea = ServiceAreaProvider(dataSource: PartnerServiceAreaDataSource(client: profileClient))
     let pushRegistrar: any PushRegistrar = UNUserNotificationPushRegistrar()
     let notificationFeedClient: NotificationFeedClient
     let notificationBadge: NotificationBadgeModel

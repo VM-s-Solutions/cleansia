@@ -141,6 +141,7 @@ fun MainShell(
     // snapshot without a second call.
     val profileVm: ProfileViewModel = hiltViewModel()
     val currentUser by profileVm.currentUser.collectAsStateWithLifecycle()
+    val isPlus by profileVm.isPlus.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
         if (currentUser == null) profileVm.refresh()
     }
@@ -292,6 +293,7 @@ fun MainShell(
                 )
                 MainTab.Profile -> ProfileTab(
                     user = currentUser,
+                    isPlus = isPlus,
                     onLogout = onLogout,
                     onRowClick = onProfileRow,
                 )

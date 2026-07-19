@@ -23,6 +23,12 @@ param ssrPrincipalId string = ''
 @description('System-assigned managed-identity principal id of the Functions host (Key Vault + Storage + ACR Pull). Empty string skips it.')
 param functionsPrincipalId string = ''
 
+@description('Staging-slot managed-identity principal ids of the API hosts (T-0359 slots — a slot must resolve its Key Vault references BEFORE the first swap). Empty strings (slots disabled) are filtered out.')
+param apiSlotPrincipalIds array = []
+
+@description('Staging-slot managed-identity principal id of the customer SSR host. Empty string skips it.')
+param ssrSlotPrincipalId string = ''
+
 @description('Object id of the CI/provisioning principal granted Key Vault Secrets Officer. Empty string skips it (owner may grant out of band).')
 param ciPrincipalId string = ''
 
@@ -36,10 +42,12 @@ var roleIds = {
 }
 
 // Every host MI that consumes Key Vault + Storage: the 5 API hosts, plus the SSR + Functions MIs when
-// supplied (they get the same Secrets-User + Storage data roles; Functions also gets AcrPull below).
-// The optional ids are filtered out when empty so no empty principalId reaches a role assignment.
+// supplied (they get the same Secrets-User + Storage data roles; Functions also gets AcrPull below),
+// plus the staging-slot MIs when slots are deployed. The optional ids are filtered out when empty so
+// no empty principalId reaches a role assignment.
 var optionalPrincipals = filter([ssrPrincipalId, functionsPrincipalId], id => !empty(id))
-var storageAndVaultPrincipals = concat(appPrincipalIds, optionalPrincipals)
+var slotPrincipals = filter(concat(apiSlotPrincipalIds, [ssrSlotPrincipalId]), id => !empty(id))
+var storageAndVaultPrincipals = concat(appPrincipalIds, optionalPrincipals, slotPrincipals)
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: last(split(keyVaultId, '/'))

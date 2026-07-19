@@ -146,7 +146,7 @@ Queues decouple the APIs from long-running operations (PDF generation). Each que
 Messages that fail processing 5 times are moved to the poison queue automatically by the Azure Functions runtime. Poison queue messages should be monitored and investigated.
 
 ::: warning
-Poison queue messages indicate a bug or data issue. Set up Application Insights alerts on poison queue depth to catch failures early.
+Poison queue messages indicate a bug or data issue. Alerting on them is provisioned by `deploy/bicep/modules/queueAlerts.bicep`: queue-service diagnostic settings ship `StorageWrite`/`StorageDelete` logs to Log Analytics, and a scheduled-query rule (`alert-poison-queue-cleansia-<region>-<env>`) fires on any successful `PutMessage` into a `*-poison` queue, notifying the ops Action Group.
 :::
 
 ## Azure Functions

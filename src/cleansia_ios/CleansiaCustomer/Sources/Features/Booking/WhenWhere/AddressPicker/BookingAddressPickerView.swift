@@ -27,10 +27,17 @@ struct BookingAddressPickerView: View {
     init(
         geocoding: GeocodingService,
         mapProvider: MapProvider,
+        serviceArea: ServiceAreaProvider? = nil,
         onConfirmed: @escaping (GeocodedAddress) -> Void,
         onBack: @escaping () -> Void
     ) {
-        _vm = StateObject(wrappedValue: AddressPickerViewModel(geocoding: geocoding))
+        let codesProvider: (() async -> [String]?)? = serviceArea.map { provider in
+            { await provider.servicedCountryIsoCodes() }
+        }
+        _vm = StateObject(wrappedValue: AddressPickerViewModel(
+            geocoding: geocoding,
+            servicedCountryCodesProvider: codesProvider
+        ))
         self.mapProvider = mapProvider
         self.onConfirmed = onConfirmed
         self.onBack = onBack

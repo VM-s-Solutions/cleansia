@@ -1,11 +1,11 @@
 ---
 id: T-0399
 title: "Android partner — Personal info submits a null birthDate against the backend's REQUIRED DateOnly (`validation.invalid_date` for any user without a stored birth date; birth date not required client-side)"
-status: proposed
+status: done
 size: S
 owner: android
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -47,3 +47,4 @@ source: phase/ios-fix2 iOS partner birth-date fix (owner-reported validation.inv
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → done)** — shipped `caef1854`: inline required error before save; 5-locale key; 69/69.

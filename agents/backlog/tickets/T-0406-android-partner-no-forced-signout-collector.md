@@ -1,11 +1,11 @@
 ---
 id: T-0406
 title: "Android partner — no collector of SessionManager forced-signout events: a token-dead device stays on its current screen instead of routing to login"
-status: proposed
+status: done
 size: S
 owner: android
 created: 2026-07-15
-updated: 2026-07-15
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -38,3 +38,4 @@ source: revoke-device-session-audit (wf_88de1ca0) — byproduct finding while in
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → done)** — shipped `26d2d6df`: SessionViewModel + nav-root collector; all sign-out navigations graph-clearing.

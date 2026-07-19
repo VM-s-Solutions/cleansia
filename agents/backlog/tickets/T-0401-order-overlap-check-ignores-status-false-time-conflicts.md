@@ -1,11 +1,11 @@
 ---
 id: T-0401
 title: "Backend — HasOverlappingOrderAsync counts assigned orders regardless of status, so stale/blocked orders cause false order.time_conflict rejections on TakeOrder"
-status: proposed
+status: done
 size: S
 owner: backend
 created: 2026-07-12
-updated: 2026-07-12
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -40,3 +40,4 @@ source: phase/ios-fix3 round-9 gate (empirical — every take but one was reject
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → done)** — shipped `a415a3d2`: non-terminal assigned orders block; fail-closed null fallback.

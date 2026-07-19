@@ -107,9 +107,11 @@ floor. Columns: ☐ Partner · ☐ Customer (mark N/A where an item is one-app-o
       native `TextField`/`SecureField` (same labels + error strings ×5); Android system-back → swipe-back +
       `NavigationStack` back; Coil `AsyncImage` → SwiftUI `AsyncImage`/Kingfisher; Material `Snackbar` → native
       toast on the same `SnackbarController` bus; Material `AlertDialog` → `.alert`/`.confirmationDialog`.
-      **The shell bottom bar is NOT a swap point:** the Android floating pill bar (+ customer center FAB) is
-      **branding** → the custom pill composite per **ADR-0022** (a stock `TabView`/`.tabItem` shell bar is a
-      finding). An **undocumented** divergence, or one that **moves layout/flow**, is a **blocking** finding.
+      **The shell bottom bar is the stock `TabView`/`.tabItem` on BOTH apps** (ADR-0022 owner-directed
+      supersede 2026-07-08 + T-0429; stale pill mandate swept T-0379): a resurrected custom pill/pager or
+      glass-FAB composite is the finding now. The customer Book FAB stays a solid-primary floating disc
+      (branding), shown only on tab roots (`path.isEmpty`). An **undocumented** divergence, or one that
+      **moves layout/flow**, is a **blocking** finding.
       *(both apps)*
 - [ ] **AR-DP-4 — App chrome (ONE-TIME per app target; ADR-0022 hardening, 2026-07-02).** Owned by the app's
       **shell/scaffold ticket** (app chrome appears in no screen's `.kt` citation — that is why it gets its own

@@ -455,6 +455,12 @@ Prod is the **same pipeline** (`deploy-azure.yml`) pointed at the `*-weu-prod` f
 `what-if`**, so the lazy path is always the non-mutating preview. Everything below is owner UI/CLI
 work the YAML cannot do. Do it **in this order**:
 
+> **Prod reliability posture (T-0359):** `weu.prod.bicepparam` now also flips deployment slots,
+> autoscale, Postgres HA/geo-backup, and ACR image retention — every knob, its chosen default, the
+> slot-swap workflow follow-up, and the deliberately-not-flipped Q-INFRA-03 private-networking flag
+> are documented in [`deploy/AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md). Note especially:
+> **geo-redundant backup only exists if it is on at the FIRST provision** (immutable after create).
+
 > **MANUAL_STEP P1 — create the `prod-weu` GitHub Environment with Required reviewers.**
 > GitHub → repo → **Settings → Environments → New environment → `prod-weu`** → add **Required
 > reviewers** = you (+ a second approver if available); **Wait timer** optional; optionally restrict

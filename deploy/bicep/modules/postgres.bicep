@@ -30,6 +30,33 @@ param skuTier string = 'Burstable'
 @description('Allocated storage in GB.')
 param storageSizeGB int = 32
 
+@description('High availability mode (T-0359 prod posture). Dev = Disabled. ZoneRedundant/SameZone require a GeneralPurpose or MemoryOptimized tier — the Burstable dev SKU rejects HA.')
+@allowed([
+  'Disabled'
+  'SameZone'
+  'ZoneRedundant'
+])
+param highAvailabilityMode string = 'Disabled'
+
+@description('Geo-redundant backup (T-0359 prod posture). Dev = Disabled. IMMUTABLE after server create — flipping it on an existing server forces a replacement, so prod must set it at provision time.')
+@allowed([
+  'Disabled'
+  'Enabled'
+])
+param geoRedundantBackup string = 'Disabled'
+
+@description('Backup retention in days (7-35). Dev = 7; prod raises it.')
+@minValue(7)
+@maxValue(35)
+param backupRetentionDays int = 7
+
+@description('Public network access (the Q-INFRA-03 seam). Enabled = the dev posture (firewall rules below apply). Disabled = private-endpoint-only — the firewall rules are skipped, and the CI migration path + admin psql access need a private path (see deploy/AZURE-PROD-POSTURE.md).')
+@allowed([
+  'Enabled'
+  'Disabled'
+])
+param publicNetworkAccess string = 'Enabled'
+
 @description('PostgreSQL major version.')
 param postgresVersion string = '16'
 
@@ -68,14 +95,14 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
       autoGrow: 'Enabled'
     }
     backup: {
-      backupRetentionDays: 7
-      geoRedundantBackup: 'Disabled'
+      backupRetentionDays: backupRetentionDays
+      geoRedundantBackup: geoRedundantBackup
     }
     highAvailability: {
-      mode: 'Disabled'
+      mode: highAvailabilityMode
     }
     network: {
-      publicNetworkAccess: 'Enabled'
+      publicNetworkAccess: publicNetworkAccess
     }
     authConfig: {
       passwordAuth: 'Enabled'
@@ -111,8 +138,10 @@ resource allowedExtensions 'Microsoft.DBforPostgreSQL/flexibleServers/configurat
 
 // Firewall: allow other Azure services (the App Services + Functions reach the server). The
 // 0.0.0.0 sentinel rule is Azure's "allow Azure-internal traffic" switch, NOT an open-to-internet
-// rule — it does not expose the server to arbitrary public IPs.
-resource allowAzureServices 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = {
+// rule — it does not expose the server to arbitrary public IPs. Dev-accepted only (Q-INFRA-03):
+// when publicNetworkAccess is Disabled the server takes no firewall rules at all — traffic arrives
+// via the private endpoint (modules/privateNetworking.bicep).
+resource allowAzureServices 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = if (publicNetworkAccess == 'Enabled') {
   parent: postgres
   name: 'AllowAllAzureServicesAndResources'
   properties: {
@@ -122,7 +151,7 @@ resource allowAzureServices 'Microsoft.DBforPostgreSQL/flexibleServers/firewallR
 }
 
 // Firewall: the owner/admin public IP, for the EF-bundle migration apply + manual psql access.
-resource allowAdminIp 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = {
+resource allowAdminIp 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = if (publicNetworkAccess == 'Enabled') {
   parent: postgres
   name: 'AllowAdminIp'
   properties: {
@@ -142,6 +171,9 @@ resource database 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-0
 
 @description('The PostgreSQL Flexible Server resource name.')
 output serverName string = postgres.name
+
+@description('The PostgreSQL Flexible Server resource id (the private-endpoint target when the Q-INFRA-03 seam is enabled).')
+output serverId string = postgres.id
 
 @description('The fully-qualified domain name of the server (host for the connection string).')
 output fullyQualifiedDomainName string = postgres.properties.fullyQualifiedDomainName

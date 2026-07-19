@@ -1,11 +1,11 @@
 ---
 id: T-0430
 title: "Partner apps — notifications feed UI (server inbox replaces the partner Android Room feed; partner iOS gains the inbox)"
-status: proposed
+status: done
 size: M
 owner: android
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 depends_on: [T-0393]
 blocks: []
 stories: []
@@ -28,3 +28,4 @@ source: T-0393 analyst-panel rebuttal condition — the partner-host endpoint sh
 ## Status log
 - 2026-07-18 — filed by the PM per the analyst panel's condition on keeping the partner-host
   endpoint in feed v1.
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → done)** — shipped on feature/i18n-cluster-3 (merged): both partner feed UIs to the customer FD-ACs; Android Room→server migration.

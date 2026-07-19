@@ -1,11 +1,11 @@
 ---
 id: T-0412
 title: "iOS — promo.new_sitewide display: event-scoped literal ApsAlert pass-through; apns-priority 5, interruption-level passive; Promo opt-in stays server-side default-OFF"
-status: proposed
+status: done
 size: S
 owner: architect
 created: 2026-07-17
-updated: 2026-07-17
+updated: 2026-07-19
 depends_on: [T-0403, T-0404]
 blocks: []
 stories: []
@@ -233,3 +233,4 @@ opt-in spec, the Android LOW channel — not new business policy).
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → done)** — shipped on feature/i18n-cluster-3 (merged): event-scoped literal aps.alert for promo.new_sitewide only.

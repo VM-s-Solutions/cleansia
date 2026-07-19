@@ -1,11 +1,11 @@
 ---
 id: T-0374
 title: "Process — iOS 16 floor verification leg: every iOS slice must smoke on the iOS 16.4 simulator; + the Gate-DP §G hardening (asset-counterpart sub-check + one-time app-chrome item)"
-status: in_progress
+status: done
 size: S
 owner: qa
 created: 2026-07-03
-updated: 2026-07-03
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -33,10 +33,14 @@ misses the review checklist structurally could not see (its citation unit is the
 ticket).
 
 ## Acceptance criteria
-- [ ] **AC1 (quality-gate leg)** — `agents/process/quality-gates.md` gains an iOS-16-floor verification leg:
+- [x] **AC1 (quality-gate leg)** — `agents/process/quality-gates.md` gains an iOS-16-floor verification leg:
   every iOS ticket's evidence must include an **iOS 16.4-simulator smoke of the touched surfaces** (launch +
   navigate every push the diff introduces/modifies + the changed screens rendered), in addition to the
   latest-runtime test suite. A latest-only run is an incomplete gate for any `layers: [ios]` ticket.
+  *(DELIVERED 2026-07-19 as **Gate 8.5 — iOS 16.4 floor smoke** in `quality-gates.md`, plus the previously
+  missing Gate 8 "iOS touched" mechanical bullet the smoke pairs with. The out-of-scope notes are carried in
+  the gate text as instructed: the 16.4 `ios-ci` destination is named a candidate follow-up; real-device CI
+  is named out of scope.)*
 - [x] **AC2 (Gate-DP §G hardening — the architect is folding this in)** —
   `agents/backlog/ios-app-review-checklist.md` §G gains the two lines from the diagnosis NOTES:
   (a) an **AR-DP-1 sub-check**: "every `drawable`/`raw` asset referenced by the cited screen has an iOS
@@ -47,8 +51,10 @@ ticket).
   T-0371, T-0372, T-0373) carries iOS 16.4 smoke evidence in its ticket before the phase exits; the phase's
   Definition-of-Done references this leg. *(EXECUTED — see the status log; the F-1 catch is the leg's
   proof-of-value.)*
-- [ ] **AC4 (recorded rationale)** — The gate text records WHY (one paragraph: nav-authority rework +
-  system-styling masking), so the leg isn't later "optimized away" as redundant.
+- [x] **AC4 (recorded rationale)** — The gate text records WHY (one paragraph: nav-authority rework +
+  system-styling masking), so the leg isn't later "optimized away" as redundant. *(DELIVERED 2026-07-19 —
+  the Gate 8.5 blockquote records the phase/ios-fix1 masking mechanics AND the F-1 catch as the leg's
+  proof-of-value.)*
 
 ## Out of scope
 - Real-device CI (macOS runners can't attach physical devices) — the leg is simulator-based; owner device
@@ -78,6 +84,18 @@ ticket).
   AR-DP-4). **OPEN (AC1 + AC4):** the DURABLE codification of the floor leg + its WHY paragraph into
   `agents/process/quality-gates.md` (grep-verified still absent) so the leg survives beyond this phase's
   discipline — qa+docs, doc-only, no code. Keep priority high; dispatch next sprint window.
+- 2026-07-19 — docs: **AC1 + AC4 delivered → done.** The durable codification landed in
+  `agents/process/quality-gates.md` as **Gate 8.5 — iOS 16.4 floor smoke (every `layers: [ios]` ticket)**
+  (named per the Gate 6.5 precedent), placed after Gate 8: the surface-scoped smoke rule (launch + navigate
+  every introduced/modified push + render the changed screens; SHORT, not a manual regression; latest-only =
+  incomplete gate), the AC4 WHY blockquote (iOS 17+ nav-authority rework masking the `comparisonTypeMismatch`
+  crash + ⚠️ placeholder pushes; system tab-bar styling masking the island bar; the F-1
+  `BrandGradientTests`-red-on-16.4-only catch as proof-of-value), and the mechanics (local `-- iOS 16.4 --`
+  runtime; suite-on-16.4-destination counts; 16.4 `ios-ci` destination = candidate follow-up; real-device CI
+  out of scope). Also added the previously missing **Gate 8 "iOS touched" mechanical bullet** (the
+  latest-runtime `xcodebuild build test` ×3 + pinned SwiftFormat/SwiftLint leg the smoke pairs with — Gate 8
+  listed backend/frontend/Android but never iOS). AC2 (`987f85f0` AR-DP-1a + AR-DP-4) re-verified present in
+  `ios-app-review-checklist.md` §G. Doc-only; no code; INDEX row updated.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

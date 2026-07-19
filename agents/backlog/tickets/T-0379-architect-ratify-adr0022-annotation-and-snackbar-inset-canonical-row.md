@@ -1,11 +1,11 @@
 ---
 id: T-0379
 title: "Architect ratification — (a) the in-body 74pt transcription annotation on ACCEPTED ADR-0022 (ADRs are supersede-never-edit) and (b) the patterns-mobile SnackbarInsetState canonical-mapping row REPLACEMENT (a 'one way' redefinition)"
-status: proposed
+status: done
 size: S
 owner: architect
 created: 2026-07-03
-updated: 2026-07-03
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -77,6 +77,49 @@ the architect's signature.
 ## Review
 <!-- architect writes the ratification verdicts here; PM reconciles -->
 
+**Architect ratification verdicts (lead-adjudicated, 2026-07-19):**
+
+- **AC1 — ERRATUM RATIFIED (not reversed into a supersede).** Author case: the `fef5745c` bracketed
+  note corrects a mis-transcribed NUMBER (64→74pt) whose true value the ADR's own cited source
+  (`MainShell.kt:456-462` = `Modifier.size(74.dp)` + 34dp icon) and its own "copy Android exactly"
+  ruling already fix — zero decision content changed; a superseding ADR would be ceremony that leaves
+  the wrong digit standing in the text people copy from. Challenger case (steelmanned):
+  supersede-never-edit is only as strong as its narrowest exception — letting anyone self-classify an
+  edit as "just a transcription" is the loophole, and a dev slice editing an architect-owned accepted
+  artifact normalizes the violation even when right. Ruling: challenge answered by BOUNDING the class
+  and making it rule-governed — the erratum convention is now recorded in `agents/backlog/adr/README.md`
+  (cited-source-determined value only; no meaning change; bracketed+dated+self-describing; architect
+  signature mandatory), and a signed erratum block is appended to ADR-0022. The dev edit was
+  procedurally out of lane, substantively correct; ratified retroactively. Living doc already carried
+  the folded note (`ios-app-architecture.md` R1). **Stale-row sweep (scope add 2026-07-17) done:**
+  `ios-app-architecture.md` — customer-shell D3 row (~79) rewritten to the post-supersede truth (stock
+  `TabView` + FAB disc; D2 topology survives), the §"iOS-16 shell crash" record section got a
+  superseded-in-part banner, the ledger ADR-0022 row (~895) status cell updated;
+  `patterns-mobile.md` — the "iOS shell navigation — the ONE way" block rewritten (stock bar both
+  apps; the old text called the shipped stock bar a defect); `ios-app-review-checklist.md` AR-DP-3
+  shell-bar clause flipped (a resurrected pill/pager is now the finding). The liquid-glass inventory
+  already carries its own RETIRED banner — left as record.
+- **AC2 — SnackbarInset row RATIFIED with one wording correction.** Verified against code: `@Published
+  private(set) bottomInset` + `setBottomInset`/`resetBottomInset` (`SnackbarController.swift:14,55-60`);
+  un-pinned hosts follow via `pinnedInset ?? controller.bottomInset` (`GlobalSnackbarHost.swift:16`);
+  the shell sets `ShellSnackbarInset.inset(pathDepth:)` on appear/path-change and resets on disappear
+  (`CustomerShellView.swift:104-109`; depth>0 → default inset); every modal-sheet host pins an explicit
+  inset (BookingSheetView, Promo/ReferralCodeSheet, AddressManager at `CustomerShellView.swift:88`,
+  OrderDetail sheets). Tests pin it (`SnackbarControllerTests`, `ShellSnackbarInsetTests` —
+  `overShellBar = chromeEnvelope + 12 = 94`). The row's mechanism was EXACT; the one drift was the
+  pill-era phrase "bar-composite clearance" → corrected to the post-supersede bottom chrome (stock tab
+  bar + docked Book FAB). No code delta needed; no follow-up ticket. Note: ADR-0022's 2026-07-08
+  supersede text computes a 129pt clearance from a then-56pt bottom-padded FAB — the code has since
+  moved to the center-docked 66pt FAB (94pt total); the ADR appendix is a correct record of its moment,
+  the catalog row (which names the constants, not a number) is the living truth.
+- **Scope addition (2026-07-04) — the `format: date` row RATIFIED as-is.** Both generator configs carry
+  `useCustomDateWithoutTime: true` (`openapi-generator-config.{partner,customer}.yaml:21`); the row
+  (patterns-mobile `OpenAPIDateWithoutTime`) codifies the shipped 5d6654a2 fix correctly. The
+  string-catalog junk-entry churn item stays open under T-0373 finding (b) — no action here.
+- **AC3 — traceability:** verdicts recorded here; cross-ref lines added to T-0368/T-0371 Review notes;
+  T-0376 is retired (cancelled by the same supersede), so its citations are moot — nothing to keep
+  consistent there.
+
 ## Status log (additions)
 - 2026-07-04 — scope addition from the fix-round-3 review: also ratify the new patterns-mobile
   rule row "a `format: date` field ridden as plain `Date` is a defect — use the generator's
@@ -84,3 +127,10 @@ the architect's signature.
   wire on iOS; it codifies the shipped 5d6654a2 fix). And note: the string-catalog junk-entry
   churn class (SWIFT_EMIT_LOC_STRINGS: NO not fully holding) recurred in round 3 — the knob
   re-investigation stays open (T-0373 finding b); junk entries stripped at commit time again.
+- 2026-07-19 — **done** by architect (lead ruling, see Review): (a) the ADR-0022 in-body 74pt note
+  ratified as a SIGNED ERRATUM (block appended to ADR-0022; convention recorded in
+  `agents/backlog/adr/README.md`) + the post-supersede stale pill rows swept in
+  `ios-app-architecture.md` / `patterns-mobile.md` / `ios-app-review-checklist.md`; (b) the
+  SnackbarInsetState canonical row RATIFIED against the landed code with one wording correction
+  (pill-era "bar-composite" → stock-bar+FAB chrome); the 2026-07-04 `format: date` row addition
+  ratified as-is (both yaml configs verified).

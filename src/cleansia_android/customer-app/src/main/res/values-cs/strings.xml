@@ -385,6 +385,8 @@
     <string name="profile_stat_favorite">Oblíbený</string>
     <string name="profile_stat_saved">Uloženo</string>
     <string name="profile_stat_member_since">Členem od</string>
+    <string name="profile_tier_plus">Plus</string>
+    <string name="profile_tier_regular">Základní</string>
     <string name="profile_section_account">Účet</string>
     <string name="profile_section_personal">Osobní</string>
     <string name="profile_section_contact">Kontakt</string>

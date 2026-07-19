@@ -21,10 +21,14 @@ struct AddressPickerView: View {
     init(
         geocoding: GeocodingService,
         mapProvider: MapProvider,
+        serviceArea: ServiceAreaProvider,
         onConfirmed: @escaping (GeocodedAddress) -> Void,
         onBack: @escaping () -> Void
     ) {
-        _vm = StateObject(wrappedValue: AddressPickerViewModel(geocoding: geocoding))
+        _vm = StateObject(wrappedValue: AddressPickerViewModel(
+            geocoding: geocoding,
+            servicedCountryCodesProvider: { await serviceArea.servicedCountryIsoCodes() }
+        ))
         self.mapProvider = mapProvider
         self.onConfirmed = onConfirmed
         self.onBack = onBack

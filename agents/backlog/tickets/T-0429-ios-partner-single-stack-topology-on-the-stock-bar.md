@@ -1,11 +1,11 @@
 ---
 id: T-0429
 title: "iOS partner — adopt the D2 single-NavigationStack/ShellRoute topology on the STOCK tab bar"
-status: proposed
+status: done
 size: M
 owner: ios
 created: 2026-07-17
-updated: 2026-07-17
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -217,3 +217,4 @@ idiomatic, already-on-the-merits-ratified (§7.7 D1 / §7.9 / §7.12) partner en
 **Not required for this verdict.** (B) changes no code, so there is no device-fragility risk to gate.
 (The only device dependency — the `deepLinkOrderId` cold-launch path — rides the already-planned T-0423
 partner device pass, per bookkeeping item 3.)
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → done)** — closed premise-void (architect AC4 ratification, f289c4db): per-tab stacks are final under the stock TabView.

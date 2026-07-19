@@ -6,8 +6,9 @@
 // dependsOn so the alerts never race the resources they watch.
 //
 // Env gating: dev = severity 3 + wide windows (owner-inbox noise floor); prod = severity 1-2 +
-// tight windows (paging). Poison-queue depth is NOT here — queue metrics need diagnostic settings
-// + a scheduled-query alert, tracked separately.
+// tight windows (paging). Poison-queue depth is NOT here — queue signals need diagnostic settings
+// + a scheduled-query alert, which live in modules/queueAlerts.bicep attached to this module's
+// exported actionGroupId.
 
 @description('Deployment stage: dev | prod. Drives severities, thresholds, and windows.')
 @allowed([

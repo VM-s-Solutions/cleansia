@@ -52,7 +52,7 @@ struct SnackbarPill: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(palette.foreground)
             }
-            .accessibilityLabel(Text("snackbar.dismiss", bundle: .module))
+            .accessibilityLabel(Text(CoreL10n.localized("snackbar.dismiss")))
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 14)

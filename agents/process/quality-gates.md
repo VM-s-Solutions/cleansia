@@ -151,6 +151,13 @@ net — the gate must not depend on a human remembering to run a suite:
   (JVM unit tests, no emulator) succeed. CI `android-ci.yml` runs these. **Kotlin source must stay
   ASCII/UTF-8 clean — no BOM, no mojibake** (a past mass-edit corrupted encodings that `-q` compiles
   tolerate; verify the diff is byte-clean).
+- **iOS touched:** the touched targets `xcodebuild … build test` green on an iPhone simulator
+  (`CleansiaCore` / `CleansiaPartner` / `CleansiaCustomer` hosted suites), and **SwiftFormat
+  `--lint` + SwiftLint `--strict`** are clean at the **pinned** versions (0.60.1 / 0.65.0 — match
+  them locally; CI asserts the pin). CI `ios-ci.yml` runs all of this on the runner's **newest**
+  runtime. **For any `layers: [ios]` ticket that is only half the gate** — the latest-runtime run
+  must be paired with the **Gate 8.5 iOS 16.4 floor smoke** below; a latest-only run is an
+  **incomplete** gate.
 - **Any stack:** `node agents/tools/check-consistency.mjs --paths=<changed dirs>` reports **no new**
   violation. A pre-existing violation the change merely sits near is noted, not blocking — unless the
   ticket *is* its canonicalization ticket. See [`enforcement.md`](./enforcement.md) for the tool, the
@@ -178,6 +185,40 @@ deferred check stays visibly open until CI goes green.
 A ticket whose mechanical checks fail cannot be `done`, regardless of how good the review reads. If a
 check is failing for a reason genuinely unrelated to the change (a flaky test, a pre-existing
 baseline item), the Reviewer says so explicitly with evidence — it is never waved through silently.
+
+### Gate 8.5 — iOS 16.4 floor smoke (every `layers: [ios]` ticket)
+
+The project's declared support floor is **iOS 16** (ADR-0014 — the iPhone 8/X-class reach), and the
+latest-runtime simulator **cannot represent it**. Before an iOS ticket reaches `done`, its evidence
+must include an **iOS 16.4-simulator smoke of the touched surfaces**, in addition to the
+latest-runtime suite run: **launch** the app, **navigate every push the diff introduces or
+modifies**, and **render the changed screens**. Keep the smoke SHORT and surface-scoped — what the
+diff touched, not a full manual regression; the point is the floor runtime, not more steps. A
+latest-only run is an **incomplete gate** for any `layers: [ios]` ticket, and the smoke is recorded
+on the ticket like any other mechanical check (e.g. "16.4 smoke: boot-install-launch, 0
+NavigationAuthority/`comparisonTypeMismatch` hits; pushes navigated; changed screens rendered").
+
+> **Why this leg exists — and must never be "optimized away" as redundant (phase/ios-fix1,
+> 2026-07-02):** ALL of the crash/⚠️/island defects in the owner's first real-device shakeout were
+> **invisible on the latest-runtime simulator**. iOS 17+ reworked the navigation authority — masking
+> both the iOS-16 `comparisonTypeMismatch` **crash** and the yellow-⚠️ missing-destination
+> placeholder pushes — and the modern system tab-bar styling masked the never-ported island bar. The
+> floor was declared in ADR-0014, yet no gate ever exercised it. The leg **paid for itself within
+> its first phase**: the **F-1 catch** — `BrandGradientTests` 18 failures on the 16.4 runtime ONLY
+> (green on iPhone 17; `UIColor(Color)` flattens dynamic color providers pre-iOS-17) — is exactly
+> the defect class only a floor run can see.
+
+Mechanics and scope:
+
+- The **iOS 16.4 runtime is installed locally** — devices are listed under `-- iOS 16.4 --` in
+  `xcrun simctl list devices`. Boot one, install the built app, and walk the touched surfaces.
+- Where the touched code is covered by tests, **running the suite against a 16.4 destination**
+  counts as (and strengthens) the smoke — that is how F-1 was caught.
+- `ios-ci.yml` tests only on the runner's newest runtime. Adding an iOS 16.4 CI destination is a
+  **candidate follow-up** (a runtime-download cost decision on hosted runners), not part of this
+  gate — until then the floor smoke is **local evidence recorded on the ticket**.
+- Real-device CI is out of scope (macOS runners can't attach physical devices) — the leg is
+  simulator-based; owner device passes remain ad-hoc acceptance, not a substitute for this gate.
 
 ---
 

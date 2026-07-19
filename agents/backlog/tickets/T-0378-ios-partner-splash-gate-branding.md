@@ -1,11 +1,11 @@
 ---
 id: T-0378
 title: "iOS partner in-app splash branding — SplashGateView is a bare ProgressView; bring it to brand parity (the customer got the full branded splash in T-0372)"
-status: proposed
+status: done
 size: S
 owner: ios
 created: 2026-07-03
-updated: 2026-07-03
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -62,3 +62,4 @@ cold start; today it reads as an unbranded loading page while the customer app o
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → done)** — shipped on feature/i18n-cluster-3 (merged PR #126): shared-look SplashBrandingView ported to partner.

@@ -25,6 +25,7 @@ final class PreferencesModel: ObservableObject {
         isFollowingSystemLanguage = settings.persistedLanguageTag == nil
         theme = settings.theme
         L10n.bundle = Self.bundle(for: settings.languageTag)
+        CoreL10n.apply(languageTag: settings.languageTag)
     }
 
     var locale: Locale {
@@ -46,6 +47,7 @@ final class PreferencesModel: ObservableObject {
     private func applyResolvedLanguage() {
         let resolved = settings.languageTag
         L10n.bundle = Self.bundle(for: resolved)
+        CoreL10n.apply(languageTag: resolved)
         languageTag = resolved
         isFollowingSystemLanguage = settings.persistedLanguageTag == nil
     }

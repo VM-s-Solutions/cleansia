@@ -42,9 +42,22 @@ jobs:
           java-version: '21'
 
       - name: Set up Android SDK
-        # Provides ANDROID_HOME / ANDROID_SDK_ROOT so Gradle resolves the SDK without a
-        # local.properties sdk.dir entry (which is dev-machine-only and not committed).
-        uses: android-actions/setup-android@v3
+        # The ubuntu-latest runner ships a full Android SDK at $ANDROID_HOME (compileSdk 35 +
+        # build-tools + platform-tools) with its licenses PRE-ACCEPTED, so Gradle resolves the SDK
+        # from the environment with no committed local.properties sdk.dir.
+        #
+        # We deliberately DON'T use android-actions/setup-android@v3: it decides the preinstalled
+        # command-line tools are the "wrong version", re-downloads the newest (16.0), then runs
+        # `sdkmanager --licenses` against that FRESH, unaccepted license set — which exits 1 even
+        # after printing "All SDK package licenses accepted" (the cmdline-tools 16.0 license
+        # exit-code bug), failing the whole job before any Gradle step runs. Re-accepting via the
+        # PREINSTALLED sdkmanager below is a guarded no-op (licenses already accepted) and can never
+        # fail the job.
+        run: |
+          set -euo pipefail
+          echo "Using preinstalled SDK at ANDROID_HOME=$ANDROID_HOME"
+          test -n "${ANDROID_HOME:-}" && test -d "$ANDROID_HOME"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
 
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v4

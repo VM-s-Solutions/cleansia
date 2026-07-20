@@ -380,6 +380,25 @@ jobs:
           ADMIN_IP_ADDRESS: ${{ secrets.ADMIN_IP_ADDRESS }}
           CI_PRINCIPAL_ID: ${{ secrets.CI_PRINCIPAL_ID }}
 
+      # The single "Login to Azure" at the top of this job mints a GitHub OIDC client assertion valid for
+      # only ~5 minutes. The Bicep deploy above runs well past that (full provision + a 3-minute retry), and
+      # the Key Vault push below is the FIRST step in this job to need a Key Vault-scoped token (audience
+      # https://vault.azure.net, plus a Graph token for the RBAC grant) — a NEW audience that forces a fresh
+      # federated-credential exchange. That exchange reuses the original assertion, which has already expired
+      # (AADSTS700024: "Client assertion is not within its valid time range"). The ARM operations in the
+      # deploy step didn't hit this because their access token was minted early and lives ~1h — it's the
+      # short-lived assertion, not the access token, that lapses. Re-login here so the vault/Graph token
+      # exchange runs against a fresh assertion; azure/login re-requests a new OIDC token on each call, so
+      # this is a clean refresh rather than a reuse of the stale one. Deploy-mode only — what-if writes no
+      # secrets, and its single ARM call runs seconds after the first login.
+      - name: Re-login to Azure (fresh OIDC token before Key Vault writes)
+        if: inputs.mode == 'deploy'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       # Push the EXTERNAL secrets (the ones Bicep can't derive) from the stage's GitHub-Environment
       # secrets into Key Vault. The DERIVABLE ones (Storage/DB conn strings) are
       # written by the Bicep derivedSecrets module — not here. Set these GitHub secrets ONCE per

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260720123132_Initial")]
+    [Migration("20260720135235_Initial")]
     partial class Initial
     {
         /// <inheritdoc />

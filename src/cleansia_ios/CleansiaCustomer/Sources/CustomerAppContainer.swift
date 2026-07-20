@@ -174,6 +174,7 @@ final class CustomerAppContainer: AppContainer {
             hasSession: hasSessionSubject.eraseToAnyPublisher(),
             apnsToken: pushRegistrar.apnsToken
         )
+        if hasValidSession { beginLiveActivityPushToStart() }
         // Alert-display permission only — APNs registration itself happens in
         // the app delegate's didFinishLaunching (deferring it there gets
         // silently dropped by iOS).
@@ -182,6 +183,14 @@ final class CustomerAppContainer: AppContainer {
 
     func updatePushSession(hasSession: Bool) {
         hasSessionSubject.send(hasSession)
+        if hasSession { beginLiveActivityPushToStart() }
+    }
+
+    /// Register the push-to-start token once a session is ready so the backend can start Live Activities
+    /// on iOS 17.2+ (ADR-0029). Idempotent — the coordinator guards its single observer.
+    private func beginLiveActivityPushToStart() {
+        guard #available(iOS 16.2, *) else { return }
+        LiveActivityCoordinator.shared.beginPushToStartRegistration()
     }
 
     func installGeneratedClientAuth() {
@@ -201,5 +210,10 @@ final class CustomerAppContainer: AppContainer {
         // main; call sites await via continuations, so UI updates still hop back.
         CleansiaCustomerApiAPI.apiResponseQueue = DispatchQueue(label: "cz.cleansia.api.response", qos: .userInitiated)
         CodableHelper.jsonDecoder = ApiDateDecoding.decoder(primary: { CodableHelper.dateFormatter.date(from: $0) })
+        if #available(iOS 16.2, *) {
+            LiveActivityCoordinator.shared.install(
+                registrar: CustomerLiveActivityRegistrar(deviceIdProvider: authStack.deviceIdProvider)
+            )
+        }
     }
 }

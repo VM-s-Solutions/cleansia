@@ -4,6 +4,11 @@ import Combine
 import XCTest
 @testable import CleansiaCustomer
 
+private struct NoopLiveActivitySync: OrderLiveActivitySyncing {
+    func start(orderId _: String, orderNumber _: String, scheduledStart _: Date, scheduledEnd _: Date) {}
+    func end(orderId _: String) {}
+}
+
 @MainActor
 final class OrderDetailViewModelTests: XCTestCase {
     private func makeVM(
@@ -18,6 +23,7 @@ final class OrderDetailViewModelTests: XCTestCase {
             repository: repo,
             snackbar: SnackbarController(),
             eventBus: OrderEventBus(),
+            liveActivity: NoopLiveActivitySync(),
             pollInterval: pollInterval
         )
     }
@@ -341,6 +347,7 @@ final class OrderDetailViewModelTests: XCTestCase {
             repository: repo,
             snackbar: SnackbarController(),
             eventBus: bus,
+            liveActivity: NoopLiveActivitySync(),
             pollInterval: 60
         )
         await vm.load()

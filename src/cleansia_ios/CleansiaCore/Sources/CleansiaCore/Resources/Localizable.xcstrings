@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     "error.address.already_exists" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -109,16 +112,22 @@
     "error.address.mapbox_coords_required" : {
       "extractionState" : "manual",
       "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vyberte prosím adresu z našeptávače."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Please select an address from the suggestions."
           }
         },
-        "cs" : {
+        "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vyberte prosím adresu z našeptávače."
+            "value" : "Пожалуйста, выберите адрес из подсказок."
           }
         },
         "sk" : {
@@ -131,12 +140,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Будь ласка, виберіть адресу з підказок."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Пожалуйста, выберите адрес из подсказок."
           }
         }
       }
@@ -277,6 +280,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Для цього облікового запису увійдіть з email і паролем."
+          }
+        }
+      }
+    },
+    "error.auth.invalid_apple_token" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neplatný Apple token"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Apple token"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Недействительный токен Apple"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neplatný Apple token"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Недійсний токен Apple"
           }
         }
       }
@@ -526,6 +564,41 @@
         }
       }
     },
+    "error.auth.too_many_attempts" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Příliš mnoho pokusů s tímto kódem. Vyžádejte si nový kód a zkuste to znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too many attempts with this code. Request a new code and try again."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Слишком много попыток с этим кодом. Запросите новый код и попробуйте ещё раз."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забагато спроб із цим кодом. Запросіть новий код і спробуйте ще раз."
+          }
+        }
+      }
+    },
     "error.city.not_serviced" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -701,6 +774,76 @@
         }
       }
     },
+    "error.company.not_found" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informace o společnosti nenalezeny"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Company information not found"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Информация о компании не найдена"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informácie o spoločnosti neboli nájdené"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Інформацію про компанію не знайдено"
+          }
+        }
+      }
+    },
+    "error.country.not_existing_id" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Země nenalezena"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Country not found"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Страна не найдена"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krajina nebola nájdená"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Країну не знайдено"
+          }
+        }
+      }
+    },
     "error.country.not_serviced" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -771,19 +914,60 @@
         }
       }
     },
+    "error.currency.invalid" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neplatná měna"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid currency"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Недействительная валюта"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neplatná mena"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Недійсна валюта"
+          }
+        }
+      }
+    },
     "error.device.invalid_platform" : {
       "extractionState" : "manual",
       "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nepodporovaná platforma zařízení."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unsupported device platform."
           }
         },
-        "cs" : {
+        "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nepodporovaná platforma zařízení."
+            "value" : "Неподдерживаемая платформа устройства."
           }
         },
         "sk" : {
@@ -796,12 +980,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Непідтримувана платформа пристрою."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Неподдерживаемая платформа устройства."
           }
         }
       }
@@ -837,6 +1015,146 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Цей пристрій більше не зареєстрований."
+          }
+        }
+      }
+    },
+    "error.dispute.already_exists" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spor pro tuto objednávku již existuje"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispute already exists for this order"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спор для этого заказа уже существует"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reklamácia pre túto objednávku už existuje"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Суперечка для цього замовлення вже існує"
+          }
+        }
+      }
+    },
+    "error.dispute.max_length_exceeded" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Překročena maximální délka"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maximum length exceeded"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Превышена максимальная длина"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bola prekročená maximálna dĺžka"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перевищено максимальну довжину"
+          }
+        }
+      }
+    },
+    "error.dispute.not_found" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spor nenalezen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispute not found"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спор не найден"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reklamácia nebola nájdená"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Суперечку не знайдено"
+          }
+        }
+      }
+    },
+    "error.dispute.not_owned_by_user" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento spor patří k jinému účtu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This dispute belongs to a different account."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот спор принадлежит другому аккаунту."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Táto reklamácia patrí k inému účtu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ця суперечка належить іншому обліковому запису."
           }
         }
       }
@@ -1152,6 +1470,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ви не можете редагувати цього працівника."
+          }
+        }
+      }
+    },
+    "error.employee.not_approved" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Váš účet zatím nebyl schválen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your account hasn't been approved yet."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш аккаунт ещё не одобрен."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Váš účet zatiaľ nebol schválený."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш обліковий запис ще не схвалено."
           }
         }
       }
@@ -1541,19 +1894,95 @@
         }
       }
     },
+    "error.gdpr.consent_already_granted" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento souhlas již byl udělen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This consent has already been granted."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это согласие уже предоставлено."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento súhlas už bol udelený."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цю згоду вже надано."
+          }
+        }
+      }
+    },
+    "error.gdpr.consent_not_found" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Souhlas nenalezen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consent not found."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Согласие не найдено."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Súhlas nebol nájdený."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Згоду не знайдено."
+          }
+        }
+      }
+    },
     "error.gdpr.deletion_already_pending" : {
       "extractionState" : "manual",
       "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smazání účtu již probíhá."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Account deletion is already in progress."
           }
         },
-        "cs" : {
+        "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Smazání účtu již probíhá."
+            "value" : "Удаление аккаунта уже выполняется."
           }
         },
         "sk" : {
@@ -1567,11 +1996,75 @@
             "state" : "translated",
             "value" : "Видалення облікового запису вже триває."
           }
+        }
+      }
+    },
+    "error.gdpr.deletion_blocked_by_invoice" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Účet zatím nelze smazat — existuje nevyřízená faktura."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your account can't be deleted yet — there is an open invoice."
+          }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удаление аккаунта уже выполняется."
+            "value" : "Аккаунт пока нельзя удалить — есть незакрытый счёт."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Účet zatiaľ nie je možné vymazať — existuje nevybavená faktúra."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обліковий запис поки не можна видалити — є незакритий рахунок."
+          }
+        }
+      }
+    },
+    "error.gdpr.deletion_blocked_by_order" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Účet zatím nelze smazat — existuje aktivní objednávka."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your account can't be deleted yet — there is an active order."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Аккаунт пока нельзя удалить — есть активный заказ."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Účet zatiaľ nie je možné vymazať — existuje aktívna objednávka."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обліковий запис поки не можна видалити — є активне замовлення."
           }
         }
       }
@@ -1715,6 +2208,41 @@
         }
       }
     },
+    "error.language.not_found" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jazyk nenalezen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language not found"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Язык не найден"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jazyk nebol nájdený"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мову не знайдено"
+          }
+        }
+      }
+    },
     "error.language.not_supported" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1746,6 +2274,181 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ця мова не підтримується."
+          }
+        }
+      }
+    },
+    "error.live_activity.order_not_active" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tato rezervace zatím nemůže zobrazit živé sledování."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This booking can't show live status yet."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это бронирование пока не может показывать статус в реальном времени."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Táto rezervácia zatiaľ nemôže zobraziť živé sledovanie."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це бронювання ще не може показувати статус у реальному часі."
+          }
+        }
+      }
+    },
+    "error.membership.already_active" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Již máte aktivní členství."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You already have an active membership."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У вас уже есть активное членство."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Už máte aktívne členstvo."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У вас уже є активне членство."
+          }
+        }
+      }
+    },
+    "error.membership.not_found" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Členství nenalezeno."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Membership not found."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Членство не найдено."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Členstvo nebolo nájdené."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Членство не знайдено."
+          }
+        }
+      }
+    },
+    "error.membership.plan.not_found" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plán členství nebyl nalezen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Membership plan not found."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "План членства не найден."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plán členstva sa nenašiel."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "План членства не знайдено."
+          }
+        }
+      }
+    },
+    "error.membership.swap_same_plan" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento plán již máte."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're already on this plan."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У вас уже есть этот план."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento plán už máte."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У вас уже є цей план."
           }
         }
       }
@@ -2522,16 +3225,22 @@
     "error.order.not_completed" : {
       "extractionState" : "manual",
       "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Objednávku lze hodnotit až po dokončení."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "You can review an order only after it's completed."
           }
         },
-        "cs" : {
+        "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Objednávku lze hodnotit až po dokončení."
+            "value" : "Оценить заказ можно только после завершения."
           }
         },
         "sk" : {
@@ -2544,12 +3253,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Оцінити замовлення можна лише після завершення."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Оценить заказ можно только после завершения."
           }
         }
       }
@@ -2732,16 +3435,22 @@
     "error.order.preferred_employee.not_eligible" : {
       "extractionState" : "manual",
       "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vybraný uklízeč není pro tuto objednávku k dispozici."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "The selected cleaner isn't available for this order."
           }
         },
-        "cs" : {
+        "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vybraný uklízeč není pro tuto objednávku k dispozici."
+            "value" : "Выбранный клинер недоступен для этого заказа."
           }
         },
         "sk" : {
@@ -2754,12 +3463,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Вибраний клінер недоступний для цього замовлення."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выбранный клинер недоступен для этого заказа."
           }
         }
       }
@@ -3044,6 +3747,321 @@
         }
       }
     },
+    "error.payroll.invoice.not_found" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faktura nenalezena"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invoice not found"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Счёт не найден"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faktúra nebola nájdená"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рахунок не знайдено"
+          }
+        }
+      }
+    },
+    "error.payroll.pay_period.not_found" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platební období nenalezeno"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pay period not found"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Расчётный период не найден"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Výplatné obdobie nebolo nájdené"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Розрахунковий період не знайдено"
+          }
+        }
+      }
+    },
+    "error.receipt.not_found" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potvrzení nenalezeno"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receipt not found"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Квитанция не найдена"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Účtenka nebola nájdená"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Квитанцію не знайдено"
+          }
+        }
+      }
+    },
+    "error.recurring_booking.ends_on_before_start" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datum ukončení musí být po datu zahájení."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The end date must be after the start date."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дата окончания должна быть позже даты начала."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dátum ukončenia musí byť po dátume začiatku."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дата завершення має бути після дати початку."
+          }
+        }
+      }
+    },
+    "error.recurring_booking.no_services_or_packages" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vyberte alespoň jednu službu nebo balíček."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select at least one service or package."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите хотя бы одну услугу или пакет."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vyberte aspoň jednu službu alebo balíček."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Виберіть принаймні одну послугу або пакет."
+          }
+        }
+      }
+    },
+    "error.recurring_booking.not_found" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pravidelný úklid nenalezen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recurring cleaning not found."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Регулярная уборка не найдена."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pravidelné upratovanie sa nenašlo."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Регулярне прибирання не знайдено."
+          }
+        }
+      }
+    },
+    "error.recurring_booking.not_owned_by_user" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento pravidelný úklid patří k jinému účtu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This recurring cleaning belongs to a different account."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эта регулярная уборка принадлежит другому аккаунту."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto pravidelné upratovanie patrí k inému účtu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це регулярне прибирання належить іншому обліковому запису."
+          }
+        }
+      }
+    },
+    "error.recurring_booking.saved_address_not_found" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vybraná adresa již neexistuje."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The selected address no longer exists."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбранный адрес больше не существует."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vybraná adresa už neexistuje."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вибрана адреса більше не існує."
+          }
+        }
+      }
+    },
+    "error.recurring_booking.starts_on_in_past" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datum zahájení nemůže být v minulosti."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The start date can't be in the past."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дата начала не может быть в прошлом."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dátum začiatku nemôže byť v minulosti."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дата початку не може бути в минулому."
+          }
+        }
+      }
+    },
     "error.referral.already_referred" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3180,6 +4198,111 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ви не можете рекомендувати себе"
+          }
+        }
+      }
+    },
+    "error.refund.failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vrácení peněz se nezdařilo. Zkuste to prosím znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The refund could not be processed. Please try again."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось выполнить возврат. Пожалуйста, попробуйте снова."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vrátenie peňazí sa nepodarilo. Skúste to prosím znova."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося обробити повернення. Спробуйте ще раз."
+          }
+        }
+      }
+    },
+    "error.refund.nothing_refundable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na této objednávce již není co vrátit."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There is nothing left to refund on this order."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В этом заказе больше нечего возвращать."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na tejto objednávke už nie je čo vrátiť."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У цьому замовленні більше немає чого повертати."
+          }
+        }
+      }
+    },
+    "error.refund.order_not_refundable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tuto objednávku nelze vrátit."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This order is not eligible for a refund."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот заказ не подлежит возврату."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Túto objednávku nie je možné vrátiť."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це замовлення не підлягає поверненню."
           }
         }
       }
@@ -3980,1091 +5103,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Закрити"
-          }
-        }
-      }
-    },
-    "error.auth.invalid_apple_token" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid Apple token"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Neplatný Apple token"
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Neplatný Apple token"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Недійсний токен Apple"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Недействительный токен Apple"
-          }
-        }
-      }
-    },
-    "error.auth.too_many_attempts" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Too many attempts with this code. Request a new code and try again."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Příliš mnoho pokusů s tímto kódem. Vyžádejte si nový kód a zkuste to znovu."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Забагато спроб із цим кодом. Запросіть новий код і спробуйте ще раз."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Слишком много попыток с этим кодом. Запросите новый код и попробуйте ещё раз."
-          }
-        }
-      }
-    },
-    "error.company.not_found" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Company information not found"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Informace o společnosti nenalezeny"
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Informácie o spoločnosti neboli nájdené"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Інформацію про компанію не знайдено"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Информация о компании не найдена"
-          }
-        }
-      }
-    },
-    "error.country.not_existing_id" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Country not found"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Země nenalezena"
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Krajina nebola nájdená"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Країну не знайдено"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Страна не найдена"
-          }
-        }
-      }
-    },
-    "error.currency.invalid" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid currency"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Neplatná měna"
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Neplatná mena"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Недійсна валюта"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Недействительная валюта"
-          }
-        }
-      }
-    },
-    "error.dispute.already_exists" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dispute already exists for this order"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Spor pro tuto objednávku již existuje"
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reklamácia pre túto objednávku už existuje"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Суперечка для цього замовлення вже існує"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Спор для этого заказа уже существует"
-          }
-        }
-      }
-    },
-    "error.dispute.max_length_exceeded" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Maximum length exceeded"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Překročena maximální délka"
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bola prekročená maximálna dĺžka"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Перевищено максимальну довжину"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Превышена максимальная длина"
-          }
-        }
-      }
-    },
-    "error.dispute.not_found" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dispute not found"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Spor nenalezen"
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reklamácia nebola nájdená"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Суперечку не знайдено"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Спор не найден"
-          }
-        }
-      }
-    },
-    "error.dispute.not_owned_by_user" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This dispute belongs to a different account."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tento spor patří k jinému účtu."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Táto reklamácia patrí k inému účtu."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ця суперечка належить іншому обліковому запису."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Этот спор принадлежит другому аккаунту."
-          }
-        }
-      }
-    },
-    "error.employee.not_approved" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your account hasn't been approved yet."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Váš účet zatím nebyl schválen."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Váš účet zatiaľ nebol schválený."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ваш обліковий запис ще не схвалено."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ваш аккаунт ещё не одобрен."
-          }
-        }
-      }
-    },
-    "error.gdpr.consent_already_granted" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This consent has already been granted."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tento souhlas již byl udělen."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tento súhlas už bol udelený."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Цю згоду вже надано."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Это согласие уже предоставлено."
-          }
-        }
-      }
-    },
-    "error.gdpr.consent_not_found" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Consent not found."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Souhlas nenalezen."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Súhlas nebol nájdený."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Згоду не знайдено."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Согласие не найдено."
-          }
-        }
-      }
-    },
-    "error.gdpr.deletion_blocked_by_invoice" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your account can't be deleted yet — there is an open invoice."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Účet zatím nelze smazat — existuje nevyřízená faktura."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Účet zatiaľ nie je možné vymazať — existuje nevybavená faktúra."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Обліковий запис поки не можна видалити — є незакритий рахунок."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Аккаунт пока нельзя удалить — есть незакрытый счёт."
-          }
-        }
-      }
-    },
-    "error.gdpr.deletion_blocked_by_order" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your account can't be deleted yet — there is an active order."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Účet zatím nelze smazat — existuje aktivní objednávka."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Účet zatiaľ nie je možné vymazať — existuje aktívna objednávka."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Обліковий запис поки не можна видалити — є активне замовлення."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Аккаунт пока нельзя удалить — есть активный заказ."
-          }
-        }
-      }
-    },
-    "error.language.not_found" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Language not found"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jazyk nenalezen"
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jazyk nebol nájdený"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Мову не знайдено"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Язык не найден"
-          }
-        }
-      }
-    },
-    "error.membership.already_active" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You already have an active membership."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Již máte aktivní členství."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Už máte aktívne členstvo."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "У вас уже є активне членство."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "У вас уже есть активное членство."
-          }
-        }
-      }
-    },
-    "error.membership.not_found" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Membership not found."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Členství nenalezeno."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Členstvo nebolo nájdené."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Членство не знайдено."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Членство не найдено."
-          }
-        }
-      }
-    },
-    "error.membership.plan.not_found" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Membership plan not found."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plán členství nebyl nalezen."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plán členstva sa nenašiel."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "План членства не знайдено."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "План членства не найден."
-          }
-        }
-      }
-    },
-    "error.membership.swap_same_plan" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You're already on this plan."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tento plán již máte."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tento plán už máte."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "У вас уже є цей план."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "У вас уже есть этот план."
-          }
-        }
-      }
-    },
-    "error.payroll.invoice.not_found" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invoice not found"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Faktura nenalezena"
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Faktúra nebola nájdená"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Рахунок не знайдено"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Счёт не найден"
-          }
-        }
-      }
-    },
-    "error.payroll.pay_period.not_found" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pay period not found"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Platební období nenalezeno"
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Výplatné obdobie nebolo nájdené"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Розрахунковий період не знайдено"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Расчётный период не найден"
-          }
-        }
-      }
-    },
-    "error.receipt.not_found" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Receipt not found"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Potvrzení nenalezeno"
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Účtenka nebola nájdená"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Квитанцію не знайдено"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Квитанция не найдена"
-          }
-        }
-      }
-    },
-    "error.recurring_booking.ends_on_before_start" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The end date must be after the start date."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Datum ukončení musí být po datu zahájení."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dátum ukončenia musí byť po dátume začiatku."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дата завершення має бути після дати початку."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дата окончания должна быть позже даты начала."
-          }
-        }
-      }
-    },
-    "error.recurring_booking.no_services_or_packages" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select at least one service or package."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vyberte alespoň jednu službu nebo balíček."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vyberte aspoň jednu službu alebo balíček."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Виберіть принаймні одну послугу або пакет."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выберите хотя бы одну услугу или пакет."
-          }
-        }
-      }
-    },
-    "error.recurring_booking.not_found" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recurring cleaning not found."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pravidelný úklid nenalezen."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pravidelné upratovanie sa nenašlo."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Регулярне прибирання не знайдено."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Регулярная уборка не найдена."
-          }
-        }
-      }
-    },
-    "error.recurring_booking.not_owned_by_user" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This recurring cleaning belongs to a different account."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tento pravidelný úklid patří k jinému účtu."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toto pravidelné upratovanie patrí k inému účtu."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Це регулярне прибирання належить іншому обліковому запису."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Эта регулярная уборка принадлежит другому аккаунту."
-          }
-        }
-      }
-    },
-    "error.recurring_booking.saved_address_not_found" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The selected address no longer exists."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vybraná adresa již neexistuje."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vybraná adresa už neexistuje."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вибрана адреса більше не існує."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выбранный адрес больше не существует."
-          }
-        }
-      }
-    },
-    "error.recurring_booking.starts_on_in_past" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The start date can't be in the past."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Datum zahájení nemůže být v minulosti."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dátum začiatku nemôže byť v minulosti."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дата початку не може бути в минулому."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Дата начала не может быть в прошлом."
-          }
-        }
-      }
-    },
-    "error.refund.failed" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The refund could not be processed. Please try again."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vrácení peněz se nezdařilo. Zkuste to prosím znovu."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vrátenie peňazí sa nepodarilo. Skúste to prosím znova."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не вдалося обробити повернення. Спробуйте ще раз."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось выполнить возврат. Пожалуйста, попробуйте снова."
-          }
-        }
-      }
-    },
-    "error.refund.nothing_refundable" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "There is nothing left to refund on this order."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Na této objednávce již není co vrátit."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Na tejto objednávke už nie je čo vrátiť."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "У цьому замовленні більше немає чого повертати."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "В этом заказе больше нечего возвращать."
-          }
-        }
-      }
-    },
-    "error.refund.order_not_refundable" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This order is not eligible for a refund."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tuto objednávku nelze vrátit."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Túto objednávku nie je možné vrátiť."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Це замовлення не підлягає поверненню."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Этот заказ не подлежит возврату."
           }
         }
       }

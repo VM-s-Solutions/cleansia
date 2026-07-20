@@ -36,6 +36,7 @@ final class OrderDetailViewModel: ViewModel {
     private let repository: OrderRepository
     private let snackbar: SnackbarController
     private let eventBus: OrderEventBus
+    private let liveActivity: OrderLiveActivitySyncing
     private let pollInterval: TimeInterval
     private let now: () -> Date
 
@@ -48,6 +49,7 @@ final class OrderDetailViewModel: ViewModel {
         repository: OrderRepository,
         snackbar: SnackbarController,
         eventBus: OrderEventBus,
+        liveActivity: OrderLiveActivitySyncing = LiveActivityBridge(),
         pollInterval: TimeInterval = 5 * 60,
         now: @escaping () -> Date = Date.init
     ) {
@@ -56,6 +58,7 @@ final class OrderDetailViewModel: ViewModel {
         self.repository = repository
         self.snackbar = snackbar
         self.eventBus = eventBus
+        self.liveActivity = liveActivity
         self.pollInterval = pollInterval
         self.now = now
         super.init()
@@ -85,6 +88,7 @@ final class OrderDetailViewModel: ViewModel {
         case let .success(order):
             state = .loaded(order)
             evaluatePoller(for: order)
+            syncLiveActivity(for: order)
         case let .failure(error):
             snackbar.showApiError(error)
             if state.loadedValue == nil {
@@ -115,6 +119,27 @@ final class OrderDetailViewModel: ViewModel {
     private func pollTick() async {
         if case let .success(order) = await client.getById(orderId: orderId) {
             state = .loaded(order)
+            syncLiveActivity(for: order)
+        }
+    }
+
+    /// Drive the in-progress-clean Live Activity off the order status (ADR-0029 LA-5): start (idempotent)
+    /// once the order is active — Confirmed / OnTheWay / InProgress — and end it on a terminal status. The
+    /// appointment window mirrors the tracking hero: `cleaningDateTime` + `estimatedTime` minutes.
+    private func syncLiveActivity(for order: OrderItem) {
+        guard let orderId = order.id, !orderId.isBlank else { return }
+        let status = order.status
+        if OrderStatusGroup.isActive(status) {
+            guard let start = order.cleaningDateTime else { return }
+            let end = start.addingTimeInterval(TimeInterval(max(order.estimatedTime ?? 0, 1) * 60))
+            liveActivity.start(
+                orderId: orderId,
+                orderNumber: order.displayOrderNumber ?? "",
+                scheduledStart: start,
+                scheduledEnd: end
+            )
+        } else if OrderStatusGroup.isCompleted(status) || OrderStatusGroup.isCancelled(status) {
+            liveActivity.end(orderId: orderId)
         }
     }
 

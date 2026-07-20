@@ -1,0 +1,11 @@
+# Keep executable text files LF-only. Without this, git on Windows (core.autocrlf=true,
+# the Windows default) rewrites these to CRLF on checkout, and bash — WSL, Git Bash, CI —
+# then fails with `$'\r': command not found` / `set: pipefail: invalid option name`.
+*.sh            text eol=lf
+*.bash          text eol=lf
+gradlew         text eol=lf
+
+# Windows batch/PowerShell stay CRLF.
+*.cmd           text eol=crlf
+*.bat           text eol=crlf
+*.ps1           text eol=crlf

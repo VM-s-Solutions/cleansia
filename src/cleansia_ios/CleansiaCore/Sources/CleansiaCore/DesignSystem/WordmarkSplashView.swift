@@ -4,8 +4,8 @@ import SwiftUI
 /// reveals one letter at a time on the sky-600 → sky-400 brand gradient; once the name has landed the
 /// optional "PARTNER" lockup and the subtitle fade in beneath it, then the resolver spinner. Pure
 /// SwiftUI text animation — no image assets, no Lottie — so it costs nothing to ship and scales to any
-/// device. The gradient matches the OS launch background (SplashBackground / sky-600), so there is no
-/// colour jump between the launch screen and this view.
+/// device. The gradient opens on sky-600, the light-mode OS launch background colour, so the hand-off
+/// from the launch screen is smooth in light mode.
 ///
 /// The subtitle is passed in because each app owns its own localized `L10n.Splash.tagline`; the shared
 /// view stays free of app-specific strings.
@@ -13,6 +13,7 @@ public struct WordmarkSplashView: View {
     private let subtitle: String
     private let showsPartnerLabel: Bool
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var revealed = false
 
     private static let brand = Array("Cleansia")
@@ -38,7 +39,7 @@ public struct WordmarkSplashView: View {
                     .foregroundColor(.white)
                     .opacity(revealed ? 1 : 0)
                     .padding(.top, Spacing.xs)
-                    .animation(.easeOut(duration: 0.4).delay(afterWordmark + 0.05), value: revealed)
+                    .animation(reveal(.easeOut(duration: 0.4).delay(afterWordmark + 0.05)), value: revealed)
             }
 
             Text(verbatim: subtitle)
@@ -48,14 +49,14 @@ public struct WordmarkSplashView: View {
                 .opacity(revealed ? 1 : 0)
                 .padding(.top, showsPartnerLabel ? Spacing.s : Spacing.m)
                 .padding(.horizontal, Spacing.xl)
-                .animation(.easeOut(duration: 0.5).delay(afterWordmark + 0.18), value: revealed)
+                .animation(reveal(.easeOut(duration: 0.5).delay(afterWordmark + 0.18)), value: revealed)
 
             ProgressView()
                 .progressViewStyle(.circular)
                 .tint(.white)
                 .opacity(revealed ? 1 : 0)
                 .padding(.top, Spacing.xl)
-                .animation(.easeOut(duration: 0.4).delay(afterWordmark + 0.32), value: revealed)
+                .animation(reveal(.easeOut(duration: 0.4).delay(afterWordmark + 0.32)), value: revealed)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
@@ -81,7 +82,7 @@ public struct WordmarkSplashView: View {
                     .opacity(revealed ? 1 : 0)
                     .offset(y: revealed ? 0 : 16)
                     .animation(
-                        .spring(response: 0.42, dampingFraction: 0.72).delay(Double(index) * Self.perLetter),
+                        reveal(.spring(response: 0.42, dampingFraction: 0.72).delay(Double(index) * Self.perLetter)),
                         value: revealed
                     )
             }
@@ -89,6 +90,11 @@ public struct WordmarkSplashView: View {
         // Read the wordmark as one word, not eight separate letters, under VoiceOver.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Cleansia")
+    }
+
+    /// Honour Reduce Motion: a nil animation makes the reveal snap in with no stagger or offset.
+    private func reveal(_ animation: Animation) -> Animation? {
+        reduceMotion ? nil : animation
     }
 }
 

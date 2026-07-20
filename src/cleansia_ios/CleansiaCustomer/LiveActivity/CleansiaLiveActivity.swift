@@ -19,9 +19,9 @@ struct CleansiaLiveActivityBundle: WidgetBundle {
 // MARK: - Brand
 
 private enum Brand {
-    static let sky = Color(red: 0.008, green: 0.518, blue: 0.780)   // #0284C7 (sky600)
+    static let sky = Color(red: 0.008, green: 0.518, blue: 0.780) // #0284C7 (sky600)
     static let skyBright = Color(red: 0.220, green: 0.741, blue: 0.973) // #38BDF8 (sky400)
-    static let tint = Color(red: 0.878, green: 0.949, blue: 0.996)  // #E0F2FE (sky100)
+    static let tint = Color(red: 0.878, green: 0.949, blue: 0.996) // #E0F2FE (sky100)
 }
 
 // MARK: - Status presentation
@@ -36,26 +36,54 @@ private struct CleanStatus {
     init(_ raw: String) {
         switch raw {
         case "onTheWay":
-            self = CleanStatus(title: "On the way", detail: "Your cleaner is heading over",
-                               symbol: "figure.walk", showsProgress: false, isTerminal: false)
+            self = CleanStatus(
+                title: "On the way",
+                detail: "Your cleaner is heading over",
+                symbol: "figure.walk",
+                showsProgress: false,
+                isTerminal: false
+            )
         case "inProgress":
-            self = CleanStatus(title: "Cleaning in progress", detail: "Your cleaner is on site",
-                               symbol: "sparkles", showsProgress: true, isTerminal: false)
+            self = CleanStatus(
+                title: "Cleaning in progress",
+                detail: "Your cleaner is on site",
+                symbol: "sparkles",
+                showsProgress: true,
+                isTerminal: false
+            )
         case "completed":
-            self = CleanStatus(title: "Clean complete", detail: "All done — thank you",
-                               symbol: "checkmark.seal.fill", showsProgress: false, isTerminal: true)
+            self = CleanStatus(
+                title: "Clean complete",
+                detail: "All done — thank you",
+                symbol: "checkmark.seal.fill",
+                showsProgress: false,
+                isTerminal: true
+            )
         case "cancelled":
-            self = CleanStatus(title: "Cancelled", detail: "This clean was cancelled",
-                               symbol: "xmark.circle.fill", showsProgress: false, isTerminal: true)
+            self = CleanStatus(
+                title: "Cancelled",
+                detail: "This clean was cancelled",
+                symbol: "xmark.circle.fill",
+                showsProgress: false,
+                isTerminal: true
+            )
         default:
-            self = CleanStatus(title: "Your clean", detail: "", symbol: "sparkles",
-                               showsProgress: false, isTerminal: false)
+            self = CleanStatus(
+                title: "Your clean",
+                detail: "",
+                symbol: "sparkles",
+                showsProgress: false,
+                isTerminal: false
+            )
         }
     }
 
     private init(title: String, detail: String, symbol: String, showsProgress: Bool, isTerminal: Bool) {
-        self.title = title; self.detail = detail; self.symbol = symbol
-        self.showsProgress = showsProgress; self.isTerminal = isTerminal
+        self.title = title
+        self.detail = detail
+        self.symbol = symbol
+        self.showsProgress = showsProgress
+        self.isTerminal = isTerminal
     }
 }
 
@@ -82,10 +110,12 @@ struct CleanOrderLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     if status.showsProgress {
-                        ProgressView(timerInterval: context.state.scheduledStart...context.state.scheduledEnd,
-                                     countsDown: false)
-                            .tint(Brand.sky)
-                            .font(.caption2)
+                        ProgressView(
+                            timerInterval: context.state.scheduledStart ... context.state.scheduledEnd,
+                            countsDown: false
+                        )
+                        .tint(Brand.sky)
+                        .font(.caption2)
                     } else {
                         Text(status.detail).font(.caption).foregroundStyle(.secondary)
                     }
@@ -94,11 +124,13 @@ struct CleanOrderLiveActivity: Widget {
                 Image(systemName: status.symbol).foregroundStyle(Brand.sky)
             } compactTrailing: {
                 if status.showsProgress {
-                    ProgressView(timerInterval: context.state.scheduledStart...context.state.scheduledEnd,
-                                 countsDown: false)
-                        .tint(Brand.sky)
-                        .labelsHidden()
-                        .frame(width: 32)
+                    ProgressView(
+                        timerInterval: context.state.scheduledStart ... context.state.scheduledEnd,
+                        countsDown: false
+                    )
+                    .tint(Brand.sky)
+                    .labelsHidden()
+                    .frame(width: 32)
                 } else {
                     Text(status.title).font(.caption2.weight(.semibold)).foregroundStyle(Brand.sky)
                 }
@@ -115,7 +147,9 @@ struct CleanOrderLiveActivity: Widget {
 private struct LockScreenLiveActivityView: View {
     let state: CleanOrderAttributes.ContentState
 
-    private var status: CleanStatus { CleanStatus(state.status) }
+    private var status: CleanStatus {
+        CleanStatus(state.status)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -138,7 +172,7 @@ private struct LockScreenLiveActivityView: View {
 
             if status.showsProgress {
                 VStack(alignment: .leading, spacing: 4) {
-                    ProgressView(timerInterval: state.scheduledStart...state.scheduledEnd, countsDown: false)
+                    ProgressView(timerInterval: state.scheduledStart ... state.scheduledEnd, countsDown: false)
                         .tint(Brand.sky)
                     HStack {
                         Text("Started").font(.caption2).foregroundStyle(.secondary)

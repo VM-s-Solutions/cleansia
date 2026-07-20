@@ -1,11 +1,11 @@
 ---
 id: T-0424
 title: "iOS — Booking-Confirmed screen shows only the confirmation code; add the order summary + progress (Android parity)"
-status: proposed
+status: done
 size: M
 owner: ios
 created: 2026-07-16
-updated: 2026-07-16
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -50,3 +50,21 @@ and renders the full summary + progress.
 
 ## Status log
 - 2026-07-16 — filed from the remarks-sweep parity finding.
+- 2026-07-19 — **done** on `feature/payroll-invoice-paid-notify`. Premise was PARTIALLY stale: a minimal
+  pass (best-effort VM + icon summary rows + a 5-dot `LiveProgress` row) had landed in `8c8f96e8`; this
+  pass closed the remaining Android-parity gap. `BookingSuccessViewModel` refit to the sealed
+  `BookingSuccessUiState` Loading/Loaded/Error (was an Optional flag — E1), + the Android
+  `orderRepository.refresh()` warm (wired from the shell through `BookingSheetView`) and the
+  server-code-wins pill (`effectiveCode`). New `BookingSuccessTimeline` ports `computeTimelineSteps`
+  (`BookingSuccessScreen.kt`) exactly: the REAL 4-step Done/Active/Pending vertical timeline over
+  status + `assignedEmployees` with the "just placed" pre-load fallback — replacing the 5-dot
+  order-detail indicator, which was the wrong semantic (the ticket's "reuse LiveProgressLogic" hint
+  didn't match Android's actual mapping; Android parity wins). View now mirrors Android's section
+  order: labeled Arrival/Address/Total rows (street+city, right-aligned values), Loading spinner,
+  timeline card with title, "what's next" note, selectable code. 13 new keys ×5 locales
+  (`booking_success_progress`/`t1..t4_title|desc`/`arrival|address|total_label`/`whats_next`,
+  Android wording). Tests: `BookingSuccessViewModelTests` (8 — loaded populates the summary, nil fetch
+  degrades to `.error` with the pill intact, blank-id skip, single-flight, warm, effectiveCode) +
+  `BookingSuccessTimelineTests` (8 — full status×assignment matrix incl. Cancelled). Both schemes
+  BUILD SUCCEEDED; customer 578 tests / 2 known Stripe-key locals on iPhone 17 (26.x) AND the 16.4
+  floor (Gate 8.5, by UDID); swiftformat 0.60.1 + swiftlint 0.65.0 --strict clean.

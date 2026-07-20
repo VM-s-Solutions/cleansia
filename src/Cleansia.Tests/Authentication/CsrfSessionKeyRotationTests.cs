@@ -76,4 +76,36 @@ public class CsrfSessionKeyRotationTests
         Assert.Equal(jti, validationKey);
         Assert.Equal(issuanceKey, validationKey);
     }
+
+    [Fact]
+    public void LegacyJtiLessToken_FallsBackToTheUserId_OnBothSides()
+    {
+        var user = NewUser();
+
+        // A token minted before jti emission existed: NameIdentifier only, no jti claim.
+        var legacyClaims = new List<Claim> { new(ClaimTypes.NameIdentifier, user.Id) };
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(new string('k', 64)));
+        var token = new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+            issuer: "cleansia.tests",
+            audience: "customer",
+            claims: legacyClaims,
+            expires: DateTime.UtcNow.AddMinutes(15),
+            signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)));
+
+        var config = new AuthCookieConfig { AccessCookieName = "customer_token", RefreshCookieName = "customer_refresh" };
+        var response = new JwtTokenResponse(Token: token, IsEmailConfirmed: true, UserId: user.Id);
+        Assert.Equal(user.Id, config.SessionKeyForCsrf(response));
+
+        var principal = new JwtSecurityTokenHandler().ValidateToken(
+            token,
+            new TokenValidationParameters
+            {
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = false,
+                IssuerSigningKey = key,
+            },
+            out _);
+        Assert.Equal(user.Id, CsrfTokenService.GetSessionKey(principal));
+    }
 }

@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -83,7 +84,8 @@ public class NotifyOnTheWay
 
     public class Handler(
         IOrderRepository orderRepository,
-        INotificationProducer notificationProducer)
+        INotificationProducer notificationProducer,
+        ILiveActivityProducer liveActivityProducer)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -93,7 +95,11 @@ public class NotifyOnTheWay
                 .Include(o => o.OrderStatusHistory)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
-            order!.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.OnTheWay, order));
+            var transition = OrderStatusTrack.Create(OrderStatus.OnTheWay, order!);
+            order!.AddOrderStatus(transition);
+
+            await liveActivityProducer.NotifyOrderTransitionAsync(
+                order, LiveActivityEventKeys.Start, transition, cancellationToken);
 
             if (!string.IsNullOrEmpty(order.UserId))
             {

@@ -11,6 +11,7 @@ struct AddressSectionView: View {
     private let onSaved: () -> Void
     private let geocoding: GeocodingService
     private let mapProvider: MapProvider
+    private let serviceArea: ServiceAreaProvider
 
     init(
         client: PartnerProfileClient,
@@ -18,13 +19,19 @@ struct AddressSectionView: View {
         chainVM: OnboardingChainViewModel,
         geocoding: GeocodingService,
         mapProvider: MapProvider,
+        serviceArea: ServiceAreaProvider,
         onboarding: Bool,
         onSaved: @escaping () -> Void
     ) {
-        _vm = StateObject(wrappedValue: AddressSectionViewModel(client: client, snackbar: snackbar))
+        _vm = StateObject(wrappedValue: AddressSectionViewModel(
+            client: client,
+            serviceArea: serviceArea,
+            snackbar: snackbar
+        ))
         self.chainVM = chainVM
         self.geocoding = geocoding
         self.mapProvider = mapProvider
+        self.serviceArea = serviceArea
         self.onboarding = onboarding
         self.onSaved = onSaved
     }
@@ -64,6 +71,7 @@ struct AddressSectionView: View {
                 AddressPickerView(
                     geocoding: geocoding,
                     mapProvider: mapProvider,
+                    serviceArea: serviceArea,
                     onConfirmed: { address in
                         vm.applyPick(address)
                         pickerOpen = false

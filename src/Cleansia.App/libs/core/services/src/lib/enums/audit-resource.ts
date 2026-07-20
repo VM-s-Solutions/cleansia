@@ -5,6 +5,7 @@ export const AuditResourceType = {
   Dispute: 'Dispute',
   AdminUser: 'AdminUser',
   EmployeePayConfig: 'EmployeePayConfig',
+  User: 'User',
 } as const;
 
 export type AuditResourceType =

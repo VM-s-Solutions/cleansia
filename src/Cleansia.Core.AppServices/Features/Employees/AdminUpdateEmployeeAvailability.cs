@@ -1,5 +1,6 @@
 #nullable enable
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -9,6 +10,7 @@ using DayOfWeek = Cleansia.Core.Domain.Enums.DayOfWeek;
 
 namespace Cleansia.Core.AppServices.Features.Employees;
 
+[AuditAction("employee.availability.update", ResourceType = "User")]
 public class AdminUpdateEmployeeAvailability
 {
     public class Validator : AbstractValidator<Command>
@@ -72,8 +74,14 @@ public class AdminUpdateEmployeeAvailability
 
     public record Response(string EmployeeId);
 
-    internal class Handler(
-        IEmployeeRepository employeeRepository) : ICommandHandler<Command, Response>
+    // Ids only — the schedule values are the subject's working-hours pattern (personal data the audit
+    // log must not copy). The row records that this admin changed this user's availability, keyed on
+    // the USER id the employee drill-in filters on.
+    public record AvailabilitySnapshot(string UserId, string EmployeeId);
+
+    public class Handler(
+        IEmployeeRepository employeeRepository,
+        IAuditContext auditContext) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -81,6 +89,9 @@ public class AdminUpdateEmployeeAvailability
 
             var availability = ConvertAvailability(command.Availability);
             employee!.UpdateAvailability(availability);
+
+            var snapshot = new AvailabilitySnapshot(employee.UserId, employee.Id);
+            auditContext.RecordChange("User", employee.UserId, snapshot, snapshot);
 
             return BusinessResult.Success(new Response(employee.Id));
         }

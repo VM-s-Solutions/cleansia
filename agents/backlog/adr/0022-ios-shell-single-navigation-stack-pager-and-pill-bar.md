@@ -219,3 +219,36 @@ screens (the root's hidden navigation bar left `interactivePopGestureRecognizer`
 Partner (D4) is untouched: it was already on the stock `TabView` interim, so no regression. The partner
 pill/pager follow-up (T-0376) is effectively cancelled by this supersede — flag for the PM to retire it rather
 than build the pill it was scoped to port.
+
+### D2-remnant resolved — 2026-07-19 (T-0429, architect AC4 ratification, record-only)
+
+The single shell `NavigationStack` (D2) was retired WITH the pager, not merely by association. D2 was
+required because pushed children living inside `.page` tabs would be swipeable between tabs mid-flow
+(the reason this ADR's Alternative 3 rejected per-tab stacks); with the pager gone that objection
+evaporates. The customer kept the single stack post-supersede for two CUSTOMER-SPECIFIC drivers the
+partner lacks — the iOS-16 sibling-typed-`NavigationPath` crash (already neutralized on partner by D4:
+`PartnerRootView` is a flat switch and every per-tab path is a `NavigationPath`), and genuine cross-tab
+route de-duplication (`orderDetail`/`subscribePlus` pushed from three customer tabs). The partner's
+`OrderRoute`/`EarningsRoute`/`ProfileRoute` are each pushed only within their own tab, so a merged
+`ShellRoute` would be a god-enum without de-dup AND is structurally ill-defined: `ProfileRoute` is
+shared with the out-of-shell `RegistrationLock` audience state, which a shell-level route cannot own.
+**Verdict: the partner shell is FINAL on the stock `TabView` + per-tab `NavigationStack`s** (already
+ratified on the merits, §7.7 D1 / §7.9 / §7.12 "mirror the tree, not the mechanism"). No refactor,
+no code change, no device test. This entry closes the D2 remnant; T-0429 is closed.
+
+### Erratum ratified — 2026-07-19 (T-0379, architect)
+
+The bracketed in-body note at D3 (*"[transcription-corrected 2026-07-03: this line originally said
+64pt, but its own cited source `MainShell.kt:456-462` is `Modifier.size(74.dp)` + a 34dp icon — D3's
+copy-Android-exactly ruling governs]"*, commit `fef5745c`) is **RATIFIED as a signed erratum**, not
+reversed into a supersede. Grounds: it corrects a mis-transcribed NUMBER whose true value was already
+fixed by the ADR's own cited source and its own "copy Android exactly" ruling — no decision content
+(option, threshold, scope, alternative, rationale) changed, so a superseding ADR would carry zero
+decision value while leaving the wrong digit standing in the text readers copy from. The
+supersede-never-edit concern (that "erratum" becomes a discretionary loophole) is answered by
+bounding the class and recording the convention in `agents/backlog/adr/README.md`: an in-body
+annotation is permissible ONLY for a transcription erratum determinable from the ADR's own cited
+source, must be dated + bracketed + self-describing, and requires this architect ratification —
+anything touching meaning still demands a supersede. The dev-slice edit was procedurally out of lane
+(architect-owned artifact) but substantively correct; this signature closes it.
+— architect, 2026-07-19, T-0379 AC1.

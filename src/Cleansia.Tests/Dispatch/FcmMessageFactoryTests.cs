@@ -35,6 +35,7 @@ public class FcmMessageFactoryTests
         { "recurring.scheduled", OrderArgs(), ["A-1042"] },
         { "order.new_available", new Dictionary<string, string> { ["count"] = "3" }, ["3"] },
         { "order.assignment_cancelled", new Dictionary<string, string> { ["orderId"] = "ord-1", ["orderNumber"] = "A-2201" }, ["A-2201"] },
+        { "payroll.invoice_paid", new Dictionary<string, string> { ["invoiceId"] = "inv-1" }, [] },
         { "dispute.reply", new Dictionary<string, string> { ["orderId"] = "ord-1", ["disputeId"] = "dsp-1" }, [] },
         { "loyalty.tier_upgrade", new Dictionary<string, string> { ["tier"] = "SilverMopper" }, [] },
         { "membership.expiring_soon", new Dictionary<string, string>(), [] },
@@ -69,6 +70,7 @@ public class FcmMessageFactoryTests
         { "recurring.scheduled", OrderArgs() },
         { "order.new_available", new Dictionary<string, string> { ["count"] = "3" } },
         { "order.assignment_cancelled", new Dictionary<string, string> { ["orderId"] = "ord-1", ["orderNumber"] = "A-2201" } },
+        { "payroll.invoice_paid", new Dictionary<string, string> { ["invoiceId"] = "inv-1" } },
         { "dispute.reply", new Dictionary<string, string> { ["orderId"] = "ord-1", ["disputeId"] = "dsp-1" } },
         { "loyalty.tier_upgrade", new Dictionary<string, string> { ["tier"] = "SilverMopper" } },
         { "membership.expiring_soon", new Dictionary<string, string>() },
@@ -302,7 +304,7 @@ public class FcmMessageFactoryTests
     }
 
     [Fact]
-    public void Display_Map_Contains_Exactly_The_Thirteen_Ratified_Events()
+    public void Display_Map_Contains_Exactly_The_Fourteen_Ratified_Events()
     {
         string[] expected =
         [
@@ -318,6 +320,7 @@ public class FcmMessageFactoryTests
             "order.new_available",
             "order.on_the_way",
             "order.refunded",
+            "payroll.invoice_paid",
             "recurring.scheduled",
         ];
 

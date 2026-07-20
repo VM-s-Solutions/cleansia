@@ -1,12 +1,18 @@
 // Writes the Key Vault secrets that Bicep can DERIVE from resources it creates (no external input):
 //   - Storage--ConnectionString  : built from the storage account's access key (listKeys)
 //   - ConnectionStrings--cleansia-db : built from the Postgres FQDN + admin login + the @secure() password
-//   - Jwt--Issuer / Jwt--Audience : deterministic config values
 //
 // The remaining secrets (Jwt--Key, Stripe--*, SendGrid--ApiKey, Sentry--Dsn, Mapbox--*) are EXTERNAL —
 // Bicep cannot know them — so they are NOT written here; a CI step pushes those from GitHub-Environment
 // secrets. (ADR-0015 D4: no external secret value is ever in source; derivable values are computed, not
 // committed — the storage key is read at deploy time via listKeys, never written to source or an output.)
+//
+// JWT issuer/audience are deliberately NOT written. No app setting references them — every host
+// validates with the code-side values (config "JwtSettings:Issuer" is unset on the deployed hosts, so
+// the `?? "cleansia"` fallback applies, and each host passes its audience as a constant). This module
+// used to write Jwt--Issuer (the partner API URL) + Jwt--Audience as dead secrets; wiring them into
+// app settings would have swapped the live issuer from "cleansia" to that URL and invalidated every
+// outstanding JWT on the next deploy — zero benefit, real outage. Issuer/audience stay code-side.
 
 @description('Name of the Key Vault these secrets are written into.')
 param keyVaultName string
@@ -26,12 +32,6 @@ param postgresAdministratorPassword string
 
 @description('The application database name.')
 param databaseName string = 'Cleansia'
-
-@description('JWT issuer — the partner API host base URL (deterministic from region/env).')
-param jwtIssuer string
-
-@description('JWT audience — a constant config value.')
-param jwtAudience string = 'cleansia'
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
@@ -60,21 +60,5 @@ resource dbConnSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   name: 'ConnectionStrings--cleansia-db'
   properties: {
     value: dbConnectionString
-  }
-}
-
-resource jwtIssuerSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'Jwt--Issuer'
-  properties: {
-    value: jwtIssuer
-  }
-}
-
-resource jwtAudienceSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'Jwt--Audience'
-  properties: {
-    value: jwtAudience
   }
 }

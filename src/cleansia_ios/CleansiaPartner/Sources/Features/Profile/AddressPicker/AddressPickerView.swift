@@ -9,6 +9,8 @@ struct AddressPickerView: View {
         span: MKCoordinateSpan(latitudeDelta: defaultSpan, longitudeDelta: defaultSpan)
     )
     @FocusState private var searchFocused: Bool
+    @Environment(\.locationProvider) private var location
+    @Environment(\.snackbarController) private var snackbar
 
     private let mapProvider: MapProvider
     private let onConfirmed: (GeocodedAddress) -> Void
@@ -21,10 +23,14 @@ struct AddressPickerView: View {
     init(
         geocoding: GeocodingService,
         mapProvider: MapProvider,
+        serviceArea: ServiceAreaProvider,
         onConfirmed: @escaping (GeocodedAddress) -> Void,
         onBack: @escaping () -> Void
     ) {
-        _vm = StateObject(wrappedValue: AddressPickerViewModel(geocoding: geocoding))
+        _vm = StateObject(wrappedValue: AddressPickerViewModel(
+            geocoding: geocoding,
+            servicedCountryCodesProvider: { await serviceArea.servicedCountryIsoCodes() }
+        ))
         self.mapProvider = mapProvider
         self.onConfirmed = onConfirmed
         self.onBack = onBack
@@ -42,6 +48,16 @@ struct AddressPickerView: View {
             VStack(spacing: 0) {
                 topBar
                 Spacer()
+                HStack {
+                    Spacer()
+                    FloatingCircleButton(
+                        systemIcon: "location",
+                        accessibilityLabel: L10n.AddressPicker.myLocation,
+                        action: { Task { await vm.recenterOnMyLocation(location: location) } }
+                    )
+                }
+                .padding(.horizontal, Spacing.s)
+                .padding(.bottom, Spacing.s)
                 ConfirmCard(
                     resolved: vm.resolved,
                     lookingUp: vm.lookingUp,
@@ -51,8 +67,17 @@ struct AddressPickerView: View {
             }
         }
         .navigationBarHidden(true)
+        .task { await vm.autoCenterOnOpen(location: location) }
         .onReceive(vm.recenter) { coordinate in
             region.center = CLLocationCoordinate2D(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        }
+        .onReceive(vm.locationFailed) { failure in
+            switch failure {
+            case .denied:
+                snackbar.showError(L10n.AddressPicker.locationDenied)
+            case .unavailable:
+                snackbar.showError(L10n.AddressPicker.locationUnavailable)
+            }
         }
         .onReceive(vm.confirmed, perform: onConfirmed)
     }

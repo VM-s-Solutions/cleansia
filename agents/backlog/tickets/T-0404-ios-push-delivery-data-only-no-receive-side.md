@@ -1,11 +1,11 @@
 ---
 id: T-0404
 title: "iOS — order-status pushes never surface: backend sends data-only FCM (no APNs alert) and iOS has no receive-side handler"
-status: proposed
+status: done
 size: M
 owner: architect
 created: 2026-07-14
-updated: 2026-07-14
+updated: 2026-07-19
 depends_on: [T-0403]
 blocks: []
 stories: []
@@ -84,3 +84,4 @@ Whichever is chosen, iOS also needs the **tap → deep-link** path wired to the 
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → done)** — code shipped `e956529e`+`d937de0f` (ADR-0025 accepted, loc-key APNs alert path); live push remains gated on T-0342 (.p8, owner).

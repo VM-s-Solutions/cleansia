@@ -21,6 +21,7 @@ object NotificationDeepLink {
 
     const val EXTRA_EVENT_KEY = "cleansia.partner.notification.event_key"
     const val EXTRA_ARG_ORDER_ID = "cleansia.partner.notification.order_id"
+    const val EXTRA_ARG_INVOICE_ID = "cleansia.partner.notification.invoice_id"
 
     /**
      * Stuff an Intent with the strings the typed-route resolver expects later.
@@ -30,6 +31,7 @@ object NotificationDeepLink {
     fun encode(intent: Intent, eventKey: String, args: Map<String, String>) {
         intent.putExtra(EXTRA_EVENT_KEY, eventKey)
         args["orderId"]?.let { intent.putExtra(EXTRA_ARG_ORDER_ID, it) }
+        args["invoiceId"]?.let { intent.putExtra(EXTRA_ARG_INVOICE_ID, it) }
     }
 
     /**
@@ -38,18 +40,22 @@ object NotificationDeepLink {
      */
     fun resolve(intent: Intent?): NavRoute? {
         val eventKey = intent?.getStringExtra(EXTRA_EVENT_KEY) ?: return null
-        return resolve(eventKey, intent.getStringExtra(EXTRA_ARG_ORDER_ID))
+        return resolve(
+            eventKey,
+            intent.getStringExtra(EXTRA_ARG_ORDER_ID),
+            intent.getStringExtra(EXTRA_ARG_INVOICE_ID),
+        )
     }
 
     /**
-     * Resolve from a raw event_key + orderId. Shared by [resolve] (system-tap
+     * Resolve from a raw event_key + args. Shared by [resolve] (system-tap
      * path) and the in-app notifications feed (row-tap path) so both routes
      * land on the same destination.
      */
-    fun resolve(eventKey: String, orderId: String?): NavRoute? = when (eventKey) {
-        // All currently-wired partner events are order-scoped — land on the
-        // order detail so the cleaner sees the job that changed. dispute.reply
-        // also carries the disputed order's id (see CleansiaFirebaseMessagingService).
+    fun resolve(eventKey: String, orderId: String?, invoiceId: String?): NavRoute? = when (eventKey) {
+        // Order-scoped events land on the order detail so the cleaner sees the
+        // job that changed. dispute.reply also carries the disputed order's id
+        // (see CleansiaFirebaseMessagingService).
         "order.confirmed",
         "order.in_progress",
         "order.completed",
@@ -58,6 +64,12 @@ object NotificationDeepLink {
         "dispute.reply",
         "order.assignment_cancelled",
         -> orderId?.takeIf { it.isNotBlank() }?.let { NavRoute.OrderDetail(orderId = it) }
+        // Payroll payout — open the paid invoice; fall back to the Earnings
+        // summary when the payload carries no invoiceId. Both are root
+        // destinations in PartnerNavHost.
+        "payroll.invoice_paid" ->
+            invoiceId?.takeIf { it.isNotBlank() }?.let { NavRoute.InvoiceDetail(invoiceId = it) }
+                ?: NavRoute.Earnings
         // Digest — no single order to open. Land on the bottom-nav
         // scaffold (Main). NavRoute.Orders is a nested tab inside Main,
         // not a root destination, so navigating to it directly throws

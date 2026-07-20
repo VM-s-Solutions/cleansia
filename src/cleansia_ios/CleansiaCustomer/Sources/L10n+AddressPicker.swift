@@ -30,6 +30,18 @@ extension L10n {
             localized("address_picker_clear")
         }
 
+        static var myLocation: String {
+            localized("address_picker_my_location")
+        }
+
+        static var myLocationUnavailable: String {
+            localized("address_picker_my_location_unavailable")
+        }
+
+        static var myLocationDenied: String {
+            localized("address_picker_my_location_denied")
+        }
+
         static var back: String {
             localized("common_back")
         }

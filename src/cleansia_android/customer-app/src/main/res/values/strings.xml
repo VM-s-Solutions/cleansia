@@ -388,6 +388,8 @@
     <string name="profile_stat_favorite">Favorite</string>
     <string name="profile_stat_saved">Saved</string>
     <string name="profile_stat_member_since">Member since</string>
+    <string name="profile_tier_plus">Plus</string>
+    <string name="profile_tier_regular">Regular</string>
     <string name="profile_section_account">Account</string>
     <string name="profile_section_personal">Personal</string>
     <string name="profile_section_contact">Contact</string>
@@ -1173,6 +1175,8 @@
 
     <string name="notification_order_assignment_cancelled_title">Job cancelled</string>
     <string name="notification_order_assignment_cancelled_body">A job you accepted was cancelled: #%1$s. Tap for details.</string>
+    <string name="notification_payroll_invoice_paid_title">You\'ve been paid</string>
+    <string name="notification_payroll_invoice_paid_body">Your invoice for the latest pay period has been paid. Tap to view.</string>
     <!-- ── Your devices ── -->
     <string name="profile_row_devices">Your devices</string>
     <string name="devices_title">Your devices</string>

@@ -1,11 +1,11 @@
 ---
 id: T-0325
 title: "Owner: iOS location-permission purpose string (NSLocationWhenInUseUsageDescription) ×5"
-status: proposed
+status: done
 size: S
 owner: owner
 created: 2026-06-27
-updated: 2026-06-27
+updated: 2026-07-19
 depends_on: []
 blocks: [T-0335]
 stories: []
@@ -55,10 +55,10 @@ may want to control the exact copy + its 5 translations).
 when building this — you only need to approve the copy.)
 
 ## Done when
-- [ ] Owner approves the wording ×5 (or edits it).
-- [ ] `NSLocationWhenInUseUsageDescription` is added to the partner (and later customer) `project.yml`
+- [x] Owner approves the wording ×5 (or edits it). *(Approved verbatim 2026-07-19.)*
+- [x] `NSLocationWhenInUseUsageDescription` is added to the partner (and later customer) `project.yml`
       `info.properties`, localized ×5. (Agent can do the mechanical add once the copy is signed off.)
-- [ ] Unblocks **T-0335** (the my-location FAB + auto-center).
+- [x] Unblocks **T-0335** (the my-location FAB + auto-center).
 
 ## Notes
 - **When-in-use only** — no `NSLocationAlwaysUsageDescription` (no background location; matches Android's
@@ -70,3 +70,9 @@ when building this — you only need to approve the copy.)
 - 2026-06-27 — created as the explicit owner backlog item (per owner request). Previously referenced only as a
   "proposed owner manual_step" inside T-0306/§7.6 D2, T-0310/§7.7 Scope A, and T-0335 `depends_on` — but no
   ticket file existed. This file makes it a real, do-it-later owner task with proposed copy. Blocks T-0335.
+- 2026-07-19 — **done.** Owner approved the proposed copy ×5 verbatim (2026-07-19); mechanical add landed by the
+  ios agent: `NSLocationWhenInUseUsageDescription` in **both** apps' `project.yml` `info.properties` (en base,
+  next to the camera/photo strings) + the ×5 localized values appended to both apps'
+  `Resources/{en,cs,sk,uk,ru}.lproj/InfoPlist.strings` (the existing localized-Info.plist mechanism —
+  `NSCameraUsageDescription` precedent). `xcodegen generate` re-run in both app dirs (Info.plist carries the key).
+  When-in-use only, no Always variant. Unblocks T-0335 (implemented in the same batch).

@@ -1,18 +1,19 @@
 ---
 id: T-0334
 title: iOS ServiceAreaProvider Core seam + the advisory ServiceAreaRow indicator (+ the forward-geocode country-bias it backs)
-status: draft
+status: in_progress
 size: M
 owner: pm
 created: 2026-06-26
-updated: 2026-06-26
+updated: 2026-07-19
 depends_on: [T-0310, T-0306]
 blocks: []
 stories: []
 adrs: [0013, 0014]
 layers: [ios]
 security_touching: false
-manual_steps: []
+manual_steps:
+  - "partner-mobile spec + client regen exposing the serviced-cities endpoint (owner) — gates the AC2 city-level row"
 sprint: 12
 source: sprint-12 §7.7 Decision 3 (architect)
 ---
@@ -52,7 +53,7 @@ creation is" (`:42-44`). The save resolves `countryId` independently (`:213-222`
 - [ ] **AC2 — The advisory `ServiceAreaRow` on the partner Address section.** The 3-state indicator
   (`InServicedCity`/`OutsideServicedCity`/`CountryNotServiced`/`Unknown`) refreshed off the picked address,
   **fire-and-forget, NEVER a save gate** (failures → `Unknown`, the `:163-195` parity). Localized ×5.
-- [ ] **AC3 — The forward-geocode country-bias wired.** The `GeocodingService.forwardGeocode(query,
+- [x] **AC3 — The forward-geocode country-bias wired.** The `GeocodingService.forwardGeocode(query,
   countryIsoCodes:)` call passes `serviceAreaProvider.servicedCountryIsoCodes()` so search suggestions bias to
   serviced countries (the `ServiceAreaProvider.kt:14-16` use T-0306 deferred). MapKit `MKLocalSearch` region/bias
   applied where supported; a no-bias fallback is acceptable if MapKit can't honor it (note in-ticket).
@@ -74,6 +75,58 @@ endpoint surface); no `optimizer`. **Routing:** `[ios]`. **Suggested home:** aft
 attaches to must exist first).
 
 ## Status log
+- 2026-07-19 — **backend (serviced-cities endpoint) — already shipped; unblock confirmed, tests added**
+  on `feature/payroll-invoice-paid-notify`. Investigated the domain per the "mobile client doesn't
+  expose serviced cities" blocker: "serviced" for cities is modeled exactly like countries — a
+  `ServiceCity : Auditable` entity (`Core.Domain/ServiceAreas/ServiceCity.cs`, `CountryId` FK →
+  `Country`, `Name`, unused-by-design `ZipPrefix`; `IsActive` = the serviced flag), an
+  `IServiceCityRepository` (`GetByCountryAsync`/`GetAllActiveAsync`/`CityIsServicedAsync`), and the
+  `GetServiceCities` CQRS query (`Core.AppServices/Features/ServiceAreas/GetServiceCities.cs`, flat
+  `IEnumerable<ServiceCityDto>` shape mirroring `GetServicedCountries`, optional `CountryId` scope).
+  **The backend read endpoint already exists and is exposed on BOTH mobile hosts** — partner
+  (`Web.Mobile.Partner/Controllers/ServiceCityController.cs`) and customer
+  (`Web.Mobile.Customer/Controllers/ServiceCityController.cs`), plus `Web.Customer` (AllowAnonymous)
+  and `Web.Admin` (CRUD) — landed 2026-05-31 (commit `1d154849`), and Android's generated client
+  already consumes it (`ServiceCityApi`). So the "no serviced-cities endpoint" note was about the
+  **iOS generated client**, not the backend: the backend needs no new work. The one genuine gap —
+  `GetServiceCities` had zero test coverage — is now closed: added
+  `Cleansia.Tests/Features/ServiceAreas/GetServiceCitiesHandlerTests.cs` (5 tests: unscoped
+  all-active list + full DTO projection, `CountryId` scoping / correct repo path, empty-`CountryId`
+  treated as unscoped, empty-set, null-ZipPrefix + missing-Country-nav projection). Build clean;
+  `dotnet test src/Cleansia.Tests` green 2021/2021 (2016 baseline + 5). **MANUAL_STEP (owner, still
+  gates AC2):** regen the customer + partner mobile specs and their generated clients
+  (`npm run generate-*-client` / spec dump) so iOS gains the `getServiceCities` client the
+  `ServiceAreaProvider`'s `loadCities()`/`isCityServiced()` city-half will consume. The iOS/Android
+  city-level `ServiceAreaRow` wiring is the regen-gated follow-up (NOT built here).
+- 2026-07-19 — **in_progress** on `feature/payroll-invoice-paid-notify` (ios) — **the endpoint-free half
+  SHIPPED; the city-level half stays endpoint-gated.** **Shipped:** (1) the **countries-only**
+  `ServiceAreaProvider` Core seam — `CleansiaCore/ServiceArea/` (`ServiceAreaProvider` **actor** with the
+  Android `Mutex` single-flight parity via an inflight `Task`, lazy-cached, **only a success is cached /
+  a failure is never cached so the next access retries** [the `ServiceAreaProvider.kt` law], `refresh()`
+  hook, `servicedCountryIsoCodes()` normalized alpha-2 lowercase and **nil-on-failure** to match the
+  `AddressPickerViewModel` UNKNOWN contract) + the `ServicedCountry` value type + the per-app
+  `ServiceAreaDataSource` protocol on the ADR-0011 `ApiResult` contract (`PartnerServiceAreaDataSource`
+  over the existing `PartnerProfileClient.getServicedCountries()`; `CustomerServiceAreaDataSource` over
+  `CustomerCountryAPI.countryGetServiced()`); homed on each app container (partner lazy over
+  `profileClient`; customer inline) — device-level public data, NOT in the session-wipe set (the E9
+  allowlist entry for the Android `*ServiceAreaDataSource`s). (2) the partner `AddressSectionViewModel`
+  **moved off its direct `getServicedCountries` calls onto the provider** — the country-only advisory
+  tri-state (`unknown`/`countryServiced`/`countryNotServiced`), the degrade-to-Unknown law, and the
+  save-time retry-and-surface-the-true-error path all preserved (`loadCountriesResult()` carries the
+  typed failure); the whole existing VM test suite kept green on the seam + a new no-refetch-at-save
+  test. (3) **AC3 forward-geocode country-bias LIVE:** the previously-unwired
+  `servicedCountryCodesProvider` is now fed from the provider at BOTH `AddressPickerViewModel`
+  construction sites — partner `AddressPickerView` (threaded container→ProfileView/RegistrationLockView→
+  AddressSectionView) and customer `BookingAddressPickerView` (threaded container→CustomerShellView→
+  BookingSheet/AddressManager/chooser chains). New Core `ServiceAreaProviderTests` (cache / failure-retry /
+  single-flight / refresh / iso-normalization / nil-on-failure). Gates: Core 340 / Partner 457 /
+  Customer 578 on iPhone 17 + the `iPhone14-iOS16` 16.4 floor (only the pre-existing ignorable
+  TCC/Stripe-key failures); swiftformat + swiftlint `--strict` clean. **Gated remainder (NOT built):**
+  the **AC2 city-level 3-state `ServiceAreaRow`** (`InServicedCity`/`OutsideServicedCity`) + the provider's
+  `ServicedCity`/`loadCities()`/`isCityServiced()` half — the partner mobile spec/generated client exposes
+  **no serviced-cities endpoint** (`ServiceCityApi.getServiceCities` has no iOS equivalent), so it needs
+  the owner spec+client regen first (`manual_steps`). The existing country-only `CountryNotServicedRow`
+  advisory stays as the interim surface.
 - 2026-06-26 — draft (created by architect ruling, sprint-12 §7.7 Decision 3). The advisory `ServiceAreaRow` +
   the `ServiceAreaProvider` Core seam (+ the forward-geocode country-bias it backs, itself deferred from T-0306)
   are deferred out of T-0310 to keep that screen ticket scoped (`M`); the Address section ships pan/search/save
@@ -83,3 +136,7 @@ attaches to must exist first).
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 (ios, harvest note) — `patterns-mobile.md`'s stale "the iOS `ServiceAreaProvider` seam
+  doesn't exist yet" note (the Slice-D `CountryResolver` bullet) corrected to point at the landed
+  countries-only Core seam; folding `CountryResolver` onto it flagged as a candidate cleanup for the
+  city-half follow-up.

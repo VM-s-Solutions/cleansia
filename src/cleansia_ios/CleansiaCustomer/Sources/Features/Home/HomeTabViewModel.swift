@@ -15,7 +15,9 @@ final class HomeTabViewModel: ViewModel {
     @Published private(set) var ordersLoaded = false
     @Published private(set) var ordersLoading = false
     @Published private(set) var recurringTemplates: [RecurringTemplate] = []
+    @Published private(set) var recurringLoaded = false
     @Published private(set) var loyaltyAccount: LoyaltyAccount?
+    @Published private(set) var loyaltyLoaded = false
     @Published private(set) var membership: MyMembership?
     @Published private(set) var addresses: [SavedAddress] = []
     @Published private(set) var selectedAddressId: String?
@@ -52,7 +54,9 @@ final class HomeTabViewModel: ViewModel {
         orderRepository.$loaded.assign(to: &$ordersLoaded)
         orderRepository.$loading.assign(to: &$ordersLoading)
         recurringRepository.$templates.assign(to: &$recurringTemplates)
+        recurringRepository.$loaded.assign(to: &$recurringLoaded)
         loyaltyRepository.$account.assign(to: &$loyaltyAccount)
+        loyaltyRepository.$loaded.assign(to: &$loyaltyLoaded)
         membershipRepository.$current.assign(to: &$membership)
         savedAddressRepository.$addresses.assign(to: &$addresses)
         savedAddressRepository.$selectedId.assign(to: &$selectedAddressId)
@@ -138,33 +142,53 @@ final class HomeTabViewModel: ViewModel {
 
     /// The `LaunchedEffect(isPlus) { if (isPlus) recurringRepo.refresh() }`
     /// parity (`HomeTab.kt:160-162`) — errors stay silent, as on Android.
+    /// Skips when the shell prefetch already landed the templates — this pass only
+    /// backfills a failed/raced prefetch, else a Plus user double-fetches at entry.
     func refreshRecurringIfPlus(_ isPlus: Bool) async {
-        guard isPlus else { return }
+        guard isPlus, !recurringRepository.loaded else { return }
         await recurringRepository.refresh()
     }
 
-    /// The 1.5s hard ceiling (`HomeTab.kt:207-210`) — a slow/failing source
+    var sectionVisibility: HomeSections.SectionVisibility {
+        HomeSections.SectionVisibility(
+            orderAgain: mostRecentCompleted != nil,
+            recurring: showRecurringSection,
+            packages: !popularPackages.isEmpty,
+            recent: showRecent,
+            milestone: milestoneAccount != nil
+        )
+    }
+
+    /// The 1.5s fallback ceiling (`HomeTab.kt:207-210`) — a slow/failing source
     /// stops blocking and the page renders whatever arrived.
     func runFirstPaintCeiling() async {
         try? await Task.sleep(nanoseconds: 1_500_000_000)
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, !firstPaintReady else { return }
         firstPaintReady = true
     }
 
-    /// Flip once when orders + membership + packages have all landed; never
-    /// revert for this tab session (`HomeTab.kt:196-203`).
+    /// Flip once when every Home source has landed (recurring only gates Plus
+    /// members); never revert for this tab session (`HomeTab.kt:196-203`).
     private func startFirstPaintWatcher() {
-        Publishers.CombineLatest3($ordersLoaded, $membership, $packages)
-            .map { ordersLoaded, membership, packages in
-                HomeSections.firstPaintReady(
-                    ordersLoaded: ordersLoaded,
-                    membershipReady: membership != nil,
-                    packagesReady: !packages.isEmpty
-                )
-            }
-            .filter { $0 }
-            .prefix(1)
-            .sink { [weak self] ready in self?.firstPaintReady = ready }
-            .store(in: &cancellables)
+        Publishers.CombineLatest(
+            Publishers.CombineLatest3($ordersLoaded, $membership, $packages),
+            Publishers.CombineLatest($loyaltyLoaded, $recurringLoaded)
+        )
+        .map { core, extras in
+            let (ordersLoaded, membership, packages) = core
+            let (loyaltyLoaded, recurringLoaded) = extras
+            return HomeSections.firstPaintReady(HomeSections.FirstPaintSources(
+                ordersLoaded: ordersLoaded,
+                membershipReady: membership != nil,
+                packagesReady: !packages.isEmpty,
+                loyaltyLoaded: loyaltyLoaded,
+                isPlus: membership?.hasMembership == true,
+                recurringLoaded: recurringLoaded
+            ))
+        }
+        .filter { $0 }
+        .prefix(1)
+        .sink { [weak self] ready in self?.firstPaintReady = ready }
+        .store(in: &cancellables)
     }
 }

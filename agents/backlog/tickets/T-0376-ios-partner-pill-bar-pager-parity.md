@@ -1,11 +1,11 @@
 ---
 id: T-0376
 title: "iOS partner shell — pill-bar + pager parity (the ADR-0022 D4-mandated follow-up): adopt the D2/D3 shape with the partner pill variant + harvest the shared pill to CleansiaCore (second call site)"
-status: proposed
+status: retired
 size: M
 owner: ios
 created: 2026-07-03
-updated: 2026-07-03
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -93,3 +93,4 @@ rules WHEN the shared pill is harvested to `CleansiaCore`: at the SECOND call si
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → retired)** — cancelled by the owner-directed ADR-0022 supersede (`365fd221`, PR #107); surviving topology half re-scoped as T-0429 (itself closed premise-void).

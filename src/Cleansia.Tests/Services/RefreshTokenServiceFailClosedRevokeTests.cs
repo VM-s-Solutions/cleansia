@@ -72,7 +72,8 @@ public sealed class RefreshTokenServiceFailClosedRevokeTests : IDisposable
             new RefreshTokenRepository(ctx),
             unitOfWork ?? ctx,
             jwt.Object,
-            NullLogger<RefreshTokenService>.Instance);
+            NullLogger<RefreshTokenService>.Instance,
+            TimeProvider.System);
     }
 
     private async Task SeedUserAsync()
@@ -347,7 +348,7 @@ public sealed class RefreshTokenServiceFailClosedRevokeTests : IDisposable
                 jwt.SetupGet(s => s.RefreshTokenShortExpDays).Returns(1);
                 new RefreshTokenService(
                         new RefreshTokenRepository(raceCtx), raceCtx, jwt.Object,
-                        NullLogger<RefreshTokenService>.Instance)
+                        NullLogger<RefreshTokenService>.Instance, TimeProvider.System)
                     .Issue(UserId, rememberMe: true, audience: Audience, deviceId: "dev-race");
                 await raceCtx.CommitAsync(cancellationToken);
             }

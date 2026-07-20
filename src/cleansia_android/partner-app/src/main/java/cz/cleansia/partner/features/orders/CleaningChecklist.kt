@@ -60,13 +60,15 @@ fun CleaningChecklist(
     val services = order.selectedServices.orEmpty()
         .mapNotNull { s ->
             val id = s.id ?: return@mapNotNull null
-            val name = s.name?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            val name = localizedScopeName(s.translations, s.name)
+                ?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
             ChecklistItem(id = id, label = name)
         }
     val packages = order.selectedPackages.orEmpty()
         .mapNotNull { p ->
             val id = p.id ?: return@mapNotNull null
-            val name = p.name?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            val name = localizedScopeName(p.translations, p.name)
+                ?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
             ChecklistItem(id = id, label = name)
         }
     val extras = order.extras.orEmpty()

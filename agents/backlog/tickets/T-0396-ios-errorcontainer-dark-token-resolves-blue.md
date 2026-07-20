@@ -1,11 +1,11 @@
 ---
 id: T-0396
 title: "iOS design token — CleansiaColors.errorContainer resolves to blue (Palette.sky800) in DARK mode, so any destructive 'container' surface is blue-on-dark"
-status: proposed
+status: done
 size: S
 owner: architect
 created: 2026-07-08
-updated: 2026-07-08
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -48,3 +48,12 @@ source: phase/ios-fix2 fix-round-5 D-profile+plus+dialog review (minor, latent t
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — ios: implemented. Android dark schemes don't override the error-container slots, so the
+  device renders the Material3 baseline — mirrored verbatim: dark `errorContainer` = `#8C1D18` (error30,
+  replaces the interim Tailwind red-900 `#7F1D1D` that had superseded the original blue `sky800`), dark
+  `onErrorContainer` = `#F9DEDC` (error90, replaces `darkError` red-300). All 4 `errorContainer` call sites
+  are destructive surfaces (partner contract chip + invoice badge, customer dispute banner + delete-account
+  halo) — none relied on blue. Harvest: baseline-mirror rule folded into `patterns-mobile.md` colors row.
+  Follow-up candidates (out of scope here): fix-round-5 `.error.opacity(...)` container workarounds could
+  now adopt the token; light `errorContainer` (`#FEE2E2`) also deviates from the Android-effective baseline
+  (`#F9DEDC`) — minor, pale-pink vs pale-pink.

@@ -1,11 +1,11 @@
 ---
 id: T-0400
 title: "Deployed web cookie auth requires same-site custom domains — dev/prod frontends and APIs must share the cleansia.cz site (until then, deployed-dev web URLs cannot authenticate — by design)"
-status: proposed
+status: blocked
 size: M
 owner: architect
 created: 2026-07-11
-updated: 2026-07-15
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -81,3 +81,8 @@ source: phase/web-fix1 — the deployed-web 401 root cause (owner chose the loca
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **PARKED by the owner** (proposed → blocked): domains are not bought yet and a rebrand of
+  "Cleansia" is possible — custom domains are explicitly NOT a concern right now. Verified dormant:
+  `customDomains` defaults to `{}` in main.bicep and is commented out in BOTH bicepparam files — zero
+  effect on any deploy until the owner uncomments and fills it. The enabler stays authored and ready.
+  This also keeps the T-0409 admin-TTL PROD cut-over parked (its code is shipped; dev unaffected).

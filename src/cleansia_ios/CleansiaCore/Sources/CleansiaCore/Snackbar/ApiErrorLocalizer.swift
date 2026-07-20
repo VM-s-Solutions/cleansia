@@ -25,27 +25,27 @@ public struct ApiErrorLocalizer: ApiErrorLocalizing {
         return message(forStatus: error.httpStatus)
     }
 
-    // String(localized:) cannot signal a miss, so probe with a sentinel default.
+    /// The lookup cannot signal a miss, so probe with a sentinel default.
     private func catalogString(_ key: String) -> String? {
         let sentinel = "\u{1}"
-        let value = Bundle.module.localizedString(forKey: key, value: sentinel, table: nil)
+        let value = CoreL10n.bundle.localizedString(forKey: key, value: sentinel, table: nil)
         return value == sentinel ? nil : value
     }
 
     public func message(forStatus status: Int?) -> String {
         switch status {
         case 401, 403:
-            String(localized: "error.unauthorized", bundle: .module)
+            CoreL10n.localized("error.unauthorized")
         case 404:
-            String(localized: "error.not_found", bundle: .module)
+            CoreL10n.localized("error.not_found")
         case .some(400 ... 499):
-            String(localized: "error.request", bundle: .module)
+            CoreL10n.localized("error.request")
         case .some(500 ... 599):
-            String(localized: "error.server", bundle: .module)
+            CoreL10n.localized("error.server")
         case nil:
-            String(localized: "error.unreachable", bundle: .module)
+            CoreL10n.localized("error.unreachable")
         default:
-            String(localized: "error.generic", bundle: .module)
+            CoreL10n.localized("error.generic")
         }
     }
 }

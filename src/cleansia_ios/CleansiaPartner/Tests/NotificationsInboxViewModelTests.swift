@@ -172,6 +172,22 @@ final class NotificationsInboxViewModelTests: XCTestCase {
         XCTAssertEqual(received, [.ordersTab])
     }
 
+    func testTapInvoicePaidRowEmitsTheInvoiceDestination() async {
+        client.pageResults = [NotificationFixtures.page([
+            NotificationFixtures.item(id: "n-1", eventKey: "payroll.invoice_paid", args: ["invoiceId": "inv-5"])
+        ])]
+        let vm = makeVM()
+        await vm.onOpen()
+
+        var received: [PartnerNotificationDestination] = []
+        let token = vm.tapped.sink { received.append($0) }
+        defer { token.cancel() }
+
+        await vm.tap(id: "n-1")
+
+        XCTAssertEqual(received, [.invoice(invoiceId: "inv-5")])
+    }
+
     func testTapRowWithoutTargetMarksReadWithoutNavigating() async {
         client.pageResults = [NotificationFixtures.page([
             NotificationFixtures.item(id: "n-1", eventKey: "order.confirmed", args: [:])

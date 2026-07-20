@@ -73,5 +73,6 @@ identifier_name:
     - ml
     - xs
     - xl
+    - v   # CleanOrderAttributes.ContentState.v — the Live Activity content-state schema-version wire key ("v")
 
 reporter: "xcode"

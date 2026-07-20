@@ -77,7 +77,8 @@ final class NotificationsInboxViewModel: ViewModel {
         }
         if let destination = PartnerNotificationDeepLink.resolve(
             eventKey: item.eventKey,
-            orderId: nonEmpty(item.args[PartnerNotificationDeepLink.orderIdField])
+            orderId: nonEmpty(item.args[PartnerNotificationDeepLink.orderIdField]),
+            invoiceId: nonEmpty(item.args[PartnerNotificationDeepLink.invoiceIdField])
         ) {
             tapped.send(destination)
         }

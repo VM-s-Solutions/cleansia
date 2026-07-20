@@ -34,6 +34,7 @@ public class CancelOrderStandardTierFeeTests
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
     private readonly Mock<INotificationProducer> _producer = new();
+    private readonly Mock<ILiveActivityProducer> _liveActivityProducer = new();
 
     public CancelOrderStandardTierFeeTests()
     {
@@ -57,7 +58,8 @@ public class CancelOrderStandardTierFeeTests
             _refundService.Object,
             _loyaltyService.Object,
             new CancellationPolicyResolver(_membershipRepository.Object),
-            _producer.Object);
+            _producer.Object,
+            _liveActivityProducer.Object);
 
     private Order ArrangeAcceptedCardPaidOrder(DateTime cleaningUtc, decimal totalPrice)
     {

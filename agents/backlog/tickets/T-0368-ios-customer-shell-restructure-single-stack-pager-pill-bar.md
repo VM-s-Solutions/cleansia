@@ -161,3 +161,6 @@ cluster, all sharing one root topology:
   (2) the ADR's 64pt FAB line contradicts its own cited source (`MainShell.kt:456-462` = 74dp/34dp)
   (→ Slice-D carrier + the ADR transcription note; ratification → T-0379). PM reconciled 2026-07-03:
   both findings landed; slice advanced.
+- 2026-07-19 architect (T-0379 close-out): finding (2)'s ADR-0022 in-body 74pt note is **ratified as a
+  signed erratum** (block appended to ADR-0022; convention in `agents/backlog/adr/README.md`) — the
+  supersede-never-edit flag this review raised is resolved. See T-0379 Review for the full verdicts.

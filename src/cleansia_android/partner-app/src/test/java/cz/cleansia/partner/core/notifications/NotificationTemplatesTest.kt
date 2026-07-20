@@ -33,6 +33,15 @@ class NotificationTemplatesTest {
     }
 
     @Test
+    fun `templateFor maps the payroll payout to the order-updates channel`() {
+        val template = NotificationTemplates.templateFor("payroll.invoice_paid")
+
+        assertEquals(R.string.notification_payroll_invoice_paid_title, template?.titleRes)
+        assertEquals(R.string.notification_payroll_invoice_paid_body, template?.bodyRes)
+        assertEquals(NotificationChannels.CHANNEL_ORDER_UPDATES, template?.channelId)
+    }
+
+    @Test
     fun `templateFor returns null for an unknown key - drop parity`() {
         assertNull(NotificationTemplates.templateFor("promo.new_sitewide"))
         assertNull(NotificationTemplates.templateFor("loyalty.tier_upgrade"))
@@ -91,19 +100,37 @@ class NotificationTemplatesTest {
 
     @Test
     fun `deep link resolves the new-jobs digest to Main`() {
-        assertEquals(NavRoute.Main, NotificationDeepLink.resolve("order.new_available", null))
+        assertEquals(NavRoute.Main, NotificationDeepLink.resolve("order.new_available", null, null))
     }
 
     @Test
     fun `deep link resolves an order event to the order detail`() {
         assertEquals(
             NavRoute.OrderDetail(orderId = "ord-7"),
-            NotificationDeepLink.resolve("order.confirmed", "ord-7"),
+            NotificationDeepLink.resolve("order.confirmed", "ord-7", null),
         )
     }
 
     @Test
+    fun `deep link resolves the payroll payout to the invoice detail`() {
+        assertEquals(
+            NavRoute.InvoiceDetail(invoiceId = "inv-42"),
+            NotificationDeepLink.resolve("payroll.invoice_paid", null, "inv-42"),
+        )
+    }
+
+    @Test
+    fun `deep link resolves the payroll payout to Earnings when the invoice id is absent`() {
+        assertEquals(NavRoute.Earnings, NotificationDeepLink.resolve("payroll.invoice_paid", null, null))
+    }
+
+    @Test
+    fun `deep link resolves the payroll payout to Earnings when the invoice id is blank`() {
+        assertEquals(NavRoute.Earnings, NotificationDeepLink.resolve("payroll.invoice_paid", null, "  "))
+    }
+
+    @Test
     fun `deep link resolves an unknown key to null`() {
-        assertNull(NotificationDeepLink.resolve("promo.new_sitewide", null))
+        assertNull(NotificationDeepLink.resolve("promo.new_sitewide", null, null))
     }
 }

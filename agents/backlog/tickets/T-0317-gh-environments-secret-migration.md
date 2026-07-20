@@ -1,11 +1,11 @@
 ---
 id: T-0317
 title: OWNER — GitHub Environments (dev-weu / prod-weu) + flat-secret migration into per-env scopes
-status: blocked
+status: done
 size: S
 owner: pm
 created: 2026-06-23
-updated: 2026-06-23
+updated: 2026-07-19
 depends_on: []
 blocks: [T-0318]
 stories: []
@@ -32,12 +32,12 @@ its per-env secrets must exist before the workflow can run.
 
 ## Acceptance criteria
 
-- [ ] **AC1 — `dev-weu` Environment (auto on merge).** A GitHub Environment named **`dev-weu`** that
+- [x] **AC1 — `dev-weu` Environment (auto on merge).** A GitHub Environment named **`dev-weu`** that
   auto-deploys on merge to master (no required reviewer — dev is fast).
-- [ ] **AC2 — `prod-weu` Environment (protected).** A GitHub Environment named **`prod-weu`** with
+- [x] **AC2 — `prod-weu` Environment (protected).** A GitHub Environment named **`prod-weu`** with
   **required reviewers + manual approval** (the protected prod gate; ADR-0015 #9). It stays empty/unused
   this wave (prod is authored-not-deployed) but exists as the scaffolding.
-- [ ] **AC3 — Flat secrets migrated into the per-env scopes.** The flat `*_DEV`/`*_PRO` secrets — OIDC
+- [x] **AC3 — Flat secrets migrated into the per-env scopes.** The flat `*_DEV`/`*_PRO` secrets — OIDC
   ids (`AZURE_CLIENT_ID`/`AZURE_TENANT_ID`/`AZURE_SUBSCRIPTION_ID`), `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER`
   / `_ADMIN`, `ACR_NAME`, and the bootstrap `DB_CONNECTION_STRING` — are moved into the **`dev-weu`** (dev
   values) and **`prod-weu`** (prod values) Environment scopes, and the flat repo-level copies removed.
@@ -68,6 +68,16 @@ living doc once the owner confirms the names, but the creation/migration is the 
   first); `security_touching: true` (secret handling); `manual_steps: [gh-environments,
   secret-migration]`. **Held until the owner confirms it done.** Surfaced on the OWNER PROVISIONING
   CHECKLIST relayed to the owner.
+- 2026-07-19 — blocked → **done** (reconciled by backend — **owner completed this weeks ago**; the
+  ticket record was stale). Evidence: (1) the owner's direct confirmation (his iPhone runs against the
+  DEV environment daily); (2) `deploy-dev.yml`/`deploy-pro.yml` + `deploy-azure.yml` reference the
+  `dev-weu`/`prod-weu` Environments by name with `secrets: inherit` and dev deploys have run through
+  them — impossible if the Environments/secrets did not exist; (3) live-host proof of a completed
+  secret-fed deploy: all five `api-cleansia-*-weu-dev.azurewebsites.net/health` endpoints returned
+  **HTTP 200 "Healthy"** and `web-cleansia-customer-weu-dev` returned 200 on 2026-07-19.
 
 ## Review
 <!-- no agent work product — this is an owner provisioning step; verified by the owner confirming it done -->
+- 2026-07-19 backend: reconciled to reality — the owner confirmed completion; live dev hosts verified
+  (see the status log). No agent work product; the verification evidence is the smoke run recorded on
+  T-0320.

@@ -44,6 +44,7 @@ public static class NotificationFeedEventKeys
     [
         NotificationEventCatalog.NewJobsAvailable,
         NotificationEventCatalog.OrderAssignmentCancelled,
+        NotificationEventCatalog.InvoicePaid,
     ];
 
     public static IReadOnlyList<string> For(NotificationFeedAudience audience) => audience switch

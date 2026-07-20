@@ -382,6 +382,8 @@
     <string name="profile_stat_favorite">Избранный</string>
     <string name="profile_stat_saved">Сохранено</string>
     <string name="profile_stat_member_since">Участник с</string>
+    <string name="profile_tier_plus">Plus</string>
+    <string name="profile_tier_regular">Обычный</string>
     <string name="profile_section_account">Учётная запись</string>
     <string name="profile_section_personal">Личное</string>
     <string name="profile_section_contact">Контакты</string>
@@ -1149,6 +1151,8 @@
 
     <string name="notification_order_assignment_cancelled_title">Заказ отменён</string>
     <string name="notification_order_assignment_cancelled_body">Заказ, который вы приняли, отменён: #%1$s. Нажмите, чтобы посмотреть детали.</string>
+    <string name="notification_payroll_invoice_paid_title">Вам выплачено</string>
+    <string name="notification_payroll_invoice_paid_body">Ваш счёт за последний расчётный период оплачен. Нажмите, чтобы посмотреть.</string>
     <!-- ── Ваши устройства ── -->
     <string name="profile_row_devices">Ваши устройства</string>
     <string name="devices_title">Ваши устройства</string>

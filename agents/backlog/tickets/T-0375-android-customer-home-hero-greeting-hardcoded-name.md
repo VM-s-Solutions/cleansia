@@ -1,11 +1,11 @@
 ---
 id: T-0375
 title: "Android customer BUG — home_hero_greeting bakes the hardcoded name \", Michael\" into EVERY user's greeting (strings.xml:116, ×5 locales)"
-status: proposed
+status: done
 size: S
 owner: android
 created: 2026-07-03
-updated: 2026-07-03
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -65,3 +65,4 @@ argument.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled (proposed → done)** — fixed in `13431f2b` (PR #123): AC1 option (a) name-less iOS-parity copy in all 5 locales; AC2 zero 'Michael' hits repo-wide; re-verified 2026-07-19 with full suites green (244+122).

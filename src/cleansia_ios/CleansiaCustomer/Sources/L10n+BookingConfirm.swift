@@ -85,6 +85,58 @@ extension L10n.Booking {
         L10n.localized("booking_success_go_home")
     }
 
+    static var successProgress: String {
+        L10n.localized("booking_success_progress")
+    }
+
+    static var successStepReceivedTitle: String {
+        L10n.localized("booking_success_t1_title")
+    }
+
+    static var successStepReceivedSubtitle: String {
+        L10n.localized("booking_success_t1_desc")
+    }
+
+    static var successStepAssigningTitle: String {
+        L10n.localized("booking_success_t2_title")
+    }
+
+    static var successStepAssigningSubtitle: String {
+        L10n.localized("booking_success_t2_desc")
+    }
+
+    static var successStepConfirmedTitle: String {
+        L10n.localized("booking_success_t3_title")
+    }
+
+    static var successStepConfirmedSubtitle: String {
+        L10n.localized("booking_success_t3_desc")
+    }
+
+    static var successStepCleaningDayTitle: String {
+        L10n.localized("booking_success_t4_title")
+    }
+
+    static var successStepCleaningDaySubtitle: String {
+        L10n.localized("booking_success_t4_desc")
+    }
+
+    static var successArrivalLabel: String {
+        L10n.localized("booking_success_arrival_label")
+    }
+
+    static var successAddressLabel: String {
+        L10n.localized("booking_success_address_label")
+    }
+
+    static var successTotalLabel: String {
+        L10n.localized("booking_success_total_label")
+    }
+
+    static var successWhatsNext: String {
+        L10n.localized("booking_success_whats_next")
+    }
+
     static var errorSignInRequired: String {
         L10n.localized("error_booking_sign_in_required")
     }

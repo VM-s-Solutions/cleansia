@@ -13,6 +13,7 @@ struct RegistrationLockView: View {
     private let snackbar: SnackbarController
     private let geocoding: GeocodingService
     private let mapProvider: MapProvider
+    private let serviceArea: ServiceAreaProvider
 
     init(
         client: PartnerRegistrationClient,
@@ -21,6 +22,7 @@ struct RegistrationLockView: View {
         snackbar: SnackbarController,
         geocoding: GeocodingService,
         mapProvider: MapProvider,
+        serviceArea: ServiceAreaProvider,
         onCompleted: @escaping () -> Void,
         onSignedOut: @escaping () -> Void
     ) {
@@ -30,6 +32,7 @@ struct RegistrationLockView: View {
         self.snackbar = snackbar
         self.geocoding = geocoding
         self.mapProvider = mapProvider
+        self.serviceArea = serviceArea
         self.onCompleted = onCompleted
         self.onSignedOut = onSignedOut
     }
@@ -122,6 +125,7 @@ struct RegistrationLockView: View {
                 chainVM: chainVM,
                 geocoding: geocoding,
                 mapProvider: mapProvider,
+                serviceArea: serviceArea,
                 onboarding: onboarding,
                 onSaved: { Task { await chainVM.advanceOrFinish() } }
             )

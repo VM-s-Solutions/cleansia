@@ -1,11 +1,11 @@
 ---
 id: T-0331
 title: iOS DeviceIdProvider — persist own generated UUID (IDFV as seed only) + verify Keychain write OSStatus before caching
-status: draft
+status: done
 size: S
 owner: pm
 created: 2026-06-26
-updated: 2026-06-26
+updated: 2026-07-19
 depends_on: [T-0300]
 blocks: []
 stories: []
@@ -102,3 +102,4 @@ assertions above.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled (draft → done)** — verified already-shipped in code: DeviceIdProvider mints its OWN UUID (IDFV gone entirely), Keychain write OSStatus verified before the fast-path trusts the cache (persisted flag, re-attempts until errSecSuccess); full DeviceIdProviderTests suite covers mint/stability/failure-retry/convergence. Nothing functional remains.

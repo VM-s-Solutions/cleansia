@@ -68,6 +68,13 @@ class NotificationsViewModelTest {
         createdOn = "2026-07-15T08:00:00+00:00",
         readOn = "2026-07-15T09:00:00+00:00",
     )
+    private val invoicePaidRow = UserNotificationDto(
+        id = "n-invoice-paid",
+        eventKey = "payroll.invoice_paid",
+        args = mapOf("invoiceId" to "inv-5"),
+        createdOn = "2026-07-14T08:00:00+00:00",
+        readOn = null,
+    )
 
     @Before
     fun setUp() {
@@ -80,6 +87,8 @@ class NotificationsViewModelTest {
         every { appContext.getString(R.string.notification_order_confirmed_title) } returns "Job confirmed"
         every { appContext.getString(R.string.notification_order_confirmed_body, "A-1042") } returns "Job #A-1042 is confirmed."
         every { appContext.getString(R.string.notification_order_confirmed_body, "A-2000") } returns "Job #A-2000 is confirmed."
+        every { appContext.getString(R.string.notification_payroll_invoice_paid_title) } returns "You've been paid"
+        every { appContext.getString(R.string.notification_payroll_invoice_paid_body) } returns "Your invoice has been paid."
         every { errorTranslator.translate(any()) } returns translatedError
         coEvery { repository.markRead(any()) } returns ApiResult.Success(Unit)
         coEvery { repository.markAllRead(any()) } returns ApiResult.Success(Unit)
@@ -198,6 +207,29 @@ class NotificationsViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { repository.markRead("n-newjobs") }
+        verify(exactly = 1) { repository.decrementUnread() }
+    }
+
+    @Test
+    fun `payroll payout row tap emits the invoice detail from the invoiceId arg - iOS parity`() = runTest {
+        // Pins the VM's own item.args["invoiceId"] extraction (the string-literal
+        // key added for T-0431), matching iOS NotificationsInboxViewModelTests'
+        // testTapInvoicePaidRowEmitsTheInvoiceDestination. The positional deep-link
+        // unit tests can't catch a mis-keyed args lookup; this can.
+        coEvery { repository.getPage(1) } returns ApiResult.Success(page(invoicePaidRow))
+
+        val vm = viewModel()
+        vm.open()
+        advanceUntilIdle()
+        val item = (vm.state.value as NotificationsUiState.Loaded).items.single()
+
+        vm.openRoute.test {
+            vm.onRowClick(item)
+            assertEquals(NavRoute.InvoiceDetail("inv-5"), awaitItem())
+        }
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.markRead("n-invoice-paid") }
         verify(exactly = 1) { repository.decrementUnread() }
     }
 

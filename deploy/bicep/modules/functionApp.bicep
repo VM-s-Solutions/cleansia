@@ -35,6 +35,9 @@ param storageAccountId string
 @description('Application Insights connection string (non-secret; instrumentation only).')
 param appInsightsConnectionString string
 
+@description('Subnet id for regional VNet integration (the Q-INFRA-03 seam). Empty (default) = no VNet integration. MUST be set whenever Postgres/Storage go private — an unintegrated Functions host would lose the DB and every queue at once.')
+param virtualNetworkSubnetId string = ''
+
 @description('Resource tags.')
 param tags object = {}
 
@@ -126,16 +129,23 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
     serverFarmId: appServicePlanId
     httpsOnly: true
     reserved: true
+    virtualNetworkSubnetId: empty(virtualNetworkSubnetId) ? null : virtualNetworkSubnetId
     siteConfig: {
       linuxFxVersion: linuxFxVersion
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
+      vnetRouteAllEnabled: empty(virtualNetworkSubnetId) ? null : true
       // MUST be true on a Dedicated (App Service) plan: with alwaysOn=false the Functions host unloads
       // when idle and stops polling the Storage Queues (send-email, generate-receipt, generate-invoice,
       // notifications) and firing timers until something wakes it — messages sit invisible past their
       // visibility timeout and come back with DequeueCount > 1. Only Consumption plans get an external
       // scale controller; on this shared B2 the warm host IS the queue scaler.
       alwaysOn: true
+      // The GET /api/health probe (HealthFunction). App Service pings it and RECYCLES an instance that
+      // returns non-200 — self-healing for the class of failure behind the 2026-07-18 outage (host up but
+      // a dependency down), and it exposes the HealthCheckStatus metric the alerts module watches. Points
+      // at the app's only HTTP route; timers/queues are unaffected.
+      healthCheckPath: '/api/health'
       // Pull the image from ACR using the Function App's managed identity (AcrPull granted in
       // roleAssignments.bicep). No registry admin user, no registry password in config.
       acrUseManagedIdentityCreds: true

@@ -6,6 +6,7 @@ using Cleansia.Config.Services;
 using Cleansia.Config.Validation;
 using Cleansia.Infra.Azure.Storage.Blobs;
 using Cleansia.Infra.Azure.Storage.Queues;
+using Cleansia.Infra.Clients.Apns;
 using Cleansia.Infra.Clients.Fcm;
 using Cleansia.Infra.Clients.SendGrid;
 using Cleansia.Infra.Clients.Stripe;
@@ -30,6 +31,7 @@ public static class CoreExtensions
             .AddStripe(configuration, env)
             .AddSendGrid()
             .AddFcm()
+            .AddApns()
             .AddAzureBlobStorage(configuration)
             .AddAzureStorageQueues(configuration)
             .AddFiscalServices(configuration);

@@ -19,6 +19,15 @@ param location string
 @description('App Service Plan SKU. Dev = B2 (ADR-0015 D2 owner override of B1); prod = S1.')
 param skuName string = 'B2'
 
+@description('Enable the CPU-driven autoscale rule on the plan (T-0359 prod posture). Autoscale needs a Standard+ SKU (S1) — dev B2 keeps the default false and stays a fixed single instance. Scaling the plan scales every site on it (the 5 APIs + SSR + Functions).')
+param autoscaleEnabled bool = false
+
+@description('Autoscale instance floor (also the default count). 1 keeps prod cost-lean; raise to 2 for instance redundancy.')
+param autoscaleMinInstances int = 1
+
+@description('Autoscale instance ceiling. S1 allows up to 10.')
+param autoscaleMaxInstances int = 3
+
 @description('Resource tags applied to the plan.')
 param tags object = {}
 
@@ -34,6 +43,67 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   }
   properties: {
     reserved: true
+  }
+}
+
+// CPU-driven scale-out for the shared plan: +1 instance above 70% average CPU over 10 minutes,
+// -1 below 30%, 10-minute cooldowns. Deliberately conservative (one signal, symmetric hysteresis)
+// so the rule can never flap; the bounds are param-overridable per environment.
+resource autoscale 'Microsoft.Insights/autoscalesettings@2022-10-01' = if (autoscaleEnabled) {
+  name: 'autoscale-${planName}'
+  location: location
+  tags: tags
+  properties: {
+    enabled: true
+    targetResourceUri: appServicePlan.id
+    profiles: [
+      {
+        name: 'cpu-based'
+        capacity: {
+          minimum: string(autoscaleMinInstances)
+          maximum: string(autoscaleMaxInstances)
+          default: string(autoscaleMinInstances)
+        }
+        rules: [
+          {
+            metricTrigger: {
+              metricName: 'CpuPercentage'
+              metricResourceUri: appServicePlan.id
+              timeGrain: 'PT1M'
+              statistic: 'Average'
+              timeWindow: 'PT10M'
+              timeAggregation: 'Average'
+              operator: 'GreaterThan'
+              threshold: 70
+            }
+            scaleAction: {
+              direction: 'Increase'
+              type: 'ChangeCount'
+              value: '1'
+              cooldown: 'PT10M'
+            }
+          }
+          {
+            metricTrigger: {
+              metricName: 'CpuPercentage'
+              metricResourceUri: appServicePlan.id
+              timeGrain: 'PT1M'
+              statistic: 'Average'
+              timeWindow: 'PT10M'
+              timeAggregation: 'Average'
+              operator: 'LessThan'
+              threshold: 30
+            }
+            scaleAction: {
+              direction: 'Decrease'
+              type: 'ChangeCount'
+              value: '1'
+              cooldown: 'PT10M'
+            }
+          }
+        ]
+      }
+    ]
   }
 }
 

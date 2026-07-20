@@ -1,11 +1,11 @@
 ---
 id: T-0431
 title: "Partner-targeted notification events — assignment, accepted-job cancellation, invoice-ready"
-status: proposed
+status: done
 size: M
 owner: analyst
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 depends_on: [T-0393]
 blocks: []
 stories: []
@@ -253,3 +253,23 @@ Per ADR-0025 D2/D5, a new event key may enter the backend APNs display map / go 
   "you've been paid" semantics differ and would rename the event `payroll.invoice_paid`), and it
   needs a partner *invoices* deep-link target that does not yet exist on mobile. Not guessed; awaits
   the owner's call, then a fast follow-up.
+- 2026-07-19 — **owner resolved the forks: OPEN-3 = PAID, OPEN-2 = push + feed.** The event ships as
+  **`payroll.invoice_paid`** ("You've been paid"), fired from `MarkInvoicePaid.Handler` on the invoice's
+  own `Employee.UserId` (skips legacy null-user rows) via the `INotificationProducer` seam inside the
+  command's unit of work. Non-mutable (`GetCategoryFor` null default — a payout is a transactional
+  notice, OPEN-1 default held), **argless** display (`FcmMessageFactory` `[InvoicePaid] = NoArgs`;
+  `invoiceId` rides `data` only — no fiscal number on the lock screen, no D3 allowlist change). The
+  deep-link target the analyst noted as missing now **exists** on both platforms (iOS
+  `EarningsRoute.invoiceDetail`, Android `NavRoute.InvoiceDetail`), so the tap opens the paid invoice,
+  falling back to the Earnings summary when `invoiceId` is absent (parity, backend always sends it).
+  Mobile client-first per ADR-0025 / CH-E: `push.payroll.invoice_paid.*` ×5 in **all four** catalogs
+  (a dual-role cleaner's customer app receives the multicast and must render, not raw-key). Partner
+  render + feed keyset both platforms; the customer apps render the push but do not deep-link (no
+  earnings screen — lands Home). Tests: `MarkInvoicePaidNotifyTests` (notify-employee / skip-null-user),
+  FCM/keyset pins bumped to **14** display events + 3-event Partner set + 2 non-mutable keys, iOS
+  deep-link/routing/feed pins + the Android feed-VM row-tap parity pin. Backend 1983/1983; Android
+  partner 122 + customer 244; iOS partner scheme green. Adversarial 5-dimension review (backend /
+  push-pipeline+i18n / deep-link parity / security / tests) ran with per-finding verification: backend
+  and push-pipeline dimensions clean; one low test-parity gap (Android feed-VM pin) fixed; one nit
+  (iOS `.earningsTab` fallback doesn't reset the Earnings nav path — unreachable defensive branch)
+  accepted as documented. Shipped on `feature/payroll-invoice-paid-notify`. **T-0431 v1 complete.**

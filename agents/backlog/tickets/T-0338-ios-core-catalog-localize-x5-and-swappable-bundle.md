@@ -1,11 +1,11 @@
 ---
 id: T-0338
 title: Localize the CleansiaCore catalog ×5 + route Core localization through a swappable bundle (so the in-app language switch reaches Core toasts)
-status: draft
+status: done
 size: S
 owner: pm
 created: 2026-06-27
-updated: 2026-06-27
+updated: 2026-07-19
 depends_on: [T-0310]
 blocks: []
 stories: []
@@ -56,14 +56,14 @@ partner equivalents are already localized ×5 (`partner-app/src/main/res/values{
 so the translations exist to lift verbatim.
 
 ## Acceptance criteria
-- [ ] **AC1 — The Core catalog is localized ×5.** Add `cs`, `sk`, `uk`, `ru` variants for all **7** Core-owned
+- [x] **AC1 — The Core catalog is localized ×5.** Add `cs`, `sk`, `uk`, `ru` variants for all **7** Core-owned
   keys (`error.unauthorized`, `error.not_found`, `error.request`, `error.server`, `error.unreachable`,
   `error.generic`, `snackbar.dismiss`) to the CleansiaCore package — either as `cs/sk/uk/ru` `.lproj`
   `Localizable.strings` siblings of the existing `en.lproj`, or by migrating to a `.xcstrings` String Catalog
   with all 5 languages. The translations are lifted **verbatim** from the already-×5 Android/partner equivalents
   (the `values-{cs,sk,uk,ru}/strings.xml` error/dismiss strings). `Package.swift`'s `defaultLocalization`
   stays `"en"`.
-- [ ] **AC2 — Core localization is routed through a swappable bundle (or fed the resolved locale).** Change the
+- [x] **AC2 — Core localization is routed through a swappable bundle (or fed the resolved locale).** Change the
   Core resolution so the **T-0310 Slice C language switch reaches the Core strings**: feed the user-selected
   locale (from the one `AppSettingsStore`, §7.7 D4) into the Core localization path — e.g. a Core-side
   `localizedBundle(for: language)` / a `LocalizationProvider` seam that loads the matching `.lproj` from
@@ -73,12 +73,12 @@ so the translations exist to lift verbatim.
   restart** (parity with how the app-target catalogs already follow the switch). `ApiErrorLocalizer` and
   `GlobalSnackbarHost` are the only two call sites to re-point; no public-API break unless the seam needs the
   locale passed in (then thread it from `CleansiaCore`'s settings store, not from feature code).
-- [ ] **AC3 — A Core test asserts each key resolves in all 5 known regions.** Add a CleansiaCore unit test that,
+- [x] **AC3 — A Core test asserts each key resolves in all 5 known regions.** Add a CleansiaCore unit test that,
   for each of the **5 known regions** (`en, cs, sk, uk, ru`), resolves **every** Core-owned key and asserts it
   is non-empty **and** differs from the `en` baseline for the non-en regions (i.e. an actual translation landed,
   not a silent fall-through to English) — mirroring the existing `ApiErrorLocalizerTests` shape. Extend or sit
   alongside `ApiErrorLocalizerTests.swift`.
-- [ ] **AC4 — Gates green.** `CleansiaCore` + both app targets compile; the Swift suites green on the simulator;
+- [x] **AC4 — Gates green.** `CleansiaCore` + both app targets compile; the Swift suites green on the simulator;
   the blocking SwiftLint/SwiftFormat iOS CI gate (T-0323) passes; reviewer-per-developer APPROVE. No Gate-DP
   (no screen change — strings + a Core seam only); no security gate (no authz/endpoint surface — user-facing
   copy only); no optimizer.
@@ -103,6 +103,29 @@ so the translations exist to lift verbatim.
   any time after T-0310 (the switch + the writable `AppSettingsStore.language` must exist — both shipped).
 
 ## Status log
+- 2026-07-19 — **done** on `feature/payroll-invoice-paid-notify` (ios). **AC1 had pre-landed** with the
+  business-error snackbar catalog (`6bf55f14` migrated the Core package to a single `Localizable.xcstrings`
+  — 145 keys, all ×5, the 7 Core-owned keys included; `defaultLocalization: "en"` unchanged). **This pass
+  closed AC2 + AC3.** **AC2 mechanism (the implementer-seam record):** a Core-side swappable bundle —
+  `CleansiaCore/Localization/CoreL10n.swift` (`apply(languageTag:)` repoints an internal
+  `CoreL10n.bundle` at the matching `.lproj` **inside `Bundle.module`**; unknown tag / no feed →
+  `.module` exactly as today) — the Core mirror of the T-0310 app-target mechanism (`L10n.bundle`
+  repointing + root `\.locale`), chosen over `String(localized:locale:)` threading because it re-points
+  ONE seam instead of passing a locale through every call site. Fed from the one `AppSettingsStore`
+  resolved tag by the same two models that already repoint the app bundles (`PreferencesModel` /
+  `CustomerPreferencesModel`, init + language change) — no feature-code involvement, no public-API break
+  (`apply(languageTag:)` is the only new public symbol). Call sites re-pointed: `ApiErrorLocalizer`
+  (catalog probe + the 6 status fallbacks) + `GlobalSnackbarHost` (`snackbar.dismiss`). **AC3:**
+  `CoreL10nCatalogTests` enumerates EVERY key from the compiled en catalog (145; asserts the canonical 7
+  present), resolves each in all 5 regions asserting non-empty + differs-from-en (no identical-value
+  allowlist needed — zero keys are legitimately identical today), plus a per-region own-`.lproj`
+  existence check (catches a silent fall-through) and the no-restart switch contract
+  (`apply("cs")` → a freshly-resolved Core toast is Czech). **AC4:** CleansiaCore 340 tests,
+  CleansiaPartner 457 (2 pre-existing ignorable `LocalizableCatalogFormatTests` TCC failures),
+  CleansiaCustomer 578 (2 pre-existing ignorable Stripe-key Booking*SubmitTests failures) — green on
+  iPhone 17 **and** on the `iPhone14-iOS16` 16.4 floor (Gate 8.5, suite-run form); swiftformat 0.60.1
+  `--lint` + swiftlint 0.65.0 `--strict` clean on the changed files. Reviewer-per-developer verdict
+  pending in `## Review`.
 - 2026-06-27 — draft (created by PM from the T-0310 Slice C reviewer MINOR). CleansiaCore-owned user-facing
   strings (the 6 `ApiErrorLocalizer` toasts + `snackbar.dismiss`) ship en-only behind `defaultLocalization: "en"`
   + `bundle: .module`, so the new T-0310 Slice C in-app language switch does not re-localize them (English on a
@@ -115,3 +138,10 @@ so the translations exist to lift verbatim.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 (ios, harvest note) — the `CoreL10n.apply(languageTag:)` seam folded into `patterns-mobile.md`
+  (the Preferences sub-screens bullet): a preferences model that repoints only the app `L10n.bundle` and
+  not `CoreL10n` is now a documented bug class.
+- 2026-07-19 (reviewer verdict) — **PASS.** The batch's adversarial review (ios-core-seams dimension:
+  CoreL10n thread-safety, default-path byte-parity with `Bundle.module`, both apps repointing on init AND
+  on switch, no partner/customer asymmetry) returned zero findings; AC1–AC4 evidence verified in the
+  status log. Reconciled done.

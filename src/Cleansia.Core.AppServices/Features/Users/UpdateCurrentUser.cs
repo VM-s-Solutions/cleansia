@@ -131,13 +131,11 @@ public class UpdateCurrentUser
 
             switch ((hasExistingPhoto, hasNewPhoto))
             {
-                // Replace existing photo
                 case (true, true):
                     await client.DeleteAsync(user.ProfilePhotoName!, cancellationToken);
                     await UploadPhotoAsync(client, user.ProfilePhotoName!, command.Photo!.Base64Content!,
                         cancellationToken);
                     break;
-                // Upload new photo
                 case (false, true):
                     {
                         var fileName = Guid.NewGuid().ToString();
@@ -145,7 +143,6 @@ public class UpdateCurrentUser
                         user.UpdateProfilePhotoName(fileName);
                         break;
                     }
-                // Delete existing photo
                 case (true, false) when
                     string.IsNullOrWhiteSpace(command.Photo?.FileName):
                     await client.DeleteAsync(user.ProfilePhotoName!, cancellationToken);

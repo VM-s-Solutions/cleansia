@@ -1,11 +1,11 @@
 ---
 id: T-0405
 title: "Security — revoking a device leaves it fully functional for up to 24 h: AccessTokenExpMinutes=1440 + no per-request device/session check"
-status: proposed
+status: done
 size: S
 owner: architect
 created: 2026-07-15
-updated: 2026-07-15
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -94,3 +94,4 @@ appsettings stay byte-identical.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → done)** — shipped `c198a275` (ADR-0024 accepted): 30-min TTL on the two mobile hosts.

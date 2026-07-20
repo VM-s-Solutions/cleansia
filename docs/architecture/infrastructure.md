@@ -48,15 +48,15 @@ Key Vault
 
 | Secret | Used By | Purpose |
 |--------|---------|---------|
-| `Jwt--Key` | All APIs | JWT signing key |
-| `Jwt--Issuer` | All APIs | JWT issuer |
-| `Jwt--Audience` | All APIs | JWT audience |
-| `ConnectionStrings--cleansia-db` | All APIs, Functions | PostgreSQL connection string |
+| `Jwt--Key` | All APIs | JWT signing key (issuer/audience are code-side constants, not KV secrets) |
+| `ConnectionStrings--cleansia-db` | All APIs, Functions, CI migrate job | PostgreSQL connection string |
 | `Stripe--SecretKey` | Customer API | Stripe payment processing |
 | `Stripe--WebhookSecret` | Customer API | Stripe webhook signature verification |
 | `SendGrid--ApiKey` | Functions, APIs | Email delivery |
 | `Sentry--Dsn` | All APIs, Functions | Error tracking |
 | `Storage--ConnectionString` | All APIs, Functions | Azure Blob/Queue Storage |
+| `Fiscal--CzechEet2--ApiKey` | APIs, Functions (only once `fiscalSecretProvisioned` is true) | Czech EET fiscal API key |
+| `Fiscal--CzechEet2--CertificatePassword` | APIs, Functions (only once `fiscalSecretProvisioned` is true) | Czech EET certificate password |
 
 ::: warning Secret Rotation
 The `Jwt--Key` and `Stripe--SecretKey` should be rotated periodically. Coordinate JWT key rotation with a grace period where both old and new keys are valid.
@@ -146,7 +146,7 @@ Queues decouple the APIs from long-running operations (PDF generation). Each que
 Messages that fail processing 5 times are moved to the poison queue automatically by the Azure Functions runtime. Poison queue messages should be monitored and investigated.
 
 ::: warning
-Poison queue messages indicate a bug or data issue. Set up Application Insights alerts on poison queue depth to catch failures early.
+Poison queue messages indicate a bug or data issue. Alerting on them is provisioned by `deploy/bicep/modules/queueAlerts.bicep`: queue-service diagnostic settings ship `StorageWrite`/`StorageDelete` logs to Log Analytics, and a scheduled-query rule (`alert-poison-queue-cleansia-<region>-<env>`) fires on any successful `PutMessage` into a `*-poison` queue, notifying the ops Action Group.
 :::
 
 ## Azure Functions

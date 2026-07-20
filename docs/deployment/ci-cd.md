@@ -99,6 +99,11 @@ dotnet ef migrations bundle \
   --configuration Release \
   --output ./efbundle
 
+# Connection string read from Key Vault at run time (ConnectionStrings--cleansia-db) —
+# the same secret the runtime hosts resolve, so a rotation touches one place.
+DB_CONNECTION_STRING="$(az keyvault secret show \
+  --vault-name kv-cleansia-<region>-<env> \
+  --name ConnectionStrings--cleansia-db --query value -o tsv)"
 ./efbundle --connection "$DB_CONNECTION_STRING"
 ```
 

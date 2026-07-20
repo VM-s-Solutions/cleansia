@@ -927,6 +927,36 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "LiveActivityTokens",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    UserId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    DeviceId = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    OrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    Token = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
+                    LastUpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LiveActivityTokens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LiveActivityTokens_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "LoyaltyAccounts",
                 columns: table => new
                 {
@@ -2641,6 +2671,23 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_LiveActivityTokens_TenantId",
+                table: "LiveActivityTokens",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LiveActivityTokens_UserId_DeviceId_OrderId",
+                table: "LiveActivityTokens",
+                columns: new[] { "UserId", "DeviceId", "OrderId" },
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", false);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LiveActivityTokens_UserId_OrderId",
+                table: "LiveActivityTokens",
+                columns: new[] { "UserId", "OrderId" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LoyaltyAccounts_TenantId",
                 table: "LoyaltyAccounts",
                 column: "TenantId");
@@ -3413,6 +3460,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "GdprRequests");
+
+            migrationBuilder.DropTable(
+                name: "LiveActivityTokens");
 
             migrationBuilder.DropTable(
                 name: "LoyaltyTierConfigs");

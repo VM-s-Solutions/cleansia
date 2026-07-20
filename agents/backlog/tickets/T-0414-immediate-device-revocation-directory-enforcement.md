@@ -1,11 +1,11 @@
 ---
 id: T-0414
 title: "Security — device deleted from the Devices list must lose API access ~immediately: device_id claim in mobile access tokens + RevokedDeviceDirectory enforcement at token validation (ADR-0026)"
-status: proposed
+status: done
 size: M
 owner: architect
 created: 2026-07-15
-updated: 2026-07-15
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -164,3 +164,4 @@ source: owner directive 2026-07-15 ("I want the device once it's deleted from th
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → done)** — shipped `4645c510` (ADR-0026 accepted).

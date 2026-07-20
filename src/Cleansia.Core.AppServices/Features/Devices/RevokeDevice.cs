@@ -25,6 +25,7 @@ public static class RevokeDevice
     internal class Handler(
         IDeviceRepository deviceRepository,
         IRefreshTokenService refreshTokenService,
+        ILiveActivityTokenRepository liveActivityTokenRepository,
         IUserSessionProvider userSessionProvider
     ) : ICommandHandler<Command, Response>
     {
@@ -42,6 +43,14 @@ public static class RevokeDevice
 
             deviceRepository.Deactivate(device);
             await refreshTokenService.RevokeByDeviceAsync(userId, device.DeviceId, "device_revoked", cancellationToken);
+
+            // A revoked device must stop receiving lock-screen order state (ADR-0029 D3 / ADR-0026
+            // revocation intent): hard-delete its activity tokens, push-to-start included.
+            var activityTokens = await liveActivityTokenRepository.GetByUserAndDeviceAsync(userId, device.DeviceId, cancellationToken);
+            if (activityTokens.Count > 0)
+            {
+                liveActivityTokenRepository.RemoveRange(activityTokens);
+            }
 
             return BusinessResult.Success(new Response(true));
         }

@@ -56,6 +56,11 @@ object NotificationTemplates {
             R.string.notification_new_jobs_body,
             NotificationChannels.CHANNEL_NEW_JOBS,
         )
+        "payroll.invoice_paid" -> Template(
+            R.string.notification_payroll_invoice_paid_title,
+            R.string.notification_payroll_invoice_paid_body,
+            NotificationChannels.CHANNEL_ORDER_UPDATES,
+        )
         else -> null
     }
 

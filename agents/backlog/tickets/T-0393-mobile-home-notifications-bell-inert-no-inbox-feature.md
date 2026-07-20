@@ -1,11 +1,11 @@
 ---
 id: T-0393
 title: "Mobile FEATURE gap (iOS+Android) — the Home notification bell is inert on both platforms; no notifications inbox/feed exists (owner: \"clicking notifications does nothing\")"
-status: proposed
+status: done
 size: L
 owner: pm
 created: 2026-07-08
-updated: 2026-07-17
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -439,3 +439,4 @@ seam's name/shape — no ADR required beyond what ADR-0002/0025 already settle.
   MANUAL_STEPS pending (owner): fold the `UserNotifications` table into the Initial migration;
   re-dump both mobile specs + regen clients. Mobile UI lanes: customer inbox next (this ticket),
   partner UIs = T-0430, new partner events = T-0431.
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → done)** — UMBRELLA COMPLETE: customer scope end-to-end (feed backend + both customer inboxes, PR #126) + partner UIs (T-0430) + partner events (T-0431 order.assignment_cancelled & payroll.invoice_paid). Nothing remains.

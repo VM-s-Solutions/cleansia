@@ -19,6 +19,15 @@ param location string
 ])
 param sku string = 'Basic'
 
+@description('Enable the scheduled image purge task (T-0359 prod posture — CI pushes one sha-tagged image per deploy, and nothing ever deletes them). An ACR Task running `acr purge` because the built-in retentionPolicy cannot do this job: it is Premium-only AND only deletes UNTAGGED manifests, while every CI image is tagged with its commit sha. ACR Tasks run on every SKU including this Basic registry.')
+param imageRetentionEnabled bool = false
+
+@description('Tags older than this many days are purged (the newest imageRetentionKeepCount per repository always survive).')
+param imageRetentionDays int = 30
+
+@description('The newest N tags per repository that always survive the purge, regardless of age.')
+param imageRetentionKeepCount int = 10
+
 @description('Resource tags.')
 param tags object = {}
 
@@ -52,6 +61,44 @@ resource registry 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' = 
         status: 'disabled'
         days: 7
       }
+    }
+  }
+}
+
+// Nightly (03:00 UTC) purge across every repository: tags older than the cutoff go, the newest N per
+// repo always survive (a rollback target is always present), and orphaned untagged manifests are
+// swept too. --keep guarantees the currently-deployed image can never be purged by age alone as long
+// as fewer than N newer deploys exist; the Functions host references its image by sha tag, so the
+// keep-floor is the safety net.
+var purgeCommand = 'acr purge --filter \'.*:.*\' --ago ${imageRetentionDays}d --keep ${imageRetentionKeepCount} --untagged'
+
+resource purgeTask 'Microsoft.ContainerRegistry/registries/tasks@2019-06-01-preview' = if (imageRetentionEnabled) {
+  parent: registry
+  name: 'purge-old-images'
+  location: location
+  tags: tags
+  properties: {
+    status: 'Enabled'
+    platform: {
+      os: 'Linux'
+      architecture: 'amd64'
+    }
+    agentConfiguration: {
+      cpu: 2
+    }
+    timeout: 3600
+    step: {
+      type: 'EncodedTask'
+      encodedTaskContent: base64('version: v1.1.0\nsteps:\n  - cmd: ${purgeCommand}\n    disableWorkingDirectoryOverride: true\n    timeout: 3600\n')
+    }
+    trigger: {
+      timerTriggers: [
+        {
+          name: 'nightly'
+          schedule: '0 3 * * *'
+          status: 'Enabled'
+        }
+      ]
     }
   }
 }

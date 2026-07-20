@@ -88,6 +88,10 @@ targets:
         STRIPE_PUBLISHABLE_KEY: $(STRIPE_PUBLISHABLE_KEY)
         NSCameraUsageDescription: Cleansia uses the camera so you can attach photo evidence to a dispute.
         NSPhotoLibraryUsageDescription: Cleansia needs access to your photos so you can attach photo evidence to a dispute.
+        NSLocationWhenInUseUsageDescription: Cleansia uses your location to center the map on your current position when you set your address.
+        # ADR-0029 — opts the app into ActivityKit Live Activities (the CleansiaCustomerLiveActivity
+        # widget extension renders the in-progress-clean status). Inert until the APNS channel is enabled.
+        NSSupportsLiveActivities: true
         CFBundleURLTypes:
           - CFBundleURLSchemes:
               - $(GID_REVERSED_CLIENT_ID)
@@ -131,6 +135,8 @@ targets:
         product: GoogleSignIn
       - package: StripePaymentSheet
         product: StripePaymentSheet
+      # Embeds the Live Activity widget extension into the app bundle (ADR-0029).
+      - target: CleansiaCustomerLiveActivity
 
   CleansiaCustomerTests:
     type: bundle.unit-test
@@ -144,6 +150,30 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: CleansiaCustomer
+      - package: CleansiaCore
+
+  # ADR-0029 — the Live Activity widget extension (iOS 16.1+; the app floor stays 16.0). Renders the
+  # in-progress-clean status on the lock screen + Dynamic Island. CleanOrderAttributes is shared with the
+  # app target (compiled into both — the standard ActivityKit pattern; they are separate processes).
+  CleansiaCustomerLiveActivity:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "16.1"
+    sources:
+      - path: LiveActivity
+      - path: Sources/LiveActivityShared/CleanOrderAttributes.swift
+    info:
+      path: LiveActivity/Info.plist
+      properties:
+        CFBundleDisplayName: Cleansia
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cz.cleansia.customer.widgets
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: NO
+    dependencies:
       - package: CleansiaCore
 
 schemes:

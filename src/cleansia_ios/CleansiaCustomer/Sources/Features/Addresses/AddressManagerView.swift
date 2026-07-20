@@ -10,6 +10,7 @@ struct AddressManagerView: View {
         repository: SavedAddressRepository,
         geocoding: GeocodingService,
         mapProvider: MapProvider,
+        serviceArea: ServiceAreaProvider? = nil,
         snackbar: SnackbarController,
         onBack: @escaping () -> Void,
         onSelected: @escaping (SavedAddress) -> Void
@@ -18,6 +19,7 @@ struct AddressManagerView: View {
             repository: repository,
             geocoding: geocoding,
             mapProvider: mapProvider,
+            serviceArea: serviceArea,
             snackbar: snackbar
         ))
         self.onBack = onBack
@@ -51,6 +53,7 @@ struct AddressManagerView: View {
             BookingAddressPickerView(
                 geocoding: vm.geocoding,
                 mapProvider: vm.mapProvider,
+                serviceArea: vm.serviceArea,
                 onConfirmed: vm.mapDidConfirm,
                 onBack: vm.backToList
             )

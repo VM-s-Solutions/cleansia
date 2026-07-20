@@ -32,6 +32,7 @@ public class AdminCancelOrderHandlerTests
     private readonly Mock<IRefundService> _refundService = new();
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
     private readonly Mock<INotificationProducer> _producer = new();
+    private readonly Mock<ILiveActivityProducer> _liveActivityProducer = new();
 
     public AdminCancelOrderHandlerTests()
     {
@@ -44,7 +45,8 @@ public class AdminCancelOrderHandlerTests
             _session.Object,
             _refundService.Object,
             _loyaltyService.Object,
-            _producer.Object);
+            _producer.Object,
+            _liveActivityProducer.Object);
 
     private Order ArrangeOrder(OrderStatus latestStatus, PaymentStatus paymentStatus = PaymentStatus.Paid)
     {

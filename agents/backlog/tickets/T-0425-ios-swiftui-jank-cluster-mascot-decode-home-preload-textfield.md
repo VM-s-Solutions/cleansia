@@ -1,11 +1,11 @@
 ---
 id: T-0425
 title: "iOS — SwiftUI jank cluster: 1024px mascot decode on the main thread, Home pop-in, floating-label input drag"
-status: proposed
+status: done
 size: L
 owner: optimizer
 created: 2026-07-16
-updated: 2026-07-16
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -68,3 +68,11 @@ the label animates on first appearance; the `:71` `.offset(y:)` compounds it.
 
 ## Status log
 - 2026-07-16 — filed from the remarks-sweep perf investigation.
+- 2026-07-19 — ios: AC1 (mascot 600² downsample) + AC3 (focus-keyed float) verified already landed in
+  dfd81d99; implemented AC2 — shell prefetch now also loads recurring + catalog in parallel,
+  `firstPaintReady` widened to orders+membership+packages+loyalty (+recurring when Plus) with the 1.5s
+  ceiling as fallback only, conditional Home sections crossfade via a `SectionVisibility` fingerprint,
+  and `loadCatalog` is single-flight (the prefetch/Home race would otherwise double-fetch and flap
+  `catalogState`). Both schemes build; customer tests green on iPhone 17 (26.x) and the 16.4 floor sim
+  (only the 2 known Stripe-key-present failures); swiftformat 0.60.1 + swiftlint 0.65.0 --strict clean.
+  AC4 device Instruments before/after not runnable here — needs owner hardware.

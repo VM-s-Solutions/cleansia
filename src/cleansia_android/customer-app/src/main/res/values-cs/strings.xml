@@ -385,6 +385,8 @@
     <string name="profile_stat_favorite">Oblíbený</string>
     <string name="profile_stat_saved">Uloženo</string>
     <string name="profile_stat_member_since">Členem od</string>
+    <string name="profile_tier_plus">Plus</string>
+    <string name="profile_tier_regular">Základní</string>
     <string name="profile_section_account">Účet</string>
     <string name="profile_section_personal">Osobní</string>
     <string name="profile_section_contact">Kontakt</string>
@@ -1152,6 +1154,8 @@
 
     <string name="notification_order_assignment_cancelled_title">Zakázka zrušena</string>
     <string name="notification_order_assignment_cancelled_body">Zakázka, kterou jste přijali, byla zrušena: #%1$s. Klepnutím zobrazíte detaily.</string>
+    <string name="notification_payroll_invoice_paid_title">Byli jste vyplaceni</string>
+    <string name="notification_payroll_invoice_paid_body">Vaše faktura za poslední výplatní období byla proplacena. Klepnutím zobrazíte.</string>
     <!-- ── Vaše zařízení ── -->
     <string name="profile_row_devices">Vaše zařízení</string>
     <string name="devices_title">Vaše zařízení</string>

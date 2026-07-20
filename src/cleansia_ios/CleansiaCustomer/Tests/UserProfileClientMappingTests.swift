@@ -25,6 +25,37 @@ final class UserProfileClientMappingTests: XCTestCase {
         XCTAssertEqual(command.languageCode, "cs")
     }
 
+    func testMyProfileMapsStatsIntoTheDomainProfile() {
+        let memberSince = Date(timeIntervalSince1970: 1_739_534_400)
+        let dto = MyProfileDto(
+            email: "jane@example.com",
+            firstName: "Jane",
+            lastName: "Doe",
+            memberSince: memberSince,
+            totalBookings: 7,
+            totalSavings: 320,
+            savingsCurrencyCode: "CZK"
+        )
+
+        let user = dto.toDomain(id: "user-1")
+
+        XCTAssertEqual(user.memberSince, memberSince)
+        XCTAssertEqual(user.totalBookings, 7)
+        XCTAssertEqual(user.totalSavings, 320)
+        XCTAssertEqual(user.savingsCurrencyCode, "CZK")
+    }
+
+    func testMyProfileDefaultsAbsentStatsToZeroAndNil() {
+        let dto = MyProfileDto(email: "jane@example.com")
+
+        let user = dto.toDomain(id: "user-1")
+
+        XCTAssertNil(user.memberSince)
+        XCTAssertEqual(user.totalBookings, 0)
+        XCTAssertEqual(user.totalSavings, 0)
+        XCTAssertNil(user.savingsCurrencyCode)
+    }
+
     func testUpdateCommandBlanksPhoneToNil() {
         let update = ProfileUpdate(
             id: "user-1",

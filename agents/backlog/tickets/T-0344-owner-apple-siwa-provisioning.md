@@ -5,7 +5,7 @@ status: proposed
 size: S
 owner: owner
 created: 2026-06-28
-updated: 2026-06-28
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -48,3 +48,4 @@ source: Q-IOS-04 ruling (sprint-12 §7.14 §"MANUAL_STEPs"); gates LIVE Apple si
 ## Status log
 - 2026-06-28 — filed from the Q-IOS-04 ruling. The buildable code is T-0343 (backend) + T-0312 (iOS); this is
   the Apple-account/config gate for live sign-in.
+- 2026-07-19 — owner deferred 2026-07-19 — will provision Apple SIWA slightly later (pairs with Google). Kept owner-blocked.

@@ -26,14 +26,16 @@ final class AddressSectionViewModel: ViewModel {
     private(set) var employeeId = ""
     /// nil = the serviced-countries fetch failed (UNKNOWN) — not the same as
     /// a loaded-but-empty list, which is the server saying "none serviced".
-    private var countries: [CountryListItem]?
+    private var countries: [ServicedCountry]?
 
     private let client: PartnerProfileClient
+    private let serviceArea: ServiceAreaProvider
     private let snackbar: SnackbarController
     private let localizer = ApiErrorLocalizer()
 
-    init(client: PartnerProfileClient, snackbar: SnackbarController) {
+    init(client: PartnerProfileClient, serviceArea: ServiceAreaProvider, snackbar: SnackbarController) {
         self.client = client
+        self.serviceArea = serviceArea
         self.snackbar = snackbar
     }
 
@@ -57,7 +59,7 @@ final class AddressSectionViewModel: ViewModel {
 
     func load() async {
         state = .loading
-        countries = await (client.getServicedCountries()).valueOrNil
+        countries = await serviceArea.loadCountries()
         switch await client.getCurrentEmployee() {
         case let .success(employee):
             employeeId = employee.id ?? ""
@@ -86,7 +88,7 @@ final class AddressSectionViewModel: ViewModel {
             return
         }
         if countries == nil {
-            switch await client.getServicedCountries() {
+            switch await serviceArea.loadCountriesResult() {
             case let .success(fetched):
                 countries = fetched
                 refreshServiceAreaStatus()
@@ -164,11 +166,5 @@ final class AddressSectionViewModel: ViewModel {
         serviceAreaStatus = countries.contains { IsoCountryCodes.toAlpha2($0.isoCode) == code }
             ? .countryServiced
             : .countryNotServiced
-    }
-}
-
-private extension ApiResult {
-    var valueOrNil: Success? {
-        try? get()
     }
 }

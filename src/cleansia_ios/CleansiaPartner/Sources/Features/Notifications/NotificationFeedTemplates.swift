@@ -6,7 +6,8 @@ import Foundation
 enum PartnerFeedEventKeys {
     static let all: Set<String> = [
         "order.new_available",
-        "order.assignment_cancelled"
+        "order.assignment_cancelled",
+        "payroll.invoice_paid"
     ]
 
     static func contains(_ eventKey: String) -> Bool {

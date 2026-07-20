@@ -1,11 +1,11 @@
 ---
 id: T-0395
 title: "Android — catalog names not localized on Home 'Popular packages' + order-list summary (iOS localized them in fix-round 5; Android now lags)"
-status: proposed
+status: done
 size: S
 owner: android
 created: 2026-07-08
-updated: 2026-07-08
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -55,3 +55,4 @@ source: phase/ios-fix2 fix-round-5 (A-shell+home + C-orders-i18n reviews) — iO
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → done)** — shipped on feature/hardening-cluster-2 (merged) after the owner spec regen `248e3c47`.

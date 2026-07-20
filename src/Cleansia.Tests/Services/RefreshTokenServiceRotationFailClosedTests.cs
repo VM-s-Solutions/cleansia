@@ -57,7 +57,8 @@ public sealed class RefreshTokenServiceRotationFailClosedTests : IDisposable
             new RefreshTokenRepository(ctx),
             ctx,
             jwt.Object,
-            NullLogger<RefreshTokenService>.Instance);
+            NullLogger<RefreshTokenService>.Instance,
+            TimeProvider.System);
     }
 
     private async Task<string> SeedActiveTokenAsync()

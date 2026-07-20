@@ -136,3 +136,7 @@ source: phase/ios-fix1 on-device shakeout diagnosis (2026-07-02, cluster booking
   canonical-mapping row in `patterns-mobile.md` (view-local `bottomInset:` param → the published
   `SnackbarController.bottomInset` + pin-vs-follow semantics) — a "one way" redefinition to ratify.
   PM reconciled 2026-07-03: fold verified, slice advanced to done.
+- 2026-07-19 architect (T-0379 close-out): the replaced SnackbarInsetState row is **ratified** —
+  mechanism verified exact against the landed code (published inset, un-pinned hosts follow, shell
+  lifts via `ShellSnackbarInset` while path empty, modal-sheet hosts pin); one wording correction
+  (pill-era "bar-composite" → post-supersede stock-bar+FAB chrome). See T-0379 Review.

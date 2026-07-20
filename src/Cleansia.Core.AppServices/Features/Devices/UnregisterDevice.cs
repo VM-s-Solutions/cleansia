@@ -20,6 +20,7 @@ public static class UnregisterDevice
 
     internal class Handler(
         IDeviceRepository deviceRepository,
+        ILiveActivityTokenRepository liveActivityTokenRepository,
         IUserSessionProvider userSessionProvider
     ) : ICommandHandler<Command, Response>
     {
@@ -37,6 +38,15 @@ public static class UnregisterDevice
             if (device is not null)
             {
                 deviceRepository.Deactivate(device);
+            }
+
+            // Sign-out on the device: hard-delete its activity tokens (push-to-start included) so a
+            // signed-out handset stops receiving lock-screen order state (ADR-0029 D3). Keyed by the
+            // client (userId, deviceId), so it runs even when the Device row is already gone.
+            var activityTokens = await liveActivityTokenRepository.GetByUserAndDeviceAsync(userId, request.DeviceId, cancellationToken);
+            if (activityTokens.Count > 0)
+            {
+                liveActivityTokenRepository.RemoveRange(activityTokens);
             }
 
             return BusinessResult.Success(new Response(true));

@@ -3,6 +3,8 @@ package cz.cleansia.customer.features.profile
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
+import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.customer.core.user.UserRepository
@@ -31,9 +33,11 @@ class ProfileViewModelTest {
     val mainRule = MainDispatcherRule()
 
     private lateinit var userRepository: UserRepository
+    private lateinit var membershipRepository: MembershipRepository
     private lateinit var settings: AppSettingsRepository
     private lateinit var snackbar: SnackbarController
     private val currentUser = MutableStateFlow<CurrentUser?>(null)
+    private val membership = MutableStateFlow<GetMyMembershipResponse?>(null)
 
     private val sampleUser = CurrentUser(
         id = "user-1",
@@ -48,12 +52,14 @@ class ProfileViewModelTest {
     @Before
     fun setUp() {
         userRepository = mockk(relaxed = true)
+        membershipRepository = mockk(relaxed = true)
         settings = mockk(relaxed = true)
         snackbar = mockk(relaxed = true)
         every { userRepository.currentUser } returns currentUser
+        every { membershipRepository.current } returns membership
     }
 
-    private fun viewModel() = ProfileViewModel(userRepository, settings, snackbar)
+    private fun viewModel() = ProfileViewModel(userRepository, membershipRepository, settings, snackbar)
 
     @Test
     fun `save and refresh start Idle`() = runTest {
@@ -169,6 +175,36 @@ class ProfileViewModelTest {
         assertTrue(completed)
         assertEquals(ActionState.Idle, vm.saveState.value)
         coVerify { settings.markOnboardingSeen("user-1") }
+    }
+
+    @Test
+    fun `isPlus is false while the membership state is unknown`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertFalse(vm.isPlus.value)
+    }
+
+    @Test
+    fun `isPlus stays false for a non-Plus user`() = runTest {
+        membership.value = GetMyMembershipResponse(hasMembership = false)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertFalse(vm.isPlus.value)
+    }
+
+    @Test
+    fun `isPlus turns true when the membership cache reports an active Plus`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertFalse(vm.isPlus.value)
+
+        membership.value = GetMyMembershipResponse(hasMembership = true)
+        advanceUntilIdle()
+
+        assertTrue(vm.isPlus.value)
     }
 
     @Test

@@ -18,15 +18,16 @@ struct ChecklistGroups: Equatable {
 }
 
 enum ChecklistBuilder {
-    static func items(for order: OrderDetail) -> ChecklistGroups {
+    static func items(for order: OrderDetail, locale: Locale) -> ChecklistGroups {
         // Keyed by the stable backend id (Android parity — CleaningChecklist.kt keys
         // by service.id/package.id) so persisted ticks survive a list reorder; the
-        // name is the defensive fallback for a row the wire sent without an id.
+        // name fallback for an id-less row stays the RAW snapshot name (never the
+        // localized one) so ticks also survive a language switch.
         let services = order.services.map { svc in
-            ChecklistItem(id: "service:\(svc.id ?? svc.name)", label: svc.name, glyph: nil)
+            ChecklistItem(id: "service:\(svc.id ?? svc.name)", label: svc.localizedName(for: locale), glyph: nil)
         }
         let packages = order.packages.map { pkg in
-            ChecklistItem(id: "package:\(pkg.id ?? pkg.name)", label: pkg.name, glyph: nil)
+            ChecklistItem(id: "package:\(pkg.id ?? pkg.name)", label: pkg.localizedName(for: locale), glyph: nil)
         }
         let extras = order.extras.map { slug in
             ChecklistItem(id: "extra:\(slug)", label: OrderExtras.name(slug), glyph: OrderExtras.emoji(slug))
@@ -40,13 +41,14 @@ enum ChecklistBuilder {
 /// InProgress — preventing pre-checking before the work is real (the
 /// `CleaningChecklist.kt` parity).
 struct CleaningChecklistView: View {
+    @Environment(\.locale) private var locale
     let order: OrderDetail
     let checkedIds: Set<String>
     let interactive: Bool
     let onToggle: (String, Bool) -> Void
 
     private var groups: ChecklistGroups {
-        ChecklistBuilder.items(for: order)
+        ChecklistBuilder.items(for: order, locale: locale)
     }
 
     private var allItems: [ChecklistItem] {
@@ -67,6 +69,7 @@ struct CleaningChecklistView: View {
                     group(L10n.Orders.checklistExtrasLabel, groups.extras)
                 }
             }
+            .id(locale.identifier)
         }
     }
 

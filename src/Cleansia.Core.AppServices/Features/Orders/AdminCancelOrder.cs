@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -46,7 +47,8 @@ public class AdminCancelOrder
         IUserSessionProvider userSessionProvider,
         IRefundService refundService,
         ILoyaltyService loyaltyService,
-        INotificationProducer notificationProducer
+        INotificationProducer notificationProducer,
+        ILiveActivityProducer liveActivityProducer
     ) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -99,7 +101,13 @@ public class AdminCancelOrder
                 feeRate: 0m,
                 refundAmount: refundAmount,
                 reason: command.Reason);
-            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
+            var transition = OrderStatusTrack.Create(OrderStatus.Cancelled, order);
+            order.AddOrderStatus(transition);
+
+            // Unconditional, beside the append — the refund-conditional customer alert must not gate
+            // the activity end-push (mirrors CancelOrder).
+            await liveActivityProducer.NotifyOrderTransitionAsync(
+                order, LiveActivityEventKeys.End, transition, cancellationToken);
 
             var refundInitiated = false;
             if (order.PaymentType == PaymentType.Card

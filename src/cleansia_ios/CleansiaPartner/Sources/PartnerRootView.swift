@@ -78,6 +78,7 @@ struct PartnerRootView: View {
                 snackbar: container.snackbar,
                 geocoding: container.geocodingService,
                 mapProvider: container.mapProvider,
+                serviceArea: container.serviceArea,
                 onCompleted: { route = .dashboard },
                 onSignedOut: { route = .login }
             )

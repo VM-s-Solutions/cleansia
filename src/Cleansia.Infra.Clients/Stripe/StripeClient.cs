@@ -34,9 +34,16 @@ public class StripeClient : IStripeClient
         stripe = new global::Stripe.StripeClient(config.SecretKey, httpClient: systemNetHttpClient);
     }
 
+    // Stripe amounts are integer minor units. A bare (long) cast truncates toward zero, so any
+    // amount still carrying fractional cents would silently lose one against the ledger's
+    // numeric(18,2) away-from-zero rounding — round the same way here so Stripe and the persisted
+    // amount are always cent-identical.
+    public static long ToMinorUnits(decimal amount) =>
+        (long)Math.Round(amount * 100m, MidpointRounding.AwayFromZero);
+
     public async Task<string> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken)
     {
-        var unitAmount = (long)(order.TotalPrice * 100);
+        var unitAmount = ToMinorUnits(order.TotalPrice);
 
         var options = new SessionCreateOptions
         {
@@ -90,7 +97,7 @@ public class StripeClient : IStripeClient
         var refundOptions = new global::Stripe.RefundCreateOptions
         {
             PaymentIntent = session.PaymentIntentId,
-            Amount = (long)(amount * 100),
+            Amount = ToMinorUnits(amount),
             Reason = global::Stripe.RefundReasons.RequestedByCustomer,
         };
         // The caller's deterministic refund key is the idempotency key (ADR-0006 D3): a retry of the
@@ -108,7 +115,7 @@ public class StripeClient : IStripeClient
         var refundOptions = new global::Stripe.RefundCreateOptions
         {
             PaymentIntent = paymentIntentId,
-            Amount = (long)(amount * 100),
+            Amount = ToMinorUnits(amount),
             Reason = global::Stripe.RefundReasons.RequestedByCustomer,
         };
         // The caller's deterministic refund key is the idempotency key (ADR-0006 D3): a retry of the
@@ -156,7 +163,7 @@ public class StripeClient : IStripeClient
         var service = new PaymentIntentService(stripe);
         var options = new PaymentIntentCreateOptions
         {
-            Amount = (long)(amount * 100),
+            Amount = ToMinorUnits(amount),
             Currency = currency.ToLowerInvariant(),
             Customer = stripeCustomerId,
             SetupFutureUsage = "off_session",
@@ -175,7 +182,7 @@ public class StripeClient : IStripeClient
         // without Stripe rejecting on idempotency-replay-with-different-params.
         // Same-amount retries still collide and Stripe returns the original
         // intent (the desired idempotent behavior).
-        var amountCents = (long)(amount * 100);
+        var amountCents = ToMinorUnits(amount);
         var requestOptions = new RequestOptions { IdempotencyKey = $"pi-{orderId}-{amountCents}" };
         var intent = await ClassifyAsync(
             nameof(CreatePaymentIntentAsync),

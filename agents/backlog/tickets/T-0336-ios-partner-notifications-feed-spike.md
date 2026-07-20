@@ -1,11 +1,11 @@
 ---
 id: T-0336
 title: SPIKE — iOS partner in-app notifications feed (persistence choice + push-receipt contract + dashboard bell badge)
-status: draft
+status: superseded
 size: S
 owner: pm
 created: 2026-06-26
-updated: 2026-06-26
+updated: 2026-07-19
 depends_on: [T-0311]
 blocks: []
 stories: []
@@ -74,3 +74,4 @@ exist to have anything to feed).
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (draft → superseded)** — superseded by the shipped T-0430 partner feed (server-backed persistence chosen by the feed design; the spike question is moot).

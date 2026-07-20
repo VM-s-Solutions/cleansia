@@ -209,6 +209,9 @@ public static class ServiceExtensions
         services.AddScoped<ILoyaltyService, LoyaltyService>();
         // The single notify seam: feed row + outbox push, atomically, in the caller's unit of work.
         services.AddScoped<INotificationProducer, NotificationProducer>();
+        // The sibling live-activity seam (ADR-0029 D2): enqueues one ActivityKit send per order
+        // transition onto its own queue, gated on a registered token — no feed row, no preference gate.
+        services.AddScoped<ILiveActivityProducer, LiveActivityProducer>();
         services.AddScoped<IRefundService, RefundService>();
         services.AddScoped<IPromoCodeService, PromoCodeService>();
         services.AddScoped<IReferralService, ReferralService>();

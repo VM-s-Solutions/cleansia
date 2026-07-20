@@ -1,11 +1,11 @@
 ---
 id: T-0353
 title: "Android partner profile section-form Error state has no retry affordance (renders an empty form)"
-status: proposed
+status: done
 size: S
 owner: android
 created: 2026-06-30
-updated: 2026-06-30
+updated: 2026-07-19
 depends_on: [T-0337]
 blocks: []
 stories: []
@@ -63,3 +63,4 @@ affordance** — the user sees a blank form, can't tell the load failed, and has
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → done)** — shipped `91fbe1eb` (hardening-cluster-2, merged): SectionScaffold isError/onRetry.

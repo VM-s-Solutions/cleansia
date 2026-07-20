@@ -14,7 +14,8 @@ public class RefreshTokenService(
     IRefreshTokenRepository repository,
     IUnitOfWork unitOfWork,
     IJwtSettings jwtSettings,
-    ILogger<RefreshTokenService> logger)
+    ILogger<RefreshTokenService> logger,
+    TimeProvider timeProvider)
     : IRefreshTokenService
 {
     // 48 bytes = 384 bits of entropy → 64 base64url chars. Overkill; that's the point.
@@ -31,7 +32,7 @@ public class RefreshTokenService(
         var record = RefreshToken.Create(
             userId: userId,
             tokenHash: hash,
-            expiresAt: DateTimeOffset.UtcNow.Add(lifetime),
+            expiresAt: timeProvider.GetUtcNow().Add(lifetime),
             audience: audience,
             deviceLabel: deviceLabel,
             ipAddress: ipAddress,
@@ -77,7 +78,7 @@ public class RefreshTokenService(
             throw new RefreshTokenValidationException($"Refresh token revoked ({existing.RevokedReason})");
         }
 
-        if (existing.ExpiresAt <= DateTimeOffset.UtcNow)
+        if (existing.ExpiresAt <= timeProvider.GetUtcNow())
         {
             throw new RefreshTokenValidationException("Refresh token expired");
         }
@@ -100,8 +101,8 @@ public class RefreshTokenService(
         var carriedDeviceId = existing.DeviceId ?? deviceId;
         var issued = Issue(existing.UserId, rememberMe, audience, deviceLabel, ipAddress, carriedDeviceId);
 
-        existing.MarkUsed(DateTimeOffset.UtcNow);
-        existing.Revoke("rotated", DateTimeOffset.UtcNow, replacedByTokenId: issued.Record.Id);
+        existing.MarkUsed(timeProvider.GetUtcNow());
+        existing.Revoke("rotated", timeProvider.GetUtcNow(), replacedByTokenId: issued.Record.Id);
 
         return issued;
     }
@@ -250,7 +251,7 @@ public class RefreshTokenService(
         const int maxAttempts = 5;
         for (var attempt = 1; ; attempt++)
         {
-            var now = DateTimeOffset.UtcNow;
+            var now = timeProvider.GetUtcNow();
             await stage(token => token.Revoke(reason, now), cancellationToken);
             try
             {

@@ -1,8 +1,12 @@
 # ADR-0028 — Multi-tenant activation pack: the HOST names the tenant (server-side host→tenant registry, precedence `override > tenant_id claim > host > null`), every anonymous email-keyed account flow then scopes to the resolved tenant — retiring the `IgnoringTenant` compensations — and confirm-family lookups STAY tenant-filtered; single-tenant mode (empty registry) is byte-identical to today
 
-- **Status:** **draft — awaiting owner ratification** (panel consensus reached 2026-07-17 — zero
-  blocking challenges; the ADR carries owner OPEN items O-1…O-3 which gate *activation*, not the
-  decision shape. On ratification flips to `accepted` and becomes immutable — supersede, never edit.)
+- **Status:** **DECLINED (owner, 2026-07-19)** — the owner declined to activate this now: Cleansia is
+  running no franchises / white-labels, and standing the host→tenant resolution + retiring the
+  `IgnoringTenant` compensations up front adds architectural complexity for a capability with no current
+  demand. The decision shape recorded here stays valid and re-openable — because the empty-registry mode
+  is byte-identical to today, nothing needs undoing, and this ADR can be revived to `proposed` the day a
+  second brand is real. Not accepted, so not immutable. (Panel consensus 2026-07-17 was sound; this is a
+  product-timing call, not a rejection of the design.)
 - **Date:** 2026-07-17
 - **Supersedes:** — (composes with ADR-0017, which locked tenancy = app-level / claim-driven / no
   region in the filter; this ADR fills the one gap ADR-0017 left open: how an ANONYMOUS request —

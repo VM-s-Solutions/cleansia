@@ -16,6 +16,7 @@ final class AddressManagerViewModel: ViewModel {
     let repository: SavedAddressRepository
     let geocoding: GeocodingService
     let mapProvider: MapProvider
+    let serviceArea: ServiceAreaProvider?
 
     private let snackbar: SnackbarController
     private var cancellables: Set<AnyCancellable> = []
@@ -28,11 +29,13 @@ final class AddressManagerViewModel: ViewModel {
         repository: SavedAddressRepository,
         geocoding: GeocodingService,
         mapProvider: MapProvider,
+        serviceArea: ServiceAreaProvider? = nil,
         snackbar: SnackbarController
     ) {
         self.repository = repository
         self.geocoding = geocoding
         self.mapProvider = mapProvider
+        self.serviceArea = serviceArea
         self.snackbar = snackbar
         super.init()
         repository.$addresses.assign(to: &$addresses)

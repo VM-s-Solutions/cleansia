@@ -36,6 +36,21 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
         )
     }
 
+    func testInvoicePaidWithIdResolvesToInvoiceDestination() {
+        XCTAssertEqual(
+            PartnerNotificationDeepLink.resolve(eventKey: "payroll.invoice_paid", orderId: nil, invoiceId: "inv-7"),
+            .invoice(invoiceId: "inv-7")
+        )
+    }
+
+    func testInvoicePaidWithoutIdResolvesToEarningsTab() {
+        // Parity with Android's `InvoiceDetail(id) ?: Earnings` fallback.
+        XCTAssertEqual(
+            PartnerNotificationDeepLink.resolve(eventKey: "payroll.invoice_paid", orderId: nil, invoiceId: nil),
+            .earningsTab
+        )
+    }
+
     func testUnknownEventResolvesToNil() {
         XCTAssertNil(PartnerNotificationDeepLink.resolve(eventKey: "loyalty.points", orderId: "ord-1"))
     }
@@ -48,6 +63,18 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
     func testResolveFromUserInfoWithEmptyOrderIdResolvesToNil() {
         let userInfo: [AnyHashable: Any] = ["event_key": "order.completed", "orderId": ""]
         XCTAssertNil(PartnerNotificationDeepLink.resolve(userInfo))
+    }
+
+    func testResolveFromUserInfoMapsInvoiceId() {
+        let userInfo: [AnyHashable: Any] = ["event_key": "payroll.invoice_paid", "invoiceId": "inv-9"]
+        XCTAssertEqual(PartnerNotificationDeepLink.resolve(userInfo), .invoice(invoiceId: "inv-9"))
+    }
+
+    func testResolveFromUserInfoWithEmptyInvoiceIdResolvesToEarningsTab() {
+        // An empty invoiceId is normalized to nil, then falls back to the
+        // Earnings tab (Android parity), not a dropped tap.
+        let userInfo: [AnyHashable: Any] = ["event_key": "payroll.invoice_paid", "invoiceId": ""]
+        XCTAssertEqual(PartnerNotificationDeepLink.resolve(userInfo), .earningsTab)
     }
 
     func testResolveFromUserInfoWithoutEventKeyResolvesToNil() {
@@ -82,6 +109,15 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
             extra: ["orderId": "ord-1"]
         )
         XCTAssertNil(PartnerNotificationDeepLink.resolve(userInfo))
+    }
+
+    func testResolveFromAlertCarryingUserInfoResolvesInvoice() {
+        let userInfo = alertCarryingUserInfo(
+            eventKey: "payroll.invoice_paid",
+            locArgs: [],
+            extra: ["invoiceId": "inv-3"]
+        )
+        XCTAssertEqual(PartnerNotificationDeepLink.resolve(userInfo), .invoice(invoiceId: "inv-3"))
     }
 
     private func alertCarryingUserInfo(

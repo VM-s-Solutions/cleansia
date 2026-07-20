@@ -43,10 +43,25 @@ public class DeletePayConfig
             var config = await _payConfigRepository.GetByIdAsync(payConfigId, cancellationToken);
             if (config == null) return false;
 
-            // Check if any order pays were calculated using this config
-            // This is a simple check - in reality you might want to track which config was used
-            var hasOrderPays = await _orderEmployeePayRepository.GetAll()
-                .AnyAsync(cancellationToken);
+            // Pay rows don't record the config they were computed under, so dependency is
+            // reconstructed the way CalculateOrderPay selects configs: rows whose order carries this
+            // config's service/package, narrowed to the override's employee for a per-employee
+            // config. A global config also blocks on rows a per-employee override may have shadowed
+            // at calc time — deliberately conservative, since shadowing can't be reconstructed from
+            // the recorded data.
+            var candidateRows = _orderEmployeePayRepository.GetAll();
+            if (config.EmployeeId != null)
+            {
+                candidateRows = candidateRows.Where(pay => pay.EmployeeId == config.EmployeeId);
+            }
+
+            var hasOrderPays = config.ServiceId != null
+                ? await candidateRows.AnyAsync(
+                    pay => pay.Order!.SelectedServices.Any(s => s.ServiceId == config.ServiceId),
+                    cancellationToken)
+                : await candidateRows.AnyAsync(
+                    pay => pay.Order!.SelectedPackages.Any(p => p.PackageId == config.PackageId),
+                    cancellationToken);
 
             return !hasOrderPays;
         }

@@ -1,11 +1,11 @@
 ---
 id: T-0377
 title: "iOS launch screen — re-probe UILaunchScreen UIImageName on REAL hardware (known-broken on the iOS 16.4 SIMULATOR; color-only shipped by T-0372)"
-status: proposed
+status: blocked
 size: S
 owner: ios
 created: 2026-07-03
-updated: 2026-07-03
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -61,3 +61,5 @@ shipping a possibly-broken first frame.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled (proposed → blocked)** — OWNER-GATED confirmed: this is a real-hardware probe (owner's iPhone) + an empirical AC2 verdict; the codebase is already in the exact color-only baseline the ticket describes (UIColorName only, no UIImageName; probe asset present in both apps). No code work exists until the probe runs.
+- 2026-07-19 — owner 2026-07-19 — will run the real-device launch-image probe once everything is shipped. Stays owner-gated.

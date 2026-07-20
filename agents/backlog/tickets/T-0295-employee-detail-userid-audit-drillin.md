@@ -1,11 +1,11 @@
 ---
 id: T-0295
 title: Add UserId to AdminEmployeeDetail → enable the User-typed audit drill-in from the employee page (T-0289 deviation)
-status: in_review
+status: done
 size: XS
 owner: backend
 created: 2026-06-23
-updated: 2026-06-23
+updated: 2026-07-19
 depends_on: [T-0289]
 blocks: []
 stories: []
@@ -40,18 +40,18 @@ T-0286).
 - [x] **AC1 — `UserId` exposed on `AdminEmployeeDetail`.** The admin employee-detail DTO gains a
   `UserId` field (the audited `User.Id` for the employee), populated by its mapper/query. Additive,
   backward-compatible — no existing field changes. A backend test asserts it is populated.
-- [ ] **AC2 — Employee-page drill-in using the existing helper.** The employee-detail page gains the same
+- [x] **AC2 — Employee-page drill-in using the existing helper.** The employee-detail page gains the same
   **"View audit history"** affordance the other four pages got in T-0289, passing the **`user`**
   `resourceType` + the new `UserId` to the existing `buildAuditResourceHistoryRoute(...)` helper /
   `audit-log/resource/:resourceType/:resourceId` route. Gated by `*cleansiaPermission="Policy.CanViewAuditLog"`,
   `<cleansia-button>` only — identical pattern to T-0289.
-- [ ] **AC3 — History filters to REAL rows (the bug T-0289 avoided).** Opening the drill-in from the
+- [x] **AC3 — History filters to REAL rows (the bug T-0289 avoided).** Opening the drill-in from the
   employee page lands on the per-resource history filtered by `(user, UserId)` and renders the employee's
   actual audited rows — not the empty view that wiring `Employee.Id` would have produced. A
   mismatched/empty result fails this AC.
-- [ ] **AC4 — i18n reuse.** Reuses the T-0289 "View audit history" i18n key (already in all 5 admin
+- [x] **AC4 — i18n reuse.** Reuses the T-0289 "View audit history" i18n key (already in all 5 admin
   locales) — no new hardcoded string. If a new key is needed it exists in **all 5** admin locales.
-- [ ] **AC5 — Gates green incl. regen.** Backend: `dotnet build` + the three test projects pass. Frontend
+- [x] **AC5 — Gates green incl. regen.** Backend: `dotnet build` + the three test projects pass. Frontend
   (against the regenerated client): `nx test` for the employee-detail lib + the audit-log lib;
   `nx build cleansia-admin.app --configuration=production` clean; `check-consistency.mjs` no new
   violation. **Held from `done`** until the owner admin nswag-regen lands + the admin prod-build is clean.
@@ -99,5 +99,28 @@ detail surface; adds no endpoint/authz; the route it links to is already gated).
   per quality-gates §after-regen). The ticket is **held from `done`** until the regen lands + the admin
   prod-build is clean — the same gate T-0290/T-0286 used. **Ticket stays `in_review` (not `done`).**
 
+- 2026-07-19 — in_review → **done (FE HALF SHIPPED AFTER THE OWNER'S 2nd ADMIN NSWAG-REGEN)** (frontend).
+  The regenerated admin client carries `AdminEmployeeDetail.userId` (verified in the committed
+  `admin-client.ts`). **AC2:** the employee-detail page gained the identical T-0289 "View audit history"
+  affordance — `<cleansia-button>` gated by `*cleansiaPermission="Policy.CanViewAuditLog"`, calling
+  `buildAuditResourceHistoryRoute(AuditResourceType.User, employee.userId)` (the `User` member added to
+  the frontend `AuditResourceType` const; disabled until `userId` is loaded, mirroring the order-detail
+  drill-in). **AC3:** the drill-in passes the audited `User.Id` with `resourceType = 'User'` — the exact
+  pair the backend records (`ResourceType = "User"` in `AdminDeleteUserAccount` /
+  `RecordChange("User", ...)`), so the per-resource history filters to the employee's real audited rows,
+  not the `Employee.Id` empty view. **AC4:** reused `pages.audit_log.drill_in.view_history` (present in
+  all 5 admin locales) — zero new strings. **AC5:** new `audit-resource.spec.ts` covers the User route;
+  `nx test services` 47/47, `nx test employee-management` + `nx test audit-log` green,
+  `nx build cleansia-admin.app --configuration=production` clean, `check-consistency.mjs` → no new
+  violation (7 pre-existing C3 findings in untouched employee-management facades).
+
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 (review corrective) — **coverage caveat recorded:** the drill-in's (User, UserId) filter
+  pair is correct, but the ONLY backend producer of User-typed audit rows today is `gdpr.user.delete`
+  (`AdminDeleteUserAccount`) — so the history renders empty for any employee never GDPR-deleted. The
+  AC3 status-log wording ("renders the employee's actual audited rows") overstated present coverage.
+  Follow-up filed: **T-0436** (record User-typed rows from the other employee-affecting admin actions
+  so the drill-in has content). Coverage added by T-0436 (2026-07-19): `employee.approve` /
+  `employee.reject` / `employee.update` / `employee.availability.update` now each record a
+  (User, User.Id) row via `RecordChange`, so the drill-in has content for normal employees.

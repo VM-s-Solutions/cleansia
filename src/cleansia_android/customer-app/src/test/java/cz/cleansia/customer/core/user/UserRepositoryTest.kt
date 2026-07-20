@@ -143,6 +143,42 @@ class UserRepositoryTest {
     }
 
     @Test
+    fun refreshCurrentUser_mapsProfileStatsOntoCurrentUser() = runTest {
+        val memberSince = kotlinx.datetime.Instant.parse("2025-02-14T10:00:00Z")
+        coEvery { userApi.userGetCurrentUser(query = null) } returns Response.success(
+            profile().copy(
+                memberSince = memberSince,
+                totalBookings = 7,
+                totalSavings = 320.0,
+                savingsCurrencyCode = "CZK",
+            ),
+        )
+
+        val repo = newRepo()
+        repo.refreshCurrentUser()
+
+        val user = repo.currentUser.value
+        assertEquals(memberSince, user?.memberSince)
+        assertEquals(7, user?.totalBookings)
+        assertEquals(320.0, user?.totalSavings)
+        assertEquals("CZK", user?.savingsCurrencyCode)
+    }
+
+    @Test
+    fun refreshCurrentUser_givenNoStats_defaultsToZeroBookingsAndNoSavingsCurrency() = runTest {
+        coEvery { userApi.userGetCurrentUser(query = null) } returns Response.success(profile())
+
+        val repo = newRepo()
+        repo.refreshCurrentUser()
+
+        val user = repo.currentUser.value
+        assertNull(user?.memberSince)
+        assertEquals(0, user?.totalBookings)
+        assertEquals(0.0, user?.totalSavings)
+        assertNull(user?.savingsCurrencyCode)
+    }
+
+    @Test
     fun refreshCurrentUser_givenNoToken_returnsSilentNetworkError() = runTest {
         every { tokenStore.current() } returns null
 

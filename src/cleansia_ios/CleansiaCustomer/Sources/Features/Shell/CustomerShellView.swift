@@ -63,8 +63,10 @@ struct CustomerShellView: View {
                 vm: bookingVM,
                 geocoding: container.geocodingService,
                 mapProvider: container.mapProvider,
+                serviceArea: container.serviceArea,
                 paymentSheet: StripePaymentController(),
                 orderClient: container.orderClient,
+                warmOrders: { await container.orderRepository.refresh() },
                 onDismiss: { model.isBookingPresented = false },
                 onViewOrder: { orderId in
                     model.isBookingPresented = false
@@ -81,6 +83,7 @@ struct CustomerShellView: View {
                 repository: container.savedAddressRepository,
                 geocoding: container.geocodingService,
                 mapProvider: container.mapProvider,
+                serviceArea: container.serviceArea,
                 snackbar: snackbar,
                 onBack: { model.isAddressManagerPresented = false },
                 onSelected: { _ in model.isAddressManagerPresented = false }
@@ -116,10 +119,12 @@ struct CustomerShellView: View {
         async let membership = container.membershipRepository.refresh()
         async let plans = container.membershipRepository.refreshPlans()
         async let addresses = container.savedAddressRepository.refresh()
+        async let recurring = container.recurringRepository.refresh()
+        async let catalog: Void = bookingVM.loadCatalog()
         // The gate refreshes the profile itself (`MainShell.kt:157-181` — once
         // per shell entry, on the fresh server snapshot, never a stale cache).
         async let needsOnboarding = profileVM.needsOnboarding()
-        _ = await (orders, loyalty, referrals, membership, plans, addresses)
+        _ = await (orders, loyalty, referrals, membership, plans, addresses, recurring, catalog)
         if await needsOnboarding { onNeedsOnboarding() }
     }
 
@@ -264,6 +269,7 @@ extension CustomerShellView {
                 repository: container.savedAddressRepository,
                 geocoding: container.geocodingService,
                 mapProvider: container.mapProvider,
+                serviceArea: container.serviceArea,
                 snackbar: snackbar,
                 onBack: { model.pop() },
                 onSelected: { _ in model.pop() }

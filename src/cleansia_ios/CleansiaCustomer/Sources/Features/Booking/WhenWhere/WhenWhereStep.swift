@@ -6,6 +6,7 @@ struct WhenWhereStep: View {
     @Environment(\.savedAddressRepository) private var savedAddressRepository
     let geocoding: GeocodingService
     let mapProvider: MapProvider
+    var serviceArea: ServiceAreaProvider?
 
     @State private var showAddressChooser = false
 
@@ -58,6 +59,7 @@ struct WhenWhereStep: View {
                 currentSavedAddressId: viewModel.state.savedAddressId,
                 geocoding: geocoding,
                 mapProvider: mapProvider,
+                serviceArea: serviceArea,
                 onPickSaved: { address in
                     viewModel.update { BookingSavedAddressApply.applied($0, address: address) }
                     showAddressChooser = false

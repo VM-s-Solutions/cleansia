@@ -80,6 +80,11 @@ object NotificationTemplates {
             R.string.notification_order_assignment_cancelled_body,
             NotificationCategoryDto.OrderUpdates,
         )
+        "payroll.invoice_paid" -> Template(
+            R.string.notification_payroll_invoice_paid_title,
+            R.string.notification_payroll_invoice_paid_body,
+            NotificationCategoryDto.OrderUpdates,
+        )
         else -> null
     }
 

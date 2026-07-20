@@ -29,14 +29,22 @@ public class NotificationFeedEventKeysTests
     }
 
     [Fact]
-    public void Assignment_Cancelled_Is_The_One_Deliberately_Non_Mutable_Feed_Key()
+    public void The_Non_Mutable_Feed_Keys_Are_Exactly_Assignment_Cancelled_And_Invoice_Paid()
     {
-        // A cancellation of an accepted job must not be silenceable, so it maps to no category
-        // (the producer's mute gate is skipped). Every OTHER feed key stays mutable.
-        Assert.Null(NotificationEventCatalog.GetCategoryFor(NotificationEventCatalog.OrderAssignmentCancelled));
+        // A job cancellation and a payment confirmation must not be silenceable, so they map to no
+        // category (the producer's mute gate is skipped). Every OTHER feed key stays mutable.
+        string[] nonMutable =
+        [
+            NotificationEventCatalog.OrderAssignmentCancelled,
+            NotificationEventCatalog.InvoicePaid,
+        ];
+        foreach (var key in nonMutable)
+        {
+            Assert.Null(NotificationEventCatalog.GetCategoryFor(key));
+        }
         foreach (var key in NotificationFeedEventKeys.Customer
                      .Concat(NotificationFeedEventKeys.Partner)
-                     .Where(k => k != NotificationEventCatalog.OrderAssignmentCancelled))
+                     .Where(k => !nonMutable.Contains(k)))
         {
             Assert.NotNull(NotificationEventCatalog.GetCategoryFor(key));
         }
@@ -50,10 +58,14 @@ public class NotificationFeedEventKeysTests
     }
 
     [Fact]
-    public void Partner_Keyset_Is_The_New_Jobs_Digest_Plus_Assignment_Cancelled()
+    public void Partner_Keyset_Is_The_New_Jobs_Digest_Plus_Assignment_Cancelled_And_Invoice_Paid()
     {
         Assert.Equal(
-            [NotificationEventCatalog.NewJobsAvailable, NotificationEventCatalog.OrderAssignmentCancelled],
+            [
+                NotificationEventCatalog.NewJobsAvailable,
+                NotificationEventCatalog.OrderAssignmentCancelled,
+                NotificationEventCatalog.InvoicePaid,
+            ],
             NotificationFeedEventKeys.Partner);
     }
 

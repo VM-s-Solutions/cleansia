@@ -36,6 +36,12 @@ param alwaysOn bool = false
 @description('Health-check path Azure pings to gauge instance health. The .NET hosts expose /health (all checks) + /alive (liveness only) via MapDefaultEndpoints. Empty string disables the probe (the SSR/Node host passes "").')
 param healthCheckPath string = '/health'
 
+@description('Deploy a "staging" deployment slot for swap-based zero-downtime deploys (T-0359 prod posture). Requires a Standard+ plan SKU (S1) — B-series plans reject slot creation, so dev keeps the default false.')
+param stagingSlotEnabled bool = false
+
+@description('Subnet id for regional VNet integration (the Q-INFRA-03 private-networking seam). Empty (default) = no VNet integration — the dev public-endpoint posture unchanged.')
+param virtualNetworkSubnetId string = ''
+
 @description('Resource tags applied to the host.')
 param tags object = {}
 
@@ -57,6 +63,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
   properties: {
     serverFarmId: appServicePlanId
     httpsOnly: httpsOnly
+    virtualNetworkSubnetId: empty(virtualNetworkSubnetId) ? null : virtualNetworkSubnetId
     siteConfig: {
       linuxFxVersion: linuxFxVersion
       alwaysOn: alwaysOn
@@ -65,6 +72,48 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
       http20Enabled: true
       healthCheckPath: empty(healthCheckPath) ? null : healthCheckPath
       appSettings: appSettingsArray
+      vnetRouteAllEnabled: empty(virtualNetworkSubnetId) ? null : true
+      cors: {
+        allowedOrigins: corsAllowedOrigins
+        supportCredentials: !empty(corsAllowedOrigins)
+      }
+    }
+  }
+}
+
+// The swap-based zero-downtime deploy target: CI deploys the artifact HERE, warms it, then swaps —
+// the running production site is never stopped (no stop/start deploy pattern). The slot mirrors the
+// parent's config 1:1 and has its OWN managed identity, which must hold the same Key Vault/Storage
+// grants BEFORE the first swap — a cold slot that cannot resolve its Key Vault references would swap
+// a broken instance into production. The orchestrator feeds stagingSlotPrincipalId to roleAssignments
+// for exactly that.
+resource stagingSlot 'Microsoft.Web/sites/slots@2023-12-01' = if (stagingSlotEnabled) {
+  parent: appService
+  name: 'staging'
+  location: location
+  tags: tags
+  kind: 'app,linux'
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    serverFarmId: appServicePlanId
+    httpsOnly: httpsOnly
+    virtualNetworkSubnetId: empty(virtualNetworkSubnetId) ? null : virtualNetworkSubnetId
+    siteConfig: {
+      linuxFxVersion: linuxFxVersion
+      // Deliberately NOT mirrored from the parent: Always On is on Azure's not-swapped settings
+      // list (slot-sticky), so a warm slot buys zero swap benefit — the CI workflow warms the slot
+      // explicitly before swapping. Mirroring it would pin every idle staging process resident
+      // 24/7, roughly doubling per-instance memory on the plan (13 resident apps on an S1's
+      // 1.75 GB) for nothing.
+      alwaysOn: false
+      minTlsVersion: '1.2'
+      ftpsState: 'Disabled'
+      http20Enabled: true
+      healthCheckPath: empty(healthCheckPath) ? null : healthCheckPath
+      appSettings: appSettingsArray
+      vnetRouteAllEnabled: empty(virtualNetworkSubnetId) ? null : true
       cors: {
         allowedOrigins: corsAllowedOrigins
         supportCredentials: !empty(corsAllowedOrigins)
@@ -84,3 +133,6 @@ output defaultHostName string = appService.properties.defaultHostName
 
 @description('System-assigned managed identity principal id — consumed by roleAssignments to grant Key Vault Secrets User + Storage data roles.')
 output principalId string = appService.identity.principalId
+
+@description('Staging-slot managed identity principal id (needs the same grants as the parent before a swap). Empty string when the slot is disabled.')
+output stagingSlotPrincipalId string = stagingSlotEnabled ? stagingSlot!.identity.principalId : ''

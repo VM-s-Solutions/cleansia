@@ -55,12 +55,27 @@ struct OrderDetailAddress: Equatable {
 struct OrderDetailService: Equatable, Hashable {
     let id: String?
     let name: String
+    let translations: [String: Translation]?
+
+    init(id: String?, name: String, translations: [String: Translation]? = nil) {
+        self.id = id
+        self.name = name
+        self.translations = translations
+    }
 }
 
 struct OrderDetailPackage: Equatable, Hashable {
     let id: String?
     let name: String
     let price: Double?
+    let translations: [String: Translation]?
+
+    init(id: String?, name: String, price: Double?, translations: [String: Translation]? = nil) {
+        self.id = id
+        self.name = name
+        self.price = price
+        self.translations = translations
+    }
 }
 
 struct OrderDetailPayment: Equatable {
@@ -115,10 +130,15 @@ extension OrderDetail {
         bathrooms = item.bathrooms ?? 0
         services = item.selectedServices?.compactMap { service in
             service.name.flatMap { $0.isEmpty ? nil : $0 }
-                .map { OrderDetailService(id: service.id, name: $0) }
+                .map { OrderDetailService(id: service.id, name: $0, translations: service.translations) }
         } ?? []
         packages = item.selectedPackages?.map { pkg in
-            OrderDetailPackage(id: pkg.id, name: pkg.name.flatMap { $0.isEmpty ? nil : $0 } ?? "—", price: pkg.price)
+            OrderDetailPackage(
+                id: pkg.id,
+                name: pkg.name.flatMap { $0.isEmpty ? nil : $0 } ?? "—",
+                price: pkg.price,
+                translations: pkg.translations
+            )
         } ?? []
         extras = item.extras?.filter(\.value).keys.sorted() ?? []
 

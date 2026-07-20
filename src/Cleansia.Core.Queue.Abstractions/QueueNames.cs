@@ -8,4 +8,5 @@ public static class QueueNames
     public const string SitewidePromoFanout = "sitewide-promo-fanout";
     public const string CalculateOrderPay = "calculate-order-pay";
     public const string SendEmail = "send-email";
+    public const string LiveActivityDispatch = "live-activity-dispatch";
 }

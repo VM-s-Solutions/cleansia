@@ -86,6 +86,7 @@ private data class ProfileRow(
 fun ProfileTab(
     modifier: Modifier = Modifier,
     user: CurrentUser? = null,
+    isPlus: Boolean = false,
     onLogout: () -> Unit = {},
     onRowClick: (key: String) -> Unit = {},
 ) {
@@ -95,7 +96,7 @@ fun ProfileTab(
     val firstName = user?.firstName ?: ""
     val lastName = user?.lastName ?: ""
     val email = user?.email ?: ""
-    val tier = "Regular"
+    val tier = stringResource(if (isPlus) R.string.profile_tier_plus else R.string.profile_tier_regular)
     val totalBookings = user?.totalBookings ?: 0
     val savedDisplay = formatSaved(user?.totalSavings ?: 0.0, user?.savingsCurrencyCode)
     val memberSince = formatMemberSince(user?.memberSince)
@@ -360,7 +361,7 @@ private fun TierBadge(tier: String) {
 
 /** "%.0f Kč" style, mirroring the booking total formatter; symbol-less when the
  *  user has no realized orders (currency null). */
-private fun formatSaved(amount: Double, currencyCode: String?): String {
+internal fun formatSaved(amount: Double, currencyCode: String?): String {
     val symbol = when (currencyCode?.uppercase()) {
         "CZK" -> "Kč"
         "EUR" -> "€"
@@ -372,7 +373,7 @@ private fun formatSaved(amount: Double, currencyCode: String?): String {
 }
 
 /** Account-creation instant → "MMM yyyy" (e.g. "Feb 2025"); em dash if unknown. */
-private fun formatMemberSince(instant: kotlinx.datetime.Instant?): String =
+internal fun formatMemberSince(instant: kotlinx.datetime.Instant?): String =
     instant
         ?.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
         ?.toJavaLocalDateTime()

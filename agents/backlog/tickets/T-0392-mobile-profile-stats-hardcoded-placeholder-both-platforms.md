@@ -1,11 +1,11 @@
 ---
 id: T-0392
 title: "Mobile BUG (iOS+Android) — Profile stats card ships hardcoded placeholders (3 bookings / 320 Kč saved / \"Feb 2025\" member-since / \"Regular\" tier) to every user; \"Feb 2025\" is also an untranslated English literal"
-status: proposed
+status: done
 size: M
 owner: pm
 created: 2026-07-08
-updated: 2026-07-08
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -94,6 +94,40 @@ savings, and the Profile tab has **no** orders view-model injected for a booking
   deliberate exception, NOT undone. **Android still shows the placeholder card.** When this ticket is worked:
   either wire real cross-platform stats OR hide Android's `StatsCard` symmetrically so the two converge again.
   Bumping toward the top of the follow-up queue since the platforms are now visibly diverged.
+- 2026-07-19 — **done.** Backend fields + Android wiring had landed via PR #121/#122; the Android
+  tier-literal gap and the iOS half both closed today (see Review). Both platforms now render the
+  SAME set of real stats (all three SHOWN) from `MyProfileDto`, with the tier badge on real
+  membership state — the fix-round-5 divergence is resolved by convergence on real data.
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **Android half complete** (android). The backend + stats wiring had already landed via
+  PR #121/#122 (`MyProfileDto.memberSince/totalBookings/totalSavings/savingsCurrencyCode` →
+  `CurrentUser` → `StatsCard`); this pass closed the last AC4 gap — the hardcoded untranslated
+  `tier = "Regular"` literal. **v1 contract for the iOS mirror:** all three stats SHOWN with real
+  values (bookings = `totalBookings`; saved = `totalSavings` formatted in `savingsCurrencyCode`,
+  symbol-less number when currency null; member-since = locale-formatted "MMM yyyy", em dash "—"
+  while null). Tier badge = `MembershipRepository.current.hasMembership` → localized
+  `profile_tier_plus`/`profile_tier_regular` (exposed as `ProfileViewModel.isPlus`, passed into
+  `ProfileTab`) — identical to iOS's existing `membershipVM.current?.hasMembership` read, string
+  values mirrored from the iOS xcstrings (en Plus/Regular, cs Základní, sk Základné, uk Стандартний,
+  ru Обычный). Tests: +3 VM tier-mapping, +2 repo stats-mapping, +6 formatter (null → em dash /
+  symbol-less); `:customer-app:testDebugUnitTest` 255/255 green.
+- 2026-07-19 — **iOS half complete (ios) — both platforms converged, ticket done.** The stats card
+  had already been restored with real DTO reads (PR #122/#124: `MyProfileDto.memberSince/
+  totalBookings/totalSavings/savingsCurrencyCode` → `CurrentUserProfile` → `ProfileStatsCard`);
+  this pass closed the two v1-contract gaps: (1) **saved** no longer routes through
+  `OrdersFormat.price`, which defaulted a null currency to CZK (a no-realized-orders user saw
+  "0 Kč" instead of the contract's bare number) — new `ProfileStatsFormat.saved` mirrors Android's
+  `formatSaved` exactly (CZK→"Kč", EUR→"€", USD→"$" as "10 $", unknown code passthrough, symbol-less
+  when currency null); (2) **member-since** no longer formats via `Date.formatted` (system locale) —
+  `ProfileStatsFormat.memberSince` takes the app locale from `@Environment(\.locale)` (fed by
+  `preferences.locale`, the OrdersTab pattern, so it reacts to the in-app language switch), "MMM y"
+  template, "—" when null. Bookings (`totalBookings ?? 0`) and the tier badge
+  (`membershipVM.current?.hasMembership`) were already contract-conformant — untouched.
+  `MyProfileDto.toDomain` made internal for mapping tests. Tests: +6 formatter (known/unknown/null
+  currency, en "Feb 2025" + cs month localization, null → "—") +2 DTO stats-mapping
+  (values + absent-defaults); customer suite 586 tests on iPhone 17 AND the iPhone14-iOS16 floor
+  (only the 2 known local Stripe-key artifacts fail); partner scheme BUILD SUCCEEDED;
+  swiftformat 0.60.1 --lint + swiftlint 0.65.0 --strict clean. No new strings — the stat labels and
+  tiers already exist ×5 locales, and "—" mirrors Android's unlocalized literal.

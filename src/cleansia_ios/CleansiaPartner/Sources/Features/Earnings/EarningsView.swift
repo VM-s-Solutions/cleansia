@@ -5,6 +5,7 @@ import SwiftUI
 struct EarningsView: View {
     @StateObject private var vm: EarningsViewModel
     @State private var path = NavigationPath()
+    @Binding private var deepLinkInvoiceId: String?
 
     private let payrollClient: PartnerPayrollClient
     private let invoicesStaleness: InvoicesStaleness
@@ -14,9 +15,11 @@ struct EarningsView: View {
         dashboardClient: PartnerDashboardClient,
         payrollClient: PartnerPayrollClient,
         invoicesStaleness: InvoicesStaleness,
-        snackbar: SnackbarController
+        snackbar: SnackbarController,
+        deepLinkInvoiceId: Binding<String?> = .constant(nil)
     ) {
         _vm = StateObject(wrappedValue: EarningsViewModel(client: dashboardClient))
+        _deepLinkInvoiceId = deepLinkInvoiceId
         self.payrollClient = payrollClient
         self.invoicesStaleness = invoicesStaleness
         self.snackbar = snackbar
@@ -31,6 +34,15 @@ struct EarningsView: View {
                 .navigationDestination(for: EarningsRoute.self, destination: destination)
         }
         .task { await vm.load() }
+        .onChange(of: deepLinkInvoiceId) { openInvoiceDeepLink($0) }
+        .onAppear { openInvoiceDeepLink(deepLinkInvoiceId) }
+    }
+
+    private func openInvoiceDeepLink(_ invoiceId: String?) {
+        guard let invoiceId else { return }
+        path.append(EarningsRoute.invoices)
+        path.append(EarningsRoute.invoiceDetail(id: invoiceId))
+        deepLinkInvoiceId = nil
     }
 
     @ViewBuilder

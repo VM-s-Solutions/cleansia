@@ -15,6 +15,7 @@ struct BookingAddressPickerView: View {
     @Environment(\.savedAddressRepository) private var repository
     @Environment(\.snackbarController) private var snackbar
     @Environment(\.bookingAddressSaveOffered) private var saveOffered
+    @Environment(\.locationProvider) private var location
 
     private let mapProvider: MapProvider
     private let onConfirmed: (GeocodedAddress) -> Void
@@ -27,10 +28,17 @@ struct BookingAddressPickerView: View {
     init(
         geocoding: GeocodingService,
         mapProvider: MapProvider,
+        serviceArea: ServiceAreaProvider? = nil,
         onConfirmed: @escaping (GeocodedAddress) -> Void,
         onBack: @escaping () -> Void
     ) {
-        _vm = StateObject(wrappedValue: AddressPickerViewModel(geocoding: geocoding))
+        let codesProvider: (() async -> [String]?)? = serviceArea.map { provider in
+            { await provider.servicedCountryIsoCodes() }
+        }
+        _vm = StateObject(wrappedValue: AddressPickerViewModel(
+            geocoding: geocoding,
+            servicedCountryCodesProvider: codesProvider
+        ))
         self.mapProvider = mapProvider
         self.onConfirmed = onConfirmed
         self.onBack = onBack
@@ -66,6 +74,16 @@ struct BookingAddressPickerView: View {
             VStack(spacing: 0) {
                 topBar
                 Spacer()
+                HStack {
+                    Spacer()
+                    FloatingCircleButton(
+                        systemIcon: "location",
+                        accessibilityLabel: L10n.AddressPicker.myLocation,
+                        action: { Task { await vm.recenterOnMyLocation(location: location) } }
+                    )
+                }
+                .padding(.horizontal, Spacing.s)
+                .padding(.bottom, Spacing.s)
                 ConfirmCard(
                     resolved: vm.resolved,
                     lookingUp: vm.lookingUp,
@@ -74,8 +92,17 @@ struct BookingAddressPickerView: View {
                 )
             }
         }
+        .task { await vm.autoCenterOnOpen(location: location) }
         .onReceive(vm.recenter) { coordinate in
             region.center = CLLocationCoordinate2D(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        }
+        .onReceive(vm.locationFailed) { failure in
+            switch failure {
+            case .denied:
+                snackbar.showError(L10n.AddressPicker.myLocationDenied)
+            case .unavailable:
+                snackbar.showError(L10n.AddressPicker.myLocationUnavailable)
+            }
         }
         .onReceive(vm.confirmed, perform: handleConfirm)
     }
@@ -360,6 +387,7 @@ private struct ConfirmCard: View {
                 onConfirmed: { _ in },
                 onBack: {}
             )
+            .environment(\.locationProvider, PreviewLocationProvider())
         }
     }
 #endif

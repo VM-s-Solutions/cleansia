@@ -1,11 +1,11 @@
 ---
 id: T-0428
 title: "Auth — logout of a ROTATED refresh token revokes its SUCCESSOR CHAIN (session-scoped, ownership-gated), not a silent no-op and not an account-wide theft response"
-status: proposed
+status: done
 size: S
 owner: backend
 created: 2026-07-17
-updated: 2026-07-17
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -195,3 +195,4 @@ tests. No migration, no NSwag, no client change, no config change. The `auth` ra
   attacked and narrowed; verdict = successor-chain revoke, ownership-gated, response-invariant,
   with user-wide revoke retained only as the adversarial-contention fallback. Stays `proposed`
   pending PM scheduling; implementation is backend lane, re-verify by security on the diff.
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → done)** — shipped on feature/i18n-cluster-3 (merged): rotated-token logout chain-revokes along the success chain.

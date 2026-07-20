@@ -1,9 +1,11 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -44,7 +46,8 @@ public class AdminOverrideOrderStatus
     public class Handler(
         IOrderRepository orderRepository,
         IUserSessionProvider userSessionProvider,
-        IAuditContext auditContext
+        IAuditContext auditContext,
+        ILiveActivityProducer liveActivityProducer
     ) : ICommandHandler<Command, Response>
     {
         // The forward-only lifecycle the override may walk. Cancelled is intentionally absent —
@@ -102,7 +105,18 @@ public class AdminOverrideOrderStatus
                     BusinessErrorMessage.InvalidOrderStatusTransition));
             }
 
-            order.AddOrderStatus(OrderStatusTrack.Create(command.TargetStatus, order));
+            var transition = OrderStatusTrack.Create(command.TargetStatus, order);
+            order.AddOrderStatus(transition);
+
+            // The override's FIRST notification-style call (ADR-0029 D2/RV-2): a state card must track
+            // admin-driven forward moves. Forward-only, so Cancelled is unreachable here; a target with
+            // no activity event (Confirmed) maps to null and produces nothing.
+            var eventKey = LiveActivityEventKeys.ForStatus(command.TargetStatus);
+            if (eventKey is not null)
+            {
+                await liveActivityProducer.NotifyOrderTransitionAsync(
+                    order, eventKey, transition, cancellationToken);
+            }
 
             auditContext.RecordChange(
                 "Order",

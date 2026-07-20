@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -7,6 +8,7 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Employees;
 
+[AuditAction("employee.reject", ResourceType = "User")]
 public class RejectEmployee
 {
     public class Validator : AbstractValidator<Command>
@@ -42,10 +44,15 @@ public class RejectEmployee
 
     public record Response(string EmployeeId, DateTimeOffset RejectedAt);
 
+    // Keyed on the USER id (the audited subject the employee drill-in filters on), never the Employee
+    // id. The admin's free-text reason is excluded — it could carry subject PII.
+    public record ContractSnapshot(string UserId, string EmployeeId, ContractStatus Status);
+
     public class Handler(
         IEmployeeRepository employeeRepository,
         IUserRepository userRepository,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        IAuditContext auditContext)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -69,7 +76,15 @@ public class RejectEmployee
                     BusinessErrorMessage.EmployeeNotFound));
             }
 
+            var statusBefore = employee.ContractStatus;
+
             employee.Reject(adminUser.Id, command.Reason);
+
+            auditContext.RecordChange(
+                "User",
+                employee.UserId,
+                new ContractSnapshot(employee.UserId, employee.Id, statusBefore),
+                new ContractSnapshot(employee.UserId, employee.Id, employee.ContractStatus));
 
             return BusinessResult.Success(new Response(employee.Id, employee.RejectedAt!.Value));
         }

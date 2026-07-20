@@ -15,6 +15,7 @@ struct ProfileView: View {
     private let snackbar: SnackbarController
     private let geocoding: GeocodingService
     private let mapProvider: MapProvider
+    private let serviceArea: ServiceAreaProvider
     private let onSignedOut: () -> Void
 
     init(
@@ -24,6 +25,7 @@ struct ProfileView: View {
         snackbar: SnackbarController,
         geocoding: GeocodingService,
         mapProvider: MapProvider,
+        serviceArea: ServiceAreaProvider,
         preferences: PreferencesModel,
         onSignedOut: @escaping () -> Void
     ) {
@@ -40,6 +42,7 @@ struct ProfileView: View {
         self.snackbar = snackbar
         self.geocoding = geocoding
         self.mapProvider = mapProvider
+        self.serviceArea = serviceArea
         self.onSignedOut = onSignedOut
     }
 
@@ -98,6 +101,7 @@ struct ProfileView: View {
                 chainVM: chainVM,
                 geocoding: geocoding,
                 mapProvider: mapProvider,
+                serviceArea: serviceArea,
                 onboarding: onboarding,
                 onSaved: { popOrAdvance(onboarding: onboarding) }
             )

@@ -1,11 +1,11 @@
 ---
 id: T-0352
 title: "Cross-app password min-length policy drift — customer-app enforces >=12, partner-app >=8; pick one canonical policy"
-status: proposed
+status: done
 size: S
 owner: android
 created: 2026-06-30
-updated: 2026-06-30
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -65,3 +65,4 @@ source: HARDENING-1 T-0333 android review — cross-app inconsistency (NON-block
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled to reality (proposed → done)** — resolved-as-shipped: both apps aligned to the 12-char minimum (INDEX verified 2026-07-17; hardening PRs merged).

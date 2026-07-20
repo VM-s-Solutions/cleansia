@@ -27,6 +27,11 @@ name: Deploy to Azure (reusable)
 #   only, not on each other. The ordering that matters (migrate-before-deploy) is held by the needs edge.
 # - All FIVE API hosts are deployed, including api-cleansia-customer-mobile-<region>-<env> (the host the
 #   old four-host YAML omitted — the iOS customer app's API).
+# - PROD web-host deploys are slot-swapped (deploy/AZURE-PROD-POSTURE.md §1): artifact → the `staging`
+#   slot → warm via the health endpoint → `az webapp deployment slot swap` into production, so the live
+#   site is never stopped. Dev (B-series, no slots) keeps deploying straight to the site, and the
+#   Functions container deliberately has NO slot — a warm staging Functions host would double-consume
+#   the Storage Queues.
 
 on:
   workflow_call:
@@ -295,6 +300,40 @@ jobs:
             echo "FCM_PROVISIONED=false" >> "$GITHUB_ENV"
           fi
 
+      # Same shape as the FCM flag above, for the two Czech-EET fiscal secrets: the Bicep wires the
+      # Fiscal__CzechEet2__{ApiKey,CertificatePassword} app settings as Key Vault references only when
+      # BOTH GitHub secrets are set (the secret-push step below writes them in the same run) — an
+      # unresolvable KV reference hands the app the raw reference string, not an empty value. While
+      # unset, the Bicep keeps the literal empty placeholders and dev is unchanged.
+      - name: Resolve fiscal provisioning flag
+        env:
+          FISCAL_CZECH_EET2_API_KEY: ${{ secrets.FISCAL_CZECH_EET2_API_KEY }}
+          FISCAL_CZECH_EET2_CERTIFICATE_PASSWORD: ${{ secrets.FISCAL_CZECH_EET2_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -n "$FISCAL_CZECH_EET2_API_KEY" ] && [ -n "$FISCAL_CZECH_EET2_CERTIFICATE_PASSWORD" ]; then
+            echo "FISCAL_PROVISIONED=true" >> "$GITHUB_ENV"
+          else
+            echo "FISCAL_PROVISIONED=false" >> "$GITHUB_ENV"
+          fi
+
+      # Same shape as the FCM/fiscal flags, for the three APNS Live Activity secrets (ADR-0029): the
+      # Bicep wires the six APNS__* Function-App settings as Key Vault references + flips APNS__Enabled
+      # on ONLY when all three GitHub secrets are set (the secret-push step writes them in the same run),
+      # so the KV reference is never wired before the secret exists. Seed them from the SAME team-scoped
+      # .p8 already used for ordinary push — NO new key. Set all three to enable the iOS Live Activity
+      # channel; leaving any unset keeps the whole pipeline INERT (APNS__Enabled=false).
+      - name: Resolve APNS provisioning flag
+        env:
+          APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
+          APNS_TEAM_ID: ${{ secrets.APNS_TEAM_ID }}
+          APNS_PRIVATE_KEY_PEM: ${{ secrets.APNS_PRIVATE_KEY_PEM }}
+        run: |
+          if [ -n "$APNS_KEY_ID" ] && [ -n "$APNS_TEAM_ID" ] && [ -n "$APNS_PRIVATE_KEY_PEM" ]; then
+            echo "APNS_PROVISIONED=true" >> "$GITHUB_ENV"
+          else
+            echo "APNS_PROVISIONED=false" >> "$GITHUB_ENV"
+          fi
+
       - name: Bicep what-if (non-mutating preview)
         if: inputs.mode == 'what-if'
         run: |
@@ -305,7 +344,9 @@ jobs:
             --parameters postgresAdministratorPassword="$POSTGRES_ADMIN_PASSWORD" \
                          adminIpAddress="$ADMIN_IP_ADDRESS" \
                          ciPrincipalId="$CI_PRINCIPAL_ID" \
-                         fcmSecretProvisioned="$FCM_PROVISIONED"
+                         fcmSecretProvisioned="$FCM_PROVISIONED" \
+                         fiscalSecretProvisioned="$FISCAL_PROVISIONED" \
+                         apnsSecretProvisioned="$APNS_PROVISIONED"
         env:
           POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
           ADMIN_IP_ADDRESS: ${{ secrets.ADMIN_IP_ADDRESS }}
@@ -325,7 +366,9 @@ jobs:
               --parameters postgresAdministratorPassword="$POSTGRES_ADMIN_PASSWORD" \
                            adminIpAddress="$ADMIN_IP_ADDRESS" \
                            ciPrincipalId="$CI_PRINCIPAL_ID" \
-                           fcmSecretProvisioned="$FCM_PROVISIONED"
+                           fcmSecretProvisioned="$FCM_PROVISIONED" \
+                           fiscalSecretProvisioned="$FISCAL_PROVISIONED" \
+                           apnsSecretProvisioned="$APNS_PROVISIONED"
           }
           if ! deploy; then
             echo "::warning::First provision attempt failed (often the transient PG ServerIsBusy) — retrying once in 3 minutes."
@@ -338,7 +381,7 @@ jobs:
           CI_PRINCIPAL_ID: ${{ secrets.CI_PRINCIPAL_ID }}
 
       # Push the EXTERNAL secrets (the ones Bicep can't derive) from the stage's GitHub-Environment
-      # secrets into Key Vault. The DERIVABLE ones (Storage/DB conn strings, Jwt issuer/audience) are
+      # secrets into Key Vault. The DERIVABLE ones (Storage/DB conn strings) are
       # written by the Bicep derivedSecrets module — not here. Set these GitHub secrets ONCE per
       # Environment; every deploy syncs them, so they're never hand-set per-API. Each push is skipped
       # if its GitHub secret is empty (so a missing optional secret doesn't fail the deploy).
@@ -367,6 +410,11 @@ jobs:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          FISCAL_CZECH_EET2_API_KEY: ${{ secrets.FISCAL_CZECH_EET2_API_KEY }}
+          FISCAL_CZECH_EET2_CERTIFICATE_PASSWORD: ${{ secrets.FISCAL_CZECH_EET2_CERTIFICATE_PASSWORD }}
+          APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
+          APNS_TEAM_ID: ${{ secrets.APNS_TEAM_ID }}
+          APNS_PRIVATE_KEY_PEM: ${{ secrets.APNS_PRIVATE_KEY_PEM }}
         run: |
           # Grant the CI principal (this OIDC app's service principal) Secrets Officer on the vault.
           CI_OID="$(az ad signed-in-user show --query id -o tsv 2>/dev/null || true)"
@@ -410,6 +458,18 @@ jobs:
           # whether this GitHub secret is set, so the KV reference is never wired before the secret
           # exists (an unresolvable reference would dead-letter every push, not no-op cleanly).
           set_secret "Fcm--ServiceAccountJson"      "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          # Czech-EET fiscal secrets — same provisioned-flag pattern as FCM: the hosts bind the
+          # Fiscal__CzechEet2__{ApiKey,CertificatePassword} KV references only when both GitHub
+          # secrets are set (fiscalSecretProvisioned), so the references are never wired before the
+          # secrets exist.
+          set_secret "Fiscal--CzechEet2--ApiKey"              "$FISCAL_CZECH_EET2_API_KEY"
+          set_secret "Fiscal--CzechEet2--CertificatePassword" "$FISCAL_CZECH_EET2_CERTIFICATE_PASSWORD"
+          # APNS Live Activity (ADR-0029) — the Functions host binds the six APNS__* settings + flips
+          # APNS__Enabled only when apnsSecretProvisioned is true, which is driven by whether all three
+          # of these GitHub secrets are set (so a KV reference is never wired before its secret exists).
+          set_secret "Apns--KeyId"                            "$APNS_KEY_ID"
+          set_secret "Apns--TeamId"                           "$APNS_TEAM_ID"
+          set_secret "Apns--PrivateKeyPem"                    "$APNS_PRIVATE_KEY_PEM"
 
   # ===========================================================================================
   # Migrate — committed EF migrations applied BEFORE any deploy (ADR-0015 D5). Runs after provision
@@ -468,10 +528,23 @@ jobs:
             --url "https://management.azure.com/subscriptions/${SUB_ID}/resourceGroups/rg-cleansia-${{ matrix.region }}-${{ inputs.env }}/providers/Microsoft.DBforPostgreSQL/flexibleServers/pg-cleansia-${{ matrix.region }}-${{ inputs.env }}/firewallRules/ci-migrate-${{ github.run_id }}?api-version=2024-08-01" \
             --body "{\"properties\":{\"startIpAddress\":\"${RUNNER_IP}\",\"endIpAddress\":\"${RUNNER_IP}\"}}"
 
+      # The connection string is read from Key Vault (ConnectionStrings--cleansia-db, written by the
+      # Bicep derivedSecrets module) — the SAME source the runtime hosts resolve, so a password
+      # rotation touches one place instead of also updating a duplicated DB_CONNECTION_STRING GitHub
+      # secret. The OIDC principal this job logs in as can read it: the provision job (a `needs` of
+      # this one) self-grants it Key Vault Secrets Officer on the vault before pushing secrets, and
+      # the Bicep ciPrincipalId grant covers it too when CI_PRINCIPAL_ID is set. The value is masked
+      # before use so it can never surface in the job log.
       - name: Apply migrations
-        env:
-          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
         run: |
+          DB_CONNECTION_STRING="$(az keyvault secret show \
+            --vault-name kv-cleansia-${{ matrix.region }}-${{ inputs.env }} \
+            --name ConnectionStrings--cleansia-db --query value -o tsv)"
+          if [ -z "$DB_CONNECTION_STRING" ]; then
+            echo "::error::Key Vault secret ConnectionStrings--cleansia-db is empty or unreadable — check the CI principal's Key Vault RBAC and that provision ran"
+            exit 1
+          fi
+          echo "::add-mask::$DB_CONNECTION_STRING"
           chmod +x ./src/efbundle
           ./src/efbundle --connection "$DB_CONNECTION_STRING"
 
@@ -512,11 +585,38 @@ jobs:
           name: partner-api
           path: ./partner-api
 
+      # Prod lands in the staging slot and is swapped below (deploy/AZURE-PROD-POSTURE.md §1);
+      # 'production' is the action's default slot, so the dev (B-series, slotless) path is unchanged.
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
           app-name: api-cleansia-partner-${{ matrix.region }}-${{ inputs.env }}
+          slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./partner-api
+
+      # Slots are not Always On (deliberate — see appService.bicep), so the freshly-deployed slot is
+      # cold: warm it and PROVE it healthy before the swap. Failing here fails the job — a slot that
+      # never answers /health must not be swapped into production.
+      - name: Warm the staging slot
+        if: inputs.env == 'prod'
+        run: |
+          SLOT_URL="https://api-cleansia-partner-${{ matrix.region }}-${{ inputs.env }}-staging.azurewebsites.net/health"
+          for attempt in $(seq 1 30); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
+            if [ "$code" = "200" ]; then echo "slot healthy (attempt $attempt)"; exit 0; fi
+            echo "  slot not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            sleep 10
+          done
+          echo "::error::staging slot never went healthy at $SLOT_URL — refusing to swap a cold/broken slot into production"
+          exit 1
+
+      - name: Swap staging into production
+        if: inputs.env == 'prod'
+        run: |
+          az webapp deployment slot swap \
+            --resource-group rg-cleansia-${{ matrix.region }}-${{ inputs.env }} \
+            --name api-cleansia-partner-${{ matrix.region }}-${{ inputs.env }} \
+            --slot staging --target-slot production
 
   deploy-admin-api:
     name: Deploy Admin API
@@ -543,11 +643,34 @@ jobs:
           name: admin-api
           path: ./admin-api
 
+      # The prod slot flow below mirrors deploy-partner-api.
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
           app-name: api-cleansia-admin-${{ matrix.region }}-${{ inputs.env }}
+          slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./admin-api
+
+      - name: Warm the staging slot
+        if: inputs.env == 'prod'
+        run: |
+          SLOT_URL="https://api-cleansia-admin-${{ matrix.region }}-${{ inputs.env }}-staging.azurewebsites.net/health"
+          for attempt in $(seq 1 30); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
+            if [ "$code" = "200" ]; then echo "slot healthy (attempt $attempt)"; exit 0; fi
+            echo "  slot not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            sleep 10
+          done
+          echo "::error::staging slot never went healthy at $SLOT_URL — refusing to swap a cold/broken slot into production"
+          exit 1
+
+      - name: Swap staging into production
+        if: inputs.env == 'prod'
+        run: |
+          az webapp deployment slot swap \
+            --resource-group rg-cleansia-${{ matrix.region }}-${{ inputs.env }} \
+            --name api-cleansia-admin-${{ matrix.region }}-${{ inputs.env }} \
+            --slot staging --target-slot production
 
   deploy-customer-api:
     name: Deploy Customer API
@@ -574,11 +697,34 @@ jobs:
           name: customer-api
           path: ./customer-api
 
+      # The prod slot flow below mirrors deploy-partner-api.
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
           app-name: api-cleansia-customer-${{ matrix.region }}-${{ inputs.env }}
+          slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./customer-api
+
+      - name: Warm the staging slot
+        if: inputs.env == 'prod'
+        run: |
+          SLOT_URL="https://api-cleansia-customer-${{ matrix.region }}-${{ inputs.env }}-staging.azurewebsites.net/health"
+          for attempt in $(seq 1 30); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
+            if [ "$code" = "200" ]; then echo "slot healthy (attempt $attempt)"; exit 0; fi
+            echo "  slot not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            sleep 10
+          done
+          echo "::error::staging slot never went healthy at $SLOT_URL — refusing to swap a cold/broken slot into production"
+          exit 1
+
+      - name: Swap staging into production
+        if: inputs.env == 'prod'
+        run: |
+          az webapp deployment slot swap \
+            --resource-group rg-cleansia-${{ matrix.region }}-${{ inputs.env }} \
+            --name api-cleansia-customer-${{ matrix.region }}-${{ inputs.env }} \
+            --slot staging --target-slot production
 
   deploy-partner-mobile-api:
     name: Deploy Partner-Mobile API
@@ -605,11 +751,34 @@ jobs:
           name: partner-mobile-api
           path: ./partner-mobile-api
 
+      # The prod slot flow below mirrors deploy-partner-api.
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
           app-name: api-cleansia-partner-mobile-${{ matrix.region }}-${{ inputs.env }}
+          slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./partner-mobile-api
+
+      - name: Warm the staging slot
+        if: inputs.env == 'prod'
+        run: |
+          SLOT_URL="https://api-cleansia-partner-mobile-${{ matrix.region }}-${{ inputs.env }}-staging.azurewebsites.net/health"
+          for attempt in $(seq 1 30); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
+            if [ "$code" = "200" ]; then echo "slot healthy (attempt $attempt)"; exit 0; fi
+            echo "  slot not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            sleep 10
+          done
+          echo "::error::staging slot never went healthy at $SLOT_URL — refusing to swap a cold/broken slot into production"
+          exit 1
+
+      - name: Swap staging into production
+        if: inputs.env == 'prod'
+        run: |
+          az webapp deployment slot swap \
+            --resource-group rg-cleansia-${{ matrix.region }}-${{ inputs.env }} \
+            --name api-cleansia-partner-mobile-${{ matrix.region }}-${{ inputs.env }} \
+            --slot staging --target-slot production
 
   deploy-customer-mobile-api:
     name: Deploy Customer-Mobile API
@@ -636,14 +805,39 @@ jobs:
           name: customer-mobile-api
           path: ./customer-mobile-api
 
+      # The prod slot flow below mirrors deploy-partner-api.
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
           app-name: api-cleansia-customer-mobile-${{ matrix.region }}-${{ inputs.env }}
+          slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./customer-mobile-api
+
+      - name: Warm the staging slot
+        if: inputs.env == 'prod'
+        run: |
+          SLOT_URL="https://api-cleansia-customer-mobile-${{ matrix.region }}-${{ inputs.env }}-staging.azurewebsites.net/health"
+          for attempt in $(seq 1 30); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
+            if [ "$code" = "200" ]; then echo "slot healthy (attempt $attempt)"; exit 0; fi
+            echo "  slot not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            sleep 10
+          done
+          echo "::error::staging slot never went healthy at $SLOT_URL — refusing to swap a cold/broken slot into production"
+          exit 1
+
+      - name: Swap staging into production
+        if: inputs.env == 'prod'
+        run: |
+          az webapp deployment slot swap \
+            --resource-group rg-cleansia-${{ matrix.region }}-${{ inputs.env }} \
+            --name api-cleansia-customer-mobile-${{ matrix.region }}-${{ inputs.env }} \
+            --slot staging --target-slot production
 
   # ===========================================================================================
   # Functions — container via ACR (ADR-0015 D2; QuestPDF native deps mandate the container).
+  # Deliberately NO staging slot, even in prod: a warm staging Functions container would compete
+  # with production for the same Storage Queue messages (deploy/AZURE-PROD-POSTURE.md §1).
   # ===========================================================================================
 
   build-and-deploy-functions:
@@ -716,14 +910,40 @@ jobs:
           name: customer-app
           path: ./customer-app
 
+      # For prod the startup command is set on the STAGING slot — appCommandLine swaps with the slot,
+      # so the swap carries it into production together with the artifact.
       - name: Configure startup command
-        run: az webapp config set --name web-cleansia-customer-${{ matrix.region }}-${{ inputs.env }} --resource-group rg-cleansia-${{ matrix.region }}-${{ inputs.env }} --startup-file "node server/server.mjs"
+        run: az webapp config set --name web-cleansia-customer-${{ matrix.region }}-${{ inputs.env }} --resource-group rg-cleansia-${{ matrix.region }}-${{ inputs.env }} --startup-file "node server/server.mjs" ${{ inputs.env == 'prod' && '--slot staging' || '' }}
 
+      # The prod slot flow below mirrors deploy-partner-api, except the warm probe hits '/' — the
+      # SSR/Node host has no /health endpoint (appService.bicep passes healthCheckPath: '').
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
           app-name: web-cleansia-customer-${{ matrix.region }}-${{ inputs.env }}
+          slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./customer-app
+
+      - name: Warm the staging slot
+        if: inputs.env == 'prod'
+        run: |
+          SLOT_URL="https://web-cleansia-customer-${{ matrix.region }}-${{ inputs.env }}-staging.azurewebsites.net/"
+          for attempt in $(seq 1 30); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SLOT_URL" || true)"
+            if [ "$code" = "200" ]; then echo "slot healthy (attempt $attempt)"; exit 0; fi
+            echo "  slot not healthy yet (HTTP $code, attempt $attempt/30) — retrying in 10s…"
+            sleep 10
+          done
+          echo "::error::staging slot never went healthy at $SLOT_URL — refusing to swap a cold/broken slot into production"
+          exit 1
+
+      - name: Swap staging into production
+        if: inputs.env == 'prod'
+        run: |
+          az webapp deployment slot swap \
+            --resource-group rg-cleansia-${{ matrix.region }}-${{ inputs.env }} \
+            --name web-cleansia-customer-${{ matrix.region }}-${{ inputs.env }} \
+            --slot staging --target-slot production
 
   # ===========================================================================================
   # SPAs — partner + admin Static Web Apps. Parallel; need build-angular + provision (no DB).

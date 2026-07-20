@@ -36,6 +36,7 @@
     <Project Path="Cleansia.Web.Partner/Cleansia.Web.Partner.csproj" />
   </Folder>
   <Folder Name="/06 Functions/">
+    <Project Path="Cleansia.Functions.Core/Cleansia.Functions.Core.csproj" />
     <Project Path="Cleansia.Functions/Cleansia.Functions.csproj" />
   </Folder>
   <Folder Name="/99 Test/">

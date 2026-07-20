@@ -17,7 +17,12 @@ import {
   CleansiaTitleComponent,
   ICleansiaSelectOption,
 } from '@cleansia/components';
-import { CleansiaAdminRoute, Policy } from '@cleansia/services';
+import {
+  AuditResourceType,
+  buildAuditResourceHistoryRoute,
+  CleansiaAdminRoute,
+  Policy,
+} from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -179,6 +184,14 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate([CleansiaAdminRoute.EMPLOYEE_MANAGEMENT]);
+  }
+
+  viewAuditHistory(): void {
+    const userId = this.facade.employee()?.userId;
+    if (!userId) return;
+    this.router.navigate(
+      buildAuditResourceHistoryRoute(AuditResourceType.User, userId)
+    );
   }
 
   getContractStatusClass(status: string | undefined): string {

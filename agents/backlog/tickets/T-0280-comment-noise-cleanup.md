@@ -84,3 +84,10 @@ confirms comments-only. `qa` = build/test green + the comments-only diff. No `se
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+
+- 2026-07-19 (batch) — FE half re-verified done (0 hits for the named noise classes; auth services carry
+  only keep-the-why comments). Backend "audit pockets" half completed in this batch: banner dividers out of
+  `DashboardStatsDto`, what-restating case labels out of `UpdateCurrentUser`, one what-comment out of
+  `UploadEmployeeDocument`, tutorial comment in `DeletePayConfig` rewritten to the actual why — diff verified
+  comments-only. Latent smell surfaced while reading `DeletePayConfig` (unfiltered `GetAll().AnyAsync()`
+  over-blocks all deletes) → filed **T-0433**.

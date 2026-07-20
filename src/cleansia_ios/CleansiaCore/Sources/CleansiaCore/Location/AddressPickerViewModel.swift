@@ -3,6 +3,11 @@ import Foundation
 
 @MainActor
 public final class AddressPickerViewModel: ViewModel {
+    public enum LocationFailure: Equatable {
+        case denied
+        case unavailable
+    }
+
     @Published public private(set) var resolved: GeocodedAddress?
     @Published public private(set) var lookingUp = false
     @Published public private(set) var searchQuery = ""
@@ -11,6 +16,7 @@ public final class AddressPickerViewModel: ViewModel {
 
     public let confirmed = PassthroughSubject<GeocodedAddress, Never>()
     public let recenter = PassthroughSubject<Coordinate, Never>()
+    public let locationFailed = PassthroughSubject<LocationFailure, Never>()
 
     public var canConfirm: Bool {
         resolved != nil && !lookingUp
@@ -110,5 +116,53 @@ public final class AddressPickerViewModel: ViewModel {
     public func confirm() {
         guard let resolved, !lookingUp else { return }
         confirmed.send(resolved)
+    }
+
+    /// On-open auto-center (`AddressPickerScreen.kt:150-161` parity): an
+    /// already-granted permission centers best-effort with no failure noise;
+    /// only a fresh prompt answered here reports denied/unavailable. An
+    /// already-denied/restricted status stays silent on the default center —
+    /// iOS never re-prompts, so nagging every open would be pure noise.
+    public func autoCenterOnOpen(location: LocationProvider) async {
+        switch location.authorizationStatus {
+        case .authorized:
+            if let fix = await location.currentLocation() {
+                recenter.send(fix)
+            }
+        case .notDetermined:
+            await requestThenCenter(location)
+        case .denied, .restricted:
+            break
+        }
+    }
+
+    /// The my-location FAB (`AddressPickerScreen.kt:272-295` parity) — an
+    /// explicit tap always answers, including the denied case.
+    public func recenterOnMyLocation(location: LocationProvider) async {
+        switch location.authorizationStatus {
+        case .authorized:
+            await centerOrReportUnavailable(location)
+        case .notDetermined:
+            await requestThenCenter(location)
+        case .denied, .restricted:
+            locationFailed.send(.denied)
+        }
+    }
+
+    private func requestThenCenter(_ location: LocationProvider) async {
+        let status = await location.requestWhenInUseAuthorization()
+        if status == .authorized {
+            await centerOrReportUnavailable(location)
+        } else {
+            locationFailed.send(.denied)
+        }
+    }
+
+    private func centerOrReportUnavailable(_ location: LocationProvider) async {
+        if let fix = await location.currentLocation() {
+            recenter.send(fix)
+        } else {
+            locationFailed.send(.unavailable)
+        }
     }
 }

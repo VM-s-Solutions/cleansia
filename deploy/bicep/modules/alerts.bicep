@@ -6,8 +6,9 @@
 // dependsOn so the alerts never race the resources they watch.
 //
 // Env gating: dev = severity 3 + wide windows (owner-inbox noise floor); prod = severity 1-2 +
-// tight windows (paging). Poison-queue depth is NOT here — queue metrics need diagnostic settings
-// + a scheduled-query alert, tracked separately.
+// tight windows (paging). Poison-queue depth is NOT here — queue signals need diagnostic settings
+// + a scheduled-query alert, which live in modules/queueAlerts.bicep attached to this module's
+// exported actionGroupId.
 
 @description('Deployment stage: dev | prod. Drives severities, thresholds, and windows.')
 @allowed([
@@ -24,6 +25,9 @@ param alertEmail string
 
 @description('Deploy-time resource NAMES of the web hosts to alert on (the five API App Services + the customer SSR).')
 param siteNames array
+
+@description('Deploy-time resource NAME of the queue/timer Function App — watched by its own HealthCheckStatus alert (the 2026-07-18 outage was a silent Functions-host failure).')
+param functionsSiteName string
 
 @description('Deploy-time resource name of the PostgreSQL Flexible Server (mirrors modules/postgres.bicep naming).')
 param postgresServerName string
@@ -108,6 +112,44 @@ resource http5xxAlerts 'Microsoft.Insights/metricAlerts@2018-03-01' = [
     }
   }
 ]
+
+// The Functions host has no request traffic (queue/timer only) so Http5xx/latency don't apply — instead
+// watch the HealthCheckStatus metric fed by the /api/health probe (healthCheckPath on functionApp.bicep).
+// It reports the % of healthy instances; < 100 means an instance is failing its probe (DB/queue down, or
+// the worker crash-looping — exactly the 2026-07-18 silent outage). Sev = the http5xx tier: a dead
+// background host means no emails/receipts/invoices/push go out. windowSize smooths deploy-time blips.
+resource functionsHealthAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
+  name: 'alert-functions-health-${functionsSiteName}'
+  location: 'global'
+  tags: tags
+  properties: {
+    description: 'Functions host ${functionsSiteName} is failing its /api/health probe (unhealthy instance) over ${windowSize}.'
+    severity: http5xxSeverity
+    enabled: true
+    scopes: [resourceId('Microsoft.Web/sites', functionsSiteName)]
+    evaluationFrequency: evaluationFrequency
+    windowSize: windowSize
+    criteria: {
+      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
+      allOf: [
+        {
+          criterionType: 'StaticThresholdCriterion'
+          name: 'HealthCheckStatus'
+          metricNamespace: 'Microsoft.Web/sites'
+          metricName: 'HealthCheckStatus'
+          operator: 'LessThan'
+          threshold: 100
+          timeAggregation: 'Average'
+        }
+      ]
+    }
+    actions: [
+      {
+        actionGroupId: actionGroup.id
+      }
+    ]
+  }
+}
 
 resource latencyAlerts 'Microsoft.Insights/metricAlerts@2018-03-01' = [
   for siteName in siteNames: {

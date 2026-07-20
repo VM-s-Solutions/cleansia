@@ -41,6 +41,23 @@ final class NotificationFeedTemplatesTests: XCTestCase {
         XCTAssertEqual(destination, .order(orderId: "ord-1"))
     }
 
+    func testInvoicePaidRowRendersArglessTemplate() throws {
+        let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "payroll.invoice_paid",
+            args: ["invoiceId": "inv-1"]
+        ))
+        XCTAssertEqual(rendered.title, L10n.localized("push.payroll.invoice_paid.title"))
+        XCTAssertEqual(rendered.body, L10n.localized("push.payroll.invoice_paid.body"))
+        XCTAssertFalse(rendered.body.contains("%"), "invoice_paid body is argless")
+    }
+
+    func testInvoicePaidTapResolvesToTheInvoiceDetail() {
+        let destination = PartnerNotificationDeepLink.resolve(
+            eventKey: "payroll.invoice_paid", orderId: nil, invoiceId: "inv-1"
+        )
+        XCTAssertEqual(destination, .invoice(invoiceId: "inv-1"))
+    }
+
     func testUnknownEventKeyHidesTheRow() {
         XCTAssertNil(NotificationFeedTemplates.render(eventKey: "order.confirmed", args: [:]))
         XCTAssertNil(NotificationFeedTemplates.render(eventKey: "promo.new_sitewide", args: [:]))

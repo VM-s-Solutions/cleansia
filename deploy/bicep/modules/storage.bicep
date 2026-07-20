@@ -29,6 +29,13 @@ param stage string
 ])
 param skuName string = 'Standard_LRS'
 
+@description('Network ACL default action (the Q-INFRA-03 seam). Allow = the dev public posture. Deny locks the data plane to the private endpoints (modules/privateNetworking.bicep) plus trusted Azure services via the retained AzureServices bypass; ARM control-plane operations (listKeys for derivedSecrets, diagnostic settings, metric alerts) are unaffected.')
+@allowed([
+  'Allow'
+  'Deny'
+])
+param networkDefaultAction string = 'Allow'
+
 @description('Resource tags applied to the account.')
 param tags object = {}
 
@@ -75,7 +82,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2024-01-01' = {
     allowSharedKeyAccess: true
     publicNetworkAccess: 'Enabled'
     networkAcls: {
-      defaultAction: 'Allow'
+      defaultAction: networkDefaultAction
       bypass: 'AzureServices'
     }
   }

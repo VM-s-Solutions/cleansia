@@ -215,8 +215,9 @@ az deployment group show -g rg-cleansia-weu-dev -n main --query properties.outpu
 
 You no longer hand-populate all 10 secrets. The deploy automates most of it:
 
-- **4 DERIVED by the Bicep** (`derivedSecrets` module — nothing for you to do): `Storage--ConnectionString`,
-  `ConnectionStrings--cleansia-db`, `Jwt--Issuer`, `Jwt--Audience`.
+- **2 DERIVED by the Bicep** (`derivedSecrets` module — nothing for you to do): `Storage--ConnectionString`,
+  `ConnectionStrings--cleansia-db`. (JWT issuer/audience are code-side constants — no KV secret, no app
+  setting; see the rationale comment in `deploy/bicep/modules/derivedSecrets.bicep`.)
 - **EXTERNAL pushed by CI from GitHub-Environment secrets** — set these in the `dev-weu` GitHub
   Environment once and every deploy syncs them into Key Vault:
 
@@ -236,6 +237,8 @@ You no longer hand-populate all 10 secrets. The deploy automates most of it:
   | `SENDGRID_ORDER_STATUS_UPDATE_TEMPLATE_ID` | `SendGrid--OrderStatusUpdateTemplateId` | your `d-…` id (from your user-secrets) |
   | `SENTRY_DSN` | `Sentry--Dsn` | leave EMPTY for dev (Sentry off); real DSN in prod |
   | `MAPBOX_TOKEN` | `Mapbox--GeocodingAccessToken` | `pk.…` (rotate the exposed one first) |
+  | `FISCAL_CZECH_EET2_API_KEY` | `Fiscal--CzechEet2--ApiKey` | leave UNSET until fiscal go-live — setting BOTH fiscal secrets flips `fiscalSecretProvisioned` and wires the KV references |
+  | `FISCAL_CZECH_EET2_CERTIFICATE_PASSWORD` | `Fiscal--CzechEet2--CertificatePassword` | leave UNSET until fiscal go-live (see above) |
 
   (The 5 template-id values above are the ones committed in `appsettings.json`; the 6th
   — OrderStatusUpdate — has no committed value, so paste your real `d-…` id from your user-secrets. If
@@ -271,8 +274,6 @@ ST_CONN=$(az storage account show-connection-string -g rg-cleansia-weu-dev \
 az keyvault secret set --vault-name kv-cleansia-weu-dev --name "ConnectionStrings--cleansia-db" --value "$DB_CONN"
 az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Storage--ConnectionString"      --value "$ST_CONN"
 az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Jwt--Key"                         --value "<a-strong-random-256-bit-key>"
-az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Jwt--Issuer"                      --value "https://api-cleansia-partner-weu-dev.azurewebsites.net"
-az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Jwt--Audience"                    --value "cleansia"
 az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Stripe--SecretKey"                --value "sk_test_..."     # TEST key, never live
 az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Stripe--WebhookSecret"            --value "whsec_..."       # TEST webhook
 az keyvault secret set --vault-name kv-cleansia-weu-dev --name "SendGrid--ApiKey"                 --value "SG...."
@@ -322,14 +323,15 @@ az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Mapbox--Geocodin
 >
 > **If migrate fails with `Couldn't set …;ssl mode` (or similar):** your Postgres password contains a
 > special char (`;` `=` `&` …) that corrupts the connection string. **Reset to an alphanumeric password**
-> and update it in THREE places that must match:
+> and update it in TWO places that must match (the migrate job reads the connection string from Key
+> Vault — there is no separate `DB_CONNECTION_STRING` GitHub secret to sync anymore):
 > ```bash
 > NEW_PW=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32); echo "$NEW_PW"
 > az postgres flexible-server update -g rg-cleansia-weu-dev -n pg-cleansia-weu-dev --admin-password "$NEW_PW"
 > # then set, all to the new value:
 > #  1) GitHub dev-weu secret  POSTGRES_ADMIN_PASSWORD   = $NEW_PW
-> #  2) GitHub dev-weu secret  DB_CONNECTION_STRING      = the full Host=…;Password=$NEW_PW;Ssl Mode=Require;… string
-> #  3) Key Vault secret       ConnectionStrings--cleansia-db = the same full string
+> #  2) Key Vault secret       ConnectionStrings--cleansia-db = the full Host=…;Password=$NEW_PW;Ssl Mode=Require;… string
+> #     (or just re-run the deploy — the Bicep derivedSecrets module rewrites it from POSTGRES_ADMIN_PASSWORD)
 > ```
 > Then re-run the deploy.
 
@@ -455,6 +457,12 @@ Prod is the **same pipeline** (`deploy-azure.yml`) pointed at the `*-weu-prod` f
 `what-if`**, so the lazy path is always the non-mutating preview. Everything below is owner UI/CLI
 work the YAML cannot do. Do it **in this order**:
 
+> **Prod reliability posture (T-0359):** `weu.prod.bicepparam` now also flips deployment slots,
+> autoscale, Postgres HA/geo-backup, and ACR image retention — every knob, its chosen default, the
+> slot-swap workflow follow-up, and the deliberately-not-flipped Q-INFRA-03 private-networking flag
+> are documented in [`deploy/AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md). Note especially:
+> **geo-redundant backup only exists if it is on at the FIRST provision** (immutable after create).
+
 > **MANUAL_STEP P1 — create the `prod-weu` GitHub Environment with Required reviewers.**
 > GitHub → repo → **Settings → Environments → New environment → `prod-weu`** → add **Required
 > reviewers** = you (+ a second approver if available); **Wait timer** optional; optionally restrict
@@ -491,7 +499,6 @@ work the YAML cannot do. Do it **in this order**:
 | `POSTGRES_ADMIN_PASSWORD` | a **new** strong alphanumeric password (§1 rules; never dev's) | the Bicep `@secure()` param |
 | `ADMIN_IP_ADDRESS` | your laptop's public IP (§1 caveats apply) | the Postgres admin firewall rule |
 | `CI_PRINCIPAL_ID` | the OIDC SP object id — optional; empty skips the Bicep grant (the deploy self-grants Secrets Officer) | the Bicep `ciPrincipalId` param |
-| `DB_CONNECTION_STRING` | full Npgsql string for `pg-cleansia-weu-prod` (build as §6.2, prod names) | `migrate-database` |
 | `ACR_NAME` | `acrcleansiaweuprod` (deterministic — same naming rule as §4's note) | the Functions `az acr build` step |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER` | `swa-cleansia-partner-weu-prod` deploy token (fill after P5) | partner SPA deploy |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN` | `swa-cleansia-admin-weu-prod` deploy token (fill after P5) | admin SPA deploy |
@@ -510,9 +517,11 @@ work the YAML cannot do. Do it **in this order**:
 | `SENTRY_DSN` | the **real** prod DSN (dev leaves this empty; prod is where Sentry is on) | KV push → `Sentry--Dsn` |
 | `MAPBOX_TOKEN` | the prod Mapbox token | KV push → `Mapbox--GeocodingAccessToken` |
 
-> The 4 derivable Key Vault secrets (`Storage--ConnectionString`, `ConnectionStrings--cleansia-db`,
-> `Jwt--Issuer`, `Jwt--Audience`) are written by the Bicep `derivedSecrets` module on the first
-> provision, exactly as in dev (§6) — nothing to set.
+> The 2 derivable Key Vault secrets (`Storage--ConnectionString`, `ConnectionStrings--cleansia-db`)
+> are written by the Bicep `derivedSecrets` module on the first provision, exactly as in dev (§6) —
+> nothing to set. The `migrate-database` job reads `ConnectionStrings--cleansia-db` from Key Vault at
+> run time (no `DB_CONNECTION_STRING` secret). JWT issuer/audience are code-side constants — no KV
+> secret (see `deploy/bicep/modules/derivedSecrets.bicep`).
 
 > **MANUAL_STEP P5 — first provision.** Preferred: dispatch **Actions → "Deploy to PRO" → Run
 > workflow → mode = `what-if`**, review the preview, then re-dispatch with **mode = `deploy`** and
@@ -629,9 +638,10 @@ GSI fails with an "origin not allowed" 403. API hostnames are not needed there.
   architect must ratify or fix that pairing in T-0400 AC1/AC3 before prod cut-over.
 - **Cookies** — nothing to change: host-only (no `Domain` attribute), `HttpOnly`/`Secure`/`Strict`
   untouched; same-site is exactly what the subdomains provide.
-- **JWT issuer** (`Jwt--Issuer` derived secret) stays on the partner API default hostname — it is an
-  opaque matched string, not a reachable URL; changing it is optional and must be done on both
-  issue + validate sides at once.
+- **JWT issuer/audience** — nothing to align: they are code-side constants (the `JwtSettings:Issuer`
+  fallback `"cleansia"` + per-host constant audiences), an opaque matched string, not a reachable URL.
+  No KV secret or app setting carries them (see `deploy/bicep/modules/derivedSecrets.bicep`); changing
+  the issuer would have to happen on both issue + validate sides at once and would invalidate live JWTs.
 
 ### 12.5 — Smoke (T-0400 AC4)
 

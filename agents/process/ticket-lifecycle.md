@@ -29,6 +29,8 @@ draft ──► ready ──► in_progress ──► in_review ──► qa ─
 | `in_review` | Implementation done; reviewer + (if needed) security/optimizer verifying. | PM (when review passes or requests changes) |
 | `qa` | Review passed; QA executing the test plan against the running app. | PM (when QA passes) |
 | `done` | Merged, verified, status logged. | — terminal |
+| `retired` | Cancelled by an explicit supersede/owner decision — the WORK is no longer wanted (e.g. a design amendment killed it). Not a failure state; the ticket records why. | PM or Architect (citing the superseding artifact) — terminal |
+| `superseded` | The QUESTION the ticket asked was answered by other shipped work (typical for spikes). Points at what answered it. | PM (citing the superseding ticket) — terminal |
 | `blocked` | Cannot proceed: unanswered blocking question, failed dependency, owner decision needed. | PM (when the blocker clears) |
 
 A ticket that fails review or QA does **not** go backwards in the index; it stays in

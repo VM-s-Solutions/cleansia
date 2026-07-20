@@ -2,6 +2,7 @@ package cz.cleansia.customer.features.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.customer.core.user.CurrentUser
@@ -11,8 +12,11 @@ import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
@@ -23,11 +27,20 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
+    membershipRepository: MembershipRepository,
     private val settings: AppSettingsRepository,
     private val snackbar: SnackbarController,
 ) : ViewModel() {
 
     val currentUser: StateFlow<CurrentUser?> = userRepository.currentUser
+
+    /**
+     * Drives the hero tier badge (Plus vs Regular) from the shared membership
+     * cache — same source the management card and iOS's `membershipVM` read.
+     */
+    val isPlus: StateFlow<Boolean> = membershipRepository.current
+        .map { it?.hasMembership == true }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _refreshState = MutableStateFlow<ActionState>(ActionState.Idle)
     val refreshState: StateFlow<ActionState> = _refreshState.asStateFlow()

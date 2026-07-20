@@ -1,5 +1,6 @@
 #nullable enable
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -11,6 +12,7 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Employees;
 
+[AuditAction("employee.update", ResourceType = "User")]
 public class AdminUpdateEmployee
 {
     public class Validator : AbstractValidator<Command>
@@ -96,9 +98,15 @@ public class AdminUpdateEmployee
 
     public record Response(string EmployeeId);
 
-    internal class Handler(
+    // Ids only (ADR-0012 D4.1) — the edited fields ARE the subject's PII (name/phone/address/IBAN/
+    // passport), which the audit log must never copy. The row records that this admin edited this
+    // user's profile, keyed on the USER id the employee drill-in filters on.
+    public record ProfileEditSnapshot(string UserId, string EmployeeId);
+
+    public class Handler(
         IEmployeeRepository employeeRepository,
-        IAddressGeocoder addressGeocoder) : ICommandHandler<Command, Response>
+        IAddressGeocoder addressGeocoder,
+        IAuditContext auditContext) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -154,6 +162,9 @@ public class AdminUpdateEmployee
                     kvp => kvp.Value.ToList()),
                 command.EmergencyName ?? employee.EmergencyContactName,
                 command.EmergencyPhone ?? employee.EmergencyContactPhone);
+
+            var snapshot = new ProfileEditSnapshot(employee.UserId, employee.Id);
+            auditContext.RecordChange("User", employee.UserId, snapshot, snapshot);
 
             return BusinessResult.Success(new Response(employee.Id));
         }

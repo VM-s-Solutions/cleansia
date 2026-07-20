@@ -1,11 +1,11 @@
 ---
 id: T-0279
 title: Replace admin-pay-config.service hand-rolled HttpClient with the generated AdminPayConfigClient
-status: blocked
+status: done
 size: S
 owner: —
 created: 2026-06-22
-updated: 2026-06-22
+updated: 2026-07-19
 depends_on: []
 blocks: []
 stories: []
@@ -70,3 +70,4 @@ released: **single frontend dev + one reviewer**, serial (two facades + one serv
 
 ## Review
 <!-- reviewer / qa write verdicts here; PM reconciles before advancing state -->
+- 2026-07-19 — **frontmatter reconciled (blocked → done)** — shipped in fd155511 (both pay-config facades on the generated AdminClient.adminPayConfigClient; hand-rolled service deleted; 16 specs). INDEX already done; ticket frontmatter lagged.

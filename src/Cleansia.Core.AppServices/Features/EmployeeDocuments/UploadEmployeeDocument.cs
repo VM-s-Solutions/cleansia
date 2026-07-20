@@ -102,7 +102,6 @@ public class UploadEmployeeDocument
                     BusinessErrorMessage.NotFound));
             }
 
-            // Check if a document with the same filename already exists (auto-versioning)
             var existingDocument = await documentRepository.GetLatestByFileNameAsync(
                 request.EmployeeId,
                 request.FileName,

@@ -316,6 +316,24 @@ jobs:
             echo "FISCAL_PROVISIONED=false" >> "$GITHUB_ENV"
           fi
 
+      # Same shape as the FCM/fiscal flags, for the three APNS Live Activity secrets (ADR-0029): the
+      # Bicep wires the six APNS__* Function-App settings as Key Vault references + flips APNS__Enabled
+      # on ONLY when all three GitHub secrets are set (the secret-push step writes them in the same run),
+      # so the KV reference is never wired before the secret exists. Seed them from the SAME team-scoped
+      # .p8 already used for ordinary push — NO new key. Set all three to enable the iOS Live Activity
+      # channel; leaving any unset keeps the whole pipeline INERT (APNS__Enabled=false).
+      - name: Resolve APNS provisioning flag
+        env:
+          APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
+          APNS_TEAM_ID: ${{ secrets.APNS_TEAM_ID }}
+          APNS_PRIVATE_KEY_PEM: ${{ secrets.APNS_PRIVATE_KEY_PEM }}
+        run: |
+          if [ -n "$APNS_KEY_ID" ] && [ -n "$APNS_TEAM_ID" ] && [ -n "$APNS_PRIVATE_KEY_PEM" ]; then
+            echo "APNS_PROVISIONED=true" >> "$GITHUB_ENV"
+          else
+            echo "APNS_PROVISIONED=false" >> "$GITHUB_ENV"
+          fi
+
       - name: Bicep what-if (non-mutating preview)
         if: inputs.mode == 'what-if'
         run: |
@@ -327,7 +345,8 @@ jobs:
                          adminIpAddress="$ADMIN_IP_ADDRESS" \
                          ciPrincipalId="$CI_PRINCIPAL_ID" \
                          fcmSecretProvisioned="$FCM_PROVISIONED" \
-                         fiscalSecretProvisioned="$FISCAL_PROVISIONED"
+                         fiscalSecretProvisioned="$FISCAL_PROVISIONED" \
+                         apnsSecretProvisioned="$APNS_PROVISIONED"
         env:
           POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
           ADMIN_IP_ADDRESS: ${{ secrets.ADMIN_IP_ADDRESS }}
@@ -348,7 +367,8 @@ jobs:
                            adminIpAddress="$ADMIN_IP_ADDRESS" \
                            ciPrincipalId="$CI_PRINCIPAL_ID" \
                            fcmSecretProvisioned="$FCM_PROVISIONED" \
-                           fiscalSecretProvisioned="$FISCAL_PROVISIONED"
+                           fiscalSecretProvisioned="$FISCAL_PROVISIONED" \
+                           apnsSecretProvisioned="$APNS_PROVISIONED"
           }
           if ! deploy; then
             echo "::warning::First provision attempt failed (often the transient PG ServerIsBusy) — retrying once in 3 minutes."
@@ -392,6 +412,9 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           FISCAL_CZECH_EET2_API_KEY: ${{ secrets.FISCAL_CZECH_EET2_API_KEY }}
           FISCAL_CZECH_EET2_CERTIFICATE_PASSWORD: ${{ secrets.FISCAL_CZECH_EET2_CERTIFICATE_PASSWORD }}
+          APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
+          APNS_TEAM_ID: ${{ secrets.APNS_TEAM_ID }}
+          APNS_PRIVATE_KEY_PEM: ${{ secrets.APNS_PRIVATE_KEY_PEM }}
         run: |
           # Grant the CI principal (this OIDC app's service principal) Secrets Officer on the vault.
           CI_OID="$(az ad signed-in-user show --query id -o tsv 2>/dev/null || true)"
@@ -441,6 +464,12 @@ jobs:
           # secrets exist.
           set_secret "Fiscal--CzechEet2--ApiKey"              "$FISCAL_CZECH_EET2_API_KEY"
           set_secret "Fiscal--CzechEet2--CertificatePassword" "$FISCAL_CZECH_EET2_CERTIFICATE_PASSWORD"
+          # APNS Live Activity (ADR-0029) — the Functions host binds the six APNS__* settings + flips
+          # APNS__Enabled only when apnsSecretProvisioned is true, which is driven by whether all three
+          # of these GitHub secrets are set (so a KV reference is never wired before its secret exists).
+          set_secret "Apns--KeyId"                            "$APNS_KEY_ID"
+          set_secret "Apns--TeamId"                           "$APNS_TEAM_ID"
+          set_secret "Apns--PrivateKeyPem"                    "$APNS_PRIVATE_KEY_PEM"
 
   # ===========================================================================================
   # Migrate — committed EF migrations applied BEFORE any deploy (ADR-0015 D5). Runs after provision

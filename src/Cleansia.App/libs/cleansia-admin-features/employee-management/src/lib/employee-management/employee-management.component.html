@@ -69,7 +69,7 @@
 
 <!-- Filter Drawer Backdrop -->
 @if (isFilterDrawerOpen()) {
-<div class="filter-drawer-backdrop" (click)="closeFilterDrawer()"></div>
+<div class="filter-drawer-backdrop" tabindex="0" (click)="closeFilterDrawer()" (keydown.enter)="closeFilterDrawer()"></div>
 }
 
 <!-- Filter Drawer -->
@@ -110,7 +110,9 @@
           <div
             class="filter-checkbox-item"
             [class.checked]="isContractStatusChecked(option.value)"
+            tabindex="0"
             (click)="toggleContractStatus(option.value)"
+            (keydown.enter)="toggleContractStatus(option.value)"
           >
             <cleansia-checkbox
               [label]="option.label"
@@ -132,7 +134,9 @@
           <div
             class="filter-checkbox-item"
             [class.checked]="filterForm.value.isActive === null"
+            tabindex="0"
             (click)="onActiveStatusSelect(null)"
+            (keydown.enter)="onActiveStatusSelect(null)"
           >
             <cleansia-radio
               [label]="'global.all' | translate"
@@ -147,7 +151,9 @@
           <div
             class="filter-checkbox-item"
             [class.checked]="filterForm.value.isActive === option.value"
+            tabindex="0"
             (click)="onActiveStatusSelect(option.value)"
+            (keydown.enter)="onActiveStatusSelect(option.value)"
           >
             <cleansia-radio
               [label]="option.label"

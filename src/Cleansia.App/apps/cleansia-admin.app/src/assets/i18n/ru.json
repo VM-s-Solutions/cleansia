@@ -476,7 +476,16 @@
       "apply_to_all": "Применить ко всем",
       "services": "Услуги",
       "packages": "Пакеты",
-      "not_configured": "Не настроено"
+      "not_configured": "Не настроено",
+      "override_dialog_title": "Индивидуальная ставка",
+      "add_override": "Добавить ставку",
+      "edit_override": "Редактировать ставку",
+      "delete_override": "Удалить ставку",
+      "delete_override_confirm": "Вы уверены, что хотите удалить эту индивидуальную ставку? Сотрудник вернётся к глобальной ставке.",
+      "grade_quick_fill": "Быстрое заполнение",
+      "grade_junior": "Junior",
+      "grade_medior": "Medior",
+      "grade_senior": "Senior"
     },
     "order_management": {
       "title": "Управление заказами",

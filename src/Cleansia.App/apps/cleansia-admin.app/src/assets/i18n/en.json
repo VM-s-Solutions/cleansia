@@ -476,7 +476,16 @@
       "apply_to_all": "Apply to All",
       "services": "Services",
       "packages": "Packages",
-      "not_configured": "Not configured"
+      "not_configured": "Not configured",
+      "override_dialog_title": "Pay Override",
+      "add_override": "Add override",
+      "edit_override": "Edit override",
+      "delete_override": "Delete override",
+      "delete_override_confirm": "Are you sure you want to remove this pay override? The employee will fall back to the global rate.",
+      "grade_quick_fill": "Quick fill",
+      "grade_junior": "Junior",
+      "grade_medior": "Medior",
+      "grade_senior": "Senior"
     },
     "order_management": {
       "title": "Order Management",

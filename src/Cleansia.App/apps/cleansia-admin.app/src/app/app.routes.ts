@@ -1,5 +1,6 @@
 import { Route } from '@angular/router';
 import { adminGuard, guestGuard } from '@cleansia/admin-services';
+import { CleansiaNotFoundComponent } from '@cleansia/components';
 import { CommonRoute } from '@cleansia/services';
 
 export const appRoutes: Route[] = [
@@ -232,8 +233,7 @@ export const appRoutes: Route[] = [
   },
   {
     path: CommonRoute.NOT_FOUND,
-    loadComponent: () =>
-      import('@cleansia/components').then((m) => m.CleansiaNotFoundComponent),
+    component: CleansiaNotFoundComponent,
     data: { title: 'page_titles.admin.not_found' },
   },
   {

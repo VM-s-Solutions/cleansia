@@ -476,7 +476,16 @@
       "apply_to_all": "Použít na vše",
       "services": "Služby",
       "packages": "Balíčky",
-      "not_configured": "Nenakonfigurováno"
+      "not_configured": "Nenakonfigurováno",
+      "override_dialog_title": "Individuální sazba",
+      "add_override": "Přidat sazbu",
+      "edit_override": "Upravit sazbu",
+      "delete_override": "Odstranit sazbu",
+      "delete_override_confirm": "Opravdu chcete odstranit tuto individuální sazbu? Zaměstnanec se vrátí ke globální sazbě.",
+      "grade_quick_fill": "Rychlé vyplnění",
+      "grade_junior": "Junior",
+      "grade_medior": "Medior",
+      "grade_senior": "Senior"
     },
     "order_management": {
       "title": "Správa objednávek",

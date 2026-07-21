@@ -64,6 +64,8 @@ targets:
         # constrained so it avoids the old UIImageName scaling bug. The partner
         # in-app SplashGateView now shows the same letter-by-letter wordmark reveal.
         UILaunchStoryboardName: LaunchScreen
+        # Home-screen app name — show "Cleansia Partner" rather than the PRODUCT_NAME ("CleansiaPartner").
+        CFBundleDisplayName: Cleansia Partner
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         # T-0403 debug: Firebase's app-delegate swizzling proxy is the only

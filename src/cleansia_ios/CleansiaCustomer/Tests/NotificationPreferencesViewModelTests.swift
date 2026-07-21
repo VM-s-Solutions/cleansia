@@ -57,7 +57,7 @@ final class NotificationPreferencesViewModelTests: XCTestCase {
         XCTAssertTrue(client.updatedPayloads.isEmpty)
 
         scheduler.advance(by: .milliseconds(300))
-        await settle()
+        await waitUntil("the coalesced PUT to land") { client.updatedPayloads.count >= 1 }
 
         XCTAssertEqual(client.updatedPayloads.count, 1)
         let put = client.updatedPayloads[0]
@@ -73,11 +73,11 @@ final class NotificationPreferencesViewModelTests: XCTestCase {
 
         vm.setCategory(.promo, enabled: true)
         scheduler.advance(by: .milliseconds(300))
-        await settle()
+        await waitUntil("the first PUT to land") { client.updatedPayloads.count >= 1 }
 
         vm.setCategory(.promo, enabled: false)
         scheduler.advance(by: .milliseconds(300))
-        await settle()
+        await waitUntil("the second PUT to land") { client.updatedPayloads.count >= 2 }
 
         XCTAssertEqual(client.updatedPayloads.count, 2)
     }
@@ -90,15 +90,31 @@ final class NotificationPreferencesViewModelTests: XCTestCase {
 
         vm.setCategory(.promo, enabled: true)
         scheduler.advance(by: .milliseconds(300))
-        await settle()
+        await waitUntil("the optimistic toggle to revert") {
+            if case let .loaded(prefs) = vm.state { return !prefs.promo }
+            return false
+        }
 
         guard case let .loaded(prefs) = vm.state else { return XCTFail("expected loaded") }
         XCTAssertFalse(prefs.promo)
     }
 
-    private func settle() async {
-        for _ in 0 ..< 5 {
+    /// Yield the main actor until `condition` holds — the deterministic replacement for a fixed
+    /// `Task.yield()` count. The VM debounces writes on `scheduler`, and its `.sink` spawns
+    /// `Task { commit }` which `scheduler.advance(by:)` does NOT await; a fixed number of yields
+    /// therefore raced (the commit Task hadn't appended/reverted yet on a busy runner). Polling the
+    /// observable effect removes the flake, and it fails loudly rather than hanging if the effect
+    /// never arrives.
+    private func waitUntil(
+        _ description: String,
+        _ condition: () -> Bool,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) async {
+        for _ in 0 ..< 500 {
+            if condition() { return }
             await Task.yield()
         }
+        XCTFail("timed out waiting for \(description)", file: file, line: line)
     }
 }

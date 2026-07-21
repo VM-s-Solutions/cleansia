@@ -118,9 +118,9 @@ targets:
         CODE_SIGN_ENTITLEMENTS: CleansiaCustomer.entitlements
         # Owner-provisioned Google iOS OAuth client; empty until then →
         # graceful .notConfigured (no crash) and no Google button round-trip.
-        GID_CLIENT_ID: ""
-        GID_SERVER_CLIENT_ID: ""
-        GID_REVERSED_CLIENT_ID: ""
+        GID_CLIENT_ID: "834394881207-4um0ikpfpavpl0usplaqpul413d8mvqq.apps.googleusercontent.com"
+        GID_SERVER_CLIENT_ID: "834394881207-3r8mue033iimtrkn5u1ko9d5m5p7oh25.apps.googleusercontent.com"
+        GID_REVERSED_CLIENT_ID: "com.googleusercontent.apps.834394881207-4um0ikpfpavpl0usplaqpul413d8mvqq"
         # Owner-provisioned Stripe publishable key (pk_ only — NEVER a secret
         # key). Empty until then → card payment is hidden and the cash path is
         # the only option; STPAPIClient is not initialised and PaymentSheet is

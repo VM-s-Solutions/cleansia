@@ -68,33 +68,16 @@ struct SnackbarPill: View {
     }
 
     private func severityBadge(_ palette: SnackbarPalette.Palette) -> some View {
-        ZStack {
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [palette.accentTop, palette.accentBottom],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .overlay(
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [.white.opacity(0.35), .clear],
-                                startPoint: .top,
-                                endPoint: .center
-                            )
-                        )
-                )
-                .overlay(Circle().strokeBorder(.white.opacity(0.18), lineWidth: 0.5))
-                .shadow(color: palette.accentBottom.opacity(0.35), radius: 2.5, y: 1)
-            Image(systemName: palette.symbol)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundColor(.white)
-        }
-        .frame(width: 30, height: 30)
-        .accessibilityHidden(true)
+        // Solid accent disc + a plain white glyph. Plain glyphs (not the
+        // `.circle.fill` variants, whose inner mark is optically offset inside
+        // the symbol) get centered on their tight bounds, so they sit dead in
+        // the middle of the disc.
+        Image(systemName: palette.symbol)
+            .font(.system(size: 14, weight: .bold))
+            .foregroundColor(.white)
+            .frame(width: 30, height: 30)
+            .background(Circle().fill(palette.accent))
+            .accessibilityHidden(true)
     }
 
     private var pillBackground: some View {
@@ -105,36 +88,30 @@ struct SnackbarPill: View {
 
 enum SnackbarPalette {
     struct Palette {
-        let accentTop: Color
-        let accentBottom: Color
+        let accent: Color
         let symbol: String
     }
 
     static func palette(for severity: SnackbarSeverity) -> Palette {
         switch severity {
         case .error:
-            Palette(accentTop: errorTop, accentBottom: errorBottom, symbol: "exclamationmark.circle.fill")
+            Palette(accent: error, symbol: "exclamationmark")
         case .success:
-            Palette(accentTop: successTop, accentBottom: successBottom, symbol: "checkmark.circle.fill")
+            Palette(accent: success, symbol: "checkmark")
         case .info:
-            Palette(accentTop: infoTop, accentBottom: infoBottom, symbol: "info.circle.fill")
+            Palette(accent: info, symbol: "info")
         case .warning:
-            Palette(accentTop: warningTop, accentBottom: warningBottom, symbol: "exclamationmark.triangle.fill")
+            Palette(accent: warning, symbol: "exclamationmark")
         }
     }
 
-    private static let successTop = Color.dynamic(light: Color(hex: 0x22C55E), dark: Color(hex: 0x4ADE80))
-    private static let successBottom = Color.dynamic(light: Color(hex: 0x16A34A), dark: Color(hex: 0x22C55E))
-
-    private static let errorTop = Color.dynamic(light: Color(hex: 0xEF4444), dark: Color(hex: 0xF87171))
-    private static let errorBottom = Color.dynamic(light: Color(hex: 0xDC2626), dark: Color(hex: 0xEF4444))
-
-    // Info rides the sky brand ramp (its light bottom is sky-600, i.e. CleansiaColors.primary).
-    private static let infoTop = Color.dynamic(light: Color(hex: 0x0EA5E9), dark: Color(hex: 0x38BDF8))
-    private static let infoBottom = Color.dynamic(light: Color(hex: 0x0284C7), dark: Color(hex: 0x0EA5E9))
-
-    private static let warningTop = Color.dynamic(light: Color(hex: 0xF59E0B), dark: Color(hex: 0xFBBF24))
-    private static let warningBottom = Color.dynamic(light: Color(hex: 0xD97706), dark: Color(hex: 0xF59E0B))
+    // Solid accents (the deeper 600 tone in light, 500 in dark) — enough
+    // contrast to carry a white glyph.
+    private static let success = Color.dynamic(light: Color(hex: 0x16A34A), dark: Color(hex: 0x22C55E))
+    private static let error = Color.dynamic(light: Color(hex: 0xDC2626), dark: Color(hex: 0xEF4444))
+    // Info rides the sky brand ramp (light = sky-600, i.e. CleansiaColors.primary).
+    private static let info = Color.dynamic(light: Color(hex: 0x0284C7), dark: Color(hex: 0x0EA5E9))
+    private static let warning = Color.dynamic(light: Color(hex: 0xD97706), dark: Color(hex: 0xF59E0B))
 }
 
 #if DEBUG

@@ -37,80 +37,98 @@ struct SnackbarPill: View {
     let message: SnackbarMessage
     let onDismiss: () -> Void
 
+    private let cornerRadius: CGFloat = 20
+
     var body: some View {
         let palette = SnackbarPalette.palette(for: message.severity)
-        HStack(spacing: 12) {
-            Image(systemName: palette.symbol)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(palette.foreground)
+        HStack(spacing: Spacing.s) {
+            severityBadge(palette)
             Text(message.text)
-                .font(.subheadline.weight(.medium))
-                .foregroundColor(palette.foreground)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurface)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(palette.foreground)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .frame(width: 28, height: 28)
             }
             .accessibilityLabel(Text(CoreL10n.localized("snackbar.dismiss")))
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 14)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(palette.background)
+        .padding(.vertical, 10)
+        .padding(.leading, Spacing.s)
+        .padding(.trailing, Spacing.xs)
+        .background(pillBackground(accent: palette.accent))
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .strokeBorder(CleansiaColors.outlineVariant.opacity(0.6), lineWidth: 0.5)
         )
-        .shadow(color: .black.opacity(0.18), radius: 12, y: 4)
+        .shadow(color: .black.opacity(0.22), radius: 18, y: 8)
+    }
+
+    private func severityBadge(_ palette: SnackbarPalette.Palette) -> some View {
+        ZStack {
+            Circle().fill(palette.accent)
+            Image(systemName: palette.symbol)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(.white)
+        }
+        .frame(width: 30, height: 30)
+        .accessibilityHidden(true)
+    }
+
+    private func pillBackground(accent: Color) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(CleansiaColors.surface)
+            .overlay(alignment: .leading) {
+                Capsule()
+                    .fill(accent)
+                    .frame(width: 4)
+                    .padding(.vertical, 12)
+                    .padding(.leading, 5)
+            }
     }
 }
 
 enum SnackbarPalette {
     struct Palette {
-        let background: Color
-        let foreground: Color
+        let accent: Color
         let symbol: String
     }
 
     static func palette(for severity: SnackbarSeverity) -> Palette {
         switch severity {
         case .error:
-            Palette(
-                background: Color(red: 0.996, green: 0.886, blue: 0.886),
-                foreground: Color(red: 0.725, green: 0.110, blue: 0.110),
-                symbol: "exclamationmark.circle"
-            )
+            Palette(accent: CleansiaColors.error, symbol: "exclamationmark.circle.fill")
         case .success:
-            Palette(
-                background: Color(red: 0.863, green: 0.988, blue: 0.906),
-                foreground: Color(red: 0.082, green: 0.502, blue: 0.239),
-                symbol: "checkmark.circle"
-            )
+            Palette(accent: successAccent, symbol: "checkmark.circle.fill")
         case .info:
-            Palette(
-                background: Color(red: 0.878, green: 0.949, blue: 0.996),
-                foreground: Color(red: 0.012, green: 0.412, blue: 0.631),
-                symbol: "info.circle"
-            )
+            Palette(accent: CleansiaColors.primary, symbol: "info.circle.fill")
         case .warning:
-            Palette(
-                background: Color(red: 0.996, green: 0.953, blue: 0.780),
-                foreground: Color(red: 0.706, green: 0.325, blue: 0.035),
-                symbol: "exclamationmark.triangle"
-            )
+            Palette(accent: warningAccent, symbol: "exclamationmark.triangle.fill")
         }
     }
+
+    private static let successAccent = Color.dynamic(light: Color(hex: 0x16A34A), dark: Color(hex: 0x22C55E))
+    private static let warningAccent = Color.dynamic(light: Color(hex: 0xF59E0B), dark: Color(hex: 0xFBBF24))
 }
 
 #if DEBUG
     struct SnackbarPill_Previews: PreviewProvider {
         static var previews: some View {
-            VStack(spacing: 12) {
-                SnackbarPill(message: SnackbarMessage(text: "Order could not be cancelled", severity: .error)) {}
-                SnackbarPill(message: SnackbarMessage(text: "Saved", severity: .success)) {}
-                SnackbarPill(message: SnackbarMessage(text: "Heads up", severity: .info)) {}
-                SnackbarPill(message: SnackbarMessage(text: "Careful now", severity: .warning)) {}
+            ForEach([ColorScheme.light, .dark], id: \.self) { scheme in
+                VStack(spacing: 12) {
+                    SnackbarPill(message: SnackbarMessage(text: "Order could not be cancelled", severity: .error)) {}
+                    SnackbarPill(message: SnackbarMessage(text: "Saved", severity: .success)) {}
+                    SnackbarPill(message: SnackbarMessage(text: "Heads up", severity: .info)) {}
+                    SnackbarPill(message: SnackbarMessage(text: "Careful now", severity: .warning)) {}
+                }
+                .padding()
+                .background(CleansiaColors.background)
+                .environment(\.colorScheme, scheme)
+                .previewDisplayName(scheme == .light ? "Light" : "Dark")
             }
-            .padding()
             .previewLayout(.sizeThatFits)
         }
     }

@@ -230,6 +230,23 @@ Use `cz.cleansia.core.ui.components.*` — `CleansiaPrimaryButton`, `CleansiaOut
 `MaterialTheme.typography.*` inside `CleansiaTheme` (which applies `CleansiaTypography`). Never style
 raw components one-off; never duplicate a `:core` component.
 
+> **iOS destructive affordance — the ONE way (T-0432):** the Core `CleansiaDangerButton` (in
+> `Core/Components/CleansiaButton.swift`, alongside the primary/outlined/link buttons) is the single
+> danger/destructive button — an **error-tinted surface** (`error.opacity(0.12)` fill + `error` glyph &
+> label + `error.opacity(0.4)` hairline), theme-adaptive by construction. **Never put `onError` text on
+> an `error` fill** for a destructive button: `error`/`onError` are both reddish in the dark scheme
+> (`darkError` salmon on `errorText` dark-red), so a "solid red pill with onError text" collapses to
+> dark-red-on-red in dark mode (the delete-account contrast defect). The customer profile delete-row +
+> the delete-account confirm both consume it; partner `ProfileHubContent`'s hand-rolled copy is the
+> remaining convergence target.
+
+> **iOS snackbar pill — the ONE way (T-0432):** `SnackbarPill`/`SnackbarPalette` in
+> `Core/Snackbar/GlobalSnackbarHost.swift` render on a **theme-adaptive** `CleansiaColors.surface` pill
+> with `onSurface` text (NOT a fixed pastel fill — that never adapted to dark), a filled circular
+> severity **badge** (solid accent circle + white glyph) + a thin leading accent capsule, rounded 20
+> continuous with a deep floating shadow. Severity accent = `error` / green / `primary` / amber; the
+> `SnackbarMessage`/`SnackbarSeverity` API + dismiss button + accessibility are unchanged.
+
 > **iOS `CleansiaDialog` spring pop-in:** call sites present the dialog with a plain
 > `if flag { CleansiaDialog(…) }` (no `withAnimation` around the flag), so a bare `.transition` never
 > fires. The dialog springs itself in — `@State presented` flipped true in `.onAppear` under a
@@ -342,7 +359,19 @@ source the revealed layout renders and those sources must all start in the shell
 gate + late independent loads = per-section layout shove), with late arrivals crossfading via
 `.transition(.opacity)` + one `.animation(_, value:)` keyed on an Equatable section-visibility
 fingerprint (`HomeSections.SectionVisibility`); (d) float a text-field label on `focused`, never on a
-derived value-based flag — programmatic pre-fill must snap into place, not drag.
+derived value-based flag — programmatic pre-fill must snap into place, not drag. **`CleansiaTextField`/
+`CleansiaPhoneInput` (the canonical form, T-0432 refinement):** the floated LABEL is the only moving
+element and it moves under **one** container-level `.animation(.easeOut(0.2), value: focused)` (NOT a
+per-view `.animation` on both the label and the field — two competing transactions read as a two-part
+"drag"); the field itself only takes a static `.padding(.top, floating ? Spacing.s : 0)` inside that
+one transaction. Keying the single animation on `focused` (not `floating`) is what makes a programmatic
+value change snap. Give the 56pt container a full-row tap target with `.contentShape(Rectangle())` +
+`.onTapGesture { if enabled { focused = true } }` — the bare `TextField` only captures its text glyphs,
+so the rest of the row felt dead. **AutoFill:** every call site passes an explicit
+`textContentType:` (login identifier `.username` + `.password`; sign-up `.emailAddress`/`.newPassword`;
+`.givenName`/`.familyName`/`.telephoneNumber`; one-time codes `.oneTimeCode` — already baked into
+`CodeInput`). A field with no `textContentType` makes the QuickType/Keychain suggestion fill nothing
+and jump to the next field.
 
 **Partner router — the ONE way (ADR-0020, reviewer #23):** the partner app's **top-level audience** (logged-out
 / resolving / locked / in-shell) is the **flat-enum `PartnerRootView` root-switch** — a closed `enum Route`

@@ -81,6 +81,7 @@ private struct ForgotPasswordContent: View {
                         label: L10n.Auth.email,
                         errorText: form.emailError,
                         keyboardType: .emailAddress,
+                        textContentType: .emailAddress,
                         enabled: !isLoading
                     )
 

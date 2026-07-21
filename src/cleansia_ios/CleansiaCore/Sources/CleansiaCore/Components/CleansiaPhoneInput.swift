@@ -45,21 +45,25 @@ public struct CleansiaPhoneInput: View {
                 Text(label)
                     .font(floating ? CleansiaTypography.labelMedium : CleansiaTypography.bodyLarge)
                     .foregroundColor(floating ? floatingLabelColor : CleansiaColors.onSurfaceVariant)
-                    .offset(y: floating ? -14 : 0)
-                    .animation(.easeOut(duration: 0.15), value: floating)
+                    .offset(y: floating ? -13 : 0)
 
+                // The displayed text is masked into space-grouped digits while the
+                // bound `value` stays sanitized (leading `+` + digits only), so
+                // callers send an unformatted number.
                 TextField("", text: Binding(
                     get: { PhoneNumberFormatter.display(value) },
                     set: { value = PhoneNumberSanitizer.sanitize($0) }
                 ))
                 .keyboardType(.phonePad)
+                .textContentType(.telephoneNumber)
                 .font(CleansiaTypography.bodyLarge)
                 .foregroundColor(CleansiaColors.onSurface)
                 .tint(CleansiaColors.primary)
                 .focused($focused)
                 .disabled(!enabled)
-                .offset(y: floating ? 8 : 0)
+                .padding(.top, floating ? Spacing.s : 0)
             }
+            .animation(.easeOut(duration: 0.2), value: focused)
             .padding(.horizontal, Spacing.m)
             .frame(minHeight: 56)
             .background(transparentContainer ? .clear : CleansiaColors.surface)
@@ -68,6 +72,10 @@ public struct CleansiaPhoneInput: View {
                 RoundedRectangle(cornerRadius: CornerRadius.small)
                     .stroke(borderColor, lineWidth: focused ? 2 : 1)
             )
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if enabled { focused = true }
+            }
 
             if let supporting = errorText ?? helper {
                 Text(supporting)

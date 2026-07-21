@@ -39,8 +39,12 @@ struct ProfileTab: View {
                         sectionGroup(title: L10n.Profile.groupPreferences, rows: preferenceRows)
                         sectionGroup(title: L10n.Profile.groupSupport, rows: supportRows)
 
-                        DeleteAccountRow(onTap: { onOpen(.deleteAccount) })
-                            .padding(.horizontal, Spacing.m)
+                        CleansiaDangerButton(
+                            L10n.Profile.deleteAccount,
+                            leadingIcon: "trash",
+                            action: { onOpen(.deleteAccount) }
+                        )
+                        .padding(.horizontal, Spacing.m)
 
                         CleansiaOutlinedButton(L10n.Profile.signOut, size: .medium) {
                             showSignOutDialog = true
@@ -178,30 +182,6 @@ private struct ProfileRow: View {
     }
 }
 
-private struct DeleteAccountRow: View {
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(role: .destructive, action: onTap) {
-            HStack(spacing: Spacing.xs) {
-                Image(systemName: "trash")
-                    .font(.system(size: 16, weight: .semibold))
-                Text(L10n.Profile.deleteAccount)
-                    .font(CleansiaTypography.labelLarge)
-            }
-            .foregroundColor(CleansiaColors.error)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(CleansiaColors.error.opacity(0.12), in: RoundedRectangle(cornerRadius: CornerRadius.large))
-            .overlay {
-                RoundedRectangle(cornerRadius: CornerRadius.large)
-                    .stroke(CleansiaColors.error.opacity(0.4), lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 private struct ProfileHeader: View {
     let user: CurrentUserProfile?
     let tier: String
@@ -222,8 +202,6 @@ private struct ProfileHeader: View {
                 memberSince: ProfileStatsFormat.memberSince(user?.memberSince, locale: locale)
             )
             .padding(.horizontal, Spacing.ml)
-            // Overlap must not exceed the hero's Spacing.m bottom lip, or the
-            // card's hit region crops the Edit Profile chip's tap area.
             .offset(y: -Spacing.m)
             .padding(.bottom, -Spacing.m)
         }
@@ -293,37 +271,32 @@ private struct HeroGradient: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.m) {
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .fill(Color.white)
-                        .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 3))
-                        .frame(width: 72, height: 72)
-                    Text(initials)
-                        .font(CleansiaTypography.headlineSmall)
-                        .foregroundColor(CleansiaColors.primary)
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(user?.fullName ?? "")
-                        .font(CleansiaTypography.headlineSmall)
-                        .foregroundColor(.white)
+        HStack(alignment: .top, spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(Color.white)
+                    .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 3))
+                    .frame(width: 72, height: 72)
+                Text(initials)
+                    .font(CleansiaTypography.headlineSmall)
+                    .foregroundColor(CleansiaColors.primary)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(user?.fullName ?? "")
+                    .font(CleansiaTypography.headlineSmall)
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                if let email = user?.email, !email.isEmpty {
+                    Text(email)
+                        .font(CleansiaTypography.bodyMedium)
+                        .foregroundColor(.white.opacity(0.85))
                         .lineLimit(1)
-                    if let email = user?.email, !email.isEmpty {
-                        Text(email)
-                            .font(CleansiaTypography.bodyMedium)
-                            .foregroundColor(.white.opacity(0.85))
-                            .lineLimit(1)
-                    }
-                    TierBadge(tier: tier)
-                        .padding(.top, Spacing.xxs)
                 }
-                Spacer(minLength: 0)
+                TierBadge(tier: tier)
+                    .padding(.top, Spacing.xxs)
             }
-            HStack {
-                Spacer()
-                EditProfileChip(onEdit: onEdit)
-            }
+            Spacer(minLength: Spacing.s)
+            EditProfileChip(onEdit: onEdit)
         }
         .padding(.horizontal, Spacing.ml)
         .padding(.top, Spacing.m + topInset)

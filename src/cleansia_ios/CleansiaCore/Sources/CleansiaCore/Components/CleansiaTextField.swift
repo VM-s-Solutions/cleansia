@@ -6,6 +6,7 @@ public struct CleansiaTextField: View {
     private let helper: String?
     private let errorText: String?
     private let keyboardType: UIKeyboardType
+    private let textContentType: UITextContentType?
     private let isPassword: Bool
     private let enabled: Bool
     private let transparentContainer: Bool
@@ -19,6 +20,7 @@ public struct CleansiaTextField: View {
         helper: String? = nil,
         errorText: String? = nil,
         keyboardType: UIKeyboardType = .default,
+        textContentType: UITextContentType? = nil,
         isPassword: Bool = false,
         enabled: Bool = true,
         transparentContainer: Bool = false
@@ -28,6 +30,7 @@ public struct CleansiaTextField: View {
         self.helper = helper
         self.errorText = errorText
         self.keyboardType = keyboardType
+        self.textContentType = textContentType
         self.isPassword = isPassword
         self.enabled = enabled
         self.transparentContainer = transparentContainer
@@ -52,14 +55,7 @@ public struct CleansiaTextField: View {
                 Text(label)
                     .font(floating ? CleansiaTypography.labelMedium : CleansiaTypography.bodyLarge)
                     .foregroundColor(floating ? floatingLabelColor : CleansiaColors.onSurfaceVariant)
-                    .offset(y: floating ? -14 : 0)
-                    // Animate the float on FOCUS, not on the derived `floating`
-                    // state. Keying on `floating` animated the label whenever the
-                    // value arrived programmatically (pre-fill / async binding),
-                    // so on first appearance the hint visibly "dragged" into place
-                    // instead of rendering already-floated. Focus is the real
-                    // user-interaction trigger; programmatic value changes now snap.
-                    .animation(.easeOut(duration: 0.15), value: focused)
+                    .offset(y: floating ? -13 : 0)
 
                 HStack {
                     field
@@ -74,9 +70,14 @@ public struct CleansiaTextField: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .offset(y: floating ? 8 : 0)
-                .animation(.easeOut(duration: 0.15), value: focused)
+                .padding(.top, floating ? Spacing.s : 0)
             }
+            // One shared transaction for the label + field so they move as a
+            // single coordinated motion, never a two-part "drag". Keyed on
+            // FOCUS, not the derived `floating`: a programmatic value change
+            // (pre-fill / async binding) doesn't touch focus, so the label snaps
+            // into its floated place instead of sliding in on first appearance.
+            .animation(.easeOut(duration: 0.2), value: focused)
             .padding(.horizontal, Spacing.m)
             .frame(minHeight: 56)
             .background(containerColor)
@@ -85,6 +86,10 @@ public struct CleansiaTextField: View {
                 RoundedRectangle(cornerRadius: CornerRadius.small)
                     .stroke(borderColor, lineWidth: focused ? 2 : 1)
             )
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if enabled { focused = true }
+            }
 
             if let supporting = errorText ?? helper {
                 Text(supporting)
@@ -113,6 +118,7 @@ public struct CleansiaTextField: View {
                     .keyboardType(keyboardType)
             }
         }
+        .textContentType(textContentType)
         .font(CleansiaTypography.bodyLarge)
         .foregroundColor(CleansiaColors.onSurface)
         .tint(CleansiaColors.primary)
@@ -127,8 +133,18 @@ public struct CleansiaTextField: View {
         static var previews: some View {
             StatefulPreviewWrapper("") { binding in
                 VStack(spacing: Spacing.m) {
-                    CleansiaTextField(value: binding, label: "Email", keyboardType: .emailAddress)
-                    CleansiaTextField(value: .constant("secret"), label: "Password", isPassword: true)
+                    CleansiaTextField(
+                        value: binding,
+                        label: "Email",
+                        keyboardType: .emailAddress,
+                        textContentType: .emailAddress
+                    )
+                    CleansiaTextField(
+                        value: .constant("secret"),
+                        label: "Password",
+                        textContentType: .password,
+                        isPassword: true
+                    )
                     CleansiaTextField(value: .constant("bad"), label: "Code", errorText: "Invalid code")
                 }
                 .padding()

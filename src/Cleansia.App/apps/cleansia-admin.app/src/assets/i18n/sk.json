@@ -476,7 +476,16 @@
       "apply_to_all": "Použiť na všetko",
       "services": "Služby",
       "packages": "Balíčky",
-      "not_configured": "Nenakonfigurované"
+      "not_configured": "Nenakonfigurované",
+      "override_dialog_title": "Individuálna sadzba",
+      "add_override": "Pridať sadzbu",
+      "edit_override": "Upraviť sadzbu",
+      "delete_override": "Odstrániť sadzbu",
+      "delete_override_confirm": "Naozaj chcete odstrániť túto individuálnu sadzbu? Zamestnanec sa vráti ku globálnej sadzbe.",
+      "grade_quick_fill": "Rýchle vyplnenie",
+      "grade_junior": "Junior",
+      "grade_medior": "Medior",
+      "grade_senior": "Senior"
     },
     "order_management": {
       "title": "Správa objednávok",

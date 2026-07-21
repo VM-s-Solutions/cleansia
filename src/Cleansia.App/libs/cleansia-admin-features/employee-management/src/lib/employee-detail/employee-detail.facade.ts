@@ -52,6 +52,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
   readonly loadingPayConfigs = signal<boolean>(false);
   readonly savingPayConfig = signal<boolean>(false);
   readonly bulkApplyingGrade = signal<boolean>(false);
+  readonly payConfigDialogOpen = signal<boolean>(false);
   readonly services = signal<ICleansiaSelectOption[]>([]);
   readonly packages = signal<ICleansiaSelectOption[]>([]);
   readonly currencies = signal<ICleansiaSelectOption[]>([]);
@@ -429,6 +430,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.employee_detail.messages.pay_config_save_success')
           );
+          this.payConfigDialogOpen.set(false);
           this.loadPayConfigSummary(employeeId);
         }
       });
@@ -503,6 +505,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
             this.translate.instant('pages.employee_detail.messages.pay_config_save_success')
           );
           this.editingSection.set(null);
+          this.payConfigDialogOpen.set(false);
           this.loadEmployeePayConfigs(employeeId);
         }
       });

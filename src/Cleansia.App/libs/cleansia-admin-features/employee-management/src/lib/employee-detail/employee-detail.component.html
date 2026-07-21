@@ -684,6 +684,36 @@
                 {{ 'pages.employee_detail.not_configured' | translate }}
               </span>
               }
+              <cleansia-button
+                icon="pi pi-pencil"
+                severity="secondary"
+                buttonSize="small"
+                [outlined]="true"
+                [tooltip]="
+                  (item.hasConfig
+                    ? 'pages.employee_detail.edit_override'
+                    : 'pages.employee_detail.add_override'
+                  ) | translate
+                "
+                [ariaLabel]="
+                  (item.hasConfig
+                    ? 'pages.employee_detail.edit_override'
+                    : 'pages.employee_detail.add_override'
+                  ) | translate
+                "
+                (onClick)="onEditPayConfig(item, true)"
+              />
+              @if (item.hasConfig) {
+              <cleansia-button
+                icon="pi pi-trash"
+                severity="danger"
+                buttonSize="small"
+                [outlined]="true"
+                [tooltip]="'pages.employee_detail.delete_override' | translate"
+                [ariaLabel]="'pages.employee_detail.delete_override' | translate"
+                (onClick)="confirmDeletePayConfig(item)"
+              />
+              }
             </div>
           </div>
           }
@@ -711,6 +741,36 @@
               <span style="color: var(--text-color-secondary); font-style: italic;">
                 {{ 'pages.employee_detail.not_configured' | translate }}
               </span>
+              }
+              <cleansia-button
+                icon="pi pi-pencil"
+                severity="secondary"
+                buttonSize="small"
+                [outlined]="true"
+                [tooltip]="
+                  (item.hasConfig
+                    ? 'pages.employee_detail.edit_override'
+                    : 'pages.employee_detail.add_override'
+                  ) | translate
+                "
+                [ariaLabel]="
+                  (item.hasConfig
+                    ? 'pages.employee_detail.edit_override'
+                    : 'pages.employee_detail.add_override'
+                  ) | translate
+                "
+                (onClick)="onEditPayConfig(item, false)"
+              />
+              @if (item.hasConfig) {
+              <cleansia-button
+                icon="pi pi-trash"
+                severity="danger"
+                buttonSize="small"
+                [outlined]="true"
+                [tooltip]="'pages.employee_detail.delete_override' | translate"
+                [ariaLabel]="'pages.employee_detail.delete_override' | translate"
+                (onClick)="confirmDeletePayConfig(item)"
+              />
               }
             </div>
           </div>
@@ -782,3 +842,129 @@
     }
   </div>
 </div>
+
+<p-dialog
+  [(visible)]="facade.payConfigDialogOpen"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '560px' }"
+  [header]="'pages.employee_detail.override_dialog_title' | translate"
+>
+  <form [formGroup]="payConfigForm" class="pay-config-override-form">
+    <div
+      style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem;"
+    >
+      <div style="flex: 1 1 45%; min-width: 200px;">
+        <cleansia-text-input
+          [label]="'pages.employee_detail.pay_config_base_pay' | translate"
+          formControlName="basePay"
+          dataType="number"
+          [required]="true"
+          [floatVariant]="'on'"
+        />
+      </div>
+      <div style="flex: 1 1 45%; min-width: 200px;">
+        <cleansia-select
+          [options]="facade.currencies()"
+          [label]="'pages.employee_detail.pay_config_currency' | translate"
+          [floatVariant]="'on'"
+          formControlName="currencyId"
+        />
+      </div>
+      <div style="flex: 1 1 45%; min-width: 200px;">
+        <cleansia-text-input
+          [label]="'pages.employee_detail.pay_config_extra_room' | translate"
+          formControlName="extraPerRoom"
+          dataType="number"
+          [floatVariant]="'on'"
+        />
+      </div>
+      <div style="flex: 1 1 45%; min-width: 200px;">
+        <cleansia-text-input
+          [label]="'pages.employee_detail.pay_config_extra_bathroom' | translate"
+          formControlName="extraPerBathroom"
+          dataType="number"
+          [floatVariant]="'on'"
+        />
+      </div>
+      <div style="flex: 1 1 45%; min-width: 200px;">
+        <cleansia-text-input
+          [label]="'pages.employee_detail.pay_config_distance_rate' | translate"
+          formControlName="distanceRatePerKm"
+          dataType="number"
+          [floatVariant]="'on'"
+        />
+      </div>
+      <div style="flex: 1 1 45%; min-width: 200px;">
+        <cleansia-text-input
+          [label]="'pages.employee_detail.pay_config_min_pay' | translate"
+          formControlName="minimumPay"
+          dataType="number"
+          [floatVariant]="'on'"
+        />
+      </div>
+      <div style="flex: 1 1 45%; min-width: 200px;">
+        <cleansia-text-input
+          [label]="'pages.employee_detail.pay_config_max_pay' | translate"
+          formControlName="maximumPay"
+          dataType="number"
+          [floatVariant]="'on'"
+        />
+      </div>
+      <div style="flex: 1 1 100%;">
+        <cleansia-textarea
+          [label]="'pages.employee_detail.pay_config_description' | translate"
+          formControlName="description"
+          [rows]="2"
+        />
+      </div>
+    </div>
+
+    <div
+      style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;"
+    >
+      <span style="color: var(--text-color-secondary); font-size: 0.875rem;">
+        {{ 'pages.employee_detail.grade_quick_fill' | translate }}:
+      </span>
+      <cleansia-button
+        [label]="'pages.employee_detail.grade_junior' | translate"
+        severity="secondary"
+        buttonSize="small"
+        [outlined]="true"
+        (onClick)="applyGradeMultiplier(0.5)"
+      />
+      <cleansia-button
+        [label]="'pages.employee_detail.grade_medior' | translate"
+        severity="secondary"
+        buttonSize="small"
+        [outlined]="true"
+        (onClick)="applyGradeMultiplier(0.75)"
+      />
+      <cleansia-button
+        [label]="'pages.employee_detail.grade_senior' | translate"
+        severity="secondary"
+        buttonSize="small"
+        [outlined]="true"
+        (onClick)="applyGradeMultiplier(1)"
+      />
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <cleansia-button
+      [label]="'common.cancel' | translate"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="onCancelPayConfig()"
+    />
+    <cleansia-button
+      [label]="'common.save' | translate"
+      icon="pi pi-check"
+      [loading]="facade.savingPayConfig()"
+      [disabled]="facade.savingPayConfig()"
+      (onClick)="onSavePayConfig()"
+    />
+  </ng-template>
+</p-dialog>
+
+<p-confirmDialog />

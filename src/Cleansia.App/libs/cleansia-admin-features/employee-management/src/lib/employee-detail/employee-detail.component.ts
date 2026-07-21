@@ -3,7 +3,13 @@ import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, inje
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Code, EmployeeDocumentItem, EmployeeEntityType, TimeRange } from '@cleansia/admin-services';
+import {
+  Code,
+  EmployeeDocumentItem,
+  EmployeeEntityType,
+  EmployeePayConfigSummaryItemDto,
+  TimeRange,
+} from '@cleansia/admin-services';
 import { selectDayOfWeekCodes } from '@cleansia/admin-stores';
 import {
   CleansiaAvailabilityComponent,
@@ -13,6 +19,7 @@ import {
   CleansiaSectionComponent,
   CleansiaSelectComponent,
   CleansiaTelephoneComponent,
+  CleansiaTextareaComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
   ICleansiaSelectOption,
@@ -26,7 +33,10 @@ import {
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { ConfirmationService } from 'primeng/api';
 import { CheckboxModule } from 'primeng/checkbox';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 import { EmployeeDetailFacade } from './employee-detail.facade';
@@ -45,18 +55,26 @@ import { EmployeeDocumentsSectionComponent } from './employee-documents-section.
     CleansiaCalendarComponent,
     CleansiaSelectComponent,
     CleansiaTelephoneComponent,
+    CleansiaTextareaComponent,
     CleansiaTextInputComponent,
     TranslatePipe,
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CheckboxModule,
+    ConfirmDialogModule,
+    DialogModule,
     ToastModule,
     EmployeeDocumentsSectionComponent,
     CleansiaPermissionDirective,
   ],
   templateUrl: './employee-detail.component.html',
-  providers: [EmployeeDocumentsFacade, EmployeeDetailFacade, DialogService],
+  providers: [
+    EmployeeDocumentsFacade,
+    EmployeeDetailFacade,
+    DialogService,
+    ConfirmationService,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EmployeeDetailComponent implements OnInit, OnDestroy {
@@ -67,8 +85,11 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   private readonly store = inject(Store);
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly confirmationService = inject(ConfirmationService);
 
   protected readonly Policy = Policy;
+
+  readonly editingConfigId = signal<string | null>(null);
 
   readonly daysOfWeek = signal<Code[]>([]);
   availabilityValue: { [key: string]: TimeRange[] } = {};
@@ -248,12 +269,69 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  onEditPayConfig(
+    item: EmployeePayConfigSummaryItemDto,
+    isService: boolean
+  ): void {
+    this.editingConfigId.set(item.hasConfig ? item.configId ?? null : null);
+    this.payConfigForm.reset({
+      serviceId: isService ? item.serviceId ?? null : null,
+      packageId: isService ? null : item.packageId ?? null,
+      currencyId: item.currencyId ?? null,
+      basePay: item.hasConfig ? item.basePay : 0,
+      extraPerRoom: item.hasConfig ? item.extraPerRoom : 0,
+      extraPerBathroom: item.hasConfig ? item.extraPerBathroom : 0,
+      distanceRatePerKm: item.hasConfig ? item.distanceRatePerKm : 0,
+      minimumPay: item.hasConfig ? item.minimumPay : 0,
+      maximumPay: item.hasConfig ? item.maximumPay : 0,
+      description: null,
+    });
+    this.facade.payConfigDialogOpen.set(true);
+  }
+
   onSavePayConfig(): void {
-    this.facade.createEmployeePayConfig(this.payConfigForm.getRawValue());
+    if (this.payConfigForm.invalid) {
+      this.payConfigForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.payConfigForm.getRawValue();
+    const editingConfigId = this.editingConfigId();
+
+    if (editingConfigId) {
+      this.facade.updateSinglePayConfig(editingConfigId, {
+        basePay: value.basePay ?? 0,
+        extraPerRoom: value.extraPerRoom ?? 0,
+        extraPerBathroom: value.extraPerBathroom ?? 0,
+        distanceRatePerKm: value.distanceRatePerKm ?? 0,
+        minimumPay: value.minimumPay ?? 0,
+        maximumPay: value.maximumPay ?? 0,
+      });
+      return;
+    }
+
+    this.facade.createEmployeePayConfig(value);
+  }
+
+  onCancelPayConfig(): void {
+    this.facade.payConfigDialogOpen.set(false);
   }
 
   onDeletePayConfig(payConfigId: string): void {
     this.facade.deleteEmployeePayConfig(payConfigId);
+  }
+
+  confirmDeletePayConfig(item: EmployeePayConfigSummaryItemDto): void {
+    if (!item.configId) return;
+    const configId = item.configId;
+    this.confirmationService.confirm({
+      message: this.translate.instant(
+        'pages.employee_detail.delete_override_confirm'
+      ),
+      header: this.translate.instant('pages.employee_detail.delete_override'),
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => this.onDeletePayConfig(configId),
+    });
   }
 
   onBulkApplyGrade(): void {

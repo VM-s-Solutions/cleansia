@@ -39,15 +39,16 @@ struct DeleteAccountView: View {
                     whatGetsDeleted
                     appleNote
                     confirmField
-                    Spacer(minLength: Spacing.l)
                 }
                 .padding(Spacing.m)
             }
-            VStack {
-                Spacer()
+            .safeAreaInset(edge: .bottom) {
                 deleteButton
+                    .padding(.horizontal, Spacing.m)
+                    .padding(.top, Spacing.s)
+                    .padding(.bottom, Spacing.m)
+                    .background(CleansiaColors.background)
             }
-            .padding(Spacing.m)
             if showConfirmDialog {
                 confirmDialog
             }
@@ -120,36 +121,21 @@ struct DeleteAccountView: View {
                 value: $typedEmail,
                 label: L10n.DeleteAccount.confirmHint,
                 errorText: (!typedEmail.isBlank && !emailMatches) ? L10n.DeleteAccount.confirmMismatch : nil,
-                keyboardType: .emailAddress
+                keyboardType: .emailAddress,
+                textContentType: .emailAddress
             )
         }
     }
 
     private var deleteButton: some View {
-        let enabled = emailMatches && !vm.deleteState.isSubmitting
-        return Button {
+        CleansiaDangerButton(
+            L10n.DeleteAccount.confirmButton,
+            leadingIcon: "trash",
+            loading: vm.deleteState.isSubmitting,
+            enabled: emailMatches && !vm.deleteState.isSubmitting
+        ) {
             showConfirmDialog = true
-        } label: {
-            ZStack {
-                if vm.deleteState.isSubmitting {
-                    ProgressView()
-                        .progressViewStyle(.circular)
-                        .tint(CleansiaColors.onError)
-                } else {
-                    HStack(spacing: Spacing.xs) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 16, weight: .semibold))
-                        Text(L10n.DeleteAccount.confirmButton)
-                            .font(CleansiaTypography.titleMedium)
-                    }
-                    .foregroundColor(CleansiaColors.onError)
-                }
-            }
-            .frame(maxWidth: .infinity, minHeight: 52)
-            .background(CleansiaColors.error.opacity(enabled ? 1 : 0.5))
-            .clipShape(Capsule())
         }
-        .disabled(!enabled)
     }
 
     private var confirmDialog: some View {

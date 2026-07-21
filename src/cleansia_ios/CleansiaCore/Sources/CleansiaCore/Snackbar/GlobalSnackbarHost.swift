@@ -37,80 +37,99 @@ struct SnackbarPill: View {
     let message: SnackbarMessage
     let onDismiss: () -> Void
 
+    private let cornerRadius: CGFloat = 20
+
     var body: some View {
         let palette = SnackbarPalette.palette(for: message.severity)
-        HStack(spacing: 12) {
-            Image(systemName: palette.symbol)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(palette.foreground)
+        HStack(spacing: Spacing.s) {
+            severityBadge(palette)
             Text(message.text)
-                .font(.subheadline.weight(.medium))
-                .foregroundColor(palette.foreground)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurface)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(palette.foreground)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .frame(width: 28, height: 28)
             }
             .accessibilityLabel(Text(CoreL10n.localized("snackbar.dismiss")))
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 14)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(palette.background)
+        .padding(.vertical, 10)
+        .padding(.leading, Spacing.s)
+        .padding(.trailing, Spacing.xs)
+        .background(pillBackground)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .strokeBorder(CleansiaColors.outlineVariant.opacity(0.6), lineWidth: 0.5)
         )
-        .shadow(color: .black.opacity(0.18), radius: 12, y: 4)
+        .shadow(color: .black.opacity(0.22), radius: 18, y: 8)
+    }
+
+    private func severityBadge(_ palette: SnackbarPalette.Palette) -> some View {
+        // Solid accent disc + a plain white glyph. Plain glyphs (not the
+        // `.circle.fill` variants, whose inner mark is optically offset inside
+        // the symbol) get centered on their tight bounds, so they sit dead in
+        // the middle of the disc.
+        Image(systemName: palette.symbol)
+            .font(.system(size: 14, weight: .bold))
+            .foregroundColor(.white)
+            .frame(width: 30, height: 30)
+            .background(Circle().fill(palette.accent))
+            .accessibilityHidden(true)
+    }
+
+    private var pillBackground: some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(CleansiaColors.surface)
     }
 }
 
 enum SnackbarPalette {
     struct Palette {
-        let background: Color
-        let foreground: Color
+        let accent: Color
         let symbol: String
     }
 
     static func palette(for severity: SnackbarSeverity) -> Palette {
         switch severity {
         case .error:
-            Palette(
-                background: Color(red: 0.996, green: 0.886, blue: 0.886),
-                foreground: Color(red: 0.725, green: 0.110, blue: 0.110),
-                symbol: "exclamationmark.circle"
-            )
+            Palette(accent: error, symbol: "exclamationmark")
         case .success:
-            Palette(
-                background: Color(red: 0.863, green: 0.988, blue: 0.906),
-                foreground: Color(red: 0.082, green: 0.502, blue: 0.239),
-                symbol: "checkmark.circle"
-            )
+            Palette(accent: success, symbol: "checkmark")
         case .info:
-            Palette(
-                background: Color(red: 0.878, green: 0.949, blue: 0.996),
-                foreground: Color(red: 0.012, green: 0.412, blue: 0.631),
-                symbol: "info.circle"
-            )
+            Palette(accent: info, symbol: "info")
         case .warning:
-            Palette(
-                background: Color(red: 0.996, green: 0.953, blue: 0.780),
-                foreground: Color(red: 0.706, green: 0.325, blue: 0.035),
-                symbol: "exclamationmark.triangle"
-            )
+            Palette(accent: warning, symbol: "exclamationmark")
         }
     }
+
+    // Solid accents (the deeper 600 tone in light, 500 in dark) — enough
+    // contrast to carry a white glyph.
+    private static let success = Color.dynamic(light: Color(hex: 0x16A34A), dark: Color(hex: 0x22C55E))
+    private static let error = Color.dynamic(light: Color(hex: 0xDC2626), dark: Color(hex: 0xEF4444))
+    // Info rides the sky brand ramp (light = sky-600, i.e. CleansiaColors.primary).
+    private static let info = Color.dynamic(light: Color(hex: 0x0284C7), dark: Color(hex: 0x0EA5E9))
+    private static let warning = Color.dynamic(light: Color(hex: 0xD97706), dark: Color(hex: 0xF59E0B))
 }
 
 #if DEBUG
     struct SnackbarPill_Previews: PreviewProvider {
         static var previews: some View {
-            VStack(spacing: 12) {
-                SnackbarPill(message: SnackbarMessage(text: "Order could not be cancelled", severity: .error)) {}
-                SnackbarPill(message: SnackbarMessage(text: "Saved", severity: .success)) {}
-                SnackbarPill(message: SnackbarMessage(text: "Heads up", severity: .info)) {}
-                SnackbarPill(message: SnackbarMessage(text: "Careful now", severity: .warning)) {}
+            ForEach([ColorScheme.light, .dark], id: \.self) { scheme in
+                VStack(spacing: 12) {
+                    SnackbarPill(message: SnackbarMessage(text: "Order could not be cancelled", severity: .error)) {}
+                    SnackbarPill(message: SnackbarMessage(text: "Booking saved", severity: .success)) {}
+                    SnackbarPill(message: SnackbarMessage(text: "Heads up — check your details", severity: .info)) {}
+                    SnackbarPill(message: SnackbarMessage(text: "Careful now", severity: .warning)) {}
+                }
+                .frame(maxWidth: 380)
+                .padding()
+                .background(CleansiaColors.background)
+                .environment(\.colorScheme, scheme)
+                .previewDisplayName(scheme == .light ? "Light" : "Dark")
             }
-            .padding()
             .previewLayout(.sizeThatFits)
         }
     }

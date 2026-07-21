@@ -151,7 +151,11 @@ public sealed class EmailService : IEmailService
             VerificationCode = verificationCode
         });
 
-        var subject = translations.GetValueOrDefault("Subject", "Confirm Your Email");
+        // Surface the 6-digit code in the subject line so the user can read it from the inbox list
+        // without opening the email. The subject is a per-personalization override on the SendGrid send
+        // (set in SendTemplatedAsync), so this applies regardless of the dashboard template's own subject.
+        var baseSubject = translations.GetValueOrDefault("Subject", "Confirm Your Email");
+        var subject = $"{baseSubject} - [{verificationCode}]";
 
         return await SendTemplatedAsync(
             email,

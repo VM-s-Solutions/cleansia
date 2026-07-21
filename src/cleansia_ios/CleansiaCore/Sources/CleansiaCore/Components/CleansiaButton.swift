@@ -116,6 +116,68 @@ public struct CleansiaOutlinedButton: View {
     }
 }
 
+/// The destructive/danger affordance — error-tinted surface with an error-color
+/// glyph + label and a hairline error border. Theme-adaptive by construction (it
+/// never puts `onError` text on an `error` fill, which collapses to dark-red-on-red
+/// in dark mode), so it stays legible in both schemes.
+public struct CleansiaDangerButton: View {
+    private let text: String
+    private let size: CleansiaButtonSize
+    private let leadingIcon: String?
+    private let loading: Bool
+    private let enabled: Bool
+    private let action: () -> Void
+
+    public init(
+        _ text: String,
+        size: CleansiaButtonSize = .large,
+        leadingIcon: String? = nil,
+        loading: Bool = false,
+        enabled: Bool = true,
+        action: @escaping () -> Void
+    ) {
+        self.text = text
+        self.size = size
+        self.leadingIcon = leadingIcon
+        self.loading = loading
+        self.enabled = enabled
+        self.action = action
+    }
+
+    public var body: some View {
+        Button(role: .destructive, action: action) {
+            ZStack {
+                if loading {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .tint(CleansiaColors.error)
+                } else {
+                    HStack(spacing: Spacing.xs) {
+                        if let leadingIcon {
+                            Image(systemName: leadingIcon).font(.system(size: 16, weight: .semibold))
+                        }
+                        Text(text).font(CleansiaTypography.titleMedium)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: size.minHeight)
+            .padding(.horizontal, size.horizontalPadding)
+            .foregroundColor(CleansiaColors.error)
+            .background(
+                CleansiaColors.error.opacity(0.12),
+                in: RoundedRectangle(cornerRadius: CornerRadius.large)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.large)
+                    .stroke(CleansiaColors.error.opacity(0.4), lineWidth: 1)
+            )
+            .opacity(enabled && !loading ? 1 : 0.55)
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled || loading)
+    }
+}
+
 public struct CleansiaTextLink: View {
     private let text: String
     private let action: () -> Void
@@ -144,6 +206,7 @@ public struct CleansiaTextLink: View {
                 CleansiaPrimaryButton("Loading", loading: true) {}
                 CleansiaPrimaryButton("Disabled", enabled: false) {}
                 CleansiaOutlinedButton("Continue with Google", leadingIcon: "globe") {}
+                CleansiaDangerButton("Delete account", leadingIcon: "trash") {}
                 CleansiaTextLink("Forgot password?") {}
             }
             .padding()

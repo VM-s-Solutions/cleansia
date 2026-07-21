@@ -21,10 +21,19 @@ public class AppleAuth
             // Identity (email, subject, email_verified) and the account-type safety guard are bound from
             // the VERIFIED Apple identity token in the Handler, never from the client (S1). The validator
             // therefore keeps ONLY shape rules on the fields the handler actually uses: the token and the
-            // raw nonce (both verified server-side) and the first-login display name (Apple returns a name
-            // only on the first authorization, so the client-provided value is the only available source).
-            AddFirstNameRules(command => command.FirstName);
-            AddLastNameRules(command => command.LastName);
+            // raw nonce (both verified server-side). The display name is optional here — Apple returns a
+            // name ONLY on the first authorization, may omit the family name, and sends no name at all on
+            // every later sign-in, so requiring it would reject legitimate logins. When a value is present
+            // it is only length-capped; identity never depends on it.
+            RuleFor(command => command.FirstName)
+                .MaximumLength(50)
+                .WithMessage(BusinessErrorMessage.MaxLength)
+                .WithErrorCode(nameof(Command.FirstName));
+
+            RuleFor(command => command.LastName)
+                .MaximumLength(50)
+                .WithMessage(BusinessErrorMessage.MaxLength)
+                .WithErrorCode(nameof(Command.LastName));
 
             RuleFor(command => command.IdentityToken)
                 .NotEmpty()
@@ -41,8 +50,8 @@ public class AppleAuth
     public record Command(
         string IdentityToken,
         string RawNonce,
-        string FirstName,
-        string LastName)
+        string? FirstName,
+        string? LastName)
         : ICommand<JwtTokenResponse>;
 
     public class Handler(
@@ -94,14 +103,35 @@ public class AppleAuth
                     new Error(nameof(Command.IdentityToken), BusinessErrorMessage.InvalidAppleUserToken));
             }
 
-            // FirstName / LastName are kept from the command — Apple returns a name claim only on the first
-            // authorization, so the client-provided display name is the only available source for those two.
-            var userEntity = User.CreateWithApple(claims.Email, command.FirstName, command.LastName, claims.Subject);
+            // The display name is taken from the command only for provisioning — Apple returns a name
+            // claim only on the first authorization, so the client-provided value is the only source, and
+            // it may be absent or partial (see ResolveDisplayName). Identity is the verified claims.
+            var (firstName, lastName) = ResolveDisplayName(command.FirstName, command.LastName);
+            var userEntity = User.CreateWithApple(claims.Email, firstName, lastName, claims.Subject);
 
             userRepository.Add(userEntity);
             cartRepository.Add(Cart.CreateWithUser(userEntity));
 
             return BusinessResult.Success(await tokenService.GenerateTokenAsync(userEntity, rememberMe: true, hostAudience.Audience, cancellationToken));
+        }
+
+        // Apple hands the name only on the first authorization and may omit the family name entirely, or
+        // fold the whole name into a single field. Take whatever it gives: an empty last name is allowed;
+        // when only a space-separated full name arrives, split off the first token as the given name so the
+        // family name isn't needlessly left blank.
+        private static (string FirstName, string LastName) ResolveDisplayName(string? firstName, string? lastName)
+        {
+            var first = (firstName ?? string.Empty).Trim();
+            var last = (lastName ?? string.Empty).Trim();
+
+            if (last.Length == 0 && first.Contains(' '))
+            {
+                var separatorIndex = first.IndexOf(' ');
+                last = first[(separatorIndex + 1)..].Trim();
+                first = first[..separatorIndex];
+            }
+
+            return (first, last);
         }
     }
 }

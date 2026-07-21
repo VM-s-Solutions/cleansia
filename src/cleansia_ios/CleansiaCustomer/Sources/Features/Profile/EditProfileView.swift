@@ -31,24 +31,28 @@ struct EditProfileView: View {
                     CleansiaTextField(
                         value: $firstName,
                         label: L10n.EditProfile.firstName,
-                        errorText: missingFieldError(firstName, message: L10n.Auth.errorFirstNameRequired)
+                        errorText: missingFieldError(firstName, message: L10n.Auth.errorFirstNameRequired),
+                        textContentType: .givenName
                     )
                     CleansiaTextField(
                         value: $lastName,
                         label: L10n.EditProfile.lastName,
-                        errorText: missingFieldError(lastName, message: L10n.Auth.errorLastNameRequired)
+                        errorText: missingFieldError(lastName, message: L10n.Auth.errorLastNameRequired),
+                        textContentType: .familyName
                     )
                     CleansiaTextField(
                         value: .constant(vm.currentUser?.email ?? ""),
                         label: L10n.EditProfile.email,
                         helper: L10n.EditProfile.emailReadonly,
+                        textContentType: .emailAddress,
                         enabled: false
                     )
                     CleansiaTextField(
                         value: $phone,
                         label: L10n.EditProfile.phone,
                         errorText: missingFieldError(phone, message: L10n.EditProfile.phoneRequired),
-                        keyboardType: .phonePad
+                        keyboardType: .phonePad,
+                        textContentType: .telephoneNumber
                     )
                     BirthDateField(
                         birthDate: $birthDate,

@@ -67,7 +67,13 @@ public class MobileLogin
 
             user.ResetLoginThrottle();
 
-            return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, command.RememberMe, hostAudience.Audience, cancellationToken));
+            // Native customer app: issue a long-lived (RefreshTokenExpDays) refresh token regardless of
+            // the client's rememberMe toggle. A phone is a personal device and users expect a persistent
+            // session (Wolt/Bolt-style) — the short 1-day token would sign them out after a day of not
+            // opening the app. The refresh expiry slides on every rotation, so the session survives as
+            // long as the app refreshes within the window. Parity with the social (Apple/Google) paths,
+            // which already force the long lifetime.
+            return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken));
         }
     }
 }

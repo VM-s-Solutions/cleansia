@@ -66,6 +66,10 @@ private struct SignInContent: View {
         !form.email.isBlank && !form.password.isBlank
     }
 
+    private var formDisabled: Bool {
+        isLoading || isSocialLoading
+    }
+
     var body: some View {
         CenteredAuthScroll {
             VStack(spacing: 0) {
@@ -92,7 +96,8 @@ private struct SignInContent: View {
                     label: L10n.Auth.email,
                     errorText: form.emailError,
                     keyboardType: .emailAddress,
-                    enabled: !isLoading
+                    textContentType: .username,
+                    enabled: !formDisabled
                 )
 
                 Spacer().frame(height: Spacing.xs)
@@ -101,8 +106,9 @@ private struct SignInContent: View {
                     value: passwordBinding,
                     label: L10n.Auth.password,
                     errorText: form.passwordError,
+                    textContentType: .password,
                     isPassword: true,
-                    enabled: !isLoading
+                    enabled: !formDisabled
                 )
 
                 Spacer().frame(height: Spacing.xs)
@@ -112,13 +118,14 @@ private struct SignInContent: View {
                     Spacer()
                     CleansiaTextLink(L10n.Auth.forgotPassword, action: onForgotPassword)
                 }
+                .disabled(formDisabled)
 
                 Spacer().frame(height: Spacing.m)
 
                 CleansiaPrimaryButton(
                     L10n.Auth.signIn,
                     loading: isLoading,
-                    enabled: canSubmit,
+                    enabled: canSubmit && !isSocialLoading,
                     action: onSubmit
                 )
 
@@ -139,6 +146,11 @@ private struct SignInContent: View {
             .padding(.vertical, Spacing.xl)
         }
         .background(CleansiaColors.background.ignoresSafeArea())
+        .overlay {
+            if isSocialLoading {
+                AuthAuthenticatingOverlay()
+            }
+        }
     }
 }
 

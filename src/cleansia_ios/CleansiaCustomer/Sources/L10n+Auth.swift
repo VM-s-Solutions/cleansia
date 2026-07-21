@@ -189,5 +189,9 @@ extension L10n {
         static var socialFailed: String {
             localized("auth_social_failed")
         }
+
+        static var signingIn: String {
+            localized("auth_signing_in")
+        }
     }
 }

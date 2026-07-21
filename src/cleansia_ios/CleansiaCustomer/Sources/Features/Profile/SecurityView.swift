@@ -67,8 +67,18 @@ struct SecurityView: View {
             Text(L10n.Security.codeHelper)
                 .font(CleansiaTypography.labelSmall)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
-            CleansiaTextField(value: $code, label: L10n.Security.codeLabel, keyboardType: .numberPad)
-            CleansiaTextField(value: $newPassword, label: L10n.Security.newPassword, isPassword: true)
+            CleansiaTextField(
+                value: $code,
+                label: L10n.Security.codeLabel,
+                keyboardType: .numberPad,
+                textContentType: .oneTimeCode
+            )
+            CleansiaTextField(
+                value: $newPassword,
+                label: L10n.Security.newPassword,
+                textContentType: .newPassword,
+                isPassword: true
+            )
             PasswordRuleList(
                 rules: [
                     PasswordRule(label: L10n.Auth.ruleMinLength, isSatisfied: PasswordPolicy.hasMinLength(newPassword)),
@@ -77,7 +87,12 @@ struct SecurityView: View {
                 ],
                 hasInput: !newPassword.isEmpty
             )
-            CleansiaTextField(value: $confirmPassword, label: L10n.Security.confirmPassword, isPassword: true)
+            CleansiaTextField(
+                value: $confirmPassword,
+                label: L10n.Security.confirmPassword,
+                textContentType: .newPassword,
+                isPassword: true
+            )
             CleansiaPrimaryButton(
                 L10n.Security.updateButton,
                 loading: vm.changeState.isSubmitting,

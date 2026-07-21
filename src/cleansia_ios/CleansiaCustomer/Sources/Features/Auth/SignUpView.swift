@@ -53,6 +53,10 @@ private struct SignUpContent: View {
         Binding(get: { value }, set: setter)
     }
 
+    private var formDisabled: Bool {
+        isLoading || isSocialLoading
+    }
+
     var body: some View {
         CenteredAuthScroll {
             VStack(spacing: 0) {
@@ -79,13 +83,15 @@ private struct SignUpContent: View {
                         value: binding(form.firstName, onFirstNameChange),
                         label: L10n.Auth.firstName,
                         errorText: form.firstNameError,
-                        enabled: !isLoading
+                        textContentType: .givenName,
+                        enabled: !formDisabled
                     )
                     CleansiaTextField(
                         value: binding(form.lastName, onLastNameChange),
                         label: L10n.Auth.lastName,
                         errorText: form.lastNameError,
-                        enabled: !isLoading
+                        textContentType: .familyName,
+                        enabled: !formDisabled
                     )
                 }
 
@@ -96,7 +102,8 @@ private struct SignUpContent: View {
                     label: L10n.Auth.email,
                     errorText: form.emailError,
                     keyboardType: .emailAddress,
-                    enabled: !isLoading
+                    textContentType: .emailAddress,
+                    enabled: !formDisabled
                 )
 
                 Spacer().frame(height: Spacing.xs)
@@ -105,8 +112,9 @@ private struct SignUpContent: View {
                     value: binding(form.password, onPasswordChange),
                     label: L10n.Auth.password,
                     errorText: form.passwordError,
+                    textContentType: .newPassword,
                     isPassword: true,
-                    enabled: !isLoading
+                    enabled: !formDisabled
                 )
 
                 PasswordRuleList(
@@ -124,8 +132,9 @@ private struct SignUpContent: View {
                     value: binding(form.confirmPassword, onConfirmPasswordChange),
                     label: L10n.Auth.confirmPassword,
                     errorText: form.confirmPasswordError,
+                    textContentType: .newPassword,
                     isPassword: true,
-                    enabled: !isLoading
+                    enabled: !formDisabled
                 )
 
                 PasswordRuleList(
@@ -140,7 +149,7 @@ private struct SignUpContent: View {
                 CleansiaPrimaryButton(
                     L10n.Auth.signUp,
                     loading: isLoading,
-                    enabled: form.isValid,
+                    enabled: form.isValid && !isSocialLoading,
                     action: onSubmit
                 )
 
@@ -161,6 +170,11 @@ private struct SignUpContent: View {
             .padding(.vertical, Spacing.xl)
         }
         .background(CleansiaColors.background.ignoresSafeArea())
+        .overlay {
+            if isSocialLoading {
+                AuthAuthenticatingOverlay()
+            }
+        }
     }
 }
 

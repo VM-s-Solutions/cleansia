@@ -22,6 +22,11 @@ public enum CleansiaFont {
         return .custom(name, size: size)
     }
 
+    public static func uiFont(_ family: CleansiaFontFamily, weight: Font.Weight, size: CGFloat) -> UIFont {
+        let candidate = "\(family.rawValue)-\(suffix(for: weight))"
+        return UIFont(name: candidate, size: size) ?? .systemFont(ofSize: size)
+    }
+
     private static func registeredName(_ family: CleansiaFontFamily, weight: Font.Weight) -> String? {
         let candidate = "\(family.rawValue)-\(suffix(for: weight))"
         return UIFont(name: candidate, size: 1) != nil ? candidate : nil

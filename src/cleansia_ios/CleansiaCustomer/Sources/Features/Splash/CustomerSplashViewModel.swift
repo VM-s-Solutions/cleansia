@@ -8,8 +8,8 @@ final class CustomerSplashViewModel: ViewModel {
     private let hasValidSession: Bool
     private let hold: () async -> Void
 
-    /// The default hold mirrors Android's SplashScreen.kt pacing: a 600ms
-    /// fade-in plus a 1200ms brand hold before auto-advancing.
+    /// The default hold (1.8s) gives the branded splash time to play its letter-by-letter reveal
+    /// before the gate auto-advances — matching Android's SplashScreen.kt brand-hold pacing.
     init(
         hasValidSession: Bool,
         hold: @escaping () async -> Void = { try? await Task.sleep(nanoseconds: 1_800_000_000) }

@@ -52,7 +52,8 @@ final class SplashViewModelTests: XCTestCase {
         SplashViewModel(
             hasValidSession: hasValidSession,
             settings: FakeSettings(hasSeenOnboarding: hasSeenOnboarding),
-            client: client
+            client: client,
+            hold: {}
         )
     }
 

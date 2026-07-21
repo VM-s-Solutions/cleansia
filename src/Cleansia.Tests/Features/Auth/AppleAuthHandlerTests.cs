@@ -200,6 +200,83 @@ public class AppleAuthHandlerTests
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    // Regression (the reported bug): Apple omits the family name on the first authorization, so the
+    // command arrives with a null LastName. Provisioning must succeed and store an empty last name — never
+    // fail with "last name is required".
+    [Fact]
+    public async Task Missing_LastName_Provisions_User_With_Empty_LastName()
+    {
+        const string verifiedEmail = "no-last-name@example.com";
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("apple-sub-nolast", verifiedEmail, EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(verifiedEmail, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        var command = new AppleAuth.Command(
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "Jane", LastName: null);
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _userRepository.Verify(r => r.Add(It.Is<User>(u =>
+            u.Email == verifiedEmail &&
+            u.FirstName == "Jane" &&
+            u.LastName == string.Empty &&
+            u.AuthenticationType == AuthenticationType.Apple)), Times.Once);
+        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Once);
+    }
+
+    // A later Apple sign-in that provisions (e.g. the account was deleted and recreated) carries no name
+    // at all — both fields null. Provisioning must still succeed with empty names.
+    [Fact]
+    public async Task Missing_Both_Names_Provisions_User_With_Empty_Names()
+    {
+        const string verifiedEmail = "no-name@example.com";
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("apple-sub-noname", verifiedEmail, EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(verifiedEmail, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        var command = new AppleAuth.Command(
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: null, LastName: null);
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _userRepository.Verify(r => r.Add(It.Is<User>(u =>
+            u.Email == verifiedEmail &&
+            u.FirstName == string.Empty &&
+            u.LastName == string.Empty)), Times.Once);
+    }
+
+    // When Apple folds the whole name into the given-name field and sends no family name, split off the
+    // first token so the last name isn't left blank unnecessarily.
+    [Fact]
+    public async Task Full_Name_In_FirstName_Is_Split_Into_First_And_Last()
+    {
+        const string verifiedEmail = "full-name@example.com";
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("apple-sub-full", verifiedEmail, EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(verifiedEmail, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        var command = new AppleAuth.Command(
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "Jane Doe", LastName: null);
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _userRepository.Verify(r => r.Add(It.Is<User>(u =>
+            u.FirstName == "Jane" &&
+            u.LastName == "Doe")), Times.Once);
+    }
+
     // Inactive existing Apple user is rejected (mirrors the Google handler).
     [Fact]
     public async Task Inactive_Existing_User_Is_Rejected()

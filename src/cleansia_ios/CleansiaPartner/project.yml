@@ -58,14 +58,12 @@ targets:
         # Static launch screen — parity analogue of Android's system splash
         # background (Theme.Cleansia.Splash windowSplashScreenBackground, with
         # the values-night dark variant). Also opts the app into native
-        # full-screen rendering (without it iOS letterboxes). Deliberately
-        # color-only: on the iOS 16.4 simulator UIImageName either scales the
-        # image to fill the screen (broken giant mascot) or silently renders
-        # nothing for padded variants. The partner's in-app SplashGateView is
-        # still a plain ProgressView gate (no mascot splash; the customer app
-        # has the branded one).
-        UILaunchScreen:
-          UIColorName: SplashBackground
+        # full-screen rendering (without it iOS letterboxes). Branded launch
+        # storyboard (T-0426): full-bleed SplashBackground colour + the centered
+        # "Cleansia PARTNER" wordmark (LaunchScreen.storyboard), Auto-Layout-
+        # constrained so it avoids the old UIImageName scaling bug. The partner
+        # in-app SplashGateView now shows the same letter-by-letter wordmark reveal.
+        UILaunchStoryboardName: LaunchScreen
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         # T-0403 debug: Firebase's app-delegate swizzling proxy is the only

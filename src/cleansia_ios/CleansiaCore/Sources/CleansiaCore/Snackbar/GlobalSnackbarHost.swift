@@ -58,7 +58,7 @@ struct SnackbarPill: View {
         .padding(.vertical, 10)
         .padding(.leading, Spacing.s)
         .padding(.trailing, Spacing.xs)
-        .background(pillBackground(accent: palette.accent))
+        .background(pillBackground)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -69,7 +69,26 @@ struct SnackbarPill: View {
 
     private func severityBadge(_ palette: SnackbarPalette.Palette) -> some View {
         ZStack {
-            Circle().fill(palette.accent)
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [palette.accentTop, palette.accentBottom],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay(
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [.white.opacity(0.35), .clear],
+                                startPoint: .top,
+                                endPoint: .center
+                            )
+                        )
+                )
+                .overlay(Circle().strokeBorder(.white.opacity(0.18), lineWidth: 0.5))
+                .shadow(color: palette.accentBottom.opacity(0.35), radius: 2.5, y: 1)
             Image(systemName: palette.symbol)
                 .font(.system(size: 15, weight: .bold))
                 .foregroundColor(.white)
@@ -78,40 +97,44 @@ struct SnackbarPill: View {
         .accessibilityHidden(true)
     }
 
-    private func pillBackground(accent: Color) -> some View {
+    private var pillBackground: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
             .fill(CleansiaColors.surface)
-            .overlay(alignment: .leading) {
-                Capsule()
-                    .fill(accent)
-                    .frame(width: 4)
-                    .padding(.vertical, 12)
-                    .padding(.leading, 5)
-            }
     }
 }
 
 enum SnackbarPalette {
     struct Palette {
-        let accent: Color
+        let accentTop: Color
+        let accentBottom: Color
         let symbol: String
     }
 
     static func palette(for severity: SnackbarSeverity) -> Palette {
         switch severity {
         case .error:
-            Palette(accent: CleansiaColors.error, symbol: "exclamationmark.circle.fill")
+            Palette(accentTop: errorTop, accentBottom: errorBottom, symbol: "exclamationmark.circle.fill")
         case .success:
-            Palette(accent: successAccent, symbol: "checkmark.circle.fill")
+            Palette(accentTop: successTop, accentBottom: successBottom, symbol: "checkmark.circle.fill")
         case .info:
-            Palette(accent: CleansiaColors.primary, symbol: "info.circle.fill")
+            Palette(accentTop: infoTop, accentBottom: infoBottom, symbol: "info.circle.fill")
         case .warning:
-            Palette(accent: warningAccent, symbol: "exclamationmark.triangle.fill")
+            Palette(accentTop: warningTop, accentBottom: warningBottom, symbol: "exclamationmark.triangle.fill")
         }
     }
 
-    private static let successAccent = Color.dynamic(light: Color(hex: 0x16A34A), dark: Color(hex: 0x22C55E))
-    private static let warningAccent = Color.dynamic(light: Color(hex: 0xF59E0B), dark: Color(hex: 0xFBBF24))
+    private static let successTop = Color.dynamic(light: Color(hex: 0x22C55E), dark: Color(hex: 0x4ADE80))
+    private static let successBottom = Color.dynamic(light: Color(hex: 0x16A34A), dark: Color(hex: 0x22C55E))
+
+    private static let errorTop = Color.dynamic(light: Color(hex: 0xEF4444), dark: Color(hex: 0xF87171))
+    private static let errorBottom = Color.dynamic(light: Color(hex: 0xDC2626), dark: Color(hex: 0xEF4444))
+
+    // Info rides the sky brand ramp (its light bottom is sky-600, i.e. CleansiaColors.primary).
+    private static let infoTop = Color.dynamic(light: Color(hex: 0x0EA5E9), dark: Color(hex: 0x38BDF8))
+    private static let infoBottom = Color.dynamic(light: Color(hex: 0x0284C7), dark: Color(hex: 0x0EA5E9))
+
+    private static let warningTop = Color.dynamic(light: Color(hex: 0xF59E0B), dark: Color(hex: 0xFBBF24))
+    private static let warningBottom = Color.dynamic(light: Color(hex: 0xD97706), dark: Color(hex: 0xF59E0B))
 }
 
 #if DEBUG
@@ -120,10 +143,11 @@ enum SnackbarPalette {
             ForEach([ColorScheme.light, .dark], id: \.self) { scheme in
                 VStack(spacing: 12) {
                     SnackbarPill(message: SnackbarMessage(text: "Order could not be cancelled", severity: .error)) {}
-                    SnackbarPill(message: SnackbarMessage(text: "Saved", severity: .success)) {}
-                    SnackbarPill(message: SnackbarMessage(text: "Heads up", severity: .info)) {}
+                    SnackbarPill(message: SnackbarMessage(text: "Booking saved", severity: .success)) {}
+                    SnackbarPill(message: SnackbarMessage(text: "Heads up — check your details", severity: .info)) {}
                     SnackbarPill(message: SnackbarMessage(text: "Careful now", severity: .warning)) {}
                 }
+                .frame(maxWidth: 380)
                 .padding()
                 .background(CleansiaColors.background)
                 .environment(\.colorScheme, scheme)

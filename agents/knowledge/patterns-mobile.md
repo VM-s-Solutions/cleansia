@@ -371,7 +371,21 @@ so the rest of the row felt dead. **AutoFill:** every call site passes an explic
 `textContentType:` (login identifier `.username` + `.password`; sign-up `.emailAddress`/`.newPassword`;
 `.givenName`/`.familyName`/`.telephoneNumber`; one-time codes `.oneTimeCode` — already baked into
 `CodeInput`). A field with no `textContentType` makes the QuickType/Keychain suggestion fill nothing
-and jump to the next field.
+and jump to the next field. **`textContentType` is necessary but NOT sufficient (T-0433):** when
+Password AutoFill fills the credential pair it sets the **non-focused** field's text programmatically,
+and a SwiftUI `TextField(text:)` only writes its binding on user-editing events for the *focused*
+field — so the fill never reaches the binding (worsened by a custom `Binding(get:set:)` call site),
+the field shows empty and focus jumps on. The fix is structural, not another modifier:
+`CleansiaTextField`'s inner input is a **`UIViewRepresentable`-backed `UITextField`** (a private
+`ManagedTextField`/`TrackingTextField` in the Core component) whose coordinator captures **both**
+`.editingChanged` AND any programmatic `.text` set (via a `text` `didSet` on a `UITextField` subclass,
+guarded by an `isApplyingBinding` flag so our own binding→field sync doesn't loop). It bridges
+`@FocusState` manually — a plain `@State focused` Bool drives `becomeFirstResponder()`/`resignFirstResponder()`
+in `updateUIView` (dispatched async to avoid mutating state mid-update), and the delegate's begin/end-editing
+reports back into `focused` so the floating-label/border logic is unchanged. The password-visibility toggle
+flips `isSecureTextEntry` and **re-seats the text** (empty-then-back, binding-guarded) to clear UITextField's
+purge-on-toggle while restoring the caret offset. Keep the public `init` stable — it's a shared component
+across both apps and many forms.
 
 **Partner router — the ONE way (ADR-0020, reviewer #23):** the partner app's **top-level audience** (logged-out
 / resolving / locked / in-shell) is the **flat-enum `PartnerRootView` root-switch** — a closed `enum Route`

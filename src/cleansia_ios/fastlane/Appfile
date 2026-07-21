@@ -1,0 +1,4 @@
+# app_identifier is passed per lane (two apps share this config), so it is not
+# set here. The signing team comes from the environment — never hardcoded, same
+# convention as the Stripe key — so it stays out of git.
+team_id(ENV["ASC_TEAM_ID"]) if ENV["ASC_TEAM_ID"]

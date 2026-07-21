@@ -1,0 +1,114 @@
+# frozen_string_literal: true
+
+# Cleansia iOS — local TestFlight lanes.
+#
+# Run from src/cleansia_ios:
+#   bundle exec fastlane customer   # build + upload the Customer app
+#   bundle exec fastlane partner    # build + upload the Partner app
+#   bundle exec fastlane all        # both, in sequence
+#
+# These run on the OWNER'S MAC, on purpose: it already has the working-tree
+# Stripe publishable key + GoogleService-Info.plist (both gitignored) and the
+# Xcode-managed signing identity, so nothing secret ever has to live in CI.
+# Auth + the signing team come entirely from the environment — see
+# fastlane/.env.example. Copy it to fastlane/.env (gitignored) and fill it in.
+
+require "shellwords"
+
+default_platform(:ios)
+
+IOS_ROOT = File.expand_path("..", __dir__)
+
+APPS = {
+  customer: {
+    scheme: "CleansiaCustomer",
+    project: "CleansiaCustomer/CleansiaCustomer.xcodeproj",
+    bundle_id: "cz.cleansia.customer",
+  },
+  partner: {
+    scheme: "CleansiaPartner",
+    project: "CleansiaPartner/CleansiaPartner.xcodeproj",
+    bundle_id: "cz.cleansia.partner",
+  },
+}.freeze
+
+platform :ios do
+  desc "Build + upload the Customer app to TestFlight"
+  lane :customer do
+    ship(:customer)
+  end
+
+  desc "Build + upload the Partner app to TestFlight"
+  lane :partner do
+    ship(:partner)
+  end
+
+  desc "Build + upload BOTH apps to TestFlight"
+  lane :all do
+    ship(:customer)
+    ship(:partner)
+  end
+end
+
+# Regenerate → bump → archive → upload for one app.
+def ship(key)
+  app = APPS.fetch(key)
+  team_id = ENV.fetch("ASC_TEAM_ID")
+
+  api_key = app_store_connect_api_key(
+    key_id: ENV.fetch("ASC_KEY_ID"),
+    issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+    key_filepath: ENV.fetch("ASC_KEY_PATH"),
+  )
+
+  # 1. Regenerate the two gitignored, build-required inputs from their source of
+  #    truth: the OpenAPI Swift client packages and the .xcodeproj. This also
+  #    re-bakes the working-tree Stripe key + Info.plist from project.yml.
+  app_dir = File.join(IOS_ROOT, app[:project].split("/").first)
+  sh("cd #{IOS_ROOT.shellescape} && ./scripts/generate-api-clients.sh")
+  sh("cd #{app_dir.shellescape} && xcodegen generate")
+
+  # 2. Next build number = one past the highest already on TestFlight (0 → 1 for
+  #    the very first upload). TestFlight rejects a duplicate build number.
+  build_number = latest_testflight_build_number(
+    api_key: api_key,
+    app_identifier: app[:bundle_id],
+    initial_build_number: 0,
+  ) + 1
+  UI.message("📦 #{app[:bundle_id]} → build ##{build_number}")
+
+  # 3. Archive (Release, device) with Xcode-managed automatic signing. The build
+  #    number is injected as an xcarg — never edited into project.yml — so it
+  #    survives the xcodegen regen above and applies to the app + its Live
+  #    Activity extension together (they must share a version).
+  build_app(
+    project: File.join(IOS_ROOT, app[:project]),
+    scheme: app[:scheme],
+    configuration: "Release",
+    export_method: "app-store",
+    output_directory: File.join(IOS_ROOT, "build"),
+    output_name: "#{app[:scheme]}.ipa",
+    clean: true,
+    xcargs: "CURRENT_PROJECT_VERSION=#{build_number} DEVELOPMENT_TEAM=#{team_id} -allowProvisioningUpdates",
+    # Let Xcode create/download the App Store profile at export time too (not
+    # just archive), so a first non-interactive run can provision the app + the
+    # Live Activity extension.
+    export_xcargs: "-allowProvisioningUpdates",
+    export_team_id: team_id,
+    export_options: {
+      signingStyle: "automatic",
+      teamID: team_id,
+    },
+  )
+
+  # 4. Ship. Internal testers get it within minutes of processing (no Beta App
+  #    Review); external testers need a one-time review, enabled per-app in ASC.
+  upload_to_testflight(
+    api_key: api_key,
+    app_identifier: app[:bundle_id],
+    skip_waiting_for_build_processing: true,
+    distribute_external: false,
+  )
+
+  UI.success("✅ #{app[:bundle_id]} build ##{build_number} uploaded to TestFlight")
+end

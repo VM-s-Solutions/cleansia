@@ -161,15 +161,15 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
 
   readonly gradeOptions: ICleansiaSelectOption[] = [
     {
-      label: this.translate.instant('pages.employee_detail.grade.junior'),
+      label: this.translate.instant('pages.employee_detail.grade_junior'),
       value: 'junior',
     },
     {
-      label: this.translate.instant('pages.employee_detail.grade.medior'),
+      label: this.translate.instant('pages.employee_detail.grade_medior'),
       value: 'medior',
     },
     {
-      label: this.translate.instant('pages.employee_detail.grade.senior'),
+      label: this.translate.instant('pages.employee_detail.grade_senior'),
       value: 'senior',
     },
   ];

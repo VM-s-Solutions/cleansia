@@ -71,6 +71,8 @@ targets:
         # full-screen or dropped padded variants. The gradient + letter-by-letter
         # reveal continue in the in-app SplashGateView.
         UILaunchStoryboardName: LaunchScreen
+        # Home-screen app name — show "Cleansia" rather than the PRODUCT_NAME ("CleansiaCustomer").
+        CFBundleDisplayName: Cleansia
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         # T-0403 debug: Firebase's app-delegate swizzling proxy is the only

@@ -2,78 +2,77 @@ import XCTest
 @testable import CleansiaCore
 
 final class AnimatedMascotPlaybackTests: XCTestCase {
-    func testLoopingNeverStops() {
-        XCTAssertFalse(AnimatedMascotPlayback.shouldStop(loop: true, frameIndex: 0, frameCount: 10))
-        XCTAssertFalse(AnimatedMascotPlayback.shouldStop(loop: true, frameIndex: 9, frameCount: 10))
-    }
-
-    func testOneShotStopsOnLastFrame() {
-        XCTAssertFalse(AnimatedMascotPlayback.shouldStop(loop: false, frameIndex: 0, frameCount: 10))
-        XCTAssertFalse(AnimatedMascotPlayback.shouldStop(loop: false, frameIndex: 8, frameCount: 10))
-        XCTAssertTrue(AnimatedMascotPlayback.shouldStop(loop: false, frameIndex: 9, frameCount: 10))
-    }
-
-    func testOneShotWithUnknownFrameCountKeepsPlaying() {
-        XCTAssertFalse(AnimatedMascotPlayback.shouldStop(loop: false, frameIndex: 100, frameCount: 0))
-    }
+    // MARK: shouldRestart
 
     func testFirstRenderRestarts() {
         XCTAssertTrue(AnimatedMascotPlayback.shouldRestart(
-            activeData: nil, activeLoop: nil, data: Data([1]), loop: true
+            currentName: nil, currentLoop: nil, name: "m", loop: true, force: false
         ))
     }
 
-    func testSameDataAndLoopDoesNotRestart() {
-        let data = Data([1, 2, 3])
+    func testSameMascotAndLoopDoesNotRestart() {
         XCTAssertFalse(AnimatedMascotPlayback.shouldRestart(
-            activeData: data, activeLoop: true, data: data, loop: true
+            currentName: "m", currentLoop: true, name: "m", loop: true, force: false
         ))
     }
 
-    func testChangedDataRestarts() {
+    func testForceAlwaysRestarts() {
         XCTAssertTrue(AnimatedMascotPlayback.shouldRestart(
-            activeData: Data([1]), activeLoop: true, data: Data([2]), loop: true
+            currentName: "m", currentLoop: true, name: "m", loop: true, force: true
+        ))
+    }
+
+    func testChangedMascotRestarts() {
+        XCTAssertTrue(AnimatedMascotPlayback.shouldRestart(
+            currentName: "m", currentLoop: true, name: "other", loop: true, force: false
         ))
     }
 
     func testChangedLoopRestarts() {
-        let data = Data([1])
         XCTAssertTrue(AnimatedMascotPlayback.shouldRestart(
-            activeData: data, activeLoop: false, data: data, loop: true
+            currentName: "m", currentLoop: false, name: "m", loop: true, force: false
         ))
     }
 
-    func testPinsFinalFrameOnUpdateAfterOneShotCompletes() {
-        XCTAssertTrue(AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(
-            loop: false, hasCompletedFrame: true, superseded: false
-        ))
+    // MARK: animationRepeatCount
+
+    func testLoopingRepeatsForever() {
+        XCTAssertEqual(AnimatedMascotPlayback.animationRepeatCount(loop: true), 0)
     }
 
-    func testDoesNotPinBeforeOneShotHasCompleted() {
-        XCTAssertFalse(AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(
-            loop: false, hasCompletedFrame: false, superseded: false
-        ))
+    func testOneShotPlaysOnce() {
+        XCTAssertEqual(AnimatedMascotPlayback.animationRepeatCount(loop: false), 1)
     }
 
-    func testNeverPinsFinalFrameWhileLooping() {
-        XCTAssertFalse(AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(
-            loop: true, hasCompletedFrame: true, superseded: false
-        ))
-    }
-
-    func testDoesNotPinFinalFrameWhenSupersededByNewerRun() {
-        XCTAssertFalse(AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(
-            loop: false, hasCompletedFrame: true, superseded: true
-        ))
-    }
+    // MARK: isSuperseded
 
     func testCurrentGenerationIsNotSuperseded() {
-        XCTAssertFalse(AnimatedMascotPlayback.isSuperseded(generation: 2, activeGeneration: 2))
+        XCTAssertFalse(AnimatedMascotPlayback.isSuperseded(token: 2, generation: 2))
     }
 
     func testOlderGenerationIsSuperseded() {
-        XCTAssertTrue(AnimatedMascotPlayback.isSuperseded(generation: 1, activeGeneration: 2))
+        XCTAssertTrue(AnimatedMascotPlayback.isSuperseded(token: 1, generation: 2))
     }
+
+    // MARK: totalDuration
+
+    func testTotalDurationUsesSummedDelaysWhenPresent() {
+        XCTAssertEqual(AnimatedMascotPlayback.totalDuration(summedDelays: 2.5, frameCount: 50), 2.5)
+    }
+
+    func testTotalDurationFallsBackTo30fpsWhenNoDelays() {
+        XCTAssertEqual(AnimatedMascotPlayback.totalDuration(summedDelays: 0, frameCount: 60), 2.0, accuracy: 0.0001)
+    }
+
+    func testTotalDurationAvoidsZeroForEmptyFrames() {
+        XCTAssertEqual(
+            AnimatedMascotPlayback.totalDuration(summedDelays: 0, frameCount: 0),
+            1.0 / 30.0,
+            accuracy: 0.0001
+        )
+    }
+
+    // MARK: asset names
 
     func testAnimatedMascotAssetNames() {
         XCTAssertEqual(AnimatedMascot.cleaningInProgress.rawValue, "mascot_cleaning_in_progress")

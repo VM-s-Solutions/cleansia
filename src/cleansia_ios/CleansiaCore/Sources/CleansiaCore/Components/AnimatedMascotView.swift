@@ -7,25 +7,31 @@ public enum AnimatedMascot: String {
     case welcoming = "mascot_welcoming"
 }
 
+/// Pure playback decisions for `AnimatedImageView`, factored out so they are unit-testable
+/// without a running UIKit view or a real asset.
 enum AnimatedMascotPlayback {
-    static func shouldStop(loop: Bool, frameIndex: Int, frameCount: Int) -> Bool {
-        !loop && frameCount > 0 && frameIndex >= frameCount - 1
+    /// Whether a render pass should (re)start playback: a brand-new view (`force`), or a
+    /// changed mascot/loop. An identical, non-forced re-render is skipped so a running loop
+    /// isn't restarted and no work is redone.
+    static func shouldRestart(currentName: String?, currentLoop: Bool?, name: String, loop: Bool, force: Bool) -> Bool {
+        force || currentName != name || currentLoop != loop
     }
 
-    static func shouldRestart(activeData: Data?, activeLoop: Bool?, data: Data, loop: Bool) -> Bool {
-        activeData != data || activeLoop != loop
+    /// `UIImageView.animationRepeatCount`: infinite (0) for a loop, once (1) for a one-shot —
+    /// which then freezes on its final frame via the pinned `image`.
+    static func animationRepeatCount(loop: Bool) -> Int {
+        loop ? 0 : 1
     }
 
-    static func isSuperseded(generation: Int, activeGeneration: Int) -> Bool {
-        generation != activeGeneration
+    /// A decode delivered after a newer render superseded it must be dropped.
+    static func isSuperseded(token: Int, generation: Int) -> Bool {
+        token != generation
     }
 
-    /// Whether a layout/update pass should re-assert the pinned final frame.
-    /// Only for a completed one-shot that is still the current run: a looping
-    /// run has no final frame, an un-finished run hasn't captured one yet, and
-    /// a superseded run must yield the view to its successor.
-    static func shouldPinFinalFrameOnUpdate(loop: Bool, hasCompletedFrame: Bool, superseded: Bool) -> Bool {
-        !loop && hasCompletedFrame && !superseded
+    /// Total loop duration from the summed per-frame delays, with a ~30fps fallback when the
+    /// source reports none.
+    static func totalDuration(summedDelays: TimeInterval, frameCount: Int) -> TimeInterval {
+        summedDelays > 0 ? summedDelays : Double(max(frameCount, 1)) / 30.0
     }
 }
 
@@ -33,14 +39,23 @@ enum AnimatedMascotPlayback {
 /// mirroring Android's Coil-backed `MascotAnimation`. With `loop: false` the
 /// animation plays once and freezes on the final frame. Falls back to the
 /// static mascot image when the data asset is missing or cannot be animated.
+///
+/// Performance: the frames are decoded ONCE — downsampled, off the main thread —
+/// then cached and played by `UIImageView`'s built-in frame animator. This
+/// avoids the previous `CGAnimateImageDataWithBlock` path, which re-decoded the
+/// full-size WebP frame-by-frame on the MAIN thread on every loop (and reloaded
+/// the ~1.7 MB asset on every SwiftUI body evaluation), the source of the jank
+/// on the order-detail hero and the busy loader.
 public struct AnimatedMascotView: View {
+    private let mascot: AnimatedMascot
     private let data: Data?
     private let loop: Bool
     private let fallback: Mascot
     private let bundle: Bundle
 
     public init(_ mascot: AnimatedMascot, loop: Bool = true, fallback: Mascot, bundle: Bundle = .main) {
-        data = NSDataAsset(name: mascot.rawValue, bundle: bundle)?.data
+        self.mascot = mascot
+        data = MascotAssetCache.shared.data(for: mascot, bundle: bundle)
         self.loop = loop
         self.fallback = fallback
         self.bundle = bundle
@@ -48,7 +63,7 @@ public struct AnimatedMascotView: View {
 
     public var body: some View {
         if let data {
-            AnimatedImageView(data: data, loop: loop, fallback: fallback, bundle: bundle)
+            AnimatedImageView(name: mascot.rawValue, data: data, loop: loop, fallback: fallback, bundle: bundle)
         } else {
             Image(fallback.rawValue, bundle: bundle)
                 .resizable()
@@ -57,7 +72,131 @@ public struct AnimatedMascotView: View {
     }
 }
 
+/// One decoded, ready-to-play animation: pre-rendered frames plus the total loop
+/// duration (sum of the WebP per-frame delays).
+struct MascotAnimation {
+    let frames: [UIImage]
+    let duration: TimeInterval
+}
+
+/// Process-wide caches for the raw asset `Data` and the decoded frames, so the
+/// heavy work happens at most once per asset. Both are `NSCache`, so the system
+/// evicts them under memory pressure.
+final class MascotAssetCache {
+    static let shared = MascotAssetCache()
+
+    private let dataCache = NSCache<NSString, NSData>()
+    private let frameCache = NSCache<NSString, FrameBox>()
+    private let decodeQueue = DispatchQueue(label: "cleansia.mascot.decode", qos: .userInitiated)
+
+    /// Frames are decoded at the asset's native size (360 px). The mascots render up to 220 pt
+    /// (booking/membership success hero) and 140 pt (loader / order hero) — i.e. ~660 / ~420 px
+    /// at @3x, both already above native — so there is no useful detail to downsample away.
+    /// Trade-off: the full loop is held in memory (~65 MB for 125 frames) in an NSCache the system
+    /// purges under pressure; a running animation keeps its own strong ref, so a purge only forces
+    /// a re-decode next time.
+    private let maxPixel: CGFloat = 360
+
+    final class FrameBox {
+        let animation: MascotAnimation
+        init(_ animation: MascotAnimation) {
+            self.animation = animation
+        }
+    }
+
+    func data(for mascot: AnimatedMascot, bundle: Bundle) -> Data? {
+        let key = "\(mascot.rawValue)#\(bundle.bundleIdentifier ?? "main")" as NSString
+        if let cached = dataCache.object(forKey: key) { return cached as Data }
+        guard let data = NSDataAsset(name: mascot.rawValue, bundle: bundle)?.data else { return nil }
+        dataCache.setObject(data as NSData, forKey: key)
+        return data
+    }
+
+    func cachedAnimation(name: String) -> MascotAnimation? {
+        frameCache.object(forKey: frameKey(name))?.animation
+    }
+
+    /// Decode all frames off the main thread, cache them, and call back on the main thread. If
+    /// already cached, calls back synchronously. The frame cache is keyed by asset name + size;
+    /// every call site uses the main bundle, where asset names are unique.
+    func loadAnimation(name: String, data: Data, completion: @escaping (MascotAnimation?) -> Void) {
+        if let hit = cachedAnimation(name: name) {
+            completion(hit)
+            return
+        }
+        let maxPixel = maxPixel
+        let key = frameKey(name)
+        decodeQueue.async { [weak self] in
+            // Re-check: a concurrent first-load may have populated the cache while this was queued.
+            if let hit = self?.frameCache.object(forKey: key)?.animation {
+                DispatchQueue.main.async { completion(hit) }
+                return
+            }
+            let animation = MascotAssetCache.decode(data: data, maxPixel: maxPixel)
+            if let animation {
+                self?.frameCache.setObject(FrameBox(animation), forKey: key)
+            }
+            DispatchQueue.main.async { completion(animation) }
+        }
+    }
+
+    private func frameKey(_ name: String) -> NSString {
+        "\(name)#\(Int(maxPixel))" as NSString
+    }
+
+    /// A single downsampled poster frame (frame 0), for an instant image while
+    /// the full animation decodes. Cheap — one thumbnail, not the whole loop.
+    func posterFrame(data: Data) -> UIImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              CGImageSourceGetCount(source) > 0,
+              let frame = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                  kCGImageSourceCreateThumbnailFromImageAlways: true,
+                  kCGImageSourceCreateThumbnailWithTransform: true,
+                  kCGImageSourceThumbnailMaxPixelSize: maxPixel
+              ] as CFDictionary)
+        else { return nil }
+        return UIImage(cgImage: frame)
+    }
+
+    private static func decode(data: Data, maxPixel: CGFloat) -> MascotAnimation? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        let count = CGImageSourceGetCount(source)
+        guard count > 0 else { return nil }
+
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixel,
+            kCGImageSourceShouldCacheImmediately: true
+        ]
+
+        var frames: [UIImage] = []
+        frames.reserveCapacity(count)
+        var total: TimeInterval = 0
+        for index in 0 ..< count {
+            guard let frame = CGImageSourceCreateThumbnailAtIndex(source, index, options as CFDictionary)
+            else { continue }
+            frames.append(UIImage(cgImage: frame))
+            total += frameDelay(source, index)
+        }
+        guard !frames.isEmpty else { return nil }
+        let duration = AnimatedMascotPlayback.totalDuration(summedDelays: total, frameCount: frames.count)
+        return MascotAnimation(frames: frames, duration: duration)
+    }
+
+    private static func frameDelay(_ source: CGImageSource, _ index: Int) -> TimeInterval {
+        guard let props = CGImageSourceCopyPropertiesAtIndex(source, index, nil) as? [CFString: Any],
+              let webp = props[kCGImagePropertyWebPDictionary] as? [CFString: Any]
+        else { return 1.0 / 30.0 }
+        let delay = (webp[kCGImagePropertyWebPUnclampedDelayTime] as? Double)
+            ?? (webp[kCGImagePropertyWebPDelayTime] as? Double)
+        if let delay, delay > 0 { return delay }
+        return 1.0 / 30.0
+    }
+}
+
 private struct AnimatedImageView: UIViewRepresentable {
+    let name: String
     let data: Data
     let loop: Bool
     let fallback: Mascot
@@ -74,115 +213,68 @@ private struct AnimatedImageView: UIViewRepresentable {
         view.setContentHuggingPriority(.defaultLow, for: .vertical)
         view.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         view.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
-        context.coordinator.animateIfNeeded(self, on: view)
+        // A brand-new view always needs its frames, even if the coordinator was
+        // already showing this mascot in a previous (reused) view.
+        context.coordinator.render(self, on: view, force: true)
         return view
     }
 
     func updateUIView(_ view: UIImageView, context: Context) {
-        context.coordinator.animateIfNeeded(self, on: view)
+        context.coordinator.render(self, on: view, force: false)
     }
 
     final class Coordinator {
-        private var activeData: Data?
-        private var activeLoop: Bool?
-        private var activeGeneration = 0
-        private var pinnedFinalFrame: UIImage?
-        private var completedGeneration: Int?
+        private var currentName: String?
+        private var currentLoop: Bool?
+        private var generation = 0
 
-        func animateIfNeeded(_ representable: AnimatedImageView, on view: UIImageView) {
+        func render(_ representable: AnimatedImageView, on view: UIImageView, force: Bool) {
+            let name = representable.name
+            let loop = representable.loop
             guard AnimatedMascotPlayback.shouldRestart(
-                activeData: activeData,
-                activeLoop: activeLoop,
-                data: representable.data,
-                loop: representable.loop
-            ) else {
-                reassertPinnedFinalFrame(loop: representable.loop, on: view)
+                currentName: currentName, currentLoop: currentLoop, name: name, loop: loop, force: force
+            ) else { return }
+            currentName = name
+            currentLoop = loop
+            generation += 1
+            let token = generation // snapshot; a newer mascot supersedes this run
+            let cache = MascotAssetCache.shared
+
+            if let animation = cache.cachedAnimation(name: name) {
+                apply(animation, loop: loop, on: view)
                 return
             }
-            activeData = representable.data
-            activeLoop = representable.loop
-            activeGeneration += 1
-            pinnedFinalFrame = nil
-            completedGeneration = nil
-            start(representable, on: view, generation: activeGeneration)
-        }
 
-        private func start(_ representable: AnimatedImageView, on view: UIImageView, generation: Int) {
-            let data = representable.data
-            let loop = representable.loop
-            let source = CGImageSourceCreateWithData(data as CFData, nil)
-            let frameCount = source.map(CGImageSourceGetCount) ?? 0
-            // A superseded run must stop itself via the stop flag: CGAnimateImageData
-            // has no cancel handle, so the generation token is the only way to kill
-            // the old animation when SwiftUI reuses the UIImageView for a new mascot.
-            let frameHandler: CGImageSourceAnimationBlock = { [weak view, weak self] index, cgImage, stop in
-                guard let view, let self, !AnimatedMascotPlayback.isSuperseded(
-                    generation: generation, activeGeneration: activeGeneration
-                ) else {
-                    stop.pointee = true
-                    return
-                }
-                view.image = UIImage(cgImage: cgImage)
-                // CGAnimateImageDataWithBlock ignores the WebP's baked-in loop count and
-                // repeats forever, so the one-shot must stop itself on the final frame.
-                if AnimatedMascotPlayback.shouldStop(loop: loop, frameIndex: index, frameCount: frameCount) {
-                    stop.pointee = true
-                    completeOneShot(
-                        source: source, frameIndex: index, delivered: cgImage,
-                        on: view, generation: generation
-                    )
-                }
-            }
-            let status = CGAnimateImageDataWithBlock(data as CFData, nil, frameHandler)
-            if status != noErr {
-                let fallback = staticFrame(from: source)
-                    ?? UIImage(named: representable.fallback.rawValue, in: representable.bundle, with: nil)
-                view.image = fallback
-                if !loop, let fallback { pin(fallback, generation: generation, on: view) }
+            // Stop any prior run before the poster so a reused, still-looping view can't keep
+            // showing the previous mascot until the new decode lands.
+            view.stopAnimating()
+            view.animationImages = nil
+            // Instant poster while the full loop decodes off the main thread.
+            view.image = cache.posterFrame(data: representable.data)
+                ?? UIImage(named: representable.fallback.rawValue, in: representable.bundle, with: nil)
+
+            cache.loadAnimation(name: name, data: representable.data) { [weak self, weak view] animation in
+                guard let self, let view, let animation,
+                      !AnimatedMascotPlayback.isSuperseded(token: token, generation: generation)
+                else { return }
+                apply(animation, loop: loop, on: view)
             }
         }
 
-        /// Freezes the ending pose so it survives SwiftUI relayout and view reuse.
-        /// The block's own last frame is transient — a later `updateUIView`, or a
-        /// fresh `UIImageView` SwiftUI hands us after the one-shot ends, leaves the
-        /// view imageless. Pinning the decoded final frame and re-asserting it on
-        /// every update keeps the mascot on screen indefinitely.
-        private func completeOneShot(
-            source: CGImageSource?,
-            frameIndex: Int,
-            delivered: CGImage,
-            on view: UIImageView,
-            generation: Int
-        ) {
-            let finalFrame = source
-                .flatMap { CGImageSourceCreateImageAtIndex($0, max(frameIndex, 0), nil) }
-                .map(UIImage.init(cgImage:)) ?? UIImage(cgImage: delivered)
-            pin(finalFrame, generation: generation, on: view)
-            DispatchQueue.main.async { [weak self, weak view] in
-                guard let self, let view else { return }
-                reassertPinnedFinalFrame(loop: false, on: view)
+        private func apply(_ animation: MascotAnimation, loop: Bool, on view: UIImageView) {
+            guard animation.frames.count > 1 else {
+                view.stopAnimating()
+                view.animationImages = nil
+                view.image = animation.frames.first
+                return
             }
-        }
-
-        private func pin(_ frame: UIImage, generation: Int, on view: UIImageView) {
-            pinnedFinalFrame = frame
-            completedGeneration = generation
-            view.image = frame
-        }
-
-        private func reassertPinnedFinalFrame(loop: Bool, on view: UIImageView) {
-            let superseded = completedGeneration != activeGeneration
-            guard AnimatedMascotPlayback.shouldPinFinalFrameOnUpdate(
-                loop: loop, hasCompletedFrame: pinnedFinalFrame != nil, superseded: superseded
-            ), let frame = pinnedFinalFrame, view.image !== frame else { return }
-            view.image = frame
-        }
-
-        private func staticFrame(from source: CGImageSource?) -> UIImage? {
-            guard let source, CGImageSourceGetCount(source) > 0,
-                  let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil)
-            else { return nil }
-            return UIImage(cgImage: cgImage)
+            view.animationImages = animation.frames
+            view.animationDuration = animation.duration
+            view.animationRepeatCount = AnimatedMascotPlayback.animationRepeatCount(loop: loop)
+            // The `image` shows through once a one-shot stops animating, so pin
+            // the final frame there — that is the frozen ending pose.
+            view.image = animation.frames.last
+            view.startAnimating()
         }
     }
 }

@@ -50,7 +50,11 @@ final class OrderDetailViewModel: ViewModel {
         snackbar: SnackbarController,
         eventBus: OrderEventBus,
         liveActivity: OrderLiveActivitySyncing = LiveActivityBridge(),
-        pollInterval: TimeInterval = 5 * 60,
+        // Active-order tracking cadence. Short so an OnTheWay → InProgress change surfaces (and the Live
+        // Activity is updated) within ~30s while the detail screen is open, instead of up to 5 minutes.
+        // Scoped to active orders and only ticks while foregrounded (the sleeping task suspends in the
+        // background), so the extra polling is bounded. App-closed immediacy still needs the backend push.
+        pollInterval: TimeInterval = 30,
         now: @escaping () -> Date = Date.init
     ) {
         self.orderId = orderId
@@ -132,11 +136,17 @@ final class OrderDetailViewModel: ViewModel {
         if OrderStatusGroup.isActive(status) {
             guard let start = order.cleaningDateTime else { return }
             let end = start.addingTimeInterval(TimeInterval(max(order.estimatedTime ?? 0, 1) * 60))
+            let wireStatus = OrderStatusGroup.liveActivityStatus(status)
+            let orderNumber = order.displayOrderNumber ?? ""
+            // start is idempotent (creates the activity once, with the current status); update rewrites a
+            // running activity so an OnTheWay → InProgress transition flips the card to "Cleaning in progress".
             liveActivity.start(
-                orderId: orderId,
-                orderNumber: order.displayOrderNumber ?? "",
-                scheduledStart: start,
-                scheduledEnd: end
+                orderId: orderId, orderNumber: orderNumber, status: wireStatus,
+                scheduledStart: start, scheduledEnd: end
+            )
+            liveActivity.update(
+                orderId: orderId, orderNumber: orderNumber, status: wireStatus,
+                scheduledStart: start, scheduledEnd: end
             )
         } else if OrderStatusGroup.isCompleted(status) || OrderStatusGroup.isCancelled(status) {
             liveActivity.end(orderId: orderId)

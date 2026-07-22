@@ -299,8 +299,8 @@ private struct HeroGradient: View {
             EditProfileChip(onEdit: onEdit)
         }
         .padding(.horizontal, Spacing.ml)
-        .padding(.top, Spacing.m + topInset)
-        .padding(.bottom, Spacing.m)
+        .padding(.top, Spacing.xl + topInset)
+        .padding(.bottom, Spacing.l)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom)

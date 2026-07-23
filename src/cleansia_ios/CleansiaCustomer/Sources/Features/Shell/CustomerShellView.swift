@@ -40,7 +40,7 @@ struct CustomerShellView: View {
             CleansiaColors.background.ignoresSafeArea()
             NavigationStack(path: $model.path) {
                 tabs
-                    .background(InteractivePopGestureEnabler())
+                    .background(InteractivePopGestureEnabler(onPop: { model.pop() }))
                     .toolbar(.hidden, for: .navigationBar)
                     .navigationDestination(for: ShellRoute.self) { route in
                         destination(route)
@@ -380,64 +380,58 @@ extension CustomerShellView {
     }
 }
 
-/// Restores the swipe-to-go-back gesture that `.toolbar(.hidden, for:
-/// .navigationBar)` on the shell root otherwise disables: hiding the bar leaves
-/// the shell's `interactivePopGestureRecognizer` without a delegate, so UIKit
-/// stops firing it. Re-pointing the delegate re-enables the swipe while the bar
-/// stays hidden, and gating on the stack depth keeps the root from swiping into
-/// an empty stack. Scoped to the shell's own navigation controller.
+/// Edge-only swipe-to-go-back. `.toolbar(.hidden, for: .navigationBar)` on the shell root disables the
+/// system pop gesture, and re-enabling it by replacing that recognizer's delegate strips its private
+/// left-edge scoping — which makes the WHOLE page draggable sideways (worst on tall/scrollable pages).
+/// So we leave the system recognizer OFF and install our OWN `UIScreenEdgePanGestureRecognizer(edges:
+/// .left)`, which is edge-scoped by construction (it physically cannot begin mid-page), and pop through
+/// the SwiftUI `NavigationPath` via `onPop` so navigation state stays in sync (no `popViewController`
+/// desync, no private API).
 private struct InteractivePopGestureEnabler: UIViewControllerRepresentable {
+    let onPop: () -> Void
+
     func makeUIViewController(context _: Context) -> GestureController {
-        GestureController()
+        let controller = GestureController()
+        controller.onPop = onPop
+        return controller
     }
 
-    /// Re-assert on every update as well: if this controller attaches before the
-    /// ancestor UINavigationController joins the parent chain, `navigationController`
-    /// is nil at `didMove` and the swipe would stay dead with no retry.
+    /// Re-run install on update too: if this attaches before the ancestor UINavigationController joins
+    /// the parent chain, `navigationController` is nil at `didMove` and the gesture would never install.
     func updateUIViewController(_ controller: GestureController, context _: Context) {
-        controller.reassertGesture()
+        controller.onPop = onPop
+        controller.installIfNeeded()
     }
 
-    final class GestureController: UIViewController, UIGestureRecognizerDelegate {
-        /// ~30pt left-edge band, matching UIKit's own screen-edge slop.
-        private let edgeWidth: CGFloat = 30
+    final class GestureController: UIViewController {
+        var onPop: (() -> Void)?
+        private weak var edgeGesture: UIScreenEdgePanGestureRecognizer?
 
         override func didMove(toParent parent: UIViewController?) {
             super.didMove(toParent: parent)
-            reassertGesture()
+            installIfNeeded()
         }
 
-        func reassertGesture() {
-            guard let gesture = navigationController?.interactivePopGestureRecognizer else { return }
-            gesture.delegate = self
-            gesture.isEnabled = true
+        func installIfNeeded() {
+            guard let navView = navigationController?.view, edgeGesture == nil else { return }
+            // Keep the system pop recognizer OFF — re-enabling it under a hidden nav bar needs a
+            // delegate swap that strips its edge scoping and lets the whole page drag. Our own
+            // left-edge gesture below is edge-scoped by construction instead.
+            navigationController?.interactivePopGestureRecognizer?.isEnabled = false
+            let gesture = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleEdgePan(_:)))
+            gesture.edges = .left
+            navView.addGestureRecognizer(gesture)
+            edgeGesture = gesture
         }
 
-        /// The AUTHORITATIVE gate. `NavigationStack`'s pop recognizer is Apple's private
-        /// `_UIParallaxTransitionPanGestureRecognizer`, whose left-edge scoping is enforced by its
-        /// ORIGINAL delegate — which we had to replace to keep swipe-back alive under a hidden nav bar.
-        /// That makes it full-width, and `shouldReceive` is NOT honored as the begin decision for it, so
-        /// `x`-filtering there leaked (the whole page could be dragged). `shouldBegin` returning false
-        /// HARD-STOPS the recognizer, so re-impose the edge here: reconstruct the touch-DOWN x as
-        /// (location − translation) and only begin for a rightward swipe that STARTED at the left edge —
-        /// a drag originating mid-page can never begin, scrollable or not.
-        func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
-            guard (navigationController?.viewControllers.count ?? 0) > 1 else { return false }
-            guard let pan = gesture as? UIPanGestureRecognizer else { return true }
-            let location = pan.location(in: gesture.view)
-            let translation = pan.translation(in: gesture.view)
-            let startX = location.x - translation.x
-            return startX <= edgeWidth && translation.x > 0
-        }
-
-        /// Keep: lets the (now edge-only) back-swipe co-fire with the vertical scroll on a tall page,
-        /// so the scroll pan doesn't starve it. Safe because `shouldBegin` already rejects any drag that
-        /// didn't start at the edge, regardless of simultaneity.
-        func gestureRecognizer(
-            _: UIGestureRecognizer,
-            shouldRecognizeSimultaneouslyWith _: UIGestureRecognizer
-        ) -> Bool {
-            true
+        @objc private func handleEdgePan(_ gesture: UIScreenEdgePanGestureRecognizer) {
+            guard gesture.state == .ended else { return }
+            let translation = gesture.translation(in: gesture.view)
+            let velocity = gesture.velocity(in: gesture.view)
+            // A committed rightward edge-swipe (dragged far enough, or a flick) pops.
+            if translation.x > 60 || velocity.x > 600 {
+                onPop?()
+            }
         }
     }
 }

@@ -55,6 +55,15 @@ targets:
     info:
       path: Info.plist
       properties:
+        # Version + build wired to the target's MARKETING_VERSION /
+        # CURRENT_PROJECT_VERSION build settings (xcodegen would otherwise bake
+        # literal "1.0"/"1"), so a release bump is a single settings change and
+        # fastlane can override CURRENT_PROJECT_VERSION per TestFlight upload.
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # Standard HTTPS/Keychain only — exempt from export compliance, so every
+        # TestFlight upload skips the encryption-usage question.
+        ITSAppUsesNonExemptEncryption: false
         # Static launch screen — parity analogue of Android's system splash
         # background (Theme.Cleansia.Splash windowSplashScreenBackground, with
         # the values-night dark variant). Also opts the app into native

@@ -28,6 +28,12 @@ enum AnimatedMascotPlayback {
         token != generation
     }
 
+    /// Whether a view that just entered a window should (re)start playback: it has frames staged and
+    /// isn't already animating. Guards the off-window `startAnimating` that leaves the mascot frozen.
+    static func shouldResumePlayback(hasWindow: Bool, hasFrames: Bool, isAnimating: Bool) -> Bool {
+        hasWindow && hasFrames && !isAnimating
+    }
+
     /// Total loop duration from the summed per-frame delays, with a ~30fps fallback when the
     /// source reports none.
     static func totalDuration(summedDelays: TimeInterval, frameCount: Int) -> TimeInterval {
@@ -207,7 +213,7 @@ private struct AnimatedImageView: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> UIImageView {
-        let view = UIImageView()
+        let view = AnimatingImageView()
         view.contentMode = .scaleAspectFit
         view.setContentHuggingPriority(.defaultLow, for: .horizontal)
         view.setContentHuggingPriority(.defaultLow, for: .vertical)
@@ -274,7 +280,27 @@ private struct AnimatedImageView: UIViewRepresentable {
             // The `image` shows through once a one-shot stops animating, so pin
             // the final frame there — that is the frozen ending pose.
             view.image = animation.frames.last
+            // startAnimating() only takes effect once the view is on a window; apply() can run
+            // synchronously (cache hit) from makeUIView before that, so AnimatingImageView also
+            // (re)starts it in didMoveToWindow. Calling here too covers the already-on-window case.
             view.startAnimating()
+        }
+    }
+}
+
+/// A UIImageView that (re)starts its frame animation whenever it enters a window. UIKit's built-in
+/// animator only runs while the view is in a window and is dropped by an off-window
+/// `startAnimating()`; without this, a mascot applied synchronously from `makeUIView` (a frame-cache
+/// hit, i.e. every appearance after the first) would freeze on a single frame.
+private final class AnimatingImageView: UIImageView {
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if AnimatedMascotPlayback.shouldResumePlayback(
+            hasWindow: window != nil,
+            hasFrames: animationImages?.isEmpty == false,
+            isAnimating: isAnimating
+        ) {
+            startAnimating()
         }
     }
 }

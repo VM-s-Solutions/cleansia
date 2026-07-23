@@ -54,6 +54,32 @@ final class AnimatedMascotPlaybackTests: XCTestCase {
         XCTAssertTrue(AnimatedMascotPlayback.isSuperseded(token: 1, generation: 2))
     }
 
+    // MARK: shouldResumePlayback
+
+    func testResumesWhenOnWindowWithFramesAndStopped() {
+        XCTAssertTrue(AnimatedMascotPlayback.shouldResumePlayback(hasWindow: true, hasFrames: true, isAnimating: false))
+    }
+
+    func testDoesNotResumeOffWindow() {
+        XCTAssertFalse(AnimatedMascotPlayback.shouldResumePlayback(
+            hasWindow: false,
+            hasFrames: true,
+            isAnimating: false
+        ))
+    }
+
+    func testDoesNotResumeWithoutFrames() {
+        XCTAssertFalse(AnimatedMascotPlayback.shouldResumePlayback(
+            hasWindow: true,
+            hasFrames: false,
+            isAnimating: false
+        ))
+    }
+
+    func testDoesNotResumeWhileAlreadyAnimating() {
+        XCTAssertFalse(AnimatedMascotPlayback.shouldResumePlayback(hasWindow: true, hasFrames: true, isAnimating: true))
+    }
+
     // MARK: totalDuration
 
     func testTotalDurationUsesSummedDelaysWhenPresent() {

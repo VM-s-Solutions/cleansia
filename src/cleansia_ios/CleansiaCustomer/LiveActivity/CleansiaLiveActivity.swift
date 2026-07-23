@@ -85,6 +85,25 @@ private struct CleanStatus {
         self.showsProgress = showsProgress
         self.isTerminal = isTerminal
     }
+
+    /// Bundled mascot art for the active (non-terminal) states; the terminal states keep the clearer
+    /// checkmark / xmark SF Symbols. Lives in the widget's own asset catalog (LiveActivity/Assets.xcassets).
+    var mascotAsset: String? {
+        isTerminal ? nil : "mascot_live"
+    }
+}
+
+/// The status icon: the cleaning mascot for active states, an SF Symbol for terminal ones. Used where
+/// there's room (lock screen, expanded Dynamic Island); the tiny compact/minimal slots keep the symbol.
+@ViewBuilder
+private func statusIcon(_ status: CleanStatus, size: CGFloat) -> some View {
+    if let art = status.mascotAsset {
+        Image(art).resizable().scaledToFit().frame(width: size, height: size)
+    } else {
+        Image(systemName: status.symbol)
+            .font(.system(size: size * 0.62, weight: .semibold))
+            .foregroundStyle(Brand.sky)
+    }
 }
 
 // MARK: - Widget
@@ -102,7 +121,7 @@ struct CleanOrderLiveActivity: Widget {
                     Label {
                         Text(orderLabel(context.state.orderNumber)).font(.caption2)
                     } icon: {
-                        Image(systemName: status.symbol).foregroundStyle(Brand.sky)
+                        statusIcon(status, size: 20)
                     }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
@@ -155,10 +174,8 @@ private struct LockScreenLiveActivityView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 ZStack {
-                    Circle().fill(Brand.tint).frame(width: 40, height: 40)
-                    Image(systemName: status.symbol)
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(Brand.sky)
+                    Circle().fill(Brand.tint).frame(width: 46, height: 46)
+                    statusIcon(status, size: 34)
                 }
                 VStack(alignment: .leading, spacing: 1) {
                     Text(status.title).font(.headline)

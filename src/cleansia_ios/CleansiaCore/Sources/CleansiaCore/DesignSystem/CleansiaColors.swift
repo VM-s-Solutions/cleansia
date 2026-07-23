@@ -24,14 +24,6 @@ public enum CleansiaColors {
     public static let surfaceVariant = Color.dynamic(light: Palette.slate100, dark: Palette.darkSurfaceElevated)
     public static let onSurfaceVariant = Color.dynamic(light: Palette.slate700, dark: Palette.slate400)
 
-    // Inverse (Material) surface — a high-contrast pill that opposes the app
-    // background: a dark pill in light theme, a light pill in dark theme. Used
-    // by the global snackbar so it reads as a distinct, deliberate chip in both
-    // themes and both apps.
-    public static let inverseSurface = Color.dynamic(light: Palette.slate900, dark: Palette.slate100)
-    public static let onInverseSurface = Color.dynamic(light: .white, dark: Palette.slate900)
-    public static let onInverseSurfaceVariant = Color.dynamic(light: Palette.slate400, dark: Palette.slate500)
-
     public static let outline = Color.dynamic(light: Palette.slate200, dark: Palette.slate700)
     public static let outlineVariant = Color.dynamic(light: Palette.slate200, dark: Palette.slate700)
 

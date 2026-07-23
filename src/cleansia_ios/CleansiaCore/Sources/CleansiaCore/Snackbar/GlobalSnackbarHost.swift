@@ -45,12 +45,12 @@ struct SnackbarPill: View {
             severityBadge(palette)
             Text(message.text)
                 .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onInverseSurface)
+                .foregroundColor(CleansiaColors.onSurface)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(CleansiaColors.onInverseSurfaceVariant)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
                     .frame(width: 28, height: 28)
             }
             .accessibilityLabel(Text(CoreL10n.localized("snackbar.dismiss")))
@@ -62,7 +62,7 @@ struct SnackbarPill: View {
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .strokeBorder(CleansiaColors.onInverseSurface.opacity(0.12), lineWidth: 0.5)
+                .strokeBorder(CleansiaColors.outlineVariant.opacity(0.6), lineWidth: 0.5)
         )
         .shadow(color: .black.opacity(0.22), radius: 18, y: 8)
     }
@@ -82,7 +82,7 @@ struct SnackbarPill: View {
 
     private var pillBackground: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(CleansiaColors.inverseSurface)
+            .fill(CleansiaColors.surface)
     }
 }
 

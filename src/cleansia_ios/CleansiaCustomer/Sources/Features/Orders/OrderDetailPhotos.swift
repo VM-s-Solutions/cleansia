@@ -7,7 +7,9 @@ struct OrderPhotosSection: View {
     let onViewPhotos: () -> Void
 
     private var previewThumbs: [GetOrderPhotosOrderPhotoDto] {
-        Array((response.photos ?? []).prefix(6))
+        // A few previews that fit the card width without a horizontal scroll — the whole card is a
+        // button into the full gallery, so the row is just a teaser, not a scroller.
+        Array((response.photos ?? []).prefix(4))
     }
 
     var body: some View {
@@ -29,13 +31,15 @@ struct OrderPhotosSection: View {
                     PhotoCountPill(text: L10n.OrderPhotos.summaryBefore(response.beforePhotoCount ?? 0))
                     PhotoCountPill(text: L10n.OrderPhotos.summaryAfter(response.afterPhotoCount ?? 0))
                 }
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: Spacing.xs) {
-                        ForEach(Array(previewThumbs.enumerated()), id: \.offset) { _, photo in
-                            PhotoThumb(urlString: photo.blobUrl, size: 72)
-                        }
+                // Plain, non-scrolling row (clipped) — a horizontal ScrollView here captured the
+                // pan gesture and broke the edge-swipe-back on completed orders.
+                HStack(spacing: Spacing.xs) {
+                    ForEach(Array(previewThumbs.enumerated()), id: \.offset) { _, photo in
+                        PhotoThumb(urlString: photo.blobUrl, size: 72)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .clipped()
             }
         }
         .buttonStyle(.plain)

@@ -296,11 +296,15 @@ private struct HeroGradient: View {
                     .padding(.top, Spacing.xxs)
             }
             Spacer(minLength: Spacing.s)
+            // Center the chip vertically within the (taller) header while the avatar and
+            // name/email/badge stay top-anchored — the fill-height frame expands the chip to the
+            // row height and centers its content.
             EditProfileChip(onEdit: onEdit)
+                .frame(maxHeight: .infinity, alignment: .center)
         }
         .padding(.horizontal, Spacing.ml)
-        .padding(.top, Spacing.m + topInset)
-        .padding(.bottom, Spacing.m)
+        .padding(.top, 48 + topInset)
+        .padding(.bottom, 40)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom)

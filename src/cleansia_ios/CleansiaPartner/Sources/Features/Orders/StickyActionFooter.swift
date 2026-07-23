@@ -43,6 +43,14 @@ struct StickyActionFooter: View {
                     onConfirm: { onConfirm(.start) }
                 )
             }
+        case .collectCash:
+            footer {
+                CleansiaPrimaryButton(
+                    L10n.Orders.markCashCollected,
+                    loading: isBusy(.markCashCollected),
+                    action: { onConfirm(.collectCash) }
+                )
+            }
         case .complete:
             footer {
                 SlideToConfirm(

@@ -1062,6 +1062,10 @@
       "max_employees_exceeded": "Maximum number of employees exceeded",
       "not_in_progress": "Order is not in progress",
       "not_confirmed": "Order must be in confirmed status to start",
+      "cash_not_collected": "Collect the cash and mark it as received before completing this order.",
+      "cash_already_collected": "Cash has already been collected for this order.",
+      "not_cash_payment": "This isn't a cash order.",
+      "payment_not_confirmed": "This order's payment hasn't been confirmed yet.",
       "actual_time": {
         "positive": "Actual time must be positive"
       },

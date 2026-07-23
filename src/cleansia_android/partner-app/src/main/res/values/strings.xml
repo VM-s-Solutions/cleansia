@@ -984,6 +984,7 @@
     <string name="starting_order">Starting the job…</string>
     <string name="slide_to_complete">Slide to complete</string>
     <string name="completing_order">Completing…</string>
+    <string name="order_mark_cash_collected">Mark cash collected</string>
 
     <!-- Backend error-key translations. Resource names follow
          `error_key_<dot-replaced-with-underscore>` per
@@ -1182,6 +1183,10 @@
     <string name="error_order_completion_notes_required">Completion notes are required.</string>
     <string name="error_order_completion_notes_too_long">Completion notes are too long.</string>
     <string name="error_order_after_photos_required">Take at least one \"after\" photo before completing the order.</string>
+    <string name="error_order_cash_not_collected">Collect the cash and mark it as received before completing this order.</string>
+    <string name="error_order_payment_not_confirmed">This order\'s payment hasn\'t been confirmed yet.</string>
+    <string name="error_order_not_cash_payment">This isn\'t a cash order.</string>
+    <string name="error_order_cash_already_collected">Cash has already been collected for this order.</string>
 
     <!-- Order — notes / issues / review -->
     <string name="error_order_note_content_required">Note text is required.</string>

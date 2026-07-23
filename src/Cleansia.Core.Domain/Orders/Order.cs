@@ -43,6 +43,13 @@ public class Order : Auditable, ITenantEntity
 
     public PaymentStatus PaymentStatus { get; private set; } = PaymentStatus.Pending;
 
+    // Cash-collection audit: a card order flips to Paid via the Stripe webhook, but a CASH order stays
+    // Pending until the assigned cleaner physically collects the money and marks it (MarkCashCollected).
+    // These record WHO collected and WHEN, so completion of an unpaid cash order can be blocked with a trail.
+    public DateTime? CashCollectedAt { get; private set; }
+
+    public string? CollectedByEmployeeId { get; private set; }
+
     [Required]
     public decimal TotalPrice { get; private set; }
 
@@ -360,6 +367,18 @@ public class Order : Auditable, ITenantEntity
     public Order UpdatePaymentStatus(PaymentStatus paymentStatus)
     {
         PaymentStatus = paymentStatus;
+
+        return this;
+    }
+
+    // The cleaner collected the cash owed for a cash order. Flips the order to Paid (the same terminal
+    // state a Stripe-charged card order reaches) and stamps the audit trail. Idempotency + "cash orders
+    // only" are enforced in MarkCashCollected.Validator, so this stays a pure happy-path mutator.
+    public Order MarkCashCollected(string employeeId)
+    {
+        PaymentStatus = PaymentStatus.Paid;
+        CashCollectedAt = DateTime.UtcNow;
+        CollectedByEmployeeId = employeeId;
 
         return this;
     }

@@ -990,6 +990,7 @@
     <string name="starting_order">Начинаю уборку…</string>
     <string name="slide_to_complete">Проведите, чтобы завершить</string>
     <string name="completing_order">Завершаю…</string>
+    <string name="order_mark_cash_collected">Отметить наличные как полученные</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Перед завершением заказа сделайте хотя бы одну фотографию \"после\".</string>
@@ -1164,6 +1165,10 @@
     <string name="error_order_completion_notes_required">Заметки о завершении обязательны.</string>
     <string name="error_order_completion_notes_too_long">Заметки о завершении слишком длинные.</string>
     <string name="error_order_after_photos_required">Перед завершением заказа сделайте хотя бы одно фото «после».</string>
+    <string name="error_order_cash_not_collected">Прежде чем завершить заказ, получите наличные и отметьте их как принятые.</string>
+    <string name="error_order_payment_not_confirmed">Оплата за этот заказ ещё не подтверждена.</string>
+    <string name="error_order_not_cash_payment">Это не заказ с оплатой наличными.</string>
+    <string name="error_order_cash_already_collected">Наличные за этот заказ уже получены.</string>
 
     <string name="error_order_note_content_required">Текст заметки обязателен.</string>
     <string name="error_order_issue_description_required">Описание проблемы обязательно.</string>

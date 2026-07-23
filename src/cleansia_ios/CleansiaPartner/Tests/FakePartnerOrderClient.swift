@@ -99,6 +99,10 @@ final class FakePartnerOrderClient: PartnerOrderClient {
         await record("start", orderId)
     }
 
+    func markCashCollected(orderId: String) async -> ApiResult<Void> {
+        await record("markCashCollected", orderId)
+    }
+
     func completeOrder(orderId: String, actualMinutes _: Int?, notes _: String?) async -> ApiResult<Void> {
         await record("complete", orderId)
     }

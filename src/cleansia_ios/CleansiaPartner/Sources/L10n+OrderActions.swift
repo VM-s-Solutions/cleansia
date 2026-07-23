@@ -23,6 +23,14 @@ extension L10n.Orders {
         L10n.localized("starting_order")
     }
 
+    static var markCashCollected: String {
+        L10n.localized("partner_order_mark_cash_collected")
+    }
+
+    static var cashCollectedToast: String {
+        L10n.localized("cash_collected_toast")
+    }
+
     static var slideToComplete: String {
         L10n.localized("slide_to_complete")
     }

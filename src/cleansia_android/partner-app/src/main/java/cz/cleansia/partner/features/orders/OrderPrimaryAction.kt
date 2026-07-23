@@ -31,7 +31,7 @@ import cz.cleansia.partner.api.model.OrderStatus
  *   New / Confirmed, NOT mine:   Slide-to-take
  *   Confirmed (mine):            "Notify on the way" (single button)
  *   OnTheWay (mine):             Slide-to-start
- *   InProgress (mine):           "Complete order"
+ *   InProgress (mine):           "Mark cash collected" (unpaid cash) then Slide-to-complete
  *   Completed / Cancelled:       (nothing)
  *
  * Phase B added `isAssignedToCurrentUser` on the detail DTO, so we no
@@ -48,7 +48,9 @@ fun OrderPrimaryAction(
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
+    onMarkCashCollected: () -> Unit,
     canComplete: Boolean = true,
+    needsCashCollection: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     when (status) {
@@ -104,13 +106,27 @@ fun OrderPrimaryAction(
             // completion-notes are both optional on the backend.
             if (isAssignedToCurrentUser) {
                 if (canComplete) {
-                    SlideToCommit(
-                        idleLabel = stringResource(R.string.slide_to_complete),
-                        busyLabel = stringResource(R.string.completing_order),
-                        onCommit = onCompleteClick,
-                        isBusy = inFlight == OrderAction.Complete,
-                        modifier = modifier,
-                    )
+                    if (needsCashCollection) {
+                        // Cash order still unpaid — the server rejects
+                        // CompleteOrder until the cleaner records the cash.
+                        // Swap the complete slide for this button; marking
+                        // cash flips the order to Paid and the slide returns.
+                        CleansiaPrimaryButton(
+                            text = stringResource(R.string.order_mark_cash_collected),
+                            onClick = onMarkCashCollected,
+                            loading = inFlight == OrderAction.MarkCashCollected,
+                            enabled = inFlight == null,
+                            modifier = modifier,
+                        )
+                    } else {
+                        SlideToCommit(
+                            idleLabel = stringResource(R.string.slide_to_complete),
+                            busyLabel = stringResource(R.string.completing_order),
+                            onCommit = onCompleteClick,
+                            isBusy = inFlight == OrderAction.Complete,
+                            modifier = modifier,
+                        )
+                    }
                 } else {
                     // After-photos missing — show a soft hint so the
                     // cleaner sees what's blocking the slide. Server

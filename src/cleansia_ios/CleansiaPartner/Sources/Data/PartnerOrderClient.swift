@@ -26,6 +26,7 @@ protocol PartnerOrderClient: AnyObject {
     func takeOrder(orderId: String) async -> ApiResult<Void>
     func notifyOnTheWay(orderId: String) async -> ApiResult<Void>
     func startOrder(orderId: String) async -> ApiResult<Void>
+    func markCashCollected(orderId: String) async -> ApiResult<Void>
     func completeOrder(orderId: String, actualMinutes: Int?, notes: String?) async -> ApiResult<Void>
 
     func addNote(orderId: String, content: String) async -> ApiResult<Void>
@@ -122,6 +123,14 @@ final class LivePartnerOrderClient: PartnerOrderClient {
     func startOrder(orderId: String) async -> ApiResult<Void> {
         await apiResult(mapError: ApiError.fromGenerated) {
             _ = try await PartnerOrderAPI.orderStartOrder(startOrderCommand: StartOrderCommand(orderId: orderId))
+        }
+    }
+
+    func markCashCollected(orderId: String) async -> ApiResult<Void> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            _ = try await PartnerOrderAPI.orderMarkCashCollected(
+                markCashCollectedCommand: MarkCashCollectedCommand(orderId: orderId)
+            )
         }
     }
 

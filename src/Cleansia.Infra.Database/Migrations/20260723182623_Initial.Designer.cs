@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260720135235_Initial")]
+    [Migration("20260723182623_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -2967,8 +2967,14 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<DateTime?>("CashCollectedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("CleaningDateTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CollectedByEmployeeId")
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("timestamp with time zone");

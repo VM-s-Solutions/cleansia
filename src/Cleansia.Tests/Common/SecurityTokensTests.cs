@@ -121,9 +121,10 @@ public class SecurityTokensTests
         var raw = user.UpdateResetPasswordToken();
 
         Assert.False(string.IsNullOrWhiteSpace(raw));
-        // The reset token stays in the self-authenticating 128-bit class (it rides a link), NEVER the
-        // 6-digit OTP class — length is what discriminates the two on the confirm wire.
-        Assert.True(raw.Length >= 16, $"reset token must stay high-entropy: '{raw}'");
+        // The reset token is now a 6-digit typed OTP (same class as the email-confirmation code): the apps
+        // render six digit boxes and resolution is always (email + code) under the attempt budget + 15-min
+        // expiry, so the 6-digit space is safe (a bare-code lookup is never permitted).
+        Assert.Matches(@"^\d{6}$", raw);
         Assert.NotEqual(raw, user.ResetPasswordCode);
         Assert.Equal(SecurityTokens.Hash(raw), user.ResetPasswordCode);
     }

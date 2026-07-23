@@ -64,7 +64,10 @@ public class TokenServiceRecordLoginTests
         var response = await CreateSut().GenerateTokenAsync(user, rememberMe: false, Audience);
 
         var jwt = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().ReadJwtToken(response.Token);
-        Assert.Equal(Now.UtcDateTime, jwt.ValidFrom);
+        // NotBefore is deliberately backdated 60s to absorb inter-instance clock drift under ClockSkew=Zero
+        // (ADR-0024). Crucially, exp is STILL exactly Now + TTL — the revocation bound TC-REVOKE-TTL-2 pins is
+        // unchanged; only the not-before window widened.
+        Assert.Equal(Now.UtcDateTime.AddSeconds(-60), jwt.ValidFrom);
         Assert.Equal(Now.UtcDateTime.AddMinutes(15), jwt.ValidTo);
     }
 

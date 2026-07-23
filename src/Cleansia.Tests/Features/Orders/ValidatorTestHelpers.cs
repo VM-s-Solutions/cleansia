@@ -16,7 +16,12 @@ namespace Cleansia.Tests.Features.Orders;
 /// </summary>
 internal static class ValidatorTestHelpers
 {
-    public static Order BuildOrder(string orderId, OrderStatus currentStatus, string assignedEmployeeId)
+    public static Order BuildOrder(
+        string orderId,
+        OrderStatus currentStatus,
+        string assignedEmployeeId,
+        PaymentType paymentType = PaymentType.Cash,
+        PaymentStatus paymentStatus = PaymentStatus.Pending)
     {
         var address = Address.Create("123 Main St", "Prague", "11000", "cz");
         var order = Order.Create(
@@ -28,10 +33,10 @@ internal static class ValidatorTestHelpers
             bathrooms: 1,
             extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
-            paymentType: PaymentType.Cash,
+            paymentType: paymentType,
             totalPrice: 1000m,
             currencyId: "czk",
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: paymentStatus);
 
         order.Id = orderId;
 

@@ -1001,6 +1001,8 @@ namespace Cleansia.Infra.Database.Migrations
                     CleaningDateTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     PaymentType = table.Column<int>(type: "integer", nullable: false),
                     PaymentStatus = table.Column<int>(type: "integer", nullable: false),
+                    CashCollectedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CollectedByEmployeeId = table.Column<string>(type: "text", nullable: true),
                     TotalPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     NetAmount = table.Column<decimal>(type: "numeric", nullable: false),
                     VatAmount = table.Column<decimal>(type: "numeric", nullable: false),

@@ -168,12 +168,14 @@ public class User : Auditable, ITenantEntity
         };
 
     /// <summary>
-    /// Generates a fresh cryptographic password-reset token, persists only its hash, and RETURNS the
-    /// RAW token so the caller can email it. The raw value is never stored.
+    /// Generates a fresh 6-digit password-reset OTP (same shape as the email-confirmation code — the apps
+    /// render six digit boxes), persists only its hash, and RETURNS the RAW code so the caller can email it.
+    /// The raw value is never stored. Resolution is always (email + code) under the attempt budget + 15-min
+    /// expiry below, so a 6-digit space is safe against brute force (a bare-code lookup is never allowed).
     /// </summary>
     public string UpdateResetPasswordToken()
     {
-        var rawToken = SecurityTokens.Generate();
+        var rawToken = SecurityTokens.GenerateOtp();
         ResetPasswordCode = SecurityTokens.Hash(rawToken);
         ResetPasswordCodeExpiresAt = DateTime.UtcNow.AddMinutes(15);
         ResetPasswordCodeAttempts = 0;

@@ -78,6 +78,19 @@ struct OrderDetailPackage: Equatable, Hashable {
     }
 }
 
+/// Backend `PaymentType` / `PaymentStatus` wire values (the enum ordinals the
+/// `Code.value` envelope carries), the surrogate for the missing generated Swift
+/// enums the cash-collection gate compares against.
+enum PaymentTypeCode {
+    static let cash = 1
+    static let card = 2
+}
+
+enum PaymentStatusCode {
+    static let pending = 1
+    static let paid = 2
+}
+
 struct OrderDetailPayment: Equatable {
     let subtotal: Double?
     let total: Double?
@@ -86,10 +99,20 @@ struct OrderDetailPayment: Equatable {
     let promoDiscount: Double?
     let methodName: String?
     let statusName: String?
+    let typeCode: Int?
+    let statusCode: Int?
 
     var hasBreakdown: Bool {
         guard let subtotal, let total else { return false }
         return subtotal != total
+    }
+
+    var isCash: Bool {
+        typeCode == PaymentTypeCode.cash
+    }
+
+    var isSettled: Bool {
+        statusCode == PaymentStatusCode.paid
     }
 }
 
@@ -153,7 +176,9 @@ extension OrderDetail {
             membershipDiscount: item.membershipDiscountAmount,
             promoDiscount: item.promoDiscountAmount,
             methodName: item.paymentType?.name,
-            statusName: item.paymentStatus?.name
+            statusName: item.paymentStatus?.name,
+            typeCode: item.paymentType?.value,
+            statusCode: item.paymentStatus?.value
         )
 
         isAssignedToCurrentUser = item.isAssignedToCurrentUser ?? false

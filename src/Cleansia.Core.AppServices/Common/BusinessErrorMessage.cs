@@ -43,6 +43,11 @@ public static class BusinessErrorMessage
     public const string OrderInProgressCannotCancel = "order.in_progress_cannot_cancel";
     public const string InvalidOrderStatusTransition = "order.invalid_status_transition";
     public const string CancellationWindowClosed = "order.cancellation_window_closed";
+    // Cash-collection gating (cleaner marks cash collected before an order can be completed).
+    public const string OrderNotCashPayment = "order.not_cash_payment";
+    public const string OrderCashAlreadyCollected = "order.cash_already_collected";
+    public const string OrderCashNotCollected = "order.cash_not_collected";
+    public const string OrderPaymentNotConfirmed = "order.payment_not_confirmed";
     public const string AddressNotOwnedByUser = "address.not_owned_by_user";
     public const string AddressLabelRequired = "address.label_required";
     public const string SavedAddressAlreadyExists = "address.already_exists";

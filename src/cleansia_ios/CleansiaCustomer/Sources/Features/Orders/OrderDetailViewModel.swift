@@ -91,6 +91,11 @@ final class OrderDetailViewModel: ViewModel {
         switch await client.getById(orderId: orderId) {
         case let .success(order):
             state = .loaded(order)
+            // The in-progress hero plays the heavy 125-frame cleaning mascot; decode + pin it off-main as
+            // the detail loads so it's warm when the hero renders, instead of a ~5s first-paint freeze.
+            if order.status == ._4 {
+                AnimatedMascotView.prewarm(.cleaningInProgress)
+            }
             evaluatePoller(for: order)
             syncLiveActivity(for: order)
         case let .failure(error):

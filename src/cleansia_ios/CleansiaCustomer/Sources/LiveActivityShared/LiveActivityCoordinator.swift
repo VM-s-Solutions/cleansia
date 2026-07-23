@@ -5,14 +5,16 @@ import Foundation
 /// activity with a push token so the backend drives updates while the app is closed, hands the tokens to
 /// the backend via `LiveActivityRegistering`, and ends it on a terminal status.
 ///
-/// Wiring (done once the widget target builds green): the order-tracking screen calls `start(...)` when an
-/// order first reaches Confirmed/OnTheWay and `end(orderId:)` on Completed/Cancelled; app launch (post
-/// login) calls `beginPushToStartRegistration()` so the SERVER can start activities on iOS 17.2+.
+/// Wiring: the order-tracking screen calls `start(...)` when an order first reaches Confirmed/OnTheWay and
+/// `end(orderId:)` on Completed/Cancelled; app launch (post login) calls `beginPushToStartRegistration()`
+/// so the SERVER can start activities on iOS 17.2+.
 ///
-/// The backend registration itself is the one regen-gated piece: `LiveActivityRegistering`'s live
-/// implementation calls the generated `CleansiaCustomerApi` LiveActivity client, which only exists after
-/// the customer-mobile spec regen (T-0427 owner step). Until then a no-op keeps everything compiling and
-/// the local activity still starts/ends — it just isn't server-pushed yet.
+/// The live backend registrar IS installed at composition (CustomerAppContainer swaps the no-op default
+/// for `CustomerLiveActivityRegistrar`, which calls the generated `CleansiaCustomerApi` LiveActivity
+/// client), and the backend fires status pushes on transitions. So the server-push path is complete; the
+/// only remaining variable for updates on a CLOSED device is APNs Live-Activity delivery config on the
+/// environment. The on-device foreground `update(...)` path is the fast path while the app is active, and
+/// the widget's ETA countdown self-advances with no push either way.
 ///
 /// Floor is iOS 16.2 (the `ActivityContent` + push-token API); the app itself stays 16.0, so callers gate
 /// on `#available(iOS 16.2, *)`. On a rare 16.0/16.1 device no activity starts — harmless, the order still

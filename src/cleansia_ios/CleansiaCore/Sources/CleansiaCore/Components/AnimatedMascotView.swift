@@ -76,6 +76,14 @@ public struct AnimatedMascotView: View {
                 .scaledToFit()
         }
     }
+
+    /// Decode + pin a mascot's frames off the main thread AHEAD of the view that shows it. Call this as a
+    /// screen loads (e.g. an in-progress order's ViewModel) so the heavy 125-frame cleaning loop is warm
+    /// when its hero renders, instead of freezing on the first paint for ~5s while it decodes. Idempotent;
+    /// call on the main thread. The public seam onto the module-internal `MascotAssetCache`.
+    public static func prewarm(_ mascot: AnimatedMascot, bundle: Bundle = .main) {
+        MascotAssetCache.shared.prewarm(mascot, bundle: bundle)
+    }
 }
 
 /// One decoded, ready-to-play animation: pre-rendered frames plus the total loop
@@ -94,6 +102,13 @@ final class MascotAssetCache {
     private let dataCache = NSCache<NSString, NSData>()
     private let frameCache = NSCache<NSString, FrameBox>()
     private let decodeQueue = DispatchQueue(label: "cleansia.mascot.decode", qos: .userInitiated)
+
+    /// Strong references that survive `frameCache` eviction, for mascots we deliberately keep hot (the
+    /// order-in-progress hero). The `frameCache` is purgeable under memory pressure; when it drops the
+    /// heavy 125-frame `cleaningInProgress` loop the next paint pays a full ~5s re-decode. Pinning holds
+    /// the decoded frames so that re-decode never happens twice. Main-thread only (set from `prewarm`'s
+    /// main-thread completion, read from `cachedAnimation` on the main/UI thread).
+    private var pinnedAnimations: [NSString: MascotAnimation] = [:]
 
     /// Frames are decoded at the asset's native size (360 px). The mascots render up to 220 pt
     /// (booking/membership success hero) and 140 pt (loader / order hero) — i.e. ~660 / ~420 px
@@ -119,7 +134,25 @@ final class MascotAssetCache {
     }
 
     func cachedAnimation(name: String) -> MascotAnimation? {
-        frameCache.object(forKey: frameKey(name))?.animation
+        let key = frameKey(name)
+        // A pinned animation outlives frameCache eviction — check it first so a purged hero replays
+        // instantly instead of re-decoding.
+        if let pinned = pinnedAnimations[key] { return pinned }
+        return frameCache.object(forKey: key)?.animation
+    }
+
+    /// Decode a mascot's frames off the main thread AHEAD of the view that needs them and PIN the result,
+    /// so the visible hero gets an instant cache hit instead of a ~5s first-paint decode, and a later
+    /// NSCache purge can't force that decode again. Idempotent; call from the main thread (e.g. an order's
+    /// ViewModel `load()` before the in-progress hero appears, or at app launch).
+    func prewarm(_ mascot: AnimatedMascot, bundle: Bundle = .main) {
+        let key = frameKey(mascot.rawValue)
+        if pinnedAnimations[key] != nil { return }
+        guard let data = data(for: mascot, bundle: bundle) else { return }
+        loadAnimation(name: mascot.rawValue, data: data) { [weak self] animation in
+            guard let self, let animation else { return }
+            pinnedAnimations[key] = animation
+        }
     }
 
     /// Decode all frames off the main thread, cache them, and call back on the main thread. If

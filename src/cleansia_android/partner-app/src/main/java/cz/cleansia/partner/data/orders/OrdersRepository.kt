@@ -5,6 +5,7 @@ import cz.cleansia.partner.api.model.AddOrderNoteCommand
 import cz.cleansia.partner.api.model.BlobFileDto
 import cz.cleansia.partner.api.model.CompleteOrderCommand
 import cz.cleansia.partner.api.model.GetOrderPhotosResponse
+import cz.cleansia.partner.api.model.MarkCashCollectedCommand
 import cz.cleansia.partner.api.model.NotifyOnTheWayCommand
 import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.api.model.OrderStatus
@@ -69,6 +70,7 @@ interface OrdersRepository {
 
     suspend fun takeOrder(orderId: String): ApiResult<Unit>
     suspend fun startOrder(orderId: String): ApiResult<Unit>
+    suspend fun markCashCollected(orderId: String): ApiResult<Unit>
     suspend fun notifyOnTheWay(orderId: String): ApiResult<Unit>
     suspend fun completeOrder(
         orderId: String,
@@ -247,6 +249,10 @@ class OrdersRepositoryImpl @Inject constructor(
 
     override suspend fun startOrder(orderId: String): ApiResult<Unit> = safeApiCall(json) {
         orderApi.orderStartOrder(StartOrderCommand(orderId = orderId))
+    }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
+
+    override suspend fun markCashCollected(orderId: String): ApiResult<Unit> = safeApiCall(json) {
+        orderApi.orderMarkCashCollected(MarkCashCollectedCommand(orderId = orderId))
     }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
 
     override suspend fun notifyOnTheWay(orderId: String): ApiResult<Unit> = safeApiCall(json) {

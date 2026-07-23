@@ -987,6 +987,7 @@
     <string name="starting_order">Začínam upratovanie…</string>
     <string name="slide_to_complete">Posunutím dokončite</string>
     <string name="completing_order">Dokončujem…</string>
+    <string name="order_mark_cash_collected">Označiť hotovosť ako prijatú</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Pred dokončením zákazky urobte aspoň jednu fotografiu \"po\".</string>
@@ -1161,6 +1162,10 @@
     <string name="error_order_completion_notes_required">Poznámky k dokončeniu sú povinné.</string>
     <string name="error_order_completion_notes_too_long">Poznámky k dokončeniu sú príliš dlhé.</string>
     <string name="error_order_after_photos_required">Pred dokončením zákazky odfoťte aspoň jednu fotografiu „po\".</string>
+    <string name="error_order_cash_not_collected">Pred dokončením zákazky vyberte hotovosť a označte ju ako prijatú.</string>
+    <string name="error_order_payment_not_confirmed">Platba za túto zákazku ešte nebola potvrdená.</string>
+    <string name="error_order_not_cash_payment">Toto nie je zákazka platená v hotovosti.</string>
+    <string name="error_order_cash_already_collected">Hotovosť za túto zákazku už bola prijatá.</string>
 
     <string name="error_order_note_content_required">Text poznámky je povinný.</string>
     <string name="error_order_issue_description_required">Popis problému je povinný.</string>

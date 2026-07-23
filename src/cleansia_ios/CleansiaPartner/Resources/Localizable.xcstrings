@@ -1363,6 +1363,40 @@
         }
       }
     },
+    "cash_collected_toast": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hotovost přijata"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cash collected"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наличные получены"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hotovosť prijatá"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готівку отримано"
+          }
+        }
+      }
+    },
     "checklist_all_done_hint": {
       "localizations": {
         "cs": {
@@ -7785,6 +7819,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Замовлення"
+          }
+        }
+      }
+    },
+    "partner_order_mark_cash_collected": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Označit hotovost jako přijatou"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark cash collected"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отметить наличные как полученные"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Označiť hotovosť ako prijatú"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Позначити готівку як отриману"
           }
         }
       }

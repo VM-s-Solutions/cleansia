@@ -24,7 +24,9 @@ final class OrderDetailViewModelTests: XCTestCase {
         id: String = "order-1",
         status: Int = 4,
         isMine: Bool = true,
-        hasAfterPhotos: Bool = true
+        hasAfterPhotos: Bool = true,
+        paymentType: Int? = nil,
+        paymentStatus: Int? = nil
     ) -> OrderItem {
         var item = OrderItem()
         item.id = id
@@ -33,6 +35,8 @@ final class OrderDetailViewModelTests: XCTestCase {
         item.address = OrderAddress(latitude: 50.0, longitude: 14.0)
         item.isAssignedToCurrentUser = isMine
         item.hasAfterPhotos = hasAfterPhotos
+        item.paymentType = paymentType.map { Code(value: $0) }
+        item.paymentStatus = paymentStatus.map { Code(value: $0) }
         return item
     }
 
@@ -113,6 +117,35 @@ final class OrderDetailViewModelTests: XCTestCase {
         XCTAssertEqual(vm.primaryAction, .completeBlocked)
     }
 
+    // MARK: payment-gated completion — a cash order must be collected first
+
+    func testPrimaryActionCollectCashForUnsettledCashOrder() async {
+        client.byIdResult = .success(loadedItem(
+            status: 4, isMine: true, hasAfterPhotos: true, paymentType: 1, paymentStatus: 1
+        ))
+        let vm = makeVM()
+        await vm.load()
+        XCTAssertEqual(vm.primaryAction, .collectCash)
+    }
+
+    func testPrimaryActionCompleteOnceCashCollected() async {
+        client.byIdResult = .success(loadedItem(
+            status: 4, isMine: true, hasAfterPhotos: true, paymentType: 1, paymentStatus: 2
+        ))
+        let vm = makeVM()
+        await vm.load()
+        XCTAssertEqual(vm.primaryAction, .complete)
+    }
+
+    func testPrimaryActionCardOrderNeverCollectsCash() async {
+        client.byIdResult = .success(loadedItem(
+            status: 4, isMine: true, hasAfterPhotos: true, paymentType: 2, paymentStatus: 1
+        ))
+        let vm = makeVM()
+        await vm.load()
+        XCTAssertEqual(vm.primaryAction, .complete)
+    }
+
     // TC-IOS-PHOTOS-GATE: after an after-photo upload, the photos VM fires
     // `mutated` → the parent re-fetches → the server-recomputed hasAfterPhotos
     // flips completeBlocked → complete.
@@ -155,6 +188,37 @@ final class OrderDetailViewModelTests: XCTestCase {
 
         XCTAssertTrue(staleness.isPaneStale(.available))
         XCTAssertTrue(staleness.isPaneStale(.active))
+        XCTAssertFalse(staleness.isPaneStale(.history))
+    }
+
+    func testMarkCashCollectedSuccessShowsToastAndRefetches() async {
+        client.byIdResult = .success(loadedItem(status: 4, paymentType: 1, paymentStatus: 1))
+        let vm = makeVM()
+        await vm.load()
+        let fetchesBefore = client.getByIdCallCount
+
+        await vm.markCashCollected()
+
+        XCTAssertEqual(client.commands.map(\.name), ["markCashCollected"])
+        XCTAssertEqual(snackbar.current?.severity, .success)
+        XCTAssertEqual(snackbar.current?.text, L10n.Orders.cashCollectedToast)
+        XCTAssertEqual(client.getByIdCallCount, fetchesBefore + 1)
+        XCTAssertEqual(vm.actionState, .idle)
+        XCTAssertNil(vm.inFlightAction)
+    }
+
+    func testMarkCashCollectedInvalidatesTheActivePane() async {
+        client.byIdResult = .success(loadedItem(status: 4, paymentType: 1, paymentStatus: 1))
+        let vm = makeVM()
+        await vm.load()
+        for pane in OrdersPane.allCases {
+            staleness.markPaneFresh(pane)
+        }
+
+        await vm.markCashCollected()
+
+        XCTAssertTrue(staleness.isPaneStale(.active))
+        XCTAssertFalse(staleness.isPaneStale(.available))
         XCTAssertFalse(staleness.isPaneStale(.history))
     }
 

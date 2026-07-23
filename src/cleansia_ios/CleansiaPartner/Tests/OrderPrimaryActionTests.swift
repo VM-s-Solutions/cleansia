@@ -3,8 +3,20 @@ import XCTest
 @testable import CleansiaPartner
 
 final class OrderPrimaryActionTests: XCTestCase {
-    private func action(_ status: OrderStatus?, mine: Bool, photos: Bool = false) -> OrderPrimaryAction {
-        OrderPrimaryAction.action(for: status, isMine: mine, hasAfterPhotos: photos)
+    private func action(
+        _ status: OrderStatus?,
+        mine: Bool,
+        photos: Bool = false,
+        cash: Bool = false,
+        settled: Bool = false
+    ) -> OrderPrimaryAction {
+        OrderPrimaryAction.action(
+            for: status,
+            isMine: mine,
+            hasAfterPhotos: photos,
+            isCashPayment: cash,
+            isPaymentSettled: settled
+        )
     }
 
     // MARK: New (0)
@@ -52,6 +64,31 @@ final class OrderPrimaryActionTests: XCTestCase {
         XCTAssertEqual(action(._4, mine: false, photos: false), .none)
     }
 
+    // MARK: InProgress (4) — cash-collection gate (after the after-photos gate)
+
+    func testInProgressMineUnsettledCashWithAfterPhotosIsCollectCash() {
+        XCTAssertEqual(action(._4, mine: true, photos: true, cash: true, settled: false), .collectCash)
+    }
+
+    func testInProgressMineUnsettledCashWithoutAfterPhotosIsStillCompleteBlocked() {
+        // The after-photos gate is checked first (the Android canComplete →
+        // needsCashCollection ordering), so no photo blocks before cash shows.
+        XCTAssertEqual(action(._4, mine: true, photos: false, cash: true, settled: false), .completeBlocked)
+    }
+
+    func testInProgressMineSettledCashResolvesToTheAfterPhotosGate() {
+        XCTAssertEqual(action(._4, mine: true, photos: true, cash: true, settled: true), .complete)
+        XCTAssertEqual(action(._4, mine: true, photos: false, cash: true, settled: true), .completeBlocked)
+    }
+
+    func testInProgressMineCardOrderNeverCollectsCash() {
+        XCTAssertEqual(action(._4, mine: true, photos: true, cash: false, settled: false), .complete)
+    }
+
+    func testInProgressNotMineUnsettledCashIsStillNone() {
+        XCTAssertEqual(action(._4, mine: false, photos: true, cash: true, settled: false), .none)
+    }
+
     // MARK: Pending (1) / Completed (5) / Cancelled (6) / nil — terminal/no-op
 
     func testPendingIsAlwaysNone() {
@@ -80,6 +117,7 @@ final class OrderPrimaryActionTests: XCTestCase {
         XCTAssertEqual(OrderPrimaryAction.take.orderAction, .take)
         XCTAssertEqual(OrderPrimaryAction.notifyOnTheWay.orderAction, .notifyOnTheWay)
         XCTAssertEqual(OrderPrimaryAction.start.orderAction, .start)
+        XCTAssertEqual(OrderPrimaryAction.collectCash.orderAction, .markCashCollected)
         XCTAssertEqual(OrderPrimaryAction.complete.orderAction, .complete)
         XCTAssertNil(OrderPrimaryAction.completeBlocked.orderAction)
         XCTAssertNil(OrderPrimaryAction.none.orderAction)

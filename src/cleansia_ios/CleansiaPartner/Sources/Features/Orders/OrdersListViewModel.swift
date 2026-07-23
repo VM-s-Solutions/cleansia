@@ -89,12 +89,19 @@ final class OrdersListViewModel: ViewModel {
 
     /// The inline primary action for a list row, via the shared machine. The
     /// Available card's `isMine` is always false (it lists unassigned offers);
-    /// the Active row's is always true (assigned-to-me). `hasAfterPhotos` isn't
-    /// on the list DTO, so an InProgress Active row resolves to `.complete` and
-    /// the server's after-photos guard is the safety net (the inline parity).
+    /// the Active row's is always true (assigned-to-me). Neither `hasAfterPhotos`
+    /// nor the payment fields are on the list DTO, so an InProgress Active row
+    /// resolves to `.complete` and the server's after-photos + payment guards are
+    /// the safety net (the inline parity). Cash collection lives on the detail.
     func inlineAction(for order: OrderListItem) -> OrderPrimaryAction {
         let isMine = tab == .active
-        return OrderPrimaryAction.action(for: order.status, isMine: isMine, hasAfterPhotos: true)
+        return OrderPrimaryAction.action(
+            for: order.status,
+            isMine: isMine,
+            hasAfterPhotos: true,
+            isCashPayment: false,
+            isPaymentSettled: true
+        )
     }
 
     /// Run a row's inline lifecycle action. O2: acts ONLY on `order.id` — the id

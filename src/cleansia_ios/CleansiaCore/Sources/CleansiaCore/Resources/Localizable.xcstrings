@@ -2767,6 +2767,76 @@
         }
       }
     },
+    "error.order.cash_already_collected" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hotovost za tuto zakázku již byla přijata."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cash has already been collected for this order."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Наличные за этот заказ уже получены."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hotovosť za túto zákazku už bola prijatá."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готівку за це замовлення вже отримано."
+          }
+        }
+      }
+    },
+    "error.order.cash_not_collected" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Před dokončením zakázky vyberte hotovost a označte ji jako přijatou."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collect the cash and mark it as received before completing this order."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прежде чем завершить заказ, получите наличные и отметьте их как принятые."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pred dokončením zákazky vyberte hotovosť a označte ju ako prijatú."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перш ніж завершити замовлення, отримайте готівку та позначте її як прийняту."
+          }
+        }
+      }
+    },
     "error.order.cleaning_date.below_lead_time" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3222,6 +3292,41 @@
         }
       }
     },
+    "error.order.not_cash_payment" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto není zakázka placená hotově."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This isn't a cash order."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это не заказ с оплатой наличными."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto nie je zákazka platená v hotovosti."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це не замовлення з оплатою готівкою."
+          }
+        }
+      }
+    },
     "error.order.not_completed" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3428,6 +3533,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Платіжна служба тимчасово недоступна."
+          }
+        }
+      }
+    },
+    "error.order.payment_not_confirmed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platba za tuto zakázku ještě nebyla potvrzena."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This order's payment hasn't been confirmed yet."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оплата за этот заказ ещё не подтверждена."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platba za túto zákazku ešte nebola potvrdená."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оплату за це замовлення ще не підтверджено."
           }
         }
       }

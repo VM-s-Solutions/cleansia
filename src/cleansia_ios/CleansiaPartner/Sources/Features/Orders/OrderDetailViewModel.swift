@@ -8,6 +8,7 @@ enum OrderAction: Equatable {
     case take
     case notifyOnTheWay
     case start
+    case markCashCollected
     case complete
 
     var mutation: OrdersMutation {
@@ -15,6 +16,7 @@ enum OrderAction: Equatable {
         case .take: .takeOrder
         case .notifyOnTheWay: .notifyOnTheWay
         case .start: .startOrder
+        case .markCashCollected: .markCashCollected
         case .complete: .completeOrder
         }
     }
@@ -26,6 +28,7 @@ enum OrderAction: Equatable {
         switch self {
         case .notifyOnTheWay: L10n.Orders.customerNotifiedOnTheWay
         case .start: L10n.Orders.orderStartedToast
+        case .markCashCollected: L10n.Orders.cashCollectedToast
         case .complete: L10n.Orders.orderCompletedToast
         case .take: nil
         }
@@ -61,7 +64,9 @@ final class OrderDetailViewModel: ViewModel {
         return OrderPrimaryAction.action(
             for: order.status,
             isMine: order.isAssignedToCurrentUser,
-            hasAfterPhotos: order.hasAfterPhotos
+            hasAfterPhotos: order.hasAfterPhotos,
+            isCashPayment: order.payment.isCash,
+            isPaymentSettled: order.payment.isSettled
         )
     }
 
@@ -74,6 +79,7 @@ final class OrderDetailViewModel: ViewModel {
         case .take: await take()
         case .notifyOnTheWay: await notifyOnTheWay()
         case .start: await start()
+        case .collectCash: await markCashCollected()
         case .complete: await complete()
         case .completeBlocked, .none: break
         }
@@ -89,6 +95,10 @@ final class OrderDetailViewModel: ViewModel {
 
     func start() async {
         await run(.start) { await self.client.startOrder(orderId: self.orderId) }
+    }
+
+    func markCashCollected() async {
+        await run(.markCashCollected) { await self.client.markCashCollected(orderId: self.orderId) }
     }
 
     func complete() async {

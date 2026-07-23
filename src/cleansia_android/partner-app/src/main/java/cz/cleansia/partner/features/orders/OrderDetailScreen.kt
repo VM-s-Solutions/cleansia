@@ -66,6 +66,8 @@ import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.api.model.OrderStatus
+import cz.cleansia.partner.api.model.PaymentStatus
+import cz.cleansia.partner.api.model.PaymentType
 
 /**
  * v2 layout: Mapbox tile as full-bleed backdrop, BottomSheetScaffold
@@ -125,6 +127,7 @@ fun OrderDetailScreen(
                 // and notes — the cleaner just confirms with the
                 // slide gesture and the order flips to Completed.
                 onCompleteClick = { viewModel.complete(null, null) },
+                onMarkCashCollected = viewModel::markCashCollected,
                 // onContentMutated routes through the staleness-gated
                 // refresh path, so photo upload / note add re-fetches
                 // silently (no full-page spinner flash). Repository
@@ -149,6 +152,7 @@ private fun OrderDetailBottomSheetLayout(
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
+    onMarkCashCollected: () -> Unit,
     onPhotosChanged: () -> Unit,
     onNavigateBack: () -> Unit,
 ) {
@@ -206,6 +210,7 @@ private fun OrderDetailBottomSheetLayout(
                     onStart = onStart,
                     onNotifyOnTheWay = onNotifyOnTheWay,
                     onCompleteClick = onCompleteClick,
+                    onMarkCashCollected = onMarkCashCollected,
                     onPhotosChanged = onPhotosChanged,
                 )
             },
@@ -359,6 +364,7 @@ private fun OrderDetailSheetContent(
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
+    onMarkCashCollected: () -> Unit,
     onPhotosChanged: () -> Unit,
 ) {
     val showAccessCard = isMine &&
@@ -551,15 +557,24 @@ private fun OrderDetailSheetContent(
             Spacer(Modifier.height(Spacing.S))
         }
 
+        // Cash orders reach the door still Pending; the server blocks
+        // CompleteOrder until the cleaner records the cash (PaymentType._1
+        // = Cash, PaymentStatus._2 = Paid — Code.value carries the enum
+        // ordinal, same as OrderStatus above).
+        val needsCashCollection = order.paymentType?.value == PaymentType._1.value &&
+            order.paymentStatus?.value != PaymentStatus._2.value
+
         StickyActionFooter(
             status = status,
             isMine = isMine,
             inFlight = inFlight,
             canComplete = order.hasAfterPhotos == true,
+            needsCashCollection = needsCashCollection,
             onTake = onTake,
             onStart = onStart,
             onNotifyOnTheWay = onNotifyOnTheWay,
             onCompleteClick = onCompleteClick,
+            onMarkCashCollected = onMarkCashCollected,
         )
     }
 }
@@ -570,10 +585,12 @@ private fun StickyActionFooter(
     isMine: Boolean,
     inFlight: OrderAction?,
     canComplete: Boolean,
+    needsCashCollection: Boolean,
     onTake: () -> Unit,
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
+    onMarkCashCollected: () -> Unit,
 ) {
     // Completed / Cancelled / null — no action available. Don't even
     // render the footer so the cleaner doesn't see a hollow strip.
@@ -613,7 +630,9 @@ private fun StickyActionFooter(
                 onStart = onStart,
                 onNotifyOnTheWay = onNotifyOnTheWay,
                 onCompleteClick = onCompleteClick,
+                onMarkCashCollected = onMarkCashCollected,
                 canComplete = canComplete,
+                needsCashCollection = needsCashCollection,
             )
         }
     }

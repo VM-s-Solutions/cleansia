@@ -102,6 +102,23 @@ class OrderDetailViewModelTest {
     }
 
     @Test
+    fun `markCashCollected action calls repo and returns to Idle`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        coEvery { ordersRepository.markCashCollected(orderId) } returns ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.markCashCollected()
+        advanceUntilIdle()
+
+        io.mockk.coVerify { ordersRepository.markCashCollected(orderId) }
+        assertEquals(ActionState.Idle, vm.actionState.value)
+        assertNull(vm.inFlightAction.value)
+    }
+
+    @Test
     fun `action failure surfaces ActionState Error and snackbars`() = runTest {
         every { ordersRepository.isOrderStale(orderId) } returns true
         coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)

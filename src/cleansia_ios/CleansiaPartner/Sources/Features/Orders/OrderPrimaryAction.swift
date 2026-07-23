@@ -9,6 +9,10 @@ enum OrderPrimaryAction: Equatable {
     case take
     case notifyOnTheWay
     case start
+    /// InProgress & mine, a CASH order not yet settled — the cash must be
+    /// collected and marked before the order can complete (the server's
+    /// payment-settled guard, surfaced early).
+    case collectCash
     case complete
     /// InProgress & mine but no "after" photo yet — the slide is blocked and a
     /// hint is shown instead (the server's after-photos guard, surfaced early).
@@ -22,6 +26,7 @@ enum OrderPrimaryAction: Equatable {
         case .take: .take
         case .notifyOnTheWay: .notifyOnTheWay
         case .start: .start
+        case .collectCash: .markCashCollected
         case .complete: .complete
         case .completeBlocked, .none: nil
         }
@@ -30,7 +35,9 @@ enum OrderPrimaryAction: Equatable {
     static func action(
         for status: OrderStatus?,
         isMine: Bool,
-        hasAfterPhotos: Bool
+        hasAfterPhotos: Bool,
+        isCashPayment: Bool,
+        isPaymentSettled: Bool
     ) -> OrderPrimaryAction {
         switch status {
         case ._0:
@@ -44,9 +51,14 @@ enum OrderPrimaryAction: Equatable {
             // OnTheWay: only the assignee starts.
             return isMine ? .start : .none
         case ._4:
-            // InProgress: only the assignee completes, gated on an after-photo.
+            // InProgress: only the assignee completes, gated first on an
+            // after-photo, then on payment — a cash order settles only once the
+            // cleaner collects (the `OrderPrimaryAction.kt` canComplete →
+            // needsCashCollection ordering).
             guard isMine else { return .none }
-            return hasAfterPhotos ? .complete : .completeBlocked
+            guard hasAfterPhotos else { return .completeBlocked }
+            if isCashPayment, !isPaymentSettled { return .collectCash }
+            return .complete
         case ._1, ._5, ._6, .none:
             // Pending / Completed / Cancelled / unknown — no action.
             return .none

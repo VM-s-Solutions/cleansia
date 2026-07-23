@@ -145,17 +145,23 @@ public sealed class EmailService : IEmailService
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.ConfirmationEmail, languageCode, ct);
 
+        // Surface the 6-digit code in the subject line so the user can read it from the inbox list
+        // without opening the email, as "<subject> - [code]". The SendGrid dynamic template renders its
+        // subject from the {{Subject}} handlebars fed by the dynamic template data — and a dynamic
+        // template's own subject wins over the per-personalization subject — so the code has to be written
+        // into that data. We overwrite translations["Subject"] BEFORE the merge so {{Subject}} carries the
+        // code; the per-personalization subject set in SendTemplatedAsync is the belt-and-suspenders path
+        // for templates whose subject is left blank. (Setting only the personalization subject — the prior
+        // fix — had no visible effect because this template's subject is the {{Subject}} variable.)
+        var baseSubject = translations.GetValueOrDefault("Subject", "Confirm Your Email");
+        var subject = $"{baseSubject} - [{verificationCode}]";
+        translations["Subject"] = subject;
+
         var mergeData = MergeTranslationsWithData(translations, new
         {
             UserName = userName,
             VerificationCode = verificationCode
         });
-
-        // Surface the 6-digit code in the subject line so the user can read it from the inbox list
-        // without opening the email. The subject is a per-personalization override on the SendGrid send
-        // (set in SendTemplatedAsync), so this applies regardless of the dashboard template's own subject.
-        var baseSubject = translations.GetValueOrDefault("Subject", "Confirm Your Email");
-        var subject = $"{baseSubject} - [{verificationCode}]";
 
         return await SendTemplatedAsync(
             email,

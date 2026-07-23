@@ -54,7 +54,7 @@ public class CompleteOrderValidatorTests
     [Fact]
     public async Task When_Cleaner_Approved_And_All_Rules_Pass_Then_Valid()
     {
-        // approved + assigned + after photos present + profile complete.
+        // approved + assigned + after photos present + profile complete + payment settled.
         ArrangeCompletableOrder(employeeStatus: ContractStatus.Approved);
 
         var result = await _validator.ValidateAsync(new CompleteOrder.Command(OrderId));
@@ -62,9 +62,52 @@ public class CompleteOrderValidatorTests
         Assert.True(result.IsValid);
     }
 
-    private void ArrangeCompletableOrder(ContractStatus employeeStatus)
+    [Fact]
+    public async Task When_Cash_Order_Not_Collected_Then_OrderCashNotCollected()
     {
-        var order = ValidatorTestHelpers.BuildOrder(OrderId, OrderStatus.InProgress, EmployeeId);
+        // Everything else valid, but the cash hasn't been collected yet (PaymentStatus.Pending) —
+        // the cleaner must mark it collected first. This is the core money-safety gate.
+        ArrangeCompletableOrder(ContractStatus.Approved, PaymentType.Cash, PaymentStatus.Pending);
+
+        var result = await _validator.ValidateAsync(new CompleteOrder.Command(OrderId));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OrderCashNotCollected);
+    }
+
+    [Fact]
+    public async Task When_Card_Order_Payment_Not_Confirmed_Then_OrderPaymentNotConfirmed()
+    {
+        // Card charge hasn't cleared (Stripe webhook not yet arrived) — completion is blocked with the
+        // card-specific message, not the cash one.
+        ArrangeCompletableOrder(ContractStatus.Approved, PaymentType.Card, PaymentStatus.Pending);
+
+        var result = await _validator.ValidateAsync(new CompleteOrder.Command(OrderId));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OrderPaymentNotConfirmed);
+        Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OrderCashNotCollected);
+    }
+
+    [Fact]
+    public async Task When_Cash_Order_Collected_Then_Valid()
+    {
+        // A cash order whose money has been collected (Paid) completes normally.
+        ArrangeCompletableOrder(ContractStatus.Approved, PaymentType.Cash, PaymentStatus.Paid);
+
+        var result = await _validator.ValidateAsync(new CompleteOrder.Command(OrderId));
+
+        Assert.True(result.IsValid);
+    }
+
+    private void ArrangeCompletableOrder(
+        ContractStatus employeeStatus,
+        PaymentType paymentType = PaymentType.Cash,
+        PaymentStatus paymentStatus = PaymentStatus.Paid)
+    {
+        // A completable order is payment-SETTLED by default (Paid): completion is now gated on payment,
+        // so the "all rules pass" case must model a collected cash / confirmed card order.
+        var order = ValidatorTestHelpers.BuildOrder(OrderId, OrderStatus.InProgress, EmployeeId, paymentType, paymentStatus);
         var employee = ValidatorTestHelpers.BuildEmployee(EmployeeId, employeeStatus, withAddress: true);
 
         _orderRepository.Setup(r => r.ExistsAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(true);

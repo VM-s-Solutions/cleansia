@@ -123,22 +123,31 @@ public static class ServiceExtensions
                 ValidateActor = false,
                 ValidateLifetime = true,
                 IssuerSigningKey = new SymmetricSecurityKey(secret),
-                // A small tolerance for clock drift between scaled instances. ClockSkew = Zero rejects a
-                // just-issued token if the validating instance's clock is a fraction behind the issuing
-                // one ("token not yet valid"), which surfaced as an immediate "session expired" right
-                // after a successful mobile sign-in.
-                ClockSkew = TimeSpan.FromSeconds(60),
+                // ClockSkew stays Zero by design: ADR-0024 makes AccessTokenExpMinutes the EXACT
+                // device-revocation latency bound (any skew would extend a revoked token's residual
+                // life). Pinned by TC-REVOKE-TTL-2 (MobileAccessTokenTtlExpiryTests).
+                ClockSkew = TimeSpan.Zero,
             };
             options.Events = new JwtBearerEvents
             {
-                // Surface auth failures instead of swallowing them — a silent Task.CompletedTask is why
-                // token-validation failures never reached App Insights.
+                // Surface auth failures instead of swallowing them (a silent Task.CompletedTask is why
+                // token-validation failures never reached App Insights). Routine expiry is normal — the
+                // client refreshes on it — so log that quietly; anything else (bad signature, wrong
+                // issuer/audience, malformed token) is a real problem worth a warning.
                 OnAuthenticationFailed = context =>
                 {
-                    context.HttpContext.RequestServices
+                    var logger = context.HttpContext.RequestServices
                         .GetService<ILoggerFactory>()?
-                        .CreateLogger("JwtBearer")
-                        .LogWarning(context.Exception, "JWT authentication failed: {Message}", context.Exception.Message);
+                        .CreateLogger("JwtBearer");
+                    if (context.Exception is SecurityTokenExpiredException)
+                    {
+                        logger?.LogDebug(context.Exception, "JWT expired");
+                    }
+                    else
+                    {
+                        logger?.LogWarning(context.Exception, "JWT authentication failed: {Message}", context.Exception.Message);
+                    }
+
                     return Task.CompletedTask;
                 },
                 OnTokenValidated = context =>

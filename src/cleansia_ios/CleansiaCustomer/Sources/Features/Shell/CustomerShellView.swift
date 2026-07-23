@@ -399,6 +399,9 @@ private struct InteractivePopGestureEnabler: UIViewControllerRepresentable {
     }
 
     final class GestureController: UIViewController, UIGestureRecognizerDelegate {
+        /// ~30pt left-edge band, matching UIKit's own screen-edge slop.
+        private let edgeWidth: CGFloat = 30
+
         override func didMove(toParent parent: UIViewController?) {
             super.didMove(toParent: parent)
             reassertGesture()
@@ -410,21 +413,26 @@ private struct InteractivePopGestureEnabler: UIViewControllerRepresentable {
             gesture.isEnabled = true
         }
 
-        func gestureRecognizerShouldBegin(_: UIGestureRecognizer) -> Bool {
-            (navigationController?.viewControllers.count ?? 0) > 1
+        /// The AUTHORITATIVE gate. `NavigationStack`'s pop recognizer is Apple's private
+        /// `_UIParallaxTransitionPanGestureRecognizer`, whose left-edge scoping is enforced by its
+        /// ORIGINAL delegate — which we had to replace to keep swipe-back alive under a hidden nav bar.
+        /// That makes it full-width, and `shouldReceive` is NOT honored as the begin decision for it, so
+        /// `x`-filtering there leaked (the whole page could be dragged). `shouldBegin` returning false
+        /// HARD-STOPS the recognizer, so re-impose the edge here: reconstruct the touch-DOWN x as
+        /// (location − translation) and only begin for a rightward swipe that STARTED at the left edge —
+        /// a drag originating mid-page can never begin, scrollable or not.
+        func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
+            guard (navigationController?.viewControllers.count ?? 0) > 1 else { return false }
+            guard let pan = gesture as? UIPanGestureRecognizer else { return true }
+            let location = pan.location(in: gesture.view)
+            let translation = pan.translation(in: gesture.view)
+            let startX = location.x - translation.x
+            return startX <= edgeWidth && translation.x > 0
         }
 
-        /// Edge-only. Replacing the pop recognizer's delegate removes UIKit's built-in left-edge
-        /// scoping, which makes the WHOLE page draggable sideways. Re-impose it: only accept a touch
-        /// that STARTS within ~30pt of the left screen edge, so a drag from the middle is ignored and
-        /// the page stays put.
-        func gestureRecognizer(_: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-            touch.location(in: nil).x <= 30
-        }
-
-        /// Let the (edge-only) back-swipe fire alongside a vertical scroll, so it still works on tall,
-        /// scrollable pages (a completed order) where the scroll pan would otherwise starve it. Safe
-        /// now that the gesture only starts at the edge.
+        /// Keep: lets the (now edge-only) back-swipe co-fire with the vertical scroll on a tall page,
+        /// so the scroll pan doesn't starve it. Safe because `shouldBegin` already rejects any drag that
+        /// didn't start at the edge, regardless of simultaneity.
         func gestureRecognizer(
             _: UIGestureRecognizer,
             shouldRecognizeSimultaneouslyWith _: UIGestureRecognizer

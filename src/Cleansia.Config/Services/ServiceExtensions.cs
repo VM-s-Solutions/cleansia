@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Config.Services;
 
@@ -122,11 +123,33 @@ public static class ServiceExtensions
                 ValidateActor = false,
                 ValidateLifetime = true,
                 IssuerSigningKey = new SymmetricSecurityKey(secret),
+                // ClockSkew stays Zero by design: ADR-0024 makes AccessTokenExpMinutes the EXACT
+                // device-revocation latency bound (any skew would extend a revoked token's residual
+                // life). Pinned by TC-REVOKE-TTL-2 (MobileAccessTokenTtlExpiryTests).
                 ClockSkew = TimeSpan.Zero,
             };
             options.Events = new JwtBearerEvents
             {
-                OnAuthenticationFailed = context => Task.CompletedTask,
+                // Surface auth failures instead of swallowing them (a silent Task.CompletedTask is why
+                // token-validation failures never reached App Insights). Routine expiry is normal — the
+                // client refreshes on it — so log that quietly; anything else (bad signature, wrong
+                // issuer/audience, malformed token) is a real problem worth a warning.
+                OnAuthenticationFailed = context =>
+                {
+                    var logger = context.HttpContext.RequestServices
+                        .GetService<ILoggerFactory>()?
+                        .CreateLogger("JwtBearer");
+                    if (context.Exception is SecurityTokenExpiredException)
+                    {
+                        logger?.LogDebug(context.Exception, "JWT expired");
+                    }
+                    else
+                    {
+                        logger?.LogWarning(context.Exception, "JWT authentication failed: {Message}", context.Exception.Message);
+                    }
+
+                    return Task.CompletedTask;
+                },
                 OnTokenValidated = context =>
                 {
                     if (context.Principal?.Identity is not ClaimsIdentity claimsIdentity)

@@ -5,7 +5,20 @@ import XCTest
 @testable import CleansiaCustomer
 
 private struct NoopLiveActivitySync: OrderLiveActivitySyncing {
-    func start(orderId _: String, orderNumber _: String, scheduledStart _: Date, scheduledEnd _: Date) {}
+    func start(
+        orderId _: String,
+        orderNumber _: String,
+        status _: String,
+        scheduledStart _: Date,
+        scheduledEnd _: Date
+    ) {}
+    func update(
+        orderId _: String,
+        orderNumber _: String,
+        status _: String,
+        scheduledStart _: Date,
+        scheduledEnd _: Date
+    ) {}
     func end(orderId _: String) {}
 }
 

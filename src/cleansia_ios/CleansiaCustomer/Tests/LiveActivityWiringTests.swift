@@ -26,18 +26,36 @@ private final class SpyLiveActivityApi: LiveActivityApi, @unchecked Sendable {
 }
 
 private final class SpyLiveActivitySync: OrderLiveActivitySyncing, @unchecked Sendable {
-    struct Started: Equatable {
+    struct Call: Equatable {
         let orderId: String
         let orderNumber: String
+        let status: String
         let start: Date
         let end: Date
     }
 
-    private(set) var started: [Started] = []
+    private(set) var started: [Call] = []
+    private(set) var updated: [Call] = []
     private(set) var ended: [String] = []
 
-    func start(orderId: String, orderNumber: String, scheduledStart: Date, scheduledEnd: Date) {
-        started.append(Started(orderId: orderId, orderNumber: orderNumber, start: scheduledStart, end: scheduledEnd))
+    func start(orderId: String, orderNumber: String, status: String, scheduledStart: Date, scheduledEnd: Date) {
+        started.append(Call(
+            orderId: orderId,
+            orderNumber: orderNumber,
+            status: status,
+            start: scheduledStart,
+            end: scheduledEnd
+        ))
+    }
+
+    func update(orderId: String, orderNumber: String, status: String, scheduledStart: Date, scheduledEnd: Date) {
+        updated.append(Call(
+            orderId: orderId,
+            orderNumber: orderNumber,
+            status: status,
+            start: scheduledStart,
+            end: scheduledEnd
+        ))
     }
 
     func end(orderId: String) {
@@ -132,8 +150,23 @@ final class OrderLiveActivitySyncTests: XCTestCase {
         XCTAssertEqual(sync.started.count, 1)
         XCTAssertEqual(sync.started.first?.orderId, "o1")
         XCTAssertEqual(sync.started.first?.orderNumber, "1042")
+        XCTAssertEqual(sync.started.first?.status, "onTheWay")
         XCTAssertEqual(sync.started.first?.start, start)
         XCTAssertEqual(sync.started.first?.end, start.addingTimeInterval(90 * 60))
+        XCTAssertTrue(sync.ended.isEmpty)
+    }
+
+    func testInProgressOrderStartsAndUpdatesToCleaning() async {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(order(statusValue: 4))]
+        let sync = SpyLiveActivitySync()
+
+        await makeVM(client, sync: sync).load()
+
+        // The activity is started AND updated with "inProgress" so an already-cleaning order (or an
+        // OnTheWay → InProgress transition on a re-fetch) renders "Cleaning in progress", not "On the way".
+        XCTAssertEqual(sync.started.first?.status, "inProgress")
+        XCTAssertEqual(sync.updated.first?.status, "inProgress")
         XCTAssertTrue(sync.ended.isEmpty)
     }
 

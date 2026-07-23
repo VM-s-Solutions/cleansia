@@ -48,14 +48,20 @@ public sealed class EmailService : IEmailService
 
         var resetLink = $"{sendGridConfig.ClientDomainUrl}{sendGridConfig.ResetPasswordUrl}?email={Uri.EscapeDataString(email)}&code={Uri.EscapeDataString(code)}";
 
+        // Surface the 6-digit reset code in the subject as "<subject> - [code]", mirroring the email
+        // confirmation. The SendGrid dynamic template renders its subject from the {{Subject}} handlebars
+        // fed by the template data (a dynamic template's own subject wins over the per-personalization
+        // subject), so the code must be written into translations["Subject"] BEFORE the merge.
+        var baseSubject = translations.GetValueOrDefault("Subject", "Reset Your Password");
+        var subject = $"{baseSubject} - [{code}]";
+        translations["Subject"] = subject;
+
         var mergeData = MergeTranslationsWithData(translations, new
         {
             UserName = fullUserName,
             VerificationCode = code,
             ResetPasswordLink = resetLink
         });
-
-        var subject = translations.GetValueOrDefault("Subject", "Reset Your Password");
 
         return await SendTemplatedAsync(
             email,

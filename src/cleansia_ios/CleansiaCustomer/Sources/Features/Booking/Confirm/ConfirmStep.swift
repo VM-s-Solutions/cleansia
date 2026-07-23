@@ -6,7 +6,6 @@ struct ConfirmStep: View {
     @StateObject private var extras = PreferredCleanerViewModel()
 
     @State private var showPromoSheet = false
-    @State private var showReferralSheet = false
 
     private var quote: BookingQuote? {
         viewModel.quoteState.quote
@@ -70,7 +69,6 @@ struct ConfirmStep: View {
                 extrasCard
                 summaryCard
                 promoRow
-                referralRow
                 paymentSection
                 specialInstructionsSection
                 PreferredCleanerPicker(
@@ -91,13 +89,6 @@ struct ConfirmStep: View {
                 currencyCode: currencyCode,
                 onValidate: { code in await viewModel.validatePromoCode(code) },
                 onDismiss: { showPromoSheet = false }
-            )
-        }
-        .sheet(isPresented: $showReferralSheet) {
-            ReferralCodeSheet(
-                initialCode: viewModel.state.referralCode,
-                onValidate: { code in await viewModel.validateReferralCode(code) },
-                onDismiss: { showReferralSheet = false }
             )
         }
     }
@@ -142,25 +133,8 @@ struct ConfirmStep: View {
         )
     }
 
-    private var referralRow: some View {
-        CodeEntryRow(
-            systemImage: "person.2",
-            title: L10n.Booking.referralRowTitle,
-            appliedCode: appliedReferralCode,
-            clearLabel: L10n.Booking.referralRowClear,
-            appliedText: L10n.Booking.referralRowApplied,
-            onTap: { showReferralSheet = true },
-            onClear: { viewModel.clearReferralCode() }
-        )
-    }
-
     private var appliedPromoCode: String {
         if case .valid = viewModel.promoState { return viewModel.state.promoCode }
-        return ""
-    }
-
-    private var appliedReferralCode: String {
-        if case .valid = viewModel.referralState { return viewModel.state.referralCode }
         return ""
     }
 

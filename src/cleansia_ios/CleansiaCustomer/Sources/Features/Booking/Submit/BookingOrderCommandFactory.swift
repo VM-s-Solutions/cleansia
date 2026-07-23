@@ -26,8 +26,6 @@ enum BookingOrderCommandFactory {
             return state.promoCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         }()
 
-        let referral = state.referralCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-
         return CreateOrderCommand(
             customerName: resolved.profile.fullName,
             customerEmail: resolved.profile.email,
@@ -44,7 +42,7 @@ enum BookingOrderCommandFactory {
             currencyId: resolved.quote.currencyId.isBlank ? nil : resolved.quote.currencyId,
             totalPrice: resolved.quote.totalPrice,
             promoCode: promo,
-            referralCode: referral.isBlank ? nil : referral,
+            referralCode: nil,
             preferredEmployeeId: state.preferredEmployeeId
         )
     }

@@ -16,15 +16,9 @@ final class RegisterViewModelTests: XCTestCase {
             language: String
         )?
 
-        func register(
-            email: String,
-            password: String,
-            firstName: String,
-            lastName: String,
-            language: String
-        ) async -> ApiResult<Bool> {
+        func register(_ request: RegisterRequest) async -> ApiResult<Bool> {
             callCount += 1
-            lastArgs = (email, password, firstName, lastName, language)
+            lastArgs = (request.email, request.password, request.firstName, request.lastName, request.language)
             return result
         }
     }

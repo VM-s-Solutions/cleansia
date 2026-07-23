@@ -139,6 +139,36 @@ final class CustomerAuthViewModelTests: XCTestCase {
         XCTAssertEqual(registration.callCount, 1)
     }
 
+    func testSignUpThreadsTrimmedReferralCodeToRegister() async {
+        registration.result = .success(true)
+        let vm = makeViewModel()
+        vm.onFirstNameChange("Jana")
+        vm.onLastNameChange("Nováková")
+        vm.onSignUpEmailChange("jana@b.cz")
+        vm.onSignUpPasswordChange("abcdefg1")
+        vm.onConfirmPasswordChange("abcdefg1")
+        vm.onReferralCodeChange("  ANNA7 ")
+
+        await vm.signUp()
+
+        XCTAssertEqual(registration.lastReferralCode, "ANNA7")
+    }
+
+    func testSignUpSendsNilReferralWhenBlank() async {
+        registration.result = .success(true)
+        let vm = makeViewModel()
+        vm.onFirstNameChange("Jana")
+        vm.onLastNameChange("Nováková")
+        vm.onSignUpEmailChange("jana@b.cz")
+        vm.onSignUpPasswordChange("abcdefg1")
+        vm.onConfirmPasswordChange("abcdefg1")
+        vm.onReferralCodeChange("   ")
+
+        await vm.signUp()
+
+        XCTAssertNil(registration.lastReferralCode)
+    }
+
     func testSignUpEnforcesPasswordPolicy() async {
         let vm = makeViewModel()
         vm.onFirstNameChange("Jana")
@@ -409,16 +439,12 @@ private final class FakeRegistrationClient: RegistrationAuthClient {
     var result: ApiResult<Bool> = .success(true)
     private(set) var callCount = 0
     private(set) var lastLanguage: String?
+    private(set) var lastReferralCode: String?
 
-    func register(
-        email _: String,
-        password _: String,
-        firstName _: String,
-        lastName _: String,
-        language: String
-    ) async -> ApiResult<Bool> {
+    func register(_ request: RegisterRequest) async -> ApiResult<Bool> {
         callCount += 1
-        lastLanguage = language
+        lastLanguage = request.language
+        lastReferralCode = request.referralCode
         return result
     }
 }

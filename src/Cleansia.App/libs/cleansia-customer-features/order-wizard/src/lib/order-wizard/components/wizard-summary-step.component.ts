@@ -10,7 +10,7 @@ import {
   CodeDialogResult,
 } from '@cleansia/components';
 import { OrderWizardFacade } from '../order-wizard.facade';
-import { formatPrice, getItemTranslation, PromoCodeUiState, ReferralUiState } from '../order-wizard.models';
+import { formatPrice, getItemTranslation, PromoCodeUiState } from '../order-wizard.models';
 
 /**
  * Map the backend's PromoCodeError enum (string) to a localized i18n key.
@@ -25,17 +25,6 @@ const PROMO_ERROR_KEYS: Record<string, string> = {
   PerUserLimitReached: 'pages.order.promo.error_used',
   BelowMinimumOrderAmount: 'pages.order.promo.error_min_order',
   CurrencyMismatch: 'pages.order.promo.error_currency',
-};
-
-/**
- * Map the backend's ReferralValidationError enum (string) to a localized i18n key.
- * Same fallback shape as the promo errorKey helper.
- */
-const REFERRAL_ERROR_KEYS: Record<string, string> = {
-  NotFound: 'pages.order.referral.error_not_found',
-  SelfReferral: 'pages.order.referral.error_self_referral',
-  AlreadyReferred: 'pages.order.referral.error_already_referred',
-  Inactive: 'pages.order.referral.error_inactive',
 };
 
 @Component({
@@ -81,31 +70,18 @@ export class WizardSummaryStepComponent implements OnInit {
   // Local-only state; the facade owns the actual code + validation result.
   // The dialogs read facade signals via `*DialogState` computeds below.
   protected readonly promoDialogVisible = signal(false);
-  protected readonly referralDialogVisible = signal(false);
 
   openPromoDialog(): void {
     this.promoDialogVisible.set(true);
-  }
-
-  openReferralDialog(): void {
-    this.referralDialogVisible.set(true);
   }
 
   closePromoDialog(): void {
     this.promoDialogVisible.set(false);
   }
 
-  closeReferralDialog(): void {
-    this.referralDialogVisible.set(false);
-  }
-
   /** Bridge dialog `(visibleChange)` into the local signal — types align cleanly. */
   onPromoDialogVisible(visible: boolean): void {
     this.promoDialogVisible.set(visible);
-  }
-
-  onReferralDialogVisible(visible: boolean): void {
-    this.referralDialogVisible.set(visible);
   }
 
   /**
@@ -118,18 +94,9 @@ export class WizardSummaryStepComponent implements OnInit {
     this.facade.clearPromoCode();
   }
 
-  clearReferral(event: Event): void {
-    event.stopPropagation();
-    this.facade.clearReferralCode();
-  }
-
   /** Apply tap handler — single backend call, no debounce. */
   async applyPromo(code: string): Promise<void> {
     await this.facade.validatePromoCodeNow(code);
-  }
-
-  async applyReferral(code: string): Promise<void> {
-    await this.facade.validateReferralCodeNow(code);
   }
 
   /**
@@ -140,11 +107,6 @@ export class WizardSummaryStepComponent implements OnInit {
   protected readonly promoDialogState = computed<CodeDialogResult>(() => {
     const state = this.facade.promoCodeState();
     return promoStateToDialog(state, this.translate);
-  });
-
-  protected readonly referralDialogState = computed<CodeDialogResult>(() => {
-    const state = this.facade.referralState();
-    return referralStateToDialog(state, this.translate);
   });
 
   /** Normalized display form for the summary "Promo (-CODE)" line. */
@@ -324,33 +286,6 @@ function promoStateToDialog(
     case 'invalid': {
       const key =
         PROMO_ERROR_KEYS[state.error ?? ''] ?? 'pages.order.promo.error_generic';
-      return { kind: 'invalid', errorMessage: translate.instant(key) };
-    }
-  }
-}
-
-function referralStateToDialog(
-  state: ReferralUiState,
-  translate: TranslateService,
-): CodeDialogResult {
-  switch (state.kind) {
-    case 'idle':
-      return { kind: 'idle' };
-    case 'validating':
-      return { kind: 'validating' };
-    case 'valid': {
-      const name = state.referrerFirstName?.trim();
-      const messageKey = name
-        ? 'pages.order.referral.dialog_success_named'
-        : 'pages.order.referral.dialog_success';
-      return {
-        kind: 'valid',
-        successMessage: translate.instant(messageKey, { name: name ?? '' }),
-      };
-    }
-    case 'invalid': {
-      const key =
-        REFERRAL_ERROR_KEYS[state.error ?? ''] ?? 'pages.order.referral.error_generic';
       return { kind: 'invalid', errorMessage: translate.instant(key) };
     }
   }

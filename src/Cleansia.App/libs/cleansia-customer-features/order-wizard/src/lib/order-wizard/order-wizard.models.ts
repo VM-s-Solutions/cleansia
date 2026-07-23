@@ -13,18 +13,6 @@ export type PromoCodeUiState =
   | { kind: 'valid'; discount: number }
   | { kind: 'invalid'; error: string | null };
 
-/**
- * Late-acceptance referral input on the booking summary step. Mirrors the
- * promo state machine but tracks the inviter's first name (when the backend
- * is willing to share it) instead of a discount amount. Backend re-validates
- * at order-create time and a bad code is never a submit blocker.
- */
-export type ReferralUiState =
-  | { kind: 'idle' }
-  | { kind: 'validating' }
-  | { kind: 'valid'; referrerFirstName: string | null }
-  | { kind: 'invalid'; error: string | null };
-
 export interface RebookParams {
   selectedServiceIds: string[];
   selectedPackageIds: string[];
@@ -65,13 +53,6 @@ export interface OrderWizardFormData {
    * Backend re-validates and applies the discount inside CreateOrder.Handler.
    */
   promoCode: string;
-  /**
-   * Optional referral code (late-acceptance path — covers the "forgot to enter
-   * at signup" case). Backend treats this as best-effort: when the user has no
-   * existing Referral row and the code validates, it creates one before order
-   * persistence. Bad codes log a warning server-side and never fail the order.
-   */
-  referralCode: string;
 }
 
 export const ORDER_WIZARD_INITIAL_DATA: OrderWizardFormData = {
@@ -93,7 +74,6 @@ export const ORDER_WIZARD_INITIAL_DATA: OrderWizardFormData = {
   specialInstructions: '',
   entryInstructions: '',
   promoCode: '',
-  referralCode: '',
 };
 
 // ── Validation ──────────────────────────────────────────────

@@ -87,21 +87,8 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         }
     }
 
-    public func register(
-        email: String,
-        password: String,
-        firstName: String,
-        lastName: String,
-        language: String
-    ) async -> ApiResult<Bool> {
-        let body = RegisterRequest(
-            email: email,
-            password: password,
-            firstName: firstName,
-            lastName: lastName,
-            language: language
-        )
-        return await post(path: registerEndpoint.path, body: body, useNoAuthSession: true)
+    public func register(_ request: RegisterRequest) async -> ApiResult<Bool> {
+        await post(path: registerEndpoint.path, body: request, useNoAuthSession: true)
     }
 
     public func confirmEmail(email: String, code: String) async -> ApiResult<LoginOutcome> {

@@ -853,23 +853,6 @@
         "error_min_order": "Objednávka nespĺňa minimálnu sumu pre tento kód",
         "error_currency": "Kód neplatí pre túto menu",
         "error_generic": "Nepodarilo sa overiť kód. Skúste to znova."
-      },
-      "referral": {
-        "row_title": "Odporúčací kód",
-        "row_applied": "{{code}} aktivované",
-        "dialog_title": "Zadajte odporúčací kód",
-        "dialog_helper": "Máte kód od kamaráta? Obaja získate 150 bonusových bodov po prvom upratovaní.",
-        "dialog_apply": "Použiť",
-        "dialog_cancel": "Zrušiť",
-        "dialog_done": "Hotovo",
-        "dialog_success": "Kód prijatý — obaja získate 150 bonusových bodov.",
-        "dialog_success_named": "Kód od {{name}} prijatý — obaja získate 150 bonusových bodov.",
-        "validating": "Overujem…",
-        "error_not_found": "Odporúčací kód sa nenašiel",
-        "error_self_referral": "Sám seba nemôžete odporučiť",
-        "error_already_referred": "Odporúčanie ste už prijali",
-        "error_inactive": "Tento odporúčací kód už nie je aktívny",
-        "error_generic": "Kód sa nepodarilo overiť. Môžete pokračovať."
       }
     },
     "orders": {

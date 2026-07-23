@@ -14,12 +14,13 @@ enum OrdersMutation {
     case takeOrder
     case notifyOnTheWay
     case startOrder
+    case markCashCollected
     case completeOrder
 
     var affectedPanes: [OrdersPane] {
         switch self {
         case .takeOrder, .notifyOnTheWay: [.available, .active]
-        case .startOrder: [.active]
+        case .startOrder, .markCashCollected: [.active]
         case .completeOrder: [.active, .history]
         }
     }

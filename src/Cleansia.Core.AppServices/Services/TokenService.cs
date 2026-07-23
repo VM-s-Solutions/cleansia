@@ -20,6 +20,10 @@ public class TokenService(
     TimeProvider timeProvider)
     : ITokenService
 {
+    // How far to backdate a freshly-minted access token's NotBefore, absorbing clock drift between the
+    // issuing instance and a (possibly trailing) validating instance under ClockSkew=Zero (ADR-0024).
+    private const int ClockDriftBufferSeconds = 60;
+
     public async Task<JwtTokenResponse> GenerateTokenAsync(User user, bool rememberMe, string audience, CancellationToken cancellationToken = default)
     {
         if (!user.IsEmailConfirmed)
@@ -77,7 +81,12 @@ public class TokenService(
             Issuer = jwtSettings.Issuer,
             Audience = audience,
             Subject = new ClaimsIdentity(user.SetClaims(employeeId, deviceId)),
-            NotBefore = now,
+            // Backdate ONLY NotBefore by a small buffer. A validating instance whose clock trails the
+            // issuer's would otherwise reject a just-minted token as "not yet valid" (nbf in the future)
+            // on the very first authed call after login — fatal because the mobile bearer runs
+            // ClockSkew=Zero (ADR-0024). Expires stays exactly now+TTL, so the access-token lifetime that
+            // TC-REVOKE-TTL-2 pins as the device-revocation bound is unchanged; only the nbf window widens.
+            NotBefore = now.AddSeconds(-ClockDriftBufferSeconds),
             IssuedAt = now,
             Expires = now.AddMinutes(jwtSettings.AccessTokenExpMinutes),
             SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),

@@ -5,14 +5,16 @@ import Foundation
 /// activity with a push token so the backend drives updates while the app is closed, hands the tokens to
 /// the backend via `LiveActivityRegistering`, and ends it on a terminal status.
 ///
-/// Wiring (done once the widget target builds green): the order-tracking screen calls `start(...)` when an
-/// order first reaches Confirmed/OnTheWay and `end(orderId:)` on Completed/Cancelled; app launch (post
-/// login) calls `beginPushToStartRegistration()` so the SERVER can start activities on iOS 17.2+.
+/// Wiring: the order-tracking screen calls `start(...)` when an order first reaches Confirmed/OnTheWay and
+/// `end(orderId:)` on Completed/Cancelled; app launch (post login) calls `beginPushToStartRegistration()`
+/// so the SERVER can start activities on iOS 17.2+.
 ///
-/// The backend registration itself is the one regen-gated piece: `LiveActivityRegistering`'s live
-/// implementation calls the generated `CleansiaCustomerApi` LiveActivity client, which only exists after
-/// the customer-mobile spec regen (T-0427 owner step). Until then a no-op keeps everything compiling and
-/// the local activity still starts/ends — it just isn't server-pushed yet.
+/// The live backend registrar IS installed at composition (CustomerAppContainer swaps the no-op default
+/// for `CustomerLiveActivityRegistrar`, which calls the generated `CleansiaCustomerApi` LiveActivity
+/// client), and the backend fires status pushes on transitions. So the server-push path is complete; the
+/// only remaining variable for updates on a CLOSED device is APNs Live-Activity delivery config on the
+/// environment. The on-device foreground `update(...)` path is the fast path while the app is active, and
+/// the widget's ETA countdown self-advances with no push either way.
 ///
 /// Floor is iOS 16.2 (the `ActivityContent` + push-token API); the app itself stays 16.0, so callers gate
 /// on `#available(iOS 16.2, *)`. On a rare 16.0/16.1 device no activity starts — harmless, the order still
@@ -43,13 +45,16 @@ final class LiveActivityCoordinator {
     }
 
     /// Start (or reuse) the live activity for an order and register its push token so the backend can push
-    /// status updates. Idempotent: if an activity for this order already exists, it does nothing.
-    func start(orderId: String, orderNumber: String, scheduledStart: Date, scheduledEnd: Date) {
+    /// status updates. Idempotent: if an activity for this order already exists, it does nothing (call
+    /// `update` to rewrite the content-state of a running activity). The initial content reflects the
+    /// order's CURRENT status, so opening an already-in-progress order renders "Cleaning in progress"
+    /// rather than a stale "On the way".
+    func start(orderId: String, orderNumber: String, status: String, scheduledStart: Date, scheduledEnd: Date) {
         guard isEnabled, existingActivity(orderId: orderId, orderNumber: orderNumber) == nil else { return }
 
         let attributes = CleanOrderAttributes(orderNumber: orderNumber)
         let initialState = CleanOrderAttributes.ContentState(
-            v: 1, status: "onTheWay", orderNumber: orderNumber,
+            v: 1, status: status, orderNumber: orderNumber,
             scheduledStart: scheduledStart, scheduledEnd: scheduledEnd
         )
 
@@ -64,6 +69,21 @@ final class LiveActivityCoordinator {
         } catch {
             // areActivitiesEnabled can race the request, or the per-app activity budget is exhausted.
             // Non-fatal: the order still tracks in-app; the activity simply isn't shown.
+        }
+    }
+
+    /// Rewrite the content-state of the order's running activity (e.g. OnTheWay → InProgress). No-op if no
+    /// activity is running for the order — reuses the same `existingActivity` identity as `start`, so it
+    /// also drives a system-restored / server-started activity. This is the on-device path that keeps the
+    /// Live Activity in sync while the app is active, independent of the (regen-gated) backend push channel.
+    func update(orderId: String, orderNumber: String, status: String, scheduledStart: Date, scheduledEnd: Date) {
+        guard let activity = existingActivity(orderId: orderId, orderNumber: orderNumber) else { return }
+        let state = CleanOrderAttributes.ContentState(
+            v: 1, status: status, orderNumber: orderNumber,
+            scheduledStart: scheduledStart, scheduledEnd: scheduledEnd
+        )
+        Task {
+            await activity.update(ActivityContent(state: state, staleDate: scheduledEnd.addingTimeInterval(3600)))
         }
     }
 
@@ -94,7 +114,11 @@ final class LiveActivityCoordinator {
     /// falls back to matching a system-restored / server-started activity by its `orderNumber` — the only
     /// stable identity in `CleanOrderAttributes` (it deliberately carries no order id, per ADR-0029 D4).
     private func existingActivity(orderId: String, orderNumber: String) -> Activity<CleanOrderAttributes>? {
-        started[orderId] ?? Activity<CleanOrderAttributes>.activities.first { $0.attributes.orderNumber == orderNumber }
+        if let live = started[orderId] { return live }
+        // Don't match a system-restored activity on an empty order number — that would grab an
+        // unrelated one. Only fall back when we have a real number to match on.
+        guard !orderNumber.isEmpty else { return nil }
+        return Activity<CleanOrderAttributes>.activities.first { $0.attributes.orderNumber == orderNumber }
     }
 
     private func observePushToken(of activity: Activity<CleanOrderAttributes>, orderId: String, orderNumber: String) {

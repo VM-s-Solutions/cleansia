@@ -144,6 +144,10 @@ final class OrderNotesViewModel: ViewModel {
             .success(())
         }
 
+        func markCashCollected(orderId _: String) async -> ApiResult<Void> {
+            .success(())
+        }
+
         func completeOrder(orderId _: String, actualMinutes _: Int?, notes _: String?) async -> ApiResult<Void> {
             .success(())
         }

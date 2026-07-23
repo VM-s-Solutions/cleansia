@@ -26,6 +26,7 @@ struct SignUpView: View {
             onEmailChange: vm.onSignUpEmailChange,
             onPasswordChange: vm.onSignUpPasswordChange,
             onConfirmPasswordChange: vm.onConfirmPasswordChange,
+            onReferralCodeChange: vm.onReferralCodeChange,
             onSignIn: onSignIn,
             onSubmit: { Task { await vm.signUp() } },
             onApple: { Task { await vm.signInWithApple() } },
@@ -44,6 +45,7 @@ private struct SignUpContent: View {
     let onEmailChange: (String) -> Void
     let onPasswordChange: (String) -> Void
     let onConfirmPasswordChange: (String) -> Void
+    let onReferralCodeChange: (String) -> Void
     let onSignIn: () -> Void
     let onSubmit: () -> Void
     let onApple: () -> Void
@@ -144,6 +146,14 @@ private struct SignUpContent: View {
                     hasInput: !form.confirmPassword.isEmpty
                 )
 
+                Spacer().frame(height: Spacing.xs)
+
+                CleansiaTextField(
+                    value: binding(form.referralCode, onReferralCodeChange),
+                    label: L10n.Auth.referralCode,
+                    enabled: !formDisabled
+                )
+
                 Spacer().frame(height: Spacing.m)
 
                 CleansiaPrimaryButton(
@@ -220,6 +230,7 @@ private struct SignUpContent: View {
                 onEmailChange: { _ in },
                 onPasswordChange: { _ in },
                 onConfirmPasswordChange: { _ in },
+                onReferralCodeChange: { _ in },
                 onSignIn: {},
                 onSubmit: {},
                 onApple: {},

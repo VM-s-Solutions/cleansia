@@ -10,13 +10,27 @@ public protocol LoginClient: AnyObject {
 }
 
 public protocol RegistrationAuthClient: AnyObject {
+    func register(_ request: RegisterRequest) async -> ApiResult<Bool>
+}
+
+public extension RegistrationAuthClient {
     func register(
         email: String,
         password: String,
         firstName: String,
         lastName: String,
-        language: String
-    ) async -> ApiResult<Bool>
+        language: String,
+        referralCode: String? = nil
+    ) async -> ApiResult<Bool> {
+        await register(RegisterRequest(
+            email: email,
+            password: password,
+            firstName: firstName,
+            lastName: lastName,
+            language: language,
+            referralCode: referralCode
+        ))
+    }
 }
 
 public protocol EmailConfirmationClient: AnyObject {

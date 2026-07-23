@@ -234,13 +234,7 @@ private final class StubAuthSpine: AuthSpine, @unchecked Sendable {
         .success(.authenticated)
     }
 
-    func register(
-        email _: String,
-        password _: String,
-        firstName _: String,
-        lastName _: String,
-        language _: String
-    ) async -> ApiResult<Bool> {
+    func register(_: RegisterRequest) async -> ApiResult<Bool> {
         .success(true)
     }
 

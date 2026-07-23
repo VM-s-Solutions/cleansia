@@ -45,7 +45,15 @@ public abstract class CleansiaApiController(IMediator mediator) : ControllerBase
                         StatusCodes.Status400BadRequest,
                         result.Error!,
                         validationResult.Errors)),
-            BusinessResult<JwtTokenResponse> authResult => Unauthorized(authResult.Error),
+            // 401 for a failed auth command, but carry the business key in the `errors` dictionary — every
+            // client (iOS firstErrorKey, Android firstErrorKey, web HttpErrorInterceptor) reads the first
+            // `errors` value to localize. A bare Error{code,message} has no `errors` dict, so all three fell
+            // back to a generic status message (iOS: "session expired") and the real cause was discarded.
+            BusinessResult<JwtTokenResponse> authResult => Unauthorized(CreateProblemDetails(
+                        "Unauthorized",
+                        StatusCodes.Status401Unauthorized,
+                        authResult.Error!,
+                        [authResult.Error!])),
             _ => BadRequest(CreateProblemDetails(
                         "Bad Request",
                         StatusCodes.Status400BadRequest,

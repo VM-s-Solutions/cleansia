@@ -62,7 +62,16 @@ public class CompleteOrder
                 .MustAsync(OrderIsInProgressAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotInProgress)
                 .MustAsync(HasAfterPhotosAsync)
-                .WithMessage(BusinessErrorMessage.AfterPhotosRequired);
+                .WithMessage(BusinessErrorMessage.AfterPhotosRequired)
+                // Payment must be settled before an order can be completed. A cash order is settled only
+                // once the cleaner marks the cash collected (MarkCashCollected → Paid); a card order once
+                // Stripe confirms (webhook → Paid). Two rules so each surfaces the right, actionable message:
+                // cash-not-collected tells the cleaner to collect + mark it; payment-not-confirmed says the
+                // card charge hasn't cleared yet (nothing the cleaner can do but wait).
+                .MustAsync(CashIsCollectedIfCashPaymentAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashNotCollected)
+                .MustAsync(CardPaymentIsConfirmedIfCardPaymentAsync)
+                .WithMessage(BusinessErrorMessage.OrderPaymentNotConfirmed);
 
             // No length / positivity check on ActualCompletionTimeMinutes:
             // when the caller doesn't supply it (or sends 0), the handler
@@ -149,6 +158,32 @@ public class CompleteOrder
                 .GetPhotoCountByOrderIdAndTypeAsync(orderId, PhotoType.After, cancellationToken);
 
             return photoCount > 0;
+        }
+
+        // A cash order may complete only once the cleaner has collected the cash (PaymentStatus == Paid).
+        // Passes trivially for non-cash orders — those are covered by the card rule below.
+        private async Task<bool> CashIsCollectedIfCashPaymentAsync(string orderId, CancellationToken cancellationToken)
+        {
+            var order = await _orderRepository
+                .GetQueryable()
+                .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+
+            if (order is null) return false;
+
+            return order.PaymentType != PaymentType.Cash || order.PaymentStatus == PaymentStatus.Paid;
+        }
+
+        // A card order may complete only once Stripe has confirmed the charge (PaymentStatus == Paid).
+        // Passes trivially for non-card orders — cash is handled by the rule above.
+        private async Task<bool> CardPaymentIsConfirmedIfCardPaymentAsync(string orderId, CancellationToken cancellationToken)
+        {
+            var order = await _orderRepository
+                .GetQueryable()
+                .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+
+            if (order is null) return false;
+
+            return order.PaymentType != PaymentType.Card || order.PaymentStatus == PaymentStatus.Paid;
         }
     }
 

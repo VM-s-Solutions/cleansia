@@ -380,38 +380,32 @@ extension CustomerShellView {
     }
 }
 
-/// Restores the swipe-to-go-back gesture that `.toolbar(.hidden, for:
-/// .navigationBar)` on the shell root otherwise disables: hiding the bar leaves
-/// the shell's `interactivePopGestureRecognizer` without a delegate, so UIKit
-/// stops firing it. Re-pointing the delegate re-enables the swipe while the bar
-/// stays hidden, and gating on the stack depth keeps the root from swiping into
-/// an empty stack. Scoped to the shell's own navigation controller.
+/// Re-enables NATIVE swipe-to-go-back on pushed screens. SwiftUI leaves the navigation controller's
+/// `interactivePopGestureRecognizer` disabled stack-wide once the shell root hides its nav bar
+/// (`.toolbar(.hidden, for: .navigationBar)`), even on pushed screens that DO show a nav bar + native
+/// back button (e.g. the order detail). We ONLY flip `isEnabled` back on. We deliberately do NOT replace
+/// the recognizer's delegate: its native delegate is what enforces the left-edge scoping AND drives the
+/// interactive slide-to-back. Leaving it intact keeps swipe-back edge-only (the page cannot be dragged
+/// from the middle) and fully native. Screens that use a custom hidden-bar header keep their tap-back.
 private struct InteractivePopGestureEnabler: UIViewControllerRepresentable {
     func makeUIViewController(context _: Context) -> GestureController {
         GestureController()
     }
 
-    /// Re-assert on every update as well: if this controller attaches before the
-    /// ancestor UINavigationController joins the parent chain, `navigationController`
-    /// is nil at `didMove` and the swipe would stay dead with no retry.
+    /// Re-assert on every update too: if this attaches before the ancestor UINavigationController joins
+    /// the parent chain, `navigationController` is nil at `didMove` and the gesture would stay disabled.
     func updateUIViewController(_ controller: GestureController, context _: Context) {
-        controller.reassertGesture()
+        controller.reenablePopGesture()
     }
 
-    final class GestureController: UIViewController, UIGestureRecognizerDelegate {
+    final class GestureController: UIViewController {
         override func didMove(toParent parent: UIViewController?) {
             super.didMove(toParent: parent)
-            reassertGesture()
+            reenablePopGesture()
         }
 
-        func reassertGesture() {
-            guard let gesture = navigationController?.interactivePopGestureRecognizer else { return }
-            gesture.delegate = self
-            gesture.isEnabled = true
-        }
-
-        func gestureRecognizerShouldBegin(_: UIGestureRecognizer) -> Bool {
-            (navigationController?.viewControllers.count ?? 0) > 1
+        func reenablePopGesture() {
+            navigationController?.interactivePopGestureRecognizer?.isEnabled = true
         }
     }
 }

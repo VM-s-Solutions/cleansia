@@ -13,13 +13,16 @@ final class PushTokenForwarderTests: XCTestCase {
         chain.forwarder.forward(fcmToken: "fcm-abc")
 
         await chain.client.waitForRegisters(2)
+        // The session-start token-less register and the forwarded-token upgrade are dispatched from two
+        // concurrent tasks, so their arrival ORDER is not deterministic (this assertion used to flake on
+        // it). Assert order-independently — both must fire with the right deviceId / token / platform.
         XCTAssertEqual(
-            chain.client.registeredRequests,
+            chain.client.registeredRequests.sorted { $0.deviceToken < $1.deviceToken },
             [
                 RegisterDeviceRequest(deviceId: deviceId, deviceToken: "", platform: "ios"),
                 RegisterDeviceRequest(deviceId: deviceId, deviceToken: "fcm-abc", platform: "ios")
             ],
-            "the session-start token-less register precedes the forwarded-token upgrade"
+            "both the session-start token-less register and the forwarded-token upgrade fire"
         )
     }
 

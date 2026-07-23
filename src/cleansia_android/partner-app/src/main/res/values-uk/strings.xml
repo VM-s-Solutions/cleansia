@@ -990,6 +990,7 @@
     <string name="starting_order">Починаю прибирання…</string>
     <string name="slide_to_complete">Проведіть, щоб завершити</string>
     <string name="completing_order">Завершую…</string>
+    <string name="order_mark_cash_collected">Позначити готівку як отриману</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Перед завершенням замовлення зробіть принаймні одне фото \"після\".</string>
@@ -1164,6 +1165,10 @@
     <string name="error_order_completion_notes_required">Нотатки про завершення обов\'язкові.</string>
     <string name="error_order_completion_notes_too_long">Нотатки про завершення занадто довгі.</string>
     <string name="error_order_after_photos_required">Перед завершенням замовлення зробіть хоча б одне фото «після».</string>
+    <string name="error_order_cash_not_collected">Перш ніж завершити замовлення, отримайте готівку та позначте її як прийняту.</string>
+    <string name="error_order_payment_not_confirmed">Оплату за це замовлення ще не підтверджено.</string>
+    <string name="error_order_not_cash_payment">Це не замовлення з оплатою готівкою.</string>
+    <string name="error_order_cash_already_collected">Готівку за це замовлення вже отримано.</string>
 
     <string name="error_order_note_content_required">Текст нотатки обов\'язковий.</string>
     <string name="error_order_issue_description_required">Опис проблеми обов\'язковий.</string>

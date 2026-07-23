@@ -38,7 +38,6 @@ import {
   OrderWizardFormData,
   PromoCodeUiState,
   RebookParams,
-  ReferralUiState,
 } from './order-wizard.models';
 
 @Injectable()
@@ -165,7 +164,6 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     this.promo.connect({
       displayedTotalPrice: this.displayedTotalPrice,
       persistPromoCode: (value) => this.updateFormData({ promoCode: value }),
-      persistReferralCode: (value) => this.updateFormData({ referralCode: value }),
     });
     this.serviceArea.connect({
       currentAddress: () => this.formData().address,
@@ -181,16 +179,14 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     return this.pricing.refreshQuoteNow();
   }
 
-  // ─── Promo + referral code validation ────────────────────────
+  // ─── Promo code validation ───────────────────────────────────
   //
-  // The promo/referral validation state machines + their backend calls live in
+  // The promo validation state machine + its backend call live in
   // OrderPromoFacade, provided alongside this facade on the component. We
-  // re-expose their surface so the template/summary-step keep reading the
+  // re-expose its surface so the template/summary-step keep reading the
   // wizard facade.
   readonly promoCode = this.promo.promoCode;
   readonly promoCodeState = this.promo.promoCodeState;
-  readonly referralCode = this.promo.referralCode;
-  readonly referralState = this.promo.referralState;
 
   /**
    * Server-resolved tier discount preview from the live quote (anonymous quotes return 0).
@@ -247,28 +243,14 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     this.promo.setPromoCode(value);
   }
 
-  setReferralCode(value: string): void {
-    this.promo.setReferralCode(value);
-  }
-
   /** Apply-button handler from the promo dialog — see OrderPromoFacade. */
   validatePromoCodeNow(code: string): Promise<PromoCodeUiState> {
     return this.promo.validatePromoCodeNow(code);
   }
 
-  /** Apply-button handler from the referral dialog — see OrderPromoFacade. */
-  validateReferralCodeNow(code: string): Promise<ReferralUiState> {
-    return this.promo.validateReferralCodeNow(code);
-  }
-
   /** Wipes the applied promo state — used by the row's clear-X button. */
   clearPromoCode(): void {
     this.promo.clearPromoCode();
-  }
-
-  /** Wipes the applied referral state — used by the row's clear-X button. */
-  clearReferralCode(): void {
-    this.promo.clearReferralCode();
   }
 
   initialize(): void {
@@ -565,15 +547,6 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       promoState.kind === 'valid' && trimmedPromo
         ? trimmedPromo.toUpperCase()
         : undefined;
-    // Referral code: forward whenever the user typed something (trimmed).
-    // Backend treats invalid codes as no-op and never fails the order, so we
-    // don't gate on the live `referralState` like we do for promo. This keeps
-    // the late-acceptance flow forgiving — a typo'd code on submit just
-    // results in no referral being recorded.
-    const trimmedReferral = this.referralCode().trim();
-    const referralCodeToSend = trimmedReferral
-      ? trimmedReferral.toUpperCase()
-      : undefined;
     // Backend validator is XOR: send savedAddressId OR customerAddress, never both.
     const command = new CreateOrderCommand({
       customerName: `${data.customerFirstName} ${data.customerLastName}`.trim(),
@@ -597,7 +570,9 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       totalPrice: quoted.totalPrice,
       language: this.translate.currentLang || this.translate.getDefaultLang(),
       promoCode: promoCodeToSend,
-      referralCode: referralCodeToSend,
+      // Referral is a signup-only benefit now — the checkout wizard never
+      // populates it. Backend still accepts the field for other callers.
+      referralCode: undefined,
       // Future Cleansia Plus perk — customer-requested cleaner. Web wizard
       // doesn't surface this picker yet (waiting on the Plus rollout); send
       // undefined so the backend skips the matching boost. The field is

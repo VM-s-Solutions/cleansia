@@ -1007,6 +1007,7 @@
     <string name="starting_order">Začínám úklid…</string>
     <string name="slide_to_complete">Posunutím dokončete</string>
     <string name="completing_order">Dokončuji…</string>
+    <string name="order_mark_cash_collected">Označit hotovost jako přijatou</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Před dokončením zakázky pořiďte alespoň jednu fotografii \"po\".</string>
@@ -1181,6 +1182,10 @@
     <string name="error_order_completion_notes_required">Poznámky k dokončení jsou povinné.</string>
     <string name="error_order_completion_notes_too_long">Poznámky k dokončení jsou příliš dlouhé.</string>
     <string name="error_order_after_photos_required">Před dokončením zakázky pořiďte alespoň jednu fotografii „po\".</string>
+    <string name="error_order_cash_not_collected">Před dokončením zakázky vyberte hotovost a označte ji jako přijatou.</string>
+    <string name="error_order_payment_not_confirmed">Platba za tuto zakázku ještě nebyla potvrzena.</string>
+    <string name="error_order_not_cash_payment">Toto není zakázka placená hotově.</string>
+    <string name="error_order_cash_already_collected">Hotovost za tuto zakázku již byla přijata.</string>
 
     <string name="error_order_note_content_required">Text poznámky je povinný.</string>
     <string name="error_order_issue_description_required">Popis problému je povinný.</string>

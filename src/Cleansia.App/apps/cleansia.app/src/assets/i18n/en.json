@@ -853,23 +853,6 @@
         "error_min_order": "Order doesn't meet the minimum for this code",
         "error_currency": "Code doesn't apply to this currency",
         "error_generic": "Couldn't validate code. Please try again."
-      },
-      "referral": {
-        "row_title": "Referral code",
-        "row_applied": "{{code}} applied",
-        "dialog_title": "Enter referral code",
-        "dialog_helper": "Have a friend's code? Both of you earn 150 bonus tier-points after your first cleaning.",
-        "dialog_apply": "Apply",
-        "dialog_cancel": "Cancel",
-        "dialog_done": "Done",
-        "dialog_success": "Code accepted — you'll both get 150 bonus points.",
-        "dialog_success_named": "Code from {{name}} accepted — you'll both get 150 bonus points.",
-        "validating": "Checking…",
-        "error_not_found": "Referral code not found",
-        "error_self_referral": "You can't refer yourself",
-        "error_already_referred": "You've already accepted a referral",
-        "error_inactive": "This referral code is no longer active",
-        "error_generic": "Couldn't validate code. You can still continue."
       }
     },
     "orders": {

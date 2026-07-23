@@ -853,23 +853,6 @@
         "error_min_order": "Objednávka nesplňuje minimální částku pro tento kód",
         "error_currency": "Kód neplatí pro tuto měnu",
         "error_generic": "Nepodařilo se ověřit kód. Zkuste to znovu."
-      },
-      "referral": {
-        "row_title": "Doporučovací kód",
-        "row_applied": "{{code}} aktivováno",
-        "dialog_title": "Zadejte doporučovací kód",
-        "dialog_helper": "Máte kód od kamaráda? Oba získáte 150 bonusových bodů po prvním úklidu.",
-        "dialog_apply": "Použít",
-        "dialog_cancel": "Zrušit",
-        "dialog_done": "Hotovo",
-        "dialog_success": "Kód přijat — oba získáte 150 bonusových bodů.",
-        "dialog_success_named": "Kód od {{name}} přijat — oba získáte 150 bonusových bodů.",
-        "validating": "Ověřuji…",
-        "error_not_found": "Doporučovací kód nebyl nalezen",
-        "error_self_referral": "Sami sebe nemůžete doporučit",
-        "error_already_referred": "Doporučení jste již přijali",
-        "error_inactive": "Tento doporučovací kód již není aktivní",
-        "error_generic": "Kód se nepodařilo ověřit. Můžete pokračovat."
       }
     },
     "orders": {

@@ -32,6 +32,7 @@ public struct RegisterRequest: Encodable, Sendable {
     public let firstName: String
     public let lastName: String
     public let language: String
+    public let referralCode: String?
 }
 
 /// The email names the account the 6-digit code was issued to — the server verifies the code ONLY

@@ -4,6 +4,11 @@ import SwiftUI
 struct RewardsTab: View {
     @StateObject private var vm: RewardsViewModel
     @Environment(\.snackbarController) private var snackbar
+    // Re-localize on a runtime language switch: the reward cards take value-type inputs, so SwiftUI's
+    // equality check skips re-invoking their body when only the bundle is repointed. Stamping the
+    // locale identity forces the subtree to rebuild from cached data in the new language — the app's
+    // standard pattern (see HomeTab). Without it, only the title (in this body) updated.
+    @Environment(\.locale) private var locale
     let onOpenActivity: () -> Void
 
     init(
@@ -28,7 +33,10 @@ struct RewardsTab: View {
                 .padding(.horizontal, Spacing.ml)
                 .padding(.vertical, Spacing.m)
 
+            // .id on the content (not the outer VStack) so the cards rebuild from cached data in the
+            // new language without restarting the .task / re-fetching.
             content
+                .id(locale.identifier)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(CleansiaColors.background.ignoresSafeArea())

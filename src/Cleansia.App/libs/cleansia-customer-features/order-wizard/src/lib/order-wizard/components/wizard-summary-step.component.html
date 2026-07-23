@@ -128,47 +128,6 @@
       </div>
     }
 
-    <!-- Referral row — Wolt-style entry tile that opens a dialog. Backend
-         treats invalid codes as best-effort, so the row stays clickable
-         after a failure to let the user retry. -->
-    <div
-      class="order-wizard__code-row"
-      tabindex="0"
-      role="button"
-      [attr.aria-label]="'pages.order.referral.row_title' | translate"
-      (click)="openReferralDialog()"
-      (keydown.enter)="openReferralDialog()"
-      (keydown.space)="$event.preventDefault(); openReferralDialog()"
-    >
-      <div class="order-wizard__code-row-icon">
-        <i class="pi pi-users"></i>
-      </div>
-      <div class="order-wizard__code-row-content">
-        <div class="order-wizard__code-row-label">
-          {{ 'pages.order.referral.row_title' | translate }}
-        </div>
-        @if (facade.referralState().kind === 'valid') {
-          <div class="order-wizard__code-row-applied">
-            {{ 'pages.order.referral.row_applied' | translate: { code: facade.referralCode() } }}
-          </div>
-        }
-      </div>
-      <div class="order-wizard__code-row-action">
-        @if (facade.referralState().kind === 'valid') {
-          <button
-            type="button"
-            class="order-wizard__code-row-clear"
-            [attr.aria-label]="'pages.order.referral.dialog_cancel' | translate"
-            (click)="clearReferral($event)"
-          >
-            <i class="pi pi-times"></i>
-          </button>
-        } @else {
-          <i class="pi pi-chevron-right"></i>
-        }
-      </div>
-    </div>
-
     <!-- Promo row — Wolt-style. Tap to open dialog → enter code → Apply
          hits backend once → Done locks it in. The clear-X strips the
          applied state without reopening the dialog. -->
@@ -343,21 +302,4 @@
   (applyClicked)="applyPromo($event)"
   (done)="closePromoDialog()"
   (cancelled)="closePromoDialog()"
-/>
-
-<cleansia-code-input-dialog
-  [visible]="referralDialogVisible()"
-  (visibleChange)="onReferralDialogVisible($event)"
-  [initialCode]="facade.referralCode()"
-  [state]="referralDialogState()"
-  titleKey="pages.order.referral.dialog_title"
-  inputLabelKey="pages.order.referral.row_title"
-  helperKey="pages.order.referral.dialog_helper"
-  cancelKey="pages.order.referral.dialog_cancel"
-  applyKey="pages.order.referral.dialog_apply"
-  doneKey="pages.order.referral.dialog_done"
-  validatingKey="pages.order.referral.validating"
-  (applyClicked)="applyReferral($event)"
-  (done)="closeReferralDialog()"
-  (cancelled)="closeReferralDialog()"
 />

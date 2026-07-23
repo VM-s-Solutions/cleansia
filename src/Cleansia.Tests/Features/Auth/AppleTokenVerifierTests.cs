@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Infra.Common.Configuration.Interfaces;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Cleansia.Tests.Features.Auth;
@@ -36,7 +37,7 @@ public class AppleTokenVerifierTests
     {
         var config = new Mock<IAppleConfig>();
         config.SetupGet(c => c.BundleId).Returns(bundleId);
-        return new AppleTokenVerifier(config.Object);
+        return new AppleTokenVerifier(config.Object, NullLogger<AppleTokenVerifier>.Instance);
     }
 
     // Fail closed when no audience is configured: an empty bundle id leaves the aud check unconstrained,

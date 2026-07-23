@@ -140,6 +140,7 @@ final class OrdersListViewModel: ViewModel {
         case .take: await client.takeOrder(orderId: orderId)
         case .notifyOnTheWay: await client.notifyOnTheWay(orderId: orderId)
         case .start: await client.startOrder(orderId: orderId)
+        case .collectCash: await client.markCashCollected(orderId: orderId)
         case .complete: await client.completeOrder(orderId: orderId, actualMinutes: nil, notes: nil)
         case .completeBlocked, .none: .failure(ApiError(code: "orders.no_action"))
         }

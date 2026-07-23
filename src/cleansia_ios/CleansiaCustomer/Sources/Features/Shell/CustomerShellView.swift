@@ -413,16 +413,5 @@ private struct InteractivePopGestureEnabler: UIViewControllerRepresentable {
         func gestureRecognizerShouldBegin(_: UIGestureRecognizer) -> Bool {
             (navigationController?.viewControllers.count ?? 0) > 1
         }
-
-        /// Let the edge-swipe pop fire ALONGSIDE an in-page pan. Without this, a scrollable page
-        /// (e.g. a completed order — review + receipt + photos + timeline make its ScrollView tall
-        /// enough to scroll) lets the scroll view's pan recognizer starve the pop gesture, so
-        /// swipe-back silently dies on exactly those screens while short pages keep working.
-        func gestureRecognizer(
-            _: UIGestureRecognizer,
-            shouldRecognizeSimultaneouslyWith _: UIGestureRecognizer
-        ) -> Bool {
-            true
-        }
     }
 }

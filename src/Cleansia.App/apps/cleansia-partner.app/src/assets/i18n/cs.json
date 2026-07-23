@@ -1062,6 +1062,10 @@
       "max_employees_exceeded": "Překročen maximální počet zaměstnanců",
       "not_in_progress": "Objednávka není v průběhu",
       "not_confirmed": "Objednávka musí být ve stavu potvrzena pro zahájení",
+      "cash_not_collected": "Před dokončením objednávky vyberte hotovost a označte ji jako přijatou.",
+      "cash_already_collected": "Hotovost za tuto objednávku již byla vybrána.",
+      "not_cash_payment": "Toto není objednávka placená hotově.",
+      "payment_not_confirmed": "Platba za tuto objednávku dosud nebyla potvrzena.",
       "actual_time": {
         "positive": "Skutečný čas musí být kladný"
       },

@@ -413,5 +413,23 @@ private struct InteractivePopGestureEnabler: UIViewControllerRepresentable {
         func gestureRecognizerShouldBegin(_: UIGestureRecognizer) -> Bool {
             (navigationController?.viewControllers.count ?? 0) > 1
         }
+
+        /// Edge-only. Replacing the pop recognizer's delegate removes UIKit's built-in left-edge
+        /// scoping, which makes the WHOLE page draggable sideways. Re-impose it: only accept a touch
+        /// that STARTS within ~30pt of the left screen edge, so a drag from the middle is ignored and
+        /// the page stays put.
+        func gestureRecognizer(_: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            touch.location(in: nil).x <= 30
+        }
+
+        /// Let the (edge-only) back-swipe fire alongside a vertical scroll, so it still works on tall,
+        /// scrollable pages (a completed order) where the scroll pan would otherwise starve it. Safe
+        /// now that the gesture only starts at the edge.
+        func gestureRecognizer(
+            _: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith _: UIGestureRecognizer
+        ) -> Bool {
+            true
+        }
     }
 }

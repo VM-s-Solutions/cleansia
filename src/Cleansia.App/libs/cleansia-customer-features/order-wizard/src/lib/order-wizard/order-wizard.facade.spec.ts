@@ -29,7 +29,6 @@ describe('OrderWizardFacade', () => {
   let orderClient: { quote: jest.Mock; createOrder: jest.Mock };
   let paymentClient: { createOrder: jest.Mock };
   let promoCodeClient: { validate: jest.Mock };
-  let referralClient: { validate: jest.Mock };
   let countryClient: { getServiced: jest.Mock };
   let extraClient: { getOverview: jest.Mock };
   let userClient: { getCurrent: jest.Mock };
@@ -75,9 +74,6 @@ describe('OrderWizardFacade', () => {
     promoCodeClient = {
       validate: jest.fn().mockReturnValue(of({ isValid: true, discountAmount: 100 })),
     };
-    referralClient = {
-      validate: jest.fn().mockReturnValue(of({ isValid: true, referrerFirstName: 'Pat' })),
-    };
     countryClient = { getServiced: jest.fn().mockReturnValue(of([])) };
     extraClient = { getOverview: jest.fn().mockReturnValue(of([])) };
     userClient = { getCurrent: jest.fn().mockReturnValue(of({})) };
@@ -109,7 +105,6 @@ describe('OrderWizardFacade', () => {
             orderClient,
             paymentClient,
             promoCodeClient,
-            referralClient,
             countryClient,
             extraClient,
             userClient,
@@ -176,42 +171,12 @@ describe('OrderWizardFacade', () => {
     });
   });
 
-  describe('validateReferralCodeNow', () => {
-    it('returns idle and skips the client for an empty code', async () => {
-      const state = await facade.validateReferralCodeNow('');
-
-      expect(state).toEqual({ kind: 'idle' });
-      expect(referralClient.validate).not.toHaveBeenCalled();
-    });
-
-    it('resolves to valid when the backend accepts the code', async () => {
-      const state = await facade.validateReferralCodeNow('friend');
-
-      expect(state).toEqual({ kind: 'valid', referrerFirstName: 'Pat' });
-    });
-
-    it('resolves to invalid on a network error', async () => {
-      referralClient.validate.mockReturnValue(throwError(() => new Error('boom')));
-
-      const state = await facade.validateReferralCodeNow('x');
-
-      expect(state).toEqual({ kind: 'invalid', error: null });
-    });
-  });
-
-  describe('promo + referral code mutators', () => {
+  describe('promo code mutators', () => {
     it('setPromoCode persists the raw input into form data', () => {
       facade.setPromoCode('save10');
 
       expect(facade.promoCode()).toBe('save10');
       expect(facade.formData().promoCode).toBe('save10');
-    });
-
-    it('setReferralCode persists the raw input into form data', () => {
-      facade.setReferralCode('friend');
-
-      expect(facade.referralCode()).toBe('friend');
-      expect(facade.formData().referralCode).toBe('friend');
     });
 
     it('a valid promo code normalizes and is stored uppercased', async () => {
@@ -236,16 +201,6 @@ describe('OrderWizardFacade', () => {
       expect(facade.promoCodeState()).toEqual({ kind: 'idle' });
       expect(facade.promoCode()).toBe('');
       expect(facade.formData().promoCode).toBe('');
-    });
-
-    it('clearReferralCode resets the state and wipes the form value', async () => {
-      await facade.validateReferralCodeNow('friend');
-
-      facade.clearReferralCode();
-
-      expect(facade.referralState()).toEqual({ kind: 'idle' });
-      expect(facade.referralCode()).toBe('');
-      expect(facade.formData().referralCode).toBe('');
     });
 
     it('effectivePromoDiscount reflects the applied valid discount', async () => {

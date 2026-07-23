@@ -16,6 +16,7 @@ struct SignUpFormState: Equatable {
     var email = ""
     var password = ""
     var confirmPassword = ""
+    var referralCode = ""
     var firstNameError: String?
     var lastNameError: String?
     var emailError: String?
@@ -158,17 +159,23 @@ final class CustomerAuthViewModel: ViewModel {
         signUpForm.confirmPasswordError = nil
     }
 
+    func onReferralCodeChange(_ value: String) {
+        signUpForm.referralCode = value
+    }
+
     func signUp() async {
         if signUpState.isSubmitting { return }
         guard validateSignUp() else { return }
 
+        let referralCode = signUpForm.referralCode.trimmingCharacters(in: .whitespacesAndNewlines)
         signUpState = .submitting
         let result = await registrationClient.register(
             email: signUpForm.email,
             password: signUpForm.password,
             firstName: signUpForm.firstName,
             lastName: signUpForm.lastName,
-            language: settings.languageTag
+            language: settings.languageTag,
+            referralCode: referralCode.isEmpty ? nil : referralCode
         )
         signUpState = .idle
 

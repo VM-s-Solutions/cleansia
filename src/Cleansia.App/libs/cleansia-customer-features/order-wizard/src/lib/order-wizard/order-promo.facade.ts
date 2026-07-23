@@ -3,30 +3,27 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CustomerClient,
   ValidatePromoCodeCommand,
-  ValidateReferralQuery,
 } from '@cleansia/customer-services';
 import { catchError, of, takeUntil } from 'rxjs';
-import { PromoCodeUiState, ReferralUiState } from './order-wizard.models';
+import { PromoCodeUiState } from './order-wizard.models';
 
-/** Dependencies the promo/referral engine reads from the orchestrating wizard facade. */
+/** Dependencies the promo engine reads from the orchestrating wizard facade. */
 interface PromoConnection {
   /** Post-surcharge subtotal the user is actually charged — promo validates against this. */
   displayedTotalPrice: Signal<number | null | undefined>;
   /** Echoes the raw promo input into the wizard form model. */
   persistPromoCode: (value: string) => void;
-  /** Echoes the raw referral input into the wizard form model. */
-  persistReferralCode: (value: string) => void;
 }
 
 /**
- * Promo-code + referral-code validation for the booking wizard.
+ * Promo-code validation for the booking wizard.
  *
  * Wolt-style: the summary step shows a tappable row that opens a modal which
- * calls `validatePromoCodeNow`/`validateReferralCodeNow` exactly once on Apply
- * (no debounced auto-validation). Backend re-validates server-side at
- * order-create time, so these state machines are purely a UX optimization
- * (instant green-check / red-X feedback). The orchestrating facade owns the
- * form model and connects the echo callbacks in via [connect].
+ * calls `validatePromoCodeNow` exactly once on Apply (no debounced
+ * auto-validation). Backend re-validates server-side at order-create time, so
+ * this state machine is purely a UX optimization (instant green-check / red-X
+ * feedback). The orchestrating facade owns the form model and connects the echo
+ * callback in via [connect].
  */
 @Injectable()
 export class OrderPromoFacade extends UnsubscribeControlDirective {
@@ -36,9 +33,6 @@ export class OrderPromoFacade extends UnsubscribeControlDirective {
 
   promoCode = signal('');
   promoCodeState = signal<PromoCodeUiState>({ kind: 'idle' });
-
-  referralCode = signal('');
-  referralState = signal<ReferralUiState>({ kind: 'idle' });
 
   /** Promo discount the user just applied via the dialog (client-side validation). */
   readonly effectivePromoDiscount = computed(() => {
@@ -53,11 +47,6 @@ export class OrderPromoFacade extends UnsubscribeControlDirective {
   setPromoCode(value: string): void {
     this.promoCode.set(value);
     this.deps?.persistPromoCode(value);
-  }
-
-  setReferralCode(value: string): void {
-    this.referralCode.set(value);
-    this.deps?.persistReferralCode(value);
   }
 
   /**
@@ -104,54 +93,9 @@ export class OrderPromoFacade extends UnsubscribeControlDirective {
     });
   }
 
-  /**
-   * Apply-button handler from the referral dialog. Mirrors `validatePromoCodeNow`.
-   * Backend doesn't fail orders on bad referral codes, so this is purely UX
-   * confirmation — but we still gate the row's "applied" chip on a `valid`
-   * state so the user knows it stuck.
-   */
-  validateReferralCodeNow(code: string): Promise<ReferralUiState> {
-    const normalized = code.trim().toUpperCase();
-    if (!normalized) {
-      this.referralState.set({ kind: 'idle' });
-      this.setReferralCode('');
-      return Promise.resolve({ kind: 'idle' });
-    }
-    this.referralState.set({ kind: 'validating' });
-    return new Promise<ReferralUiState>((resolve) => {
-      this.customerClient.referralClient
-        .validate(
-          new ValidateReferralQuery({
-            code: normalized,
-          }),
-        )
-        .pipe(
-          takeUntil(this.destroyed$),
-          catchError(() => of(null)),
-        )
-        .subscribe((resp) => {
-          const newState: ReferralUiState =
-            resp && resp.isValid
-              ? { kind: 'valid', referrerFirstName: resp.referrerFirstName ?? null }
-              : { kind: 'invalid', error: resp?.errorCode ?? null };
-          this.referralState.set(newState);
-          if (newState.kind === 'valid') {
-            this.setReferralCode(normalized);
-          }
-          resolve(newState);
-        });
-    });
-  }
-
   /** Wipes the applied promo state — used by the row's clear-X button. */
   clearPromoCode(): void {
     this.setPromoCode('');
     this.promoCodeState.set({ kind: 'idle' });
-  }
-
-  /** Wipes the applied referral state — used by the row's clear-X button. */
-  clearReferralCode(): void {
-    this.setReferralCode('');
-    this.referralState.set({ kind: 'idle' });
   }
 }

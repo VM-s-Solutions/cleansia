@@ -70,6 +70,10 @@ extension L10n {
             localized("auth_confirm_password")
         }
 
+        static var referralCode: String {
+            localized("auth_referral_code")
+        }
+
         static var ruleMinLength: String {
             localized("register_pw_min_length")
         }

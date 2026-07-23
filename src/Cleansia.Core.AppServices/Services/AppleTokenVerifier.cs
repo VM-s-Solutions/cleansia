@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Infra.Common.Configuration.Interfaces;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
@@ -31,11 +32,13 @@ public class AppleTokenVerifier : IAppleTokenVerifier
     private const string AppleJwksUri = "https://appleid.apple.com/auth/keys";
 
     private readonly IAppleConfig _appleConfig;
+    private readonly ILogger<AppleTokenVerifier> _logger;
     private readonly ConfigurationManager<OpenIdConnectConfiguration> _configurationManager;
 
-    public AppleTokenVerifier(IAppleConfig appleConfig)
+    public AppleTokenVerifier(IAppleConfig appleConfig, ILogger<AppleTokenVerifier> logger)
     {
         _appleConfig = appleConfig;
+        _logger = logger;
         _configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
             AppleJwksUri,
             new OpenIdConnectConfigurationRetriever());
@@ -47,6 +50,9 @@ public class AppleTokenVerifier : IAppleTokenVerifier
         // the aud check effectively unconstrained.
         if (string.IsNullOrWhiteSpace(_appleConfig.BundleId))
         {
+            _logger.LogError(
+                "Apple identity-token verification failed closed: no Apple BundleId is configured, so the " +
+                "audience check is unsatisfiable. Set Apple:BundleId for this host.");
             return null;
         }
 
@@ -74,6 +80,12 @@ public class AppleTokenVerifier : IAppleTokenVerifier
             var result = await handler.ValidateTokenAsync(identityToken, validationParameters);
             if (!result.IsValid)
             {
+                // Signature/issuer/audience/lifetime/alg rejection. Log the exception TYPE only (e.g.
+                // SecurityTokenExpiredException, SecurityTokenInvalidAudienceException) — never the token —
+                // so a genuine verify failure is diagnosable on DEV instead of surfacing as "session expired".
+                _logger.LogWarning(
+                    "Apple identity-token validation failed: {Failure}",
+                    result.Exception?.GetType().Name ?? "invalid token");
                 return null;
             }
 
@@ -86,6 +98,7 @@ public class AppleTokenVerifier : IAppleTokenVerifier
             if (!token.TryGetClaim("nonce", out var nonceClaim) ||
                 !FixedTimeEquals(nonceClaim.Value, HashNonce(rawNonce)))
             {
+                _logger.LogWarning("Apple identity-token rejected: nonce claim missing or does not match SHA256(rawNonce).");
                 return null;
             }
 
@@ -94,6 +107,7 @@ public class AppleTokenVerifier : IAppleTokenVerifier
                 !token.TryGetClaim("email", out var emailClaim) ||
                 string.IsNullOrEmpty(emailClaim.Value))
             {
+                _logger.LogWarning("Apple identity-token rejected: missing subject or email claim.");
                 return null;
             }
 
@@ -102,8 +116,11 @@ public class AppleTokenVerifier : IAppleTokenVerifier
 
             return new AppleVerifiedClaims(subject, emailClaim.Value, emailVerified);
         }
-        catch
+        catch (Exception ex)
         {
+            // JWKS fetch failure, malformed token, transient network — fail closed, but make the cause
+            // visible (type + message, never the token) so it is distinguishable from a clean rejection.
+            _logger.LogWarning(ex, "Apple identity-token verification threw and failed closed.");
             return null;
         }
     }

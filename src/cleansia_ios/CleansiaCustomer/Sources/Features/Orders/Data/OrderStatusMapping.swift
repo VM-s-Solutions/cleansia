@@ -53,4 +53,15 @@ enum OrderStatusGroup {
     static func isCancelled(_ status: OrderStatus?) -> Bool {
         status == ._6
     }
+
+    /// The Live Activity wire status (CleanOrderAttributes.ContentState.status) for an order status.
+    /// InProgress(4) drives the "Cleaning in progress" content; Confirmed(2)/OnTheWay(3) stay "onTheWay".
+    static func liveActivityStatus(_ status: OrderStatus?) -> String {
+        switch status {
+        case ._4: "inProgress"
+        case ._5: "completed"
+        case ._6: "cancelled"
+        default: "onTheWay"
+        }
+    }
 }

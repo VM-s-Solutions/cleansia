@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Config.Services;
 
@@ -122,11 +123,24 @@ public static class ServiceExtensions
                 ValidateActor = false,
                 ValidateLifetime = true,
                 IssuerSigningKey = new SymmetricSecurityKey(secret),
-                ClockSkew = TimeSpan.Zero,
+                // A small tolerance for clock drift between scaled instances. ClockSkew = Zero rejects a
+                // just-issued token if the validating instance's clock is a fraction behind the issuing
+                // one ("token not yet valid"), which surfaced as an immediate "session expired" right
+                // after a successful mobile sign-in.
+                ClockSkew = TimeSpan.FromSeconds(60),
             };
             options.Events = new JwtBearerEvents
             {
-                OnAuthenticationFailed = context => Task.CompletedTask,
+                // Surface auth failures instead of swallowing them — a silent Task.CompletedTask is why
+                // token-validation failures never reached App Insights.
+                OnAuthenticationFailed = context =>
+                {
+                    context.HttpContext.RequestServices
+                        .GetService<ILoggerFactory>()?
+                        .CreateLogger("JwtBearer")
+                        .LogWarning(context.Exception, "JWT authentication failed: {Message}", context.Exception.Message);
+                    return Task.CompletedTask;
+                },
                 OnTokenValidated = context =>
                 {
                     if (context.Principal?.Identity is not ClaimsIdentity claimsIdentity)

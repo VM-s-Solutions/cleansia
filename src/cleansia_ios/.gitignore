@@ -18,5 +18,22 @@ CleansiaCustomerApi/
 # project's sender id / API key). Owner drops it into each app's Firebase/ folder.
 **/GoogleService-Info.plist
 
+# fastlane — local secrets + build output (see fastlane/README.md)
+fastlane/.env
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/test_output/
+build/
+*.ipa
+*.app.dSYM.zip
+Gemfile.lock
+
+# Signing / auth key material — never commit (fail-closed if ever dropped in-tree)
+*.p8
+AuthKey_*
+*.mobileprovision
+*.p12
+*.cer
+
 # macOS
 .DS_Store

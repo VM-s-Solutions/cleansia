@@ -1,0 +1,6 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+# TestFlight build + upload lanes (see fastlane/README.md).
+gem "fastlane", ">= 2.220"

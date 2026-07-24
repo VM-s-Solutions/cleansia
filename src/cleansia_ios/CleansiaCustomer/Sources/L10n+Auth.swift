@@ -34,10 +34,6 @@ extension L10n {
             localized("auth_password")
         }
 
-        static var rememberMe: String {
-            localized("login_remember_me")
-        }
-
         static var forgotPassword: String {
             localized("login_forgot_password")
         }
@@ -72,6 +68,10 @@ extension L10n {
 
         static var referralCode: String {
             localized("auth_referral_code")
+        }
+
+        static var acceptTerms: String {
+            localized("register_terms_and_conditions")
         }
 
         static var ruleMinLength: String {
@@ -164,6 +164,10 @@ extension L10n {
 
         static var errorPasswordsNoMatch: String {
             localized("auth_error_passwords_no_match")
+        }
+
+        static var errorTermsRequired: String {
+            localized("register_error_terms_required")
         }
 
         static var errorGeneric: String {

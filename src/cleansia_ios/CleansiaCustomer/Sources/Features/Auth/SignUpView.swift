@@ -27,6 +27,7 @@ struct SignUpView: View {
             onPasswordChange: vm.onSignUpPasswordChange,
             onConfirmPasswordChange: vm.onConfirmPasswordChange,
             onReferralCodeChange: vm.onReferralCodeChange,
+            onAcceptTermsChange: vm.onAcceptTermsChange,
             onSignIn: onSignIn,
             onSubmit: { Task { await vm.signUp() } },
             onApple: { Task { await vm.signInWithApple() } },
@@ -46,6 +47,7 @@ private struct SignUpContent: View {
     let onPasswordChange: (String) -> Void
     let onConfirmPasswordChange: (String) -> Void
     let onReferralCodeChange: (String) -> Void
+    let onAcceptTermsChange: (Bool) -> Void
     let onSignIn: () -> Void
     let onSubmit: () -> Void
     let onApple: () -> Void
@@ -53,6 +55,10 @@ private struct SignUpContent: View {
 
     private func binding(_ value: String, _ setter: @escaping (String) -> Void) -> Binding<String> {
         Binding(get: { value }, set: setter)
+    }
+
+    private var acceptTermsBinding: Binding<Bool> {
+        Binding(get: { form.acceptTerms }, set: onAcceptTermsChange)
     }
 
     private var formDisabled: Bool {
@@ -154,6 +160,20 @@ private struct SignUpContent: View {
                     enabled: !formDisabled
                 )
 
+                Spacer().frame(height: Spacing.s)
+
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
+                    CleansiaCheckbox(checked: acceptTermsBinding, label: L10n.Auth.acceptTerms)
+                    if let termsError = form.termsError {
+                        Text(termsError)
+                            .font(CleansiaTypography.labelSmall)
+                            .foregroundColor(CleansiaColors.error)
+                            .padding(.horizontal, Spacing.xxs)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .disabled(formDisabled)
+
                 Spacer().frame(height: Spacing.m)
 
                 CleansiaPrimaryButton(
@@ -200,7 +220,8 @@ private struct SignUpContent: View {
                         lastName: "Nováková",
                         email: "jana@b.cz",
                         password: "abcdefg1",
-                        confirmPassword: "abcdefg1"
+                        confirmPassword: "abcdefg1",
+                        acceptTerms: true
                     ),
                     isLoading: true
                 )
@@ -212,7 +233,8 @@ private struct SignUpContent: View {
                         password: "short",
                         firstNameError: "First name is required",
                         emailError: "Please enter a valid email",
-                        passwordError: "Password must be at least 8 characters with a letter and a number"
+                        passwordError: "Password must be at least 8 characters with a letter and a number",
+                        termsError: "You must accept the terms and conditions"
                     ),
                     isLoading: false
                 )
@@ -231,6 +253,7 @@ private struct SignUpContent: View {
                 onPasswordChange: { _ in },
                 onConfirmPasswordChange: { _ in },
                 onReferralCodeChange: { _ in },
+                onAcceptTermsChange: { _ in },
                 onSignIn: {},
                 onSubmit: {},
                 onApple: {},

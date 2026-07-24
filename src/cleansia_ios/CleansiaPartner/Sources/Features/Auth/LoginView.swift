@@ -26,7 +26,6 @@ struct LoginView: View {
             isLoading: vm.loginState.isSubmitting,
             onEmailChange: vm.onEmailChange,
             onPasswordChange: vm.onPasswordChange,
-            onRememberMeChange: vm.onRememberMeChange,
             onForgotPassword: onForgotPassword,
             onSignUp: onSignUp,
             onSubmit: { Task { await vm.login() } }
@@ -40,7 +39,6 @@ private struct LoginContent: View {
     let isLoading: Bool
     let onEmailChange: (String) -> Void
     let onPasswordChange: (String) -> Void
-    let onRememberMeChange: (Bool) -> Void
     let onForgotPassword: () -> Void
     let onSignUp: () -> Void
     let onSubmit: () -> Void
@@ -51,10 +49,6 @@ private struct LoginContent: View {
 
     private var passwordBinding: Binding<String> {
         Binding(get: { form.password }, set: onPasswordChange)
-    }
-
-    private var rememberMeBinding: Binding<Bool> {
-        Binding(get: { form.rememberMe }, set: onRememberMeChange)
     }
 
     private var canSubmit: Bool {
@@ -106,7 +100,6 @@ private struct LoginContent: View {
                 Spacer().frame(height: Spacing.xs)
 
                 HStack {
-                    CleansiaCheckbox(checked: rememberMeBinding, label: L10n.rememberMe)
                     Spacer()
                     CleansiaTextLink(L10n.forgotPassword, action: onForgotPassword)
                 }
@@ -174,7 +167,6 @@ private struct LoginContent: View {
                     isLoading: isLoading,
                     onEmailChange: { binding.wrappedValue.email = $0 },
                     onPasswordChange: { binding.wrappedValue.password = $0 },
-                    onRememberMeChange: { binding.wrappedValue.rememberMe = $0 },
                     onForgotPassword: {},
                     onSignUp: {},
                     onSubmit: {}

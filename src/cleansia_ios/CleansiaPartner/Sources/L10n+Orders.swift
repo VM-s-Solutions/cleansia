@@ -233,6 +233,18 @@ extension L10n {
             localized("payment_status_failed")
         }
 
+        static var paymentStatusRefunded: String {
+            localized("payment_status_refunded")
+        }
+
+        static var paymentStatusDisputed: String {
+            localized("payment_status_disputed")
+        }
+
+        static var paymentStatusPartiallyRefunded: String {
+            localized("payment_status_partially_refunded")
+        }
+
         static var photosSectionTitle: String {
             localized("photos")
         }

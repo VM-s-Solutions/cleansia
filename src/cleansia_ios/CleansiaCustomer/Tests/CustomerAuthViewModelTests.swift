@@ -61,6 +61,15 @@ final class CustomerAuthViewModelTests: XCTestCase {
         return { received }
     }
 
+    private func fillValidSignUp(_ vm: CustomerAuthViewModel) {
+        vm.onFirstNameChange("Jana")
+        vm.onLastNameChange("Nováková")
+        vm.onSignUpEmailChange("jana@b.cz")
+        vm.onSignUpPasswordChange("abcdefg1")
+        vm.onConfirmPasswordChange("abcdefg1")
+        vm.onAcceptTermsChange(true)
+    }
+
     func testSignInAuthenticatedEmitsSignedIn() async {
         login.result = .success(.authenticated)
         let vm = makeViewModel()
@@ -123,15 +132,21 @@ final class CustomerAuthViewModelTests: XCTestCase {
         XCTAssertEqual(snackbar.current?.severity, .error)
     }
 
+    func testSignInAlwaysSendsTheFormerUncheckedRememberMeDefault() async {
+        let vm = makeViewModel()
+        vm.onSignInEmailChange("a@b.cz")
+        vm.onSignInPasswordChange("secret")
+
+        await vm.signIn()
+
+        XCTAssertEqual(login.lastRememberMe, false)
+    }
+
     func testSignUpSuccessEmitsNeedsEmailConfirmCarryingFormEmail() async {
         registration.result = .success(true)
         let vm = makeViewModel()
         let received = collectOutcome(vm)
-        vm.onFirstNameChange("Jana")
-        vm.onLastNameChange("Nováková")
-        vm.onSignUpEmailChange("jana@b.cz")
-        vm.onSignUpPasswordChange("abcdefg1")
-        vm.onConfirmPasswordChange("abcdefg1")
+        fillValidSignUp(vm)
 
         await vm.signUp()
 
@@ -142,11 +157,7 @@ final class CustomerAuthViewModelTests: XCTestCase {
     func testSignUpThreadsTrimmedReferralCodeToRegister() async {
         registration.result = .success(true)
         let vm = makeViewModel()
-        vm.onFirstNameChange("Jana")
-        vm.onLastNameChange("Nováková")
-        vm.onSignUpEmailChange("jana@b.cz")
-        vm.onSignUpPasswordChange("abcdefg1")
-        vm.onConfirmPasswordChange("abcdefg1")
+        fillValidSignUp(vm)
         vm.onReferralCodeChange("  ANNA7 ")
 
         await vm.signUp()
@@ -157,11 +168,7 @@ final class CustomerAuthViewModelTests: XCTestCase {
     func testSignUpSendsNilReferralWhenBlank() async {
         registration.result = .success(true)
         let vm = makeViewModel()
-        vm.onFirstNameChange("Jana")
-        vm.onLastNameChange("Nováková")
-        vm.onSignUpEmailChange("jana@b.cz")
-        vm.onSignUpPasswordChange("abcdefg1")
-        vm.onConfirmPasswordChange("abcdefg1")
+        fillValidSignUp(vm)
         vm.onReferralCodeChange("   ")
 
         await vm.signUp()
@@ -171,9 +178,7 @@ final class CustomerAuthViewModelTests: XCTestCase {
 
     func testSignUpEnforcesPasswordPolicy() async {
         let vm = makeViewModel()
-        vm.onFirstNameChange("Jana")
-        vm.onLastNameChange("Nováková")
-        vm.onSignUpEmailChange("jana@b.cz")
+        fillValidSignUp(vm)
         vm.onSignUpPasswordChange("short")
         vm.onConfirmPasswordChange("short")
 
@@ -185,16 +190,46 @@ final class CustomerAuthViewModelTests: XCTestCase {
 
     func testSignUpRequiresMatchingPasswords() async {
         let vm = makeViewModel()
-        vm.onFirstNameChange("Jana")
-        vm.onLastNameChange("Nováková")
-        vm.onSignUpEmailChange("jana@b.cz")
-        vm.onSignUpPasswordChange("abcdefg1")
+        fillValidSignUp(vm)
         vm.onConfirmPasswordChange("abcdefg2")
 
         await vm.signUp()
 
         XCTAssertNotNil(vm.signUpForm.confirmPasswordError)
         XCTAssertEqual(registration.callCount, 0)
+    }
+
+    func testSignUpWithoutConsentSetsTermsErrorAndDoesNotSubmit() async {
+        let vm = makeViewModel()
+        fillValidSignUp(vm)
+        vm.onAcceptTermsChange(false)
+
+        await vm.signUp()
+
+        XCTAssertNotNil(vm.signUpForm.termsError)
+        XCTAssertEqual(registration.callCount, 0)
+    }
+
+    func testSignUpFormStaysInvalidUntilConsentIsAccepted() {
+        let vm = makeViewModel()
+        fillValidSignUp(vm)
+        vm.onAcceptTermsChange(false)
+        XCTAssertFalse(vm.signUpForm.isValid)
+
+        vm.onAcceptTermsChange(true)
+        XCTAssertTrue(vm.signUpForm.isValid)
+    }
+
+    func testAcceptingConsentClearsTheTermsError() async {
+        let vm = makeViewModel()
+        fillValidSignUp(vm)
+        vm.onAcceptTermsChange(false)
+        await vm.signUp()
+        XCTAssertNotNil(vm.signUpForm.termsError)
+
+        vm.onAcceptTermsChange(true)
+
+        XCTAssertNil(vm.signUpForm.termsError)
     }
 
     func testConfirmEmailAuthenticatedEmitsSignedIn() async {
@@ -428,9 +463,11 @@ final class CustomerAuthViewModelTests: XCTestCase {
 private final class FakeLoginClient: LoginClient {
     var result: ApiResult<LoginOutcome> = .success(.authenticated)
     private(set) var callCount = 0
+    private(set) var lastRememberMe: Bool?
 
-    func login(email _: String, password _: String, rememberMe _: Bool) async -> ApiResult<LoginOutcome> {
+    func login(email _: String, password _: String, rememberMe: Bool) async -> ApiResult<LoginOutcome> {
         callCount += 1
+        lastRememberMe = rememberMe
         return result
     }
 }

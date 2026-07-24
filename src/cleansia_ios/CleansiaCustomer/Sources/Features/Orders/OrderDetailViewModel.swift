@@ -78,6 +78,10 @@ final class OrderDetailViewModel: ViewModel {
             state = .error(ApiError(code: "missing_order_id"))
             return
         }
+        // The in-progress hero plays the heavy 125-frame cleaning mascot. Kick its off-main decode BEFORE
+        // the fetch so it lands while the request is in flight: prewarming once the order is loaded runs in
+        // the same main-thread turn as the hero's first render, so it can never win that race.
+        AnimatedMascotView.prewarm(.cleaningInProgress)
         await fetch(initial: state.loadedValue == nil)
     }
 
@@ -91,11 +95,6 @@ final class OrderDetailViewModel: ViewModel {
         switch await client.getById(orderId: orderId) {
         case let .success(order):
             state = .loaded(order)
-            // The in-progress hero plays the heavy 125-frame cleaning mascot; decode + pin it off-main as
-            // the detail loads so it's warm when the hero renders, instead of a ~5s first-paint freeze.
-            if order.status == ._4 {
-                AnimatedMascotView.prewarm(.cleaningInProgress)
-            }
             evaluatePoller(for: order)
             syncLiveActivity(for: order)
         case let .failure(error):
@@ -134,25 +133,20 @@ final class OrderDetailViewModel: ViewModel {
 
     /// Drive the in-progress-clean Live Activity off the order status (ADR-0029 LA-5): start (idempotent)
     /// once the order is active — Confirmed / OnTheWay / InProgress — and end it on a terminal status. The
-    /// appointment window mirrors the tracking hero: `cleaningDateTime` + `estimatedTime` minutes.
+    /// window carries both the booked appointment (mirroring the tracking hero: `cleaningDateTime` +
+    /// `estimatedTime` minutes) and the actual phase timestamps off the status history, so the card's ETA
+    /// counts against what really happened.
     private func syncLiveActivity(for order: OrderItem) {
         guard let orderId = order.id, !orderId.isBlank else { return }
         let status = order.status
         if OrderStatusGroup.isActive(status) {
-            guard let start = order.cleaningDateTime else { return }
-            let end = start.addingTimeInterval(TimeInterval(max(order.estimatedTime ?? 0, 1) * 60))
+            guard let window = EtaWindow.forOrder(order) else { return }
             let wireStatus = OrderStatusGroup.liveActivityStatus(status)
             let orderNumber = order.displayOrderNumber ?? ""
             // start is idempotent (creates the activity once, with the current status); update rewrites a
             // running activity so an OnTheWay → InProgress transition flips the card to "Cleaning in progress".
-            liveActivity.start(
-                orderId: orderId, orderNumber: orderNumber, status: wireStatus,
-                scheduledStart: start, scheduledEnd: end
-            )
-            liveActivity.update(
-                orderId: orderId, orderNumber: orderNumber, status: wireStatus,
-                scheduledStart: start, scheduledEnd: end
-            )
+            liveActivity.start(orderId: orderId, orderNumber: orderNumber, status: wireStatus, window: window)
+            liveActivity.update(orderId: orderId, orderNumber: orderNumber, status: wireStatus, window: window)
         } else if OrderStatusGroup.isCompleted(status) || OrderStatusGroup.isCancelled(status) {
             liveActivity.end(orderId: orderId)
         }

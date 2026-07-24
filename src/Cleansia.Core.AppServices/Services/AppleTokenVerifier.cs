@@ -14,10 +14,11 @@ namespace Cleansia.Core.AppServices.Services;
 /// The sole adapter that verifies a Sign in with Apple identity token (ADR-0001 S1 server-truth-identity)
 /// — the Apple analogue of <see cref="GoogleTokenVerifier"/>. Verification ALWAYS runs (no environment
 /// bypass). The signature is validated with the vetted <see cref="JsonWebTokenHandler"/> against Apple's
-/// JWKS (fetched and cached via <see cref="ConfigurationManager{T}"/>, refreshed on an unknown
-/// <c>kid</c>), pinned to RS256 (alg:none and HS256/symmetric key-confusion are rejected). The audience
-/// is pinned to the configured native bundle id, the issuer to <c>https://appleid.apple.com</c>, and the
-/// lifetime (exp/iat) is enforced. The request nonce is bound server-side
+/// JWKS (discovered from Apple's OIDC metadata document and cached via
+/// <see cref="ConfigurationManager{T}"/>, refreshed on an unknown <c>kid</c>), pinned to RS256 (alg:none
+/// and HS256/symmetric key-confusion are rejected). The audience is pinned to the configured native
+/// bundle id, the issuer to <c>https://appleid.apple.com</c>, and the lifetime (exp/iat) is enforced.
+/// The request nonce is bound server-side
 /// (<c>SHA256(rawNonce) == token.nonce</c>) to defeat replay. On ANY failure (forged/expired/wrong-aud/
 /// wrong-iss signature, unknown kid, JWKS-fetch failure, nonce mismatch, or a missing/empty bundle id
 /// that makes the audience check unsatisfiable) it returns <c>null</c> so the caller fails closed with a
@@ -27,9 +28,12 @@ public class AppleTokenVerifier : IAppleTokenVerifier
 {
     private const string AppleIssuer = "https://appleid.apple.com";
 
-    // Apple's JWKS endpoint is HARDCODED to HTTPS with no config override and no cross-host redirect
-    // (so the verifier cannot be pointed at an attacker-controlled key set — no SSRF / key-substitution).
-    private const string AppleJwksUri = "https://appleid.apple.com/auth/keys";
+    // Apple's OIDC DISCOVERY document, HARDCODED to HTTPS with no config override and no cross-host
+    // redirect (so the verifier cannot be pointed at an attacker-controlled key set — no SSRF /
+    // key-substitution). It MUST be the discovery document and not Apple's bare key set:
+    // OpenIdConnectConfigurationRetriever loads signing keys only through the document's jwks_uri, so a
+    // raw key set produces a configuration with zero keys and rejects every token as unsigned.
+    private const string AppleMetadataAddress = "https://appleid.apple.com/.well-known/openid-configuration";
 
     private readonly IAppleConfig _appleConfig;
     private readonly ILogger<AppleTokenVerifier> _logger;
@@ -40,7 +44,7 @@ public class AppleTokenVerifier : IAppleTokenVerifier
         _appleConfig = appleConfig;
         _logger = logger;
         _configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
-            AppleJwksUri,
+            AppleMetadataAddress,
             new OpenIdConnectConfigurationRetriever());
     }
 
@@ -58,7 +62,11 @@ public class AppleTokenVerifier : IAppleTokenVerifier
 
         try
         {
-            var openIdConfig = await _configurationManager.GetConfigurationAsync(cancellationToken);
+            // Fetch under the caller's token so a discovery/JWKS outage fails closed HERE, with its cause
+            // logged, instead of surfacing as an opaque signature failure. The manager is then handed to
+            // the validator (rather than a snapshot of its keys) so an unknown kid — Apple rotates its
+            // signing keys — triggers an automatic refresh mid-validation instead of a hard rejection.
+            await _configurationManager.GetConfigurationAsync(cancellationToken);
 
             var validationParameters = new TokenValidationParameters
             {
@@ -66,7 +74,7 @@ public class AppleTokenVerifier : IAppleTokenVerifier
                 ValidateIssuer = true,
                 ValidAudience = _appleConfig.BundleId,
                 ValidateAudience = true,
-                IssuerSigningKeys = openIdConfig.SigningKeys,
+                ConfigurationManager = _configurationManager,
                 ValidateIssuerSigningKey = true,
                 // Pin RS256 so a token whose header advertises alg:none or a symmetric alg (HS256
                 // key-confusion against the public JWKS key) is rejected.
@@ -103,18 +111,24 @@ public class AppleTokenVerifier : IAppleTokenVerifier
             }
 
             var subject = token.Subject;
-            if (string.IsNullOrEmpty(subject) ||
-                !token.TryGetClaim("email", out var emailClaim) ||
-                string.IsNullOrEmpty(emailClaim.Value))
+            if (string.IsNullOrEmpty(subject))
             {
-                _logger.LogWarning("Apple identity-token rejected: missing subject or email claim.");
+                _logger.LogWarning("Apple identity-token rejected: missing subject claim.");
                 return null;
             }
 
-            var emailVerified = token.TryGetClaim("email_verified", out var emailVerifiedClaim) &&
+            // Apple sends the email claim ONLY on the user's FIRST authorization for this app; every later
+            // sign-in carries the sub alone. Requiring it here would lock every returning user out, so the
+            // claim is optional and the caller resolves the account by the sub (see AppleAuth.Handler).
+            var email = token.TryGetClaim("email", out var emailClaim) && !string.IsNullOrWhiteSpace(emailClaim.Value)
+                ? emailClaim.Value
+                : null;
+
+            var emailVerified = email is not null &&
+                token.TryGetClaim("email_verified", out var emailVerifiedClaim) &&
                 IsTrue(emailVerifiedClaim.Value);
 
-            return new AppleVerifiedClaims(subject, emailClaim.Value, emailVerified);
+            return new AppleVerifiedClaims(subject, email, emailVerified);
         }
         catch (Exception ex)
         {

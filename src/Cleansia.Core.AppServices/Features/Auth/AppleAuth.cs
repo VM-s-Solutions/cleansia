@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
@@ -59,7 +60,8 @@ public class AppleAuth
         ITokenService tokenService,
         ICartRepository cartRepository,
         IUserRepository userRepository,
-        IHostAudienceProvider hostAudience)
+        IHostAudienceProvider hostAudience,
+        ILogger<Handler> logger)
         : ICommandHandler<Command, JwtTokenResponse>
     {
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
@@ -74,13 +76,25 @@ public class AppleAuth
                     new Error(nameof(Command.IdentityToken), BusinessErrorMessage.InvalidAppleUserToken));
             }
 
-            var user = await userRepository.GetByEmailIgnoringTenantAsync(claims.Email, cancellationToken);
+            // Resolve by the Apple sub FIRST: it is server-verified from the token (never client-supplied),
+            // immutable for this Apple ID within our developer team, and the ONLY identity Apple sends on a
+            // returning sign-in — it omits the email after the user's first authorization, so an
+            // email-only lookup locked returning users out. The email is a fallback for accounts
+            // provisioned before their sub was ever seen.
+            var user = await userRepository.GetByAppleIdIgnoringTenantAsync(claims.Subject, cancellationToken);
+            if (user is null && !string.IsNullOrWhiteSpace(claims.Email))
+            {
+                user = await userRepository.GetByEmailIgnoringTenantAsync(claims.Email, cancellationToken);
+            }
+
             if (user is not null)
             {
                 // S1: the account-type guard MUST run against the account the handler actually
-                // authenticates — the VERIFIED claims.Email — not a client-supplied field. Block an Apple
-                // login from binding into an existing password (Internal) OR Google account that shares
-                // this verified email (the verified-email-collision takeover Google's hardening closed).
+                // authenticates — resolved from the VERIFIED claims — not a client-supplied field. Block an
+                // Apple login from binding into an existing password (Internal) OR Google account that
+                // shares this verified email (the verified-email-collision takeover Google's hardening
+                // closed). A sub-matched account keeps its stored email untouched: rewriting it would
+                // collide with the (TenantId, Email) unique index and silently merge two accounts.
                 if (user.AuthenticationType != AuthenticationType.Apple)
                 {
                     return BusinessResult.Failure<JwtTokenResponse>(
@@ -95,10 +109,17 @@ public class AppleAuth
                 return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken));
             }
 
-            // Provision only when Apple reports the email as verified — reject an unverifiable email rather
-            // than create an account around it.
-            if (!claims.EmailVerified)
+            // Provision only when Apple reports a verified email — reject an unverifiable one rather than
+            // create an account around it. No email at all means Apple has authorized this app for that
+            // Apple ID before, yet no account carries the sub: nothing safe to provision, so fail closed.
+            if (!claims.EmailVerified || string.IsNullOrWhiteSpace(claims.Email))
             {
+                logger.LogWarning(
+                    "Apple sign-in rejected: no account matched the verified subject and a new one cannot be " +
+                    "provisioned (hasEmailClaim: {HasEmailClaim}, emailVerified: {EmailVerified}).",
+                    claims.Email is not null,
+                    claims.EmailVerified);
+
                 return BusinessResult.Failure<JwtTokenResponse>(
                     new Error(nameof(Command.IdentityToken), BusinessErrorMessage.InvalidAppleUserToken));
             }

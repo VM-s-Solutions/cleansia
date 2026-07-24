@@ -5,7 +5,6 @@ import Foundation
 struct LoginFormState: Equatable {
     var email = ""
     var password = ""
-    var rememberMe = true
     var emailError: String?
     var passwordError: String?
 }
@@ -25,6 +24,10 @@ final class LoginViewModel: ViewModel {
     private let loginClient: LoginClient
     private let snackbar: SnackbarController
 
+    /// Login no longer offers a remember-me toggle; `true` preserves the box's former
+    /// checked-by-default state, so the refresh token keeps its 30-day lifetime.
+    private static let rememberMe = true
+
     init(loginClient: LoginClient, snackbar: SnackbarController) {
         self.loginClient = loginClient
         self.snackbar = snackbar
@@ -40,10 +43,6 @@ final class LoginViewModel: ViewModel {
         form.passwordError = nil
     }
 
-    func onRememberMeChange(_ rememberMe: Bool) {
-        form.rememberMe = rememberMe
-    }
-
     func login() async {
         if loginState.isSubmitting { return }
         guard validate() else { return }
@@ -52,7 +51,7 @@ final class LoginViewModel: ViewModel {
         let result = await loginClient.login(
             email: form.email,
             password: form.password,
-            rememberMe: form.rememberMe
+            rememberMe: Self.rememberMe
         )
         loginState = .idle
 

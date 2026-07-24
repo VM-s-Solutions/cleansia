@@ -3,11 +3,12 @@ import SwiftUI
 import WidgetKit
 
 // The CleansiaCustomerLiveActivity widget extension entry point + the branded lock-screen / Dynamic
-// Island presentation of an in-progress clean, styled after Uber/Wolt delivery activities: a mascot
-// avatar, a bold self-advancing ETA countdown (NOT a progress bar), and a clean two-line header. The
-// countdown uses `Text(timerInterval:)`, which live-updates on a locked device with NO push and NO app
-// running — so the card never looks frozen even between backend status pushes. Renders
-// CleanOrderAttributes, which the app starts and the backend pushes status updates to.
+// Island presentation of an in-progress clean, styled after Uber/Wolt delivery activities: a per-status
+// mascot avatar, a bold self-advancing ETA (NOT a progress bar), and a clean two-line header. The ETA is
+// system-drawn, so it live-updates on a locked device with NO push and NO app running; once the counted-to
+// end passes it switches to counting UP from a past anchor, which cannot clamp — so the card keeps moving
+// even when no push arrives. Renders CleanOrderAttributes, which the app starts and the backend pushes
+// status updates to.
 //
 // The whole extension deploys at iOS 16.1, so no @available guards are needed inside it.
 
@@ -32,13 +33,11 @@ private struct CleanStatus {
     let title: String
     let detail: String
     let symbol: String
+    /// Bundled mascot art, one pose per active state so the card reads at a glance; the terminal states
+    /// keep the clearer checkmark / xmark SF Symbols. Lives in the widget's own asset catalog
+    /// (LiveActivity/Assets.xcassets); `mascot_live` stays the generic fallback for an unknown status.
+    let mascotAsset: String?
     let isTerminal: Bool
-
-    /// Active (non-terminal) states show the live ETA countdown to completion; terminal states show a
-    /// final glyph + line instead.
-    var showsEta: Bool {
-        !isTerminal
-    }
 
     init(_ raw: String) {
         switch raw {
@@ -47,6 +46,7 @@ private struct CleanStatus {
                 title: "On the way",
                 detail: "Your cleaner is heading over",
                 symbol: "figure.walk",
+                mascotAsset: "mascot_on_the_way",
                 isTerminal: false
             )
         case "inProgress":
@@ -54,6 +54,7 @@ private struct CleanStatus {
                 title: "Cleaning in progress",
                 detail: "Your cleaner is on site",
                 symbol: "sparkles",
+                mascotAsset: "mascot_cleaning",
                 isTerminal: false
             )
         case "completed":
@@ -61,6 +62,7 @@ private struct CleanStatus {
                 title: "Clean complete",
                 detail: "All done — thank you",
                 symbol: "checkmark.seal.fill",
+                mascotAsset: nil,
                 isTerminal: true
             )
         case "cancelled":
@@ -68,6 +70,7 @@ private struct CleanStatus {
                 title: "Cancelled",
                 detail: "This clean was cancelled",
                 symbol: "xmark.circle.fill",
+                mascotAsset: nil,
                 isTerminal: true
             )
         default:
@@ -75,26 +78,26 @@ private struct CleanStatus {
                 title: "Your clean",
                 detail: "",
                 symbol: "sparkles",
+                mascotAsset: "mascot_live",
                 isTerminal: false
             )
         }
     }
 
-    private init(title: String, detail: String, symbol: String, isTerminal: Bool) {
+    private init(title: String, detail: String, symbol: String, mascotAsset: String?, isTerminal: Bool) {
         self.title = title
         self.detail = detail
         self.symbol = symbol
+        self.mascotAsset = mascotAsset
         self.isTerminal = isTerminal
     }
 
-    /// Bundled mascot art for the active (non-terminal) states; the terminal states keep the clearer
-    /// checkmark / xmark SF Symbols. Lives in the widget's own asset catalog (LiveActivity/Assets.xcassets).
-    var mascotAsset: String? {
-        isTerminal ? nil : "mascot_live"
+    func eta(for state: CleanOrderAttributes.ContentState, now: Date = Date()) -> EtaPresentation {
+        LiveActivityEta.presentation(window: state.etaWindow, terminalLabel: isTerminal ? title : nil, now: now)
     }
 }
 
-/// The status icon: the cleaning mascot for active states, an SF Symbol for terminal ones — and a robust
+/// The status icon: the status's own mascot for active states, an SF Symbol for terminal ones — and a robust
 /// fallback to the SF Symbol whenever the mascot art can't be resolved from the widget bundle (so a
 /// mis-membered asset catalog degrades to a symbol instead of rendering blank).
 @ViewBuilder
@@ -108,12 +111,83 @@ private func statusIcon(_ status: CleanStatus, size: CGFloat) -> some View {
     }
 }
 
-/// A safe completion-ETA interval: the scheduled cleaning window, guarded so the range is always valid
-/// (end strictly after start) — `Text(timerInterval:)` then shows the live time remaining until the clean
-/// is done, advancing on its own with no push.
-private func etaInterval(_ state: CleanOrderAttributes.ContentState) -> ClosedRange<Date>? {
-    guard state.scheduledEnd > state.scheduledStart else { return nil }
-    return state.scheduledStart ... state.scheduledEnd
+/// The ETA readout: the ticking digits plus the word that says what they mean. A terminal status has
+/// nothing to time, so it falls back to the status line (expanded island) or its glyph.
+private struct EtaReadout: View {
+    enum Style {
+        case lockScreen
+        case island
+        case compact
+    }
+
+    let eta: EtaPresentation
+    let symbol: String
+    let style: Style
+
+    var body: some View {
+        switch eta {
+        case let .countdown(range):
+            ticking(Text(timerInterval: range, countsDown: true))
+        case let .elapsed(since):
+            ticking(Text(since, style: .timer))
+        case let .label(text):
+            terminal(text)
+        }
+    }
+
+    private func ticking(_ digits: Text) -> some View {
+        VStack(alignment: .trailing, spacing: 0) {
+            digits
+                .font(digitFont)
+                .foregroundStyle(Brand.sky)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: digitWidth)
+            if let caption {
+                Text(caption)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func terminal(_ text: String) -> some View {
+        switch style {
+        case .island:
+            Text(text).font(.caption.weight(.semibold)).foregroundStyle(Brand.sky)
+        case .lockScreen:
+            Image(systemName: symbol).font(.title.weight(.semibold)).foregroundStyle(Brand.sky)
+        case .compact:
+            Image(systemName: symbol).foregroundStyle(Brand.sky)
+        }
+    }
+
+    /// Never "remaining" over a count-UP — that number is time spent, not time left. The compact slot has
+    /// room for the digits only.
+    private var caption: String? {
+        guard style != .compact else { return nil }
+        return switch eta {
+        case .countdown: style == .lockScreen ? "remaining" : "left"
+        case .elapsed: "elapsed"
+        case .label: nil
+        }
+    }
+
+    private var digitFont: Font {
+        switch style {
+        case .lockScreen: .system(.title2, design: .rounded).weight(.bold).monospacedDigit()
+        case .island: .title3.weight(.bold).monospacedDigit()
+        case .compact: .caption2.weight(.semibold).monospacedDigit()
+        }
+    }
+
+    private var digitWidth: CGFloat {
+        switch style {
+        case .lockScreen: 96
+        case .island: 84
+        case .compact: 44
+        }
+    }
 }
 
 // MARK: - Widget
@@ -126,7 +200,7 @@ struct CleanOrderLiveActivity: Widget {
                 .activitySystemActionForegroundColor(Brand.sky)
         } dynamicIsland: { context in
             let status = CleanStatus(context.state.status)
-            let eta = etaInterval(context.state)
+            let eta = status.eta(for: context.state)
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     Label {
@@ -136,18 +210,7 @@ struct CleanOrderLiveActivity: Widget {
                     }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if status.showsEta, let eta {
-                        VStack(alignment: .trailing, spacing: 0) {
-                            Text(timerInterval: eta, countsDown: true)
-                                .font(.title3.weight(.bold).monospacedDigit())
-                                .foregroundStyle(Brand.sky)
-                                .multilineTextAlignment(.trailing)
-                                .frame(maxWidth: 84)
-                            Text("left").font(.caption2).foregroundStyle(.secondary)
-                        }
-                    } else {
-                        Text(status.title).font(.caption.weight(.semibold)).foregroundStyle(Brand.sky)
-                    }
+                    EtaReadout(eta: eta, symbol: status.symbol, style: .island)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     Text(status.detail.isEmpty ? status.title : status.detail)
@@ -156,14 +219,7 @@ struct CleanOrderLiveActivity: Widget {
             } compactLeading: {
                 statusIcon(status, size: 18)
             } compactTrailing: {
-                if status.showsEta, let eta {
-                    Text(timerInterval: eta, countsDown: true)
-                        .font(.caption2.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(Brand.sky)
-                        .frame(width: 44)
-                } else {
-                    Image(systemName: status.symbol).foregroundStyle(Brand.sky)
-                }
+                EtaReadout(eta: eta, symbol: status.symbol, style: .compact)
             } minimal: {
                 Image(systemName: status.symbol).foregroundStyle(Brand.sky)
             }
@@ -206,24 +262,8 @@ private struct LockScreenLiveActivityView: View {
 
             Spacer(minLength: 8)
 
-            // Uber/Wolt-style ETA: a bold, self-advancing countdown to completion — no progress bar.
-            if status.showsEta, let eta = etaInterval(state) {
-                VStack(alignment: .trailing, spacing: 0) {
-                    Text(timerInterval: eta, countsDown: true)
-                        .font(.system(.title2, design: .rounded).weight(.bold))
-                        .monospacedDigit()
-                        .foregroundStyle(Brand.sky)
-                        .multilineTextAlignment(.trailing)
-                        .frame(maxWidth: 96)
-                    Text("remaining")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            } else {
-                Image(systemName: status.symbol)
-                    .font(.title.weight(.semibold))
-                    .foregroundStyle(Brand.sky)
-            }
+            // Uber/Wolt-style ETA: a bold, self-advancing number — no progress bar.
+            EtaReadout(eta: status.eta(for: state), symbol: status.symbol, style: .lockScreen)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)

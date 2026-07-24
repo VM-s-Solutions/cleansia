@@ -831,3 +831,38 @@ Service does not provide.
 
 *Ratified by the architect as the ruling of the LA-1…LA-4 implementation review. — architect,
 2026-07-20.*
+
+---
+
+## Amendment A2 — 2026-07-24 (content-state gains two OPTIONAL phase timestamps — frozen-ETA fix)
+
+*(Bounded amendment per `agents/backlog/adr/README.md` §"Dated appended sections". D4's additive-only
+evolution clause is EXERCISED, not changed.)*
+
+**What.** `LiveActivityContentState` gains `phaseStart` and `phaseEnd` — both **optional/nullable and
+omitted from the wire when null** (the APNs client serializes with `WhenWritingNull`). The five original
+keys `{v, status, orderNumber, scheduledStart, scheduledEnd}` are untouched.
+
+**Why.** The widget anchored its countdown to the **booked** window (`cleaningDateTime … + estimatedTime`).
+Once that window elapsed — a cleaner running late, the routine case — the system timer clamped and the
+card sat frozen at 00:00, i.e. the surface lied about an in-flight clean. The phase pair carries the
+**actual** window: `onTheWay` → the real departure instant plus expected arrival (the booked start, or a
+10-minute floor from departure when the cleaner left after it); `inProgress` → the real start plus the
+order's estimated duration; terminal states → both null (nothing is counting down).
+
+**Source of the timestamp.** `SendLiveActivityUpdateMessage.TransitionAtUtc`, which is already the
+transition's `OrderStatusTrack.CreatedOn` — the order's own persisted record of the move, and the same
+value APNs orders updates by. No new source, no widened wire shape (A1(b)'s reasoning holds), and a
+redelivered message rebuilds an identical window.
+
+**S6.** Both fields are **order timestamps, not personal data** — the D4 forbidden set (names, addresses,
+free text, internal ids) is unchanged and still structurally unrepresentable. The allowlist in D4 reads
+as `{v, status, orderNumber, scheduledStart, scheduledEnd, phaseStart, phaseEnd}`; the builder-side pin
+(TC-LA-6) asserts nothing outside it can appear.
+
+**Compatibility, both directions (pinned by test).** An older iOS build ignores the two unknown keys and
+decodes as before; a newer build decodes a pre-amendment payload with both fields `nil`. The shared
+fixture `src/Cleansia.Tests/Functions/Fixtures/live-activity-content-state.json` now carries them — the
+iOS decoding test (LA-5) must declare them **optional** on the Swift side.
+
+*Recorded by the backend developer alongside the fix. — backend, 2026-07-24.*

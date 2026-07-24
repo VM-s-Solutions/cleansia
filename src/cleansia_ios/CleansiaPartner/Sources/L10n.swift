@@ -23,10 +23,6 @@ enum L10n {
         localized("password")
     }
 
-    static var rememberMe: String {
-        localized("remember_me")
-    }
-
     static var forgotPassword: String {
         localized("forgot_password")
     }

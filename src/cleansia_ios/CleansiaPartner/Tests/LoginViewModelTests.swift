@@ -83,6 +83,15 @@ final class LoginViewModelTests: XCTestCase {
 
         XCTAssertEqual(received?.requiresEmailConfirmation, false)
         XCTAssertEqual(vm.loginState, .idle)
+    }
+
+    func testLoginAlwaysSendsTheFormerCheckedRememberMeDefault() async {
+        let vm = makeViewModel()
+        vm.onEmailChange("a@b.com")
+        vm.onPasswordChange("secret")
+
+        await vm.login()
+
         XCTAssertEqual(client.lastArgs?.rememberMe, true)
     }
 

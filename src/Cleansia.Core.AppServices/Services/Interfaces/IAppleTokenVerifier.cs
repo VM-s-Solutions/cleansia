@@ -19,7 +19,9 @@ public interface IAppleTokenVerifier
 /// The subset of verified Apple identity-token claims the auth flow trusts: <paramref name="Subject"/>
 /// is the Apple <c>sub</c> (the stable account id, bound as <c>User.AppleId</c>), <paramref name="Email"/>
 /// is the email claim, and <paramref name="EmailVerified"/> is Apple's <c>email_verified</c> flag.
-/// These are the source of truth — never the client-supplied request fields. Provisioning is gated on
-/// <paramref name="EmailVerified"/>.
+/// These are the source of truth — never the client-supplied request fields. <paramref name="Email"/> is
+/// <c>null</c> whenever Apple omits it, which it does on EVERY sign-in after the user's first
+/// authorization: the sub is the identity, the email is not. Provisioning a new account still requires a
+/// non-null email plus <paramref name="EmailVerified"/>.
 /// </summary>
-public record AppleVerifiedClaims(string Subject, string Email, bool EmailVerified);
+public record AppleVerifiedClaims(string Subject, string? Email, bool EmailVerified);

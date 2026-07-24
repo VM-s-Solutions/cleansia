@@ -11664,41 +11664,6 @@
         }
       }
     },
-    "login_remember_me" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zapamatovat si mě"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remember me"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Запомнить меня"
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zapamätať si ma"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Запам'ятати мене"
-          }
-        }
-      }
-    },
     "login_subtitle" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -24929,6 +24894,41 @@
         }
       }
     },
+    "register_error_terms_required" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Musíte souhlasit s obchodními podmínkami"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You must accept the terms and conditions"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы должны принять условия и положения"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Musíte prijať obchodné podmienky"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ви повинні прийняти Умови та положення"
+          }
+        }
+      }
+    },
     "register_login_link" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -25170,6 +25170,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Зареєструйтеся, щоб замовити перше прибирання."
+          }
+        }
+      }
+    },
+    "register_terms_and_conditions" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Souhlasím s Podmínkami služby a Zásadami ochrany soukromí"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I agree to the Terms of Service and Privacy Policy"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Я соглашаюсь с Условиями использования и Политикой конфиденциальности"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Súhlasím s Podmienkami služby a Zásadami ochrany súkromia"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Я погоджуюся з Умовами використання та Політикою конфіденційності"
           }
         }
       }

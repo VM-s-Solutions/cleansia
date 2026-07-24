@@ -49,19 +49,16 @@ final class LiveActivityCoordinator {
     /// `update` to rewrite the content-state of a running activity). The initial content reflects the
     /// order's CURRENT status, so opening an already-in-progress order renders "Cleaning in progress"
     /// rather than a stale "On the way".
-    func start(orderId: String, orderNumber: String, status: String, scheduledStart: Date, scheduledEnd: Date) {
+    func start(orderId: String, orderNumber: String, status: String, window: EtaWindow) {
         guard isEnabled, existingActivity(orderId: orderId, orderNumber: orderNumber) == nil else { return }
 
         let attributes = CleanOrderAttributes(orderNumber: orderNumber)
-        let initialState = CleanOrderAttributes.ContentState(
-            v: 1, status: status, orderNumber: orderNumber,
-            scheduledStart: scheduledStart, scheduledEnd: scheduledEnd
-        )
+        let initialState = contentState(status: status, orderNumber: orderNumber, window: window)
 
         do {
             let activity = try Activity<CleanOrderAttributes>.request(
                 attributes: attributes,
-                content: ActivityContent(state: initialState, staleDate: scheduledEnd.addingTimeInterval(3600)),
+                content: ActivityContent(state: initialState, staleDate: window.latestEnd.addingTimeInterval(3600)),
                 pushType: .token
             )
             started[orderId] = activity
@@ -76,14 +73,11 @@ final class LiveActivityCoordinator {
     /// activity is running for the order — reuses the same `existingActivity` identity as `start`, so it
     /// also drives a system-restored / server-started activity. This is the on-device path that keeps the
     /// Live Activity in sync while the app is active, independent of the (regen-gated) backend push channel.
-    func update(orderId: String, orderNumber: String, status: String, scheduledStart: Date, scheduledEnd: Date) {
+    func update(orderId: String, orderNumber: String, status: String, window: EtaWindow) {
         guard let activity = existingActivity(orderId: orderId, orderNumber: orderNumber) else { return }
-        let state = CleanOrderAttributes.ContentState(
-            v: 1, status: status, orderNumber: orderNumber,
-            scheduledStart: scheduledStart, scheduledEnd: scheduledEnd
-        )
+        let state = contentState(status: status, orderNumber: orderNumber, window: window)
         Task {
-            await activity.update(ActivityContent(state: state, staleDate: scheduledEnd.addingTimeInterval(3600)))
+            await activity.update(ActivityContent(state: state, staleDate: window.latestEnd.addingTimeInterval(3600)))
         }
     }
 
@@ -109,6 +103,18 @@ final class LiveActivityCoordinator {
     }
 
     // MARK: - Internals
+
+    private func contentState(
+        status: String,
+        orderNumber: String,
+        window: EtaWindow
+    ) -> CleanOrderAttributes.ContentState {
+        CleanOrderAttributes.ContentState(
+            v: 1, status: status, orderNumber: orderNumber,
+            scheduledStart: window.scheduledStart, scheduledEnd: window.scheduledEnd,
+            phaseStart: window.phaseStart, phaseEnd: window.phaseEnd
+        )
+    }
 
     /// The activity already running for this order, if any. Keyed by `orderId` for the current session;
     /// falls back to matching a system-restored / server-started activity by its `orderNumber` — the only

@@ -5,7 +5,6 @@ import Foundation
 struct SignInFormState: Equatable {
     var email = ""
     var password = ""
-    var rememberMe = false
     var emailError: String?
     var passwordError: String?
 }
@@ -17,11 +16,13 @@ struct SignUpFormState: Equatable {
     var password = ""
     var confirmPassword = ""
     var referralCode = ""
+    var acceptTerms = false
     var firstNameError: String?
     var lastNameError: String?
     var emailError: String?
     var passwordError: String?
     var confirmPasswordError: String?
+    var termsError: String?
 
     var passwordHasMinLength: Bool {
         PasswordPolicy.hasMinLength(password)
@@ -44,7 +45,8 @@ struct SignUpFormState: Equatable {
             !lastName.isBlank &&
             !email.isBlank &&
             PasswordPolicy.isValid(password) &&
-            passwordsMatch
+            passwordsMatch &&
+            acceptTerms
     }
 }
 
@@ -78,6 +80,10 @@ final class CustomerAuthViewModel: ViewModel {
     private let settings: AppSettingsStore
     private let snackbar: SnackbarController
     private let pendingEmail: String?
+
+    /// Sign-in no longer offers a remember-me toggle; `false` preserves the box's former
+    /// unchecked default, so the refresh token keeps its 24-hour rather than 30-day lifetime.
+    private static let rememberMe = false
 
     init(
         loginClient: LoginClient,
@@ -116,10 +122,6 @@ final class CustomerAuthViewModel: ViewModel {
         signInForm.passwordError = nil
     }
 
-    func onRememberMeChange(_ value: Bool) {
-        signInForm.rememberMe = value
-    }
-
     func signIn() async {
         if signInState.isSubmitting { return }
         guard validateSignIn() else { return }
@@ -128,7 +130,7 @@ final class CustomerAuthViewModel: ViewModel {
         let result = await loginClient.login(
             email: signInForm.email,
             password: signInForm.password,
-            rememberMe: signInForm.rememberMe
+            rememberMe: Self.rememberMe
         )
         signInState = .idle
         emit(result, fallbackEmail: signInForm.email)
@@ -161,6 +163,11 @@ final class CustomerAuthViewModel: ViewModel {
 
     func onReferralCodeChange(_ value: String) {
         signUpForm.referralCode = value
+    }
+
+    func onAcceptTermsChange(_ value: Bool) {
+        signUpForm.acceptTerms = value
+        signUpForm.termsError = nil
     }
 
     func signUp() async {
@@ -366,6 +373,10 @@ final class CustomerAuthViewModel: ViewModel {
         }
         if !signUpForm.passwordsMatch {
             signUpForm.confirmPasswordError = L10n.Auth.errorPasswordsNoMatch
+            valid = false
+        }
+        if !signUpForm.acceptTerms {
+            signUpForm.termsError = L10n.Auth.errorTermsRequired
             valid = false
         }
         return valid

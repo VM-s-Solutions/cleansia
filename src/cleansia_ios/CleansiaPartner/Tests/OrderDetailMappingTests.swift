@@ -37,8 +37,8 @@ final class OrderDetailMappingTests: XCTestCase {
         item.originalSubtotal = 1400
         item.totalPrice = 1200
         item.tierDiscountAmount = 200
-        item.paymentType = Code(name: "Card")
-        item.paymentStatus = Code(name: "Paid")
+        item.paymentType = Code(name: "Card", value: 2)
+        item.paymentStatus = Code(name: "Paid", value: 2)
         item.isAssignedToCurrentUser = true
         item.hasAfterPhotos = true
         return item
@@ -108,8 +108,10 @@ final class OrderDetailMappingTests: XCTestCase {
         XCTAssertEqual(detail.payment.subtotal, 1400)
         XCTAssertEqual(detail.payment.total, 1200)
         XCTAssertEqual(detail.payment.tierDiscount, 200)
-        XCTAssertEqual(detail.payment.methodName, "Card")
-        XCTAssertEqual(detail.payment.statusName, "Paid")
+        XCTAssertEqual(detail.payment.typeCode, PaymentTypeCode.card.rawValue)
+        XCTAssertEqual(detail.payment.statusCode, PaymentStatusCode.paid.rawValue)
+        XCTAssertTrue(detail.payment.isSettled)
+        XCTAssertFalse(detail.payment.isCash)
     }
 
     func testPaymentHasNoBreakdownWhenSubtotalEqualsTotal() {

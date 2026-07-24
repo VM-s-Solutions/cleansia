@@ -18,8 +18,12 @@ final class AppSettingsStoreTests: XCTestCase {
         super.tearDown()
     }
 
+    private func makeStore(preferred: [String]) -> UserDefaultsAppSettingsStore {
+        UserDefaultsAppSettingsStore(defaults: defaults, preferredLanguageTags: { preferred })
+    }
+
     private func makeStore(locale: String?) -> UserDefaultsAppSettingsStore {
-        UserDefaultsAppSettingsStore(defaults: defaults, localeLanguageCode: { locale })
+        makeStore(preferred: locale.map { [$0] } ?? [])
     }
 
     func testHasSeenOnboardingDefaultsFalse() {
@@ -38,7 +42,7 @@ final class AppSettingsStoreTests: XCTestCase {
         let freshSuite = "AppSettingsStoreTests.fresh.\(UUID().uuidString)"
         let other = try XCTUnwrap(UserDefaults(suiteName: freshSuite))
         defer { other.removePersistentDomain(forName: freshSuite) }
-        let store = UserDefaultsAppSettingsStore(defaults: other, localeLanguageCode: { "en" })
+        let store = UserDefaultsAppSettingsStore(defaults: other, preferredLanguageTags: { ["en"] })
         XCTAssertFalse(store.hasSeenOnboarding)
     }
 
@@ -87,6 +91,29 @@ final class AppSettingsStoreTests: XCTestCase {
     func testLanguageDefaultsToEnglishWhenLocaleNil() {
         let store = makeStore(locale: nil)
         XCTAssertEqual(store.languageTag, "en")
+    }
+
+    func testLanguageNarrowsRegionQualifiedTagToBareCode() {
+        XCTAssertEqual(makeStore(preferred: ["cs-CZ"]).languageTag, "cs")
+    }
+
+    func testLanguageWalksPastUnsupportedPrimaryToSupportedSecondary() {
+        XCTAssertEqual(makeStore(preferred: ["pl-PL", "cs-CZ"]).languageTag, "cs")
+    }
+
+    func testLanguageDefaultsToEnglishWhenNothingPreferredIsSupported() {
+        XCTAssertEqual(makeStore(preferred: ["pl-PL", "de-DE"]).languageTag, "en")
+    }
+
+    func testLanguageDefaultsToEnglishWhenPreferredListIsEmpty() {
+        XCTAssertEqual(makeStore(preferred: []).languageTag, "en")
+    }
+
+    func testPersistedChoiceWinsOverPreferredList() {
+        let store = makeStore(preferred: ["cs-CZ", "sk-SK"])
+        store.setLanguage("ru")
+        XCTAssertEqual(store.languageTag, "ru")
+        XCTAssertEqual(makeStore(preferred: ["cs-CZ", "sk-SK"]).languageTag, "ru")
     }
 
     func testSetLanguageRoundTripsAndPersists() {

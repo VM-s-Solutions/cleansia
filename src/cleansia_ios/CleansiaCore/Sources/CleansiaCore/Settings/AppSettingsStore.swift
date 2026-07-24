@@ -16,14 +16,15 @@ public protocol AppSettingsStore: AnyObject {
     func hasSeenOnboarding(userId: String) -> Bool
     func markOnboardingSeen(userId: String)
 
-    /// The resolved language tag — an explicit choice, else the device locale,
-    /// else "en". Always one of `supportedLanguageTags`.
+    /// The resolved language tag — an explicit choice, else the first supported
+    /// entry of the device's ordered preferred languages, else "en". Always one
+    /// of `supportedLanguageTags`.
     var languageTag: String { get }
-    /// The explicit choice, or `nil` when following the device locale (the
+    /// The explicit choice, or `nil` when following the device languages (the
     /// fresh-install "System" default).
     var persistedLanguageTag: String? { get }
     func setLanguage(_ tag: String)
-    /// Clears the explicit choice so `languageTag` resolves via device locale.
+    /// Clears the explicit choice so `languageTag` resolves via device languages.
     func clearLanguage()
 
     var theme: Theme { get }
@@ -51,14 +52,22 @@ public final class UserDefaultsAppSettingsStore: AppSettingsStore, @unchecked Se
     }
 
     private let defaults: UserDefaults
-    private let localeLanguageCode: () -> String?
+    private let preferredLanguageTags: () -> [String]
 
     public init(
         defaults: UserDefaults = .standard,
-        localeLanguageCode: @escaping () -> String? = { Locale.current.languageCode }
+        preferredLanguageTags: @escaping () -> [String] = UserDefaultsAppSettingsStore.systemPreferredLanguageTags
     ) {
         self.defaults = defaults
-        self.localeLanguageCode = localeLanguageCode
+        self.preferredLanguageTags = preferredLanguageTags
+    }
+
+    /// `Bundle.main.preferredLocalizations` — not `Locale.current` — because it is
+    /// the only source that honours the per-app language override and the full
+    /// ordered preference list rather than the formatting locale.
+    public static func systemPreferredLanguageTags() -> [String] {
+        let bundled = Bundle.main.preferredLocalizations
+        return bundled.isEmpty ? Locale.preferredLanguages : bundled
     }
 
     public var hasSeenOnboarding: Bool {
@@ -81,10 +90,11 @@ public final class UserDefaultsAppSettingsStore: AppSettingsStore, @unchecked Se
         if let stored = persistedLanguageTag {
             return stored
         }
-        if let seed = localeLanguageCode(), isSupported(seed) {
-            return seed
-        }
-        return Self.defaultLanguageTag
+        let seed = preferredLanguageTags()
+            .lazy
+            .compactMap(Self.bareLanguageCode)
+            .first(where: isSupported)
+        return seed ?? Self.defaultLanguageTag
     }
 
     public var persistedLanguageTag: String? {
@@ -96,7 +106,7 @@ public final class UserDefaultsAppSettingsStore: AppSettingsStore, @unchecked Se
 
     public func setLanguage(_ tag: String) {
         // Clamp to the supported set; an unsupported tag clears the choice and
-        // falls back through the same resolve as the getter (device locale → "en").
+        // falls back through the same resolve as the getter (device languages → "en").
         if isSupported(tag) {
             defaults.set(tag, forKey: Key.language)
         } else {
@@ -121,5 +131,17 @@ public final class UserDefaultsAppSettingsStore: AppSettingsStore, @unchecked Se
 
     private func isSupported(_ tag: String) -> Bool {
         Self.supportedLanguageTags.contains(tag)
+    }
+
+    /// Preferred entries arrive region/script-qualified ("cs-CZ", "zh-Hant-TW");
+    /// the supported set is bare language codes, so they must be narrowed before
+    /// matching. The split covers identifiers `Locale` refuses to parse.
+    private static func bareLanguageCode(_ tag: String) -> String? {
+        let trimmed = tag.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return nil }
+        if let code = Locale(identifier: trimmed).language.languageCode?.identifier, !code.isEmpty {
+            return code.lowercased()
+        }
+        return trimmed.split(whereSeparator: { $0 == "-" || $0 == "_" }).first.map { $0.lowercased() }
     }
 }

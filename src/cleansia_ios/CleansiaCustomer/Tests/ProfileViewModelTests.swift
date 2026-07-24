@@ -151,7 +151,7 @@ final class ProfileViewModelTests: XCTestCase {
     func testCompleteOnboardingSavesAndMarksSeenForTheUser() async {
         client.currentUserResult = .success(ProfileFixtures.user(id: "user-7", phoneNumber: nil))
         client.updateResult = .success(())
-        let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults(), localeLanguageCode: { "cs" })
+        let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults(), preferredLanguageTags: { ["cs"] })
         let vm = ProfileViewModel(
             repository: repository,
             settings: settings,
@@ -176,7 +176,7 @@ final class ProfileViewModelTests: XCTestCase {
     func testCompleteOnboardingSendsTheResolvedAppLanguage() async {
         client.currentUserResult = .success(ProfileFixtures.user(phoneNumber: nil))
         client.updateResult = .success(())
-        let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults(), localeLanguageCode: { "uk" })
+        let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults(), preferredLanguageTags: { ["uk"] })
         let vm = ProfileViewModel(
             repository: repository,
             settings: settings,

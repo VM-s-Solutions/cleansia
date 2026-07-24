@@ -23,7 +23,7 @@ final class AppSettingsStoreExtensionTests: XCTestCase {
     }
 
     private func makeStore(locale: String?) -> UserDefaultsAppSettingsStore {
-        UserDefaultsAppSettingsStore(defaults: defaults, localeLanguageCode: { locale })
+        UserDefaultsAppSettingsStore(defaults: defaults, preferredLanguageTags: { locale.map { [$0] } ?? [] })
     }
 
     func testSetLanguageRoundTripsAndPersists() {

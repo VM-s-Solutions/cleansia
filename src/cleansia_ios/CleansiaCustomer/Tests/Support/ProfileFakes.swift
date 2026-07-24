@@ -8,6 +8,11 @@ final class FakeGdprDeleteClient: GdprDeleteClient, @unchecked Sendable {
     private(set) var deleteCallCount = 0
 
     func deleteMyAccount() async -> ApiResult<Void> {
+        // Force a real suspension. The @MainActor VM sets .submitting synchronously before awaiting this,
+        // so yielding here lets a concurrent re-entry deterministically observe the in-flight state and be
+        // dropped by the guard. Without it the call can complete inline (no actor hop), letting the first
+        // delete finish and reset state before the second checks the guard — which flaked the reentry test.
+        await Task.yield()
         deleteCallCount += 1
         return deleteResult
     }

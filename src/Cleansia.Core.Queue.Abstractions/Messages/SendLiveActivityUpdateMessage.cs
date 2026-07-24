@@ -8,8 +8,10 @@ namespace Cleansia.Core.Queue.Abstractions.Messages;
 /// state (its own queue, claim keyspace, and failure domain), not a feed/preference-gated alert.
 ///
 /// <see cref="EventKey"/> is one of <see cref="LiveActivityEventKeys"/> (start/update/end).
-/// <see cref="TransitionAtUtc"/> becomes the APNs payload's mandatory <c>timestamp</c> — ActivityKit
-/// discards out-of-order updates, so a redelivery or cross-transition race can never regress the card.
+/// <see cref="TransitionAtUtc"/> (the transition's <c>OrderStatusTrack.CreatedOn</c>) becomes the APNs
+/// payload's mandatory <c>timestamp</c> — ActivityKit discards out-of-order updates, so a redelivery or
+/// cross-transition race can never regress the card — AND anchors the content state's actual phase
+/// window, so the card's countdown does not freeze when the booked window elapses.
 ///
 /// S6: the fields are the S6 allowlist and NOTHING more — no customer/cleaner name, address, free
 /// text, or internal id (<c>OrderId</c> stays app-side on iOS). The payload is lock-screen visible.

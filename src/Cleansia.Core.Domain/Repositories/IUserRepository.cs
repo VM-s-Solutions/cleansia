@@ -39,6 +39,16 @@ public interface IUserRepository : IRepository<User, string>
     /// as <see cref="GetByEmailIgnoringTenantAsync"/>.
     /// </summary>
     Task<bool> ExistsWithEmailIgnoringTenantAsync(string email, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Anonymous-path lookup by the Apple <c>sub</c> (<see cref="User.AppleId"/>) for Sign in with Apple,
+    /// which is the only stable identity Apple sends on a returning sign-in — it omits the email after
+    /// the first authorization. Same tenant rationale as <see cref="GetByEmailIgnoringTenantAsync"/>: the
+    /// request carries no tenant claim, so the global filter would narrow the read to
+    /// <c>TenantId == null</c> and a tenant-stamped account could never sign in. The scope is the Apple
+    /// subject, which the caller has verified from the identity token and never accepts from the client.
+    /// </summary>
+    Task<User?> GetByAppleIdIgnoringTenantAsync(string appleId, CancellationToken cancellationToken = default);
     Task<bool> ExistsWithConfirmationCodeAsync(string token, CancellationToken cancellationToken = default);
     Task<User?> GetByConfirmationCodeAsync(string token, CancellationToken cancellationToken = default);
     IQueryable<User> GetUnconfirmedUsersOlderThan(DateTime cutoffDate);

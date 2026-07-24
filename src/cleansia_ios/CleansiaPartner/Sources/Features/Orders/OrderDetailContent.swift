@@ -235,10 +235,8 @@ private struct OrderMetadataRow: View {
                 tierDiscount: 200,
                 membershipDiscount: nil,
                 promoDiscount: nil,
-                methodName: "Card",
-                statusName: "Paid",
-                typeCode: PaymentTypeCode.card,
-                statusCode: PaymentStatusCode.paid
+                typeCode: PaymentTypeCode.card.rawValue,
+                statusCode: PaymentStatusCode.paid.rawValue
             ),
             isAssignedToCurrentUser: true,
             hasAfterPhotos: false,

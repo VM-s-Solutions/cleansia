@@ -80,15 +80,19 @@ struct OrderDetailPackage: Equatable, Hashable {
 
 /// Backend `PaymentType` / `PaymentStatus` wire values (the enum ordinals the
 /// `Code.value` envelope carries), the surrogate for the missing generated Swift
-/// enums the cash-collection gate compares against.
-enum PaymentTypeCode {
-    static let cash = 1
-    static let card = 2
+/// enums the cash-collection gate and the payment labels compare against.
+enum PaymentTypeCode: Int, CaseIterable {
+    case cash = 1
+    case card = 2
 }
 
-enum PaymentStatusCode {
-    static let pending = 1
-    static let paid = 2
+enum PaymentStatusCode: Int, CaseIterable {
+    case pending = 1
+    case paid = 2
+    case failed = 3
+    case refunded = 4
+    case disputed = 5
+    case partiallyRefunded = 6
 }
 
 struct OrderDetailPayment: Equatable {
@@ -97,8 +101,6 @@ struct OrderDetailPayment: Equatable {
     let tierDiscount: Double?
     let membershipDiscount: Double?
     let promoDiscount: Double?
-    let methodName: String?
-    let statusName: String?
     let typeCode: Int?
     let statusCode: Int?
 
@@ -108,11 +110,11 @@ struct OrderDetailPayment: Equatable {
     }
 
     var isCash: Bool {
-        typeCode == PaymentTypeCode.cash
+        typeCode == PaymentTypeCode.cash.rawValue
     }
 
     var isSettled: Bool {
-        statusCode == PaymentStatusCode.paid
+        statusCode == PaymentStatusCode.paid.rawValue
     }
 }
 
@@ -175,8 +177,6 @@ extension OrderDetail {
             tierDiscount: item.tierDiscountAmount,
             membershipDiscount: item.membershipDiscountAmount,
             promoDiscount: item.promoDiscountAmount,
-            methodName: item.paymentType?.name,
-            statusName: item.paymentStatus?.name,
             typeCode: item.paymentType?.value,
             statusCode: item.paymentStatus?.value
         )

@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.TestUtilities.MockDataFactories.Users;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Cleansia.Tests.Features.Auth;
@@ -25,7 +26,10 @@ namespace Cleansia.Tests.Features.Auth;
 ///   - an existing account whose verified email collides but whose AuthenticationType is NOT Apple
 ///     (covers BOTH Internal AND Google) is rejected with <see cref="BusinessErrorMessage.InternalAuthTypeError"/>
 ///     — closing the verified-email-collision takeover for Apple exactly as Google's hardening did;
-///   - provisioning happens ONLY when <c>claims.EmailVerified</c> (stricter than Google today).
+///   - provisioning happens ONLY when <c>claims.EmailVerified</c> (stricter than Google today);
+///   - a RETURNING user resolves by the verified Apple <c>sub</c> even when Apple omits the email claim
+///     (Apple guarantees the email only on the FIRST authorization), and the sub-matched account keeps
+///     its stored email; the collision and IsActive guards still run on that path.
 /// Written red → green per knowledge/testing.md (the contract precedes the handler body).
 /// </summary>
 public class AppleAuthHandlerTests
@@ -37,6 +41,7 @@ public class AppleAuthHandlerTests
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IAppleTokenVerifier> _verifier = new();
     private readonly IHostAudienceProvider _hostAudience = new HostAudienceProvider(HostAudience);
+    private readonly List<(LogLevel Level, string Message)> _logEntries = [];
 
     public AppleAuthHandlerTests()
     {
@@ -52,7 +57,8 @@ public class AppleAuthHandlerTests
             _tokenService.Object,
             _cartRepository.Object,
             _userRepository.Object,
-            _hostAudience)!;
+            _hostAudience,
+            new CapturingLogger<AppleAuth.Handler>(_logEntries))!;
 
     private static AppleAuth.Command Command() =>
         new(IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "First", LastName: "Last");
@@ -180,7 +186,8 @@ public class AppleAuthHandlerTests
         _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
     }
 
-    // Stricter than Google today: a verified token whose email_verified is false provisions NOTHING.
+    // Stricter than Google today: a verified token whose email_verified is false provisions NOTHING —
+    // and says so in the log, because a silent rejection here is indistinguishable from a bad signature.
     [Fact]
     public async Task Unverified_Email_Does_Not_Provision()
     {
@@ -198,6 +205,137 @@ public class AppleAuthHandlerTests
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
         _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+
+        var warning = Assert.Single(_logEntries, e => e.Level == LogLevel.Warning);
+        Assert.DoesNotContain("unverified@example.com", warning.Message);
+    }
+
+    // The returning-user gap: Apple guarantees the email claim only on the FIRST authorization, so a
+    // later sign-in arrives with a sub and NO email. The account must resolve by the verified sub — the
+    // email lookup is unreachable and must not be attempted.
+    [Fact]
+    public async Task Returning_User_Without_Email_Claim_Is_Resolved_By_AppleId()
+    {
+        const string appleSub = "apple-sub-returning";
+        var existing = UserMockFactory.Generate(new UserMockFactory.UserPartial
+        {
+            AuthenticationType = AuthenticationType.Apple
+        });
+        existing.IsActive = true;
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims(appleSub, Email: null, EmailVerified: false));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync(appleSub, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
+        _tokenService.Verify(t => t.GenerateTokenAsync(existing, true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    // The sub is the stable identity, so it wins over the email — and the matched account KEEPS its
+    // stored email (rewriting it would collide with the (TenantId, Email) unique index and silently
+    // merge accounts when the user switches between a relay address and their real one).
+    [Fact]
+    public async Task AppleId_Match_Wins_Over_Email_And_Does_Not_Rewrite_The_Stored_Email()
+    {
+        const string appleSub = "apple-sub-stable";
+        var existing = UserMockFactory.Generate(new UserMockFactory.UserPartial
+        {
+            AuthenticationType = AuthenticationType.Apple
+        });
+        existing.IsActive = true;
+        var storedEmail = existing.Email;
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims(appleSub, "different-relay@privaterelay.appleid.com", EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync(appleSub, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(storedEmail, existing.Email);
+        _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+    }
+
+    // S1: the account-type collision guard runs on whichever account was resolved — including the
+    // AppleId path — so an Apple login can never bind into an Internal/Google account.
+    [Theory]
+    [InlineData(AuthenticationType.Internal)]
+    [InlineData(AuthenticationType.Google)]
+    public async Task Account_Found_By_AppleId_With_NonApple_AuthenticationType_Is_Rejected(AuthenticationType collidingType)
+    {
+        const string appleSub = "apple-sub-collide";
+        var existing = UserMockFactory.Generate(new UserMockFactory.UserPartial
+        {
+            AuthenticationType = collidingType
+        });
+        existing.IsActive = true;
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims(appleSub, Email: null, EmailVerified: false));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync(appleSub, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.InternalAuthTypeError, result.Error!.Message);
+        _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // An account matched by sub is still subject to the IsActive gate.
+    [Fact]
+    public async Task Inactive_Account_Found_By_AppleId_Is_Rejected()
+    {
+        const string appleSub = "apple-sub-inactive";
+        var existing = UserMockFactory.Generate(new UserMockFactory.UserPartial
+        {
+            AuthenticationType = AuthenticationType.Apple
+        });
+        existing.IsActive = false;
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims(appleSub, Email: null, EmailVerified: false));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync(appleSub, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.InvalidPassword, result.Error!.Message);
+        _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // The email claim is optional for a RETURNING user only. With no matching sub there is no account
+    // to sign into and no verified email to build one around, so provisioning must be refused.
+    [Fact]
+    public async Task Unknown_AppleId_Without_Email_Claim_Cannot_Provision()
+    {
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("apple-sub-unknown", Email: null, EmailVerified: false));
+
+        var result = await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.InvalidAppleUserToken, result.Error!.Message);
+        Assert.Equal(nameof(AppleAuth.Command.IdentityToken), result.Error!.Code);
+        _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
+        _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        Assert.Single(_logEntries, e => e.Level == LogLevel.Warning);
     }
 
     // Regression (the reported bug): Apple omits the family name on the first authorization, so the
@@ -298,5 +436,13 @@ public class AppleAuthHandlerTests
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.InvalidPassword, result.Error!.Message);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    private sealed class CapturingLogger<T>(List<(LogLevel Level, string Message)> entries) : ILogger<T>
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            => entries.Add((logLevel, formatter(state, exception)));
     }
 }

@@ -30,32 +30,19 @@ private final class SpyLiveActivitySync: OrderLiveActivitySyncing, @unchecked Se
         let orderId: String
         let orderNumber: String
         let status: String
-        let start: Date
-        let end: Date
+        let window: EtaWindow
     }
 
     private(set) var started: [Call] = []
     private(set) var updated: [Call] = []
     private(set) var ended: [String] = []
 
-    func start(orderId: String, orderNumber: String, status: String, scheduledStart: Date, scheduledEnd: Date) {
-        started.append(Call(
-            orderId: orderId,
-            orderNumber: orderNumber,
-            status: status,
-            start: scheduledStart,
-            end: scheduledEnd
-        ))
+    func start(orderId: String, orderNumber: String, status: String, window: EtaWindow) {
+        started.append(Call(orderId: orderId, orderNumber: orderNumber, status: status, window: window))
     }
 
-    func update(orderId: String, orderNumber: String, status: String, scheduledStart: Date, scheduledEnd: Date) {
-        updated.append(Call(
-            orderId: orderId,
-            orderNumber: orderNumber,
-            status: status,
-            start: scheduledStart,
-            end: scheduledEnd
-        ))
+    func update(orderId: String, orderNumber: String, status: String, window: EtaWindow) {
+        updated.append(Call(orderId: orderId, orderNumber: orderNumber, status: status, window: window))
     }
 
     func end(orderId: String) {
@@ -118,13 +105,14 @@ final class LiveActivityRegistrarTests: XCTestCase {
 final class OrderLiveActivitySyncTests: XCTestCase {
     private let start = Date(timeIntervalSince1970: 1_700_000_000)
 
-    private func order(statusValue: Int) -> OrderItem {
+    private func order(statusValue: Int, history: [OrderStatusTrackDto]? = nil) -> OrderItem {
         OrderItem(
             id: "o1",
             displayOrderNumber: "1042",
             cleaningDateTime: start,
             estimatedTime: 90,
-            orderStatus: Code(type: "OrderStatus", name: nil, value: statusValue)
+            orderStatus: Code(type: "OrderStatus", name: nil, value: statusValue),
+            statusHistory: history
         )
     }
 
@@ -151,8 +139,8 @@ final class OrderLiveActivitySyncTests: XCTestCase {
         XCTAssertEqual(sync.started.first?.orderId, "o1")
         XCTAssertEqual(sync.started.first?.orderNumber, "1042")
         XCTAssertEqual(sync.started.first?.status, "onTheWay")
-        XCTAssertEqual(sync.started.first?.start, start)
-        XCTAssertEqual(sync.started.first?.end, start.addingTimeInterval(90 * 60))
+        XCTAssertEqual(sync.started.first?.window.scheduledStart, start)
+        XCTAssertEqual(sync.started.first?.window.scheduledEnd, start.addingTimeInterval(90 * 60))
         XCTAssertTrue(sync.ended.isEmpty)
     }
 
@@ -168,6 +156,21 @@ final class OrderLiveActivitySyncTests: XCTestCase {
         XCTAssertEqual(sync.started.first?.status, "inProgress")
         XCTAssertEqual(sync.updated.first?.status, "inProgress")
         XCTAssertTrue(sync.ended.isEmpty)
+    }
+
+    func testInProgressWindowCarriesTheActualStartOffTheStatusHistory() async {
+        let startedAt = start.addingTimeInterval(15 * 60)
+        let client = FakeOrderClient()
+        client.detailResults = [.success(order(
+            statusValue: 4,
+            history: [OrderFixtures.track(statusValue: 4, createdOn: startedAt)]
+        ))]
+        let sync = SpyLiveActivitySync()
+
+        await makeVM(client, sync: sync).load()
+
+        XCTAssertEqual(sync.started.first?.window.phaseStart, startedAt)
+        XCTAssertEqual(sync.started.first?.window.phaseEnd, startedAt.addingTimeInterval(90 * 60))
     }
 
     func testCompletedOrderEnds() async {

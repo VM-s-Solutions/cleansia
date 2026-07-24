@@ -22,7 +22,7 @@ final class PreferencesModelTests: XCTestCase {
     }
 
     private func makeStore(locale: String = "en") -> UserDefaultsAppSettingsStore {
-        UserDefaultsAppSettingsStore(defaults: defaults, localeLanguageCode: { locale })
+        UserDefaultsAppSettingsStore(defaults: defaults, preferredLanguageTags: { [locale] })
     }
 
     func testSeedsFromStore() {

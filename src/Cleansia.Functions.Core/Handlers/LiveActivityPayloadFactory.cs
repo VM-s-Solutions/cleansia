@@ -32,6 +32,10 @@ public static class LiveActivityPayloadFactory
     // Cancelled card dismisses immediately (a dead order must not linger).
     private static readonly TimeSpan CompletedLinger = TimeSpan.FromMinutes(30);
 
+    // A phase window that is already elapsed renders as a permanently-clamped 00:00 — the exact freeze
+    // the phase fields exist to fix — so every window gets at least this much runway.
+    private static readonly TimeSpan MinPhaseWindow = TimeSpan.FromMinutes(10);
+
     /// <summary>
     /// Build the push for this transition. <paramref name="currentStatus"/> is the order's persisted
     /// <c>CurrentStatus</c>, read by the consumer ONLY for an <c>end</c> event (the message's
@@ -50,12 +54,16 @@ public static class LiveActivityPayloadFactory
             _ => StatusInProgress,
         };
 
+        var (phaseStart, phaseEnd) = PhaseWindow(status, message);
+
         var contentState = new LiveActivityContentState(
             V: ContentStateVersion,
             Status: status,
             OrderNumber: message.OrderNumber,
             ScheduledStart: message.ScheduledStart,
-            ScheduledEnd: message.ScheduledEnd);
+            ScheduledEnd: message.ScheduledEnd,
+            PhaseStart: phaseStart,
+            PhaseEnd: phaseEnd);
 
         var staleDate = StaleDate(message.ScheduledEnd, now);
 
@@ -74,6 +82,39 @@ public static class LiveActivityPayloadFactory
             AttributesType: isStart ? AttributesType : null,
             Attributes: isStart ? new LiveActivityStartAttributes(message.OrderNumber) : null);
     }
+
+    /// <summary>
+    /// The ACTUAL phase window the widget's countdown is anchored to, replacing the booked window that
+    /// clamps to a frozen 00:00 once it elapses (a cleaner who runs late is the common case).
+    ///
+    /// <para>The phase START is <see cref="SendLiveActivityUpdateMessage.TransitionAtUtc"/> — already the
+    /// <c>OrderStatusTrack.CreatedOn</c> of THIS transition, i.e. the order's own persisted record of when
+    /// the cleaner moved. No new source: a redelivered message therefore rebuilds the identical window,
+    /// and re-reading the history in the consumer could only disagree with the timestamp APNs already
+    /// orders the update by.</para>
+    /// </summary>
+    private static (DateTimeOffset? Start, DateTimeOffset? End) PhaseWindow(string status, SendLiveActivityUpdateMessage message)
+    {
+        var start = message.TransitionAtUtc;
+
+        return status switch
+        {
+            // Expected arrival: the booked start, unless the cleaner left so late that it is already
+            // behind us — then a floor from departure.
+            StatusOnTheWay => (start, Later(message.ScheduledStart, start + MinPhaseWindow)),
+
+            // The booked duration IS the order's estimated time (the producer derives scheduledEnd as
+            // cleaningDateTime + EstimatedTime), re-anchored to when work actually started.
+            StatusInProgress => (start, start + Longer(message.ScheduledEnd - message.ScheduledStart, MinPhaseWindow)),
+
+            // Completed/cancelled: nothing is counting down, and a stale window would keep the card ticking.
+            _ => (null, null),
+        };
+    }
+
+    private static DateTimeOffset Later(DateTimeOffset left, DateTimeOffset right) => left > right ? left : right;
+
+    private static TimeSpan Longer(TimeSpan left, TimeSpan right) => left > right ? left : right;
 
     private static DateTimeOffset StaleDate(DateTimeOffset scheduledEnd, DateTimeOffset now)
     {

@@ -77,6 +77,18 @@ public class UserRepository(CleansiaDbContext context)
             .AnyAsync(user => user.Email == email, cancellationToken);
     }
 
+    // Sign in with Apple runs on an ANONYMOUS request, so the same tenant rationale as
+    // GetByEmailIgnoringTenantAsync applies: the filter would narrow the read to TenantId == null and a
+    // tenant-stamped account could never sign in. The scope is the Apple sub, verified server-side from
+    // the identity token before this call.
+    public Task<User?> GetByAppleIdIgnoringTenantAsync(string appleId, CancellationToken cancellationToken = default)
+    {
+        return GetDbSet()
+            .IgnoreQueryFilters()
+            .Include(user => user.Employee)
+            .FirstOrDefaultAsync(user => user.AppleId == appleId, cancellationToken);
+    }
+
     // The confirmation token is stored as a SHA-256 hash, so the incoming RAW
     // token is hashed and matched against the stored hash. Stays inside the global tenant filter
     // (no IgnoreQueryFilters) — a hashed token must not match cross-tenant.

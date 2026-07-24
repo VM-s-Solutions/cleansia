@@ -59,6 +59,9 @@ public class UserRepositoryTokenLookupTenantTests
                 "GetByIdIgnoringTenantAsync",
                 "GetByEmailIgnoringTenantAsync",
                 "ExistsWithEmailIgnoringTenantAsync",
+                // Sign in with Apple is anonymous and resolves the account by the verified Apple sub —
+                // same bypass rationale as the anonymous email lookup above.
+                "GetByAppleIdIgnoringTenantAsync",
                 "RecordFailedLoginAsync",
                 "TryChargeResetPasswordCodeAttemptAsync",
                 // The OTP confirm branch resolves the account by email (anonymous), so its budget

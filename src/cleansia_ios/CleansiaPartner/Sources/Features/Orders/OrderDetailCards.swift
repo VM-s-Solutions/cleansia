@@ -248,11 +248,11 @@ struct PaymentCard: View {
                     paymentRow(L10n.Orders.paymentTotal, total, emphasis: true)
                 }
                 HStack {
-                    Text(L10n.Orders.paymentMethod(PaymentPresentation.methodLabel(payment.methodName)))
+                    Text(L10n.Orders.paymentMethod(PaymentPresentation.methodLabel(payment.typeCode)))
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                     Spacer()
-                    PaymentStatusPill(statusName: payment.statusName)
+                    PaymentStatusPill(statusCode: payment.statusCode)
                 }
             }
         }
@@ -287,31 +287,23 @@ struct PaymentCard: View {
     }
 }
 
-/// Colour-coded payment-status pill: green happy-path, amber pending, red
-/// failed/refunded, neutral fallback (the `PaymentStatusPill` parity). The label
-/// resolves the raw wire status to a localized key via `PaymentPresentation`.
+/// Colour-coded payment-status pill: green settled, amber pending, red
+/// failed/disputed, neutral for refunds and for a status we don't map yet (the
+/// `PaymentStatusPill` parity). Label and tint both come from `PaymentPresentation`.
 private struct PaymentStatusPill: View {
-    let statusName: String?
-
-    private var key: String {
-        statusName?.lowercased() ?? ""
-    }
+    let statusCode: Int?
 
     private var tint: Color {
-        if key.contains("paid") || key.contains("captured") || key.contains("succeed") {
-            return CleansiaColors.successText
+        switch PaymentPresentation.statusSeverity(statusCode) {
+        case .success: CleansiaColors.successText
+        case .warning: CleansiaColors.warningStar
+        case .error: CleansiaColors.error
+        case .neutral: CleansiaColors.onSurfaceVariant
         }
-        if key.contains("pending") || key.contains("processing") {
-            return CleansiaColors.warningStar
-        }
-        if key.contains("failed") || key.contains("refund") || key.contains("declined") {
-            return CleansiaColors.error
-        }
-        return CleansiaColors.onSurfaceVariant
     }
 
     private var label: String {
-        PaymentPresentation.statusLabel(statusName)
+        PaymentPresentation.statusLabel(statusCode)
     }
 
     var body: some View {

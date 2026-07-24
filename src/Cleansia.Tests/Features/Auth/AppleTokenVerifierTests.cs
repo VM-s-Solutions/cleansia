@@ -3,6 +3,10 @@ using System.Text;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
 using Moq;
 
 namespace Cleansia.Tests.Features.Auth;
@@ -26,6 +30,11 @@ namespace Cleansia.Tests.Features.Auth;
 ///   - no env bypass: the verifier source pins RS256 + the Apple issuer + the bundle-id audience + the
 ///     nonce check and carries no <c>IsDevelopment</c> short-circuit (mirrors the GoogleTokenVerifier
 ///     source-guard idiom).
+///   - the metadata address is the OIDC DISCOVERY document, not the bare key set: handing
+///     <see cref="OpenIdConnectConfigurationRetriever"/> a raw <c>{"keys":[…]}</c> document yields a
+///     configuration with ZERO signing keys, which made EVERY Apple sign-in fail with
+///     <c>SecurityTokenSignatureKeyNotFoundException</c> before the nonce/audience checks ever ran.
+///     Pinned twice: hermetically (the retriever's own behaviour) and by a source guard.
 ///
 /// The full forged-SIGNATURE / live-JWKS rejection path (a syntactically valid JWT with a bad RSA
 /// signature / mismatched aud against Apple's real keys) is honestly deferred to the integration suite
@@ -99,9 +108,106 @@ public class AppleTokenVerifierTests
         Assert.Contains("BundleId", source);
         Assert.Contains("nonce", source);
         Assert.Contains("ToHexStringLower", source);
-        // The JWKS endpoint is hardcoded HTTPS, with no config override.
-        Assert.Contains("https://appleid.apple.com/auth/keys", source);
         Assert.DoesNotContain("IsDevelopment", source);
+    }
+
+    // The regression guard for the bug that made Sign in with Apple never work: the metadata address
+    // MUST be Apple's OIDC discovery document (hardcoded HTTPS, no config override), never the bare key
+    // set — the retriever only loads keys through the document's jwks_uri.
+    [Fact]
+    public void Verifier_Source_Points_ConfigurationManager_At_The_Discovery_Document()
+    {
+        var source = File.ReadAllText(LocateAppServicesFile("Services/AppleTokenVerifier.cs"));
+
+        Assert.Contains("https://appleid.apple.com/.well-known/openid-configuration", source);
+        Assert.Contains("OpenIdConnectConfigurationRetriever", source);
+        Assert.DoesNotContain("\"https://appleid.apple.com/auth/keys\"", source);
+    }
+
+    // The root cause, proven hermetically (no network): OpenIdConnectConfigurationRetriever populates
+    // SigningKeys ONLY from the document's jwks_uri. Given a bare {"keys":[…]} key set it returns a
+    // configuration with no signing keys at all — which, with RequireSignedTokens +
+    // ValidateIssuerSigningKey, rejects every token before nonce/audience/lifetime are even reached.
+    [Fact]
+    public async Task Bare_Jwks_Document_Yields_No_Signing_Keys_But_Discovery_Document_Does()
+    {
+        using var rsa = RSA.Create(2048);
+        var retriever = new StubDocumentRetriever(rsa);
+
+        var fromBareJwks = await OpenIdConnectConfigurationRetriever.GetAsync(
+            StubDocumentRetriever.JwksAddress, retriever, CancellationToken.None);
+        var fromDiscovery = await OpenIdConnectConfigurationRetriever.GetAsync(
+            StubDocumentRetriever.DiscoveryAddress, retriever, CancellationToken.None);
+
+        Assert.Empty(fromBareJwks.SigningKeys);
+        Assert.NotEmpty(fromDiscovery.SigningKeys);
+    }
+
+    // The other half of the fix, proven hermetically: handing the ConfigurationManager to the validation
+    // parameters (instead of snapshotting its keys) is what lets the handler resolve the token's kid —
+    // and is what makes an unknown kid refreshable. Same wiring as the production verifier, against a
+    // stub metadata endpoint and a locally signed RS256 token.
+    [Fact]
+    public async Task ConfigurationManager_On_ValidationParameters_Resolves_The_Signing_Key()
+    {
+        const string audience = "cz.cleansia.customer";
+        using var rsa = RSA.Create(2048);
+        var configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
+            StubDocumentRetriever.DiscoveryAddress,
+            new OpenIdConnectConfigurationRetriever(),
+            new StubDocumentRetriever(rsa));
+
+        var token = new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
+        {
+            Issuer = StubDocumentRetriever.Issuer,
+            Audience = audience,
+            Expires = DateTime.UtcNow.AddMinutes(5),
+            SigningCredentials = new SigningCredentials(
+                new RsaSecurityKey(rsa) { KeyId = StubDocumentRetriever.KeyId },
+                SecurityAlgorithms.RsaSha256)
+        });
+
+        var result = await new JsonWebTokenHandler().ValidateTokenAsync(token, new TokenValidationParameters
+        {
+            ValidIssuer = StubDocumentRetriever.Issuer,
+            ValidateIssuer = true,
+            ValidAudience = audience,
+            ValidateAudience = true,
+            ConfigurationManager = configurationManager,
+            ValidateIssuerSigningKey = true,
+            ValidAlgorithms = [SecurityAlgorithms.RsaSha256],
+            ValidateLifetime = true,
+            RequireExpirationTime = true,
+            RequireSignedTokens = true
+        });
+
+        Assert.True(result.IsValid, result.Exception?.GetType().Name);
+    }
+
+    private sealed class StubDocumentRetriever(RSA rsa) : IDocumentRetriever
+    {
+        internal const string Issuer = "https://stub.invalid";
+        internal const string DiscoveryAddress = "https://stub.invalid/.well-known/openid-configuration";
+        internal const string JwksAddress = "https://stub.invalid/auth/keys";
+        internal const string KeyId = "stub-key";
+
+        public Task<string> GetDocumentAsync(string address, CancellationToken cancel) => address switch
+        {
+            DiscoveryAddress => Task.FromResult(
+                $$"""{"issuer":"{{Issuer}}","jwks_uri":"{{JwksAddress}}"}"""),
+            JwksAddress => Task.FromResult(BuildKeySet()),
+            _ => throw new InvalidOperationException($"unexpected metadata address: {address}")
+        };
+
+        private string BuildKeySet()
+        {
+            var parameters = rsa.ExportParameters(includePrivateParameters: false);
+            var modulus = Base64UrlEncoder.Encode(parameters.Modulus!);
+            var exponent = Base64UrlEncoder.Encode(parameters.Exponent!);
+            return $$"""
+                {"keys":[{"kty":"RSA","kid":"{{KeyId}}","use":"sig","alg":"RS256","n":"{{modulus}}","e":"{{exponent}}"}]}
+                """;
+        }
     }
 
     private static string LocateAppServicesFile(string relativePath)

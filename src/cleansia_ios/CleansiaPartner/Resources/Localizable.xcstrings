@@ -8095,6 +8095,40 @@
         }
       }
     },
+    "payment_status_disputed": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sporná platba"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disputed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оспорено"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sporná platba"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оскаржено"
+          }
+        }
+      }
+    },
     "payment_status_failed": {
       "localizations": {
         "cs": {
@@ -8163,6 +8197,40 @@
         }
       }
     },
+    "payment_status_partially_refunded": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Částečně vráceno"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partially refunded"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Частично возвращено"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čiastočne vrátené"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Частково повернено"
+          }
+        }
+      }
+    },
     "payment_status_pending": {
       "localizations": {
         "cs": {
@@ -8193,6 +8261,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Очікує"
+          }
+        }
+      }
+    },
+    "payment_status_refunded": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vráceno"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refunded"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Возвращено"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vrátené"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повернено"
           }
         }
       }
@@ -12648,40 +12750,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Завершіть налаштування, щоб почати заробляти"
-          }
-        }
-      }
-    },
-    "remember_me": {
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zapamatovat si mě"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remember me"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Запомнить меня"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zapamätať si ma"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Запам'ятати мене"
           }
         }
       }

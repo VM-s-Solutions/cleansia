@@ -26,7 +26,6 @@ struct SignInView: View {
             isSocialLoading: vm.socialState.isSubmitting,
             onEmailChange: vm.onSignInEmailChange,
             onPasswordChange: vm.onSignInPasswordChange,
-            onRememberMeChange: vm.onRememberMeChange,
             onForgotPassword: onForgotPassword,
             onSignUp: onSignUp,
             onSubmit: { Task { await vm.signIn() } },
@@ -43,7 +42,6 @@ private struct SignInContent: View {
     let isSocialLoading: Bool
     let onEmailChange: (String) -> Void
     let onPasswordChange: (String) -> Void
-    let onRememberMeChange: (Bool) -> Void
     let onForgotPassword: () -> Void
     let onSignUp: () -> Void
     let onSubmit: () -> Void
@@ -56,10 +54,6 @@ private struct SignInContent: View {
 
     private var passwordBinding: Binding<String> {
         Binding(get: { form.password }, set: onPasswordChange)
-    }
-
-    private var rememberMeBinding: Binding<Bool> {
-        Binding(get: { form.rememberMe }, set: onRememberMeChange)
     }
 
     private var canSubmit: Bool {
@@ -114,7 +108,6 @@ private struct SignInContent: View {
                 Spacer().frame(height: Spacing.xs)
 
                 HStack {
-                    CleansiaCheckbox(checked: rememberMeBinding, label: L10n.Auth.rememberMe)
                     Spacer()
                     CleansiaTextLink(L10n.Auth.forgotPassword, action: onForgotPassword)
                 }
@@ -182,7 +175,6 @@ private struct SignInContent: View {
                 isSocialLoading: false,
                 onEmailChange: { _ in },
                 onPasswordChange: { _ in },
-                onRememberMeChange: { _ in },
                 onForgotPassword: {},
                 onSignUp: {},
                 onSubmit: {},

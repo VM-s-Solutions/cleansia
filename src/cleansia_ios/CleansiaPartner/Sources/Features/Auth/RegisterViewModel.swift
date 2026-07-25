@@ -47,7 +47,10 @@ final class RegisterViewModel: ViewModel {
     @Published private(set) var form = RegisterFormState()
     @Published private(set) var registerState: ActionState = .idle
 
-    let registerSuccess = PassthroughSubject<Void, Never>()
+    /// Carries the registered email so the caller can land the user on the confirm-email step —
+    /// the code was just sent there, and bouncing to login would make them sign in only to be
+    /// routed straight back (Route.afterLogin already does that for an unconfirmed account).
+    let registerSuccess = PassthroughSubject<String, Never>()
 
     private let client: RegistrationAuthClient
     private let settings: AppSettingsStore
@@ -105,7 +108,7 @@ final class RegisterViewModel: ViewModel {
 
         switch result {
         case .success:
-            registerSuccess.send(())
+            registerSuccess.send(form.email)
         case let .failure(error):
             snackbar.showApiError(error)
         }

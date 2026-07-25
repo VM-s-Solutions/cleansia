@@ -9,18 +9,14 @@ import SwiftUI
 struct StickyActionFooter: View {
     let action: OrderPrimaryAction
     let inFlightAction: OrderAction?
-    var cashAmount: String?
     let onConfirm: (OrderPrimaryAction) -> Void
-
-    @State private var confirmingCash = false
+    /// Raised instead of confirming inline: the cash confirmation is a `CleansiaDialog`, which is a
+    /// full-screen scrim + card, so it belongs at the screen root — not nested inside this footer's
+    /// bottom-pinned, surface-backed strip where it would be laid out inside a ~90pt-tall container.
+    var onCashConfirmRequested: () -> Void = {}
 
     private func isBusy(_ orderAction: OrderAction) -> Bool {
         inFlightAction == orderAction
-    }
-
-    private var cashConfirmMessage: String {
-        guard let cashAmount else { return L10n.Orders.markCashCollectedConfirmMessageNoAmount }
-        return L10n.Orders.markCashCollectedConfirmMessage(cashAmount)
     }
 
     var body: some View {
@@ -58,18 +54,8 @@ struct StickyActionFooter: View {
                 CleansiaPrimaryButton(
                     L10n.Orders.markCashCollected,
                     loading: isBusy(.markCashCollected),
-                    action: { confirmingCash = true }
+                    action: onCashConfirmRequested
                 )
-            }
-            .confirmationDialog(
-                L10n.Orders.markCashCollectedConfirmTitle,
-                isPresented: $confirmingCash,
-                titleVisibility: .visible
-            ) {
-                Button(L10n.Orders.markCashCollectedConfirmAction) { onConfirm(.collectCash) }
-                Button(L10n.cancel, role: .cancel) {}
-            } message: {
-                Text(cashConfirmMessage)
             }
         case .complete:
             footer {

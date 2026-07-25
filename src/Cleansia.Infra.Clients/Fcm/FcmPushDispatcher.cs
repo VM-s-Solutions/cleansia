@@ -26,6 +26,21 @@ public class FcmPushDispatcher(
 {
     private const string Provider = "Fcm";
 
+    /// <summary>
+    /// The one OAuth scope FCM v1 send requires. Pinned explicitly rather than inheriting
+    /// FirebaseAdmin's broad DefaultScopes — see the comment at the credential build site.
+    /// </summary>
+    private const string FcmScope = "https://www.googleapis.com/auth/firebase.messaging";
+
+    /// <summary>
+    /// Our own FirebaseApp name. Deliberately NOT the default instance: <c>FirebaseApp.DefaultInstance</c>
+    /// may already have been created by something else in the process (a test, another integration) with
+    /// a DIFFERENT credential, in which case the credential built here is silently discarded and the
+    /// dispatch runs on whatever that other credential can do. A named app makes the credential we built
+    /// the credential we use.
+    /// </summary>
+    private const string AppName = "cleansia-push";
+
     private static readonly object InitLock = new();
     private static FirebaseMessaging? _messaging;
     private static bool _initAttempted;
@@ -68,45 +83,106 @@ public class FcmPushDispatcher(
         }
         catch (Exception ex)
         {
-            var failureClass = IntegrationFailureClassifier.FromException(ex);
+            // A credential rejection can surface EITHER per-token (handled below) or as a throw from the
+            // whole batch — the OAuth token mint succeeds but FCM answers 401 to the send, and the SDK
+            // wraps it. Classify a FirebaseMessagingException with everything it carries so that shape
+            // ACKS with a diagnosis too, instead of retrying an unfixable credential to the poison queue.
+            var failureClass = ex is FirebaseMessagingException fcmException
+                ? IntegrationFailureClassifier.FromFcmException(fcmException)
+                : IntegrationFailureClassifier.FromException(ex);
             IntegrationFailureMetrics.Record(Provider, failureClass);
             logger.LogError(ex, "FCM dispatch failed: {FailureClass} for event {EventKey} ({TokenCount} tokens)",
                 failureClass, eventKey, deviceTokens.Count);
+
+            if (failureClass == IntegrationFailureClass.AuthConfig)
+            {
+                var status = ex is FirebaseMessagingException { HttpResponse: { } httpResponse }
+                    ? ((int)httpResponse.StatusCode).ToString()
+                    : "?";
+                var errorCode = (ex as FirebaseMessagingException)?.ErrorCode;
+                return new PushDispatchResult(
+                    SuccessCount: 0,
+                    FailureCount: deviceTokens.Count,
+                    InvalidTokens: [],
+                    AuthConfig: true,
+                    FailureDetail: $"{status} {errorCode}: {ex.Message}");
+            }
+
             // Surface as all-failed (NOT skipped); caller will not prune (no InvalidTokens) and throws so
             // the queue redelivers.
             return AllFailedTransientResult(deviceTokens.Count);
         }
 
         var invalidTokens = new List<string>();
+        var failureCount = 0;
+        var authConfigFailures = 0;
+        string? authConfigDetail = null;
+
         for (var i = 0; i < response.Responses.Count; i++)
         {
             var item = response.Responses[i];
             if (item.IsSuccess) continue;
+
+            failureCount++;
 
             // Surface WHY FCM rejected this token — without this a caller only sees the "{Failure}
             // failed" count and cannot tell an APNs-config problem from a stale token. The
             // MessagingErrorCode is the actionable diagnostic: ThirdPartyAuthError = the APNs auth
             // key/cert in Firebase is wrong/missing/expired or not authorised for the bundle;
             // Unregistered/SenderIdMismatch = stale or wrong-project/wrong-environment token;
-            // Unavailable/Internal = transient. S6-safe: the error code + the SDK's fixed technical
-            // message carry no user content; the token is identified only by its fan-out index.
+            // Unavailable/Internal = transient. It is NULL for a credential rejection (FCM answers
+            // 401/403 before its own taxonomy applies), which is why the HTTP status and the
+            // transport-level ErrorCode are logged alongside it — those are the only signal in that
+            // case, and reading them is the difference between a one-look diagnosis and a poison
+            // queue full of synthesized messages. S6-safe: the error codes + the SDK's fixed
+            // technical message carry no user content; the token is identified only by its fan-out
+            // index.
+            var status = (int?)item.Exception?.HttpResponse?.StatusCode;
             logger.LogWarning(
-                "FCM rejected token #{Index}/{Total} for event {EventKey}: {ErrorCode} — {Detail}",
+                "FCM rejected token #{Index}/{Total} for event {EventKey}: {ErrorCode}/{TransportErrorCode} " +
+                "HTTP {HttpStatus} — {Detail}",
                 i + 1, response.Responses.Count, eventKey,
-                item.Exception?.MessagingErrorCode, item.Exception?.Message);
+                item.Exception?.MessagingErrorCode, item.Exception?.ErrorCode, status,
+                item.Exception?.Message);
+
+            var failureClass = item.Exception is { } tokenException
+                ? IntegrationFailureClassifier.FromFcmException(tokenException)
+                : IntegrationFailureClass.Transient;
+            IntegrationFailureMetrics.Record(Provider, failureClass);
+
+            if (failureClass == IntegrationFailureClass.AuthConfig
+                && item.Exception?.MessagingErrorCode is null)
+            {
+                // Credential-level rejection (as opposed to ThirdPartyAuthError, which is an APNs-key
+                // problem inside Firebase and is per-token/per-platform). Remember the provider's own
+                // words for the consumer's single alertable log line.
+                authConfigFailures++;
+                authConfigDetail ??= $"{status?.ToString() ?? "?"} {item.Exception?.ErrorCode}: {item.Exception?.Message}";
+            }
 
             // A dead-token code means the row should be pruned; transient codes leave it in place so
-            // FCM can succeed on a retry from the queue.
+            // FCM can succeed on a retry from the queue. Deliberately keyed on the per-token
+            // MessagingErrorCode ONLY: a 401/403 must never prune, or one bad credential would delete
+            // every Device row in the database on the next notification.
             if (IntegrationFailureClassifier.IsDeadFcmToken(item.Exception?.MessagingErrorCode))
             {
                 invalidTokens.Add(deviceTokens[i]);
             }
         }
 
+        // Every failure was the provider refusing OUR credential, and nothing succeeded → a host-wide
+        // config fault. Flag it so the consumer ACKS with one loud, actionable log instead of retrying
+        // an unfixable request through maxDequeueCount into the poison queue.
+        var allFailedOnAuth = response.SuccessCount == 0
+                              && failureCount > 0
+                              && authConfigFailures == failureCount;
+
         return new PushDispatchResult(
             SuccessCount: response.SuccessCount,
             FailureCount: response.FailureCount,
-            InvalidTokens: invalidTokens);
+            InvalidTokens: invalidTokens,
+            AuthConfig: allFailedOnAuth,
+            FailureDetail: allFailedOnAuth ? authConfigDetail : null);
     }
 
     /// <summary>Why <see cref="EnsureInitialized"/> could not return a live <see cref="FirebaseMessaging"/>.</summary>
@@ -164,7 +240,15 @@ public class FcmPushDispatcher(
                     var json = raw.StartsWith('{')
                         ? raw
                         : Encoding.UTF8.GetString(Convert.FromBase64String(config.ServiceAccountJson));
-                    credential = GoogleCredential.FromJson(json);
+                    // Scope the credential EXPLICITLY to FCM. Without CreateScoped, a service-account
+                    // credential arrives unscoped, IsCreateScopedRequired stays true, and FirebaseAdmin
+                    // substitutes its own six broad DefaultScopes — which historically have NOT included
+                    // firebase.messaging, so the minted access token can be rejected by the FCM v1 send
+                    // endpoint with a 401 even though the key itself is perfectly valid and the OAuth
+                    // mint succeeded. Pinning the scope removes that failure mode and is least-privilege
+                    // on its own: we were minting cloud-platform + devstorage.full_control just to send
+                    // a push.
+                    credential = GoogleCredential.FromJson(json).CreateScoped(FcmScope);
                 }
                 else
                 {
@@ -187,7 +271,7 @@ public class FcmPushDispatcher(
                 var options = new AppOptions { Credential = credential };
                 if (projectIdOverride is not null) options.ProjectId = projectIdOverride;
 
-                var app = FirebaseApp.DefaultInstance ?? FirebaseApp.Create(options);
+                var app = FirebaseApp.GetInstance(AppName) ?? FirebaseApp.Create(options, AppName);
                 _messaging = FirebaseMessaging.GetMessaging(app);
                 return (_messaging, InitOutcome.Ready);
             }

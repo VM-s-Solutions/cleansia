@@ -1,5 +1,6 @@
 using System.Net;
 using Cleansia.Core.Clients.Abstractions;
+using FirebaseAdmin;
 using FirebaseAdmin.Messaging;
 using SendGrid;
 using Stripe;
@@ -102,5 +103,56 @@ public class IntegrationFailureClassifierProviderMappersTests
     public void Fcm_Null_Code_Is_Not_A_Dead_Token()
     {
         Assert.False(IntegrationFailureClassifier.IsDeadFcmToken(null));
+    }
+
+    // FirebaseMessagingException's constructor is internal to the SDK, so these exercise
+    // FromFcmFailure — the pure core FromFcmException delegates to after projecting the three
+    // signals off the exception.
+
+    [Theory]
+    [InlineData(401, IntegrationFailureClass.AuthConfig)]
+    [InlineData(403, IntegrationFailureClass.AuthConfig)]
+    [InlineData(503, IntegrationFailureClass.Transient)]
+    [InlineData(400, IntegrationFailureClass.Permanent)]
+    public void Fcm_Failure_Without_Messaging_Code_Falls_Back_To_The_Http_Status(
+        int status, IntegrationFailureClass expected)
+    {
+        // THE regression this exists for: a credential rejection reaches us with
+        // MessagingErrorCode == null (the failure is at the auth layer, before FCM's own taxonomy),
+        // so FromFcmErrorCode alone landed it on `_ => Transient` and the consumer retried a
+        // permanently-broken config into the poison queue.
+        Assert.Equal(expected, IntegrationFailureClassifier.FromFcmFailure(
+            messagingErrorCode: null, httpStatusCode: status, transportErrorCode: ErrorCode.Unauthenticated));
+    }
+
+    [Fact]
+    public void Fcm_Failure_Prefers_The_Messaging_Code_Over_The_Http_Status()
+    {
+        // A 404 carrying Unregistered is a DEAD TOKEN, not a generic permanent HTTP fault — the
+        // specific code must win so the prune path keeps behaving.
+        Assert.Equal(IntegrationFailureClass.Permanent, IntegrationFailureClassifier.FromFcmFailure(
+            MessagingErrorCode.Unregistered, httpStatusCode: 404, transportErrorCode: ErrorCode.NotFound));
+    }
+
+    [Fact]
+    public void Fcm_Transient_Messaging_Code_Wins_Over_An_Auth_Http_Status()
+    {
+        // Guards the precedence in the other direction: an explicit FCM code is always more specific
+        // than the envelope's status, so a 401-shaped envelope must not upgrade a retryable code.
+        Assert.Equal(IntegrationFailureClass.Transient, IntegrationFailureClassifier.FromFcmFailure(
+            MessagingErrorCode.Unavailable, httpStatusCode: 401, transportErrorCode: ErrorCode.Unauthenticated));
+    }
+
+    [Theory]
+    [InlineData(ErrorCode.Unauthenticated, IntegrationFailureClass.AuthConfig)]
+    [InlineData(ErrorCode.PermissionDenied, IntegrationFailureClass.AuthConfig)]
+    [InlineData(ErrorCode.DeadlineExceeded, IntegrationFailureClass.Timeout)]
+    [InlineData(ErrorCode.Unavailable, IntegrationFailureClass.Transient)]
+    [InlineData(ErrorCode.InvalidArgument, IntegrationFailureClass.Permanent)]
+    public void Fcm_Failure_With_Neither_Messaging_Code_Nor_Status_Uses_The_Transport_Code(
+        ErrorCode errorCode, IntegrationFailureClass expected)
+    {
+        Assert.Equal(expected, IntegrationFailureClassifier.FromFcmFailure(
+            messagingErrorCode: null, httpStatusCode: null, transportErrorCode: errorCode));
     }
 }

@@ -26,6 +26,47 @@ Bicep step.** Owner steps:
    device (iOS display is gated on the T-0404 APNs alert work — a Firebase-console test push
    CAN display on iOS and gives a false "works"; the real events are data-only).
 
+## 0b. FCM answers 401 / 403 — "push notifications stopped arriving"
+
+Symptom in App Insights: `POST https://fcm.googleapis.com/v1/projects/<project>/messages:send`
+returns **401**, and the queue message ends in `notifications-dispatch-poison`.
+
+**The project id in that URL is not configured anywhere.** It is read out of the
+service-account JSON itself (`FcmPushDispatcher` passes no `ProjectId` override when
+`FCM:ServiceAccountJson` is set), so a "wrong project in Azure" mismatch is structurally
+impossible — the project in the URL *is* the credential's own project. Likewise, the OAuth
+token mint succeeding proves the key is neither revoked nor mangled. That leaves:
+
+| # | Cause | Tell-tale |
+|---|---|---|
+| 1 | Service-account key **disabled or deleted** in GCP (this org enforces `iam.disableServiceAccountKeyCreation`, so keys get clawed back) | `401 Unauthenticated` |
+| 2 | **FCM API not enabled** on the project | `403` naming `fcm.googleapis.com` |
+| 3 | Service account **missing the Firebase Cloud Messaging API Admin role** | `403 PermissionDenied` |
+
+The credential is now explicitly scoped to `https://www.googleapis.com/auth/firebase.messaging`
+(`CreateScoped` in `EnsureInitialized`), which both removes the "inherited broad default scopes"
+failure mode and stops us minting a `cloud-platform` token just to send a push.
+
+**Read the answer instead of guessing** — Google's literal error text is logged at the boundary:
+
+```kusto
+traces | where message has "FCM rejected token" | where timestamp > ago(2d)
+```
+
+That line carries `{ErrorCode}/{TransportErrorCode} HTTP {HttpStatus} — {Detail}`, which names the
+cause outright. `host.json` excludes `Exception` from App Insights sampling so it survives.
+
+**Owner fix:** re-issue the service-account key in Firebase Console → Project settings → Service
+accounts → *Generate new private key*, update the `FIREBASE_SERVICE_ACCOUNT_JSON` GitHub
+Environment secret, and re-run the deploy (the KV push only happens inside a deploy). Then verify
+with `gcloud services list --enabled --project <project> | grep fcm`.
+
+**What the code now does with a 401:** it classifies it `AuthConfig` and ACKs with one alertable
+`LogError` instead of throwing. A credential fault is host-wide — every push is failing
+identically — so redelivery was amplification, not recovery: ~15 FCM rejections plus 15-25 OAuth
+mints per notification, all landing in the poison queue with the real cause discarded. Device rows
+are never pruned on a 401; the tokens are innocent, and pruning would delete every `Device` row.
+
 ## 1. Encoding the FCM service-account JSON
 
 `FCM:ServiceAccountJson` must be **base64-encoded**. The dispatcher accepts

@@ -1,4 +1,5 @@
 using System.Net.Sockets;
+using FirebaseAdmin;
 using FirebaseAdmin.Messaging;
 using SendGrid;
 using Stripe;
@@ -83,6 +84,56 @@ public static class IntegrationFailureClassifier
             MessagingErrorCode.ThirdPartyAuthError => IntegrationFailureClass.AuthConfig,
             _ => IntegrationFailureClass.Transient,
         };
+
+    /// <summary>
+    /// Classify a per-token <see cref="FirebaseMessagingException"/> using everything the SDK gives us,
+    /// in decreasing specificity: the FCM-level <see cref="MessagingErrorCode"/> when present, else the
+    /// HTTP status FCM answered with, else the transport-level <see cref="FirebaseAdmin.ErrorCode"/>.
+    ///
+    /// Why this exists: a credential rejection (FCM answers 401/403 for a disabled service-account key,
+    /// a missing <c>firebase.messaging</c> OAuth scope, or a project without the FCM API enabled) arrives
+    /// with MessagingErrorCode == NULL, because the failure is at the auth layer BEFORE FCM's own error
+    /// taxonomy applies. <see cref="FromFcmErrorCode"/> alone therefore lands such a failure on its
+    /// <c>_ => Transient</c> default and the caller retries a permanently-broken config into the poison
+    /// queue. This does NOT introduce a second taxonomy: it reduces to the existing
+    /// <see cref="FromHttpStatus"/> primitive, which has always mapped 401/403 → AuthConfig — it merely
+    /// makes that mapping REACHABLE from the FCM path.
+    /// </summary>
+    public static IntegrationFailureClass FromFcmException(FirebaseMessagingException exception) =>
+        FromFcmFailure(
+            exception.MessagingErrorCode,
+            (int?)exception.HttpResponse?.StatusCode,
+            exception.ErrorCode);
+
+    /// <summary>
+    /// The pure core of <see cref="FromFcmException"/>, taking the three signals rather than the
+    /// exception. Split out because <see cref="FirebaseMessagingException"/>'s constructor is
+    /// <c>internal</c> to the SDK and cannot be built in a test — the classification rules would
+    /// otherwise be untestable, which is exactly how the 401 → Transient hole got in.
+    /// </summary>
+    public static IntegrationFailureClass FromFcmFailure(
+        MessagingErrorCode? messagingErrorCode,
+        int? httpStatusCode,
+        ErrorCode transportErrorCode)
+    {
+        if (messagingErrorCode is { } messagingCode)
+        {
+            return FromFcmErrorCode(messagingCode);
+        }
+
+        if (httpStatusCode is { } status)
+        {
+            return FromHttpStatus(status);
+        }
+
+        return transportErrorCode switch
+        {
+            ErrorCode.Unauthenticated or ErrorCode.PermissionDenied => IntegrationFailureClass.AuthConfig,
+            ErrorCode.InvalidArgument or ErrorCode.NotFound => IntegrationFailureClass.Permanent,
+            ErrorCode.DeadlineExceeded => IntegrationFailureClass.Timeout,
+            _ => IntegrationFailureClass.Transient,
+        };
+    }
 
     /// <summary>
     /// True when an FCM error means the token is permanently dead and its device row should be pruned:

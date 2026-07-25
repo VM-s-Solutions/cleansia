@@ -54,7 +54,37 @@ struct OrderDetailContent: View {
         order.status == ._4
     }
 
+    @State private var confirmingCash = false
+
+    private var cashConfirmMessage: String {
+        guard let cashAmount = order.cashDueLabel else {
+            return L10n.Orders.markCashCollectedConfirmMessageNoAmount
+        }
+        return L10n.Orders.markCashCollectedConfirmMessage(cashAmount)
+    }
+
     var body: some View {
+        ZStack {
+            detail
+            if confirmingCash {
+                CleansiaDialog(
+                    title: L10n.Orders.markCashCollectedConfirmTitle,
+                    confirmLabel: L10n.Orders.markCashCollectedConfirmAction,
+                    onConfirm: {
+                        confirmingCash = false
+                        onConfirm(.collectCash)
+                    },
+                    onDismiss: { confirmingCash = false },
+                    message: cashConfirmMessage,
+                    dismissLabel: L10n.cancel,
+                    icon: "banknote",
+                    confirmEnabled: inFlightAction != .markCashCollected
+                )
+            }
+        }
+    }
+
+    private var detail: some View {
         VStack(spacing: 0) {
             OrderDetailCompactHeader(order: order, locale: locale)
             ScrollView {
@@ -102,8 +132,8 @@ struct OrderDetailContent: View {
             StickyActionFooter(
                 action: primaryAction,
                 inFlightAction: inFlightAction,
-                cashAmount: order.cashDueLabel,
-                onConfirm: onConfirm
+                onConfirm: onConfirm,
+                onCashConfirmRequested: { confirmingCash = true }
             )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

@@ -154,6 +154,26 @@ public class SendPushNotificationHandler(
                 return;
             }
 
+            // The provider REJECTED OUR CREDENTIAL (FCM answered 401/403 — disabled service-account key,
+            // missing firebase.messaging scope, or the FCM API not enabled on the project). Same shape as
+            // all-failed-transient, opposite treatment: a credential fault is HOST-WIDE, so every push in
+            // the system is failing identically and redelivery is amplification, not recovery — ~15 FCM
+            // rejections plus 15-25 OAuth mints per notification, all ending in the poison queue with the
+            // real cause thrown away. ACK it with ONE alertable LogError carrying the provider's own words,
+            // so the operator gets a diagnosis instead of a dead-letter pile. Device rows are NOT pruned:
+            // the tokens are innocent (result.InvalidTokens is empty by construction on this path), and
+            // pruning on a 401 would delete every Device in the database.
+            if (result.AuthConfig)
+            {
+                logger.LogError(
+                    "FCM rejected our credential for event {EventKey} to user {UserId} — {Detail}. " +
+                    "Acking: this is a permanent provider-auth misconfiguration and no retry can succeed. " +
+                    "Check the FCM service-account key, its firebase.messaging scope, and that the FCM API " +
+                    "is enabled on the project.",
+                    message.EventKey, message.UserId, result.FailureDetail ?? "no detail supplied");
+                return;
+            }
+
             // BLIND-8 second defect — a transient FCM/init failure must NOT masquerade as "all-failed,
             // nothing pruned" and silently ack. When every token failed with no dead token to prune
             // (the shape FcmPushDispatcher returns on a broad-catch / cold-start init race — NOT the

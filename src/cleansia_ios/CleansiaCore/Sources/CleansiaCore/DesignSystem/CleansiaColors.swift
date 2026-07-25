@@ -24,6 +24,12 @@ public enum CleansiaColors {
     public static let surfaceVariant = Color.dynamic(light: Palette.slate100, dark: Palette.darkSurfaceElevated)
     public static let onSurfaceVariant = Color.dynamic(light: Palette.slate700, dark: Palette.slate400)
 
+    /// Deliberately CONTRASTING with `surface`: dark in light mode, light in dark mode. For transient
+    /// overlays (the snackbar) that must read as "on top of" the page rather than "part of" it — a
+    /// surface-coloured pill on a surface-coloured page is nearly invisible whichever theme you're in.
+    public static let inverseSurface = Color.dynamic(light: Palette.slate900, dark: Palette.slate100)
+    public static let onInverseSurface = Color.dynamic(light: Palette.slate50, dark: Palette.slate900)
+
     public static let outline = Color.dynamic(light: Palette.slate200, dark: Palette.slate700)
     public static let outlineVariant = Color.dynamic(light: Palette.slate200, dark: Palette.slate700)
 

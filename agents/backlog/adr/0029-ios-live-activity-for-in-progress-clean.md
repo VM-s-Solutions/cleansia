@@ -866,3 +866,52 @@ fixture `src/Cleansia.Tests/Functions/Fixtures/live-activity-content-state.json`
 iOS decoding test (LA-5) must declare them **optional** on the Swift side.
 
 *Recorded by the backend developer alongside the fix. — backend, 2026-07-24.*
+
+## Amendment A3 — 2026-07-25 (server-started cards are ADOPTED at launch — the "only works with the app open" fix)
+
+**Symptom.** The Live Activity appeared and updated only while the customer had the order-detail screen
+open and the app running. Closing the app, or never opening that screen, meant no card at all.
+
+**Two independent causes, one config and one code.**
+
+**(1) The APNs channel is switched off in the environment.** `IApnsConfig.Enabled` defaults to false;
+`deploy/bicep/main.bicep` emits the six `APNS__*` Function-App settings only when
+`apnsSecretProvisioned=true`, which `deploy-azure.yml` derives from three GitHub Environment secrets —
+`APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY_PEM`. Neither bicepparam sets it, so
+`ApnsLiveActivityClient.SendAsync` returns `Skipped` without opening a socket and the consumer acks.
+**Until those three secrets exist and a deploy re-runs, the backend pushes nothing** — not start, not
+update, not end. Seed them from the SAME team-scoped `.p8` already used for ordinary push; an APNs auth
+key is not push-type-specific. Verify by the Function App log line flipping from
+`Live-activity dispatch skipped (APNS disabled/unconfigured)` to `Live-activity dispatch for start …`.
+
+**(2) The app only ever observed push tokens for activities IT started.** `observePushToken(...)` was
+called from exactly one place — the success branch of the local `start(...)`, which the order-detail
+screen drives. So an update token existed only for a card this session created. A **server**-started card
+(push-to-start, iOS 17.2+) would appear and then freeze on its opening status forever, because
+`SendLiveActivityUpdateHandler` resolves zero tokens for it. That is the reported symptom exactly.
+
+**The fix — an adoption lane, owned by `LiveActivityCoordinator` and started at LAUNCH.**
+`beginActivityAdoption()` walks `Activity<CleanOrderAttributes>.activities` (cards that already exist —
+`activityUpdates` reports activities as they *start*, so one created while the process was dead is not in
+the stream) and then iterates `activityUpdates` for new ones. Each adopted activity gets its
+`pushTokenUpdates` observed and registered, plus `activityStateUpdates` observed so a user dismissal calls
+`DELETE /api/LiveActivity/{orderId}` — the previously unmet half of T-0427's deregistration AC.
+
+It is wired from the composition root (`CustomerAppContainer.installGeneratedClientAuth`), **deliberately
+not from the SwiftUI scene's `.task`**: a push-to-start launches the app in the *background* with no
+scene connected, so a scene-scoped task never runs on the one launch that needs this most. The
+push-to-start registration moved to the same launch point for the same reason.
+
+**D4 is unchanged.** `POST /api/LiveActivity/Register` is keyed by order id, but `CleanOrderAttributes`
+still carries only `orderNumber` — adding an id to the attributes would put an internal identifier in the
+lock-screen payload, which D4/S6 forbid. Instead the client maps number → id against the customer's own
+orders (`CustomerLiveActivityOrderResolver`, page 0 of `GetMyOrders`), keeping the id off the wire
+entirely. Resolution is retried with bounded backoff because a background launch races the network coming
+up; a card that cannot be resolved is left un-adopted so a later launch retries rather than being orphaned.
+
+**Still out of scope (raised, not silently changed).** The server starts a card at `OnTheWay` only, while
+the app starts one locally at `Confirmed`; moving the server start earlier reopens CH-D2-1 (the ~8h
+ActivityKit budget). And iOS 16.1–17.1 devices can never be server-started — on those the detail-screen
+local start remains the only path. That is an OS limit, not a defect.
+
+*Recorded by the iOS developer alongside the fix. — ios, 2026-07-25.*

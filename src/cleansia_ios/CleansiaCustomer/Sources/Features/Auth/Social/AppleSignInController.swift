@@ -50,11 +50,19 @@ import Foundation
                 finish(.failure)
                 return
             }
+            let name = credential.fullName
             finish(.apple(SocialSignInResult.AppleCredential(
                 identityToken: identityToken,
                 rawNonce: rawNonce,
-                firstName: credential.fullName?.givenName,
-                lastName: credential.fullName?.familyName
+                // Apple hands the name over EXACTLY ONCE, in the first authorization's response — the
+                // identity token carries no name claim and no API can fetch it later, so anything dropped
+                // here is dropped permanently and the account falls back to an email-derived placeholder.
+                // givenName/familyName are what Apple's consent sheet edits and are the normal case;
+                // nickname and middleName are the remaining PersonNameComponents fields that can carry a
+                // real name when the user cleared the two main ones. Whatever arrives is sent — the
+                // backend's SplitSuppliedName handles a single field holding a full name.
+                firstName: name?.givenName ?? name?.nickname ?? name?.middleName,
+                lastName: name?.familyName
             )))
         }
 

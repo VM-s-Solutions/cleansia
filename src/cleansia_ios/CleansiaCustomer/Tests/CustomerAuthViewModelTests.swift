@@ -176,6 +176,56 @@ final class CustomerAuthViewModelTests: XCTestCase {
         XCTAssertNil(registration.lastReferralCode)
     }
 
+    func testReferralFieldStartsCollapsed() {
+        let vm = makeViewModel()
+
+        XCTAssertFalse(vm.signUpForm.referralExpanded)
+    }
+
+    func testTogglingReferralRevealsTheField() {
+        let vm = makeViewModel()
+
+        vm.toggleReferralCode()
+
+        XCTAssertTrue(vm.signUpForm.referralExpanded)
+    }
+
+    func testTogglingReferralTwiceCollapsesAndClearsTheTypedCode() {
+        let vm = makeViewModel()
+        vm.toggleReferralCode()
+        vm.onReferralCodeChange("ANNA7")
+
+        vm.toggleReferralCode()
+
+        XCTAssertFalse(vm.signUpForm.referralExpanded)
+        XCTAssertEqual(vm.signUpForm.referralCode, "")
+    }
+
+    func testSignUpSendsTheCodeTypedWhileRevealed() async {
+        registration.result = .success(true)
+        let vm = makeViewModel()
+        fillValidSignUp(vm)
+        vm.toggleReferralCode()
+        vm.onReferralCodeChange("ANNA7")
+
+        await vm.signUp()
+
+        XCTAssertEqual(registration.lastReferralCode, "ANNA7")
+    }
+
+    func testSignUpSendsNilWhenTheTypedCodeWasCollapsedAway() async {
+        registration.result = .success(true)
+        let vm = makeViewModel()
+        fillValidSignUp(vm)
+        vm.toggleReferralCode()
+        vm.onReferralCodeChange("ANNA7")
+        vm.toggleReferralCode()
+
+        await vm.signUp()
+
+        XCTAssertNil(registration.lastReferralCode)
+    }
+
     func testSignUpEnforcesPasswordPolicy() async {
         let vm = makeViewModel()
         fillValidSignUp(vm)

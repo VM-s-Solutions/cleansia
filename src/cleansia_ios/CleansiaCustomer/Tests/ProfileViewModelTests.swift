@@ -163,7 +163,12 @@ final class ProfileViewModelTests: XCTestCase {
         let token = vm.saved.sink { completed = true }
         defer { token.cancel() }
 
-        await vm.completeOnboarding(phoneNumber: " +420111 ", birthDate: nil)
+        await vm.completeOnboarding(
+            firstName: "Jane",
+            lastName: "Doe",
+            phoneNumber: " +420111 ",
+            birthDate: nil
+        )
 
         XCTAssertTrue(completed)
         XCTAssertTrue(settings.hasSeenOnboarding(userId: "user-7"))
@@ -171,6 +176,68 @@ final class ProfileViewModelTests: XCTestCase {
         XCTAssertEqual(client.lastUpdate?.phoneNumber, "+420111")
         XCTAssertEqual(client.lastUpdate?.firstName, "Jane")
         XCTAssertEqual(client.lastUpdate?.lastName, "Doe")
+    }
+
+    func testCompleteOnboardingSendsTheEditedNamesForANamelessAccount() async {
+        client.currentUserResult = .success(ProfileFixtures.user(firstName: "", lastName: "", phoneNumber: nil))
+        client.updateResult = .success(())
+        let vm = makeVM()
+        await vm.refresh()
+
+        await vm.completeOnboarding(
+            firstName: "  Ada ",
+            lastName: " Lovelace ",
+            phoneNumber: "+420111",
+            birthDate: nil
+        )
+
+        XCTAssertEqual(client.lastUpdate?.firstName, "Ada")
+        XCTAssertEqual(client.lastUpdate?.lastName, "Lovelace")
+    }
+
+    func testCompleteOnboardingRejectsBlankNamesWithoutCallingUpdate() async {
+        client.currentUserResult = .success(ProfileFixtures.user(id: "user-7", firstName: "", lastName: ""))
+        let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults())
+        let vm = ProfileViewModel(repository: repository, settings: settings, snackbar: snackbar)
+        await vm.refresh()
+
+        var completed = false
+        let token = vm.saved.sink { completed = true }
+        defer { token.cancel() }
+
+        await vm.completeOnboarding(firstName: "  ", lastName: "", phoneNumber: "+420111", birthDate: nil)
+
+        XCTAssertEqual(client.updateCallCount, 0)
+        XCTAssertFalse(completed)
+        XCTAssertFalse(settings.hasSeenOnboarding(userId: "user-7"))
+        XCTAssertNotNil(snackbar.current)
+        guard case .error = vm.saveState else { return XCTFail("expected action error") }
+    }
+
+    func testOnboardingNeedsNameOnlyWhenAStoredNameIsBlank() async {
+        let vm = makeVM()
+        XCTAssertFalse(vm.onboardingNeedsName)
+
+        client.currentUserResult = .success(ProfileFixtures.user(firstName: "", lastName: "Doe"))
+        await vm.refresh()
+        XCTAssertTrue(vm.onboardingNeedsName)
+
+        client.currentUserResult = .success(ProfileFixtures.user(firstName: "Jane", lastName: " "))
+        await vm.refresh()
+        XCTAssertTrue(vm.onboardingNeedsName)
+
+        client.currentUserResult = .success(ProfileFixtures.user())
+        await vm.refresh()
+        XCTAssertFalse(vm.onboardingNeedsName)
+    }
+
+    func testCanCompleteOnboardingRequiresNamesAndPhone() {
+        let vm = makeVM()
+
+        XCTAssertTrue(vm.canCompleteOnboarding(firstName: "Ada", lastName: "Lovelace", phoneNumber: "+420111"))
+        XCTAssertFalse(vm.canCompleteOnboarding(firstName: " ", lastName: "Lovelace", phoneNumber: "+420111"))
+        XCTAssertFalse(vm.canCompleteOnboarding(firstName: "Ada", lastName: "", phoneNumber: "+420111"))
+        XCTAssertFalse(vm.canCompleteOnboarding(firstName: "Ada", lastName: "Lovelace", phoneNumber: " "))
     }
 
     func testCompleteOnboardingSendsTheResolvedAppLanguage() async {
@@ -184,7 +251,12 @@ final class ProfileViewModelTests: XCTestCase {
         )
         await vm.refresh()
 
-        await vm.completeOnboarding(phoneNumber: "+420111", birthDate: nil)
+        await vm.completeOnboarding(
+            firstName: "Jane",
+            lastName: "Doe",
+            phoneNumber: "+420111",
+            birthDate: nil
+        )
 
         XCTAssertEqual(client.lastUpdate?.languageCode, "uk")
     }
@@ -204,7 +276,12 @@ final class ProfileViewModelTests: XCTestCase {
         let token = vm.saved.sink { completed = true }
         defer { token.cancel() }
 
-        await vm.completeOnboarding(phoneNumber: "+420111", birthDate: nil)
+        await vm.completeOnboarding(
+            firstName: "Jane",
+            lastName: "Doe",
+            phoneNumber: "+420111",
+            birthDate: nil
+        )
 
         XCTAssertFalse(completed)
         XCTAssertFalse(settings.hasSeenOnboarding(userId: "user-7"))

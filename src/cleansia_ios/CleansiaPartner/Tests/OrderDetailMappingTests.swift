@@ -152,4 +152,17 @@ final class OrderDetailMappingTests: XCTestCase {
         item.address = OrderAddress(street: "X")
         XCTAssertFalse(OrderDetail(item).canShowMap)
     }
+
+    func testCashDueLabelFormatsTheOrderTotalWithItsCurrency() {
+        XCTAssertEqual(OrderDetail(makeItem()).cashDueLabel, OrdersFormat.money(1200, symbol: "Kč"))
+    }
+
+    func testCashDueLabelIsNilWithoutATotal() {
+        var item = makeItem()
+        item.totalPrice = nil
+        XCTAssertNil(OrderDetail(item).cashDueLabel)
+
+        item.totalPrice = 0
+        XCTAssertNil(OrderDetail(item).cashDueLabel)
+    }
 }

@@ -9,10 +9,18 @@ import SwiftUI
 struct StickyActionFooter: View {
     let action: OrderPrimaryAction
     let inFlightAction: OrderAction?
+    var cashAmount: String?
     let onConfirm: (OrderPrimaryAction) -> Void
+
+    @State private var confirmingCash = false
 
     private func isBusy(_ orderAction: OrderAction) -> Bool {
         inFlightAction == orderAction
+    }
+
+    private var cashConfirmMessage: String {
+        guard let cashAmount else { return L10n.Orders.markCashCollectedConfirmMessageNoAmount }
+        return L10n.Orders.markCashCollectedConfirmMessage(cashAmount)
     }
 
     var body: some View {
@@ -44,12 +52,24 @@ struct StickyActionFooter: View {
                 )
             }
         case .collectCash:
+            // The only irreversible money action in the app: the server rejects a
+            // second call and there is no un-collect endpoint, so it asks first.
             footer {
                 CleansiaPrimaryButton(
                     L10n.Orders.markCashCollected,
                     loading: isBusy(.markCashCollected),
-                    action: { onConfirm(.collectCash) }
+                    action: { confirmingCash = true }
                 )
+            }
+            .confirmationDialog(
+                L10n.Orders.markCashCollectedConfirmTitle,
+                isPresented: $confirmingCash,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Orders.markCashCollectedConfirmAction) { onConfirm(.collectCash) }
+                Button(L10n.cancel, role: .cancel) {}
+            } message: {
+                Text(cashConfirmMessage)
             }
         case .complete:
             footer {
@@ -60,8 +80,8 @@ struct StickyActionFooter: View {
                     onConfirm: { onConfirm(.complete) }
                 )
             }
-        case .completeBlocked:
-            footer { CompleteBlockedHint() }
+        case let .completeBlocked(cashPending):
+            footer { CompleteBlockedHint(cashPending: cashPending) }
         case .none:
             EmptyView()
         }
@@ -78,19 +98,28 @@ struct StickyActionFooter: View {
 }
 
 /// Disabled-state stand-in for the Complete slide when no "after" photo exists
-/// yet — surfaces the server's after-photos guard early. Same copy as the
-/// backend's after-photos error.
+/// yet — surfaces the server's after-photos guard early. With cash still owed the
+/// photo is only the first of three steps, so the hint spells the sequence out
+/// rather than letting the cleaner discover the cash button after uploading.
 private struct CompleteBlockedHint: View {
+    let cashPending: Bool
+
+    private var text: String {
+        cashPending ? L10n.Orders.completeBlockedCashSequence : L10n.Orders.afterPhotosRequired
+    }
+
     var body: some View {
         HStack(spacing: Spacing.xs) {
             Image(systemName: "camera")
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
-            Text(L10n.Orders.afterPhotosRequired)
+            Text(text)
                 .font(CleansiaTypography.labelMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .multilineTextAlignment(.leading)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Spacing.s)
+        .padding(.horizontal, Spacing.m)
         .background(CleansiaColors.surfaceVariant, in: Capsule())
     }
 }

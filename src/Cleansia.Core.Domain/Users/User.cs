@@ -216,6 +216,27 @@ public class User : Auditable, ITenantEntity
         return this;
     }
 
+    /// <summary>
+    /// Fills ONLY the blank name parts and leaves anything already stored untouched. The callers are
+    /// external-identity logins (Apple replays the name captured at the FIRST authorization), so the
+    /// value they carry can be stale by years — it may repair a blank field but must never be able to
+    /// silently undo a name the user has since edited in the profile screen.
+    /// </summary>
+    public User FillMissingName(string? firstName, string? lastName)
+    {
+        if (string.IsNullOrWhiteSpace(FirstName) && !string.IsNullOrWhiteSpace(firstName))
+        {
+            FirstName = firstName.Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(LastName) && !string.IsNullOrWhiteSpace(lastName))
+        {
+            LastName = lastName.Trim();
+        }
+
+        return this;
+    }
+
     public User UpgradeToEmployee()
     {
         if (Profile == UserProfile.Customer)

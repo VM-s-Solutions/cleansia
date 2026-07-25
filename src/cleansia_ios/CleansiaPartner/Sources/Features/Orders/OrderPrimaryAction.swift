@@ -16,7 +16,9 @@ enum OrderPrimaryAction: Equatable {
     case complete
     /// InProgress & mine but no "after" photo yet — the slide is blocked and a
     /// hint is shown instead (the server's after-photos guard, surfaced early).
-    case completeBlocked
+    /// `cashPending` carries the cash the photo gate is hiding, so the hint can
+    /// state the whole remaining sequence instead of only the photo.
+    case completeBlocked(cashPending: Bool)
     case none
 
     /// The `OrderAction` this maps to for the in-flight discriminator, or nil
@@ -56,8 +58,9 @@ enum OrderPrimaryAction: Equatable {
             // cleaner collects (the `OrderPrimaryAction.kt` canComplete →
             // needsCashCollection ordering).
             guard isMine else { return .none }
-            guard hasAfterPhotos else { return .completeBlocked }
-            if isCashPayment, !isPaymentSettled { return .collectCash }
+            let cashPending = isCashPayment && !isPaymentSettled
+            guard hasAfterPhotos else { return .completeBlocked(cashPending: cashPending) }
+            if cashPending { return .collectCash }
             return .complete
         case ._1, ._5, ._6, .none:
             // Pending / Completed / Cancelled / unknown — no action.

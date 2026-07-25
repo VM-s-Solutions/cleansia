@@ -80,6 +80,14 @@ extension L10n {
             localized("onboarding_subtitle")
         }
 
+        static var firstNameLabel: String {
+            localized("profile_edit_first_name")
+        }
+
+        static var lastNameLabel: String {
+            localized("profile_edit_last_name")
+        }
+
         static var phoneLabel: String {
             localized("onboarding_phone_label")
         }

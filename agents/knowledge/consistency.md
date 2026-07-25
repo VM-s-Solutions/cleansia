@@ -219,6 +219,11 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   message from `R.string.*` (reusing the existing `error_*_required`/`error_email_invalid` keys + one new
   `error_password_rules`), ×5 locales. **Also RESOLVED for the profile section VMs (T-0337):** the literals
   in `Personal/Address/Identification/Bank/Emergency` section VMs moved to `R.string.*` ×5.
+  **E8 is now machine-enforced on iOS:** `StringCatalogCompletenessTests` (CleansiaCore, runs in the standalone
+  package CI builds) reads all three `.xcstrings` off disk and fails on a key missing any of en/cs/sk/uk/ru, on
+  an auto-extracted junk key (`-%@`, `#%@`, `%@%@%%` — the fingerprint of Xcode deleting real keys), and on a
+  non-English value still equal to the English source unless it is on an asserted allow-list (see
+  `patterns-mobile.md`). "It compiles" is no longer evidence a screen is translated.
 - **E9.** **Every per-user cache is in the session-wipe set** (the security law is `security-rules.md`
   **S11** — this is its mobile mechanism + allowlist). A `@Singleton` (Android) / long-lived injected
   class (iOS) that holds **per-user state** (a cached `StateFlow`/`@Published`, a DataStore/`UserDefaults`

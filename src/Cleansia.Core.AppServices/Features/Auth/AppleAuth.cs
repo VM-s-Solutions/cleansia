@@ -64,6 +64,13 @@ public class AppleAuth
         ILogger<Handler> logger)
         : ICommandHandler<Command, JwtTokenResponse>
     {
+        private const string AppleRelayEmailDomain = "privaterelay.appleid.com";
+        private const string FallbackFirstName = "Cleansia";
+        private const string FallbackLastName = "Customer";
+        private const int MinDerivedNameLength = 2;
+        private const int MaxNameLength = 50;
+        private static readonly char[] EmailNameSeparators = ['.', '_', '-', '+'];
+
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
         {
             // S1 server-truth-identity: verify the Apple identity token server-side (RS256/JWKS, aud/iss/
@@ -106,6 +113,20 @@ public class AppleAuth
                     return BusinessResult.Failure<JwtTokenResponse>(
                         new Error(nameof(Command.IdentityToken), BusinessErrorMessage.InvalidPassword));
                 }
+
+                // Heal an account stored with a blank name. Apple sends the name ONLY on the first
+                // authorization, so accounts provisioned while this flow was broken are blank and a normal
+                // later sign-in carries nothing to fill them with — which leaves the customer unable to
+                // book (an empty name fails the profile-complete gate and CreateOrder's CustomerName rule)
+                // with no way out. So fall back to the SAME verified-email derivation used at provisioning
+                // when the client sends nothing, making every later sign-in self-healing rather than
+                // depending on the user revoking the app in Settings.
+                // FillMissingName never overwrites a stored value: the Apple payload can carry a name the
+                // user has since replaced in the profile screen, and a login must not silently undo that.
+                var (suppliedFirstName, suppliedLastName) = SplitSuppliedName(command.FirstName, command.LastName);
+                var (healedFirstName, healedLastName) = ResolveDisplayName(suppliedFirstName, suppliedLastName, user.Email);
+                user.FillMissingName(healedFirstName, healedLastName);
+
                 return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken));
             }
 
@@ -124,10 +145,10 @@ public class AppleAuth
                     new Error(nameof(Command.IdentityToken), BusinessErrorMessage.InvalidAppleUserToken));
             }
 
-            // The display name is taken from the command only for provisioning — Apple returns a name
-            // claim only on the first authorization, so the client-provided value is the only source, and
-            // it may be absent or partial (see ResolveDisplayName). Identity is the verified claims.
-            var (firstName, lastName) = ResolveDisplayName(command.FirstName, command.LastName);
+            // The display name comes from the command when Apple sent one — it only ever does on the FIRST
+            // authorization, and may arrive partial — and otherwise from the verified email
+            // (see ResolveDisplayName). Identity itself is always the verified claims.
+            var (firstName, lastName) = ResolveDisplayName(command.FirstName, command.LastName, claims.Email);
             var userEntity = User.CreateWithApple(claims.Email, firstName, lastName, claims.Subject);
 
             userRepository.Add(userEntity);
@@ -136,11 +157,31 @@ public class AppleAuth
             return BusinessResult.Success(await tokenService.GenerateTokenAsync(userEntity, rememberMe: true, hostAudience.Audience, cancellationToken));
         }
 
+        // A provisioned account must NEVER carry a blank name part: UpdateCurrentUser validates both
+        // NotEmpty and CreateOrder requires a CustomerName of at least 2 characters, so an empty name
+        // locks the customer out of booking on an account Apple can never re-send a name for. Anything the
+        // client supplied wins; each blank part falls back to the VERIFIED email's local part
+        // ("jane.doe@x.com" -> Jane Doe) and then to a neutral placeholder the user can edit.
+        private static (string FirstName, string LastName) ResolveDisplayName(string? firstName, string? lastName, string verifiedEmail)
+        {
+            var (first, last) = SplitSuppliedName(firstName, lastName);
+            if (first.Length > 0 && last.Length > 0)
+            {
+                return (first, last);
+            }
+
+            var (derivedFirst, derivedLast) = DeriveNameFromEmail(verifiedEmail);
+
+            return (
+                first.Length > 0 ? first : derivedFirst,
+                last.Length > 0 ? last : derivedLast);
+        }
+
         // Apple hands the name only on the first authorization and may omit the family name entirely, or
-        // fold the whole name into a single field. Take whatever it gives: an empty last name is allowed;
-        // when only a space-separated full name arrives, split off the first token as the given name so the
-        // family name isn't needlessly left blank.
-        private static (string FirstName, string LastName) ResolveDisplayName(string? firstName, string? lastName)
+        // fold the whole name into a single field: when only a space-separated full name arrives, split off
+        // the first token as the given name so the family name isn't needlessly left blank. Either part may
+        // still come back empty — the caller decides what an empty part means.
+        private static (string FirstName, string LastName) SplitSuppliedName(string? firstName, string? lastName)
         {
             var first = (firstName ?? string.Empty).Trim();
             var last = (lastName ?? string.Empty).Trim();
@@ -153,6 +194,36 @@ public class AppleAuth
             }
 
             return (first, last);
+        }
+
+        private static (string FirstName, string LastName) DeriveNameFromEmail(string verifiedEmail)
+        {
+            // An Apple private-relay local part is a random token, never name-shaped, so deriving from it
+            // would persist gibberish as the user's name — go straight to the placeholder instead.
+            var isRelayAddress = verifiedEmail.EndsWith(AppleRelayEmailDomain, StringComparison.OrdinalIgnoreCase);
+            var localPart = verifiedEmail.Split('@')[0];
+            string[] parts = isRelayAddress
+                ? []
+                : localPart
+                    .Split(EmailNameSeparators, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(ToNamePart)
+                    .Where(part => part.Length >= MinDerivedNameLength)
+                    .ToArray();
+
+            return (
+                parts.Length > 0 ? parts[0] : FallbackFirstName,
+                parts.Length > 1 ? parts[1] : FallbackLastName);
+        }
+
+        // Digits and punctuation are dropped ("jane.doe2024" -> Jane, Doe) and the result capitalised;
+        // a leftover shorter than MinDerivedNameLength is discarded by the caller as not name-shaped.
+        private static string ToNamePart(string token)
+        {
+            var letters = new string(token.Where(char.IsLetter).Take(MaxNameLength).ToArray());
+
+            return letters.Length == 0
+                ? string.Empty
+                : char.ToUpperInvariant(letters[0]) + letters[1..].ToLowerInvariant();
         }
     }
 }

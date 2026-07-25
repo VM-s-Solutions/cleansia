@@ -102,6 +102,7 @@ struct OrderDetailContent: View {
             StickyActionFooter(
                 action: primaryAction,
                 inFlightAction: inFlightAction,
+                cashAmount: order.cashDueLabel,
                 onConfirm: onConfirm
             )
         }

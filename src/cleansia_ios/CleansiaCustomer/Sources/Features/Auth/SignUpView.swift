@@ -27,6 +27,7 @@ struct SignUpView: View {
             onPasswordChange: vm.onSignUpPasswordChange,
             onConfirmPasswordChange: vm.onConfirmPasswordChange,
             onReferralCodeChange: vm.onReferralCodeChange,
+            onToggleReferralCode: vm.toggleReferralCode,
             onAcceptTermsChange: vm.onAcceptTermsChange,
             onSignIn: onSignIn,
             onSubmit: { Task { await vm.signUp() } },
@@ -47,6 +48,7 @@ private struct SignUpContent: View {
     let onPasswordChange: (String) -> Void
     let onConfirmPasswordChange: (String) -> Void
     let onReferralCodeChange: (String) -> Void
+    let onToggleReferralCode: () -> Void
     let onAcceptTermsChange: (Bool) -> Void
     let onSignIn: () -> Void
     let onSubmit: () -> Void
@@ -154,10 +156,12 @@ private struct SignUpContent: View {
 
                 Spacer().frame(height: Spacing.xs)
 
-                CleansiaTextField(
-                    value: binding(form.referralCode, onReferralCodeChange),
-                    label: L10n.Auth.referralCode,
-                    enabled: !formDisabled
+                ReferralDisclosure(
+                    code: form.referralCode,
+                    expanded: form.referralExpanded,
+                    enabled: !formDisabled,
+                    onCodeChange: onReferralCodeChange,
+                    onToggle: onToggleReferralCode
                 )
 
                 Spacer().frame(height: Spacing.s)
@@ -212,6 +216,49 @@ private struct SignUpContent: View {
     }
 }
 
+/// The referral code is optional, so it hides behind a disclosure row instead of
+/// sitting in the required-field stack where it reads as mandatory.
+private struct ReferralDisclosure: View {
+    let code: String
+    let expanded: Bool
+    let enabled: Bool
+    let onCodeChange: (String) -> Void
+    let onToggle: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            Button {
+                withAnimation(.easeOut(duration: 0.2)) { onToggle() }
+            } label: {
+                HStack {
+                    Text(L10n.Auth.referralToggle)
+                        .font(CleansiaTypography.bodyMedium)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .multilineTextAlignment(.leading)
+                    Spacer()
+                    Image(systemName: expanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(expanded ? L10n.Auth.referralCollapseHint : L10n.Auth.referralExpandHint)
+
+            if expanded {
+                CleansiaTextField(
+                    value: Binding(get: { code }, set: onCodeChange),
+                    label: L10n.Auth.referralCode,
+                    enabled: enabled,
+                    autoFocus: true
+                )
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .disabled(!enabled)
+    }
+}
+
 #if DEBUG
     struct SignUpView_Previews: PreviewProvider {
         static var previews: some View {
@@ -243,6 +290,11 @@ private struct SignUpContent: View {
                     isLoading: false
                 )
                 .previewDisplayName("Field errors")
+                preview(
+                    form: SignUpFormState(referralCode: "ANNA7", referralExpanded: true),
+                    isLoading: false
+                )
+                .previewDisplayName("Referral revealed")
             }
         }
 
@@ -257,6 +309,7 @@ private struct SignUpContent: View {
                 onPasswordChange: { _ in },
                 onConfirmPasswordChange: { _ in },
                 onReferralCodeChange: { _ in },
+                onToggleReferralCode: {},
                 onAcceptTermsChange: { _ in },
                 onSignIn: {},
                 onSubmit: {},

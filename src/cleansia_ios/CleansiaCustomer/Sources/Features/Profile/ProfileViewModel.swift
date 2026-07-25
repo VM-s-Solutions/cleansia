@@ -70,18 +70,44 @@ final class ProfileViewModel: ViewModel {
         }
     }
 
-    /// Saves the onboarding fields without disturbing first/last name (the
-    /// registration form already collected those). The language rides the
-    /// resolved app tag — always ∈ {en,cs,sk,uk,ru} — the Android device-locale
-    /// clamp (`ProfileViewModel.kt:105-106`) through the one settings store.
-    func completeOnboarding(phoneNumber: String, birthDate: Date?) async {
+    /// Apple sign-in can hand us an account with no name at all, so onboarding
+    /// has to be able to collect one — replaying the stored blanks is rejected by
+    /// the `UpdateCurrentUser` validators and leaves the screen a dead end.
+    var onboardingNeedsName: Bool {
+        guard let user = repository.currentUser else { return false }
+        return user.firstName.isBlank || user.lastName.isBlank
+    }
+
+    /// `UpdateCurrentUser` requires both names; the phone is what the booking
+    /// pre-flight needs.
+    func canCompleteOnboarding(firstName: String, lastName: String, phoneNumber: String) -> Bool {
+        !saveState.isSubmitting && !firstName.isBlank && !lastName.isBlank && !phoneNumber.isBlank
+    }
+
+    /// The language rides the resolved app tag — always ∈ {en,cs,sk,uk,ru} — the
+    /// Android device-locale clamp (`ProfileViewModel.kt:105-106`) through the one
+    /// settings store.
+    func completeOnboarding(
+        firstName: String,
+        lastName: String,
+        phoneNumber: String,
+        birthDate: Date?
+    ) async {
         guard let user = repository.currentUser else { return }
         guard !saveState.isSubmitting else { return }
+        guard !firstName.isBlank, !lastName.isBlank else {
+            let message = firstName.isBlank
+                ? L10n.Auth.errorFirstNameRequired
+                : L10n.Auth.errorLastNameRequired
+            snackbar.showError(message)
+            saveState = .error(message)
+            return
+        }
         saveState = .submitting
         let update = ProfileUpdate(
             id: user.id,
-            firstName: user.firstName,
-            lastName: user.lastName,
+            firstName: firstName.trimmed,
+            lastName: lastName.trimmed,
             phoneNumber: phoneNumber.trimmed.nilIfEmpty,
             birthDate: birthDate,
             languageCode: settings.languageTag

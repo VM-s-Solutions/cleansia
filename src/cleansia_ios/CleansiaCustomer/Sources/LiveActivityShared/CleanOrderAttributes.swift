@@ -60,10 +60,12 @@ struct EtaWindow: Equatable {
     let phaseStart: Date?
     let phaseEnd: Date?
 
-    /// The last moment the card can still be telling the truth — the staleness anchor. A clean that
-    /// started late finishes after the booked end.
-    var latestEnd: Date {
-        max(scheduledEnd, phaseEnd ?? scheduledEnd)
+    /// The instant the countdown hits 00:00 — the actual finish when it is known, else the booked one.
+    /// Doubles as the activity's staleDate: `Text(timerInterval:)` CLAMPS at its upper bound, so this is
+    /// exactly the moment the card stops telling the truth and the system must re-render it into the
+    /// count-up form instead of leaving it frozen at zero.
+    var countdownEnd: Date {
+        phaseEnd ?? scheduledEnd
     }
 }
 
@@ -89,7 +91,7 @@ enum LiveActivityEta {
     static func presentation(window: EtaWindow, terminalLabel: String?, now: Date) -> EtaPresentation {
         if let terminalLabel { return .label(terminalLabel) }
         let start = window.phaseStart ?? window.scheduledStart
-        let end = window.phaseEnd ?? window.scheduledEnd
+        let end = window.countdownEnd
         // Anchor at or before `now`: a range that opens later renders frozen at its full width until it does.
         let anchor = min(start, now)
         guard end > now.addingTimeInterval(countdownFloor) else { return .elapsed(since: anchor) }

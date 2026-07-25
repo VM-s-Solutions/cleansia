@@ -7823,6 +7823,40 @@
         }
       }
     },
+    "partner_order_complete_blocked_cash_sequence": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add an \"after\" photo, then collect the cash, then complete the order."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přidejte fotografii \"po\", pak převezměte hotovost a nakonec zakázku dokončete."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pridajte fotografiu \"po\", potom prevezmite hotovosť a nakoniec zákazku dokončite."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Додайте фото \"після\", потім отримайте готівку, а потім завершіть замовлення."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавьте фото \"после\", затем получите наличные, затем завершите заказ."
+          }
+        }
+      }
+    },
     "partner_order_mark_cash_collected": {
       "localizations": {
         "cs": {
@@ -7853,6 +7887,142 @@
           "stringUnit": {
             "state": "translated",
             "value": "Позначити готівку як отриману"
+          }
+        }
+      }
+    },
+    "partner_order_mark_cash_collected_confirm_action": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes, cash collected"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ano, hotovost přijata"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áno, hotovosť prijatá"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Так, готівку отримано"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Да, наличные получены"
+          }
+        }
+      }
+    },
+    "partner_order_mark_cash_collected_confirm_message": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm you have taken %1$@ in cash from the customer. This cannot be undone."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potvrďte, že jste od zákazníka převzali %1$@ v hotovosti. Tuto akci nelze vzít zpět."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potvrďte, že ste od zákazníka prevzali %1$@ v hotovosti. Túto akciu nemožno vrátiť späť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Підтвердьте, що ви отримали від клієнта %1$@ готівкою. Цю дію не можна скасувати."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подтвердите, что вы получили от клиента %1$@ наличными. Это действие нельзя отменить."
+          }
+        }
+      }
+    },
+    "partner_order_mark_cash_collected_confirm_message_no_amount": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm you have taken the cash payment from the customer. This cannot be undone."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potvrďte, že jste od zákazníka převzali platbu v hotovosti. Tuto akci nelze vzít zpět."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potvrďte, že ste od zákazníka prevzali platbu v hotovosti. Túto akciu nemožno vrátiť späť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Підтвердьте, що ви отримали від клієнта оплату готівкою. Цю дію не можна скасувати."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подтвердите, что вы получили от клиента оплату наличными. Это действие нельзя отменить."
+          }
+        }
+      }
+    },
+    "partner_order_mark_cash_collected_confirm_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark cash as collected?"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Označit hotovost jako přijatou?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Označiť hotovosť ako prijatú?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Позначити готівку як отриману?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отметить наличные как полученные?"
           }
         }
       }

@@ -11,6 +11,7 @@ public struct CleansiaTextField: View {
     private let isPassword: Bool
     private let enabled: Bool
     private let transparentContainer: Bool
+    private let autoFocus: Bool
 
     @State private var passwordVisible = false
     @State private var focused = false
@@ -24,7 +25,8 @@ public struct CleansiaTextField: View {
         textContentType: UITextContentType? = nil,
         isPassword: Bool = false,
         enabled: Bool = true,
-        transparentContainer: Bool = false
+        transparentContainer: Bool = false,
+        autoFocus: Bool = false
     ) {
         _value = value
         self.label = label
@@ -35,6 +37,7 @@ public struct CleansiaTextField: View {
         self.isPassword = isPassword
         self.enabled = enabled
         self.transparentContainer = transparentContainer
+        self.autoFocus = autoFocus
     }
 
     private var isError: Bool {
@@ -98,6 +101,9 @@ public struct CleansiaTextField: View {
                     .foregroundColor(isError ? CleansiaColors.error : CleansiaColors.onSurfaceVariant)
                     .padding(.horizontal, Spacing.m)
             }
+        }
+        .onAppear {
+            if autoFocus, enabled { focused = true }
         }
     }
 

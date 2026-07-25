@@ -58,7 +58,7 @@ final class LiveActivityCoordinator {
         do {
             let activity = try Activity<CleanOrderAttributes>.request(
                 attributes: attributes,
-                content: ActivityContent(state: initialState, staleDate: window.latestEnd.addingTimeInterval(3600)),
+                content: ActivityContent(state: initialState, staleDate: window.countdownEnd),
                 pushType: .token
             )
             started[orderId] = activity
@@ -77,7 +77,7 @@ final class LiveActivityCoordinator {
         guard let activity = existingActivity(orderId: orderId, orderNumber: orderNumber) else { return }
         let state = contentState(status: status, orderNumber: orderNumber, window: window)
         Task {
-            await activity.update(ActivityContent(state: state, staleDate: window.latestEnd.addingTimeInterval(3600)))
+            await activity.update(ActivityContent(state: state, staleDate: window.countdownEnd))
         }
     }
 

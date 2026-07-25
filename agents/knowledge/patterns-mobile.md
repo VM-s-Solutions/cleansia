@@ -471,6 +471,26 @@ strings re-resolve. The segmented `Picker` in particular **must** carry `.id(loc
 The partner `OrdersFormat`/`DashboardFormat`/`EarningsFormat` date helpers all take `locale:` (default `.current`)
 and are threaded from each date-bearing view's `@Environment(\.locale)`, mirroring the customer `OrdersFormat`.
 
+**Strings in an app EXTENSION (the Live Activity widget) live in CleansiaCore's catalog, behind a typed
+`*L10n` facade (T-batch4):** an extension is a separate *module* and a separate *process*, so it cannot see the
+app target's `L10n` — Core's catalog is the only one both link. Add the keys to
+`CleansiaCore/Sources/CleansiaCore/Resources/Localizable.xcstrings` and expose them as public typed accessors
+over `CoreL10n.localized` (`LiveActivityL10n`) rather than leaking key literals across the module boundary;
+`CoreL10n.localized` itself is internal. **The extension follows the DEVICE language, not the in-app switch** —
+`CoreL10n.apply(languageTag:)` runs in the *app* process, and an extension has its own `UserDefaults` domain, so
+the selected tag never reaches it without an App Group. That is the opposite of the in-app rule above, and it is
+the accepted trade-off until an App Group exists (an entitlement/provisioning change). Do NOT confuse this with
+APNs `loc-key` strings, which must stay in each **app** target's catalog (APNs reads only the main bundle).
+
+**The standing guard against untranslated strings: `StringCatalogCompletenessTests` (CleansiaCore).** It reads
+all three `.xcstrings` off disk (walking up from `#filePath` until all three resolve) and fails naming
+catalog + key + locale. It asserts (a) every key carries a non-empty value in en/cs/sk/uk/ru — plural
+`variations` included, (b) no auto-extracted **junk keys** (`-%@`, `#%@`, `%@%@%%` — keys with no letter left
+once format specifiers are stripped; these are the fingerprint of Xcode having deleted real keys), (c) no
+non-English value equal to the English source unless it is on an asserted **allow-list** of proper nouns
+(IBAN, platform names, `Cleansia Plus`, format-only strings) — and (d) that allow-list carries no stale entry.
+Adding a locale-invariant string means adding an allow-list entry with a reason, never skipping the check.
+
 **Top-level audience state may carry a payload (ADR-0020 fold-in, sprint-12 §7.5 Decision 2, reviewer #26b):**
 a flat-enum `Route` case may take an associated value when a nav input must reach the destination — e.g.
 `case verifyEmail(email: String?)` threads the ConfirmEmail resend email (the iOS analogue of Android reading

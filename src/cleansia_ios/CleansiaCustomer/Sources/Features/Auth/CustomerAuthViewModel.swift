@@ -16,6 +16,7 @@ struct SignUpFormState: Equatable {
     var password = ""
     var confirmPassword = ""
     var referralCode = ""
+    var referralExpanded = false
     var acceptTerms = false
     var firstNameError: String?
     var lastNameError: String?
@@ -163,6 +164,15 @@ final class CustomerAuthViewModel: ViewModel {
 
     func onReferralCodeChange(_ value: String) {
         signUpForm.referralCode = value
+    }
+
+    func toggleReferralCode() {
+        signUpForm.referralExpanded.toggle()
+        // Collapsing hides the field, so anything typed into it must go too —
+        // a code the customer can no longer see must never reach the register call.
+        if !signUpForm.referralExpanded {
+            signUpForm.referralCode = ""
+        }
     }
 
     func onAcceptTermsChange(_ value: Bool) {

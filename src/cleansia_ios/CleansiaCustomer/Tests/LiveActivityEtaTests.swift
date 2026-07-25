@@ -84,10 +84,18 @@ final class LiveActivityEtaTests: XCTestCase {
         XCTAssertEqual(eta, .label("Clean complete"))
     }
 
-    func testLatestEndPrefersTheLaterOfTheBookedAndActualFinish() {
-        XCTAssertEqual(window(start: now, end: now + 3600, phaseEnd: now + 5400).latestEnd, now + 5400)
-        XCTAssertEqual(window(start: now, end: now + 3600, phaseEnd: now + 60).latestEnd, now + 3600)
-        XCTAssertEqual(window(start: now, end: now + 3600).latestEnd, now + 3600)
+    func testCountdownEndPrefersTheActualFinishOverTheBookedOne() {
+        XCTAssertEqual(window(start: now, end: now + 3600, phaseEnd: now + 5400).countdownEnd, now + 5400)
+        XCTAssertEqual(window(start: now, end: now + 3600, phaseEnd: now + 60).countdownEnd, now + 60)
+        XCTAssertEqual(window(start: now, end: now + 3600).countdownEnd, now + 3600)
+    }
+
+    /// The staleDate contract: the activity must go stale at exactly the instant the countdown clamps, so
+    /// the system re-renders it into the count-up instead of leaving it frozen at 00:00.
+    func testCountdownEndIsTheUpperBoundOfTheCountdownItProduces() {
+        let live = window(start: now - 600, end: now + 3600, phaseEnd: now + 1800)
+
+        XCTAssertEqual(presentation(live), .countdown(now - 600 ... live.countdownEnd))
     }
 }
 

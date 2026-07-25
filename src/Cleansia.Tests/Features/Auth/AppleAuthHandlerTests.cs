@@ -29,7 +29,11 @@ namespace Cleansia.Tests.Features.Auth;
 ///   - provisioning happens ONLY when <c>claims.EmailVerified</c> (stricter than Google today);
 ///   - a RETURNING user resolves by the verified Apple <c>sub</c> even when Apple omits the email claim
 ///     (Apple guarantees the email only on the FIRST authorization), and the sub-matched account keeps
-///     its stored email; the collision and IsActive guards still run on that path.
+///     its stored email; the collision and IsActive guards still run on that path;
+///   - provisioning NEVER persists a blank name part (an empty name fails UpdateCurrentUser's NotEmpty
+///     rules and CreateOrder's 2-character CustomerName floor, i.e. it blocks booking on an account Apple
+///     can never re-send a name for), and a returning account's blank name is back-filled — but a stored
+///     name is never overwritten.
 /// Written red → green per knowledge/testing.md (the contract precedes the handler body).
 /// </summary>
 public class AppleAuthHandlerTests
@@ -42,12 +46,16 @@ public class AppleAuthHandlerTests
     private readonly Mock<IAppleTokenVerifier> _verifier = new();
     private readonly IHostAudienceProvider _hostAudience = new HostAudienceProvider(HostAudience);
     private readonly List<(LogLevel Level, string Message)> _logEntries = [];
+    private User? _provisionedUser;
 
     public AppleAuthHandlerTests()
     {
         _tokenService
             .Setup(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new JwtTokenResponse(Token: "jwt", IsEmailConfirmed: true));
+        _userRepository
+            .Setup(r => r.Add(It.IsAny<User>()))
+            .Callback<User>(user => _provisionedUser = user);
     }
 
     private AppleAuth.Handler CreateHandler() =>
@@ -62,6 +70,29 @@ public class AppleAuthHandlerTests
 
     private static AppleAuth.Command Command() =>
         new(IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "First", LastName: "Last");
+
+    private static User BlankNameAppleUser(string firstName, string lastName, string? email = null)
+    {
+        var user = UserMockFactory.Generate(new UserMockFactory.UserPartial
+        {
+            AuthenticationType = AuthenticationType.Apple,
+            FirstName = firstName,
+            LastName = lastName,
+            Email = email
+        });
+        user.IsActive = true;
+
+        return user;
+    }
+
+    // The two rules a stored name has to satisfy for the customer to be able to book:
+    // UpdateCurrentUser validates each part NotEmpty, CreateOrder needs a 2+ character CustomerName.
+    private static void AssertUsableName(string namePart)
+    {
+        Assert.False(string.IsNullOrWhiteSpace(namePart));
+        Assert.True(namePart.Length >= 2, $"'{namePart}' is shorter than the 2-character minimum.");
+        Assert.True(namePart.All(char.IsLetter), $"'{namePart}' is not name-shaped.");
+    }
 
     // The email/sub that resolve the account come from the VERIFIED token, never the request.
     [Fact]
@@ -339,12 +370,13 @@ public class AppleAuthHandlerTests
     }
 
     // Regression (the reported bug): Apple omits the family name on the first authorization, so the
-    // command arrives with a null LastName. Provisioning must succeed and store an empty last name — never
-    // fail with "last name is required".
+    // command arrives with a null LastName. Provisioning must succeed AND must not store a blank last
+    // name — an empty part fails UpdateCurrentUser's NotEmpty rule and leaves the customer unable to book.
+    // The supplied given name is kept; only the blank part is filled from the verified email.
     [Fact]
-    public async Task Missing_LastName_Provisions_User_With_Empty_LastName()
+    public async Task Missing_LastName_Is_Filled_From_The_Verified_Email_LocalPart()
     {
-        const string verifiedEmail = "no-last-name@example.com";
+        const string verifiedEmail = "jane.doe@example.com";
         _verifier
             .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AppleVerifiedClaims("apple-sub-nolast", verifiedEmail, EmailVerified: true));
@@ -353,25 +385,26 @@ public class AppleAuthHandlerTests
             .ReturnsAsync((User?)null);
 
         var command = new AppleAuth.Command(
-            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "Jane", LastName: null);
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "Janet", LastName: null);
 
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        _userRepository.Verify(r => r.Add(It.Is<User>(u =>
-            u.Email == verifiedEmail &&
-            u.FirstName == "Jane" &&
-            u.LastName == string.Empty &&
-            u.AuthenticationType == AuthenticationType.Apple)), Times.Once);
+        Assert.NotNull(_provisionedUser);
+        Assert.Equal(verifiedEmail, _provisionedUser!.Email);
+        Assert.Equal("Janet", _provisionedUser.FirstName);
+        Assert.Equal("Doe", _provisionedUser.LastName);
+        Assert.Equal(AuthenticationType.Apple, _provisionedUser.AuthenticationType);
         _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Once);
     }
 
     // A later Apple sign-in that provisions (e.g. the account was deleted and recreated) carries no name
-    // at all — both fields null. Provisioning must still succeed with empty names.
+    // at all — both fields null. Provisioning must still succeed, with BOTH parts derived from the
+    // verified email's local part rather than persisted blank.
     [Fact]
-    public async Task Missing_Both_Names_Provisions_User_With_Empty_Names()
+    public async Task Missing_Both_Names_Are_Derived_From_The_Verified_Email_LocalPart()
     {
-        const string verifiedEmail = "no-name@example.com";
+        const string verifiedEmail = "jane.doe2024@example.com";
         _verifier
             .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AppleVerifiedClaims("apple-sub-noname", verifiedEmail, EmailVerified: true));
@@ -385,10 +418,177 @@ public class AppleAuthHandlerTests
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        _userRepository.Verify(r => r.Add(It.Is<User>(u =>
-            u.Email == verifiedEmail &&
-            u.FirstName == string.Empty &&
-            u.LastName == string.Empty)), Times.Once);
+        Assert.NotNull(_provisionedUser);
+        Assert.Equal(verifiedEmail, _provisionedUser!.Email);
+        Assert.Equal("Jane", _provisionedUser.FirstName);
+        Assert.Equal("Doe", _provisionedUser.LastName);
+    }
+
+    // A local part with nothing name-shaped in it (all digits, or single letters) must not be persisted as
+    // a name — the neutral placeholder takes over. Whatever it is, it has to satisfy the two rules the
+    // customer is blocked by: NotEmpty (UpdateCurrentUser) and 2+ characters (CreateOrder.CustomerName).
+    [Theory]
+    [InlineData("12345678@example.com")]
+    [InlineData("j.d@example.com")]
+    [InlineData("_@example.com")]
+    public async Task Unusable_Email_LocalPart_Falls_Back_To_A_Usable_Neutral_Name(string verifiedEmail)
+    {
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("apple-sub-unusable", verifiedEmail, EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(verifiedEmail, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        var command = new AppleAuth.Command(
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: null, LastName: null);
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(_provisionedUser);
+        AssertUsableName(_provisionedUser!.FirstName);
+        AssertUsableName(_provisionedUser.LastName);
+    }
+
+    // An Apple private-relay address is a random token, never name-shaped, so it must not be mined for a
+    // name — that would persist gibberish the user then has to notice and correct.
+    [Fact]
+    public async Task PrivateRelay_Email_Is_Not_Mined_For_A_Name()
+    {
+        const string relayLocalPart = "k9x7m2q4r5";
+        const string verifiedEmail = $"{relayLocalPart}@privaterelay.appleid.com";
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("apple-sub-relay", verifiedEmail, EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(verifiedEmail, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        var command = new AppleAuth.Command(
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: null, LastName: null);
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(_provisionedUser);
+        AssertUsableName(_provisionedUser!.FirstName);
+        AssertUsableName(_provisionedUser.LastName);
+
+        var relayLetters = new string(relayLocalPart.Where(char.IsLetter).ToArray());
+        Assert.DoesNotContain(relayLetters, _provisionedUser.FirstName, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(relayLetters, _provisionedUser.LastName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // The email fallback is a floor, not a rewrite: a name Apple actually handed us always wins.
+    [Fact]
+    public async Task Supplied_Name_Wins_Over_The_Email_Fallback_At_Provisioning()
+    {
+        const string verifiedEmail = "someone.else@example.com";
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("apple-sub-supplied", verifiedEmail, EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(verifiedEmail, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        var command = new AppleAuth.Command(
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "Jane", LastName: "Doe");
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(_provisionedUser);
+        Assert.Equal("Jane", _provisionedUser!.FirstName);
+        Assert.Equal("Doe", _provisionedUser.LastName);
+    }
+
+    // Back-fill: accounts provisioned before the blank-name fix can only be repaired when Apple replays
+    // the name (the user revoked the app and re-authorized). A blank stored part takes the supplied value.
+    [Fact]
+    public async Task Returning_User_With_Blank_Stored_Name_Is_BackFilled_From_The_Supplied_Name()
+    {
+        var existing = BlankNameAppleUser(firstName: string.Empty, lastName: string.Empty);
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("apple-sub-blank", Email: null, EmailVerified: false));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync("apple-sub-blank", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("First", existing.FirstName);
+        Assert.Equal("Last", existing.LastName);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+    }
+
+    // Only the blank part moves: the payload can carry an Apple-ID name the user has since replaced in the
+    // profile screen, and a sign-in must never silently undo that edit.
+    [Fact]
+    public async Task Returning_User_BackFill_Fills_Only_The_Blank_Part()
+    {
+        var existing = BlankNameAppleUser(firstName: "Renamed", lastName: string.Empty);
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("apple-sub-partial", Email: null, EmailVerified: false));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync("apple-sub-partial", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Renamed", existing.FirstName);
+        Assert.Equal("Last", existing.LastName);
+    }
+
+    [Fact]
+    public async Task Returning_User_BackFill_Never_Overwrites_A_Stored_Name()
+    {
+        var existing = BlankNameAppleUser(firstName: "Renamed", lastName: "Surname");
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("apple-sub-named", Email: null, EmailVerified: false));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync("apple-sub-named", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Renamed", existing.FirstName);
+        Assert.Equal("Surname", existing.LastName);
+    }
+
+    // The back-fill is driven ONLY by a name the client actually supplied. A routine returning sign-in
+    // carries none, and inventing one from the stored (possibly relay) email would be a write with no new
+    // information behind it — such accounts are healed by the profile screen instead.
+    [Fact]
+    public async Task Returning_User_With_A_Blank_Name_Is_Healed_From_Their_Stored_Email()
+    {
+        var existing = BlankNameAppleUser(
+            firstName: string.Empty, lastName: string.Empty, email: "jane.doe@example.com");
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("apple-sub-nameless", Email: null, EmailVerified: false));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync("apple-sub-nameless", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var command = new AppleAuth.Command(
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: null, LastName: null);
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        // Apple sends no name on a repeat authorization, so healing MUST come from the verified email —
+        // otherwise an account provisioned blank (while this flow was broken) can never book again.
+        Assert.True(result.IsSuccess);
+        AssertUsableName(existing.FirstName);
+        AssertUsableName(existing.LastName);
+        Assert.Equal("Jane", existing.FirstName);
+        Assert.Equal("Doe", existing.LastName);
     }
 
     // When Apple folds the whole name into the given-name field and sends no family name, split off the

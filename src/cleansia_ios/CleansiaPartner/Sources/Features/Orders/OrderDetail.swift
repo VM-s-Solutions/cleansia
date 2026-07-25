@@ -125,6 +125,14 @@ extension OrderDetail {
     var canShowMap: Bool {
         coordinate != nil && status != ._6
     }
+
+    /// The formatted sum the cleaner takes in cash, or nil when the wire carried no
+    /// total — the cash-collection confirmation then asks without naming an amount
+    /// rather than guessing one.
+    var cashDueLabel: String? {
+        guard let total = payment.total, total > 0 else { return nil }
+        return OrdersFormat.money(total, symbol: currencySymbol)
+    }
 }
 
 extension OrderDetail {

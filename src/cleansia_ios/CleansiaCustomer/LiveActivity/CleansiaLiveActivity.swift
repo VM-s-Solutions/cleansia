@@ -1,4 +1,5 @@
 import ActivityKit
+import CleansiaCore
 import SwiftUI
 import WidgetKit
 
@@ -11,6 +12,9 @@ import WidgetKit
 // status updates to.
 //
 // The whole extension deploys at iOS 16.1, so no @available guards are needed inside it.
+//
+// Copy comes from CleansiaCore's catalog via LiveActivityL10n: this target links Core but not the app
+// module, so Core's is the only catalog both processes can read.
 
 @main
 struct CleansiaLiveActivityBundle: WidgetBundle {
@@ -43,39 +47,39 @@ private struct CleanStatus {
         switch raw {
         case "onTheWay":
             self = CleanStatus(
-                title: "On the way",
-                detail: "Your cleaner is heading over",
+                title: LiveActivityL10n.Status.onTheWayTitle,
+                detail: LiveActivityL10n.Status.onTheWayDetail,
                 symbol: "figure.walk",
                 mascotAsset: "mascot_on_the_way",
                 isTerminal: false
             )
         case "inProgress":
             self = CleanStatus(
-                title: "Cleaning in progress",
-                detail: "Your cleaner is on site",
+                title: LiveActivityL10n.Status.inProgressTitle,
+                detail: LiveActivityL10n.Status.inProgressDetail,
                 symbol: "sparkles",
                 mascotAsset: "mascot_cleaning",
                 isTerminal: false
             )
         case "completed":
             self = CleanStatus(
-                title: "Clean complete",
-                detail: "All done — thank you",
+                title: LiveActivityL10n.Status.completedTitle,
+                detail: LiveActivityL10n.Status.completedDetail,
                 symbol: "checkmark.seal.fill",
                 mascotAsset: nil,
                 isTerminal: true
             )
         case "cancelled":
             self = CleanStatus(
-                title: "Cancelled",
-                detail: "This clean was cancelled",
+                title: LiveActivityL10n.Status.cancelledTitle,
+                detail: LiveActivityL10n.Status.cancelledDetail,
                 symbol: "xmark.circle.fill",
                 mascotAsset: nil,
                 isTerminal: true
             )
         default:
             self = CleanStatus(
-                title: "Your clean",
+                title: LiveActivityL10n.Status.genericTitle,
                 detail: "",
                 symbol: "sparkles",
                 mascotAsset: "mascot_live",
@@ -167,8 +171,8 @@ private struct EtaReadout: View {
     private var caption: String? {
         guard style != .compact else { return nil }
         return switch eta {
-        case .countdown: style == .lockScreen ? "remaining" : "left"
-        case .elapsed: "elapsed"
+        case .countdown: style == .lockScreen ? LiveActivityL10n.Eta.remaining : LiveActivityL10n.Eta.left
+        case .elapsed: LiveActivityL10n.Eta.elapsed
         case .label: nil
         }
     }
@@ -271,5 +275,5 @@ private struct LockScreenLiveActivityView: View {
 }
 
 private func orderLabel(_ orderNumber: String) -> String {
-    orderNumber.isEmpty ? "Your booking" : "Order #\(orderNumber)"
+    orderNumber.isEmpty ? LiveActivityL10n.bookingFallback : LiveActivityL10n.orderNumber(orderNumber)
 }

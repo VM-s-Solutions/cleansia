@@ -4,11 +4,14 @@ import SwiftUI
 /// Post-signin onboarding (`ProfileOnboardingScreen.kt` parity). Shown once per
 /// user — gathers the fields the registration form intentionally skips. Phone
 /// is the practically-required one (the booking pre-flight rejects an empty
-/// phone); birth date is optional.
+/// phone); birth date is optional. Name fields only appear for the accounts that
+/// arrived without one (Apple sign-in) — everyone else sees the screen unchanged.
 struct ProfileOnboardingView: View {
     @StateObject private var vm: ProfileViewModel
     private let onDone: () -> Void
 
+    @State private var firstName = ""
+    @State private var lastName = ""
     @State private var phone = ""
     @State private var birthDate: Date?
     @State private var seededFor: String?
@@ -20,16 +23,31 @@ struct ProfileOnboardingView: View {
 
     var body: some View {
         ProfileOnboardingContent(
-            firstName: vm.currentUser?.firstName ?? "",
+            greetingName: vm.currentUser?.firstName ?? "",
+            showNameFields: vm.onboardingNeedsName,
+            firstName: $firstName,
+            lastName: $lastName,
             phone: $phone,
             birthDate: $birthDate,
             saving: vm.saveState.isSubmitting,
+            canSave: vm.canCompleteOnboarding(
+                firstName: firstName,
+                lastName: lastName,
+                phoneNumber: phone
+            ),
             onSkip: {
                 vm.skipOnboarding()
                 onDone()
             },
             onSave: {
-                Task { await vm.completeOnboarding(phoneNumber: phone, birthDate: birthDate) }
+                Task {
+                    await vm.completeOnboarding(
+                        firstName: firstName,
+                        lastName: lastName,
+                        phoneNumber: phone,
+                        birthDate: birthDate
+                    )
+                }
             }
         )
         .onReceive(vm.repository.$currentUser) { user in seed(user) }
@@ -39,22 +57,24 @@ struct ProfileOnboardingView: View {
     private func seed(_ user: CurrentUserProfile?) {
         guard let user, seededFor != user.id else { return }
         seededFor = user.id
+        firstName = user.firstName
+        lastName = user.lastName
         phone = user.phoneNumber ?? ""
         birthDate = user.birthDate
     }
 }
 
 private struct ProfileOnboardingContent: View {
-    let firstName: String
+    let greetingName: String
+    let showNameFields: Bool
+    @Binding var firstName: String
+    @Binding var lastName: String
     @Binding var phone: String
     @Binding var birthDate: Date?
     let saving: Bool
+    let canSave: Bool
     let onSkip: () -> Void
     let onSave: () -> Void
-
-    private var canSave: Bool {
-        !phone.isBlank && !saving
-    }
 
     var body: some View {
         ZStack {
@@ -64,12 +84,26 @@ private struct ProfileOnboardingContent: View {
                     VStack(alignment: .leading, spacing: 0) {
                         hero
                             .padding(.top, Spacing.l)
+                        if showNameFields {
+                            CleansiaTextField(
+                                value: $firstName,
+                                label: L10n.Onboarding.firstNameLabel,
+                                textContentType: .givenName
+                            )
+                            .padding(.top, 28)
+                            CleansiaTextField(
+                                value: $lastName,
+                                label: L10n.Onboarding.lastNameLabel,
+                                textContentType: .familyName
+                            )
+                            .padding(.top, Spacing.m)
+                        }
                         CleansiaPhoneInput(
                             value: $phone,
                             label: L10n.Onboarding.phoneLabel,
                             helper: L10n.Onboarding.phoneHelper
                         )
-                        .padding(.top, 28)
+                        .padding(.top, showNameFields ? Spacing.m : 28)
                         OnboardingDateField(birthDate: $birthDate)
                             .padding(.top, Spacing.m)
                     }
@@ -88,9 +122,9 @@ private struct ProfileOnboardingContent: View {
                 .scaledToFit()
                 .frame(width: 160, height: 160)
             Text(
-                firstName.isBlank
+                greetingName.isBlank
                     ? L10n.Onboarding.greeting
-                    : L10n.Onboarding.greetingNamed(firstName)
+                    : L10n.Onboarding.greetingNamed(greetingName)
             )
             .font(CleansiaTypography.headlineSmall)
             .foregroundColor(CleansiaColors.onBackground)
@@ -185,15 +219,24 @@ private struct OnboardingDateField: View {
 
 #if DEBUG
     private struct ProfileOnboardingPreviewHost: View {
+        let greetingName: String
+        let showNameFields: Bool
+
+        @State private var firstName = ""
+        @State private var lastName = ""
         @State private var phone = ""
         @State private var birthDate: Date?
 
         var body: some View {
             ProfileOnboardingContent(
-                firstName: "Jane",
+                greetingName: greetingName,
+                showNameFields: showNameFields,
+                firstName: $firstName,
+                lastName: $lastName,
                 phone: $phone,
                 birthDate: $birthDate,
                 saving: false,
+                canSave: false,
                 onSkip: {},
                 onSave: {}
             )
@@ -202,7 +245,10 @@ private struct OnboardingDateField: View {
 
     struct ProfileOnboardingContent_Previews: PreviewProvider {
         static var previews: some View {
-            ProfileOnboardingPreviewHost()
+            ProfileOnboardingPreviewHost(greetingName: "Jane", showNameFields: false)
+                .previewDisplayName("Named")
+            ProfileOnboardingPreviewHost(greetingName: "", showNameFields: true)
+                .previewDisplayName("Nameless account")
         }
     }
 #endif

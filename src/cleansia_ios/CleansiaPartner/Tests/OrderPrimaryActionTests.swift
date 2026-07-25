@@ -56,7 +56,14 @@ final class OrderPrimaryActionTests: XCTestCase {
     }
 
     func testInProgressMineWithoutAfterPhotosIsCompleteBlocked() {
-        XCTAssertEqual(action(._4, mine: true, photos: false), .completeBlocked)
+        XCTAssertEqual(action(._4, mine: true, photos: false), .completeBlocked(cashPending: false))
+    }
+
+    func testCardOrderIsNeverBlockedWithCashPending() {
+        XCTAssertEqual(
+            action(._4, mine: true, photos: false, cash: false, settled: false),
+            .completeBlocked(cashPending: false)
+        )
     }
 
     func testInProgressNotMineIsNoneRegardlessOfPhotos() {
@@ -72,13 +79,21 @@ final class OrderPrimaryActionTests: XCTestCase {
 
     func testInProgressMineUnsettledCashWithoutAfterPhotosIsStillCompleteBlocked() {
         // The after-photos gate is checked first (the Android canComplete →
-        // needsCashCollection ordering), so no photo blocks before cash shows.
-        XCTAssertEqual(action(._4, mine: true, photos: false, cash: true, settled: false), .completeBlocked)
+        // needsCashCollection ordering), so no photo blocks before cash shows —
+        // but the blocked case carries the still-owed cash so the hint can
+        // spell out the whole remaining sequence.
+        XCTAssertEqual(
+            action(._4, mine: true, photos: false, cash: true, settled: false),
+            .completeBlocked(cashPending: true)
+        )
     }
 
     func testInProgressMineSettledCashResolvesToTheAfterPhotosGate() {
         XCTAssertEqual(action(._4, mine: true, photos: true, cash: true, settled: true), .complete)
-        XCTAssertEqual(action(._4, mine: true, photos: false, cash: true, settled: true), .completeBlocked)
+        XCTAssertEqual(
+            action(._4, mine: true, photos: false, cash: true, settled: true),
+            .completeBlocked(cashPending: false)
+        )
     }
 
     func testInProgressMineCardOrderNeverCollectsCash() {
@@ -119,7 +134,8 @@ final class OrderPrimaryActionTests: XCTestCase {
         XCTAssertEqual(OrderPrimaryAction.start.orderAction, .start)
         XCTAssertEqual(OrderPrimaryAction.collectCash.orderAction, .markCashCollected)
         XCTAssertEqual(OrderPrimaryAction.complete.orderAction, .complete)
-        XCTAssertNil(OrderPrimaryAction.completeBlocked.orderAction)
+        XCTAssertNil(OrderPrimaryAction.completeBlocked(cashPending: false).orderAction)
+        XCTAssertNil(OrderPrimaryAction.completeBlocked(cashPending: true).orderAction)
         XCTAssertNil(OrderPrimaryAction.none.orderAction)
     }
 }

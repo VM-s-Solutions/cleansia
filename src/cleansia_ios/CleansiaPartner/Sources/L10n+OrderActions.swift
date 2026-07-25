@@ -31,6 +31,22 @@ extension L10n.Orders {
         L10n.localized("cash_collected_toast")
     }
 
+    static var markCashCollectedConfirmTitle: String {
+        L10n.localized("partner_order_mark_cash_collected_confirm_title")
+    }
+
+    static func markCashCollectedConfirmMessage(_ amount: String) -> String {
+        L10n.format("partner_order_mark_cash_collected_confirm_message", amount)
+    }
+
+    static var markCashCollectedConfirmMessageNoAmount: String {
+        L10n.localized("partner_order_mark_cash_collected_confirm_message_no_amount")
+    }
+
+    static var markCashCollectedConfirmAction: String {
+        L10n.localized("partner_order_mark_cash_collected_confirm_action")
+    }
+
     static var slideToComplete: String {
         L10n.localized("slide_to_complete")
     }
@@ -49,6 +65,10 @@ extension L10n.Orders {
 
     static var afterPhotosRequired: String {
         L10n.localized("error_key_order_after_photos_required")
+    }
+
+    static var completeBlockedCashSequence: String {
+        L10n.localized("partner_order_complete_blocked_cash_sequence")
     }
 
     // Lifecycle actions (Active-row swipe)

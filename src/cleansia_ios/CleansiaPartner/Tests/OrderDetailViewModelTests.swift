@@ -114,7 +114,7 @@ final class OrderDetailViewModelTests: XCTestCase {
         client.byIdResult = .success(loadedItem(status: 4, isMine: true, hasAfterPhotos: false))
         let vm = makeVM()
         await vm.load()
-        XCTAssertEqual(vm.primaryAction, .completeBlocked)
+        XCTAssertEqual(vm.primaryAction, .completeBlocked(cashPending: false))
     }
 
     // MARK: payment-gated completion — a cash order must be collected first
@@ -153,7 +153,7 @@ final class OrderDetailViewModelTests: XCTestCase {
         client.byIdResult = .success(loadedItem(status: 4, isMine: true, hasAfterPhotos: false))
         let vm = makeVM()
         await vm.load()
-        XCTAssertEqual(vm.primaryAction, .completeBlocked)
+        XCTAssertEqual(vm.primaryAction, .completeBlocked(cashPending: false))
 
         client.byIdResult = .success(loadedItem(status: 4, isMine: true, hasAfterPhotos: true))
         await vm.load() // the re-fetch the photos `mutated` triggers

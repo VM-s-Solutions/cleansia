@@ -226,7 +226,8 @@ You no longer hand-populate all 10 secrets. The deploy automates most of it:
   | `JWT_KEY` | `Jwt--Key` | a strong random 256-bit key |
   | `CSRF_SECRET` | `Csrf--Secret` | a random string (only enforced when Csrf:Enabled=true; safe to set now) |
   | `STRIPE_SECRET_KEY` | `Stripe--SecretKey` | `sk_test_…` (TEST, never live) |
-  | `STRIPE_WEBHOOK_SECRET` | `Stripe--WebhookSecret` | `whsec_…` |
+  | `STRIPE_WEBHOOK_SECRET` | `Stripe--WebhookSecret` | `whsec_…` from the **WEB** Stripe endpoint (`api-cleansia-customer-…`) |
+  | `STRIPE_WEBHOOK_SECRET_MOBILE` | `Stripe--WebhookSecretMobile` | `whsec_…` from the **MOBILE** Stripe endpoint (`api-cleansia-customer-mobile-…`). Falls back to the web secret when unset. |
   | `STRIPE_PUBLISHABLE_KEY` | `Stripe--PublishableKey` | `pk_test_…` (client-safe, but routed through KV) |
   | `SENDGRID_API_KEY` | `SendGrid--ApiKey` | `SG.…` ← **the one that was blocking email** |
   | `SENDGRID_RESET_PASSWORD_TEMPLATE_ID` | `SendGrid--ResetPasswordTemplateId` | `d-c475f44d635f40569aa8b5171dc63270` |
@@ -275,7 +276,8 @@ az keyvault secret set --vault-name kv-cleansia-weu-dev --name "ConnectionString
 az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Storage--ConnectionString"      --value "$ST_CONN"
 az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Jwt--Key"                         --value "<a-strong-random-256-bit-key>"
 az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Stripe--SecretKey"                --value "sk_test_..."     # TEST key, never live
-az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Stripe--WebhookSecret"            --value "whsec_..."       # TEST webhook
+az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Stripe--WebhookSecret"            --value "whsec_..."       # TEST webhook — WEB endpoint
+az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Stripe--WebhookSecretMobile"      --value "whsec_..."       # TEST webhook — MOBILE endpoint
 az keyvault secret set --vault-name kv-cleansia-weu-dev --name "SendGrid--ApiKey"                 --value "SG...."
 az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Sentry--Dsn"                      --value "https://...@sentry.io/..."
 az keyvault secret set --vault-name kv-cleansia-weu-dev --name "Mapbox--GeocodingAccessToken"     --value "pk.eyJ..."       # rotate the exposed token first
@@ -505,7 +507,8 @@ work the YAML cannot do. Do it **in this order**:
 | `JWT_KEY` | a **new** strong random 256-bit key | KV push → `Jwt--Key` |
 | `CSRF_SECRET` | a new random string | KV push → `Csrf--Secret` |
 | `STRIPE_SECRET_KEY` | `sk_live_…` (**live** key — prod only) | KV push → `Stripe--SecretKey` |
-| `STRIPE_WEBHOOK_SECRET` | the **live** `whsec_…` (from the prod Stripe webhook endpoint) | KV push → `Stripe--WebhookSecret` |
+| `STRIPE_WEBHOOK_SECRET` | the **live** `whsec_…` from the prod **web** Stripe endpoint | KV push → `Stripe--WebhookSecret` |
+| `STRIPE_WEBHOOK_SECRET_MOBILE` | the **live** `whsec_…` from the prod **mobile** Stripe endpoint | KV push → `Stripe--WebhookSecretMobile` |
 | `STRIPE_PUBLISHABLE_KEY` | `pk_live_…` | KV push → `Stripe--PublishableKey` |
 | `SENDGRID_API_KEY` | the prod SendGrid key | KV push → `SendGrid--ApiKey` |
 | `SENDGRID_RESET_PASSWORD_TEMPLATE_ID` | `d-…` (same template ids as dev unless prod gets its own set) | KV push |

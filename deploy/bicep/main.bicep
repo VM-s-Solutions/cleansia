@@ -207,6 +207,10 @@ var apiHosts = [
     audience: 'customer'
     browserFacing: true
     needsStripe: true
+    // Web channel: Stripe Checkout Sessions (OrderPaymentDispatcher mints a session only on Web),
+    // plus the membership/subscription and chargeback events. Its own Stripe endpoint => its own
+    // signing secret, so rotating one channel cannot silently break the other.
+    webhookSecretName: 'Stripe--WebhookSecret'
   }
   {
     audience: 'partner-mobile'
@@ -217,6 +221,9 @@ var apiHosts = [
     audience: 'customer-mobile'
     browserFacing: false
     needsStripe: true
+    // Mobile channel: Stripe PaymentSheet PaymentIntents (payment_intent.*), delivered to a SEPARATE
+    // Stripe endpoint so web and mobile traffic are traceable apart — hence a separate signing secret.
+    webhookSecretName: 'Stripe--WebhookSecretMobile'
   }
 ]
 
@@ -436,6 +443,9 @@ var apnsSettings = apnsSecretProvisioned
     }
   : {}
 
+// Shared Stripe settings. Stripe__WebhookSecret is a DEFAULT: each host overrides it with its own
+// endpoint's signing secret at the call site (see host.webhookSecretName), because a Stripe webhook
+// secret is per-ENDPOINT and web/mobile now have separate endpoints.
 var stripeSettings = {
   Stripe__SecretKey: kvRef(keyVaultUri, 'Stripe--SecretKey')
   Stripe__WebhookSecret: kvRef(keyVaultUri, 'Stripe--WebhookSecret')
@@ -489,7 +499,7 @@ module apiAppServices 'modules/appService.bicep' = [
       // union() with {} is a no-op, so each host receives exactly the blocks its flags select: Stripe
       // for the payment initiators, the app-level CORS override for browser hosts (empty until
       // customDomains adds frontend origins — see corsOriginsAppSettings).
-      appSettings: union(apiBaseSettings, fiscalSettings, host.needsStripe ? stripeSettings : {}, host.browserFacing ? corsOriginsAppSettings : {})
+      appSettings: union(apiBaseSettings, fiscalSettings, host.needsStripe ? union(stripeSettings, { Stripe__WebhookSecret: kvRef(keyVaultUri, host.webhookSecretName) }) : {}, host.browserFacing ? corsOriginsAppSettings : {})
       corsAllowedOrigins: host.browserFacing ? browserCorsOrigins : []
       httpsOnly: true
       // Prod (S1) keeps the hosts warm; dev (B2) keeps the cost posture — an idle host may unload.

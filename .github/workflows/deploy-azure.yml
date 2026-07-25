@@ -418,6 +418,7 @@ jobs:
           CSRF_SECRET: ${{ secrets.CSRF_SECRET }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_WEBHOOK_SECRET_MOBILE: ${{ secrets.STRIPE_WEBHOOK_SECRET_MOBILE }}
           STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           SENDGRID_RESET_PASSWORD_TEMPLATE_ID: ${{ secrets.SENDGRID_RESET_PASSWORD_TEMPLATE_ID }}
@@ -462,6 +463,10 @@ jobs:
           set_secret "Csrf--Secret"                 "$CSRF_SECRET"
           set_secret "Stripe--SecretKey"            "$STRIPE_SECRET_KEY"
           set_secret "Stripe--WebhookSecret"        "$STRIPE_WEBHOOK_SECRET"
+          # Separate Stripe endpoint per channel => separate signing secret. Falls back to the web
+          # secret until STRIPE_WEBHOOK_SECRET_MOBILE exists, so the KV reference the mobile host
+          # binds always resolves and a half-configured deploy cannot 500 the mobile webhook.
+          set_secret "Stripe--WebhookSecretMobile"  "${STRIPE_WEBHOOK_SECRET_MOBILE:-$STRIPE_WEBHOOK_SECRET}"
           set_secret "Stripe--PublishableKey"       "$STRIPE_PUBLISHABLE_KEY"
           set_secret "SendGrid--ApiKey"                        "$SENDGRID_API_KEY"
           set_secret "SendGrid--ResetPasswordTemplateId"       "$SENDGRID_RESET_PASSWORD_TEMPLATE_ID"

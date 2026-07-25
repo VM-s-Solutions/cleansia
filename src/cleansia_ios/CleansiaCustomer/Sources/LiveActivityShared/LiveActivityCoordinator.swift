@@ -26,9 +26,13 @@ final class LiveActivityCoordinator {
     static let shared = LiveActivityCoordinator(registrar: NoopLiveActivityRegistering())
 
     private var registrar: LiveActivityRegistering
+    private var orderResolver: LiveActivityOrderResolving?
     private var started: [String: Activity<CleanOrderAttributes>] = [:] // orderId -> live activity
     private var tokenObservers: [String: Task<Void, Never>] = [:] // orderId -> pushTokenUpdates observer
+    private var stateObservers: [String: Task<Void, Never>] = [:] // orderId -> activityStateUpdates observer
     private var pushToStartObserver: Task<Void, Never>?
+    private var activityObserver: Task<Void, Never>?
+    private var adoptedActivityIds: Set<String> = []
 
     init(registrar: LiveActivityRegistering) {
         self.registrar = registrar
@@ -36,8 +40,107 @@ final class LiveActivityCoordinator {
 
     /// Swap the no-op seam for the live backend registrar once the composition root has the session's
     /// device id + auth spine (`CustomerAppContainer`). Idempotent-safe: install before the first `start`.
-    func install(registrar: LiveActivityRegistering) {
+    func install(registrar: LiveActivityRegistering, orderResolver: LiveActivityOrderResolving? = nil) {
         self.registrar = registrar
+        if let orderResolver { self.orderResolver = orderResolver }
+    }
+
+    /// Adopt every Live Activity for this app that THIS session did not start — the ones the SERVER started
+    /// via push-to-start, and the ones the system restored after the app was terminated — and register each
+    /// one's update token so the backend can drive it.
+    ///
+    /// Without this, `observePushToken` only ever ran from the success branch of the local `start(...)`, so
+    /// an update token existed ONLY for activities the app itself created, i.e. only when the user had
+    /// opened the order-detail screen. A server-started card would appear and then freeze on its opening
+    /// status forever — `SendLiveActivityUpdateHandler` resolves zero tokens for it — until the stale date
+    /// or the OS's ~8h budget killed it. That is precisely the "only works when I open the order" symptom.
+    ///
+    /// MUST be started at LAUNCH (composition root), not from a SwiftUI scene's `.task`: a push-to-start
+    /// launches the app in the BACKGROUND with no scene connected, so a scene-scoped task never runs — the
+    /// one launch that most needs this lane is the one that would skip it.
+    func beginActivityAdoption() {
+        guard activityObserver == nil else { return }
+
+        // Already-running activities first: `activityUpdates` reports activities as they START, so a card
+        // the server started while this process was dead is not in the stream — only in `activities`.
+        for activity in Activity<CleanOrderAttributes>.activities {
+            adopt(activity)
+        }
+
+        activityObserver = Task { [weak self] in
+            for await activity in Activity<CleanOrderAttributes>.activityUpdates {
+                await self?.adopt(activity)
+            }
+        }
+    }
+
+    /// Track a foreign activity and wire its token + lifecycle. Idempotent per activity id.
+    private func adopt(_ activity: Activity<CleanOrderAttributes>) {
+        guard !adoptedActivityIds.contains(activity.id) else { return }
+        let orderNumber = activity.attributes.orderNumber
+        // An activity this session started is already tracked by order id, with its token observed.
+        guard !started.values.contains(where: { $0.id == activity.id }) else {
+            adoptedActivityIds.insert(activity.id)
+            return
+        }
+        guard !orderNumber.isEmpty else { return }
+
+        adoptedActivityIds.insert(activity.id)
+        Task { [weak self] in
+            guard let self else { return }
+            guard let orderId = await resolveOrderId(orderNumber: orderNumber) else {
+                // Could not map the number to an id (no session, or the network never came up in the
+                // background-launch window). Un-mark it so a later launch — or the next activityUpdates
+                // emission — can try again instead of the card being orphaned for its whole lifetime.
+                adoptedActivityIds.remove(activity.id)
+                return
+            }
+            trackAdopted(activity, orderId: orderId, orderNumber: orderNumber)
+        }
+    }
+
+    private func trackAdopted(_ activity: Activity<CleanOrderAttributes>, orderId: String, orderNumber: String) {
+        started[orderId] = activity
+        observePushToken(of: activity, orderId: orderId, orderNumber: orderNumber)
+        observeState(of: activity, orderId: orderId)
+    }
+
+    /// Bounded retry around the resolve: a background launch races the network coming up, and giving up on
+    /// the first failure would leave the card unpushable for its entire life.
+    private func resolveOrderId(orderNumber: String) async -> String? {
+        guard let orderResolver else { return nil }
+        for attempt in 0 ..< 3 {
+            if let orderId = await orderResolver.orderId(forOrderNumber: orderNumber) {
+                return orderId
+            }
+            if attempt < 2 {
+                try? await Task.sleep(nanoseconds: UInt64(2 << attempt) * 1_000_000_000)
+            }
+        }
+
+        return nil
+    }
+
+    /// Release the backend's token when the USER dismisses a card (or the system ends it) — the app never
+    /// called `end(...)`, so nothing else would tell the server to stop pushing a card that no longer
+    /// exists (the unmet half of T-0427's deregistration AC).
+    private func observeState(of activity: Activity<CleanOrderAttributes>, orderId: String) {
+        stateObservers[orderId]?.cancel()
+        stateObservers[orderId] = Task { [weak self, registrar] in
+            for await state in activity.activityStateUpdates where state == .dismissed || state == .ended {
+                await registrar.deregister(orderId: orderId)
+                await self?.forgetAdopted(orderId: orderId, activityId: activity.id)
+
+                return
+            }
+        }
+    }
+
+    private func forgetAdopted(orderId: String, activityId: String) {
+        tokenObservers.removeValue(forKey: orderId)?.cancel()
+        stateObservers.removeValue(forKey: orderId)?.cancel()
+        started.removeValue(forKey: orderId)
+        adoptedActivityIds.remove(activityId)
     }
 
     /// Whether the user has Live Activities enabled for the app (the Settings toggle).
@@ -63,6 +166,9 @@ final class LiveActivityCoordinator {
                 pushType: .token
             )
             started[orderId] = activity
+            // Claim it for the adoption lane too, so a concurrent activityUpdates emission for the card we
+            // just created doesn't try to resolve its order id all over again.
+            adoptedActivityIds.insert(activity.id)
             observePushToken(of: activity, orderId: orderId, orderNumber: orderNumber)
         } catch {
             // areActivitiesEnabled can race the request, or the per-app activity budget is exhausted.
@@ -90,7 +196,9 @@ final class LiveActivityCoordinator {
     /// instead of the widget's terminal presentation.
     func end(orderId: String, orderNumber: String, status: LiveActivityTerminalStatus) {
         tokenObservers.removeValue(forKey: orderId)?.cancel()
+        stateObservers.removeValue(forKey: orderId)?.cancel()
         let live = existingActivity(orderId: orderId, orderNumber: orderNumber)
+        if let live { adoptedActivityIds.remove(live.id) }
         started.removeValue(forKey: orderId)
         let dismissal = LiveActivityPolicy.dismissal(for: status, now: Date())
         Task { [registrar] in

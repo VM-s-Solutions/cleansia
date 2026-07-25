@@ -45,12 +45,12 @@ struct SnackbarPill: View {
             severityBadge(palette)
             Text(message.text)
                 .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurface)
+                .foregroundColor(CleansiaColors.onInverseSurface)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .foregroundColor(CleansiaColors.onInverseSurface.opacity(0.7))
                     .frame(width: 28, height: 28)
             }
             .accessibilityLabel(Text(CoreL10n.localized("snackbar.dismiss")))
@@ -62,7 +62,7 @@ struct SnackbarPill: View {
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .strokeBorder(CleansiaColors.outlineVariant.opacity(0.6), lineWidth: 0.5)
+                .strokeBorder(CleansiaColors.onInverseSurface.opacity(0.12), lineWidth: 0.5)
         )
         .shadow(color: .black.opacity(0.22), radius: 18, y: 8)
     }
@@ -81,8 +81,13 @@ struct SnackbarPill: View {
     }
 
     private var pillBackground: some View {
+        // INVERTED, not `surface`: a surface-coloured pill sits on a surface/background-coloured page
+        // and all that separates them is a hairline and a soft shadow, so the snackbar reads as part
+        // of the screen and is easy to miss entirely. Inverting it (dark pill in light mode, light
+        // pill in dark mode) is the standard treatment for a transient overlay and makes the message
+        // unmissable in both themes.
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(CleansiaColors.surface)
+            .fill(CleansiaColors.inverseSurface)
     }
 }
 
@@ -105,13 +110,16 @@ enum SnackbarPalette {
         }
     }
 
-    // Solid accents (the deeper 600 tone in light, 500 in dark) — enough
-    // contrast to carry a white glyph.
-    private static let success = Color.dynamic(light: Color(hex: 0x16A34A), dark: Color(hex: 0x22C55E))
-    private static let error = Color.dynamic(light: Color(hex: 0xDC2626), dark: Color(hex: 0xEF4444))
-    // Info rides the sky brand ramp (light = sky-600, i.e. CleansiaColors.primary).
-    private static let info = Color.dynamic(light: Color(hex: 0x0284C7), dark: Color(hex: 0x0EA5E9))
-    private static let warning = Color.dynamic(light: Color(hex: 0xD97706), dark: Color(hex: 0xF59E0B))
+    // Solid accents, keyed to the INVERTED pill they sit on rather than to the page: in LIGHT mode the
+    // pill is near-black, so the brighter 500 tone is the one that separates from it; in DARK mode the
+    // pill is near-white, so the deeper 600 tone is. (This is the opposite pairing from a normal
+    // surface-coloured control, and swapping it is what keeps the disc from disappearing into the pill.)
+    // Both tones still carry a white glyph.
+    private static let success = Color.dynamic(light: Color(hex: 0x22C55E), dark: Color(hex: 0x16A34A))
+    private static let error = Color.dynamic(light: Color(hex: 0xEF4444), dark: Color(hex: 0xDC2626))
+    // Info rides the sky brand ramp (sky-500 on the dark pill, sky-600 on the light one).
+    private static let info = Color.dynamic(light: Color(hex: 0x0EA5E9), dark: Color(hex: 0x0284C7))
+    private static let warning = Color.dynamic(light: Color(hex: 0xF59E0B), dark: Color(hex: 0xD97706))
 }
 
 #if DEBUG

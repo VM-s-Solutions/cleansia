@@ -131,6 +131,13 @@ public class AppleAuth
                 // generated from one the user typed: ReplaceSystemGeneratedName promotes the genuine Apple
                 // payload over the former (it arrives exactly once — revoke + re-authorize — and must not
                 // be dropped on the floor) and never touches the latter.
+                // Bind the verified sub if this row was matched by the EMAIL fallback (an account
+                // provisioned before subs were stored). Apple only sends the email on the first
+                // authorization, so without this the next sign-in has neither a matching sub nor an email
+                // to fall back to and the user is locked out of their own account. No-ops when a sub is
+                // already bound — an existing sub is never rewritten (S1).
+                user.LinkAppleId(claims.Subject);
+
                 var (suppliedFirstName, suppliedLastName) = SplitSuppliedName(command.FirstName, command.LastName);
                 var (derivedFirstName, derivedLastName) = DeriveNameFromEmail(user.Email);
                 user.ReplaceSystemGeneratedName(suppliedFirstName, suppliedLastName, derivedFirstName, derivedLastName);
@@ -185,10 +192,15 @@ public class AppleAuth
                 last.Length > 0 ? last : derivedLast);
         }
 
-        // Apple hands the name only on the first authorization and may omit the family name entirely, or
-        // fold the whole name into a single field: when only a space-separated full name arrives, split off
-        // the first token as the given name so the family name isn't needlessly left blank. Either part may
-        // still come back empty — the caller decides what an empty part means.
+        // Apple hands the name only on the first authorization and may omit either part entirely, or fold
+        // the whole name into a single field: when only ONE space-separated field arrives, split it so the
+        // other part isn't needlessly left blank (and doesn't get back-filled with a placeholder that then
+        // reads as user-authored forever). Symmetric on purpose — the sole field can be either one,
+        // depending on which the user cleared in Apple's consent sheet — and the split is by FIRST space
+        // when the given name is the populated one, by LAST space when the family name is, so multi-word
+        // surnames ("Anna van der Berg") stay whole. A first/last swap is possible either way and is
+        // accepted: the user can correct it in Edit profile, whereas a placeholder is much harder to
+        // displace later.
         private static (string FirstName, string LastName) SplitSuppliedName(string? firstName, string? lastName)
         {
             var first = (firstName ?? string.Empty).Trim();
@@ -199,6 +211,12 @@ public class AppleAuth
                 var separatorIndex = first.IndexOf(' ');
                 last = first[(separatorIndex + 1)..].Trim();
                 first = first[..separatorIndex];
+            }
+            else if (first.Length == 0 && last.Contains(' '))
+            {
+                var separatorIndex = last.LastIndexOf(' ');
+                first = last[..separatorIndex].Trim();
+                last = last[(separatorIndex + 1)..];
             }
 
             return (first, last);

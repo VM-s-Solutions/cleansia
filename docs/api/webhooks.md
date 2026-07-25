@@ -114,12 +114,50 @@ Before processing, the handler validates:
 
 ## Stripe Dashboard Setup
 
-To configure the webhook in the Stripe Dashboard:
+**Two endpoints, two signing secrets.** Web and mobile take different Stripe paths — the web
+channel mints a Checkout Session, mobile uses a PaymentIntent via PaymentSheet — so they emit
+different event types and are hosted by different App Services. Each Stripe endpoint signs with
+its **own** `whsec_`, and a payload signed by one will never verify against the other's secret.
 
-1. Go to **Developers > Webhooks**
-2. Add endpoint URL: `https://api.cleansia.cz/api/Payment/webhook`
-3. Select events: `checkout.session.completed`, `checkout.session.expired`
-4. Copy the signing secret (`whsec_...`) to Azure Key Vault as `Stripe--WebhookSecret`
+| Channel | Endpoint URL | Events | GitHub Environment secret | Key Vault secret |
+|---|---|---|---|---|
+| Web | `https://api-cleansia-customer-<region>-<env>.azurewebsites.net/api/Payment/webhook` | `checkout.session.completed`, `checkout.session.expired` | `STRIPE_WEBHOOK_SECRET_WEB` | `Stripe--WebhookSecret` |
+| Mobile | `https://api-cleansia-customer-mobile-<region>-<env>.azurewebsites.net/api/Payment/webhook` | `payment_intent.succeeded`, `payment_intent.payment_failed` | `STRIPE_WEBHOOK_SECRET_MOBILE` | `Stripe--WebhookSecretMobile` |
+
+Steps, per environment (`dev-weu`, then `prod-weu`):
+
+1. **Developers → Webhooks → Add endpoint**, once per row above, with that row's URL and events.
+2. Reveal each endpoint's signing secret and set it as that row's **GitHub Environment secret**.
+3. **Re-run the deploy.** The Key Vault push only happens inside a deploy run, so adding the
+   GitHub secret on its own changes nothing that is live.
+
+### Debugging `400 InvalidSignature`
+
+The 400 means the HMAC over (raw body + `Stripe-Signature` timestamp + configured `whsec_`) did
+not match, i.e. **the host that received the delivery is not holding the secret of the endpoint
+that signed it.** In order of likelihood:
+
+1. **`STRIPE_WEBHOOK_SECRET_MOBILE` was never set.** `deploy-azure.yml` falls back to
+   `${STRIPE_WEBHOOK_SECRET_MOBILE:-$STRIPE_WEBHOOK_SECRET_WEB}`, so the *web* secret got written
+   into `Stripe--WebhookSecretMobile` and every mobile delivery fails. Tell-tale: both Key Vault
+   secrets share the same last 4 characters.
+2. **The secret was set but no deploy has run since** — Key Vault still holds the fallback value.
+3. **Set out-of-band with `az keyvault secret set` but the App Service was not restarted.** The
+   Bicep KV reference is version-less, so the app keeps serving the cached old value for up to 24h.
+   Always follow with `az webapp restart`. This is the usual "I already fixed it and it still fails".
+4. **Cross-wired URLs** — the mobile endpoint points at the web host, or vice versa. Check the
+   failing delivery's destination hostname in the Stripe dashboard.
+
+Compare without printing secrets:
+
+```bash
+az keyvault secret show --vault-name kv-cleansia-weu-dev \
+  --name Stripe--WebhookSecretMobile --query value -o tsv | tail -c 5
+```
+
+Replaying a fixed delivery is safe — the signature check runs before any database write, and the
+processed-event guard makes a duplicate a no-op. Use **Resend** in the Stripe dashboard, or just
+wait for Stripe's own 3-day retry.
 
 ## Error Responses
 

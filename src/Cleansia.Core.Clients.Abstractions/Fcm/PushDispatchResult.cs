@@ -21,8 +21,25 @@ namespace Cleansia.Core.Clients.Abstractions.Fcm;
 /// A genuine cold-start FCM-init race is NOT skipped — it returns an all-failed
 /// (non-skipped) result so the consumer still throws and the queue redelivers.
 /// </param>
+/// <param name="AuthConfig">
+/// True when EVERY token failed because the provider REJECTED OUR CREDENTIAL (FCM answered
+/// 401/403 — a wrong/disabled service-account key, a missing OAuth scope, or the FCM API not
+/// enabled on the project). Like <see cref="Skipped"/> this is a permanent config fault the
+/// consumer must ACK rather than throw on, but for the opposite reason: the provider IS
+/// configured, it just says no. Retrying cannot succeed — a 401 is host-wide, so every push in
+/// the system is failing identically and redelivery is amplification, not recovery. It is also
+/// DISTINCT from <see cref="InvalidTokens"/>: the tokens are innocent, so nothing is pruned.
+/// </param>
+/// <param name="FailureDetail">
+/// The provider's own error text for an <see cref="AuthConfig"/> (or otherwise notable) failure,
+/// e.g. <c>"401 Unauthenticated: Request had invalid authentication credentials."</c>. Carried so
+/// the consumer can log the ACTIONABLE cause instead of a synthesized message. S6-safe: FCM's
+/// technical error text carries no user content, and device tokens are never put in it.
+/// </param>
 public record PushDispatchResult(
     int SuccessCount,
     int FailureCount,
     IReadOnlyList<string> InvalidTokens,
-    bool Skipped = false);
+    bool Skipped = false,
+    bool AuthConfig = false,
+    string? FailureDetail = null);

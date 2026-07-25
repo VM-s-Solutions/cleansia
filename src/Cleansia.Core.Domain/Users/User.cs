@@ -217,6 +217,32 @@ public class User : Auditable, ITenantEntity
     }
 
     /// <summary>
+    /// Binds the VERIFIED Apple subject to an account that does not carry one yet, and does nothing at all
+    /// when one is already stored.
+    /// <para>
+    /// Why this matters: Apple sends the email only on the FIRST authorization and the sub on every one, so
+    /// an Apple account whose row predates sub-storage is reachable by the email fallback exactly once —
+    /// and on every sign-in after that, the sub lookup misses and there is no email to fall back to, which
+    /// locks the user out of their own account with no self-service recovery. Binding the sub on the one
+    /// sign-in that still carries an email closes that window permanently.
+    /// </para>
+    /// <para>
+    /// The never-overwrite rule is a SECURITY property, not tidiness: an existing sub is the account's
+    /// verified identity anchor, and letting a later sign-in rewrite it would let one Apple ID take over an
+    /// account anchored to a different one (S1 server-truth-identity).
+    /// </para>
+    /// </summary>
+    public User LinkAppleId(string appleSub)
+    {
+        if (string.IsNullOrWhiteSpace(AppleId) && !string.IsNullOrWhiteSpace(appleSub))
+        {
+            AppleId = appleSub.Trim();
+        }
+
+        return this;
+    }
+
+    /// <summary>
     /// Fills ONLY the blank name parts and leaves anything already stored untouched. The values reaching
     /// it are external-identity ones (Apple replays the name captured at the FIRST authorization), so they
     /// can be stale by years — they may repair a blank field but must never silently undo a name the user

@@ -212,8 +212,16 @@ final class CustomerAppContainer: AppContainer {
         CodableHelper.jsonDecoder = ApiDateDecoding.decoder(primary: { CodableHelper.dateFormatter.date(from: $0) })
         if #available(iOS 16.2, *) {
             LiveActivityCoordinator.shared.install(
-                registrar: CustomerLiveActivityRegistrar(deviceIdProvider: authStack.deviceIdProvider)
+                registrar: CustomerLiveActivityRegistrar(deviceIdProvider: authStack.deviceIdProvider),
+                orderResolver: CustomerLiveActivityOrderResolver(client: orderClient)
             )
+            // Adopt server-started / system-restored cards from LAUNCH — deliberately here and not in the
+            // scene's `.task`, because a push-to-start launches the app in the BACKGROUND with no scene
+            // connected, so a scene-scoped task never runs on the one launch that needs this most.
+            LiveActivityCoordinator.shared.beginActivityAdoption()
+            // Same reasoning for the push-to-start token: `startPush()` runs from the scene `.task`, so a
+            // background launch never re-registers. Idempotent — the coordinator guards its one observer.
+            if hasValidSession { LiveActivityCoordinator.shared.beginPushToStartRegistration() }
         }
     }
 }

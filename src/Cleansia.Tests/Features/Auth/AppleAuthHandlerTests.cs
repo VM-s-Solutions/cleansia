@@ -735,6 +735,90 @@ public class AppleAuthHandlerTests
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    // Apple's consent sheet lets the user clear EITHER name field, and the one-shot payload arrives only
+    // once — so a full name folded into whichever single field survived must be split rather than half
+    // discarded and back-filled with a placeholder (which then reads as user-authored forever). The
+    // family-name side splits at the LAST space so multi-word surnames stay whole. A first/last swap is
+    // possible and accepted: the user can fix it in Edit profile; a placeholder is far harder to displace.
+    [Theory]
+    [InlineData("Michael Chaban", null, "Michael", "Chaban")]
+    [InlineData(null, "Michael Chaban", "Michael", "Chaban")]
+    [InlineData("", "Anna van der Berg", "Anna van der", "Berg")]
+    [InlineData("Michael", "Chaban", "Michael", "Chaban")]
+    public async Task A_Full_Name_In_Either_Single_Field_Is_Split_Across_Both(
+        string? suppliedFirst, string? suppliedLast, string expectedFirst, string expectedLast)
+    {
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("sub-split", "cmisa695@example.com", EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        var result = await CreateHandler().Handle(
+            new AppleAuth.Command(
+                IdentityToken: "any-token",
+                RawNonce: "any-raw-nonce",
+                FirstName: suppliedFirst,
+                LastName: suppliedLast),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(_provisionedUser);
+        Assert.Equal(expectedFirst, _provisionedUser!.FirstName);
+        Assert.Equal(expectedLast, _provisionedUser.LastName);
+    }
+
+    // An Apple account whose row predates sub-storage is findable ONLY by the email fallback, and Apple
+    // sends the email ONLY on the first authorization — so unless the sub is bound on the one sign-in that
+    // still carries an email, every later sign-in misses on the sub, has no email to fall back to, and the
+    // user is locked out of their own account with no self-service recovery.
+    [Fact]
+    public async Task Email_Matched_Account_Without_A_Sub_Gets_The_Verified_Subject_Bound()
+    {
+        var existing = BlankNameAppleUser("Jane", "Doe", "jane.doe@example.com");
+        Assert.Null(existing.AppleId); // precondition: the pre-sub-storage row shape
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("sub-newly-seen", existing.Email, EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync("sub-newly-seen", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(existing.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("sub-newly-seen", existing.AppleId);
+    }
+
+    // The never-overwrite half is a SECURITY property (S1): an already-bound sub is the account's verified
+    // identity anchor, so a later sign-in must never be able to re-point it at a different Apple ID.
+    [Fact]
+    public async Task An_Already_Bound_Subject_Is_Never_Rewritten()
+    {
+        var existing = User.CreateWithApple("jane.doe@example.com", "Jane", "Doe", "sub-original");
+        existing.IsActive = true;
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("sub-different", existing.Email, EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync("sub-different", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(existing.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        Assert.Equal("sub-original", existing.AppleId);
+    }
+
     private sealed class CapturingLogger<T>(List<(LogLevel Level, string Message)> entries) : ILogger<T>
     {
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;

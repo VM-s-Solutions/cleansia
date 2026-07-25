@@ -120,6 +120,53 @@ public class SendPushNotificationAuthConfigAckTests
     }
 
     [Fact]
+    public async Task Apple_Refusing_The_Apns_Key_Acks_And_Keeps_Every_Device()
+    {
+        // The production incident: an APNs auth key scoped to Sandbox met a TestFlight (Production)
+        // build, so FCM returned ThirdPartyAuthError/401 for every token. The dispatcher reports it as
+        // AuthConfig; the handler must ACK — no retry can re-scope an Apple key — and must not touch the
+        // Device rows, which are innocent.
+        var handler = CreateHandler();
+        var message = Serialize(new SendPushNotificationMessage(
+            UserId: "USER-1", EventKey: "order.confirmed", Args: new(), TenantId: null));
+
+        SetupEligibleDevices("USER-1", "IOS-TOKEN-1", "IOS-TOKEN-2");
+        SetupDispatch(new PushDispatchResult(
+            SuccessCount: 0,
+            FailureCount: 2,
+            InvalidTokens: [],
+            AuthConfig: true,
+            FailureDetail: "HTTP 401 ThirdPartyAuthError — APPLE refused the APNs auth key that Firebase holds."));
+
+        var ex = await Record.ExceptionAsync(() => handler.HandleAsync(message, CancellationToken.None));
+
+        Assert.Null(ex);
+        _deviceRepository.Verify(
+            r => r.Remove(It.IsAny<Cleansia.Core.Domain.Devices.Device>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task A_Mixed_Fleet_With_One_Delivered_Push_Is_Not_An_Auth_Fault()
+    {
+        // The case the (since-removed) MessagingErrorCode-is-null qualifier was reaching for, handled
+        // where it belongs: the dispatcher only sets AuthConfig when NOTHING succeeded. An iOS token
+        // failing on the APNs key while an Android token delivered is a partial failure, so the handler
+        // takes the normal path — it neither acks-and-swallows nor throws.
+        var handler = CreateHandler();
+        var message = Serialize(new SendPushNotificationMessage(
+            UserId: "USER-1", EventKey: "order.confirmed", Args: new(), TenantId: null));
+
+        SetupEligibleDevices("USER-1", "IOS-TOKEN-1", "ANDROID-TOKEN-1");
+        SetupDispatch(new PushDispatchResult(SuccessCount: 1, FailureCount: 1, InvalidTokens: []));
+
+        var ex = await Record.ExceptionAsync(() => handler.HandleAsync(message, CancellationToken.None));
+
+        Assert.Null(ex);
+        _deviceRepository.Verify(
+            r => r.Remove(It.IsAny<Cleansia.Core.Domain.Devices.Device>()), Times.Never);
+    }
+
+    [Fact]
     public async Task All_Failed_Without_Auth_Flag_Still_Throws_For_Redelivery()
     {
         // Characterization pin: the genuine cold-start init race / network all-fail keeps its retry.

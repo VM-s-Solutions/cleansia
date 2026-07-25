@@ -22,20 +22,75 @@ Bicep step.** Owner steps:
    created before the secret exists (an unresolvable reference would dead-letter every push).
    When the secret is absent, the param stays `false` and the dispatcher runs its clean
    disabled no-op.
-4. Verify end to end: change an order status → the push arrives on a registered **Android**
-   device (iOS display is gated on the T-0404 APNs alert work — a Firebase-console test push
-   CAN display on iOS and gives a false "works"; the real events are data-only).
+4. Verify end to end on **BOTH platforms**: change an order status → the push arrives on a
+   registered Android device **and** on iOS. Verifying on Android alone is exactly what lets an
+   APNs-key fault ship unnoticed — Android never touches the APNs credential, so it stays green
+   while every iOS push fails (see §0b). On iOS specifically, verify on a **TestFlight** build,
+   not only an Xcode-installed one: they use different APNs environments and a key can be valid
+   for one and not the other. Note a Firebase-console test push CAN display on iOS and gives a
+   false "works"; the real events are data-only.
 
 ## 0b. FCM answers 401 / 403 — "push notifications stopped arriving"
 
 Symptom in App Insights: `POST https://fcm.googleapis.com/v1/projects/<project>/messages:send`
 returns **401**, and the queue message ends in `notifications-dispatch-poison`.
 
-**The project id in that URL is not configured anywhere.** It is read out of the
-service-account JSON itself (`FcmPushDispatcher` passes no `ProjectId` override when
-`FCM:ServiceAccountJson` is set), so a "wrong project in Azure" mismatch is structurally
-impossible — the project in the URL *is* the credential's own project. Likewise, the OAuth
-token mint succeeding proves the key is neither revoked nor mangled. That leaves:
+> **TWO different credentials sit on this path and both surface as an HTTP 401 from
+> `fcm.googleapis.com`. Only the FCM error code separates them. Read the code before you touch
+> anything** — this exact ambiguity once cost a full evening of investigating Key Vault, GCP IAM and
+> the deploy pipeline while the actual fault was an APNs key in Firebase.
+
+| Log says | Who refused us | Where the fix lives |
+|---|---|---|
+| `ThirdPartyAuthError`, HTTP 401 | **APPLE.** FCM authenticated to Google fine; APNs then rejected the APNs auth key **Firebase** holds. | Apple Developer portal + Firebase console. Nothing in Azure, Key Vault or GCP is involved and no redeploy can affect it. See §0b-1. |
+| **No** FCM error code, HTTP 401/403 | **GOOGLE.** Our service-account credential was refused before FCM's own taxonomy applied. | GCP / the `FIREBASE_SERVICE_ACCOUNT_JSON` secret. See §0b-2. |
+
+`oauth2.googleapis.com` returning 200 while `fcm.googleapis.com` 401s **does not narrow this down** —
+the OAuth mint succeeds in both cases. It only proves the service-account key itself is alive.
+
+**Read the answer instead of guessing** — the boundary logs Google's literal text:
+
+```kusto
+traces | where message has "FCM rejected token" | where timestamp > ago(2d)
+```
+
+That line carries `{ErrorCode}/{TransportErrorCode} HTTP {HttpStatus} — {Detail}`. `host.json`
+excludes `Exception` from App Insights sampling so it survives.
+
+### §0b-1 — `ThirdPartyAuthError`: Apple refused the APNs key
+
+Check in this order:
+
+1. **The key's APNs ENVIRONMENT scope.** A key scoped to *Sandbox* cannot authenticate a
+   TestFlight or App Store build, whose device tokens are *Production*. Signature of this fault:
+   *"it worked from Xcode this morning and broke the moment I shipped to TestFlight."* Xcode
+   substitutes `aps-environment = production` at distribution signing, so the `development` value
+   committed in `CleansiaCustomer.entitlements` tells you **nothing** about what a TestFlight build
+   sent — do not "verify" from it. Note also that Firebase holds a **development** key slot and a
+   **production** key slot separately; only a sandbox key in the dev slot is this same shape.
+   An APNs auth key's environment **cannot be changed after creation** — Apple's *Edit* flow covers
+   only the name and the service checkboxes. Fixing it means creating a new key (prefer
+   *Team Scoped (All Topics)* so one key serves both bundle ids and the Live Activity path) and
+   uploading it to Firebase. `.p8` keys never expire, so there is no need to revoke the old one —
+   and revoking is immediate, irreversible, and would also break the Live Activity client if that
+   key is the one seeded into `Apns--KeyId` / `Apns--PrivateKeyPem`.
+2. The key's **topic scope** covers `cz.cleansia.customer` / `cz.cleansia.partner`.
+3. The key is **not revoked**, and its **Key ID + Team ID** match what Firebase stores.
+4. The bundle id is registered under that Apple app configuration in Firebase.
+
+Allow **10–15 minutes** after uploading a new key before retesting; earlier retests are false
+negatives. Then test **both** a TestFlight token and an Xcode-installed token — replacing rather
+than adding a key can fix one and break the other.
+
+**Not to be confused with `APNS__UseSandbox` in `main.bicep`** — that steers the direct-APNs
+**Live Activity** client, a separate path that never involves FCM.
+
+### §0b-2 — no FCM error code: Google refused the service account
+
+The project id in the URL is not configured anywhere. It is read out of the service-account JSON
+itself (`FcmPushDispatcher` passes no `ProjectId` override when `FCM:ServiceAccountJson` is set), so
+a "wrong project in Azure" mismatch is structurally impossible — the project in the URL *is* the
+credential's own project. That leaves:
 
 | # | Cause | Tell-tale |
 |---|---|---|
@@ -43,29 +98,27 @@ token mint succeeding proves the key is neither revoked nor mangled. That leaves
 | 2 | **FCM API not enabled** on the project | `403` naming `fcm.googleapis.com` |
 | 3 | Service account **missing the Firebase Cloud Messaging API Admin role** | `403 PermissionDenied` |
 
-The credential is now explicitly scoped to `https://www.googleapis.com/auth/firebase.messaging`
-(`CreateScoped` in `EnsureInitialized`), which both removes the "inherited broad default scopes"
-failure mode and stops us minting a `cloud-platform` token just to send a push.
+The credential is explicitly scoped to `https://www.googleapis.com/auth/firebase.messaging`
+(`CreateScoped` in `EnsureInitialized`), which removes the "inherited broad default scopes" failure
+mode and stops us minting a `cloud-platform` token just to send a push.
 
-**Read the answer instead of guessing** — Google's literal error text is logged at the boundary:
+**Fix:** re-issue the service-account key in Firebase Console → Project settings → Service accounts
+→ *Generate new private key*, update the `FIREBASE_SERVICE_ACCOUNT_JSON` GitHub Environment secret,
+and re-run the deploy (the Key Vault push only happens inside a deploy). Then verify with
+`gcloud services list --enabled --project <project> | grep fcm`.
 
-```kusto
-traces | where message has "FCM rejected token" | where timestamp > ago(2d)
-```
+### What the code does with either
 
-That line carries `{ErrorCode}/{TransportErrorCode} HTTP {HttpStatus} — {Detail}`, which names the
-cause outright. `host.json` excludes `Exception` from App Insights sampling so it survives.
+It classifies the failure `AuthConfig` and ACKs with one alertable `LogError` instead of throwing.
+The fault is host-wide — every push is failing identically — so redelivery was amplification, not
+recovery: ~15 FCM rejections plus 15-25 OAuth mints per notification, all landing in the poison
+queue with the real cause discarded. Device rows are **never** pruned on a 401; the tokens are
+innocent, and pruning would delete every `Device` row.
 
-**Owner fix:** re-issue the service-account key in Firebase Console → Project settings → Service
-accounts → *Generate new private key*, update the `FIREBASE_SERVICE_ACCOUNT_JSON` GitHub
-Environment secret, and re-run the deploy (the KV push only happens inside a deploy). Then verify
-with `gcloud services list --enabled --project <project> | grep fcm`.
+⚠️ **Because it now acks, a broken credential produces SILENCE rather than a poison pile.** That
+`LogError` is the only operational signal — alert on it (`Provider="Fcm"`, `FailureClass=AuthConfig`).
 
-**What the code now does with a 401:** it classifies it `AuthConfig` and ACKs with one alertable
-`LogError` instead of throwing. A credential fault is host-wide — every push is failing
-identically — so redelivery was amplification, not recovery: ~15 FCM rejections plus 15-25 OAuth
-mints per notification, all landing in the poison queue with the real cause discarded. Device rows
-are never pruned on a 401; the tokens are innocent, and pruning would delete every `Device` row.
+Reference: [FCM v1 error codes](https://firebase.google.com/docs/cloud-messaging/error-codes).
 
 ## 1. Encoding the FCM service-account JSON
 

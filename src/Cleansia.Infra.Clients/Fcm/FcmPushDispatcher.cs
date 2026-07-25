@@ -117,6 +117,7 @@ public class FcmPushDispatcher(
         var failureCount = 0;
         var authConfigFailures = 0;
         string? authConfigDetail = null;
+        string? apnsAuthDetail = null;
 
         for (var i = 0; i < response.Responses.Count; i++)
         {
@@ -150,14 +151,32 @@ public class FcmPushDispatcher(
                 : IntegrationFailureClass.Transient;
             IntegrationFailureMetrics.Record(Provider, failureClass);
 
-            if (failureClass == IntegrationFailureClass.AuthConfig
-                && item.Exception?.MessagingErrorCode is null)
+            // EVERY AuthConfig failure counts, whatever produced it. An earlier version additionally
+            // required MessagingErrorCode to be null, on the theory that ThirdPartyAuthError is an
+            // APNs-key problem and therefore per-token/per-platform rather than host-wide. That was
+            // wrong in the case that actually happened: on an iOS-only fleet EVERY token fails
+            // ThirdPartyAuthError, so the qualifier starved authConfigFailures, allFailedOnAuth never
+            // became true, and a mis-scoped APNs key poison-looped exactly like the credential fault
+            // this branch exists to stop. The blast radius the qualifier was guarding is already
+            // covered by allFailedOnAuth's own gate below (nothing succeeded AND every failure was
+            // AuthConfig), so a mixed fleet with a healthy Android token still takes the normal path.
+            if (failureClass == IntegrationFailureClass.AuthConfig)
             {
-                // Credential-level rejection (as opposed to ThirdPartyAuthError, which is an APNs-key
-                // problem inside Firebase and is per-token/per-platform). Remember the provider's own
-                // words for the consumer's single alertable log line.
                 authConfigFailures++;
-                authConfigDetail ??= $"{status?.ToString() ?? "?"} {item.Exception?.ErrorCode}: {item.Exception?.Message}";
+
+                // TWO different credentials sit behind an FCM 401 and the consumer's log has to name
+                // the right one — pointing an operator at the Google service account when Apple is
+                // refusing the APNs key costs hours. ThirdPartyAuthError means FCM authenticated to
+                // Google fine and APNs then rejected the key FIREBASE holds; anything else means
+                // Google refused us.
+                if (item.Exception?.MessagingErrorCode == MessagingErrorCode.ThirdPartyAuthError)
+                {
+                    apnsAuthDetail ??= ApnsAuthDetail(status, item.Exception?.Message);
+                }
+                else
+                {
+                    authConfigDetail ??= $"{status?.ToString() ?? "?"} {item.Exception?.ErrorCode}: {item.Exception?.Message}";
+                }
             }
 
             // A dead-token code means the row should be pruned; transient codes leave it in place so
@@ -182,8 +201,31 @@ public class FcmPushDispatcher(
             FailureCount: response.FailureCount,
             InvalidTokens: invalidTokens,
             AuthConfig: allFailedOnAuth,
-            FailureDetail: allFailedOnAuth ? authConfigDetail : null);
+            // APNs detail wins when present: it is the more specific diagnosis, and it is the one an
+            // operator would otherwise chase in entirely the wrong system.
+            FailureDetail: allFailedOnAuth ? apnsAuthDetail ?? authConfigDetail : null);
     }
+
+    /// <summary>
+    /// The operator-facing diagnosis for an FCM <c>ThirdPartyAuthError</c>: Apple refused the APNs auth
+    /// key that FIREBASE holds. Public and pure only because it has to be testable — FirebaseAdmin's
+    /// <c>BatchResponse</c>/<c>SendResponse</c> constructors are internal to the SDK, so the per-token
+    /// loop above cannot be driven from a unit test and this formatter is the only reachable surface.
+    /// <para>
+    /// The wording order is deliberate. The environment scope is checked FIRST because it is the failure
+    /// that arrives with no warning: a Sandbox-scoped key serves Xcode-installed builds perfectly and
+    /// then refuses every push the moment the same app ships to TestFlight, which reads as "push broke
+    /// on its own". Key ID / Team ID mistakes, by contrast, never work even once.
+    /// </para>
+    /// </summary>
+    public static string ApnsAuthDetail(int? httpStatus, string? providerMessage) =>
+        $"HTTP {httpStatus?.ToString() ?? "?"} ThirdPartyAuthError — APPLE refused the APNs auth key that " +
+        "Firebase holds. This is NOT the Google service account and NOT any Azure/Key Vault setting; no " +
+        "redeploy can affect it. Check, in order: (1) the key's APNs ENVIRONMENT scope — a Sandbox-only " +
+        "key cannot authenticate a TestFlight or App Store build, whose tokens are Production, and " +
+        "Firebase holds a development and a production slot separately; (2) the key's topic scope covers " +
+        "this bundle id; (3) the key is not revoked and its Key ID + Team ID match what Firebase stores. " +
+        $"FCM said: {providerMessage ?? "(no message)"}";
 
     /// <summary>Why <see cref="EnsureInitialized"/> could not return a live <see cref="FirebaseMessaging"/>.</summary>
     private enum InitOutcome

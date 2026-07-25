@@ -155,4 +155,26 @@ public class IntegrationFailureClassifierProviderMappersTests
         Assert.Equal(expected, IntegrationFailureClassifier.FromFcmFailure(
             messagingErrorCode: null, httpStatusCode: null, transportErrorCode: errorCode));
     }
+
+    // The shape observed in production when an APNs auth key scoped to the Sandbox environment met a
+    // TestFlight (Production) build: APNs refuses the key Firebase holds, and FCM reports it as
+    // ThirdPartyAuthError with HTTP 401. Both halves matter — AuthConfig makes the consumer ACK
+    // instead of poison-looping a fault no retry can fix, and NOT-a-dead-token keeps it from pruning
+    // Device rows over a credential problem the tokens had nothing to do with.
+    [Theory]
+    [InlineData(401)]
+    [InlineData(403)]
+    [InlineData(500)]
+    [InlineData(null)]
+    public void Apns_ThirdPartyAuthError_Is_AuthConfig_Whatever_Http_Status_Accompanies_It(int? status)
+    {
+        Assert.Equal(IntegrationFailureClass.AuthConfig, IntegrationFailureClassifier.FromFcmFailure(
+            MessagingErrorCode.ThirdPartyAuthError, status, ErrorCode.Unauthenticated));
+    }
+
+    [Fact]
+    public void Apns_ThirdPartyAuthError_Never_Prunes_The_Device_Row()
+    {
+        Assert.False(IntegrationFailureClassifier.IsDeadFcmToken(MessagingErrorCode.ThirdPartyAuthError));
+    }
 }

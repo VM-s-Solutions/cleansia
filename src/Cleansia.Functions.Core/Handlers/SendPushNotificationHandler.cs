@@ -154,23 +154,29 @@ public class SendPushNotificationHandler(
                 return;
             }
 
-            // The provider REJECTED OUR CREDENTIAL (FCM answered 401/403 — disabled service-account key,
-            // missing firebase.messaging scope, or the FCM API not enabled on the project). Same shape as
-            // all-failed-transient, opposite treatment: a credential fault is HOST-WIDE, so every push in
-            // the system is failing identically and redelivery is amplification, not recovery — ~15 FCM
-            // rejections plus 15-25 OAuth mints per notification, all ending in the poison queue with the
-            // real cause thrown away. ACK it with ONE alertable LogError carrying the provider's own words,
-            // so the operator gets a diagnosis instead of a dead-letter pile. Device rows are NOT pruned:
-            // the tokens are innocent (result.InvalidTokens is empty by construction on this path), and
-            // pruning on a 401 would delete every Device in the database.
+            // An AUTH/CONFIG credential fault, i.e. every token failed because a credential on the push
+            // path was refused. TWO different credentials can produce this and both surface as an FCM
+            // 401, so this message deliberately does NOT name one — {Detail} does, and naming the wrong
+            // one sends the operator into the wrong system for hours:
+            //   * GOOGLE refused us     — disabled service-account key, missing scope, FCM API off.
+            //   * APPLE refused Firebase — the APNs auth key stored in FIREBASE is mis-scoped (Sandbox
+            //     key vs a Production TestFlight build), revoked, or wrong Key ID / Team ID. Nothing in
+            //     Azure, Key Vault or GCP is involved and no redeploy can fix it.
+            // Same shape as all-failed-transient, opposite treatment: a credential fault is HOST-WIDE, so
+            // every push in the system is failing identically and redelivery is amplification, not
+            // recovery — ~15 FCM rejections plus 15-25 OAuth mints per notification, all ending in the
+            // poison queue with the real cause thrown away. ACK it with ONE alertable LogError carrying
+            // the provider's own words. Device rows are NOT pruned: the tokens are innocent
+            // (result.InvalidTokens is empty by construction on this path), and pruning on a 401 would
+            // delete every Device in the database.
+            // NOTE: acking means a broken credential now produces SILENCE rather than a poison pile, so
+            // this LogError is the only operational signal — it needs an alert on it.
             if (result.AuthConfig)
             {
                 logger.LogError(
-                    "FCM rejected our credential for event {EventKey} to user {UserId} — {Detail}. " +
-                    "Acking: this is a permanent provider-auth misconfiguration and no retry can succeed. " +
-                    "Check the FCM service-account key, its firebase.messaging scope, and that the FCM API " +
-                    "is enabled on the project.",
-                    message.EventKey, message.UserId, result.FailureDetail ?? "no detail supplied");
+                    "FCM push failed for event {EventKey} to user {UserId} on a credential/auth fault — {Detail} " +
+                    "Acking: this is a permanent configuration fault and no retry can succeed.",
+                    message.EventKey, message.UserId, result.FailureDetail ?? "no detail supplied.");
                 return;
             }
 

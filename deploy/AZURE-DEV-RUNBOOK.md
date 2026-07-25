@@ -226,7 +226,7 @@ You no longer hand-populate all 10 secrets. The deploy automates most of it:
   | `JWT_KEY` | `Jwt--Key` | a strong random 256-bit key |
   | `CSRF_SECRET` | `Csrf--Secret` | a random string (only enforced when Csrf:Enabled=true; safe to set now) |
   | `STRIPE_SECRET_KEY` | `Stripe--SecretKey` | `sk_test_…` (TEST, never live) |
-  | `STRIPE_WEBHOOK_SECRET` | `Stripe--WebhookSecret` | `whsec_…` from the **WEB** Stripe endpoint (`api-cleansia-customer-…`) |
+  | `STRIPE_WEBHOOK_SECRET_WEB` | `Stripe--WebhookSecret` | `whsec_…` from the **WEB** Stripe endpoint (`api-cleansia-customer-…`) |
   | `STRIPE_WEBHOOK_SECRET_MOBILE` | `Stripe--WebhookSecretMobile` | `whsec_…` from the **MOBILE** Stripe endpoint (`api-cleansia-customer-mobile-…`). Falls back to the web secret when unset. |
   | `STRIPE_PUBLISHABLE_KEY` | `Stripe--PublishableKey` | `pk_test_…` (client-safe, but routed through KV) |
   | `SENDGRID_API_KEY` | `SendGrid--ApiKey` | `SG.…` ← **the one that was blocking email** |
@@ -507,7 +507,7 @@ work the YAML cannot do. Do it **in this order**:
 | `JWT_KEY` | a **new** strong random 256-bit key | KV push → `Jwt--Key` |
 | `CSRF_SECRET` | a new random string | KV push → `Csrf--Secret` |
 | `STRIPE_SECRET_KEY` | `sk_live_…` (**live** key — prod only) | KV push → `Stripe--SecretKey` |
-| `STRIPE_WEBHOOK_SECRET` | the **live** `whsec_…` from the prod **web** Stripe endpoint | KV push → `Stripe--WebhookSecret` |
+| `STRIPE_WEBHOOK_SECRET_WEB` | the **live** `whsec_…` from the prod **web** Stripe endpoint | KV push → `Stripe--WebhookSecret` |
 | `STRIPE_WEBHOOK_SECRET_MOBILE` | the **live** `whsec_…` from the prod **mobile** Stripe endpoint | KV push → `Stripe--WebhookSecretMobile` |
 | `STRIPE_PUBLISHABLE_KEY` | `pk_live_…` | KV push → `Stripe--PublishableKey` |
 | `SENDGRID_API_KEY` | the prod SendGrid key | KV push → `SendGrid--ApiKey` |

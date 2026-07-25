@@ -417,7 +417,10 @@ jobs:
           JWT_KEY: ${{ secrets.JWT_KEY }}
           CSRF_SECRET: ${{ secrets.CSRF_SECRET }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          # Named per Stripe ENDPOINT (web vs mobile). The _WEB fallback to the legacy
+          # STRIPE_WEBHOOK_SECRET keeps a repo that has not been re-keyed yet deploying green;
+          # drop the fallback once STRIPE_WEBHOOK_SECRET_WEB is set and the old secret is deleted.
+          STRIPE_WEBHOOK_SECRET_WEB: ${{ secrets.STRIPE_WEBHOOK_SECRET_WEB || secrets.STRIPE_WEBHOOK_SECRET }}
           STRIPE_WEBHOOK_SECRET_MOBILE: ${{ secrets.STRIPE_WEBHOOK_SECRET_MOBILE }}
           STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
@@ -462,11 +465,11 @@ jobs:
           set_secret "Jwt--Key"                     "$JWT_KEY"
           set_secret "Csrf--Secret"                 "$CSRF_SECRET"
           set_secret "Stripe--SecretKey"            "$STRIPE_SECRET_KEY"
-          set_secret "Stripe--WebhookSecret"        "$STRIPE_WEBHOOK_SECRET"
+          set_secret "Stripe--WebhookSecret"        "$STRIPE_WEBHOOK_SECRET_WEB"
           # Separate Stripe endpoint per channel => separate signing secret. Falls back to the web
           # secret until STRIPE_WEBHOOK_SECRET_MOBILE exists, so the KV reference the mobile host
           # binds always resolves and a half-configured deploy cannot 500 the mobile webhook.
-          set_secret "Stripe--WebhookSecretMobile"  "${STRIPE_WEBHOOK_SECRET_MOBILE:-$STRIPE_WEBHOOK_SECRET}"
+          set_secret "Stripe--WebhookSecretMobile"  "${STRIPE_WEBHOOK_SECRET_MOBILE:-$STRIPE_WEBHOOK_SECRET_WEB}"
           set_secret "Stripe--PublishableKey"       "$STRIPE_PUBLISHABLE_KEY"
           set_secret "SendGrid--ApiKey"                        "$SENDGRID_API_KEY"
           set_secret "SendGrid--ResetPasswordTemplateId"       "$SENDGRID_RESET_PASSWORD_TEMPLATE_ID"

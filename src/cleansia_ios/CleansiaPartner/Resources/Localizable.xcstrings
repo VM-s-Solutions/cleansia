@@ -6,31 +6,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Souhlasím s obchodními podmínkami"
+            "value": "Souhlasím s [obchodními podmínkami](cleansia://terms) a [zásadami ochrany soukromí](cleansia://privacy)"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "I accept the Terms and Conditions"
+            "value": "I accept the [Terms and Conditions](cleansia://terms) and the [Privacy Policy](cleansia://privacy)"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Я принимаю условия и положения"
+            "value": "Я принимаю [условия и положения](cleansia://terms) и [политику конфиденциальности](cleansia://privacy)"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Súhlasím s obchodnými podmienkami"
+            "value": "Súhlasím s [obchodnými podmienkami](cleansia://terms) a [zásadami ochrany súkromia](cleansia://privacy)"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Я приймаю Умови та положення"
+            "value": "Я приймаю [Умови та положення](cleansia://terms) і [Політику конфіденційності](cleansia://privacy)"
           }
         }
       }
@@ -15151,6 +15151,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ваш счёт за последний расчётный период оплачен. Нажмите, чтобы посмотреть."
+          }
+        }
+      }
+    },
+    "accept_terms_toggle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept terms and privacy policy"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Souhlasit s podmínkami a zásadami ochrany soukromí"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Súhlasiť s podmienkami a zásadami ochrany súkromia"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прийняти умови та політику конфіденційності"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Принять условия и политику конфиденциальности"
           }
         }
       }

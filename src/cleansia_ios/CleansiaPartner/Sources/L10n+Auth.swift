@@ -26,6 +26,12 @@ extension L10n {
             localized("accept_terms")
         }
 
+        /// Short VoiceOver label for the consent toggle itself — the full sentence is already its own
+        /// accessibility element (and carries the tappable links), so the button must not repeat it.
+        static var acceptTermsToggle: String {
+            localized("accept_terms_toggle")
+        }
+
         static var submit: String {
             localized("register")
         }

@@ -31,7 +31,7 @@ struct HelpSupportView: View {
                 .font(CleansiaTypography.labelSmall)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
             VStack(spacing: 0) {
-                contactRow(icon: "envelope", title: L10n.Help.email, subtitle: L10n.Help.emailDesc)
+                contactRow(icon: "envelope", title: L10n.Help.email, subtitle: CleansiaWeb.supportEmail)
                 Divider().padding(.leading, Spacing.xl)
                 contactRow(icon: "phone", title: L10n.Help.call, subtitle: L10n.Help.callDesc)
             }

@@ -1,3 +1,4 @@
+import CleansiaCore
 import XCTest
 @testable import CleansiaCustomer
 
@@ -89,6 +90,6 @@ final class RewardsShareTests: XCTestCase {
     func testShareTextEmbedsCodeAndLandingUrl() {
         let text = RewardsShare.message(code: "ABC123")
         XCTAssertTrue(text.contains("ABC123"))
-        XCTAssertTrue(text.contains("https://cleansia.cz/r/ABC123"))
+        XCTAssertTrue(text.contains(CleansiaWeb.referralLink(code: "ABC123")))
     }
 }

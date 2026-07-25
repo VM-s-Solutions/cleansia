@@ -9809,41 +9809,6 @@
         }
       }
     },
-    "help_email_desc" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "support@cleansia.cz"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "support@cleansia.cz"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "support@cleansia.cz"
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "support@cleansia.cz"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "support@cleansia.cz"
-          }
-        }
-      }
-    },
     "help_faq_a1" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -25180,31 +25145,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Souhlasím s Podmínkami služby a Zásadami ochrany soukromí"
+            "value" : "Souhlasím s [Podmínkami služby](cleansia://terms) a [Zásadami ochrany soukromí](cleansia://privacy)"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I agree to the Terms of Service and Privacy Policy"
+            "value" : "I agree to the [Terms of Service](cleansia://terms) and [Privacy Policy](cleansia://privacy)"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Я соглашаюсь с Условиями использования и Политикой конфиденциальности"
+            "value" : "Я соглашаюсь с [Условиями использования](cleansia://terms) и [Политикой конфиденциальности](cleansia://privacy)"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Súhlasím s Podmienkami služby a Zásadami ochrany súkromia"
+            "value" : "Súhlasím s [Podmienkami služby](cleansia://terms) a [Zásadami ochrany súkromia](cleansia://privacy)"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Я погоджуюся з Умовами використання та Політикою конфіденційності"
+            "value" : "Я погоджуюся з [Умовами використання](cleansia://terms) та [Політикою конфіденційності](cleansia://privacy)"
           }
         }
       }
@@ -25765,6 +25730,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Підтвердіть email"
+          }
+        }
+      }
+    },
+    "register_terms_toggle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accept terms and privacy policy"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Souhlasit s podmínkami a zásadami ochrany soukromí"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Súhlasiť s podmienkami a zásadami ochrany súkromia"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прийняти умови та політику конфіденційності"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Принять условия и политику конфиденциальности"
           }
         }
       }

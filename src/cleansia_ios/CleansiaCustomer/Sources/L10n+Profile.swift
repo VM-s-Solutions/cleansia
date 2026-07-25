@@ -248,10 +248,6 @@ extension L10n {
             localized("help_email")
         }
 
-        static var emailDesc: String {
-            localized("help_email_desc")
-        }
-
         static var call: String {
             localized("help_call")
         }

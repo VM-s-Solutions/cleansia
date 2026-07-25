@@ -147,7 +147,11 @@ private struct RegisterContent: View {
                 Spacer().frame(height: Spacing.s)
 
                 VStack(alignment: .leading, spacing: Spacing.xxs) {
-                    CleansiaCheckbox(checked: acceptTermsBinding, label: L10n.Register.acceptTerms)
+                    CleansiaConsentCheckbox(
+                        checked: acceptTermsBinding,
+                        markdown: L10n.Register.acceptTerms,
+                        toggleAccessibilityLabel: L10n.Register.acceptTermsToggle
+                    )
                     if let termsError = form.termsError {
                         Text(termsError)
                             .font(CleansiaTypography.labelSmall)

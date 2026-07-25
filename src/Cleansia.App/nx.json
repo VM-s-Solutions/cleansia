@@ -15,7 +15,6 @@
     ],
     "sharedGlobals": []
   },
-  "nxCloudId": "6877f42bb8130921ce178082",
   "targetDefaults": {
     "@angular/build:application": {
       "cache": true,
@@ -91,7 +90,6 @@
       "prefix": "cleansia"
     }
   },
-  "nxCloudAccessToken": "ODA0YjJiM2MtNTY3Yi00Mjg5LThiZTYtZGQxOTY3YjM5MTczfHJlYWQ=",
   "release": {
     "version": {
       "preVersionCommand": "npx nx run-many -t build"

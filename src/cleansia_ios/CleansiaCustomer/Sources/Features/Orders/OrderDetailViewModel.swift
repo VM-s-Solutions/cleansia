@@ -139,17 +139,25 @@ final class OrderDetailViewModel: ViewModel {
     private func syncLiveActivity(for order: OrderItem) {
         guard let orderId = order.id, !orderId.isBlank else { return }
         let status = order.status
+        let orderNumber = order.displayOrderNumber ?? ""
         if OrderStatusGroup.isActive(status) {
             guard let window = EtaWindow.forOrder(order) else { return }
             let wireStatus = OrderStatusGroup.liveActivityStatus(status)
-            let orderNumber = order.displayOrderNumber ?? ""
             // start is idempotent (creates the activity once, with the current status); update rewrites a
             // running activity so an OnTheWay → InProgress transition flips the card to "Cleaning in progress".
             liveActivity.start(orderId: orderId, orderNumber: orderNumber, status: wireStatus, window: window)
             liveActivity.update(orderId: orderId, orderNumber: orderNumber, status: wireStatus, window: window)
-        } else if OrderStatusGroup.isCompleted(status) || OrderStatusGroup.isCancelled(status) {
-            liveActivity.end(orderId: orderId)
+        } else if let terminal = terminalLiveActivityStatus(status) {
+            // The terminal status travels with the end: it is what the card is left showing, and what
+            // decides whether the card lingers for a last glance or leaves at once.
+            liveActivity.end(orderId: orderId, orderNumber: orderNumber, status: terminal)
         }
+    }
+
+    private func terminalLiveActivityStatus(_ status: OrderStatus?) -> LiveActivityTerminalStatus? {
+        if OrderStatusGroup.isCompleted(status) { return .completed }
+        if OrderStatusGroup.isCancelled(status) { return .cancelled }
+        return nil
     }
 
     private func shouldStopPolling() -> Bool {

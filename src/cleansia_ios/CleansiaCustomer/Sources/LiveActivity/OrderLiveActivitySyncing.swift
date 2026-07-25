@@ -1,3 +1,4 @@
+import CleansiaCore
 import Foundation
 
 /// The order-tracking screen's seam onto the Live Activity lifecycle. Keeps `OrderDetailViewModel` free of
@@ -6,7 +7,7 @@ import Foundation
 protocol OrderLiveActivitySyncing: Sendable {
     func start(orderId: String, orderNumber: String, status: String, window: EtaWindow)
     func update(orderId: String, orderNumber: String, status: String, window: EtaWindow)
-    func end(orderId: String)
+    func end(orderId: String, orderNumber: String, status: LiveActivityTerminalStatus)
 }
 
 struct LiveActivityBridge: OrderLiveActivitySyncing {
@@ -34,10 +35,10 @@ struct LiveActivityBridge: OrderLiveActivitySyncing {
         }
     }
 
-    func end(orderId: String) {
+    func end(orderId: String, orderNumber: String, status: LiveActivityTerminalStatus) {
         guard #available(iOS 16.2, *) else { return }
         Task { @MainActor in
-            LiveActivityCoordinator.shared.end(orderId: orderId)
+            LiveActivityCoordinator.shared.end(orderId: orderId, orderNumber: orderNumber, status: status)
         }
     }
 }

@@ -592,6 +592,9 @@ public class RefundServiceTests
         public Task CancelPaymentIntentAsync(string paymentIntentId, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
+        public Task<StripePaymentSnapshot> GetPaymentSnapshotAsync(string? stripeSessionId, string? stripePaymentIntentId, CancellationToken cancellationToken)
+            => throw new NotSupportedException();
+
         public Task<string> CreateEphemeralKeyAsync(string stripeCustomerId, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 

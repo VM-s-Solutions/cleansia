@@ -244,16 +244,96 @@ final class AnimatedMascotPlaybackTests: XCTestCase {
     func testChunkLengthDoublesTheBuffer() {
         XCTAssertEqual(AnimatedMascotPlayback.nextChunkLength(published: 4, remaining: 59, firstChunk: 4), 4)
         XCTAssertEqual(AnimatedMascotPlayback.nextChunkLength(published: 8, remaining: 55, firstChunk: 4), 8)
-        XCTAssertEqual(AnimatedMascotPlayback.nextChunkLength(published: 16, remaining: 47, firstChunk: 4), 16)
+    }
+
+    /// Unbounded doubling made the LAST chunk of a 125-frame loop cover ~61 frames, and nothing is
+    /// published until a chunk is whole — the playhead then holds one frame for seconds.
+    func testChunkLengthStopsDoublingAtTheCap() {
+        XCTAssertEqual(AnimatedMascotPlayback.nextChunkLength(published: 16, remaining: 47, firstChunk: 4), 8)
+        XCTAssertEqual(AnimatedMascotPlayback.nextChunkLength(published: 64, remaining: 61, firstChunk: 4), 8)
     }
 
     func testChunkLengthIsCappedByTheFramesLeft() {
-        XCTAssertEqual(AnimatedMascotPlayback.nextChunkLength(published: 32, remaining: 20, firstChunk: 4), 20)
+        XCTAssertEqual(AnimatedMascotPlayback.nextChunkLength(published: 32, remaining: 3, firstChunk: 4), 3)
         XCTAssertEqual(AnimatedMascotPlayback.nextChunkLength(published: 0, remaining: 2, firstChunk: 4), 2)
     }
 
     func testChunkLengthIsZeroWhenNothingIsLeft() {
         XCTAssertEqual(AnimatedMascotPlayback.nextChunkLength(published: 32, remaining: 0, firstChunk: 4), 0)
+    }
+
+    // MARK: nextChunkSlice
+
+    func testTheFirstSliceIsTheFirstChunkOfTheFirstSegment() {
+        XCTAssertEqual(
+            AnimatedMascotPlayback.nextChunkSlice(published: 0, cursor: 0, counts: [18, 18, 17], firstChunk: 4),
+            AnimatedMascotPlayback.ChunkSlice(segment: 0, range: 0 ..< 4)
+        )
+    }
+
+    func testASliceNeverStraddlesTwoSegments() {
+        XCTAssertEqual(
+            AnimatedMascotPlayback.nextChunkSlice(published: 16, cursor: 16, counts: [18, 18, 17], firstChunk: 4),
+            AnimatedMascotPlayback.ChunkSlice(segment: 0, range: 16 ..< 18),
+            "the chunk is clipped at the segment end instead of spilling into the next file"
+        )
+    }
+
+    func testASliceRestartsAtLocalZeroInTheNextSegment() {
+        XCTAssertEqual(
+            AnimatedMascotPlayback.nextChunkSlice(published: 16, cursor: 18, counts: [18, 18, 17], firstChunk: 4),
+            AnimatedMascotPlayback.ChunkSlice(segment: 1, range: 0 ..< 8),
+            "indices are local to the segment's own CGImageSource"
+        )
+    }
+
+    func testASliceLandsInTheLastSegment() {
+        XCTAssertEqual(
+            AnimatedMascotPlayback.nextChunkSlice(
+                published: 32, cursor: 120, counts: [18, 18, 18, 18, 18, 18, 17], firstChunk: 4
+            ),
+            AnimatedMascotPlayback.ChunkSlice(segment: 6, range: 12 ..< 17),
+            "the tail chunk is clipped by the frames that are left, not by the cap"
+        )
+    }
+
+    func testASingleSegmentBehavesLikeAWholeFile() {
+        XCTAssertEqual(
+            AnimatedMascotPlayback.nextChunkSlice(published: 0, cursor: 0, counts: [50], firstChunk: 4),
+            AnimatedMascotPlayback.ChunkSlice(segment: 0, range: 0 ..< 4)
+        )
+        XCTAssertEqual(
+            AnimatedMascotPlayback.nextChunkSlice(published: 8, cursor: 8, counts: [50], firstChunk: 4),
+            AnimatedMascotPlayback.ChunkSlice(segment: 0, range: 8 ..< 16)
+        )
+    }
+
+    func testThereIsNoSliceOnceEveryFrameIsDecoded() {
+        XCTAssertNil(
+            AnimatedMascotPlayback.nextChunkSlice(published: 53, cursor: 53, counts: [18, 18, 17], firstChunk: 4)
+        )
+        XCTAssertNil(AnimatedMascotPlayback.nextChunkSlice(published: 0, cursor: 0, counts: [], firstChunk: 4))
+    }
+
+    /// Walking the whole plan must visit every frame of every segment exactly once, in order — that
+    /// concatenation IS the animation the playhead sees.
+    func testWalkingEverySliceCoversTheSegmentsInOrder() {
+        let counts = [18, 18, 18, 18, 18, 18, 17]
+        var cursor = 0
+        var visited: [Int: [Int]] = [:]
+        var chunks = 0
+        while let slice = AnimatedMascotPlayback.nextChunkSlice(
+            published: cursor, cursor: cursor, counts: counts, firstChunk: 4
+        ) {
+            visited[slice.segment, default: []] += Array(slice.range)
+            cursor += slice.range.count
+            chunks += 1
+            XCTAssertLessThan(chunks, 200, "slice walk must terminate")
+        }
+        XCTAssertEqual(cursor, 125)
+        for (segment, frames) in visited {
+            XCTAssertEqual(frames, Array(0 ..< counts[segment]), "segment \(segment) decoded out of order")
+        }
     }
 
     // MARK: shouldPublish
@@ -266,9 +346,16 @@ final class AnimatedMascotPlaybackTests: XCTestCase {
         XCTAssertFalse(AnimatedMascotPlayback.shouldPublish(decoded: 3, published: 0, isComplete: false, firstChunk: 4))
     }
 
-    func testPublishesOnDoubling() {
-        XCTAssertFalse(AnimatedMascotPlayback.shouldPublish(decoded: 7, published: 4, isComplete: false, firstChunk: 4))
-        XCTAssertTrue(AnimatedMascotPlayback.shouldPublish(decoded: 8, published: 4, isComplete: false, firstChunk: 4))
+    /// Publishing must NOT wait for the buffer to double: at `published: 64` that meant 61 more frames
+    /// decoded before anything reached the screen — the visible drag. Every chunk goes out.
+    func testPublishesEveryChunkOncePlaybackHasStarted() {
+        XCTAssertTrue(AnimatedMascotPlayback.shouldPublish(decoded: 5, published: 4, isComplete: false, firstChunk: 4))
+        XCTAssertTrue(AnimatedMascotPlayback.shouldPublish(
+            decoded: 18, published: 16, isComplete: false, firstChunk: 4
+        ))
+        XCTAssertTrue(AnimatedMascotPlayback.shouldPublish(
+            decoded: 72, published: 64, isComplete: false, firstChunk: 4
+        ))
     }
 
     func testAlwaysPublishesTheCompleteAnimation() {
@@ -285,32 +372,55 @@ final class AnimatedMascotPlaybackTests: XCTestCase {
         ))
     }
 
-    // MARK: preferredFramesPerSecond
+    // MARK: display cadence at the native rate
 
-    func testDisplayLinkOversamplesTheAnimationRate() {
-        XCTAssertEqual(AnimatedMascotPlayback.preferredFramesPerSecond(shortestDelay: 0.041), 49)
-        XCTAssertEqual(AnimatedMascotPlayback.preferredFramesPerSecond(shortestDelay: 0.06), 34)
+    /// The judder: the link used to be pinned to the animation's own rate, which CADisplayLink quantizes
+    /// to a factor of the panel rate — a 24 fps loop asked for 49 and got 30 Hz, holding alternate frames
+    /// for 67 ms against 33 ms. Ticking at the panel's own 60 Hz and letting `advance` gate on the
+    /// timestamp holds every frame for 2 or 3 ticks instead.
+    func testEveryFrameHoldsTwoOrThreeTicksAtTheNativeDisplayRate() {
+        let holds = displayedFrameDurations(tick: 1.0 / 60.0, delays: mascotDelays)
+        let ticks = holds.map { Int(($0 * 60).rounded()) }
+        XCTAssertEqual(Set(ticks), [2, 3], "no frame is held for one tick or for four")
     }
 
-    func testDisplayLinkRateIsCappedAtTheDisplayRate() {
-        XCTAssertEqual(AnimatedMascotPlayback.preferredFramesPerSecond(shortestDelay: 1.0 / 30.0), 60)
-        XCTAssertEqual(AnimatedMascotPlayback.preferredFramesPerSecond(shortestDelay: 1.0 / 120.0), 60)
+    /// A frame clock that drifts would slowly desync the 24 fps loop from its 5.207 s length.
+    func testTheLoopKeepsItsLengthAtTheNativeDisplayRate() {
+        let delays = mascotDelays
+        let holds = displayedFrameDurations(tick: 1.0 / 60.0, delays: delays)
+        XCTAssertEqual(holds.reduce(0, +) + delays[delays.count - 1], 5.207, accuracy: 1.0 / 60.0)
     }
 
-    func testDisplayLinkRateHasAFloorForSlowAnimations() {
-        XCTAssertEqual(AnimatedMascotPlayback.preferredFramesPerSecond(shortestDelay: 0.5), 30)
-    }
-
-    func testDisplayLinkRateSurvivesAMissingDelay() {
-        XCTAssertEqual(AnimatedMascotPlayback.preferredFramesPerSecond(shortestDelay: 0), 60)
-        XCTAssertEqual(AnimatedMascotPlayback.preferredFramesPerSecond(shortestDelay: 1e-300), 60)
-    }
-
-    // MARK: asset names
+    // MARK: segments
 
     func testAnimatedMascotAssetNames() {
         XCTAssertEqual(AnimatedMascot.cleaningInProgress.rawValue, "mascot_cleaning_in_progress")
         XCTAssertEqual(AnimatedMascot.welcoming.rawValue, "mascot_welcoming")
+    }
+
+    func testTheCleaningLoopIsSplitAcrossSevenSegmentsInOrder() {
+        XCTAssertEqual(AnimatedMascot.cleaningInProgress.segmentNames, [
+            "mascot_cleaning_in_progress",
+            "mascot_cleaning_in_progress_1",
+            "mascot_cleaning_in_progress_2",
+            "mascot_cleaning_in_progress_3",
+            "mascot_cleaning_in_progress_4",
+            "mascot_cleaning_in_progress_5",
+            "mascot_cleaning_in_progress_6"
+        ])
+    }
+
+    func testAShortMascotStaysASingleFile() {
+        XCTAssertEqual(AnimatedMascot.welcoming.segmentNames, ["mascot_welcoming"])
+    }
+
+    /// Both mascots decode at the asset's NATIVE 360 px. Decode size is a pure memory lever (measured:
+    /// 360/288/240/180 all decode the 125-frame loop in ~4.2 s), so shrinking it buys nothing but a softer
+    /// image: the heroes render in a 140 pt box = 420 px at @3x, where 360 already upscales 1.17x and 240
+    /// would upscale 1.75x on the app's most prominent animation.
+    func testDecodeSizes() {
+        XCTAssertEqual(AnimatedMascot.cleaningInProgress.maxPixel, 360)
+        XCTAssertEqual(AnimatedMascot.welcoming.maxPixel, 360)
     }
 
     func testMascotAssetNames() {
@@ -323,6 +433,33 @@ final class AnimatedMascotPlaybackTests: XCTestCase {
     }
 
     // MARK: helpers
+
+    /// The shipped 125-frame cleaning loop: 24 fps written in whole milliseconds, 5207 ms round.
+    private var mascotDelays: [TimeInterval] {
+        Array(repeating: [0.041, 0.042, 0.042], count: 41).flatMap { $0 } + [0.041, 0.041]
+    }
+
+    /// How long each frame actually stays on screen when `advance` is driven by a display link ticking
+    /// at `tick`. One entry per frame CHANGE, so the final (still-showing) frame is not included.
+    private func displayedFrameDurations(tick: TimeInterval, delays: [TimeInterval]) -> [TimeInterval] {
+        var playhead = AnimatedMascotPlayback.Playhead()
+        var durations: [TimeInterval] = []
+        var shownAt: TimeInterval = 0
+        var now: TimeInterval = 0
+        while durations.count < delays.count - 1, now < 60 {
+            now += tick
+            let next = AnimatedMascotPlayback.advance(
+                playhead, now: now, delays: delays, isComplete: true, loop: false
+            )
+            if next.index != playhead.index {
+                durations.append(now - shownAt)
+                shownAt = now
+            }
+            playhead = next
+        }
+        XCTAssertEqual(durations.count, delays.count - 1, "the loop must run to its last frame")
+        return durations
+    }
 
     /// Three 40 ms frames — the shipped mascots run at 41 ms.
     private func step(

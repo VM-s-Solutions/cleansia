@@ -47,7 +47,7 @@ struct PartnerRootView: View {
                 settings: container.appSettings,
                 snackbar: container.snackbar,
                 onSignIn: { route = .login },
-                onRegistered: { route = .login }
+                onRegistered: { route = .verifyEmail(email: $0) }
             )
         case .forgotPassword:
             ForgotPasswordView(

@@ -43,12 +43,26 @@ public class Order : Auditable, ITenantEntity
 
     public PaymentStatus PaymentStatus { get; private set; } = PaymentStatus.Pending;
 
-    // Cash-collection audit: a card order flips to Paid via the Stripe webhook, but a CASH order stays
-    // Pending until the assigned cleaner physically collects the money and marks it (MarkCashCollected).
-    // These record WHO collected and WHEN, so completion of an unpaid cash order can be blocked with a trail.
+    // Cash-collection audit: a card order flips to Paid via the Stripe webhook, but an order the cleaner
+    // settled on site stays Pending until they physically collect the money and mark it
+    // (MarkCashCollected). These record WHO collected and WHEN, so completion of an unpaid order can be
+    // blocked with a trail — and they are the source of the derived tender below.
     public DateTime? CashCollectedAt { get; private set; }
 
     public string? CollectedByEmployeeId { get; private set; }
+
+    [NotMapped]
+    public bool SettledInCash => CashCollectedAt is not null;
+
+    /// <summary>
+    /// The tender the customer ACTUALLY paid with, as opposed to <see cref="PaymentType"/>, which stays
+    /// the booking contract (a card booking whose Stripe webhook never arrived keeps
+    /// <see cref="PaymentType.Card"/> so the refund path still finds its charge surface). A card booking
+    /// the cleaner collected in cash is legally a cash sale, so the fiscal registration, the receipt's
+    /// payment label and revenue-by-tender reporting must read this — not the booked type.
+    /// </summary>
+    [NotMapped]
+    public PaymentType ActualPaymentType => SettledInCash ? PaymentType.Cash : PaymentType;
 
     [Required]
     public decimal TotalPrice { get; private set; }
@@ -371,9 +385,10 @@ public class Order : Auditable, ITenantEntity
         return this;
     }
 
-    // The cleaner collected the cash owed for a cash order. Flips the order to Paid (the same terminal
-    // state a Stripe-charged card order reaches) and stamps the audit trail. Idempotency + "cash orders
-    // only" are enforced in MarkCashCollected.Validator, so this stays a pure happy-path mutator.
+    // The cleaner collected the cash owed for this order. Flips it to Paid (the same terminal state a
+    // Stripe-charged card order reaches) and stamps the audit trail. Idempotency and the InProgress gate
+    // are enforced in MarkCashCollected.Validator, and the Stripe reconciliation that keeps a card order
+    // from being charged twice is in its handler, so this stays a pure happy-path mutator.
     public Order MarkCashCollected(string employeeId)
     {
         PaymentStatus = PaymentStatus.Paid;

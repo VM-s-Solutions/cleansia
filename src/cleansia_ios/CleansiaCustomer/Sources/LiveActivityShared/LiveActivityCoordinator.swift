@@ -1,4 +1,5 @@
 import ActivityKit
+import CleansiaCore
 import Foundation
 
 /// Owns the ActivityKit lifecycle for the in-progress-clean Live Activity (ADR-0029), app-side. Starts an
@@ -6,7 +7,7 @@ import Foundation
 /// the backend via `LiveActivityRegistering`, and ends it on a terminal status.
 ///
 /// Wiring: the order-tracking screen calls `start(...)` when an order first reaches Confirmed/OnTheWay and
-/// `end(orderId:)` on Completed/Cancelled; app launch (post login) calls `beginPushToStartRegistration()`
+/// `end(...)` on Completed/Cancelled; app launch (post login) calls `beginPushToStartRegistration()`
 /// so the SERVER can start activities on iOS 17.2+.
 ///
 /// The live backend registrar IS installed at composition (CustomerAppContainer swaps the no-op default
@@ -58,7 +59,7 @@ final class LiveActivityCoordinator {
         do {
             let activity = try Activity<CleanOrderAttributes>.request(
                 attributes: attributes,
-                content: ActivityContent(state: initialState, staleDate: window.countdownEnd),
+                content: ActivityContent(state: initialState, staleDate: staleDate(for: window)),
                 pushType: .token
             )
             started[orderId] = activity
@@ -77,16 +78,28 @@ final class LiveActivityCoordinator {
         guard let activity = existingActivity(orderId: orderId, orderNumber: orderNumber) else { return }
         let state = contentState(status: status, orderNumber: orderNumber, window: window)
         Task {
-            await activity.update(ActivityContent(state: state, staleDate: window.countdownEnd))
+            await activity.update(ActivityContent(state: state, staleDate: staleDate(for: window)))
         }
     }
 
-    /// End the order's live activity immediately and deregister its token.
-    func end(orderId: String) {
+    /// End the order's live activity on its terminal status and deregister its token. Resolved through the
+    /// same `existingActivity` identity as `update`, so a system-restored / server-started card is ended too.
+    ///
+    /// The final content is written EXPLICITLY: ending with `nil` leaves the card on its last in-service
+    /// state, whose stale date is by then already in the past — the system draws its placeholder over that
+    /// instead of the widget's terminal presentation.
+    func end(orderId: String, orderNumber: String, status: LiveActivityTerminalStatus) {
         tokenObservers.removeValue(forKey: orderId)?.cancel()
-        let live = started.removeValue(forKey: orderId)
+        let live = existingActivity(orderId: orderId, orderNumber: orderNumber)
+        started.removeValue(forKey: orderId)
+        let dismissal = LiveActivityPolicy.dismissal(for: status, now: Date())
         Task { [registrar] in
-            if let live { await live.end(nil, dismissalPolicy: .default) }
+            if let live {
+                await live.end(
+                    terminalActivityContent(from: live.content.state, status: status),
+                    dismissalPolicy: dismissal.uiPolicy
+                )
+            }
             await registrar.deregister(orderId: orderId)
         }
     }
@@ -103,6 +116,11 @@ final class LiveActivityCoordinator {
     }
 
     // MARK: - Internals
+
+    /// Mirrors the backend push's own stale date so a locally-written card and a pushed one agree.
+    private func staleDate(for window: EtaWindow) -> Date {
+        LiveActivityPolicy.staleDate(scheduledEnd: window.scheduledEnd, now: Date())
+    }
 
     private func contentState(
         status: String,
@@ -133,6 +151,27 @@ final class LiveActivityCoordinator {
             for await tokenData in activity.pushTokenUpdates {
                 await registrar.register(orderId: orderId, orderNumber: orderNumber, token: hexString(tokenData))
             }
+        }
+    }
+}
+
+/// What an ended card is left holding: the terminal state and NO stale date — an ended activity has nothing
+/// left to time, and a stale date already behind "now" is what makes the system draw its placeholder over
+/// the card.
+@available(iOS 16.2, *)
+func terminalActivityContent(
+    from state: CleanOrderAttributes.ContentState,
+    status: LiveActivityTerminalStatus
+) -> ActivityContent<CleanOrderAttributes.ContentState> {
+    ActivityContent(state: state.terminal(status), staleDate: nil)
+}
+
+@available(iOS 16.1, *)
+extension LiveActivityDismissal {
+    var uiPolicy: ActivityUIDismissalPolicy {
+        switch self {
+        case .immediate: .immediate
+        case let .after(date): .after(date)
         }
     }
 }

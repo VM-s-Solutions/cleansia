@@ -217,10 +217,11 @@ public class User : Auditable, ITenantEntity
     }
 
     /// <summary>
-    /// Fills ONLY the blank name parts and leaves anything already stored untouched. The callers are
-    /// external-identity logins (Apple replays the name captured at the FIRST authorization), so the
-    /// value they carry can be stale by years — it may repair a blank field but must never be able to
-    /// silently undo a name the user has since edited in the profile screen.
+    /// Fills ONLY the blank name parts and leaves anything already stored untouched. The values reaching
+    /// it are external-identity ones (Apple replays the name captured at the FIRST authorization), so they
+    /// can be stale by years — they may repair a blank field but must never silently undo a name the user
+    /// has since edited in the profile screen. Displacing a name is the strictly narrower
+    /// <see cref="ReplaceSystemGeneratedName"/>.
     /// </summary>
     public User FillMissingName(string? firstName, string? lastName)
     {
@@ -236,6 +237,46 @@ public class User : Auditable, ITenantEntity
 
         return this;
     }
+
+    /// <summary>
+    /// Promotes a name the external provider GENUINELY supplied over one WE generated, per part.
+    /// <paramref name="firstName"/>/<paramref name="lastName"/> are the parts the client actually sent;
+    /// <paramref name="derivedFirstName"/>/<paramref name="derivedLastName"/> are what our own
+    /// email-derivation would produce for this account, and are the only evidence that a stored value is
+    /// system-generated rather than user-authored.
+    /// <para>
+    /// Why this exists: Apple hands the real name over exactly ONCE, on the first authorization. If that
+    /// one payload lands on an account already showing a derived placeholder, a blank-parts-only back-fill
+    /// silently discards it and the placeholder outlives the only chance to correct it — the user then has
+    /// to notice and retype their own name. So a part is overwritten only when it is blank OR equal to the
+    /// derivation (provably ours); a part the user typed themselves is never touched, and a part with
+    /// nothing genuine to replace it is left alone.
+    /// </para>
+    /// <para>
+    /// The derivation and its fallback constants are therefore part of an IDENTIFICATION rule, not just a
+    /// default: changing them orphans every row already written with the old values, which then reads as
+    /// user-authored forever. Do not change them casually.
+    /// </para>
+    /// </summary>
+    public User ReplaceSystemGeneratedName(string? firstName, string? lastName, string? derivedFirstName, string? derivedLastName)
+    {
+        if (IsSystemGenerated(FirstName, derivedFirstName) && !string.IsNullOrWhiteSpace(firstName))
+        {
+            FirstName = firstName.Trim();
+        }
+
+        if (IsSystemGenerated(LastName, derivedLastName) && !string.IsNullOrWhiteSpace(lastName))
+        {
+            LastName = lastName.Trim();
+        }
+
+        return FillMissingName(derivedFirstName, derivedLastName);
+    }
+
+    private static bool IsSystemGenerated(string? storedNamePart, string? derivedNamePart)
+        => string.IsNullOrWhiteSpace(storedNamePart)
+            || (!string.IsNullOrWhiteSpace(derivedNamePart)
+                && string.Equals(storedNamePart.Trim(), derivedNamePart.Trim(), StringComparison.OrdinalIgnoreCase));
 
     public User UpgradeToEmployee()
     {

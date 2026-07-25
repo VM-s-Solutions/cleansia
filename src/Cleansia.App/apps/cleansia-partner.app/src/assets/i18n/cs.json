@@ -1066,6 +1066,9 @@
       "cash_already_collected": "Hotovost za tuto objednávku již byla vybrána.",
       "not_cash_payment": "Toto není objednávka placená hotově.",
       "payment_not_confirmed": "Platba za tuto objednávku dosud nebyla potvrzena.",
+      "card_payment_already_settled": "Platba kartou už proběhla. Obnovte stránku a objednávku dokončete — hotovost nevybírejte.",
+      "card_payment_in_progress": "Platba kartou se stále zpracovává. Chvíli počkejte a zkuste to znovu — hotovost zatím nevybírejte.",
+      "card_payment_unverified": "Stav platby kartou se teď nepodařilo ověřit, hotovost proto nelze zaznamenat. Zkuste to za chvíli znovu nebo kontaktujte administrátora.",
       "actual_time": {
         "positive": "Skutečný čas musí být kladný"
       },

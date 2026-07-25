@@ -47,12 +47,10 @@ struct EditProfileView: View {
                         textContentType: .emailAddress,
                         enabled: false
                     )
-                    CleansiaTextField(
+                    CleansiaPhoneInput(
                         value: $phone,
                         label: L10n.EditProfile.phone,
-                        errorText: missingFieldError(phone, message: L10n.EditProfile.phoneRequired),
-                        keyboardType: .phonePad,
-                        textContentType: .telephoneNumber
+                        errorText: missingFieldError(phone, message: L10n.EditProfile.phoneRequired)
                     )
                     BirthDateField(
                         birthDate: $birthDate,

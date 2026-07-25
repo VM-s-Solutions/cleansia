@@ -154,13 +154,15 @@ private struct EtaReadout: View {
         }
     }
 
+    /// The lock screen already leads with the terminal glyph and titles the card with this very text, so it
+    /// draws nothing here rather than the same checkmark twice.
     @ViewBuilder
     private func terminal(_ text: String) -> some View {
         switch style {
         case .island:
             Text(text).font(.caption.weight(.semibold)).foregroundStyle(Brand.sky)
         case .lockScreen:
-            Image(systemName: symbol).font(.title.weight(.semibold)).foregroundStyle(Brand.sky)
+            EmptyView()
         case .compact:
             Image(systemName: symbol).foregroundStyle(Brand.sky)
         }

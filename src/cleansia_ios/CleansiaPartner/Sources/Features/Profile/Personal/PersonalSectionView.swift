@@ -46,10 +46,9 @@ struct PersonalSectionView: View {
                     placeholder: L10n.Profile.birthDatePlaceholder,
                     errorText: vm.form.birthDateError
                 )
-                CleansiaTextField(
+                CleansiaPhoneInput(
                     value: $vm.form.phone,
-                    label: L10n.Profile.phone,
-                    keyboardType: .phonePad
+                    label: L10n.Profile.phone
                 )
                 CleansiaTextField(
                     value: $vm.form.email,

@@ -32,8 +32,8 @@ namespace Cleansia.Tests.Features.Auth;
 ///     its stored email; the collision and IsActive guards still run on that path;
 ///   - provisioning NEVER persists a blank name part (an empty name fails UpdateCurrentUser's NotEmpty
 ///     rules and CreateOrder's 2-character CustomerName floor, i.e. it blocks booking on an account Apple
-///     can never re-send a name for), and a returning account's blank name is back-filled — but a stored
-///     name is never overwritten.
+///     can never re-send a name for), and a returning account's blank OR system-generated name is
+///     back-filled from a genuinely supplied one — but a name the user typed is never overwritten.
 /// Written red → green per knowledge/testing.md (the contract precedes the handler body).
 /// </summary>
 public class AppleAuthHandlerTests
@@ -544,8 +544,10 @@ public class AppleAuthHandlerTests
         Assert.Equal("Last", existing.LastName);
     }
 
+    // Neither stored part matches what the account's email derives to, so both are user-authored and the
+    // supplied payload must lose to them.
     [Fact]
-    public async Task Returning_User_BackFill_Never_Overwrites_A_Stored_Name()
+    public async Task Returning_User_BackFill_Never_Overwrites_A_User_Set_Name()
     {
         var existing = BlankNameAppleUser(firstName: "Renamed", lastName: "Surname");
         _verifier
@@ -589,6 +591,101 @@ public class AppleAuthHandlerTests
         AssertUsableName(existing.LastName);
         Assert.Equal("Jane", existing.FirstName);
         Assert.Equal("Doe", existing.LastName);
+    }
+
+    // The one genuine name Apple ever sends (first authorization, e.g. after the user revoked the app in
+    // Settings and re-authorized) must be able to displace a name WE generated. "cmisa695@gmail.com"
+    // derives to Cmisa/Customer, so an account showing that is provably system-generated, never user typed.
+    [Fact]
+    public async Task Returning_User_System_Generated_Name_Is_Replaced_By_The_Supplied_Name()
+    {
+        var existing = BlankNameAppleUser(
+            firstName: "Cmisa", lastName: "Customer", email: "cmisa695@gmail.com");
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("apple-sub-derived", Email: null, EmailVerified: false));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync("apple-sub-derived", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var command = new AppleAuth.Command(
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "Michael", LastName: "Chaban");
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Michael", existing.FirstName);
+        Assert.Equal("Chaban", existing.LastName);
+    }
+
+    // Per-part, not all-or-nothing: the placeholder family name goes, the given name the user typed stays.
+    [Fact]
+    public async Task Returning_User_Placeholder_LastName_Is_Replaced_While_A_User_Set_FirstName_Survives()
+    {
+        var existing = BlankNameAppleUser(
+            firstName: "Miguel", lastName: "Customer", email: "cmisa695@gmail.com");
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("apple-sub-placeholder", Email: null, EmailVerified: false));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync("apple-sub-placeholder", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var command = new AppleAuth.Command(
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "Michael", LastName: "Chaban");
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Miguel", existing.FirstName);
+        Assert.Equal("Chaban", existing.LastName);
+    }
+
+    // A name the user set themselves is never touched, however genuine the Apple payload is.
+    [Fact]
+    public async Task Returning_User_UserEdited_Name_Is_Not_Replaced_By_The_Supplied_Name()
+    {
+        var existing = BlankNameAppleUser(
+            firstName: "Miguel", lastName: "Chabanov", email: "cmisa695@gmail.com");
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("apple-sub-edited", Email: null, EmailVerified: false));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync("apple-sub-edited", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var command = new AppleAuth.Command(
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: "Michael", LastName: "Chaban");
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Miguel", existing.FirstName);
+        Assert.Equal("Chabanov", existing.LastName);
+    }
+
+    // A routine returning sign-in carries no name, so there is nothing genuine to promote — the
+    // system-generated name stays exactly as stored rather than being rewritten for no reason.
+    [Fact]
+    public async Task Returning_User_Without_A_Supplied_Name_Keeps_The_System_Generated_Name()
+    {
+        var existing = BlankNameAppleUser(
+            firstName: "Cmisa", lastName: "Customer", email: "cmisa695@gmail.com");
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("apple-sub-nopayload", Email: null, EmailVerified: false));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync("apple-sub-nopayload", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var command = new AppleAuth.Command(
+            IdentityToken: "any-token", RawNonce: "any-raw-nonce", FirstName: null, LastName: null);
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Cmisa", existing.FirstName);
+        Assert.Equal("Customer", existing.LastName);
     }
 
     // When Apple folds the whole name into the given-name field and sends no family name, split off the

@@ -7,7 +7,7 @@ import XCTest
 private struct NoopLiveActivitySync: OrderLiveActivitySyncing {
     func start(orderId _: String, orderNumber _: String, status _: String, window _: EtaWindow) {}
     func update(orderId _: String, orderNumber _: String, status _: String, window _: EtaWindow) {}
-    func end(orderId _: String) {}
+    func end(orderId _: String, orderNumber _: String, status _: LiveActivityTerminalStatus) {}
 }
 
 @MainActor

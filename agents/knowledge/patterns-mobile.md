@@ -401,6 +401,23 @@ flips `isSecureTextEntry` and **re-seats the text** (empty-then-back, binding-gu
 purge-on-toggle while restoring the caret offset. Keep the public `init` stable — it's a shared component
 across both apps and many forms.
 
+**Masked input (phone) — the ONE way:** SwiftUI has **no `VisualTransformation`**, so Android's
+"raw value + `OffsetMapping`" trick has no direct port; a `TextField(text: Binding(get:format,set:sanitize))`
+is NOT the equivalent (the caret jumps to the end and backspace over a separator is a visible no-op — the
+mask puts the separator straight back). The iOS form is a **pure `PhoneMaskEngine`** (`CleansiaCore/Validation`)
+that takes `(current text, edit range, replacement)` → `(display text, caret offset, wire value)`, behind a
+one-method **`PhoneDisplayFormatting`** protocol so the engine unit-tests against a stub and the vendor lib
+(PhoneNumberKit `PartialFormatter`, the libphonenumber `AsYouTypeFormatter` counterpart) stays out of the
+tests. Rules the engine owns: backspacing a separator **deletes the digit in front of it**; the caret is
+mapped by counting *significant* characters (digit or leading `+`), never by character index; and a
+formatter whose output does not `sanitize` back to the exact wire value is **refused** (falls back to the
+bare value) — the visible text is what the next edit is read from, so a lying formatter would silently
+rewrite what we submit. The UIKit glue is a `UIViewRepresentable` whose delegate returns **`false`** from
+`shouldChangeCharactersIn` and seats text + caret itself, plus an `.editingChanged` net for AutoFill.
+**The mask is display-only:** the bound value stays `PhoneNumberSanitizer` output (`+` + digits) and is
+normalised on **load** too (`onAppear`/`onChange` write-back), because phone uniqueness is an exact string
+match server-side.
+
 **Partner router — the ONE way (ADR-0020, reviewer #23):** the partner app's **top-level audience** (logged-out
 / resolving / locked / in-shell) is the **flat-enum `PartnerRootView` root-switch** — a closed `enum Route`
 (`.splash`/`.login`/`.verifyEmail`/`.registrationLock`/`.dashboard`-shell) the root view `switch`es over,
@@ -481,6 +498,19 @@ over `CoreL10n.localized` (`LiveActivityL10n`) rather than leaking key literals 
 the selected tag never reaches it without an App Group. That is the opposite of the in-app rule above, and it is
 the accepted trade-off until an App Group exists (an entitlement/provisioning change). Do NOT confuse this with
 APNs `loc-key` strings, which must stay in each **app** target's catalog (APNs reads only the main bundle).
+
+**A rule the BACKEND also writes lives in Core as a pure function, pinned by Core tests — never inlined at
+the ActivityKit call site.** The Live Activity card has two writers: the app's `LiveActivityCoordinator` and
+the server's `LiveActivityPayloadFactory`. Any constant they must agree on (the ADR-0029 D2 stale-date
+`max(now + 4h, scheduledEnd + 1h)`, the 30-minute completed linger, the `completed`/`cancelled` wire strings)
+belongs in `CleansiaCore/LiveActivity/LiveActivityPolicy` as pure `Foundation`-only logic, with the
+ActivityKit type (`ActivityUIDismissalPolicy`) mapped from it at the edge. Reason: the app-target tests do
+**not** run in this repo's toolchain, the CleansiaCore package tests do — so the rule that must not drift is
+the one that has to be reachable from a suite that actually executes. The same split applies to any
+widget/extension logic: pure decision in Core (tested), framework plumbing in the target (read-verified).
+**Ending an activity always writes an explicit final `ActivityContent`** — `end(nil, ...)` leaves the card on
+its last in-service state with a stale date already in the past, which the system renders as a placeholder
+(the "black box with a spinner"); the terminal write clears the phase window and passes `staleDate: nil`.
 
 **The standing guard against untranslated strings: `StringCatalogCompletenessTests` (CleansiaCore).** It reads
 all three `.xcstrings` off disk (walking up from `#filePath` until all three resolve) and fails naming

@@ -1,4 +1,5 @@
 import ActivityKit
+import CleansiaCore
 import Foundation
 
 /// The ActivityKit contract shared by the CleansiaCustomer APP (which starts/ends the activity) and the
@@ -48,6 +49,17 @@ extension CleanOrderAttributes.ContentState {
             phaseEnd: phaseEnd
         )
     }
+
+    /// The final state an ended activity is left showing. The phase window is cleared because a carried
+    /// over one keeps the card timing a clean that is already over — and because the widget's terminal
+    /// branch must be reached by the STATUS, not by whatever the last in-service push happened to say.
+    func terminal(_ status: LiveActivityTerminalStatus) -> Self {
+        var final = self
+        final.status = status.rawValue
+        final.phaseStart = nil
+        final.phaseEnd = nil
+        return final
+    }
 }
 
 // MARK: - ETA
@@ -61,9 +73,8 @@ struct EtaWindow: Equatable {
     let phaseEnd: Date?
 
     /// The instant the countdown hits 00:00 — the actual finish when it is known, else the booked one.
-    /// Doubles as the activity's staleDate: `Text(timerInterval:)` CLAMPS at its upper bound, so this is
-    /// exactly the moment the card stops telling the truth and the system must re-render it into the
-    /// count-up form instead of leaving it frozen at zero.
+    /// NOT the activity's staleDate (`LiveActivityPolicy.staleDate` owns that): a stale date this early is
+    /// reached mid-clean and makes the system draw its placeholder over a card that is still true.
     var countdownEnd: Date {
         phaseEnd ?? scheduledEnd
     }

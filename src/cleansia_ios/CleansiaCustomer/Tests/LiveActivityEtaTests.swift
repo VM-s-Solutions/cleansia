@@ -1,3 +1,5 @@
+import ActivityKit
+import CleansiaCore
 import CleansiaCustomerApi
 import Foundation
 import XCTest
@@ -90,12 +92,109 @@ final class LiveActivityEtaTests: XCTestCase {
         XCTAssertEqual(window(start: now, end: now + 3600).countdownEnd, now + 3600)
     }
 
-    /// The staleDate contract: the activity must go stale at exactly the instant the countdown clamps, so
-    /// the system re-renders it into the count-up instead of leaving it frozen at 00:00.
     func testCountdownEndIsTheUpperBoundOfTheCountdownItProduces() {
         let live = window(start: now - 600, end: now + 3600, phaseEnd: now + 1800)
 
         XCTAssertEqual(presentation(live), .countdown(now - 600 ... live.countdownEnd))
+    }
+
+    /// A countdown whose range is inverted or already behind "now" is drawn by the system as a frozen or
+    /// placeholder card. No window may produce one.
+    func testNoWindowEverProducesAnInvertedOrAlreadyElapsedCountdown() {
+        let offsets: [TimeInterval] = [-7200, -3600, -600, -60, 0, 30, 60, 600, 3600, 7200]
+
+        for startOffset in offsets {
+            for endOffset in offsets {
+                let eta = presentation(window(start: now + startOffset, end: now + endOffset))
+                guard case let .countdown(range) = eta else { continue }
+                XCTAssertLessThanOrEqual(range.lowerBound, now)
+                XCTAssertLessThan(range.lowerBound, range.upperBound)
+                XCTAssertGreaterThan(range.upperBound, now)
+            }
+        }
+    }
+}
+
+/// The final content-state an ended activity is left showing (ADR-0029 D2). Ending with no content at all
+/// leaves the card on its last in-service state — which is the "black box with a spinner" on completion.
+@available(iOS 16.1, *)
+final class LiveActivityTerminalStateTests: XCTestCase {
+    private let booked = Date(timeIntervalSince1970: 1_700_000_000)
+
+    private func inProgressState() -> CleanOrderAttributes.ContentState {
+        CleanOrderAttributes.ContentState(
+            v: 1,
+            status: "inProgress",
+            orderNumber: "1042",
+            scheduledStart: booked,
+            scheduledEnd: booked.addingTimeInterval(90 * 60),
+            phaseStart: booked.addingTimeInterval(10 * 60),
+            phaseEnd: booked.addingTimeInterval(100 * 60)
+        )
+    }
+
+    func testTerminalStateCarriesTheTerminalStatus() {
+        XCTAssertEqual(inProgressState().terminal(.completed).status, "completed")
+        XCTAssertEqual(inProgressState().terminal(.cancelled).status, "cancelled")
+    }
+
+    func testTerminalStateClearsThePhaseWindowSoNothingKeepsTiming() {
+        let final = inProgressState().terminal(.completed)
+
+        XCTAssertNil(final.phaseStart)
+        XCTAssertNil(final.phaseEnd)
+    }
+
+    func testTerminalStateKeepsTheIdentityAndBookedWindowOfTheCardItReplaces() {
+        let final = inProgressState().terminal(.cancelled)
+
+        XCTAssertEqual(final.v, 1)
+        XCTAssertEqual(final.orderNumber, "1042")
+        XCTAssertEqual(final.scheduledStart, booked)
+        XCTAssertEqual(final.scheduledEnd, booked.addingTimeInterval(90 * 60))
+    }
+
+    /// The widget resolves a terminal status to a label, never to a timer — at any "now", including one
+    /// long past the booked window the ended card still carries.
+    func testATerminalStateAlwaysPresentsTheLabelBranch() {
+        let final = inProgressState().terminal(.completed)
+
+        for hours in [-2.0, 0.0, 1.0, 5.0] {
+            let eta = LiveActivityEta.presentation(
+                window: final.etaWindow,
+                terminalLabel: "Clean complete",
+                now: booked.addingTimeInterval(hours * 3600)
+            )
+
+            XCTAssertEqual(eta, .label("Clean complete"))
+        }
+    }
+
+    func testATerminalStatesWindowFallsBackToTheBookedOne() {
+        XCTAssertEqual(
+            inProgressState().terminal(.completed).etaWindow.countdownEnd,
+            booked.addingTimeInterval(90 * 60)
+        )
+    }
+
+    @available(iOS 16.2, *)
+    func testTheEndedCardCarriesNoStaleDate() {
+        let content = terminalActivityContent(from: inProgressState(), status: .completed)
+
+        XCTAssertNil(content.staleDate)
+        XCTAssertEqual(content.state.status, "completed")
+        XCTAssertNil(content.state.phaseEnd)
+    }
+
+    @available(iOS 16.2, *)
+    func testACancelledCardLeavesAtOnceAndACompletedOneLingers() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+
+        XCTAssertEqual(LiveActivityPolicy.dismissal(for: .cancelled, now: now).uiPolicy, .immediate)
+        XCTAssertEqual(
+            LiveActivityPolicy.dismissal(for: .completed, now: now).uiPolicy,
+            .after(now.addingTimeInterval(30 * 60))
+        )
     }
 }
 

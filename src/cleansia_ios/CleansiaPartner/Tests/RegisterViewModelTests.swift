@@ -159,12 +159,14 @@ final class RegisterViewModelTests: XCTestCase {
         let vm = makeViewModel()
         fillValid(vm)
 
-        var received = false
-        vm.registerSuccess.sink { received = true }.store(in: &cancellables)
+        var receivedEmail: String?
+        vm.registerSuccess.sink { receivedEmail = $0 }.store(in: &cancellables)
 
         await vm.register()
 
-        XCTAssertTrue(received)
+        // The email must ride along: PartnerRootView routes it to .verifyEmail so the user lands on
+        // the confirm-email step the code was just sent to, instead of being bounced to login.
+        XCTAssertEqual(receivedEmail, "jana@b.cz")
         XCTAssertEqual(vm.registerState, .idle)
         XCTAssertEqual(client.callCount, 1)
         XCTAssertEqual(client.lastArgs?.email, "jana@b.cz")
@@ -179,7 +181,7 @@ final class RegisterViewModelTests: XCTestCase {
         fillValid(vm)
 
         var received = false
-        vm.registerSuccess.sink { received = true }.store(in: &cancellables)
+        vm.registerSuccess.sink { _ in received = true }.store(in: &cancellables)
 
         await vm.register()
 

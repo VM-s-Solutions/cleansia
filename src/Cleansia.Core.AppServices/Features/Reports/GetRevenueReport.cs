@@ -68,8 +68,10 @@ public class GetRevenueReport
                     OrderCount: g.Select(x => x.Order.Id).Distinct().Count()))
                 .ToList();
 
+            // Grouped by the tender actually taken, so a card booking the cleaner settled in cash lands
+            // in the cash column the admin has to reconcile against the float.
             var revenueByPaymentType = orders
-                .GroupBy(o => o.PaymentType)
+                .GroupBy(o => o.ActualPaymentType)
                 .Select(g => new RevenueByPaymentType(
                     PaymentTypeCode: g.Key.ToString(),
                     PaymentTypeName: g.Key.MapToCode().Name,

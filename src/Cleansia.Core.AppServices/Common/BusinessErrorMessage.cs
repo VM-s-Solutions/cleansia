@@ -44,10 +44,14 @@ public static class BusinessErrorMessage
     public const string InvalidOrderStatusTransition = "order.invalid_status_transition";
     public const string CancellationWindowClosed = "order.cancellation_window_closed";
     // Cash-collection gating (cleaner marks cash collected before an order can be completed).
-    public const string OrderNotCashPayment = "order.not_cash_payment";
     public const string OrderCashAlreadyCollected = "order.cash_already_collected";
     public const string OrderCashNotCollected = "order.cash_not_collected";
     public const string OrderPaymentNotConfirmed = "order.payment_not_confirmed";
+    // Reconciliation outcomes when the cleaner tries to take cash for an order booked on a card: the
+    // handler asks Stripe what really happened before any second tender is recorded.
+    public const string CardPaymentAlreadySettled = "order.card_payment_already_settled";
+    public const string CardPaymentInProgress = "order.card_payment_in_progress";
+    public const string CardPaymentUnverified = "order.card_payment_unverified";
     public const string AddressNotOwnedByUser = "address.not_owned_by_user";
     public const string AddressLabelRequired = "address.label_required";
     public const string SavedAddressAlreadyExists = "address.already_exists";

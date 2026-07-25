@@ -10,9 +10,17 @@ struct MascotAnimation {
     let isComplete: Bool
 }
 
-/// Process-wide caches for the raw asset `Data` and the decoded frames, so the
-/// heavy work happens at most once per asset. Both are `NSCache`, so the system
-/// evicts them under memory pressure.
+/// A mascot's bundled bytes: one entry per segment file, in playback order, plus the size its frames
+/// are decoded at. One logical animation, several files — see `AnimatedMascot.segmentNames`.
+struct MascotAsset {
+    let name: String
+    let segments: [Data]
+    let maxPixel: CGFloat
+}
+
+/// Process-wide caches for the raw asset `Data` and the decoded frames, so the heavy work happens at
+/// most once per asset. Both are `NSCache`, so the system evicts them under memory pressure; the frame
+/// cache is bounded by decoded bytes on top of that, because a whole mascot loop is tens of MiB.
 final class MascotAssetCache {
     static let shared = MascotAssetCache()
 
@@ -22,24 +30,22 @@ final class MascotAssetCache {
     /// blocks the visible decode of another for its whole (quadratic) run.
     private let decodeQueue = DispatchQueue(label: "cleansia.mascot.decode", attributes: .concurrent)
 
-    /// Strong references that survive `frameCache` eviction, for mascots we deliberately keep hot (the
-    /// order-in-progress hero). The `frameCache` is purgeable under memory pressure; when it drops the
-    /// heavy 63-frame `cleaningInProgress` loop the next paint pays the full re-decode again. Pinning holds
-    /// the decoded frames so that re-decode never happens twice. Main-thread only (set from `prewarm`'s
+    /// AT MOST ONE strong reference that survives `frameCache` eviction, for the mascot we deliberately
+    /// keep hot (the order-in-progress hero). The `frameCache` is purgeable under memory pressure; when it
+    /// drops the 125-frame `cleaningInProgress` loop the next paint pays the full re-decode again, so the
+    /// pin holds it. One slot, and dropped on a memory warning: an unbounded pin map would be a leak by
+    /// another name, since nothing else ever removes from it. Main-thread only (set from `prewarm`'s
     /// main-thread completion, read from `cachedAnimation` on the main/UI thread).
-    private var pinnedAnimations: [NSString: MascotAnimation] = [:]
+    private var pinned: (key: NSString, animation: MascotAnimation)?
 
     /// One decode per asset, shared by every view and by `prewarm`, so a visible mascot never repeats
-    /// work a prewarm is already doing. Main-thread only, like `pinnedAnimations`.
+    /// work a prewarm is already doing. Main-thread only, like `pinned`.
     private var jobs: [NSString: DecodeJob] = [:]
 
-    /// Frames are decoded at the asset's native size (360 px). The mascots render up to 220 pt
-    /// (booking/membership success hero) and 140 pt (loader / order hero) — i.e. ~660 / ~420 px
-    /// at @3x, both already above native — so there is no useful detail to downsample away.
-    /// Trade-off: the full loop is held in memory (~33 MB for 63 frames) in an NSCache the system
-    /// purges under pressure; a running animation keeps its own strong ref, so a purge only forces
-    /// a re-decode next time.
-    private let maxPixel: CGFloat = 360
+    /// 125 frames of the cleaning loop at its native 360 px would be 61.8 MiB of decoded bitmaps, held
+    /// for the life of the process. The decoded cache is bounded instead — the pin plus the two mascots
+    /// at their current sizes come to ~52 MiB.
+    private let decodedByteLimit = 64 * 1024 * 1024
 
     final class FrameBox {
         let animation: MascotAnimation
@@ -48,19 +54,35 @@ final class MascotAssetCache {
         }
     }
 
-    func data(for mascot: AnimatedMascot, bundle: Bundle) -> Data? {
-        let key = "\(mascot.rawValue)#\(bundle.bundleIdentifier ?? "main")" as NSString
-        if let cached = dataCache.object(forKey: key) { return cached as Data }
-        guard let data = NSDataAsset(name: mascot.rawValue, bundle: bundle)?.data else { return nil }
-        dataCache.setObject(data as NSData, forKey: key)
-        return data
+    private init() {
+        frameCache.totalCostLimit = decodedByteLimit
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.pinned = nil
+            self?.frameCache.removeAllObjects()
+        }
     }
 
-    func cachedAnimation(name: String) -> MascotAnimation? {
-        let key = frameKey(name)
+    /// The mascot's segment files in playback order. Stops at the first missing segment rather than
+    /// skipping it, so a mis-exported asset plays a shorter loop instead of a jumping one.
+    func asset(for mascot: AnimatedMascot, bundle: Bundle) -> MascotAsset? {
+        var segments: [Data] = []
+        for name in mascot.segmentNames {
+            guard let data = segmentData(name: name, bundle: bundle) else { break }
+            segments.append(data)
+        }
+        guard !segments.isEmpty else { return nil }
+        return MascotAsset(name: mascot.rawValue, segments: segments, maxPixel: mascot.maxPixel)
+    }
+
+    func cachedAnimation(_ asset: MascotAsset) -> MascotAnimation? {
+        let key = frameKey(asset)
         // A pinned animation outlives frameCache eviction — check it first so a purged hero replays
         // instantly instead of re-decoding.
-        if let pinned = pinnedAnimations[key] { return pinned }
+        if let pinned, pinned.key == key { return pinned.animation }
         return frameCache.object(forKey: key)?.animation
     }
 
@@ -69,31 +91,34 @@ final class MascotAssetCache {
     /// later NSCache purge can't force the decode again. Idempotent; call from the main thread (e.g. an
     /// order's ViewModel `load()` before the in-progress hero appears, or at app launch).
     func prewarm(_ mascot: AnimatedMascot, bundle: Bundle = .main) {
-        let key = frameKey(mascot.rawValue)
-        if pinnedAnimations[key] != nil { return }
-        if let hit = cachedAnimation(name: mascot.rawValue) {
-            pinnedAnimations[key] = hit
+        // Check the pin BEFORE touching the catalog: prewarm runs on every order-detail load and at shell
+        // entry, and `asset(for:)` materialises every segment's Data (~1.4 MB across 7 reads) synchronously.
+        // The key is derivable from the mascot alone, so an already-pinned loop costs no I/O at all.
+        let key = frameKey(name: mascot.rawValue, maxPixel: mascot.maxPixel)
+        if pinned?.key == key { return }
+        guard let asset = asset(for: mascot, bundle: bundle) else { return }
+        if let hit = cachedAnimation(asset) {
+            pinned = (key, hit)
             return
         }
         if let job = jobs[key] {
             job.isPinned = true
             return
         }
-        guard let data = data(for: mascot, bundle: bundle) else { return }
-        startJob(key: key, data: data, isVisible: false, isPinned: true, onUpdate: nil)
+        startJob(key: key, asset: asset, isVisible: false, isPinned: true, onUpdate: nil)
     }
 
     /// Decode off the main thread and publish PROGRESSIVELY: `onUpdate` runs on the main thread with a
-    /// growing prefix of the animation — the first frames within milliseconds, then each doubling, then
-    /// the complete loop. A cache hit calls back once, synchronously. Call from the main thread. The
-    /// frame cache is keyed by asset name + size; every call site uses the main bundle, where asset
-    /// names are unique.
-    func loadAnimation(name: String, data: Data, onUpdate: @escaping (MascotAnimation) -> Void) {
-        if let hit = cachedAnimation(name: name) {
+    /// growing prefix of the animation — the first frames within milliseconds, then a steady chunk at a
+    /// time, then the complete loop. A cache hit calls back once, synchronously. Call from the main
+    /// thread. The frame cache is keyed by asset name + size; every call site uses the main bundle,
+    /// where asset names are unique.
+    func loadAnimation(_ asset: MascotAsset, onUpdate: @escaping (MascotAnimation) -> Void) {
+        if let hit = cachedAnimation(asset) {
             onUpdate(hit)
             return
         }
-        let key = frameKey(name)
+        let key = frameKey(asset)
         if let job = jobs[key] {
             // A prewarm (or another view) is already decoding this asset: attach instead of duplicating
             // the work, and promote it — this caller is on screen.
@@ -102,20 +127,55 @@ final class MascotAssetCache {
             if !job.frames.isEmpty { onUpdate(job.snapshot) }
             return
         }
-        startJob(key: key, data: data, isVisible: true, isPinned: false, onUpdate: onUpdate)
+        startJob(key: key, asset: asset, isVisible: true, isPinned: false, onUpdate: onUpdate)
+    }
+
+    /// A single downsampled poster frame (frame 0 of the first segment), for an instant image while the
+    /// full animation decodes. Cheap — one thumbnail, not the whole loop.
+    func posterFrame(_ asset: MascotAsset) -> UIImage? {
+        guard let data = asset.segments.first,
+              let source = CGImageSourceCreateWithData(data as CFData, nil),
+              CGImageSourceGetCount(source) > 0,
+              let frame = CGImageSourceCreateThumbnailAtIndex(
+                  source, 0, MascotAssetCache.thumbnailOptions(asset.maxPixel)
+              )
+        else { return nil }
+        return UIImage(cgImage: frame)
+    }
+
+    private func segmentData(name: String, bundle: Bundle) -> Data? {
+        let key = "\(name)#\(bundle.bundleIdentifier ?? "main")" as NSString
+        if let cached = dataCache.object(forKey: key) { return cached as Data }
+        guard let data = NSDataAsset(name: name, bundle: bundle)?.data else { return nil }
+        dataCache.setObject(data as NSData, forKey: key)
+        return data
     }
 
     private func startJob(
         key: NSString,
-        data: Data,
+        asset: MascotAsset,
         isVisible: Bool,
         isPinned: Bool,
         onUpdate: ((MascotAnimation) -> Void)?
     ) {
-        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return }
-        let count = CGImageSourceGetCount(source)
-        guard count > 0 else { return }
-        let job = DecodeJob(key: key, source: source, count: count, isVisible: isVisible, isPinned: isPinned)
+        var sources: [CGImageSource] = []
+        var counts: [Int] = []
+        for data in asset.segments {
+            guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { continue }
+            let count = CGImageSourceGetCount(source)
+            guard count > 0 else { continue }
+            sources.append(source)
+            counts.append(count)
+        }
+        guard !sources.isEmpty else { return }
+        let job = DecodeJob(
+            key: key,
+            sources: sources,
+            counts: counts,
+            maxPixel: asset.maxPixel,
+            isVisible: isVisible,
+            isPinned: isPinned
+        )
         if let onUpdate { job.subscribers.append(onUpdate) }
         jobs[key] = job
         pump(job)
@@ -125,21 +185,20 @@ final class MascotAssetCache {
     /// block just turns a frame range into images, so no lock is needed. Re-reading `isVisible` here is
     /// what lets a prewarm promoted mid-flight finish at a visible QoS.
     private func pump(_ job: DecodeJob) {
-        let length = AnimatedMascotPlayback.nextChunkLength(
+        guard let slice = AnimatedMascotPlayback.nextChunkSlice(
             published: job.published,
-            remaining: job.count - job.cursor,
+            cursor: job.cursor,
+            counts: job.counts,
             firstChunk: job.firstChunk
-        )
-        guard length > 0 else {
+        ) else {
             finish(job)
             return
         }
-        let range = job.cursor ..< (job.cursor + length)
-        job.cursor = range.upperBound
-        let source = job.source
-        let maxPixel = maxPixel
+        job.cursor += slice.range.count
+        let source = job.sources[slice.segment]
+        let maxPixel = job.maxPixel
         decodeQueue.async(qos: job.isVisible ? .userInitiated : .utility) { [weak self] in
-            let chunk = MascotAssetCache.decodeChunk(source: source, range: range, maxPixel: maxPixel)
+            let chunk = MascotAssetCache.decodeChunk(source: source, range: slice.range, maxPixel: maxPixel)
             DispatchQueue.main.async { self?.append(chunk, to: job) }
         }
     }
@@ -172,26 +231,33 @@ final class MascotAssetCache {
         job.subscribers.removeAll()
         guard !job.frames.isEmpty else { return }
         let animation = job.snapshot
-        frameCache.setObject(FrameBox(animation), forKey: job.key)
-        if job.isPinned { pinnedAnimations[job.key] = animation }
+        frameCache.setObject(FrameBox(animation), forKey: job.key, cost: MascotAssetCache.byteCount(animation))
+        if job.isPinned { pinned = (job.key, animation) }
     }
 
-    private func frameKey(_ name: String) -> NSString {
+    private func frameKey(_ asset: MascotAsset) -> NSString {
+        frameKey(name: asset.name, maxPixel: asset.maxPixel)
+    }
+
+    /// The same key, derivable without loading any asset data — so callers can test the cache cheaply.
+    private func frameKey(name: String, maxPixel: CGFloat) -> NSString {
         "\(name)#\(Int(maxPixel))" as NSString
     }
 
-    /// A single downsampled poster frame (frame 0), for an instant image while
-    /// the full animation decodes. Cheap — one thumbnail, not the whole loop.
-    func posterFrame(data: Data) -> UIImage? {
-        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-              CGImageSourceGetCount(source) > 0,
-              let frame = CGImageSourceCreateThumbnailAtIndex(source, 0, [
-                  kCGImageSourceCreateThumbnailFromImageAlways: true,
-                  kCGImageSourceCreateThumbnailWithTransform: true,
-                  kCGImageSourceThumbnailMaxPixelSize: maxPixel
-              ] as CFDictionary)
-        else { return nil }
-        return UIImage(cgImage: frame)
+    private static func thumbnailOptions(_ maxPixel: CGFloat) -> CFDictionary {
+        [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixel,
+            kCGImageSourceShouldCacheImmediately: true
+        ] as CFDictionary
+    }
+
+    private static func byteCount(_ animation: MascotAnimation) -> Int {
+        animation.frames.reduce(0) { total, frame in
+            guard let image = frame.cgImage else { return total }
+            return total + image.bytesPerRow * image.height
+        }
     }
 
     private static func decodeChunk(
@@ -199,18 +265,13 @@ final class MascotAssetCache {
         range: Range<Int>,
         maxPixel: CGFloat
     ) -> (frames: [UIImage], delays: [TimeInterval]) {
-        let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageAlways: true,
-            kCGImageSourceCreateThumbnailWithTransform: true,
-            kCGImageSourceThumbnailMaxPixelSize: maxPixel,
-            kCGImageSourceShouldCacheImmediately: true
-        ]
+        let options = thumbnailOptions(maxPixel)
         var frames: [UIImage] = []
         var delays: [TimeInterval] = []
         frames.reserveCapacity(range.count)
         delays.reserveCapacity(range.count)
         for index in range {
-            guard let frame = CGImageSourceCreateThumbnailAtIndex(source, index, options as CFDictionary)
+            guard let frame = CGImageSourceCreateThumbnailAtIndex(source, index, options)
             else { continue }
             frames.append(UIImage(cgImage: frame))
             delays.append(frameDelay(source, index))
@@ -218,22 +279,51 @@ final class MascotAssetCache {
         return (frames, delays)
     }
 
+    /// Where each animated format keeps its per-frame delay. The unclamped value first: the clamped one
+    /// silently rounds a short frame up.
+    private struct DelayKeys {
+        let format: CFString
+        let unclamped: CFString
+        let clamped: CFString
+    }
+
+    private static let delayKeys = [
+        DelayKeys(
+            format: kCGImagePropertyWebPDictionary,
+            unclamped: kCGImagePropertyWebPUnclampedDelayTime,
+            clamped: kCGImagePropertyWebPDelayTime
+        ),
+        DelayKeys(
+            format: kCGImagePropertyGIFDictionary,
+            unclamped: kCGImagePropertyGIFUnclampedDelayTime,
+            clamped: kCGImagePropertyGIFDelayTime
+        )
+    ]
+
     private static func frameDelay(_ source: CGImageSource, _ index: Int) -> TimeInterval {
-        guard let props = CGImageSourceCopyPropertiesAtIndex(source, index, nil) as? [CFString: Any],
-              let webp = props[kCGImagePropertyWebPDictionary] as? [CFString: Any]
-        else { return AnimatedMascotPlayback.fallbackFrameDelay }
-        let delay = (webp[kCGImagePropertyWebPUnclampedDelayTime] as? Double)
-            ?? (webp[kCGImagePropertyWebPDelayTime] as? Double)
-        return AnimatedMascotPlayback.normalizedDelay(delay ?? 0)
+        guard let props = CGImageSourceCopyPropertiesAtIndex(source, index, nil) as? [CFString: Any] else {
+            return AnimatedMascotPlayback.fallbackFrameDelay
+        }
+        for keys in delayKeys {
+            guard let container = props[keys.format] as? [CFString: Any],
+                  let delay = (container[keys.unclamped] as? Double) ?? (container[keys.clamped] as? Double)
+            else { continue }
+            return AnimatedMascotPlayback.normalizedDelay(delay)
+        }
+        return AnimatedMascotPlayback.fallbackFrameDelay
     }
 }
 
-/// One in-flight progressive decode. Mutated on the main thread only — the background chunks receive
-/// an immutable frame range and hand their images back through the main queue.
+/// One in-flight progressive decode over a mascot's ordered segment files. Mutated on the main thread
+/// only — the background chunks receive an immutable frame range and hand their images back through the
+/// main queue. `cursor`, `frames` and `delays` run across the concatenation of the segments, so playback
+/// never sees the seams.
 private final class DecodeJob {
     let key: NSString
-    let source: CGImageSource
+    let sources: [CGImageSource]
+    let counts: [Int]
     let count: Int
+    let maxPixel: CGFloat
     let firstChunk: Int
     /// The next frame index to decode, which runs ahead of `frames.count` when ImageIO refuses a frame.
     var cursor = 0
@@ -244,10 +334,19 @@ private final class DecodeJob {
     var isPinned: Bool
     var subscribers: [(MascotAnimation) -> Void] = []
 
-    init(key: NSString, source: CGImageSource, count: Int, isVisible: Bool, isPinned: Bool) {
+    init(
+        key: NSString,
+        sources: [CGImageSource],
+        counts: [Int],
+        maxPixel: CGFloat,
+        isVisible: Bool,
+        isPinned: Bool
+    ) {
         self.key = key
-        self.source = source
-        self.count = count
+        self.sources = sources
+        self.counts = counts
+        count = counts.reduce(0, +)
+        self.maxPixel = maxPixel
         firstChunk = AnimatedMascotPlayback.firstChunkSize(frameCount: count)
         self.isVisible = isVisible
         self.isPinned = isPinned

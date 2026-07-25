@@ -71,6 +71,24 @@ public interface IStripeClient
         CancellationToken cancellationToken);
 
     /// <summary>
+    /// Read the LIVE settlement state of an order's card charge, resolving whichever surface the order
+    /// was charged on (Checkout Session for web, PaymentIntent for mobile). Read-only — it never moves
+    /// money. Callers use it to answer "has this customer already paid?" before taking an alternative
+    /// tender, so the answer must come from Stripe rather than our possibly-stale
+    /// <c>PaymentStatus</c> (the whole point is that the webhook may never have arrived).
+    /// <para>
+    /// Throws the same way every other read here does (<c>StripeException</c> /
+    /// <c>HttpRequestException</c> / timeout, classified + metered at the adapter boundary) — an
+    /// unreachable Stripe is NOT reported as "unpaid", so a caller that must not double-charge can fail
+    /// closed.
+    /// </para>
+    /// </summary>
+    Task<StripePaymentSnapshot> GetPaymentSnapshotAsync(
+        string? stripeSessionId,
+        string? stripePaymentIntentId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// Create a short-lived Stripe ephemeral key tied to a customer. The mobile
     /// PaymentSheet uses this to display saved cards without requiring a full
     /// authentication round-trip. Lifetime is ~10 minutes — generate per
@@ -147,6 +165,32 @@ public interface IStripeClient
         string idempotencyAttemptId,
         CancellationToken cancellationToken);
 }
+
+/// <summary>
+/// What Stripe currently says about a charge surface. Deliberately coarse — a caller deciding whether
+/// it is safe to take a second tender only needs "money settled" / "money in flight" / "no money".
+/// </summary>
+public enum StripePaymentState
+{
+    /// <summary>No charge has settled and none is in flight — the surface can be abandoned safely.</summary>
+    Unpaid = 0,
+
+    /// <summary>
+    /// A charge is in flight (authorized-not-captured, async settlement, or the customer is mid-3DS).
+    /// It may settle at any moment, so it must be treated as "may already be paid".
+    /// </summary>
+    Processing = 1,
+
+    /// <summary>Stripe holds a settled charge for this surface — the customer has paid.</summary>
+    Settled = 2,
+}
+
+/// <summary>
+/// Result of <see cref="IStripeClient.GetPaymentSnapshotAsync"/>.
+/// <paramref name="OutstandingPaymentIntentId"/> is the intent a caller may cancel to close the
+/// surface; null when there is nothing cancellable (no intent, or it is already canceled/settled).
+/// </summary>
+public record StripePaymentSnapshot(StripePaymentState State, string? OutstandingPaymentIntentId);
 
 /// <summary>
 /// Result of <see cref="IStripeClient.CreateSetupIntentAsync"/>. The

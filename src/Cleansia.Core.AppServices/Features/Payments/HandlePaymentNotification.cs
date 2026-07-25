@@ -243,6 +243,14 @@ public class HandlePaymentNotification
 
         private async Task<BusinessResult<string>> HandleCompletedSession(Order order, string orderId, string language, CancellationToken cancellationToken)
         {
+            // Checked BEFORE the terminal-state short-circuit below: a cash-collected order is already
+            // Paid, so it would otherwise be waved through as a benign duplicate — hiding the fact that
+            // the customer just paid a second time.
+            if (order.SettledInCash)
+            {
+                return await EscalateDoubleSettlement(order, orderId, cancellationToken);
+            }
+
             if (order.PaymentStatus is PaymentStatus.Paid or PaymentStatus.Refunded)
             {
                 logger.LogInformation("Order {OrderId} already in terminal state {Status}, skipping webhook processing", orderId, order.PaymentStatus);
@@ -314,7 +322,55 @@ public class HandlePaymentNotification
             return BusinessResult.Success(orderId);
         }
 
-        private const string ChargebackActor = "stripe-webhook";
+        private const string WebhookActor = "stripe-webhook";
+
+        private const string DoubleSettlementDescription =
+            "The card payment settled at Stripe after the cleaner had already collected this order in cash. " +
+            "The customer may have paid twice — reconcile the two settlements and decide the refund.";
+
+        /// <summary>
+        /// A card charge settled AFTER the assigned cleaner recorded a cash collection for the same
+        /// order. Deliberately does not refund: which settlement to reverse (and whether the cash ever
+        /// reached us) is a human call, so this raises an escalated dispute for an administrator and
+        /// leaves the money exactly where it is.
+        /// </summary>
+        private async Task<BusinessResult<string>> EscalateDoubleSettlement(
+            Order order, string orderId, CancellationToken cancellationToken)
+        {
+            logger.LogError(
+                "Stripe settled order {OrderId} at {PaymentStatus} after employee {EmployeeId} collected it in cash on {CashCollectedAt}; escalating for manual reconciliation, no automatic refund",
+                orderId, order.PaymentStatus, order.CollectedByEmployeeId, order.CashCollectedAt);
+
+            var existing = await disputeRepository.GetOpenDisputeForOrderAsync(order.Id, cancellationToken);
+            if (existing is not null)
+            {
+                if (!existing.UpdateStatus(DisputeStatus.Escalated, WebhookActor))
+                {
+                    logger.LogWarning(
+                        "Double settlement on order {OrderId} could not escalate the open dispute (illegal {CurrentStatus} → Escalated)",
+                        orderId, existing.Status);
+                }
+                return BusinessResult.Success(orderId);
+            }
+
+            var dispute = new Cleansia.Core.Domain.Disputes.Dispute(
+                orderId: order.Id,
+                userId: order.UserId ?? string.Empty,
+                reason: DisputeReason.IncorrectAmount,
+                description: DoubleSettlementDescription,
+                createdBy: WebhookActor);
+
+            if (!dispute.UpdateStatus(DisputeStatus.Escalated, WebhookActor))
+            {
+                logger.LogWarning(
+                    "Double settlement on order {OrderId} could not escalate a new dispute (illegal {CurrentStatus} → Escalated); not persisting",
+                    orderId, dispute.Status);
+                return BusinessResult.Success(orderId);
+            }
+            disputeRepository.Add(dispute);
+
+            return BusinessResult.Success(orderId);
+        }
 
         /// <summary>
         /// Inbound bank chargeback (ADR-0006 D4). Resolves the disputed charge to
@@ -355,7 +411,7 @@ public class HandlePaymentNotification
             var existing = await disputeRepository.GetOpenDisputeForOrderAsync(order.Id, cancellationToken);
             if (existing is not null)
             {
-                existing.LinkStripeDispute(stripeDisputeId, ChargebackActor);
+                existing.LinkStripeDispute(stripeDisputeId, WebhookActor);
                 logger.LogInformation("Linked chargeback to existing dispute for order {OrderId}", order.Id);
                 return BusinessResult.Success(stripeEvent.Id);
             }
@@ -365,14 +421,14 @@ public class HandlePaymentNotification
                 userId: order.UserId ?? string.Empty,
                 reason: DisputeReason.Chargeback, // ADR-0006 D4: a bank chargeback, not a customer claim
                 description: ChargebackDescription,
-                createdBy: ChargebackActor);
-            dispute.LinkStripeDispute(stripeDisputeId, ChargebackActor);
+                createdBy: WebhookActor);
+            dispute.LinkStripeDispute(stripeDisputeId, WebhookActor);
 
             // Route the terminal write through the same transition guard the in-app path obeys
             // (CanTransitionTo) rather than forcing the edge via a bare Escalate. A freshly-built
             // dispute is Pending and Pending→Escalated is legal, so the happy path is unchanged; a
             // non-legal start state is rejected here instead of being silently overwritten.
-            if (!dispute.UpdateStatus(DisputeStatus.Escalated, ChargebackActor))
+            if (!dispute.UpdateStatus(DisputeStatus.Escalated, WebhookActor))
             {
                 logger.LogWarning(
                     "Chargeback {EventType} could not escalate a new dispute for order {OrderId} " +
@@ -425,13 +481,13 @@ public class HandlePaymentNotification
                 // arm gates on terminality instead: never resolve an already-settled dispute (this is the
                 // Closed→Resolved late-event hazard).
                 case DisputeStatus.Resolved when !dispute.IsTerminal:
-                    dispute.Resolve(ChargebackActor, refundAmount: null, resolutionNotes: ChargebackWonNotes);
+                    dispute.Resolve(WebhookActor, refundAmount: null, resolutionNotes: ChargebackWonNotes);
                     break;
                 case DisputeStatus.Closed when dispute.CanTransitionTo(DisputeStatus.Closed):
-                    dispute.Close(ChargebackActor);
+                    dispute.Close(WebhookActor);
                     break;
                 case DisputeStatus.Escalated when dispute.CanTransitionTo(DisputeStatus.Escalated):
-                    dispute.Escalate(ChargebackActor);
+                    dispute.Escalate(WebhookActor);
                     break;
                 default:
                     // A genuine forbidden edge (e.g. "won" after a prior "lost" left it Closed). No-op +

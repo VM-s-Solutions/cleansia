@@ -5,17 +5,46 @@ import UIKit
 public enum AnimatedMascot: String {
     case cleaningInProgress = "mascot_cleaning_in_progress"
     case welcoming = "mascot_welcoming"
+
+    /// The asset-catalog data assets that make up this animation, in playback order.
+    ///
+    /// ImageIO replays an animated WebP from frame 0 for EVERY frame it is asked for, so ONE file of n
+    /// frames costs O(n²) to decode: measured 4263 ms for the 125-frame cleaning loop, against 637 ms for
+    /// the same 125 frames split across 7 files — the playhead catches a single file's decoder and freezes
+    /// mid-loop. So the long loop ships as segments that concatenate back into one animation (identical
+    /// frames, identical per-frame delays, ~8 KB less than the single file); short ones stay whole.
+    ///
+    /// Segment 0 keeps the bare mascot name so the catalog entry the rest of the app knows still exists.
+    var segmentNames: [String] {
+        (0 ..< segmentCount).map { $0 == 0 ? rawValue : "\(rawValue)_\($0)" }
+    }
+
+    /// The pixel size frames are decoded at — a pure MEMORY lever, not a speed one (measured: 360/288/240/180
+    /// all decode 125 frames in ~4.2 s). Both mascots decode at the asset's native 360 px: the heroes render
+    /// in a 140 pt box, which is 420 px on an @3x screen, so 360 already upscales slightly (1.17x) and
+    /// dropping to 240 would make it 1.75x — visibly soft on the app's most prominent animation. The memory
+    /// that buys (61.8 MiB for the 125-frame loop) is bounded by the single-slot pin below.
+    var maxPixel: CGFloat {
+        360
+    }
+
+    private var segmentCount: Int {
+        switch self {
+        case .cleaningInProgress: 7
+        case .welcoming: 1
+        }
+    }
 }
 
 /// Pure playback decisions for `AnimatedImageView`, factored out so they are unit-testable
 /// without a running UIKit view or a real asset.
 ///
 /// Playback runs over a PARTIAL, GROWING frame buffer. ImageIO cannot random-access an animated
-/// WebP — every `CGImageSourceCreateThumbnailAtIndex` replays the file from frame 0, so decoding
-/// the whole loop is O(n²) (measured: 1151 ms for the 63-frame cleaning mascot, 499 ms for the
-/// 50-frame welcoming one). Waiting for that means seconds of static poster, so the decoder
-/// publishes a prefix within milliseconds and keeps appending — which means every decision below
-/// has to cope with "the frame I want next does not exist yet".
+/// WebP — every `CGImageSourceCreateThumbnailAtIndex` replays the file from frame 0, so decoding a
+/// whole loop is O(n²) (measured: 4263 ms for 125 frames in one file, 637 ms for the same 125 frames
+/// across 7 files, 499 ms for the 50-frame welcoming one). Waiting for that means seconds of static
+/// poster, so the decoder publishes a prefix within milliseconds and keeps appending — which means
+/// every decision below has to cope with "the frame I want next does not exist yet".
 enum AnimatedMascotPlayback {
     /// ImageIO reports no delay for some frames and WebP permits a literal 0; either would spin the
     /// playhead at display-link speed.
@@ -31,11 +60,10 @@ enum AnimatedMascotPlayback {
     /// frame clock is restarted instead.
     private static let overdueRebaseFrames = 4.0
 
-    /// Tick faster than the animation's own rate: ticking at exactly the frame rate makes each frame
-    /// land on one or two ticks, which reads as judder.
-    private static let displayLinkOversample = 2.0
-    private static let minFramesPerSecond = 30
-    private static let maxFramesPerSecond = 60
+    /// A chunk this size costs a few ms even at the tail of a segment, so frames land steadily. Without a
+    /// cap the doubling makes the LAST chunk cover half the animation and publish only once all of it is
+    /// decoded — the playhead then holds one frame for that entire chunk, which is the visible drag.
+    private static let maxChunkFrames = 8
 
     /// Where playback sits inside the (possibly still growing) frame buffer. `frameStart` is a
     /// `CACurrentMediaTime`-based timestamp; `isFinished` is the frozen end of a one-shot.
@@ -108,28 +136,52 @@ enum AnimatedMascotPlayback {
     }
 
     /// How many frames the next decode chunk should cover: the first chunk, then a doubling of what
-    /// is already on screen, capped by what is left.
+    /// is already on screen, capped by `maxChunkFrames` and by what is left.
     static func nextChunkLength(published: Int, remaining: Int, firstChunk: Int) -> Int {
         guard remaining > 0 else { return 0 }
-        return min(remaining, max(published > 0 ? published : firstChunk, 1))
+        let grown = published > 0 ? published : firstChunk
+        return min(remaining, max(min(grown, maxChunkFrames), 1))
     }
 
-    /// Whether the decoded prefix should be handed to the view yet. Publishing every frame would
-    /// churn the view for no gain; publishing too rarely delays the start. So: the first chunk, then
-    /// each doubling, and always the finished animation.
+    /// Where the next chunk sits inside the segment files, or `nil` when every frame is decoded.
+    ///
+    /// A chunk never straddles two segments: each `CGImageSource` replays only its own frames, and that
+    /// bound is the entire point of splitting the asset.
+    static func nextChunkSlice(
+        published: Int,
+        cursor: Int,
+        counts: [Int],
+        firstChunk: Int
+    ) -> ChunkSlice? {
+        var segment = 0
+        var local = cursor
+        while segment < counts.count, local >= counts[segment] {
+            local -= counts[segment]
+            segment += 1
+        }
+        guard segment < counts.count else { return nil }
+        let remaining = counts.reduce(0, +) - cursor
+        let length = min(
+            nextChunkLength(published: published, remaining: remaining, firstChunk: firstChunk),
+            counts[segment] - local
+        )
+        guard length > 0 else { return nil }
+        return ChunkSlice(segment: segment, range: local ..< (local + length))
+    }
+
+    struct ChunkSlice: Equatable {
+        let segment: Int
+        let range: Range<Int>
+    }
+
+    /// Whether the decoded prefix should be handed to the view yet: not before the FIRST chunk is whole
+    /// (one frame on screen would just flash), and then on every chunk. Chunks are capped, so that is a
+    /// steady drip rather than the churn of publishing frame by frame — and it makes the cap the only
+    /// knob on how long the playhead can be starved. Holding frames back for a doubling instead was the
+    /// visible drag: at `published: 64` nothing reached the screen until 61 more frames were decoded.
     static func shouldPublish(decoded: Int, published: Int, isComplete: Bool, firstChunk: Int) -> Bool {
         guard decoded > published else { return false }
-        if isComplete { return true }
-        if published == 0 { return decoded >= firstChunk }
-        return decoded >= published * 2
-    }
-
-    /// The display link's tick rate, derived from the shortest frame delay in the animation.
-    static func preferredFramesPerSecond(shortestDelay: TimeInterval) -> Int {
-        let ticks = displayLinkOversample / normalizedDelay(shortestDelay)
-        guard ticks > Double(minFramesPerSecond) else { return minFramesPerSecond }
-        guard ticks < Double(maxFramesPerSecond) else { return maxFramesPerSecond }
-        return Int(ticks.rounded(.up))
+        return isComplete || published > 0 || decoded >= firstChunk
     }
 }
 
@@ -141,25 +193,24 @@ enum AnimatedMascotPlayback {
 /// Performance: frames are decoded ONCE per asset — downsampled, off the main thread — and cached.
 /// The decode publishes PROGRESSIVELY: the first few frames land within milliseconds and playback
 /// starts there, growing into the full loop without a restart, because ImageIO's frame-0 replay
-/// makes decoding a whole animated WebP quadratic (seconds for the shipped mascots).
+/// makes decoding a whole animated WebP quadratic (seconds for the shipped mascots). A long mascot is
+/// bundled as several segment files that decode in order and concatenate into one continuous loop.
 public struct AnimatedMascotView: View {
-    private let mascot: AnimatedMascot
-    private let data: Data?
+    private let asset: MascotAsset?
     private let loop: Bool
     private let fallback: Mascot
     private let bundle: Bundle
 
     public init(_ mascot: AnimatedMascot, loop: Bool = true, fallback: Mascot, bundle: Bundle = .main) {
-        self.mascot = mascot
-        data = MascotAssetCache.shared.data(for: mascot, bundle: bundle)
+        asset = MascotAssetCache.shared.asset(for: mascot, bundle: bundle)
         self.loop = loop
         self.fallback = fallback
         self.bundle = bundle
     }
 
     public var body: some View {
-        if let data {
-            AnimatedImageView(name: mascot.rawValue, data: data, loop: loop, fallback: fallback, bundle: bundle)
+        if let asset {
+            AnimatedImageView(asset: asset, loop: loop, fallback: fallback, bundle: bundle)
         } else {
             Image(fallback.rawValue, bundle: bundle)
                 .resizable()
@@ -168,7 +219,7 @@ public struct AnimatedMascotView: View {
     }
 
     /// Decode + pin a mascot's frames off the main thread AHEAD of the view that shows it. Call this as a
-    /// screen loads (e.g. an in-progress order's ViewModel) so the heavy 63-frame cleaning loop is whole
+    /// screen loads (e.g. an in-progress order's ViewModel) so the heavy 125-frame cleaning loop is whole
     /// when its hero renders, rather than still growing. Idempotent; call on the main thread. The public
     /// seam onto the module-internal `MascotAssetCache`.
     public static func prewarm(_ mascot: AnimatedMascot, bundle: Bundle = .main) {
@@ -177,8 +228,7 @@ public struct AnimatedMascotView: View {
 }
 
 private struct AnimatedImageView: UIViewRepresentable {
-    let name: String
-    let data: Data
+    let asset: MascotAsset
     let loop: Bool
     let fallback: Mascot
     let bundle: Bundle
@@ -214,18 +264,18 @@ private struct AnimatedImageView: UIViewRepresentable {
         private var generation = 0
 
         func render(_ representable: AnimatedImageView, on view: MascotAnimationView, force: Bool) {
-            let name = representable.name
+            let asset = representable.asset
             let loop = representable.loop
             guard AnimatedMascotPlayback.shouldRestart(
-                currentName: currentName, currentLoop: currentLoop, name: name, loop: loop, force: force
+                currentName: currentName, currentLoop: currentLoop, name: asset.name, loop: loop, force: force
             ) else { return }
-            currentName = name
+            currentName = asset.name
             currentLoop = loop
             generation += 1
             let token = generation // snapshot; a newer mascot supersedes this run
             let cache = MascotAssetCache.shared
 
-            if let animation = cache.cachedAnimation(name: name) {
+            if let animation = cache.cachedAnimation(asset) {
                 view.prepare(poster: animation.frames.first, loop: loop)
                 view.update(animation)
                 return
@@ -234,12 +284,12 @@ private struct AnimatedImageView: UIViewRepresentable {
             // Clear any prior run before the poster so a reused, still-playing view can't keep
             // showing the previous mascot until the new frames land.
             view.prepare(
-                poster: cache.posterFrame(data: representable.data)
+                poster: cache.posterFrame(asset)
                     ?? UIImage(named: representable.fallback.rawValue, in: representable.bundle, with: nil),
                 loop: loop
             )
 
-            cache.loadAnimation(name: name, data: representable.data) { [weak self, weak view] animation in
+            cache.loadAnimation(asset) { [weak self, weak view] animation in
                 guard let self, let view,
                       !AnimatedMascotPlayback.isSuperseded(token: token, generation: generation)
                 else { return }
@@ -255,13 +305,17 @@ private struct AnimatedImageView: UIViewRepresentable {
 /// would mean re-assigning `animationImages` and restarting the loop from frame 0 — a visible jump on
 /// every publish. A display-link playhead just keeps stepping, and gets the loop's real per-frame
 /// delays (the built-in animator only takes one average duration for the whole sequence).
+///
+/// The link runs at the DISPLAY's rate and `advance` decides from the timestamp when a frame changes.
+/// Asking for the animation's own rate instead (`preferredFramesPerSecond`) is what made it judder:
+/// CADisplayLink quantizes that request to a factor of the panel rate, so a 24 fps loop's 49 became a
+/// 30 Hz tick, which holds alternate frames for 67 ms instead of 42.
 final class MascotAnimationView: UIImageView {
     private var frames: [UIImage] = []
     private var delays: [TimeInterval] = []
     private var isComplete = false
     private var loop = true
     private var playhead = AnimatedMascotPlayback.Playhead()
-    private var framesPerSecond = 60
     private var displayLink: CADisplayLink?
 
     private var isPlaying: Bool {
@@ -287,8 +341,6 @@ final class MascotAnimationView: UIImageView {
         delays = animation.delays
         isComplete = animation.isComplete
         if image == nil { image = frames.first }
-        framesPerSecond = AnimatedMascotPlayback.preferredFramesPerSecond(shortestDelay: delays.min() ?? 0)
-        displayLink?.preferredFramesPerSecond = framesPerSecond
         resumeIfNeeded()
     }
 
@@ -323,7 +375,7 @@ final class MascotAnimationView: UIImageView {
             return
         }
         let link = CADisplayLink(target: DisplayLinkProxy(self), selector: #selector(DisplayLinkProxy.tick))
-        link.preferredFramesPerSecond = framesPerSecond
+        link.preferredFrameRateRange = .default
         link.add(to: .main, forMode: .common)
         displayLink = link
     }

@@ -232,7 +232,9 @@ public sealed class ReceiptService(
             customerName: order.CustomerName,
             customerEmail: order.CustomerEmail,
             lineItems: BuildFiscalLineItems(order, companyInfo.IsVatPayer ? order.AppliedVatRate : null),
-            paymentMethod: order.PaymentType.ToString(),
+            // The tender actually taken, not the booked one — a card booking the cleaner settled in cash
+            // must be registered with the fiscal authority as a cash sale.
+            paymentMethod: order.ActualPaymentType.ToString(),
             countryCode: isoCode);
 
     private static IReadOnlyList<FiscalLineItem> BuildFiscalLineItems(Order order, decimal? vatRate)
@@ -372,7 +374,7 @@ public sealed class ReceiptService(
             Total = order.TotalPrice,
             Currency = order.Currency?.Symbol ?? "Kč",
             PaymentStatus = order.PaymentStatus.ToString(),
-            PaymentType = order.PaymentType.ToString(),
+            PaymentType = order.ActualPaymentType.ToString(),
             CleaningDate = order.CleaningDateTime.ToString("dd.MM.yyyy HH:mm"),
             Rooms = order.Rooms,
             Bathrooms = order.Bathrooms,

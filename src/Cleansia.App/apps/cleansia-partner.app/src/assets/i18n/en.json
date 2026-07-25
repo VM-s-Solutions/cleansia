@@ -1066,6 +1066,9 @@
       "cash_already_collected": "Cash has already been collected for this order.",
       "not_cash_payment": "This isn't a cash order.",
       "payment_not_confirmed": "This order's payment hasn't been confirmed yet.",
+      "card_payment_already_settled": "The card payment already went through. Refresh and complete the order — don't take cash.",
+      "card_payment_in_progress": "The card payment is still being processed. Wait a moment and try again — don't take cash yet.",
+      "card_payment_unverified": "We couldn't check the card payment status right now, so cash can't be recorded. Try again shortly or contact an administrator.",
       "actual_time": {
         "positive": "Actual time must be positive"
       },

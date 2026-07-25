@@ -203,6 +203,53 @@ public class StripeClient : IStripeClient
             () => service.CancelAsync(paymentIntentId, cancellationToken: cancellationToken));
     }
 
+    public async Task<StripePaymentSnapshot> GetPaymentSnapshotAsync(
+        string? stripeSessionId,
+        string? stripePaymentIntentId,
+        CancellationToken cancellationToken)
+    {
+        var intentId = stripePaymentIntentId;
+
+        if (string.IsNullOrEmpty(intentId) && !string.IsNullOrEmpty(stripeSessionId))
+        {
+            var sessionService = new SessionService(stripe);
+            var session = await ClassifyAsync(
+                nameof(GetPaymentSnapshotAsync),
+                () => sessionService.GetAsync(stripeSessionId, cancellationToken: cancellationToken));
+
+            if (session.PaymentStatus is "paid" or "no_payment_required")
+            {
+                return new StripePaymentSnapshot(StripePaymentState.Settled, null);
+            }
+
+            intentId = session.PaymentIntentId;
+        }
+
+        if (string.IsNullOrEmpty(intentId))
+        {
+            return new StripePaymentSnapshot(StripePaymentState.Unpaid, null);
+        }
+
+        var intentService = new PaymentIntentService(stripe);
+        var intent = await ClassifyAsync(
+            nameof(GetPaymentSnapshotAsync),
+            () => intentService.GetAsync(intentId, cancellationToken: cancellationToken));
+
+        var state = MapIntentStatus(intent.Status);
+        var cancellable = state == StripePaymentState.Unpaid && intent.Status != "canceled" ? intent.Id : null;
+        return new StripePaymentSnapshot(state, cancellable);
+    }
+
+    // requires_capture is an authorized hold — real money the customer can still be charged — so it
+    // counts as in-flight, not unpaid. requires_action is a customer mid-3DS who may confirm a second
+    // later. Everything the customer has not started (or has abandoned/cancelled) is genuinely unpaid.
+    private static StripePaymentState MapIntentStatus(string status) => status switch
+    {
+        "succeeded" => StripePaymentState.Settled,
+        "processing" or "requires_capture" or "requires_action" => StripePaymentState.Processing,
+        _ => StripePaymentState.Unpaid,
+    };
+
     public async Task<string> CreateEphemeralKeyAsync(
         string stripeCustomerId,
         CancellationToken cancellationToken)

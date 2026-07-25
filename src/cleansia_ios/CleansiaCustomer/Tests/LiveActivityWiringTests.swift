@@ -33,9 +33,15 @@ private final class SpyLiveActivitySync: OrderLiveActivitySyncing, @unchecked Se
         let window: EtaWindow
     }
 
+    struct EndCall: Equatable {
+        let orderId: String
+        let orderNumber: String
+        let status: LiveActivityTerminalStatus
+    }
+
     private(set) var started: [Call] = []
     private(set) var updated: [Call] = []
-    private(set) var ended: [String] = []
+    private(set) var ended: [EndCall] = []
 
     func start(orderId: String, orderNumber: String, status: String, window: EtaWindow) {
         started.append(Call(orderId: orderId, orderNumber: orderNumber, status: status, window: window))
@@ -45,8 +51,8 @@ private final class SpyLiveActivitySync: OrderLiveActivitySyncing, @unchecked Se
         updated.append(Call(orderId: orderId, orderNumber: orderNumber, status: status, window: window))
     }
 
-    func end(orderId: String) {
-        ended.append(orderId)
+    func end(orderId: String, orderNumber: String, status: LiveActivityTerminalStatus) {
+        ended.append(EndCall(orderId: orderId, orderNumber: orderNumber, status: status))
     }
 }
 
@@ -173,25 +179,41 @@ final class OrderLiveActivitySyncTests: XCTestCase {
         XCTAssertEqual(sync.started.first?.window.phaseEnd, startedAt.addingTimeInterval(90 * 60))
     }
 
-    func testCompletedOrderEnds() async {
+    /// The terminal status must travel with the end — it is what the ended card is left showing. Ending
+    /// without one leaves the card on its last in-service state, which the system then draws as a stale
+    /// placeholder.
+    func testCompletedOrderEndsWithTheCompletedStatus() async {
         let client = FakeOrderClient()
         client.detailResults = [.success(order(statusValue: 5))]
         let sync = SpyLiveActivitySync()
 
         await makeVM(client, sync: sync).load()
 
-        XCTAssertEqual(sync.ended, ["o1"])
+        XCTAssertEqual(sync.ended, [.init(orderId: "o1", orderNumber: "1042", status: .completed)])
         XCTAssertTrue(sync.started.isEmpty)
     }
 
-    func testCancelledOrderEnds() async {
+    func testCancelledOrderEndsWithTheCancelledStatus() async {
         let client = FakeOrderClient()
         client.detailResults = [.success(order(statusValue: 6))]
         let sync = SpyLiveActivitySync()
 
         await makeVM(client, sync: sync).load()
 
-        XCTAssertEqual(sync.ended, ["o1"])
+        XCTAssertEqual(sync.ended, [.init(orderId: "o1", orderNumber: "1042", status: .cancelled)])
+    }
+
+    /// The order number is the only identity a system-restored / server-started card carries
+    /// (`CleanOrderAttributes` holds no order id), so the end must pass it through or such a card is never
+    /// resolved and never ended.
+    func testEndCarriesTheOrderNumberSoARestoredCardCanBeResolved() async {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(order(statusValue: 5))]
+        let sync = SpyLiveActivitySync()
+
+        await makeVM(client, sync: sync).load()
+
+        XCTAssertEqual(sync.ended.first?.orderNumber, "1042")
     }
 
     func testPendingOrderNeitherStartsNorEnds() async {

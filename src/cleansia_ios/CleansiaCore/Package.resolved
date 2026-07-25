@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "phonenumberkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/PhoneNumberKit/PhoneNumberKit",
+      "state" : {
+        "revision" : "575bda0cd71186372e2ecb1352b91d7853bce048",
+        "version" : "5.0.5"
+      }
+    }
+  ],
+  "version" : 2
+}

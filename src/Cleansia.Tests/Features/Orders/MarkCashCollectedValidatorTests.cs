@@ -10,8 +10,10 @@ using Moq;
 namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
-/// MarkCashCollected lets the assigned cleaner record that they collected the cash owed for a CASH order.
-/// It is gated so that only an Approved, assigned cleaner may collect, only CASH orders qualify, and it is
+/// MarkCashCollected lets the assigned cleaner record a cash collection on ANY order that is not yet
+/// settled — including a card order whose Stripe webhook never arrived, which otherwise could not be
+/// completed in the field at all. It is gated so that only an Approved, assigned cleaner may collect,
+/// only while the order is InProgress (the cleaner is on site — matching both mobile UIs), and it is
 /// idempotent (an already-Paid order can't be re-collected).
 /// </summary>
 public class MarkCashCollectedValidatorTests
@@ -64,26 +66,49 @@ public class MarkCashCollectedValidatorTests
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OrderNotFound);
     }
 
+    // The point of the change: an unpaid CARD order (the Stripe webhook never landed) is now a legal
+    // target, so the cleaner can settle it in cash and complete the job on site. The card-vs-cash
+    // reconciliation against live Stripe happens in the handler, not here.
     [Fact]
-    public async Task When_Order_Is_Card_Payment_Then_OrderNotCashPayment()
+    public async Task When_Order_Is_Unpaid_Card_Payment_Then_Valid()
     {
         Arrange(PaymentType.Card, PaymentStatus.Pending, ContractStatus.Approved, assigned: true);
 
         var result = await _validator.ValidateAsync(new MarkCashCollected.Command(OrderId));
 
-        Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OrderNotCashPayment);
+        Assert.True(result.IsValid);
     }
 
-    [Fact]
-    public async Task When_Cash_Already_Collected_Then_OrderCashAlreadyCollected()
+    [Theory]
+    [InlineData(PaymentType.Cash)]
+    [InlineData(PaymentType.Card)]
+    public async Task When_Already_Paid_Then_OrderCashAlreadyCollected(PaymentType paymentType)
     {
-        Arrange(PaymentType.Cash, PaymentStatus.Paid, ContractStatus.Approved, assigned: true);
+        Arrange(paymentType, PaymentStatus.Paid, ContractStatus.Approved, assigned: true);
 
         var result = await _validator.ValidateAsync(new MarkCashCollected.Command(OrderId));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OrderCashAlreadyCollected);
+    }
+
+    // Cash can only change hands while the cleaner is on site. The gate applies to cash orders too, so
+    // the backend now enforces what both mobile UIs already only offered during InProgress.
+    [Theory]
+    [InlineData(PaymentType.Cash, OrderStatus.Confirmed)]
+    [InlineData(PaymentType.Cash, OrderStatus.OnTheWay)]
+    [InlineData(PaymentType.Cash, OrderStatus.Completed)]
+    [InlineData(PaymentType.Card, OrderStatus.Confirmed)]
+    [InlineData(PaymentType.Card, OrderStatus.OnTheWay)]
+    public async Task When_Order_Not_In_Progress_Then_OrderNotInProgress(
+        PaymentType paymentType, OrderStatus currentStatus)
+    {
+        Arrange(paymentType, PaymentStatus.Pending, ContractStatus.Approved, assigned: true, currentStatus);
+
+        var result = await _validator.ValidateAsync(new MarkCashCollected.Command(OrderId));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OrderNotInProgress);
     }
 
     [Theory]
@@ -110,10 +135,15 @@ public class MarkCashCollectedValidatorTests
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.EmployeeNotAssignedToOrder);
     }
 
-    private void Arrange(PaymentType paymentType, PaymentStatus paymentStatus, ContractStatus employeeStatus, bool assigned)
+    private void Arrange(
+        PaymentType paymentType,
+        PaymentStatus paymentStatus,
+        ContractStatus employeeStatus,
+        bool assigned,
+        OrderStatus currentStatus = OrderStatus.InProgress)
     {
         var order = ValidatorTestHelpers.BuildOrder(
-            OrderId, OrderStatus.InProgress, assigned ? EmployeeId : "other-emp", paymentType, paymentStatus);
+            OrderId, currentStatus, assigned ? EmployeeId : "other-emp", paymentType, paymentStatus);
         var employee = ValidatorTestHelpers.BuildEmployee(EmployeeId, employeeStatus, withAddress: true);
 
         _orderRepository.Setup(r => r.ExistsAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(true);

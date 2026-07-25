@@ -24,11 +24,10 @@ struct EmergencySectionView: View {
                     label: L10n.Profile.emergencyName,
                     errorText: vm.nameError
                 )
-                CleansiaTextField(
+                CleansiaPhoneInput(
                     value: $vm.phone,
                     label: L10n.Profile.emergencyPhone,
-                    errorText: vm.phoneError,
-                    keyboardType: .phonePad
+                    errorText: vm.phoneError
                 )
                 SaveSectionButton(
                     onboarding: false,

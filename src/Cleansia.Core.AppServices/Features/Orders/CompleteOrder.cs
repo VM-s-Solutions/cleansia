@@ -65,9 +65,10 @@ public class CompleteOrder
                 .WithMessage(BusinessErrorMessage.AfterPhotosRequired)
                 // Payment must be settled before an order can be completed. A cash order is settled only
                 // once the cleaner marks the cash collected (MarkCashCollected → Paid); a card order once
-                // Stripe confirms (webhook → Paid). Two rules so each surfaces the right, actionable message:
-                // cash-not-collected tells the cleaner to collect + mark it; payment-not-confirmed says the
-                // card charge hasn't cleared yet (nothing the cleaner can do but wait).
+                // Stripe confirms (webhook → Paid) or, when that webhook never arrives, once the cleaner
+                // settles it in cash through the same MarkCashCollected reconciliation. Two rules so each
+                // surfaces the right, actionable message: cash-not-collected tells the cleaner to collect +
+                // mark it; payment-not-confirmed says the card charge hasn't cleared yet.
                 .MustAsync(CashIsCollectedIfCashPaymentAsync)
                 .WithMessage(BusinessErrorMessage.OrderCashNotCollected)
                 .MustAsync(CardPaymentIsConfirmedIfCardPaymentAsync)

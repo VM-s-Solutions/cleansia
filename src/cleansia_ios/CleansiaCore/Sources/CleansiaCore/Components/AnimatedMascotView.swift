@@ -78,7 +78,7 @@ public struct AnimatedMascotView: View {
     }
 
     /// Decode + pin a mascot's frames off the main thread AHEAD of the view that shows it. Call this as a
-    /// screen loads (e.g. an in-progress order's ViewModel) so the heavy 125-frame cleaning loop is warm
+    /// screen loads (e.g. an in-progress order's ViewModel) so the heavy 63-frame cleaning loop is warm
     /// when its hero renders, instead of freezing on the first paint for ~5s while it decodes. Idempotent;
     /// call on the main thread. The public seam onto the module-internal `MascotAssetCache`.
     public static func prewarm(_ mascot: AnimatedMascot, bundle: Bundle = .main) {
@@ -105,7 +105,7 @@ final class MascotAssetCache {
 
     /// Strong references that survive `frameCache` eviction, for mascots we deliberately keep hot (the
     /// order-in-progress hero). The `frameCache` is purgeable under memory pressure; when it drops the
-    /// heavy 125-frame `cleaningInProgress` loop the next paint pays a full ~5s re-decode. Pinning holds
+    /// heavy 63-frame `cleaningInProgress` loop the next paint pays the full re-decode again. Pinning holds
     /// the decoded frames so that re-decode never happens twice. Main-thread only (set from `prewarm`'s
     /// main-thread completion, read from `cachedAnimation` on the main/UI thread).
     private var pinnedAnimations: [NSString: MascotAnimation] = [:]
@@ -113,7 +113,7 @@ final class MascotAssetCache {
     /// Frames are decoded at the asset's native size (360 px). The mascots render up to 220 pt
     /// (booking/membership success hero) and 140 pt (loader / order hero) — i.e. ~660 / ~420 px
     /// at @3x, both already above native — so there is no useful detail to downsample away.
-    /// Trade-off: the full loop is held in memory (~65 MB for 125 frames) in an NSCache the system
+    /// Trade-off: the full loop is held in memory (~33 MB for 63 frames) in an NSCache the system
     /// purges under pressure; a running animation keeps its own strong ref, so a purge only forces
     /// a re-decode next time.
     private let maxPixel: CGFloat = 360

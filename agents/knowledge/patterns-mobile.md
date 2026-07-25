@@ -254,6 +254,20 @@ raw components one-off; never duplicate a `:core` component.
 > `opacity` on the card and a fade on the scrim (Android `scaleIn(0.85)+fadeIn` parity). Keeps the
 > public API unchanged — no new required params, so partner call sites are untouched.
 
+> **iOS consent row + outbound web links — the ONE way:** a checkbox whose label carries links uses
+> the Core **`CleansiaConsentCheckbox`**, never `CleansiaCheckbox` — the latter wraps box + label in a
+> single `Button`, so any link inside the label has its taps swallowed by that `Button`. Only the glyph
+> is the toggle; the sentence is a sibling `Text(AttributedString(markdown:))` `.tint`ed
+> `CleansiaColors.primary`, so the tap reaches the environment `openURL`. The **localized** string never
+> spells a URL out (translators would each have to re-translate one) — it carries **placeholder** targets
+> (`[Terms of Service](cleansia://terms)`) that Core **`ConsentMarkdown`** rewrites to the real pages,
+> stripping unknown targets and falling back to the raw sentence as plain text when a translation broke
+> or dropped the markup (legally load-bearing copy is never lost). Every outbound web address in both
+> apps derives from the ONE Core **`CleansiaWeb`** (`Config/CleansiaWeb.swift`) `domain` constant —
+> terms/privacy/referral link/support email — because the domain is expected to move; a second literal
+> `cleansia.cz` anywhere in the iOS tree (Swift, string catalog or plist) is a defect, and
+> `ConsentCatalogTests` pins the markup + the no-literal-domain rule across both apps × five locales.
+
 ## Navigation — typed routes
 
 `navigation/Routes.kt` defines `@Serializable data object`/`data class` routes; args are constructor

@@ -163,7 +163,11 @@ private struct SignUpContent: View {
                 Spacer().frame(height: Spacing.s)
 
                 VStack(alignment: .leading, spacing: Spacing.xxs) {
-                    CleansiaCheckbox(checked: acceptTermsBinding, label: L10n.Auth.acceptTerms)
+                    CleansiaConsentCheckbox(
+                        checked: acceptTermsBinding,
+                        markdown: L10n.Auth.acceptTerms,
+                        toggleAccessibilityLabel: L10n.Auth.acceptTermsToggle
+                    )
                     if let termsError = form.termsError {
                         Text(termsError)
                             .font(CleansiaTypography.labelSmall)

@@ -1,3 +1,4 @@
+import CleansiaCore
 import Foundation
 
 enum TierStatus: Equatable {
@@ -75,11 +76,7 @@ enum LoyaltyPresentation {
 }
 
 enum RewardsShare {
-    static func landingURL(code: String) -> String {
-        "https://cleansia.cz/r/\(code)"
-    }
-
     static func message(code: String) -> String {
-        L10n.Rewards.referralShareText(code, landingURL(code: code))
+        L10n.Rewards.referralShareText(code, CleansiaWeb.referralLink(code: code))
     }
 }

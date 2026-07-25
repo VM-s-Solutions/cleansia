@@ -78,7 +78,7 @@ final class OrderDetailViewModel: ViewModel {
             state = .error(ApiError(code: "missing_order_id"))
             return
         }
-        // The in-progress hero plays the heavy 125-frame cleaning mascot. Kick its off-main decode BEFORE
+        // The in-progress hero plays the heavy 63-frame cleaning mascot. Kick its off-main decode BEFORE
         // the fetch so it lands while the request is in flight: prewarming once the order is loaded runs in
         // the same main-thread turn as the hero's first render, so it can never win that race.
         AnimatedMascotView.prewarm(.cleaningInProgress)

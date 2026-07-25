@@ -74,6 +74,12 @@ extension L10n {
             localized("register_terms_and_conditions")
         }
 
+        /// Short VoiceOver label for the consent toggle itself — the full sentence is already its own
+        /// accessibility element (and carries the tappable links), so the button must not repeat it.
+        static var acceptTermsToggle: String {
+            localized("register_terms_toggle")
+        }
+
         static var ruleMinLength: String {
             localized("register_pw_min_length")
         }

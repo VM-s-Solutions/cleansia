@@ -125,7 +125,7 @@ struct CustomerShellView: View {
         // per shell entry, on the fresh server snapshot, never a stale cache).
         async let needsOnboarding = profileVM.needsOnboarding()
         _ = await (orders, loyalty, referrals, membership, plans, addresses, recurring, catalog)
-        // The order-detail hero's 125-frame cleaning mascot takes ~5s to decode. Warm it here, at shell
+        // The order-detail hero's 63-frame cleaning mascot is the app's costliest decode. Warm it here, at shell
         // entry — seconds to minutes ahead of any tap into a detail, from the list, Home or a push deep
         // link — whenever the customer has a clean in flight to open.
         if container.orderRepository.orders.contains(where: { OrderStatusGroup.isActive($0.status) }) {

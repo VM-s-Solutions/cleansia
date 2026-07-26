@@ -603,6 +603,10 @@
     <string name="booking_where">Where</string>
     <string name="booking_select_address_hint">Pick from saved or add new</string>
     <string name="booking_when">Pick a date</string>
+    <!-- First chip in the booking day strip. The other seven chips are locale-aware
+         weekday abbreviations rendered by java.time, so this is the only day label
+         that needs a translation. Same key name as iOS (booking_today). -->
+    <string name="booking_today">Today</string>
     <string name="booking_new_address">Pick on map</string>
 
     <!-- Address picker (map) -->
@@ -666,7 +670,7 @@
     <string name="booking_summary_promo_discount">Promo (-%1$s)</string>
     <string name="booking_summary_membership_discount">Cleansia Plus discount</string>
     <string name="booking_summary_tier_discount">Loyalty tier discount</string>
-    <string name="booking_summary_tier_discount_min_not_met">Loyalty discount applies on orders above %d CZK</string>
+    <string name="booking_summary_tier_discount_min_not_met">Loyalty discount applies on orders above %1$s</string>
     <string name="booking_summary_total">Total</string>
 
     <!-- Promo code (Loyalty Phase B) — auto-validated input on Confirm step -->

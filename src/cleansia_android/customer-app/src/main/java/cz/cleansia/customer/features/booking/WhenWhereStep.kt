@@ -34,13 +34,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
 import cz.cleansia.customer.ui.theme.selectionTint
 import kotlinx.datetime.Clock
-import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
@@ -49,8 +49,12 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.isoDayNumber
+import java.time.format.TextStyle
+import java.util.Locale
+import java.time.DayOfWeek as JavaDayOfWeek
 
-private data class DayChip(
+internal data class DayChip(
     val label: String,
     val date: String,
     val localDate: LocalDate,
@@ -62,24 +66,25 @@ private data class DayChip(
 // LocalDate so slot selection can build an Instant without parsing. Backend
 // has no day-of-week restriction for one-off orders, so every day is bookable;
 // per-slot availability is gated only by the lead-time bands in [timeSlotsFor].
-private fun buildDays(): List<DayChip> {
+//
+// Weekday abbreviations come from CLDR via java.time rather than a hardcoded
+// English table, so the strip reads "po/út/st…" in Czech and "пн/вт/ср…" in
+// Ukrainian. Only "Today" needs a translated string — pass it in as [todayLabel]
+// so this stays a plain function the JVM test suite can call.
+internal fun buildDays(locale: Locale, todayLabel: String): List<DayChip> {
     val tz = TimeZone.currentSystemDefault()
     val today = Clock.System.now().toLocalDateTime(tz).date
     return (0..7).map { offset ->
         val d = today.plus(offset, DateTimeUnit.DAY)
         val label = if (offset == 0) {
-            "Today"
+            todayLabel
         } else {
-            when (d.dayOfWeek) {
-                DayOfWeek.MONDAY -> "Mon"
-                DayOfWeek.TUESDAY -> "Tue"
-                DayOfWeek.WEDNESDAY -> "Wed"
-                DayOfWeek.THURSDAY -> "Thu"
-                DayOfWeek.FRIDAY -> "Fri"
-                DayOfWeek.SATURDAY -> "Sat"
-                DayOfWeek.SUNDAY -> "Sun"
-                else -> d.dayOfWeek.name.take(3)
-            }
+            // kotlinx.datetime.DayOfWeek is a JVM typealias for java.time.DayOfWeek
+            // so .getDisplayName would resolve directly — go through isoDayNumber
+            // anyway so the conversion survives a kotlinx-datetime version bump
+            // that stops aliasing.
+            JavaDayOfWeek.of(d.dayOfWeek.isoDayNumber)
+                .getDisplayName(TextStyle.SHORT, locale)
         }
         DayChip(
             label = label,
@@ -157,8 +162,12 @@ fun WhenWhereStep(
     onUpdate: (BookingState) -> Unit,
     onPickAddressOnMap: () -> Unit = {},
 ) {
-    // Rebuilt per composition but cheap — 8 entries, one Clock.now() call.
-    val days = androidx.compose.runtime.remember { buildDays() }
+    // Weekday labels come from the ACTIVE app locale, not the JVM default, so a
+    // per-app language override is honoured. Both inputs are remember keys: with
+    // no keys the strip would keep its old English labels after a language switch.
+    val locale = LocalConfiguration.current.locales.get(0) ?: Locale.getDefault()
+    val todayLabel = stringResource(R.string.booking_today)
+    val days = androidx.compose.runtime.remember(locale, todayLabel) { buildDays(locale, todayLabel) }
 
     Column(
         modifier = Modifier

@@ -593,6 +593,7 @@
     <string name="booking_where">Де</string>
     <string name="booking_select_address_hint">Виберіть зі збережених або додайте нову</string>
     <string name="booking_when">Виберіть дату</string>
+    <string name="booking_today">Сьогодні</string>
     <string name="booking_new_address">Вибрати на карті</string>
 
     <!-- Address picker (map) -->
@@ -656,7 +657,7 @@
     <string name="booking_summary_promo_discount">Промокод (-%1$s)</string>
     <string name="booking_summary_membership_discount">Знижка Cleansia Plus</string>
     <string name="booking_summary_tier_discount">Знижка за лояльність</string>
-    <string name="booking_summary_tier_discount_min_not_met">Знижка за лояльність діє для замовлень понад %d CZK</string>
+    <string name="booking_summary_tier_discount_min_not_met">Знижка за лояльність діє для замовлень понад %1$s</string>
     <string name="booking_summary_total">Усього</string>
 
     <!-- Promo code -->

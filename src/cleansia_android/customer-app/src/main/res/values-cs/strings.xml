@@ -596,6 +596,7 @@
     <string name="booking_where">Kde</string>
     <string name="booking_select_address_hint">Vyberte z uložených nebo přidejte novou</string>
     <string name="booking_when">Vyberte datum</string>
+    <string name="booking_today">Dnes</string>
     <string name="booking_new_address">Vybrat na mapě</string>
 
     <!-- Address picker (map) -->
@@ -659,7 +660,7 @@
     <string name="booking_summary_promo_discount">Slevový kód (-%1$s)</string>
     <string name="booking_summary_membership_discount">Sleva Cleansia Plus</string>
     <string name="booking_summary_tier_discount">Věrnostní sleva</string>
-    <string name="booking_summary_tier_discount_min_not_met">Věrnostní sleva platí pro objednávky nad %d CZK</string>
+    <string name="booking_summary_tier_discount_min_not_met">Věrnostní sleva platí pro objednávky nad %1$s</string>
     <string name="booking_summary_total">Celkem</string>
 
     <!-- Promo code -->

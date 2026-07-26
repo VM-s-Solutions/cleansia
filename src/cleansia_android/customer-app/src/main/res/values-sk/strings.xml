@@ -593,6 +593,7 @@
     <string name="booking_where">Kde</string>
     <string name="booking_select_address_hint">Vyberte z uložených alebo pridajte novú</string>
     <string name="booking_when">Vyberte dátum</string>
+    <string name="booking_today">Dnes</string>
     <string name="booking_new_address">Vybrať na mape</string>
 
     <!-- Address picker (map) -->
@@ -656,7 +657,7 @@
     <string name="booking_summary_promo_discount">Zľavový kód (-%1$s)</string>
     <string name="booking_summary_membership_discount">Zľava Cleansia Plus</string>
     <string name="booking_summary_tier_discount">Vernostná zľava</string>
-    <string name="booking_summary_tier_discount_min_not_met">Vernostná zľava platí pre objednávky nad %d CZK</string>
+    <string name="booking_summary_tier_discount_min_not_met">Vernostná zľava platí pre objednávky nad %1$s</string>
     <string name="booking_summary_total">Celkom</string>
 
     <!-- Promo code -->

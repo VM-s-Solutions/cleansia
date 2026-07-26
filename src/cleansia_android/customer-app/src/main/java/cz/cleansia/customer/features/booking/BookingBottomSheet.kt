@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
+import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Poppins
@@ -559,7 +560,9 @@ private fun SheetContent(
                     tierDiscount = tierDiscount,
                     promoDiscount = promoDiscount,
                 )
-                formatQuotedTotal(finalTotal, q.currencyCode)
+                // Same formatter the ConfirmStep summary uses — the footer and the
+                // receipt above it must render the identical number and symbol.
+                formatOrderPrice(finalTotal, q.currencyCode)
             }
             if (currentStep == TOTAL_STEPS) {
                 // Slide to confirm — Wolt-style, prevents accidental taps on the final step.
@@ -682,14 +685,4 @@ private fun SheetContent(
             message = androidx.compose.ui.res.stringResource(cz.cleansia.customer.R.string.busy_booking),
         )
     }
-}
-
-private fun formatQuotedTotal(total: Double, currencyCode: String): String {
-    val symbol = when (currencyCode.uppercase()) {
-        "CZK" -> "Kč"
-        "EUR" -> "€"
-        "USD" -> "$"
-        else -> currencyCode
-    }
-    return "%.0f %s".format(total, symbol)
 }

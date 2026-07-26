@@ -15,8 +15,11 @@ import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -41,6 +44,26 @@ class AuthViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+
+    private val _passwordResetCodeSent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /**
+     * Emits once per password-reset code the **server actually accepted**.
+     *
+     * Both screens that request a reset code (ForgotPassword and profile →
+     * Security) used to flip their own `isEmailSent` / `codeSent` flag inside
+     * the button's `onClick`, so a 429, a 500 or airplane mode still walked the
+     * user forward to a code-entry form for a code that was never sent — with
+     * only a snackbar, already gone by the time they finished reading it, to
+     * say otherwise. They now advance off this event instead.
+     *
+     * It is deliberately **not** a flag on [AuthUiState]: every path in this
+     * class assigns a whole new `AuthUiState`, so a later unrelated failure
+     * (a rejected code, a resend that 500s) would reset the flag and bounce the
+     * user back to the email step mid-flow. An event that the screen latches
+     * once cannot be un-set by an unrelated write.
+     */
+    val passwordResetCodeSent: SharedFlow<Unit> = _passwordResetCodeSent.asSharedFlow()
 
     fun signIn(email: String, password: String, rememberMe: Boolean) {
         _uiState.value = AuthUiState(loading = true)
@@ -137,6 +160,8 @@ class AuthViewModel @Inject constructor(
             authRepository.requestPasswordChange(email, language)
                 .onSuccess {
                     snackbar.showSuccessKey(R.string.forgot_code_sent)
+                    // Only now is there a code to type. See [passwordResetCodeSent].
+                    _passwordResetCodeSent.tryEmit(Unit)
                     _uiState.value = AuthUiState()
                 }
                 .onError {

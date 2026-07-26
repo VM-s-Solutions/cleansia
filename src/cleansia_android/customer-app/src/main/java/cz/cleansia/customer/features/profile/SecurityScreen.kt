@@ -50,6 +50,10 @@ import cz.cleansia.core.ui.theme.Poppins
  * Security — change-password via the email reset-code flow. Reuses the same
  * two-step flow as Forgot Password (request a code → enter code + new password),
  * but the email is known from the session so it's never typed.
+ *
+ * [codeSent] is hoisted for the same reason as on `ForgotPasswordScreen`: this
+ * screen used to set it in the request button's `onClick`, so a failed request
+ * still showed the code form for a code nobody had.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,9 +62,8 @@ fun SecurityScreen(
     onSendCode: () -> Unit = {},
     onChangePassword: (code: String, newPassword: String) -> Unit = { _, _ -> },
     loading: Boolean = false,
+    codeSent: Boolean = false,
 ) {
-    var codeSent by remember { mutableStateOf(false) }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -86,10 +89,7 @@ fun SecurityScreen(
             if (!codeSent) {
                 CleansiaPrimaryButton(
                     text = stringResource(R.string.security_request_code),
-                    onClick = {
-                        onSendCode()
-                        codeSent = true
-                    },
+                    onClick = onSendCode,
                     loading = loading,
                 )
             } else {

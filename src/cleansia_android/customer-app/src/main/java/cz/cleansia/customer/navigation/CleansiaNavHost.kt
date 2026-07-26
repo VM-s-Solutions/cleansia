@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -230,6 +232,15 @@ fun CleansiaNavHost(
             val vm: AuthViewModel = hiltViewModel()
             val state by vm.uiState.collectAsState()
 
+            // Latched off the VM's confirmed-send event, never off the tap: a
+            // request the server rejected must leave the user on the email step.
+            // rememberSaveable so a rotation mid-flow doesn't throw them back to
+            // it either — the event is replay-free and will not fire again.
+            var codeSent by rememberSaveable { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                vm.passwordResetCodeSent.collect { codeSent = true }
+            }
+
             LaunchedEffect(state.outcome) {
                 if (state.outcome is AuthOutcome.PasswordReset) {
                     navController.navigate(Routes.SignIn) {
@@ -250,6 +261,8 @@ fun CleansiaNavHost(
                     }
                 },
                 onBackToLogin = { navController.popBackStack() },
+                loading = state.loading,
+                codeSent = codeSent,
             )
         }
         composable<Routes.EmailVerify>(
@@ -438,6 +451,13 @@ fun CleansiaNavHost(
             val user by profileVm.currentUser.collectAsState()
             val email = user?.email.orEmpty()
 
+            // Same rule as ForgotPassword: only a code the server confirmed it
+            // sent may reveal the code-entry form.
+            var codeSent by rememberSaveable { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                authVm.passwordResetCodeSent.collect { codeSent = true }
+            }
+
             LaunchedEffect(authState.outcome) {
                 if (authState.outcome is AuthOutcome.PasswordReset) {
                     authVm.clearState()
@@ -452,6 +472,7 @@ fun CleansiaNavHost(
                     authVm.changePassword(email, code, newPassword)
                 },
                 loading = authState.loading,
+                codeSent = codeSent,
             )
         }
         composable<Routes.Devices>(

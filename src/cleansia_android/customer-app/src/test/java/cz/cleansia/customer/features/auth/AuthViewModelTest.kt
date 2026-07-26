@@ -17,6 +17,9 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -213,6 +216,54 @@ class AuthViewModelTest {
 
         verify(exactly = 1) { snackbar.showErrorKey(R.string.forgot_change_failed) }
         verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    // ─── The code-entry step may only open on a code the server actually sent ───
+
+    /**
+     * Subscribes to [AuthViewModel.passwordResetCodeSent] eagerly and records
+     * every emission. The flow has `replay = 0`, so a collector started after
+     * the emission would see nothing and the assertions would be meaningless —
+     * hence `UnconfinedTestDispatcher`, which subscribes before `launch` returns.
+     */
+    private fun TestScope.recordCodeSentEvents(vm: AuthViewModel): List<Unit> {
+        val events = mutableListOf<Unit>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            vm.passwordResetCodeSent.collect { events += it }
+        }
+        return events
+    }
+
+    @Test
+    fun `a failed reset request emits no code-sent event`() = runTest {
+        // This is the whole bug: both screens used to flip their own "code sent"
+        // flag inside the button's onClick, so a 429, a 500 or airplane mode
+        // still showed the code-entry form — and the user then sat typing a code
+        // that was never sent, with the snackbar long gone.
+        coEvery { authRepository.requestPasswordChange(any(), any()) } returns
+            ApiResult.Error(ApiError.Network("failed to connect to 10.0.2.2"))
+
+        val vm = viewModel()
+        val events = recordCodeSentEvents(vm)
+        vm.requestPasswordChange("user@example.com")
+        advanceUntilIdle()
+
+        assertEquals(emptyList<Unit>(), events)
+        verify(exactly = 1) { snackbar.showErrorKey(R.string.forgot_send_failed) }
+    }
+
+    @Test
+    fun `an accepted reset request emits exactly one code-sent event`() = runTest {
+        coEvery { authRepository.requestPasswordChange(any(), any()) } returns
+            ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        val events = recordCodeSentEvents(vm)
+        vm.requestPasswordChange("user@example.com")
+        advanceUntilIdle()
+
+        assertEquals(1, events.size)
+        verify(exactly = 1) { snackbar.showSuccessKey(R.string.forgot_code_sent) }
     }
 
     @Test

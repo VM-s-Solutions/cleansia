@@ -48,6 +48,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
+import cz.cleansia.core.ui.components.CleansiaDestructiveButton
 import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.theme.Poppins
 
@@ -248,33 +249,14 @@ fun DeleteAccountScreen(
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 12.dp),
         ) {
-            androidx.compose.material3.Button(
+            CleansiaDestructiveButton(
+                text = stringResource(R.string.delete_account_confirm_button),
                 // Opens the dialog only — nothing here may call onConfirmDelete
                 // directly, or the second gate is gone.
                 onClick = { confirming = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                enabled = emailMatches && !loading,
-                shape = CircleShape,
-                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error,
-                    contentColor = MaterialTheme.colorScheme.onError,
-                ),
-            ) {
-                if (loading) {
-                    androidx.compose.material3.CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = MaterialTheme.colorScheme.onError,
-                        strokeWidth = 2.dp,
-                    )
-                } else {
-                    Text(
-                        text = stringResource(R.string.delete_account_confirm_button),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    )
-                }
-            }
+                enabled = emailMatches,
+                loading = loading,
+            )
         }
     }
 

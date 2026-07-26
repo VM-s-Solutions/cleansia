@@ -3,7 +3,6 @@ package cz.cleansia.customer.features.orders
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,7 +25,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Cancel
-import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.ReportProblem
 import androidx.compose.material3.Button
@@ -54,7 +52,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -62,8 +59,8 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.core.orders.ReceiptOpenResult
 import cz.cleansia.customer.core.orders.openReceiptPdf
-import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.components.CleansiaErrorState
 import cz.cleansia.core.ui.theme.Poppins
 
 /**
@@ -306,9 +303,15 @@ fun OrderDetailScreen(
         ) {
             when (val s = state) {
                 is OrderDetailUiState.Loading -> LoadingState()
-                is OrderDetailUiState.Error -> ErrorState(
-                    canRetry = s.canRetry,
-                    onRetry = viewModel::refresh,
+                is OrderDetailUiState.Error -> CleansiaErrorState(
+                    title = stringResource(R.string.order_detail_error_title),
+                    message = stringResource(R.string.order_detail_error_message),
+                    backLabel = stringResource(R.string.common_back),
+                    // A permanent failure (deleted order, 404) sets canRetry
+                    // false; passing a null label is what suppresses the CTA,
+                    // so both halves must stay gated on the same flag.
+                    retryLabel = if (s.canRetry) stringResource(R.string.order_detail_error_retry) else null,
+                    onRetry = if (s.canRetry) viewModel::refresh else null,
                     onBack = onBack,
                 )
                 is OrderDetailUiState.Loaded -> {
@@ -542,62 +545,6 @@ private fun ActionsFooter(
 private fun LoadingState() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-    }
-}
-
-@Composable
-private fun ErrorState(
-    canRetry: Boolean,
-    onRetry: () -> Unit,
-    onBack: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Icon(
-            Icons.Outlined.CloudOff,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(48.dp),
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = stringResource(R.string.order_detail_error_title),
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontFamily = Poppins,
-                fontWeight = FontWeight.SemiBold,
-            ),
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = stringResource(R.string.order_detail_error_message),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(24.dp))
-        if (canRetry) {
-            CleansiaPrimaryButton(
-                text = stringResource(R.string.order_detail_error_retry),
-                onClick = onRetry,
-            )
-            Spacer(Modifier.height(8.dp))
-        }
-        Text(
-            text = stringResource(R.string.common_back),
-            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier
-                .clip(RoundedCornerShape(999.dp))
-                .clickable(onClick = onBack)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-        )
     }
 }
 

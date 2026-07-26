@@ -221,11 +221,15 @@ public class FcmPushDispatcher(
     public static string ApnsAuthDetail(int? httpStatus, string? providerMessage) =>
         $"HTTP {httpStatus?.ToString() ?? "?"} ThirdPartyAuthError — APPLE refused the APNs auth key that " +
         "Firebase holds. This is NOT the Google service account and NOT any Azure/Key Vault setting; no " +
-        "redeploy can affect it. Check, in order: (1) the key's APNs ENVIRONMENT scope — a Sandbox-only " +
-        "key cannot authenticate a TestFlight or App Store build, whose tokens are Production, and " +
-        "Firebase holds a development and a production slot separately; (2) the key's topic scope covers " +
-        "this bundle id; (3) the key is not revoked and its Key ID + Team ID match what Firebase stores. " +
-        $"FCM said: {providerMessage ?? "(no message)"}";
+        "redeploy or restart can affect it. Check, in order: (1) THE SLOT — a Firebase app card has a " +
+        "SEPARATE 'Development APNs auth key' and 'Production APNs auth key', and a TestFlight or App " +
+        "Store build sends a PRODUCTION token, so a card showing 'No production APNs auth key' fails " +
+        "every push from those builds while Xcode-installed builds keep working; one Sandbox & " +
+        "Production key goes in BOTH slots; (2) the key is stored PER iOS APP, so confirm the app entry " +
+        "for THIS bundle id, not a sibling one; (3) the Key ID + Team ID as stored — Firebase does not " +
+        "validate the Key ID against the uploaded .p8, it stores whatever was typed; (4) the key's APNs " +
+        "ENVIRONMENT scope, which cannot be edited after creation, so fixing it means a replacement key " +
+        $"created as 'Sandbox & Production'. FCM said: {providerMessage ?? "(no message)"}";
 
     /// <summary>Why <see cref="EnsureInitialized"/> could not return a live <see cref="FirebaseMessaging"/>.</summary>
     private enum InitOutcome

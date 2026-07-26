@@ -427,4 +427,116 @@ final class OrdersListViewModelTests: XCTestCase {
         // the row's own id from the list response.
         XCTAssertEqual(client.commands.first?.orderId, "row-id")
     }
+
+    // MARK: - Location (distance on the Available rows)
+
+    private final class FakeLocationProvider: LocationProvider {
+        var status: LocationAuthorizationStatus = .notDetermined
+        var statusAfterRequest: LocationAuthorizationStatus = .denied
+        var fix: Coordinate?
+        private(set) var requestCount = 0
+        private(set) var currentLocationCount = 0
+
+        var authorizationStatus: LocationAuthorizationStatus {
+            status
+        }
+
+        func requestWhenInUseAuthorization() async -> LocationAuthorizationStatus {
+            requestCount += 1
+            status = statusAfterRequest
+            return status
+        }
+
+        func currentLocation() async -> Coordinate? {
+            currentLocationCount += 1
+            return fix
+        }
+    }
+
+    private static let pragueFix = Coordinate(latitude: 50.08, longitude: 14.44)
+
+    /// The guard for the whole design decision: entering the Available tab must
+    /// never raise the system dialog by itself. iOS grants exactly one prompt per
+    /// install, so an auto-prompt seconds after login would burn it cold.
+    func testRefreshDoesNotPromptWhenNotDetermined() async {
+        let provider = FakeLocationProvider()
+        provider.status = .notDetermined
+        provider.fix = Self.pragueFix
+        let vm = makeVM()
+
+        await vm.refreshLocationIfAuthorized(provider)
+
+        XCTAssertEqual(provider.requestCount, 0)
+        XCTAssertEqual(provider.currentLocationCount, 0)
+        XCTAssertNil(vm.currentLocation)
+        XCTAssertTrue(vm.showsLocationPrompt)
+    }
+
+    func testRefreshAssignsTheFixWhenAuthorized() async {
+        let provider = FakeLocationProvider()
+        provider.status = .authorized
+        provider.fix = Self.pragueFix
+        let vm = makeVM()
+
+        await vm.refreshLocationIfAuthorized(provider)
+
+        XCTAssertEqual(vm.currentLocation, Self.pragueFix)
+        XCTAssertEqual(vm.locationStatus, .authorized)
+        XCTAssertEqual(provider.requestCount, 0)
+        XCTAssertFalse(vm.showsLocationPrompt)
+    }
+
+    func testRefreshIsSilentWhenDenied() async {
+        let provider = FakeLocationProvider()
+        provider.status = .denied
+        provider.fix = Self.pragueFix
+        let vm = makeVM()
+
+        await vm.refreshLocationIfAuthorized(provider)
+
+        XCTAssertEqual(provider.requestCount, 0)
+        XCTAssertEqual(provider.currentLocationCount, 0)
+        XCTAssertNil(vm.currentLocation)
+        XCTAssertFalse(vm.showsLocationPrompt)
+    }
+
+    func testExplicitRequestPromptsOnceAndAssignsTheFix() async {
+        let provider = FakeLocationProvider()
+        provider.status = .notDetermined
+        provider.statusAfterRequest = .authorized
+        provider.fix = Self.pragueFix
+        let vm = makeVM()
+
+        await vm.requestLocationPermission(provider)
+
+        XCTAssertEqual(provider.requestCount, 1)
+        XCTAssertEqual(vm.locationStatus, .authorized)
+        XCTAssertEqual(vm.currentLocation, Self.pragueFix)
+    }
+
+    /// A refused prompt must retire the row rather than leave it lingering —
+    /// iOS will not show the dialog again, so the button would be inert.
+    func testExplicitRequestDeniedLeavesDistanceHidden() async {
+        let provider = FakeLocationProvider()
+        provider.status = .notDetermined
+        provider.statusAfterRequest = .denied
+        provider.fix = Self.pragueFix
+        let vm = makeVM()
+
+        await vm.requestLocationPermission(provider)
+
+        XCTAssertEqual(provider.requestCount, 1)
+        XCTAssertEqual(provider.currentLocationCount, 0)
+        XCTAssertNil(vm.currentLocation)
+        XCTAssertFalse(vm.showsLocationPrompt)
+    }
+
+    func testPromptOnlyShowsOnTheAvailableTab() async {
+        let vm = makeVM()
+        XCTAssertTrue(vm.showsLocationPrompt)
+
+        await vm.selectTab(.active)
+
+        XCTAssertFalse(vm.showsLocationPrompt)
+    }
 }

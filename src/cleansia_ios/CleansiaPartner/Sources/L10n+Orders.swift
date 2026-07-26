@@ -35,6 +35,14 @@ extension L10n {
             format("km_away", value)
         }
 
+        static var locationPrompt: String {
+            localized("orders_location_prompt")
+        }
+
+        static var locationPromptAction: String {
+            localized("orders_location_prompt_action")
+        }
+
         static var topPay: String {
             localized("top_pay")
         }

@@ -5,6 +5,7 @@ import SwiftUI
 struct OrdersPaneView: View {
     @ObservedObject var vm: OrdersListViewModel
     let onOpen: (OrderListItem) -> Void
+    let onRequestLocation: () -> Void
 
     var body: some View {
         switch vm.tab {
@@ -15,9 +16,11 @@ struct OrdersPaneView: View {
                 hasSearch: !vm.searchQuery.isEmpty,
                 sort: vm.availableSort,
                 currentLocation: vm.currentLocation,
+                showsLocationPrompt: vm.showsLocationPrompt,
                 inFlightOrderId: vm.inFlightActionOrderId,
                 onSort: { sort in Task { await vm.setAvailableSort(sort) } },
                 onTake: { order in Task { await vm.runInlineAction(vm.inlineAction(for: order), on: order) } },
+                onRequestLocation: onRequestLocation,
                 onOpen: onOpen
             )
         case .active:
@@ -51,9 +54,11 @@ private struct AvailablePane: View {
     let hasSearch: Bool
     let sort: AvailableSort
     let currentLocation: Coordinate?
+    let showsLocationPrompt: Bool
     let inFlightOrderId: String?
     let onSort: (AvailableSort) -> Void
     let onTake: (OrderListItem) -> Void
+    let onRequestLocation: () -> Void
     let onOpen: (OrderListItem) -> Void
 
     private var hotDealPay: Double? {
@@ -67,6 +72,9 @@ private struct AvailablePane: View {
         } else {
             List {
                 OrdersSearchField(text: $searchQuery)
+                if showsLocationPrompt {
+                    LocationPromptRow(onEnable: onRequestLocation).ordersRow()
+                }
                 AvailableSummaryRow(orders: orders, sort: sort, onSort: onSort)
                 if orders.isEmpty {
                     Text(L10n.Orders.noMatchingOrders)
@@ -86,6 +94,28 @@ private struct AvailablePane: View {
                 }
             }
             .listStyle(.plain)
+        }
+    }
+}
+
+/// Permission priming for the distance annotation. Sits above the summary row so
+/// it reads as a property of the list, not of any one job, and disappears for
+/// good once the status settles — see `OrdersListViewModel.showsLocationPrompt`.
+private struct LocationPromptRow: View {
+    let onEnable: () -> Void
+
+    var body: some View {
+        HStack(spacing: Spacing.xs) {
+            Image(systemName: "location")
+                .foregroundColor(CleansiaColors.primary)
+            Text(L10n.Orders.locationPrompt)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+            Spacer()
+            Button(L10n.Orders.locationPromptAction, action: onEnable)
+                .font(CleansiaTypography.labelLarge)
+                .foregroundColor(CleansiaColors.primary)
+                .buttonStyle(.plain)
         }
     }
 }

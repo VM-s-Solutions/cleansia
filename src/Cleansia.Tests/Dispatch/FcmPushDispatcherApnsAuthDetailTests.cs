@@ -41,21 +41,33 @@ public class FcmPushDispatcherApnsAuthDetailTests
     }
 
     [Fact]
-    public void Checks_The_Environment_Scope_Before_Key_Id_And_Team_Id()
+    public void Checks_The_Firebase_Slot_First()
     {
-        // Order matters. A Sandbox-scoped key works perfectly from Xcode and then refuses every push
-        // the moment the same app ships to TestFlight — it reads as "push broke on its own", so it is
-        // the check an operator would never think to make. A wrong Key ID / Team ID never works even
-        // once and is therefore self-evident.
+        // Order matters, and this order is what the 2026-07-25 outage actually taught. The fault was
+        // a Firebase app card holding a Development APNs auth key with the Production slot EMPTY: a
+        // TestFlight build sends a Production token, FCM finds no production key, and every push
+        // fails — while Xcode-installed builds keep working perfectly, so it reads as "push broke on
+        // its own". That asymmetry is invisible unless someone thinks to look at the slots, and the
+        // whole investigation went through the Apple key, the Google service account, Key Vault and
+        // the deploy pipeline before anyone did.
         var detail = Detail();
-        var environmentIndex = detail.IndexOf("ENVIRONMENT", StringComparison.Ordinal);
+        var slotIndex = detail.IndexOf("SLOT", StringComparison.Ordinal);
         var keyIdIndex = detail.IndexOf("Key ID", StringComparison.Ordinal);
+        var environmentIndex = detail.IndexOf("ENVIRONMENT", StringComparison.Ordinal);
 
-        Assert.True(environmentIndex >= 0, "The environment scope is not mentioned at all.");
+        Assert.True(slotIndex >= 0, "The development/production SLOT check is not mentioned at all.");
         Assert.True(keyIdIndex >= 0, "The Key ID check is not mentioned at all.");
-        Assert.True(environmentIndex < keyIdIndex,
-            "The APNs ENVIRONMENT scope must be the FIRST thing checked — it is the failure that " +
-            "arrives with no warning when a build moves from Xcode to TestFlight.");
+        Assert.True(environmentIndex >= 0, "The environment scope is not mentioned at all.");
+        Assert.True(slotIndex < keyIdIndex && slotIndex < environmentIndex,
+            "The Firebase development/production SLOT must be the FIRST thing checked — it is the " +
+            "cause that presents identically to a bad key while leaving Xcode builds working.");
+    }
+
+    [Fact]
+    public void Names_The_Empty_Production_Slot_In_The_Consoles_Own_Words()
+    {
+        // So an operator can ctrl-F the log text against what the Firebase console literally shows.
+        Assert.Contains("No production APNs auth key", Detail(), StringComparison.Ordinal);
     }
 
     [Fact]

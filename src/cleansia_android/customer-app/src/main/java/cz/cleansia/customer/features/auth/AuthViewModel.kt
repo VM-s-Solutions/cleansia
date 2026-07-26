@@ -74,8 +74,15 @@ class AuthViewModel @Inject constructor(
                 referralCode = referralCode?.trim()?.uppercase()?.ifBlank { null },
             )
                 .onSuccess { _uiState.value = AuthUiState(outcome = AuthOutcome.NeedsEmailConfirm(email)) }
-                .onError {
-                    snackbar.showErrorKey(R.string.error_generic_unknown)
+                .onError { error ->
+                    // Signup is the one auth flow with nothing to hide: the form has to
+                    // tell you an email is taken or it can't work. So show the server's
+                    // own translated key ("user.existing_email", "auth.invalid_password_format")
+                    // rather than "something went wrong", which sends users back to
+                    // re-typing a password that was never the problem.
+                    // The forgot-password / resend siblings below deliberately stay vague —
+                    // there a precise "no such account" is an enumeration oracle.
+                    snackbar.showError(ApiErrorParser.parseToUserMessage(appContext, error))
                     _uiState.value = AuthUiState()
                 }
         }

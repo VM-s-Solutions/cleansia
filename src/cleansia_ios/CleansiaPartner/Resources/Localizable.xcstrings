@@ -4321,6 +4321,40 @@
         }
       }
     },
+    "email_readonly_helper": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro změnu e-mailové adresy kontaktujte podporu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contact support to change your email address."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для смены адреса электронной почты обратитесь в поддержку."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pre zmenu e-mailovej adresy kontaktujte podporu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для зміни електронної адреси зверніться до підтримки."
+          }
+        }
+      }
+    },
     "emergency_contact": {
       "localizations": {
         "cs": {

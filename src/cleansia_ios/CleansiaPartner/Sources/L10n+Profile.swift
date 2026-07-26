@@ -90,6 +90,10 @@ extension L10n {
             localized("email")
         }
 
+        static var emailReadonlyHelper: String {
+            localized("email_readonly_helper")
+        }
+
         static var street: String {
             localized("profile_street")
         }

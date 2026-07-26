@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -38,11 +39,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.R
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -124,6 +127,15 @@ private fun CleansiaSnackbar(
     // sticky CTA, sheet) push a bigger value so the pill clears them.
     val extraBottom by SnackbarInsetState.insetDp.collectAsState()
 
+    // INVERTED, not `surface`: a surface-coloured pill sits on a surface/background-
+    // coloured page and all that separates them is a hairline and a soft shadow, so
+    // the snackbar reads as part of the screen and is easy to miss entirely.
+    // Inverting it (dark pill in light theme, light pill in dark theme) is the
+    // standard treatment for a transient overlay and makes the message unmissable in
+    // both themes. Mirrors the decision iOS shipped in PR #148.
+    val pill = MaterialTheme.colorScheme.inverseSurface
+    val onPill = MaterialTheme.colorScheme.inverseOnSurface
+
     Row(
         modifier = Modifier
             .navigationBarsPadding()
@@ -131,21 +143,27 @@ private fun CleansiaSnackbar(
             .fillMaxWidth()
             .shadow(elevation = 12.dp, shape = RoundedCornerShape(14.dp), clip = false)
             .clip(RoundedCornerShape(14.dp))
-            .background(palette.background)
+            .background(pill)
+            // Hairline so the pill still has an edge when it lands on a scrim or a
+            // photo rather than on the page background.
+            .border(0.5.dp, onPill.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
             .padding(start = 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             imageVector = palette.icon,
             contentDescription = null,
-            tint = palette.foreground,
+            tint = palette.accent,
             modifier = Modifier.size(20.dp),
         )
         Spacer(Modifier.width(12.dp))
         Text(
             text = text,
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-            color = palette.foreground,
+            // SemiBold, not Medium: Nunito ships no Medium(500), so the CSS-style
+            // weight matcher silently resolved `Medium` down to Regular and the
+            // .copy() was a no-op. SemiBold is the nearest weight we actually bundle.
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = onPill,
             modifier = Modifier
                 .weight(1f)
                 .padding(vertical = 10.dp),
@@ -153,8 +171,8 @@ private fun CleansiaSnackbar(
         IconButton(onClick = onDismiss) {
             Icon(
                 imageVector = Icons.Outlined.Close,
-                contentDescription = stringResource(android.R.string.cancel),
-                tint = palette.foreground,
+                contentDescription = stringResource(R.string.core_snackbar_dismiss),
+                tint = onPill.copy(alpha = 0.7f),
                 modifier = Modifier.size(18.dp),
             )
         }
@@ -162,33 +180,40 @@ private fun CleansiaSnackbar(
 }
 
 private data class Palette(
-    val background: Color,
-    val foreground: Color,
+    val accent: Color,
     val icon: ImageVector,
 )
 
 @Composable
-private fun paletteFor(severity: Severity): Palette = when (severity) {
-    // Tailwind-derived tints that match the rest of the app. Dark mode: slightly
-    // desaturated backgrounds to avoid screaming against slate-900.
-    Severity.Error -> Palette(
-        background = Color(0xFFFEE2E2), // red-100 in light; we rely on content contrast across modes
-        foreground = Color(0xFFB91C1C), // red-700
-        icon = Icons.Outlined.ErrorOutline,
-    )
-    Severity.Success -> Palette(
-        background = Color(0xFFDCFCE7), // green-100
-        foreground = Color(0xFF15803D), // green-700
-        icon = Icons.Outlined.CheckCircle,
-    )
-    Severity.Info -> Palette(
-        background = Color(0xFFE0F2FE), // sky-100
-        foreground = Color(0xFF0369A1), // sky-700
-        icon = Icons.Outlined.Info,
-    )
-    Severity.Warning -> Palette(
-        background = Color(0xFFFEF3C7), // amber-100
-        foreground = Color(0xFFB45309), // amber-700
-        icon = Icons.Outlined.WarningAmber,
-    )
+private fun paletteFor(severity: Severity): Palette {
+    // The accent is keyed to the PILL it sits on, not to the page. Because the pill
+    // is inverted, the pairing is the opposite of a normal surface-coloured control:
+    // a light theme gives a near-black pill, on which the brighter 500 tone
+    // separates; a dark theme gives a near-white pill, on which the deeper 600 tone
+    // does. Tones taken verbatim from iOS PR #148 so both platforms read identically.
+    //
+    // Resolved from the pill's own luminance rather than isSystemInDarkTheme():
+    // CleansiaTheme(darkTheme = ...) accepts an explicit override, so reading the
+    // system setting would desynchronise the accent from the pill the moment anyone
+    // forces a theme. The pill's luminance cannot lie about what the pill is.
+    val pillIsDark = MaterialTheme.colorScheme.inverseSurface.luminance() < 0.5f
+    return when (severity) {
+        Severity.Error -> Palette(
+            accent = if (pillIsDark) Color(0xFFEF4444) else Color(0xFFDC2626), // red-500 / red-600
+            icon = Icons.Outlined.ErrorOutline,
+        )
+        Severity.Success -> Palette(
+            accent = if (pillIsDark) Color(0xFF22C55E) else Color(0xFF16A34A), // green-500 / green-600
+            icon = Icons.Outlined.CheckCircle,
+        )
+        // Info rides the Sky brand ramp exactly as it does on iOS.
+        Severity.Info -> Palette(
+            accent = if (pillIsDark) Color(0xFF0EA5E9) else Color(0xFF0284C7), // sky-500 / sky-600
+            icon = Icons.Outlined.Info,
+        )
+        Severity.Warning -> Palette(
+            accent = if (pillIsDark) Color(0xFFF59E0B) else Color(0xFFD97706), // amber-500 / amber-600
+            icon = Icons.Outlined.WarningAmber,
+        )
+    }
 }

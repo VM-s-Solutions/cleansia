@@ -7,11 +7,15 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 class NotificationFeedRepositoryTest {
 
@@ -47,9 +51,9 @@ class NotificationFeedRepositoryTest {
                 ),
             ),
         )
-        coEvery { api.paged(1, 20) } returns Response.success(dto)
+        coEvery { api.paged(offset = 0, limit = 20) } returns Response.success(dto)
 
-        val result = newRepo().getPage(1)
+        val result = newRepo().getPage(offset = 0)
 
         assertTrue(result.isSuccess)
         assertEquals(dto, result.getOrNull())
@@ -57,12 +61,45 @@ class NotificationFeedRepositoryTest {
 
     @Test
     fun getPage_whenApiThrows_isSilentNetworkError() = runTest {
-        coEvery { api.paged(1, 20) } throws java.io.IOException("boom")
+        coEvery { api.paged(offset = 0, limit = 20) } throws java.io.IOException("boom")
 
-        val result = newRepo().getPage(1)
+        val result = newRepo().getPage(offset = 0)
 
         assertTrue(result.isError)
         assertTrue(result.errorOrNull() is ApiError.Network)
+    }
+
+    /**
+     * The wire contract, not the Kotlin one: `GetPagedUserNotifications.Request`
+     * extends `DataRangeRequest`, which binds `Offset`/`Limit`. Sending
+     * `pageNumber`/`pageSize` bound nothing, so the server silently fell back to
+     * offset 0 and every "load more" returned the same first rows — duplicate
+     * `LazyColumn` keys, which throws. A mocked interface can only pin argument
+     * values, so this one goes over a real socket to pin the parameter NAMES.
+     */
+    @Test
+    fun getPage_secondPage_sendsOffsetNotPageNumber() = runTest {
+        val server = MockWebServer()
+        server.start()
+        try {
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "application/json")
+                    .setBody("""{"pageNumber":1,"pageSize":20,"total":0,"data":[]}"""),
+            )
+            val wireApi = Retrofit.Builder()
+                .baseUrl(server.url("/"))
+                .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+                .build()
+                .create(NotificationFeedApi::class.java)
+
+            NotificationFeedRepository(wireApi, json).getPage(offset = 40)
+
+            assertEquals("/api/Notification/Paged?Offset=40&Limit=20", server.takeRequest().path)
+        } finally {
+            server.shutdown()
+        }
     }
 
     @Test

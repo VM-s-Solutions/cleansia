@@ -57,21 +57,25 @@ class NotificationsInboxViewModel @Inject constructor(
     private val _openRoute = MutableSharedFlow<Any>(extraBufferCapacity = 1)
     val openRoute: SharedFlow<Any> = _openRoute.asSharedFlow()
 
-    private var pageNumber = 0
+    /**
+     * The paging cursor: rows the server has already sent us, which is what
+     * `Offset` means on the wire. It counts RAW rows, deliberately not
+     * `items.size` — rows whose event key has no local template are dropped by
+     * [toFeedItem], and paging off the filtered count would re-request rows that
+     * are already on screen, duplicating `LazyColumn` keys (which throws).
+     */
     private var fetchedCount = 0
     private var total = 0
 
-    /** Called on every sheet open (and on retry) — always refetches page 1. */
+    /** Called on every sheet open (and on retry) — always refetches from the top. */
     fun open() {
         viewModelScope.launch {
             _state.value = NotificationsInboxUiState.Loading
-            pageNumber = 0
             fetchedCount = 0
             total = 0
-            when (val result = repository.getPage(pageNumber = 1)) {
+            when (val result = repository.getPage(offset = 0)) {
                 is ApiResult.Success -> {
                     val page = result.data
-                    pageNumber = 1
                     fetchedCount = page.data.size
                     total = page.total
                     _state.value = NotificationsInboxUiState.Loaded(
@@ -93,10 +97,9 @@ class NotificationsInboxViewModel @Inject constructor(
         if (!current.canLoadMore || current.loadingMore) return
         _state.value = current.copy(loadingMore = true)
         viewModelScope.launch {
-            when (val result = repository.getPage(pageNumber = pageNumber + 1)) {
+            when (val result = repository.getPage(offset = fetchedCount)) {
                 is ApiResult.Success -> {
                     val page = result.data
-                    pageNumber += 1
                     fetchedCount += page.data.size
                     total = page.total
                     val latest = _state.value as? NotificationsInboxUiState.Loaded ?: return@launch

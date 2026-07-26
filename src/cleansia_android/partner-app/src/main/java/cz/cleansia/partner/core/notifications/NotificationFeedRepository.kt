@@ -27,8 +27,14 @@ class NotificationFeedRepository @Inject constructor(
     private val _unreadCount = MutableStateFlow(0)
     val unreadCount: StateFlow<Int> = _unreadCount.asStateFlow()
 
-    suspend fun getPage(pageNumber: Int, pageSize: Int = PAGE_SIZE): ApiResult<PagedNotificationsDto> =
-        when (val result = safeApiCall(json) { api.paged(pageNumber, pageSize) }) {
+    /**
+     * @param offset how many rows the caller has ALREADY fetched — a raw row
+     * cursor, not a page index (see [NotificationFeedApi.paged]). Callers must
+     * count the rows the server sent, never the subset that survived client-side
+     * filtering, or the next page re-serves rows they are already rendering.
+     */
+    suspend fun getPage(offset: Int, limit: Int = PAGE_SIZE): ApiResult<PagedNotificationsDto> =
+        when (val result = safeApiCall(json) { api.paged(offset = offset, limit = limit) }) {
             is ApiResult.Success ->
                 ApiResult.Success(result.data as? PagedNotificationsDto ?: PagedNotificationsDto())
             is ApiResult.Error -> result

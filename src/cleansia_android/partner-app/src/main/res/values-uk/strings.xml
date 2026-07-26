@@ -990,6 +990,10 @@
     <string name="slide_to_complete">Проведіть, щоб завершити</string>
     <string name="completing_order">Завершую…</string>
     <string name="order_mark_cash_collected">Позначити готівку як отриману</string>
+    <string name="partner_order_mark_cash_collected_confirm_title">Позначити готівку як отриману?</string>
+    <string name="partner_order_mark_cash_collected_confirm_message">Підтвердьте, що ви отримали від клієнта %1$s готівкою. Цю дію не можна скасувати.</string>
+    <string name="partner_order_mark_cash_collected_confirm_message_no_amount">Підтвердьте, що ви отримали від клієнта оплату готівкою. Цю дію не можна скасувати.</string>
+    <string name="partner_order_mark_cash_collected_confirm_action">Так, готівку отримано</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Перед завершенням замовлення зробіть принаймні одне фото \"після\".</string>

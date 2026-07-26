@@ -987,6 +987,10 @@
     <string name="slide_to_complete">Posunutím dokončite</string>
     <string name="completing_order">Dokončujem…</string>
     <string name="order_mark_cash_collected">Označiť hotovosť ako prijatú</string>
+    <string name="partner_order_mark_cash_collected_confirm_title">Označiť hotovosť ako prijatú?</string>
+    <string name="partner_order_mark_cash_collected_confirm_message">Potvrďte, že ste od zákazníka prevzali %1$s v hotovosti. Túto akciu nemožno vrátiť späť.</string>
+    <string name="partner_order_mark_cash_collected_confirm_message_no_amount">Potvrďte, že ste od zákazníka prevzali platbu v hotovosti. Túto akciu nemožno vrátiť späť.</string>
+    <string name="partner_order_mark_cash_collected_confirm_action">Áno, hotovosť prijatá</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Pred dokončením zákazky urobte aspoň jednu fotografiu \"po\".</string>

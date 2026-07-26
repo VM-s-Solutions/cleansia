@@ -990,6 +990,10 @@
     <string name="slide_to_complete">Проведите, чтобы завершить</string>
     <string name="completing_order">Завершаю…</string>
     <string name="order_mark_cash_collected">Отметить наличные как полученные</string>
+    <string name="partner_order_mark_cash_collected_confirm_title">Отметить наличные как полученные?</string>
+    <string name="partner_order_mark_cash_collected_confirm_message">Подтвердите, что вы получили от клиента %1$s наличными. Это действие нельзя отменить.</string>
+    <string name="partner_order_mark_cash_collected_confirm_message_no_amount">Подтвердите, что вы получили от клиента оплату наличными. Это действие нельзя отменить.</string>
+    <string name="partner_order_mark_cash_collected_confirm_action">Да, наличные получены</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Перед завершением заказа сделайте хотя бы одну фотографию \"после\".</string>

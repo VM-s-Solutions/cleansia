@@ -985,6 +985,15 @@
     <string name="completing_order">Completing…</string>
     <string name="order_mark_cash_collected">Mark cash collected</string>
 
+    <!-- Cash collection is irreversible: the server rejects a second call
+         and there is no un-collect endpoint, so the button asks first.
+         Key names match the iOS partner xcstrings so the two platforms
+         stay greppable together. -->
+    <string name="partner_order_mark_cash_collected_confirm_title">Mark cash as collected?</string>
+    <string name="partner_order_mark_cash_collected_confirm_message">Confirm you have taken %1$s in cash from the customer. This cannot be undone.</string>
+    <string name="partner_order_mark_cash_collected_confirm_message_no_amount">Confirm you have taken the cash payment from the customer. This cannot be undone.</string>
+    <string name="partner_order_mark_cash_collected_confirm_action">Yes, cash collected</string>
+
     <!-- Backend error-key translations. Resource names follow
          `error_key_<dot-replaced-with-underscore>` per
          ApiErrorTranslator.lookupKey. -->

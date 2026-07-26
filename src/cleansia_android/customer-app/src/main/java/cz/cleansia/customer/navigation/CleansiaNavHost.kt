@@ -176,9 +176,7 @@ fun CleansiaNavHost(
             }
 
             SignInScreen(
-                onSignInClick = { email, password, rememberMe ->
-                    vm.signIn(email, password, rememberMe)
-                },
+                onSignInClick = { email, password -> vm.signIn(email, password) },
                 onForgotPassword = { navController.navigate(Routes.ForgotPassword) },
                 onCreateAccount = { navController.navigate(Routes.SignUp) },
                 onGoogleSignIn = { vm.signInWithGoogle(context) },

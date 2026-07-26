@@ -7,11 +7,13 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.AuthRepository
+import cz.cleansia.customer.core.auth.AuthSuccess
 import cz.cleansia.customer.core.auth.GoogleSignInController
 import cz.cleansia.customer.core.settings.AppSettings
 import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -126,6 +128,30 @@ class AuthViewModelTest {
 
         verify(exactly = 1) { snackbar.showError(existingEmailMessage) }
         verify(exactly = 0) { snackbar.showErrorKey(R.string.error_generic_unknown) }
+    }
+
+    /**
+     * One session lifetime for every mobile surface: 30 days, always requested.
+     *
+     * The sign-in screen used to carry a "Remember me" checkbox that defaulted to
+     * *unchecked*, so the common case asked for the 24-hour refresh token. The checkbox is
+     * gone and the flag is pinned true here. It is still sent on the wire because
+     * `Auth/Login` declares it and the web keeps its own checkbox — this is a client-side
+     * decision, not a server change.
+     */
+    @Test
+    fun `signIn always requests the long-lived session`() = runTest {
+        // The outcome is irrelevant here; EmailUnconfirmed is simply the AuthSuccess arm that
+        // needs no TokenStore.Tokens fixture to build. A relaxed mock cannot stand in — a
+        // relaxed ApiResult is neither Success nor Error and toAuthUiState's `when` throws.
+        coEvery { authRepository.login(any(), any(), any()) } returns
+            ApiResult.Success(AuthSuccess.EmailUnconfirmed("user@example.com"))
+
+        val vm = viewModel()
+        vm.signIn("user@example.com", "Passw0rd!")
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { authRepository.login("user@example.com", "Passw0rd!", true) }
     }
 
     @Test

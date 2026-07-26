@@ -24,8 +24,11 @@ final class LoginViewModel: ViewModel {
     private let loginClient: LoginClient
     private let snackbar: SnackbarController
 
-    /// Login no longer offers a remember-me toggle; `true` preserves the box's former
-    /// checked-by-default state, so the refresh token keeps its 30-day lifetime.
+    /// One session lifetime for every mobile surface: 30 days, always requested. This screen
+    /// has no remember-me toggle and neither does the Android partner app any more — unlike the
+    /// customer command, `MobilePartnerLogin` genuinely honours the flag, so unticking it really
+    /// did sign a cleaner out after a day away. The field stays on the wire because the command
+    /// declares it and the web keeps its own checkbox; no server change.
     private static let rememberMe = true
 
     init(loginClient: LoginClient, snackbar: SnackbarController) {

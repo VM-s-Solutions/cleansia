@@ -55,7 +55,6 @@
     <string name="email">Электронная почта</string>
     <string name="password">Пароль</string>
     <string name="confirm_password">Подтвердить пароль</string>
-    <string name="remember_me">Запомнить меня</string>
     <string name="forgot_password">Забыли пароль?</string>
     <string name="dont_have_account">Нет аккаунта?</string>
     <string name="already_have_account">Уже есть аккаунт?</string>

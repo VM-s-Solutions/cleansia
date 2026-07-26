@@ -65,10 +65,10 @@ class AuthViewModel @Inject constructor(
      */
     val passwordResetCodeSent: SharedFlow<Unit> = _passwordResetCodeSent.asSharedFlow()
 
-    fun signIn(email: String, password: String, rememberMe: Boolean) {
+    fun signIn(email: String, password: String) {
         _uiState.value = AuthUiState(loading = true)
         viewModelScope.launch {
-            _uiState.value = authRepository.login(email, password, rememberMe)
+            _uiState.value = authRepository.login(email, password, LONG_LIVED_SESSION)
                 .toAuthUiState(fallbackEmail = email)
         }
     }
@@ -245,6 +245,26 @@ class AuthViewModel @Inject constructor(
     /** The language code the backend expects on emails sent to this user. */
     private suspend fun currentLanguageCode(): String =
         settings.settings.first().language.tag ?: "en"
+
+    private companion object {
+        /**
+         * The `rememberMe` flag on `Auth/Login`, pinned to the 30-day refresh lifetime.
+         *
+         * The sign-in screen used to offer this as a checkbox that defaulted to *unchecked*,
+         * so the common case asked for the 24-hour token. It is now one value for every
+         * mobile surface (iOS customer, iOS partner, Android partner all send `true` too).
+         * A handset is a personal device: the short token only bought a forced re-login after
+         * a day away, and the security it implied is already carried by single-use rotating
+         * refresh tokens, EncryptedSharedPreferences, and per-device revocation.
+         *
+         * Kept on the wire rather than dropped because the command still declares it and the
+         * web keeps its own checkbox — no server change. Note this app's server side
+         * (`MobileLogin`) already discarded the flag and forced the long lifetime, so nothing
+         * observable changes for a customer; the value is aligned so the client stops
+         * claiming something the server ignores.
+         */
+        const val LONG_LIVED_SESSION = true
+    }
 }
 
 data class AuthUiState(

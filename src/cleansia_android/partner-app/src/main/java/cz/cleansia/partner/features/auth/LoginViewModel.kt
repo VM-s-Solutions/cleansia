@@ -23,7 +23,6 @@ import javax.inject.Inject
 data class LoginFormState(
     val email: String = "",
     val password: String = "",
-    val rememberMe: Boolean = true,
     val emailError: String? = null,
     val passwordError: String? = null,
 )
@@ -54,10 +53,6 @@ class LoginViewModel @Inject constructor(
         _uiState.update { it.copy(password = password, passwordError = null) }
     }
 
-    fun onRememberMeChange(rememberMe: Boolean) {
-        _uiState.update { it.copy(rememberMe = rememberMe) }
-    }
-
     fun login() {
         if (_loginState.value is ActionState.Submitting) return
         val state = _uiState.value
@@ -78,7 +73,7 @@ class LoginViewModel @Inject constructor(
 
         viewModelScope.launch {
             _loginState.value = ActionState.Submitting
-            when (val result = authRepository.login(state.email, state.password, state.rememberMe)) {
+            when (val result = authRepository.login(state.email, state.password, LONG_LIVED_SESSION)) {
                 is ApiResult.Success -> {
                     _loginState.value = ActionState.Idle
                     _loginSuccess.emit(
@@ -91,5 +86,26 @@ class LoginViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private companion object {
+        /**
+         * The `rememberMe` flag on `Auth/Login`, pinned to the 30-day refresh lifetime.
+         *
+         * This screen used to expose it as a checkbox (checked by default). Unlike the
+         * customer app — where `MobileLogin` discards the flag server-side — the partner
+         * command `MobilePartnerLogin` genuinely honours it, so a cleaner who unticked the
+         * box really did get a 24-hour refresh token and really was signed out after a day
+         * of not opening the app. Remember-me is a shared-computer web idiom; on a work
+         * handset it only bought that forced re-login, and the security it implied is
+         * already carried by single-use rotating refresh tokens, EncryptedSharedPreferences,
+         * and per-device revocation.
+         *
+         * Kept on the wire rather than dropped because the command still declares it and the
+         * web keeps its own checkbox — no server change. In-flight sessions are unaffected:
+         * `RefreshTokenService.RotateAsync` infers the lifetime from the *original* token, so
+         * an existing 24-hour session keeps rotating as 24 hours until its next full login.
+         */
+        const val LONG_LIVED_SESSION = true
     }
 }

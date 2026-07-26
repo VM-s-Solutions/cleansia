@@ -8,7 +8,6 @@
     <string name="login_subtitle">Sign in to manage your bookings.</string>
     <string name="login_email">Email</string>
     <string name="login_password">Password</string>
-    <string name="login_remember_me">Remember me</string>
     <string name="login_forgot_password">Forgot password?</string>
     <string name="login_login">Log in</string>
     <string name="login_or">OR</string>

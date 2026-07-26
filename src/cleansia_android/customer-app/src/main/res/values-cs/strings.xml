@@ -8,7 +8,6 @@
     <string name="login_subtitle">Přihlaste se pro správu rezervací.</string>
     <string name="login_email">E-mail</string>
     <string name="login_password">Heslo</string>
-    <string name="login_remember_me">Zapamatovat si mě</string>
     <string name="login_forgot_password">Zapomenuté heslo?</string>
     <string name="login_login">Přihlásit se</string>
     <string name="login_or">NEBO</string>

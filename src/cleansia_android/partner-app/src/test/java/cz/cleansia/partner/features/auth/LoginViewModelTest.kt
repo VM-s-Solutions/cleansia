@@ -103,6 +103,32 @@ class LoginViewModelTest {
         }
     }
 
+    /**
+     * One session lifetime for every mobile surface: 30 days, always requested.
+     *
+     * This is the only client in the product where remember-me was ever *functional* —
+     * `MobilePartnerLogin` honours `command.RememberMe`, where `MobileLogin` (customer)
+     * discards it and forces the long lifetime server-side. So a partner who unticked the
+     * box really did get a 24-hour refresh token and really was signed out after a day of
+     * not opening the app. The box is gone and the flag is pinned true.
+     *
+     * The field stays on the wire because the command declares it and the web keeps its own
+     * checkbox — this is a client-side decision, not a server change.
+     */
+    @Test
+    fun `login always requests the long-lived session`() = runTest {
+        coEvery { authRepository.login(any(), any(), any()) } returns
+            ApiResult.Success(LoginOutcome.Authenticated)
+
+        val vm = viewModel()
+        vm.onEmailChange("a@b.com")
+        vm.onPasswordChange("secret")
+        vm.login()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { authRepository.login("a@b.com", "secret", true) }
+    }
+
     @Test
     fun `login failure snackbars and returns to Idle without success effect`() = runTest {
         coEvery { authRepository.login("a@b.com", "secret", true) } returns

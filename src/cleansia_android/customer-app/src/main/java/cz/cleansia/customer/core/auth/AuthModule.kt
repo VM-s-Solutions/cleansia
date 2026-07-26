@@ -123,7 +123,7 @@ object AuthModule {
         @NoAuthOkHttp client: OkHttpClient,
         json: Json,
     ): Retrofit = Retrofit.Builder()
-        .baseUrl(BuildConfig.API_BASE_URL)
+        .baseUrl(BuildConfig.API_BASE_URL.ensureTrailingSlash())
         .client(client)
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
@@ -237,11 +237,17 @@ object AuthModule {
         @AuthOkHttp client: OkHttpClient,
         json: Json,
     ): Retrofit = Retrofit.Builder()
-        .baseUrl(BuildConfig.API_BASE_URL)
+        .baseUrl(BuildConfig.API_BASE_URL.ensureTrailingSlash())
         .client(client)
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
 }
+
+// Retrofit REJECTS a base URL that does not end in "/" — it throws at graph construction, so the
+// app dies on launch rather than at the first request. API_BASE_URL is overridable from a gradle
+// property or env var, which makes a missing slash a very easy mistake to make; normalise it here.
+// Mirrors the partner app's NetworkModule, which has always done this.
+private fun String.ensureTrailingSlash(): String = if (endsWith("/")) this else "$this/"
 
 // ─── Qualifiers ───
 // Two Retrofit + OkHttp pairs live in the graph; qualifiers disambiguate.

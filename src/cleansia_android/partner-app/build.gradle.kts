@@ -55,21 +55,34 @@ android {
         buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"$mapboxAccessToken\"")
     }
 
+    // Backend API base URL override, same seam the customer app exposes. Previously this app
+    // hardcoded a URL per build type with no way to redirect it, so pointing it at a different
+    // backend meant editing this file — which is exactly the kind of asymmetry that makes the two
+    // apps drift. A non-null value here wins for EVERY build type; otherwise each type keeps its
+    // own default below.
+    //     ./gradlew :partner-app:installDebug -PAPI_BASE_URL=http://10.0.2.2:5002/
+    val apiBaseUrlOverride: String? = providers.gradleProperty("API_BASE_URL").orNull
+        ?: System.getenv("API_BASE_URL")
+
     buildTypes {
         debug {
             isMinifyEnabled = false
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            // Trailing slash, no `/api` suffix — the generated OpenAPI client's
-            // method paths already start with `api/Auth/Login` etc. NetworkModule
-            // adds the trailing slash if missing, but keep it explicit here for clarity.
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:5002/\"")
+            // Defaults to the Azure DEV host, matching what iOS ships in CleansiaPartner/project.yml
+            // so both platforms hit the same backend out of the box. Trailing slash, no `/api`
+            // suffix — the generated OpenAPI client's method paths already start with
+            // `api/Auth/Login`. NetworkModule normalises a missing slash anyway.
+            val url = apiBaseUrlOverride
+                ?: "https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net/"
+            buildConfigField("String", "API_BASE_URL", "\"$url\"")
         }
         create("staging") {
             isMinifyEnabled = true
             applicationIdSuffix = ".staging"
             versionNameSuffix = "-staging"
-            buildConfigField("String", "API_BASE_URL", "\"https://staging-api.cleansia.cz/\"")
+            val url = apiBaseUrlOverride ?: "https://staging-api.cleansia.cz/"
+            buildConfigField("String", "API_BASE_URL", "\"$url\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -79,7 +92,8 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            buildConfigField("String", "API_BASE_URL", "\"https://api.cleansia.cz/\"")
+            val url = apiBaseUrlOverride ?: "https://api.cleansia.cz/"
+            buildConfigField("String", "API_BASE_URL", "\"$url\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

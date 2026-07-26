@@ -364,4 +364,8 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
+    // Hand-written Retrofit interfaces carry the wire contract in their @Query
+    // names; a mocked interface can only pin argument values, never the names
+    // the server actually binds. MockWebServer lets those tests assert the URL.
+    testImplementation(libs.okhttp.mockwebserver)
 }

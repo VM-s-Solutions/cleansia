@@ -15,8 +15,11 @@ import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -42,10 +45,30 @@ class AuthViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
-    fun signIn(email: String, password: String, rememberMe: Boolean) {
+    private val _passwordResetCodeSent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /**
+     * Emits once per password-reset code the **server actually accepted**.
+     *
+     * Both screens that request a reset code (ForgotPassword and profile →
+     * Security) used to flip their own `isEmailSent` / `codeSent` flag inside
+     * the button's `onClick`, so a 429, a 500 or airplane mode still walked the
+     * user forward to a code-entry form for a code that was never sent — with
+     * only a snackbar, already gone by the time they finished reading it, to
+     * say otherwise. They now advance off this event instead.
+     *
+     * It is deliberately **not** a flag on [AuthUiState]: every path in this
+     * class assigns a whole new `AuthUiState`, so a later unrelated failure
+     * (a rejected code, a resend that 500s) would reset the flag and bounce the
+     * user back to the email step mid-flow. An event that the screen latches
+     * once cannot be un-set by an unrelated write.
+     */
+    val passwordResetCodeSent: SharedFlow<Unit> = _passwordResetCodeSent.asSharedFlow()
+
+    fun signIn(email: String, password: String) {
         _uiState.value = AuthUiState(loading = true)
         viewModelScope.launch {
-            _uiState.value = authRepository.login(email, password, rememberMe)
+            _uiState.value = authRepository.login(email, password, LONG_LIVED_SESSION)
                 .toAuthUiState(fallbackEmail = email)
         }
     }
@@ -74,8 +97,15 @@ class AuthViewModel @Inject constructor(
                 referralCode = referralCode?.trim()?.uppercase()?.ifBlank { null },
             )
                 .onSuccess { _uiState.value = AuthUiState(outcome = AuthOutcome.NeedsEmailConfirm(email)) }
-                .onError {
-                    snackbar.showErrorKey(R.string.error_generic_unknown)
+                .onError { error ->
+                    // Signup is the one auth flow with nothing to hide: the form has to
+                    // tell you an email is taken or it can't work. So show the server's
+                    // own translated key ("user.existing_email", "auth.invalid_password_format")
+                    // rather than "something went wrong", which sends users back to
+                    // re-typing a password that was never the problem.
+                    // The forgot-password / resend siblings below deliberately stay vague —
+                    // there a precise "no such account" is an enumeration oracle.
+                    snackbar.showError(ApiErrorParser.parseToUserMessage(appContext, error))
                     _uiState.value = AuthUiState()
                 }
         }
@@ -130,6 +160,8 @@ class AuthViewModel @Inject constructor(
             authRepository.requestPasswordChange(email, language)
                 .onSuccess {
                     snackbar.showSuccessKey(R.string.forgot_code_sent)
+                    // Only now is there a code to type. See [passwordResetCodeSent].
+                    _passwordResetCodeSent.tryEmit(Unit)
                     _uiState.value = AuthUiState()
                 }
                 .onError {
@@ -213,6 +245,26 @@ class AuthViewModel @Inject constructor(
     /** The language code the backend expects on emails sent to this user. */
     private suspend fun currentLanguageCode(): String =
         settings.settings.first().language.tag ?: "en"
+
+    private companion object {
+        /**
+         * The `rememberMe` flag on `Auth/Login`, pinned to the 30-day refresh lifetime.
+         *
+         * The sign-in screen used to offer this as a checkbox that defaulted to *unchecked*,
+         * so the common case asked for the 24-hour token. It is now one value for every
+         * mobile surface (iOS customer, iOS partner, Android partner all send `true` too).
+         * A handset is a personal device: the short token only bought a forced re-login after
+         * a day away, and the security it implied is already carried by single-use rotating
+         * refresh tokens, EncryptedSharedPreferences, and per-device revocation.
+         *
+         * Kept on the wire rather than dropped because the command still declares it and the
+         * web keeps its own checkbox — no server change. Note this app's server side
+         * (`MobileLogin`) already discarded the flag and forced the long lifetime, so nothing
+         * observable changes for a customer; the value is aligned so the client stops
+         * claiming something the server ignores.
+         */
+        const val LONG_LIVED_SESSION = true
+    }
 }
 
 data class AuthUiState(

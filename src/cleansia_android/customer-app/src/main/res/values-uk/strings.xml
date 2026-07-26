@@ -8,7 +8,6 @@
     <string name="login_subtitle">Увійдіть, щоб керувати бронюваннями.</string>
     <string name="login_email">Email</string>
     <string name="login_password">Пароль</string>
-    <string name="login_remember_me">Запам’ятати мене</string>
     <string name="login_forgot_password">Забули пароль?</string>
     <string name="login_login">Увійти</string>
     <string name="login_or">АБО</string>

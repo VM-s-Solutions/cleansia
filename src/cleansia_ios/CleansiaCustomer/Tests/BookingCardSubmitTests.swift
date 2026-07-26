@@ -64,19 +64,24 @@ final class BookingCardSubmitTests: XCTestCase {
         XCTAssertEqual(presentation.merchantDisplayName, "Cleansia")
     }
 
+    /// The order is already created at this point, so the customer needs to know
+    /// exactly why the card step died — the intent error is the only clue they get.
     func testPaymentIntentFailureLeavesCardPendingUnreached() async {
+        let serverError = ApiError(code: "payment.intent_failed", httpStatus: 502)
         let create = FakeOrderCreateClient(result: .success(CreatedOrder(id: "o-card", confirmationCode: "CLN-C")))
-        let intent = FakePaymentIntentClient(result: .failure(ApiError(code: "network.unreachable")))
+        let intent = FakePaymentIntentClient(result: .failure(serverError))
         let vm = makeVM(create: create, paymentIntent: intent)
         vm.update(cardReadyState)
 
         let outcome = await vm.submit()
 
-        XCTAssertEqual(outcome, .failed)
+        XCTAssertEqual(outcome, .failed(serverError))
         XCTAssertEqual(create.callCount, 1)
         XCTAssertEqual(intent.callCount, 1)
     }
 
+    /// A 200 with an empty client secret is a local sanity check, not a server
+    /// rejection — there is no ApiError to show, so the generic message stands.
     func testEmptyClientSecretFails() async {
         let intent = FakePaymentIntentClient(result: .success(PaymentIntentDetails(
             clientSecret: "", ephemeralKey: "ek", stripeCustomerId: "cus"
@@ -85,7 +90,7 @@ final class BookingCardSubmitTests: XCTestCase {
         vm.update(cardReadyState)
 
         let outcome = await vm.submit()
-        XCTAssertEqual(outcome, .failed)
+        XCTAssertEqual(outcome, .failed(nil))
     }
 
     func testCardUnavailableNeverCallsPaymentIntent() async {

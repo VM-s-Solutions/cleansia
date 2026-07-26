@@ -59,12 +59,22 @@ struct BookingQuote: Equatable {
 
 enum BookingQuoteState: Equatable {
     case idle
-    case quoting
+    /// Carries the quote that was on screen when the re-quote started, so the
+    /// price summary keeps showing the last known total instead of flashing to
+    /// 0 for the 400 ms debounce plus the round trip. `nil` only for the very
+    /// first quote, where there is genuinely nothing to show yet.
+    case quoting(previous: BookingQuote?)
     case quoted(BookingQuote)
 
+    /// Display-only: during `.quoting` this is deliberately stale. Submission
+    /// is gated on `lastQuoteRequest` matching the current request, which is
+    /// written only on a successful quote, so a stale quote is never priced in.
     var quote: BookingQuote? {
-        if case let .quoted(value) = self { return value }
-        return nil
+        switch self {
+        case .idle: nil
+        case let .quoting(previous): previous
+        case let .quoted(value): value
+        }
     }
 }
 

@@ -8,7 +8,6 @@
     <string name="login_subtitle">Prihláste sa na správu rezervácií.</string>
     <string name="login_email">E-mail</string>
     <string name="login_password">Heslo</string>
-    <string name="login_remember_me">Zapamätať si ma</string>
     <string name="login_forgot_password">Zabudnuté heslo?</string>
     <string name="login_login">Prihlásiť sa</string>
     <string name="login_or">ALEBO</string>

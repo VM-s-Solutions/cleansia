@@ -132,14 +132,19 @@ final class CustomerAuthViewModelTests: XCTestCase {
         XCTAssertEqual(snackbar.current?.severity, .error)
     }
 
-    func testSignInAlwaysSendsTheFormerUncheckedRememberMeDefault() async {
+    /// One mobile-wide session lifetime. There is no remember-me toggle on this screen and
+    /// there never was one to inherit an "unchecked" default from — the constant used to be
+    /// `false`, which asked the server for the 24-hour refresh token. Every other mobile
+    /// surface (iOS partner, both Android apps) asks for the 30-day one, so this is the
+    /// odd-one-out being brought into line rather than a preference being expressed.
+    func testSignInAlwaysRequestsTheLongLivedRefreshToken() async {
         let vm = makeViewModel()
         vm.onSignInEmailChange("a@b.cz")
         vm.onSignInPasswordChange("secret")
 
         await vm.signIn()
 
-        XCTAssertEqual(login.lastRememberMe, false)
+        XCTAssertEqual(login.lastRememberMe, true)
     }
 
     func testSignUpSuccessEmitsNeedsEmailConfirmCarryingFormEmail() async {

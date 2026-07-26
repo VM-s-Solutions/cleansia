@@ -74,7 +74,6 @@ final class CustomerShellRoutingTests: XCTestCase {
             .createRecurring(orderId: "order-2"),
             .rewardsActivity,
             .disputes,
-            .createDispute(orderId: nil),
             .createDispute(orderId: "order-3"),
             .disputeDetail("d-1"),
             .addresses,

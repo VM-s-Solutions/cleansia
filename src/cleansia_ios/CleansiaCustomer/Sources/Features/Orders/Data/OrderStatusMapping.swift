@@ -46,6 +46,17 @@ enum OrderStatusGroup {
         }
     }
 
+    /// Whether "Report issue" is offered for this order (`canReportIssue`,
+    /// `OrderDetailScreen.kt:236-239`): Confirmed → Completed. New/Pending have
+    /// no cleaner assigned yet so there is nothing to dispute, and a Cancelled
+    /// cleaning never happened.
+    static func isReportable(_ status: OrderStatus?) -> Bool {
+        switch status {
+        case ._2, ._3, ._4, ._5: true
+        default: false
+        }
+    }
+
     static func isCompleted(_ status: OrderStatus?) -> Bool {
         status == ._5
     }

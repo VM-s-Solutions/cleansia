@@ -7,7 +7,7 @@ import cz.cleansia.core.location.UserLocation
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.api.model.OrderStatus
-import cz.cleansia.partner.core.auth.UserProfileStore
+import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.location.haversineKm
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
@@ -122,7 +122,7 @@ data class OrdersListUiState(
 @HiltViewModel
 class OrdersListViewModel @Inject constructor(
     private val ordersRepository: OrdersRepository,
-    private val userProfileStore: UserProfileStore,
+    private val employeeIdResolver: EmployeeIdResolver,
     private val errorTranslator: ApiErrorTranslator,
     private val snackbar: SnackbarController,
     private val locationService: LocationService,
@@ -219,7 +219,14 @@ class OrdersListViewModel @Inject constructor(
         fetchAsync(tab, background = true)
     }
 
-    private fun fetchAsync(tab: OrdersTab, background: Boolean) {
+    /**
+     * @param notifyOnError raise the translated failure on the snackbar. False
+     * only for the reconciling fetch that follows a *rejected* inline action:
+     * the cleaner has already been told why the swipe failed, and the partner
+     * app wires no `NetworkErrorInterceptor` (only the customer app does) to
+     * collapse the duplicate for us.
+     */
+    private fun fetchAsync(tab: OrdersTab, background: Boolean, notifyOnError: Boolean = true) {
         viewModelScope.launch {
             _uiState.update {
                 it.copy(
@@ -229,7 +236,11 @@ class OrdersListViewModel @Inject constructor(
                 )
             }
 
-            val employeeId = userProfileStore.current()?.employeeId
+            // Resolved, not merely read: a session minted by confirm-email on
+            // a pre-fix build has no stored employee id, which silently sends
+            // the My-Active / My-Completed tabs unscoped — the cleaner sees an
+            // empty list on a day they are working.
+            val employeeId = employeeIdResolver.resolve()
             val state = _uiState.value
 
             val (statuses, isUnassigned, scopedEmployeeId) = when (tab) {
@@ -284,7 +295,7 @@ class OrdersListViewModel @Inject constructor(
                     )
                 }
                 is ApiResult.Error -> {
-                    snackbar.showError(errorTranslator.translate(result.error))
+                    if (notifyOnError) snackbar.showError(errorTranslator.translate(result.error))
                     _uiState.update {
                         it.copy(
                             isUserRefreshing = false,
@@ -344,6 +355,16 @@ class OrdersListViewModel @Inject constructor(
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(inFlightActionOrderId = null) }
                     snackbar.showError(errorTranslator.translate(result.error))
+                    // Reconcile exactly as the success branch does. A reject
+                    // nearly always means the order moved on without us —
+                    // another cleaner took it, or the status advanced from the
+                    // detail screen — so the row must stop offering an action
+                    // the server has already refused. The panes are
+                    // invalidated as well as refetched: the mutation's *other*
+                    // pane is just as wrong as this one, and only the
+                    // watermark reset makes the next tab switch pick it up.
+                    ordersRepository.invalidatePanesFor(mutation)
+                    fetchAsync(_uiState.value.tab, background = true, notifyOnError = false)
                 }
             }
         }

@@ -102,7 +102,7 @@ class NotificationsViewModelTest {
 
     @Test
     fun `open transitions Loading to Loaded and hides unknown-key rows`() = runTest {
-        coEvery { repository.getPage(1) } returns ApiResult.Success(page(unknownNewestRow, newJobsRow))
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(page(unknownNewestRow, newJobsRow))
 
         val vm = viewModel()
         assertEquals(NotificationsUiState.Loading, vm.state.value)
@@ -122,7 +122,7 @@ class NotificationsViewModelTest {
     fun `open fires the watermarked mark-all with the newest FETCHED createdOn and refreshes the badge`() = runTest {
         // Newest fetched row carries an unknown key — the watermark must still be
         // ITS createdOn (server truth), never now() and never the newest known row.
-        coEvery { repository.getPage(1) } returns ApiResult.Success(page(unknownNewestRow, newJobsRow))
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(page(unknownNewestRow, newJobsRow))
 
         val vm = viewModel()
         vm.open()
@@ -134,7 +134,7 @@ class NotificationsViewModelTest {
 
     @Test
     fun `open with zero rows shows empty Loaded and skips mark-all`() = runTest {
-        coEvery { repository.getPage(1) } returns ApiResult.Success(page())
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(page())
 
         val vm = viewModel()
         vm.open()
@@ -147,7 +147,7 @@ class NotificationsViewModelTest {
 
     @Test
     fun `open http error transitions to Error and surfaces single snackbar`() = runTest {
-        coEvery { repository.getPage(1) } returns ApiResult.Error(ApiError.Server(500, "boom"))
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Error(ApiError.Server(500, "boom"))
 
         val vm = viewModel()
         vm.open()
@@ -160,7 +160,7 @@ class NotificationsViewModelTest {
 
     @Test
     fun `open network error transitions to Error and surfaces snackbar`() = runTest {
-        coEvery { repository.getPage(1) } returns ApiResult.Error(ApiError.Network("offline"))
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Error(ApiError.Network("offline"))
 
         val vm = viewModel()
         vm.open()
@@ -172,7 +172,7 @@ class NotificationsViewModelTest {
 
     @Test
     fun `unread row tap optimistically clears the dot, decrements the badge, fires mark-read and emits the route`() = runTest {
-        coEvery { repository.getPage(1) } returns ApiResult.Success(page(confirmedRow))
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(page(confirmedRow))
 
         val vm = viewModel()
         vm.open()
@@ -193,7 +193,7 @@ class NotificationsViewModelTest {
 
     @Test
     fun `new-jobs digest tap navigates to Main - deep-link parity preserved`() = runTest {
-        coEvery { repository.getPage(1) } returns ApiResult.Success(page(newJobsRow))
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(page(newJobsRow))
 
         val vm = viewModel()
         vm.open()
@@ -216,7 +216,7 @@ class NotificationsViewModelTest {
         // key added for T-0431), matching iOS NotificationsInboxViewModelTests'
         // testTapInvoicePaidRowEmitsTheInvoiceDestination. The positional deep-link
         // unit tests can't catch a mis-keyed args lookup; this can.
-        coEvery { repository.getPage(1) } returns ApiResult.Success(page(invoicePaidRow))
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(page(invoicePaidRow))
 
         val vm = viewModel()
         vm.open()
@@ -235,7 +235,7 @@ class NotificationsViewModelTest {
 
     @Test
     fun `read row tap navigates without a second mark-read or badge decrement`() = runTest {
-        coEvery { repository.getPage(1) } returns ApiResult.Success(page(readConfirmedRow))
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(page(readConfirmedRow))
 
         val vm = viewModel()
         vm.open()
@@ -255,7 +255,7 @@ class NotificationsViewModelTest {
     @Test
     fun `row without a destination just marks read - no route emitted`() = runTest {
         val orphanRow = confirmedRow.copy(id = "n-orphan", args = mapOf("orderNumber" to "A-1042"))
-        coEvery { repository.getPage(1) } returns ApiResult.Success(page(orphanRow))
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(page(orphanRow))
 
         val vm = viewModel()
         vm.open()
@@ -274,10 +274,10 @@ class NotificationsViewModelTest {
 
     @Test
     fun `loadMore appends the next page and never re-fires mark-all`() = runTest {
-        coEvery { repository.getPage(1) } returns ApiResult.Success(
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(
             page(unknownNewestRow, newJobsRow, total = 3),
         )
-        coEvery { repository.getPage(2) } returns ApiResult.Success(
+        coEvery { repository.getPage(offset = 2) } returns ApiResult.Success(
             PagedNotificationsDto(pageNumber = 2, pageSize = 20, total = 3, data = listOf(confirmedRow)),
         )
 
@@ -296,12 +296,48 @@ class NotificationsViewModelTest {
         coVerify(exactly = 1) { repository.markAllRead(any()) }
     }
 
+    /**
+     * The cursor is a RAW row offset, so it must count every row the server
+     * sent — including the ones `toFeedItem()` drops for an unknown event key.
+     * Each page here is 2 raw rows rendering as 1 item, so after two pages the
+     * next request is offset 4, never the 2 items on screen: keying it off the
+     * filtered count re-serves rows already rendered, which duplicates
+     * `LazyColumn` keys and throws.
+     */
+    @Test
+    fun `loadMore requests the offset of the RAW fetched row count, not the filtered item count`() = runTest {
+        val secondUnknownRow = unknownNewestRow.copy(id = "n-unknown-2")
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(
+            page(unknownNewestRow, newJobsRow, total = 5),
+        )
+        coEvery { repository.getPage(offset = 2) } returns ApiResult.Success(
+            page(secondUnknownRow, confirmedRow, total = 5),
+        )
+        coEvery { repository.getPage(offset = 4) } returns ApiResult.Success(page(total = 5))
+
+        val vm = viewModel()
+        vm.open()
+        advanceUntilIdle()
+        vm.loadMore()
+        advanceUntilIdle()
+        vm.loadMore()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.getPage(offset = 0) }
+        coVerify(exactly = 1) { repository.getPage(offset = 2) }
+        coVerify(exactly = 1) { repository.getPage(offset = 4) }
+        assertEquals(
+            listOf("n-newjobs", "n-confirmed"),
+            (vm.state.value as NotificationsUiState.Loaded).items.map { it.id },
+        )
+    }
+
     @Test
     fun `loadMore http error keeps the list and surfaces snackbar`() = runTest {
-        coEvery { repository.getPage(1) } returns ApiResult.Success(
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(
             page(newJobsRow, total = 2),
         )
-        coEvery { repository.getPage(2) } returns ApiResult.Error(ApiError.Server(500, "boom"))
+        coEvery { repository.getPage(offset = 1) } returns ApiResult.Error(ApiError.Server(500, "boom"))
 
         val vm = viewModel()
         vm.open()

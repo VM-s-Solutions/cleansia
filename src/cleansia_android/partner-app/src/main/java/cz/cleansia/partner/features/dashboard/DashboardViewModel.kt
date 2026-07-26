@@ -6,6 +6,7 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.api.model.AvailableJobsPreviewResponse
 import cz.cleansia.partner.api.model.DashboardStatsDto
 import cz.cleansia.partner.api.model.OrderListItem
+import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.auth.UserProfileStore
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.notifications.NotificationFeedRepository
@@ -49,7 +50,9 @@ private enum class RefreshSource { INIT, RESUME, USER_PULL }
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val dashboardRepository: DashboardRepository,
+    /** Still needed for the greeting name; the scoping id comes from the resolver. */
     private val userProfileStore: UserProfileStore,
+    private val employeeIdResolver: EmployeeIdResolver,
     private val snackbar: SnackbarController,
     private val errorTranslator: ApiErrorTranslator,
     private val notificationFeedRepository: NotificationFeedRepository,
@@ -123,7 +126,11 @@ class DashboardViewModel @Inject constructor(
             val isUserPull = source == RefreshSource.USER_PULL
             if (isUserPull) _userPullInFlight.value = true
             try {
-                val employeeId = userProfileStore.current()?.employeeId
+                // Resolved, not merely read: a session minted by confirm-email
+                // on a pre-fix build has no stored employee id, and a null one
+                // makes refresh() skip the upcoming-orders leg entirely — the
+                // cleaner's own dashboard showed them no upcoming jobs.
+                val employeeId = employeeIdResolver.resolve()
                 val error = dashboardRepository.refresh(employeeId, force = isUserPull)
                 if (error != null) {
                     snackbar.showError(errorTranslator.translate(error))

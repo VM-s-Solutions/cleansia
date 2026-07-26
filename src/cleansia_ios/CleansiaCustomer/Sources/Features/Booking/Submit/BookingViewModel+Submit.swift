@@ -3,21 +3,25 @@ import Foundation
 
 extension BookingViewModel {
     func submit() async -> BookingSubmitOutcome {
-        guard !submitState.isSubmitting else { return .failed }
+        guard !submitState.isSubmitting else { return .failed(nil) }
         submitState = .submitting
         defer { submitState = .idle }
 
-        guard tokenStore.current() != nil else { return .failed }
+        guard tokenStore.current() != nil else { return .failed(nil) }
 
-        guard case let .success(profile) = await profileClient.currentProfile() else {
-            return .failed
+        let profileResult = await profileClient.currentProfile()
+        guard case let .success(profile) = profileResult else {
+            return .failed(profileResult.apiErrorOrNil)
         }
         guard profile.isComplete else { return .profileIncomplete }
 
         let current = state
-        guard let instant = current.selectedInstant else { return .failed }
+        guard let instant = current.selectedInstant else { return .failed(nil) }
 
-        guard let quote = await resolvedQuote(for: current) else { return .failed }
+        let quoteResult = await resolvedQuote(for: current)
+        guard case let .success(quote) = quoteResult else {
+            return .failed(quoteResult.apiErrorOrNil)
+        }
 
         let countryId = current.savedAddressId == nil
             ? await countryResolver.countryId(forIsoCode: current.countryIsoCode)
@@ -35,8 +39,13 @@ extension BookingViewModel {
             )
         )
 
-        guard case let .success(order) = await orderCreateClient.create(command) else {
-            return .failed
+        // The one that matters most: `order.no_available_spots`,
+        // `order.time_conflict`, `order.total_price.not_match` and
+        // `city.not_serviced` are all rejections the customer can act on, and
+        // every one of them already ships translated in five locales.
+        let createResult = await orderCreateClient.create(command)
+        guard case let .success(order) = createResult else {
+            return .failed(createResult.apiErrorOrNil)
         }
 
         if current.paymentMethod == .card, isCardPaymentAvailable {
@@ -52,10 +61,12 @@ extension BookingViewModel {
     }
 
     private func cardPending(for order: CreatedOrder) async -> BookingSubmitOutcome {
-        guard case let .success(intent) = await paymentIntentClient.createPaymentIntent(orderId: order.id),
-              !intent.clientSecret.isEmpty
-        else {
-            return .failed
+        // The order already exists here, so the customer is owed the real reason
+        // the card step stopped. An empty secret on a 200 has no error to report
+        // and correctly falls back to `nil`.
+        let intentResult = await paymentIntentClient.createPaymentIntent(orderId: order.id)
+        guard case let .success(intent) = intentResult, !intent.clientSecret.isEmpty else {
+            return .failed(intentResult.apiErrorOrNil)
         }
         return .cardPending(
             orderId: order.id,
@@ -69,19 +80,20 @@ extension BookingViewModel {
         )
     }
 
-    func resolvedQuote(for current: BookingState) async -> BookingQuote? {
+    /// Returns the whole `ApiResult` rather than an optional: flattening it to
+    /// `BookingQuote?` discarded a populated `ApiError` one frame before
+    /// `submit` could hand it to the sheet.
+    func resolvedQuote(for current: BookingState) async -> ApiResult<BookingQuote> {
         let request = current.quoteRequest
         if let cached = quoteState.quote, lastQuoteRequest == request {
-            return cached
+            return .success(cached)
         }
-        switch await quoteClient.quote(request) {
-        case let .success(quote):
+        let result = await quoteClient.quote(request)
+        if case let .success(quote) = result {
             lastQuoteRequest = request
             quoteState = .quoted(quote)
-            return quote
-        case .failure:
-            return nil
         }
+        return result
     }
 
     #if DEBUG

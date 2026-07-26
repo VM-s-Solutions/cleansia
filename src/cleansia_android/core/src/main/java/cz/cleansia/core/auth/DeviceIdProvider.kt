@@ -10,8 +10,10 @@ import android.provider.Settings
  *
  *  1. Push registration — the id sent as `deviceId` in /api/Device/Register,
  *     stored server-side on the Device row.
- *  2. [AuthInterceptor]'s `X-Device-Id` header — stamped onto refresh tokens
- *     at issue/rotation time so revoking a device also kills its session.
+ *  2. [DeviceHeadersInterceptor]'s `X-Device-Id` header — stamped onto refresh
+ *     tokens at issue/rotation time so revoking a device also kills its session.
+ *     That interceptor is installed on BOTH OkHttp clients precisely because
+ *     issue time means Login/Register/RefreshToken, which are anonymous.
  *
  * The revoke match is `RefreshToken.DeviceId == Device.DeviceId`, so a second
  * id source would silently break the session kill — never resolve the id

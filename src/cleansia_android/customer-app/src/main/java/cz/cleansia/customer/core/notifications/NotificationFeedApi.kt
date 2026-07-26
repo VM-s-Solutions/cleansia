@@ -16,10 +16,16 @@ import retrofit2.http.Query
  */
 interface NotificationFeedApi {
 
+    /**
+     * `Offset`/`Limit`, not page numbers: the endpoint binds
+     * `GetPagedUserNotifications.Request`, which extends `DataRangeRequest`
+     * (`Offset`, `Limit`). Anything else is ignored by model binding and the
+     * server quietly serves rows 0..19 again — so [offset] is a RAW row cursor.
+     */
     @GET("api/Notification/Paged")
     suspend fun paged(
-        @Query("pageNumber") pageNumber: Int,
-        @Query("pageSize") pageSize: Int,
+        @Query("Offset") offset: Int,
+        @Query("Limit") limit: Int,
     ): Response<PagedNotificationsDto>
 
     @GET("api/Notification/UnreadCount")

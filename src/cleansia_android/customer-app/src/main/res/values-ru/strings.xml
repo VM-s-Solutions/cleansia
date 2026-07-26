@@ -8,7 +8,6 @@
     <string name="login_subtitle">Войдите для управления бронированиями.</string>
     <string name="login_email">Email</string>
     <string name="login_password">Пароль</string>
-    <string name="login_remember_me">Запомнить меня</string>
     <string name="login_forgot_password">Забыли пароль?</string>
     <string name="login_login">Войти</string>
     <string name="login_or">ИЛИ</string>

@@ -50,6 +50,11 @@ import cz.cleansia.customer.ui.theme.SuccessText
 /**
  * Forgot Password — mirrors the web's [`forgot-password.component.html`].
  * Two-phase flow: email input → code + new password.
+ *
+ * [codeSent] is hoisted on purpose. This screen used to own it and set it in
+ * the send button's `onClick`, which meant a rejected or never-delivered
+ * request still walked the user to the code form. The caller now latches it off
+ * the ViewModel's confirmed-send event.
  */
 @Composable
 fun ForgotPasswordScreen(
@@ -58,9 +63,9 @@ fun ForgotPasswordScreen(
     onRegister: () -> Unit = {},
     onBackToLogin: () -> Unit = {},
     loading: Boolean = false,
+    codeSent: Boolean = false,
 ) {
     var email by remember { mutableStateOf("") }
-    var isEmailSent by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -97,15 +102,12 @@ fun ForgotPasswordScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            if (!isEmailSent) {
+            if (!codeSent) {
                 EmailStep(
                     email = email,
                     onEmailChange = { email = it },
                     loading = loading,
-                    onSend = {
-                        onSendCode(email)
-                        isEmailSent = true
-                    },
+                    onSend = { onSendCode(email) },
                     onRegister = onRegister,
                 )
             } else {

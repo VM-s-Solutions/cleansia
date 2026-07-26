@@ -14,6 +14,7 @@ import cz.cleansia.partner.api.model.RequestPasswordChangeCommand
 import cz.cleansia.partner.api.model.ResendConfirmationEmailCommand
 import cz.cleansia.partner.core.auth.UserProfileData
 import cz.cleansia.partner.core.auth.UserProfileStore
+import cz.cleansia.partner.core.network.AuthenticatedAuthApi
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.core.notifications.PushTokenRepository
@@ -64,7 +65,15 @@ interface AuthRepository {
 
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
+    /** Anonymous client — the token-issuing endpoints, which must carry no Bearer. */
     private val authApi: AuthApi,
+    /**
+     * Authenticated client, for the `[Authorize]` auth endpoints ([logout]).
+     * Lazy so the repository does not drag the authenticated OkHttp graph —
+     * and with it [cz.cleansia.core.auth.AuthAuthenticator] — into its own
+     * construction.
+     */
+    @AuthenticatedAuthApi private val authenticatedAuthApi: Provider<AuthApi>,
     private val employeeApi: EmployeeApi,
     private val tokenStore: TokenStore,
     private val userProfileStore: UserProfileStore,
@@ -113,28 +122,7 @@ class AuthRepositoryImpl @Inject constructor(
             )
         }
 
-        // Best-effort employee fetch. If it fails we still return success
-        // because the token is good; profile data lazy-loads later anyway.
-        val employee = safeApiCall(json) { employeeApi.employeeGetCurrentEmployee() }
-            .getOrNull()
-        if (employee != null) {
-            userProfileStore.save(
-                userProfileStore.current()?.copy(
-                    employeeId = employee.id,
-                    firstName = employee.firstName,
-                    lastName = employee.lastName,
-                ) ?: UserProfileData(
-                    userId = body.userId.orEmpty(),
-                    email = body.email ?: email,
-                    employeeId = employee.id,
-                    isEmailConfirmed = true,
-                    hasAdminAccess = body.hasAdminAccess ?: false,
-                    firstName = employee.firstName,
-                    lastName = employee.lastName,
-                    role = body.role,
-                ),
-            )
-        }
+        hydrateEmployeeProfile(body, fallbackEmail = email)
 
         // Device registration is driven by PushTokenSessionObserver,
         // which reacts to the auth-token flow flipping null→non-null
@@ -182,6 +170,14 @@ class AuthRepositoryImpl @Inject constructor(
         persistTokens(body)
         persistProfile(body, fallbackEmail = email)
 
+        // Same hydration login does — and the ONLY chance this session gets.
+        // A cleaner who registers and confirms on the same device never runs
+        // login(), and JwtTokenResponse carries the *user* id, never the
+        // employee id. Without this the session held employeeId = null for its
+        // whole 30-day life: empty invoices, an unscoped dashboard, empty
+        // My-Active/My-Completed tabs and an error screen on Period Pay.
+        hydrateEmployeeProfile(body, fallbackEmail = email)
+
         // Device registration is driven by PushTokenSessionObserver
         // (see login() — same reasoning).
 
@@ -216,9 +212,17 @@ class AuthRepositoryImpl @Inject constructor(
 
         val refreshToken = tokenStore.current()?.refreshToken
         if (!refreshToken.isNullOrBlank()) {
-            // Best-effort — ignore the result. If it fails we still wipe locally.
+            // MUST go out on the authenticated client: /api/Auth/Logout is
+            // [Authorize], so on the anonymous client this was a guaranteed 401
+            // that the best-effort wrapper swallowed — the cleaner saw "signed
+            // out" while the refresh token stayed live server-side.
+            // Best-effort stays: a failure must still wipe locally, and the
+            // authenticated client carries AuthAuthenticator, so an expired
+            // access token refreshes-and-retries instead of failing outright.
             runCatching {
-                safeApiCall(json) { authApi.authLogout(LogoutCommand(token = refreshToken)) }
+                safeApiCall(json) {
+                    authenticatedAuthApi.get().authLogout(LogoutCommand(token = refreshToken))
+                }
             }
         }
         signOutLocal()
@@ -244,6 +248,37 @@ class AuthRepositoryImpl @Inject constructor(
                 accessTokenExpiresAt = accessExp,
                 refreshToken = refresh,
                 refreshTokenExpiresAt = refreshExp,
+            ),
+        )
+    }
+
+    /**
+     * Best-effort employee fetch, run by every path that mints a session
+     * ([login] and [confirmEmail]). If it fails we still return success because
+     * the token is good — [cz.cleansia.partner.core.auth.EmployeeIdResolver]
+     * back-fills the id on first use rather than blocking the sign-in on a
+     * secondary call.
+     *
+     * Must run AFTER [persistTokens] so the request carries a bearer, and after
+     * [persistProfile] so there is a profile row to merge into.
+     */
+    private suspend fun hydrateEmployeeProfile(body: JwtTokenResponse, fallbackEmail: String) {
+        val employee = safeApiCall(json) { employeeApi.employeeGetCurrentEmployee() }
+            .getOrNull() ?: return
+        userProfileStore.save(
+            userProfileStore.current()?.copy(
+                employeeId = employee.id,
+                firstName = employee.firstName,
+                lastName = employee.lastName,
+            ) ?: UserProfileData(
+                userId = body.userId.orEmpty(),
+                email = body.email ?: fallbackEmail,
+                employeeId = employee.id,
+                isEmailConfirmed = true,
+                hasAdminAccess = body.hasAdminAccess ?: false,
+                firstName = employee.firstName,
+                lastName = employee.lastName,
+                role = body.role,
             ),
         )
     }

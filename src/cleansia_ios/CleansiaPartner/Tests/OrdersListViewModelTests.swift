@@ -159,6 +159,64 @@ final class OrdersListViewModelTests: XCTestCase {
         XCTAssertEqual(vm.visibleOrders.map(\.id), ["o1"])
     }
 
+    // MARK: search is scoped to Available — the only pane that renders the field
+
+    // `OrdersListContent.swift` puts `OrdersSearchField` inside `AvailablePane`
+    // and nowhere else, so a query left over from Available used to silently
+    // filter Active/History with no visible control to clear it — and because
+    // `ActivePane`'s empty branch renders `noActiveOrders`, a cleaner could be
+    // told they have no jobs on a day they do. These pin the scoping. The
+    // Android parity is the same shape: only `AvailablePane` calls
+    // `matchesSearch`; `ActivePane`/`HistoryPane` read `uiState.orders` raw.
+
+    func testSearchQueryDoesNotFilterTheActivePane() async {
+        client.pagedResult = .success([
+            .sample(id: "o1", customerName: "Jana"),
+            .sample(id: "o2", customerName: "Petr")
+        ])
+        let vm = makeVM()
+        await vm.onAppear()
+        vm.setSearchQuery("jana")
+        XCTAssertEqual(vm.visibleOrders.map(\.id), ["o1"], "Available still filters")
+
+        await vm.selectTab(.active)
+        XCTAssertEqual(vm.visibleOrders.map(\.id), ["o1", "o2"])
+    }
+
+    func testSearchQueryDoesNotFilterTheHistoryPane() async {
+        client.pagedResult = .success([
+            .sample(id: "o1", customerName: "Jana"),
+            .sample(id: "o2", customerName: "Petr")
+        ])
+        let vm = makeVM()
+        await vm.onAppear()
+        vm.setSearchQuery("jana")
+
+        await vm.selectTab(.history)
+        XCTAssertEqual(vm.visibleOrders.map(\.id), ["o1", "o2"])
+    }
+
+    /// Deliberate decision, pinned so a later "tidy-up" can't silently reverse
+    /// it: switching tabs does NOT clear the query. Android's `selectTab` only
+    /// copies `tab`/`orders` and leaves `searchQuery` alone, and a cleaner who
+    /// checks an active job mid-search expects their typing back when they
+    /// return. Scoping the *filter* is the fix; clearing the *field* is not.
+    func testSearchQuerySurvivesATabRoundTrip() async {
+        client.pagedResult = .success([
+            .sample(id: "o1", customerName: "Jana"),
+            .sample(id: "o2", customerName: "Petr")
+        ])
+        let vm = makeVM()
+        await vm.onAppear()
+        vm.setSearchQuery("jana")
+
+        await vm.selectTab(.active)
+        await vm.selectTab(.available)
+
+        XCTAssertEqual(vm.searchQuery, "jana")
+        XCTAssertEqual(vm.visibleOrders.map(\.id), ["o1"])
+    }
+
     func testSortChangeRefetchesAvailableSilently() async {
         let vm = makeVM()
         await vm.onAppear()

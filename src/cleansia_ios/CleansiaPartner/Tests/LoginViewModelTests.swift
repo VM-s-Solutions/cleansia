@@ -85,7 +85,10 @@ final class LoginViewModelTests: XCTestCase {
         XCTAssertEqual(vm.loginState, .idle)
     }
 
-    func testLoginAlwaysSendsTheFormerCheckedRememberMeDefault() async {
+    /// One mobile-wide session lifetime. The old name referred to "the former checked default"
+    /// of a remember-me checkbox — that checkbox is now gone from the Android partner app too,
+    /// so there is no default left to inherit, only a single value every client sends.
+    func testLoginAlwaysRequestsTheLongLivedRefreshToken() async {
         let vm = makeViewModel()
         vm.onEmailChange("a@b.com")
         vm.onPasswordChange("secret")

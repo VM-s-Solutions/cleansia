@@ -3,6 +3,7 @@ package cz.cleansia.partner.core.network
 import android.content.Context
 import cz.cleansia.core.auth.AuthAuthenticator
 import cz.cleansia.core.auth.AuthInterceptor
+import cz.cleansia.core.auth.DeviceHeadersInterceptor
 import cz.cleansia.core.auth.DeviceIdProvider
 import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.core.auth.RefreshClient
@@ -49,7 +50,10 @@ import javax.inject.Singleton
  *
  * Reuses the canonical pieces from `:core`:
  *  - [TokenStore]              — EncryptedSharedPreferences-backed token persistence
- *  - [AuthInterceptor]         — attaches Bearer, skips anon paths, adds X-Device-Label
+ *  - [AuthInterceptor]         — attaches Bearer, skips anon paths (auth client only)
+ *  - [DeviceHeadersInterceptor] — X-Device-Id / X-Device-Label; on BOTH clients,
+ *                                 because the backend stamps RefreshToken.DeviceId
+ *                                 at issue time and login/refresh are anonymous
  *  - [AuthAuthenticator]       — single-flight 401-refresh-retry
  *  - [SessionManager]          — emits ForcedSignOut events the UI listens to
  *  - [SessionScopedCache]      — multibinding marker; any repo with per-user state
@@ -95,10 +99,20 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideAuthInterceptor(
-        tokenStore: TokenStore,
+    fun provideAuthInterceptor(tokenStore: TokenStore): AuthInterceptor = AuthInterceptor(tokenStore)
+
+    /**
+     * Goes on BOTH clients. The no-auth client is the one that issues tokens
+     * (Login / Register / RefreshToken), and the backend stamps
+     * `RefreshToken.DeviceId` from `X-Device-Id` at issue time — so leaving the
+     * anonymous client bare meant every Android refresh token carried a null
+     * device id and could never be revoked from the devices list.
+     */
+    @Provides
+    @Singleton
+    fun provideDeviceHeadersInterceptor(
         deviceIdProvider: DeviceIdProvider,
-    ): AuthInterceptor = AuthInterceptor(tokenStore, deviceIdProvider)
+    ): DeviceHeadersInterceptor = DeviceHeadersInterceptor(deviceIdProvider)
 
     @Provides
     @Singleton
@@ -147,9 +161,18 @@ object NetworkModule {
     @NoAuthOkHttp
     fun provideNoAuthOkHttp(
         logging: HttpLoggingInterceptor,
+        deviceHeadersInterceptor: DeviceHeadersInterceptor,
         @TimeZoneInterceptorQ timeZoneInterceptor: okhttp3.Interceptor,
     ): OkHttpClient =
         OkHttpClient.Builder()
+            // Device headers, NOT auth: login/register/refresh must identify the
+            // device so the issued refresh token is revocable. An AuthInterceptor
+            // must NOT be added here as a shortcut for the [Authorize] auth
+            // endpoints (/api/Auth/Logout, /ChangePassword — deliberately absent
+            // from ANON_ENDPOINTS): this client has no AuthAuthenticator, so an
+            // expired token would 401 with no refresh-retry. Those calls belong
+            // on the authenticated client.
+            .addInterceptor(deviceHeadersInterceptor)
             .addInterceptor(timeZoneInterceptor)
             .addInterceptor(logging)
             .connectTimeout(15, TimeUnit.SECONDS)
@@ -168,9 +191,29 @@ object NetworkModule {
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
 
+    /**
+     * AuthApi on the ANONYMOUS client — the token-issuing calls (Login,
+     * RegisterEmployee, ConfirmUserEmail, RefreshToken, ForgotPassword) plus the
+     * Authenticator's own refresh. These must not carry a Bearer, and refresh in
+     * particular must not sit behind the Authenticator that calls it.
+     */
     @Provides
     @Singleton
     fun provideAuthApi(@NoAuthRetrofit retrofit: Retrofit): AuthApi =
+        retrofit.create(AuthApi::class.java)
+
+    /**
+     * The SAME interface on the AUTHENTICATED client, for the `[Authorize]`
+     * members of AuthController — today that is `/api/Auth/Logout` only.
+     * Sending logout on the anonymous client made it a guaranteed 401, so the
+     * refresh token stayed live server-side while the cleaner believed they had
+     * signed out. Injected as a `Provider` at the call site so the repository
+     * does not pull the authenticated OkHttp graph in at construction time.
+     */
+    @Provides
+    @Singleton
+    @AuthenticatedAuthApi
+    fun provideAuthenticatedAuthApi(@AuthRetrofit retrofit: Retrofit): AuthApi =
         retrofit.create(AuthApi::class.java)
 
     @Provides
@@ -223,6 +266,7 @@ object NetworkModule {
     fun provideAuthOkHttp(
         logging: HttpLoggingInterceptor,
         authInterceptor: AuthInterceptor,
+        deviceHeadersInterceptor: DeviceHeadersInterceptor,
         authenticator: AuthAuthenticator,
         retryAfterInterceptor: RetryAfterInterceptor,
         @TimeZoneInterceptorQ timeZoneInterceptor: okhttp3.Interceptor,
@@ -232,6 +276,7 @@ object NetworkModule {
         // client stays without it.
         .addInterceptor(retryAfterInterceptor)
         .addInterceptor(authInterceptor)
+        .addInterceptor(deviceHeadersInterceptor)
         .addInterceptor(timeZoneInterceptor)
         .addInterceptor(logging)
         .authenticator(authenticator)
@@ -267,3 +312,10 @@ object NetworkModule {
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class AuthRetrofit
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class NoAuthRetrofit
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class TimeZoneInterceptorQ
+
+/**
+ * Marks the [AuthApi] built on the AUTHENTICATED client. The unqualified
+ * binding stays the anonymous one, so a newly added anonymous auth endpoint is
+ * wired correctly by default; only the `[Authorize]` ones opt in here.
+ */
+@Qualifier @Retention(AnnotationRetention.BINARY) annotation class AuthenticatedAuthApi

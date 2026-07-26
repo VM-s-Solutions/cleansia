@@ -9,9 +9,11 @@ struct OrderDetailView: View {
     @State private var showPhotos = false
     @State private var receiptURL: ReceiptFile?
 
+    private let routeOrderId: String
     private let client: OrderClient
     private let snackbar: SnackbarController
     private let paymentSheet: PaymentSheetPresenting
+    private let onReportIssue: (String) -> Void
 
     init(
         orderId: String,
@@ -19,7 +21,8 @@ struct OrderDetailView: View {
         repository: OrderRepository,
         snackbar: SnackbarController,
         eventBus: OrderEventBus,
-        paymentSheet: PaymentSheetPresenting
+        paymentSheet: PaymentSheetPresenting,
+        onReportIssue: @escaping (String) -> Void
     ) {
         _vm = StateObject(
             wrappedValue: OrderDetailViewModel(
@@ -30,9 +33,11 @@ struct OrderDetailView: View {
                 eventBus: eventBus
             )
         )
+        routeOrderId = orderId
         self.client = client
         self.snackbar = snackbar
         self.paymentSheet = paymentSheet
+        self.onReportIssue = onReportIssue
     }
 
     var body: some View {
@@ -60,8 +65,11 @@ struct OrderDetailView: View {
             }
     }
 
+    /// `OrderItem.id` is optional on the wire, so fall back to the id this
+    /// screen was routed with — they are the same order, and "" is never a
+    /// usable id for the photos screen or the dispute route.
     private var orderId: String {
-        vm.state.loadedValue?.id ?? ""
+        vm.state.loadedValue?.id ?? routeOrderId
     }
 
     private var navigationTitle: String {
@@ -93,10 +101,14 @@ struct OrderDetailView: View {
                     ConfirmRecurringFooter(submitting: vm.confirmRecurringState.isSubmitting) {
                         Task { await vm.confirmRecurring() }
                     }
-                } else if OrderStatusGroup.isCancellable(order.status) {
-                    CancelFooter(enabled: !vm.cancelState.isSubmitting) {
-                        showCancelSheet = true
-                    }
+                } else if OrderStatusGroup.isCancellable(order.status) || OrderStatusGroup.isReportable(order.status) {
+                    OrderDetailActionsFooter(
+                        showCancel: OrderStatusGroup.isCancellable(order.status),
+                        showReportIssue: OrderStatusGroup.isReportable(order.status),
+                        cancelEnabled: !vm.cancelState.isSubmitting,
+                        onCancel: { showCancelSheet = true },
+                        onReportIssue: { onReportIssue(orderId) }
+                    )
                 }
             }
         }
@@ -193,19 +205,35 @@ private struct ConfirmRecurringFooter: View {
     }
 }
 
-private struct CancelFooter: View {
-    let enabled: Bool
+/// The order-detail footer (`ActionsFooter`, `OrderDetailScreen.kt:280-286`).
+/// Cancel and Report-issue overlap on Confirmed, so both are stacked rather than
+/// each owning its own footer — Cancel on top, Report issue below.
+private struct OrderDetailActionsFooter: View {
+    let showCancel: Bool
+    let showReportIssue: Bool
+    let cancelEnabled: Bool
     let onCancel: () -> Void
+    let onReportIssue: () -> Void
 
     var body: some View {
-        VStack {
-            CleansiaOutlinedButton(
-                L10n.OrderDetail.actionCancel,
-                leadingIcon: "xmark.circle",
-                enabled: enabled,
-                action: onCancel
-            )
-            .tint(CleansiaColors.error)
+        VStack(spacing: Spacing.s) {
+            if showCancel {
+                CleansiaOutlinedButton(
+                    L10n.OrderDetail.actionCancel,
+                    leadingIcon: "xmark.circle",
+                    enabled: cancelEnabled,
+                    action: onCancel
+                )
+                .tint(CleansiaColors.error)
+            }
+            if showReportIssue {
+                CleansiaOutlinedButton(
+                    L10n.OrderDetail.actionReportIssue,
+                    leadingIcon: "exclamationmark.triangle",
+                    action: onReportIssue
+                )
+                .tint(CleansiaColors.primary)
+            }
         }
         .padding(.horizontal, Spacing.m)
         .padding(.vertical, Spacing.s)

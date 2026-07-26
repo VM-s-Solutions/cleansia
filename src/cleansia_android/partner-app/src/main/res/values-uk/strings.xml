@@ -55,7 +55,6 @@
     <string name="email">Електронна пошта</string>
     <string name="password">Пароль</string>
     <string name="confirm_password">Підтвердити пароль</string>
-    <string name="remember_me">Запам\'ятати мене</string>
     <string name="forgot_password">Забули пароль?</string>
     <string name="dont_have_account">Немає облікового запису?</string>
     <string name="already_have_account">Вже маєте обліковий запис?</string>

@@ -33,7 +33,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
-import cz.cleansia.core.ui.components.CleansiaCheckbox
 import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextField
@@ -42,13 +41,21 @@ import cz.cleansia.core.ui.components.LabelledDivider
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 
 /**
- * Sign In — mirrors the web's [`login.component.html`].
- * Layout: mascot above the form → brand wordmark → title → email + password → remember-me + forgot-password row →
+ * Sign In — mirrors the web's [`login.component.html`], minus the remember-me checkbox.
+ * Layout: mascot above the form → brand wordmark → title → email + password → forgot-password row →
  *         primary Log in button → OR divider → Google button → "Don't have an account? Register" footer.
+ *
+ * The remember-me box is deliberately absent. It defaulted to *unchecked*, so the common case
+ * asked for a 24-hour refresh token — and on a personal handset the only thing that bought was
+ * a forced re-login after a day of not opening the app. Worse, on this app it was decorative:
+ * `MobileLogin` discards `rememberMe` and forces the long lifetime server-side regardless, so
+ * the box never did anything a customer could observe. The session is now uniformly 30 days
+ * across every mobile surface; the web keeps its checkbox, where the shared-computer case is
+ * real. See [AuthViewModel.signIn].
  */
 @Composable
 fun SignInScreen(
-    onSignInClick: (email: String, password: String, rememberMe: Boolean) -> Unit = { _, _, _ -> },
+    onSignInClick: (email: String, password: String) -> Unit = { _, _ -> },
     onForgotPassword: () -> Unit = {},
     onCreateAccount: () -> Unit = {},
     onGoogleSignIn: () -> Unit = {},
@@ -56,7 +63,6 @@ fun SignInScreen(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var rememberMe by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -113,19 +119,17 @@ fun SignInScreen(
 
         Spacer(Modifier.height(8.dp))
 
-        // Remember me + (Forgot password — TODO Wave 1 Finding 3: link
-        // hidden until UserController reset endpoints are wired. The screen
-        // + route still exist so the wiring can drop in without churn.)
+        // Forgot password — TODO Wave 1 Finding 3: link hidden until
+        // UserController reset endpoints are wired. The screen + route still
+        // exist so the wiring can drop in without churn.
+        // (Arrangement.End, not SpaceBetween: the remember-me checkbox that used to
+        // hold the left of this row is gone, and SpaceBetween with a lone child would
+        // have flipped the link to the left edge.)
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.End,
         ) {
-            CleansiaCheckbox(
-                checked = rememberMe,
-                onCheckedChange = { rememberMe = it },
-                label = stringResource(R.string.login_remember_me),
-            )
             CleansiaTextLink(
                 text = stringResource(R.string.login_forgot_password),
                 onClick = onForgotPassword,
@@ -137,7 +141,7 @@ fun SignInScreen(
         // Primary login
         CleansiaPrimaryButton(
             text = stringResource(R.string.login_login),
-            onClick = { onSignInClick(email, password, rememberMe) },
+            onClick = { onSignInClick(email, password) },
             loading = loading,
             enabled = email.isNotBlank() && password.isNotBlank(),
         )

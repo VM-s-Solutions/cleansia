@@ -53,7 +53,6 @@
     <string name="email">E-mail</string>
     <string name="password">Heslo</string>
     <string name="confirm_password">Potvrdit heslo</string>
-    <string name="remember_me">Zapamatovat si mě</string>
     <string name="forgot_password">Zapomněli jste heslo?</string>
     <string name="dont_have_account">Nemáte účet?</string>
     <string name="already_have_account">Už máte účet?</string>

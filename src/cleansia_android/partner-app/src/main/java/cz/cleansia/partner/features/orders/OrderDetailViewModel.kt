@@ -68,11 +68,19 @@ class OrderDetailViewModel @Inject constructor(
 
     fun onResume() = ensureFreshOrCachedAsync()
 
-    private suspend fun fetch() {
+    /**
+     * @param notifyOnError raise the translated failure on the snackbar. False
+     * only for the reconciling fetch that follows a *rejected* action: the
+     * cleaner has already been told why the action failed, and the partner app
+     * has no `NetworkErrorInterceptor` (only the customer app wires one) to
+     * collapse the duplicate for us. A silent failure is fine there because the
+     * fetch is a best-effort reconciliation, not something the user asked for.
+     */
+    private suspend fun fetch(notifyOnError: Boolean = true) {
         when (val result = ordersRepository.getById(orderId)) {
             is ApiResult.Success -> _uiState.value = OrderDetailUiState.Loaded(result.data)
             is ApiResult.Error -> {
-                snackbar.showError(errorTranslator.translate(result.error))
+                if (notifyOnError) snackbar.showError(errorTranslator.translate(result.error))
                 if (_uiState.value !is OrderDetailUiState.Loaded) {
                     _uiState.value = OrderDetailUiState.Error
                 }
@@ -112,6 +120,16 @@ class OrderDetailViewModel @Inject constructor(
                     snackbar.showError(errorTranslator.translate(result.error))
                     _actionState.value = ActionState.Error(errorTranslator.translate(result.error))
                     _inFlightAction.value = null
+                    // A clean reject almost always means the order moved on
+                    // without us — another cleaner took it, or the status
+                    // advanced from a different device. Without this the footer
+                    // keeps offering the exact action the server just refused,
+                    // so the cleaner taps it again and again. Straight to
+                    // fetch(), not ensureFreshOrCachedAsync(): the cached copy
+                    // is known to disagree with the server, which is precisely
+                    // when a warm cache must not win. That also makes
+                    // invalidateOrder() redundant here.
+                    fetch(notifyOnError = false)
                 }
             }
         }

@@ -39,9 +39,18 @@ final class OrdersListViewModel: ViewModel {
         paneState[tab.pane] ?? .loading
     }
 
-    /// The rows for the current tab after the client-side search filter.
+    /// The rows for the current tab, search-filtered on Available only.
+    ///
+    /// `OrdersSearchField` renders inside `AvailablePane` and nowhere else, so
+    /// applying the query to Active/History hid rows behind a control the
+    /// cleaner couldn't see — and `ActivePane`'s empty branch would then claim
+    /// `noActiveOrders` on a day they had jobs. The query itself deliberately
+    /// survives a tab switch (Android's `selectTab` leaves it alone too); it is
+    /// the *filter* that is scoped, not the field.
     var visibleOrders: [OrderListItem] {
-        (currentState.loadedValue ?? []).filter { $0.matchesSearch(searchQuery) }
+        let rows = currentState.loadedValue ?? []
+        guard tab == .available else { return rows }
+        return rows.filter { $0.matchesSearch(searchQuery) }
     }
 
     /// The single in-progress order, if any — drives the sticky banner.

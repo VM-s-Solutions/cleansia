@@ -91,18 +91,32 @@ struct CustomerCard: View {
 
     @ViewBuilder
     private var contactActions: some View {
-        // Contact PII gated to the assignee (server-side PII gating parity); the
-        // call/SMS/navigate handlers are wired in a later slice.
+        // Contact PII gated to the assignee (server-side PII gating parity).
         let showContact = order.isAssignedToCurrentUser
             && !(order.customerPhone ?? "").isEmpty
         if showContact || addressLine != nil {
             HStack(spacing: Spacing.xs) {
                 if showContact {
-                    ContactChip(icon: "phone", label: L10n.Orders.actionCall)
-                    ContactChip(icon: "message", label: L10n.Orders.actionSms)
+                    ContactChip(
+                        icon: "phone",
+                        label: L10n.Orders.actionCall,
+                        destination: ContactActions.callURL(phone: order.customerPhone)
+                    )
+                    ContactChip(
+                        icon: "message",
+                        label: L10n.Orders.actionSms,
+                        destination: ContactActions.smsURL(phone: order.customerPhone)
+                    )
                 }
                 if addressLine != nil {
-                    ContactChip(icon: "map", label: L10n.Orders.actionNavigate)
+                    ContactChip(
+                        icon: "map",
+                        label: L10n.Orders.actionNavigate,
+                        destination: ContactActions.mapsURL(
+                            coordinate: order.coordinate,
+                            address: addressLine
+                        )
+                    )
                 }
             }
             .padding(.top, Spacing.xxs)
@@ -113,8 +127,24 @@ struct CustomerCard: View {
 private struct ContactChip: View {
     let icon: String
     let label: String
+    let destination: URL?
 
     var body: some View {
+        // `Link` rather than a Button calling `canOpenURL` + `openURL`: it needs
+        // no `LSApplicationQueriesSchemes` declaration, so tel:/sms:/maps links
+        // work with no Info.plist change. Same pattern as the customer app's
+        // employee-call button (OrderDetailDetailsCards.swift).
+        //
+        // A nil destination means the field is unusable (a phone with no digits,
+        // an address that is neither geocoded nor printable). Rendering nothing
+        // is deliberate — a chip that looks tappable and is not is exactly the
+        // bug this replaces.
+        if let destination {
+            Link(destination: destination) { chip }
+        }
+    }
+
+    private var chip: some View {
         Label(label, systemImage: icon)
             .font(CleansiaTypography.labelLarge)
             .foregroundColor(CleansiaColors.primary)

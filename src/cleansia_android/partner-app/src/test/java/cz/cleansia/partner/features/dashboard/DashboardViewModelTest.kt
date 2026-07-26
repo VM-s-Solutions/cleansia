@@ -3,6 +3,7 @@ package cz.cleansia.partner.features.dashboard
 import app.cash.turbine.test
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.api.model.DashboardStatsDto
+import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.auth.UserProfileData
 import cz.cleansia.partner.core.auth.UserProfileStore
 import cz.cleansia.core.network.ApiError
@@ -37,6 +38,7 @@ class DashboardViewModelTest {
 
     private lateinit var dashboardRepository: DashboardRepository
     private lateinit var userProfileStore: UserProfileStore
+    private lateinit var employeeIdResolver: EmployeeIdResolver
     private lateinit var snackbar: SnackbarController
     private lateinit var errorTranslator: ApiErrorTranslator
     private lateinit var notificationFeedRepository: NotificationFeedRepository
@@ -59,6 +61,7 @@ class DashboardViewModelTest {
     fun setUp() {
         dashboardRepository = mockk(relaxed = true)
         userProfileStore = mockk()
+        employeeIdResolver = mockk()
         snackbar = mockk(relaxed = true)
         errorTranslator = mockk()
         notificationFeedRepository = mockk(relaxUnitFun = true)
@@ -67,11 +70,19 @@ class DashboardViewModelTest {
         coEvery { notificationFeedRepository.refreshUnreadCount() } returns ApiResult.Success(0)
         every { errorTranslator.translate(any()) } returns "translated error"
         coEvery { userProfileStore.current() } returns profile
+        coEvery { employeeIdResolver.resolve() } returns "emp-1"
         coEvery { dashboardRepository.refresh(any(), any()) } returns null
     }
 
     private fun viewModel() =
-        DashboardViewModel(dashboardRepository, userProfileStore, snackbar, errorTranslator, notificationFeedRepository)
+        DashboardViewModel(
+            dashboardRepository,
+            userProfileStore,
+            employeeIdResolver,
+            snackbar,
+            errorTranslator,
+            notificationFeedRepository,
+        )
 
     @Test
     fun `refreshing with no stats yields Loading then Loaded once data arrives`() = runTest {

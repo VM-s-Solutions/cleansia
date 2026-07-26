@@ -82,9 +82,18 @@ final class CustomerAuthViewModel: ViewModel {
     private let snackbar: SnackbarController
     private let pendingEmail: String?
 
-    /// Sign-in no longer offers a remember-me toggle; `false` preserves the box's former
-    /// unchecked default, so the refresh token keeps its 24-hour rather than 30-day lifetime.
-    private static let rememberMe = false
+    /// One session lifetime for every mobile surface: 30 days, always requested.
+    ///
+    /// This constant used to be `false` — the inherited default of a "remember me" checkbox
+    /// this screen has never actually shown — which asked for the 24-hour refresh token while
+    /// the iOS partner app and both Android apps asked for the 30-day one. Remember-me is a
+    /// shared-computer web idiom; on a personal handset it only buys a forced re-login after a
+    /// day of not opening the app, and the security it implies is already carried by
+    /// single-use rotating refresh tokens, the Keychain, and per-device revocation.
+    ///
+    /// The field stays on the wire because `Auth/Login` still declares it (and the web keeps
+    /// its checkbox), so this is a client-side decision only — no server change.
+    private static let rememberMe = true
 
     init(
         loginClient: LoginClient,

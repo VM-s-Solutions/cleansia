@@ -28,7 +28,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cz.cleansia.core.ui.components.CleansiaCheckbox
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.components.CleansiaTextLink
@@ -117,16 +116,15 @@ fun LoginScreen(
 
             Spacer(Modifier.height(8.dp))
 
+            // The remember-me checkbox that used to hold the left of this row is gone — the
+            // session is now uniformly 30 days on every mobile surface (see
+            // LoginViewModel.LONG_LIVED_SESSION). Arrangement.End, not SpaceBetween: with a
+            // lone child SpaceBetween would have flipped the link to the left edge.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.End,
             ) {
-                CleansiaCheckbox(
-                    checked = uiState.rememberMe,
-                    onCheckedChange = viewModel::onRememberMeChange,
-                    label = stringResource(R.string.remember_me),
-                )
                 CleansiaTextLink(
                     text = stringResource(R.string.forgot_password),
                     onClick = onNavigateToForgotPassword,

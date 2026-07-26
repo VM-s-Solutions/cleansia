@@ -66,17 +66,24 @@ android {
                     ?: ""
         buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"$mapboxAccessToken\"")
 
-        // Backend API base URL — points at the dedicated Customer Mobile API
-        // host (Cleansia.Web.Mobile.Customer on :5004). The Customer Web host
-        // (:5003) is for browser clients and blanks body tokens per the
-        // HttpOnly cookie migration; native clients need the token in the
-        // JSON response (EncryptedSharedPreferences storage), which the
-        // Mobile.Customer host preserves. Override in
-        // `~/.gradle/gradle.properties` with `API_BASE_URL=http://192.168.1.x:5004/`
-        // for real-device testing.
+        // Backend API base URL — points at the dedicated Customer Mobile API host
+        // (Cleansia.Web.Mobile.Customer). The Customer Web host is for browser clients and blanks
+        // body tokens per the HttpOnly cookie migration; native clients need the token in the JSON
+        // response (EncryptedSharedPreferences storage), which the Mobile.Customer host preserves.
+        //
+        // The DEFAULT is the Azure DEV host, deliberately matching what iOS ships in
+        // CleansiaCustomer/project.yml — a fresh clone of either platform talks to the same backend
+        // with no local setup, which is the whole point when comparing the two apps side by side.
+        // For a locally-running backend, override without editing this file:
+        //     ./gradlew :customer-app:installDebug -PAPI_BASE_URL=http://10.0.2.2:5004/
+        // (10.0.2.2 is the emulator's alias for the host machine; use the LAN IP on a real device),
+        // or set API_BASE_URL in ~/.gradle/gradle.properties to make it sticky.
+        //
+        // MUST end with a slash: Retrofit rejects a base URL without one. ensureTrailingSlash() in
+        // AuthModule is the belt to this braces, so an override that forgets it still works.
         val apiBaseUrl = providers.gradleProperty("API_BASE_URL").orNull
             ?: System.getenv("API_BASE_URL")
-                    ?: "http://10.0.2.2:5004/"
+                    ?: "https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net/"
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
 
         // Sentry DSN — read from ~/.gradle/gradle.properties (SENTRY_DSN) or CI env.

@@ -30,6 +30,11 @@ splashScreen = "1.0.1"
 lifecycle = "2.8.7"
 androidxCore = "1.15.0"
 appcompat = "1.7.0"
+# EXIF reader for the shared image compressor. The AndroidX implementation is
+# used rather than android.media.ExifInterface because the platform class's
+# InputStream constructor has per-API and per-OEM gaps for HEIF/WebP across the
+# 26 -> 35 range both apps support.
+exifinterface = "1.3.7"
 mapbox = "11.8.0"
 mapboxCompose = "11.8.0"
 playServicesLocation = "21.2.0"
@@ -58,6 +63,7 @@ libphonenumber = "8.13.50"
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+androidx-exifinterface = { module = "androidx.exifinterface:exifinterface", version.ref = "exifinterface" }
 androidx-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "splashScreen" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }

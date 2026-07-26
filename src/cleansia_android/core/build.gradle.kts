@@ -61,6 +61,10 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    // EXIF reader for cz.cleansia.core.media.ImageCompressor — the orientation
+    // tag has to be read BEFORE the re-encode drops it, or portrait photos
+    // upload sideways.
+    implementation(libs.androidx.exifinterface)
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)

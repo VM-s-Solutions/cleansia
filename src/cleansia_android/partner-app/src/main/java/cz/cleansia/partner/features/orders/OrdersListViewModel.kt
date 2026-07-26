@@ -219,7 +219,14 @@ class OrdersListViewModel @Inject constructor(
         fetchAsync(tab, background = true)
     }
 
-    private fun fetchAsync(tab: OrdersTab, background: Boolean) {
+    /**
+     * @param notifyOnError raise the translated failure on the snackbar. False
+     * only for the reconciling fetch that follows a *rejected* inline action:
+     * the cleaner has already been told why the swipe failed, and the partner
+     * app wires no `NetworkErrorInterceptor` (only the customer app does) to
+     * collapse the duplicate for us.
+     */
+    private fun fetchAsync(tab: OrdersTab, background: Boolean, notifyOnError: Boolean = true) {
         viewModelScope.launch {
             _uiState.update {
                 it.copy(
@@ -288,7 +295,7 @@ class OrdersListViewModel @Inject constructor(
                     )
                 }
                 is ApiResult.Error -> {
-                    snackbar.showError(errorTranslator.translate(result.error))
+                    if (notifyOnError) snackbar.showError(errorTranslator.translate(result.error))
                     _uiState.update {
                         it.copy(
                             isUserRefreshing = false,
@@ -348,6 +355,16 @@ class OrdersListViewModel @Inject constructor(
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(inFlightActionOrderId = null) }
                     snackbar.showError(errorTranslator.translate(result.error))
+                    // Reconcile exactly as the success branch does. A reject
+                    // nearly always means the order moved on without us —
+                    // another cleaner took it, or the status advanced from the
+                    // detail screen — so the row must stop offering an action
+                    // the server has already refused. The panes are
+                    // invalidated as well as refetched: the mutation's *other*
+                    // pane is just as wrong as this one, and only the
+                    // watermark reset makes the next tab switch pick it up.
+                    ordersRepository.invalidatePanesFor(mutation)
+                    fetchAsync(_uiState.value.tab, background = true, notifyOnError = false)
                 }
             }
         }

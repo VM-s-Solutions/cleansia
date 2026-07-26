@@ -135,6 +135,65 @@ class OrderDetailViewModelTest {
         verify { snackbar.showError("translated error") }
     }
 
+    /**
+     * A clean server reject — another cleaner took the job, or the status moved
+     * on from a different device — used to leave the footer offering the exact
+     * action that had just been refused, because only the success branch
+     * refetched. The reconciling fetch deliberately bypasses
+     * [OrdersRepository.isOrderStale]: the local copy of the order is *known*
+     * to disagree with the server, so a warm cache is precisely the wrong thing
+     * to trust here.
+     */
+    @Test
+    fun `a rejected action refetches so the footer cannot keep offering it`() = runTest {
+        val refreshed = mockk<OrderItem>()
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returnsMany listOf(
+            ApiResult.Success(order),
+            ApiResult.Success(refreshed),
+        )
+        coEvery { ordersRepository.takeOrder(orderId) } returns
+            ApiResult.Error(ApiError.BadRequest("taken", errorKey = "order.already_taken"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertEquals(OrderDetailUiState.Loaded(order), vm.uiState.value)
+
+        vm.take()
+        advanceUntilIdle()
+
+        assertEquals(OrderDetailUiState.Loaded(refreshed), vm.uiState.value)
+        assertTrue(vm.actionState.value is ActionState.Error)
+        assertNull(vm.inFlightAction.value)
+    }
+
+    /**
+     * The reconciling fetch must not be able to turn one failure into two
+     * snackbars. The partner app has no `NetworkErrorInterceptor` (only the
+     * customer app wires one), so nothing above the ViewModel de-duplicates
+     * toasts — the refetch has to stay silent about its own error, and the
+     * order already on screen has to survive it.
+     */
+    @Test
+    fun `a failed reconciling refetch keeps the order and raises only the action error`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returnsMany listOf(
+            ApiResult.Success(order),
+            ApiResult.Error(ApiError.Network("down")),
+        )
+        coEvery { ordersRepository.startOrder(orderId) } returns ApiResult.Error(ApiError.Network("down"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.start()
+        advanceUntilIdle()
+
+        assertEquals(OrderDetailUiState.Loaded(order), vm.uiState.value)
+        verify(exactly = 1) { snackbar.showError("translated error") }
+        io.mockk.coVerify(exactly = 2) { ordersRepository.getById(orderId) }
+    }
+
     @Test
     fun `action is re-entry guarded while submitting`() = runTest {
         every { ordersRepository.isOrderStale(orderId) } returns true

@@ -14,6 +14,7 @@ final class CustomerAuthViewModelTests: XCTestCase {
     private var provider: FakeSocialSignInProvider!
     private var settings: FakeAppSettingsStore!
     private var snackbar: SnackbarController!
+    private var referral: FakeReferralClient!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
@@ -27,11 +28,13 @@ final class CustomerAuthViewModelTests: XCTestCase {
         provider = FakeSocialSignInProvider()
         settings = FakeAppSettingsStore()
         snackbar = SnackbarController()
+        referral = FakeReferralClient()
         cancellables = []
     }
 
     override func tearDown() {
         cancellables = nil
+        referral = nil
         snackbar = nil
         settings = nil
         provider = nil
@@ -55,7 +58,8 @@ final class CustomerAuthViewModelTests: XCTestCase {
             settings: settings,
             snackbar: snackbar,
             pendingEmail: pendingEmail,
-            changePasswordClient: changePassword
+            changePasswordClient: changePassword,
+            referralClient: referral
         )
     }
 
@@ -185,54 +189,94 @@ final class CustomerAuthViewModelTests: XCTestCase {
         XCTAssertNil(registration.lastReferralCode)
     }
 
-    func testReferralFieldStartsCollapsed() {
+    // MARK: - Referral validation at signup
+
+    func testValidatingAGoodReferralCodeAppliesTheNormalisedCode() async {
+        referral.result = .success(ReferralValidation(isValid: true, referrerFirstName: "Eva", errorCode: nil))
         let vm = makeViewModel()
 
-        XCTAssertFalse(vm.signUpForm.referralExpanded)
+        let outcome = await vm.validateReferralCode(" anna7 ")
+
+        XCTAssertEqual(outcome, .valid(referrerFirstName: "Eva"))
+        XCTAssertEqual(vm.referralState, .valid(referrerFirstName: "Eva"))
+        XCTAssertEqual(vm.signUpForm.referralCode, "ANNA7")
+        XCTAssertEqual(referral.lastCode, "ANNA7")
     }
 
-    func testTogglingReferralRevealsTheField() {
-        let vm = makeViewModel()
-
-        vm.toggleReferralCode()
-
-        XCTAssertTrue(vm.signUpForm.referralExpanded)
-    }
-
-    func testTogglingReferralTwiceCollapsesAndClearsTheTypedCode() {
-        let vm = makeViewModel()
-        vm.toggleReferralCode()
-        vm.onReferralCodeChange("ANNA7")
-
-        vm.toggleReferralCode()
-
-        XCTAssertFalse(vm.signUpForm.referralExpanded)
-        XCTAssertEqual(vm.signUpForm.referralCode, "")
-    }
-
-    func testSignUpSendsTheCodeTypedWhileRevealed() async {
+    func testAValidatedReferralCodeIsTheOneSentToRegister() async {
+        referral.result = .success(ReferralValidation(isValid: true, referrerFirstName: "Eva", errorCode: nil))
         registration.result = .success(true)
         let vm = makeViewModel()
         fillValidSignUp(vm)
-        vm.toggleReferralCode()
-        vm.onReferralCodeChange("ANNA7")
+        _ = await vm.validateReferralCode("anna7")
 
         await vm.signUp()
 
         XCTAssertEqual(registration.lastReferralCode, "ANNA7")
     }
 
-    func testSignUpSendsNilWhenTheTypedCodeWasCollapsedAway() async {
+    func testRejectedReferralCodeMapsTheServerErrorAndIsNotApplied() async {
+        referral.result = .success(ReferralValidation(
+            isValid: false,
+            referrerFirstName: nil,
+            errorCode: "SelfReferral"
+        ))
+        let vm = makeViewModel()
+
+        let outcome = await vm.validateReferralCode("MYOWN")
+
+        XCTAssertEqual(outcome, .invalid(.selfReferral))
+        XCTAssertEqual(vm.referralState, .invalid(.selfReferral))
+        XCTAssertEqual(vm.signUpForm.referralCode, "")
+    }
+
+    func testReferralTransportFailureIsGenericInvalidNotAFatalError() async {
+        referral.result = .failure(ApiError(code: "network"))
+        let vm = makeViewModel()
+
+        let outcome = await vm.validateReferralCode("ANNA7")
+
+        XCTAssertEqual(outcome, .invalid(nil))
+        XCTAssertEqual(vm.referralState, .invalid(nil))
+        XCTAssertEqual(vm.signUpForm.referralCode, "")
+    }
+
+    func testBlankReferralCodeShortCircuitsWithoutCallingTheClient() async {
+        let vm = makeViewModel()
+
+        let outcome = await vm.validateReferralCode("   ")
+
+        XCTAssertEqual(outcome, .idle)
+        XCTAssertEqual(vm.referralState, .idle)
+        XCTAssertEqual(referral.callCount, 0)
+    }
+
+    func testClearingTheReferralDropsBothTheStateAndThePayload() async {
+        referral.result = .success(ReferralValidation(isValid: true, referrerFirstName: "Eva", errorCode: nil))
+        let vm = makeViewModel()
+        _ = await vm.validateReferralCode("ANNA7")
+
+        vm.clearReferralCode()
+
+        XCTAssertEqual(vm.referralState, .idle)
+        XCTAssertEqual(vm.signUpForm.referralCode, "")
+    }
+
+    /// A rejected code must not block registration — `Register.cs` accepts a bad
+    /// referral fail-soft, so the sign-up button stays live and the code still
+    /// goes over the wire for the server to ignore.
+    func testARejectedReferralCodeDoesNotBlockSignUp() async {
+        referral.result = .success(ReferralValidation(isValid: false, referrerFirstName: nil, errorCode: "NotFound"))
         registration.result = .success(true)
         let vm = makeViewModel()
         fillValidSignUp(vm)
-        vm.toggleReferralCode()
-        vm.onReferralCodeChange("ANNA7")
-        vm.toggleReferralCode()
+        vm.onReferralCodeChange("NOPE")
+        _ = await vm.validateReferralCode("NOPE")
 
         await vm.signUp()
 
-        XCTAssertNil(registration.lastReferralCode)
+        XCTAssertTrue(vm.signUpForm.isValid)
+        XCTAssertEqual(registration.callCount, 1)
     }
 
     func testSignUpEnforcesPasswordPolicy() async {

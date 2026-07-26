@@ -16,7 +16,6 @@ struct SignUpFormState: Equatable {
     var password = ""
     var confirmPassword = ""
     var referralCode = ""
-    var referralExpanded = false
     var acceptTerms = false
     var firstNameError: String?
     var lastNameError: String?
@@ -75,6 +74,11 @@ final class CustomerAuthViewModel: ViewModel {
     @Published private(set) var resendState: ActionState = .idle
     @Published private(set) var socialState: ActionState = .idle
 
+    /// Referral validation at signup, mirroring the booking sheet's state machine.
+    /// Purely advisory: `Register` accepts a bad code fail-soft, so nothing here
+    /// gates `signUpForm.isValid`.
+    @Published private(set) var referralState: ReferralCodeState = .idle
+
     let outcome = PassthroughSubject<AuthOutcome, Never>()
 
     private let loginClient: LoginClient
@@ -87,6 +91,10 @@ final class CustomerAuthViewModel: ViewModel {
     /// the shared `PasswordResetClient` — the partner mobile host has no such endpoint.
     private let changePasswordClient: ChangePasswordClient
     private let socialAuthClient: SocialAuthClient
+    /// `Referral/Validate` is `[AllowAnonymous]` and sits on the customer
+    /// `AnonymousAllowList`, so this runs with no session and no bearer — which is
+    /// exactly what a signup screen needs.
+    private let referralClient: ReferralClient
     private let socialProvider: SocialSignInProviding
     private let settings: AppSettingsStore
     private let snackbar: SnackbarController
@@ -116,7 +124,8 @@ final class CustomerAuthViewModel: ViewModel {
         settings: AppSettingsStore,
         snackbar: SnackbarController,
         pendingEmail: String? = nil,
-        changePasswordClient: ChangePasswordClient = LiveChangePasswordClient()
+        changePasswordClient: ChangePasswordClient = LiveChangePasswordClient(),
+        referralClient: ReferralClient = LiveReferralClient()
     ) {
         self.loginClient = loginClient
         self.registrationClient = registrationClient
@@ -124,6 +133,7 @@ final class CustomerAuthViewModel: ViewModel {
         self.passwordResetClient = passwordResetClient
         self.changePasswordClient = changePasswordClient
         self.socialAuthClient = socialAuthClient
+        self.referralClient = referralClient
         self.socialProvider = socialProvider
         self.settings = settings
         self.snackbar = snackbar
@@ -188,13 +198,45 @@ final class CustomerAuthViewModel: ViewModel {
         signUpForm.referralCode = value
     }
 
-    func toggleReferralCode() {
-        signUpForm.referralExpanded.toggle()
-        // Collapsing hides the field, so anything typed into it must go too —
-        // a code the customer can no longer see must never reach the register call.
-        if !signUpForm.referralExpanded {
-            signUpForm.referralCode = ""
+    /// Checks the code against the server before the customer commits to it, so a
+    /// typo surfaces here instead of silently costing them the referral bonus.
+    /// Structurally identical to `BookingViewModel.validateReferralCode` — same
+    /// client, same state machine, same normalisation — because it is the same
+    /// endpoint answering the same question at a different point in the funnel.
+    ///
+    /// Only a code the server accepted is written to the form. A rejected or
+    /// unreachable code leaves `referralCode` alone, so it never reaches `Register`
+    /// on the strength of a failed check.
+    @discardableResult
+    func validateReferralCode(_ rawCode: String) async -> ReferralCodeState {
+        let normalized = rawCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        if normalized.isEmpty {
+            referralState = .idle
+            return .idle
         }
+        referralState = .validating
+        let resolved: ReferralCodeState = switch await referralClient.validate(code: normalized) {
+        case let .success(validation):
+            if validation.isValid {
+                .valid(referrerFirstName: validation.referrerFirstName)
+            } else {
+                .invalid(ReferralValidationError.from(validation.errorCode))
+            }
+        case .failure:
+            .invalid(nil)
+        }
+        referralState = resolved
+        if case .valid = resolved {
+            signUpForm.referralCode = normalized
+        }
+        return resolved
+    }
+
+    /// Clearing the row must drop the payload too — a code the customer can no
+    /// longer see must never reach the register call.
+    func clearReferralCode() {
+        referralState = .idle
+        signUpForm.referralCode = ""
     }
 
     func onAcceptTermsChange(_ value: Bool) {

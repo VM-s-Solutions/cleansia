@@ -333,9 +333,30 @@ extension CustomerShellView {
             snackbar: snackbar,
             eventBus: container.orderEventBus,
             paymentSheet: StripePaymentController(),
+            hasMembership: membershipVM.current?.hasMembership == true,
             // The footer hands back the id of the order on screen — the dispute
             // form is only reachable with one, which is the whole fix.
-            onReportIssue: { model.path.append(ShellRoute.createDispute(orderId: $0)) }
+            onReportIssue: { model.path.append(ShellRoute.createDispute(orderId: $0)) },
+            // Pop FIRST. `rebookOrder` presents the booking sheet at the shell
+            // root, so leaving the detail pushed underneath drops the customer
+            // back onto the old order when the sheet dismisses — Android pops to
+            // MainShell for the same reason (`CleansiaNavHost.kt:636-643`).
+            // Clearing the path also lets the shell's "some items are no longer
+            // available" snackbar be seen.
+            onRebook: { orderId in
+                model.path = NavigationPath()
+                rebookOrder(orderId)
+            },
+            // Pre-seeded, exactly like the Home and membership-success entries:
+            // the createRecurring destination pops on creation, so without the
+            // list beneath it a new schedule lands on the tab root instead of on
+            // the list it was just added to.
+            onMakeRecurring: { orderId in
+                model.path = NavigationPath([
+                    ShellRoute.recurringList,
+                    ShellRoute.createRecurring(orderId: orderId)
+                ])
+            }
         )
     }
 

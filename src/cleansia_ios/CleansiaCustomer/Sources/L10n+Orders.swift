@@ -269,6 +269,10 @@ extension L10n {
             localized("order_action_rebook")
         }
 
+        static var actionMakeRecurring: String {
+            localized("order_action_make_recurring")
+        }
+
         static var rebookUnavailableItems: String {
             localized("order_rebook_unavailable_items")
         }

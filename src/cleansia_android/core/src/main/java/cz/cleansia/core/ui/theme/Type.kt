@@ -2,34 +2,40 @@ package cz.cleansia.core.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.googlefonts.Font
-import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.unit.sp
 import cz.cleansia.core.R
 
-private val googleFontsProvider = GoogleFont.Provider(
-    providerAuthority = "com.google.android.gms.fonts",
-    providerPackage = "com.google.android.gms",
-    certificates = R.array.com_google_android_gms_fonts_certs,
-)
-
-private val poppinsFont = GoogleFont("Poppins")
-private val nunitoFont = GoogleFont("Nunito")
+/*
+ * The six TTFs in res/font are the exact same binaries the iOS apps ship
+ * (src/cleansia_ios/CleansiaCustomer/Resources/Fonts, byte-identical), so Android and iOS render
+ * the brand metrically identically.
+ *
+ * They are bundled rather than fetched through the Play-Services downloadable-font provider on
+ * purpose: that provider resolves only on devices with Google Play Services, so on a Huawei,
+ * a de-Googled ROM or a grey-market handset it never resolved at all and EVERY string in both apps
+ * fell back to Roboto. It also failed on a cold first launch without network. Bundling costs
+ * ~868 KB per APK and removes both failure modes.
+ *
+ * Note there is deliberately no Nunito Medium(500) in the bundle — same as the provider family
+ * before it. Compose's CSS-style weight matcher resolves a Medium request on Nunito down to
+ * Regular(400); that is pre-existing behaviour, not a regression introduced here.
+ */
 
 // Poppins — headings (matches web app)
 val Poppins = FontFamily(
-    Font(googleFont = poppinsFont, fontProvider = googleFontsProvider, weight = FontWeight.Medium),
-    Font(googleFont = poppinsFont, fontProvider = googleFontsProvider, weight = FontWeight.SemiBold),
-    Font(googleFont = poppinsFont, fontProvider = googleFontsProvider, weight = FontWeight.Bold),
+    Font(R.font.poppins_medium, FontWeight.Medium),
+    Font(R.font.poppins_semibold, FontWeight.SemiBold),
+    Font(R.font.poppins_bold, FontWeight.Bold),
 )
 
 // Nunito — body (matches web app)
 val Nunito = FontFamily(
-    Font(googleFont = nunitoFont, fontProvider = googleFontsProvider, weight = FontWeight.Normal),
-    Font(googleFont = nunitoFont, fontProvider = googleFontsProvider, weight = FontWeight.SemiBold),
-    Font(googleFont = nunitoFont, fontProvider = googleFontsProvider, weight = FontWeight.Bold),
+    Font(R.font.nunito_regular, FontWeight.Normal),
+    Font(R.font.nunito_semibold, FontWeight.SemiBold),
+    Font(R.font.nunito_bold, FontWeight.Bold),
 )
 
 val CleansiaTypography = Typography(

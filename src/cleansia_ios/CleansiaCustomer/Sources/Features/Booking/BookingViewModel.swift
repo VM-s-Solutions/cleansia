@@ -74,7 +74,8 @@ final class BookingViewModel: ViewModel {
     }
 
     var isQuoting: Bool {
-        quoteState == .quoting
+        if case .quoting = quoteState { return true }
+        return false
     }
 
     func update(_ transform: (BookingState) -> BookingState) {
@@ -297,11 +298,15 @@ final class BookingViewModel: ViewModel {
         quoteTask?.cancel()
         if request.serviceIds.isEmpty, request.packageIds.isEmpty {
             quoteState = .idle
+            // Cache invalidation, not tidying: without this a later submit of
+            // the same request shape could be served the abandoned quote.
             lastQuoteRequest = nil
             return
         }
         let previousQuote = quoteState.quote
-        quoteState = .quoting
+        // Hand the outgoing quote to `.quoting` so the summary keeps the last
+        // known total for the duration of the round trip.
+        quoteState = .quoting(previous: previousQuote)
         quoteTask = Task { [weak self] in
             guard let self else { return }
             let result = await quoteClient.quote(request)

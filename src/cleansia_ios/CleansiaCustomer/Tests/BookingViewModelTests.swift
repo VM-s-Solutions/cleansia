@@ -182,7 +182,7 @@ final class BookingViewModelTests: XCTestCase {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        XCTAssertEqual(vm.quoteState, .quoting)
+        XCTAssertEqual(vm.quoteState, .quoting(previous: nil))
 
         await drainQuote()
 
@@ -261,6 +261,81 @@ final class BookingViewModelTests: XCTestCase {
         await drainQuote()
 
         XCTAssertEqual(vm.quoteState.quote?.totalPrice, 900)
+    }
+
+    /// The confirm step reads `quoteState.quote?.totalPrice ?? 0`, so while a
+    /// re-quote is in flight the whole price summary used to flash to 0/CZK for
+    /// the 400 ms debounce plus the round trip. `.quoting` carries the previous
+    /// quote so every reader keeps the stale-but-correct number until the new
+    /// one lands.
+    func testReQuoteKeepsThePreviousTotalOnScreen() async {
+        let quote = FakeQuoteClient(result: .success(BookingQuote(totalPrice: 1200, currencyCode: "CZK")))
+        let scheduler = TestScheduler.dispatch
+        let vm = makeVM(quote: quote, scheduler: scheduler)
+
+        vm.update { var s = $0
+            s.selectedServiceIds = ["s-1"]
+            return s
+        }
+        scheduler.advance(by: .milliseconds(400))
+        await drainQuote()
+        XCTAssertEqual(vm.quoteState.quote?.totalPrice, 1200)
+
+        quote.result = .success(BookingQuote(totalPrice: 1500, currencyCode: "CZK"))
+        vm.update { var s = $0
+            s.rooms = 2
+            return s
+        }
+        scheduler.advance(by: .milliseconds(400))
+
+        XCTAssertTrue(vm.isQuoting)
+        XCTAssertEqual(vm.quoteState.quote?.totalPrice, 1200)
+        XCTAssertEqual(vm.quoteState.quote?.currencyCode, "CZK")
+
+        await drainQuote()
+        XCTAssertEqual(vm.quoteState.quote?.totalPrice, 1500)
+    }
+
+    /// The very first quote has nothing to fall back on, so the summary must
+    /// still be absent rather than showing a fabricated zero.
+    func testFirstQuoteHasNoPreviousTotalToKeep() {
+        let quote = FakeQuoteClient(result: .success(BookingQuote(totalPrice: 1200, currencyCode: "CZK")))
+        let scheduler = TestScheduler.dispatch
+        let vm = makeVM(quote: quote, scheduler: scheduler)
+
+        vm.update { var s = $0
+            s.selectedServiceIds = ["s-1"]
+            return s
+        }
+        scheduler.advance(by: .milliseconds(400))
+
+        XCTAssertTrue(vm.isQuoting)
+        XCTAssertNil(vm.quoteState.quote)
+    }
+
+    /// The carried-over quote is for display only. `lastQuoteRequest` is written
+    /// only on a successful quote, so `resolvedQuote` still misses the cache
+    /// while a re-quote is in flight and the stale total can never be submitted.
+    /// The scheduler is deliberately never advanced here, so the debounced
+    /// watcher never fires and `quoteClient` sees exactly the one call made by
+    /// `resolvedQuote` itself.
+    func testCarriedOverQuoteIsNeverServedToSubmit() async {
+        let quote = FakeQuoteClient(result: .success(BookingQuote(totalPrice: 1500, currencyCode: "CZK")))
+        let vm = makeVM(quote: quote, scheduler: .dispatch)
+
+        vm.update { var s = $0
+            s.selectedServiceIds = ["s-1"]
+            return s
+        }
+        vm.quoteState = .quoting(previous: BookingQuote(totalPrice: 1200, currencyCode: "CZK"))
+        vm.lastQuoteRequest = nil
+        XCTAssertEqual(vm.quoteState.quote?.totalPrice, 1200)
+
+        let resolved = await vm.resolvedQuote(for: vm.state)
+
+        XCTAssertEqual(try? resolved.get().totalPrice, 1500)
+        XCTAssertEqual(quote.callCount, 1)
+        XCTAssertEqual(vm.quoteState.quote?.totalPrice, 1500)
     }
 
     func testClearingSelectionReturnsQuoteToIdle() async {

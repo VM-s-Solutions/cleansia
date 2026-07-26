@@ -3,6 +3,7 @@ package cz.cleansia.customer.core.auth
 import android.content.Context
 import cz.cleansia.core.auth.AuthAuthenticator
 import cz.cleansia.core.auth.AuthInterceptor
+import cz.cleansia.core.auth.DeviceHeadersInterceptor
 import cz.cleansia.core.auth.DeviceIdProvider
 import cz.cleansia.core.auth.NetworkErrorInterceptor
 import cz.cleansia.core.auth.SessionManager
@@ -63,6 +64,9 @@ object AuthModule {
     //     a 401 on refresh would recursively trigger another refresh → stack overflow.
     //     The AuthInterceptor already skips the Authorization header on anonymous
     //     endpoints, but using a separate client makes the boundary explicit.
+    // [DeviceHeadersInterceptor] is on BOTH — it carries no credential, and the
+    // device id has to reach the endpoints that ISSUE tokens or the resulting
+    // refresh token is stamped with a null device id and is unrevocable.
 
     @Provides
     @Singleton
@@ -105,10 +109,19 @@ object AuthModule {
     @NoAuthOkHttp
     fun provideNoAuthOkHttpClient(
         logging: HttpLoggingInterceptor,
+        deviceHeadersInterceptor: DeviceHeadersInterceptor,
         networkErrorInterceptor: NetworkErrorInterceptor,
         @TimeZoneInterceptorQ timeZoneInterceptor: okhttp3.Interceptor,
     ): OkHttpClient = OkHttpClient.Builder()
         .eventListener(SentryOkHttpEventListener())
+        // Device headers, NOT auth: login/register/refresh must identify the
+        // device so the issued refresh token is revocable. See
+        // [DeviceHeadersInterceptor]. An AuthInterceptor must NOT be added here
+        // as a shortcut for the [Authorize] auth endpoints (/api/Auth/Logout,
+        // /ChangePassword — deliberately absent from ANON_ENDPOINTS): this
+        // client has no AuthAuthenticator, so an expired token would 401 with no
+        // refresh-retry. Those calls belong on the authenticated client.
+        .addInterceptor(deviceHeadersInterceptor)
         .addInterceptor(timeZoneInterceptor)
         .addInterceptor(networkErrorInterceptor)
         .addInterceptor(logging)
@@ -186,10 +199,20 @@ object AuthModule {
 
     @Provides
     @Singleton
-    fun provideAuthInterceptor(
-        tokenStore: TokenStore,
+    fun provideAuthInterceptor(tokenStore: TokenStore): AuthInterceptor = AuthInterceptor(tokenStore)
+
+    /**
+     * Goes on BOTH clients. The no-auth client is the one that issues tokens
+     * (Login / Register / GoogleAuth / RefreshToken), and the backend stamps
+     * `RefreshToken.DeviceId` from `X-Device-Id` at issue time — so leaving the
+     * anonymous client bare meant every Android refresh token carried a null
+     * device id and could never be revoked from "Your devices".
+     */
+    @Provides
+    @Singleton
+    fun provideDeviceHeadersInterceptor(
         deviceIdProvider: DeviceIdProvider,
-    ): AuthInterceptor = AuthInterceptor(tokenStore, deviceIdProvider)
+    ): DeviceHeadersInterceptor = DeviceHeadersInterceptor(deviceIdProvider)
 
     @Provides
     @Singleton
@@ -211,6 +234,7 @@ object AuthModule {
     fun provideAuthOkHttpClient(
         logging: HttpLoggingInterceptor,
         authInterceptor: AuthInterceptor,
+        deviceHeadersInterceptor: DeviceHeadersInterceptor,
         networkErrorInterceptor: NetworkErrorInterceptor,
         authenticator: AuthAuthenticator,
         retryAfterInterceptor: RetryAfterInterceptor,
@@ -222,6 +246,7 @@ object AuthModule {
         // login) client stays without it.
         .addInterceptor(retryAfterInterceptor)
         .addInterceptor(authInterceptor)
+        .addInterceptor(deviceHeadersInterceptor)
         .addInterceptor(timeZoneInterceptor)
         .addInterceptor(networkErrorInterceptor)
         .addInterceptor(logging)

@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.core.os.ConfigurationCompat
+import cz.cleansia.core.settings.SupportedLanguages
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -41,6 +43,28 @@ class AppSettingsRepository(private val context: Context) {
     suspend fun setLanguage(language: LanguagePreference) {
         context.dataStore.edit { it[Keys.LANGUAGE] = language.name }
     }
+
+    /**
+     * The language code to send with confirmation / password-reset emails.
+     *
+     * [LanguagePreference.System] is the default and carries a null tag, so every
+     * caller used to `?: "en"` and a Czech phone got English mail on a fresh
+     * install. Resolution now runs through [SupportedLanguages], which prefers an
+     * explicit picker choice, then the device's ordered locale list, then English —
+     * and clamps the answer to the five codes the backend's `LanguageValidator`
+     * will accept, so an unsupported handset locale can never fail a registration.
+     *
+     * We read `context.resources.configuration` rather than
+     * `AppCompatDelegate.getApplicationLocales()`: when the preference is System
+     * there is no app override to read, and when there IS one the configuration
+     * already reflects it. Reading both would be two sources of truth that
+     * disagree right after a locale change.
+     */
+    suspend fun emailLanguageTag(): String = SupportedLanguages.resolve(
+        persistedTag = settings.first().language.tag,
+        devicePreferred = ConfigurationCompat.getLocales(context.resources.configuration)
+            .let { locales -> (0 until locales.size()).mapNotNull { locales[it]?.toLanguageTag() } },
+    )
 
     private fun Preferences.toAppSettings(): AppSettings {
         val theme = this[Keys.THEME]?.let { runCatching { ThemePreference.valueOf(it) }.getOrNull() }

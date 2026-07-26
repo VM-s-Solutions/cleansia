@@ -48,7 +48,7 @@ fun OrderPrimaryAction(
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
-    onMarkCashCollected: () -> Unit,
+    onCashConfirmRequested: () -> Unit,
     canComplete: Boolean = true,
     needsCashCollection: Boolean = false,
     modifier: Modifier = Modifier,
@@ -111,9 +111,16 @@ fun OrderPrimaryAction(
                         // CompleteOrder until the cleaner records the cash.
                         // Swap the complete slide for this button; marking
                         // cash flips the order to Paid and the slide returns.
+                        //
+                        // This is the only irreversible money action in the
+                        // app: the server rejects a second call and there is
+                        // no un-collect endpoint, so the tap only *requests*
+                        // the confirmation. The screen root owns the dialog
+                        // and calls the mutation — we still spin here once it
+                        // is in flight. (iOS: StickyActionFooter.swift.)
                         CleansiaPrimaryButton(
                             text = stringResource(R.string.order_mark_cash_collected),
-                            onClick = onMarkCashCollected,
+                            onClick = onCashConfirmRequested,
                             loading = inFlight == OrderAction.MarkCashCollected,
                             enabled = inFlight == null,
                             modifier = modifier,

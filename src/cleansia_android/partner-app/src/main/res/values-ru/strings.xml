@@ -75,7 +75,7 @@
     <string name="back">Назад</string>
 
     <!-- Password rules -->
-    <string name="register_pw_min_length">Не менее 12 символов</string>
+    <string name="register_pw_min_length">Не менее 8 символов</string>
     <string name="register_pw_letter">Содержит букву</string>
     <string name="register_pw_number">Содержит цифру</string>
     <string name="register_pw_match">Пароли совпадают</string>
@@ -990,6 +990,10 @@
     <string name="slide_to_complete">Проведите, чтобы завершить</string>
     <string name="completing_order">Завершаю…</string>
     <string name="order_mark_cash_collected">Отметить наличные как полученные</string>
+    <string name="partner_order_mark_cash_collected_confirm_title">Отметить наличные как полученные?</string>
+    <string name="partner_order_mark_cash_collected_confirm_message">Подтвердите, что вы получили от клиента %1$s наличными. Это действие нельзя отменить.</string>
+    <string name="partner_order_mark_cash_collected_confirm_message_no_amount">Подтвердите, что вы получили от клиента оплату наличными. Это действие нельзя отменить.</string>
+    <string name="partner_order_mark_cash_collected_confirm_action">Да, наличные получены</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Перед завершением заказа сделайте хотя бы одну фотографию \"после\".</string>
@@ -1013,9 +1017,14 @@
     <string name="payment_promo_discount">Промо скидка</string>
     <string name="payment_total">Итого</string>
     <string name="payment_method_value">Способ: %1$s</string>
+    <string name="payment_method_cash">Наличными</string>
+    <string name="payment_method_card">Картой</string>
     <string name="payment_status_paid">Оплачено</string>
     <string name="payment_status_pending">Ожидает</string>
     <string name="payment_status_failed">Не удалось</string>
+    <string name="payment_status_refunded">Возвращено</string>
+    <string name="payment_status_disputed">Оспорено</string>
+    <string name="payment_status_partially_refunded">Частично возвращено</string>
     <string name="status_timeline_section_title">Хронология статуса</string>
     <string name="order_on_the_way_encouragement">В пути — скоро увидимся!</string>
 

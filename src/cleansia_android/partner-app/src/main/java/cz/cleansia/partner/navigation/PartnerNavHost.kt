@@ -128,8 +128,8 @@ fun PartnerNavHost(navController: NavHostController) {
             LoginScreen(
                 onNavigateToRegister = { navController.navigate(NavRoute.Register) },
                 onNavigateToForgotPassword = { navController.navigate(NavRoute.ForgotPassword) },
-                onNavigateToConfirmEmail = {
-                    navController.navigate(NavRoute.ConfirmEmail) {
+                onNavigateToConfirmEmail = { email ->
+                    navController.navigate(NavRoute.ConfirmEmail(email)) {
                         popUpTo(NavRoute.Login) { inclusive = true }
                     }
                 },
@@ -146,7 +146,17 @@ fun PartnerNavHost(navController: NavHostController) {
         composable<NavRoute.Register> {
             RegisterScreen(
                 onNavigateToLogin = { navController.popBackStack() },
-                onRegisterSuccess = { navController.popBackStack() },
+                // Straight to the code screen carrying the address just
+                // registered — `confirmEmail` is an anonymous call that mints
+                // its own tokens, so the round-trip through Login was never
+                // needed. Login stays on the stack (inclusive = false) so the
+                // code screen's own back arrow still has somewhere sensible
+                // to land.
+                onRegisterSuccess = { email ->
+                    navController.navigate(NavRoute.ConfirmEmail(email)) {
+                        popUpTo(NavRoute.Login) { inclusive = false }
+                    }
+                },
             )
         }
 
@@ -159,16 +169,20 @@ fun PartnerNavHost(navController: NavHostController) {
 
         composable<NavRoute.ConfirmEmail> {
             ConfirmEmailScreen(
+                // Reified popUpTo<T> because ConfirmEmail is now a data class
+                // and the bare name is a type, not an instance. `inclusive`
+                // is NOT the default and dropping it would leave the code
+                // screen on the back stack for an already-confirmed account.
                 onNavigateBack = {
                     navController.navigate(NavRoute.Login) {
-                        popUpTo(NavRoute.ConfirmEmail) { inclusive = true }
+                        popUpTo<NavRoute.ConfirmEmail> { inclusive = true }
                     }
                 },
                 onConfirmationSuccess = {
                     // Newly-confirmed accounts always need onboarding;
                     // bounce through Splash for the status check.
                     navController.navigate(NavRoute.Splash) {
-                        popUpTo(NavRoute.ConfirmEmail) { inclusive = true }
+                        popUpTo<NavRoute.ConfirmEmail> { inclusive = true }
                     }
                 },
             )

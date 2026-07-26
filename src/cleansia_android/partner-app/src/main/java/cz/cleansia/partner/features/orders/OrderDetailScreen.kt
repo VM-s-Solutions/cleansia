@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.CircularProgressIndicator
@@ -34,7 +35,9 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,13 +64,16 @@ import com.mapbox.maps.extension.compose.style.MapStyle
 import com.mapbox.maps.viewannotation.annotationAnchor
 import com.mapbox.maps.viewannotation.geometry
 import com.mapbox.maps.viewannotation.viewAnnotationOptions
+import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.location.MapStyles
+import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.api.model.PaymentStatus
 import cz.cleansia.partner.api.model.PaymentType
+import java.util.Locale
 
 /**
  * v2 layout: Mapbox tile as full-bleed backdrop, BottomSheetScaffold
@@ -114,28 +120,71 @@ fun OrderDetailScreen(
             }
         }
         is OrderDetailUiState.Loaded -> {
-            OrderDetailBottomSheetLayout(
-                order = s.order,
-                inFlight = inFlightAction,
-                checkedIds = checkedIds,
-                onToggleChecklistItem = checklistViewModel::setChecked,
-                onTake = viewModel::take,
-                onStart = viewModel::start,
-                onNotifyOnTheWay = viewModel::notifyOnTheWay,
-                // Slide-to-complete now: no dialog, no optional
-                // fields. Backend accepts null for both actualMinutes
-                // and notes — the cleaner just confirms with the
-                // slide gesture and the order flips to Completed.
-                onCompleteClick = { viewModel.complete(null, null) },
-                onMarkCashCollected = viewModel::markCashCollected,
-                // onContentMutated routes through the staleness-gated
-                // refresh path, so photo upload / note add re-fetches
-                // silently (no full-page spinner flash). Repository
-                // invalidates its watermark on mutation success, so the
-                // gate always lets this through.
-                onPhotosChanged = viewModel::onContentMutated,
-                onNavigateBack = onNavigateBack,
-            )
+            // Cash confirmation state lives HERE, at the screen root —
+            // deliberately not inside `sheetContent`. The dialog opens its own
+            // window either way, but state hoisted into the sheet's content is
+            // recomposed by the sheet's drag-anchor recalculation, the same
+            // collision ReferralCodeBottomSheet documents as having frozen its
+            // input pipeline. iOS hosts it at its ZStack root for the same
+            // reason (OrderDetailContent.swift).
+            var confirmingCash by remember { mutableStateOf(false) }
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                OrderDetailBottomSheetLayout(
+                    order = s.order,
+                    inFlight = inFlightAction,
+                    checkedIds = checkedIds,
+                    onToggleChecklistItem = checklistViewModel::setChecked,
+                    onTake = viewModel::take,
+                    onStart = viewModel::start,
+                    onNotifyOnTheWay = viewModel::notifyOnTheWay,
+                    // Slide-to-complete now: no dialog, no optional
+                    // fields. Backend accepts null for both actualMinutes
+                    // and notes — the cleaner just confirms with the
+                    // slide gesture and the order flips to Completed.
+                    onCompleteClick = { viewModel.complete(null, null) },
+                    onCashConfirmRequested = { confirmingCash = true },
+                    // onContentMutated routes through the staleness-gated
+                    // refresh path, so photo upload / note add re-fetches
+                    // silently (no full-page spinner flash). Repository
+                    // invalidates its watermark on mutation success, so the
+                    // gate always lets this through.
+                    onPhotosChanged = viewModel::onContentMutated,
+                    onNavigateBack = onNavigateBack,
+                )
+
+                if (confirmingCash) {
+                    CleansiaDialog(
+                        onDismiss = { confirmingCash = false },
+                        title = stringResource(
+                            R.string.partner_order_mark_cash_collected_confirm_title,
+                        ),
+                        message = cashDueLabel(
+                            s.order.totalPrice,
+                            s.order.currency?.code ?: s.order.currency?.symbol,
+                        )?.let {
+                            stringResource(
+                                R.string.partner_order_mark_cash_collected_confirm_message,
+                                it,
+                            )
+                        } ?: stringResource(
+                            R.string.partner_order_mark_cash_collected_confirm_message_no_amount,
+                        ),
+                        icon = Icons.Outlined.Payments,
+                        confirmLabel = stringResource(
+                            R.string.partner_order_mark_cash_collected_confirm_action,
+                        ),
+                        onConfirm = {
+                            confirmingCash = false
+                            viewModel.markCashCollected()
+                        },
+                        dismissLabel = stringResource(R.string.cancel),
+                        // Belt to the button's own spinner: an in-flight
+                        // collection must not be confirmable twice.
+                        confirmEnabled = inFlightAction != OrderAction.MarkCashCollected,
+                    )
+                }
+            }
         }
         OrderDetailUiState.Error -> Unit
     }
@@ -152,7 +201,7 @@ private fun OrderDetailBottomSheetLayout(
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
-    onMarkCashCollected: () -> Unit,
+    onCashConfirmRequested: () -> Unit,
     onPhotosChanged: () -> Unit,
     onNavigateBack: () -> Unit,
 ) {
@@ -210,7 +259,7 @@ private fun OrderDetailBottomSheetLayout(
                     onStart = onStart,
                     onNotifyOnTheWay = onNotifyOnTheWay,
                     onCompleteClick = onCompleteClick,
-                    onMarkCashCollected = onMarkCashCollected,
+                    onCashConfirmRequested = onCashConfirmRequested,
                     onPhotosChanged = onPhotosChanged,
                 )
             },
@@ -364,7 +413,7 @@ private fun OrderDetailSheetContent(
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
-    onMarkCashCollected: () -> Unit,
+    onCashConfirmRequested: () -> Unit,
     onPhotosChanged: () -> Unit,
 ) {
     val showAccessCard = isMine &&
@@ -574,7 +623,7 @@ private fun OrderDetailSheetContent(
             onStart = onStart,
             onNotifyOnTheWay = onNotifyOnTheWay,
             onCompleteClick = onCompleteClick,
-            onMarkCashCollected = onMarkCashCollected,
+            onCashConfirmRequested = onCashConfirmRequested,
         )
     }
 }
@@ -590,7 +639,7 @@ private fun StickyActionFooter(
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
-    onMarkCashCollected: () -> Unit,
+    onCashConfirmRequested: () -> Unit,
 ) {
     // Completed / Cancelled / null — no action available. Don't even
     // render the footer so the cleaner doesn't see a hollow strip.
@@ -630,7 +679,7 @@ private fun StickyActionFooter(
                 onStart = onStart,
                 onNotifyOnTheWay = onNotifyOnTheWay,
                 onCompleteClick = onCompleteClick,
-                onMarkCashCollected = onMarkCashCollected,
+                onCashConfirmRequested = onCashConfirmRequested,
                 canComplete = canComplete,
                 needsCashCollection = needsCashCollection,
             )
@@ -638,3 +687,19 @@ private fun StickyActionFooter(
     }
 }
 
+/**
+ * The formatted sum the cleaner is about to record as taken in cash, or null
+ * when the wire carried no usable total — the confirmation then asks without
+ * naming an amount rather than guessing one.
+ *
+ * The `> 0` guard is not cosmetic: "Confirm you have taken 0 Kč in cash" reads
+ * as a bug and is worse than the amount-free copy. iOS pins the same rule in
+ * `OrderDetail.cashDueLabel`.
+ */
+internal fun cashDueLabel(
+    totalPrice: Double?,
+    currencyCode: String?,
+    locale: Locale = Locale.getDefault(),
+): String? = totalPrice
+    ?.takeIf { it > 0 }
+    ?.let { formatOrderPrice(it, currencyCode, locale) }

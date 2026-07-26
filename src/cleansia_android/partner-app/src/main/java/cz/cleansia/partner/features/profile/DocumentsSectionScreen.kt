@@ -289,6 +289,29 @@ private fun StatusBadge(status: DocumentStatus?) {
     )
 }
 
+/**
+ * The document types offered by the upload picker, in the order the API
+ * enumerates them.
+ *
+ * Deliberately spelled out rather than [DocumentType.entries]: the list and
+ * [documentTypeLabel] have to stay in lockstep, and `entries` would let a
+ * regenerated enum add a type that reaches the picker with no label. The
+ * mapper's `when` fails to compile in that case; `DocumentTypeOptionsTest`
+ * covers the other direction — a type that exists but is never offered.
+ */
+internal val documentTypeOptions: List<DocumentType> = listOf(
+    DocumentType._1,
+    DocumentType._2,
+    DocumentType._3,
+    DocumentType._4,
+    DocumentType._5,
+    DocumentType._6,
+    DocumentType._7,
+    DocumentType._8,
+    DocumentType._9,
+    DocumentType._10,
+)
+
 @Composable
 private fun documentTypeLabel(type: DocumentType?): String = when (type) {
     DocumentType._1 -> stringResource(R.string.document_type_identity)
@@ -314,20 +337,11 @@ private fun UploadDialog(
     var selectedType by remember { mutableStateOf<DocumentType?>(null) }
     var description by remember { mutableStateOf("") }
 
-    val typeOptions = remember {
-        listOf(
-            DocumentType._1 to "Identity card",
-            DocumentType._2 to "Passport",
-            DocumentType._3 to "Driver's license",
-            DocumentType._4 to "Work permit",
-            DocumentType._5 to "Contract",
-            DocumentType._6 to "Certificate",
-            DocumentType._7 to "Bank statement",
-            DocumentType._8 to "Tax document",
-            DocumentType._9 to "Insurance document",
-            DocumentType._10 to "Other",
-        )
-    }
+    // Same labels the document rows show — not remembered, because
+    // documentTypeLabel reads string resources and so must run inside
+    // composition. Ten lookups per recomposition of an open dialog is free.
+    val typeOptions: List<Pair<DocumentType, String>> =
+        documentTypeOptions.map { it to documentTypeLabel(it) }
 
     CleansiaDialog(
         onDismiss = onDismiss,

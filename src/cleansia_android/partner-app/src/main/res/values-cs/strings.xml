@@ -73,7 +73,7 @@
     <string name="back">Zpět</string>
 
     <!-- Password rules -->
-    <string name="register_pw_min_length">Alespoň 12 znaků</string>
+    <string name="register_pw_min_length">Alespoň 8 znaků</string>
     <string name="register_pw_letter">Obsahuje písmeno</string>
     <string name="register_pw_number">Obsahuje číslo</string>
     <string name="register_pw_match">Hesla se shodují</string>
@@ -1007,6 +1007,10 @@
     <string name="slide_to_complete">Posunutím dokončete</string>
     <string name="completing_order">Dokončuji…</string>
     <string name="order_mark_cash_collected">Označit hotovost jako přijatou</string>
+    <string name="partner_order_mark_cash_collected_confirm_title">Označit hotovost jako přijatou?</string>
+    <string name="partner_order_mark_cash_collected_confirm_message">Potvrďte, že jste od zákazníka převzali %1$s v hotovosti. Tuto akci nelze vzít zpět.</string>
+    <string name="partner_order_mark_cash_collected_confirm_message_no_amount">Potvrďte, že jste od zákazníka převzali platbu v hotovosti. Tuto akci nelze vzít zpět.</string>
+    <string name="partner_order_mark_cash_collected_confirm_action">Ano, hotovost přijata</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Před dokončením zakázky pořiďte alespoň jednu fotografii \"po\".</string>
@@ -1030,9 +1034,14 @@
     <string name="payment_promo_discount">Promo sleva</string>
     <string name="payment_total">Celkem</string>
     <string name="payment_method_value">Metoda: %1$s</string>
+    <string name="payment_method_cash">Hotově</string>
+    <string name="payment_method_card">Kartou</string>
     <string name="payment_status_paid">Zaplaceno</string>
     <string name="payment_status_pending">Čeká</string>
     <string name="payment_status_failed">Selhalo</string>
+    <string name="payment_status_refunded">Vráceno</string>
+    <string name="payment_status_disputed">Sporná platba</string>
+    <string name="payment_status_partially_refunded">Částečně vráceno</string>
     <string name="status_timeline_section_title">Časová osa stavu</string>
     <string name="order_on_the_way_encouragement">Na cestě — brzy na viděnou!</string>
 

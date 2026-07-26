@@ -75,7 +75,7 @@
     <string name="back">Back</string>
 
     <!-- Password rules — shown live under the Register screen's password fields. -->
-    <string name="register_pw_min_length">At least 12 characters</string>
+    <string name="register_pw_min_length">At least 8 characters</string>
     <string name="register_pw_letter">Contains a letter</string>
     <string name="register_pw_number">Contains a number</string>
     <string name="register_pw_match">Passwords match</string>
@@ -985,6 +985,15 @@
     <string name="completing_order">Completing…</string>
     <string name="order_mark_cash_collected">Mark cash collected</string>
 
+    <!-- Cash collection is irreversible: the server rejects a second call
+         and there is no un-collect endpoint, so the button asks first.
+         Key names match the iOS partner xcstrings so the two platforms
+         stay greppable together. -->
+    <string name="partner_order_mark_cash_collected_confirm_title">Mark cash as collected?</string>
+    <string name="partner_order_mark_cash_collected_confirm_message">Confirm you have taken %1$s in cash from the customer. This cannot be undone.</string>
+    <string name="partner_order_mark_cash_collected_confirm_message_no_amount">Confirm you have taken the cash payment from the customer. This cannot be undone.</string>
+    <string name="partner_order_mark_cash_collected_confirm_action">Yes, cash collected</string>
+
     <!-- Backend error-key translations. Resource names follow
          `error_key_<dot-replaced-with-underscore>` per
          ApiErrorTranslator.lookupKey. -->
@@ -1009,9 +1018,14 @@
     <string name="payment_promo_discount">Promo discount</string>
     <string name="payment_total">Total</string>
     <string name="payment_method_value">Method: %1$s</string>
+    <string name="payment_method_cash">Cash</string>
+    <string name="payment_method_card">Card</string>
     <string name="payment_status_paid">Paid</string>
     <string name="payment_status_pending">Pending</string>
     <string name="payment_status_failed">Failed</string>
+    <string name="payment_status_refunded">Refunded</string>
+    <string name="payment_status_disputed">Disputed</string>
+    <string name="payment_status_partially_refunded">Partially refunded</string>
     <string name="status_timeline_section_title">Status timeline</string>
     <string name="order_on_the_way_encouragement">On your way — see you soon!</string>
 

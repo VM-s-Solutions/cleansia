@@ -13,7 +13,19 @@ sealed interface NavRoute {
     @Serializable data object Login : NavRoute
     @Serializable data object Register : NavRoute
     @Serializable data object ForgotPassword : NavRoute
-    @Serializable data object ConfirmEmail : NavRoute
+
+    /**
+     * Six-digit e-mail verification code screen.
+     *
+     * [email] is the address the code was issued to. It rides on the route
+     * because a partner who has just registered has no session and no stored
+     * profile yet — the screen used to source the address from
+     * `UserProfileStore`, which only a successful login populates, so the only
+     * way in was to register, bounce back to Login, and sign in with an account
+     * the app had just told you was unconfirmed. Defaulted so the route stays
+     * constructible and serializable; a blank value falls back to the store.
+     */
+    @Serializable data class ConfirmEmail(val email: String = "") : NavRoute
 
     /**
      * Pre-Main gate for cleaners whose profile / availability / documents

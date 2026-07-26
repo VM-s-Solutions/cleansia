@@ -9,10 +9,12 @@ final class CustomerAuthViewModelTests: XCTestCase {
     private var registration: FakeRegistrationClient!
     private var confirmation: FakeEmailConfirmationClient!
     private var passwordReset: FakePasswordResetClient!
+    private var changePassword: FakeChangePasswordClient!
     private var social: FakeSocialAuthClient!
     private var provider: FakeSocialSignInProvider!
     private var settings: FakeAppSettingsStore!
     private var snackbar: SnackbarController!
+    private var referral: FakeReferralClient!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
@@ -21,19 +23,23 @@ final class CustomerAuthViewModelTests: XCTestCase {
         registration = FakeRegistrationClient()
         confirmation = FakeEmailConfirmationClient()
         passwordReset = FakePasswordResetClient()
+        changePassword = FakeChangePasswordClient()
         social = FakeSocialAuthClient()
         provider = FakeSocialSignInProvider()
         settings = FakeAppSettingsStore()
         snackbar = SnackbarController()
+        referral = FakeReferralClient()
         cancellables = []
     }
 
     override func tearDown() {
         cancellables = nil
+        referral = nil
         snackbar = nil
         settings = nil
         provider = nil
         social = nil
+        changePassword = nil
         passwordReset = nil
         confirmation = nil
         registration = nil
@@ -51,7 +57,9 @@ final class CustomerAuthViewModelTests: XCTestCase {
             socialProvider: provider,
             settings: settings,
             snackbar: snackbar,
-            pendingEmail: pendingEmail
+            pendingEmail: pendingEmail,
+            changePasswordClient: changePassword,
+            referralClient: referral
         )
     }
 
@@ -181,54 +189,94 @@ final class CustomerAuthViewModelTests: XCTestCase {
         XCTAssertNil(registration.lastReferralCode)
     }
 
-    func testReferralFieldStartsCollapsed() {
+    // MARK: - Referral validation at signup
+
+    func testValidatingAGoodReferralCodeAppliesTheNormalisedCode() async {
+        referral.result = .success(ReferralValidation(isValid: true, referrerFirstName: "Eva", errorCode: nil))
         let vm = makeViewModel()
 
-        XCTAssertFalse(vm.signUpForm.referralExpanded)
+        let outcome = await vm.validateReferralCode(" anna7 ")
+
+        XCTAssertEqual(outcome, .valid(referrerFirstName: "Eva"))
+        XCTAssertEqual(vm.referralState, .valid(referrerFirstName: "Eva"))
+        XCTAssertEqual(vm.signUpForm.referralCode, "ANNA7")
+        XCTAssertEqual(referral.lastCode, "ANNA7")
     }
 
-    func testTogglingReferralRevealsTheField() {
-        let vm = makeViewModel()
-
-        vm.toggleReferralCode()
-
-        XCTAssertTrue(vm.signUpForm.referralExpanded)
-    }
-
-    func testTogglingReferralTwiceCollapsesAndClearsTheTypedCode() {
-        let vm = makeViewModel()
-        vm.toggleReferralCode()
-        vm.onReferralCodeChange("ANNA7")
-
-        vm.toggleReferralCode()
-
-        XCTAssertFalse(vm.signUpForm.referralExpanded)
-        XCTAssertEqual(vm.signUpForm.referralCode, "")
-    }
-
-    func testSignUpSendsTheCodeTypedWhileRevealed() async {
+    func testAValidatedReferralCodeIsTheOneSentToRegister() async {
+        referral.result = .success(ReferralValidation(isValid: true, referrerFirstName: "Eva", errorCode: nil))
         registration.result = .success(true)
         let vm = makeViewModel()
         fillValidSignUp(vm)
-        vm.toggleReferralCode()
-        vm.onReferralCodeChange("ANNA7")
+        _ = await vm.validateReferralCode("anna7")
 
         await vm.signUp()
 
         XCTAssertEqual(registration.lastReferralCode, "ANNA7")
     }
 
-    func testSignUpSendsNilWhenTheTypedCodeWasCollapsedAway() async {
+    func testRejectedReferralCodeMapsTheServerErrorAndIsNotApplied() async {
+        referral.result = .success(ReferralValidation(
+            isValid: false,
+            referrerFirstName: nil,
+            errorCode: "SelfReferral"
+        ))
+        let vm = makeViewModel()
+
+        let outcome = await vm.validateReferralCode("MYOWN")
+
+        XCTAssertEqual(outcome, .invalid(.selfReferral))
+        XCTAssertEqual(vm.referralState, .invalid(.selfReferral))
+        XCTAssertEqual(vm.signUpForm.referralCode, "")
+    }
+
+    func testReferralTransportFailureIsGenericInvalidNotAFatalError() async {
+        referral.result = .failure(ApiError(code: "network"))
+        let vm = makeViewModel()
+
+        let outcome = await vm.validateReferralCode("ANNA7")
+
+        XCTAssertEqual(outcome, .invalid(nil))
+        XCTAssertEqual(vm.referralState, .invalid(nil))
+        XCTAssertEqual(vm.signUpForm.referralCode, "")
+    }
+
+    func testBlankReferralCodeShortCircuitsWithoutCallingTheClient() async {
+        let vm = makeViewModel()
+
+        let outcome = await vm.validateReferralCode("   ")
+
+        XCTAssertEqual(outcome, .idle)
+        XCTAssertEqual(vm.referralState, .idle)
+        XCTAssertEqual(referral.callCount, 0)
+    }
+
+    func testClearingTheReferralDropsBothTheStateAndThePayload() async {
+        referral.result = .success(ReferralValidation(isValid: true, referrerFirstName: "Eva", errorCode: nil))
+        let vm = makeViewModel()
+        _ = await vm.validateReferralCode("ANNA7")
+
+        vm.clearReferralCode()
+
+        XCTAssertEqual(vm.referralState, .idle)
+        XCTAssertEqual(vm.signUpForm.referralCode, "")
+    }
+
+    /// A rejected code must not block registration — `Register.cs` accepts a bad
+    /// referral fail-soft, so the sign-up button stays live and the code still
+    /// goes over the wire for the server to ignore.
+    func testARejectedReferralCodeDoesNotBlockSignUp() async {
+        referral.result = .success(ReferralValidation(isValid: false, referrerFirstName: nil, errorCode: "NotFound"))
         registration.result = .success(true)
         let vm = makeViewModel()
         fillValidSignUp(vm)
-        vm.toggleReferralCode()
-        vm.onReferralCodeChange("ANNA7")
-        vm.toggleReferralCode()
+        vm.onReferralCodeChange("NOPE")
+        _ = await vm.validateReferralCode("NOPE")
 
         await vm.signUp()
 
-        XCTAssertNil(registration.lastReferralCode)
+        XCTAssertTrue(vm.signUpForm.isValid)
+        XCTAssertEqual(registration.callCount, 1)
     }
 
     func testSignUpEnforcesPasswordPolicy() async {
@@ -337,7 +385,11 @@ final class CustomerAuthViewModelTests: XCTestCase {
         XCTAssertFalse(makeViewModel(pendingEmail: "   ").canResend)
     }
 
-    func testForgotPasswordSuccessEmitsPasswordReset() async throws {
+    /// The bug this pins: sending the code used to emit `.passwordReset`, which the router maps
+    /// to `.login` — bouncing the customer back to a sign-in screen they still cannot pass,
+    /// with a code in their inbox and nowhere to type it. Requesting the code must move the
+    /// screen to its second step, not leave it.
+    func testForgotPasswordSuccessOpensTheCodeStepInsteadOfLeavingTheScreen() async {
         passwordReset.result = .success(())
         let vm = makeViewModel()
         let received = collectOutcome(vm)
@@ -345,10 +397,22 @@ final class CustomerAuthViewModelTests: XCTestCase {
 
         await vm.requestPasswordReset()
 
-        XCTAssertEqual(received(), .passwordReset)
+        XCTAssertTrue(vm.resetCodeSent)
+        XCTAssertNil(received(), "the reset is not finished until the new password is accepted")
         XCTAssertEqual(snackbar.current?.severity, .success)
-        let outcome = try XCTUnwrap(received())
-        XCTAssertEqual(CustomerRootView.Route.afterAuth(outcome), .login)
+    }
+
+    func testForgotPasswordFailureKeepsTheEmailStep() async {
+        passwordReset.result = .failure(ApiError(code: "network.unreachable"))
+        let vm = makeViewModel()
+        let received = collectOutcome(vm)
+        vm.onForgotEmailChange("a@b.cz")
+
+        await vm.requestPasswordReset()
+
+        XCTAssertFalse(vm.resetCodeSent)
+        XCTAssertNil(received())
+        XCTAssertEqual(snackbar.current?.severity, .error)
     }
 
     func testForgotPasswordInvalidEmailDoesNotSubmit() async {
@@ -359,6 +423,59 @@ final class CustomerAuthViewModelTests: XCTestCase {
 
         XCTAssertNotNil(vm.forgotForm.emailError)
         XCTAssertEqual(passwordReset.callCount, 0)
+    }
+
+    func testCompleteResetSendsTheCodeAndFormEmailThenFinishesTheFlow() async throws {
+        passwordReset.result = .success(())
+        let vm = makeViewModel()
+        let received = collectOutcome(vm)
+        vm.onForgotEmailChange("a@b.cz")
+        await vm.requestPasswordReset()
+
+        await vm.completePasswordReset(code: " 123456 ", newPassword: "abcdefg1", confirmPassword: "abcdefg1")
+
+        let call = try XCTUnwrap(changePassword.changeCalls.first)
+        XCTAssertEqual(call.email, "a@b.cz")
+        XCTAssertEqual(call.code, "123456", "the code is trimmed before it reaches the server")
+        XCTAssertEqual(call.newPassword, "abcdefg1")
+        XCTAssertEqual(received(), .passwordReset)
+        XCTAssertEqual(try CustomerRootView.Route.afterAuth(XCTUnwrap(received())), .login)
+        XCTAssertEqual(vm.resetState, .idle)
+    }
+
+    func testCompleteResetRejectsAMismatchedConfirmationWithoutCallingTheServer() async {
+        let vm = makeViewModel()
+        let received = collectOutcome(vm)
+        vm.onForgotEmailChange("a@b.cz")
+
+        await vm.completePasswordReset(code: "123456", newPassword: "abcdefg1", confirmPassword: "abcdefg2")
+
+        XCTAssertEqual(changePassword.changeCalls.count, 0)
+        XCTAssertNil(received())
+        XCTAssertNotNil(vm.resetState.errorMessage)
+    }
+
+    func testCompleteResetEnforcesTheSamePasswordPolicyAsSignUp() async {
+        let vm = makeViewModel()
+        vm.onForgotEmailChange("a@b.cz")
+
+        await vm.completePasswordReset(code: "123456", newPassword: "short", confirmPassword: "short")
+
+        XCTAssertEqual(changePassword.changeCalls.count, 0)
+        XCTAssertNotNil(vm.resetState.errorMessage)
+    }
+
+    func testCompleteResetFailureSurfacesTheServerErrorAndDoesNotFinish() async {
+        changePassword.changePasswordResult = .failure(ApiError(code: "user.too_many_attempts"))
+        let vm = makeViewModel()
+        let received = collectOutcome(vm)
+        vm.onForgotEmailChange("a@b.cz")
+
+        await vm.completePasswordReset(code: "000000", newPassword: "abcdefg1", confirmPassword: "abcdefg1")
+
+        XCTAssertNil(received(), "a rejected code must leave the customer on the reset step")
+        XCTAssertEqual(snackbar.current?.severity, .error)
+        XCTAssertNotNil(vm.resetState.errorMessage)
     }
 
     func testSignInReentryGuardWhileSubmitting() async {

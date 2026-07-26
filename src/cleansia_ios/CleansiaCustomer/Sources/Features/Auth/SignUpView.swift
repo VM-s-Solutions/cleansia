@@ -21,13 +21,14 @@ struct SignUpView: View {
             form: vm.signUpForm,
             isLoading: vm.signUpState.isSubmitting,
             isSocialLoading: vm.socialState.isSubmitting,
+            referralState: vm.referralState,
             onFirstNameChange: vm.onFirstNameChange,
             onLastNameChange: vm.onLastNameChange,
             onEmailChange: vm.onSignUpEmailChange,
             onPasswordChange: vm.onSignUpPasswordChange,
             onConfirmPasswordChange: vm.onConfirmPasswordChange,
-            onReferralCodeChange: vm.onReferralCodeChange,
-            onToggleReferralCode: vm.toggleReferralCode,
+            onValidateReferral: vm.validateReferralCode,
+            onClearReferral: vm.clearReferralCode,
             onAcceptTermsChange: vm.onAcceptTermsChange,
             onSignIn: onSignIn,
             onSubmit: { Task { await vm.signUp() } },
@@ -42,18 +43,21 @@ private struct SignUpContent: View {
     let form: SignUpFormState
     let isLoading: Bool
     let isSocialLoading: Bool
+    let referralState: ReferralCodeState
     let onFirstNameChange: (String) -> Void
     let onLastNameChange: (String) -> Void
     let onEmailChange: (String) -> Void
     let onPasswordChange: (String) -> Void
     let onConfirmPasswordChange: (String) -> Void
-    let onReferralCodeChange: (String) -> Void
-    let onToggleReferralCode: () -> Void
+    let onValidateReferral: (String) async -> ReferralCodeState
+    let onClearReferral: () -> Void
     let onAcceptTermsChange: (Bool) -> Void
     let onSignIn: () -> Void
     let onSubmit: () -> Void
     let onApple: () -> Void
     let onGoogle: () -> Void
+
+    @State private var showReferralSheet = false
 
     private func binding(_ value: String, _ setter: @escaping (String) -> Void) -> Binding<String> {
         Binding(get: { value }, set: setter)
@@ -156,13 +160,7 @@ private struct SignUpContent: View {
 
                 Spacer().frame(height: Spacing.xs)
 
-                ReferralDisclosure(
-                    code: form.referralCode,
-                    expanded: form.referralExpanded,
-                    enabled: !formDisabled,
-                    onCodeChange: onReferralCodeChange,
-                    onToggle: onToggleReferralCode
-                )
+                referralRow
 
                 Spacer().frame(height: Spacing.s)
 
@@ -213,49 +211,41 @@ private struct SignUpContent: View {
                 AuthAuthenticatingOverlay()
             }
         }
-    }
-}
-
-/// The referral code is optional, so it hides behind a disclosure row instead of
-/// sitting in the required-field stack where it reads as mandatory.
-private struct ReferralDisclosure: View {
-    let code: String
-    let expanded: Bool
-    let enabled: Bool
-    let onCodeChange: (String) -> Void
-    let onToggle: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            Button {
-                withAnimation(.easeOut(duration: 0.2)) { onToggle() }
-            } label: {
-                HStack {
-                    Text(L10n.Auth.referralToggle)
-                        .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                        .multilineTextAlignment(.leading)
-                    Spacer()
-                    Image(systemName: expanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityHint(expanded ? L10n.Auth.referralCollapseHint : L10n.Auth.referralExpandHint)
-
-            if expanded {
-                CleansiaTextField(
-                    value: Binding(get: { code }, set: onCodeChange),
-                    label: L10n.Auth.referralCode,
-                    enabled: enabled,
-                    autoFocus: true
-                )
-            }
+        .sheet(isPresented: $showReferralSheet) {
+            ReferralCodeSheet(
+                initialCode: form.referralCode,
+                onValidate: onValidateReferral,
+                onDismiss: { showReferralSheet = false }
+            )
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .disabled(!enabled)
+    }
+
+    /// The referral code is optional, so it is a tappable row rather than a field
+    /// in the required stack — the same `CodeEntryRow` the booking Confirm step
+    /// uses for the promo code, so the two code entries behave identically.
+    ///
+    /// This replaces a plain disclosure holding an unvalidated text field: a typo
+    /// used to be accepted silently at signup and only discovered as a missing
+    /// bonus. The sheet checks the code against the server before it is applied.
+    private var referralRow: some View {
+        CodeEntryRow(
+            systemImage: "gift",
+            title: L10n.Auth.referralToggle,
+            appliedCode: appliedReferralCode,
+            clearLabel: L10n.Booking.referralRowClear,
+            appliedText: L10n.Booking.referralRowApplied,
+            onTap: { showReferralSheet = true },
+            onClear: onClearReferral
+        )
+        .disabled(formDisabled)
+    }
+
+    /// Only a server-validated code counts as applied. An unresolved or rejected
+    /// one leaves the row in its neutral "add a code" state rather than claiming
+    /// a bonus the customer will not get.
+    private var appliedReferralCode: String {
+        if case .valid = referralState { return form.referralCode }
+        return ""
     }
 }
 
@@ -291,25 +281,31 @@ private struct ReferralDisclosure: View {
                 )
                 .previewDisplayName("Field errors")
                 preview(
-                    form: SignUpFormState(referralCode: "ANNA7", referralExpanded: true),
-                    isLoading: false
+                    form: SignUpFormState(referralCode: "ANNA7"),
+                    isLoading: false,
+                    referralState: .valid(referrerFirstName: "Eva")
                 )
-                .previewDisplayName("Referral revealed")
+                .previewDisplayName("Referral applied")
             }
         }
 
-        private static func preview(form: SignUpFormState, isLoading: Bool) -> some View {
+        private static func preview(
+            form: SignUpFormState,
+            isLoading: Bool,
+            referralState: ReferralCodeState = .idle
+        ) -> some View {
             SignUpContent(
                 form: form,
                 isLoading: isLoading,
                 isSocialLoading: false,
+                referralState: referralState,
                 onFirstNameChange: { _ in },
                 onLastNameChange: { _ in },
                 onEmailChange: { _ in },
                 onPasswordChange: { _ in },
                 onConfirmPasswordChange: { _ in },
-                onReferralCodeChange: { _ in },
-                onToggleReferralCode: {},
+                onValidateReferral: { _ in .idle },
+                onClearReferral: {},
                 onAcceptTermsChange: { _ in },
                 onSignIn: {},
                 onSubmit: {},

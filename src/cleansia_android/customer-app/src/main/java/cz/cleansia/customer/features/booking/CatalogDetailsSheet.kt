@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.ServiceListItem
@@ -96,13 +97,13 @@ fun ServiceDetailsSheet(
             Spacer(Modifier.height(20.dp))
             PriceBreakdownRow(
                 label = stringResource(R.string.details_base_price),
-                value = "${service.basePrice.toInt()} CZK",
+                value = formatOrderPrice(service.basePrice, null),
             )
             if (service.perRoomPrice > 0) {
                 Spacer(Modifier.height(6.dp))
                 PriceBreakdownRow(
                     label = stringResource(R.string.details_per_room),
-                    value = "${service.perRoomPrice.toInt()} CZK",
+                    value = formatOrderPrice(service.perRoomPrice, null),
                 )
             }
 
@@ -151,7 +152,7 @@ fun PackageDetailsSheet(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "${pkg.price.toInt()} CZK",
+                formatOrderPrice(pkg.price, null),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.primary,
             )

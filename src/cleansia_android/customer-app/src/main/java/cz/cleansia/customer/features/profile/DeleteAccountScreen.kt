@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.DeleteForever
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,6 +48,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
+import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.theme.Poppins
 
 /**
@@ -55,7 +57,13 @@ import cz.cleansia.core.ui.theme.Poppins
  * The user must:
  *  1. Read a clear list of what gets deleted.
  *  2. Type their own email to confirm (prevents slip-taps).
- *  3. Tap a destructive-red button to execute.
+ *  3. Tap a destructive-red button, then confirm in a dialog.
+ *
+ * Two independent gates guard the delete: the typed-email match keeps the CTA
+ * disabled, and the dialog is the last word before the call goes out. Neither
+ * replaces the other — the email match stops the wrong account being deleted,
+ * the dialog stops a deliberate-looking tap the user did not mean. iOS gates it
+ * the same way (DeleteAccountView.swift).
  *
  * Success flow (VM handles): backend anonymises, we wipe tokens locally, a
  * forced-sign-out event routes back to SignIn. A snackbar confirms.
@@ -69,6 +77,7 @@ fun DeleteAccountScreen(
     loading: Boolean = false,
 ) {
     var typedEmail by remember { mutableStateOf("") }
+    var confirming by remember { mutableStateOf(false) }
     val emailMatches = typedEmail.isNotBlank() && typedEmail.trim().equals(userEmail, ignoreCase = true)
 
     Column(
@@ -240,7 +249,9 @@ fun DeleteAccountScreen(
                 .padding(horizontal = 20.dp, vertical = 12.dp),
         ) {
             androidx.compose.material3.Button(
-                onClick = onConfirmDelete,
+                // Opens the dialog only — nothing here may call onConfirmDelete
+                // directly, or the second gate is gone.
+                onClick = { confirming = true },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -265,5 +276,24 @@ fun DeleteAccountScreen(
                 }
             }
         }
+    }
+
+    if (confirming) {
+        CleansiaDialog(
+            onDismiss = { confirming = false },
+            title = stringResource(R.string.delete_account_dialog_title),
+            message = stringResource(R.string.delete_account_dialog_message),
+            icon = Icons.Outlined.WarningAmber,
+            destructive = true,
+            confirmLabel = stringResource(R.string.delete_account_dialog_confirm),
+            onConfirm = {
+                confirming = false
+                onConfirmDelete()
+            },
+            dismissLabel = stringResource(R.string.common_cancel),
+            // The VM already guards re-entry; this stops the second tap ever
+            // reaching it, so the dialog cannot flash a second confirm.
+            confirmEnabled = !loading,
+        )
     }
 }

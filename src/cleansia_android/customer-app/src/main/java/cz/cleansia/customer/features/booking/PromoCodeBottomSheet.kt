@@ -44,6 +44,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
+import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.promo.PromoCodeError
 import cz.cleansia.customer.ui.theme.ErrorText
@@ -260,7 +261,7 @@ private fun ResultBlock(state: PromoCodeUiState) {
                 Text(
                     text = stringResource(
                         R.string.booking_promo_code_dialog_success,
-                        "${state.discountAmount.toInt()} CZK",
+                        formatOrderPrice(state.discountAmount, null),
                     ),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = SuccessText,

@@ -23,7 +23,7 @@
     <string name="register_email">Email</string>
     <string name="register_password">Password</string>
     <string name="register_confirm_password">Confirm password</string>
-    <string name="register_pw_min_length">At least 12 characters</string>
+    <string name="register_pw_min_length">At least 8 characters</string>
     <string name="register_pw_letter">At least one letter</string>
     <string name="register_pw_number">At least one number</string>
     <string name="register_pw_match">Passwords match</string>
@@ -446,7 +446,6 @@
     <!-- Profile — notifications -->
     <string name="notifications_title">Notifications</string>
     <string name="notifications_section_push">Push notifications</string>
-    <string name="notifications_section_channels">Channels</string>
     <string name="notifications_booking_updates">Booking updates</string>
     <string name="notifications_booking_updates_desc">When a cleaner is assigned, on the way, or done</string>
     <string name="notifications_cleaner_messages">Cleaner messages</string>
@@ -474,10 +473,6 @@
     <string name="busy_booking">Booking your cleaning…</string>
     <string name="busy_payment">Processing payment…</string>
     <string name="busy_subscribe_plus">Activating Cleansia Plus…</string>
-    <string name="notifications_email">Email</string>
-    <string name="notifications_email_desc">Receipts and important account updates</string>
-    <string name="notifications_sms">SMS</string>
-    <string name="notifications_sms_desc">Text messages for booking reminders</string>
 
     <!-- Profile — help & support -->
     <string name="help_title">Help &amp; support</string>
@@ -603,6 +598,10 @@
     <string name="booking_where">Where</string>
     <string name="booking_select_address_hint">Pick from saved or add new</string>
     <string name="booking_when">Pick a date</string>
+    <!-- First chip in the booking day strip. The other seven chips are locale-aware
+         weekday abbreviations rendered by java.time, so this is the only day label
+         that needs a translation. Same key name as iOS (booking_today). -->
+    <string name="booking_today">Today</string>
     <string name="booking_new_address">Pick on map</string>
 
     <!-- Address picker (map) -->
@@ -666,7 +665,7 @@
     <string name="booking_summary_promo_discount">Promo (-%1$s)</string>
     <string name="booking_summary_membership_discount">Cleansia Plus discount</string>
     <string name="booking_summary_tier_discount">Loyalty tier discount</string>
-    <string name="booking_summary_tier_discount_min_not_met">Loyalty discount applies on orders above %d CZK</string>
+    <string name="booking_summary_tier_discount_min_not_met">Loyalty discount applies on orders above %1$s</string>
     <string name="booking_summary_total">Total</string>
 
     <!-- Promo code (Loyalty Phase B) — auto-validated input on Confirm step -->
@@ -770,6 +769,10 @@
     <string name="delete_account_confirm_mismatch">Email doesn\'t match your account</string>
     <string name="delete_account_confirm_button">Permanently delete account</string>
     <string name="delete_account_success">Your account has been deleted.</string>
+    <!-- Final confirmation dialog — second gate after the typed-email match. Copy matches iOS. -->
+    <string name="delete_account_dialog_title">Delete account?</string>
+    <string name="delete_account_dialog_message">This permanently deletes your account and data. This cannot be undone.</string>
+    <string name="delete_account_dialog_confirm">Delete</string>
 
     <!-- Error handling — generics (used when a specific key can't be resolved) -->
     <string name="error_generic_unknown">Something went wrong. Please try again.</string>

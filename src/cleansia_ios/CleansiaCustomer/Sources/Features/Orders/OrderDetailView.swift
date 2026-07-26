@@ -14,6 +14,13 @@ struct OrderDetailView: View {
     private let snackbar: SnackbarController
     private let paymentSheet: PaymentSheetPresenting
     private let onReportIssue: (String) -> Void
+    private let onRebook: (String) -> Void
+    private let onMakeRecurring: (String) -> Void
+    /// Read from the shell, which already observes the membership repository and
+    /// warms it in `prefetch()`. Deliberately not refreshed here: a network call
+    /// on every order open to decide one button's visibility is a bad trade, and
+    /// Android has the identical cold-deep-link exposure.
+    private let hasMembership: Bool
 
     init(
         orderId: String,
@@ -22,7 +29,10 @@ struct OrderDetailView: View {
         snackbar: SnackbarController,
         eventBus: OrderEventBus,
         paymentSheet: PaymentSheetPresenting,
-        onReportIssue: @escaping (String) -> Void
+        hasMembership: Bool,
+        onReportIssue: @escaping (String) -> Void,
+        onRebook: @escaping (String) -> Void,
+        onMakeRecurring: @escaping (String) -> Void
     ) {
         _vm = StateObject(
             wrappedValue: OrderDetailViewModel(
@@ -37,7 +47,10 @@ struct OrderDetailView: View {
         self.client = client
         self.snackbar = snackbar
         self.paymentSheet = paymentSheet
+        self.hasMembership = hasMembership
         self.onReportIssue = onReportIssue
+        self.onRebook = onRebook
+        self.onMakeRecurring = onMakeRecurring
     }
 
     var body: some View {
@@ -101,11 +114,18 @@ struct OrderDetailView: View {
                     ConfirmRecurringFooter(submitting: vm.confirmRecurringState.isSubmitting) {
                         Task { await vm.confirmRecurring() }
                     }
-                } else if OrderStatusGroup.isCancellable(order.status) || OrderStatusGroup.isReportable(order.status) {
+                } else if OrderDetailFooterActions.showFooter(order.status, hasMembership: hasMembership) {
                     OrderDetailActionsFooter(
+                        showRebook: OrderDetailFooterActions.showRebook(order.status),
+                        showMakeRecurring: OrderDetailFooterActions.showMakeRecurring(
+                            order.status,
+                            hasMembership: hasMembership
+                        ),
                         showCancel: OrderStatusGroup.isCancellable(order.status),
                         showReportIssue: OrderStatusGroup.isReportable(order.status),
                         cancelEnabled: !vm.cancelState.isSubmitting,
+                        onRebook: { onRebook(orderId) },
+                        onMakeRecurring: { onMakeRecurring(orderId) },
                         onCancel: { showCancelSheet = true },
                         onReportIssue: { onReportIssue(orderId) }
                     )
@@ -205,18 +225,69 @@ private struct ConfirmRecurringFooter: View {
     }
 }
 
-/// The order-detail footer (`ActionsFooter`, `OrderDetailScreen.kt:280-286`).
-/// Cancel and Report-issue overlap on Confirmed, so both are stacked rather than
-/// each owning its own footer — Cancel on top, Report issue below.
+/// Which of the footer's four CTAs a given order offers (`canRebook` /
+/// `canMakeRecurring`, `OrderDetailScreen.kt:243-250`). Pulled out of the view so
+/// the gating is checkable: "Book again on a cancelled order" and "the Plus-only
+/// recurring CTA shown to a free customer" both render perfectly and are both wrong.
+enum OrderDetailFooterActions {
+    /// Only a finished cleaning is worth repeating. Deliberately NOT widened to
+    /// Cancelled: a cancelled order never happened, so there is no delivered
+    /// service to book again.
+    static func showRebook(_ status: OrderStatus?) -> Bool {
+        OrderStatusGroup.isCompleted(status)
+    }
+
+    /// Same Completed-only gate as rebook, plus the Plus gate — recurring
+    /// bookings are a membership perk, so offering the CTA without one would
+    /// walk the customer into a paywall from a button that promised a schedule.
+    static func showMakeRecurring(_ status: OrderStatus?, hasMembership: Bool) -> Bool {
+        showRebook(status) && hasMembership
+    }
+
+    /// The footer renders if any of its four actions would. Completed used to
+    /// arrive here only via `isReportable`, which is an accident of the dispute
+    /// window happening to extend past completion rather than a statement about
+    /// re-booking; naming all four keeps the gate honest if that window narrows.
+    static func showFooter(_ status: OrderStatus?, hasMembership: Bool) -> Bool {
+        OrderStatusGroup.isCancellable(status)
+            || OrderStatusGroup.isReportable(status)
+            || showRebook(status)
+            || showMakeRecurring(status, hasMembership: hasMembership)
+    }
+}
+
+/// The order-detail footer (`ActionsFooter`, `OrderDetailScreen.kt:393-500`).
+/// Several actions overlap on one status, so they are stacked in Android's order
+/// rather than each owning its own footer: Book again (primary) on top, then
+/// Make recurring, then Cancel, then Report issue.
 private struct OrderDetailActionsFooter: View {
+    let showRebook: Bool
+    let showMakeRecurring: Bool
     let showCancel: Bool
     let showReportIssue: Bool
     let cancelEnabled: Bool
+    let onRebook: () -> Void
+    let onMakeRecurring: () -> Void
     let onCancel: () -> Void
     let onReportIssue: () -> Void
 
     var body: some View {
         VStack(spacing: Spacing.s) {
+            if showRebook {
+                CleansiaPrimaryButton(
+                    L10n.OrderDetail.actionRebook,
+                    leadingIcon: "arrow.clockwise",
+                    action: onRebook
+                )
+            }
+            if showMakeRecurring {
+                CleansiaOutlinedButton(
+                    L10n.OrderDetail.actionMakeRecurring,
+                    leadingIcon: "calendar",
+                    action: onMakeRecurring
+                )
+                .tint(CleansiaColors.primary)
+            }
             if showCancel {
                 CleansiaOutlinedButton(
                     L10n.OrderDetail.actionCancel,

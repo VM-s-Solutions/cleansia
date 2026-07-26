@@ -23,7 +23,7 @@
     <string name="register_email">E-mail</string>
     <string name="register_password">Heslo</string>
     <string name="register_confirm_password">Potvrdit heslo</string>
-    <string name="register_pw_min_length">Alespoň 12 znaků</string>
+    <string name="register_pw_min_length">Alespoň 8 znaků</string>
     <string name="register_pw_letter">Alespoň jedno písmeno</string>
     <string name="register_pw_number">Alespoň jedna číslice</string>
     <string name="register_pw_match">Hesla se shodují</string>
@@ -443,7 +443,6 @@
     <!-- Profile — notifications -->
     <string name="notifications_title">Oznámení</string>
     <string name="notifications_section_push">Push oznámení</string>
-    <string name="notifications_section_channels">Kanály</string>
     <string name="notifications_booking_updates">Aktualizace rezervací</string>
     <string name="notifications_booking_updates_desc">Když je přidělen uklízeč, je na cestě nebo dokončil úklid</string>
     <string name="notifications_cleaner_messages">Zprávy od uklízeče</string>
@@ -471,10 +470,6 @@
     <string name="busy_booking">Vytváříme vaši objednávku…</string>
     <string name="busy_payment">Zpracováváme platbu…</string>
     <string name="busy_subscribe_plus">Aktivujeme Cleansia Plus…</string>
-    <string name="notifications_email">E-mail</string>
-    <string name="notifications_email_desc">Účtenky a důležité informace o účtu</string>
-    <string name="notifications_sms">SMS</string>
-    <string name="notifications_sms_desc">Textové zprávy s připomínkami rezervací</string>
 
     <!-- Profile — help & support -->
     <string name="help_title">Nápověda a podpora</string>
@@ -596,6 +591,7 @@
     <string name="booking_where">Kde</string>
     <string name="booking_select_address_hint">Vyberte z uložených nebo přidejte novou</string>
     <string name="booking_when">Vyberte datum</string>
+    <string name="booking_today">Dnes</string>
     <string name="booking_new_address">Vybrat na mapě</string>
 
     <!-- Address picker (map) -->
@@ -659,7 +655,7 @@
     <string name="booking_summary_promo_discount">Slevový kód (-%1$s)</string>
     <string name="booking_summary_membership_discount">Sleva Cleansia Plus</string>
     <string name="booking_summary_tier_discount">Věrnostní sleva</string>
-    <string name="booking_summary_tier_discount_min_not_met">Věrnostní sleva platí pro objednávky nad %d CZK</string>
+    <string name="booking_summary_tier_discount_min_not_met">Věrnostní sleva platí pro objednávky nad %1$s</string>
     <string name="booking_summary_total">Celkem</string>
 
     <!-- Promo code -->
@@ -763,6 +759,9 @@
     <string name="delete_account_confirm_mismatch">E-mail neodpovídá vašemu účtu</string>
     <string name="delete_account_confirm_button">Trvale smazat účet</string>
     <string name="delete_account_success">Váš účet byl smazán.</string>
+    <string name="delete_account_dialog_title">Smazat účet?</string>
+    <string name="delete_account_dialog_message">Tímto trvale smažete svůj účet a data. Toto nelze vrátit zpět.</string>
+    <string name="delete_account_dialog_confirm">Smazat</string>
 
     <!-- Error handling — generics -->
     <string name="error_generic_unknown">Něco se pokazilo. Zkuste to prosím znovu.</string>

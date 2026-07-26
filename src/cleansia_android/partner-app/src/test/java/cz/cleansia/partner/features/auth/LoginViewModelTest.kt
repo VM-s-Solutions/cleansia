@@ -104,6 +104,46 @@ class LoginViewModelTest {
     }
 
     /**
+     * The address that rides to ConfirmEmail must be the one the *server*
+     * says the code was issued to, not the one the user typed. The two differ
+     * whenever the server normalises the address — here, case — and the
+     * confirm call is validated against the server's copy, so sending the
+     * typed one back would fail a code that is perfectly valid.
+     */
+    @Test
+    fun `unverified login carries the server email, not the typed one`() = runTest {
+        coEvery { authRepository.login("A@B.com", "secret", true) } returns
+            ApiResult.Success(LoginOutcome.UnverifiedEmail(email = "a@b.com", hasToken = false))
+
+        val vm = viewModel()
+        vm.onEmailChange("A@B.com")
+        vm.onPasswordChange("secret")
+
+        vm.loginSuccess.test {
+            vm.login()
+            advanceUntilIdle()
+            assertEquals("a@b.com", awaitItem().email)
+        }
+    }
+
+    /** A verified login has no UnverifiedEmail to read — fall back to the typed address. */
+    @Test
+    fun `verified login falls back to the typed email`() = runTest {
+        coEvery { authRepository.login("a@b.com", "secret", true) } returns
+            ApiResult.Success(LoginOutcome.Authenticated)
+
+        val vm = viewModel()
+        vm.onEmailChange("a@b.com")
+        vm.onPasswordChange("secret")
+
+        vm.loginSuccess.test {
+            vm.login()
+            advanceUntilIdle()
+            assertEquals("a@b.com", awaitItem().email)
+        }
+    }
+
+    /**
      * One session lifetime for every mobile surface: 30 days, always requested.
      *
      * This is the only client in the product where remember-me was ever *functional* —

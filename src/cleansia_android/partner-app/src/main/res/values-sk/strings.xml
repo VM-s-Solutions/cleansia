@@ -75,7 +75,7 @@
     <string name="back">Späť</string>
 
     <!-- Password rules -->
-    <string name="register_pw_min_length">Aspoň 12 znakov</string>
+    <string name="register_pw_min_length">Aspoň 8 znakov</string>
     <string name="register_pw_letter">Obsahuje písmeno</string>
     <string name="register_pw_number">Obsahuje číslo</string>
     <string name="register_pw_match">Heslá sa zhodujú</string>
@@ -987,6 +987,10 @@
     <string name="slide_to_complete">Posunutím dokončite</string>
     <string name="completing_order">Dokončujem…</string>
     <string name="order_mark_cash_collected">Označiť hotovosť ako prijatú</string>
+    <string name="partner_order_mark_cash_collected_confirm_title">Označiť hotovosť ako prijatú?</string>
+    <string name="partner_order_mark_cash_collected_confirm_message">Potvrďte, že ste od zákazníka prevzali %1$s v hotovosti. Túto akciu nemožno vrátiť späť.</string>
+    <string name="partner_order_mark_cash_collected_confirm_message_no_amount">Potvrďte, že ste od zákazníka prevzali platbu v hotovosti. Túto akciu nemožno vrátiť späť.</string>
+    <string name="partner_order_mark_cash_collected_confirm_action">Áno, hotovosť prijatá</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Pred dokončením zákazky urobte aspoň jednu fotografiu \"po\".</string>
@@ -1010,9 +1014,14 @@
     <string name="payment_promo_discount">Promo zľava</string>
     <string name="payment_total">Spolu</string>
     <string name="payment_method_value">Spôsob: %1$s</string>
+    <string name="payment_method_cash">Hotovosťou</string>
+    <string name="payment_method_card">Kartou</string>
     <string name="payment_status_paid">Zaplatené</string>
     <string name="payment_status_pending">Čaká</string>
     <string name="payment_status_failed">Zlyhalo</string>
+    <string name="payment_status_refunded">Vrátené</string>
+    <string name="payment_status_disputed">Sporná platba</string>
+    <string name="payment_status_partially_refunded">Čiastočne vrátené</string>
     <string name="status_timeline_section_title">Časová os stavu</string>
     <string name="order_on_the_way_encouragement">Na ceste — čoskoro dovidenia!</string>
 

@@ -60,6 +60,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.catalog.CategoryDto
 import cz.cleansia.customer.core.catalog.PackageListItem
@@ -394,7 +395,9 @@ private fun PackageCard(
             Spacer(Modifier.weight(1f).heightIn(min = 4.dp))
 
             Text(
-                "${pkg.price.toInt()} CZK",
+                // Catalog browse has no quote yet, so no currency —
+                // formatOrderPrice defaults to CZK, matching what this literal assumed.
+                formatOrderPrice(pkg.price, null),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = Color.White,
             )

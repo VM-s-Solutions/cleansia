@@ -52,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
+import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.customer.ui.theme.selectionTint
 import cz.cleansia.customer.ui.theme.SuccessText
@@ -86,6 +87,11 @@ fun ConfirmStep(
     val quoteState by bookingVm.quoteState.collectAsStateWithLifecycle()
     val quote = (quoteState as? QuoteState.Quoted)?.response
     val promoState by bookingVm.promoCodeState.collectAsStateWithLifecycle()
+    // Every money row on this screen renders through [formatOrderPrice] with the
+    // quote's own currency, so the summary and the sheet footer can never disagree.
+    // Null before the first quote lands — formatOrderPrice falls back to CZK, which
+    // is what the hardcoded " CZK" suffix this replaced always assumed.
+    val currencyCode = quote?.currencyCode
     // [totalPrice] is the raw subtotal — what the backend's PriceMatchesAsync
     // validates against, so submission must echo it unchanged. Discounts are
     // applied client-side here for display.
@@ -132,6 +138,7 @@ fun ConfirmStep(
             ExtrasCard(
                 extras = sortedExtras,
                 selectedSlugs = state.selectedExtraSlugs,
+                currencyCode = currencyCode,
                 onToggle = { slug ->
                     val updated = if (slug in state.selectedExtraSlugs) {
                         state.selectedExtraSlugs - slug
@@ -156,9 +163,14 @@ fun ConfirmStep(
             Spacer(Modifier.height(6.dp))
             selectedServices.forEach { svc ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(svc.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                    // Same [localizedName] every other catalog render uses — the
+                    // summary must name the item exactly as the picker did.
+                    Text(localizedName(svc.translations, svc.name), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
                     Text(
-                        "${(svc.basePrice + svc.perRoomPrice * (state.rooms + state.bathrooms)).toInt()} CZK",
+                        formatOrderPrice(
+                            svc.basePrice + svc.perRoomPrice * (state.rooms + state.bathrooms),
+                            currencyCode,
+                        ),
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -166,9 +178,9 @@ fun ConfirmStep(
             }
             selectedPackages.forEach { pkg ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(pkg.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                    Text(localizedName(pkg.translations, pkg.name), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
                     Text(
-                        "${pkg.price.toInt()} CZK",
+                        formatOrderPrice(pkg.price, currencyCode),
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -184,7 +196,11 @@ fun ConfirmStep(
             )
             Spacer(Modifier.height(4.dp))
             LabeledInfoRow(Icons.Outlined.LocationOn, stringResource(R.string.booking_summary_address), state.street.ifBlank { "—" })
-            LabeledInfoRow(Icons.Outlined.Home, stringResource(R.string.booking_summary_property), "${state.rooms} rooms · ${state.bathrooms} bath")
+            LabeledInfoRow(
+                Icons.Outlined.Home,
+                stringResource(R.string.booking_summary_property),
+                stringResource(R.string.order_detail_rooms_bathrooms, state.rooms, state.bathrooms),
+            )
             LabeledInfoRow(Icons.Outlined.CalendarToday, stringResource(R.string.booking_summary_date), state.selectedDate.ifBlank { "—" })
             LabeledInfoRow(Icons.Outlined.AccessTime, stringResource(R.string.booking_summary_time), state.selectedTime.ifBlank { "—" })
 
@@ -199,7 +215,7 @@ fun ConfirmStep(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    "${basePrice.toInt()} CZK",
+                    formatOrderPrice(basePrice, currencyCode),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -212,7 +228,7 @@ fun ConfirmStep(
                         color = SuccessText,
                     )
                     Text(
-                        "-${promoDiscount.toInt()} CZK",
+                        "-${formatOrderPrice(promoDiscount, currencyCode)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = SuccessText,
                     )
@@ -226,7 +242,7 @@ fun ConfirmStep(
                         color = SuccessText,
                     )
                     Text(
-                        "-${membershipDiscount.toInt()} CZK",
+                        "-${formatOrderPrice(membershipDiscount, currencyCode)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = SuccessText,
                     )
@@ -240,7 +256,7 @@ fun ConfirmStep(
                         color = SuccessText,
                     )
                     Text(
-                        "-${tierDiscount.toInt()} CZK",
+                        "-${formatOrderPrice(tierDiscount, currencyCode)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = SuccessText,
                     )
@@ -254,7 +270,7 @@ fun ConfirmStep(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        "+${surcharge.toInt()} CZK",
+                        "+${formatOrderPrice(surcharge, currencyCode)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -268,7 +284,7 @@ fun ConfirmStep(
                 Text(
                     stringResource(
                         R.string.booking_summary_tier_discount_min_not_met,
-                        tierFloor.toInt(),
+                        formatOrderPrice(tierFloor, currencyCode),
                     ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -283,7 +299,7 @@ fun ConfirmStep(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    "${finalTotal.toInt()} CZK",
+                    formatOrderPrice(finalTotal, currencyCode),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -527,6 +543,7 @@ private fun SummaryCard(content: @Composable () -> Unit) {
 private fun ExtrasCard(
     extras: List<cz.cleansia.customer.core.catalog.ExtraListItem>,
     selectedSlugs: Set<String>,
+    currencyCode: String?,
     onToggle: (String) -> Unit,
 ) {
     Column(
@@ -551,6 +568,10 @@ private fun ExtrasCard(
         Spacer(Modifier.height(10.dp))
         extras.forEach { extra ->
             val isSelected = extra.slug in selectedSlugs
+            // Extras carry the same `translations` map as services and packages;
+            // the card's own doc comment already promised a translated name.
+            val extraName = localizedName(extra.translations, extra.name)
+            val extraDescription = localizedDescription(extra.translations, extra.description)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -567,14 +588,14 @@ private fun ExtrasCard(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        extra.name,
+                        extraName,
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
-                    if (!extra.description.isNullOrBlank()) {
+                    if (!extraDescription.isNullOrBlank()) {
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            extra.description,
+                            extraDescription,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -582,7 +603,7 @@ private fun ExtrasCard(
                 }
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "${extra.price.toInt()} CZK",
+                    formatOrderPrice(extra.price, currencyCode),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = if (isSelected) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.onSurface,

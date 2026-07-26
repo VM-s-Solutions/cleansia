@@ -23,7 +23,7 @@
     <string name="register_email">Email</string>
     <string name="register_password">Пароль</string>
     <string name="register_confirm_password">Подтвердите пароль</string>
-    <string name="register_pw_min_length">Минимум 12 символов</string>
+    <string name="register_pw_min_length">Не менее 8 символов</string>
     <string name="register_pw_letter">Минимум одна буква</string>
     <string name="register_pw_number">Минимум одна цифра</string>
     <string name="register_pw_match">Пароли совпадают</string>
@@ -440,7 +440,6 @@
     <!-- Profile — notifications -->
     <string name="notifications_title">Уведомления</string>
     <string name="notifications_section_push">Push-уведомления</string>
-    <string name="notifications_section_channels">Каналы</string>
     <string name="notifications_booking_updates">Обновления бронирований</string>
     <string name="notifications_booking_updates_desc">Когда клинер назначен, в пути или завершил</string>
     <string name="notifications_cleaner_messages">Сообщения от клинера</string>
@@ -468,10 +467,6 @@
     <string name="busy_booking">Создаём ваш заказ…</string>
     <string name="busy_payment">Обрабатываем платёж…</string>
     <string name="busy_subscribe_plus">Активируем Cleansia Plus…</string>
-    <string name="notifications_email">Email</string>
-    <string name="notifications_email_desc">Чеки и важные обновления учётной записи</string>
-    <string name="notifications_sms">SMS</string>
-    <string name="notifications_sms_desc">Текстовые сообщения для напоминаний</string>
 
     <!-- Profile — help & support -->
     <string name="help_title">Помощь и поддержка</string>
@@ -593,6 +588,7 @@
     <string name="booking_where">Где</string>
     <string name="booking_select_address_hint">Выберите из сохранённых или добавьте новый</string>
     <string name="booking_when">Выберите дату</string>
+    <string name="booking_today">Сегодня</string>
     <string name="booking_new_address">Выбрать на карте</string>
 
     <!-- Address picker (map) -->
@@ -656,7 +652,7 @@
     <string name="booking_summary_promo_discount">Промокод (-%1$s)</string>
     <string name="booking_summary_membership_discount">Скидка Cleansia Plus</string>
     <string name="booking_summary_tier_discount">Скидка за лояльность</string>
-    <string name="booking_summary_tier_discount_min_not_met">Скидка за лояльность действует для заказов от %d CZK</string>
+    <string name="booking_summary_tier_discount_min_not_met">Скидка за лояльность действует для заказов от %1$s</string>
     <string name="booking_summary_total">Итого</string>
 
     <!-- Promo code -->
@@ -760,6 +756,9 @@
     <string name="delete_account_confirm_mismatch">Email не совпадает с вашей учётной записью</string>
     <string name="delete_account_confirm_button">Окончательно удалить учётную запись</string>
     <string name="delete_account_success">Ваша учётная запись удалена.</string>
+    <string name="delete_account_dialog_title">Удалить аккаунт?</string>
+    <string name="delete_account_dialog_message">Это навсегда удалит ваш аккаунт и данные. Это нельзя отменить.</string>
+    <string name="delete_account_dialog_confirm">Удалить</string>
 
     <!-- Error handling — generics -->
     <string name="error_generic_unknown">Что-то пошло не так. Попробуйте ещё раз.</string>

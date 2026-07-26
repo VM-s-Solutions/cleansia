@@ -78,6 +78,48 @@ final class OrderStatusLogicTests: XCTestCase {
     }
 }
 
+/// The Completed-only footer CTAs (`canRebook` / `canMakeRecurring`,
+/// `OrderDetailScreen.kt:243-250`). These are the gates a screenshot cannot
+/// check: showing "Book again" on a Cancelled order, or the Plus-only recurring
+/// CTA to a free customer, both render perfectly and are both wrong.
+final class OrderDetailFooterActionsTests: XCTestCase {
+    func testBookAgainIsOfferedOnlyOnACompletedOrder() {
+        XCTAssertTrue(OrderDetailFooterActions.showRebook(._5))
+        XCTAssertFalse(OrderDetailFooterActions.showRebook(._0))
+        XCTAssertFalse(OrderDetailFooterActions.showRebook(._1))
+        XCTAssertFalse(OrderDetailFooterActions.showRebook(._2))
+        XCTAssertFalse(OrderDetailFooterActions.showRebook(._3))
+        XCTAssertFalse(OrderDetailFooterActions.showRebook(._4))
+        XCTAssertFalse(OrderDetailFooterActions.showRebook(nil))
+    }
+
+    /// A cancelled cleaning never happened, so there is nothing to repeat.
+    /// Android gates strictly on Completed and iOS must not drift wider.
+    func testBookAgainIsNotOfferedOnACancelledOrder() {
+        XCTAssertFalse(OrderDetailFooterActions.showRebook(._6))
+        XCTAssertFalse(OrderDetailFooterActions.showMakeRecurring(._6, hasMembership: true))
+    }
+
+    func testMakeRecurringNeedsBothCompletedAndAnActivePlusMembership() {
+        XCTAssertTrue(OrderDetailFooterActions.showMakeRecurring(._5, hasMembership: true))
+        XCTAssertFalse(OrderDetailFooterActions.showMakeRecurring(._5, hasMembership: false))
+        XCTAssertFalse(OrderDetailFooterActions.showMakeRecurring(._4, hasMembership: true))
+        XCTAssertFalse(OrderDetailFooterActions.showMakeRecurring(nil, hasMembership: true))
+    }
+
+    /// The footer's own render gate. It used to be `isCancellable || isReportable`,
+    /// which happens to cover Completed today only because Completed is reportable —
+    /// an accident that would silently hide both new CTAs if the dispute window
+    /// ever narrowed.
+    func testTheFooterRendersWheneverAnyOfItsFourActionsWould() {
+        XCTAssertTrue(OrderDetailFooterActions.showFooter(._5, hasMembership: false))
+        XCTAssertTrue(OrderDetailFooterActions.showFooter(._2, hasMembership: false))
+        XCTAssertTrue(OrderDetailFooterActions.showFooter(._0, hasMembership: false))
+        XCTAssertFalse(OrderDetailFooterActions.showFooter(._6, hasMembership: true))
+        XCTAssertFalse(OrderDetailFooterActions.showFooter(nil, hasMembership: true))
+    }
+}
+
 final class LiveProgressLogicTests: XCTestCase {
     func testActiveStepMapsEachOfSevenStates() {
         XCTAssertEqual(LiveProgress.activeStep(for: ._0), .booked)

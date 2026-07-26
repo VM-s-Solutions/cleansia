@@ -222,6 +222,8 @@
     <!-- Orders -->
     <string name="orders">Замовлення</string>
     <string name="order_details">Деталі замовлення</string>
+    <string name="order_detail_error_title">Не вдалося завантажити це замовлення</string>
+    <string name="order_detail_error_message">Перевірте підключення до Інтернету та спробуйте знову.</string>
     <string name="active">Активні</string>
     <string name="available">Доступні</string>
     <string name="my_orders">Мої замовлення</string>

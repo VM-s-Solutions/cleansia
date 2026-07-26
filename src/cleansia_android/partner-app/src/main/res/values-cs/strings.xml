@@ -170,6 +170,8 @@
     <!-- Orders -->
     <string name="orders">Objednávky</string>
     <string name="order_details">Detail objednávky</string>
+    <string name="order_detail_error_title">Objednávku se nepodařilo načíst</string>
+    <string name="order_detail_error_message">Zkontrolujte připojení k internetu a zkuste to znovu.</string>
     <string name="active">Aktivní</string>
     <string name="available">Dostupné</string>
     <string name="my_orders">Moje objednávky</string>

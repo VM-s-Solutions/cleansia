@@ -32,9 +32,24 @@ import kotlinx.serialization.json.Json
  *
  * Sign-out wipes every [SessionScopedCache] in [sessionScopedCaches] — adding
  * a new cache is a one-line change in [SessionScopedModule], no edit here.
+ *
+ * Two [AuthApi] instances on purpose:
+ *  - [api] is built on the anonymous client and serves the token-ISSUING calls
+ *    (login / register / confirm / refresh), which must not carry a Bearer.
+ *  - [authenticatedApi] is built on the authenticated client and serves
+ *    `/api/Auth/Logout`, which is `[Authorize]` server-side.
+ * See [logout] for why the split exists at all.
  */
 class AuthRepository(
     private val api: AuthApi,
+    /**
+     * Lazy on purpose. The authenticated Retrofit hangs off the OkHttp client
+     * that owns [AuthAuthenticator], and the authenticator holds a
+     * `Provider<AuthRepository>` for its refresh call — resolving this eagerly
+     * would close that loop into a Dagger dependency cycle. `.get()` is called
+     * inside [logout] only, by which time the whole graph is built.
+     */
+    private val authenticatedApi: javax.inject.Provider<AuthApi>,
     private val tokenStore: TokenStore,
     private val sessionManager: SessionManager,
     private val sessionScopedCaches: Set<@JvmSuppressWildcards SessionScopedCache>,
@@ -119,7 +134,14 @@ class AuthRepository(
         }
 
         if (refreshToken != null) {
-            runCatching { api.logout(LogoutRequest(refreshToken)) }
+            // MUST go out on the authenticated client: /api/Auth/Logout is
+            // [Authorize], so on the anonymous client this was a guaranteed 401
+            // that runCatching swallowed — the user saw "signed out" while the
+            // refresh token stayed live server-side for up to 30 days.
+            // runCatching stays: an offline logout must still wipe locally, and
+            // the authenticated client's AuthAuthenticator means an expired
+            // access token refreshes-and-retries rather than failing outright.
+            runCatching { authenticatedApi.get().logout(LogoutRequest(refreshToken)) }
                 .onFailure { Log.w(TAG, "Logout API call failed: ${it.message}") }
         }
         // Wipe session-scoped caches before the token so any future expansion of

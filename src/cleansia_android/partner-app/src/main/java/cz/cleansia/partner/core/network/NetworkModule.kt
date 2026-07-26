@@ -191,9 +191,29 @@ object NetworkModule {
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
 
+    /**
+     * AuthApi on the ANONYMOUS client — the token-issuing calls (Login,
+     * RegisterEmployee, ConfirmUserEmail, RefreshToken, ForgotPassword) plus the
+     * Authenticator's own refresh. These must not carry a Bearer, and refresh in
+     * particular must not sit behind the Authenticator that calls it.
+     */
     @Provides
     @Singleton
     fun provideAuthApi(@NoAuthRetrofit retrofit: Retrofit): AuthApi =
+        retrofit.create(AuthApi::class.java)
+
+    /**
+     * The SAME interface on the AUTHENTICATED client, for the `[Authorize]`
+     * members of AuthController — today that is `/api/Auth/Logout` only.
+     * Sending logout on the anonymous client made it a guaranteed 401, so the
+     * refresh token stayed live server-side while the cleaner believed they had
+     * signed out. Injected as a `Provider` at the call site so the repository
+     * does not pull the authenticated OkHttp graph in at construction time.
+     */
+    @Provides
+    @Singleton
+    @AuthenticatedAuthApi
+    fun provideAuthenticatedAuthApi(@AuthRetrofit retrofit: Retrofit): AuthApi =
         retrofit.create(AuthApi::class.java)
 
     @Provides
@@ -292,3 +312,10 @@ object NetworkModule {
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class AuthRetrofit
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class NoAuthRetrofit
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class TimeZoneInterceptorQ
+
+/**
+ * Marks the [AuthApi] built on the AUTHENTICATED client. The unqualified
+ * binding stays the anonymous one, so a newly added anonymous auth endpoint is
+ * wired correctly by default; only the `[Authorize]` ones opt in here.
+ */
+@Qualifier @Retention(AnnotationRetention.BINARY) annotation class AuthenticatedAuthApi

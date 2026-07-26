@@ -38,6 +38,7 @@ import retrofit2.Response
 class AuthRepositoryTest {
 
     private lateinit var api: AuthApi
+    private lateinit var authenticatedApi: AuthApi
     private lateinit var tokenStore: TokenStore
     private lateinit var sessionManager: SessionManager
     private lateinit var pushTokenRepository: PushTokenRepository
@@ -51,6 +52,7 @@ class AuthRepositoryTest {
     @Before
     fun setUp() {
         api = mockk()
+        authenticatedApi = mockk()
         tokenStore = mockk(relaxed = true)
         sessionManager = mockk(relaxed = true)
         pushTokenRepository = mockk(relaxed = true)
@@ -70,6 +72,9 @@ class AuthRepositoryTest {
     private fun newRepository(caches: Set<SessionScopedCache> = emptySet()): AuthRepository =
         AuthRepository(
             api = api,
+            // Two distinct mocks so a test can tell WHICH client a call went out on —
+            // that distinction is the whole of the logout bug.
+            authenticatedApi = javax.inject.Provider { authenticatedApi },
             tokenStore = tokenStore,
             sessionManager = sessionManager,
             sessionScopedCaches = caches,
@@ -236,19 +241,24 @@ class AuthRepositoryTest {
     }
 
     @Test
-    fun logout_callsApiLogoutWhenRefreshTokenPresent() = kotlinx.coroutines.test.runTest {
+    fun logout_callsTheAuthenticatedClientNotTheAnonymousOne() = kotlinx.coroutines.test.runTest {
         every { tokenStore.current() } returns TokenStore.Tokens(
             accessToken = "a",
             accessTokenExpiresAt = 1L,
             refreshToken = "r",
             refreshTokenExpiresAt = 1L,
         )
-        coEvery { api.logout(any()) } returns Response.success(true)
+        coEvery { authenticatedApi.logout(any()) } returns Response.success(true)
 
         val repo = newRepository()
         repo.logout()
 
-        coVerify { api.logout(LogoutRequest("r")) }
+        // `/api/Auth/Logout` is [Authorize] server-side. Issued on the anonymous
+        // client it is a guaranteed 401 that runCatching swallows, so the refresh
+        // token survives the "sign out" for its whole 30-day life. Asserting the
+        // INSTANCE, not just the call, is the entire point of this test.
+        coVerify(exactly = 1) { authenticatedApi.logout(LogoutRequest("r")) }
+        coVerify(exactly = 0) { api.logout(any()) }
         verify { tokenStore.clear() }
     }
 
@@ -260,7 +270,7 @@ class AuthRepositoryTest {
             refreshToken = "r",
             refreshTokenExpiresAt = 1L,
         )
-        coEvery { api.logout(any()) } throws java.io.IOException("network down")
+        coEvery { authenticatedApi.logout(any()) } throws java.io.IOException("network down")
 
         val repo = newRepository()
         repo.logout()

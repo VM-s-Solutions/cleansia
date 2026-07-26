@@ -142,32 +142,48 @@ object AuthModule {
         .build()
 
     /**
-     * Dedicated AuthApi instance used ONLY by the Authenticator's refresh flow.
-     * The main AuthRepository uses this same instance too — simpler than two
-     * AuthApi bindings, and the refresh interceptor guard in [AuthInterceptor]
-     * prevents auth tokens leaking into the refresh request.
+     * AuthApi on the ANONYMOUS client — the token-issuing calls (Login,
+     * Register, GoogleAuth, ConfirmUserEmail, RefreshToken) plus the
+     * Authenticator's refresh flow. These must not carry a Bearer, and the
+     * refresh call in particular must not sit behind the Authenticator.
      */
     @Provides
     @Singleton
     fun provideAuthApi(@NoAuthRetrofit retrofit: Retrofit): AuthApi =
         retrofit.create(AuthApi::class.java)
 
+    /**
+     * The SAME interface on the AUTHENTICATED client, for the `[Authorize]`
+     * members of AuthController — today that is `/api/Auth/Logout` only.
+     * Sending logout on the anonymous client made it a guaranteed 401, so the
+     * refresh token stayed live server-side for its full 30 days while the user
+     * believed they had signed out. Injected as a `Provider` at the call site;
+     * see [AuthRepository]'s constructor for the cycle it breaks.
+     */
+    @Provides
+    @Singleton
+    @AuthenticatedAuthApi
+    fun provideAuthenticatedAuthApi(@AuthRetrofit retrofit: Retrofit): AuthApi =
+        retrofit.create(AuthApi::class.java)
+
     @Provides
     @Singleton
     fun provideAuthRepository(
         api: AuthApi,
+        @AuthenticatedAuthApi authenticatedApi: javax.inject.Provider<AuthApi>,
         tokenStore: TokenStore,
         sessionManager: SessionManager,
         sessionScopedCaches: Set<@JvmSuppressWildcards SessionScopedCache>,
         pushTokenRepository: cz.cleansia.core.notifications.PushTokenRepository,
         json: Json,
     ): AuthRepository = AuthRepository(
-        api,
-        tokenStore,
-        sessionManager,
-        sessionScopedCaches,
-        pushTokenRepository,
-        json,
+        api = api,
+        authenticatedApi = authenticatedApi,
+        tokenStore = tokenStore,
+        sessionManager = sessionManager,
+        sessionScopedCaches = sessionScopedCaches,
+        pushTokenRepository = pushTokenRepository,
+        json = json,
     )
 
     @Provides
@@ -276,3 +292,10 @@ object AuthModule {
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class AuthRetrofit
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class NoAuthRetrofit
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class TimeZoneInterceptorQ
+
+/**
+ * Marks the [AuthApi] built on the AUTHENTICATED client. The unqualified
+ * binding stays the anonymous one so a new anonymous auth endpoint is wired
+ * correctly by default; only the `[Authorize]` ones opt in here.
+ */
+@Qualifier @Retention(AnnotationRetention.BINARY) annotation class AuthenticatedAuthApi

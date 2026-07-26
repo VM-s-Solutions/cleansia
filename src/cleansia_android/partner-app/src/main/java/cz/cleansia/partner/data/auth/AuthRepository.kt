@@ -14,6 +14,7 @@ import cz.cleansia.partner.api.model.RequestPasswordChangeCommand
 import cz.cleansia.partner.api.model.ResendConfirmationEmailCommand
 import cz.cleansia.partner.core.auth.UserProfileData
 import cz.cleansia.partner.core.auth.UserProfileStore
+import cz.cleansia.partner.core.network.AuthenticatedAuthApi
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.core.notifications.PushTokenRepository
@@ -64,7 +65,15 @@ interface AuthRepository {
 
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
+    /** Anonymous client — the token-issuing endpoints, which must carry no Bearer. */
     private val authApi: AuthApi,
+    /**
+     * Authenticated client, for the `[Authorize]` auth endpoints ([logout]).
+     * Lazy so the repository does not drag the authenticated OkHttp graph —
+     * and with it [cz.cleansia.core.auth.AuthAuthenticator] — into its own
+     * construction.
+     */
+    @AuthenticatedAuthApi private val authenticatedAuthApi: Provider<AuthApi>,
     private val employeeApi: EmployeeApi,
     private val tokenStore: TokenStore,
     private val userProfileStore: UserProfileStore,
@@ -216,9 +225,17 @@ class AuthRepositoryImpl @Inject constructor(
 
         val refreshToken = tokenStore.current()?.refreshToken
         if (!refreshToken.isNullOrBlank()) {
-            // Best-effort — ignore the result. If it fails we still wipe locally.
+            // MUST go out on the authenticated client: /api/Auth/Logout is
+            // [Authorize], so on the anonymous client this was a guaranteed 401
+            // that the best-effort wrapper swallowed — the cleaner saw "signed
+            // out" while the refresh token stayed live server-side.
+            // Best-effort stays: a failure must still wipe locally, and the
+            // authenticated client carries AuthAuthenticator, so an expired
+            // access token refreshes-and-retries instead of failing outright.
             runCatching {
-                safeApiCall(json) { authApi.authLogout(LogoutCommand(token = refreshToken)) }
+                safeApiCall(json) {
+                    authenticatedAuthApi.get().authLogout(LogoutCommand(token = refreshToken))
+                }
             }
         }
         signOutLocal()

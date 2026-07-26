@@ -27,7 +27,12 @@ data class LoginFormState(
     val passwordError: String? = null,
 )
 
-data class LoginSuccess(val requiresEmailConfirmation: Boolean)
+/**
+ * [email] is the address ConfirmEmail should verify against — the server's
+ * copy when it gave us one, because the confirm call is validated against the
+ * address the code was issued to and the server may normalise what was typed.
+ */
+data class LoginSuccess(val email: String, val requiresEmailConfirmation: Boolean)
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
@@ -76,8 +81,12 @@ class LoginViewModel @Inject constructor(
             when (val result = authRepository.login(state.email, state.password, LONG_LIVED_SESSION)) {
                 is ApiResult.Success -> {
                     _loginState.value = ActionState.Idle
+                    val outcome = result.data
                     _loginSuccess.emit(
-                        LoginSuccess(requiresEmailConfirmation = result.data is LoginOutcome.UnverifiedEmail),
+                        LoginSuccess(
+                            email = (outcome as? LoginOutcome.UnverifiedEmail)?.email ?: state.email,
+                            requiresEmailConfirmation = outcome is LoginOutcome.UnverifiedEmail,
+                        ),
                     )
                 }
                 is ApiResult.Error -> {

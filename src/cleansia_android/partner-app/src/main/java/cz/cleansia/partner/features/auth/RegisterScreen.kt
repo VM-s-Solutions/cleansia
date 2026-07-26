@@ -43,14 +43,16 @@ import cz.cleansia.partner.R
  * password + rule list → confirm password + match rule → terms checkbox →
  * register button → footer link. No Google OAuth, no referral code.
  *
- * Success routes back to Login — the user receives a verification email and
- * signs in there; after the first successful sign-in with unconfirmed email
- * the Login flow forwards them to ConfirmEmailScreen.
+ * Success routes straight to ConfirmEmailScreen, carrying the address that
+ * was just registered so the code screen can show it and confirm against it.
+ * It used to route back to Login instead, which meant the user had to sign in
+ * with an account the app had just told them was unconfirmed before it would
+ * forward them to the same code screen.
  */
 @Composable
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
-    onRegisterSuccess: () -> Unit,
+    onRegisterSuccess: (String) -> Unit,
     viewModel: RegisterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -67,7 +69,7 @@ fun RegisterScreen(
         uiState.acceptTerms
 
     LaunchedEffect(uiState.isRegistrationSuccessful) {
-        if (uiState.isRegistrationSuccessful) onRegisterSuccess()
+        if (uiState.isRegistrationSuccessful) onRegisterSuccess(uiState.email)
     }
 
     LaunchedEffect(uiState.error) {

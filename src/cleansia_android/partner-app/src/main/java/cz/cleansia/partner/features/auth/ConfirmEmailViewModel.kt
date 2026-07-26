@@ -1,6 +1,7 @@
 package cz.cleansia.partner.features.auth
 
 import android.content.Context
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
@@ -32,6 +33,7 @@ data class ConfirmEmailUiState(
 
 @HiltViewModel
 class ConfirmEmailViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val authRepository: AuthRepository,
     private val errorTranslator: ApiErrorTranslator,
     private val userProfileStore: UserProfileStore,
@@ -43,14 +45,27 @@ class ConfirmEmailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ConfirmEmailUiState())
     val uiState: StateFlow<ConfirmEmailUiState> = _uiState.asStateFlow()
 
+    /**
+     * The address the code was issued to, carried on the route. Read via
+     * [SavedStateHandle] rather than `toRoute<>()` so the ViewModel layer stays
+     * free of androidx.navigation, matching OrderDetailViewModel.
+     */
+    private val routeEmail: String = savedStateHandle.get<String>("email").orEmpty()
+
     init {
-        viewModelScope.launch {
-            // Email comes from the just-stored profile (login persisted it
-            // even when the email wasn't yet confirmed). Used for the resend
-            // call, the screen subtitle, and the confirm call — the backend
-            // validates the code against the address it was issued to.
-            userProfileStore.current()?.let { profile ->
-                _uiState.update { it.copy(email = profile.email) }
+        // The route arg is the primary source: a partner who has just
+        // registered has no session, so UserProfileStore is empty for them.
+        // The store survives as a fallback for a login path that omitted the
+        // address on the wire. Branching (rather than always launching) also
+        // means the two sources cannot race to overwrite each other.
+        if (routeEmail.isNotBlank()) {
+            _uiState.update { it.copy(email = routeEmail) }
+        } else {
+            viewModelScope.launch {
+                // Login persisted the profile even with the email unconfirmed.
+                userProfileStore.current()?.let { profile ->
+                    _uiState.update { it.copy(email = profile.email) }
+                }
             }
         }
     }

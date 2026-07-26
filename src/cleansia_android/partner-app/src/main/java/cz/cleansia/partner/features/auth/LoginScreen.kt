@@ -44,7 +44,7 @@ import cz.cleansia.partner.R
 fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     onNavigateToForgotPassword: () -> Unit,
-    onNavigateToConfirmEmail: () -> Unit,
+    onNavigateToConfirmEmail: (String) -> Unit,
     onLoginSuccess: () -> Unit,
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
@@ -54,7 +54,7 @@ fun LoginScreen(
 
     LaunchedEffect(viewModel) {
         viewModel.loginSuccess.collect { success ->
-            if (success.requiresEmailConfirmation) onNavigateToConfirmEmail()
+            if (success.requiresEmailConfirmation) onNavigateToConfirmEmail(success.email)
             else onLoginSuccess()
         }
     }

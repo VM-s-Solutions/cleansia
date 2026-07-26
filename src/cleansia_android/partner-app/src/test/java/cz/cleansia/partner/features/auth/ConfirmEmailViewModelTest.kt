@@ -1,6 +1,7 @@
 package cz.cleansia.partner.features.auth
 
 import android.content.Context
+import androidx.lifecycle.SavedStateHandle
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
@@ -66,7 +67,8 @@ class ConfirmEmailViewModelTest {
         role = null,
     )
 
-    private fun viewModel() = ConfirmEmailViewModel(
+    private fun viewModel(routeEmail: String? = null) = ConfirmEmailViewModel(
+        SavedStateHandle(if (routeEmail == null) emptyMap() else mapOf("email" to routeEmail)),
         authRepository,
         errorTranslator,
         userProfileStore,
@@ -78,6 +80,48 @@ class ConfirmEmailViewModelTest {
     @Test
     fun `stored profile email is loaded into state`() = runTest {
         val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals("a@b.com", vm.uiState.value.email)
+    }
+
+    /**
+     * The whole point of item #13: a partner who has just registered has no
+     * session and no stored profile, so the address can only come from the
+     * route. Before the fix, registration bounced back to Login precisely
+     * because ConfirmEmail could not be reached without a profile — landing
+     * here with an empty store used to leave the subtitle blank and make the
+     * confirm call unresolvable.
+     */
+    @Test
+    fun `route email is used when the profile store is empty`() = runTest {
+        coEvery { userProfileStore.current() } returns null
+
+        val vm = viewModel(routeEmail = "fresh@registrant.cz")
+        advanceUntilIdle()
+
+        assertEquals("fresh@registrant.cz", vm.uiState.value.email)
+    }
+
+    /**
+     * The route argument is the primary source; the store is only a fallback.
+     * They can legitimately disagree — a stale profile from a previous session
+     * on a shared handset — and the address the user just typed must win.
+     */
+    @Test
+    fun `route email wins over a stale stored profile`() = runTest {
+        coEvery { userProfileStore.current() } returns profile(email = "stale@old.cz")
+
+        val vm = viewModel(routeEmail = "fresh@registrant.cz")
+        advanceUntilIdle()
+
+        assertEquals("fresh@registrant.cz", vm.uiState.value.email)
+    }
+
+    /** A blank arg is not an address — fall through to the store. */
+    @Test
+    fun `blank route email falls back to the stored profile`() = runTest {
+        val vm = viewModel(routeEmail = "")
         advanceUntilIdle()
 
         assertEquals("a@b.com", vm.uiState.value.email)

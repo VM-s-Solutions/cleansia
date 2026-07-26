@@ -222,10 +222,13 @@ public class FcmPushDispatcher(
         $"HTTP {httpStatus?.ToString() ?? "?"} ThirdPartyAuthError — APPLE refused the APNs auth key that " +
         "Firebase holds. This is NOT the Google service account and NOT any Azure/Key Vault setting; no " +
         "redeploy can affect it. Check, in order: (1) the key's APNs ENVIRONMENT scope — a Sandbox-only " +
-        "key cannot authenticate a TestFlight or App Store build, whose tokens are Production, and " +
-        "Firebase holds a development and a production slot separately; (2) the key's topic scope covers " +
-        "this bundle id; (3) the key is not revoked and its Key ID + Team ID match what Firebase stores. " +
-        $"FCM said: {providerMessage ?? "(no message)"}";
+        "key cannot authenticate a TestFlight or App Store build, whose tokens are Production, and the " +
+        "scope CANNOT be edited after creation, so fixing it means creating a replacement key with " +
+        "'Sandbox & Production'; (2) the key is stored PER iOS APP in Firebase, so confirm it was " +
+        "uploaded to the app entry for THIS bundle id and not a sibling one; (3) the key's topic scope " +
+        "covers this bundle id; (4) the key is not revoked and its Key ID + Team ID match what Firebase " +
+        "stores — Firebase does not validate the Key ID against the uploaded .p8, it stores whatever was " +
+        $"typed. FCM said: {providerMessage ?? "(no message)"}";
 
     /// <summary>Why <see cref="EnsureInitialized"/> could not return a live <see cref="FirebaseMessaging"/>.</summary>
     private enum InitOutcome

@@ -66,21 +66,37 @@ Check in this order:
    *"it worked from Xcode this morning and broke the moment I shipped to TestFlight."* Xcode
    substitutes `aps-environment = production` at distribution signing, so the `development` value
    committed in `CleansiaCustomer.entitlements` tells you **nothing** about what a TestFlight build
-   sent — do not "verify" from it. Note also that Firebase holds a **development** key slot and a
-   **production** key slot separately; only a sandbox key in the dev slot is this same shape.
+   sent — do not "verify" from it.
    An APNs auth key's environment **cannot be changed after creation** — Apple's *Edit* flow covers
-   only the name and the service checkboxes. Fixing it means creating a new key (prefer
-   *Team Scoped (All Topics)* so one key serves both bundle ids and the Live Activity path) and
-   uploading it to Firebase. `.p8` keys never expire, so there is no need to revoke the old one —
-   and revoking is immediate, irreversible, and would also break the Live Activity client if that
-   key is the one seeded into `Apns--KeyId` / `Apns--PrivateKeyPem`.
-2. The key's **topic scope** covers `cz.cleansia.customer` / `cz.cleansia.partner`.
-3. The key is **not revoked**, and its **Key ID + Team ID** match what Firebase stores.
-4. The bundle id is registered under that Apple app configuration in Firebase.
+   only the name and the enabled services. Fixing it means creating a REPLACEMENT key, and the
+   environment choice lives behind the **Configure** button next to the APNs checkbox, which is easy
+   to click straight past: doing so yields another Sandbox-only key that fails identically. Create it
+   as **Team Scoped (All Topics)** + **Sandbox & Production** so one key serves both bundle ids, both
+   environments, and the Live Activity path — then re-open the Keys list and READ THE ROW BACK to
+   confirm the environment actually says `Sandbox & Production`.
+   Do **not** revoke the old key until the new one is verified working: `.p8` keys never expire,
+   revocation is immediate and irreversible, and the old key is also the one seeded into
+   `Apns--KeyId` / `Apns--PrivateKeyPem` for the Live Activity client — revoking it breaks that
+   channel too, silently.
+2. **Which Firebase app entry holds it.** The APNs key is stored **per iOS app**, not per project,
+   and this project has two (`cz.cleansia.customer` and `cz.cleansia.partner`). Uploading to the
+   wrong entry leaves the other app on the old key. There is **ONE** auth-key slot per app — the
+   development/production *pair* belongs to the legacy **APNs Certificates** section, not to auth
+   keys, so do not go looking for a "production slot" that does not exist.
+3. **Key ID and Team ID as stored.** Firebase does **not** validate the Key ID against the uploaded
+   `.p8` — it stores whatever was typed, so a paste with stray whitespace or a stale Key ID fails
+   exactly like a bad key. Retype rather than paste when in doubt.
+4. The key's **topic scope** covers this bundle id, and the key is not revoked.
 
-Allow **10–15 minutes** after uploading a new key before retesting; earlier retests are false
-negatives. Then test **both** a TestFlight token and an Xcode-installed token — replacing rather
+The FCM path needs **no redeploy** after fixing this — Google holds the key server-side and picks it
+up on the next send. Test **both** a TestFlight token and an Xcode-installed token: replacing rather
 than adding a key can fix one and break the other.
+
+**Isolating Apple from Firebase.** Every signal above is filtered through FCM, which collapses *every*
+Apple-side refusal into the same `ThirdPartyAuthError`. To ask Apple directly, sign a provider JWT
+with the `.p8` and POST to `api.push.apple.com` (and `api.sandbox.push.apple.com`) yourself. Even
+with a bogus device token the answer separates the cases: `403 InvalidProviderToken` = the key or
+identity is wrong; `400 BadDeviceToken` = **the key is fine** and the problem is elsewhere.
 
 **Not to be confused with `APNS__UseSandbox` in `main.bicep`** — that steers the direct-APNs
 **Live Activity** client, a separate path that never involves FCM.

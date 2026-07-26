@@ -1,6 +1,5 @@
 package cz.cleansia.customer.features.disputes
 
-import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -82,6 +81,11 @@ import cz.cleansia.customer.core.disputes.DisputeMessageDto
 import cz.cleansia.customer.core.disputes.openEvidencePdfFromUrl
 import cz.cleansia.core.format.disputeAllowsMessages
 import cz.cleansia.core.format.formatOrderDateTime
+import cz.cleansia.core.media.ImageCompressor
+import cz.cleansia.core.media.isImageMimeType
+import cz.cleansia.core.media.jpegFileName
+import cz.cleansia.core.media.queryDisplayName
+import cz.cleansia.core.media.queryMimeType
 import cz.cleansia.customer.ui.format.disputeStatusColor
 import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.customer.core.orders.ReceiptOpenResult
@@ -133,6 +137,7 @@ fun DisputeDetailScreen(
     val snackbar: SnackbarController = viewModel.snackbar
     val noViewerMessage = stringResource(R.string.dispute_evidence_no_viewer)
     val openErrorMessage = stringResource(R.string.dispute_evidence_open_error)
+    val encodeFailedMessage = stringResource(R.string.dispute_evidence_encode_failed)
 
     // Fullscreen image preview overlay state. Holds the URL of the evidence
     // currently being viewed; null means no overlay. Same one-state-per-pager
@@ -154,21 +159,48 @@ fun DisputeDetailScreen(
             // Add-evidence button is gated by uploadState (Submitting) instead.
             coroutineScope.launch {
                 for (uri in uris) {
-                    // Read everything off the main thread — bytes, the binder
-                    // IPC for getType, and the OpenableColumns query for the
-                    // display name. Even though each individual call is fast,
-                    // they add up across multi-file selections.
-                    val (bytes, mime, fileName) = withContext(Dispatchers.IO) {
-                        val bytes = runCatching {
+                    // The provider queries are binder IPC, so they stay off the
+                    // main thread. Each is fast on its own; they add up across
+                    // a multi-file selection.
+                    val (mime, displayName) = withContext(Dispatchers.IO) {
+                        queryMimeType(context, uri) to queryDisplayName(context, uri)
+                    }
+                    if (isImageMimeType(mime)) {
+                        // Images are downscaled to 1920px and re-encoded, which
+                        // is what drops the EXIF block — capture GPS included —
+                        // and matches what iOS EvidencePreparer already does.
+                        // Note the VM's size + type checks then run on the FINAL
+                        // bytes, which is the fail-closed ordering: we never
+                        // approve one payload and upload another.
+                        val compressed = ImageCompressor.compress(context.contentResolver, uri)
+                        if (compressed == null) {
+                            snackbar.showError(encodeFailedMessage)
+                            continue
+                        }
+                        viewModel.uploadEvidence(
+                            bytes = compressed.bytes,
+                            fileName = jpegFileName(displayName ?: fallbackEvidenceName()),
+                            mimeType = compressed.contentType,
+                        )
+                        continue
+                    }
+                    // Not an image — a PDF, or a provider that declares no type
+                    // at all. Uploaded byte-identical: re-encoding a PDF as a
+                    // JPEG would destroy it.
+                    val bytes = withContext(Dispatchers.IO) {
+                        runCatching {
                             context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
                         }.getOrNull()
-                        val mime = context.contentResolver.getType(uri) ?: "application/octet-stream"
-                        val fileName = queryFileName(context, uri)
-                            ?: "evidence-${System.currentTimeMillis()}"
-                        Triple(bytes, mime, fileName)
                     }
-                    if (bytes == null) continue
-                    viewModel.uploadEvidence(bytes, fileName, mime)
+                    if (bytes == null) {
+                        snackbar.showError(encodeFailedMessage)
+                        continue
+                    }
+                    viewModel.uploadEvidence(
+                        bytes = bytes,
+                        fileName = displayName ?: fallbackEvidenceName(),
+                        mimeType = mime ?: "application/octet-stream",
+                    )
                 }
             }
         },
@@ -843,20 +875,9 @@ private fun isPdfEvidence(evidence: DisputeEvidenceDto): Boolean =
     evidence.fileName?.endsWith(".pdf", ignoreCase = true) == true
 
 /**
- * Resolve the user-visible filename for a content URI. Returns null on any
- * provider error or when DISPLAY_NAME is missing — caller falls back to a
- * synthetic "evidence-{timestamp}" name.
+ * Fallback name for a picked file whose provider reports no `DISPLAY_NAME`.
+ *
+ * The query itself now lives in `cz.cleansia.core.media.queryDisplayName`,
+ * shared with the two partner upload paths.
  */
-private fun queryFileName(context: android.content.Context, uri: Uri): String? {
-    return runCatching {
-        context.contentResolver.query(
-            uri,
-            arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
-            null,
-            null,
-            null,
-        )?.use { cursor ->
-            if (cursor.moveToFirst()) cursor.getString(0) else null
-        }
-    }.getOrNull()
-}
+private fun fallbackEvidenceName(): String = "evidence-${System.currentTimeMillis()}"

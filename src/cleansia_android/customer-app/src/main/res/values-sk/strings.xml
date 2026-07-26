@@ -1217,4 +1217,5 @@
     <string name="notifications_inbox_error_retry">Skúsiť znova</string>
     <string name="notifications_bell_unread_content_description">Oznámenia, neprečítaných: %1$d</string>
     <string name="notifications_badge_overflow">99+</string>
+    <string name="dispute_evidence_encode_failed">Súbor sa nepodarilo spracovať.</string>
 </resources>

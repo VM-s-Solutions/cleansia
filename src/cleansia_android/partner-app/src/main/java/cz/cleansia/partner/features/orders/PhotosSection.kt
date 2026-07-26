@@ -1,7 +1,6 @@
 package cz.cleansia.partner.features.orders
 
 import android.net.Uri
-import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -112,7 +111,7 @@ fun PhotosSection(
                 photos = photos.filter { it.photoType == PhotoType._1 },
                 isUploading = mutation.isUploading,
                 deletingId = mutation.deletingId,
-                onUpload = viewModel::upload,
+                onUpload = viewModel::compressAndUpload,
                 onDelete = viewModel::delete,
                 isReadOnly = !canUploadBefore,
             )
@@ -122,7 +121,7 @@ fun PhotosSection(
                 photos = photos.filter { it.photoType == PhotoType._2 },
                 isUploading = mutation.isUploading,
                 deletingId = mutation.deletingId,
-                onUpload = viewModel::upload,
+                onUpload = viewModel::compressAndUpload,
                 onDelete = viewModel::delete,
                 isReadOnly = !canUploadAfter,
             )
@@ -137,28 +136,26 @@ private fun PhotoRail(
     photos: List<GetOrderPhotosOrderPhotoDto>,
     isUploading: Boolean,
     deletingId: String?,
-    onUpload: (PhotoType, String, String, String) -> Unit,
+    onUpload: (PhotoType, Uri) -> Unit,
     onDelete: (String) -> Unit,
     isReadOnly: Boolean,
 ) {
-    val context = LocalContext.current
     var pickingForType by remember { mutableStateOf<PhotoType?>(null) }
 
+    // Hands the Uri straight to the ViewModel and does no work itself. The
+    // ActivityResultRegistry dispatches this callback on the MAIN thread, so
+    // everything that used to live here — openInputStream, readBytes and a
+    // base64 encode of the whole file — froze the UI for the length of a
+    // multi-MB read. (The comment that used to sit here claimed the opposite.)
+    // Reading, downscaling, the EXIF/GPS strip and the base64 now all happen
+    // inside ImageCompressor, off the main thread and in one hop.
     val pickImage = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
     ) { uri: Uri? ->
         val target = pickingForType
         pickingForType = null
         if (uri == null || target == null) return@rememberLauncherForActivityResult
-        val resolver = context.contentResolver
-        val name = uri.lastPathSegment?.substringAfterLast('/') ?: "photo.jpg"
-        val contentType = resolver.getType(uri) ?: "image/jpeg"
-        val bytes = runCatching { resolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull()
-            ?: return@rememberLauncherForActivityResult
-        // Base64 encoding can be slow for multi-MB images — keep it off the main thread.
-        // The VM caller will hit the network anyway; this is just decode prep.
-        val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
-        onUpload(target, name, contentType, base64)
+        onUpload(target, uri)
     }
 
     // Group label — same labelSmall + onSurfaceVariant treatment used

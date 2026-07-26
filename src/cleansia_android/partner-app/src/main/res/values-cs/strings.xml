@@ -1331,4 +1331,6 @@
     <string name="period_pay_empty">V tomto období zatím nejsou žádné zakázky.</string>
     <string name="period_pay_error">Výplatu za toto období se nepodařilo načíst.</string>
     <string name="invoice_view_period_pay">Zobrazit výplatu za období</string>
+    <string name="photo_encode_failed">Tuto fotku se nepodařilo zpracovat. Zkuste prosím jinou.</string>
+    <string name="document_read_failed">Tento soubor se nepodařilo načíst. Zkuste prosím jiný.</string>
 </resources>

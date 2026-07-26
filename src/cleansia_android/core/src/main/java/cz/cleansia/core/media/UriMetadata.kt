@@ -53,3 +53,35 @@ fun queryMimeType(context: Context, uri: Uri): String? =
  */
 fun isImageMimeType(mimeType: String?): Boolean =
     mimeType?.substringBefore(';')?.trim()?.lowercase()?.startsWith("image/") == true
+
+/** Server-side cap on `FileName` — `SaveOrderPhotos.cs` and `SaveMyDocuments.cs`. */
+private const val MAX_UPLOAD_FILE_NAME_LENGTH = 255
+
+private const val JPEG_EXTENSION = ".jpg"
+
+/**
+ * The name to upload a compressed image under: the user's own [displayName]
+ * with its extension replaced by `.jpg`.
+ *
+ * Everything [ImageCompressor] returns is a JPEG whatever was picked, so the
+ * name has to say so. `SaveOrderPhotos.cs` derives the stored content type from
+ * the file extension, and the dispute evidence list routes a tap to the image
+ * or the PDF viewer on the same basis — a PNG name on JPEG bytes makes both
+ * wrong. The user's own name is kept rather than collapsed to
+ * [ImageCompressor.OUTPUT_FILE_NAME] because the partner documents list renders
+ * it verbatim, and a screen of identical `photo.jpg` rows is useless.
+ *
+ * A provider-supplied name is untrusted: it is stripped of path segments and
+ * truncated to the 255 the validators accept, and anything left blank (a
+ * dotfile, a path with no leaf) falls back to the shared default.
+ */
+fun jpegFileName(displayName: String?): String {
+    val base = displayName
+        ?.trim()
+        ?.substringAfterLast('/')
+        ?.substringBeforeLast('.')
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?: return ImageCompressor.OUTPUT_FILE_NAME
+    return base.take(MAX_UPLOAD_FILE_NAME_LENGTH - JPEG_EXTENSION.length) + JPEG_EXTENSION
+}

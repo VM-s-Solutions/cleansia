@@ -101,9 +101,18 @@ struct BookingSheetView: View {
         case .profileIncomplete:
             slideResetCount += 1
             onCompleteProfile()
-        case .failed:
+        case let .failed(error):
             slideResetCount += 1
-            snackbar.showError(L10n.Booking.errorGenericNetwork)
+            // Prefer the server's own business error — "no cleaner is available
+            // for that slot", "the price changed", "we don't serve that city" are
+            // all actionable and already translated in all five locales, where the
+            // generic network line tells the customer nothing. `showApiError`
+            // drops cancellations by itself, so no extra guard is needed here.
+            if let error {
+                snackbar.showApiError(error)
+            } else {
+                snackbar.showError(L10n.Booking.errorGenericNetwork)
+            }
         }
     }
 

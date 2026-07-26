@@ -89,7 +89,7 @@ final class BookingSubmitTests: XCTestCase {
 
         let outcome = await vm.submit()
 
-        XCTAssertEqual(outcome, .failed)
+        XCTAssertEqual(outcome, .failed(nil))
         XCTAssertEqual(create.callCount, 0)
         XCTAssertEqual(profile.callCount, 0)
     }
@@ -137,7 +137,7 @@ final class BookingSubmitTests: XCTestCase {
         vm.update(readyState())
 
         let outcome = await vm.submit()
-        XCTAssertEqual(outcome, .failed)
+        XCTAssertEqual(outcome, .failed(ApiError(code: "network.unreachable")))
         XCTAssertEqual(create.callCount, 0)
     }
 
@@ -154,18 +154,40 @@ final class BookingSubmitTests: XCTestCase {
         }
 
         let outcome = await vm.submit()
-        XCTAssertEqual(outcome, .failed)
+        XCTAssertEqual(outcome, .failed(nil))
         XCTAssertEqual(create.callCount, 0)
     }
 
-    func testCreateFailureFails() async {
-        let create = FakeOrderCreateClient(result: .failure(ApiError(code: "order.total_price_not_match")))
+    /// The headline regression: a rejected create used to collapse into one
+    /// generic network toast, so "that slot was just taken" / "the price
+    /// changed" / "we don't serve that city" all reached the customer as
+    /// "something went wrong". The whole `ApiError` — key, server detail and
+    /// status — has to reach the sheet for `showApiError` to catalog-match it.
+    func testCreateFailurePropagatesTheServerErrorCodeToTheCaller() async {
+        let serverError = ApiError(
+            code: "order.total_price.not_match",
+            message: "The total price does not match the current quote.",
+            httpStatus: 400
+        )
+        let create = FakeOrderCreateClient(result: .failure(serverError))
         let vm = makeVM(create: create)
         vm.update(readyState())
 
         let outcome = await vm.submit()
-        XCTAssertEqual(outcome, .failed)
+        XCTAssertEqual(outcome, .failed(serverError))
         XCTAssertEqual(create.callCount, 1)
+    }
+
+    /// The other half of the same fix: a business rejection that is not about
+    /// price. Pins that nothing in the submit path filters the error by code.
+    func testCreateRejectionForAnUnservicedCityReachesTheCaller() async {
+        let serverError = ApiError(code: "city.not_serviced", httpStatus: 400)
+        let create = FakeOrderCreateClient(result: .failure(serverError))
+        let vm = makeVM(create: create)
+        vm.update(readyState())
+
+        let outcome = await vm.submit()
+        XCTAssertEqual(outcome, .failed(serverError))
     }
 
     func testPriceEchoesQuotedRawTotalVerbatim() async {
@@ -217,14 +239,18 @@ final class BookingSubmitTests: XCTestCase {
         XCTAssertEqual(create.commands.first?.totalPrice, 1700)
     }
 
+    /// `resolvedQuote` used to flatten its `ApiResult` to `BookingQuote?`, which
+    /// threw the error away one frame before `submit` could return it. It now
+    /// hands the whole result back.
     func testQuoteFailureOnSubmitFails() async {
-        let quote = FakeQuoteClient(result: .failure(ApiError(code: "network.unreachable")))
+        let serverError = ApiError(code: "order.no_available_spots", httpStatus: 409)
+        let quote = FakeQuoteClient(result: .failure(serverError))
         let create = FakeOrderCreateClient()
         let vm = makeVM(quote: quote, create: create)
         vm.update(readyState())
 
         let outcome = await vm.submit()
-        XCTAssertEqual(outcome, .failed)
+        XCTAssertEqual(outcome, .failed(serverError))
         XCTAssertEqual(create.callCount, 0)
     }
 
@@ -337,7 +363,9 @@ final class BookingSubmitTests: XCTestCase {
         let successCount = outcomes.filter { if case .success = $0 { return true }
             return false
         }.count
-        let failedCount = outcomes.filter { $0 == .failed }.count
+        // The loser is rejected by the local in-flight guard, not by the server,
+        // so it must carry no ApiError — otherwise a second tap would toast.
+        let failedCount = outcomes.filter { $0 == .failed(nil) }.count
         XCTAssertEqual(successCount, 1)
         XCTAssertEqual(failedCount, 1)
     }

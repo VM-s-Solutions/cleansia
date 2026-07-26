@@ -252,7 +252,6 @@ extension CustomerShellView {
                 repository: container.disputeRepository,
                 snackbar: snackbar,
                 onDisputeClick: { model.path.append(ShellRoute.disputeDetail($0)) },
-                onCreateDispute: { model.path.append(ShellRoute.createDispute(orderId: nil)) },
                 onBrowseOrders: model.openOrders
             )
         case let .createDispute(orderId):
@@ -333,7 +332,10 @@ extension CustomerShellView {
             repository: container.orderRepository,
             snackbar: snackbar,
             eventBus: container.orderEventBus,
-            paymentSheet: StripePaymentController()
+            paymentSheet: StripePaymentController(),
+            // The footer hands back the id of the order on screen — the dispute
+            // form is only reachable with one, which is the whole fix.
+            onReportIssue: { model.path.append(ShellRoute.createDispute(orderId: $0)) }
         )
     }
 

@@ -5,19 +5,16 @@ struct DisputesListView: View {
     @StateObject private var vm: DisputesListViewModel
     @Environment(\.snackbarController) private var snackbar
     let onDisputeClick: (String) -> Void
-    let onCreateDispute: () -> Void
     let onBrowseOrders: () -> Void
 
     init(
         repository: DisputeRepository,
         snackbar: SnackbarController,
         onDisputeClick: @escaping (String) -> Void,
-        onCreateDispute: @escaping () -> Void,
         onBrowseOrders: @escaping () -> Void
     ) {
         _vm = StateObject(wrappedValue: DisputesListViewModel(repository: repository, snackbar: snackbar))
         self.onDisputeClick = onDisputeClick
-        self.onCreateDispute = onCreateDispute
         self.onBrowseOrders = onBrowseOrders
     }
 
@@ -37,9 +34,13 @@ struct DisputesListView: View {
             .task { await vm.onAppear() }
     }
 
+    /// A dispute is always filed against an order, so this cannot open the form
+    /// directly. It used to show the hint and then push an orderless form that
+    /// could never be submitted; it now shows the same hint and takes the user
+    /// to Orders, where every eligible order carries a "Report issue" action.
     private func startCreate() {
         snackbar.showInfo(L10n.Disputes.listFabNoOrder)
-        onCreateDispute()
+        onBrowseOrders()
     }
 
     @ViewBuilder

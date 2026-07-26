@@ -53,6 +53,29 @@ final class OrderStatusLogicTests: XCTestCase {
         XCTAssertFalse(OrderStatusGroup.isCancellable(._3))
         XCTAssertFalse(OrderStatusGroup.isCancellable(._5))
     }
+
+    /// The Report-issue gate, matching `OrderDetailScreen.kt`'s `canReportIssue`:
+    /// there is nothing to dispute until a cleaner has taken the job (Confirmed),
+    /// and a cancelled cleaning never happened.
+    func testReportableIsConfirmedThroughCompleted() {
+        XCTAssertTrue(OrderStatusGroup.isReportable(._2))
+        XCTAssertTrue(OrderStatusGroup.isReportable(._3))
+        XCTAssertTrue(OrderStatusGroup.isReportable(._4))
+        XCTAssertTrue(OrderStatusGroup.isReportable(._5))
+        XCTAssertFalse(OrderStatusGroup.isReportable(._0))
+        XCTAssertFalse(OrderStatusGroup.isReportable(._1))
+        XCTAssertFalse(OrderStatusGroup.isReportable(._6))
+        XCTAssertFalse(OrderStatusGroup.isReportable(nil))
+    }
+
+    /// Confirmed is the one status that offers both footer actions, and Completed
+    /// is reportable while no longer being cancellable — the two states that make
+    /// a single-action footer wrong.
+    func testConfirmedIsBothCancellableAndReportableWhileCompletedIsReportableOnly() {
+        XCTAssertTrue(OrderStatusGroup.isCancellable(._2) && OrderStatusGroup.isReportable(._2))
+        XCTAssertFalse(OrderStatusGroup.isCancellable(._5))
+        XCTAssertTrue(OrderStatusGroup.isReportable(._5))
+    }
 }
 
 final class LiveProgressLogicTests: XCTestCase {

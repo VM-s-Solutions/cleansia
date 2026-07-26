@@ -261,6 +261,10 @@ extension L10n {
             localized("order_action_cancel")
         }
 
+        static var actionReportIssue: String {
+            localized("order_action_report_issue")
+        }
+
         static var actionRebook: String {
             localized("order_action_rebook")
         }

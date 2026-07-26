@@ -1314,4 +1314,6 @@
     <string name="period_pay_empty">У цьому періоді поки немає замовлень.</string>
     <string name="period_pay_error">Не вдалося завантажити оплату за цей період.</string>
     <string name="invoice_view_period_pay">Переглянути оплату за період</string>
+    <string name="photo_encode_failed">Не вдалося обробити це фото. Спробуйте інше.</string>
+    <string name="document_read_failed">Не вдалося прочитати цей файл. Спробуйте інший.</string>
 </resources>

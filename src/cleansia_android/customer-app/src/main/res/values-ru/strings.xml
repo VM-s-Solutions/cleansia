@@ -1217,4 +1217,5 @@
     <string name="notifications_inbox_error_retry">Попробовать снова</string>
     <string name="notifications_bell_unread_content_description">Уведомления, непрочитанных: %1$d</string>
     <string name="notifications_badge_overflow">99+</string>
+    <string name="dispute_evidence_encode_failed">Не удалось обработать файл.</string>
 </resources>

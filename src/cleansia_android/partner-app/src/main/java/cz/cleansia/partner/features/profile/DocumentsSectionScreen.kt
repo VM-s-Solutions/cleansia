@@ -1,7 +1,6 @@
 package cz.cleansia.partner.features.profile
 
 import android.net.Uri
-import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -45,7 +44,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -74,27 +72,24 @@ fun DocumentsSectionScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val uploadState by viewModel.uploadState.collectAsStateWithLifecycle()
     val deletingId by viewModel.deletingId.collectAsStateWithLifecycle()
-    val context = LocalContext.current
     val uploading = uploadState is cz.cleansia.core.ui.state.ActionState.Submitting
     val documents = (uiState as? DocumentsSectionUiState.Loaded)?.documents.orEmpty()
 
-    // Pending pick — once the user picks a file, we hold its Uri here and
-    // open the metadata dialog. Null again after upload starts or dialog
-    // is cancelled.
-    var pendingFile by remember { mutableStateOf<PendingUpload?>(null) }
+    // Pending pick — the VM reads and encodes the picked file off the main
+    // thread and publishes it here; the metadata dialog opens on it. Null again
+    // after the upload is fired or the dialog is cancelled.
+    val pendingFile by viewModel.pendingFile.collectAsStateWithLifecycle()
+    val preparing by viewModel.isPreparing.collectAsStateWithLifecycle()
 
+    // Hands the Uri straight to the VM. This callback runs on the MAIN thread,
+    // so the openInputStream + readBytes + base64 that used to live here froze
+    // the UI for the length of the read — and the picker has no MIME filter, so
+    // that could be a 10 MB PDF.
     val pickFile = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
     ) { uri: Uri? ->
         uri ?: return@rememberLauncherForActivityResult
-        val resolver = context.contentResolver
-        val name = uri.lastPathSegment?.substringAfterLast('/') ?: "document"
-        val contentType = resolver.getType(uri) ?: "application/octet-stream"
-        val bytes = runCatching {
-            resolver.openInputStream(uri)?.use { it.readBytes() }
-        }.getOrNull() ?: return@rememberLauncherForActivityResult
-        val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
-        pendingFile = PendingUpload(fileName = name, contentType = contentType, base64 = base64)
+        viewModel.stageFile(uri)
     }
 
     Scaffold(
@@ -122,11 +117,22 @@ fun DocumentsSectionScreen(
             )
         },
         floatingActionButton = {
+            // Reading and compressing takes a beat, and the dialog only opens
+            // once it finishes — without a spinner here the file pick would
+            // look like it did nothing.
             FloatingActionButton(
-                onClick = { pickFile.launch("*/*") },
+                onClick = { if (!preparing) pickFile.launch("*/*") },
                 containerColor = MaterialTheme.colorScheme.primary,
             ) {
-                Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.add_document))
+                if (preparing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.add_document))
+                }
             }
         },
         containerColor = MaterialTheme.colorScheme.background,
@@ -188,7 +194,7 @@ fun DocumentsSectionScreen(
         UploadDialog(
             pending = pending,
             isUploading = uploading,
-            onDismiss = { pendingFile = null },
+            onDismiss = { viewModel.clearPendingFile() },
             onConfirm = { type, description ->
                 viewModel.upload(
                     documentType = type,
@@ -197,17 +203,11 @@ fun DocumentsSectionScreen(
                     base64Content = pending.base64,
                     description = description,
                 )
-                pendingFile = null
+                viewModel.clearPendingFile()
             },
         )
     }
 }
-
-private data class PendingUpload(
-    val fileName: String,
-    val contentType: String,
-    val base64: String,
-)
 
 @Composable
 private fun DocumentRow(

@@ -1245,4 +1245,5 @@
     <string name="notifications_inbox_error_retry">Try again</string>
     <string name="notifications_bell_unread_content_description">Notifications, %1$d unread</string>
     <string name="notifications_badge_overflow">99+</string>
+    <string name="dispute_evidence_encode_failed">Couldn\'t process file.</string>
 </resources>

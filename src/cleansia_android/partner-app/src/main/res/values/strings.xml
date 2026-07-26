@@ -1346,4 +1346,6 @@
     <string name="period_pay_empty">No jobs in this period yet.</string>
     <string name="period_pay_error">We couldn\'t load this period\'s pay.</string>
     <string name="invoice_view_period_pay">View period pay</string>
+    <string name="photo_encode_failed">We couldn\'t process that photo. Please try another one.</string>
+    <string name="document_read_failed">We couldn\'t read that file. Please try another one.</string>
 </resources>

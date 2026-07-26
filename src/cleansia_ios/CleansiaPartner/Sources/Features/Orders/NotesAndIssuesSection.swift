@@ -209,7 +209,7 @@ private struct TextEntrySheet: View {
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
                     .multilineTextAlignment(.center)
-                CleansiaTextField(value: $text, label: fieldLabel, enabled: !isSaving)
+                CleansiaTextArea(value: $text, label: fieldLabel, minHeight: 120, enabled: !isSaving)
                 CleansiaPrimaryButton(L10n.Orders.save, loading: isSaving, enabled: !text.isBlank, action: submit)
                 Spacer()
             }

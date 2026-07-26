@@ -443,7 +443,6 @@
     <!-- Profile — notifications -->
     <string name="notifications_title">Oznámení</string>
     <string name="notifications_section_push">Push oznámení</string>
-    <string name="notifications_section_channels">Kanály</string>
     <string name="notifications_booking_updates">Aktualizace rezervací</string>
     <string name="notifications_booking_updates_desc">Když je přidělen uklízeč, je na cestě nebo dokončil úklid</string>
     <string name="notifications_cleaner_messages">Zprávy od uklízeče</string>
@@ -471,10 +470,6 @@
     <string name="busy_booking">Vytváříme vaši objednávku…</string>
     <string name="busy_payment">Zpracováváme platbu…</string>
     <string name="busy_subscribe_plus">Aktivujeme Cleansia Plus…</string>
-    <string name="notifications_email">E-mail</string>
-    <string name="notifications_email_desc">Účtenky a důležité informace o účtu</string>
-    <string name="notifications_sms">SMS</string>
-    <string name="notifications_sms_desc">Textové zprávy s připomínkami rezervací</string>
 
     <!-- Profile — help & support -->
     <string name="help_title">Nápověda a podpora</string>

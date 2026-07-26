@@ -440,7 +440,6 @@
     <!-- Profile — notifications -->
     <string name="notifications_title">Уведомления</string>
     <string name="notifications_section_push">Push-уведомления</string>
-    <string name="notifications_section_channels">Каналы</string>
     <string name="notifications_booking_updates">Обновления бронирований</string>
     <string name="notifications_booking_updates_desc">Когда клинер назначен, в пути или завершил</string>
     <string name="notifications_cleaner_messages">Сообщения от клинера</string>
@@ -468,10 +467,6 @@
     <string name="busy_booking">Создаём ваш заказ…</string>
     <string name="busy_payment">Обрабатываем платёж…</string>
     <string name="busy_subscribe_plus">Активируем Cleansia Plus…</string>
-    <string name="notifications_email">Email</string>
-    <string name="notifications_email_desc">Чеки и важные обновления учётной записи</string>
-    <string name="notifications_sms">SMS</string>
-    <string name="notifications_sms_desc">Текстовые сообщения для напоминаний</string>
 
     <!-- Profile — help & support -->
     <string name="help_title">Помощь и поддержка</string>

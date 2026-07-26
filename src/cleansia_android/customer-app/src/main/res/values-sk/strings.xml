@@ -440,7 +440,6 @@
     <!-- Profile — notifications -->
     <string name="notifications_title">Upozornenia</string>
     <string name="notifications_section_push">Push upozornenia</string>
-    <string name="notifications_section_channels">Kanály</string>
     <string name="notifications_booking_updates">Aktualizácie rezervácií</string>
     <string name="notifications_booking_updates_desc">Keď je pridelená upratovačka, je na ceste alebo dokončila upratovanie</string>
     <string name="notifications_cleaner_messages">Správy od upratovačky</string>
@@ -468,10 +467,6 @@
     <string name="busy_booking">Vytvárame vašu objednávku…</string>
     <string name="busy_payment">Spracovávame platbu…</string>
     <string name="busy_subscribe_plus">Aktivujeme Cleansia Plus…</string>
-    <string name="notifications_email">E-mail</string>
-    <string name="notifications_email_desc">Účtenky a dôležité informácie o účte</string>
-    <string name="notifications_sms">SMS</string>
-    <string name="notifications_sms_desc">Textové správy s pripomienkami rezervácií</string>
 
     <!-- Profile — help & support -->
     <string name="help_title">Pomocník a podpora</string>

@@ -22,11 +22,9 @@ import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.CardMembership
 import androidx.compose.material.icons.outlined.CreditCardOff
-import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.MilitaryTech
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Receipt
-import androidx.compose.material.icons.outlined.Sms
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.TrackChanges
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,9 +39,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -82,12 +77,12 @@ fun NotificationsScreen(
     val tierUpgrade = preferences?.tierUpgrade ?: true
     val disputeReply = preferences?.disputeReply ?: true
 
-    // Email/SMS aren't push categories — backend doesn't model them and we
-    // don't currently send SMS at all. Kept as local-only toggles so the
-    // UI shape stays the same; replace with their own VM if/when backend
-    // adds these channels.
-    var emailUpdates by remember { mutableStateOf(true) }
-    var smsUpdates by remember { mutableStateOf(false) }
+    // Every toggle below writes through viewModel.setCategory. There is
+    // deliberately no local toggle state on this screen: an Email and an SMS
+    // switch used to live here in a remember { }, and because nothing read them
+    // they silently reset on every entry. UserNotificationPreferences models
+    // push categories only, so do not re-add a channel toggle here until the
+    // backend actually carries one.
 
     Column(
         modifier = Modifier
@@ -200,25 +195,6 @@ fun NotificationsScreen(
                     subtitle = stringResource(R.string.notifications_dispute_reply_desc),
                     checked = disputeReply,
                     onCheckedChange = { viewModel.setCategory(NotificationCategoryDto.DisputeReply, it) },
-                )
-            }
-            Spacer(Modifier.height(16.dp))
-
-            SectionCard(stringResource(R.string.notifications_section_channels)) {
-                ToggleRow(
-                    icon = Icons.Outlined.Email,
-                    title = stringResource(R.string.notifications_email),
-                    subtitle = stringResource(R.string.notifications_email_desc),
-                    checked = emailUpdates,
-                    onCheckedChange = { emailUpdates = it },
-                )
-                RowDivider()
-                ToggleRow(
-                    icon = Icons.Outlined.Sms,
-                    title = stringResource(R.string.notifications_sms),
-                    subtitle = stringResource(R.string.notifications_sms_desc),
-                    checked = smsUpdates,
-                    onCheckedChange = { smsUpdates = it },
                 )
             }
             Spacer(Modifier.height(32.dp))

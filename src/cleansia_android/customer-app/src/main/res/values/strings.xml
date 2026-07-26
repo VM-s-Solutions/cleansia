@@ -446,7 +446,6 @@
     <!-- Profile — notifications -->
     <string name="notifications_title">Notifications</string>
     <string name="notifications_section_push">Push notifications</string>
-    <string name="notifications_section_channels">Channels</string>
     <string name="notifications_booking_updates">Booking updates</string>
     <string name="notifications_booking_updates_desc">When a cleaner is assigned, on the way, or done</string>
     <string name="notifications_cleaner_messages">Cleaner messages</string>
@@ -474,10 +473,6 @@
     <string name="busy_booking">Booking your cleaning…</string>
     <string name="busy_payment">Processing payment…</string>
     <string name="busy_subscribe_plus">Activating Cleansia Plus…</string>
-    <string name="notifications_email">Email</string>
-    <string name="notifications_email_desc">Receipts and important account updates</string>
-    <string name="notifications_sms">SMS</string>
-    <string name="notifications_sms_desc">Text messages for booking reminders</string>
 
     <!-- Profile — help & support -->
     <string name="help_title">Help &amp; support</string>

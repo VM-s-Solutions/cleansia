@@ -1034,9 +1034,14 @@
     <string name="payment_promo_discount">Promo sleva</string>
     <string name="payment_total">Celkem</string>
     <string name="payment_method_value">Metoda: %1$s</string>
+    <string name="payment_method_cash">Hotově</string>
+    <string name="payment_method_card">Kartou</string>
     <string name="payment_status_paid">Zaplaceno</string>
     <string name="payment_status_pending">Čeká</string>
     <string name="payment_status_failed">Selhalo</string>
+    <string name="payment_status_refunded">Vráceno</string>
+    <string name="payment_status_disputed">Sporná platba</string>
+    <string name="payment_status_partially_refunded">Částečně vráceno</string>
     <string name="status_timeline_section_title">Časová osa stavu</string>
     <string name="order_on_the_way_encouragement">Na cestě — brzy na viděnou!</string>
 

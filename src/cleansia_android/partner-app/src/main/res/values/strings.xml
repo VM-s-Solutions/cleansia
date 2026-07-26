@@ -1018,9 +1018,14 @@
     <string name="payment_promo_discount">Promo discount</string>
     <string name="payment_total">Total</string>
     <string name="payment_method_value">Method: %1$s</string>
+    <string name="payment_method_cash">Cash</string>
+    <string name="payment_method_card">Card</string>
     <string name="payment_status_paid">Paid</string>
     <string name="payment_status_pending">Pending</string>
     <string name="payment_status_failed">Failed</string>
+    <string name="payment_status_refunded">Refunded</string>
+    <string name="payment_status_disputed">Disputed</string>
+    <string name="payment_status_partially_refunded">Partially refunded</string>
     <string name="status_timeline_section_title">Status timeline</string>
     <string name="order_on_the_way_encouragement">On your way — see you soon!</string>
 

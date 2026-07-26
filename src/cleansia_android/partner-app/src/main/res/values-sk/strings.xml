@@ -1014,9 +1014,14 @@
     <string name="payment_promo_discount">Promo zľava</string>
     <string name="payment_total">Spolu</string>
     <string name="payment_method_value">Spôsob: %1$s</string>
+    <string name="payment_method_cash">Hotovosťou</string>
+    <string name="payment_method_card">Kartou</string>
     <string name="payment_status_paid">Zaplatené</string>
     <string name="payment_status_pending">Čaká</string>
     <string name="payment_status_failed">Zlyhalo</string>
+    <string name="payment_status_refunded">Vrátené</string>
+    <string name="payment_status_disputed">Sporná platba</string>
+    <string name="payment_status_partially_refunded">Čiastočne vrátené</string>
     <string name="status_timeline_section_title">Časová os stavu</string>
     <string name="order_on_the_way_encouragement">Na ceste — čoskoro dovidenia!</string>
 

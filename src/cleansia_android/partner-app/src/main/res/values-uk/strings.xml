@@ -1017,9 +1017,14 @@
     <string name="payment_promo_discount">Промо знижка</string>
     <string name="payment_total">Разом</string>
     <string name="payment_method_value">Метод: %1$s</string>
+    <string name="payment_method_cash">Готівкою</string>
+    <string name="payment_method_card">Карткою</string>
     <string name="payment_status_paid">Оплачено</string>
     <string name="payment_status_pending">Очікує</string>
     <string name="payment_status_failed">Не вдалося</string>
+    <string name="payment_status_refunded">Повернено</string>
+    <string name="payment_status_disputed">Оскаржено</string>
+    <string name="payment_status_partially_refunded">Частково повернено</string>
     <string name="status_timeline_section_title">Хронологія статусу</string>
     <string name="order_on_the_way_encouragement">У дорозі — скоро побачимось!</string>
 

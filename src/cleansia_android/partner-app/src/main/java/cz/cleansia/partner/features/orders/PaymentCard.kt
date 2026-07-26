@@ -113,12 +113,12 @@ fun PaymentCard(
             Text(
                 text = stringResource(
                     R.string.payment_method_value,
-                    order.paymentType?.name.orEmpty().ifBlank { "—" },
+                    PaymentPresentation.methodLabel(order.paymentType?.value),
                 ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            PaymentStatusPill(statusName = order.paymentStatus?.name)
+            PaymentStatusPill(statusCode = order.paymentStatus?.value)
         }
     }
 }
@@ -156,25 +156,21 @@ private fun PaymentRow(
 }
 
 /**
- * Color-coded status pill. Maps the Code DTO's `name` string (set by
- * the backend enum) to one of three buckets — green for the happy path,
- * amber for pending, red for failed/refunded. Anything we don't
- * recognise falls back to a neutral pill so the screen never crashes
- * on a future enum addition.
+ * Color-coded status pill, driven by the backend ordinal rather than the
+ * `Code` DTO's English `name` — see [PaymentPresentation] for why. Green
+ * for the happy path, amber for pending, red for the two states that cost
+ * the cleaner money (failed, disputed), neutral for refunds and for any
+ * ordinal a future backend release adds.
  */
 @Composable
-private fun PaymentStatusPill(statusName: String?) {
-    val key = statusName?.lowercase().orEmpty()
-    val (tint, label) = when {
-        key.contains("paid") || key.contains("captured") || key.contains("succeed") ->
-            Color(0xFF16A34A) to (statusName ?: stringResource(R.string.payment_status_paid))
-        key.contains("pending") || key.contains("processing") ->
-            Color(0xFFD97706) to (statusName ?: stringResource(R.string.payment_status_pending))
-        key.contains("failed") || key.contains("refund") || key.contains("declined") ->
-            Color(0xFFDC2626) to (statusName ?: stringResource(R.string.payment_status_failed))
-        else ->
-            MaterialTheme.colorScheme.onSurfaceVariant to (statusName ?: "—")
+private fun PaymentStatusPill(statusCode: Int?) {
+    val tint = when (PaymentPresentation.severity(statusCode)) {
+        PaymentSeverity.Success -> Color(0xFF16A34A)
+        PaymentSeverity.Warning -> Color(0xFFD97706)
+        PaymentSeverity.Error -> Color(0xFFDC2626)
+        PaymentSeverity.Neutral -> MaterialTheme.colorScheme.onSurfaceVariant
     }
+    val label = PaymentPresentation.statusLabel(statusCode)
     Box(
         modifier = Modifier
             .background(color = tint.copy(alpha = 0.12f), shape = RoundedCornerShape(999.dp))

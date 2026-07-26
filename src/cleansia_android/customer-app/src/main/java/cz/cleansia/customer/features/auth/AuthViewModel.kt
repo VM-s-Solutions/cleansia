@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -242,9 +241,16 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    /** The language code the backend expects on emails sent to this user. */
-    private suspend fun currentLanguageCode(): String =
-        settings.settings.first().language.tag ?: "en"
+    /**
+     * The language code the backend expects on emails sent to this user.
+     *
+     * This used to be `settings.first().language.tag ?: "en"` inline. The default
+     * preference is `System`, whose tag is null, so the fallback fired for every
+     * fresh install and confirmation / reset emails always arrived in English.
+     * [AppSettingsRepository.emailLanguageTag] resolves the device's own
+     * languages instead, clamped to the five the backend accepts.
+     */
+    private suspend fun currentLanguageCode(): String = settings.emailLanguageTag()
 
     private companion object {
         /**

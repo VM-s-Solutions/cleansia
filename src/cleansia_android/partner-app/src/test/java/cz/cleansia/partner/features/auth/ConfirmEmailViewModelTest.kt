@@ -7,6 +7,7 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.core.auth.UserProfileData
 import cz.cleansia.partner.core.auth.UserProfileStore
 import cz.cleansia.partner.core.network.ApiErrorTranslator
+import cz.cleansia.partner.core.settings.AppSettings
 import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.data.auth.AuthRepository
 import cz.cleansia.partner.data.auth.LoginOutcome
@@ -17,6 +18,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -136,5 +138,29 @@ class ConfirmEmailViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 0) { authRepository.confirmEmail(any(), any()) }
+    }
+
+    /**
+     * `resendCode` used to read `settings.first().language.tag ?: "en"`, and
+     * `LanguagePreference.System` — the fresh-install default — carries a null
+     * tag, so every re-sent confirmation email arrived in English no matter what
+     * the handset was set to. Resolution belongs to
+     * [AppSettingsRepository.emailLanguageTag]; this pins that the VM asks for it.
+     */
+    @Test
+    fun `resendCode sends the resolved device language, not a hardcoded en`() = runTest {
+        // A System preference really is sitting in DataStore — that is the default —
+        // and it must still not be what decides the email language.
+        every { appSettingsRepository.settings } returns flowOf(AppSettings())
+        coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
+        coEvery { authRepository.resendConfirmation(any(), any()) } returns
+            ApiResult.Success(true)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.resendCode()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { authRepository.resendConfirmation("a@b.com", "cs") }
     }
 }

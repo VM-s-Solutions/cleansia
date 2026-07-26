@@ -16,7 +16,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -91,7 +90,10 @@ class RegisterViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            val language = appSettingsRepository.settings.first().language.tag ?: "en"
+            // Not `settings.first().language.tag ?: "en"` — the default preference is
+            // System, whose tag is null, so every fresh install got an English
+            // confirmation email. See AppSettingsRepository.emailLanguageTag.
+            val language = appSettingsRepository.emailLanguageTag()
             when (val result = authRepository.register(
                 email = state.email,
                 password = state.password,

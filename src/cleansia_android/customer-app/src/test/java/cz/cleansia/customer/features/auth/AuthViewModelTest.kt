@@ -83,6 +83,11 @@ class AuthViewModelTest {
         // A relaxed mock hands back a Flow that never emits, so first() would hang forever.
         every { settings.settings } returns flowOf(AppSettings())
 
+        // The picker is on System (the default above), and this handset is Czech —
+        // resolving that is the repository's job, so the VM must ask it rather than
+        // reading the raw preference tag and collapsing null to "en".
+        coEvery { settings.emailLanguageTag() } returns "cs"
+
         every { context.packageName } returns packageName
         every { context.resources } returns resources
         every { context.getString(R.string.error_generic_unknown) } returns genericUnknown
@@ -308,5 +313,63 @@ class AuthViewModelTest {
 
         verify(exactly = 1) { snackbar.showErrorKey(R.string.error_email_sending_failed) }
         verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    // ─── Email language: System must resolve, not collapse to English ───
+
+    /**
+     * All three of these used to read `settings.first().language.tag ?: "en"`.
+     * `LanguagePreference.System` — the fresh-install default — carries a null
+     * tag, so the fallback fired for every new user and their confirmation and
+     * reset emails arrived in English regardless of the handset's language.
+     * The resolution now lives in [AppSettingsRepository.emailLanguageTag], and
+     * these pin that the ViewModel actually asks for it.
+     */
+    @Test
+    fun `register sends the resolved device language, not a hardcoded en`() = runTest {
+        stubRegister(ApiResult.Success(Unit))
+
+        val vm = viewModel()
+        vm.register("new@example.com", "Passw0rd!", "Ada", "Lovelace")
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            authRepository.register(
+                email = "new@example.com",
+                password = "Passw0rd!",
+                firstName = "Ada",
+                lastName = "Lovelace",
+                language = "cs",
+                referralCode = null,
+            )
+        }
+    }
+
+    @Test
+    fun `resendConfirmationEmail sends the resolved device language`() = runTest {
+        coEvery { authRepository.resendConfirmationEmail(any(), any()) } returns
+            ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        vm.resendConfirmationEmail("new@example.com")
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            authRepository.resendConfirmationEmail("new@example.com", "cs")
+        }
+    }
+
+    @Test
+    fun `requestPasswordChange sends the resolved device language`() = runTest {
+        coEvery { authRepository.requestPasswordChange(any(), any()) } returns
+            ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        vm.requestPasswordChange("new@example.com")
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            authRepository.requestPasswordChange("new@example.com", "cs")
+        }
     }
 }

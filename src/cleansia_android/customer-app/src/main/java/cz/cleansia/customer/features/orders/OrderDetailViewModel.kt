@@ -171,15 +171,32 @@ class OrderDetailViewModel @Inject constructor(
             _state.value = OrderDetailUiState.Error(canRetry = false)
             return
         }
-        _state.value = OrderDetailUiState.Loading
+        // Only blank the screen when there is nothing worth keeping on it.
+        // [load] is not just the first load — it is also the push-triggered
+        // refetch (init block), the poller-adjacent re-read after cancel /
+        // review / recurring-confirm, and the Error-state retry. Flipping to
+        // Loading unconditionally meant every inbound order.* push replaced a
+        // perfectly valid, fully-rendered detail with a full-page spinner for
+        // the length of a round trip. A refetch is a background operation from
+        // the user's point of view; the repository already owns the snackbar.
+        val hadContent = _state.value is OrderDetailUiState.Loaded
+        if (!hadContent) {
+            _state.value = OrderDetailUiState.Loading
+        }
         viewModelScope.launch {
             val dto = orderRepository.getById(id).surfaceError().getOrNull()
-            _state.value = if (dto != null) {
-                OrderDetailUiState.Loaded(dto)
-            } else {
-                // Error already surfaced as a snackbar (non-network); offer a retry.
-                OrderDetailUiState.Error(canRetry = true)
+            if (dto != null) {
+                _state.value = OrderDetailUiState.Loaded(dto)
+            } else if (!hadContent) {
+                // Nothing on screen and the fetch failed. The error is already
+                // surfaced as a snackbar (non-network); offer a retry.
+                _state.value = OrderDetailUiState.Error(canRetry = true)
             }
+            // else: a refetch failed but the previously loaded order is still
+            // the best information we have — keep it rendered (same rule the
+            // poller below already follows) rather than throwing the screen
+            // away over a transient failure.
+
             // Whenever a fresh detail comes in, re-evaluate whether to keep the
             // background status poller running. Active orders (Confirmed /
             // InProgress) get a quiet 30s tick so the LiveProgressHero stays
@@ -201,14 +218,24 @@ class OrderDetailViewModel @Inject constructor(
      */
     private var autoRefreshJob: Job? = null
 
+    /**
+     * The single definition of "this order is still moving, keep polling it".
+     * Both the arm decision and the loop's own stop check read it, so the two
+     * can no longer disagree — they did: the loop compared the raw wire value
+     * against `listOf(2, 3)` and so killed itself the moment the cleaner
+     * started work (InProgress = 4), which is exactly the stretch the
+     * LiveProgressHero needs fresh data for. Nothing re-armed it afterwards.
+     */
+    private fun isPollableStatus(statusValue: Int?): Boolean =
+        when (orderStatusFromValue(statusValue)) {
+            OrderStatus.Confirmed, OrderStatus.OnTheWay, OrderStatus.InProgress -> true
+            else -> false
+        }
+
     private fun evaluateAutoRefresh() {
         val current = state.value
         val statusValue = (current as? OrderDetailUiState.Loaded)?.order?.orderStatus?.value
-        val status = orderStatusFromValue(statusValue)
-        val isActive = status == OrderStatus.Confirmed
-            || status == OrderStatus.OnTheWay
-            || status == OrderStatus.InProgress
-        if (isActive) {
+        if (isPollableStatus(statusValue)) {
             if (autoRefreshJob?.isActive == true) return
             autoRefreshJob = viewModelScope.launch {
                 while (true) {
@@ -217,9 +244,9 @@ class OrderDetailViewModel @Inject constructor(
                     val fresh = orderRepository.getById(id).surfaceError().getOrNull()
                     if (fresh != null) {
                         _state.value = OrderDetailUiState.Loaded(fresh)
-                        // Status may have flipped to Completed/Cancelled — let
-                        // the next pass cancel us.
-                        if (fresh.orderStatus?.value !in listOf(2, 3)) break
+                        // Status may have flipped to Completed/Cancelled — stop
+                        // burning a request every 5 minutes on a finished order.
+                        if (!isPollableStatus(fresh.orderStatus?.value)) break
                     }
                 }
                 autoRefreshJob = null

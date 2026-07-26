@@ -153,7 +153,11 @@ private fun OnboardingPage(titleRes: Int, bodyRes: Int) {
         Spacer(Modifier.height(Spacing.L))
         Text(
             text = stringResource(titleRes),
-            style = MaterialTheme.typography.displaySmall,
+            // displayMedium, not displaySmall: this hero title was reaching for M3's un-rescaled
+            // 36sp baseline, a size our Poppins ramp never offered (it tops out at 32sp).
+            // displayMedium (28sp Poppins Bold) is the nearest real hero slot; the fontWeight
+            // param below still wins, so it renders 28sp Poppins SemiBold.
+            style = MaterialTheme.typography.displayMedium,
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,

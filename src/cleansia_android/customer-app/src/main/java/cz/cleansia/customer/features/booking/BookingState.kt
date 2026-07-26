@@ -33,7 +33,14 @@ data class BookingState(
     // submit code uses this to pick between savedAddressId vs inline payload
     // (backend expects XOR).
     val savedAddressId: String? = null,
+    // DISPLAY ONLY — a localized label ("Today", "po", "пн"). It is deliberately NOT the identity of
+    // the chosen day: the strip's labels are rebuilt from the device locale, so a language change
+    // mid-booking gives every chip a new label and any match against this string silently stops
+    // finding anything. [selectedLocalDate] is the identity; this is what the user reads.
     val selectedDate: String = "",
+    // Locale-independent identity of the chosen day. Selection state, slot derivation and the
+    // step-2 gate all key off this.
+    val selectedLocalDate: kotlinx.datetime.LocalDate? = null,
     val selectedTime: String = "",
     // Server-bound moment. Computed from (selectedDate, selectedTime) when the
     // user picks a slot — the two string fields stay for UI display but this is

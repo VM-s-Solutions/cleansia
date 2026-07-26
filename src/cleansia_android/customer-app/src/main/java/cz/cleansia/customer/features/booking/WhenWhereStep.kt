@@ -169,6 +169,17 @@ fun WhenWhereStep(
     val todayLabel = stringResource(R.string.booking_today)
     val days = androidx.compose.runtime.remember(locale, todayLabel) { buildDays(locale, todayLabel) }
 
+    // The strip's labels are CLDR-derived, so changing the app language rebuilds every one of them.
+    // The picked day's identity ([BookingState.selectedLocalDate]) is unaffected, but the label kept
+    // for display would otherwise stay in the old language and show up that way in the Confirm
+    // summary. Re-derive it whenever the strip is rebuilt.
+    androidx.compose.runtime.LaunchedEffect(days) {
+        val picked = days.firstOrNull { it.localDate == state.selectedLocalDate }
+        if (picked != null && picked.label != state.selectedDate) {
+            onUpdate(state.copy(selectedDate = picked.label))
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -200,7 +211,7 @@ fun WhenWhereStep(
         ) {
             items(days.size) { idx ->
                 val day = days[idx]
-                val selected = state.selectedDate == day.label
+                val selected = state.selectedLocalDate == day.localDate
                 DayChipView(day, selected) {
                     if (day.available) {
                         val instant = if (state.selectedTime.isNotBlank()) {
@@ -209,6 +220,7 @@ fun WhenWhereStep(
                         onUpdate(
                             state.copy(
                                 selectedDate = day.label,
+                                selectedLocalDate = day.localDate,
                                 selectedInstant = instant,
                             ),
                         )
@@ -235,7 +247,7 @@ fun WhenWhereStep(
         Spacer(Modifier.height(10.dp))
 
         // Slots are derived per-day so "Today" honours real-time lead-time bands.
-        val pickedDayChip = days.firstOrNull { it.label == state.selectedDate }
+        val pickedDayChip = days.firstOrNull { it.localDate == state.selectedLocalDate }
         val daySlots = androidx.compose.runtime.remember(pickedDayChip?.localDate) {
             pickedDayChip?.localDate?.let { timeSlotsFor(it) } ?: emptyList()
         }

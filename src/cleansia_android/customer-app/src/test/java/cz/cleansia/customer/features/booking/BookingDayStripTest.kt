@@ -4,6 +4,9 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Locale
@@ -83,5 +86,26 @@ class BookingDayStripTest {
             "Ukrainian labels must not be the English ones: $ukrainian",
             ukrainian.toSet().intersect(english.toSet()).isEmpty(),
         )
+    }
+
+    // The regression this file's sibling commit introduced: the day strip's labels became
+    // locale-derived, but selection was still matched on the LABEL. Changing the app language
+    // rebuilt every label, so the picked day stopped matching, the slot list emptied, and the
+    // step-2 gate stayed open because it only checked that the label string was non-blank.
+    // Selection must key off the locale-independent date instead.
+    @Test
+    fun `a day picked in one language is still the picked day in another`() {
+        val cz = buildDays(Locale("cs"), "Dnes")
+        val uk = buildDays(Locale("uk"), "\u0421\u044c\u043e\u0433\u043e\u0434\u043d\u0456")
+
+        val pickedInCzech = cz[3]
+        val sameDayInUkrainian = uk.firstOrNull { it.localDate == pickedInCzech.localDate }
+
+        assertNotNull(sameDayInUkrainian)
+        assertEquals(pickedInCzech.localDate, sameDayInUkrainian!!.localDate)
+        // The labels genuinely differ — which is exactly why matching on them was wrong.
+        assertNotEquals(pickedInCzech.label, sameDayInUkrainian.label)
+        // And label-matching finds nothing, which is the bug in one line.
+        assertNull(uk.firstOrNull { it.label == pickedInCzech.label })
     }
 }

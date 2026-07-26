@@ -412,7 +412,7 @@ private fun SheetContent(
     val canContinue = when (currentStep) {
         1 -> (state.selectedServiceIds.isNotEmpty() || state.selectedPackageIds.isNotEmpty()) && state.rooms >= 1
         2 -> state.street.isNotBlank() &&
-            state.selectedDate.isNotBlank() &&
+            state.selectedLocalDate != null &&
             state.selectedTime.isNotBlank()
         3 -> state.paymentMethod.isNotBlank()
         else -> false

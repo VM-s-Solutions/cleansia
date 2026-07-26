@@ -23,7 +23,7 @@
     <string name="register_email">Email</string>
     <string name="register_password">Пароль</string>
     <string name="register_confirm_password">Подтвердите пароль</string>
-    <string name="register_pw_min_length">Минимум 12 символов</string>
+    <string name="register_pw_min_length">Не менее 8 символов</string>
     <string name="register_pw_letter">Минимум одна буква</string>
     <string name="register_pw_number">Минимум одна цифра</string>
     <string name="register_pw_match">Пароли совпадают</string>

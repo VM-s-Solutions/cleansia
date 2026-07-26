@@ -61,6 +61,7 @@ import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.components.CleansiaTextLink
 import cz.cleansia.core.ui.components.LabelledDivider
 import cz.cleansia.core.ui.components.PasswordRuleList
+import cz.cleansia.core.validation.PasswordPolicy
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.ErrorText
 import cz.cleansia.customer.ui.theme.SuccessText
@@ -91,10 +92,10 @@ fun SignUpScreen(
     var referralValidated by rememberSaveable { mutableStateOf(false) }
     var referralSheetOpen by remember { mutableStateOf(false) }
 
-    val hasMinLength = password.length >= 12
-    val hasLetter = password.any { it.isLetter() }
-    val hasNumber = password.any { it.isDigit() }
-    val passwordsMatch = password.isNotEmpty() && password == confirmPassword
+    val hasMinLength = PasswordPolicy.hasMinLength(password)
+    val hasLetter = PasswordPolicy.hasLetter(password)
+    val hasNumber = PasswordPolicy.hasNumber(password)
+    val passwordsMatch = PasswordPolicy.passwordsMatch(password, confirmPassword)
     val hasPasswordInput = password.isNotEmpty()
     val hasConfirmInput = confirmPassword.isNotEmpty()
 

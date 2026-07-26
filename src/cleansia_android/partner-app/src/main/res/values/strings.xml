@@ -75,7 +75,7 @@
     <string name="back">Back</string>
 
     <!-- Password rules — shown live under the Register screen's password fields. -->
-    <string name="register_pw_min_length">At least 12 characters</string>
+    <string name="register_pw_min_length">At least 8 characters</string>
     <string name="register_pw_letter">Contains a letter</string>
     <string name="register_pw_number">Contains a number</string>
     <string name="register_pw_match">Passwords match</string>

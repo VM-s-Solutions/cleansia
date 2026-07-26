@@ -75,7 +75,7 @@
     <string name="back">Назад</string>
 
     <!-- Password rules -->
-    <string name="register_pw_min_length">Не менше 12 символів</string>
+    <string name="register_pw_min_length">Не менше 8 символів</string>
     <string name="register_pw_letter">Містить літеру</string>
     <string name="register_pw_number">Містить цифру</string>
     <string name="register_pw_match">Паролі збігаються</string>

@@ -23,7 +23,7 @@
     <string name="register_email">E-mail</string>
     <string name="register_password">Heslo</string>
     <string name="register_confirm_password">Potvrdit heslo</string>
-    <string name="register_pw_min_length">Alespoň 12 znaků</string>
+    <string name="register_pw_min_length">Alespoň 8 znaků</string>
     <string name="register_pw_letter">Alespoň jedno písmeno</string>
     <string name="register_pw_number">Alespoň jedna číslice</string>
     <string name="register_pw_match">Hesla se shodují</string>

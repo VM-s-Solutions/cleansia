@@ -2,6 +2,7 @@ package cz.cleansia.partner.features.auth
 
 import android.content.Context
 import cz.cleansia.core.validation.EmailValidator
+import cz.cleansia.core.validation.PasswordPolicy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
@@ -37,10 +38,10 @@ data class RegisterUiState(
     val termsError: String? = null,
     val isRegistrationSuccessful: Boolean = false,
 ) {
-    val passwordHasMinLength get() = password.length >= 12
-    val passwordHasLetter get() = password.any { it.isLetter() }
-    val passwordHasNumber get() = password.any { it.isDigit() }
-    val passwordsMatch get() = password.isNotEmpty() && password == confirmPassword
+    val passwordHasMinLength get() = PasswordPolicy.hasMinLength(password)
+    val passwordHasLetter get() = PasswordPolicy.hasLetter(password)
+    val passwordHasNumber get() = PasswordPolicy.hasNumber(password)
+    val passwordsMatch get() = PasswordPolicy.passwordsMatch(password, confirmPassword)
 }
 
 @HiltViewModel

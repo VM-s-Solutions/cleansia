@@ -43,6 +43,7 @@ import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.components.CleansiaTextLink
+import cz.cleansia.core.validation.PasswordPolicy
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.ErrorText
 import cz.cleansia.customer.ui.theme.SuccessText
@@ -184,10 +185,10 @@ private fun CodeStep(
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
-    val hasMinLength = newPassword.length >= 12
-    val hasLetter = newPassword.any { it.isLetter() }
-    val hasNumber = newPassword.any { it.isDigit() }
-    val passwordsMatch = newPassword.isNotEmpty() && newPassword == confirmPassword
+    val hasMinLength = PasswordPolicy.hasMinLength(newPassword)
+    val hasLetter = PasswordPolicy.hasLetter(newPassword)
+    val hasNumber = PasswordPolicy.hasNumber(newPassword)
+    val passwordsMatch = PasswordPolicy.passwordsMatch(newPassword, confirmPassword)
     val hasPasswordInput = newPassword.isNotEmpty()
     val hasConfirmInput = confirmPassword.isNotEmpty()
 

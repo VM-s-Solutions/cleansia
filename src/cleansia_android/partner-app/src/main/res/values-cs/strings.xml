@@ -73,7 +73,7 @@
     <string name="back">Zpět</string>
 
     <!-- Password rules -->
-    <string name="register_pw_min_length">Alespoň 12 znaků</string>
+    <string name="register_pw_min_length">Alespoň 8 znaků</string>
     <string name="register_pw_letter">Obsahuje písmeno</string>
     <string name="register_pw_number">Obsahuje číslo</string>
     <string name="register_pw_match">Hesla se shodují</string>

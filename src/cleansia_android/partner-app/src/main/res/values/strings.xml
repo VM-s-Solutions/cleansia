@@ -222,6 +222,8 @@
     <!-- Orders -->
     <string name="orders">Orders</string>
     <string name="order_details">Order Details</string>
+    <string name="order_detail_error_title">Couldn\'t load this order</string>
+    <string name="order_detail_error_message">Check your internet connection and try again.</string>
     <string name="active">Active</string>
     <string name="available">Available</string>
     <string name="my_orders">My Orders</string>

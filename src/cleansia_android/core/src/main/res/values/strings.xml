@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    :core owns only the strings that :core's own composables render. Every key
+    MUST carry the `core_` prefix: library resources are merged INTO each app's
+    resource table, and on a name collision the APP's value silently wins with
+    no warning. The prefix is the only thing keeping that from happening.
+
+    Android CI runs compileDebugKotlin + testDebugUnitTest and no lint, so a key
+    added here but missing from values-cs/sk/uk/ru compiles, ships, and renders
+    English. Add to all five files in the same edit.
+-->
+<resources>
+    <string name="core_search">Search</string>
+    <string name="core_snackbar_dismiss">Dismiss</string>
+</resources>

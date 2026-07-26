@@ -208,9 +208,13 @@ private fun AvatarPreview(initials: String) {
             ) {
                 Text(
                     initials.uppercase(),
+                    // fontSize pinned: these initials are sized to the 104.dp circle above, not to
+                    // a type slot. Without the pin they follow displaySmall (26sp) and rattle
+                    // around inside the avatar. Partner's PersonalSectionScreen pins the same 36.
                     style = MaterialTheme.typography.displaySmall.copy(
                         fontFamily = Poppins,
                         fontWeight = FontWeight.Bold,
+                        fontSize = 36.sp,
                     ),
                     color = Sky600,
                 )

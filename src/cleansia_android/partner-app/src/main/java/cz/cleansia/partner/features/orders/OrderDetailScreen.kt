@@ -67,6 +67,7 @@ import com.mapbox.maps.viewannotation.viewAnnotationOptions
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.location.MapStyles
 import cz.cleansia.core.ui.components.CleansiaDialog
+import cz.cleansia.core.ui.components.CleansiaErrorState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
@@ -186,7 +187,36 @@ fun OrderDetailScreen(
                 }
             }
         }
-        OrderDetailUiState.Error -> Unit
+        // Retry is wired to `refresh()`, NOT to `onResume()`/
+        // `ensureFreshOrCachedAsync()`. The latter short-circuits on a
+        // non-stale cache, so on a warm-but-failed order the button would
+        // visibly do nothing. `refresh()` always re-fetches.
+        //
+        // Tapping Retry on a still-broken network re-renders this same
+        // screen with no spinner — `fetch()` only ever writes Loaded or
+        // Error, never back to Loading. That is accepted rather than fixed
+        // here: the failing fetch also raises a translated snackbar
+        // (OrderDetailViewModel.fetch, notifyOnError = true), which is the
+        // feedback, and adding a Loading transition would mean touching a
+        // ViewModel PR #152 has just changed. The customer app made the
+        // opposite call because its Error lives inside a Scaffold that
+        // stays mounted; here the branch owns the whole window.
+        //
+        // The explicit background is load-bearing: unlike Loaded, this
+        // branch composes at the top level with no Mapbox backdrop beneath
+        // it, so without a fill it would render over whatever the nav host
+        // last drew.
+        OrderDetailUiState.Error -> CleansiaErrorState(
+            title = stringResource(R.string.order_detail_error_title),
+            message = stringResource(R.string.order_detail_error_message),
+            retryLabel = stringResource(R.string.retry),
+            onRetry = viewModel::refresh,
+            backLabel = stringResource(R.string.back),
+            onBack = onNavigateBack,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+        )
     }
 }
 

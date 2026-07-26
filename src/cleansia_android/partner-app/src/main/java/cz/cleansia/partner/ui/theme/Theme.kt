@@ -33,6 +33,11 @@ private val LightColors = lightColorScheme(
     outlineVariant = LightBorder,
     error = ErrorText,
     onError = LightSurface,
+    // Inverted pair — the transient-overlay surface (snackbar pill). M3's baseline
+    // is a purple-tinted grey that clashes with the Sky/Slate ramp, so pin it to
+    // ours: a near-black pill on a light page.
+    inverseSurface = Slate900,
+    inverseOnSurface = Slate50,
 )
 
 private val DarkColors = darkColorScheme(
@@ -54,6 +59,9 @@ private val DarkColors = darkColorScheme(
     outlineVariant = DarkBorder,
     error = Color(0xFFFCA5A5),
     onError = ErrorText,
+    // Mirror of the light scheme: a near-white pill on the slate-900 page.
+    inverseSurface = Slate50,
+    inverseOnSurface = Slate900,
 )
 
 @Composable

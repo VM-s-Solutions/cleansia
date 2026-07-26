@@ -38,10 +38,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.R
 
 /**
  * One option in a [CleansiaDropdown]. [id] is what the caller stores
@@ -274,7 +276,7 @@ private fun DropdownSearchField(value: String, onValueChange: (String) -> Unit) 
             decorationBox = { inner ->
                 if (value.isEmpty()) {
                     Text(
-                        text = "Search",
+                        text = stringResource(R.string.core_search),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     )

@@ -72,8 +72,6 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons)
     implementation(libs.compose.foundation)
-    // Google Fonts provider — Type.kt references it for Poppins + Nunito.
-    implementation(libs.compose.ui.text.google.fonts)
 
     // Hilt — :core declares @Module entries (e.g. TokenStore provider) that
     // both apps' SingletonComponent picks up.

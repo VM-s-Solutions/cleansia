@@ -74,6 +74,39 @@ class OrderDetailViewModelTest {
         verify { snackbar.showError("translated error") }
     }
 
+    /**
+     * The contract the new Retry button on the Error state depends on.
+     *
+     * Retry is deliberately wired to [OrderDetailViewModel.refresh] and not to
+     * `onResume`/`ensureFreshOrCachedAsync`, because those consult
+     * [OrdersRepository.isOrderStale] and return without touching the network
+     * when the cache is warm — a Retry button that silently does nothing. So
+     * this test pins the warm-cache case specifically: `isOrderStale` is false
+     * for the whole run, and `refresh()` must still re-fetch and recover.
+     */
+    @Test
+    fun `refresh from the Error state re-fetches and recovers to Loaded`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returnsMany listOf(
+            ApiResult.Error(ApiError.Network("down")),
+            ApiResult.Success(order),
+        )
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertTrue(vm.uiState.value is OrderDetailUiState.Error)
+
+        // The order is no longer stale by the time the user taps Retry, which
+        // is exactly the case that would defeat the staleness-gated path.
+        every { ordersRepository.isOrderStale(orderId) } returns false
+
+        vm.refresh()
+        advanceUntilIdle()
+
+        assertEquals(OrderDetailUiState.Loaded(order), vm.uiState.value)
+        io.mockk.coVerify(exactly = 2) { ordersRepository.getById(orderId) }
+    }
+
     @Test
     fun `warm cache skips the network and stays Loading until refreshed`() = runTest {
         every { ordersRepository.isOrderStale(orderId) } returns false

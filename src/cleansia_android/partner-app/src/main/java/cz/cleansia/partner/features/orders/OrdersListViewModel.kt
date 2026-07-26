@@ -7,7 +7,7 @@ import cz.cleansia.core.location.UserLocation
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.api.model.OrderStatus
-import cz.cleansia.partner.core.auth.UserProfileStore
+import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.location.haversineKm
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
@@ -122,7 +122,7 @@ data class OrdersListUiState(
 @HiltViewModel
 class OrdersListViewModel @Inject constructor(
     private val ordersRepository: OrdersRepository,
-    private val userProfileStore: UserProfileStore,
+    private val employeeIdResolver: EmployeeIdResolver,
     private val errorTranslator: ApiErrorTranslator,
     private val snackbar: SnackbarController,
     private val locationService: LocationService,
@@ -229,7 +229,11 @@ class OrdersListViewModel @Inject constructor(
                 )
             }
 
-            val employeeId = userProfileStore.current()?.employeeId
+            // Resolved, not merely read: a session minted by confirm-email on
+            // a pre-fix build has no stored employee id, which silently sends
+            // the My-Active / My-Completed tabs unscoped — the cleaner sees an
+            // empty list on a day they are working.
+            val employeeId = employeeIdResolver.resolve()
             val state = _uiState.value
 
             val (statuses, isUnassigned, scopedEmployeeId) = when (tab) {

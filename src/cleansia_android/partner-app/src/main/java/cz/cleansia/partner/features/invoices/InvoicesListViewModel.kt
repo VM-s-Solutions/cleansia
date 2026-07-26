@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.api.model.EmployeeInvoiceDto
-import cz.cleansia.partner.core.auth.UserProfileStore
+import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.invoices.InvoicesRepository
@@ -47,7 +47,7 @@ data class InvoicesListUiState(
 @HiltViewModel
 class InvoicesListViewModel @Inject constructor(
     private val invoicesRepository: InvoicesRepository,
-    private val userProfileStore: UserProfileStore,
+    private val employeeIdResolver: EmployeeIdResolver,
     private val errorTranslator: ApiErrorTranslator,
     private val snackbar: SnackbarController,
 ) : ViewModel() {
@@ -121,7 +121,10 @@ class InvoicesListViewModel @Inject constructor(
     private suspend fun fetchAndUpdate(
         clearFlags: (InvoicesListUiState) -> InvoicesListUiState,
     ) {
-        val employeeId = userProfileStore.current()?.employeeId
+        // Resolved, not merely read: a session minted by confirm-email on a
+        // pre-fix build has no stored employee id, and the no-id branch below
+        // renders a permanently empty invoice list with no error to explain it.
+        val employeeId = employeeIdResolver.resolve()
         if (employeeId.isNullOrBlank()) {
             _uiState.update {
                 clearFlags(it).copy(invoices = emptyList(), hasLoadedOnce = true)

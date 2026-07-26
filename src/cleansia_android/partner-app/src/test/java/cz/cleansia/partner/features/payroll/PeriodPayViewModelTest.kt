@@ -2,8 +2,7 @@ package cz.cleansia.partner.features.payroll
 
 import androidx.lifecycle.SavedStateHandle
 import cz.cleansia.core.snackbar.SnackbarController
-import cz.cleansia.partner.core.auth.UserProfileData
-import cz.cleansia.partner.core.auth.UserProfileStore
+import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
@@ -30,20 +29,9 @@ class PeriodPayViewModelTest {
     val mainRule = MainDispatcherRule()
 
     private lateinit var repository: PeriodPayRepository
-    private lateinit var userProfileStore: UserProfileStore
+    private lateinit var employeeIdResolver: EmployeeIdResolver
     private lateinit var errorTranslator: ApiErrorTranslator
     private lateinit var snackbar: SnackbarController
-
-    private val profile = UserProfileData(
-        userId = "user-1",
-        email = "cleaner@cleansia.cz",
-        employeeId = "emp-1",
-        isEmailConfirmed = true,
-        hasAdminAccess = false,
-        firstName = "Jana",
-        lastName = "Nováková",
-        role = "Employee",
-    )
 
     private val summary = PeriodPaySummary(
         payPeriodId = "pp-1",
@@ -56,23 +44,23 @@ class PeriodPayViewModelTest {
     @Before
     fun setUp() {
         repository = mockk()
-        userProfileStore = mockk()
+        employeeIdResolver = mockk()
         errorTranslator = mockk()
         snackbar = mockk(relaxed = true)
-        coEvery { userProfileStore.current() } returns profile
+        coEvery { employeeIdResolver.resolve() } returns "emp-1"
         every { errorTranslator.translate(any()) } returns "translated error"
     }
 
     private fun viewModel(payPeriodId: String = "pp-1") = PeriodPayViewModel(
         savedStateHandle = SavedStateHandle(mapOf("payPeriodId" to payPeriodId)),
         periodPayRepository = repository,
-        userProfileStore = userProfileStore,
+        employeeIdResolver = employeeIdResolver,
         errorTranslator = errorTranslator,
         snackbar = snackbar,
     )
 
     @Test
-    fun `load resolves own employeeId from the profile store and goes Loading to Loaded`() = runTest {
+    fun `load resolves own employeeId and goes Loading to Loaded`() = runTest {
         coEvery { repository.getPeriodPays("emp-1", "pp-1") } returns ApiResult.Success(summary)
 
         val vm = viewModel()
@@ -84,8 +72,10 @@ class PeriodPayViewModelTest {
     }
 
     @Test
-    fun `missing employeeId never hits the network and lands in Error`() = runTest {
-        coEvery { userProfileStore.current() } returns profile.copy(employeeId = null)
+    fun `unresolvable employeeId never hits the network and lands in Error`() = runTest {
+        // Only reachable now when the back-fill fetch itself fails (or there is
+        // no session) — a merely-unhydrated profile no longer lands here.
+        coEvery { employeeIdResolver.resolve() } returns null
 
         val vm = viewModel()
         advanceUntilIdle()

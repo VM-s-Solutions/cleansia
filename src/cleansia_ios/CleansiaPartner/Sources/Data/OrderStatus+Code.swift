@@ -24,3 +24,9 @@ extension OrderItem {
         orderStatus?.toOrderStatus()
     }
 }
+
+extension OrderStatusTrackDto {
+    var statusEnum: OrderStatus? {
+        status?.toOrderStatus()
+    }
+}

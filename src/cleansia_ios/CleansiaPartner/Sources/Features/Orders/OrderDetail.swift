@@ -7,6 +7,9 @@ struct OrderDetail: Equatable {
     let orderNumber: String
     let status: OrderStatus?
     let cleaningDateTime: Date?
+    /// The authoritative completion stamp (DB column, written inside the domain);
+    /// the timer hero anchors the job duration on it instead of the wall clock.
+    let completedAt: Date?
     let pay: Double?
     let currencyCode: String?
     let currencySymbol: String?
@@ -141,6 +144,7 @@ extension OrderDetail {
         orderNumber = item.displayOrderNumber ?? item.id?.prefix(8).description ?? "—"
         status = item.status
         cleaningDateTime = item.cleaningDateTime
+        completedAt = item.completedAt
         pay = item.estimatedCleanerPay
         currencyCode = item.currency?.code ?? item.currency?.symbol
         currencySymbol = item.currency?.symbol

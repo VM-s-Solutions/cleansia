@@ -10,6 +10,7 @@ final class OrderDetailMappingTests: XCTestCase {
         item.displayOrderNumber = "ORD-2026-007"
         item.orderStatus = Code(value: 4)
         item.cleaningDateTime = Date(timeIntervalSince1970: 1_700_000_000)
+        item.completedAt = Date(timeIntervalSince1970: 1_700_007_200)
         item.estimatedCleanerPay = 1200
         item.currency = CurrencyDetailDto(code: "CZK", symbol: "Kč")
         item.address = OrderAddress(
@@ -51,6 +52,11 @@ final class OrderDetailMappingTests: XCTestCase {
         XCTAssertEqual(detail.status, ._4)
         XCTAssertEqual(detail.pay, 1200)
         XCTAssertEqual(detail.currencySymbol, "Kč")
+    }
+
+    func testCompletedAtMapsThrough() {
+        XCTAssertEqual(OrderDetail(makeItem()).completedAt, Date(timeIntervalSince1970: 1_700_007_200))
+        XCTAssertNil(OrderDetail(OrderItem()).completedAt)
     }
 
     func testMapsStatusThroughCodeEnvelope() {

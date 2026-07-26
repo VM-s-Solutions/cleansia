@@ -774,6 +774,10 @@
     <string name="delete_account_confirm_mismatch">Email doesn\'t match your account</string>
     <string name="delete_account_confirm_button">Permanently delete account</string>
     <string name="delete_account_success">Your account has been deleted.</string>
+    <!-- Final confirmation dialog — second gate after the typed-email match. Copy matches iOS. -->
+    <string name="delete_account_dialog_title">Delete account?</string>
+    <string name="delete_account_dialog_message">This permanently deletes your account and data. This cannot be undone.</string>
+    <string name="delete_account_dialog_confirm">Delete</string>
 
     <!-- Error handling — generics (used when a specific key can't be resolved) -->
     <string name="error_generic_unknown">Something went wrong. Please try again.</string>

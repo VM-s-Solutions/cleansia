@@ -761,6 +761,9 @@
     <string name="delete_account_confirm_mismatch">Email не совпадает с вашей учётной записью</string>
     <string name="delete_account_confirm_button">Окончательно удалить учётную запись</string>
     <string name="delete_account_success">Ваша учётная запись удалена.</string>
+    <string name="delete_account_dialog_title">Удалить аккаунт?</string>
+    <string name="delete_account_dialog_message">Это навсегда удалит ваш аккаунт и данные. Это нельзя отменить.</string>
+    <string name="delete_account_dialog_confirm">Удалить</string>
 
     <!-- Error handling — generics -->
     <string name="error_generic_unknown">Что-то пошло не так. Попробуйте ещё раз.</string>

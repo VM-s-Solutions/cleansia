@@ -764,6 +764,9 @@
     <string name="delete_account_confirm_mismatch">E-mail neodpovídá vašemu účtu</string>
     <string name="delete_account_confirm_button">Trvale smazat účet</string>
     <string name="delete_account_success">Váš účet byl smazán.</string>
+    <string name="delete_account_dialog_title">Smazat účet?</string>
+    <string name="delete_account_dialog_message">Tímto trvale smažete svůj účet a data. Toto nelze vrátit zpět.</string>
+    <string name="delete_account_dialog_confirm">Smazat</string>
 
     <!-- Error handling — generics -->
     <string name="error_generic_unknown">Něco se pokazilo. Zkuste to prosím znovu.</string>

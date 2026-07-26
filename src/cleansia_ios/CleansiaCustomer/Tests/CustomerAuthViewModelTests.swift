@@ -9,6 +9,7 @@ final class CustomerAuthViewModelTests: XCTestCase {
     private var registration: FakeRegistrationClient!
     private var confirmation: FakeEmailConfirmationClient!
     private var passwordReset: FakePasswordResetClient!
+    private var changePassword: FakeChangePasswordClient!
     private var social: FakeSocialAuthClient!
     private var provider: FakeSocialSignInProvider!
     private var settings: FakeAppSettingsStore!
@@ -21,6 +22,7 @@ final class CustomerAuthViewModelTests: XCTestCase {
         registration = FakeRegistrationClient()
         confirmation = FakeEmailConfirmationClient()
         passwordReset = FakePasswordResetClient()
+        changePassword = FakeChangePasswordClient()
         social = FakeSocialAuthClient()
         provider = FakeSocialSignInProvider()
         settings = FakeAppSettingsStore()
@@ -34,6 +36,7 @@ final class CustomerAuthViewModelTests: XCTestCase {
         settings = nil
         provider = nil
         social = nil
+        changePassword = nil
         passwordReset = nil
         confirmation = nil
         registration = nil
@@ -51,7 +54,8 @@ final class CustomerAuthViewModelTests: XCTestCase {
             socialProvider: provider,
             settings: settings,
             snackbar: snackbar,
-            pendingEmail: pendingEmail
+            pendingEmail: pendingEmail,
+            changePasswordClient: changePassword
         )
     }
 
@@ -337,7 +341,11 @@ final class CustomerAuthViewModelTests: XCTestCase {
         XCTAssertFalse(makeViewModel(pendingEmail: "   ").canResend)
     }
 
-    func testForgotPasswordSuccessEmitsPasswordReset() async throws {
+    /// The bug this pins: sending the code used to emit `.passwordReset`, which the router maps
+    /// to `.login` — bouncing the customer back to a sign-in screen they still cannot pass,
+    /// with a code in their inbox and nowhere to type it. Requesting the code must move the
+    /// screen to its second step, not leave it.
+    func testForgotPasswordSuccessOpensTheCodeStepInsteadOfLeavingTheScreen() async {
         passwordReset.result = .success(())
         let vm = makeViewModel()
         let received = collectOutcome(vm)
@@ -345,10 +353,22 @@ final class CustomerAuthViewModelTests: XCTestCase {
 
         await vm.requestPasswordReset()
 
-        XCTAssertEqual(received(), .passwordReset)
+        XCTAssertTrue(vm.resetCodeSent)
+        XCTAssertNil(received(), "the reset is not finished until the new password is accepted")
         XCTAssertEqual(snackbar.current?.severity, .success)
-        let outcome = try XCTUnwrap(received())
-        XCTAssertEqual(CustomerRootView.Route.afterAuth(outcome), .login)
+    }
+
+    func testForgotPasswordFailureKeepsTheEmailStep() async {
+        passwordReset.result = .failure(ApiError(code: "network.unreachable"))
+        let vm = makeViewModel()
+        let received = collectOutcome(vm)
+        vm.onForgotEmailChange("a@b.cz")
+
+        await vm.requestPasswordReset()
+
+        XCTAssertFalse(vm.resetCodeSent)
+        XCTAssertNil(received())
+        XCTAssertEqual(snackbar.current?.severity, .error)
     }
 
     func testForgotPasswordInvalidEmailDoesNotSubmit() async {
@@ -359,6 +379,59 @@ final class CustomerAuthViewModelTests: XCTestCase {
 
         XCTAssertNotNil(vm.forgotForm.emailError)
         XCTAssertEqual(passwordReset.callCount, 0)
+    }
+
+    func testCompleteResetSendsTheCodeAndFormEmailThenFinishesTheFlow() async throws {
+        passwordReset.result = .success(())
+        let vm = makeViewModel()
+        let received = collectOutcome(vm)
+        vm.onForgotEmailChange("a@b.cz")
+        await vm.requestPasswordReset()
+
+        await vm.completePasswordReset(code: " 123456 ", newPassword: "abcdefg1", confirmPassword: "abcdefg1")
+
+        let call = try XCTUnwrap(changePassword.changeCalls.first)
+        XCTAssertEqual(call.email, "a@b.cz")
+        XCTAssertEqual(call.code, "123456", "the code is trimmed before it reaches the server")
+        XCTAssertEqual(call.newPassword, "abcdefg1")
+        XCTAssertEqual(received(), .passwordReset)
+        XCTAssertEqual(try CustomerRootView.Route.afterAuth(XCTUnwrap(received())), .login)
+        XCTAssertEqual(vm.resetState, .idle)
+    }
+
+    func testCompleteResetRejectsAMismatchedConfirmationWithoutCallingTheServer() async {
+        let vm = makeViewModel()
+        let received = collectOutcome(vm)
+        vm.onForgotEmailChange("a@b.cz")
+
+        await vm.completePasswordReset(code: "123456", newPassword: "abcdefg1", confirmPassword: "abcdefg2")
+
+        XCTAssertEqual(changePassword.changeCalls.count, 0)
+        XCTAssertNil(received())
+        XCTAssertNotNil(vm.resetState.errorMessage)
+    }
+
+    func testCompleteResetEnforcesTheSamePasswordPolicyAsSignUp() async {
+        let vm = makeViewModel()
+        vm.onForgotEmailChange("a@b.cz")
+
+        await vm.completePasswordReset(code: "123456", newPassword: "short", confirmPassword: "short")
+
+        XCTAssertEqual(changePassword.changeCalls.count, 0)
+        XCTAssertNotNil(vm.resetState.errorMessage)
+    }
+
+    func testCompleteResetFailureSurfacesTheServerErrorAndDoesNotFinish() async {
+        changePassword.changePasswordResult = .failure(ApiError(code: "user.too_many_attempts"))
+        let vm = makeViewModel()
+        let received = collectOutcome(vm)
+        vm.onForgotEmailChange("a@b.cz")
+
+        await vm.completePasswordReset(code: "000000", newPassword: "abcdefg1", confirmPassword: "abcdefg1")
+
+        XCTAssertNil(received(), "a rejected code must leave the customer on the reset step")
+        XCTAssertEqual(snackbar.current?.severity, .error)
+        XCTAssertNotNil(vm.resetState.errorMessage)
     }
 
     func testSignInReentryGuardWhileSubmitting() async {

@@ -63,9 +63,14 @@ final class CustomerAuthViewModel: ViewModel {
     @Published private(set) var forgotForm = ForgotPasswordFormState()
     @Published private(set) var verifyCode = ""
 
+    /// True once the reset code has actually been emailed, which is what moves the
+    /// forgot-password screen from "type your address" to "type the code and a new password".
+    @Published private(set) var resetCodeSent = false
+
     @Published private(set) var signInState: ActionState = .idle
     @Published private(set) var signUpState: ActionState = .idle
     @Published private(set) var forgotState: ActionState = .idle
+    @Published private(set) var resetState: ActionState = .idle
     @Published private(set) var confirmState: ActionState = .idle
     @Published private(set) var resendState: ActionState = .idle
     @Published private(set) var socialState: ActionState = .idle
@@ -76,11 +81,17 @@ final class CustomerAuthViewModel: ViewModel {
     private let registrationClient: RegistrationAuthClient
     private let emailConfirmationClient: EmailConfirmationClient
     private let passwordResetClient: PasswordResetClient
+    /// Second half of the reset: `Auth/ForgotPassword` mails the code, `User/ChangePassword`
+    /// redeems it. The second endpoint is anonymous and customer-only, which is why this
+    /// dependency is the customer-target `ChangePasswordClient` rather than another method on
+    /// the shared `PasswordResetClient` — the partner mobile host has no such endpoint.
+    private let changePasswordClient: ChangePasswordClient
     private let socialAuthClient: SocialAuthClient
     private let socialProvider: SocialSignInProviding
     private let settings: AppSettingsStore
     private let snackbar: SnackbarController
     private let pendingEmail: String?
+    private let errorLocalizer = ApiErrorLocalizer()
 
     /// One session lifetime for every mobile surface: 30 days, always requested.
     ///
@@ -104,12 +115,14 @@ final class CustomerAuthViewModel: ViewModel {
         socialProvider: SocialSignInProviding,
         settings: AppSettingsStore,
         snackbar: SnackbarController,
-        pendingEmail: String? = nil
+        pendingEmail: String? = nil,
+        changePasswordClient: ChangePasswordClient = LiveChangePasswordClient()
     ) {
         self.loginClient = loginClient
         self.registrationClient = registrationClient
         self.emailConfirmationClient = emailConfirmationClient
         self.passwordResetClient = passwordResetClient
+        self.changePasswordClient = changePasswordClient
         self.socialAuthClient = socialAuthClient
         self.socialProvider = socialProvider
         self.settings = settings
@@ -284,9 +297,49 @@ final class CustomerAuthViewModel: ViewModel {
         switch result {
         case .success:
             snackbar.showSuccess(L10n.Auth.forgotCodeSent)
-            outcome.send(.passwordReset)
+            // Do NOT emit .passwordReset here. The router maps it to .login, and emitting it at
+            // "code sent" is the whole defect: it returned the customer to a sign-in screen they
+            // still could not pass. The outcome belongs at the end of completePasswordReset.
+            resetCodeSent = true
         case .failure:
             snackbar.showError(L10n.Auth.forgotSendFailed)
+        }
+    }
+
+    /// Redeems the emailed code and sets the new password — the half of the reset the
+    /// customer app never had. Structurally identical to `SecurityViewModel.changePassword`
+    /// because it is the same endpoint; the only difference is that here the email comes from
+    /// the forgot form rather than from a signed-in session.
+    func completePasswordReset(code: String, newPassword: String, confirmPassword: String) async {
+        guard !resetState.isSubmitting else { return }
+        guard PasswordPolicy.isValid(newPassword) else {
+            resetState = .error(L10n.Security.passwordPolicyError)
+            return
+        }
+        guard PasswordPolicy.passwordsMatch(newPassword, confirmPassword) else {
+            resetState = .error(L10n.Security.passwordMismatchError)
+            return
+        }
+
+        resetState = .submitting
+        let result = await changePasswordClient.changePassword(
+            email: forgotForm.email,
+            code: code.trimmingCharacters(in: .whitespacesAndNewlines),
+            newPassword: newPassword
+        )
+
+        switch result {
+        case .success:
+            resetState = .idle
+            snackbar.showSuccess(L10n.Security.changeSuccessSnackbar)
+            outcome.send(.passwordReset)
+        case let .failure(error):
+            // ChangePassword charges a per-code attempt budget before it compares the hash, so a
+            // few wrong guesses stop being "wrong code" and start being TooManyAttempts. Surface
+            // whatever the server actually said rather than a generic retry prompt.
+            let message = errorLocalizer.message(for: error)
+            snackbar.showError(message)
+            resetState = .error(message)
         }
     }
 

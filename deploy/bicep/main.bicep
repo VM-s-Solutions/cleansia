@@ -614,8 +614,11 @@ module ssr 'modules/appService.bicep' = {
     alwaysOn: env == 'prod'
     stagingSlotEnabled: deploymentSlotsEnabled
     virtualNetworkSubnetId: privateNetworkingEnabled ? privateNetworking!.outputs.appSubnetId : ''
-    // The Angular SSR (Node) host has no /health endpoint — disable the probe so Azure doesn't recycle it.
-    healthCheckPath: ''
+    // The SSR host DOES expose /health: apps/cleansia.app/server.ts registers it on the Express app
+    // ahead of the static handler and the Angular engine catch-all, so it answers 200 JSON without
+    // ever entering a render. (It was previously disabled on the false premise that the Node host had
+    // no such route, which left the one browser-facing site as the only host Azure never probed.)
+    healthCheckPath: '/health'
     tags: commonTags
   }
 }

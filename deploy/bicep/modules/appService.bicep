@@ -33,7 +33,7 @@ param httpsOnly bool = true
 @description('Always-On. True keeps the host warm; off (default) suits dev cost on B2.')
 param alwaysOn bool = false
 
-@description('Health-check path Azure pings to gauge instance health. The .NET hosts expose /health (all checks) + /alive (liveness only) via MapDefaultEndpoints. Empty string disables the probe (the SSR/Node host passes "").')
+@description('Health-check path Azure pings to gauge instance health. Every host we deploy serves the default: the .NET hosts expose /health (all checks) + /alive (liveness only) via MapDefaultEndpoints, and the Angular SSR host registers /health in server.ts before its Angular catch-all. Empty string disables the probe entirely — no caller passes it today.')
 param healthCheckPath string = '/health'
 
 @description('Deploy a "staging" deployment slot for swap-based zero-downtime deploys (T-0359 prod posture). Requires a Standard+ plan SKU (S1) — B-series plans reject slot creation, so dev keeps the default false.')

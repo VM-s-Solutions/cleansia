@@ -44,45 +44,42 @@ param ciPrincipalId = ''
 // ── Alerting (ADR-0015 D3) — the ops email the dev Action Group notifies (not a secret) ─────────────
 param alertEmail = 'cmisa695@gmail.com'
 
-// ── Custom domains (deployed-web same-site enabler) ─────────────────────────────────────────────────
-// Deployed web cookie auth needs the frontends + APIs on ONE registrable domain: the auth cookie is
-// SameSite=Strict and host-only, and the Azure default hostnames are on the Public Suffix List, so a
-// frontend on *.dev.cleansia.cz calling *.azurewebsites.net is cross-SITE and the cookie is neither
-// stored nor sent.
+// ── Custom domains ──────────────────────────────────────────────────────────────────────────────────
+// EMPTY ON PURPOSE. Every hostname below is already bound and certified in Azure, created out-of-band
+// through the portal. Bicep must not try to own them.
 //
-// Every key here is independently contains()-guarded in main.bicep, so any subset works — but a key may
-// only be added once its CNAME and `asuid.<hostname>` TXT records exist, or hostNameBindings fails and
-// takes the WHOLE release with it (every deploy job declares `needs: provision`).
+// The reason is not preference, it is that Bicep CANNOT own them idempotently. Azure permits one
+// certificate per canonicalName per App Service PLAN, and the certificate resource is named after
+// whichever SITE created it. That name is not derivable: the certificate covering the customer web
+// host exists as
+//     customer.dev.cleansia.cz-api-cleansia-customer-mobile-weu-dev
+// i.e. named after customer-mobile, a site that does not even serve that hostname. Any name Bicep
+// guesses collides, returns Conflict 51021, and fails the ENTIRE release — every deploy job declares
+// `needs: provision`, so one certificate conflict blocks the migration, all five APIs, Functions, the
+// SSR host and both SPAs.
 //
-// TWO DIFFERENT JOBS, easy to conflate:
-//   * frontend keys (ssr / ssr-www / swa-*) drive CORS — frontendCustomDomainKeys reads ONLY these, so
-//     they are what puts an origin into the platform allow-list and the CorsOrigins__0..n app settings
-//     that override the committed Production JSON.
-//   * api-* keys drive nothing in CORS. They bind the API hostnames, which is what makes the cookie
-//     same-site, i.e. what makes LOGIN work.
-// Omitting `ssr` while the customer web app was already being served from customer.dev.cleansia.cz is
-// exactly why partner and admin logins worked and the customer one failed preflight with no
-// Access-Control-Allow-Origin.
+// So the two jobs this parameter used to conflate are now split: extraCorsOrigins tells the APIs which
+// origins to trust (the only part that was ever needed once the domains exist), and
+// customerWebBaseUrlOverride sets the customer-facing link base. Neither creates a resource.
 //
-// Naming follows what actually exists in DNS (<audience>.dev / <audience>-api.dev), NOT the prod shape
-// this file originally guessed at. All six hostnames verified live: each resolves to its App Service or
-// Static Web App and carries the asuid TXT verification record.
-//
-// Adding `ssr` also moves customerWebBaseUrl (main.bicep) off the azurewebsites default onto the custom
-// hostname, which is what SendGrid links and Stripe success/cancel returns are built from. That is
-// wanted: a customer who authenticates on customer.dev.cleansia.cz and returns from Stripe to
-// *.azurewebsites.net lands PSL-separated and appears logged out.
-//
-// The mobile API hosts are body-token (no cookies, no CORS) and need no custom domain.
-// ssr-www is prod-only. There is no PROD environment yet.
-param customDomains = {
-  ssr: 'customer.dev.cleansia.cz'
-  'swa-partner': 'partner.dev.cleansia.cz'
-  'swa-admin': 'admin.dev.cleansia.cz'
-  'api-partner': 'partner-api.dev.cleansia.cz'
-  'api-admin': 'admin-api.dev.cleansia.cz'
-  'api-customer': 'customer-api.dev.cleansia.cz'
-}
+// Populate customDomains ONLY for a hostname Bicep should create from nothing — a fresh environment
+// where no binding or certificate exists yet. Adding one that already exists will fail the deploy.
+param customDomains = {}
+
+// ── Browser origins allowed through CORS (no binding, no certificate) ───────────────────────────────
+// These three are where the frontends are actually served from. The API hostnames are deliberately
+// absent: an API is not a browser origin.
+param extraCorsOrigins = [
+  'https://customer.dev.cleansia.cz'
+  'https://partner.dev.cleansia.cz'
+  'https://admin.dev.cleansia.cz'
+]
+
+// ── Base for customer-facing links (SendGrid emails, Stripe success/cancel returns) ──────────────────
+// Must be the hostname customers authenticate on. Returning from Stripe to *.azurewebsites.net would be
+// Public-Suffix-separated from customer.dev.cleansia.cz, so the auth cookie would not be sent and the
+// user would come back apparently logged out.
+param customerWebBaseUrlOverride = 'https://customer.dev.cleansia.cz'
 
 // ── Tags applied to every resource (commonTags in main.bicep adds project/region/env/managedBy) ──────
 param tags = {

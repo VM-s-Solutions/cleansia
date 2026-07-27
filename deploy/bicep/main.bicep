@@ -97,6 +97,31 @@ recommended per-env hostnames, and the owner sequence live in deploy/AZURE-DEV-R
 ''')
 param customDomains object = {}
 
+@description('''Browser origins to allow through CORS, WITHOUT binding anything. Use this when the
+hostnames are already bound and certified outside Bicep (portal / az CLI), which is the normal way a
+domain gets cut over under time pressure.
+
+Why this exists separately from `customDomains`: that parameter conflated two unrelated jobs — telling
+the APIs which origins to trust, and creating hostname bindings plus managed certificates. Only the
+first is ever needed once the domains exist. Worse, the second cannot be made idempotent against
+out-of-band work: Azure permits ONE certificate per canonicalName per App Service PLAN, and that
+certificate resource is named after whichever SITE created it, which is not derivable — a certificate
+for the customer web host was found under the name
+`customer.dev.cleansia.cz-api-cleansia-customer-mobile-weu-dev`. Any name Bicep picks therefore risks a
+Conflict that fails the entire release, because every deploy job declares `needs: provision`.
+
+Full origins including scheme, e.g. [ '"'"'https://admin.dev.cleansia.cz'"'"' ].''')
+param extraCorsOrigins string[] = []
+
+@description('''Base URL for customer-facing links — SendGrid emails and Stripe success/cancel returns.
+Set this when the customer web app is served from a custom hostname that Bicep does not bind. Leaving
+it empty derives the value from `customDomains.ssr`, falling back to the SSR default hostname.
+
+It matters that this tracks the hostname users actually authenticate on: a customer who signs in at
+customer.dev.cleansia.cz and returns from Stripe to *.azurewebsites.net is on a Public-Suffix-separated
+site, so the auth cookie is not sent and they appear logged out.''')
+param customerWebBaseUrlOverride string = ''
+
 @description('Set true ONLY after the Key Vault secret Fcm--ServiceAccountJson exists — it wires FCM__ServiceAccountJson onto the Functions host. Default false keeps the push dispatcher in its clean disabled no-op instead of dead-lettering on an unresolvable KV reference.')
 param fcmSecretProvisioned bool = false
 
@@ -348,7 +373,7 @@ var frontendCustomDomainKeys = [
 var customFrontendOriginCandidates = [
   for key in frontendCustomDomainKeys: contains(customDomains, key) ? 'https://${customDomains[key]}' : ''
 ]
-var customFrontendOrigins = filter(customFrontendOriginCandidates, origin => !empty(origin))
+var customFrontendOrigins = union(filter(customFrontendOriginCandidates, origin => !empty(origin)), extraCorsOrigins)
 var browserCorsOrigins = concat([
   'https://${staticWebApps[0].outputs.defaultHostName}'
   'https://${staticWebApps[1].outputs.defaultHostName}'
@@ -372,7 +397,8 @@ var corsOriginsAppSettings = empty(customFrontendOrigins) ? {} : toObject(range(
 // password, order status, checkout success/cancel). The SSR default hostname until the `ssr` custom
 // domain is configured — then the links move onto it.
 var ssrCustomHost = contains(customDomains, 'ssr') ? customDomains.ssr : ''
-var customerWebBaseUrl = empty(ssrCustomHost) ? 'https://${ssr.outputs.defaultHostName}' : 'https://${ssrCustomHost}'
+var derivedCustomerWebBaseUrl = empty(ssrCustomHost) ? 'https://${ssr.outputs.defaultHostName}' : 'https://${ssrCustomHost}'
+var customerWebBaseUrl = empty(customerWebBaseUrlOverride) ? derivedCustomerWebBaseUrl : customerWebBaseUrlOverride
 
 // SendGrid email config — ONE shared definition consumed by BOTH the API hosts and the Functions app
 // (the Functions container ships an appsettings.json with only cron schedules, so it receives ZERO

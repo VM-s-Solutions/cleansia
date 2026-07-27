@@ -35,6 +35,14 @@ extension L10n {
             format("km_away", value)
         }
 
+        static var locationPrompt: String {
+            localized("orders_location_prompt")
+        }
+
+        static var locationPromptAction: String {
+            localized("orders_location_prompt_action")
+        }
+
         static var topPay: String {
             localized("top_pay")
         }
@@ -291,6 +299,58 @@ extension L10n {
 
         static var openSettings: String {
             localized("open_settings")
+        }
+
+        // MARK: - Timer hero
+
+        /// Kept for key parity with Android even though the iOS card starts at
+        /// Confirmed — see `OrderTimer.phase(for:now:)`.
+        static var trackerHeadlineNew: String {
+            localized("tracker_headline_new")
+        }
+
+        static var trackerHeadlineConfirmed: String {
+            localized("tracker_headline_confirmed")
+        }
+
+        static var trackerHeadlineConfirmedSoon: String {
+            localized("tracker_headline_confirmed_soon")
+        }
+
+        static var trackerHeadlineOnTheWay: String {
+            localized("tracker_headline_on_the_way")
+        }
+
+        static var trackerHeadlineInProgress: String {
+            localized("tracker_headline_in_progress")
+        }
+
+        static var trackerHeadlineDone: String {
+            localized("tracker_headline_done")
+        }
+
+        static func trackerCountdownStartsIn(_ duration: String) -> String {
+            format("tracker_countdown_starts_in", duration)
+        }
+
+        static func trackerSubtitleOnTheWayArriving(_ time: String) -> String {
+            format("tracker_subtitle_on_the_way_arriving", time)
+        }
+
+        static func trackerCompletedIn(_ duration: String) -> String {
+            format("tracker_completed_in", duration)
+        }
+
+        static func trackerFinishedAt(_ dateTime: String) -> String {
+            format("tracker_finished_at", dateTime)
+        }
+
+        static func durationHoursMinutes(_ hours: Int, _ minutes: Int) -> String {
+            format("duration_hours_minutes", hours, minutes)
+        }
+
+        static func durationMinutesOnly(_ minutes: Int) -> String {
+            format("duration_minutes_only", minutes)
         }
 
         static func statusLabel(_ status: OrderStatus?) -> String {

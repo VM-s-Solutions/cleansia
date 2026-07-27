@@ -67,6 +67,7 @@ struct OrdersRootView: View {
 struct OrdersListView: View {
     @ObservedObject var vm: OrdersListViewModel
     @Environment(\.locale) private var locale
+    @Environment(\.locationProvider) private var locationProvider
 
     var body: some View {
         VStack(spacing: 0) {
@@ -83,6 +84,12 @@ struct OrdersListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
         .task { await vm.onAppear() }
+        // Silent — never prompts. Re-run on every tab change so a Settings-app
+        // grant lands without a relaunch and a cold null first fix gets retried.
+        .task { await vm.refreshLocationIfAuthorized(locationProvider) }
+        .onChange(of: vm.tab) { _ in
+            Task { await vm.refreshLocationIfAuthorized(locationProvider) }
+        }
     }
 
     private var header: some View {
@@ -126,8 +133,12 @@ struct OrdersListView: View {
         case let .error(error):
             OrdersErrorView(error: error) { Task { await vm.userRefresh() } }
         case .loaded:
-            OrdersPaneView(vm: vm, onOpen: open)
-                .refreshable { await vm.userRefresh() }
+            OrdersPaneView(
+                vm: vm,
+                onOpen: open,
+                onRequestLocation: { Task { await vm.requestLocationPermission(locationProvider) } }
+            )
+            .refreshable { await vm.userRefresh() }
         }
     }
 

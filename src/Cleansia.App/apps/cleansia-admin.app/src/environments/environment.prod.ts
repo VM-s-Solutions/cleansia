@@ -3,7 +3,6 @@ export const environment = {
   apiPort: '443',
   apiProtocol: 'https',
   apiBaseUrl: 'https://api-admin.cleansia.cz',
-  authApiBaseUrl: 'https://api.cleansia.cz',
   blobStorageUrl: '',
   googleClientId: '',
   betaGateEnabled: false,

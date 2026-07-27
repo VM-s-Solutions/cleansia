@@ -90,6 +90,10 @@ extension L10n {
             localized("email")
         }
 
+        static var emailReadonlyHelper: String {
+            localized("email_readonly_helper")
+        }
+
         static var street: String {
             localized("profile_street")
         }
@@ -200,6 +204,70 @@ extension L10n {
 
         static var uploadDocument: String {
             localized("upload_document")
+        }
+
+        static var documentType: String {
+            localized("document_type")
+        }
+
+        static var descriptionOptional: String {
+            localized("description_optional")
+        }
+
+        static var documentTooLarge: String {
+            localized("document_too_large")
+        }
+
+        static var documentStatusPending: String {
+            localized("document_status_pending")
+        }
+
+        static var documentStatusApproved: String {
+            localized("document_status_approved")
+        }
+
+        static var documentStatusRejected: String {
+            localized("document_status_rejected")
+        }
+
+        static var documentTypeIdentity: String {
+            localized("document_type_identity")
+        }
+
+        static var documentTypePassport: String {
+            localized("document_type_passport")
+        }
+
+        static var documentTypeDriversLicense: String {
+            localized("document_type_drivers_license")
+        }
+
+        static var documentTypeWorkPermit: String {
+            localized("document_type_work_permit")
+        }
+
+        static var documentTypeContract: String {
+            localized("document_type_contract")
+        }
+
+        static var documentTypeCertificate: String {
+            localized("document_type_certificate")
+        }
+
+        static var documentTypeBankStatement: String {
+            localized("document_type_bank_statement")
+        }
+
+        static var documentTypeTax: String {
+            localized("document_type_tax")
+        }
+
+        static var documentTypeInsurance: String {
+            localized("document_type_insurance")
+        }
+
+        static var documentTypeOther: String {
+            localized("document_type_other")
         }
 
         static var errorGeneric: String {

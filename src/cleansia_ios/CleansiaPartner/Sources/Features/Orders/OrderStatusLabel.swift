@@ -8,8 +8,14 @@ import Foundation
 /// status renders "—" in production; the prettified raw name surfaces in DEBUG
 /// only as a diagnostic for a future backend status.
 enum OrderStatusLabel {
-    static func label(name: String?, value: Int?) -> String {
-        if let status = value.flatMap(OrderStatus.init(rawValue:)) {
+    /// Resolves the entry through the one sanctioned `Code → OrderStatus` mapping
+    /// (`OrderStatus+Code.swift`) rather than re-reading `.value` inline.
+    static func label(_ track: OrderStatusTrackDto) -> String {
+        label(status: track.statusEnum, name: track.status?.name)
+    }
+
+    static func label(status: OrderStatus?, name: String?) -> String {
+        if let status {
             return L10n.Orders.statusLabel(status)
         }
         #if DEBUG

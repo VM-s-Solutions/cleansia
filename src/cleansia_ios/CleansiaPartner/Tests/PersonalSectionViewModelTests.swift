@@ -112,6 +112,24 @@ final class PersonalSectionViewModelTests: XCTestCase {
         XCTAssertNil(vm.form.birthDateError)
     }
 
+    /// The email field is rendered read-only (the backend never assigns it), but the
+    /// personal-info validator still rejects an empty Email, so save() must keep
+    /// echoing the loaded address back unchanged.
+    func testSaveStillSendsTheLoadedEmailUnchanged() async {
+        client.employeeResult = .success(EmployeeItem(
+            id: "emp-1",
+            email: "jana@example.com",
+            firstName: "Jana",
+            lastName: "N",
+            birthDate: someBirthDate
+        ))
+        let vm = makeVM()
+        await vm.load()
+        await vm.save()
+
+        XCTAssertEqual(client.personalCommand?.email, "jana@example.com")
+    }
+
     func testSaveApiFailureSetsActionErrorAndSnackbars() async {
         client.employeeResult = .success(EmployeeItem(
             id: "emp-1",

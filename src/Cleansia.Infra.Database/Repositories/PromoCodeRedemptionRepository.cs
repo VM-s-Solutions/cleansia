@@ -82,7 +82,15 @@ public class PromoCodeRedemptionRepository(
             new NpgsqlParameter("discount", appliedDiscount),
             new NpgsqlParameter("now", NpgsqlDbType.TimestampTz) { Value = now },
             new NpgsqlParameter("maxPerUser", maxRedemptionsPerUser),
-            new NpgsqlParameter("tenantId", (object?)tenantId ?? DBNull.Value),
+            // EXPLICIT type, not inferred. @tenantId is the only parameter used in two contexts:
+            // bare in the INSERT...SELECT list (where PostgreSQL resolves the SELECT's own output
+            // types before coercing to the target columns, so it gets no type from there) and in
+            // `IS NOT DISTINCT FROM r."TenantId"` (text). In single-tenant mode the value is
+            // DBNull with no NpgsqlDbType, so Npgsql sends it untyped, PostgreSQL deduces a
+            // different type per context, and the whole statement fails to parse with
+            // `42P08 inconsistent types deduced for parameter $7` — every promo-code order, 500.
+            // Only ever fired with a NULL tenant, which is why it survived a tenanted test run.
+            new NpgsqlParameter("tenantId", NpgsqlDbType.Text) { Value = (object?)tenantId ?? DBNull.Value },
             new NpgsqlParameter("createdBy", createdBy),
         };
 

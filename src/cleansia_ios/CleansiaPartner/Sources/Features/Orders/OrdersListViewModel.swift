@@ -15,8 +15,14 @@ final class OrdersListViewModel: ViewModel {
     @Published var searchQuery: String = ""
     @Published private(set) var availableSort: AvailableSort = .earningsHighToLow
     @Published private(set) var completedPeriod: CompletedPeriod = .thisMonth
-    /// Filled by the location source later; nil for now (distance hides).
+    /// The cleaner's last known fix, used only to annotate Available rows with a
+    /// distance (`OrderListItem.distanceKm(from:)`). Stays nil unless location is
+    /// authorized, and every consumer treats nil as "hide the distance".
     @Published var currentLocation: Coordinate?
+    /// The last settled authorization answer. Re-read from the provider on every
+    /// Available entry so a grant made in the Settings app is picked up without
+    /// a relaunch.
+    @Published private(set) var locationStatus: LocationAuthorizationStatus = .notDetermined
     /// The order whose inline action is currently in flight — drives the per-row
     /// spinner so the cleaner can't double-fire. Nil when no action is running.
     @Published private(set) var inFlightActionOrderId: String?
@@ -58,6 +64,13 @@ final class OrdersListViewModel: ViewModel {
         (currentState.loadedValue ?? []).first { $0.isInProgress }
     }
 
+    /// The inline priming row, shown only while iOS can still be asked. A
+    /// denied/restricted status hides it permanently — iOS never re-prompts, and
+    /// a row whose button does nothing is worse than no row at all.
+    var showsLocationPrompt: Bool {
+        tab == .available && locationStatus == .notDetermined
+    }
+
     func onAppear() async {
         await ensureFreshOrCached(tab.pane, background: true)
     }
@@ -66,6 +79,34 @@ final class OrdersListViewModel: ViewModel {
         guard newTab != tab else { return }
         tab = newTab
         await ensureFreshOrCached(newTab.pane, background: true)
+    }
+
+    /// Silent best-effort refresh, run on every Available entry
+    /// (`OrdersListScreen.kt:114-126` parity for the *already granted* branch).
+    ///
+    /// Deliberate divergence from Android on the not-granted branch: Android
+    /// re-launches the system dialog every time the cleaner enters the tab
+    /// because Android may re-ask. iOS gets exactly one prompt per install and a
+    /// "Don't Allow" is permanent short of a trip to Settings — and Orders is the
+    /// tab that appears immediately after sign-in, so an Android-parity
+    /// auto-prompt would fire a cold, context-free dialog seconds after login and
+    /// kill the feature for everyone who taps through it. This NEVER prompts; the
+    /// only path that may is `requestLocationPermission`, behind an explicit tap.
+    ///
+    /// Re-reading the status here (not just once at init) is what makes a grant
+    /// made in the Settings app take effect, and re-resolving the fix on each
+    /// entry retries a cold null first fix — the reason Android re-resolves too.
+    func refreshLocationIfAuthorized(_ location: LocationProvider) async {
+        locationStatus = location.authorizationStatus
+        guard locationStatus == .authorized else { return }
+        if let fix = await location.currentLocation() { currentLocation = fix }
+    }
+
+    /// The explicit tap on the priming row — the ONLY path that may prompt.
+    func requestLocationPermission(_ location: LocationProvider) async {
+        locationStatus = await location.requestWhenInUseAuthorization()
+        guard locationStatus == .authorized else { return }
+        if let fix = await location.currentLocation() { currentLocation = fix }
     }
 
     func userRefresh() async {

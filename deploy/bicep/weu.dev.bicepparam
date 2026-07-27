@@ -50,14 +50,26 @@ param alertEmail = 'cmisa695@gmail.com'
 // DNS records (CNAME + asuid TXT per hostname) exist: deploy/AZURE-DEV-RUNBOOK.md §12. The dev set
 // below mirrors the prod shape (appsettings.Production.json / environment.prod.ts) under the dev zone.
 // The mobile API hosts are body-token (no cookies/CORS) and need no custom domain.
-// param customDomains = {
-//   ssr: 'dev.cleansia.cz'
-//   'swa-partner': 'partner.dev.cleansia.cz'
-//   'swa-admin': 'admin.dev.cleansia.cz'
-//   'api-partner': 'api.dev.cleansia.cz'
-//   'api-admin': 'api-admin.dev.cleansia.cz'
-//   'api-customer': 'api-customer.dev.cleansia.cz'
-// }
+// STEP 1 (this commit) — the two FRONTEND hostnames only. These already resolve (the SPAs are being
+// served from them), so this subset deploys today with no new DNS. It is what fixes CORS:
+// frontendCustomDomainKeys reads ONLY the swa-*/ssr keys, so adding these appends both origins to the
+// platform CORS list AND emits the CorsOrigins__0..n app settings that override the committed
+// Production JSON (whose origins are the PROD apex, not the dev zone).
+//
+// STEP 2 (next commit) — the api-* hostnames. Those do NOT fix CORS; they fix LOGIN. The auth cookie
+// is SameSite=Strict and host-only, and azurewebsites.net is on the Public Suffix List, so a SPA on
+// *.dev.cleansia.cz calling *.azurewebsites.net is cross-SITE: the cookie is never sent and the login
+// Set-Cookie is refused. They require CNAME + `asuid.<host>` TXT records to exist FIRST or the
+// hostNameBindings deployment fails.
+//
+// ssr / ssr-www / api-customer stay commented: no PROD environment exists yet and no DNS is created
+// for dev.cleansia.cz, so binding them would fail the deploy for hostnames nothing is asking for.
+param customDomains = {
+  'swa-partner': 'partner.dev.cleansia.cz'
+  'swa-admin': 'admin.dev.cleansia.cz'
+  'api-partner': 'api.dev.cleansia.cz'
+  'api-admin': 'api-admin.dev.cleansia.cz'
+}
 
 // ── Tags applied to every resource (commonTags in main.bicep adds project/region/env/managedBy) ──────
 param tags = {

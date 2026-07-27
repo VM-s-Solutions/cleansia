@@ -312,7 +312,12 @@ public class Order : Auditable, ITenantEntity
         string? preferredEmployeeId = null,
         // Set by the recurring-bookings materializer to link the spawned
         // Pending order back to its template. Null for one-off orders.
-        string? recurringTemplateId = null) => new()
+        string? recurringTemplateId = null,
+        // Free-text note the customer typed at booking time ("gate code 1234",
+        // "cat is friendly"). Read-only afterwards — the partner apps render it
+        // on the job card. Whitespace-only collapses to null so the partner UI
+        // doesn't render an empty "notes from the customer" section.
+        string? specialInstructions = null) => new()
         {
             CustomerName = customerName,
             CustomerEmail = customerEmail,
@@ -335,6 +340,7 @@ public class Order : Auditable, ITenantEntity
             MembershipPlanIdAtPurchase = string.IsNullOrEmpty(membershipPlanIdAtPurchase) ? null : membershipPlanIdAtPurchase,
             PreferredEmployeeId = string.IsNullOrEmpty(preferredEmployeeId) ? null : preferredEmployeeId,
             RecurringTemplateId = string.IsNullOrEmpty(recurringTemplateId) ? null : recurringTemplateId,
+            SpecialInstructions = string.IsNullOrWhiteSpace(specialInstructions) ? null : specialInstructions.Trim(),
         };
 
     public Order AddSelectedServices(IEnumerable<OrderService> selectedServices)

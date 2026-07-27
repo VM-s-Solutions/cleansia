@@ -40,7 +40,8 @@ internal static class CreateOrderTestData
         IEnumerable<string>? packageIds = null,
         string? preferredEmployeeId = null,
         string? promoCode = null,
-        string? referralCode = null) =>
+        string? referralCode = null,
+        string? specialInstructions = null) =>
         new(
             CustomerName: "Test Customer",
             CustomerEmail: "customer@example.com",
@@ -59,7 +60,8 @@ internal static class CreateOrderTestData
             Language: Constants.Language.English,
             PromoCode: promoCode,
             ReferralCode: referralCode,
-            PreferredEmployeeId: preferredEmployeeId);
+            PreferredEmployeeId: preferredEmployeeId,
+            SpecialInstructions: specialInstructions);
 
     public static OrderPricingResult MatchingPricing(decimal totalPrice = MatchingTotalPrice) =>
         new(

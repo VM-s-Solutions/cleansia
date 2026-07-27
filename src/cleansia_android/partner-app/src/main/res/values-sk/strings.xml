@@ -69,9 +69,7 @@
     <string name="last_name">Priezvisko</string>
     <string name="phone">Telefónne číslo</string>
     <string name="phone_number">Telefónne číslo</string>
-    <string name="accept_terms">Súhlasím s obchodnými podmienkami</string>
-    <string name="accept_terms_prefix">Súhlasím s</string>
-    <string name="terms_and_conditions">obchodnými podmienkami</string>
+    <string name="accept_terms"><![CDATA[Súhlasím s <a href="cleansia://terms">obchodnými podmienkami</a> a <a href="cleansia://privacy">zásadami ochrany súkromia</a>]]></string>
     <string name="back">Späť</string>
 
     <!-- Password rules -->
@@ -508,14 +506,6 @@
     <string name="mark_unavailable">Označiť ako nedostupný</string>
     <string name="set_custom_hours">Nastaviť vlastné hodiny</string>
     <string name="date_override_note">Poznámka (voliteľné)</string>
-
-    <!-- Terms & Consent -->
-    <string name="terms_consent">Podmienky a súhlas</string>
-    <string name="terms_accepted">Podmienky prijaté</string>
-    <string name="terms_not_accepted">Podmienky neprijaté</string>
-    <string name="terms_accepted_on">Prijaté dňa %1$s</string>
-    <string name="view_terms">Zobraziť podmienky</string>
-    <string name="accept_terms_message">Prečítajte si a prijmite naše obchodné podmienky, aby ste mohli pokračovať v používaní aplikácie.</string>
 
     <!-- Settings -->
     <string name="settings">Nastavenia</string>

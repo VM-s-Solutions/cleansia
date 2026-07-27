@@ -175,6 +175,53 @@ final class RegisterViewModelTests: XCTestCase {
         XCTAssertEqual(client.lastArgs?.language, "sk")
     }
 
+    /// The point of the pre-auth language menu: what the cleaner picks on the
+    /// intro screen is what the confirmation email is rendered in. Uses the real
+    /// `UserDefaultsAppSettingsStore` rather than `FakeSettings` because the
+    /// store is the piece that clamps — this is the whole chain from menu tap to
+    /// wire value.
+    func testLanguagePickedDuringOnboardingIsWhatRegisterSends() async throws {
+        let suiteName = "RegisterViewModelTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        // A German handset: nothing supported in the device list, so the intro
+        // would otherwise register "en".
+        let store = UserDefaultsAppSettingsStore(defaults: defaults, preferredLanguageTags: { ["de-DE"] })
+        let preferences = PreferencesModel(settings: store)
+        XCTAssertEqual(preferences.languageTag, "en")
+
+        preferences.selectLanguage(id: "uk")
+
+        let vm = RegisterViewModel(client: client, settings: store, snackbar: snackbar)
+        fillValid(vm)
+        await vm.register()
+
+        XCTAssertEqual(client.lastArgs?.language, "uk")
+    }
+
+    /// The registration-failure guard, end to end. A tag outside the five is
+    /// never allowed to reach the API — `LanguageValidator` would reject it with
+    /// `language.not_supported` and fail the whole signup, not just the email.
+    func testUnsupportedLanguageNeverReachesTheApi() async throws {
+        let suiteName = "RegisterViewModelTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let store = UserDefaultsAppSettingsStore(defaults: defaults, preferredLanguageTags: { ["cs-CZ"] })
+        let preferences = PreferencesModel(settings: store)
+        preferences.selectLanguage(id: "de-DE")
+
+        let vm = RegisterViewModel(client: client, settings: store, snackbar: snackbar)
+        fillValid(vm)
+        await vm.register()
+
+        XCTAssertEqual(client.lastArgs?.language, "cs")
+        XCTAssertTrue(
+            UserDefaultsAppSettingsStore.supportedLanguageTags.contains(client.lastArgs?.language ?? "")
+        )
+    }
+
     func testRegisterFailureSnackbarsAndReturnsToIdleWithoutSuccess() async {
         client.result = .failure(ApiError(code: "network.unreachable"))
         let vm = makeViewModel()

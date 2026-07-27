@@ -44,6 +44,25 @@ final class PreferencesModel: ObservableObject {
         applyResolvedLanguage()
     }
 
+    /// Applies a picker row id, where `PreferencesLabels.systemLanguageId` is
+    /// the "follow the device" sentinel and anything else is a real tag.
+    ///
+    /// Every language picker in the app — the profile screen and the pre-auth
+    /// onboarding menu — funnels through here rather than branching on the
+    /// sentinel itself. That is deliberate: the tag has to reach the store,
+    /// because the store is what clamps it to the five supported codes, and
+    /// `RegisterViewModel` reads `settings.languageTag` straight back out to
+    /// stamp the registration. A raw device tag ("de-DE") reaching the API
+    /// fails `LanguageValidator` with `language.not_supported` and takes the
+    /// whole signup down with it.
+    func selectLanguage(id: String) {
+        if id == PreferencesLabels.systemLanguageId {
+            setSystemLanguage()
+        } else {
+            setLanguage(id)
+        }
+    }
+
     private func applyResolvedLanguage() {
         let resolved = settings.languageTag
         L10n.bundle = Self.bundle(for: resolved)

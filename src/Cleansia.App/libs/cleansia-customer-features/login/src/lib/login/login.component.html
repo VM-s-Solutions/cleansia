@@ -49,10 +49,12 @@
           (clickFn)="facade.login()"
           [loading]="facade.loading() ?? false"
         />
-        <div class="cleansia-login__divider">
-          <span>{{ 'auth.login.or' | translate }}</span>
-        </div>
-        <div class="cleansia-login__google-btn" #googleBtn></div>
+        @if (isGoogleSignInConfigured) {
+          <div class="cleansia-login__divider">
+            <span>{{ 'auth.login.or' | translate }}</span>
+          </div>
+          <div class="cleansia-login__google-btn" #googleBtn></div>
+        }
         <div>
           <span tabindex="-1">
             {{ 'auth.login.dont_have_account' | translate }}

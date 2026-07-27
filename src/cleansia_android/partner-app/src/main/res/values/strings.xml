@@ -69,9 +69,7 @@
     <string name="last_name">Last Name</string>
     <string name="phone">Phone Number</string>
     <string name="phone_number">Phone Number</string>
-    <string name="accept_terms">I accept the Terms and Conditions</string>
-    <string name="accept_terms_prefix">I accept the</string>
-    <string name="terms_and_conditions">Terms and Conditions</string>
+    <string name="accept_terms"><![CDATA[I accept the <a href="cleansia://terms">Terms and Conditions</a> and the <a href="cleansia://privacy">Privacy Policy</a>]]></string>
     <string name="back">Back</string>
 
     <!-- Password rules — shown live under the Register screen's password fields. -->
@@ -508,14 +506,6 @@
     <string name="mark_unavailable">Mark as unavailable</string>
     <string name="set_custom_hours">Set custom hours</string>
     <string name="date_override_note">Note (optional)</string>
-
-    <!-- Terms & Consent -->
-    <string name="terms_consent">Terms &amp; Consent</string>
-    <string name="terms_accepted">Terms Accepted</string>
-    <string name="terms_not_accepted">Terms Not Accepted</string>
-    <string name="terms_accepted_on">Accepted on %1$s</string>
-    <string name="view_terms">View Terms</string>
-    <string name="accept_terms_message">Please read and accept our Terms and Conditions to continue using the app.</string>
 
     <!-- Settings -->
     <string name="settings">Settings</string>

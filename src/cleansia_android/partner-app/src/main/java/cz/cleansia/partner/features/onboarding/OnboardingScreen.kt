@@ -12,9 +12,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ArrowDropDown
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +38,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -38,10 +47,14 @@ import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.core.ui.components.CleansiaTextLink
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.partner.LocalAppSettings
 import cz.cleansia.partner.R
 import cz.cleansia.partner.core.settings.AppSettingsRepository
+import cz.cleansia.partner.core.settings.LanguageLabels
+import cz.cleansia.partner.core.settings.LanguagePreference
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.launch
@@ -60,6 +73,24 @@ class OnboardingViewModel @Inject constructor(
 ) : ViewModel() {
     fun markSeen() {
         viewModelScope.launch { appSettingsRepository.markOnboardingSeen() }
+    }
+
+    /**
+     * Persists the language chosen on the intro screen.
+     *
+     * Only persists — applying it to the running process is the caller's job
+     * (see [AppLocale]), exactly as the profile picker does it. Keeping the
+     * `AppCompatDelegate` call out of the ViewModel is what lets this be
+     * covered by a plain-JVM unit test.
+     *
+     * The value has to land in DataStore rather than anywhere else because
+     * that is what `AppSettingsRepository.emailLanguageTag()` reads when
+     * `RegisterViewModel` stamps the confirmation email's language — routing
+     * it through the store is also what runs `SupportedLanguages.resolve`, and
+     * a raw device tag would fail the backend's `LanguageValidator` outright.
+     */
+    fun setLanguage(language: LanguagePreference) {
+        viewModelScope.launch { appSettingsRepository.setLanguage(language) }
     }
 }
 
@@ -87,12 +118,28 @@ fun OnboardingScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        Box(
+        // Language sits opposite Skip in the intro header rather than in the
+        // post-signup RegistrationLock chain: that chain only renders after
+        // RegisterEmployee has already stamped PreferredLanguageCode and queued
+        // the confirmation email, so a choice made there would arrive too late
+        // to affect the one mail that matters — and its "Step X of 4" progress
+        // maths counts profile sections, which a display preference is not.
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(Spacing.M),
-            contentAlignment = Alignment.CenterEnd,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            LanguageChooser(
+                selected = LocalAppSettings.current.language,
+                onSelect = { language ->
+                    // Persist first, apply second: apply() recreates the
+                    // Activity on API < 33 and would otherwise race the write.
+                    viewModel.setLanguage(language)
+                    AppLocale.apply(language.tag)
+                },
+            )
             CleansiaTextLink(
                 text = stringResource(R.string.onboarding_skip),
                 onClick = finishOnce,
@@ -133,6 +180,83 @@ fun OnboardingScreen(
             },
         )
         Spacer(Modifier.height(Spacing.L))
+    }
+}
+
+/**
+ * Compact language dropdown for the pre-auth intro.
+ *
+ * A dropdown, not a pushed picker route: onboarding is reached before the
+ * cleaner has an account and the intro deliberately has no app bar to go back
+ * to, so a full screen would need a bespoke return path. The trigger shows the
+ * language *the app is in right now* — the native name, or the translated
+ * "System" label when following the device — so it is legible to someone who
+ * cannot read the language currently on screen.
+ */
+@Composable
+private fun LanguageChooser(
+    selected: LanguagePreference,
+    onSelect: (LanguagePreference) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val systemLabel = stringResource(R.string.language_system)
+    val label = LanguageLabels.nativeName(selected) ?: systemLabel
+    // The trigger has no visible caption — "Language" is what a screen reader
+    // must announce, and that string already ships in all five locales.
+    val accessibilityLabel = stringResource(R.string.language)
+
+    Box {
+        Row(
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable { expanded = true }
+                .padding(horizontal = Spacing.S, vertical = Spacing.XS)
+                .semantics { contentDescription = accessibilityLabel },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Language,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.size(Spacing.XS))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Icon(
+                imageVector = Icons.Outlined.ArrowDropDown,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            LanguageLabels.ordered.forEach { option ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = LanguageLabels.nativeName(option) ?: systemLabel,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = if (option == selected) FontWeight.SemiBold else FontWeight.Normal,
+                            ),
+                            color = if (option == selected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                        )
+                    },
+                    onClick = {
+                        expanded = false
+                        onSelect(option)
+                    },
+                )
+            }
+        }
     }
 }
 

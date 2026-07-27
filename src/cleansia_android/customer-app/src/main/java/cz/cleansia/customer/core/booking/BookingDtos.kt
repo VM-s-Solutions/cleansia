@@ -111,6 +111,13 @@ data class CreateOrderCommand(
      * assigned. Null means no preference.
      */
     val preferredEmployeeId: String? = null,
+    /**
+     * Free-text note the user typed on the confirm step ("gate code 1234").
+     * Persisted on the Order and shown read-only to the assigned cleaner.
+     * Null when blank — the backend collapses whitespace to null anyway, but
+     * sending null keeps the wire honest about "the user typed nothing".
+     */
+    val specialInstructions: String? = null,
     @EncodeDefault(EncodeDefault.Mode.ALWAYS)
     val language: String = "en",
 )

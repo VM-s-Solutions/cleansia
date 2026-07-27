@@ -6,7 +6,14 @@ export const environment = {
   apiProtocol: 'https',
   apiBaseUrl: 'https://api-cleansia-customer-weu-dev.azurewebsites.net',
   blobStorageUrl: '',
-  googleClientId: '',
+  // Google Identity Services client id. Public by design — Google authorises by
+  // page origin, not by secrecy — so it belongs in the bundle. Same client as
+  // local dev on purpose: dev and localhost share one OAuth client.
+  // MANUAL_STEP (google-oauth-origins): the deployed dev origin must be listed
+  // under Google Cloud Console → Credentials → this client → Authorized
+  // JavaScript origins, otherwise GSI answers 403 "origin not allowed".
+  googleClientId:
+    '354682423254-boe1nlnb1dbd3m6a013d3nkpo2e9bgiq.apps.googleusercontent.com',
   isDevelopment: false,
   sentryDsn: '',
   bugReportUrl:

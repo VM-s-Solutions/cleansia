@@ -51,6 +51,21 @@ android {
     }
 }
 
+// ConsentCatalogTest reads BOTH apps' strings.xml off disk — the consent-markup
+// invariant belongs to :core's shared component, not to either app. Gradle has
+// no way to know that: :core does not depend on the apps, so a translator
+// editing only customer-app/values-uk/strings.xml would leave this task
+// UP-TO-DATE and the guard would silently not run on the exact change it
+// guards. Declare the catalogs as inputs so it does.
+tasks.withType<Test>().configureEach {
+    inputs.files(
+        fileTree("$rootDir/customer-app/src/main/res") { include("values*/strings.xml") },
+        fileTree("$rootDir/partner-app/src/main/res") { include("values*/strings.xml") },
+    )
+        .withPropertyName("consentCatalogs")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+}
+
 dependencies {
     // Java 21 core library desugaring — both apps already enable it; the library
     // module needs the same so its public surface compiles against the same

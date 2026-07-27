@@ -125,6 +125,14 @@ public class CreateOrder
                 .MustAsync(PriceMatchesAsync)
                 .WithMessage(BusinessErrorMessage.TotalPriceNotMatch);
 
+            // Optional free-text. Null/empty passes (MaximumLength is a no-op on
+            // null), so old clients that never send the field are unaffected.
+            // 2000 matches the other free-text order notes (AddOrderNote,
+            // ReportOrderIssue) — the column itself is unbounded `text`.
+            RuleFor(x => x.SpecialInstructions)
+                .MaximumLength(2000)
+                .WithMessage(BusinessErrorMessage.MaxLength);
+
             When(x => !string.IsNullOrEmpty(x.PreferredEmployeeId)
                 && !string.IsNullOrEmpty(_userSessionProvider.GetUserId()), () =>
             {
@@ -193,7 +201,14 @@ public class CreateOrder
         string Language = Constants.Language.English,
         string? PromoCode = null,
         string? ReferralCode = null,
-        string? PreferredEmployeeId = null) : ICommand<Response>;
+        string? PreferredEmployeeId = null,
+        /// <summary>
+        /// Optional free-text note from the customer ("gate code 1234", "dog is
+        /// friendly"). Persisted on the Order and rendered read-only by the
+        /// partner + admin surfaces. Optional on purpose: clients built before
+        /// this field existed simply omit it and behave exactly as before.
+        /// </summary>
+        string? SpecialInstructions = null) : ICommand<Response>;
 
     public record Response(
         string Id,
@@ -270,7 +285,8 @@ public class CreateOrder
                 PromoDiscountAmount: promo.DiscountAmount,
                 PromoCodeId: promo.PromoCodeId,
                 PreferredEmployeeId: command.PreferredEmployeeId,
-                RecurringTemplateId: null), cancellationToken);
+                RecurringTemplateId: null,
+                SpecialInstructions: command.SpecialInstructions), cancellationToken);
 
             var dispatch = await orderPaymentDispatcher.DispatchAsync(
                 order, command.Language, cancellationToken);

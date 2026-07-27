@@ -26,6 +26,15 @@ enum BookingOrderCommandFactory {
             return state.promoCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         }()
 
+        // Confirm-step free text. The TextEditor is bound straight to state, so a
+        // user who taps in and back out leaves whitespace behind — normalise to
+        // nil rather than persisting an empty note on the order.
+        let instructions: String? = {
+            let trimmed = state.specialInstructions
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }()
+
         return CreateOrderCommand(
             customerName: resolved.profile.fullName,
             customerEmail: resolved.profile.email,
@@ -43,7 +52,8 @@ enum BookingOrderCommandFactory {
             totalPrice: resolved.quote.totalPrice,
             promoCode: promo,
             referralCode: nil,
-            preferredEmployeeId: state.preferredEmployeeId
+            preferredEmployeeId: state.preferredEmployeeId,
+            specialInstructions: instructions
         )
     }
 }

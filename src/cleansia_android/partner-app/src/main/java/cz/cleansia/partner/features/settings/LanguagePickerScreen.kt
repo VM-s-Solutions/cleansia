@@ -23,8 +23,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.os.LocaleListCompat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -36,8 +34,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
+import cz.cleansia.partner.core.settings.LanguageLabels
 import cz.cleansia.partner.core.settings.LanguagePreference
 
 /**
@@ -56,14 +56,7 @@ fun LanguagePickerScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val systemLabel = stringResource(R.string.language_system)
     val options = remember(systemLabel) {
-        listOf(
-            LanguagePreference.System to systemLabel,
-            LanguagePreference.English to "English",
-            LanguagePreference.Czech to "Čeština",
-            LanguagePreference.Slovak to "Slovenčina",
-            LanguagePreference.Ukrainian to "Українська",
-            LanguagePreference.Russian to "Русский",
-        )
+        LanguageLabels.ordered.map { pref -> pref to (LanguageLabels.nativeName(pref) ?: systemLabel) }
     }
     PickerScaffold(
         title = stringResource(R.string.language),
@@ -71,34 +64,19 @@ fun LanguagePickerScreen(
         options = options.map { (lang, label) -> lang.name to label },
         selectedId = settings.language.name,
         onSelected = { id ->
-            LanguagePreference.values().firstOrNull { it.name == id }?.let { pref ->
+            LanguagePreference.entries.firstOrNull { it.name == id }?.let { pref ->
                 // Persist the choice (so it survives restarts) AND apply
                 // it immediately. setLanguage() alone only wrote to
                 // DataStore — nothing fed it back into the resource
                 // Configuration, so stringResource() kept resolving the
-                // old locale. setApplicationLocales recreates the
-                // Activity in the new locale right away.
+                // old locale. AppLocale.apply recreates the Activity in
+                // the new locale right away.
                 viewModel.setLanguage(pref)
-                applyAppLocale(pref)
+                AppLocale.apply(pref.tag)
             }
             onNavigateBack()
         },
     )
-}
-
-/**
- * Applies the chosen language to the whole app via the AndroidX
- * per-app-language API. An empty locale list = "follow system".
- * Backed by appcompat (works API 24+); MainActivity extends
- * AppCompatActivity so the delegate is available.
- */
-private fun applyAppLocale(pref: LanguagePreference) {
-    val locales = if (pref.tag == null) {
-        LocaleListCompat.getEmptyLocaleList()
-    } else {
-        LocaleListCompat.forLanguageTags(pref.tag)
-    }
-    AppCompatDelegate.setApplicationLocales(locales)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

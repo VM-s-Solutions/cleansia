@@ -14,7 +14,7 @@ import {
   CodeDialogResult,
 } from '@cleansia/components';
 import { selectCustomerLoading } from '@cleansia/customer-stores';
-import { CleansiaCustomerRoute } from '@cleansia/services';
+import { CleansiaCustomerRoute, GOOGLE_CLIENT_ID } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InputTextModule } from 'primeng/inputtext';
@@ -59,6 +59,19 @@ export class RegisterComponent implements OnInit, AfterViewInit {
   protected routes = CleansiaCustomerRoute;
   private readonly zone = inject(NgZone);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  /**
+   * Deployment-specific GSI client id, supplied from the app's environment.
+   * Empty means Google sign-up is not configured for this deployment.
+   */
+  private readonly googleClientId = (inject(GOOGLE_CLIENT_ID) ?? '').trim();
+
+  /**
+   * Gates the whole Google block. Without a client id GSI answers
+   * `403 origin not allowed`, so rendering the button would give the visitor a
+   * control that can never register them — hide it and keep the email form.
+   */
+  protected readonly isGoogleSignInConfigured = !!this.googleClientId;
 
   googleBtnRef = viewChild<ElementRef>('googleBtn');
 
@@ -147,7 +160,7 @@ export class RegisterComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    if (!this.isBrowser) return;
+    if (!this.isBrowser || !this.isGoogleSignInConfigured) return;
     this.initGoogleSignIn();
   }
 
@@ -175,7 +188,7 @@ export class RegisterComponent implements OnInit, AfterViewInit {
     }
 
     google.accounts.id.initialize({
-      client_id: '354682423254-boe1nlnb1dbd3m6a013d3nkpo2e9bgiq.apps.googleusercontent.com',
+      client_id: this.googleClientId,
       callback: (response: { credential: string }) => {
         this.zone.run(() => this.facade.googleRegister(response.credential));
       },

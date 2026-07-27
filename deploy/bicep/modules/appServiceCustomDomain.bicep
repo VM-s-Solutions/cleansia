@@ -55,8 +55,21 @@ resource hostBinding 'Microsoft.Web/sites/hostNameBindings@2023-12-01' = {
 }
 
 // Phase 2 — the free App Service managed certificate; issuance validates against the binding above.
+// The name is '<hostname>-<siteName>' because that is EXACTLY what the Azure portal names a managed
+// certificate it creates. Azure enforces one certificate per canonicalName per App Service Plan, so a
+// differently-named resource for the same hostname is rejected outright:
+//
+//   Conflict / 51021 — Properties.CanonicalName is invalid. Found a duplicate certificate with
+//   admin-api.dev.cleansia.cz available or in pending issued under serverFarmId .../plan-cleansia-weu-dev.
+//   Existing certificate resource id: .../certificates/admin-api.dev.cleansia.cz-api-cleansia-admin-weu-dev
+//
+// The previous 'cert-${hostname}' failed the whole deployment the moment anyone had created the
+// certificate by hand first — which is the normal way a domain gets cut over under time pressure.
+// Matching the portal's convention makes the two paths the SAME resource, so Bicep converges onto a
+// hand-made certificate instead of colliding with it, and a portal-first cut-over stops being a
+// one-way door.
 resource managedCertificate 'Microsoft.Web/certificates@2023-12-01' = {
-  name: 'cert-${hostname}'
+  name: '${hostname}-${siteName}'
   location: location
   tags: tags
   properties: {

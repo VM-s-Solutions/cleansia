@@ -4,7 +4,7 @@ export const environment = {
   apiHost: 'api-cleansia-customer-weu-dev.azurewebsites.net',
   apiPort: '443',
   apiProtocol: 'https',
-  apiBaseUrl: 'https://api-cleansia-customer-weu-dev.azurewebsites.net',
+  apiBaseUrl: 'https://customer-api.dev.cleansia.cz',
   blobStorageUrl: '',
   // Google Identity Services client id. Public by design — Google authorises by
   // page origin, not by secrecy — so it belongs in the bundle. Same client as

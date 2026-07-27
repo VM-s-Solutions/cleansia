@@ -66,4 +66,10 @@ public record CreateOrderInput(
     /// <summary>Optional preferred-cleaner hint (Plus perk).</summary>
     string? PreferredEmployeeId = null,
     /// <summary>FK back to recurring template (set by materializer; null for one-off).</summary>
-    string? RecurringTemplateId = null);
+    string? RecurringTemplateId = null,
+    /// <summary>
+    /// Free-text note the customer typed at booking time. Persisted verbatim on
+    /// the Order and surfaced read-only to the partner/admin surfaces. Null for
+    /// the recurring pipeline — a template carries no per-occurrence note.
+    /// </summary>
+    string? SpecialInstructions = null);

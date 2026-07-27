@@ -223,4 +223,40 @@ public class CreateOrderValidatorCharacterizationTests
 
         Assert.True(result.IsValid);
     }
+
+    // ── SpecialInstructions — optional free-text, capped at 2000 ──
+
+    [Fact]
+    public async Task SpecialInstructions_Omitted_Passes()
+    {
+        var result = await CreateValidator().ValidateAsync(
+            CreateOrderTestData.ValidCommand(specialInstructions: null));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task SpecialInstructions_AtMaxLength_Passes()
+    {
+        var command = CreateOrderTestData.ValidCommand(
+            specialInstructions: new string('x', 2000));
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task SpecialInstructions_OverMaxLength_FailsMaxLength()
+    {
+        var command = CreateOrderTestData.ValidCommand(
+            specialInstructions: new string('x', 2001));
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(CreateOrder.Command.SpecialInstructions)
+            && e.ErrorMessage == BusinessErrorMessage.MaxLength);
+    }
 }

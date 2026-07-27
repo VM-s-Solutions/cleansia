@@ -5,6 +5,7 @@ import android.content.Context
 import app.cash.turbine.test
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.BookingApi
+import cz.cleansia.customer.core.booking.CreateOrderCommand
 import cz.cleansia.customer.core.booking.CreateOrderResponse
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
@@ -25,6 +26,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -167,6 +169,86 @@ class BookingViewModelTest {
 
         assertTrue("expected Success but was $outcome", outcome is BookingSubmitOutcome.Success)
         assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    /**
+     * The confirm step has always captured this text into [BookingState], but the
+     * create command had nowhere to put it, so it never left the device. Pin the
+     * wiring: what the user types must reach the wire.
+     */
+    @Test
+    fun submit_givenSpecialInstructions_sendsThemOnTheCreateCommand() = runTest {
+        currentUserFlow.value = completeUser()
+        val quote = QuoteOrderResponse(
+            totalPrice = 100.0,
+            currencyId = "cur-1",
+            currencyCode = "CZK",
+            servicesSubtotal = 100.0,
+            packagesSubtotal = 0.0,
+            exchangeRate = 1.0,
+        )
+        coEvery { bookingApi.quote(any()) } returns Response.success(quote)
+        val sent = slot<CreateOrderCommand>()
+        coEvery { bookingApi.create(capture(sent)) } returns Response.success(
+            CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"),
+        )
+
+        val vm = newViewModel()
+        vm.update {
+            it.copy(
+                selectedServiceIds = setOf("s-1"),
+                selectedInstant = futureCleaningInstant(),
+                paymentMethod = "cash",
+                street = "Wenceslas",
+                city = "Prague",
+                zipCode = "11000",
+                specialInstructions = "  Gate code 1234, dog is friendly.  ",
+            )
+        }
+        advanceUntilIdle()
+
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals("Gate code 1234, dog is friendly.", sent.captured.specialInstructions)
+    }
+
+    /** A user who tapped into the field and back out must not persist an empty note. */
+    @Test
+    fun submit_givenBlankSpecialInstructions_sendsNull() = runTest {
+        currentUserFlow.value = completeUser()
+        val quote = QuoteOrderResponse(
+            totalPrice = 100.0,
+            currencyId = "cur-1",
+            currencyCode = "CZK",
+            servicesSubtotal = 100.0,
+            packagesSubtotal = 0.0,
+            exchangeRate = 1.0,
+        )
+        coEvery { bookingApi.quote(any()) } returns Response.success(quote)
+        val sent = slot<CreateOrderCommand>()
+        coEvery { bookingApi.create(capture(sent)) } returns Response.success(
+            CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"),
+        )
+
+        val vm = newViewModel()
+        vm.update {
+            it.copy(
+                selectedServiceIds = setOf("s-1"),
+                selectedInstant = futureCleaningInstant(),
+                paymentMethod = "cash",
+                street = "Wenceslas",
+                city = "Prague",
+                zipCode = "11000",
+                specialInstructions = "   \n ",
+            )
+        }
+        advanceUntilIdle()
+
+        vm.submit()
+        advanceUntilIdle()
+
+        assertNull(sent.captured.specialInstructions)
     }
 
     @Test

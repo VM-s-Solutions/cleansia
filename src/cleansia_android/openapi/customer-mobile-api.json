@@ -7070,6 +7070,10 @@
           "preferredEmployeeId": {
             "type": "string",
             "nullable": true
+          },
+          "specialInstructions": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

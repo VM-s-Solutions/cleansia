@@ -33,6 +33,7 @@ import { customerEffects, customerReducers } from '@cleansia/customer-stores';
 import {
   AUTH_COOKIE_KEYS,
   COMMON_INTERCEPTORS_FN,
+  GOOGLE_CLIENT_ID,
   initializeTranslations,
   JsonTranslationLoader,
   MAPBOX_AUTOCOMPLETE_ENABLED,
@@ -104,6 +105,15 @@ export const appConfig: ApplicationConfig = {
     {
       provide: MAPBOX_AUTOCOMPLETE_ENABLED,
       useValue: !!(environment.mapboxToken ?? '').trim(),
+    },
+    // The GSI client id is public by design (Google gates access on the page
+    // origin, not on secrecy), but it is per-deployment: hard-coding one id in
+    // the login/register components made every build advertise the local-dev
+    // client, which 403s "origin not allowed" on any other host. Empty here
+    // means "not configured" and the components hide the button entirely.
+    {
+      provide: GOOGLE_CLIENT_ID,
+      useValue: (environment.googleClientId ?? '').trim(),
     },
     {
       provide: AUTH_COOKIE_KEYS,

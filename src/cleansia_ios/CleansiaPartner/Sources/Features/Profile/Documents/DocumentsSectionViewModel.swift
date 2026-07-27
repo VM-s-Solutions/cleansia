@@ -28,6 +28,12 @@ final class DocumentsSectionViewModel: ViewModel {
         }
     }
 
+    /// The file picker's size guard reports through here so the view keeps its
+    /// single dependency (the view model) and never touches the snackbar itself.
+    func showTooLarge() {
+        snackbar.showError(L10n.Profile.documentTooLarge)
+    }
+
     func upload(
         documentType: DocumentType,
         fileName: String,

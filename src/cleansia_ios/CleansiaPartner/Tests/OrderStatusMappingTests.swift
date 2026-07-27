@@ -27,6 +27,12 @@ final class OrderStatusMappingTests: XCTestCase {
         XCTAssertTrue(item.isInProgress)
     }
 
+    func testStatusTrackStatusReadsThroughTheCodeEnvelope() {
+        XCTAssertEqual(OrderStatusTrackDto(status: Code(value: 4)).statusEnum, ._4)
+        XCTAssertNil(OrderStatusTrackDto(status: Code(value: 99)).statusEnum)
+        XCTAssertNil(OrderStatusTrackDto().statusEnum)
+    }
+
     func testOrderItemStatusReadsThroughTheCodeEnvelope() {
         var item = OrderItem()
         item.orderStatus = Code(value: 5)

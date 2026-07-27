@@ -67,8 +67,25 @@ param alertEmail = 'cmisa695@gmail.com'
 param customDomains = {
   'swa-partner': 'partner.dev.cleansia.cz'
   'swa-admin': 'admin.dev.cleansia.cz'
-  'api-partner': 'api.dev.cleansia.cz'
-  'api-admin': 'api-admin.dev.cleansia.cz'
+  // RE-ENABLE THESE TWO once the asuid TXT records exist. They are commented out because binding a
+  // hostname whose verification record is missing fails the `main` deployment outright — and because
+  // EVERY deploy job in deploy-azure.yml declares `needs: provision`, that failure blocks the database
+  // migration, all five API deploys, Functions, the SSR site and both SPAs. One unverifiable hostname
+  // stops the entire release.
+  //
+  // Required records on the cleansia.cz zone (the TXT value is the SUBSCRIPTION-wide
+  // customDomainVerificationId, so it is the SAME string for both):
+  //   CNAME api.dev             -> api-cleansia-partner-weu-dev.azurewebsites.net
+  //   TXT   asuid.api.dev       -> 4ea18f3e2258d34ea086794555e25e8656d5195172fbe2a3ce20a20897d37222
+  //   CNAME api-admin.dev       -> api-cleansia-admin-weu-dev.azurewebsites.net
+  //   TXT   asuid.api-admin.dev -> 4ea18f3e2258d34ea086794555e25e8656d5195172fbe2a3ce20a20897d37222
+  //
+  // Until they are back, deployed web LOGIN stays broken on the custom frontend domains: the auth
+  // cookie is SameSite=Strict and host-only, and azurewebsites.net is on the Public Suffix List, so a
+  // SPA on *.dev.cleansia.cz calling *.azurewebsites.net is cross-SITE. CORS is unaffected — that is
+  // driven by the two swa-* keys above, which need no new DNS.
+  // 'api-partner': 'api.dev.cleansia.cz'
+  // 'api-admin': 'api-admin.dev.cleansia.cz'
 }
 
 // ── Tags applied to every resource (commonTags in main.bicep adds project/region/env/managedBy) ──────

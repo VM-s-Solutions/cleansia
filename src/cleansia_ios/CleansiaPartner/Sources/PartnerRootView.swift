@@ -60,6 +60,7 @@ struct PartnerRootView: View {
         case .onboarding:
             OnboardingView(
                 settings: container.appSettings,
+                preferences: preferences,
                 onFinished: { route = .login }
             )
         case .splash:

@@ -81,6 +81,29 @@ final class PreferencesModelTests: XCTestCase {
         XCTAssertTrue(model.isFollowingSystemLanguage)
     }
 
+    func testSelectLanguageBySentinelIdFollowsSystem() {
+        let store = makeStore(locale: "uk")
+        let model = PreferencesModel(settings: store)
+        model.setLanguage("sk")
+
+        model.selectLanguage(id: PreferencesLabels.systemLanguageId)
+
+        XCTAssertTrue(model.isFollowingSystemLanguage)
+        XCTAssertNil(store.persistedLanguageTag)
+        XCTAssertEqual(model.languageTag, "uk")
+    }
+
+    func testSelectLanguageByTagPersistsExplicitChoice() {
+        let store = makeStore(locale: "en")
+        let model = PreferencesModel(settings: store)
+
+        model.selectLanguage(id: "cs")
+
+        XCTAssertFalse(model.isFollowingSystemLanguage)
+        XCTAssertEqual(store.persistedLanguageTag, "cs")
+        XCTAssertEqual(model.languageTag, "cs")
+    }
+
     func testSetThemeUpdatesPublishedAndStore() {
         let store = makeStore()
         let model = PreferencesModel(settings: store)

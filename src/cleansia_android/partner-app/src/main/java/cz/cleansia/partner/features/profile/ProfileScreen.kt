@@ -59,6 +59,7 @@ import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.ContractStatus
 import cz.cleansia.partner.api.model.EmployeeItem
+import cz.cleansia.partner.core.settings.LanguageLabels
 import cz.cleansia.partner.core.settings.LanguagePreference
 import cz.cleansia.partner.core.settings.ThemePreference
 import cz.cleansia.partner.features.main.MainBottomNavInset
@@ -485,14 +486,8 @@ private fun ProfileSectionRow(
  * the device locale.
  */
 @Composable
-private fun languageSummary(language: LanguagePreference): String = when (language) {
-    LanguagePreference.System -> stringResource(R.string.language_system)
-    LanguagePreference.English -> "English"
-    LanguagePreference.Czech -> "Čeština"
-    LanguagePreference.Slovak -> "Slovenčina"
-    LanguagePreference.Ukrainian -> "Українська"
-    LanguagePreference.Russian -> "Русский"
-}
+private fun languageSummary(language: LanguagePreference): String =
+    LanguageLabels.nativeName(language) ?: stringResource(R.string.language_system)
 
 @Composable
 private fun themeSummary(theme: ThemePreference): String = stringResource(

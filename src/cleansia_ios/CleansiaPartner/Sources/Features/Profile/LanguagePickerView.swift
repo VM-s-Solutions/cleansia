@@ -17,11 +17,7 @@ struct LanguagePickerView: View {
                 ? PreferencesLabels.systemLanguageId
                 : preferences.languageTag,
             onSelect: { id in
-                if id == PreferencesLabels.systemLanguageId {
-                    preferences.setSystemLanguage()
-                } else {
-                    preferences.setLanguage(id)
-                }
+                preferences.selectLanguage(id: id)
                 onSelected()
             }
         )

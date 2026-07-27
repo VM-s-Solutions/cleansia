@@ -1,6 +1,5 @@
 package cz.cleansia.customer.features.profile
 
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,7 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.os.LocaleListCompat
+import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.customer.LocalAppSettings
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.settings.AppSettingsRepository
@@ -109,26 +108,13 @@ fun LanguageScreen(
                     onSelect = {
                         scope.launch {
                             settingsRepository.setLanguage(opt.pref)
-                            applyAppLocale(opt.pref)
+                            AppLocale.apply(opt.pref.tag)
                         }
                     },
                 )
             }
         }
     }
-}
-
-/**
- * Apply the per-app locale via AppCompatDelegate. Passing an empty list
- * means "follow system".
- */
-private fun applyAppLocale(pref: LanguagePreference) {
-    val locales = if (pref.tag == null) {
-        LocaleListCompat.getEmptyLocaleList()
-    } else {
-        LocaleListCompat.forLanguageTags(pref.tag)
-    }
-    AppCompatDelegate.setApplicationLocales(locales)
 }
 
 @Composable

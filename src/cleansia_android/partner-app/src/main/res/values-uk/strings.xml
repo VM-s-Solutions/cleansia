@@ -69,9 +69,7 @@
     <string name="last_name">Прізвище</string>
     <string name="phone">Номер телефону</string>
     <string name="phone_number">Номер телефону</string>
-    <string name="accept_terms">Я приймаю Умови та положення</string>
-    <string name="accept_terms_prefix">Я приймаю</string>
-    <string name="terms_and_conditions">Умови та положення</string>
+    <string name="accept_terms"><![CDATA[Я приймаю <a href="cleansia://terms">Умови та положення</a> і <a href="cleansia://privacy">Політику конфіденційності</a>]]></string>
     <string name="back">Назад</string>
 
     <!-- Password rules -->
@@ -508,14 +506,6 @@
     <string name="mark_unavailable">Позначити як недоступний</string>
     <string name="set_custom_hours">Встановити особливі години</string>
     <string name="date_override_note">Примітка (необов\'язково)</string>
-
-    <!-- Terms & Consent -->
-    <string name="terms_consent">Умови та згода</string>
-    <string name="terms_accepted">Умови прийнято</string>
-    <string name="terms_not_accepted">Умови не прийнято</string>
-    <string name="terms_accepted_on">Прийнято %1$s</string>
-    <string name="view_terms">Переглянути умови</string>
-    <string name="accept_terms_message">Будь ласка, прочитайте та прийміть наші Умови та положення, щоб продовжити використання додатку.</string>
 
     <!-- Settings -->
     <string name="settings">Налаштування</string>

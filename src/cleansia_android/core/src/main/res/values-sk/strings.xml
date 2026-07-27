@@ -2,4 +2,5 @@
 <resources>
     <string name="core_search">Hľadať</string>
     <string name="core_snackbar_dismiss">Zavrieť</string>
+    <string name="core_consent_toggle">Súhlasiť s podmienkami a zásadami ochrany súkromia</string>
 </resources>

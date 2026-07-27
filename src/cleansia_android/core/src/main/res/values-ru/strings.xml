@@ -2,4 +2,5 @@
 <resources>
     <string name="core_search">Поиск</string>
     <string name="core_snackbar_dismiss">Закрыть</string>
+    <string name="core_consent_toggle">Принять условия и политику конфиденциальности</string>
 </resources>

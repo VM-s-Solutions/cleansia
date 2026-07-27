@@ -54,7 +54,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.referral.ReferralValidationError
 import cz.cleansia.customer.features.booking.ReferralCodeBottomSheet
 import cz.cleansia.customer.features.booking.ReferralCodeUiState
-import cz.cleansia.core.ui.components.CleansiaCheckbox
+import cz.cleansia.core.ui.components.CleansiaConsentCheckbox
 import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextField
@@ -221,16 +221,12 @@ fun SignUpScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        Row(
+        CleansiaConsentCheckbox(
+            checked = acceptedTerms,
+            onCheckedChange = { acceptedTerms = it },
+            html = stringResource(R.string.register_terms_and_conditions),
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Top,
-        ) {
-            CleansiaCheckbox(
-                checked = acceptedTerms,
-                onCheckedChange = { acceptedTerms = it },
-                label = stringResource(R.string.register_terms_and_conditions),
-            )
-        }
+        )
 
         Spacer(Modifier.height(16.dp))
 

@@ -2,4 +2,5 @@
 <resources>
     <string name="core_search">Пошук</string>
     <string name="core_snackbar_dismiss">Закрити</string>
+    <string name="core_consent_toggle">Прийняти умови та політику конфіденційності</string>
 </resources>

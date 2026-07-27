@@ -12,4 +12,5 @@
 <resources>
     <string name="core_search">Search</string>
     <string name="core_snackbar_dismiss">Dismiss</string>
+    <string name="core_consent_toggle">Accept terms and privacy policy</string>
 </resources>

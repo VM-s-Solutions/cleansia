@@ -47,13 +47,21 @@ Vault references would swap a broken instance into production.
 
 **Workflow step (authored):** the six web-host deploy jobs in `.github/workflows/deploy-azure.yml`
 now run the full slot flow whenever `inputs.env == 'prod'`: deploy the artifact to the `staging` slot
-(`slot-name: staging` on `azure/webapps-deploy@v3`), **warm it** (curl the slot's health endpoint —
-`/health` for the five APIs, `/` for the SSR since the Node host has no health probe — retrying up to
-5 minutes and FAILING the job rather than swapping a cold/broken slot), then
+(`slot-name: staging` on `azure/webapps-deploy@v3`), **warm it** (curl the slot — `/health` for the
+five APIs, `/` for the SSR — retrying up to 5 minutes and FAILING the job rather than swapping a
+cold/broken slot), then
 `az webapp deployment slot swap … --slot staging --target-slot production`. The SSR's startup command
 is set on the staging slot for prod (`appCommandLine` swaps with the slot). Dev keeps deploying
 straight to the production site (B-series has no slots — path unchanged), and the Functions host keeps
 its slotless container-set + restart deploy (the queue double-consumption rule above).
+
+The SSR warm probe hits `/` rather than its `/health` route **on purpose**, and that is a different
+question from Azure's own probe. `/health` (registered in `apps/cleansia.app/server.ts` ahead of the
+Angular catch-all) proves only that the Node process is listening; a slot can pass it while the
+Angular engine manifest fails to load and every real request 500s. `/` forces an actual SSR render, so
+the swap gate tests the thing the site exists to do and warms the render path at the same time.
+Azure's continuous `healthCheckPath` wants the opposite trade — cheap, render-free, once a minute —
+so `main.bicep` points it at `/health` for all six web hosts, SSR included.
 
 ## 2. Autoscale (`autoscaleEnabled`, bounds)
 

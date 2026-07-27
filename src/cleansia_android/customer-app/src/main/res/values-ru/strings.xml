@@ -27,7 +27,7 @@
     <string name="register_pw_letter">Минимум одна буква</string>
     <string name="register_pw_number">Минимум одна цифра</string>
     <string name="register_pw_match">Пароли совпадают</string>
-    <string name="register_terms_and_conditions">Я соглашаюсь с Условиями использования и Политикой конфиденциальности</string>
+    <string name="register_terms_and_conditions"><![CDATA[Я соглашаюсь с <a href="cleansia://terms">Условиями использования</a> и <a href="cleansia://privacy">Политикой конфиденциальности</a>]]></string>
     <string name="register_submit">Создать учётную запись</string>
     <string name="register_have_account">Уже есть учётная запись?</string>
     <string name="register_login_link">Войти</string>

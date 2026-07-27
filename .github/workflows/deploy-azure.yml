@@ -942,8 +942,12 @@ jobs:
       - name: Configure startup command
         run: az webapp config set --name web-cleansia-customer-${{ matrix.region }}-${{ inputs.env }} --resource-group rg-cleansia-${{ matrix.region }}-${{ inputs.env }} --startup-file "node server/server.mjs" ${{ inputs.env == 'prod' && '--slot staging' || '' }}
 
-      # The prod slot flow below mirrors deploy-partner-api, except the warm probe hits '/' — the
-      # SSR/Node host has no /health endpoint (appService.bicep passes healthCheckPath: '').
+      # The prod slot flow below mirrors deploy-partner-api, except the warm probe hits '/' instead of
+      # '/health'. The SSR host does serve /health (server.ts registers it ahead of the Angular
+      # catch-all, and main.bicep points Azure's continuous probe at it) — but /health only proves the
+      # Node process is listening. A slot can answer it 200 while the Angular engine manifest fails to
+      # load and every real request 500s, which is exactly the slot we must not swap into production.
+      # '/' forces a real SSR render, so it gates the swap on the render path AND warms it.
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:

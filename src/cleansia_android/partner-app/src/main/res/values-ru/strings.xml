@@ -69,9 +69,7 @@
     <string name="last_name">Фамилия</string>
     <string name="phone">Номер телефона</string>
     <string name="phone_number">Номер телефона</string>
-    <string name="accept_terms">Я принимаю условия и положения</string>
-    <string name="accept_terms_prefix">Я принимаю</string>
-    <string name="terms_and_conditions">Условия и положения</string>
+    <string name="accept_terms"><![CDATA[Я принимаю <a href="cleansia://terms">условия и положения</a> и <a href="cleansia://privacy">политику конфиденциальности</a>]]></string>
     <string name="back">Назад</string>
 
     <!-- Password rules -->
@@ -508,14 +506,6 @@
     <string name="mark_unavailable">Отметить как недоступный</string>
     <string name="set_custom_hours">Установить особые часы</string>
     <string name="date_override_note">Примечание (необязательно)</string>
-
-    <!-- Terms & Consent -->
-    <string name="terms_consent">Условия &amp; согласие</string>
-    <string name="terms_accepted">Условия приняты</string>
-    <string name="terms_not_accepted">Условия не приняты</string>
-    <string name="terms_accepted_on">Принято %1$s</string>
-    <string name="view_terms">Просмотреть условия</string>
-    <string name="accept_terms_message">Пожалуйста, прочитайте и примите наши Условия и положения, чтобы продолжить использование приложения.</string>
 
     <!-- Settings -->
     <string name="settings">Настройки</string>

@@ -149,10 +149,12 @@
           [loading]="loading() ?? false"
           [disabled]="facade.formGroup.invalid"
         />
-        <div class="cleansia-register__divider">
-          <span>{{ 'auth.login.or' | translate }}</span>
-        </div>
-        <div class="cleansia-register__google-btn" #googleBtn></div>
+        @if (isGoogleSignInConfigured) {
+          <div class="cleansia-register__divider">
+            <span>{{ 'auth.login.or' | translate }}</span>
+          </div>
+          <div class="cleansia-register__google-btn" #googleBtn></div>
+        }
         <div>
           <span tabindex="-1">
             {{ 'auth.register.have_account' | translate }}

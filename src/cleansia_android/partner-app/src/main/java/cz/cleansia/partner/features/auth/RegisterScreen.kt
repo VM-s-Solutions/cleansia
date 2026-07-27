@@ -31,7 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cz.cleansia.core.ui.components.CleansiaCheckbox
+import cz.cleansia.core.ui.components.CleansiaConsentCheckbox
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.components.CleansiaTextLink
@@ -187,13 +187,12 @@ fun RegisterScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                CleansiaCheckbox(
-                    checked = uiState.acceptTerms,
-                    onCheckedChange = viewModel::onAcceptTermsChange,
-                    label = stringResource(R.string.accept_terms),
-                )
-            }
+            CleansiaConsentCheckbox(
+                checked = uiState.acceptTerms,
+                onCheckedChange = viewModel::onAcceptTermsChange,
+                html = stringResource(R.string.accept_terms),
+                modifier = Modifier.fillMaxWidth(),
+            )
             uiState.termsError?.let { err ->
                 Text(
                     text = err,

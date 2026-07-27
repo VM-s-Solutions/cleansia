@@ -449,6 +449,10 @@ class BookingViewModel @Inject constructor(
                 referralCode = s.referralCode.trim().uppercase().ifBlank { null },
                 totalPrice = finalTotal,
                 preferredEmployeeId = s.preferredEmployeeId,
+                // Confirm-step free text. The field is bound straight to state,
+                // so a user who taps in and out leaves whitespace behind —
+                // normalise to null rather than persisting an empty note.
+                specialInstructions = s.specialInstructions.trim().ifBlank { null },
             )
 
             val createResp = try {

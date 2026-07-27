@@ -27,7 +27,7 @@
     <string name="register_pw_letter">Aspoň jedno písmeno</string>
     <string name="register_pw_number">Aspoň jedna číslica</string>
     <string name="register_pw_match">Heslá sa zhodujú</string>
-    <string name="register_terms_and_conditions">Súhlasím s Podmienkami služby a Zásadami ochrany súkromia</string>
+    <string name="register_terms_and_conditions"><![CDATA[Súhlasím s <a href="cleansia://terms">Podmienkami služby</a> a <a href="cleansia://privacy">Zásadami ochrany súkromia</a>]]></string>
     <string name="register_submit">Vytvoriť účet</string>
     <string name="register_have_account">Už máte účet?</string>
     <string name="register_login_link">Prihlásiť sa</string>

@@ -328,6 +328,13 @@ var keyVaultUri = keyVault.outputs.keyVaultUri
 func kvRef(vaultUri string, secretName string) string =>
   '@Microsoft.KeyVault(SecretUri=${vaultUri}/secrets/${secretName})'
 
+// ONE definition of the Mapbox geocoding token reference, consumed by BOTH host families below.
+// The .NET API hosts bind it as `Mapbox__GeocodingAccessToken` (App Service maps `__` -> `:`), while
+// the Node SSR host binds the SAME secret as `MAPBOX_TOKEN` — server.ts reads `process.env.MAPBOX_TOKEN`
+// verbatim and Node performs no `__` translation, so the API-host key name would be invisible to it.
+// Same secret, two binding names; never add a second Key Vault secret for this.
+var mapboxTokenKvRef = kvRef(keyVaultUri, 'Mapbox--GeocodingAccessToken')
+
 // Browser host (SPA/SSR) CORS origins — the dev SWA + SSR default hostnames, not localhost (D3).
 // When customDomains adds same-site frontend hostnames they are APPENDED — the default hostnames keep
 // serving during the cut-over, nothing is removed. Every map lookup is defensively contains()-guarded
@@ -399,7 +406,7 @@ var apiBaseSettings = union({
   // a one-flag flip.
   Csrf__Secret: kvRef(keyVaultUri, 'Csrf--Secret')
   Sentry__Dsn: kvRef(keyVaultUri, 'Sentry--Dsn')
-  Mapbox__GeocodingAccessToken: kvRef(keyVaultUri, 'Mapbox--GeocodingAccessToken')
+  Mapbox__GeocodingAccessToken: mapboxTokenKvRef
   APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.outputs.connectionString
   // ADR-0003 D3: the app refuses to boot in non-Development unless it's told which proxy network to
   // trust for X-Forwarded-For. Behind App Service the only hop is the App Service front end, which
@@ -595,14 +602,23 @@ module ssr 'modules/appService.bicep' = {
     linuxFxVersion: ssrLinuxFxVersion
     appSettings: {
       APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.outputs.connectionString
+      // server.ts fronts Mapbox forward-geocoding at /api/mapbox/geocode so the token never reaches
+      // the browser (the Mapbox REST API authenticates ONLY via an `access_token` query parameter,
+      // which would otherwise leak into history/referrer/CDN+APM logs). The proxy reads
+      // process.env.MAPBOX_TOKEN and, when it is empty, answers 503 {"features":[]} — which is what
+      // every environment did, because this site previously received exactly ONE app setting.
+      MAPBOX_TOKEN: mapboxTokenKvRef
     }
     corsAllowedOrigins: []
     httpsOnly: true
     alwaysOn: env == 'prod'
     stagingSlotEnabled: deploymentSlotsEnabled
     virtualNetworkSubnetId: privateNetworkingEnabled ? privateNetworking!.outputs.appSubnetId : ''
-    // The Angular SSR (Node) host has no /health endpoint — disable the probe so Azure doesn't recycle it.
-    healthCheckPath: ''
+    // The SSR host DOES expose /health: apps/cleansia.app/server.ts registers it on the Express app
+    // ahead of the static handler and the Angular engine catch-all, so it answers 200 JSON without
+    // ever entering a render. (It was previously disabled on the false premise that the Node host had
+    // no such route, which left the one browser-facing site as the only host Azure never probed.)
+    healthCheckPath: '/health'
     tags: commonTags
   }
 }

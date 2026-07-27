@@ -10,7 +10,7 @@ import {
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
-import { CleansiaCustomerRoute } from '@cleansia/services';
+import { CleansiaCustomerRoute, GOOGLE_CLIENT_ID } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import { LoginFacade } from './login.facade';
 
@@ -38,10 +38,23 @@ export class LoginComponent implements AfterViewInit {
   private readonly zone = inject(NgZone);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
+  /**
+   * Deployment-specific GSI client id, supplied from the app's environment.
+   * Empty means Google sign-in is not configured for this deployment.
+   */
+  private readonly googleClientId = (inject(GOOGLE_CLIENT_ID) ?? '').trim();
+
+  /**
+   * Gates the whole Google block. Without a client id GSI answers
+   * `403 origin not allowed`, so rendering the button would give the visitor a
+   * control that can never sign them in — hide it and keep email/password.
+   */
+  protected readonly isGoogleSignInConfigured = !!this.googleClientId;
+
   googleBtnRef = viewChild<ElementRef>('googleBtn');
 
   ngAfterViewInit() {
-    if (!this.isBrowser) return;
+    if (!this.isBrowser || !this.isGoogleSignInConfigured) return;
     this.initGoogleSignIn();
   }
 
@@ -69,7 +82,7 @@ export class LoginComponent implements AfterViewInit {
     }
 
     google.accounts.id.initialize({
-      client_id: '354682423254-boe1nlnb1dbd3m6a013d3nkpo2e9bgiq.apps.googleusercontent.com',
+      client_id: this.googleClientId,
       callback: (response: { credential: string }) => {
         this.zone.run(() => this.facade.googleLogin(response.credential));
       },

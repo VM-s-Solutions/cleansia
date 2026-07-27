@@ -25,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import cz.cleansia.core.notifications.PushTokenSessionObserver
+import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.customer.core.notifications.NotificationDeepLink
 import cz.cleansia.customer.core.settings.AppSettings
 import cz.cleansia.customer.core.settings.AppSettingsRepository
@@ -34,6 +35,8 @@ import cz.cleansia.customer.ui.theme.CleansiaTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /**
  * App-wide settings exposed via CompositionLocal so any screen can read the
@@ -86,6 +89,7 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
         // Cold-start tap on a notification — resolve the deep link before
         // the NavHost composes so the LaunchedEffect picks it up immediately.
         pendingDeepLink.value = NotificationDeepLink.resolve(intent)
+        restorePersistedAppLocale()
         maybeRequestNotificationPermission()
         // Start observing (session × FCM-token) so the device gets
         // registered on every cold start with an existing session, not
@@ -164,6 +168,27 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         pendingDeepLink.value = NotificationDeepLink.resolve(intent)
+    }
+
+    /**
+     * Re-applies the persisted language to the process on every cold start.
+     *
+     * minSdk is 26 and neither app registers `AppLocalesMetadataHolderService`
+     * with `autoStoreLocales`, so on API 26-32 AppCompat holds the per-app
+     * locale in a process-scoped static and loses it when the process dies.
+     * DataStore kept the choice (it is what `emailLanguageTag()` reads for the
+     * confirmation mail), so a customer who picked Czech got a Czech email and
+     * then reopened the app in English. This closes that gap from the DataStore
+     * side - see [AppLocale] for why not the manifest service.
+     *
+     * [AppLocale.applyIfChanged] is a no-op when the delegate already matches,
+     * which is both the API 33+ path and the recreate that the API 26-32 path
+     * triggers, so this cannot loop.
+     */
+    private fun restorePersistedAppLocale() {
+        lifecycleScope.launch {
+            AppLocale.applyIfChanged(settingsRepository.settings.first().language.tag)
+        }
     }
 
     private fun maybeRequestNotificationPermission() {

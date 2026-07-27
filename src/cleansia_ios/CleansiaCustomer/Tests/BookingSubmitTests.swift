@@ -350,6 +350,41 @@ final class BookingSubmitTests: XCTestCase {
         XCTAssertEqual(create.commands.first?.cleaningDate, instant)
     }
 
+    /// The confirm step has always captured this text into `BookingState`, but
+    /// the create command had nowhere to put it, so it never left the device.
+    /// Pin the wiring: what the user types must reach the wire.
+    func testSpecialInstructionsAreSentOnTheCreateCommand() async {
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(create: create)
+        vm.update { _ in
+            var s = self.readyState()(BookingState())
+            s.specialInstructions = "  Gate code 1234, the dog is friendly.  "
+            return s
+        }
+
+        _ = await vm.submit()
+
+        XCTAssertEqual(
+            create.commands.first?.specialInstructions,
+            "Gate code 1234, the dog is friendly."
+        )
+    }
+
+    /// A user who tapped into the field and back out must not persist an empty note.
+    func testBlankSpecialInstructionsAreSentAsNil() async {
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(create: create)
+        vm.update { _ in
+            var s = self.readyState()(BookingState())
+            s.specialInstructions = "   \n "
+            return s
+        }
+
+        _ = await vm.submit()
+
+        XCTAssertNil(create.commands.first?.specialInstructions)
+    }
+
     func testDoubleSubmitYieldsSingleCreateCall() async {
         let create = FakeOrderCreateClient()
         let vm = makeVM(create: create)

@@ -291,6 +291,50 @@ public class CreateOrderHandlerCharacterizationTests
         Assert.Equal(BusinessErrorMessage.PaymentGatewayUnavailable, result.Error!.Message);
     }
 
+    /// <summary>
+    /// The customer's booking note reached the API and stopped there — the handler
+    /// built its <see cref="CreateOrderInput"/> without it. Pin the forwarding.
+    /// </summary>
+    [Fact]
+    public async Task SpecialInstructions_AreForwardedToTheOrderFactory()
+    {
+        CreateOrderInput? captured = null;
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .Callback((CreateOrderInput input, CancellationToken _) => captured = input)
+            .ReturnsAsync(OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+            {
+                Id = CreatedOrderId,
+                TenantId = "tenant-1",
+            }));
+
+        var command = CreateOrderTestData.ValidCommand(
+            specialInstructions: "Gate code 1234, please ring twice.");
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Gate code 1234, please ring twice.", captured!.SpecialInstructions);
+    }
+
+    [Fact]
+    public async Task SpecialInstructions_OmittedByOlderClients_ArriveAsNull()
+    {
+        CreateOrderInput? captured = null;
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .Callback((CreateOrderInput input, CancellationToken _) => captured = input)
+            .ReturnsAsync(OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+            {
+                Id = CreatedOrderId,
+                TenantId = "tenant-1",
+            }));
+
+        await CreateHandler().Handle(CreateOrderTestData.ValidCommand(), CancellationToken.None);
+
+        Assert.Null(captured!.SpecialInstructions);
+    }
+
     [Fact]
     public async Task AC10_CardPath_NonStripeException_IsNotCaught_Bubbles()
     {

@@ -44,39 +44,41 @@ param ciPrincipalId = ''
 // ── Alerting (ADR-0015 D3) — the ops email the dev Action Group notifies (not a secret) ─────────────
 param alertEmail = 'cmisa695@gmail.com'
 
-// ── Custom domains (deployed-web same-site enabler) — OFF until the owner creates the DNS records ───
-// Deployed web cookie auth needs the frontends + APIs on ONE registrable domain (SameSite=Strict;
-// the Azure default hostnames are PSL-separated sites). Uncomment — any subset works — ONLY AFTER the
-// DNS records (CNAME + asuid TXT per hostname) exist: deploy/AZURE-DEV-RUNBOOK.md §12. The dev set
-// below mirrors the prod shape (appsettings.Production.json / environment.prod.ts) under the dev zone.
-// The mobile API hosts are body-token (no cookies/CORS) and need no custom domain.
-// STEP 1 (this commit) — the two FRONTEND hostnames only. These already resolve (the SPAs are being
-// served from them), so this subset deploys today with no new DNS. It is what fixes CORS:
-// frontendCustomDomainKeys reads ONLY the swa-*/ssr keys, so adding these appends both origins to the
-// platform CORS list AND emits the CorsOrigins__0..n app settings that override the committed
-// Production JSON (whose origins are the PROD apex, not the dev zone).
+// ── Custom domains (deployed-web same-site enabler) ─────────────────────────────────────────────────
+// Deployed web cookie auth needs the frontends + APIs on ONE registrable domain: the auth cookie is
+// SameSite=Strict and host-only, and the Azure default hostnames are on the Public Suffix List, so a
+// frontend on *.dev.cleansia.cz calling *.azurewebsites.net is cross-SITE and the cookie is neither
+// stored nor sent.
 //
-// STEP 2 (next commit) — the api-* hostnames. Those do NOT fix CORS; they fix LOGIN. The auth cookie
-// is SameSite=Strict and host-only, and azurewebsites.net is on the Public Suffix List, so a SPA on
-// *.dev.cleansia.cz calling *.azurewebsites.net is cross-SITE: the cookie is never sent and the login
-// Set-Cookie is refused. They require CNAME + `asuid.<host>` TXT records to exist FIRST or the
-// hostNameBindings deployment fails.
+// Every key here is independently contains()-guarded in main.bicep, so any subset works — but a key may
+// only be added once its CNAME and `asuid.<hostname>` TXT records exist, or hostNameBindings fails and
+// takes the WHOLE release with it (every deploy job declares `needs: provision`).
 //
-// ssr / ssr-www / api-customer stay commented: no PROD environment exists yet and no DNS is created
-// for dev.cleansia.cz, so binding them would fail the deploy for hostnames nothing is asking for.
+// TWO DIFFERENT JOBS, easy to conflate:
+//   * frontend keys (ssr / ssr-www / swa-*) drive CORS — frontendCustomDomainKeys reads ONLY these, so
+//     they are what puts an origin into the platform allow-list and the CorsOrigins__0..n app settings
+//     that override the committed Production JSON.
+//   * api-* keys drive nothing in CORS. They bind the API hostnames, which is what makes the cookie
+//     same-site, i.e. what makes LOGIN work.
+// Omitting `ssr` while the customer web app was already being served from customer.dev.cleansia.cz is
+// exactly why partner and admin logins worked and the customer one failed preflight with no
+// Access-Control-Allow-Origin.
+//
+// Naming follows what actually exists in DNS (<audience>.dev / <audience>-api.dev), NOT the prod shape
+// this file originally guessed at. All six hostnames verified live: each resolves to its App Service or
+// Static Web App and carries the asuid TXT verification record.
+//
+// Adding `ssr` also moves customerWebBaseUrl (main.bicep) off the azurewebsites default onto the custom
+// hostname, which is what SendGrid links and Stripe success/cancel returns are built from. That is
+// wanted: a customer who authenticates on customer.dev.cleansia.cz and returns from Stripe to
+// *.azurewebsites.net lands PSL-separated and appears logged out.
+//
+// The mobile API hosts are body-token (no cookies, no CORS) and need no custom domain.
+// ssr-www is prod-only. There is no PROD environment yet.
 param customDomains = {
+  ssr: 'customer.dev.cleansia.cz'
   'swa-partner': 'partner.dev.cleansia.cz'
   'swa-admin': 'admin.dev.cleansia.cz'
-  // The hostnames the owner actually created. NOTE the shape is <audience>-api.dev, NOT the
-  // api.dev / api-admin.dev / api-customer.dev the commented block originally guessed from the prod
-  // layout — that guess is what produced ERR_NAME_NOT_RESOLVED, because the SPAs were repointed at
-  // hostnames nothing had ever created. Verified live: all three resolve to their App Service and
-  // all three carry the asuid TXT verification record.
-  //
-  // customer-api already has a managed certificate (issued out-of-band). admin-api and partner-api
-  // are bound but still serve Azure's default *.azurewebsites.net certificate, so HTTPS to them fails
-  // with a subject-name mismatch. Declaring them here is what fixes that: appServiceCustomDomain
-  // binds, issues the free managed cert, and flips the binding to SNI in one deployment.
   'api-partner': 'partner-api.dev.cleansia.cz'
   'api-admin': 'admin-api.dev.cleansia.cz'
   'api-customer': 'customer-api.dev.cleansia.cz'

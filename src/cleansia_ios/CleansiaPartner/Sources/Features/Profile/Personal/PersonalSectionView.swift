@@ -53,7 +53,9 @@ struct PersonalSectionView: View {
                 CleansiaTextField(
                     value: $vm.form.email,
                     label: L10n.Profile.email,
-                    keyboardType: .emailAddress
+                    helper: L10n.Profile.emailReadonlyHelper,
+                    keyboardType: .emailAddress,
+                    enabled: false
                 )
                 SaveSectionButton(
                     onboarding: onboarding,

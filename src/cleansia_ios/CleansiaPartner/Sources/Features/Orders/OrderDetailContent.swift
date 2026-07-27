@@ -89,7 +89,12 @@ struct OrderDetailContent: View {
             OrderDetailCompactHeader(order: order, locale: locale)
             ScrollView {
                 VStack(spacing: Spacing.m) {
-                    OrderTrackerHero(status: order.status)
+                    // Zero spacing: the timer text and the segmented bar are one
+                    // hero block, not two stacked sections.
+                    VStack(alignment: .leading, spacing: 0) {
+                        OrderTimerCard(order: order, locale: locale)
+                        OrderTrackerHero(status: order.status)
+                    }
                     OrderMetadataRow(order: order, locale: locale)
                     if showAccessCard, let access = order.accessInstructions {
                         AccessCard(instructions: access)
@@ -242,6 +247,7 @@ private struct OrderMetadataRow: View {
             orderNumber: "ORD-2026-001",
             status: ._4,
             cleaningDateTime: Date(timeIntervalSinceNow: 3600),
+            completedAt: nil,
             pay: 1200,
             currencyCode: "CZK",
             currencySymbol: "Kč",
@@ -273,7 +279,10 @@ private struct OrderMetadataRow: View {
             hasAfterPhotos: false,
             orderNotes: [],
             orderIssues: [],
-            statusHistory: []
+            // An hour-old InProgress stamp so the preview renders the live clock.
+            statusHistory: [
+                OrderStatusTrackDto(status: Code(value: 4), createdOn: Date(timeIntervalSinceNow: -3725))
+            ]
         )
     }
 

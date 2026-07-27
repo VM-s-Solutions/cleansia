@@ -46,7 +46,12 @@ public class FiscalCounterRepository(
             new NpgsqlParameter("id", id),
             new NpgsqlParameter("year", year),
             new NpgsqlParameter("scope", issuerScope),
-            new NpgsqlParameter("tenantId", (object?)tenantId ?? DBNull.Value),
+            // Explicit type for the same reason as PromoCodeRedemptionRepository, though this one is
+            // NOT currently broken: @tenantId appears once, in a plain VALUES list, so PostgreSQL
+            // infers it unambiguously from the target column. It only takes a second usage — an
+            // ON CONFLICT WHERE, a guard clause — for an untyped DBNull to start deducing two types
+            // and fail the whole statement with 42P08. Pinning it now costs nothing.
+            new NpgsqlParameter("tenantId", NpgsqlDbType.Text) { Value = (object?)tenantId ?? DBNull.Value },
             new NpgsqlParameter("createdBy", createdBy),
             new NpgsqlParameter("now", NpgsqlDbType.TimestampTz) { Value = now },
         };

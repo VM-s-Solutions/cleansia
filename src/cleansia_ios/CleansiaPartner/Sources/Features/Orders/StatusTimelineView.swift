@@ -23,7 +23,7 @@ enum StatusTimelineFormat {
         return dated.enumerated().map { index, pair in
             let (track, createdOn) = pair
             return StatusTimelineEntry(
-                label: OrderStatusLabel.label(name: track.status?.name, value: track.status?.value),
+                label: OrderStatusLabel.label(track),
                 timestamp: createdOn,
                 isCurrent: index == lastIndex
             )

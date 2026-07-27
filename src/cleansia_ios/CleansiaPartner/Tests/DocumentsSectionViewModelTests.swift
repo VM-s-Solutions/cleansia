@@ -51,6 +51,45 @@ final class DocumentsSectionViewModelTests: XCTestCase {
         XCTAssertEqual(client.saveDocumentsCommand?.documents?.first?.file?.fileName, "passport.pdf")
     }
 
+    /// Regression guard for the bug this replaced: every upload used to be
+    /// hardcoded to `._1` (IdentityCard) with a nil description, so admin
+    /// verification saw the wrong type on every document.
+    func testUploadSendsTheChosenTypeAndTrimmedDescription() async {
+        client.documentsResult = .success([])
+        let vm = makeVM()
+        await vm.load()
+        await vm.upload(
+            documentType: ._4,
+            fileName: "permit.pdf",
+            contentType: "application/pdf",
+            base64Content: "AAA",
+            description: "  work permit 2026  "
+        )
+        let saved = client.saveDocumentsCommand?.documents?.first
+        XCTAssertEqual(saved?.documentType, ._4)
+        XCTAssertEqual(saved?.description, "work permit 2026")
+    }
+
+    func testUploadSendsNilForABlankDescription() async {
+        client.documentsResult = .success([])
+        let vm = makeVM()
+        await vm.load()
+        await vm.upload(
+            documentType: ._10,
+            fileName: "scan.pdf",
+            contentType: "application/pdf",
+            base64Content: "AAA",
+            description: "   "
+        )
+        XCTAssertNil(client.saveDocumentsCommand?.documents?.first?.description)
+    }
+
+    func testShowTooLargeSnackbars() {
+        let vm = makeVM()
+        vm.showTooLarge()
+        XCTAssertNotNil(snackbar.current)
+    }
+
     func testDeleteSuccessClearsDeletingId() async {
         client.documentsResult = .success([
             GetMyDocumentsMyDocumentDto(documentId: "doc-1", fileName: "passport.pdf")

@@ -67,6 +67,8 @@ param alertEmail = 'cmisa695@gmail.com'
 param customDomains = {
   'swa-partner': 'partner.dev.cleansia.cz'
   'swa-admin': 'admin.dev.cleansia.cz'
+  'api-partner': 'api.dev.cleansia.cz'
+  'api-admin': 'api-admin.dev.cleansia.cz'
 }
 
 // ── Tags applied to every resource (commonTags in main.bicep adds project/region/env/managedBy) ──────

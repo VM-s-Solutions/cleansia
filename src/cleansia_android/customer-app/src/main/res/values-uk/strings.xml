@@ -927,6 +927,8 @@
     <string name="error_auth_insufficient_privileges">У вас немає дозволу на цю дію.</string>
     <string name="error_auth_invalid_refresh_token">Ваша сесія завершилася. Увійдіть знову.</string>
     <string name="error_auth_refresh_token_reused">З міркувань безпеки вас вийшли з усіх пристроїв.</string>
+    <string name="error_auth_current_password_invalid">Ваш поточний пароль неправильний.</string>
+    <string name="error_auth_account_locked">Забагато невдалих спроб входу. Обліковий запис тимчасово заблоковано — спробуйте ще раз за кілька хвилин.</string>
 
     <!-- User -->
     <string name="error_user_email_confirmed">Цей email вже підтверджено.</string>

@@ -705,88 +705,6 @@
     <string name="urgency_in_hours_minutes">Za %1$dh %2$dm</string>
     <string name="urgency_in_hours">Za %1$dh</string>
 
-    <!-- API Error Translations (backend error keys → localized messages) -->
-    <!-- Auth -->
-    <string name="api_error_auth_google_type_error">Chyba typu ověření Google</string>
-    <string name="api_error_auth_internal_type_error">Chyba typu interního ověření</string>
-    <string name="api_error_auth_invalid_confirmation_code">Neplatný potvrzovací kód</string>
-    <string name="api_error_auth_invalid_google_token">Neplatný Google token</string>
-    <string name="api_error_auth_invalid_password_format">Neplatný formát hesla</string>
-    <string name="api_error_auth_invalid_reset_token">Neplatný token pro obnovení hesla</string>
-    <string name="api_error_auth_same_reset_password">Nové heslo se shoduje se starým heslem</string>
-    <string name="api_error_auth_insufficient_privileges">Nemáte oprávnění provést tuto akci</string>
-    <!-- Common -->
-    <string name="api_error_common_invalid_enum_value">Neplatná hodnota</string>
-    <string name="api_error_common_max_length">Překročena maximální délka</string>
-    <string name="api_error_common_required">Toto pole je povinné</string>
-    <!-- Email -->
-    <string name="api_error_email_sending_failed">Nepodařilo se odeslat e-mail. Zkuste to prosím znovu.</string>
-    <string name="api_error_email_invalid_format">Neplatný formát e-mailu</string>
-    <string name="api_error_email_invalid_email">Neplatná e-mailová adresa</string>
-    <!-- Order -->
-    <string name="api_error_order_cleaning_date_future">Datum úklidu musí být v budoucnosti</string>
-    <string name="api_error_order_empty">Objednávka nemůže být prázdná</string>
-    <string name="api_error_order_not_found">Objednávka nenalezena</string>
-    <string name="api_error_order_already_assigned">Tato objednávka je již přiřazena</string>
-    <string name="api_error_order_no_available_spots">Žádná volná místa pro tuto objednávku</string>
-    <string name="api_error_order_employee_already_assigned">K této objednávce jste již přiřazeni</string>
-    <string name="api_error_order_employee_not_assigned">K této objednávce nejste přiřazeni</string>
-    <string name="api_error_order_max_employees_exceeded">Překročen maximální počet zaměstnanců</string>
-    <string name="api_error_order_not_in_progress">Objednávka neprobíhá</string>
-    <string name="api_error_order_not_confirmed">Objednávka není potvrzena</string>
-    <string name="api_error_order_employee_already_has_order_in_progress">Již máte rozpracovanou objednávku</string>
-    <string name="api_error_order_note_content_required">Obsah poznámky je povinný</string>
-    <string name="api_error_order_issue_description_required">Popis problému je povinný</string>
-    <!-- User -->
-    <string name="api_error_user_email_confirmed">E-mail je již potvrzen</string>
-    <string name="api_error_user_existing_email">Uživatel s tímto e-mailem již existuje</string>
-    <string name="api_error_user_not_existing_email">Uživatel s tímto e-mailem neexistuje</string>
-    <string name="api_error_user_not_existing_id">Uživatel nenalezen</string>
-    <string name="api_error_user_not_allowed_to_update">Nemáte oprávnění upravit tohoto uživatele</string>
-    <string name="api_error_user_existing_phone_number">Uživatel s tímto telefonním číslem již existuje</string>
-    <string name="api_error_user_not_found">Uživatel nenalezen</string>
-    <!-- Employee -->
-    <string name="api_error_employee_not_found">Zaměstnanec nenalezen</string>
-    <string name="api_error_employee_not_existing_email">Zaměstnanec s tímto e-mailem neexistuje</string>
-    <string name="api_error_employee_not_allowed_to_update">Nemáte oprávnění upravit tohoto zaměstnance</string>
-    <string name="api_error_employee_profile_incomplete">Profil zaměstnance je neúplný</string>
-    <string name="api_error_employee_documents_missing">Chybí požadované dokumenty</string>
-    <!-- Employee Documents -->
-    <string name="api_error_employee_document_not_found">Dokument nenalezen</string>
-    <string name="api_error_employee_document_unauthorized">Nemáte oprávnění přistupovat k tomuto dokumentu</string>
-    <string name="api_error_employee_document_not_owned">Tento dokument vám nepatří</string>
-    <!-- Validation -->
-    <string name="api_error_validation_invalid_password">Neplatné heslo</string>
-    <string name="api_error_validation_invalid_date">Neplatné datum</string>
-    <string name="api_error_validation_date_must_be_in_past">Datum musí být v minulosti</string>
-    <string name="api_error_validation_invalid_age">Neplatný věk</string>
-    <string name="api_error_validation_invalid_phone_number">Neplatný formát telefonního čísla</string>
-    <string name="api_error_validation_invalid_national_id">Neplatný formát čísla občanského průkazu</string>
-    <string name="api_error_validation_invalid_tax_id">Neplatný formát DIČ</string>
-    <string name="api_error_validation_invalid_iban">Neplatný formát IBAN</string>
-    <string name="api_error_validation_invalid_zip_code">Neplatný formát PSČ</string>
-    <string name="api_error_validation_must_be_positive">Hodnota musí být kladná</string>
-    <string name="api_error_validation_invalid_availability_format">Neplatný formát dostupnosti</string>
-    <string name="api_error_validation_page_must_be_positive">Stránka musí být větší než 0</string>
-    <string name="api_error_validation_page_size_must_be_positive">Velikost stránky musí být větší než 0</string>
-    <string name="api_error_validation_page_size_exceeded">Velikost stránky nesmí překročit 100</string>
-    <string name="api_error_validation_invalid_contract_status">Neplatný stav smlouvy</string>
-    <!-- File -->
-    <string name="api_error_file_content_type_doesnt_match">Typ souboru neodpovídá obsahu</string>
-    <string name="api_error_file_invalid_file_type">Neplatný typ souboru</string>
-    <string name="api_error_file_size_exceeded">Velikost souboru překračuje maximální povolený limit</string>
-    <string name="api_error_file_size_exceeded_10mb">Velikost souboru nesmí překročit 10 MB</string>
-    <string name="api_error_file_type_not_allowed">Typ souboru není povolen</string>
-    <string name="api_error_file_required">Nahrání souboru je povinné</string>
-    <!-- General -->
-    <string name="api_error_general_not_found">Požadovaný zdroj nebyl nalezen</string>
-    <!-- Device -->
-    <string name="api_error_device_invalid_platform">Neplatná platforma</string>
-    <!-- Country -->
-    <string name="api_error_country_not_existing_id">Země nenalezena</string>
-    <!-- Address -->
-    <string name="api_error_address_invalid_length">Neplatná délka adresy</string>
-
     <!-- Tier 3 -->
     <string name="scroll_to_top">Posunout nahoru</string>
     <string name="view_mode_list">Zobrazení seznamu</string>
@@ -1134,12 +1052,15 @@
     <string name="error_auth_internal_type_error">Pro tento účet použijte e-mail a heslo.</string>
     <string name="error_auth_invalid_confirmation_code">Tento kód je neplatný nebo vypršel.</string>
     <string name="error_auth_invalid_google_token">Přihlášení přes Google selhalo. Zkuste to znovu.</string>
+    <string name="error_auth_invalid_apple_token">Přihlášení přes Apple selhalo. Zkuste to znovu.</string>
     <string name="error_auth_invalid_password_format">Heslo musí mít alespoň 8 znaků a obsahovat písmena a číslice.</string>
     <string name="error_auth_invalid_reset_token">Tento odkaz na obnovení hesla je neplatný nebo vypršel.</string>
     <string name="error_auth_same_reset_password">Zvolte heslo odlišné od původního.</string>
     <string name="error_auth_insufficient_privileges">Nemáte oprávnění k této akci.</string>
     <string name="error_auth_invalid_refresh_token">Vaše relace vypršela. Přihlaste se prosím znovu.</string>
     <string name="error_auth_refresh_token_reused">Z bezpečnostních důvodů jste byli odhlášeni ze všech zařízení.</string>
+    <string name="error_auth_current_password_invalid">Vaše stávající heslo není správné.</string>
+    <string name="error_auth_account_locked">Příliš mnoho neúspěšných pokusů o přihlášení. Účet je dočasně uzamčen — zkuste to znovu za několik minut.</string>
 
     <string name="error_user_email_confirmed">Tento e-mail je již potvrzen.</string>
     <string name="error_user_existing_email">Účet s tímto e-mailem již existuje.</string>

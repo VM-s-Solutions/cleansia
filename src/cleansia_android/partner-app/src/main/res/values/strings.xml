@@ -836,88 +836,6 @@
     <string name="urgency_in_hours_minutes">In %1$dh %2$dm</string>
     <string name="urgency_in_hours">In %1$dh</string>
 
-    <!-- API Error Translations (backend error keys → localized messages) -->
-    <!-- Auth -->
-    <string name="api_error_auth_google_type_error">Google authentication type error</string>
-    <string name="api_error_auth_internal_type_error">Internal authentication type error</string>
-    <string name="api_error_auth_invalid_confirmation_code">Invalid confirmation code</string>
-    <string name="api_error_auth_invalid_google_token">Invalid Google token</string>
-    <string name="api_error_auth_invalid_password_format">Invalid password format</string>
-    <string name="api_error_auth_invalid_reset_token">Invalid password reset token</string>
-    <string name="api_error_auth_same_reset_password">New password matches the old password</string>
-    <string name="api_error_auth_insufficient_privileges">You are not authorized to perform this action</string>
-    <!-- Common -->
-    <string name="api_error_common_invalid_enum_value">Invalid value</string>
-    <string name="api_error_common_max_length">Maximum length exceeded</string>
-    <string name="api_error_common_required">This field is required</string>
-    <!-- Email -->
-    <string name="api_error_email_sending_failed">Failed to send email. Please try again.</string>
-    <string name="api_error_email_invalid_format">Invalid email format</string>
-    <string name="api_error_email_invalid_email">Invalid email address</string>
-    <!-- Order -->
-    <string name="api_error_order_cleaning_date_future">Cleaning date must be in the future</string>
-    <string name="api_error_order_empty">Order cannot be empty</string>
-    <string name="api_error_order_not_found">Order not found</string>
-    <string name="api_error_order_already_assigned">This order is already assigned</string>
-    <string name="api_error_order_no_available_spots">No available spots for this order</string>
-    <string name="api_error_order_employee_already_assigned">You are already assigned to this order</string>
-    <string name="api_error_order_employee_not_assigned">You are not assigned to this order</string>
-    <string name="api_error_order_max_employees_exceeded">Maximum number of employees exceeded</string>
-    <string name="api_error_order_not_in_progress">Order is not in progress</string>
-    <string name="api_error_order_not_confirmed">Order is not confirmed</string>
-    <string name="api_error_order_employee_already_has_order_in_progress">You already have an order in progress</string>
-    <string name="api_error_order_note_content_required">Note content is required</string>
-    <string name="api_error_order_issue_description_required">Issue description is required</string>
-    <!-- User -->
-    <string name="api_error_user_email_confirmed">Email is already confirmed</string>
-    <string name="api_error_user_existing_email">A user with this email already exists</string>
-    <string name="api_error_user_not_existing_email">User with this email does not exist</string>
-    <string name="api_error_user_not_existing_id">User not found</string>
-    <string name="api_error_user_not_allowed_to_update">You are not allowed to update this user</string>
-    <string name="api_error_user_existing_phone_number">A user with this phone number already exists</string>
-    <string name="api_error_user_not_found">User not found</string>
-    <!-- Employee -->
-    <string name="api_error_employee_not_found">Employee not found</string>
-    <string name="api_error_employee_not_existing_email">Employee with this email does not exist</string>
-    <string name="api_error_employee_not_allowed_to_update">You are not allowed to update this employee</string>
-    <string name="api_error_employee_profile_incomplete">Employee profile is incomplete</string>
-    <string name="api_error_employee_documents_missing">Required documents are missing</string>
-    <!-- Employee Documents -->
-    <string name="api_error_employee_document_not_found">Document not found</string>
-    <string name="api_error_employee_document_unauthorized">You are not authorized to access this document</string>
-    <string name="api_error_employee_document_not_owned">This document does not belong to you</string>
-    <!-- Validation -->
-    <string name="api_error_validation_invalid_password">Invalid password</string>
-    <string name="api_error_validation_invalid_date">Invalid date</string>
-    <string name="api_error_validation_date_must_be_in_past">Date must be in the past</string>
-    <string name="api_error_validation_invalid_age">Invalid age</string>
-    <string name="api_error_validation_invalid_phone_number">Invalid phone number format</string>
-    <string name="api_error_validation_invalid_national_id">Invalid national ID format</string>
-    <string name="api_error_validation_invalid_tax_id">Invalid tax ID format</string>
-    <string name="api_error_validation_invalid_iban">Invalid IBAN format</string>
-    <string name="api_error_validation_invalid_zip_code">Invalid zip code format</string>
-    <string name="api_error_validation_must_be_positive">Value must be positive</string>
-    <string name="api_error_validation_invalid_availability_format">Invalid availability format</string>
-    <string name="api_error_validation_page_must_be_positive">Page must be greater than 0</string>
-    <string name="api_error_validation_page_size_must_be_positive">Page size must be greater than 0</string>
-    <string name="api_error_validation_page_size_exceeded">Page size cannot exceed 100</string>
-    <string name="api_error_validation_invalid_contract_status">Invalid contract status</string>
-    <!-- File -->
-    <string name="api_error_file_content_type_doesnt_match">File type does not match content</string>
-    <string name="api_error_file_invalid_file_type">Invalid file type</string>
-    <string name="api_error_file_size_exceeded">File size exceeds the maximum allowed limit</string>
-    <string name="api_error_file_size_exceeded_10mb">File size must not exceed 10 MB</string>
-    <string name="api_error_file_type_not_allowed">File type is not allowed</string>
-    <string name="api_error_file_required">File upload is required</string>
-    <!-- General -->
-    <string name="api_error_general_not_found">Requested resource not found</string>
-    <!-- Device -->
-    <string name="api_error_device_invalid_platform">Invalid platform</string>
-    <!-- Country -->
-    <string name="api_error_country_not_existing_id">Country not found</string>
-    <!-- Address -->
-    <string name="api_error_address_invalid_length">Invalid address length</string>
-
     <!-- Tier 3 -->
     <string name="scroll_to_top">Scroll to top</string>
     <string name="view_mode_list">List view</string>
@@ -1135,12 +1053,15 @@
     <string name="error_auth_internal_type_error">Use email and password to sign in for this account.</string>
     <string name="error_auth_invalid_confirmation_code">This code is invalid or has expired.</string>
     <string name="error_auth_invalid_google_token">Google sign-in failed. Please try again.</string>
+    <string name="error_auth_invalid_apple_token">Apple sign-in failed. Please try again.</string>
     <string name="error_auth_invalid_password_format">Password must be at least 8 characters with letters and numbers.</string>
     <string name="error_auth_invalid_reset_token">This password reset link is invalid or has expired.</string>
     <string name="error_auth_same_reset_password">Please choose a password different from your old one.</string>
     <string name="error_auth_insufficient_privileges">You don\'t have permission to do that.</string>
     <string name="error_auth_invalid_refresh_token">Your session expired. Please sign in again.</string>
     <string name="error_auth_refresh_token_reused">For your security, you\'ve been signed out everywhere.</string>
+    <string name="error_auth_current_password_invalid">Your current password is incorrect.</string>
+    <string name="error_auth_account_locked">Too many failed login attempts. The account is temporarily locked — try again in a few minutes.</string>
 
     <!-- User -->
     <string name="error_user_email_confirmed">This email is already confirmed.</string>

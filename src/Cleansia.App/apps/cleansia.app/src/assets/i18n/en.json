@@ -154,6 +154,7 @@
       "register_link": "Sign up",
       "or": "or",
       "google": "Continue with Google",
+      "apple": "Continue with Apple",
       "success": "Successfully logged in!",
       "error": "Invalid email or password",
       "email_not_confirmed": "Please confirm your email address first"
@@ -1407,6 +1408,8 @@
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
       "too_many_attempts": "Too many attempts with this code. Request a new code and try again.",
       "invalid_confirmation_code": "That confirmation code is invalid or has expired.",
+      "invalid_google_token": "Google sign-in failed. Please try again.",
+      "invalid_apple_token": "Apple sign-in failed. Please try again.",
       "invalid_password_format": "Your password doesn't meet the requirements.",
       "current_password_invalid": "Your current password is incorrect.",
       "insufficient_privileges": "You don't have permission to do that."

@@ -106,6 +106,12 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'auth.apple_type_error',
   'auth.external_type_error',
   'auth.internal_type_error',
+  // Social token verification: the customer API rejects an id_token it cannot
+  // verify. invalid_google_token is reachable from the existing Google button;
+  // invalid_apple_token ships ahead of the Apple button so the string is never
+  // the thing that is missing when it lands.
+  'auth.invalid_google_token',
+  'auth.invalid_apple_token',
   // User — register / profile
   'user.email_confirmed',
   'user.existing_email',

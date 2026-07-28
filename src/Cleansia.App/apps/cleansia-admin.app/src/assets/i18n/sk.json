@@ -2164,18 +2164,9 @@
   },
   "errors": {
     "auth": {
-      "google_type_error": "Chyba typu Google autentifikácie",
-      "internal_type_error": "Chyba typu internej autentifikácie",
-      "invalid_confirmation_code": "Neplatný potvrdzovací kód",
-      "invalid_google_token": "Neplatný Google token",
-      "invalid_apple_token": "Neplatný Apple token",
       "invalid_password_format": "Neplatný formát hesla. Heslo musí mať aspoň 8 znakov a obsahovať aspoň jedno veľké písmeno, jedno malé písmeno a jednu číslicu.",
-      "invalid_reset_token": "Neplatný alebo expirovaný token na obnovenie hesla",
-      "same_reset_password": "Nové heslo musí byť odlišné od aktuálneho hesla",
       "current_password_invalid": "Súčasné heslo nie je správne",
-      "change_password_failed": "Zmena hesla sa nepodarila",
-      "account_locked": "Príliš veľa neúspešných pokusov o prihlásenie. Účet je dočasne uzamknutý — skúste to znova o niekoľko minút.",
-      "too_many_attempts": "Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova."
+      "change_password_failed": "Zmena hesla sa nepodarila"
     },
     "common": {
       "invalid_enum_value": "Bola zadaná neplatná hodnota",
@@ -2473,6 +2464,7 @@
       "invalid_reset_token": "Neplatný alebo expirovaný token na obnovenie hesla",
       "same_reset_password": "Nové heslo musí byť odlišné od aktuálneho hesla",
       "insufficient_privileges": "Nemáte oprávnenie na prístup do administračného panela. Prihlásiť sa môžu iba administrátori a zamestnanci.",
+      "current_password_invalid": "Súčasné heslo nie je správne",
       "account_locked": "Príliš veľa neúspešných pokusov o prihlásenie. Účet je dočasne uzamknutý — skúste to znova o niekoľko minút.",
       "too_many_attempts": "Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova."
     },

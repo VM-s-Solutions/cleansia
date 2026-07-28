@@ -996,6 +996,8 @@
       "invalid_password_format": "Neplatný formát hesla",
       "invalid_reset_token": "Neplatný token pro obnovení hesla",
       "same_reset_password": "Nové heslo se shoduje se starým heslem",
+      "insufficient_privileges": "Nemáte oprávnění přistupovat k partnerské aplikaci. Přihlásit se mohou pouze zaměstnanci a administrátoři.",
+      "current_password_invalid": "Současné heslo není správné",
       "account_locked": "Příliš mnoho neúspěšných pokusů o přihlášení. Účet je dočasně uzamčen — zkuste to znovu za několik minut.",
       "too_many_attempts": "Příliš mnoho pokusů s tímto kódem. Vyžádejte si nový kód a zkuste to znovu."
     },

@@ -947,6 +947,8 @@
     <string name="error_auth_insufficient_privileges">You don\'t have permission to do that.</string>
     <string name="error_auth_invalid_refresh_token">Your session expired. Please sign in again.</string>
     <string name="error_auth_refresh_token_reused">For your security, you\'ve been signed out everywhere.</string>
+    <string name="error_auth_current_password_invalid">Your current password is incorrect.</string>
+    <string name="error_auth_account_locked">Too many failed login attempts. The account is temporarily locked — try again in a few minutes.</string>
 
     <!-- User -->
     <string name="error_user_email_confirmed">This email is already confirmed.</string>

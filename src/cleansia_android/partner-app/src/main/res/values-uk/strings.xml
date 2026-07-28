@@ -836,88 +836,6 @@
     <string name="urgency_in_hours_minutes">Через %1$dг %2$dхв</string>
     <string name="urgency_in_hours">Через %1$dг</string>
 
-    <!-- API Error Translations -->
-    <!-- Auth -->
-    <string name="api_error_auth_google_type_error">Помилка типу автентифікації Google</string>
-    <string name="api_error_auth_internal_type_error">Внутрішня помилка типу автентифікації</string>
-    <string name="api_error_auth_invalid_confirmation_code">Недійсний код підтвердження</string>
-    <string name="api_error_auth_invalid_google_token">Недійсний токен Google</string>
-    <string name="api_error_auth_invalid_password_format">Недійсний формат пароля</string>
-    <string name="api_error_auth_invalid_reset_token">Недійсний токен відновлення пароля</string>
-    <string name="api_error_auth_same_reset_password">Новий пароль збігається зі старим паролем</string>
-    <string name="api_error_auth_insufficient_privileges">Ви не маєте права виконувати цю дію</string>
-    <!-- Common -->
-    <string name="api_error_common_invalid_enum_value">Недійсне значення</string>
-    <string name="api_error_common_max_length">Перевищено максимальну довжину</string>
-    <string name="api_error_common_required">Це поле обов\'язкове</string>
-    <!-- Email -->
-    <string name="api_error_email_sending_failed">Не вдалося надіслати електронний лист. Будь ласка, спробуйте ще раз.</string>
-    <string name="api_error_email_invalid_format">Недійсний формат електронної пошти</string>
-    <string name="api_error_email_invalid_email">Недійсна адреса електронної пошти</string>
-    <!-- Order -->
-    <string name="api_error_order_cleaning_date_future">Дата прибирання повинна бути в майбутньому</string>
-    <string name="api_error_order_empty">Замовлення не може бути порожнім</string>
-    <string name="api_error_order_not_found">Замовлення не знайдено</string>
-    <string name="api_error_order_already_assigned">Це замовлення вже призначено</string>
-    <string name="api_error_order_no_available_spots">Немає вільних місць для цього замовлення</string>
-    <string name="api_error_order_employee_already_assigned">Ви вже призначені на це замовлення</string>
-    <string name="api_error_order_employee_not_assigned">Ви не призначені на це замовлення</string>
-    <string name="api_error_order_max_employees_exceeded">Перевищено максимальну кількість працівників</string>
-    <string name="api_error_order_not_in_progress">Замовлення не в процесі</string>
-    <string name="api_error_order_not_confirmed">Замовлення не підтверджено</string>
-    <string name="api_error_order_employee_already_has_order_in_progress">У Вас вже є замовлення в процесі</string>
-    <string name="api_error_order_note_content_required">Вміст нотатки обов\'язковий</string>
-    <string name="api_error_order_issue_description_required">Опис проблеми обов\'язковий</string>
-    <!-- User -->
-    <string name="api_error_user_email_confirmed">Електронна пошта вже підтверджена</string>
-    <string name="api_error_user_existing_email">Користувач з такою електронною поштою вже існує</string>
-    <string name="api_error_user_not_existing_email">Користувача з такою електронною поштою не існує</string>
-    <string name="api_error_user_not_existing_id">Користувача не знайдено</string>
-    <string name="api_error_user_not_allowed_to_update">Ви не маєте права оновлювати цього користувача</string>
-    <string name="api_error_user_existing_phone_number">Користувач з таким номером телефону вже існує</string>
-    <string name="api_error_user_not_found">Користувача не знайдено</string>
-    <!-- Employee -->
-    <string name="api_error_employee_not_found">Працівника не знайдено</string>
-    <string name="api_error_employee_not_existing_email">Працівника з такою електронною поштою не існує</string>
-    <string name="api_error_employee_not_allowed_to_update">Ви не маєте права оновлювати цього працівника</string>
-    <string name="api_error_employee_profile_incomplete">Профіль працівника не заповнений</string>
-    <string name="api_error_employee_documents_missing">Відсутні необхідні документи</string>
-    <!-- Employee Documents -->
-    <string name="api_error_employee_document_not_found">Документ не знайдено</string>
-    <string name="api_error_employee_document_unauthorized">Ви не маєте права на доступ до цього документа</string>
-    <string name="api_error_employee_document_not_owned">Цей документ Вам не належить</string>
-    <!-- Validation -->
-    <string name="api_error_validation_invalid_password">Недійсний пароль</string>
-    <string name="api_error_validation_invalid_date">Недійсна дата</string>
-    <string name="api_error_validation_date_must_be_in_past">Дата повинна бути в минулому</string>
-    <string name="api_error_validation_invalid_age">Недійсний вік</string>
-    <string name="api_error_validation_invalid_phone_number">Недійсний формат номера телефону</string>
-    <string name="api_error_validation_invalid_national_id">Недійсний формат посвідчення особи</string>
-    <string name="api_error_validation_invalid_tax_id">Недійсний формат ідентифікаційного коду</string>
-    <string name="api_error_validation_invalid_iban">Недійсний формат IBAN</string>
-    <string name="api_error_validation_invalid_zip_code">Недійсний формат поштового індексу</string>
-    <string name="api_error_validation_must_be_positive">Значення повинно бути додатнім</string>
-    <string name="api_error_validation_invalid_availability_format">Недійсний формат доступності</string>
-    <string name="api_error_validation_page_must_be_positive">Сторінка повинна бути більше 0</string>
-    <string name="api_error_validation_page_size_must_be_positive">Розмір сторінки повинен бути більше 0</string>
-    <string name="api_error_validation_page_size_exceeded">Розмір сторінки не може перевищувати 100</string>
-    <string name="api_error_validation_invalid_contract_status">Недійсний статус договору</string>
-    <!-- File -->
-    <string name="api_error_file_content_type_doesnt_match">Тип файлу не відповідає вмісту</string>
-    <string name="api_error_file_invalid_file_type">Недійсний тип файлу</string>
-    <string name="api_error_file_size_exceeded">Розмір файлу перевищує максимально допустимий ліміт</string>
-    <string name="api_error_file_size_exceeded_10mb">Розмір файлу не повинен перевищувати 10 МБ</string>
-    <string name="api_error_file_type_not_allowed">Тип файлу не дозволений</string>
-    <string name="api_error_file_required">Завантаження файлу обов\'язкове</string>
-    <!-- General -->
-    <string name="api_error_general_not_found">Запитаний ресурс не знайдено</string>
-    <!-- Device -->
-    <string name="api_error_device_invalid_platform">Недійсна платформа</string>
-    <!-- Country -->
-    <string name="api_error_country_not_existing_id">Країну не знайдено</string>
-    <!-- Address -->
-    <string name="api_error_address_invalid_length">Недійсна довжина адреси</string>
-
     <!-- Tier 3 -->
     <string name="scroll_to_top">Прокрутити вгору</string>
     <string name="view_mode_list">Список</string>
@@ -1117,12 +1035,15 @@
     <string name="error_auth_internal_type_error">Для цього акаунту увійдіть за допомогою е-пошти та пароля.</string>
     <string name="error_auth_invalid_confirmation_code">Цей код недійсний або застарілий.</string>
     <string name="error_auth_invalid_google_token">Не вдалося увійти через Google. Спробуйте ще раз.</string>
+    <string name="error_auth_invalid_apple_token">Не вдалося увійти через Apple. Спробуйте ще раз.</string>
     <string name="error_auth_invalid_password_format">Пароль має містити щонайменше 8 символів, літери та цифри.</string>
     <string name="error_auth_invalid_reset_token">Це посилання для скидання пароля недійсне або застаріле.</string>
     <string name="error_auth_same_reset_password">Виберіть пароль, що відрізняється від попереднього.</string>
     <string name="error_auth_insufficient_privileges">У вас немає прав на цю дію.</string>
     <string name="error_auth_invalid_refresh_token">Сесія закінчилася. Увійдіть, будь ласка, знову.</string>
     <string name="error_auth_refresh_token_reused">З міркувань безпеки вас було вийшло з усіх пристроїв.</string>
+    <string name="error_auth_current_password_invalid">Ваш поточний пароль неправильний.</string>
+    <string name="error_auth_account_locked">Забагато невдалих спроб входу. Акаунт тимчасово заблоковано — спробуйте ще раз за кілька хвилин.</string>
 
     <string name="error_user_email_confirmed">Цю е-пошту вже підтверджено.</string>
     <string name="error_user_existing_email">Акаунт з цією е-поштою вже існує.</string>

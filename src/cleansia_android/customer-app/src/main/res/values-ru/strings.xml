@@ -927,6 +927,8 @@
     <string name="error_auth_insufficient_privileges">У вас нет разрешения на это действие.</string>
     <string name="error_auth_invalid_refresh_token">Ваша сессия истекла. Войдите снова.</string>
     <string name="error_auth_refresh_token_reused">В целях безопасности вы вышли со всех устройств.</string>
+    <string name="error_auth_current_password_invalid">Ваш текущий пароль неверен.</string>
+    <string name="error_auth_account_locked">Слишком много неудачных попыток входа. Аккаунт временно заблокирован — попробуйте снова через несколько минут.</string>
 
     <!-- User -->
     <string name="error_user_email_confirmed">Этот email уже подтверждён.</string>

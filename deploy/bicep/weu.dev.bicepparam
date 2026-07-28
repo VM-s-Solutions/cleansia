@@ -75,6 +75,23 @@ param extraCorsOrigins = [
   'https://admin.dev.cleansia.cz'
 ]
 
+// ── Social sign-in audiences for the customer web API ────────────────────────────────────────────────
+// Both are public identifiers (they ship in the browser bundle), and both live here rather than in
+// appsettings.json so DEV and PROD cannot share an audience and so a hand-set portal value cannot be
+// wiped: the appSettings collection is replaced wholesale on every provision.
+//
+// This must stay equal to googleClientId in apps/cleansia.app/src/environments/environment.staging.ts
+// (the nx configuration DEV builds) — GoogleTokenVerifier pins one audience, so drift rejects every
+// web Google sign-in with auth.invalid_google_token.
+param googleWebClientId = '354682423254-boe1nlnb1dbd3m6a013d3nkpo2e9bgiq.apps.googleusercontent.com'
+
+// Empty until the Apple Services ID is provisioned — the verifier fails closed meanwhile, which is
+// why the Apple button is also hidden by a blank appleClientId in environment.staging.ts. Set BOTH
+// to 'cz.cleansia.customer.web' to switch web Apple sign-in on. The Services ID must be grouped under
+// the primary App ID cz.cleansia.customer, or Apple mints a different `sub` on web and existing iOS
+// users cannot reach their accounts.
+param appleWebServicesId = ''
+
 // ── Base for customer-facing links (SendGrid emails, Stripe success/cancel returns) ──────────────────
 // Must be the hostname customers authenticate on. Returning from Stripe to *.azurewebsites.net would be
 // Public-Suffix-separated from customer.dev.cleansia.cz, so the auth cookie would not be sent and the

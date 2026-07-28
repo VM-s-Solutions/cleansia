@@ -112,6 +112,49 @@ public class LoginValidatorTests
     }
 
     [Fact]
+    public async Task When_Email_Exists_But_Is_Apple_Auth_Then_Validation_Fails_With_AppleAuthTypeError()
+    {
+        // Arrange
+        var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { AuthenticationType = AuthenticationType.Apple });
+        _mockRepo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        var command = new Login.Command(user.Email, "password", true);
+
+        // Act
+        var result = await _validator.ValidateAsync(command);
+
+        // Assert
+        Assert.False(result.IsValid);
+        var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
+        Assert.Contains(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.AppleAuthTypeError && e.ErrorCode == "Email");
+        // The bug this test guards: an Apple account used to be told it signed in with Google.
+        Assert.DoesNotContain(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.GoogleAuthTypeError);
+        Assert.Empty(result.Errors.Where(e => e.PropertyName == "Password"));
+    }
+
+    [Fact]
+    public async Task When_Email_Exists_But_Auth_Type_Is_Unknown_Then_Validation_Fails_With_Neutral_ExternalAuthTypeError()
+    {
+        // Arrange — an AuthenticationType value the validator has no arm for stands in for a provider
+        // added after this test was written. It must be refused, and refused WITHOUT claiming Google or
+        // Apple: that silent inheritance is exactly what the hardcoded message used to do.
+        var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { AuthenticationType = (AuthenticationType)99 });
+        _mockRepo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        var command = new Login.Command(user.Email, "password", true);
+
+        // Act
+        var result = await _validator.ValidateAsync(command);
+
+        // Assert
+        Assert.False(result.IsValid);
+        var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
+        Assert.Contains(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.ExternalAuthTypeError && e.ErrorCode == "Email");
+        Assert.DoesNotContain(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.GoogleAuthTypeError || e.ErrorMessage == BusinessErrorMessage.AppleAuthTypeError);
+        Assert.Empty(result.Errors.Where(e => e.PropertyName == "Password"));
+    }
+
+    [Fact]
     public async Task When_Email_Exists_And_Is_Internal_But_Password_Is_Empty_Then_Validation_Fails()
     {
         // Arrange

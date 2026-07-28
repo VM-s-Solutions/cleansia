@@ -18,6 +18,12 @@ namespace Cleansia.Core.AppServices.Features.Auth.Validators;
 /// </summary>
 public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
 {
+    // The auth-type rule cannot pick its message up front: the provider is only known after the async
+    // user read inside the predicate. So the predicate hands the resolved message key to the rule
+    // through the MessageFormatter, and the rule's template is nothing but this placeholder.
+    private const string AuthTypeErrorPlaceholder = "AuthTypeError";
+    private const string AuthTypeErrorTemplate = "{" + AuthTypeErrorPlaceholder + "}";
+
     private readonly IUserRepository userRepository;
     private readonly IRefreshTokenRepository refreshTokenRepository;
     private readonly IRefreshTokenService refreshTokenService;
@@ -64,8 +70,8 @@ public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
             .MustAsync(userRepository.ExistsWithEmailIgnoringTenantAsync)
             .WithMessage(BusinessErrorMessage.NotExistingUserWithEmail)
             .WithErrorCode(emailName)
-            .MustAsync(UserAuthenticationTypeIsInternal)
-            .WithMessage(BusinessErrorMessage.GoogleAuthTypeError)
+            .MustAsync((command, _, context, cancellationToken) => UserAuthenticationTypeIsInternal(emailFunc(command), context, cancellationToken))
+            .WithMessage(AuthTypeErrorTemplate)
             .WithErrorCode(emailName);
 
         RuleFor(rememberMeSelector)
@@ -78,6 +84,42 @@ public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
     {
         var user = await userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
         return user is not null && user.AuthenticationType == AuthenticationType.Internal;
+    }
+
+    // Same gate as above — only an Internal account may sign in with a password — but on rejection it
+    // also records WHICH provider the account actually uses, so the caller is not told "you signed in
+    // with Google" when the account is an Apple account (the production bug this replaces: the message
+    // was hardcoded to Google). No new disclosure: the preceding existence rule already stops the
+    // cascade for an unknown email, so naming the provider only refines an error the caller already
+    // gets for an address that is known to exist.
+    private async Task<bool> UserAuthenticationTypeIsInternal(string email, ValidationContext<TCommand> context, CancellationToken cancellationToken)
+    {
+        var user = await userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
+        if (user is not null && user.AuthenticationType == AuthenticationType.Internal)
+        {
+            return true;
+        }
+
+        // user is null only if the account disappeared between the existence rule and this one; reuse
+        // that rule's message rather than inventing a provider for an account that is not there.
+        context.MessageFormatter.AppendArgument(
+            AuthTypeErrorPlaceholder,
+            user is null ? BusinessErrorMessage.NotExistingUserWithEmail : AuthTypeErrorMessage(user.AuthenticationType));
+
+        return false;
+    }
+
+    private static string AuthTypeErrorMessage(AuthenticationType authenticationType)
+    {
+        return authenticationType switch
+        {
+            AuthenticationType.Google => BusinessErrorMessage.GoogleAuthTypeError,
+            AuthenticationType.Apple => BusinessErrorMessage.AppleAuthTypeError,
+            // Internal never reaches here (it is the passing case), and every AuthenticationType added
+            // in future lands here too — a provider-neutral message rather than a wrong one. Adding a
+            // provider without adding its arm degrades the wording; it can never mis-name the provider.
+            _ => BusinessErrorMessage.ExternalAuthTypeError,
+        };
     }
 
     // The lockout check precedes the password check (Cascade.Stop), so a locked account never

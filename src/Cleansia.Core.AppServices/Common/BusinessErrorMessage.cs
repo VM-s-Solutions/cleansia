@@ -3,7 +3,15 @@ namespace Cleansia.Core.AppServices.Common;
 public static class BusinessErrorMessage
 {
     // Auth
+    // Provider-mismatch messages. GoogleAuthTypeError/AppleAuthTypeError/ExternalAuthTypeError are
+    // emitted by the password login when the account belongs to an external provider — each names the
+    // provider the account ACTUALLY uses. ExternalAuthTypeError is the neutral fallback: any value
+    // added to AuthenticationType later lands on it, so a new provider can never inherit Google's or
+    // Apple's wording. InternalAuthTypeError is the mirror case, emitted by the Google/Apple handlers
+    // when the colliding account is a password account.
     public const string GoogleAuthTypeError = "auth.google_type_error";
+    public const string AppleAuthTypeError = "auth.apple_type_error";
+    public const string ExternalAuthTypeError = "auth.external_type_error";
     public const string InternalAuthTypeError = "auth.internal_type_error";
     public const string InvalidConfirmationCode = "auth.invalid_confirmation_code";
     public const string InvalidGoogleUserToken = "auth.invalid_google_token";

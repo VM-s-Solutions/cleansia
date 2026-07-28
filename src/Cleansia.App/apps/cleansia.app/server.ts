@@ -101,6 +101,23 @@ app.get('/api/mapbox/geocode', (req, res) => {
     });
 });
 
+// Domain-verification files (Apple's domain association today; apple-app-site-association
+// and assetlinks.json later). These need their own mount because the general static
+// handler below sees the request path `/.well-known/…`, and `send` defaults to
+// dotfiles: 'ignore' — it rejects any path segment starting with a dot. The request then
+// falls through to the SSR catch-all and answers the Angular HTML page with a 200, which
+// the verifying party reports as "invalid file" rather than as a 404. Mounting at the
+// prefix strips the dotted segment; `dotfiles: 'allow'` keeps nested dot-paths working
+// without opening up the rest of the browser bundle.
+app.use(
+  '/.well-known',
+  express.static(resolve(browserDistFolder, '.well-known'), {
+    dotfiles: 'allow',
+    index: false,
+    redirect: false,
+  }),
+);
+
 app.use(
   express.static(browserDistFolder, {
     maxAge: '1y',

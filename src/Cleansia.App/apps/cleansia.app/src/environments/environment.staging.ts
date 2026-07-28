@@ -14,6 +14,16 @@ export const environment = {
   // JavaScript origins, otherwise GSI answers 403 "origin not allowed".
   googleClientId:
     '354682423254-boe1nlnb1dbd3m6a013d3nkpo2e9bgiq.apps.googleusercontent.com',
+  // Sign in with Apple Services ID — the WEB audience, never the iOS bundle id.
+  // MANUAL_STEP (apple-services-id-dev): the Services ID must be created under
+  // the primary App ID `cz.cleansia.customer` (an ungrouped one issues a
+  // different `sub` and locks every existing iOS user out of web sign-in), with
+  // `customer.dev.cleansia.cz` registered as a domain and
+  // `https://customer.dev.cleansia.cz/auth/apple/callback` as a return URL.
+  // Must stay equal to appleWebServicesId in deploy/bicep/weu.dev.bicepparam,
+  // which is the audience the API accepts — WebSocialAudienceConfigPinTests
+  // pins the pair. Blank it to hide the button again.
+  appleClientId: 'cz.cleansia.customer.web',
   isDevelopment: false,
   sentryDsn: '',
   bugReportUrl:

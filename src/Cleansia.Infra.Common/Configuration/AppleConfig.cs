@@ -6,4 +6,6 @@ namespace Cleansia.Infra.Common.Configuration;
 public class AppleConfig(IConfiguration configuration) : AutoBindConfig(configuration, "Apple"), IAppleConfig
 {
     public string BundleId { get; set; } = string.Empty;
+
+    public string WebServicesId { get; set; } = string.Empty;
 }

@@ -12,6 +12,11 @@ export const environment = {
   blobStorageUrl: 'http://127.0.0.1:10000/devstoreaccount1',
   googleClientId:
     '354682423254-boe1nlnb1dbd3m6a013d3nkpo2e9bgiq.apps.googleusercontent.com',
+  // Sign in with Apple Services ID. Permanently empty for local dev: Apple
+  // refuses to register `localhost` or any non-HTTPS return URL against a
+  // Services ID, so there is no client id that could work here. Empty = the
+  // Apple button is hidden; email/password and Google are unaffected.
+  appleClientId: '',
   sentryDsn: '',
   bugReportUrl: '',
   // The Mapbox token must NEVER ship in the browser bundle.

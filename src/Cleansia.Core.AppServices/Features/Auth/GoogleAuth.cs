@@ -69,10 +69,14 @@ public class GoogleAuth
                 // actually authenticates — the VERIFIED claims.Email — not the client-supplied
                 // command.Email the validator used to check. Block a Google login from binding into an
                 // existing password (Internal) account that shares this verified email.
+                // The rejection names the provider the colliding account ACTUALLY uses (the same switch
+                // the password login uses) — telling an Apple user to "sign in with your email and
+                // password" sends them to a dead end. No extra disclosure: the caller already holds a
+                // token Google minted for this verified identity.
                 if (user.AuthenticationType != AuthenticationType.Google)
                 {
                     return BusinessResult.Failure<JwtTokenResponse>(
-                        new Error(nameof(Command.Email), BusinessErrorMessage.InternalAuthTypeError));
+                        new Error(nameof(Command.Email), AuthTypeErrorMessages.For(user.AuthenticationType)));
                 }
 
                 if (!user.IsActive)

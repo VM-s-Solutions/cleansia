@@ -5,7 +5,7 @@ import {
   CustomerClient,
   ValidateReferralResponse,
 } from '@cleansia/customer-services';
-import { SnackbarService } from '@cleansia/services';
+import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
 import { provideMockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, of, throwError } from 'rxjs';
@@ -14,10 +14,16 @@ import { RegisterFacade } from './register.facade';
 describe('RegisterFacade — referral landing capture (/r/{code})', () => {
   let facade: RegisterFacade;
   let referralClient: { validate: jest.Mock };
-  let authService: { register: jest.Mock; authenticateWithGoogle: jest.Mock };
+  let authService: {
+    register: jest.Mock;
+    authenticateWithGoogle: jest.Mock;
+    authenticateWithApple: jest.Mock;
+    setSession: jest.Mock;
+  };
   let snackbar: {
     showError: jest.Mock;
     showApiError: jest.Mock;
+    showErrorTranslated: jest.Mock;
     showSuccessTranslated: jest.Mock;
   };
 
@@ -31,10 +37,13 @@ describe('RegisterFacade — referral landing capture (/r/{code})', () => {
     authService = {
       register: jest.fn().mockReturnValue(of({})),
       authenticateWithGoogle: jest.fn(),
+      authenticateWithApple: jest.fn(),
+      setSession: jest.fn(),
     };
     snackbar = {
       showError: jest.fn(),
       showApiError: jest.fn(),
+      showErrorTranslated: jest.fn(),
       showSuccessTranslated: jest.fn(),
     };
 
@@ -135,5 +144,82 @@ describe('RegisterFacade — referral landing capture (/r/{code})', () => {
       'Novák',
       'ABC12'
     );
+  });
+});
+
+describe('RegisterFacade — Sign in with Apple', () => {
+  let facade: RegisterFacade;
+  let authService: { authenticateWithApple: jest.Mock; setSession: jest.Mock };
+  let snackbar: {
+    showApiError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+  };
+  let router: { navigate: jest.Mock };
+
+  beforeEach(() => {
+    authService = { authenticateWithApple: jest.fn(), setSession: jest.fn() };
+    snackbar = {
+      showApiError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+    };
+    router = { navigate: jest.fn() };
+
+    TestBed.configureTestingModule({
+      providers: [
+        RegisterFacade,
+        provideMockStore(),
+        { provide: Router, useValue: router },
+        { provide: CustomerAuthService, useValue: authService },
+        { provide: CustomerClient, useValue: { referralClient: { validate: jest.fn() } } },
+        { provide: SnackbarService, useValue: snackbar },
+        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+      ],
+    });
+
+    facade = TestBed.inject(RegisterFacade);
+  });
+
+  it('forwards the RAW nonce and the first-authorization name untouched', () => {
+    authService.authenticateWithApple.mockReturnValue(of({}));
+
+    facade.appleRegister('id-token', 'raw-nonce', 'Jan', 'Novák');
+
+    // The server hashes this value itself — sending the hash instead fails
+    // every sign-up with a generic error, so pin the argument order.
+    expect(authService.authenticateWithApple).toHaveBeenCalledWith(
+      'id-token',
+      'raw-nonce',
+      'Jan',
+      'Novák'
+    );
+    expect(authService.setSession).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalled();
+  });
+
+  it('surfaces an Apple sign-up error under the register fallback key', () => {
+    // Bare ProblemDetails — the shape NSwag actually throws. Pinning the
+    // resolved key as well as the fallback keeps this from passing while the
+    // user is shown the generic message instead of the real reason.
+    authService.authenticateWithApple.mockReturnValue(
+      throwError(() => ({
+        detail: 'auth.invalid_apple_token',
+        errors: { IdentityToken: 'auth.invalid_apple_token' },
+      }))
+    );
+
+    facade.appleRegister('id-token', 'raw-nonce');
+
+    expect(snackbar.showApiError).toHaveBeenCalledWith(expect.anything(), 'auth.register.error');
+    const [reported] = snackbar.showApiError.mock.calls[0];
+    expect(extractApiErrorCode(reported)).toBe('auth.invalid_apple_token');
+    expect(authService.setSession).not.toHaveBeenCalled();
+  });
+
+  it('reports a popup failure that never reached the API', () => {
+    facade.appleSignInFailed();
+
+    expect(snackbar.showErrorTranslated).toHaveBeenCalledWith('api.common.error_occurred');
   });
 });

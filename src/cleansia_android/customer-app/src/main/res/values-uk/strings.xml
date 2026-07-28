@@ -916,6 +916,8 @@
     <!-- Error handling — backend business keys -->
     <!-- Auth -->
     <string name="error_auth_google_type_error">Цей обліковий запис використовує вхід через Google. Скористайтеся кнопкою Google.</string>
+    <string name="error_auth_apple_type_error">Цей обліковий запис використовує вхід через Apple. Скористайтеся кнопкою Apple.</string>
+    <string name="error_auth_external_type_error">Цей обліковий запис використовує інший спосіб входу.</string>
     <string name="error_auth_internal_type_error">Для цього облікового запису увійдіть з email і паролем.</string>
     <string name="error_auth_invalid_confirmation_code">Цей код недійсний або застарів.</string>
     <string name="error_auth_invalid_google_token">Не вдалося увійти через Google. Спробуйте знову.</string>
@@ -925,6 +927,8 @@
     <string name="error_auth_insufficient_privileges">У вас немає дозволу на цю дію.</string>
     <string name="error_auth_invalid_refresh_token">Ваша сесія завершилася. Увійдіть знову.</string>
     <string name="error_auth_refresh_token_reused">З міркувань безпеки вас вийшли з усіх пристроїв.</string>
+    <string name="error_auth_current_password_invalid">Ваш поточний пароль неправильний.</string>
+    <string name="error_auth_account_locked">Забагато невдалих спроб входу. Обліковий запис тимчасово заблоковано — спробуйте ще раз за кілька хвилин.</string>
 
     <!-- User -->
     <string name="error_user_email_confirmed">Цей email вже підтверджено.</string>

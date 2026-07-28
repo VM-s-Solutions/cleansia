@@ -154,6 +154,7 @@
       "register_link": "Zaregistrujte sa",
       "or": "alebo",
       "google": "Pokračovať cez Google",
+      "apple": "Pokračovať cez Apple",
       "success": "Úspešne prihlásený!",
       "error": "Nesprávny e-mail alebo heslo",
       "email_not_confirmed": "Najprv potvrďte svoju e-mailovú adresu"
@@ -1400,9 +1401,15 @@
   },
   "api": {
     "auth": {
+      "google_type_error": "Tento účet používa prihlásenie cez Google. Použite tlačidlo Google.",
+      "apple_type_error": "Tento účet používa prihlásenie cez Apple. Použite tlačidlo Apple.",
+      "external_type_error": "Tento účet používa iný spôsob prihlásenia.",
+      "internal_type_error": "Pre tento účet sa prihláste e-mailom a heslom.",
       "account_locked": "Príliš veľa neúspešných pokusov o prihlásenie. Účet je dočasne uzamknutý — skúste to znova o niekoľko minút.",
       "too_many_attempts": "Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova.",
       "invalid_confirmation_code": "Tento potvrdzovací kód je neplatný alebo vypršal.",
+      "invalid_google_token": "Prihlásenie cez Google sa nepodarilo. Skúste to znova.",
+      "invalid_apple_token": "Prihlásenie cez Apple sa nepodarilo. Skúste to znova.",
       "invalid_password_format": "Vaše heslo nespĺňa požiadavky.",
       "current_password_invalid": "Vaše súčasné heslo nie je správne.",
       "insufficient_privileges": "Na túto akciu nemáte oprávnenie."

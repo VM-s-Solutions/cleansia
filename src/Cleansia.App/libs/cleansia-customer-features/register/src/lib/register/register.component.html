@@ -149,11 +149,23 @@
           [loading]="loading() ?? false"
           [disabled]="facade.formGroup.invalid"
         />
-        @if (isGoogleSignInConfigured) {
+        @if (isGoogleSignInConfigured || isAppleSignInConfigured) {
           <div class="cleansia-register__divider">
             <span>{{ 'auth.login.or' | translate }}</span>
           </div>
+        }
+        @if (isGoogleSignInConfigured) {
           <div class="cleansia-register__google-btn" #googleBtn></div>
+        }
+        @if (isAppleSignInConfigured) {
+          <cleansia-button
+            [style]="'basic-button'"
+            [outlined]="true"
+            [severity]="'secondary'"
+            [icon]="'pi pi-apple'"
+            [title]="'auth.login.apple' | translate"
+            (clickFn)="signUpWithApple()"
+          />
         }
         <div>
           <span tabindex="-1">

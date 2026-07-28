@@ -105,6 +105,29 @@ param ciPrincipalId = ''
 // }
 
 // ---------------------------------------------------------------------------------------------------
+// Social sign-in audiences for the customer web API.
+//
+// Both default to empty, so web Google and Apple sign-in are OFF in prod and the verifiers fail
+// closed. That is deliberate: prod must NOT inherit dev's audiences. Leave them empty until prod has
+// its own, or a token minted against the dev environment would be accepted here.
+//
+// To turn them on, create PROD-specific identifiers — never reuse the dev ones:
+//   - Google: a new Web OAuth client whose authorised JavaScript origins are the prod frontends
+//     (https://cleansia.cz, https://www.cleansia.cz). Set the same id in environment.prod.ts, which is
+//     the nx configuration prod builds; GoogleTokenVerifier pins one audience, so the two must match.
+//   - Apple: a second Services ID (e.g. cz.cleansia.web) registered against the prod domains and
+//     return URLs, grouped under the SAME primary App ID cz.cleansia.customer — the grouping is what
+//     keeps `sub` stable, so a separate Services ID does not fragment user identity across
+//     environments. Its domain-association file differs from dev's, so the /.well-known asset has to
+//     become per-configuration before this is switched on.
+//
+// Both are prerequisites of the customDomains block above, which is still commented out.
+// ---------------------------------------------------------------------------------------------------
+
+// param googleWebClientId = ''
+// param appleWebServicesId = ''
+
+// ---------------------------------------------------------------------------------------------------
 // Resource tags.
 // ---------------------------------------------------------------------------------------------------
 

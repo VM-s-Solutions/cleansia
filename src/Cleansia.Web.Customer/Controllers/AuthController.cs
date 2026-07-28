@@ -55,6 +55,24 @@ public class AuthController(
         return HandleTokenIssuingResult(result);
     }
 
+    // The browser flow's counterpart to the mobile host's AppleAuth. Same command and handler; the only
+    // difference is that this host answers with HttpOnly cookies + a CSRF token rather than a bare body
+    // token, so it must go through HandleTokenIssuingResult. The audience the identity token is checked
+    // against is this host's own (Apple:WebServicesId, never the native bundle id) — see appsettings.json.
+    // Deliberately NOT mirrored onto the partner/admin hosts: User.Profile defaults to Customer and
+    // CreateWithApple never sets it, so exposing this there would let anyone self-provision customer rows.
+    [AllowAnonymous]
+    [HttpPost("AppleAuth")]
+    [ProducesResponseType(typeof(JwtTokenResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> AppleAuth([FromBody] AppleAuth.Command command)
+    {
+        var result = await Mediator.Send(command);
+
+        return HandleTokenIssuingResult(result);
+    }
+
     [AllowAnonymous]
     [HttpPut("ConfirmUserEmail")]
     [ProducesResponseType(typeof(JwtTokenResponse), StatusCodes.Status200OK, "application/json")]

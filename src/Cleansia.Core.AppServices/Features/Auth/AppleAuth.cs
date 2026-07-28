@@ -108,10 +108,14 @@ public class AppleAuth
                 // shares this verified email (the verified-email-collision takeover Google's hardening
                 // closed). A sub-matched account keeps its stored email untouched: rewriting it would
                 // collide with the (TenantId, Email) unique index and silently merge two accounts.
+                // The rejection names the provider the colliding account ACTUALLY uses (the same switch
+                // the password login uses) — telling a Google user to "sign in with your email and
+                // password" sends them to a dead end. No extra disclosure: the caller already holds a
+                // token Apple minted for this verified identity.
                 if (user.AuthenticationType != AuthenticationType.Apple)
                 {
                     return BusinessResult.Failure<JwtTokenResponse>(
-                        new Error(nameof(Command.IdentityToken), BusinessErrorMessage.InternalAuthTypeError));
+                        new Error(nameof(Command.IdentityToken), AuthTypeErrorMessages.For(user.AuthenticationType)));
                 }
 
                 if (!user.IsActive)

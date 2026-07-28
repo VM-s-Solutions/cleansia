@@ -936,6 +936,8 @@
     <!-- Error handling — backend business keys. Naming: error_ + key.replace('.', '_') -->
     <!-- Auth -->
     <string name="error_auth_google_type_error">This account uses Google sign-in. Use the Google button.</string>
+    <string name="error_auth_apple_type_error">This account uses Sign in with Apple. Use the Apple button.</string>
+    <string name="error_auth_external_type_error">This account uses a different sign-in method.</string>
     <string name="error_auth_internal_type_error">Use email and password to sign in for this account.</string>
     <string name="error_auth_invalid_confirmation_code">This code is invalid or has expired.</string>
     <string name="error_auth_invalid_google_token">Google sign-in failed. Please try again.</string>
@@ -945,6 +947,8 @@
     <string name="error_auth_insufficient_privileges">You don\'t have permission to do that.</string>
     <string name="error_auth_invalid_refresh_token">Your session expired. Please sign in again.</string>
     <string name="error_auth_refresh_token_reused">For your security, you\'ve been signed out everywhere.</string>
+    <string name="error_auth_current_password_invalid">Your current password is incorrect.</string>
+    <string name="error_auth_account_locked">Too many failed login attempts. The account is temporarily locked — try again in a few minutes.</string>
 
     <!-- User -->
     <string name="error_user_email_confirmed">This email is already confirmed.</string>

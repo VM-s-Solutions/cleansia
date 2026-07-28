@@ -986,14 +986,18 @@
   },
   "api": {
     "auth": {
-      "google_type_error": "Google authentication type error",
-      "internal_type_error": "Internal authentication type error",
+      "google_type_error": "This account uses Google sign-in. Use the Google button.",
+      "apple_type_error": "This account uses Sign in with Apple. Use the Apple button.",
+      "external_type_error": "This account uses a different sign-in method.",
+      "internal_type_error": "Use email and password to sign in for this account.",
       "invalid_confirmation_code": "Invalid confirmation code",
       "invalid_google_token": "Invalid Google token",
       "invalid_apple_token": "Invalid Apple token",
       "invalid_password_format": "Invalid password format",
       "invalid_reset_token": "Invalid password reset token",
       "same_reset_password": "New password matches the old password",
+      "insufficient_privileges": "You do not have permission to access the partner app. Only employees and administrators can log in.",
+      "current_password_invalid": "The current password is incorrect",
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
       "too_many_attempts": "Too many attempts with this code. Request a new code and try again."
     },

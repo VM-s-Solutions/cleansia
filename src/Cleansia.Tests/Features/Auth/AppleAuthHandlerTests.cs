@@ -24,8 +24,9 @@ namespace Cleansia.Tests.Features.Auth;
 ///   - a forged/unverifiable token (verifier returns null) fails with
 ///     <see cref="BusinessErrorMessage.InvalidAppleUserToken"/> and creates no <see cref="User"/>/<see cref="Cart"/>;
 ///   - an existing account whose verified email collides but whose AuthenticationType is NOT Apple
-///     (covers BOTH Internal AND Google) is rejected with <see cref="BusinessErrorMessage.InternalAuthTypeError"/>
-///     — closing the verified-email-collision takeover for Apple exactly as Google's hardening did;
+///     (covers BOTH Internal AND Google) is rejected — closing the verified-email-collision takeover for
+///     Apple exactly as Google's hardening did — and the rejection message names the provider that
+///     account ACTUALLY uses, so a Google user is not told to use a password they never set;
 ///   - provisioning happens ONLY when <c>claims.EmailVerified</c> (stricter than Google today);
 ///   - a RETURNING user resolves by the verified Apple <c>sub</c> even when Apple omits the email claim
 ///     (Apple guarantees the email only on the FIRST authorization), and the sub-matched account keeps
@@ -191,10 +192,14 @@ public class AppleAuthHandlerTests
     // The verified-email-collision takeover guard runs in the HANDLER against the VERIFIED claims.Email.
     // An Apple login MUST NOT bind into an existing account whose AuthenticationType is not Apple. This
     // covers BOTH the Internal (password) and the Google collision.
+    // Two independent properties, and only the second one is new: the account is NEVER bound (no token,
+    // no user, no cart — the S1 property, unchanged), and the message names the provider that account
+    // ACTUALLY uses instead of always saying "use your email and password".
     [Theory]
-    [InlineData(AuthenticationType.Internal)]
-    [InlineData(AuthenticationType.Google)]
-    public async Task Existing_NonApple_Account_With_Verified_Email_Is_Rejected_With_InternalAuthTypeError(AuthenticationType collidingType)
+    [InlineData(AuthenticationType.Internal, BusinessErrorMessage.InternalAuthTypeError)]
+    [InlineData(AuthenticationType.Google, BusinessErrorMessage.GoogleAuthTypeError)]
+    public async Task Existing_NonApple_Account_With_Verified_Email_Is_Rejected_Naming_Its_Provider(
+        AuthenticationType collidingType, string expectedMessage)
     {
         var existing = UserMockFactory.Generate(new UserMockFactory.UserPartial
         {
@@ -211,7 +216,7 @@ public class AppleAuthHandlerTests
         var result = await CreateHandler().Handle(Command(), CancellationToken.None);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(BusinessErrorMessage.InternalAuthTypeError, result.Error!.Message);
+        Assert.Equal(expectedMessage, result.Error!.Message);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
         _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
@@ -298,11 +303,13 @@ public class AppleAuthHandlerTests
     }
 
     // S1: the account-type collision guard runs on whichever account was resolved — including the
-    // AppleId path — so an Apple login can never bind into an Internal/Google account.
+    // AppleId path — so an Apple login can never bind into an Internal/Google account. The message
+    // names the resolved account's real provider on this path too.
     [Theory]
-    [InlineData(AuthenticationType.Internal)]
-    [InlineData(AuthenticationType.Google)]
-    public async Task Account_Found_By_AppleId_With_NonApple_AuthenticationType_Is_Rejected(AuthenticationType collidingType)
+    [InlineData(AuthenticationType.Internal, BusinessErrorMessage.InternalAuthTypeError)]
+    [InlineData(AuthenticationType.Google, BusinessErrorMessage.GoogleAuthTypeError)]
+    public async Task Account_Found_By_AppleId_With_NonApple_AuthenticationType_Is_Rejected(
+        AuthenticationType collidingType, string expectedMessage)
     {
         const string appleSub = "apple-sub-collide";
         var existing = UserMockFactory.Generate(new UserMockFactory.UserPartial
@@ -320,7 +327,7 @@ public class AppleAuthHandlerTests
         var result = await CreateHandler().Handle(Command(), CancellationToken.None);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(BusinessErrorMessage.InternalAuthTypeError, result.Error!.Message);
+        Assert.Equal(expectedMessage, result.Error!.Message);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 

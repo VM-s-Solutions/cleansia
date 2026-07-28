@@ -97,6 +97,21 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'auth.too_many_attempts',
   'auth.current_password_invalid',
   'auth.insufficient_privileges',
+  // Provider mismatch: password login against an account that belongs to a
+  // social provider. LoginValidator names the provider the account ACTUALLY
+  // uses, so all four arms are reachable from the customer login form and each
+  // needs its own string — external_type_error is the neutral fallback that any
+  // AuthenticationType added later lands on.
+  'auth.google_type_error',
+  'auth.apple_type_error',
+  'auth.external_type_error',
+  'auth.internal_type_error',
+  // Social token verification: the customer API rejects an id_token it cannot
+  // verify. invalid_google_token is reachable from the existing Google button;
+  // invalid_apple_token ships ahead of the Apple button so the string is never
+  // the thing that is missing when it lands.
+  'auth.invalid_google_token',
+  'auth.invalid_apple_token',
   // User — register / profile
   'user.email_confirmed',
   'user.existing_email',

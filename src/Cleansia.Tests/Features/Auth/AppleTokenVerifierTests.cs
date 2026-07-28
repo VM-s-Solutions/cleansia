@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Infra.Common.Configuration.Interfaces;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Protocols;
@@ -19,8 +20,14 @@ namespace Cleansia.Tests.Features.Auth;
 /// prove the handler fails closed when the verifier returns null; they cannot prove the verifier itself
 /// pins RS256/aud/iss, binds the nonce, or carries no environment bypass. These cases close that gap
 /// with NO required network dependency:
-///   - audience enforced / fail-closed: an empty/whitespace <c>BundleId</c> makes the required audience
-///     unsatisfiable, so the verifier returns <c>null</c> before any JWKS fetch.
+///   - audience enforced / fail-closed: a host that configures NEITHER the native <c>BundleId</c> nor the
+///     web <c>WebServicesId</c> has an unsatisfiable audience check, so the verifier returns <c>null</c>
+///     before any JWKS fetch. The guard keys on the computed list being empty, not on <c>BundleId</c>
+///     alone — the customer web host deliberately configures only <c>WebServicesId</c> and must verify.
+///   - the audience list is an exact-match OR-list, so a host that lists one audience rejects the other.
+///     That is the whole of the native/web isolation (a cookie-issuing host accepting native-audience
+///     tokens would let a captured iOS token mint a browser session), and it is pinned hermetically here
+///     plus per-host in <c>AppleAudienceIsolationConfigPinTests</c>.
 ///   - fail-closed end-to-end: even with a configured bundle id, a forged/garbage token yields
 ///     <c>null</c> and never throws — whether the JWKS fetch fails (outage ⇒ fail-closed) or the token
 ///     is rejected, the caller can never receive claims for an unverifiable token.
@@ -42,34 +49,63 @@ namespace Cleansia.Tests.Features.Auth;
 /// </summary>
 public class AppleTokenVerifierTests
 {
-    private static AppleTokenVerifier CreateVerifier(string bundleId)
+    private const string NativeAudience = "cz.cleansia.customer";
+    private const string WebAudience = "cz.cleansia.customer.web";
+
+    // Both audiences are always stubbed explicitly — a Moq default would make it ambiguous whether an
+    // "unconfigured" case is testing the guard or an unstubbed member.
+    private static AppleTokenVerifier CreateVerifier(
+        string bundleId, string webServicesId = "", ILogger<AppleTokenVerifier>? logger = null)
     {
         var config = new Mock<IAppleConfig>();
         config.SetupGet(c => c.BundleId).Returns(bundleId);
-        return new AppleTokenVerifier(config.Object, NullLogger<AppleTokenVerifier>.Instance);
+        config.SetupGet(c => c.WebServicesId).Returns(webServicesId);
+        return new AppleTokenVerifier(config.Object, logger ?? NullLogger<AppleTokenVerifier>.Instance);
     }
 
-    // Fail closed when no audience is configured: an empty bundle id leaves the aud check unconstrained,
-    // so the verifier MUST reject (and never touch the network) rather than trust an unverifiable token.
+    // Fail closed when the host configures NO audience at all: an empty list leaves the aud check
+    // unconstrained, so the verifier MUST reject (and never touch the network) rather than trust an
+    // unverifiable token.
     [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    public async Task Unconfigured_BundleId_Fails_Closed_Returns_Null(string bundleId)
+    [InlineData("", "")]
+    [InlineData("   ", "   ")]
+    public async Task No_Configured_Audience_Fails_Closed_Returns_Null(string bundleId, string webServicesId)
     {
-        var verifier = CreateVerifier(bundleId);
+        var verifier = CreateVerifier(bundleId, webServicesId);
 
         var result = await verifier.VerifyAsync("any-token", "any-raw-nonce", CancellationToken.None);
 
         Assert.Null(result);
     }
 
-    // Fail-closed end-to-end: a forged/garbage token is rejected even when a bundle id IS configured.
+    // The guard keys on the COMPUTED list being empty, not on BundleId being set. The customer web host
+    // configures WebServicesId alone (it must never accept the native audience — it issues session
+    // cookies), so a BundleId-only guard would fail every web sign-in closed with no way to configure
+    // out of it. Observable without the network: the unsatisfiable-audience guard is the verifier's only
+    // LogError, so a run that reaches validation logs no Error at all.
+    [Theory]
+    [InlineData(NativeAudience, "")]
+    [InlineData("", WebAudience)]
+    public async Task A_Single_Configured_Audience_Reaches_Validation_Instead_Of_The_FailClosed_Guard(
+        string bundleId, string webServicesId)
+    {
+        var logEntries = new List<(LogLevel Level, string Message)>();
+        var verifier = CreateVerifier(bundleId, webServicesId, new CapturingLogger<AppleTokenVerifier>(logEntries));
+
+        var result = await verifier.VerifyAsync("not-a-real-apple-identity-token", "any-raw-nonce", CancellationToken.None);
+
+        // Still fails closed — the token is garbage — but for the right reason.
+        Assert.Null(result);
+        Assert.DoesNotContain(logEntries, entry => entry.Level == LogLevel.Error);
+    }
+
+    // Fail-closed end-to-end: a forged/garbage token is rejected even when an audience IS configured.
     // The verifier returns null and never throws — whether the JWKS fetch fails (offline ⇒ fail-closed)
     // or the token is rejected against the fetched keys, no claims are ever returned.
     [Fact]
     public async Task Forged_Token_With_Configured_Audience_Fails_Closed_Returns_Null()
     {
-        var verifier = CreateVerifier("cz.cleansia.customer");
+        var verifier = CreateVerifier(NativeAudience);
 
         var result = await verifier.VerifyAsync("not-a-real-apple-identity-token", "any-raw-nonce", CancellationToken.None);
 
@@ -105,7 +141,9 @@ public class AppleTokenVerifierTests
         Assert.Contains("https://appleid.apple.com", source);
         Assert.Contains("ValidIssuer", source);
         Assert.Contains("ValidAudience", source);
+        Assert.Contains("ValidAudiences", source);
         Assert.Contains("BundleId", source);
+        Assert.Contains("WebServicesId", source);
         Assert.Contains("nonce", source);
         Assert.Contains("ToHexStringLower", source);
         Assert.DoesNotContain("IsDevelopment", source);
@@ -182,6 +220,64 @@ public class AppleTokenVerifierTests
         });
 
         Assert.True(result.IsValid, result.Exception?.GetType().Name);
+    }
+
+    // ValidAudiences is an exact-match OR-list, which is what makes the per-host audience config a real
+    // isolation boundary rather than a label: a WEB-audience token validates only where WebServicesId is
+    // listed, and a host that lists the native bundle id alone rejects it (and, symmetrically, a captured
+    // NATIVE token is rejected by the web host that lists only the Services ID — the property that stops
+    // a stolen iOS token from minting a browser session cookie). Proven hermetically against a locally
+    // signed RS256 token, with the same wiring the production verifier builds.
+    [Theory]
+    [InlineData(new[] { NativeAudience, WebAudience }, true)]
+    [InlineData(new[] { WebAudience }, true)]
+    [InlineData(new[] { NativeAudience }, false)]
+    public async Task ValidAudiences_Accepts_A_Token_Only_When_Its_Audience_Is_Listed(
+        string[] configuredAudiences, bool expectedValid)
+    {
+        using var rsa = RSA.Create(2048);
+        var configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
+            StubDocumentRetriever.DiscoveryAddress,
+            new OpenIdConnectConfigurationRetriever(),
+            new StubDocumentRetriever(rsa));
+
+        var token = new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
+        {
+            Issuer = StubDocumentRetriever.Issuer,
+            Audience = WebAudience,
+            Expires = DateTime.UtcNow.AddMinutes(5),
+            SigningCredentials = new SigningCredentials(
+                new RsaSecurityKey(rsa) { KeyId = StubDocumentRetriever.KeyId },
+                SecurityAlgorithms.RsaSha256)
+        });
+
+        var result = await new JsonWebTokenHandler().ValidateTokenAsync(token, new TokenValidationParameters
+        {
+            ValidIssuer = StubDocumentRetriever.Issuer,
+            ValidateIssuer = true,
+            ValidAudiences = configuredAudiences,
+            ValidateAudience = true,
+            ConfigurationManager = configurationManager,
+            ValidateIssuerSigningKey = true,
+            ValidAlgorithms = [SecurityAlgorithms.RsaSha256],
+            ValidateLifetime = true,
+            RequireExpirationTime = true,
+            RequireSignedTokens = true
+        });
+
+        Assert.Equal(expectedValid, result.IsValid);
+        if (!expectedValid)
+        {
+            Assert.IsType<SecurityTokenInvalidAudienceException>(result.Exception);
+        }
+    }
+
+    private sealed class CapturingLogger<T>(List<(LogLevel Level, string Message)> entries) : ILogger<T>
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            => entries.Add((logLevel, formatter(state, exception)));
     }
 
     private sealed class StubDocumentRetriever(RSA rsa) : IDocumentRetriever

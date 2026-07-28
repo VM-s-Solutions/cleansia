@@ -154,6 +154,7 @@
       "register_link": "Zaregistrujte se",
       "or": "nebo",
       "google": "Pokračovat přes Google",
+      "apple": "Pokračovat přes Apple",
       "success": "Úspěšně přihlášeno!",
       "error": "Neplatný email nebo heslo",
       "email_not_confirmed": "Nejprve prosím potvrďte svůj email"
@@ -1400,9 +1401,15 @@
   },
   "api": {
     "auth": {
+      "google_type_error": "Tento účet používá přihlášení přes Google. Použijte tlačítko Google.",
+      "apple_type_error": "Tento účet používá přihlášení přes Apple. Použijte tlačítko Apple.",
+      "external_type_error": "Tento účet používá jiný způsob přihlášení.",
+      "internal_type_error": "Pro tento účet se přihlaste e-mailem a heslem.",
       "account_locked": "Příliš mnoho neúspěšných pokusů o přihlášení. Účet je dočasně uzamčen — zkuste to znovu za několik minut.",
       "too_many_attempts": "Příliš mnoho pokusů s tímto kódem. Vyžádejte si nový kód a zkuste to znovu.",
       "invalid_confirmation_code": "Tento potvrzovací kód je neplatný nebo vypršel.",
+      "invalid_google_token": "Přihlášení přes Google se nezdařilo. Zkuste to znovu.",
+      "invalid_apple_token": "Přihlášení přes Apple se nezdařilo. Zkuste to znovu.",
       "invalid_password_format": "Vaše heslo nesplňuje požadavky.",
       "current_password_invalid": "Vaše stávající heslo není správné.",
       "insufficient_privileges": "K této akci nemáte oprávnění."

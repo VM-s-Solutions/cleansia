@@ -110,8 +110,31 @@ for the customer web host was found under the name
 `customer.dev.cleansia.cz-api-cleansia-customer-mobile-weu-dev`. Any name Bicep picks therefore risks a
 Conflict that fails the entire release, because every deploy job declares `needs: provision`.
 
-Full origins including scheme, e.g. [ '"'"'https://admin.dev.cleansia.cz'"'"' ].''')
+Full origins including scheme, e.g. [ 'https://admin.dev.cleansia.cz' ].''')
 param extraCorsOrigins string[] = []
+
+@description('''Google OAuth **web** client id for the customer web API's token verification.
+
+Per-environment on purpose. GoogleTokenVerifier pins a single audience, so this must be the client id
+that THIS environment's browser bundle uses (apps/cleansia.app/src/environments/environment.*.ts) —
+any drift rejects every web Google sign-in with auth.invalid_google_token. It is also a DIFFERENT
+client from the mobile host's native one, whose tokens must not be accepted here.
+
+Public identifier, not a secret: it ships inside the browser bundle either way, so it belongs in the
+parameter file rather than Key Vault. Empty disables web Google sign-in (fails closed).''')
+param googleWebClientId string = ''
+
+@description('''Sign in with Apple **Services ID** for the customer web API's token verification.
+
+This is the WEB audience. Never put the native bundle id here: the customer web API issues HttpOnly
+session cookies, so accepting the native audience would let a captured iOS (identityToken, rawNonce)
+pair POSTed to it mint a browser session. The mobile host carries the bundle id and this host does
+not — AppleAudienceIsolationConfigPinTests pins both directions.
+
+Per-environment, because a Services ID is registered against specific domains and return URLs. Public
+identifier, same reasoning as googleWebClientId. Empty disables web Apple sign-in (fails closed),
+which is the correct state until the Services ID is provisioned.''')
+param appleWebServicesId string = ''
 
 @description('''Base URL for customer-facing links — SendGrid emails and Stripe success/cancel returns.
 Set this when the customer web app is served from a custom hostname that Bicep does not bind. Leaving
@@ -390,6 +413,16 @@ var browserCorsOrigins = concat([
 // behavior change.
 var corsOriginsAppSettings = empty(customFrontendOrigins) ? {} : toObject(range(0, length(browserCorsOrigins)), i => 'CorsOrigins__${i}', i => browserCorsOrigins[i])
 
+// Social sign-in audiences for the CUSTOMER WEB api only — the host that issues browser session
+// cookies. Each key is omitted entirely when its parameter is empty, so an unset provider keeps the
+// blank value committed in appsettings.json and the verifier fails closed, rather than being handed
+// an empty app setting. Note the deliberate asymmetry with the mobile host: this one must never
+// receive Apple__BundleId (see the appleWebServicesId parameter).
+var customerWebAuthSettings = union(
+  empty(googleWebClientId) ? {} : { Google__ClientId: googleWebClientId },
+  empty(appleWebServicesId) ? {} : { Apple__WebServicesId: appleWebServicesId }
+)
+
 // App settings shared by every API host: DB + Storage + JWT + SendGrid + Sentry + Mapbox Key Vault
 // references, plus the (non-secret) App Insights connection string. The `__` -> `:` App Service
 // mapping means the app reads its existing config keys with no code change (ADR-0015 D4).
@@ -532,7 +565,7 @@ module apiAppServices 'modules/appService.bicep' = [
       // union() with {} is a no-op, so each host receives exactly the blocks its flags select: Stripe
       // for the payment initiators, the app-level CORS override for browser hosts (empty until
       // customDomains adds frontend origins — see corsOriginsAppSettings).
-      appSettings: union(apiBaseSettings, fiscalSettings, host.needsStripe ? union(stripeSettings, { Stripe__WebhookSecret: kvRef(keyVaultUri, host.webhookSecretName) }) : {}, host.browserFacing ? corsOriginsAppSettings : {})
+      appSettings: union(apiBaseSettings, fiscalSettings, host.needsStripe ? union(stripeSettings, { Stripe__WebhookSecret: kvRef(keyVaultUri, host.webhookSecretName) }) : {}, host.browserFacing ? corsOriginsAppSettings : {}, host.audience == 'customer' ? customerWebAuthSettings : {})
       corsAllowedOrigins: host.browserFacing ? browserCorsOrigins : []
       httpsOnly: true
       // Prod (S1) keeps the hosts warm; dev (B2) keeps the cost posture — an idle host may unload.

@@ -2164,18 +2164,9 @@
   },
   "errors": {
     "auth": {
-      "google_type_error": "Google authentication type error",
-      "internal_type_error": "Internal authentication type error",
-      "invalid_confirmation_code": "Invalid confirmation code",
-      "invalid_google_token": "Invalid Google token",
-      "invalid_apple_token": "Invalid Apple token",
       "invalid_password_format": "Invalid password format. Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.",
-      "invalid_reset_token": "Invalid or expired password reset token",
-      "same_reset_password": "New password must be different from the current password",
       "current_password_invalid": "The current password is incorrect",
-      "change_password_failed": "Failed to change the password",
-      "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
-      "too_many_attempts": "Too many attempts with this code. Request a new code and try again."
+      "change_password_failed": "Failed to change the password"
     },
     "common": {
       "invalid_enum_value": "Invalid value provided",
@@ -2462,8 +2453,10 @@
   },
   "api": {
     "auth": {
-      "google_type_error": "Google authentication type error",
-      "internal_type_error": "Internal authentication type error",
+      "google_type_error": "This account uses Google sign-in. Use the Google button.",
+      "apple_type_error": "This account uses Sign in with Apple. Use the Apple button.",
+      "external_type_error": "This account uses a different sign-in method.",
+      "internal_type_error": "Use email and password to sign in for this account.",
       "invalid_confirmation_code": "Invalid confirmation code",
       "invalid_google_token": "Invalid Google token",
       "invalid_apple_token": "Invalid Apple token",
@@ -2471,6 +2464,7 @@
       "invalid_reset_token": "Invalid or expired password reset token",
       "same_reset_password": "New password must be different from the current password",
       "insufficient_privileges": "You do not have permission to access the admin panel. Only administrators and employees can log in.",
+      "current_password_invalid": "The current password is incorrect",
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
       "too_many_attempts": "Too many attempts with this code. Request a new code and try again."
     },

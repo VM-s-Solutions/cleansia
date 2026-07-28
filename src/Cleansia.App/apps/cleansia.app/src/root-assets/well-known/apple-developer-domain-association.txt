@@ -1,0 +1,6 @@
+PLACEHOLDER — NOT the real Apple domain-association file.
+
+Replace this whole file, byte for byte, with the apple-developer-domain-association.txt
+downloaded from the Apple Developer portal (Identifiers > the Cleansia Customer Web
+Services ID > Sign In with Apple > Configure > Download), then redeploy BEFORE clicking
+Verify. See README.md next to this file.

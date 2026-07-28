@@ -91,4 +91,50 @@ describe('SnackbarService.extractApiErrorMessage', () => {
       })
     ).toBe(translated);
   });
+
+  // The validation arm of CleansiaApiController puts the sentinel in `detail`
+  // and the provider key only in `errors`; before the key won, the login screen
+  // showed 'A validation problem occurred.' whenever this path beat the HTTP
+  // interceptor to the snackbar.
+  it('translates the provider key from errors instead of the validation sentinel', () => {
+    const translated = 'This account signs in with Apple';
+    const translate = TestBed.inject(TranslateService);
+    jest
+      .spyOn(translate, 'instant')
+      .mockImplementation((key: string | string[]) =>
+        key === 'api.auth.apple_type_error' ? translated : (key as string)
+      );
+
+    expect(
+      service.extractApiErrorMessage({
+        result: {
+          detail: 'A validation problem occurred.',
+          title: 'Validation Error',
+          errors: { Email: 'auth.apple_type_error' },
+        },
+      })
+    ).toBe(translated);
+  });
+
+  // The auth arm repeats the key in both places, so the new precedence must not
+  // change what that surface renders.
+  it('translates the auth key when detail and errors carry the same value', () => {
+    const translated = 'This account signs in with Google';
+    const translate = TestBed.inject(TranslateService);
+    jest
+      .spyOn(translate, 'instant')
+      .mockImplementation((key: string | string[]) =>
+        key === 'api.auth.google_type_error' ? translated : (key as string)
+      );
+
+    expect(
+      service.extractApiErrorMessage({
+        result: {
+          detail: 'auth.google_type_error',
+          title: 'Unauthorized',
+          errors: { IdentityToken: 'auth.google_type_error' },
+        },
+      })
+    ).toBe(translated);
+  });
 });

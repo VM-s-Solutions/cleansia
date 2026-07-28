@@ -916,6 +916,8 @@
     <!-- Error handling — backend business keys -->
     <!-- Auth -->
     <string name="error_auth_google_type_error">Tento účet používa prihlásenie cez Google. Použite tlačidlo Google.</string>
+    <string name="error_auth_apple_type_error">Tento účet používa prihlásenie cez Apple. Použite tlačidlo Apple.</string>
+    <string name="error_auth_external_type_error">Tento účet používa iný spôsob prihlásenia.</string>
     <string name="error_auth_internal_type_error">Pre tento účet sa prihláste e-mailom a heslom.</string>
     <string name="error_auth_invalid_confirmation_code">Tento kód je neplatný alebo vypršal.</string>
     <string name="error_auth_invalid_google_token">Prihlásenie cez Google sa nepodarilo. Skúste to znova.</string>
@@ -925,6 +927,8 @@
     <string name="error_auth_insufficient_privileges">Nemáte oprávnenie na túto akciu.</string>
     <string name="error_auth_invalid_refresh_token">Vaša relácia vypršala. Prihláste sa znova.</string>
     <string name="error_auth_refresh_token_reused">Z bezpečnostných dôvodov ste boli odhlásení zo všetkých zariadení.</string>
+    <string name="error_auth_current_password_invalid">Vaše súčasné heslo nie je správne.</string>
+    <string name="error_auth_account_locked">Príliš veľa neúspešných pokusov o prihlásenie. Účet je dočasne uzamknutý — skúste to znova o niekoľko minút.</string>
 
     <!-- User -->
     <string name="error_user_email_confirmed">Tento e-mail je už potvrdený.</string>

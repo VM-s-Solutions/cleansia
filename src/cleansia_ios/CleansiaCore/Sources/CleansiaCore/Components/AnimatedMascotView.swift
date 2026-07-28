@@ -299,6 +299,15 @@ private struct AnimatedImageView: UIViewRepresentable {
     }
 }
 
+/// What drives the playhead: `CADisplayLink` in production, a stub under test. Everything the view
+/// asks of the link is here, so a test can assert that playback stopped without waiting on a run loop.
+protocol MascotTicker: AnyObject {
+    var isPaused: Bool { get set }
+    func invalidate()
+}
+
+extension CADisplayLink: MascotTicker {}
+
 /// Plays a growing frame buffer off a `CADisplayLink`.
 ///
 /// `UIImageView.animationImages` can't do this: it owns its own timeline, so every appended chunk
@@ -316,20 +325,34 @@ final class MascotAnimationView: UIImageView {
     private var isComplete = false
     private var loop = true
     private var playhead = AnimatedMascotPlayback.Playhead()
-    private var displayLink: CADisplayLink?
+    private var ticker: MascotTicker?
+
+    /// The playhead's clock. Every timestamp playback compares against comes from here or from the
+    /// ticker, so a test can replay a frame sequence over literal times instead of racing the run loop.
+    var currentTime: () -> TimeInterval = CACurrentMediaTime
+
+    /// Builds the ticker for a given view. The view is a PARAMETER rather than a capture so the default
+    /// below stays a context-free closure that cannot retain the view it drives — the whole point of
+    /// `DisplayLinkProxy`.
+    var makeTicker: (MascotAnimationView) -> MascotTicker = { view in
+        let link = CADisplayLink(target: DisplayLinkProxy(view), selector: #selector(DisplayLinkProxy.tick))
+        link.preferredFrameRateRange = .default
+        link.add(to: .main, forMode: .common)
+        return link
+    }
 
     private var isPlaying: Bool {
-        displayLink.map { !$0.isPaused } ?? false
+        ticker.map { !$0.isPaused } ?? false
     }
 
     /// Start over: a new mascot (or a new view) drops the old buffer and playhead.
     func prepare(poster: UIImage?, loop: Bool) {
-        displayLink?.isPaused = true
+        ticker?.isPaused = true
         frames = []
         delays = []
         isComplete = false
         self.loop = loop
-        playhead = AnimatedMascotPlayback.Playhead(frameStart: CACurrentMediaTime())
+        playhead = AnimatedMascotPlayback.Playhead(frameStart: currentTime())
         image = poster
     }
 
@@ -345,21 +368,21 @@ final class MascotAnimationView: UIImageView {
     }
 
     func teardown() {
-        displayLink?.invalidate()
-        displayLink = nil
+        ticker?.invalidate()
+        ticker = nil
     }
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
         guard window != nil else {
-            displayLink?.isPaused = true
+            ticker?.isPaused = true
             return
         }
         resumeIfNeeded()
     }
 
     deinit {
-        displayLink?.invalidate()
+        ticker?.invalidate()
     }
 
     private func resumeIfNeeded() {
@@ -369,21 +392,19 @@ final class MascotAnimationView: UIImageView {
             isAnimating: isPlaying,
             isFinished: playhead.isFinished
         ) else { return }
-        playhead.frameStart = CACurrentMediaTime()
-        if let displayLink {
-            displayLink.isPaused = false
+        playhead.frameStart = currentTime()
+        if let ticker {
+            ticker.isPaused = false
             return
         }
-        let link = CADisplayLink(target: DisplayLinkProxy(self), selector: #selector(DisplayLinkProxy.tick))
-        link.preferredFrameRateRange = .default
-        link.add(to: .main, forMode: .common)
-        displayLink = link
+        ticker = makeTicker(self)
     }
 
-    fileprivate func tick(_ link: CADisplayLink) {
+    /// One tick of the ticker's clock.
+    func step(now: TimeInterval) {
         let next = AnimatedMascotPlayback.advance(
             playhead,
-            now: link.timestamp,
+            now: now,
             delays: delays,
             isComplete: isComplete,
             loop: loop
@@ -392,7 +413,7 @@ final class MascotAnimationView: UIImageView {
         let moved = next.index != playhead.index
         playhead = next
         if next.isFinished {
-            link.isPaused = true
+            ticker?.isPaused = true
             image = frames.last
             return
         }
@@ -410,6 +431,6 @@ private final class DisplayLinkProxy {
     }
 
     @objc func tick(_ link: CADisplayLink) {
-        view?.tick(link)
+        view?.step(now: link.timestamp)
     }
 }

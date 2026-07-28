@@ -1400,6 +1400,10 @@
   },
   "api": {
     "auth": {
+      "google_type_error": "Tento účet používá přihlášení přes Google. Použijte tlačítko Google.",
+      "apple_type_error": "Tento účet používá přihlášení přes Apple. Použijte tlačítko Apple.",
+      "external_type_error": "Tento účet používá jiný způsob přihlášení.",
+      "internal_type_error": "Pro tento účet se přihlaste e-mailem a heslem.",
       "account_locked": "Příliš mnoho neúspěšných pokusů o přihlášení. Účet je dočasně uzamčen — zkuste to znovu za několik minut.",
       "too_many_attempts": "Příliš mnoho pokusů s tímto kódem. Vyžádejte si nový kód a zkuste to znovu.",
       "invalid_confirmation_code": "Tento potvrzovací kód je neplatný nebo vypršel.",

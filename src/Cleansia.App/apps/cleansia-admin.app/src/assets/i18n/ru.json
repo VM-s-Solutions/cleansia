@@ -2462,8 +2462,10 @@
   },
   "api": {
     "auth": {
-      "google_type_error": "Ошибка типа аутентификации Google",
-      "internal_type_error": "Ошибка типа внутренней аутентификации",
+      "google_type_error": "Эта учётная запись использует вход через Google. Используйте кнопку Google.",
+      "apple_type_error": "Эта учётная запись использует вход через Apple. Используйте кнопку Apple.",
+      "external_type_error": "Эта учётная запись использует другой способ входа.",
+      "internal_type_error": "Для этой учётной записи войдите по email и паролем.",
       "invalid_confirmation_code": "Недействительный код подтверждения",
       "invalid_google_token": "Недействительный токен Google",
       "invalid_apple_token": "Недействительный токен Apple",

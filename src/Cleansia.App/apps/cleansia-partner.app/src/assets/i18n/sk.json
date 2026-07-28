@@ -986,8 +986,10 @@
   },
   "api": {
     "auth": {
-      "google_type_error": "Chyba typu Google autentifikácie",
-      "internal_type_error": "Chyba typu internej autentifikácie",
+      "google_type_error": "Tento účet používa prihlásenie cez Google. Použite tlačidlo Google.",
+      "apple_type_error": "Tento účet používa prihlásenie cez Apple. Použite tlačidlo Apple.",
+      "external_type_error": "Tento účet používa iný spôsob prihlásenia.",
+      "internal_type_error": "Pre tento účet sa prihláste e-mailom a heslom.",
       "invalid_confirmation_code": "Neplatný potvrdzovací kód",
       "invalid_google_token": "Neplatný Google token",
       "invalid_apple_token": "Neplatný Apple token",

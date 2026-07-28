@@ -1112,6 +1112,8 @@
     <string name="error_common_invalid_enum_value">Неприпустимий вибір.</string>
 
     <string name="error_auth_google_type_error">Цей акаунт використовує вхід через Google. Скористайтеся кнопкою Google.</string>
+    <string name="error_auth_apple_type_error">Цей акаунт використовує вхід через Apple. Скористайтеся кнопкою Apple.</string>
+    <string name="error_auth_external_type_error">Цей акаунт використовує інший спосіб входу.</string>
     <string name="error_auth_internal_type_error">Для цього акаунту увійдіть за допомогою е-пошти та пароля.</string>
     <string name="error_auth_invalid_confirmation_code">Цей код недійсний або застарілий.</string>
     <string name="error_auth_invalid_google_token">Не вдалося увійти через Google. Спробуйте ще раз.</string>

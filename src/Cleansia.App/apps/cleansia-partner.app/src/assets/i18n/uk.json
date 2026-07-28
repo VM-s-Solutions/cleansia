@@ -986,8 +986,10 @@
   },
   "api": {
     "auth": {
-      "google_type_error": "Помилка типу автентифікації Google",
-      "internal_type_error": "Помилка типу внутрішньої автентифікації",
+      "google_type_error": "Цей обліковий запис використовує вхід через Google. Скористайтеся кнопкою Google.",
+      "apple_type_error": "Цей обліковий запис використовує вхід через Apple. Скористайтеся кнопкою Apple.",
+      "external_type_error": "Цей обліковий запис використовує інший спосіб входу.",
+      "internal_type_error": "Для цього облікового запису увійдіть з email і паролем.",
       "invalid_confirmation_code": "Недійсний код підтвердження",
       "invalid_google_token": "Недійсний токен Google",
       "invalid_apple_token": "Недійсний токен Apple",

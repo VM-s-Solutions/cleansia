@@ -1400,6 +1400,10 @@
   },
   "api": {
     "auth": {
+      "google_type_error": "This account uses Google sign-in. Use the Google button.",
+      "apple_type_error": "This account uses Sign in with Apple. Use the Apple button.",
+      "external_type_error": "This account uses a different sign-in method.",
+      "internal_type_error": "Use email and password to sign in for this account.",
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
       "too_many_attempts": "Too many attempts with this code. Request a new code and try again.",
       "invalid_confirmation_code": "That confirmation code is invalid or has expired.",

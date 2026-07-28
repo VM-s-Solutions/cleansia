@@ -176,6 +176,76 @@
         }
       }
     },
+    "error.auth.apple_type_error" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento účet používá přihlášení přes Apple. Použijte tlačítko Apple."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This account uses Sign in with Apple. Use the Apple button."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эта учётная запись использует вход через Apple. Используйте кнопку Apple."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento účet používa prihlásenie cez Apple. Použite tlačidlo Apple."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей обліковий запис використовує вхід через Apple. Скористайтеся кнопкою Apple."
+          }
+        }
+      }
+    },
+    "error.auth.external_type_error" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento účet používá jiný způsob přihlášení."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This account uses a different sign-in method."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эта учётная запись использует другой способ входа."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento účet používa iný spôsob prihlásenia."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей обліковий запис використовує інший спосіб входу."
+          }
+        }
+      }
+    },
     "error.auth.google_type_error" : {
       "extractionState" : "stale",
       "localizations" : {

@@ -49,6 +49,17 @@ export const DEFAULT_SNACKBAR_ERROR_MAPPINGS: SnackbarErrorMappings = {
   countrynotserviced: 'api.service_area.country_not_serviced',
   countryrequired: 'api.service_area.country_required',
   citynotserviced: 'api.service_area.city_not_serviced',
+  // Provider mismatch on password login — the backend names the provider the
+  // account actually uses ('auth.google_type_error', 'auth.apple_type_error',
+  // the neutral 'auth.external_type_error', and the mirror case
+  // 'auth.internal_type_error'). The login facades report through
+  // `showApiError`, which looks up this map and otherwise prints the raw key,
+  // so without these entries the login screen shows 'auth.apple_type_error'
+  // verbatim. The HTTP interceptor resolves the same keys under `api.` itself.
+  authgoogletypeerror: 'api.auth.google_type_error',
+  authappletypeerror: 'api.auth.apple_type_error',
+  authexternaltypeerror: 'api.auth.external_type_error',
+  authinternaltypeerror: 'api.auth.internal_type_error',
 };
 
 @Injectable({

@@ -916,6 +916,8 @@
     <!-- Error handling — backend business keys -->
     <!-- Auth -->
     <string name="error_auth_google_type_error">Эта учётная запись использует вход через Google. Используйте кнопку Google.</string>
+    <string name="error_auth_apple_type_error">Эта учётная запись использует вход через Apple. Используйте кнопку Apple.</string>
+    <string name="error_auth_external_type_error">Эта учётная запись использует другой способ входа.</string>
     <string name="error_auth_internal_type_error">Для этой учётной записи войдите по email и паролю.</string>
     <string name="error_auth_invalid_confirmation_code">Этот код недействителен или истёк.</string>
     <string name="error_auth_invalid_google_token">Не удалось войти через Google. Попробуйте снова.</string>

@@ -1129,6 +1129,8 @@
     <string name="error_common_invalid_enum_value">Neplatná volba.</string>
 
     <string name="error_auth_google_type_error">Tento účet používá přihlášení přes Google. Použijte tlačítko Google.</string>
+    <string name="error_auth_apple_type_error">Tento účet používá přihlášení přes Apple. Použijte tlačítko Apple.</string>
+    <string name="error_auth_external_type_error">Tento účet používá jiný způsob přihlášení.</string>
     <string name="error_auth_internal_type_error">Pro tento účet použijte e-mail a heslo.</string>
     <string name="error_auth_invalid_confirmation_code">Tento kód je neplatný nebo vypršel.</string>
     <string name="error_auth_invalid_google_token">Přihlášení přes Google selhalo. Zkuste to znovu.</string>

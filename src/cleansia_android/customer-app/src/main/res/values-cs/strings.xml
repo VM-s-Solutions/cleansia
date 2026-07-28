@@ -919,6 +919,8 @@
     <!-- Error handling — backend business keys -->
     <!-- Auth -->
     <string name="error_auth_google_type_error">Tento účet používá přihlášení přes Google. Použijte tlačítko Google.</string>
+    <string name="error_auth_apple_type_error">Tento účet používá přihlášení přes Apple. Použijte tlačítko Apple.</string>
+    <string name="error_auth_external_type_error">Tento účet používá jiný způsob přihlášení.</string>
     <string name="error_auth_internal_type_error">Pro tento účet se přihlaste e-mailem a heslem.</string>
     <string name="error_auth_invalid_confirmation_code">Tento kód je neplatný nebo vypršel.</string>
     <string name="error_auth_invalid_google_token">Přihlášení přes Google se nezdařilo. Zkuste to znovu.</string>

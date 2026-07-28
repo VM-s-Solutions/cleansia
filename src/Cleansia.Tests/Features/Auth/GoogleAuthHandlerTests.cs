@@ -28,6 +28,9 @@ namespace Cleansia.Tests.Features.Auth;
 ///     <see cref="BusinessErrorMessage.InvalidGoogleUserToken"/> and creates no <see cref="User"/>/<see cref="Cart"/>;
 ///   - the legitimate flow is preserved (known active user → token; unknown email → provision
 ///     from verified claims);
+///   - an existing account whose verified email collides but whose AuthenticationType is NOT Google
+///     (covers BOTH Internal AND Apple) is rejected, and the rejection names the provider that account
+///     ACTUALLY uses — an Apple user has no password, so "use email and password" is a dead end;
 ///   - provisioning happens ONLY when <c>claims.EmailVerified</c> (parity with the AppleAuth gate —
 ///     an unverified-email Google token provisions NOTHING).
 /// Written red → green per knowledge/testing.md (predates the handler rewrite).
@@ -199,13 +202,20 @@ public class GoogleAuthHandlerTests
     // (S1): the AuthenticationType guard now runs in the HANDLER against the VERIFIED
     // claims.Email (it used to run in the validator against the attacker-controlled command.Email, so a
     // Google login whose verified email collided with an Internal/password account got a JWT for it).
-    // An existing Internal-type user with the verified email MUST be rejected — no token, no provisioning.
-    [Fact]
-    public async Task Existing_Internal_Account_With_Verified_Email_Is_Rejected_With_InternalAuthTypeError()
+    // An existing user with the verified email whose type is not Google MUST be rejected — no token, no
+    // provisioning — and that holds for the Apple collision as much as the Internal one.
+    // Two independent properties, and only the second is new: the account is NEVER bound, and the
+    // message names the provider that account ACTUALLY uses rather than always saying "email and
+    // password" (which is a dead end for an Apple account, since it has no password to offer).
+    [Theory]
+    [InlineData(AuthenticationType.Internal, BusinessErrorMessage.InternalAuthTypeError)]
+    [InlineData(AuthenticationType.Apple, BusinessErrorMessage.AppleAuthTypeError)]
+    public async Task Existing_NonGoogle_Account_With_Verified_Email_Is_Rejected_Naming_Its_Provider(
+        AuthenticationType collidingType, string expectedMessage)
     {
         var existing = UserMockFactory.Generate(new UserMockFactory.UserPartial
         {
-            AuthenticationType = AuthenticationType.Internal
+            AuthenticationType = collidingType
         });
         existing.IsActive = true;
         _verifier
@@ -218,8 +228,8 @@ public class GoogleAuthHandlerTests
         var result = await CreateHandler().Handle(CommandWith(existing.Email, "any-google-id"), CancellationToken.None);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(BusinessErrorMessage.InternalAuthTypeError, result.Error!.Message);
-        // No JWT issued for the Internal account, and nothing provisioned.
+        Assert.Equal(expectedMessage, result.Error!.Message);
+        // No JWT issued for the colliding account, and nothing provisioned.
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
         _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);

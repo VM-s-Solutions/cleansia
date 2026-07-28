@@ -104,22 +104,9 @@ public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
         // that rule's message rather than inventing a provider for an account that is not there.
         context.MessageFormatter.AppendArgument(
             AuthTypeErrorPlaceholder,
-            user is null ? BusinessErrorMessage.NotExistingUserWithEmail : AuthTypeErrorMessage(user.AuthenticationType));
+            user is null ? BusinessErrorMessage.NotExistingUserWithEmail : AuthTypeErrorMessages.For(user.AuthenticationType));
 
         return false;
-    }
-
-    private static string AuthTypeErrorMessage(AuthenticationType authenticationType)
-    {
-        return authenticationType switch
-        {
-            AuthenticationType.Google => BusinessErrorMessage.GoogleAuthTypeError,
-            AuthenticationType.Apple => BusinessErrorMessage.AppleAuthTypeError,
-            // Internal never reaches here (it is the passing case), and every AuthenticationType added
-            // in future lands here too — a provider-neutral message rather than a wrong one. Adding a
-            // provider without adding its arm degrades the wording; it can never mis-name the provider.
-            _ => BusinessErrorMessage.ExternalAuthTypeError,
-        };
     }
 
     // The lockout check precedes the password check (Cascade.Stop), so a locked account never

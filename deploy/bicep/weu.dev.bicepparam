@@ -85,12 +85,11 @@ param extraCorsOrigins = [
 // web Google sign-in with auth.invalid_google_token.
 param googleWebClientId = '354682423254-boe1nlnb1dbd3m6a013d3nkpo2e9bgiq.apps.googleusercontent.com'
 
-// Empty until the Apple Services ID is provisioned — the verifier fails closed meanwhile, which is
-// why the Apple button is also hidden by a blank appleClientId in environment.staging.ts. Set BOTH
-// to 'cz.cleansia.customer.web' to switch web Apple sign-in on. The Services ID must be grouped under
-// the primary App ID cz.cleansia.customer, or Apple mints a different `sub` on web and existing iOS
-// users cannot reach their accounts.
-param appleWebServicesId = ''
+// Must equal appleClientId in environment.staging.ts — AppleTokenVerifier accepts only the audiences
+// its host lists, so drift rejects every web sign-in with auth.invalid_apple_token. The Services ID
+// is grouped under the primary App ID cz.cleansia.customer; that grouping is what keeps `sub` stable,
+// so an iOS user reaches the same account on web rather than a freshly created one.
+param appleWebServicesId = 'cz.cleansia.customer.web'
 
 // ── Base for customer-facing links (SendGrid emails, Stripe success/cancel returns) ──────────────────
 // Must be the hostname customers authenticate on. Returning from Stripe to *.azurewebsites.net would be

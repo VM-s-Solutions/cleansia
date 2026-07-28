@@ -19,12 +19,11 @@ export const environment = {
   // the primary App ID `cz.cleansia.customer` (an ungrouped one issues a
   // different `sub` and locks every existing iOS user out of web sign-in), with
   // `customer.dev.cleansia.cz` registered as a domain and
-  // `https://customer.dev.cleansia.cz/auth/apple/callback` as a return URL, and
-  // the domain-association file verified. Until all of that is done Apple
-  // answers `invalid_client`, so this stays BLANK on purpose: an empty value
-  // hides the button entirely, which beats shipping one that always fails.
-  // Set it to 'cz.cleansia.customer.web' once the portal work is complete.
-  appleClientId: '',
+  // `https://customer.dev.cleansia.cz/auth/apple/callback` as a return URL.
+  // Must stay equal to appleWebServicesId in deploy/bicep/weu.dev.bicepparam,
+  // which is the audience the API accepts — WebSocialAudienceConfigPinTests
+  // pins the pair. Blank it to hide the button again.
+  appleClientId: 'cz.cleansia.customer.web',
   isDevelopment: false,
   sentryDsn: '',
   bugReportUrl:

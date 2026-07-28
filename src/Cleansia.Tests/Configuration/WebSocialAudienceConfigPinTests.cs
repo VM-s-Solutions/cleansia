@@ -45,6 +45,23 @@ public class WebSocialAudienceConfigPinTests
     }
 
     /// <summary>
+    /// Same failure mode as Google, one layer over: AppleTokenVerifier accepts only the audiences its
+    /// host lists, so a Services ID in the bundle that the API does not list rejects every web sign-in
+    /// with auth.invalid_apple_token — and the verifier logs only the exception type, so the reason for
+    /// a 100% failure rate is not visible from either side.
+    /// </summary>
+    [Theory]
+    [InlineData("weu.dev.bicepparam", "environment.staging.ts")]
+    [InlineData("weu.prod.bicepparam", "environment.prod.ts")]
+    public void Apple_Services_Id_Matches_The_Browser_Bundle(string parameterFile, string environmentFile)
+    {
+        var deployed = BicepParam(parameterFile, "appleWebServicesId");
+        var browser = EnvironmentValue(environmentFile, "appleClientId");
+
+        Assert.Equal(browser, deployed);
+    }
+
+    /// <summary>
     /// The shared base file must stay blank so an environment that forgets its parameter fails closed
     /// instead of silently falling back to whatever the last environment committed.
     /// </summary>

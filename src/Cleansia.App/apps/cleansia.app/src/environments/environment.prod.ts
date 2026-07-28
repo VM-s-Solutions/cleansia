@@ -12,6 +12,13 @@ export const environment = {
   // → Authorized JavaScript origins, then paste the client id here. Filling
   // this in before the origin is authorised shows a button that 403s.
   googleClientId: '',
+  // Sign in with Apple Services ID — the WEB audience, never the iOS bundle id.
+  // Empty = the Apple button is hidden, exactly like googleClientId above.
+  // MANUAL_STEP (apple-services-id-prod): create the production Services ID
+  // under the primary App ID `cz.cleansia.customer`, register the production
+  // domain + return URL, verify the domain-association file, then paste the
+  // identifier here. Filling this in first shows a button that `invalid_client`s.
+  appleClientId: '',
   isDevelopment: false,
   sentryDsn: '',
   bugReportUrl: '',

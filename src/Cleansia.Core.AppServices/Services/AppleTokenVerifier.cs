@@ -16,12 +16,13 @@ namespace Cleansia.Core.AppServices.Services;
 /// bypass). The signature is validated with the vetted <see cref="JsonWebTokenHandler"/> against Apple's
 /// JWKS (discovered from Apple's OIDC metadata document and cached via
 /// <see cref="ConfigurationManager{T}"/>, refreshed on an unknown <c>kid</c>), pinned to RS256 (alg:none
-/// and HS256/symmetric key-confusion are rejected). The audience is pinned to the configured native
-/// bundle id, the issuer to <c>https://appleid.apple.com</c>, and the lifetime (exp/iat) is enforced.
-/// The request nonce is bound server-side
+/// and HS256/symmetric key-confusion are rejected). The audience is pinned to an exact-match OR-list of
+/// the audiences THIS host configures — the native bundle id and/or the web Services ID, never a wildcard
+/// — the issuer to <c>https://appleid.apple.com</c>, and the lifetime (exp/iat) is enforced. The request
+/// nonce is bound server-side
 /// (<c>SHA256(rawNonce) == token.nonce</c>) to defeat replay. On ANY failure (forged/expired/wrong-aud/
-/// wrong-iss signature, unknown kid, JWKS-fetch failure, nonce mismatch, or a missing/empty bundle id
-/// that makes the audience check unsatisfiable) it returns <c>null</c> so the caller fails closed with a
+/// wrong-iss signature, unknown kid, JWKS-fetch failure, nonce mismatch, or no configured audience at all
+/// which makes the audience check unsatisfiable) it returns <c>null</c> so the caller fails closed with a
 /// uniform rejection (S4 — no enumeration leak).
 /// </summary>
 public class AppleTokenVerifier : IAppleTokenVerifier
@@ -50,13 +51,22 @@ public class AppleTokenVerifier : IAppleTokenVerifier
 
     public async Task<AppleVerifiedClaims?> VerifyAsync(string identityToken, string rawNonce, CancellationToken cancellationToken)
     {
-        // Fail closed when no audience is configured: an empty/whitespace bundle id would otherwise leave
-        // the aud check effectively unconstrained.
-        if (string.IsNullOrWhiteSpace(_appleConfig.BundleId))
+        // Each host accepts only the audiences it configures, and that set is the whole of the isolation
+        // between the native and the web flow: a cookie-issuing web host that also listed the native
+        // BundleId would let a captured iOS (identityToken, rawNonce) pair mint a browser session. So the
+        // list is built from whatever THIS host set, and a blank entry contributes nothing rather than
+        // widening the check.
+        string[] audiences = [.. new[] { _appleConfig.BundleId, _appleConfig.WebServicesId }
+            .Where(audience => !string.IsNullOrWhiteSpace(audience))];
+
+        // Fail closed when the host configured neither: an empty audience list would otherwise leave the
+        // aud check effectively unconstrained.
+        if (audiences.Length == 0)
         {
             _logger.LogError(
-                "Apple identity-token verification failed closed: no Apple BundleId is configured, so the " +
-                "audience check is unsatisfiable. Set Apple:BundleId for this host.");
+                "Apple identity-token verification failed closed: no Apple audience is configured, so the " +
+                "audience check is unsatisfiable. Set Apple:BundleId (native hosts) or Apple:WebServicesId " +
+                "(customer web host) — never both on one host.");
             return null;
         }
 
@@ -72,7 +82,9 @@ public class AppleTokenVerifier : IAppleTokenVerifier
             {
                 ValidIssuer = AppleIssuer,
                 ValidateIssuer = true,
-                ValidAudience = _appleConfig.BundleId,
+                // An exact-string OR-list, not a widening: no wildcard, no substring match, and
+                // ValidateAudience stays on — an audience outside the list is still rejected.
+                ValidAudiences = audiences,
                 ValidateAudience = true,
                 ConfigurationManager = _configurationManager,
                 ValidateIssuerSigningKey = true,

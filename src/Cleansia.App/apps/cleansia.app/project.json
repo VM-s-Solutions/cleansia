@@ -31,6 +31,14 @@
             "glob": "robots.txt",
             "input": "apps/cleansia.app/src/root-assets",
             "output": "/"
+          },
+          {
+            "glob": "**/*",
+            "input": "apps/cleansia.app/src/root-assets/well-known",
+            "output": "/.well-known",
+            "ignore": [
+              "**/*.md"
+            ]
           }
         ],
         "styles": [

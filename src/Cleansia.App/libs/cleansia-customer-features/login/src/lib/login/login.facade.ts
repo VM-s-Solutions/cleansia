@@ -80,6 +80,44 @@ export class LoginFacade extends UnsubscribeControlDirective {
       });
   }
 
+  /**
+   * `rawNonce` is the raw value whose SHA-256 Apple echoed into the identity
+   * token — the server recomputes the hash to bind the two. Unlike Google we
+   * decode nothing client-side: the handler binds identity from the verified
+   * token, and Apple only ever sends the name on the first authorization.
+   */
+  appleLogin(
+    identityToken: string,
+    rawNonce: string,
+    firstName?: string,
+    lastName?: string
+  ): void {
+    this.authService
+      .authenticateWithApple(identityToken, rawNonce, firstName, lastName)
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe({
+        next: (authResult: JwtTokenResponse) => {
+          this.authService.setSession(authResult);
+          this.guestOrderService.clear();
+          this.store.dispatch(loadCustomerUser());
+          this.snackbarService.showSuccessTranslated('auth.login.success');
+          this.router.navigate([CleansiaCustomerRoute.ORDERS]);
+        },
+        error: (err) => {
+          this.snackbarService.showApiError(err, 'auth.login.error');
+        },
+      });
+  }
+
+  /**
+   * Apple's popup failed for a reason that never reached our API (script
+   * blocked, `invalid_client`, popup suppressed). Without this the button just
+   * does nothing, which is indistinguishable from a hung page.
+   */
+  appleSignInFailed(): void {
+    this.snackbarService.showErrorTranslated('api.common.error_occurred');
+  }
+
   private createFormGroup() {
     return this.fb.nonNullable.group({
       email: ['', [Validators.required, Validators.email]],

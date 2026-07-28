@@ -157,6 +157,43 @@ export class RegisterFacade extends UnsubscribeControlDirective {
       });
   }
 
+  /**
+   * `rawNonce` is the raw value whose SHA-256 Apple echoed into the identity
+   * token — the server recomputes the hash to bind the two. Nothing is decoded
+   * client-side: the handler binds identity from the verified token, and Apple
+   * sends the name only on the first authorization, which is exactly here.
+   */
+  appleRegister(
+    identityToken: string,
+    rawNonce: string,
+    firstName?: string,
+    lastName?: string
+  ): void {
+    this.authService
+      .authenticateWithApple(identityToken, rawNonce, firstName, lastName)
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe({
+        next: (authResult: JwtTokenResponse) => {
+          this.authService.setSession(authResult);
+          this.store.dispatch(loadCustomerUser());
+          this.snackbarService.showSuccessTranslated('auth.login.success');
+          this.router.navigate([CleansiaCustomerRoute.ORDERS]);
+        },
+        error: (err) => {
+          this.snackbarService.showApiError(err, 'auth.register.error');
+        },
+      });
+  }
+
+  /**
+   * Apple's popup failed for a reason that never reached our API (script
+   * blocked, `invalid_client`, popup suppressed). Without this the button just
+   * does nothing, which is indistinguishable from a hung page.
+   */
+  appleSignInFailed(): void {
+    this.snackbarService.showErrorTranslated('api.common.error_occurred');
+  }
+
   private createFormGroup(): FormGroup {
     const passwordPattern = /^(?=.*[a-zA-Z])(?=.*\d).{8,}$/;
 

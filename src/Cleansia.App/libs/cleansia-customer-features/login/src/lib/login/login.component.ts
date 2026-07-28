@@ -10,7 +10,17 @@ import {
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
-import { CleansiaCustomerRoute, GOOGLE_CLIENT_ID } from '@cleansia/services';
+import {
+  APPLE_CLIENT_ID,
+  APPLE_ID_SCRIPT_URL,
+  APPLE_REDIRECT_PATH,
+  AppleNonce,
+  CleansiaCustomerRoute,
+  createAppleNonce,
+  getAppleIdApi,
+  GOOGLE_CLIENT_ID,
+  isAppleSignInCancelled,
+} from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import { LoginFacade } from './login.facade';
 
@@ -51,11 +61,25 @@ export class LoginComponent implements AfterViewInit {
    */
   protected readonly isGoogleSignInConfigured = !!this.googleClientId;
 
+  /**
+   * Deployment-specific Apple Services ID (never the iOS bundle id), supplied
+   * from the app's environment. Empty means Apple sign-in is not configured.
+   */
+  private readonly appleClientId = (inject(APPLE_CLIENT_ID) ?? '').trim();
+
+  /**
+   * Gates the whole Apple block, same contract as the Google one above: without
+   * a Services ID Apple answers `invalid_client`, so the button would be a
+   * control that can never sign anyone in.
+   */
+  protected readonly isAppleSignInConfigured = !!this.appleClientId;
+
   googleBtnRef = viewChild<ElementRef>('googleBtn');
 
   ngAfterViewInit() {
-    if (!this.isBrowser || !this.isGoogleSignInConfigured) return;
-    this.initGoogleSignIn();
+    if (!this.isBrowser) return;
+    if (this.isGoogleSignInConfigured) this.initGoogleSignIn();
+    if (this.isAppleSignInConfigured) void this.initAppleSignIn();
   }
 
   private _gsiRetries = 0;
@@ -105,5 +129,77 @@ export class LoginComponent implements AfterViewInit {
         shape: 'rectangular',
       });
     }
+  }
+
+  private _appleRetries = 0;
+  private readonly _appleMaxRetries = 20;
+  private appleNonce: AppleNonce | null = null;
+
+  private loadAppleIdScript(): void {
+    if (document.querySelector('script[src*="appleid.auth.js"]')) return;
+    const script = document.createElement('script');
+    script.src = APPLE_ID_SCRIPT_URL;
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+  }
+
+  private async initAppleSignIn(): Promise<void> {
+    this.loadAppleIdScript();
+    const appleId = getAppleIdApi();
+    if (!appleId) {
+      if (this._appleRetries < this._appleMaxRetries) {
+        this._appleRetries++;
+        setTimeout(() => void this.initAppleSignIn(), 300);
+      }
+      return;
+    }
+
+    // The nonce is minted here, ahead of any click: hashing is async and the
+    // click handler must reach `signIn()` without awaiting (see below).
+    const nonce = await createAppleNonce();
+    this.appleNonce = nonce;
+    appleId.auth.init({
+      clientId: this.appleClientId,
+      scope: 'name email',
+      redirectURI: window.location.origin + APPLE_REDIRECT_PATH,
+      // Apple gets the HASH and echoes it into the token's nonce claim; the raw
+      // value below goes to our API, which recomputes the hash to bind the two.
+      nonce: nonce.hashed,
+      usePopup: true,
+    });
+  }
+
+  protected signInWithApple(): void {
+    const appleId = getAppleIdApi();
+    const nonce = this.appleNonce;
+    if (!appleId || !nonce) {
+      this.facade.appleSignInFailed();
+      return;
+    }
+
+    // Synchronous from the click handler on purpose — Safari blocks a popup
+    // opened after an await, so nothing may be awaited above this line.
+    appleId.auth
+      .signIn()
+      .then((response) => {
+        this.zone.run(() =>
+          this.facade.appleLogin(
+            response.authorization.id_token,
+            nonce.raw,
+            response.user?.name?.firstName,
+            response.user?.name?.lastName
+          )
+        );
+      })
+      .catch((error: unknown) => {
+        if (!isAppleSignInCancelled(error)) {
+          this.zone.run(() => this.facade.appleSignInFailed());
+        }
+      })
+      .finally(() => {
+        // Bind the next attempt to its own nonce.
+        void this.initAppleSignIn();
+      });
   }
 }

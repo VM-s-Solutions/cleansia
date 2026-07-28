@@ -14,6 +14,17 @@ export const environment = {
   // JavaScript origins, otherwise GSI answers 403 "origin not allowed".
   googleClientId:
     '354682423254-boe1nlnb1dbd3m6a013d3nkpo2e9bgiq.apps.googleusercontent.com',
+  // Sign in with Apple Services ID — the WEB audience, never the iOS bundle id.
+  // MANUAL_STEP (apple-services-id-dev): the Services ID must be created under
+  // the primary App ID `cz.cleansia.customer` (an ungrouped one issues a
+  // different `sub` and locks every existing iOS user out of web sign-in), with
+  // `customer.dev.cleansia.cz` registered as a domain and
+  // `https://customer.dev.cleansia.cz/auth/apple/callback` as a return URL, and
+  // the domain-association file verified. Until all of that is done Apple
+  // answers `invalid_client`, so this stays BLANK on purpose: an empty value
+  // hides the button entirely, which beats shipping one that always fails.
+  // Set it to 'cz.cleansia.customer.web' once the portal work is complete.
+  appleClientId: '',
   isDevelopment: false,
   sentryDsn: '',
   bugReportUrl:

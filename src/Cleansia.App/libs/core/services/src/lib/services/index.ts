@@ -1,4 +1,5 @@
 export * from './api-error';
+export * from './apple-sign-in';
 export * from './country-phone-code.model';
 export * from './country-phone-code.service';
 export * from './dialog.service';

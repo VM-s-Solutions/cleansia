@@ -31,6 +31,7 @@ import {
 } from '@cleansia/customer-services';
 import { customerEffects, customerReducers } from '@cleansia/customer-stores';
 import {
+  APPLE_CLIENT_ID,
   AUTH_COOKIE_KEYS,
   COMMON_INTERCEPTORS_FN,
   GOOGLE_CLIENT_ID,
@@ -114,6 +115,13 @@ export const appConfig: ApplicationConfig = {
     {
       provide: GOOGLE_CLIENT_ID,
       useValue: (environment.googleClientId ?? '').trim(),
+    },
+    // Same contract as the GSI id above, and the same reason for the empty
+    // default — Apple gates on the domains registered against the Services ID,
+    // so a value that is right for one deployment is a dead button on another.
+    {
+      provide: APPLE_CLIENT_ID,
+      useValue: (environment.appleClientId ?? '').trim(),
     },
     {
       provide: AUTH_COOKIE_KEYS,

@@ -2904,6 +2904,111 @@
         }
       }
     },
+    "error.order.card_payment_already_settled" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tato zakázka již byla zaplacena kartou. Nevybírejte hotovost — stav platby byl aktualizován."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This order was already paid by card. Don't collect cash — the payment status has been updated."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот заказ уже оплачен картой. Не берите наличные — статус оплаты обновлён."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Táto zákazka už bola zaplatená kartou. Nevyberajte hotovosť — stav platby bol aktualizovaný."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це замовлення вже оплачено карткою. Не беріть готівку — статус оплати оновлено."
+          }
+        }
+      }
+    },
+    "error.order.card_payment_in_progress" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platba kartou za tuto zakázku se stále zpracovává. Chvíli počkejte a zkuste to znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A card payment for this order is still processing. Wait a moment and try again."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оплата картой за этот заказ ещё обрабатывается. Подождите немного и попробуйте снова."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platba kartou za túto zákazku sa stále spracúva. Chvíľu počkajte a skúste to znova."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оплата карткою за це замовлення ще обробляється. Зачекайте хвилинку та спробуйте ще раз."
+          }
+        }
+      }
+    },
+    "error.order.card_payment_unverified" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nepodařilo se ověřit platbu kartou za tuto zakázku. Zatím nevybírejte hotovost — zkuste to za chvíli znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't check this order's card payment. Don't collect cash yet — try again in a moment."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось проверить оплату картой за этот заказ. Пока не берите наличные — попробуйте снова через минуту."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nepodarilo sa overiť platbu kartou za túto zákazku. Zatiaľ nevyberajte hotovosť — skúste to o chvíľu znova."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося перевірити оплату карткою за це замовлення. Поки не беріть готівку — спробуйте ще раз за хвилину."
+          }
+        }
+      }
+    },
     "error.order.cash_already_collected" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3425,41 +3530,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "На цей слот немає доступних клінерів. Виберіть інший час."
-          }
-        }
-      }
-    },
-    "error.order.not_cash_payment" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toto není zakázka placená hotově."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This isn't a cash order."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Это не заказ с оплатой наличными."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toto nie je zákazka platená v hotovosti."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Це не замовлення з оплатою готівкою."
           }
         }
       }

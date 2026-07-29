@@ -3,6 +3,7 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddOrderNoteCommand,
   CompleteOrderCommand,
+  MarkCashCollectedCommand,
   OrderItem,
   OrderStatus,
   PartnerClient,
@@ -25,6 +26,11 @@ import {
   AddNoteDialogComponent,
   AddNoteDialogResult,
 } from '../components/add-note-dialog';
+import {
+  MarkCashCollectedDialogComponent,
+  MarkCashCollectedDialogResult,
+} from '../components/mark-cash-collected-dialog';
+import { canMarkCashCollected, formatCurrency } from './order-details.helpers';
 
 @Injectable()
 export class OrderDetailsFacade extends UnsubscribeControlDirective {
@@ -366,5 +372,92 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
           .subscribe();
       }
     });
+  }
+
+  /**
+   * Opens the custom cash-collection confirmation. Taking cash is irreversible — it flips the
+   * order to Paid — so it is never fired straight off the button click.
+   */
+  openMarkCashCollectedDialog(): void {
+    const order = this.orderDetails();
+    const employeeId = this.currentEmployeeId();
+
+    if (!order || !employeeId) {
+      this.snackbarService.showErrorTranslated(
+        'global.messages.orders.invalid_request'
+      );
+      return;
+    }
+
+    // Pre-flight gate mirroring MarkCashCollected.Validator: InProgress, not already Paid,
+    // caller assigned. Defence in depth — the trigger is already hidden outside this window.
+    if (
+      !canMarkCashCollected(
+        order.orderStatus.value,
+        order.paymentStatus.value,
+        order.assignedEmployees,
+        employeeId
+      )
+    ) {
+      this.snackbarService.showErrorTranslated(
+        'pages.order_details.mark_cash_collected_gating_error'
+      );
+      return;
+    }
+
+    const ref: DynamicDialogRef = this.dialogService.open(
+      MarkCashCollectedDialogComponent,
+      {
+        header: undefined,
+        data: {
+          orderId: order.id,
+          amount: formatCurrency(order.totalPrice, order.currency?.symbol ?? ''),
+        },
+        width: '500px',
+        modal: true,
+        dismissableMask: true,
+      }
+    );
+
+    ref.onClose
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((result: MarkCashCollectedDialogResult) => {
+        if (result?.confirmed) {
+          this.markCashCollected(order.id!);
+        }
+      });
+  }
+
+  markCashCollected(orderId: string): void {
+    if (!orderId) {
+      this.snackbarService.showErrorTranslated(
+        'global.messages.orders.invalid_request'
+      );
+      return;
+    }
+
+    this.loading.set(true);
+
+    this.partnerClient.orderClient
+      .markCashCollected(new MarkCashCollectedCommand({ orderId }))
+      .pipe(
+        takeUntil(this.destroyed$),
+        tap(() => {
+          this.snackbarService.showSuccessTranslated(
+            'global.messages.orders.cash_collected'
+          );
+          // Reload so the payment status reflects the collection.
+          this.loadOrderDetails(orderId);
+        }),
+        catchError((error) => {
+          this.snackbarService.showApiError(
+            error,
+            'global.messages.orders.cash_collect_failed'
+          );
+          return of(null);
+        }),
+        finalize(() => this.loading.set(false))
+      )
+      .subscribe();
   }
 }

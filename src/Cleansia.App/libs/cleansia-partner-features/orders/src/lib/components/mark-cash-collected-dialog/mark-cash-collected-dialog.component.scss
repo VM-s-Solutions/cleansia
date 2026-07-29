@@ -1,0 +1,35 @@
+.mark-cash-collected-dialog {
+  padding: 1rem;
+}
+.mark-cash-collected-dialog__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.mark-cash-collected-dialog__header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.mark-cash-collected-dialog__icon {
+  color: var(--green-500);
+  font-size: 1.5rem;
+}
+.mark-cash-collected-dialog__message {
+  margin: 0;
+  line-height: 1.5;
+}
+.mark-cash-collected-dialog__warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1rem 0 0;
+  font-weight: 500;
+  color: var(--orange-600);
+}
+.mark-cash-collected-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}

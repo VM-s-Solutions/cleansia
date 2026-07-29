@@ -416,6 +416,13 @@
       "before_photos_gating_error": "Fotografie před úklidem lze nahrát pouze ve stavu Potvrzeno nebo Na cestě",
       "after_photos_gating_error": "Fotografie po úklidu lze nahrát pouze ve stavu Probíhá",
       "note_issue_gating_error": "Poznámky a hlášení problémů lze přidávat pouze u aktivních objednávek",
+      "mark_cash_collected": "Označit hotovost jako přijatou",
+      "mark_cash_collected_confirm_title": "Označit hotovost jako přijatou?",
+      "mark_cash_collected_confirm_message": "Potvrďte, že jste od zákazníka převzali {{amount}} v hotovosti.",
+      "mark_cash_collected_confirm_message_no_amount": "Potvrďte, že jste od zákazníka převzali platbu v hotovosti.",
+      "mark_cash_collected_confirm_warning": "Tímto bude objednávka označena jako zaplacená. Tuto akci nelze vzít zpět.",
+      "mark_cash_collected_confirm_action": "Ano, hotovost přijata",
+      "mark_cash_collected_gating_error": "Hotovost lze přijmout pouze u probíhající a dosud nezaplacené objednávky",
       "complete_missing_after_photos": "Objednávku nelze dokončit bez fotografií po úklidu"
     },
     "invoices": {
@@ -826,6 +833,8 @@
         "no_order_selected": "Žádná objednávka není vybrána.",
         "invalid_request": "Neplatný požadavek. Chybí požadované informace.",
         "order_started": "Objednávka byla úspěšně zahájena.",
+        "cash_collected": "Hotovost byla přijata. Objednávka je označena jako zaplacená.",
+        "cash_collect_failed": "Nepodařilo se zaznamenat přijetí hotovosti. Zkuste to prosím znovu.",
         "failed_to_start": "Nepodařilo se zahájit objednávku. Zkuste to prosím znovu.",
         "print_failed": "Nepodařilo se vytisknout objednávku. Zkuste to prosím znovu.",
         "receipt_not_available": "Účtenka není k dispozici pro tuto objednávku.",

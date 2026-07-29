@@ -104,9 +104,21 @@
       </div>
       }
 
-      <!-- Action buttons row: Report Issue / Add Note available across active statuses, Complete only in InProgress with after-photos. -->
-      @if (canAddNoteOrIssue() || canCompleteOrder()) {
+      <!-- Action buttons row: Report Issue / Add Note available across active statuses, Mark Cash Collected
+           only while InProgress and unpaid, Complete only in InProgress with after-photos. -->
+      @if (canAddNoteOrIssue() || canMarkCashCollected() || canCompleteOrder()) {
       <div class="cleansia-order-details__actions-row">
+        @if (canMarkCashCollected()) {
+        <cleansia-button
+          [buttonType]="'button'"
+          [title]="'pages.order_details.mark_cash_collected' | translate"
+          [icon]="'pi pi-money-bill'"
+          [outlined]="true"
+          [severity]="'success'"
+          (clickFn)="openMarkCashCollected()"
+          [loading]="loading()"
+        />
+        }
         @if (canAddNoteOrIssue()) {
         <cleansia-button
           [title]="'pages.order_details.report_issue' | translate"

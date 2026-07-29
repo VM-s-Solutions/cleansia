@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Cleansia "C" for the notification small icon — the same arcs as
+    ic_launcher_foreground, re-viewported from 108 to 24 so the glyph spans
+    20 of the 24 units (83.3%) instead of 40.7%. The launcher foreground is
+    drawn for the adaptive-icon safe zone, and reusing it here left the
+    status-bar mark rendering at roughly half the size of the partner app's.
+
+    Single white fill and nothing else: Android keeps only the alpha channel
+    of a small icon and tints the silhouette itself, so any colour or
+    gradient here would flatten into a white blob.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M12,2
+                          a10,10 0 1 0 7.0711,17.0711
+                          l-2.5739,-2.5739
+                          a6.36,6.36 0 1 1 0,-8.9944
+                          l2.5739,-2.5739
+                          A10,10 0 0 0 12,2z" />
+</vector>

@@ -1,5 +1,4 @@
 import { Injectable, PLATFORM_ID, Signal, computed, inject, signal } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { SavedAddressStore } from '@cleansia/customer-stores';
@@ -11,29 +10,23 @@ import {
 } from '@cleansia/partner-services';
 import { AUTH_COOKIE_KEYS, CleansiaCustomerRoute } from '@cleansia/services';
 import {
+  AppleAuthCommand,
   ConfirmUserEmailCommand,
   LoginCommand,
   LogoutCommand,
-  ProblemDetails,
   RefreshTokenCommand,
   RegisterCommand,
 } from '../client/customer-client';
 import { setLocalStorageValueByKey } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
-import { Observable, catchError, map, of, tap, throwError } from 'rxjs';
-import { CUSTOMER_API_BASE_URL, CustomerClient } from '../client/customer-base-client';
+import { Observable, catchError, map, of, tap } from 'rxjs';
+import { CustomerClient } from '../client/customer-base-client';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CustomerAuthService {
   private readonly customerClient = inject(CustomerClient);
-  private readonly http = inject(HttpClient);
-  // Same resolution as CustomerClient's own, so the hand-written AppleAuth call
-  // below lands on the configured API and the auth interceptor recognises it as
-  // ours (it is what attaches withCredentials + the CSRF header).
-  private readonly apiBaseUrl =
-    inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? 'http://localhost:5003';
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
   private readonly savedAddressStore = inject(SavedAddressStore);
@@ -120,20 +113,6 @@ export class CustomerAuthService {
   }
 
   /**
-   * TEMPORARY hand-written call. The customer API gained `POST /api/Auth/AppleAuth`
-   * but the generated client has no `appleAuth` yet, and regenerating it is an
-   * owner-run step (`npm run generate-customer-client`) that must not happen here.
-   * MANUAL_STEP (nswag-customer-appleauth): after the regen, replace the body
-   * with `this.customerClient.authClient.appleAuth(new AppleAuthCommand({...}))`
-   * and delete the HttpClient/ProblemDetails plumbing above.
-   *
-   * Until then this reproduces the generated client's contract deliberately: the
-   * URL is built from the same base (so the auth interceptor attaches
-   * withCredentials and the session cookies are accepted), the success body is
-   * revived through `JwtTokenResponse.fromJS` so `refreshTokenExpiresAt` is a
-   * Date, and a 4xx rethrows a `ProblemDetails` — the raw HttpErrorResponse
-   * would surface its "Http failure response for …" message in the snackbar.
-   *
    * `rawNonce` is the RAW nonce; Apple was handed its SHA-256. See
    * `createAppleNonce`.
    */
@@ -143,20 +122,15 @@ export class CustomerAuthService {
     firstName?: string,
     lastName?: string
   ): Observable<JwtTokenResponse> {
-    return this.http
-      .post<unknown>(`${this.apiBaseUrl}/api/Auth/AppleAuth`, {
-        identityToken,
-        rawNonce,
-        firstName,
-        lastName,
-      })
+    return this.customerClient.authClient
+      .appleAuth(
+        new AppleAuthCommand({ identityToken, rawNonce, firstName, lastName })
+      )
       .pipe(
-        map((body: unknown) => {
-          const authResult = JwtTokenResponse.fromJS(body);
+        map((authResult: JwtTokenResponse) => {
           this.setSession(authResult);
           return authResult;
-        }),
-        catchError((error: unknown) => throwError(() => toProblemDetails(error)))
+        })
       );
   }
 
@@ -292,18 +266,4 @@ export class CustomerAuthService {
     this.savedAddressStore.clear();
     this._isLoggedIn.set(false);
   }
-}
-
-/**
- * Re-shapes an Angular transport error into what the generated client throws for
- * the same response, so consumers (`showApiError`, the error interceptor) read
- * the business key the same way whether the call was generated or hand-written.
- * Anything that isn't an API response — offline, CORS, DNS — is passed through.
- */
-function toProblemDetails(error: unknown): unknown {
-  if (error instanceof HttpErrorResponse && error.error && typeof error.error === 'object') {
-    return ProblemDetails.fromJS(error.error);
-  }
-
-  return error;
 }

@@ -54,10 +54,14 @@ public abstract class CleansiaApiController(IMediator mediator) : ControllerBase
                         StatusCodes.Status401Unauthorized,
                         authResult.Error!,
                         [authResult.Error!])),
+            // Same contract for every other handler failure: without the `errors` entry the clients fall
+            // through to `detail`, which holds the raw dotted key, and the user is shown literal text such
+            // as "address.already_exists".
             _ => BadRequest(CreateProblemDetails(
                         "Bad Request",
                         StatusCodes.Status400BadRequest,
-                        result.Error!))
+                        result.Error!,
+                        [result.Error!]))
         };
     }
 

@@ -82,12 +82,21 @@ fun FloatingMascot(
     }
 }
 
+/**
+ * The asset's real VP8X canvas. Without an explicit size Coil derives the decode size from layout —
+ * 384 px at 3x, 512 px at 4x — and CPU-rescales every frame up from the native 360. Decoding at
+ * native size hands the upscale to the GPU once per draw instead. At 24 fps that is the difference
+ * between smooth and juddering, and it matters more since the asset went from 63 frames to 125.
+ */
+private const val MASCOT_CANVAS_PX = 360
+
 @Composable
 private fun CleaningWebpMascot(size: Dp) {
     val context = LocalContext.current
     val request = remember {
         ImageRequest.Builder(context)
             .data(R.raw.mascot_cleaning_in_progress)
+            .size(MASCOT_CANVAS_PX)
             .build()
     }
     AsyncImage(

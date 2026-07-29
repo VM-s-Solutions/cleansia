@@ -34,6 +34,11 @@ export interface IAuthClient {
      * @param body (optional) 
      * @return OK
      */
+    appleAuth(body?: AppleAuthCommand | undefined): Observable<JwtTokenResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
     confirmUserEmail(body?: ConfirmUserEmailCommand | undefined): Observable<JwtTokenResponse>;
     /**
      * @param body (optional) 
@@ -241,6 +246,76 @@ export class AuthClient implements IAuthClient {
     }
 
     protected processGoogleAuth(response: HttpResponseBase): Observable<JwtTokenResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = JwtTokenResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    appleAuth(body?: AppleAuthCommand | undefined): Observable<JwtTokenResponse> {
+        let url = this.baseUrl + "/api/Auth/AppleAuth";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processAppleAuth(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processAppleAuth(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<JwtTokenResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<JwtTokenResponse>;
+        }));
+    }
+
+    protected processAppleAuth(response: HttpResponseBase): Observable<JwtTokenResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -6237,6 +6312,54 @@ export interface IAddressDto {
     state: string | undefined;
 }
 
+export class AppleAuthCommand implements IAppleAuthCommand {
+    identityToken!: string | undefined;
+    rawNonce!: string | undefined;
+    firstName!: string | undefined;
+    lastName!: string | undefined;
+
+    constructor(data?: IAppleAuthCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.identityToken = Data["identityToken"];
+            this.rawNonce = Data["rawNonce"];
+            this.firstName = Data["firstName"];
+            this.lastName = Data["lastName"];
+        }
+    }
+
+    static fromJS(data: any): AppleAuthCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new AppleAuthCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["identityToken"] = this.identityToken;
+        data["rawNonce"] = this.rawNonce;
+        data["firstName"] = this.firstName;
+        data["lastName"] = this.lastName;
+        return data;
+    }
+}
+
+export interface IAppleAuthCommand {
+    identityToken: string | undefined;
+    rawNonce: string | undefined;
+    firstName: string | undefined;
+    lastName: string | undefined;
+}
+
 export enum AppliedDiscountSource {
     None = 0,
     Tier = 1,
@@ -7135,6 +7258,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
     promoCode!: string | undefined;
     referralCode!: string | undefined;
     preferredEmployeeId!: string | undefined;
+    specialInstructions!: string | undefined;
 
     constructor(data?: ICreateOrderCommand) {
         if (data) {
@@ -7179,6 +7303,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
             this.promoCode = Data["promoCode"];
             this.referralCode = Data["referralCode"];
             this.preferredEmployeeId = Data["preferredEmployeeId"];
+            this.specialInstructions = Data["specialInstructions"];
         }
     }
 
@@ -7223,6 +7348,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
         data["promoCode"] = this.promoCode;
         data["referralCode"] = this.referralCode;
         data["preferredEmployeeId"] = this.preferredEmployeeId;
+        data["specialInstructions"] = this.specialInstructions;
         return data;
     }
 }
@@ -7246,6 +7372,7 @@ export interface ICreateOrderCommand {
     promoCode: string | undefined;
     referralCode: string | undefined;
     preferredEmployeeId: string | undefined;
+    specialInstructions: string | undefined;
 }
 
 export class CreateOrderResponse implements ICreateOrderResponse {

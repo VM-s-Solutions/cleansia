@@ -259,4 +259,40 @@ public class CreateOrderValidatorCharacterizationTests
             e.PropertyName == nameof(CreateOrder.Command.SpecialInstructions)
             && e.ErrorMessage == BusinessErrorMessage.MaxLength);
     }
+
+    // ── AccessInstructions — optional free-text, capped at 2000 ──
+
+    [Fact]
+    public async Task AccessInstructions_Omitted_Passes()
+    {
+        var result = await CreateValidator().ValidateAsync(
+            CreateOrderTestData.ValidCommand(accessInstructions: null));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task AccessInstructions_AtMaxLength_Passes()
+    {
+        var command = CreateOrderTestData.ValidCommand(
+            accessInstructions: new string('x', 2000));
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task AccessInstructions_OverMaxLength_FailsMaxLength()
+    {
+        var command = CreateOrderTestData.ValidCommand(
+            accessInstructions: new string('x', 2001));
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(CreateOrder.Command.AccessInstructions)
+            && e.ErrorMessage == BusinessErrorMessage.MaxLength);
+    }
 }

@@ -317,7 +317,15 @@ public class Order : Auditable, ITenantEntity
         // "cat is friendly"). Read-only afterwards — the partner apps render it
         // on the job card. Whitespace-only collapses to null so the partner UI
         // doesn't render an empty "notes from the customer" section.
-        string? specialInstructions = null) => new()
+        string? specialInstructions = null,
+        // How to get in ("key under the mat", "gate code 4455"). Separate from
+        // specialInstructions because the two answer different questions, and
+        // because keeping them apart leaves room to release them on different
+        // terms later. NOTE: there is no such gate today — OrderMappers maps
+        // this unconditionally and every partner/admin surface renders it at
+        // any status, exactly like specialInstructions. Treat it as no more
+        // protected than the rest of the order until that changes.
+        string? accessInstructions = null) => new()
         {
             CustomerName = customerName,
             CustomerEmail = customerEmail,
@@ -341,6 +349,7 @@ public class Order : Auditable, ITenantEntity
             PreferredEmployeeId = string.IsNullOrEmpty(preferredEmployeeId) ? null : preferredEmployeeId,
             RecurringTemplateId = string.IsNullOrEmpty(recurringTemplateId) ? null : recurringTemplateId,
             SpecialInstructions = string.IsNullOrWhiteSpace(specialInstructions) ? null : specialInstructions.Trim(),
+            AccessInstructions = string.IsNullOrWhiteSpace(accessInstructions) ? null : accessInstructions.Trim(),
         };
 
     public Order AddSelectedServices(IEnumerable<OrderService> selectedServices)

@@ -1,6 +1,6 @@
 import { TranslateService } from '@ngx-translate/core';
 import { toSnakeCase } from '@cleansia/utils';
-import { AssignedEmployeeDto, OrderStatus } from '@cleansia/partner-services';
+import { AssignedEmployeeDto, OrderStatus, PaymentStatus } from '@cleansia/partner-services';
 
 // --- Formatting helpers ---
 
@@ -186,6 +186,25 @@ export function canAddNoteOrIssue(
     orderStatusValue === OrderStatus.OnTheWay ||
     orderStatusValue === OrderStatus.InProgress;
   return isActive && isEmployeeAssigned(assignedEmployees, employeeId);
+}
+
+// Cash collection mirrors MarkCashCollected.Validator exactly: the order must be InProgress
+// (cash only changes hands while the cleaner is on site), must not already be Paid, and the
+// caller must be assigned to it.
+// Deliberately NOT gated on paymentType — the backend accepts a CARD booking too, because a card
+// order whose Stripe webhook never arrived would otherwise be impossible to complete in the field.
+// The handler reconciles against live Stripe before recording the cash.
+export function canMarkCashCollected(
+  orderStatusValue: number,
+  paymentStatusValue: number,
+  assignedEmployees: AssignedEmployeeDto[] | undefined,
+  employeeId: string
+): boolean {
+  return (
+    orderStatusValue === OrderStatus.InProgress &&
+    paymentStatusValue !== PaymentStatus.Paid &&
+    isEmployeeAssigned(assignedEmployees, employeeId)
+  );
 }
 
 // Completion requires InProgress AND at least one After photo present.

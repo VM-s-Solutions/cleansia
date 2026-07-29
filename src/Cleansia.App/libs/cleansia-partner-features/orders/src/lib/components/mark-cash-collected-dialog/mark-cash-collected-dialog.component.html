@@ -1,0 +1,35 @@
+<div class="mark-cash-collected-dialog">
+  <div class="mark-cash-collected-dialog__header">
+    <i class="pi pi-money-bill mark-cash-collected-dialog__icon"></i>
+    <h3>{{ 'pages.order_details.mark_cash_collected_confirm_title' | translate }}</h3>
+  </div>
+  <div class="mark-cash-collected-dialog__body">
+    @if (hasAmount) {
+    <p class="mark-cash-collected-dialog__message">
+      {{ 'pages.order_details.mark_cash_collected_confirm_message' | translate: { amount: data.amount } }}
+    </p>
+    } @else {
+    <p class="mark-cash-collected-dialog__message">
+      {{ 'pages.order_details.mark_cash_collected_confirm_message_no_amount' | translate }}
+    </p>
+    }
+    <p class="mark-cash-collected-dialog__warning">
+      <i class="pi pi-exclamation-circle"></i>
+      {{ 'pages.order_details.mark_cash_collected_confirm_warning' | translate }}
+    </p>
+  </div>
+  <div class="mark-cash-collected-dialog__footer">
+    <p-button
+      [label]="'global.actions.cancel' | translate"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="onCancel()"
+    />
+    <p-button
+      [label]="'pages.order_details.mark_cash_collected_confirm_action' | translate"
+      severity="success"
+      icon="pi pi-check"
+      (onClick)="onConfirm()"
+    />
+  </div>
+</div>

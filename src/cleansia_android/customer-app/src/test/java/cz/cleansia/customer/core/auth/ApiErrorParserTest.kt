@@ -2,6 +2,7 @@ package cz.cleansia.customer.core.auth
 
 import android.content.Context
 import android.content.res.Resources
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.customer.R
 import io.mockk.every
 import io.mockk.mockk
@@ -30,6 +31,7 @@ class ApiErrorParserTest {
     private val genericServer = "Server is temporarily unavailable. Try again later."
     private val genericUnauthorized = "Your session expired. Please sign in again."
     private val mappedNotExisting = "We couldn't find an account with that email."
+    private val mappedInternalType = "This account was created with an email and password. Sign in that way."
 
     @Before
     fun setUp() {
@@ -146,6 +148,42 @@ class ApiErrorParserTest {
 
         val message = ApiErrorParser.parseToUserMessage(context, body(payload), 400)
         assertEquals("Specific detail explanation", message)
+    }
+
+    // ── AuthRejected: a 401 the controller authored ──
+
+    @Test
+    fun parseToUserMessage_givenAuthRejected_resolvesTheBusinessKey() {
+        val mappedResId = 43
+        every {
+            resources.getIdentifier("error_auth_internal_type_error", "string", packageName)
+        } returns mappedResId
+        every { context.getString(mappedResId) } returns mappedInternalType
+
+        val message = ApiErrorParser.parseToUserMessage(
+            context,
+            ApiError.AuthRejected("auth.internal_type_error"),
+        )
+
+        assertEquals(mappedInternalType, message)
+    }
+
+    @Test
+    fun parseToUserMessage_givenAuthRejectedWithUnmappedKey_returnsGenericAndNeverTheRawKey() {
+        // Deliberately unlike the BadRequest arm, which shows the raw key: this
+        // one renders on the sign-in screen.
+        val message = ApiErrorParser.parseToUserMessage(
+            context,
+            ApiError.AuthRejected("auth.brand_new_key"),
+        )
+
+        assertEquals(genericUnauthorized, message)
+    }
+
+    @Test
+    fun parseToUserMessage_givenUnauthorized_stillReturnsTheSessionFallback() {
+        val message = ApiErrorParser.parseToUserMessage(context, ApiError.Unauthorized)
+        assertEquals(genericUnauthorized, message)
     }
 
     @Test

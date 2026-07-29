@@ -26,6 +26,13 @@ class ApiErrorTranslator @Inject constructor(
         is ApiError.Network -> context.getString(R.string.error_network)
         is ApiError.Server -> context.getString(R.string.error_server)
         is ApiError.Unauthorized -> context.getString(R.string.error_unauthorized)
+        // Intentionally asymmetric with translateBadRequest: an unmapped key is
+        // rendered raw there because it is actionable, but this arm fires on the
+        // sign-in screen and "auth.insufficient_privileges" is not something to
+        // put in front of a cleaner. A missing translation degrades to the same
+        // generic line shown today.
+        is ApiError.AuthRejected -> lookupKey(error.errorKey)
+            ?: context.getString(R.string.error_unauthorized)
         is ApiError.NotFound -> context.getString(R.string.error_not_found)
         is ApiError.BadRequest -> translateBadRequest(error)
         is ApiError.Unknown -> error.message.ifBlank { context.getString(R.string.error_generic) }

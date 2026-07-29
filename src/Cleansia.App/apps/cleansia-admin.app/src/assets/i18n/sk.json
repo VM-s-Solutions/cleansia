@@ -2466,7 +2466,9 @@
       "insufficient_privileges": "Nemáte oprávnenie na prístup do administračného panela. Prihlásiť sa môžu iba administrátori a zamestnanci.",
       "current_password_invalid": "Súčasné heslo nie je správne",
       "account_locked": "Príliš veľa neúspešných pokusov o prihlásenie. Účet je dočasne uzamknutý — skúste to znova o niekoľko minút.",
-      "too_many_attempts": "Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova."
+      "too_many_attempts": "Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova.",
+      "invalid_refresh_token": "Vaša relácia vypršala. Prihláste sa, prosím, znova.",
+      "refresh_token_reused": "Vaša relácia bola použitá inde. Prihláste sa, prosím, znova."
     },
     "common": {
       "invalid_enum_value": "Bola zadaná neplatná hodnota",
@@ -2743,8 +2745,7 @@
       "remember_me": "Zapamätať si ma",
       "forgot_password": "Zabudnuté heslo?",
       "dont_have_account": "Nemáte účet?"
-    },
-    "refresh_token_reused": "Vaša relácia bola použitá inde. Prihláste sa, prosím, znova."
+    }
   },
   "fiscal_failures": {
     "title": "Fiškálne zlyhania",

@@ -1008,7 +1008,9 @@
       "insufficient_privileges": "Nemáte oprávnenie na prístup do partnerskej aplikácie. Prihlásiť sa môžu iba zamestnanci a administrátori.",
       "current_password_invalid": "Súčasné heslo nie je správne",
       "account_locked": "Príliš veľa neúspešných pokusov o prihlásenie. Účet je dočasne uzamknutý — skúste to znova o niekoľko minút.",
-      "too_many_attempts": "Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova."
+      "too_many_attempts": "Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova.",
+      "invalid_refresh_token": "Vaša relácia vypršala. Prihláste sa, prosím, znova.",
+      "refresh_token_reused": "Vaša relácia bola použitá inde. Prihláste sa, prosím, znova."
     },
     "common": {
       "invalid_enum_value": "Neplatná hodnota výčtu",
@@ -1413,7 +1415,6 @@
         "passwords_match": "Heslá sa zhodujú"
       }
     },
-    "refresh_token_reused": "Vaša relácia bola použitá inde. Prihláste sa, prosím, znova.",
     "confirm_email": {
       "resend_success": "Potvrdzovací e-mail odoslaný!",
       "resend_error": "Nepodarilo sa znovu odoslať potvrdzovací e-mail. Skúste to prosím znova."

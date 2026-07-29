@@ -620,6 +620,33 @@ describe('OrderWizardFacade', () => {
       expect(facade.submitting()).toBe(false);
     });
 
+    // The wizard collected this and the summary step rendered it back, but the
+    // command never carried it, so every note typed on web was dropped at
+    // submit while the customer was looking at it in the review panel.
+    it('sends the special instructions the customer typed', async () => {
+      facade.updateFormData({
+        paymentType: PaymentType.Cash,
+        specialInstructions: '  Gate code 1234, dog is friendly  ',
+      });
+
+      await facade.submitOrder();
+
+      const command = orderClient.createOrder.mock.calls[0][0];
+      expect(command.specialInstructions).toBe('Gate code 1234, dog is friendly');
+    });
+
+    it('omits special instructions entirely when the customer typed none', async () => {
+      facade.updateFormData({
+        paymentType: PaymentType.Cash,
+        specialInstructions: '   ',
+      });
+
+      await facade.submitOrder();
+
+      const command = orderClient.createOrder.mock.calls[0][0];
+      expect(command.specialInstructions).toBeUndefined();
+    });
+
     it('shows an error and clears submitting when create fails', async () => {
       facade.updateFormData({ paymentType: PaymentType.Cash });
       orderClient.createOrder.mockReturnValue(throwError(() => new Error('boom')));

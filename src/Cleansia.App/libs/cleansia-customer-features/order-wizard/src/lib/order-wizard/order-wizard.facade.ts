@@ -578,6 +578,14 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       // undefined so the backend skips the matching boost. The field is
       // `required` in the NSwag-generated interface but accepts undefined.
       preferredEmployeeId: undefined,
+      // The wizard has collected this since the field shipped and the summary
+      // step renders it back to the customer, but it was never put on the
+      // command — so every note typed on web was discarded at submit while the
+      // customer watched it in the review panel. Empty becomes undefined rather
+      // than '': the backend treats null and empty alike, and undefined keeps
+      // the property out of the JSON entirely, matching every other optional
+      // here. Trimmed because a whitespace-only note is not a note.
+      specialInstructions: data.specialInstructions.trim() || undefined,
     });
 
     if (data.paymentType === PaymentType.Card) {

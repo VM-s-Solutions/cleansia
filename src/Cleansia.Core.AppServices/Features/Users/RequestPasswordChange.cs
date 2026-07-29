@@ -1,6 +1,7 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
@@ -12,8 +13,18 @@ public class RequestPasswordChange
 {
     public class Validator : AbstractValidator<Command>
     {
+        // The auth-type rule cannot pick its message up front: the provider is only known after the async
+        // user read inside the predicate. So the predicate hands the resolved message key to the rule
+        // through the MessageFormatter, and the rule's template is nothing but this placeholder.
+        private const string AuthTypeErrorPlaceholder = "AuthTypeError";
+        private const string AuthTypeErrorTemplate = "{" + AuthTypeErrorPlaceholder + "}";
+
+        private readonly IUserRepository _userRepository;
+
         public Validator(IUserRepository userRepository)
         {
+            _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+
             RuleFor(command => command.Email)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
@@ -23,7 +34,33 @@ public class RequestPasswordChange
                 // tenant-stamped accounts the ambient-null tenant filter would hide.
                 .MustAsync(userRepository.ExistsWithEmailIgnoringTenantAsync)
                 .WithErrorCode(nameof(Command.Email))
-                .WithMessage(BusinessErrorMessage.NotExistingUserWithEmail);
+                .WithMessage(BusinessErrorMessage.NotExistingUserWithEmail)
+                .MustAsync((_, email, context, cancellationToken) => UserAuthenticationTypeIsInternal(email, context, cancellationToken))
+                .WithErrorCode(nameof(Command.Email))
+                .WithMessage(AuthTypeErrorTemplate);
+        }
+
+        // Only an Internal account has a password to recover: LoginValidator refuses a password login for
+        // every other type, so mailing a reset code to a Google/Apple row can only end in a credential
+        // that never works. Refuse at the source, naming the provider the account ACTUALLY uses so the
+        // caller is told how to sign in. No new disclosure — the preceding existence rule already stops
+        // the cascade for an unknown email, so the provider is only named for a known address.
+        private async Task<bool> UserAuthenticationTypeIsInternal(
+            string email, ValidationContext<Command> context, CancellationToken cancellationToken)
+        {
+            var user = await _userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
+            if (user is not null && user.AuthenticationType == AuthenticationType.Internal)
+            {
+                return true;
+            }
+
+            // user is null only if the account disappeared between the existence rule and this one; reuse
+            // that rule's message rather than inventing a provider for an account that is not there.
+            context.MessageFormatter.AppendArgument(
+                AuthTypeErrorPlaceholder,
+                user is null ? BusinessErrorMessage.NotExistingUserWithEmail : AuthTypeErrorMessages.For(user.AuthenticationType));
+
+            return false;
         }
     }
 

@@ -14,6 +14,7 @@ import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -303,5 +304,40 @@ class MembershipRepositoryTest {
         assertTrue("expected Error but got: $result", result is ApiResult.Error)
         assertTrue((result as ApiResult.Error).error is ApiError.Server)
         verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    // ── staleness watermark ──
+
+    @Test
+    fun staleness_isStaleUntilARefreshSucceeds() = runTest {
+        val repo = newRepo()
+        assertTrue("a never-fetched cache must read stale", repo.staleness.isStale())
+
+        coEvery { api.getMine() } returns Response.success(membership())
+        repo.refresh()
+
+        assertFalse("a successful refresh must stamp the watermark", repo.staleness.isStale())
+    }
+
+    @Test
+    fun staleness_staysStaleWhenTheRefreshFails() = runTest {
+        coEvery { api.getMine() } returns Response.error(500, errorBody())
+
+        val repo = newRepo()
+        repo.refresh()
+
+        assertTrue(repo.staleness.isStale())
+    }
+
+    @Test
+    fun clear_resetsStalenessSoTheNextUserRefetches() = runTest {
+        coEvery { api.getMine() } returns Response.success(membership())
+        val repo = newRepo()
+        repo.refresh()
+        assertFalse(repo.staleness.isStale())
+
+        repo.clear()
+
+        assertTrue("sign-out must not leave the next session reading this one as fresh", repo.staleness.isStale())
     }
 }

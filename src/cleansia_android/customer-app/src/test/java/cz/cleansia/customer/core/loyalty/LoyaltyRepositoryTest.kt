@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -190,5 +191,44 @@ class LoyaltyRepositoryTest {
         assertEquals(null, repo.account.value)
         assertEquals(emptyList<TierInfoDto>(), repo.tiers.value)
         assertEquals(false, repo.loaded.value)
+    }
+
+    // ── staleness watermark ──
+
+    @Test
+    fun staleness_isStaleUntilAFetchSucceeds() = runTest {
+        val repo = newRepo()
+        assertTrue("a never-fetched cache must read stale", repo.staleness.isStale())
+
+        coEvery { api.getMy() } returns Response.success(LoyaltyAccountDto(currentTier = 1))
+        coEvery { api.getTiers() } returns Response.success(LoyaltyTiersResponseDto(tiers = emptyList()))
+        repo.refresh()
+
+        assertFalse("a successful refresh must stamp the watermark", repo.staleness.isStale())
+    }
+
+    @Test
+    fun staleness_staysStaleWhenTheFetchFails() = runTest {
+        // A failed fetch left the cache untouched, so the next screen entry must
+        // still be allowed to retry.
+        coEvery { api.getMy() } returns Response.error(500, "{}".toResponseBody("application/json".toMediaType()))
+
+        val repo = newRepo()
+        repo.refresh()
+
+        assertTrue(repo.staleness.isStale())
+    }
+
+    @Test
+    fun clear_resetsStalenessSoTheNextUserRefetches() = runTest {
+        coEvery { api.getMy() } returns Response.success(LoyaltyAccountDto(currentTier = 3))
+        coEvery { api.getTiers() } returns Response.success(LoyaltyTiersResponseDto(tiers = emptyList()))
+        val repo = newRepo()
+        repo.refresh()
+        assertFalse(repo.staleness.isStale())
+
+        repo.clear()
+
+        assertTrue("sign-out must not leave the next session reading this one as fresh", repo.staleness.isStale())
     }
 }

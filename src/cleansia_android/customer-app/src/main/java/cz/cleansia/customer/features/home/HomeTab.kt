@@ -126,15 +126,18 @@ fun HomeTab(
     val ordersLoaded by orderRepo.loaded.collectAsState(initial = false)
     val ordersLoading by orderRepo.loading.collectAsState(initial = false)
 
-    // Loyalty — observe the account snapshot for the milestone card. MainShell
-    // already prefetches LoyaltyRepository.refresh() on first composition, so
-    // this is a pure observer; null while loading or for guests.
+    // Loyalty — observe the account snapshot for the milestone card. MainShell's
+    // prefetch is gated on the one-way `loaded` latch, so it fires at most once
+    // per session; points earned after that reach this card only via the
+    // staleness-gated ON_START refresh below (or a Rewards pull-to-refresh).
+    // Null while loading or for guests.
     val loyaltyRepo = viewModel.loyaltyRepository
     val loyaltyAccount by loyaltyRepo.account.collectAsState(initial = null)
 
     // Membership — drives the Plus upsell card visibility in the smart
-    // carousel. Refresh once on first composition (no other surface refreshes
-    // it on tab switch). Null/false → show the upsell; true → hide it.
+    // carousel. This effect only covers the cold case; re-fetching an already
+    // warm snapshot is the ON_START refresh's job. Null/false → show the
+    // upsell; true → hide it.
     val membershipRepo = viewModel.membershipRepository
     val membership by membershipRepo.current.collectAsState(initial = null)
     androidx.compose.runtime.LaunchedEffect(Unit) {
@@ -221,8 +224,13 @@ fun HomeTab(
     var showNotifications by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     val unreadNotifications by viewModel.notificationFeedRepository.unreadCount
         .collectAsStateWithLifecycle()
+    // Home entry + foreground. The badge is cheap enough to refetch every time;
+    // loyalty / orders / membership are not, so onResume gates each on its own
+    // staleness watermark — this effect fires on every recomposition that
+    // re-attaches the observer, not just once per foreground.
     LifecycleEventEffect(Lifecycle.Event.ON_START) {
         viewModel.refreshNotificationBadge()
+        viewModel.onResume()
     }
 
     if (!firstPaintReady) {

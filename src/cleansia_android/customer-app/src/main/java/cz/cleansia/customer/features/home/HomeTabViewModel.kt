@@ -2,6 +2,7 @@ package cz.cleansia.customer.features.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.catalog.CatalogRepository
@@ -25,6 +26,9 @@ import kotlinx.coroutines.launch
  * [refreshCatalog] warms the catalog for the popular-packages strip and
  * surfaces the snackbar on failure (the repo no longer does). Connectivity
  * failures stay silent — NetworkErrorInterceptor owns the infra toast.
+ *
+ * [onResume] is the one place that re-fetches an already-warm cache; every
+ * other warmer on this screen fires at most once per session.
  */
 @HiltViewModel
 class HomeTabViewModel @Inject constructor(
@@ -53,5 +57,34 @@ class HomeTabViewModel @Inject constructor(
      */
     fun refreshNotificationBadge() {
         viewModelScope.launch { notificationFeedRepository.refreshUnreadCount() }
+    }
+
+    /**
+     * Home entry — a tab switch back, or the process returning to foreground.
+     * Both land on `ON_START`, and because the lifecycle observer is re-attached
+     * to an already-STARTED lifecycle every time HomeTab recomposes, this runs
+     * far more often than "once per foreground". That is why each source is
+     * gated on its own [Staleness] watermark rather than refreshed outright:
+     * ungated, every tap on the Home tab would cost three network calls.
+     *
+     * The three warmers on the screen itself (MainShell's `loaded`-gated
+     * prefetch for loyalty and orders, HomeTab's null-gated membership effect)
+     * are all one-shot, so without this nothing short of sign-out or another
+     * tab's pull-to-refresh moves the data — points earned mid-session showed
+     * up only on the next cold start.
+     *
+     * Silent on failure: these are ambient background refreshes and the screen
+     * keeps rendering the cached snapshot, so a snackbar would be noise.
+     */
+    fun onResume() {
+        refreshIfStale(loyaltyRepository.staleness) { loyaltyRepository.refresh() }
+        refreshIfStale(orderRepository.staleness) { orderRepository.refresh() }
+        refreshIfStale(membershipRepository.staleness) { membershipRepository.refresh() }
+    }
+
+    /** Each source gets its own coroutine so a slow one cannot hold up the others. */
+    private fun refreshIfStale(staleness: Staleness, refresh: suspend () -> Unit) {
+        if (!staleness.isStale()) return
+        viewModelScope.launch { refresh() }
     }
 }

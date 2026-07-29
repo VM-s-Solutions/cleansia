@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.addresses
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.core.data.UserAddress
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlin.math.roundToInt
 
 private enum class SheetAnchor { Hidden, Full }
@@ -92,7 +94,14 @@ private fun SheetWithAnchors(
         }
     }
 
-    LaunchedEffect(visible) {
+    // Keyed on parentHeightPx as well as visible, because `remember(parentHeightPx)`
+    // above rebuilds the state at `Hidden` whenever the constraint changes — the IME
+    // opening over any of AddressManagerScreen's six text fields is enough under
+    // windowSoftInputMode="adjustResize". Keyed on `visible` alone this effect would
+    // not re-run, leaving an open sheet parked off-screen with the caller's
+    // `addressSheetOpen` still true; re-tapping then assigns true over true, which is
+    // structurally equal, so nothing recomposes and the panel is dead for the session.
+    LaunchedEffect(visible, parentHeightPx) {
         if (!visible) {
             draggableState.animateTo(SheetAnchor.Hidden)
             return@LaunchedEffect
@@ -100,10 +109,19 @@ private fun SheetWithAnchors(
         draggableState.animateTo(SheetAnchor.Full)
         snapshotFlow { draggableState.currentValue }
             .distinctUntilChanged()
+            // Aligns with BookingBottomSheet: react only to genuine post-open
+            // transitions, never to whatever the flow reports on subscribe.
+            .drop(1)
             .collect { value ->
                 if (value == SheetAnchor.Hidden) onDismiss()
             }
     }
+
+    // Without this, system back reaches the nav host underneath and pops the screen
+    // hosting the sheet while `addressSheetOpen` stays true — the same true-over-true
+    // dead end as above. Routed through onDismiss so back and the header arrow leave
+    // identical state.
+    BackHandler(enabled = visible) { onDismiss() }
 
     if (!visible && draggableState.currentValue == SheetAnchor.Hidden) return
 

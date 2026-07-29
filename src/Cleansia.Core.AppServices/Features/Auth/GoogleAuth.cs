@@ -62,7 +62,16 @@ public class GoogleAuth
                     new Error(nameof(Command.Token), BusinessErrorMessage.InvalidGoogleUserToken));
             }
 
-            var user = await userRepository.GetByEmailIgnoringTenantAsync(claims.Email, cancellationToken);
+            // S1: only an email GOOGLE vouched for may resolve an EXISTING account. Without this gate a
+            // token asserting an address Google never verified — the same address a victim registered
+            // under — resolves onto their row and is handed their JWT. Provisioning is gated on the same
+            // claim below, so an unverified email has no path at all (parity with AppleAuth).
+            User? user = null;
+            if (claims.EmailVerified && !string.IsNullOrWhiteSpace(claims.Email))
+            {
+                user = await userRepository.GetByEmailIgnoringTenantAsync(claims.Email, cancellationToken);
+            }
+
             if (user is not null)
             {
                 // S1: the account-type guard MUST run against the account the handler
@@ -88,8 +97,9 @@ public class GoogleAuth
             }
 
             // Provision only when Google reports the email as verified — reject an unverifiable email
-            // rather than create an account around it (parity with the AppleAuth gate; the takeover
-            // guard above then rests on a verified email for both providers).
+            // rather than create an account around it (parity with the AppleAuth gate). This is where an
+            // unverified token lands: the lookup above declined to resolve it onto an existing account, so
+            // failing closed here is the only remaining outcome.
             if (!claims.EmailVerified)
             {
                 return BusinessResult.Failure<JwtTokenResponse>(

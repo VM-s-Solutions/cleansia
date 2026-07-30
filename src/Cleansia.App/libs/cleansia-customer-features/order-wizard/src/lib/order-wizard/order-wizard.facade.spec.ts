@@ -647,6 +647,30 @@ describe('OrderWizardFacade', () => {
       expect(command.specialInstructions).toBeUndefined();
     });
 
+    it('sends the entry instructions the customer typed as accessInstructions', async () => {
+      facade.updateFormData({
+        paymentType: PaymentType.Cash,
+        entryInstructions: '  Key under the mat, ring twice  ',
+      });
+
+      await facade.submitOrder();
+
+      const command = orderClient.createOrder.mock.calls[0][0];
+      expect(command.accessInstructions).toBe('Key under the mat, ring twice');
+    });
+
+    it('omits access instructions entirely when the customer typed none', async () => {
+      facade.updateFormData({
+        paymentType: PaymentType.Cash,
+        entryInstructions: '   ',
+      });
+
+      await facade.submitOrder();
+
+      const command = orderClient.createOrder.mock.calls[0][0];
+      expect(command.accessInstructions).toBeUndefined();
+    });
+
     it('shows an error and clears submitting when create fails', async () => {
       facade.updateFormData({ paymentType: PaymentType.Cash });
       orderClient.createOrder.mockReturnValue(throwError(() => new Error('boom')));

@@ -309,14 +309,38 @@ proxy. Full run-mode docs: `src/Cleansia.App/CLAUDE.md`.
 
 ## Brand mark — `cleansia-brand-name` is the whole lockup
 
-The mark is the **"Cleansia" wordmark** (owner ruling, T-0444), taken from the iOS art. The wordmark
-already contains the name, so `cleansia-brand-name` renders the image **alone** — never beside a
-`<h2>Cleansia</h2>` or a `<span>Cleansia</span>`, which would print the word twice. A per-app suffix
-that the wordmark does not carry (admin's "Admin") is fine; the brand word itself is never repeated.
+The mark is the wordmark taken from that app's own iOS art (owner ruling, T-0444). It already contains
+the name, so `cleansia-brand-name` renders the image **alone** — never beside a `<h2>Cleansia</h2>` or
+a `<span>Cleansia</span>`, which would print the word twice. A suffix the artwork does *not* carry
+(admin's "Admin") is fine; the brand word itself is never repeated.
+
+**Customer and admin ship the same "Cleansia" wordmark; partner ships the stacked "Cleansia Partner"
+lockup** — because the partner iOS app has its own lockup and the partner web app is the same product.
+Do not "fix" partner back to match: `assets/logos/Logo.{webp,png,ico}` is a per-app path resolved by
+each app's own assets folder precisely so an app can differ, and the spec pins the three shapes
+(`616×112`, `616×112`, `616×172`) rather than a single digest.
+
+Two consequences of the marks differing in *shape*, both handled without per-app markup:
+
+- **Sizing is by width, so the word "Cleansia" is the same size everywhere.** That line spans the full
+  width of both lockups (measured aspect 5.4870 customer / 5.4646 partner), so equal width means equal
+  wordmark; the partner mark is simply taller. Never size the marks to equal height — that would
+  shrink the partner brand.
+- **The box's aspect is a CSS variable, `--cleansia-brand-aspect`**, defaulted in the shared stylesheet
+  and overridden in `apps/cleansia-partner.app/src/styles.scss`. An `<img>` whose ratio only arrives
+  with the bytes is a layout shift, and the `width`/`height` attributes live in a *shared* template
+  that cannot know which app it is in.
+- **The alt text comes from the app's own i18n bundle** (`components.brand_mark_alt`), for the same
+  reason and by the same trick: per-app resolution with no per-call-site plumbing. An input would not
+  reach the sidebar, which partner and admin share.
+
+Generally: when a shared component must differ per app, reach for something the app already resolves
+for itself — its `assets/` folder, its i18n bundle, a CSS custom property in its `styles.scss`. A DI
+token works too but `app.config.ts` statically importing `@cleansia/components` trips
+`enforce-module-boundaries` (that lib is lazy-loaded) and pulls the whole barrel in eagerly.
 
 Its only variant input is `compact` — the collapsed sidebar rail, where the mark shrinks rather than
-being cropped or swapped. `assets/logos/Logo.{webp,png,ico}` is a per-app path resolved by each app's
-own assets folder; the files are byte-identical across the three apps so drift stays visible.
+being cropped or swapped.
 
 Two properties to keep when touching any brand asset. Both are **enforced**, not advised, by
 `cleansia-brand-name.component.spec.ts` — it reads the shipped files off disk, so regenerating an

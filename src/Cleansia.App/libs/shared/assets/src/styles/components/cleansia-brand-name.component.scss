@@ -7,18 +7,25 @@
   }
 
   // Width-driven, height auto: a narrow container then shortens the mark
-  // proportionally instead of squashing it against a fixed height.
+  // proportionally instead of squashing it against a fixed height. Equal width
+  // is also what keeps the word "Cleansia" the same size in every app, since it
+  // spans the full width of both the customer and the partner lockup.
+  //
+  // The aspect is a variable, not the image's own, so the box is right before
+  // the file loads: partner ships a taller lockup under the same file name, and
+  // an intrinsic ratio that only arrives with the bytes is a layout shift.
   img {
     display: block;
     width: 132px;
     max-width: 100%;
+    aspect-ratio: var(--cleansia-brand-aspect, 616 / 112);
     height: auto;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  // A 5.5:1 wordmark cannot be cropped down to a narrow rail without losing
-  // letters, so the collapsed sidebar gets the whole mark, scaled.
+  // A wordmark cannot be cropped down to a narrow rail without losing letters,
+  // so the collapsed sidebar gets the whole mark, scaled.
   &--compact img {
-    width: 66px;
+    width: 76px;
   }
 }

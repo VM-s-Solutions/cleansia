@@ -106,6 +106,9 @@ grounding it. Sizing/AC/deps/layers set → DoR met.
   documentation claims corrected. **Note for whoever reads the history:** commit `957a7610`'s message
   repeats the wrong a11y claim (*"removes a duplicate h2 … and eight auth screens"*). It is not
   amendable without a rebase; the correction lives in this ticket and in the follow-up commit.
+- 2026-07-30 — **owner ruling: the partner web app uses the "Cleansia Partner" lockup**, as in the iOS
+  apps. Implemented (frontend, fourth commit); the brand-asset guard was re-pointed at the new
+  invariant rather than relaxed.
 
 ## Implementation notes (frontend)
 
@@ -227,6 +230,7 @@ renders of both at 16/32/48 on light and dark tab strips are attached to the fro
 aspect 3.59, in both the partner `AppIcon1024` and its `LaunchWordmark`). All three web apps get the
 plain `Cleansia` wordmark, matching the word each app shows today. Giving the partner app its own
 lockup is a one-file swap if the owner wants it.
+→ **The owner took the partner lockup.** See "fourth pass" below.
 
 **Sizing rule for the new shape (no prior bug — a constraint the old shape never had).** At
 `a7c4f5c4` the brand stylesheet had no `img` rule at all; the 32px square was sized purely by its
@@ -258,6 +262,69 @@ restored and re-verified by sha256 afterwards.
 Harvested into `agents/knowledge/patterns-frontend.md` → "Brand mark — `cleansia-brand-name` is the
 whole lockup": no text beside the wordmark, `compact` as the only variant, bytes-match-extension, and
 width-driven sizing for non-square logos.
+
+## Implementation notes (frontend, fourth pass — the partner lockup)
+
+Owner ruling: the partner web app uses **"Cleansia Partner", exactly as in the iOS apps**. Source is
+`CleansiaPartner/.../LaunchWordmark.imageset/wordmark.png` (1400×480), ink bbox **1235×345 = 3.5797**,
+alpha reused verbatim and recoloured white → `#0284c7` exactly as the customer mark was (verified:
+single visible ink RGB, alpha channel identical between PNG and WebP, and the two composite
+bit-identically on white and on `#1e293b`). Master **616×172 = 3.5814**, inside the source's own
+threshold spread (3.5797 at `alpha>0` → 3.5872 at `alpha>128`).
+
+**Why 616 wide, and why nothing needed re-sizing.** Measured inside the partner lockup: the `Cleansia`
+line is `1235×226` (aspect **5.4646**) and spans the *full* width of the box; `PARTNER` is `702×99`,
+centred, under a 20px gap. The customer wordmark is **5.4870**. So the two lockups carry the same word
+at the same relative width — sizing both marks to the **same width** therefore renders `Cleansia` at
+the same size in both apps (24.0px customer vs 24.2px partner at `width: 132px`, 0.7% apart), with
+partner simply taller. Sizing them to equal *height* would have shrunk the partner brand by a third.
+Nothing overflows: the 76px compact rail mark sits in 82px, the 132px mark in a 194px expanded header.
+
+Measured at every slot (partner): sidebar expanded / auth card `132×37`, mobile toolbar `99×28`,
+collapsed rail `76×21`. The `Cleansia` line reads 24.2 / 18.1 / 13.9px and `PARTNER` 10.6 / 8.0 / 6.0px
+— all legible; `PARTNER` in the rail is the weakest element at 6px, which is why the shared compact
+width went 66→76px (that also lifts the customer rail mark from 12 to 13.8px, and 76 in 82 still
+clears).
+
+**Two things the shared markup could not know, and how each is resolved without per-call-site churn:**
+- *The box shape.* `width`/`height` attributes live in a shared template, so before the bytes arrive
+  the browser would reserve the customer box and then jump 13px in the partner app. The aspect is now
+  `--cleansia-brand-aspect`, defaulted `616 / 112` in the shared stylesheet and overridden `616 / 172`
+  in `apps/cleansia-partner.app/src/styles.scss`. A CSS `aspect-ratio` wins over the intrinsic ratio,
+  so the box is identical before and after load.
+- *The accessible name.* `alt="Cleansia"` over artwork reading "Cleansia Partner" is the same kind of
+  claim as the old `.webp` lie. It now comes from `components.brand_mark_alt` in each app's **own i18n
+  bundle** (added to all 15 files; `Cleansia` for customer/admin, `Cleansia Partner` for partner) —
+  which also retires a hardcoded user-visible string. A component input would not have reached the
+  sidebar, which partner and admin share. A DI token was built first and **reverted**: `app.config.ts`
+  importing `@cleansia/components` adds an `enforce-module-boundaries` error (that lib is lazy-loaded)
+  and pulls the barrel in eagerly.
+
+**No text differentiator on the partner toolbar** — the artwork now says PARTNER, so a `<span>` would
+print it twice, exactly the redundancy removed from the customer lockup. Admin keeps `<span>Admin</span>`
+because its wordmark says only "Cleansia". The asymmetry the reviewer flagged is closed at the source
+rather than papered over with a label.
+
+**Favicon.** `Logo.ico` for partner is now the **partner** iOS `AppIcon1024`, downscaled — the same
+rule as before (square frame → that app's own iOS square artwork), now applied per app so the partner
+tab matches the partner header. Honest measurement: the stacked lockup is *worse* at tab size than the
+single wordmark — 48px gives a 37×10px band (72 near-white px), 32px gives 24×3 (12 px, against 27 for
+customer), and at 16px not one pixel reaches 200/255 on all channels. At 16px the partner and customer
+tiles are not distinguishable by eye; both are simply "the blue tile".
+
+**Toolbars are now width-driven** (`width: 99px; height: auto`) instead of height-driven, which is the
+rule already in the catalog and the only way the stacked lockup gets a sane size — height-driven at
+1.25rem would have rendered partner's mark 62.6px wide with a 4px `PARTNER`.
+
+**The guard was tightened, not loosened.** `it('ships the same mark in all three apps')` asserted an
+invariant this change deliberately breaks. It is replaced by three assertions that encode the *new*
+rule: each app's `Logo.png` has the shape its brand implies (`616×112` / `616×112` / `616×172` — shape,
+not merely "different bytes", so regenerating partner from the wrong source still fails); customer and
+admin are byte-identical while partner is not; and the aspect declared in CSS matches the asset's real
+dimensions, so the two cannot drift apart into a layout shift. Plus the i18n key is asserted present
+with the right value in all five locales per app. Mutation-checked, all restored afterwards:
+partner reverted to the customer wordmark → **3 failures**; the aspect var moved 2px → **1 failure**;
+the key deleted from partner `uk.json` → **1 failure**.
 
 ## Review
 <!-- reviewer writes verdict here -->

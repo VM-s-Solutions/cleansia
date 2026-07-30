@@ -1,5 +1,11 @@
 /* You can add global styles to this file, and also import other style files */
 
+// This app's mark is the stacked "Cleansia PARTNER" lockup from iOS, so its
+// box is a different shape from the customer/admin wordmark.
+:root {
+  --cleansia-brand-aspect: 616 / 172;
+}
+
 // Hide per-page language switchers on mobile (toolbar provides it)
 // This must be global since the language switchers are in child routed components
 @media (max-width: 768px) {

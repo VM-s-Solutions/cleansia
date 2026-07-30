@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { existsSync, readFileSync } from 'fs';
 import { dirname, extname, join } from 'path';
 import { inflateSync } from 'zlib';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CleansiaBrandNameComponent } from './cleansia-brand-name.component';
 
 function findSolutionDir(): string {
@@ -22,6 +23,16 @@ const APPS = ['cleansia.app', 'cleansia-partner.app', 'cleansia-admin.app'];
 const VARIABLES_SCSS = join(
   findSolutionDir(),
   'Cleansia.App/libs/shared/assets/src/styles/common/variables.scss'
+);
+
+const SHARED_BRAND_SCSS = join(
+  findSolutionDir(),
+  'Cleansia.App/libs/shared/assets/src/styles/components/cleansia-brand-name.component.scss'
+);
+
+const PARTNER_STYLES_SCSS = join(
+  APPS_DIR,
+  'cleansia-partner.app/src/styles.scss'
 );
 
 const BRAND_ASSETS = [
@@ -157,34 +168,106 @@ describe('brand mark assets', () => {
     }
   );
 
-  it('ships the same mark in all three apps', () => {
-    const digests = APPS.map((app) =>
-      readFileSync(join(APPS_DIR, app, 'src/assets/logos/Logo.png')).toString(
-        'base64'
-      )
-    );
-    expect(new Set(digests).size).toBe(1);
+  // Customer and admin share the "Cleansia" wordmark; partner ships the stacked
+  // "Cleansia Partner" lockup, because that is what the partner iOS app uses.
+  // Asserting the shape rather than just "different bytes" is what makes this a
+  // guard: regenerating partner from the wrong source would still differ.
+  it.each([
+    ['cleansia.app', 616, 112],
+    ['cleansia-admin.app', 616, 112],
+    ['cleansia-partner.app', 616, 172],
+  ])(
+    '%s ships the mark shape its app is branded with',
+    (app, width, height) => {
+      const png = decodeRgbaPng(
+        readFileSync(join(APPS_DIR, app as string, 'src/assets/logos/Logo.png'))
+      );
+      expect([png.width, png.height]).toEqual([width, height]);
+    }
+  );
+
+  // An absent key renders as the key itself, so the alt would read
+  // "components.brand_mark_alt" rather than fail anywhere visible.
+  it.each([
+    ['cleansia.app', 'Cleansia'],
+    ['cleansia-admin.app', 'Cleansia'],
+    ['cleansia-partner.app', 'Cleansia Partner'],
+  ])('%s names its mark in all five locales', (app, expected) => {
+    for (const locale of ['en', 'cs', 'sk', 'uk', 'ru']) {
+      const bundle = JSON.parse(
+        readFileSync(
+          join(APPS_DIR, app as string, `src/assets/i18n/${locale}.json`),
+          'utf8'
+        )
+      );
+      expect(bundle.components?.brand_mark_alt).toBe(expected);
+    }
   });
+
+  it('ships one mark for customer and admin, and a distinct one for partner', () => {
+    const mark = (app: string) =>
+      readFileSync(join(APPS_DIR, app, 'src/assets/logos/Logo.png'));
+
+    expect(mark('cleansia.app').equals(mark('cleansia-admin.app'))).toBe(true);
+    expect(mark('cleansia.app').equals(mark('cleansia-partner.app'))).toBe(
+      false
+    );
+  });
+
+  // The CSS reserves the mark's box before the file arrives, so a regenerated
+  // asset whose shape no longer matches the declared aspect is a layout shift.
+  it.each([
+    ['cleansia.app', SHARED_BRAND_SCSS],
+    ['cleansia-partner.app', PARTNER_STYLES_SCSS],
+  ])(
+    '%s declares the aspect its own Logo.png actually has',
+    (app, scssPath) => {
+      const declared = /--cleansia-brand-aspect[,:]\s*(\d+)\s*\/\s*(\d+)/.exec(
+        readFileSync(scssPath as string, 'utf8')
+      );
+      expect(declared).not.toBeNull();
+
+      const png = decodeRgbaPng(
+        readFileSync(join(APPS_DIR, app as string, 'src/assets/logos/Logo.png'))
+      );
+      expect([Number(declared?.[1]), Number(declared?.[2])]).toEqual([
+        png.width,
+        png.height,
+      ]);
+    }
+  );
 });
 
 describe('CleansiaBrandNameComponent', () => {
   let fixture: ComponentFixture<CleansiaBrandNameComponent>;
 
-  beforeEach(async () => {
+  async function render(markAlt: string) {
+    TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
-      imports: [CleansiaBrandNameComponent],
+      imports: [CleansiaBrandNameComponent, TranslateModule.forRoot()],
       providers: [provideRouter([])],
     }).compileComponents();
 
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('en', {
+      components: { brand_mark_alt: markAlt },
+    });
+    translate.use('en');
+
     fixture = TestBed.createComponent(CleansiaBrandNameComponent);
     fixture.detectChanges();
-  });
+  }
 
   function root(): HTMLElement {
     return fixture.nativeElement.querySelector('.cleansia-brand-name');
   }
 
-  it('marks itself compact only when asked', () => {
+  function altText(): string | null {
+    return fixture.nativeElement.querySelector('img').getAttribute('alt');
+  }
+
+  it('marks itself compact only when asked', async () => {
+    await render('Cleansia');
     expect(root().classList).not.toContain('cleansia-brand-name--compact');
 
     fixture.componentRef.setInput('compact', true);
@@ -193,10 +276,19 @@ describe('CleansiaBrandNameComponent', () => {
     expect(root().classList).toContain('cleansia-brand-name--compact');
   });
 
-  it('renders the wordmark alone — the mark already says "Cleansia"', () => {
+  it('renders the mark alone — the artwork already carries the name', async () => {
+    await render('Cleansia');
+
     expect(fixture.nativeElement.textContent.trim()).toBe('');
-    expect(fixture.nativeElement.querySelector('img').getAttribute('alt')).toBe(
-      'Cleansia'
-    );
+    expect(altText()).toBe('Cleansia');
+  });
+
+  // Each app resolves both `assets/logos/Logo.*` and its own i18n bundle, so the
+  // accessible name follows the artwork without any call site knowing the app —
+  // which matters because partner and admin share the sidebar that renders it.
+  it('names the mark from the app bundle, so partner can say what its lockup says', async () => {
+    await render('Cleansia Partner');
+
+    expect(altText()).toBe('Cleansia Partner');
   });
 });

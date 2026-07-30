@@ -102,6 +102,7 @@ export class UserEffects {
                 photo,
                 languageCode:
                   this.translate.currentLang || this.translate.getDefaultLang(),
+                removePhoto: false,
               })
             )
             .pipe(

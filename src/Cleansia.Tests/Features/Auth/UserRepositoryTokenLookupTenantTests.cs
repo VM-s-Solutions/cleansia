@@ -62,6 +62,9 @@ public class UserRepositoryTokenLookupTenantTests
                 // Sign in with Apple is anonymous and resolves the account by the verified Apple sub —
                 // same bypass rationale as the anonymous email lookup above.
                 "GetByAppleIdIgnoringTenantAsync",
+                // Google sign-in is anonymous for the same reason and now resolves by the verified
+                // Google sub before falling back to the email — same bypass rationale as Apple.
+                "GetByGoogleIdIgnoringTenantAsync",
                 "RecordFailedLoginAsync",
                 "TryChargeResetPasswordCodeAttemptAsync",
                 // The OTP confirm branch resolves the account by email (anonymous), so its budget

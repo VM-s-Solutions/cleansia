@@ -243,6 +243,32 @@ public class User : Auditable, ITenantEntity
     }
 
     /// <summary>
+    /// Binds the Google <c>sub</c> to an account resolved by email, and never rewrites one already bound.
+    /// <para>
+    /// The window this closes is different from Apple's but the consequence is the same. Google keeps
+    /// sending the email, so an account with no stored subject is not locked out — it is worse than that:
+    /// it stays keyed on a mutable, provider-owned attribute, so changing the address on the Google
+    /// account silently orphans the row and the next sign-in provisions a duplicate. Binding the subject
+    /// on the first sign-in that resolves by email anchors the account to the one identifier Google
+    /// guarantees is stable.
+    /// </para>
+    /// <para>
+    /// Never-overwrite is the same S1 server-truth-identity property <see cref="LinkAppleId"/> carries: a
+    /// stored subject is the account's verified anchor, and allowing a later sign-in to replace it would
+    /// let one Google identity take over an account anchored to another.
+    /// </para>
+    /// </summary>
+    public User LinkGoogleId(string googleSub)
+    {
+        if (string.IsNullOrWhiteSpace(GoogleId) && !string.IsNullOrWhiteSpace(googleSub))
+        {
+            GoogleId = googleSub.Trim();
+        }
+
+        return this;
+    }
+
+    /// <summary>
     /// Fills ONLY the blank name parts and leaves anything already stored untouched. The values reaching
     /// it are external-identity ones (Apple replays the name captured at the FIRST authorization), so they
     /// can be stale by years — they may repair a blank field but must never silently undo a name the user

@@ -97,6 +97,15 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'auth.too_many_attempts',
   'auth.current_password_invalid',
   'auth.insufficient_privileges',
+  // Password reset: the forgot-password form posts a 6-digit code, so both
+  // arms of the ChangePassword validator are reachable from the customer app.
+  'auth.invalid_reset_token',
+  'auth.same_reset_password',
+  // Refresh: RefreshToken splits its failures in two — the reuse/theft signal
+  // gets its own key, and expiry, an unknown token or an audience mismatch all
+  // land on invalid_refresh_token.
+  'auth.invalid_refresh_token',
+  'auth.refresh_token_reused',
   // Provider mismatch: password login against an account that belongs to a
   // social provider. LoginValidator names the provider the account ACTUALLY
   // uses, so all four arms are reachable from the customer login form and each

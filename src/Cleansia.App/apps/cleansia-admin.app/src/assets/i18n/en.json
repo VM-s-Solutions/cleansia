@@ -2466,7 +2466,9 @@
       "insufficient_privileges": "You do not have permission to access the admin panel. Only administrators and employees can log in.",
       "current_password_invalid": "The current password is incorrect",
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
-      "too_many_attempts": "Too many attempts with this code. Request a new code and try again."
+      "too_many_attempts": "Too many attempts with this code. Request a new code and try again.",
+      "invalid_refresh_token": "Your session has expired. Please sign in again.",
+      "refresh_token_reused": "Your session was used elsewhere. Please sign in again."
     },
     "common": {
       "invalid_enum_value": "Invalid value provided",
@@ -2743,8 +2745,7 @@
       "remember_me": "Remember me",
       "forgot_password": "Forgot password?",
       "dont_have_account": "Don't have an account?"
-    },
-    "refresh_token_reused": "Your session was used elsewhere. Please sign in again."
+    }
   },
   "fiscal_failures": {
     "title": "Fiscal Failures",

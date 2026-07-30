@@ -32,7 +32,9 @@ namespace Cleansia.Tests.Features.Auth;
 ///     (covers BOTH Internal AND Apple) is rejected, and the rejection names the provider that account
 ///     ACTUALLY uses — an Apple user has no password, so "use email and password" is a dead end;
 ///   - provisioning happens ONLY when <c>claims.EmailVerified</c> (parity with the AppleAuth gate —
-///     an unverified-email Google token provisions NOTHING).
+///     an unverified-email Google token provisions NOTHING);
+///   - resolving an EXISTING account through the email fallback is gated on <c>claims.EmailVerified</c>
+///     too — a token that merely ASSERTS a victim's address never resolves onto their account.
 /// Written red → green per knowledge/testing.md (predates the handler rewrite).
 /// </summary>
 public class GoogleAuthHandlerTests
@@ -197,6 +199,61 @@ public class GoogleAuthHandlerTests
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
         _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // The email is the ONLY thing that resolves an existing account here, so it has to be an email GOOGLE
+    // vouched for: a token asserting an address Google never verified must not hand back the JWT of the
+    // account registered under it. Unverified → the lookup is not even attempted and the sign-in fails
+    // closed exactly like an unprovisionable one.
+    [Fact]
+    public async Task Unverified_Email_Does_Not_Match_An_Existing_Account()
+    {
+        var victim = UserMockFactory.Generate(new UserMockFactory.UserPartial
+        {
+            AuthenticationType = AuthenticationType.Google
+        });
+        victim.IsActive = true;
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GoogleVerifiedClaims("attacker-subject", victim.Email, EmailVerified: false));
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(victim.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(victim);
+
+        var result = await CreateHandler().Handle(CommandWith(victim.Email, "any-google-id"), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.InvalidGoogleUserToken, result.Error!.Message);
+        Assert.Equal(nameof(GoogleAuth.Command.Token), result.Error!.Code);
+        _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
+    }
+
+    // The other half of that gate: it narrows the fallback, it does not remove it. A legitimate returning
+    // user whose token DOES report the email as verified still resolves by email and still gets a token.
+    [Fact]
+    public async Task Verified_Email_Still_Matches_An_Existing_Account()
+    {
+        var existing = UserMockFactory.Generate(new UserMockFactory.UserPartial
+        {
+            AuthenticationType = AuthenticationType.Google
+        });
+        existing.IsActive = true;
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GoogleVerifiedClaims("subject-verified", existing.Email, EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(existing.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(CommandWith(existing.Email, "any-google-id"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(existing.Email, It.IsAny<CancellationToken>()), Times.Once);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+        _tokenService.Verify(t => t.GenerateTokenAsync(existing, true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // (S1): the AuthenticationType guard now runs in the HANDLER against the VERIFIED

@@ -220,8 +220,7 @@
       "submit": "Odoslať odkaz na obnovenie",
       "success": "Odkaz na obnovenie hesla odoslaný! Skontrolujte svoj e-mail.",
       "back_to_login": "Späť na prihlásenie"
-    },
-    "refresh_token_reused": "Vaša relácia bola použitá inde. Prihláste sa, prosím, znova."
+    }
   },
   "services": {
     "title": "Naše služby",
@@ -912,6 +911,7 @@
       "timeline": "Časová os",
       "notes": "Poznámky",
       "special_instructions": "Špeciálne pokyny",
+      "access_instructions": "Pokyny na prístup",
       "confirmation_code": "Potvrdzovací kód",
       "download_receipt": "Stiahnuť účtenku",
       "download_error": "Nepodarilo sa stiahnuť účtenku",
@@ -1411,8 +1411,12 @@
       "invalid_google_token": "Prihlásenie cez Google sa nepodarilo. Skúste to znova.",
       "invalid_apple_token": "Prihlásenie cez Apple sa nepodarilo. Skúste to znova.",
       "invalid_password_format": "Vaše heslo nespĺňa požiadavky.",
+      "invalid_reset_token": "Tento kód na obnovenie hesla je neplatný alebo vypršal.",
+      "same_reset_password": "Vaše nové heslo sa musí líšiť od súčasného.",
       "current_password_invalid": "Vaše súčasné heslo nie je správne.",
-      "insufficient_privileges": "Na túto akciu nemáte oprávnenie."
+      "insufficient_privileges": "Na túto akciu nemáte oprávnenie.",
+      "invalid_refresh_token": "Vaša relácia vypršala. Prihláste sa, prosím, znova.",
+      "refresh_token_reused": "Vaša relácia bola použitá inde. Prihláste sa, prosím, znova."
     },
     "common": {
       "unauthorized": "Nemáte oprávnenie na vykonanie tejto akcie",

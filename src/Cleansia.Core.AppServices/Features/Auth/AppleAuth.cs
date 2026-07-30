@@ -93,9 +93,14 @@ public class AppleAuth
             // immutable for this Apple ID within our developer team, and the ONLY identity Apple sends on a
             // returning sign-in — it omits the email after the user's first authorization, so an
             // email-only lookup locked returning users out. The email is a fallback for accounts
-            // provisioned before their sub was ever seen.
+            // provisioned before their sub was ever seen — and only when APPLE vouched for it (S1):
+            // matching by email also BINDS this token's sub to that row below, permanently, so an
+            // unverified address must reach neither the account nor its identity anchor. A sub match
+            // carries its own proof and is deliberately not gated — that sub was bound while the email
+            // was verified, and re-gating it would lock out every returning user (Apple stops sending the
+            // email, and with it a meaningful email_verified, after the first authorization).
             var user = await userRepository.GetByAppleIdIgnoringTenantAsync(claims.Subject, cancellationToken);
-            if (user is null && !string.IsNullOrWhiteSpace(claims.Email))
+            if (user is null && claims.EmailVerified && !string.IsNullOrWhiteSpace(claims.Email))
             {
                 user = await userRepository.GetByEmailIgnoringTenantAsync(claims.Email, cancellationToken);
             }

@@ -1303,7 +1303,8 @@
       "max_size": "Макс. розмір",
       "or_drag_drop": "або перетягніть",
       "selected_files": "Вибрані файли"
-    }
+    },
+    "brand_mark_alt": "Cleansia"
   },
   "validation": {
     "common": {

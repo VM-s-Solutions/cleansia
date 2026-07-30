@@ -1,4 +1,3 @@
-import { DOCUMENT } from '@angular/common';
 import { Injectable, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRouteSnapshot, NavigationEnd, Router } from '@angular/router';
@@ -10,8 +9,6 @@ export interface PageTitleConfig {
   baseTitle: string;
   /** Optional default title key when no route title is defined */
   defaultTitleKey?: string;
-  /** Optional favicon path */
-  faviconPath?: string;
 }
 
 @Injectable({
@@ -21,10 +18,8 @@ export class PageTitleService {
   private readonly titleService = inject(Title);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
-  private readonly document = inject(DOCUMENT);
 
   private baseTitle = 'Cleansia';
-  private faviconLink: HTMLLinkElement | null = null;
 
   /**
    * Initialize the page title service with configuration
@@ -32,11 +27,6 @@ export class PageTitleService {
    */
   initialize(config: PageTitleConfig): void {
     this.baseTitle = config.baseTitle;
-
-    // Set up favicon if provided
-    if (config.faviconPath) {
-      this.setupFavicon(config.faviconPath);
-    }
 
     // Listen for route changes
     this.router.events
@@ -74,13 +64,6 @@ export class PageTitleService {
     this.titleService.setTitle(fullTitle);
   }
 
-  /**
-   * Update the favicon dynamically
-   */
-  setFavicon(path: string): void {
-    this.setupFavicon(path);
-  }
-
   private updateTitle(titleKey?: string): void {
     if (titleKey) {
       // Use stream to handle the case where translations haven't loaded yet.
@@ -107,19 +90,5 @@ export class PageTitleService {
     }
 
     return title;
-  }
-
-  private setupFavicon(path: string): void {
-    // Find existing favicon link or create a new one
-    this.faviconLink = this.document.querySelector('link[rel="icon"]') as HTMLLinkElement;
-
-    if (!this.faviconLink) {
-      this.faviconLink = this.document.createElement('link');
-      this.faviconLink.rel = 'icon';
-      this.faviconLink.type = 'image/x-icon';
-      this.document.head.appendChild(this.faviconLink);
-    }
-
-    this.faviconLink.href = path;
   }
 }

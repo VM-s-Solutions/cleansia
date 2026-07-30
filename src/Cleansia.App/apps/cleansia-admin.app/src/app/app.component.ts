@@ -51,7 +51,6 @@ export class AppComponent implements OnInit {
     this.pageTitleService.initialize({
       baseTitle: 'Cleansia Admin',
       defaultTitleKey: 'page_titles.admin.default',
-      faviconPath: 'assets/logos/Logo.ico',
     });
 
     this.store.dispatch(loadAdminCodes());

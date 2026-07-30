@@ -31,12 +31,8 @@ $primary: #0284c7;
   &__left {
     flex: 1;
     min-width: 0;
-    display: none;
+    display: flex;
     align-items: center;
-  }
-
-  &__brand-mobile {
-    display: block;
   }
 
   &__center {
@@ -66,12 +62,6 @@ $primary: #0284c7;
   }
 
   @media (min-width: 768px) {
-    &__left {
-      display: flex;
-    }
-    &__brand-mobile {
-      display: none;
-    }
     &__center {
       display: flex;
     }

@@ -9,7 +9,10 @@
         <cleansia-brand-name />
       </div>
       <div class="cleansia-email-confirm__header">
-        <cleansia-title [title]="'pages.email_confirm.title' | translate" />
+        <cleansia-title
+          [level]="1"
+          [title]="'pages.email_confirm.title' | translate"
+        />
       </div>
       <p class="cleansia-email-confirm__message">
         {{ 'pages.email_confirm.description' | translate }}

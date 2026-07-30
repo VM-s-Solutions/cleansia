@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Cleansia Partner</string>
+    <string name="splash_tagline">Ваши заказы, график и оплата — в одном месте</string>
 
     <!-- Common -->
     <string name="loading">Загрузка…</string>

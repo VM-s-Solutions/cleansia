@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -58,6 +60,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
@@ -66,6 +69,7 @@ import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.customer.ui.theme.BrandGradients
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.core.ui.theme.Poppins
+import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.customer.ui.theme.Sky600
 import cz.cleansia.customer.ui.theme.asList
 import kotlinx.datetime.toJavaLocalDateTime
@@ -239,7 +243,9 @@ fun ProfileTab(
     }
 }
 
-/* ── Hero — gradient top with curved bottom, avatar, name, edit pill ── */
+// Feasible band at 320dp: >= 0.43 or the English label ellipsizes, <= 0.45 to hold the name column
+// at >= 56dp. Only 5.8dp of English headroom, so re-measure if the label, icon, padding or font moves.
+private const val EditChipMaxWidthFraction = 0.45f
 
 @Composable
 private fun ProfileHero(
@@ -251,86 +257,92 @@ private fun ProfileHero(
 ) {
     val initials = "${firstName.firstOrNull() ?: ""}${lastName.firstOrNull() ?: ""}"
 
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .background(brush = Brush.verticalGradient(BrandGradients.blue().asList()))
-            .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 36.dp),
+            .padding(start = Spacing.ML, end = Spacing.ML, top = Spacing.M, bottom = Spacing.XXL),
     ) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Big avatar
-                Box(
-                    modifier = Modifier
-                        .size(72.dp)
-                        .background(Color.White, CircleShape)
-                        .border(3.dp, Color.White.copy(alpha = 0.35f), CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        initials.uppercase(),
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontFamily = Poppins,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                        color = Sky600,
-                    )
-                }
-                Spacer(Modifier.width(14.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "$firstName $lastName",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = Poppins,
-                                fontWeight = FontWeight.Bold,
-                            ),
-                            color = Color.White,
-                            maxLines = 1,
-                        )
-                    }
-                    Spacer(Modifier.height(2.dp))
+        // RowScope.weight only divides what is left AFTER unweighted children are measured, so an
+        // unbounded chip starves the name column to nothing once the label is long (ru/uk). Capping
+        // the chip keeps the name's share; the chip ellipsizes instead.
+        val editChipMaxWidth = maxWidth * EditChipMaxWidthFraction
+
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .background(Color.White, CircleShape)
+                    .border(3.dp, Color.White.copy(alpha = 0.35f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                // The circle is fixed white in both themes, so the initials pin the light-mode
+                // brand blue; the theme-adaptive primary drops to 2.1:1 against it in dark.
+                Text(
+                    initials.uppercase(),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Sky600,
+                )
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "$firstName $lastName",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (email.isNotEmpty()) {
+                    Spacer(Modifier.height(Spacing.Hair))
                     Text(
                         email,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = Color.White.copy(alpha = 0.85f),
                         maxLines = 1,
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    TierBadge(tier)
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            // Edit profile pill — pushed to the right
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(Color.White.copy(alpha = 0.22f))
-                        .clickable(onClick = onEditClick)
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        Icons.Outlined.Edit,
-                        null,
-                        tint = Color.White,
-                        modifier = Modifier.size(14.dp),
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        stringResource(R.string.profile_row_edit),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = Color.White,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
+                Spacer(Modifier.height(6.dp))
+                TierBadge(tier)
             }
+            Spacer(Modifier.width(Spacing.S))
+            // Deliberate mixed alignment: avatar and text stay top-anchored while the chip
+            // centres against the full row height.
+            EditProfileChip(
+                onClick = onEditClick,
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .widthIn(max = editChipMaxWidth),
+            )
         }
+    }
+}
+
+@Composable
+private fun EditProfileChip(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(Color.White.copy(alpha = 0.22f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = Spacing.XS),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            Icons.Outlined.Edit,
+            null,
+            tint = Color.White,
+            modifier = Modifier.size(14.dp),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            stringResource(R.string.profile_row_edit),
+            style = MaterialTheme.typography.labelLarge,
+            color = Color.White,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -339,7 +351,7 @@ private fun TierBadge(tier: String) {
     Row(
         modifier = Modifier
             .background(Color.White.copy(alpha = 0.22f), RoundedCornerShape(999.dp))
-            .padding(horizontal = 8.dp, vertical = 3.dp),
+            .padding(horizontal = Spacing.XS, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -348,11 +360,13 @@ private fun TierBadge(tier: String) {
             tint = Color.White,
             modifier = Modifier.size(12.dp),
         )
-        Spacer(Modifier.width(4.dp))
+        Spacer(Modifier.width(Spacing.XXS))
         Text(
             tier,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+            style = MaterialTheme.typography.labelSmall,
             color = Color.White,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -599,4 +613,74 @@ private fun DeleteAccountRow(onClick: () -> Unit) {
 @Composable
 private fun ProfileTabPreview() {
     CleansiaTheme { ProfileTab() }
+}
+
+@Preview(widthDp = 390)
+@Composable
+private fun ProfileHeroPreview() {
+    CleansiaTheme {
+        ProfileHero(
+            firstName = "Jane",
+            lastName = "Doe",
+            email = "jane@example.com",
+            tier = stringResource(R.string.profile_tier_regular),
+            onEditClick = {},
+        )
+    }
+}
+
+@Preview(widthDp = 320)
+@Composable
+private fun ProfileHeroLongNamePreview() {
+    CleansiaTheme {
+        ProfileHero(
+            firstName = "Bartholomew-Maximilian",
+            lastName = "Fitzgerald-Wellington",
+            email = "bartholomew.fitzgerald.wellington@verylongdomainexample.co.uk",
+            tier = stringResource(R.string.profile_tier_plus),
+            onEditClick = {},
+        )
+    }
+}
+
+@Preview(widthDp = 390)
+@Composable
+private fun ProfileHeroNoEmailPreview() {
+    CleansiaTheme {
+        ProfileHero(
+            firstName = "Jane",
+            lastName = "Doe",
+            email = "",
+            tier = stringResource(R.string.profile_tier_regular),
+            onEditClick = {},
+        )
+    }
+}
+
+@Preview(locale = "ru", widthDp = 360)
+@Composable
+private fun ProfileHeroRussianPreview() {
+    CleansiaTheme {
+        ProfileHero(
+            firstName = "Александр",
+            lastName = "Иванов",
+            email = "aleksandr.ivanov@example.com",
+            tier = stringResource(R.string.profile_tier_regular),
+            onEditClick = {},
+        )
+    }
+}
+
+@Preview(locale = "uk", widthDp = 320)
+@Composable
+private fun ProfileHeroUkrainianNarrowPreview() {
+    CleansiaTheme {
+        ProfileHero(
+            firstName = "Володимир",
+            lastName = "Ковальчук",
+            email = "volodymyr.kovalchuk@example.com",
+            tier = stringResource(R.string.profile_tier_regular),
+            onEditClick = {},
+        )
+    }
 }

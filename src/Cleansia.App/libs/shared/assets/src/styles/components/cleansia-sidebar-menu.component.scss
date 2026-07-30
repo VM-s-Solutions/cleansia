@@ -176,6 +176,12 @@
   }
 }
 
+// The collapsed rail is 6rem wide; its side padding would eat a fifth of the
+// room the wordmark has left.
+.sidebar--collapsed .sidebar-header {
+  padding-inline: 0;
+}
+
 // ===== NAVIGATION =====
 .sidebar-nav {
   flex: 1;

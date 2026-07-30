@@ -3,7 +3,6 @@
     <color name="cleansia_primary">#0284C7</color>
     <color name="cleansia_background_light">#F8FAFC</color>
     <color name="cleansia_background_dark">#0F172A</color>
-    <color name="ic_launcher_background">#0284C7</color>
-    <!-- Sky-600, same gradient start used by the Compose splash below -->
+    <!-- sky-600 — the gradient start the in-app splash opens on, so the OS splash hands over without a colour jump -->
     <color name="splash_background">#0284C7</color>
 </resources>

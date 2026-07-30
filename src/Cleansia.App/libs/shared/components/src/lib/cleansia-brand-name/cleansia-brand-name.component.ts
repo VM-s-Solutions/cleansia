@@ -1,16 +1,15 @@
-import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'cleansia-brand-name',
   templateUrl: './cleansia-brand-name.component.html',
   standalone: true,
-  imports: [NgClass, RouterLink],
+  imports: [RouterLink, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaBrandNameComponent {
   defaultRoute = input<string>('');
-  showName = input<boolean>(true);
-  wrapped = input<boolean>(false);
+  compact = input<boolean>(false);
 }

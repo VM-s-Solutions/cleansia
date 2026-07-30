@@ -1303,7 +1303,8 @@
       "max_size": "Макс. размер",
       "or_drag_drop": "или перетащите",
       "selected_files": "Выбранные файлы"
-    }
+    },
+    "brand_mark_alt": "Cleansia"
   },
   "validation": {
     "common": {

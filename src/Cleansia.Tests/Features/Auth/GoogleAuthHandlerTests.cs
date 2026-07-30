@@ -314,4 +314,99 @@ public class GoogleAuthHandlerTests
         Assert.Equal(BusinessErrorMessage.InvalidPassword, result.Error!.Message);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    // The bug this replaces: the account was resolved by EMAIL, a provider-owned attribute the user can
+    // change at will. Change the address on the Google account and the row stopped matching, so the next
+    // sign-in provisioned a duplicate. The subject is the stable identity and now resolves first.
+    [Fact]
+    public async Task Existing_Account_Resolves_By_Subject_Even_When_The_Google_Email_Changed()
+    {
+        const string subject = "stable-subject-1";
+        var existing = User.CreateWithGoogle("old-address@example.com", "First", "Last", subject);
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GoogleVerifiedClaims(subject, "changed-address@example.com", EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByGoogleIdIgnoringTenantAsync(subject, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(
+            CommandWith("changed-address@example.com", subject), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        // No duplicate provisioned, and the email lookup never ran — the subject was enough.
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+        _userRepository.Verify(
+            r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // An account provisioned before subjects were stored resolves by email exactly once, and that
+    // sign-in anchors it. Without the bind it would take the fragile email path forever.
+    [Fact]
+    public async Task Email_Fallback_Binds_The_Subject_So_The_Next_Sign_In_Resolves_By_It()
+    {
+        const string subject = "subject-to-bind";
+        const string email = "legacy-account@example.com";
+        var legacy = User.CreateWithGoogle(email, "First", "Last", googleId: string.Empty);
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GoogleVerifiedClaims(subject, email, EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByGoogleIdIgnoringTenantAsync(subject, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(legacy);
+
+        var result = await CreateHandler().Handle(CommandWith(email, subject), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(subject, legacy.GoogleId);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+    }
+
+    // S1 server-truth-identity: a bound subject is the account's verified anchor. Letting a later
+    // sign-in rewrite it would let one Google identity take over an account anchored to another.
+    [Fact]
+    public async Task An_Already_Bound_Subject_Is_Never_Rewritten()
+    {
+        const string boundSubject = "the-real-owner";
+        const string attackerSubject = "someone-else";
+        const string email = "shared@example.com";
+        var existing = User.CreateWithGoogle(email, "First", "Last", boundSubject);
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GoogleVerifiedClaims(attackerSubject, email, EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByGoogleIdIgnoringTenantAsync(attackerSubject, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        await CreateHandler().Handle(CommandWith(email, attackerSubject), CancellationToken.None);
+
+        Assert.Equal(boundSubject, existing.GoogleId);
+    }
+
+    // The A1 gate still holds on the fallback: an unverified email must not reach the email lookup at
+    // all, even now that a subject miss is what routes it there.
+    [Fact]
+    public async Task Unverified_Email_Does_Not_Reach_The_Fallback_After_A_Subject_Miss()
+    {
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GoogleVerifiedClaims("unknown-subject", "victim@example.com", EmailVerified: false));
+        _userRepository
+            .Setup(r => r.GetByGoogleIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        var result = await CreateHandler().Handle(
+            CommandWith("victim@example.com", "unknown-subject"), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        _userRepository.Verify(
+            r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+    }
 }

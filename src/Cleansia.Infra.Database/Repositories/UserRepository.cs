@@ -89,6 +89,19 @@ public class UserRepository(CleansiaDbContext context)
             .FirstOrDefaultAsync(user => user.AppleId == appleId, cancellationToken);
     }
 
+    // Google sign-in, same anonymous-request tenant rationale as the Apple lookup above. Tracked on
+    // purpose (no AsNoTracking): the caller links the subject onto a row resolved by email, and that
+    // write has to ride the UnitOfWork commit like every other handler mutation.
+    // IX_Users_GoogleId already backs this and is deliberately NON-unique — see the note in GoogleAuth
+    // about rows that share a subject.
+    public Task<User?> GetByGoogleIdIgnoringTenantAsync(string googleId, CancellationToken cancellationToken = default)
+    {
+        return GetDbSet()
+            .IgnoreQueryFilters()
+            .Include(user => user.Employee)
+            .FirstOrDefaultAsync(user => user.GoogleId == googleId, cancellationToken);
+    }
+
     // The confirmation token is stored as a SHA-256 hash, so the incoming RAW
     // token is hashed and matched against the stored hash. Stays inside the global tenant filter
     // (no IgnoreQueryFilters) — a hashed token must not match cross-tenant.

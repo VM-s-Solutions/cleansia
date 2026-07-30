@@ -98,6 +98,52 @@ grounding it. Sizing/AC/deps/layers set → DoR met.
 ## Status log
 - 2026-07-30 — draft (created by pm; owner batch item 4, web half)
 - 2026-07-30 — ready (dep T-0438 recorded; DoR met; no-decision note recorded)
+- 2026-07-30 — implemented (frontend) on `feat/T-0444-web-logo` off `fix/T-0438-unbreak-web-build`
+
+## Implementation notes (frontend)
+
+**Both PM findings reproduced.** All three `Logo.webp` were sha1 `365adf596364`, `file(1)` =
+*PNG image data, 48 x 48* — a PNG under a `.webp` extension, at 48px into a 28px slot.
+
+**The mark had to be adapted, not copied.** The named source
+(`CleansiaCustomer/.../AppIcon1024.png`, sha1 `a39ee5488041` — verified) is a **full-bleed wordmark**;
+iOS has no icon-only mark (both `AppIcon1024.png` are wordmarks, both `LaunchWordmark` are wordmarks).
+Downscaled to favicon size it fails: at 32px the lettering is ~4px tall, at **16px it is an illegible
+white bar**. Every web brand slot is a small square *next to the literal text "Cleansia"*
+(favicon 16–32px; header `<img width="28">`; `cleansia-brand-name` `<img width="32">`), i.e. a symbol
+slot. This is the web analogue of T-0443 AC2's *"this is why AC1 is not 'copy the 1024 PNG in'"*, and
+of the owner's delegation *"make it on your own to match iOS version"*.
+
+So the mark was **derived from the iOS art by measurement, not redesigned**:
+- the "C" glyph is the actual glyph from the iOS wordmark, sampled from the source pixels
+  (bbox x 98–223, y 444–575 in the 1024 icon) as a coverage mask — not re-set in a font;
+- the gradient is the iOS gradient, corners `TL(0,152,210) → BR(64,201,249)`, reproduced bilinearly
+  (worst error **1.2/255** against 8 sampled background points);
+- the silhouette is the iOS squircle (superellipse n=5).
+
+No new art was authored; every pixel derives from `AppIcon1024.png`. If the owner would rather ship
+the full wordmark in the square slots despite the 16px legibility loss, that is a one-line
+regeneration — flagged rather than assumed.
+
+**Also fixed (same edit, same files):** the customer app was shipping **two competing favicons** —
+`index.html` declared `favicon-32.png` while `PageTitleService.faviconPath` rewrote `link[rel=icon]`
+to `Logo.ico` at runtime. `index.html` is now the single favicon declaration in all three apps and
+the now-dead favicon plumbing (`faviconPath`, `setFavicon`, `setupFavicon`, the `DOCUMENT` inject)
+was removed from `PageTitleService` — it had no remaining caller. This also removes a browser-only
+DOM mutation from the SSR customer path.
+
+`<picture>` in `cleansia-brand-name` had `<source type="image/webp">` and its `<img>` fallback both
+pointing at the same PNG-named-`.webp`; the `<source>` is now a real WebP and the fallback a real PNG.
+
+**Follow-ups found, not actioned (out of scope):**
+- `libs/shared/components/src/lib/cleansia-menu/` is **dead** — exported from the barrel, used by no
+  app; its `<img src="assets/images/logo.png">` is the only reference to that asset (which exists in
+  the customer app only, so the component would 404 in partner/admin). Deleting a public shared-lib
+  symbol is a separate call. The asset was refreshed to the new mark to avoid brand drift.
+- `cleansia-brand-name` carries `loading="lazy"` on an above-the-fold navbar logo; the component is
+  shared with the footer, so the correct fix is a per-call-site input, not a blanket flip.
+- No `apple-touch-icon` / PWA manifest exists. Explicitly out of scope; worth a ticket — the new
+  1024 master regenerates any size.
 
 ## Review
 <!-- reviewer writes verdict here -->

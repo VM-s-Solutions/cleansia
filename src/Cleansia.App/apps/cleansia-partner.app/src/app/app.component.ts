@@ -79,7 +79,6 @@ export class AppComponent implements OnInit, OnDestroy {
     this.pageTitleService.initialize({
       baseTitle: 'Cleansia Partner',
       defaultTitleKey: 'page_titles.partner.default',
-      faviconPath: 'assets/logos/Logo.ico',
     });
 
     // Load codes on app initialization

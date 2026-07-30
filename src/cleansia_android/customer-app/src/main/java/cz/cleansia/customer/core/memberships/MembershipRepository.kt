@@ -4,6 +4,7 @@ import android.content.Context
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
 import cz.cleansia.core.auth.SessionScopedCache
+import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
@@ -40,6 +41,15 @@ class MembershipRepository @Inject constructor(
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
+    /**
+     * Freshness watermark for [current]. Screens that observe it typically warm
+     * the cache with a "refresh only while null" effect, which never re-fires
+     * once the first fetch lands — a subscription bought elsewhere would stay
+     * invisible for the process lifetime. Consumers check [Staleness.isStale]
+     * on screen entry to decide whether to re-fetch.
+     */
+    val staleness = Staleness()
+
     suspend fun refresh(): ApiResult<GetMyMembershipResponse> = mutex.withLock {
         _loading.value = true
         try {
@@ -49,6 +59,7 @@ class MembershipRepository @Inject constructor(
             }
             val body = response.body() ?: return@withLock httpError(null, response.code())
             _current.value = body
+            staleness.markFresh()
             return@withLock ApiResult.Success(body)
         } finally {
             _loading.value = false
@@ -124,6 +135,7 @@ class MembershipRepository @Inject constructor(
     override suspend fun clear() {
         _current.value = null
         _plans.value = emptyList()
+        staleness.reset()
     }
 
     private suspend inline fun <T> call(

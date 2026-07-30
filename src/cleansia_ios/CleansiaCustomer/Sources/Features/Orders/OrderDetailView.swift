@@ -284,26 +284,26 @@ private struct OrderDetailActionsFooter: View {
                 CleansiaOutlinedButton(
                     L10n.OrderDetail.actionMakeRecurring,
                     leadingIcon: "calendar",
+                    contentColor: CleansiaColors.primary,
                     action: onMakeRecurring
                 )
-                .tint(CleansiaColors.primary)
             }
             if showCancel {
                 CleansiaOutlinedButton(
                     L10n.OrderDetail.actionCancel,
                     leadingIcon: "xmark.circle",
+                    contentColor: CleansiaColors.error,
                     enabled: cancelEnabled,
                     action: onCancel
                 )
-                .tint(CleansiaColors.error)
             }
             if showReportIssue {
                 CleansiaOutlinedButton(
                     L10n.OrderDetail.actionReportIssue,
                     leadingIcon: "exclamationmark.triangle",
+                    contentColor: CleansiaColors.primary,
                     action: onReportIssue
                 )
-                .tint(CleansiaColors.primary)
             }
         }
         .padding(.horizontal, Spacing.m)

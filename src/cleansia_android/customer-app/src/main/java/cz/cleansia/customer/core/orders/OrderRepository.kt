@@ -5,6 +5,7 @@ import cz.cleansia.core.auth.AuthAuthenticator
 import android.content.Context
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
+import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
@@ -55,6 +56,16 @@ class OrderRepository @Inject constructor(
     private val _loaded = MutableStateFlow(false)
     val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
 
+    /**
+     * Freshness watermark for the page-0 cache. Distinct from [loaded], which is
+     * a one-way first-paint latch and so cannot answer "has this aged?" — screens
+     * that merely observe [orders] check [Staleness.isStale] on entry to decide
+     * whether a background [refresh] is worth the round-trip. Only [refresh]
+     * stamps it; [loadNextPage] appends later pages and leaves page 0 as old as
+     * it was.
+     */
+    val staleness = Staleness()
+
     private val pageSize = 20
 
     /**
@@ -76,6 +87,7 @@ class OrderRepository @Inject constructor(
             // totalRecords in the repo API to keep consumers agnostic of the wire name.
             _totalRecords.value = body.total
             _loaded.value = true
+            staleness.markFresh()
             return ApiResult.Success(Unit)
         } finally {
             _loading.value = false
@@ -230,5 +242,6 @@ class OrderRepository @Inject constructor(
         _orders.value = emptyList()
         _totalRecords.value = 0
         _loaded.value = false
+        staleness.reset()
     }
 }

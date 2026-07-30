@@ -1225,6 +1225,7 @@
     <string name="error_gdpr_deletion_blocked_by_order">Your account can\'t be deleted yet — there is an active order.</string>
     <string name="error_general_not_found">Resource not found</string>
     <string name="error_language_not_found">Language not found</string>
+    <string name="error_language_not_supported">This language isn\'t supported.</string>
     <string name="error_membership_already_active">You already have an active membership.</string>
     <string name="error_membership_not_found">Membership not found.</string>
     <string name="error_membership_plan_not_found">Membership plan not found.</string>

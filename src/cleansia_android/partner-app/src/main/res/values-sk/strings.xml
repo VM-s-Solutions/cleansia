@@ -1089,6 +1089,9 @@
     <string name="error_order_payment_not_confirmed">Platba za túto zákazku ešte nebola potvrdená.</string>
     <string name="error_order_not_cash_payment">Toto nie je zákazka platená v hotovosti.</string>
     <string name="error_order_cash_already_collected">Hotovosť za túto zákazku už bola prijatá.</string>
+    <string name="error_order_card_payment_already_settled">Táto zákazka už bola zaplatená kartou. Nevyberajte hotovosť — stav platby bol aktualizovaný.</string>
+    <string name="error_order_card_payment_in_progress">Platba kartou za túto zákazku sa stále spracúva. Chvíľu počkajte a skúste to znova.</string>
+    <string name="error_order_card_payment_unverified">Nepodarilo sa overiť platbu kartou za túto zákazku. Zatiaľ nevyberajte hotovosť — skúste to o chvíľu znova.</string>
 
     <string name="error_order_note_content_required">Text poznámky je povinný.</string>
     <string name="error_order_issue_description_required">Popis problému je povinný.</string>

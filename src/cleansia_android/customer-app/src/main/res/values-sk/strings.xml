@@ -1197,6 +1197,7 @@
     <string name="error_gdpr_deletion_blocked_by_order">Účet zatiaľ nie je možné vymazať — existuje aktívna objednávka.</string>
     <string name="error_general_not_found">Zdroj nebol nájdený</string>
     <string name="error_language_not_found">Jazyk nebol nájdený</string>
+    <string name="error_language_not_supported">Tento jazyk nie je podporovaný.</string>
     <string name="error_membership_already_active">Už máte aktívne členstvo.</string>
     <string name="error_membership_not_found">Členstvo nebolo nájdené.</string>
     <string name="error_membership_plan_not_found">Plán členstva sa nenašiel.</string>

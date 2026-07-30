@@ -5,6 +5,7 @@ import cz.cleansia.core.auth.AuthAuthenticator
 import android.content.Context
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
+import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
@@ -52,6 +53,15 @@ class LoyaltyRepository @Inject constructor(
     val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
 
     /**
+     * Freshness watermark for [account] / [tiers]. Distinct from [loaded], which
+     * is a one-way first-paint latch: points earned after the first fetch would
+     * otherwise sit stale for the whole process lifetime, since [loaded] only
+     * ever falls back to false on sign-out. Consumers entering a screen ask
+     * [Staleness.isStale] before triggering a background [refresh].
+     */
+    val staleness = Staleness()
+
+    /**
      * Fetch the account + tier ladder in a single screen-load pass. Shown by
      * MainShell on first composition (lazy-prefetch alongside catalog/orders).
      */
@@ -74,6 +84,7 @@ class LoyaltyRepository @Inject constructor(
             }
 
             _loaded.value = true
+            staleness.markFresh()
             return ApiResult.Success(Unit)
         } finally {
             _loading.value = false
@@ -115,5 +126,6 @@ class LoyaltyRepository @Inject constructor(
         _account.value = null
         _tiers.value = emptyList()
         _loaded.value = false
+        staleness.reset()
     }
 }

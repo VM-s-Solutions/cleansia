@@ -1197,6 +1197,7 @@
     <string name="error_gdpr_deletion_blocked_by_order">Аккаунт пока нельзя удалить — есть активный заказ.</string>
     <string name="error_general_not_found">Ресурс не найден</string>
     <string name="error_language_not_found">Язык не найден</string>
+    <string name="error_language_not_supported">Этот язык не поддерживается.</string>
     <string name="error_membership_already_active">У вас уже есть активное членство.</string>
     <string name="error_membership_not_found">Членство не найдено.</string>
     <string name="error_membership_plan_not_found">План членства не найден.</string>

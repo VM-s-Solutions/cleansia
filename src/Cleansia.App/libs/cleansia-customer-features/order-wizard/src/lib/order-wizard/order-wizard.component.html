@@ -486,11 +486,15 @@
             {{ 'pages.order.entry_instructions_label' | translate }}
           </h2>
           <div class="order-wizard__field order-wizard__field--full">
+            <!-- 2000 mirrors CreateOrder.Validator's MaximumLength on
+                 AccessInstructions. Without it the note is only rejected at
+                 submit, after payment details are already entered. -->
             <textarea
               pTextarea
               [ngModel]="facade.formData().entryInstructions"
               (ngModelChange)="facade.updateFormData({ entryInstructions: $event })"
               [rows]="3"
+              maxlength="2000"
               [placeholder]="'pages.order.entry_instructions_placeholder' | translate"
             ></textarea>
           </div>

@@ -101,6 +101,9 @@ private fun SheetWithAnchors(
     // not re-run, leaving an open sheet parked off-screen with the caller's
     // `addressSheetOpen` still true; re-tapping then assigns true over true, which is
     // structurally equal, so nothing recomposes and the panel is dead for the session.
+    // Defensive, not the reported bug: the device test cleared this path (opening the
+    // keyboard and closing normally still reopened fine). Kept because the failure mode
+    // is identical and unrecoverable, and the extra key costs one comparison.
     LaunchedEffect(visible, parentHeightPx) {
         if (!visible) {
             draggableState.animateTo(SheetAnchor.Hidden)
@@ -109,8 +112,13 @@ private fun SheetWithAnchors(
         draggableState.animateTo(SheetAnchor.Full)
         snapshotFlow { draggableState.currentValue }
             .distinctUntilChanged()
-            // Aligns with BookingBottomSheet: react only to genuine post-open
-            // transitions, never to whatever the flow reports on subscribe.
+            // THIS is the line that fixed the reported bug — confirmed on device: the
+            // panel died after a hard fling-down dismiss, not after a back press or an
+            // IME resize. Without the drop, the value emitted on subscribe is already
+            // Hidden after a fling, so onDismiss fires immediately on the NEXT open and
+            // shuts the sheet before it is seen — with the caller's flag left true, so
+            // re-tapping assigns true over true and nothing recomposes again.
+            // Aligns with BookingBottomSheet, which has always had it.
             .drop(1)
             .collect { value ->
                 if (value == SheetAnchor.Hidden) onDismiss()
@@ -120,7 +128,8 @@ private fun SheetWithAnchors(
     // Without this, system back reaches the nav host underneath and pops the screen
     // hosting the sheet while `addressSheetOpen` stays true — the same true-over-true
     // dead end as above. Routed through onDismiss so back and the header arrow leave
-    // identical state.
+    // identical state. Also not the reported bug (the back-arrow test passed), but back
+    // dismissing a sheet is the platform expectation and its absence was real.
     BackHandler(enabled = visible) { onDismiss() }
 
     if (!visible && draggableState.currentValue == SheetAnchor.Hidden) return

@@ -13,10 +13,17 @@ final class LoyaltyRepository: SessionScopedCache {
     @Published private(set) var loaded = false
     @Published private(set) var loading = false
 
+    /// Freshness watermark for `account` / `tiers`, distinct from `loaded` — that
+    /// is a one-way first-paint latch, so points earned after the first fetch
+    /// would otherwise sit stale for the whole session. Screen-entry hooks ask
+    /// `isStale` before triggering a background `refresh()`.
+    let staleness: Staleness
+
     private let client: LoyaltyClient
 
-    init(client: LoyaltyClient) {
+    init(client: LoyaltyClient, staleness: Staleness = Staleness()) {
         self.client = client
+        self.staleness = staleness
     }
 
     /// Fetch account + tier ladder in one pass. Tiers are static config — a
@@ -36,6 +43,7 @@ final class LoyaltyRepository: SessionScopedCache {
             self.tiers = tiers
         }
         loaded = true
+        staleness.markFresh()
         return .success(())
     }
 
@@ -47,5 +55,6 @@ final class LoyaltyRepository: SessionScopedCache {
         account = nil
         tiers = []
         loaded = false
+        staleness.invalidate()
     }
 }

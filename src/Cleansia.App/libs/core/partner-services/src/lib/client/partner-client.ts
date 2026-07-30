@@ -12804,6 +12804,7 @@ export class UpdateCurrentUserCommand implements IUpdateCurrentUserCommand {
     birthDate!: Date | undefined;
     photo!: BlobFileDto;
     languageCode!: string | undefined;
+    removePhoto!: boolean;
 
     constructor(data?: IUpdateCurrentUserCommand) {
         if (data) {
@@ -12823,6 +12824,7 @@ export class UpdateCurrentUserCommand implements IUpdateCurrentUserCommand {
             this.birthDate = Data["birthDate"] ? new Date(Data["birthDate"].toString()) : undefined as any;
             this.photo = Data["photo"] ? BlobFileDto.fromJS(Data["photo"]) : undefined as any;
             this.languageCode = Data["languageCode"];
+            this.removePhoto = Data["removePhoto"];
         }
     }
 
@@ -12842,6 +12844,7 @@ export class UpdateCurrentUserCommand implements IUpdateCurrentUserCommand {
         data["birthDate"] = this.birthDate ? formatDate(this.birthDate) : undefined as any;
         data["photo"] = this.photo ? this.photo.toJSON() : undefined as any;
         data["languageCode"] = this.languageCode;
+        data["removePhoto"] = this.removePhoto;
         return data;
     }
 }
@@ -12854,6 +12857,7 @@ export interface IUpdateCurrentUserCommand {
     birthDate: Date | undefined;
     photo: BlobFileDto;
     languageCode: string | undefined;
+    removePhoto: boolean;
 }
 
 export class UpdateCurrentUserResponse implements IUpdateCurrentUserResponse {

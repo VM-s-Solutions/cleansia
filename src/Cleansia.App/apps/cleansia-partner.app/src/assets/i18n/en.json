@@ -1008,7 +1008,9 @@
       "insufficient_privileges": "You do not have permission to access the partner app. Only employees and administrators can log in.",
       "current_password_invalid": "The current password is incorrect",
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
-      "too_many_attempts": "Too many attempts with this code. Request a new code and try again."
+      "too_many_attempts": "Too many attempts with this code. Request a new code and try again.",
+      "invalid_refresh_token": "Your session has expired. Please sign in again.",
+      "refresh_token_reused": "Your session was used elsewhere. Please sign in again."
     },
     "common": {
       "invalid_enum_value": "Invalid enum value",
@@ -1413,7 +1415,6 @@
         "passwords_match": "Passwords match"
       }
     },
-    "refresh_token_reused": "Your session was used elsewhere. Please sign in again.",
     "confirm_email": {
       "resend_success": "Confirmation email sent!",
       "resend_error": "Failed to resend confirmation email. Please try again."

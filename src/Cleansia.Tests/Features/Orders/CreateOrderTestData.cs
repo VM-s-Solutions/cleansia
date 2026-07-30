@@ -41,7 +41,8 @@ internal static class CreateOrderTestData
         string? preferredEmployeeId = null,
         string? promoCode = null,
         string? referralCode = null,
-        string? specialInstructions = null) =>
+        string? specialInstructions = null,
+        string? accessInstructions = null) =>
         new(
             CustomerName: "Test Customer",
             CustomerEmail: "customer@example.com",
@@ -61,7 +62,8 @@ internal static class CreateOrderTestData
             PromoCode: promoCode,
             ReferralCode: referralCode,
             PreferredEmployeeId: preferredEmployeeId,
-            SpecialInstructions: specialInstructions);
+            SpecialInstructions: specialInstructions,
+            AccessInstructions: accessInstructions);
 
     public static OrderPricingResult MatchingPricing(decimal totalPrice = MatchingTotalPrice) =>
         new(

@@ -2,8 +2,10 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -14,6 +16,12 @@ public class ChangePassword
 {
     public class Validator : AbstractValidator<Command>
     {
+        // The auth-type rule cannot pick its message up front: the provider is only known after the async
+        // user read inside the predicate. So the predicate hands the resolved message key to the rule
+        // through the MessageFormatter, and the rule's template is nothing but this placeholder.
+        private const string AuthTypeErrorPlaceholder = "AuthTypeError";
+        private const string AuthTypeErrorTemplate = "{" + AuthTypeErrorPlaceholder + "}";
+
         private readonly IUserRepository _userRepository;
 
         public Validator(IUserRepository userRepository)
@@ -27,7 +35,10 @@ public class ChangePassword
                 .WithErrorCode(nameof(Command.Email))
                 .MustAsync(userRepository.ExistsWithEmailIgnoringTenantAsync)
                 .WithErrorCode(nameof(Command.Email))
-                .WithMessage(BusinessErrorMessage.NotExistingUserWithEmail);
+                .WithMessage(BusinessErrorMessage.NotExistingUserWithEmail)
+                .MustAsync((_, email, context, cancellationToken) => UserAuthenticationTypeIsInternal(email, context, cancellationToken))
+                .WithErrorCode(nameof(Command.Email))
+                .WithMessage(AuthTypeErrorTemplate);
 
             RuleFor(command => command.NewPassword).ValidatePassword();
 
@@ -49,6 +60,29 @@ public class ChangePassword
                     .WithMessage(BusinessErrorMessage.SameResetPassword)
                 .When(c => !string.IsNullOrWhiteSpace(c.Code) && !string.IsNullOrWhiteSpace(c.NewPassword))
                 .WhenAsync((c, cc) => userRepository.ExistsWithEmailIgnoringTenantAsync(c.Email, cc));
+        }
+
+        // Only an Internal account has a password to overwrite: LoginValidator refuses a password login
+        // for every other type, so completing a reset on a Google/Apple row writes a credential that can
+        // never be used. The refusal names the provider the account ACTUALLY uses so the caller is told
+        // how to sign in. No new disclosure — the preceding existence rule already stops the cascade for
+        // an unknown email, so the provider is only named for a known address.
+        private async Task<bool> UserAuthenticationTypeIsInternal(
+            string email, ValidationContext<Command> context, CancellationToken cancellationToken)
+        {
+            var user = await _userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
+            if (user is not null && user.AuthenticationType == AuthenticationType.Internal)
+            {
+                return true;
+            }
+
+            // user is null only if the account disappeared between the existence rule and this one; reuse
+            // that rule's message rather than inventing a provider for an account that is not there.
+            context.MessageFormatter.AppendArgument(
+                AuthTypeErrorPlaceholder,
+                user is null ? BusinessErrorMessage.NotExistingUserWithEmail : AuthTypeErrorMessages.For(user.AuthenticationType));
+
+            return false;
         }
 
         // The reset command is email-bound, so every guess against an account holding an ACTIVE

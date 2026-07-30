@@ -34,6 +34,27 @@ sealed class ApiError : Exception() {
         override val message: String = "Session expired. Please login again."
     }
 
+    /**
+     * 401 the *controller* authored: the auth command itself was rejected for a
+     * stated business reason (signed up with a different provider, no employee
+     * record, …) and `errorKey` carries the backend translation key.
+     *
+     * Deliberately NOT a widened [Unauthorized]: that one means "the session
+     * layer rejected you" and is what session-teardown reasoning is allowed to
+     * key off. A login failure that looked identical to an expired session
+     * would sign users out at the wrong moment.
+     *
+     * [message] mirrors [Unauthorized] instead of carrying the server text
+     * because on this arm the server's `detail` *is* the raw key — piping it
+     * through would print `auth.internal_type_error` at the ~30 call sites that
+     * use [getUserMessage] with no localizer. The key is resolved by the
+     * app-local localizers instead.
+     */
+    data class AuthRejected(
+        val errorKey: String,
+        override val message: String = Unauthorized.message,
+    ) : ApiError()
+
     data class NotFound(override val message: String = "Resource not found") : ApiError()
 
     /**

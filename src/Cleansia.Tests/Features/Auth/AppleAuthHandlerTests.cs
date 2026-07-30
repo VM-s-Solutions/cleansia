@@ -27,7 +27,10 @@ namespace Cleansia.Tests.Features.Auth;
 ///     (covers BOTH Internal AND Google) is rejected — closing the verified-email-collision takeover for
 ///     Apple exactly as Google's hardening did — and the rejection message names the provider that
 ///     account ACTUALLY uses, so a Google user is not told to use a password they never set;
-///   - provisioning happens ONLY when <c>claims.EmailVerified</c> (stricter than Google today);
+///   - provisioning happens ONLY when <c>claims.EmailVerified</c>, and so does the EMAIL FALLBACK that
+///     resolves a pre-sub-storage account — matching one binds the token's sub to it permanently, so an
+///     unverified address must reach neither the account nor its identity anchor. A SUB match is
+///     deliberately not gated: that sub was bound while the email was verified;
 ///   - a RETURNING user resolves by the verified Apple <c>sub</c> even when Apple omits the email claim
 ///     (Apple guarantees the email only on the FIRST authorization), and the sub-matched account keeps
 ///     its stored email; the collision and IsActive guards still run on that path;
@@ -824,6 +827,83 @@ public class AppleAuthHandlerTests
         await CreateHandler().Handle(Command(), CancellationToken.None);
 
         Assert.Equal("sub-original", existing.AppleId);
+    }
+
+    // Matching by email does not just sign the caller in, it PERMANENTLY binds the token's sub to that
+    // row — an anchor no later sign-in can rewrite. So the fallback must run on an email APPLE vouched
+    // for: a token asserting an unverified address must reach neither the account nor its anchor.
+    [Fact]
+    public async Task Unverified_Email_Does_Not_Match_An_Existing_Account_Or_Bind_Its_Subject()
+    {
+        var victim = BlankNameAppleUser("Jane", "Doe", "jane.doe@example.com");
+        Assert.Null(victim.AppleId); // precondition: the pre-sub-storage row shape, reachable by email only
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("attacker-sub", victim.Email, EmailVerified: false));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync("attacker-sub", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(victim.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(victim);
+
+        var result = await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.InvalidAppleUserToken, result.Error!.Message);
+        Assert.Null(victim.AppleId);
+        _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
+    }
+
+    // The other half of that gate: it narrows the fallback, it does not remove it. The first sign-in that
+    // still carries a VERIFIED email is the one chance a pre-sub-storage row has to be found and anchored.
+    [Fact]
+    public async Task Verified_Email_Still_Matches_An_Existing_Account()
+    {
+        var existing = BlankNameAppleUser("Jane", "Doe", "jane.doe@example.com");
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("sub-verified", existing.Email, EmailVerified: true));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync("sub-verified", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(existing.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("sub-verified", existing.AppleId);
+        _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(existing.Email, It.IsAny<CancellationToken>()), Times.Once);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+        _tokenService.Verify(t => t.GenerateTokenAsync(existing, true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    // The gate belongs to the EMAIL fallback alone. A sub match carries its own proof — that sub was bound
+    // while the email WAS verified — and Apple stops sending email_verified meaningfully once it stops
+    // sending the email, so re-gating this path would lock out every returning Apple user.
+    [Fact]
+    public async Task Subject_Matched_Account_Signs_In_Regardless_Of_The_EmailVerified_Claim()
+    {
+        var existing = BlankNameAppleUser("Jane", "Doe", "jane.doe@example.com");
+        existing.LinkAppleId("sub-returning");
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", "any-raw-nonce", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AppleVerifiedClaims("sub-returning", existing.Email, EmailVerified: false));
+        _userRepository
+            .Setup(r => r.GetByAppleIdIgnoringTenantAsync("sub-returning", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+        _tokenService.Verify(t => t.GenerateTokenAsync(existing, true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private sealed class CapturingLogger<T>(List<(LogLevel Level, string Message)> entries) : ILogger<T>

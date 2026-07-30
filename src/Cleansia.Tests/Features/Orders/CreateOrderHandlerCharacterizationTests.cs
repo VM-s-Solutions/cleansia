@@ -335,6 +335,50 @@ public class CreateOrderHandlerCharacterizationTests
         Assert.Null(captured!.SpecialInstructions);
     }
 
+    /// <summary>
+    /// Same defect one field over: <c>AccessInstructions</c> was a column every
+    /// partner surface rendered and no code path ever wrote. Pin the forwarding.
+    /// </summary>
+    [Fact]
+    public async Task AccessInstructions_AreForwardedToTheOrderFactory()
+    {
+        CreateOrderInput? captured = null;
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .Callback((CreateOrderInput input, CancellationToken _) => captured = input)
+            .ReturnsAsync(OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+            {
+                Id = CreatedOrderId,
+                TenantId = "tenant-1",
+            }));
+
+        var command = CreateOrderTestData.ValidCommand(
+            accessInstructions: "Key is in the lockbox, code 4455.");
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Key is in the lockbox, code 4455.", captured!.AccessInstructions);
+    }
+
+    [Fact]
+    public async Task AccessInstructions_OmittedByOlderClients_ArriveAsNull()
+    {
+        CreateOrderInput? captured = null;
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .Callback((CreateOrderInput input, CancellationToken _) => captured = input)
+            .ReturnsAsync(OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+            {
+                Id = CreatedOrderId,
+                TenantId = "tenant-1",
+            }));
+
+        await CreateHandler().Handle(CreateOrderTestData.ValidCommand(), CancellationToken.None);
+
+        Assert.Null(captured!.AccessInstructions);
+    }
+
     [Fact]
     public async Task AC10_CardPath_NonStripeException_IsNotCaught_Bubbles()
     {

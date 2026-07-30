@@ -127,6 +127,31 @@ class AuthRepositoryTest {
     }
 
     @Test
+    fun login_givenHttp401CarryingBusinessKey_surfacesTheProviderMessageNotSessionExpired() =
+        kotlinx.coroutines.test.runTest {
+            val mappedResId = 44
+            val providerMessage = "This account uses Google sign-in."
+            every {
+                appContext.resources.getIdentifier("error_auth_google_type_error", "string", any())
+            } returns mappedResId
+            every { appContext.getString(mappedResId) } returns providerMessage
+
+            val payload = """
+                { "detail": "auth.google_type_error",
+                  "errors": { "auth.google_type_error": "auth.google_type_error" } }
+            """.trimIndent()
+            val errorBody = payload.toResponseBody("application/problem+json".toMediaType())
+            coEvery { api.login(any()) } returns Response.error(401, errorBody)
+
+            val result = newRepository().login("user@example.com", "pw", rememberMe = false)
+
+            assertTrue("expected Error but was $result", result is ApiResult.Error)
+            val error = (result as ApiResult.Error).error
+            assertTrue("expected AuthRejected but was $error", error is ApiError.AuthRejected)
+            assertEquals(providerMessage, result.surfacedMessage())
+        }
+
+    @Test
     fun login_givenHttp400WithProblemDetails_surfacesParsedDetail() = kotlinx.coroutines.test.runTest {
         val payload = """
             { "title": "Validation", "detail": "Invalid credentials." }

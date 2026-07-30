@@ -6,13 +6,11 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,6 +20,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -35,6 +35,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import cz.cleansia.core.auth.SessionEvent
 import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.WordmarkSplash
+import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.RegistrationCompletionStatus
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.profile.ProfileRepository
@@ -64,6 +66,7 @@ import cz.cleansia.partner.features.profile.PersonalSectionScreen
 import cz.cleansia.partner.features.profile.ProfileScreen
 import cz.cleansia.partner.features.settings.LanguagePickerScreen
 import cz.cleansia.partner.features.settings.ThemePickerScreen
+import cz.cleansia.partner.ui.theme.CleansiaPartnerTheme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -497,13 +500,17 @@ private fun SplashGate(
             null -> { /* still resolving */ }
         }
     }
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator()
+    WordmarkSplash(
+        tagline = stringResource(R.string.splash_tagline),
+        showsPartnerLabel = true,
+    )
+}
+
+@Preview(widthDp = 390, heightDp = 844)
+@Composable
+private fun SplashBrandingPreview() {
+    CleansiaPartnerTheme {
+        WordmarkSplash(tagline = stringResource(R.string.splash_tagline), showsPartnerLabel = true)
     }
 }
 

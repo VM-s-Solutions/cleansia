@@ -164,3 +164,56 @@ leg-3 declaration (transient until this transcription), and two of the three mot
 
 **F1–F5 and F7 returned to the architect.** F6 — this transcription — closed by the orchestrator.
 F8 (`quality-gates.md:3-5` names an outdated gate list) is pre-existing debt, follow-up ticket.
+
+### Second pass — architect (2026-07-30)
+
+F1, F2, F3, F5, F7 accepted and fixed. Notably:
+
+- **F1** rescoped by *evidence type* rather than ticket type, so a screenshot-evidence ticket like
+  T-0443 is out of leg 1 **by rule** instead of by a reviewer's analogy — and the anti-theater bound
+  is named so nobody closes the gap with an asset-exists assertion.
+- **F2** resolved by ruling rather than splitting: the stub form stays but is bounded to "where the
+  pre-fix state doesn't compile", and the 6.5/0.5 boundary now turns on the **question asked** rather
+  than the mutation used. T-0438 is the case that forced this — a revert-only rule is unexecutable on
+  the very ticket it targets. One test may satisfy both legs; cite under each, mutate once.
+- **F3** both `routing.md` entries now carry Gate 6.5's enumeration instead of the bare phrase, plus
+  an explicit negative case — and, importantly, a clause preventing the narrowing of leg 1 from
+  accidentally exempting a screenshot ticket from legs 2 and 3.
+- **F5** accepted; the hole was demonstrated by this ticket's own author.
+
+**One unrequested edit, driven by empirical evidence:** the reviewer's `check-consistency` run exited
+0 having scanned **0 files**, which the original wording ("zero tests executed") did not cover — a
+consistency checker is not a test. Now: *"Zero tests run — or zero files scanned — is a non-run,
+however green the exit code."* The clause caught a false green on its first outing, against the very
+tool the gate mandates.
+
+### F4 — ADJUDICATED: accepted as CONCEDED-IN-PART (orchestrator, 2026-07-30)
+
+The architect did not claim this bar was met, which is the right call. Measured properly rather than
+by either estimate (`python3`, per-`### Gate` segmentation):
+
+| Gate | lines | words |
+|---|---|---|
+| Gate 6.5 — the AC2 target | 13 | **209** |
+| Gate 8.5 — the claimed comparator | 45 | 488 |
+| **Gate 0.5 as delivered** | **37** | **526** |
+
+So: **2.5× the AC2 target**, and by words the LONGEST gate in the file — not the second-longest the
+architect believed, and 8% over the comparator it argued it had reached. Its own estimate (~485) was
+~8% light and was honestly labelled an estimate.
+
+**Accepted anyway.** AC2's "roughly the same length as Gate 6.5" was written against a single-leg
+gate; this one carries three legs plus boundary rulings against two neighbours, and the reviewer's own
+findings (F1, F2, F5) all landed *inside* it, adding back most of what the compression removed.
+The two remaining cuts the architect named — the leg-1 worked example and the un-cached command list
+— are both load-bearing: the example is house style (Gate 6.5 has one) and "record both numbers" was
+an explicit owner instruction. Cutting to hit a word count would make the gate worse at the job it
+exists to do.
+
+The cost is real and is recorded rather than waved away: every agent reads this file at spawn, and
+this change makes the longest thing in it a process gate. If it earns an amendment later, the
+compression targets are named above.
+
+**Diff at adjudication:** 3 files, 63 insertions, 1 deletion (the earlier 59/0 figure is stale — the
+second pass introduced the Gate 6.5 cross-reference line). Re-measured by the orchestrator; the
+architect has no shell and correctly declined to carry the old number forward.

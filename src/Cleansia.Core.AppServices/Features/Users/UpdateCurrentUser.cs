@@ -101,11 +101,15 @@ public class UpdateCurrentUser
         string PhoneNumber,
         DateOnly? BirthDate,
         BlobFileDto? Photo,
-        string? LanguageCode) : ICommand<Response>;
+        string? LanguageCode,
+        // Removal has to be asked for. Photo carries a NEW image only; a null/blank Photo means the
+        // client simply had nothing to say about the avatar, which is what every profile save from
+        // Android, iOS and web looks like. Defaulted so those callers keep compiling and stay safe.
+        bool RemovePhoto = false) : ICommand<Response>;
 
     public record Response(string Id);
 
-    internal class Handler(
+    public class Handler(
         IUserRepository userRepository,
         IOrderRepository orderRepository,
         IBlobContainerClientFactory clientFactory) : ICommandHandler<Command, Response>
@@ -124,31 +128,33 @@ public class UpdateCurrentUser
 
         private async Task UpdateProfilePhoto(User user, Command command, CancellationToken cancellationToken)
         {
-            var hasExistingPhoto = !string.IsNullOrWhiteSpace(user.ProfilePhotoName);
             var hasNewPhoto = !string.IsNullOrWhiteSpace(command.Photo?.Base64Content);
 
+            // A save that neither carries an image nor asks for removal says nothing about the avatar,
+            // so it must not touch it. This is the shape of every profile save the clients send.
+            if (!hasNewPhoto && !command.RemovePhoto)
+            {
+                return;
+            }
+
+            var hasExistingPhoto = !string.IsNullOrWhiteSpace(user.ProfilePhotoName);
             var client = clientFactory.GetBlobContainerClient(Constants.BlobContainers.UserFiles);
 
-            switch ((hasExistingPhoto, hasNewPhoto))
+            if (hasExistingPhoto)
             {
-                case (true, true):
-                    await client.DeleteAsync(user.ProfilePhotoName!, cancellationToken);
-                    await UploadPhotoAsync(client, user.ProfilePhotoName!, command.Photo!.Base64Content!,
-                        cancellationToken);
-                    break;
-                case (false, true):
-                    {
-                        var fileName = Guid.NewGuid().ToString();
-                        await UploadPhotoAsync(client, fileName, command.Photo!.Base64Content!, cancellationToken);
-                        user.UpdateProfilePhotoName(fileName);
-                        break;
-                    }
-                case (true, false) when
-                    string.IsNullOrWhiteSpace(command.Photo?.FileName):
-                    await client.DeleteAsync(user.ProfilePhotoName!, cancellationToken);
-                    user.UpdateProfilePhotoName(null);
-                    break;
+                await client.DeleteAsync(user.ProfilePhotoName!, cancellationToken);
             }
+
+            if (!hasNewPhoto)
+            {
+                user.UpdateProfilePhotoName(null);
+                return;
+            }
+
+            // Replacing reuses the stored blob name so URLs already handed out keep resolving.
+            var fileName = hasExistingPhoto ? user.ProfilePhotoName! : Guid.NewGuid().ToString();
+            await UploadPhotoAsync(client, fileName, command.Photo!.Base64Content!, cancellationToken);
+            user.UpdateProfilePhotoName(fileName);
         }
 
         private static async Task UploadPhotoAsync(IBlobContainerClient client, string fileName, string base64Content, CancellationToken cancellationToken)

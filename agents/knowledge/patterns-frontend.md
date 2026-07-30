@@ -306,3 +306,23 @@ that reintroduces the cross-site cookie failure — and never weaken the cookie 
 customer app is SSR: its server render resolves the relative base against the incoming request
 origin in `app.config.server.ts` (via the `REQUEST` token), so SSR fetches also flow through the
 proxy. Full run-mode docs: `src/Cleansia.App/CLAUDE.md`.
+
+## Brand mark — `cleansia-brand-name` is the whole lockup
+
+The mark is the **"Cleansia" wordmark** (owner ruling, T-0444), taken from the iOS art. The wordmark
+already contains the name, so `cleansia-brand-name` renders the image **alone** — never beside a
+`<h2>Cleansia</h2>` or a `<span>Cleansia</span>`, which would print the word twice. A per-app suffix
+that the wordmark does not carry (admin's "Admin") is fine; the brand word itself is never repeated.
+
+Its only variant input is `compact` — the collapsed sidebar rail, where the mark shrinks rather than
+being cropped or swapped. `assets/logos/Logo.{webp,png,ico}` is a per-app path resolved by each app's
+own assets folder; the files are byte-identical across the three apps so drift stays visible.
+
+Two properties to keep when touching any brand asset:
+
+- **The bytes must match the extension.** Check with `file(1)`, not the filename — a PNG served as
+  `.webp` under `<source type="image/webp">` is a false MIME claim in markup (shipped for months
+  before T-0444).
+- **Size a non-square logo by width, not height.** `width: Npx; max-width: 100%; height: auto` — a
+  fixed `height` plus `max-width` squashes a replaced element horizontally when the container is
+  narrow (CSS 2.1 §10.4), and a 5.5:1 wordmark is where that first becomes obvious.

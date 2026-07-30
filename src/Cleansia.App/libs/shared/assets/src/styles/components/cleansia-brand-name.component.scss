@@ -4,46 +4,21 @@
     display: flex;
     align-items: center;
     user-select: none;
-    gap: 0.25rem;
-
-    h2 {
-      color: var(--cleansia-primary);
-      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      max-width: 200px;
-      overflow: hidden;
-      white-space: nowrap;
-    }
   }
 
-  &--hide-name {
-    a h2 {
-      opacity: 0;
-      max-width: 0;
-      margin: 0;
-    }
+  // Width-driven, height auto: a narrow container then shortens the mark
+  // proportionally instead of squashing it against a fixed height.
+  img {
+    display: block;
+    width: 132px;
+    max-width: 100%;
+    height: auto;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  &__wrapped {
-    a {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0;
-
-      h2 {
-        font-size: 1.25rem;
-        text-transform: uppercase;
-        margin: 0;
-      }
-    }
-
-    &.cleansia-brand-name--hide-name {
-      a h2 {
-        max-height: 0;
-        max-width: none;
-      }
-    }
+  // A 5.5:1 wordmark cannot be cropped down to a narrow rail without losing
+  // letters, so the collapsed sidebar gets the whole mark, scaled.
+  &--compact img {
+    width: 66px;
   }
 }

@@ -99,6 +99,8 @@ grounding it. Sizing/AC/deps/layers set → DoR met.
 - 2026-07-30 — draft (created by pm; owner batch item 4, web half)
 - 2026-07-30 — ready (dep T-0438 recorded; DoR met; no-decision note recorded)
 - 2026-07-30 — implemented (frontend) on `feat/T-0444-web-logo` off `fix/T-0438-unbreak-web-build`
+- 2026-07-30 — **owner overruled the monogram**: *"NO, I want the web to use usual 'cleansia' logo
+  that is used in ios apps."* Reworked to the wordmark (frontend, second commit on the same branch)
 
 ## Implementation notes (frontend)
 
@@ -144,6 +146,62 @@ pointing at the same PNG-named-`.webp`; the `<source>` is now a real WebP and th
   shared with the footer, so the correct fix is a per-call-site input, not a blanket flip.
 - No `apple-touch-icon` / PWA manifest exists. Explicitly out of scope; worth a ticket — the new
   1024 master regenerates any size.
+
+## Implementation notes (frontend, second pass — owner overruled the monogram)
+
+The monogram is gone. The mark is now the **"Cleansia" wordmark**, and the source is the iOS
+`LaunchWordmark` asset (`CleansiaCustomer/.../LaunchWordmark.imageset/wordmark.png`, 1400×360) rather
+than the app icon: it carries the same letterforms with a real alpha channel at 230px of ink height,
+against 149px if the glyphs are pulled off the icon's gradient. Its alpha is reused **verbatim** — the
+only change is ink colour, white → `--cleansia-primary #0284c7`, because iOS puts the mark on a blue
+launch background and the web puts it on `--surface-overlay`/`--surface-card`. That is the same colour
+the `<h2>Cleansia</h2>` used, so contrast is unchanged: 4.4:1 on `#0f172a`, 3.6:1 on `#1e293b` (WCAG
+1.4.11 non-text ≥3:1). Ink aspect measured 5.4870 at `alpha>0` and 5.5263 at `alpha>250`; the master is
+616×112 = **5.5000**, inside the source's own thresholding spread (0.24% off the `alpha>0` box).
+
+**The shape problem — the slot is now a wide wordmark, and the text label is gone.** Every brand slot
+was `[32px square] + the literal text "Cleansia"`. Squeezing a 5.5:1 wordmark into that square gives
+32×6px of ink; keeping the text beside a wordmark prints the word twice. So `cleansia-brand-name`
+renders the wordmark alone (`<h2>Cleansia</h2>` deleted — the `alt` carries the accessible name, and
+it also removes a duplicate `<h2>` from the heading outline of the footer and 8 auth screens). The
+partner mobile toolbar drops its `<span>Cleansia</span>` for the same reason; the admin toolbar keeps
+its suffix, now `<span>Admin</span>`, which the wordmark does **not** duplicate.
+
+That forced the component API. `showName` could no longer be honoured — the name is baked into the
+image — and `wrapped` (column layout for an icon-over-text pair) became a no-op with one child. Both
+are replaced by `compact`, the only variant the geometry actually has: the collapsed sidebar rail.
+Rendered ink per slot — navbar/footer/auth `132×24`, mobile toolbar `96×17.5`, collapsed rail `66×12`.
+The rail is 6rem wide (`1rem = 14px` here, so 84px → 70px inside the sidebar's padding); its header's
+`1rem` side padding was eating 28 of those 70px, so it is zeroed while collapsed. `brandCompact` also
+excludes mobile, where the drawer always opens at full width.
+
+**The favicon is the one square that cannot hold a 5.5:1 mark, and it is reported, not hidden.**
+`Logo.ico` (16/32/48) is now the **iOS app icon downscaled, unmodified** — the artwork iOS itself uses
+when the frame is square, so no derived glyph and no authored corner radius this time. Measured in the
+shipped frames: at 48px the lettering is a 38×7px band, at 32px 26×4px, and **at 16px not one pixel
+reaches 200/255 on all three channels — the word has dissolved into the tile**. Letterboxing the
+wordmark into the square instead is worse, not better: 16×3px of ink, peak alpha 196/255, zero fully
+opaque pixels, and no tile at all, so on a light tab strip it is a faint smudge on nothing.
+`Cleansia` needs ≈8px of ink height to read → ≈44px of wordmark → an icon ≈55px square. **The tab is
+therefore identified by the blue tile, not by reading the word, and that is true of both options.**
+If the owner wants a *readable* tab mark, the favicon alone has to be a compact mark — his call;
+renders of both at 16/32/48 on light and dark tab strips are attached to the frontend report.
+
+**Not decided unilaterally:** iOS ships a separate partner lockup (`Cleansia` over `PARTNER`,
+aspect 3.59, in both the partner `AppIcon1024` and its `LaunchWordmark`). All three web apps get the
+plain `Cleansia` wordmark, matching the word each app shows today. Giving the partner app its own
+lockup is a one-file swap if the owner wants it.
+
+Also corrected while in the file: `cleansia-brand-name`'s image was sized `height` + `max-width: 100%`,
+which squashes a replaced element horizontally in a narrow container (CSS 2.1 §10.4) — invisible on a
+1:1 icon, obvious at 5.5:1. It is now width-driven with `height: auto`. Both mobile toolbars lose a
+`border-radius: 4px` that only meant something on a square tile. `cleansia-menu` (dead, zero call
+sites) got `width`/`height` attributes so its untouched `assets/images/logo.png` reference cannot
+render at the new 616px intrinsic width.
+
+Harvested into `agents/knowledge/patterns-frontend.md` → "Brand mark — `cleansia-brand-name` is the
+whole lockup": no text beside the wordmark, `compact` as the only variant, bytes-match-extension, and
+width-driven sizing for non-square logos.
 
 ## Review
 <!-- reviewer writes verdict here -->

@@ -66,6 +66,40 @@ final class LoyaltyRepositoryTests: XCTestCase {
         XCTAssertTrue(repo.tiers.isEmpty)
         XCTAssertFalse(repo.loaded)
     }
+
+    func testNeverFetchedReadsStale() {
+        XCTAssertTrue(LoyaltyRepository(client: FakeLoyaltyClient()).staleness.isStale)
+    }
+
+    func testSuccessfulRefreshStampsTheWatermark() async {
+        let repo = LoyaltyRepository(client: FakeLoyaltyClient())
+
+        await repo.refresh()
+
+        XCTAssertFalse(repo.staleness.isStale)
+    }
+
+    func testFailedRefreshLeavesItStaleSoTheNextEntryRetries() async {
+        let client = FakeLoyaltyClient()
+        client.accountResult = .failure(ApiError(httpStatus: 500))
+        let repo = LoyaltyRepository(client: client)
+
+        await repo.refresh()
+
+        XCTAssertTrue(repo.staleness.isStale)
+    }
+
+    func testClearResetsTheWatermarkSoTheNextUserRefetches() async {
+        // Sign-out runs through the SessionScopedCacheRegistry; without this the
+        // next account would read the previous account's loyalty as fresh.
+        let repo = LoyaltyRepository(client: FakeLoyaltyClient())
+        await repo.refresh()
+        XCTAssertFalse(repo.staleness.isStale)
+
+        await repo.clear()
+
+        XCTAssertTrue(repo.staleness.isStale)
+    }
 }
 
 @MainActor

@@ -122,10 +122,44 @@ final class HomeTabViewModel: ViewModel {
         isPlus && hasRecurringSource && templatesEmpty
     }
 
-    /// `LaunchedEffect(Unit) { if (membership == null) membershipRepo.refresh() }`
-    /// (`HomeTab.kt:134-136`) — silent, as on Android.
-    func refreshMembershipIfNeeded() async {
-        guard membership == nil else { return }
+    /// Home entry and every return to the foreground.
+    ///
+    /// Nothing else on this screen ever re-fetches a cache that already landed:
+    /// the shell prefetch runs once per shell entry, and the `.task` warmers
+    /// below all guard on "still empty". Loyalty had no warmer here at all, so
+    /// points earned after the first fetch only surfaced on the next cold start
+    /// (or a Rewards pull-to-refresh) — the reported "only after the next
+    /// launch of the app".
+    ///
+    /// The naive fix is worse than the bug. SwiftUI restarts a `.task` every
+    /// time it re-presents the tab root, and `scenePhase` flips to `.active` on
+    /// every foreground, so this hook is hot: ungated it would bill three
+    /// network calls per tap on the Home tab. Each source is therefore gated on
+    /// its own freshness watermark, and a repeated return inside the window
+    /// costs nothing.
+    ///
+    /// Concurrent, so one slow source cannot hold up the others. Silent on
+    /// failure — the screen keeps rendering the cached snapshot, so a snackbar
+    /// for an ambient background refresh would be noise.
+    func refreshStaleSources() async {
+        async let loyalty: Void = refreshLoyaltyIfStale()
+        async let orders: Void = refreshOrdersIfStale()
+        async let membership: Void = refreshMembershipIfStale()
+        _ = await (loyalty, orders, membership)
+    }
+
+    private func refreshLoyaltyIfStale() async {
+        guard loyaltyRepository.staleness.isStale else { return }
+        await loyaltyRepository.refresh()
+    }
+
+    private func refreshOrdersIfStale() async {
+        guard orderRepository.staleness.isStale else { return }
+        await orderRepository.refresh()
+    }
+
+    private func refreshMembershipIfStale() async {
+        guard membershipRepository.staleness.isStale else { return }
         await membershipRepository.refresh()
     }
 

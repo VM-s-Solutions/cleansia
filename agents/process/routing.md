@@ -18,6 +18,7 @@ specialist(s) — and a reviewer alongside each developer. This table is the dec
 | Any diff in `in_review` | `reviewer` (always) |
 | `security_touching: true` | `security` (in addition to reviewer) |
 | Spine / foundation / middleware / skeleton ticket (everything else stands on it) | the assigned dev + reviewer, flagged for **Gate 6.5** (behavioral non-stub) + an end-to-end test driving the real path |
+| Bug/defect fix — or a behavior change in the Gate 6.5 classes (auth, money math, state transitions, spine) **whose AC evidence is an executable assertion** | the assigned dev + reviewer, flagged for **Gate 0.5** (verification integrity — name the test that goes red against the pre-fix code; the verifier re-runs it un-cached) |
 | Hot path, list view, paged query, new dependency, heavy UI | `optimizer` |
 | PR/diff ready for behavioral verification | `qa` |
 | Shipped behavior changed; docs/changelog stale | `docs` |
@@ -49,6 +50,14 @@ specialist(s) — and a reviewer alongside each developer. This table is the dec
    value) **plus an end-to-end test that drives the real path**, not just the units around it. The PM
    writes the flag into the ticket so the dev builds to it and the reviewer gates on it
    (`quality-gates.md` Gate 6.5).
+8. **Fixes carry a mutation-proof.** A ticket that **fixes a defect** — or changes behavior in the same
+   classes Gate 6.5 enumerates (auth decisions, money math, state transitions, spine/foundation/
+   middleware/skeleton) — is flagged at routing time as requiring **Gate 0.5**: the dev must be able to
+   name the test that goes **red against the pre-fix code** and green with it, and the verifier
+   **re-runs it itself, un-cached** and states what it could not verify. **Do not write the flag** where
+   the AC's evidence is not executable (screenshots, visual parity, a generated artifact) — there is
+   nothing to mutate, and the ticket says so under leg 3 instead. Legs 2 and 3 apply to every ticket
+   regardless (`quality-gates.md` Gate 0.5).
 
 ## What the PM does NOT do
 

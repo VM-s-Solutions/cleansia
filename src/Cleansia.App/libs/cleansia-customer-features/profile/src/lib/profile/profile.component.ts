@@ -229,6 +229,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
       birthDate: this.profileForm.value.birthDate || undefined,
       languageCode: this.translate.currentLang,
       photo: undefined as any,
+      removePhoto: false,
     });
 
     this.facade.saveProfile(cmd, () => this.loadProfile());

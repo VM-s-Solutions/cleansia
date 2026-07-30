@@ -62,12 +62,18 @@ public class GoogleAuth
                     new Error(nameof(Command.Token), BusinessErrorMessage.InvalidGoogleUserToken));
             }
 
+            // The Google subject is the account's stable identity; the email is a provider-owned
+            // attribute the user can change at will. Resolving by subject first means changing the
+            // address on a Google account no longer orphans the row and provisions a duplicate.
+            var user = await userRepository.GetByGoogleIdIgnoringTenantAsync(claims.Subject, cancellationToken);
+
             // S1: only an email GOOGLE vouched for may resolve an EXISTING account. Without this gate a
             // token asserting an address Google never verified — the same address a victim registered
             // under — resolves onto their row and is handed their JWT. Provisioning is gated on the same
             // claim below, so an unverified email has no path at all (parity with AppleAuth).
-            User? user = null;
-            if (claims.EmailVerified && !string.IsNullOrWhiteSpace(claims.Email))
+            // Reached only by accounts provisioned before subjects were stored; once one signs in here
+            // the subject is bound below and it never takes this path again.
+            if (user is null && claims.EmailVerified && !string.IsNullOrWhiteSpace(claims.Email))
             {
                 user = await userRepository.GetByEmailIgnoringTenantAsync(claims.Email, cancellationToken);
             }
@@ -93,6 +99,13 @@ public class GoogleAuth
                     return BusinessResult.Failure<JwtTokenResponse>(
                         new Error(nameof(Command.Email), BusinessErrorMessage.InvalidPassword));
                 }
+
+                // Anchor the account to the subject on the one sign-in that resolved by email. A no-op
+                // when the subject lookup is what found this row. Never overwrites a bound subject —
+                // that rule is the S1 property, enforced in LinkGoogleId itself rather than here, so it
+                // holds for every caller. The write rides the UnitOfWork commit; the row is tracked.
+                user.LinkGoogleId(claims.Subject);
+
                 return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken));
             }
 

@@ -306,3 +306,64 @@ that reintroduces the cross-site cookie failure — and never weaken the cookie 
 customer app is SSR: its server render resolves the relative base against the incoming request
 origin in `app.config.server.ts` (via the `REQUEST` token), so SSR fetches also flow through the
 proxy. Full run-mode docs: `src/Cleansia.App/CLAUDE.md`.
+
+## Brand mark — `cleansia-brand-name` is the whole lockup
+
+The mark is the wordmark taken from that app's own iOS art (owner ruling, T-0444). It already contains
+the name, so `cleansia-brand-name` renders the image **alone** — never beside a `<h2>Cleansia</h2>` or
+a `<span>Cleansia</span>`, which would print the word twice. A suffix the artwork does *not* carry
+(admin's "Admin") is fine; the brand word itself is never repeated.
+
+**Customer and admin ship the same "Cleansia" wordmark; partner ships the stacked "Cleansia Partner"
+lockup** — because the partner iOS app has its own lockup and the partner web app is the same product.
+Do not "fix" partner back to match: `assets/logos/Logo.{webp,png,ico}` is a per-app path resolved by
+each app's own assets folder precisely so an app can differ, and the spec pins the three shapes
+(`616×112`, `616×112`, `616×172`) rather than a single digest.
+
+Two consequences of the marks differing in *shape*, both handled without per-app markup:
+
+- **Sizing is by width, so the word "Cleansia" is the same size everywhere.** That line spans the full
+  width of both lockups (measured aspect 5.4870 customer / 5.4646 partner), so equal width means equal
+  wordmark; the partner mark is simply taller. Never size the marks to equal height — that would
+  shrink the partner brand.
+- **The box's aspect is a CSS variable, `--cleansia-brand-aspect`**, defaulted in the shared stylesheet
+  and overridden in `apps/cleansia-partner.app/src/styles.scss`. An `<img>` whose ratio only arrives
+  with the bytes is a layout shift, and the `width`/`height` attributes live in a *shared* template
+  that cannot know which app it is in.
+- **The alt text comes from the app's own i18n bundle** (`components.brand_mark_alt`), for the same
+  reason and by the same trick: per-app resolution with no per-call-site plumbing. An input would not
+  reach the sidebar, which partner and admin share.
+
+Generally: when a shared component must differ per app, reach for something the app already resolves
+for itself — its `assets/` folder, its i18n bundle, a CSS custom property in its `styles.scss`. A DI
+token works too but `app.config.ts` statically importing `@cleansia/components` trips
+`enforce-module-boundaries` (that lib is lazy-loaded) and pulls the whole barrel in eagerly.
+
+Its only variant input is `compact` — the collapsed sidebar rail, where the mark shrinks rather than
+being cropped or swapped.
+
+Two properties to keep when touching any brand asset. Both are **enforced**, not advised, by
+`cleansia-brand-name.component.spec.ts` — it reads the shipped files off disk, so regenerating an
+asset wrongly goes red in `nx test components`:
+
+- **The bytes must match the extension.** The spec checks magic bytes (PNG signature / `RIFF`+`WEBP` /
+  ICO reserved+type), because a PNG served as `.webp` under `<source type="image/webp">` is a false
+  MIME claim in markup and it shipped that way for months before T-0444.
+- **The mark is drawn in exactly one ink, and that ink is `--cleansia-primary`.** The spec decodes
+  `Logo.png` and diffs its single visible colour against `variables.scss`, so a re-theme that forgets
+  the logo fails instead of drifting.
+
+And one rule for the shape: **size a non-square logo by width, not height** —
+`width: Npx; max-width: 100%; height: auto`. A fixed `height` plus `max-width` squashes a replaced
+element horizontally when the container is narrow (CSS 2.1 §10.4); at 1:1 you never notice, at 5.5:1
+it is immediate. Note the workspace is **content-box** (no universal `border-box` reset; PrimeFlex only
+sets it on `.grid > .col`), so a rail's usable width is its `width` minus its own padding and border.
+
+## Heading rank is not the type scale — `cleansia-title` takes `level`
+
+`cleansia-title`'s `size` picks the visual scale *and*, by default, the heading tag
+(`large→h1, big→h2, default→h3, small→h5`). Do not reach for a bigger `size` to get a better outline:
+`--large` is `3rem` against `--default`'s `1.5rem`, and page stylesheets key off the
+`.cleansia-title--<size>` class, so changing size silently changes both type and styling. Pass
+`[level]="1"` instead — a page's own title is the `h1` whatever size it is drawn at. Leave `level` off
+and nothing changes. Every auth screen carries `[level]="1"` for exactly this reason (T-0444).

@@ -19,10 +19,7 @@
   >
     <!-- Header with gradient background -->
     <header class="sidebar-header">
-      <cleansia-brand-name
-        [showName]="!effectiveCollapsed()"
-        [wrapped]="true"
-      />
+      <cleansia-brand-name [compact]="brandCompact()" />
       @if (isMobile()) {
       <button
         type="button"

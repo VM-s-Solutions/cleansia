@@ -50,7 +50,6 @@ export class AppComponent implements OnInit, OnDestroy {
     this.pageTitleService.initialize({
       baseTitle: 'Cleansia',
       defaultTitleKey: 'page_titles.customer.default',
-      faviconPath: 'assets/logos/Logo.ico',
     });
 
     this.router.events

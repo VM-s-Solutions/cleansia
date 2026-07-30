@@ -10,6 +10,53 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## ⚠️ INDEX STALENESS NOTICE (2026-07-30)
+>
+> **Everything below the SPRINT-14 block is stale for anything merged after PR #148 (2026-07-25).**
+> PRs **#149–#170** shipped outside this process (ad-hoc workflows, not routed through the PM). The
+> owner has **declined a backfill**, so those tickets will not appear here. Rows referencing work in
+> that window may claim `proposed`/`blocked` for something already shipped, or omit shipped work
+> entirely. **Ground yourself in the CODE, not in these rows**, for any question about post-#148
+> state. Routing through the PM resumes with SPRINT-14 below.
+
+> ## 🚀 SPRINT-14 — owner batch, 2026-07-30 (demo-preparation): **1 red-build blocker + 4 owner items + 1 approved process change → 12 tickets**
+>
+> The owner is preparing a **demo** and considers the app otherwise ship-ready for one. Tickets are
+> ranked by **user-visible impact per unit of effort**, with the red build first because it blocks
+> every other lane. **PM recommendation: the avatar feature (T-0446…T-0449) should NOT gate the demo**
+> — it is the largest item by far, it is invisible until its backend read path lands, and it carries an
+> owner-only regen bundle in the middle of the chain. Rationale in `status/sprint-14.md` §3.
+>
+> **Verified by the PM before ticketing** (`--skip-nx-cache` production builds on `bbcf5b24`,
+> 2026-07-30): **all three** web apps fail, not two — `cleansia-admin.app` also consumes
+> `libs/data-access/partner-stores/src/lib/user/user.effects.ts`. Exit 1 on customer (4 errors),
+> partner, and admin.
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Owner item |
+> |----|-------|------|--------|-----------|--------|-----|-------------|------------|
+> | **T-0438** | **URGENT — unbreak `master`**: three web call sites missing the newly-required regen fields; **and** wire the wizard's long-collected `entryInstructions` into `accessInstructions` (a live data-loss bug — collected at `order-wizard.component.html:491`, displayed back at `wizard-summary-step.component.ts:240`, never sent at `order-wizard.facade.ts:551`). Cap 2000 | S | **ready** (needs dispatch) | — | frontend | no | — | 1 + 2 (web) |
+> | **T-0439** | NSwag **regen-drift guard** — second occurrence of this failure (first was `specialInstructions`, `ccca1496`/PR #166). Architect panel must rule on 4 options incl. **making nullable DTO members emit as optional** (kills the class outright) | S | **draft** — needs architect panel | T-0438 | architect, frontend, docs | no | — | 1 (guard) |
+> | **T-0440** | **iOS** — capture entry/access instructions on the booking confirm step. Contract READY (spec carries it); local generated client is **stale**, run `scripts/generate-api-clients.sh` first | S | **draft** — needs analyst panel | — | ios | no | — | 2 |
+> | **T-0441** | **Android** — same capture on the booking confirm step. **New `booking_access_instructions_hint` key ×5 IS required** — the pre-seeded `order_detail_access_instructions` is the *display* label only | S | **draft** — needs analyst panel | — | android | no | — | 2 |
+> | **T-0442** | **Android customer profile hero → match iOS.** Root cause found: iOS `HeroGradient` is ONE `HStack` with the edit chip `.frame(maxHeight: .infinity, alignment: .center)` (`ProfileTab.swift:296-303`); Android stacks a second row below a `Spacer(16.dp)` (`ProfileTab.kt:305-330`). 11-row delta table in the ticket | S | **ready** (needs dispatch) | — | android | no | — | 3 |
+> | **T-0443** | **Android brand assets from iOS** — both apps. Confirmed: the two Android apps ship **different hand-drawn vector marks**, neither matching iOS; the system splash is already wired to `ic_launcher_foreground` (`themes.xml:7`) so it comes free; the **partner has no in-app splash composable at all**; `ic_notification` must stay monochrome | M | **ready** (needs dispatch) | — | android | no | — | 4 |
+> | **T-0444** | **Web logo/favicon from iOS** — all 3 apps. Two defects found while grounding: every app serves a **PNG under a `.webp` extension** (all three `Logo.webp` share sha1 `365adf5963`, which `file(1)` reports as PNG 48×48), and the 28px header logo has a 48px source (soft on 2×) | S | **ready** (needs dispatch) | T-0438 | frontend | no | — | 4 |
+> | **T-0445** | **PROCESS (owner-approved)** — new **verification-integrity gate**: mutation-prove the test, re-run rather than trust, declare what could NOT be verified. Closes 3 real misses (a security test green before AND after the fix; an `UP-TO-DATE` Gradle run; iOS tests that never compiled). Distinct from Gate 6.5 and from the Gate 8 verify-not-trust blockquote — the ticket argues why | S | **ready** (needs dispatch) | — | architect, docs | no | — | process |
+> | **T-0446** | **Avatar READ path (SPINE)** — the API returns `{fileName: "<guid>", base64Content: null, contentType: null}` (`Mappers/BlobMappers.cs:12-18`), so **no client can render an avatar even after a successful upload**. Needs analyst + architect panels (SAS-on-DTO vs streaming endpoint vs base64) | M | **draft** — needs both panels | T-0438 | backend | **yes** | **nswag-regen + mobile-spec-redump** | 5 |
+> | **T-0447** | **Web** avatar upload/render/**removal**. Found: `updateUserCurrent` is **never dispatched** by any component — the partner-store effect chain is dead code, not a reference. Only live caller is `profile.component.ts:224` (`photo: undefined as any`) | M | **blocked** | T-0446, T-0438 | frontend | yes | — | 5 |
+> | **T-0448** | **Android** avatar upload/render/removal. `EditProfileScreen.kt:230` is `.clickable { /* TODO: launch photo picker */ }` | M | **blocked** | T-0446, T-0442, T-0441 | android | yes | — | 5 |
+> | **T-0449** | **iOS** avatar upload/render/removal. No avatar UI exists; `HeroGradient` is initials-only | M | **blocked** | T-0446, T-0440 | ios | yes | — | 5 |
+>
+> **Shared-file lanes validated before dispatch** (`process/shared-file-lanes.md`): customer-web i18n →
+> T-0447 sole writer · Android `customer-app` `strings.xml` ×5 → **T-0441 then T-0448** · Android
+> `ProfileTab.kt` → **T-0442 then T-0448** · iOS `Localizable.xcstrings` → **T-0440 then T-0449** ·
+> `agents/process/quality-gates.md` → **T-0445 then T-0439** · `INDEX.md` → PM only.
+>
+> **MANUAL_STEPS bundle for the owner (batched, one handoff — do NOT interleave):** none until T-0446
+> is implemented; then **one** bundle = `nswag-regen` (all three TS clients) + `mobile-spec-redump`
+> (`customer-mobile-api.json`, and `partner-mobile-api.json` if reachable). After that regen, **build
+> all three web apps before pushing** — skipping that is what produced T-0438.
+
 > ## 📱 PHASE/IOS-FIX1 — on-device iOS-16 shakeout (sprint-12): **16 owner-reported issues → 4-cluster diagnosis → 6 slices + 1 process ticket — ALL 6 SLICES DONE · PHASE GATE PASS · PR DRAFTED** (2026-07-03, `phase/ios-fix1`, 11 commits pushed; **remaining acceptance: the OWNER DEVICE PASS**)
 >
 > **The device-verification phase.** The owner tested BOTH iOS apps on a real **iOS 16** iPhone for the first

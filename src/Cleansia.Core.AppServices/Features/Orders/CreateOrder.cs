@@ -133,6 +133,10 @@ public class CreateOrder
                 .MaximumLength(2000)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
+            RuleFor(x => x.AccessInstructions)
+                .MaximumLength(2000)
+                .WithMessage(BusinessErrorMessage.MaxLength);
+
             When(x => !string.IsNullOrEmpty(x.PreferredEmployeeId)
                 && !string.IsNullOrEmpty(_userSessionProvider.GetUserId()), () =>
             {
@@ -208,7 +212,16 @@ public class CreateOrder
         /// partner + admin surfaces. Optional on purpose: clients built before
         /// this field existed simply omit it and behave exactly as before.
         /// </summary>
-        string? SpecialInstructions = null) : ICommand<Response>;
+        string? SpecialInstructions = null,
+        /// <summary>
+        /// Optional free-text entry instructions ("key under the mat", "gate
+        /// code 4455"). Persisted on the Order and rendered read-only by the
+        /// partner + admin surfaces, unconditionally — it carries no extra
+        /// access control today despite being the more sensitive of the two
+        /// note fields. Optional on purpose: clients built before this field
+        /// existed simply omit it and behave exactly as before.
+        /// </summary>
+        string? AccessInstructions = null) : ICommand<Response>;
 
     public record Response(
         string Id,
@@ -286,7 +299,8 @@ public class CreateOrder
                 PromoCodeId: promo.PromoCodeId,
                 PreferredEmployeeId: command.PreferredEmployeeId,
                 RecurringTemplateId: null,
-                SpecialInstructions: command.SpecialInstructions), cancellationToken);
+                SpecialInstructions: command.SpecialInstructions,
+                AccessInstructions: command.AccessInstructions), cancellationToken);
 
             var dispatch = await orderPaymentDispatcher.DispatchAsync(
                 order, command.Language, cancellationToken);

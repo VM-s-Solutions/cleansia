@@ -220,8 +220,7 @@
       "submit": "Send Reset Link",
       "success": "Password reset link sent! Check your email.",
       "back_to_login": "Back to login"
-    },
-    "refresh_token_reused": "Your session was used elsewhere. Please sign in again."
+    }
   },
   "services": {
     "title": "Our Services",
@@ -912,6 +911,7 @@
       "timeline": "Timeline",
       "notes": "Notes",
       "special_instructions": "Special Instructions",
+      "access_instructions": "Access Instructions",
       "confirmation_code": "Confirmation Code",
       "download_receipt": "Download Receipt",
       "download_error": "Failed to download receipt",
@@ -1411,8 +1411,12 @@
       "invalid_google_token": "Google sign-in failed. Please try again.",
       "invalid_apple_token": "Apple sign-in failed. Please try again.",
       "invalid_password_format": "Your password doesn't meet the requirements.",
+      "invalid_reset_token": "That reset code is invalid or has expired.",
+      "same_reset_password": "Your new password must be different from your current one.",
       "current_password_invalid": "Your current password is incorrect.",
-      "insufficient_privileges": "You don't have permission to do that."
+      "insufficient_privileges": "You don't have permission to do that.",
+      "invalid_refresh_token": "Your session has expired. Please sign in again.",
+      "refresh_token_reused": "Your session was used elsewhere. Please sign in again."
     },
     "common": {
       "unauthorized": "You are not authorized to perform this action",

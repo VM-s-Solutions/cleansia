@@ -72,4 +72,11 @@ public record CreateOrderInput(
     /// the Order and surfaced read-only to the partner/admin surfaces. Null for
     /// the recurring pipeline — a template carries no per-occurrence note.
     /// </summary>
-    string? SpecialInstructions = null);
+    string? SpecialInstructions = null,
+    /// <summary>
+    /// Free-text entry instructions the customer typed at booking time. Kept
+    /// separate from <see cref="SpecialInstructions"/> because they answer
+    /// different questions, not because it is access-controlled — it is not.
+    /// Null for the recurring pipeline: a template carries no per-occurrence note.
+    /// </summary>
+    string? AccessInstructions = null);

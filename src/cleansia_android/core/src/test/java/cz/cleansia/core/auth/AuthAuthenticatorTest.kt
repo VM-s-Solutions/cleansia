@@ -5,9 +5,11 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -69,6 +71,14 @@ class AuthAuthenticatorTest {
             .message("Unauthorized")
             .build()
     }
+
+    /**
+     * A 401 that a controller authored, carrying a BusinessErrorMessage key —
+     * the shape that now maps to `ApiError.AuthRejected` one layer up.
+     */
+    private fun http401WithBusinessKey(): Response = http401().newBuilder()
+        .body("""{"errors":{"Auth":"auth.internal_type_error"}}""".toResponseBody("application/problem+json".toMediaType()))
+        .build()
 
     // ── TERMINAL: the server rejected the refresh token ──
 
@@ -174,6 +184,37 @@ class AuthAuthenticatorTest {
 
         assertNull(result)
         coVerify(exactly = 0) { refreshClient.refresh(any()) }
+        verify(exactly = 0) { sessionManager.emitForcedSignOut(any()) }
+    }
+
+    // ── The ApiError.AuthRejected split cannot reach this layer ──
+    //
+    // This Authenticator runs below Retrofit, so it never sees an ApiError at
+    // all: its verdict comes from RefreshResult, not from the failed request's
+    // body. These two pin that, so classifying a 401 body as a business
+    // rejection upstream can never suppress or trigger a forced sign-out.
+
+    @Test
+    fun authenticate_when401CarriesBusinessErrorKey_stillSignsOutOnRefreshRejection() {
+        coEvery { refreshClient.refresh("refresh-1") } returns RefreshResult.Rejected
+
+        val result = authenticator.authenticate(null, http401WithBusinessKey())
+
+        assertNull(result)
+        coVerify(exactly = 1) { cache.clear() }
+        verify(exactly = 1) { tokenStore.clear() }
+        verify(exactly = 1) { sessionManager.emitForcedSignOut(ForcedSignOutReason.SessionExpired) }
+    }
+
+    @Test
+    fun authenticate_when401CarriesBusinessErrorKey_stillRefreshesAndRetries() {
+        coEvery { refreshClient.refresh("refresh-1") } returns RefreshResult.Success(newTokens)
+
+        val result = authenticator.authenticate(null, http401WithBusinessKey())
+
+        assertNotNull(result)
+        assertEquals("Bearer access-2", result!!.header("Authorization"))
+        verify(exactly = 1) { tokenStore.save(newTokens) }
         verify(exactly = 0) { sessionManager.emitForcedSignOut(any()) }
     }
 }

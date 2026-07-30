@@ -58,6 +58,13 @@ object ApiErrorParser {
                 ?: context.getString(R.string.error_generic_unknown)
         }
         is ApiError.Unauthorized -> context.getString(R.string.error_generic_unauthorized)
+        // Intentionally asymmetric with the BadRequest arm above: an unmapped
+        // key there is shown raw because it is still actionable, but this arm
+        // fires on the sign-in screen, where "auth.internal_type_error" would be
+        // the worst thing on the page. A missing translation degrades to the
+        // same generic line the user already gets today.
+        is ApiError.AuthRejected -> resolveStringByErrorKey(context, error.errorKey)
+            ?: context.getString(R.string.error_generic_unauthorized)
         is ApiError.Server -> error.message.takeIf { it.isNotBlank() }
             ?: context.getString(R.string.error_generic_server)
         is ApiError.Network -> context.getString(R.string.error_generic_network)

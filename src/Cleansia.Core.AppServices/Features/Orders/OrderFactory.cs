@@ -117,7 +117,8 @@ public sealed class OrderFactory(
             membershipPlanIdAtPurchase: appliedMembershipPlanId,
             preferredEmployeeId: input.PreferredEmployeeId,
             recurringTemplateId: input.RecurringTemplateId,
-            specialInstructions: input.SpecialInstructions);
+            specialInstructions: input.SpecialInstructions,
+            accessInstructions: input.AccessInstructions);
 
         order.SetCurrency(input.Currency);
 

@@ -59,7 +59,10 @@ private fun <T> handleResponse(response: Response<T>, json: Json): ApiResult<T> 
     val firstErrorKey = validationErrors?.values?.firstOrNull()?.firstOrNull()
 
     val error = when (response.code()) {
-        401 -> ApiError.Unauthorized
+        401 -> firstErrorKey
+            ?.takeIf { BUSINESS_ERROR_KEY.matches(it) }
+            ?.let { ApiError.AuthRejected(errorKey = it) }
+            ?: ApiError.Unauthorized
         404 -> ApiError.NotFound(errorResponse?.effectiveMessage ?: "Resource not found")
         400 -> ApiError.BadRequest(
             message = errorResponse?.effectiveMessage ?: "Bad request",
@@ -76,6 +79,18 @@ private fun <T> handleResponse(response: Response<T>, json: Json): ApiResult<T> 
 
     return ApiResult.Error(error)
 }
+
+/**
+ * Tells a controller-authored 401 (which puts a BusinessErrorMessage key such
+ * as `auth.internal_type_error` into `errors`) apart from the JwtBearer
+ * middleware's own 401, which carries no body at all.
+ *
+ * Matched positively rather than by "contains no space": the backend joins
+ * errors sharing a code with `"; "`, so a negative test would silently
+ * reclassify a future multi-error group as a session failure — the one
+ * misdiagnosis this split exists to prevent.
+ */
+private val BUSINESS_ERROR_KEY = Regex("^[a-z0-9_]+(\\.[a-z0-9_]+)+$")
 
 private fun parseValidationErrors(element: JsonElement): Map<String, List<String>>? = runCatching {
     element.jsonObject.entries.associate { (key, value) ->

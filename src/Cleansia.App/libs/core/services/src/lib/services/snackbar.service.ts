@@ -60,6 +60,13 @@ export const DEFAULT_SNACKBAR_ERROR_MAPPINGS: SnackbarErrorMappings = {
   authappletypeerror: 'api.auth.apple_type_error',
   authexternaltypeerror: 'api.auth.external_type_error',
   authinternaltypeerror: 'api.auth.internal_type_error',
+  // Password reset. The forgot-password facades report through `showApiError`
+  // too, and `showSnackbar` clears the message queue — so the facade's snackbar
+  // replaces the interceptor's already-translated one and is the message the
+  // user actually reads. Without these entries it prints the raw
+  // 'auth.invalid_reset_token' on screen.
+  authinvalidresettoken: 'api.auth.invalid_reset_token',
+  authsameresetpassword: 'api.auth.same_reset_password',
 };
 
 @Injectable({

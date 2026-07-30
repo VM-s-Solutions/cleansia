@@ -101,8 +101,19 @@ grounding it. Sizing/AC/deps/layers set → DoR met.
 - 2026-07-30 — implemented (frontend) on `feat/T-0444-web-logo` off `fix/T-0438-unbreak-web-build`
 - 2026-07-30 — **owner overruled the monogram**: *"NO, I want the web to use usual 'cleansia' logo
   that is used in ios apps."* Reworked to the wordmark (frontend, second commit on the same branch)
+- 2026-07-30 — changes requested → addressed (frontend, third commit). Heading outline repaired on the
+  nine auth screens; the asset invariants now have a spec instead of a catalog sentence; three
+  documentation claims corrected. **Note for whoever reads the history:** commit `957a7610`'s message
+  repeats the wrong a11y claim (*"removes a duplicate h2 … and eight auth screens"*). It is not
+  amendable without a rebase; the correction lives in this ticket and in the follow-up commit.
 
 ## Implementation notes (frontend)
+
+> **SUPERSEDED — 2026-07-30.** The monogram described below **does not ship**. The owner overruled it
+> in favour of the wordmark; see "second pass" further down for what is actually in the tree. The
+> section is kept because its findings about the `.webp` extension lie, the two competing favicons and
+> the 16px legibility floor are still the evidence base — but every sentence about the "C" mark
+> describes artwork that was regenerated away.
 
 **Both PM findings reproduced.** All three `Logo.webp` were sha1 `365adf596364`, `file(1)` =
 *PNG image data, 48 x 48* — a PNG under a `.webp` extension, at 48px into a 28px slot.
@@ -163,17 +174,42 @@ the `<h2>Cleansia</h2>` used, so contrast is unchanged: 4.4:1 on `#0f172a`, 3.6:
 was `[32px square] + the literal text "Cleansia"`. Squeezing a 5.5:1 wordmark into that square gives
 32×6px of ink; keeping the text beside a wordmark prints the word twice. So `cleansia-brand-name`
 renders the wordmark alone (`<h2>Cleansia</h2>` deleted — the `alt` carries the accessible name, and
-it also removes a duplicate `<h2>` from the heading outline of the footer and 8 auth screens). The
-partner mobile toolbar drops its `<span>Cleansia</span>` for the same reason; the admin toolbar keeps
-its suffix, now `<span>Admin</span>`, which the wordmark does **not** duplicate.
+the old lockup announced "Cleansia logo Cleansia"). The partner mobile toolbar drops its
+`<span>Cleansia</span>` for the same reason; the admin toolbar keeps its suffix, now `<span>Admin</span>`,
+which the wordmark does **not** duplicate.
+
+**Heading outline — the first pass got this half wrong, and it is now fixed.** In the **footer** the
+brand `<h2>` really was surplus: the footer already carries `<h3>` column titles under the page's own
+headings, so deleting it removed a stray level-2. On the **nine auth screens the opposite was true**.
+`cleansia-title` defaults `size` to `'default'`, which renders `<h3>` (`cleansia-title.component.html`),
+and all nine call it with no `size` — so the outline was `<h2>` brand → `<h3>` Login, and the brand
+`<h2>` was the page's *only* top-level heading. Deleting it left those screens with an `<h3>` and
+nothing above it.
+
+The repair is not `size="large"`. That input conflates heading rank with the type scale: `--large` is
+`font-size: 3rem` against `--default`'s `1.5rem`, so it would double the type on nine production
+screens, and four page rules key off `.cleansia-title--default`
+(`pages/cleansia-customer/{login,register}.component.scss`, `&__header` plus the dark-mode
+`color: #e2e8f0`) which would silently stop matching. Instead `cleansia-title` gained an optional
+`level` input; when it is absent the level is derived from `size` exactly as before, so all 54 other
+call sites render byte-identical markup. The 11 auth titles pass `[level]="1"` and become the `<h1>`
+they always should have been — **at the size they already had**. Net: the regression is gone and a
+pre-existing missing-`h1` on every auth screen is fixed, with zero visual change.
 
 That forced the component API. `showName` could no longer be honoured — the name is baked into the
 image — and `wrapped` (column layout for an icon-over-text pair) became a no-op with one child. Both
 are replaced by `compact`, the only variant the geometry actually has: the collapsed sidebar rail.
 Rendered ink per slot — navbar/footer/auth `132×24`, mobile toolbar `96×17.5`, collapsed rail `66×12`.
-The rail is 6rem wide (`1rem = 14px` here, so 84px → 70px inside the sidebar's padding); its header's
-`1rem` side padding was eating 28 of those 70px, so it is zeroed while collapsed. `brandCompact` also
-excludes mobile, where the drawer always opens at full width.
+
+Rail arithmetic, under the **content-box** model that actually applies here (grep: the only
+`box-sizing: border-box` in the workspace styles is two rules in `recurring-bookings.component.scss`,
+and PrimeFlex's single declaration is scoped to `.grid > .col` — there is no universal reset). With
+`1rem = 14px`: `--sidebar-width-collapsed: 6rem` is 84px of *content*, and `.sidebar-header` fills it,
+so the header's own `1px` border and `1rem` side padding leave **54px** of content — less than the
+66px mark, which `.sidebar { overflow: hidden }` would then clip. Zeroing the header's inline padding
+while collapsed raises that to **82px**, so the mark fits with 16px of slack. Expanded (`16rem` =
+224px) the header has 194px of content: the 132px mark sits 13.5px clear of the mobile close button.
+`brandCompact` also excludes mobile, where the drawer always opens at full width.
 
 **The favicon is the one square that cannot hold a 5.5:1 mark, and it is reported, not hidden.**
 `Logo.ico` (16/32/48) is now the **iOS app icon downscaled, unmodified** — the artwork iOS itself uses
@@ -192,12 +228,32 @@ aspect 3.59, in both the partner `AppIcon1024` and its `LaunchWordmark`). All th
 plain `Cleansia` wordmark, matching the word each app shows today. Giving the partner app its own
 lockup is a one-file swap if the owner wants it.
 
-Also corrected while in the file: `cleansia-brand-name`'s image was sized `height` + `max-width: 100%`,
-which squashes a replaced element horizontally in a narrow container (CSS 2.1 §10.4) — invisible on a
-1:1 icon, obvious at 5.5:1. It is now width-driven with `height: auto`. Both mobile toolbars lose a
-`border-radius: 4px` that only meant something on a square tile. `cleansia-menu` (dead, zero call
-sites) got `width`/`height` attributes so its untouched `assets/images/logo.png` reference cannot
-render at the new 616px intrinsic width.
+**Sizing rule for the new shape (no prior bug — a constraint the old shape never had).** At
+`a7c4f5c4` the brand stylesheet had no `img` rule at all; the 32px square was sized purely by its
+`width`/`height` attributes, and at 1:1 nothing could go wrong. A 5.5:1 mark is different: a fixed
+`height` plus `max-width: 100%` squashes a replaced element horizontally once a container is narrower
+than the mark (CSS 2.1 §10.4 resolves the over-constraint by clamping width and keeping the specified
+height). So the new rule is width-driven — `width: 132px; max-width: 100%; height: auto` — which
+shortens the mark proportionally instead.
+
+Also in passing: both mobile toolbars lose a `border-radius: 4px` that only meant something on a
+square tile, and now negotiate WebP through `<picture>` like the shared component, so the mobile path
+no longer downloads the 14.3 KB PNG alongside the 8.0 KB WebP the drawer already fetches. The two
+customer-navbar brand instances were byte-identical once `showName` went, so they collapse into one
+always-visible `__left` container (`__brand-mobile` and its two display rules deleted). `cleansia-menu`
+(dead, zero call sites) got `width`/`height` attributes so its untouched `assets/images/logo.png`
+reference cannot render at the new 616px intrinsic width.
+
+**Specs (`components`), 19 new assertions, mutation-checked.**
+`cleansia-brand-name.component.spec.ts` reads the ten shipped brand files off disk and asserts magic
+bytes against extension (PNG signature / `RIFF`+`WEBP` / ICO reserved+type), decodes `Logo.png` with a
+40-line inflate+unfilter reader (no image library ships in this workspace) and asserts its **single**
+visible ink colour equals `--cleansia-primary` parsed out of `variables.scss`, asserts the three apps
+ship one mark, and asserts the component emits no text node beside the wordmark plus `alt="Cleansia"`.
+`cleansia-sidebar-menu.component.spec.ts` covers `brandCompact` across collapsed/expanded and the
+mobile exclusion. Both mutations were run: copying PNG bytes over `Logo.webp` fails the magic-byte
+test, and a **1/255-per-channel** ink drift (`#0284c7`→`#0385c8`) fails the colour test. Assets
+restored and re-verified by sha256 afterwards.
 
 Harvested into `agents/knowledge/patterns-frontend.md` → "Brand mark — `cleansia-brand-name` is the
 whole lockup": no text beside the wordmark, `compact` as the only variant, bytes-match-extension, and

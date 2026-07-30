@@ -318,11 +318,28 @@ Its only variant input is `compact` — the collapsed sidebar rail, where the ma
 being cropped or swapped. `assets/logos/Logo.{webp,png,ico}` is a per-app path resolved by each app's
 own assets folder; the files are byte-identical across the three apps so drift stays visible.
 
-Two properties to keep when touching any brand asset:
+Two properties to keep when touching any brand asset. Both are **enforced**, not advised, by
+`cleansia-brand-name.component.spec.ts` — it reads the shipped files off disk, so regenerating an
+asset wrongly goes red in `nx test components`:
 
-- **The bytes must match the extension.** Check with `file(1)`, not the filename — a PNG served as
-  `.webp` under `<source type="image/webp">` is a false MIME claim in markup (shipped for months
-  before T-0444).
-- **Size a non-square logo by width, not height.** `width: Npx; max-width: 100%; height: auto` — a
-  fixed `height` plus `max-width` squashes a replaced element horizontally when the container is
-  narrow (CSS 2.1 §10.4), and a 5.5:1 wordmark is where that first becomes obvious.
+- **The bytes must match the extension.** The spec checks magic bytes (PNG signature / `RIFF`+`WEBP` /
+  ICO reserved+type), because a PNG served as `.webp` under `<source type="image/webp">` is a false
+  MIME claim in markup and it shipped that way for months before T-0444.
+- **The mark is drawn in exactly one ink, and that ink is `--cleansia-primary`.** The spec decodes
+  `Logo.png` and diffs its single visible colour against `variables.scss`, so a re-theme that forgets
+  the logo fails instead of drifting.
+
+And one rule for the shape: **size a non-square logo by width, not height** —
+`width: Npx; max-width: 100%; height: auto`. A fixed `height` plus `max-width` squashes a replaced
+element horizontally when the container is narrow (CSS 2.1 §10.4); at 1:1 you never notice, at 5.5:1
+it is immediate. Note the workspace is **content-box** (no universal `border-box` reset; PrimeFlex only
+sets it on `.grid > .col`), so a rail's usable width is its `width` minus its own padding and border.
+
+## Heading rank is not the type scale — `cleansia-title` takes `level`
+
+`cleansia-title`'s `size` picks the visual scale *and*, by default, the heading tag
+(`large→h1, big→h2, default→h3, small→h5`). Do not reach for a bigger `size` to get a better outline:
+`--large` is `3rem` against `--default`'s `1.5rem`, and page stylesheets key off the
+`.cleansia-title--<size>` class, so changing size silently changes both type and styling. Pass
+`[level]="1"` instead — a page's own title is the `h1` whatever size it is drawn at. Leave `level` off
+and nothing changes. Every auth screen carries `[level]="1"` for exactly this reason (T-0444).

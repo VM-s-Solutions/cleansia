@@ -737,3 +737,44 @@ Unchanged by this: T-0464 (the `MetadataName.ContentType` decoy — every order 
 evidence file is still served as `application/octet-stream`) and T-0465 (no avatar caching at all).
 Both remain post-demo. The confirmation lowers T-0464 from "possibly demo-blocking" to post-demo,
 which was its filed sequencing.
+
+### 2026-07-30 — QA: AC4 CLOSED, and the prediction was right
+
+AC4 was the last open unknown on this ticket and it has been **closed with executed evidence**, not
+argument: two browser engines and `CGImageSource` all render a bare-GUID blob served as
+`application/octet-stream`, `nosniff` is absent, and the grant on the wire is exactly `sr=b sp=r` for
+1h with container-list returning 403. Full detail in the AC4 checkbox above.
+
+Three things this changes, recorded so nobody re-opens them:
+
+1. **No content-type work belongs in this ticket.** The header defect is real, codebase-wide and
+   pre-existing — **T-0464**. AC4 passing *without* it is precisely why it does not need to ride here.
+2. **The grant-scope assertions now have wire-level corroboration**, not just
+   `ProfilePhotoSasGrantScopeTests`' locally-computed token. The security gate's §0 clearance stands
+   on two independent legs.
+3. **The residual risk is named, not hidden:** real Azure was unreachable, QA declined to obtain
+   credentials (correct), and a `nosniff` header on real Azure would break every render above. The
+   owner can settle it in one minute on DEV — routed to `status/sprint-14.md` §6, deliberately **not**
+   a ticket and **not** a blocker.
+
+<!-- reviewer + security verdicts here; AC6 must name the mutation-proving test -->
+
+### 2026-07-30 — knowledge harvest from this ticket (folded in by the PM, not by its author)
+
+The frontend developer working this ticket's lane added a catalog section to
+`agents/knowledge/patterns-frontend.md` — **"Building a generated DTO — construct-then-assign, never
+an object literal"** — and **deliberately did not write this note here**, because the backend
+developer and a reviewer were both live in this file at the time. **That was the correct call** (a
+concurrent write to a file two agents are editing is the T-0456 class of incident), and it is recorded
+as such rather than as an omission.
+
+The PM is folding the note in now that the lane has cleared. Implementers and reviewers on this
+ticket and on **T-0447 / T-0448 / T-0449** should read that section before touching a generated
+client — it is the pattern the regen breaks in T-0438 and PR #166 kept violating, and **T-0463 AC4**
+now tests for the same shape.
+
+#### What this ticket still needs before `in_review`
+
+AC9 + AC10 implemented, and AC6's mutation-proving test **named**. **AC4 is now CLOSED** — see below.
+The reviewer re-gates; the PM does not approve its own reconciliation.
+

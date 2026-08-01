@@ -80,15 +80,19 @@ dotnet test src/Cleansia.IntegrationTests
 
 ### Frontend (from `src/Cleansia.App/`)
 ```bash
-# Dev servers
-npx nx serve cleansia-partner-app       # Partner :4200
-npx nx serve cleansia-admin-app         # Admin :4201
-npx nx serve cleansia-app               # Customer :4202
+# Dev servers — prefer the npm aliases; CI invokes these same ones
+npm run start:cleansia-partner          # Partner :4200
+npm run start:cleansia-admin            # Admin :4201
+npm run start:cleansia                  # Customer :4202
 
 # Production builds
-npx nx build cleansia-partner-app --configuration=production
-npx nx build cleansia-admin-app --configuration=production
-npx nx build cleansia-app --configuration=production
+npm run build:cleansia-partner
+npm run build:cleansia-admin
+npm run build:cleansia-customer
+
+# The Nx project names are cleansia-partner.app / cleansia-admin.app / cleansia.app
+# — a DOT before `app`, not a hyphen. `npx nx build cleansia-partner-app` fails with
+# "Cannot find project". Check with `npx nx show projects` before hand-writing one.
 
 # Regenerate NSwag API clients (after backend changes)
 npm run generate-partner-client

@@ -32,9 +32,13 @@ final class FixedWhiteContrastTests: XCTestCase {
 /// files are queued for further edits on these exact hunks, and re-typing the theme-adaptive
 /// `primary` there would leave every other test green, both linters clean and light mode perfect
 /// while dark mode silently returned to 2.14:1.
+///
+/// The customer disc now lives in its own `ProfileAvatar`, shared by the hero and the edit screen, so
+/// the guard follows it there and covers both surfaces — the initials remain the no-photo fallback
+/// under the uploaded avatar.
 final class AvatarDiscBindingTests: XCTestCase {
     private static let heroes = [
-        "CleansiaCustomer/Sources/Features/Profile/ProfileTab.swift",
+        "CleansiaCustomer/Sources/Features/Profile/ProfileAvatar.swift",
         "CleansiaPartner/Sources/Features/Profile/ProfileHubContent.swift"
     ]
 

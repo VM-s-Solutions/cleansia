@@ -5,6 +5,7 @@ struct ProfileTab: View {
     @ObservedObject var profileVM: ProfileViewModel
     @ObservedObject var membershipVM: MembershipViewModel
     @ObservedObject var preferences: CustomerPreferencesModel
+    let avatarCache: RemoteImageCache
     let onOpen: (ShellRoute) -> Void
     let onSignOut: () -> Void
 
@@ -34,8 +35,12 @@ struct ProfileTab: View {
                         ProfileHeader(
                             user: profileVM.currentUser,
                             tier: tierLabel,
+                            avatarCache: avatarCache,
                             topInset: proxy.safeAreaInsets.top,
-                            onEdit: { onOpen(.editProfile(showBookingHint: false)) }
+                            onEdit: { onOpen(.editProfile(showBookingHint: false)) },
+                            onAvatarLoadFailure: { photo in
+                                Task { await profileVM.avatarLoadFailed(fileName: photo.fileName) }
+                            }
                         )
 
                         MembershipManagementCard(vm: membershipVM, onSubscribeClick: { onOpen(Self.subscribeRoute) })
@@ -191,8 +196,10 @@ private struct ProfileRow: View {
 private struct ProfileHeader: View {
     let user: CurrentUserProfile?
     let tier: String
+    let avatarCache: RemoteImageCache
     var topInset: CGFloat = 0
     let onEdit: () -> Void
+    let onAvatarLoadFailure: (ProfilePhoto) -> Void
 
     @Environment(\.locale) private var locale
 
@@ -201,7 +208,14 @@ private struct ProfileHeader: View {
         // fed by the real profile DTO stats: bookings placed, money saved
         // (formatted in the savings currency), and member-since.
         VStack(spacing: 0) {
-            HeroGradient(user: user, tier: tier, topInset: topInset, onEdit: onEdit)
+            HeroGradient(
+                user: user,
+                tier: tier,
+                avatarCache: avatarCache,
+                topInset: topInset,
+                onEdit: onEdit,
+                onAvatarLoadFailure: onAvatarLoadFailure
+            )
             ProfileStatsCard(
                 bookings: user?.totalBookings ?? 0,
                 saved: ProfileStatsFormat.saved(user?.totalSavings ?? 0, currencyCode: user?.savingsCurrencyCode),
@@ -267,26 +281,19 @@ private struct ProfileStatsCard: View {
 private struct HeroGradient: View {
     let user: CurrentUserProfile?
     let tier: String
+    let avatarCache: RemoteImageCache
     var topInset: CGFloat = 0
     let onEdit: () -> Void
-
-    private var initials: String {
-        let first = user?.firstName.first.map(String.init) ?? ""
-        let last = user?.lastName.first.map(String.init) ?? ""
-        return (first + last).uppercased()
-    }
+    let onAvatarLoadFailure: (ProfilePhoto) -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(Color.white)
-                    .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 3))
-                    .frame(width: 72, height: 72)
-                Text(initials)
-                    .font(CleansiaTypography.headlineSmall)
-                    .foregroundColor(CleansiaColors.onFixedWhite)
-            }
+            ProfileAvatar(
+                display: user?.profilePhoto.map(AvatarDisplay.remote) ?? .initials,
+                initials: user?.initials ?? "",
+                cache: avatarCache,
+                onLoadFailure: onAvatarLoadFailure
+            )
             VStack(alignment: .leading, spacing: 2) {
                 Text(user?.fullName ?? "")
                     .font(CleansiaTypography.headlineSmall)
@@ -378,7 +385,9 @@ struct EditProfileChip: View {
                     savingsCurrencyCode: "CZK"
                 ),
                 tier: "Regular",
-                onEdit: {}
+                avatarCache: RemoteImageCache(),
+                onEdit: {},
+                onAvatarLoadFailure: { _ in }
             )
             .background(CleansiaColors.background)
         }

@@ -6,7 +6,7 @@ size: M
 owner: ios
 created: 2026-07-30
 updated: 2026-08-01
-depends_on: [T-0446, T-0440, T-0451, T-0450]
+depends_on: [T-0446, T-0451, T-0450]
 blocks: []
 stories: [US-user-avatar]
 adrs: []
@@ -131,6 +131,36 @@ Related, and also not a defect: the **ru/uk two-line placeholder** on iOS. Wheth
   **So: `blocked` on T-0450 alone, and T-0450 is blocked on the owner.** Lane unchanged:
   **T-0451 ✅ → T-0450 → T-0449** on `ProfileTab.swift`, and **T-0440 ✅ → T-0450 → T-0449** on
   `Localizable.xcstrings`.
+- 2026-08-01 — **Q-I18N-02 IS ANSWERED. T-0450 is `ready`. This ticket stays `blocked`, on T-0450
+  alone, and here is exactly what changed and what did not.**
+
+  | | Before | Now |
+  |---|---|---|
+  | **Q-I18N-02** | `blocking: yes`, unanswered, no PM default | **ANSWERED** — verb-only label (`Edit`/`Редактировать`) + truncate, don't wrap |
+  | **T-0450** | `draft`, blocked on the owner, size `M`, two defects | **`ready`**, size `S`, **half (A) only** — the label |
+  | **the Poppins half** | inside T-0450, needing an architect panel + the unanswered Q-BRAND-01 | **split out to `T-0472`** — and **T-0472 does NOT block this ticket** |
+  | **this ticket** | `blocked` on T-0450, which was blocked on the owner | `blocked` on T-0450, which is **dispatchable today** |
+
+  **The blocker is no longer an owner reply — it is one `ready` ticket's write landing.** T-0450 writes
+  `Localizable.xcstrings` and `ProfileTab.swift` — **both** files this ticket rebuilds — and it adds an
+  explicit `.lineLimit(1)` + `.truncationMode(…)` to `EditProfileChip` (`ProfileTab.swift:332-350`),
+  which today has neither. That is inside the `HeroGradient`/chip region this ticket restructures. **Do
+  not "unblock" by dropping the T-0450 dep.**
+
+  **T-0472 (the Poppins split) does not enter this ticket's lane** unless its architect ruling reaches
+  iOS call sites; if it does, it is sequenced **after** this ticket. Do not run them concurrently.
+- 2026-08-01 — **`T-0440` REMOVED from `depends_on` — a discharge, not a drop.** It was a **lane**
+  dependency (the `Localizable.xcstrings` head) and its write is on `master` (`a10e1f88` #179). T-0440
+  itself is still `qa` on an owed AC1 screenshot + the Gate 8.5 render leg — *neither gates a code lane*
+  (`status/sprint-14.md` §8.2). **T-0446 and T-0451 stay listed; both are `done`.** Full remaining lanes:
+  T-0451 ✅ → **T-0450 → T-0449** on `ProfileTab.swift`, and T-0440 ✅ → **T-0450 → T-0449** on
+  `Localizable.xcstrings`.
+- 2026-08-01 — **the stale-client trap in `## Context` is now a TICKET, not just a warning.** The
+  gitignored `CleansiaCustomerApi/` going stale on every pull — the trap this ticket has warned about
+  since it was created, and which **still** cost the T-0440 reviewer a false blocker — is filed as
+  **T-0474** (post-checkout regeneration). **The warning at `## Context` stands and must still be
+  obeyed**: run `src/cleansia_ios/scripts/generate-api-clients.sh` before concluding any field is
+  missing. T-0474 is not a dependency of this ticket.
 - 2026-08-01 — **two carry-forwards from T-0451 and T-0440, both "do not undo this later":**
   - **T-0451's fix must survive.** It pinned the initials ink to a **fixed-white-surface** token
     (`CleansiaColors.onFixedWhite`) because the disc is `Color.white` in both themes. When an image is

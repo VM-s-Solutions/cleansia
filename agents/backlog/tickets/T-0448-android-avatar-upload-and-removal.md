@@ -6,7 +6,7 @@ size: M
 owner: android
 created: 2026-07-30
 updated: 2026-08-01
-depends_on: [T-0446, T-0441, T-0450]
+depends_on: [T-0446, T-0450]
 blocks: [T-0453]
 stories: [US-user-avatar]
 adrs: []
@@ -120,6 +120,32 @@ _(PM floor; the `US-user-avatar` analyst panel finalizes)_
   ticket on both lanes. Full lane unchanged: T-0442 ✅ → **T-0450 → T-0448 → T-0453**.
   **Do not "unblock" this by dropping the T-0450 dependency** — that would put an Android avatar into
   a hero whose ru/uk label is about to change underneath it, on the same five files.
+- 2026-08-01 — **Q-I18N-02 IS ANSWERED. T-0450 is `ready`. This ticket stays `blocked`, on T-0450
+  alone, and here is exactly what changed and what did not.**
+
+  | | Before | Now |
+  |---|---|---|
+  | **Q-I18N-02** | `blocking: yes`, unanswered, no PM default | **ANSWERED** — verb-only label (`Edit`/`Редактировать`) + truncate, don't wrap |
+  | **T-0450** | `draft`, blocked on the owner, size `M`, two defects | **`ready`**, size `S`, **half (A) only** — the label |
+  | **the Poppins half** | inside T-0450, needing an architect panel + the unanswered Q-BRAND-01 | **split out to `T-0472`** — and **T-0472 does NOT block this ticket** |
+  | **this ticket** | `blocked` on T-0450, which was blocked on the owner | `blocked` on T-0450, which is **dispatchable today** |
+
+  **The blocker is no longer an owner reply — it is one `ready` ticket's write landing.** T-0450 changes
+  `values-{ru,uk}/strings.xml`, which this ticket also writes, and changes what the hero chip renders in
+  ru/uk. It must precede this ticket on that lane. **Do not "unblock" by dropping the T-0450 dep** — that
+  would put an Android avatar into a hero whose ru/uk label is about to change underneath it, on the
+  same five files.
+
+  **⚠️ New lane neighbour: `T-0472`.** If T-0472's architect ruling touches the hard-coded Poppins call
+  sites it writes `ProfileTab.kt:437` and `EditProfileScreen.kt:215` — both inside this ticket's files
+  (`EditProfileScreen.kt:230` is this ticket's photo-picker TODO). **T-0472 is sequenced LAST**, after
+  this ticket. Do not run them concurrently.
+- 2026-08-01 — **`T-0441` REMOVED from `depends_on` — a discharge, not a drop.** It was a **lane**
+  dependency (the `values*/strings.xml` head) and its write is on `master` (`1d85b35f` #178). T-0441
+  itself is still `qa` on an owed AC1 **screenshot**, and *a screenshot does not gate a code lane* — the
+  ruling already recorded at `status/sprint-14.md` §8.2. Leaving it listed would have made this ticket
+  un-`ready` on a screenshot forever. **T-0446 stays listed and is `done`.** Full remaining lane:
+  T-0442 ✅ → **T-0450 → T-0448 → T-0453** (then T-0472).
 - 2026-08-01 — **when it does run, AC evidence must be a DEVICE RUN, not an inference from the other
   two platforms.** QA could execute Chromium, WebKit and `CGImageSource`; it could **not** execute
   Android (no emulator, and `BitmapFactory` is not exercisable on the JVM). The static trace found no

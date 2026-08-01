@@ -10,7 +10,15 @@ T-0446 security gate, the ADR-0031 panel, QA's AC4 run, the T-0441 review.)
 findings; **+ 4** from the security gate; **+ 3** from the ADR-0031 panel; **+ 5** from QA and the
 T-0440/T-0441 reviews; **+ 2** filed at the wave-2 close-out. **34 total.**
 
-> ## 🟢 READ §8 FIRST. Everything between here and §8 was written BEFORE the merges.
+> ## 🟩 READ §9 FIRST — it is the current state. Then §8. Everything before §8 predates the merges.
+>
+> **§9 (2026-08-01, fifth pass):** `Q-I18N-02` is **ANSWERED** — the last `blocking: yes` question in
+> the backlog is closed and **the owner is off the demo chain**. T-0450 is **split** (label → T-0450
+> `ready`; Poppins → **T-0472**, blocks nothing). Two new owner items filed: **T-0473** ("Report an
+> issue" → red) and the two approved process fixes **T-0474** + **T-0475**. And one thing to say plainly
+> to anyone who asks: **the avatar feature is one-third shipped** — only the read path (T-0446) exists.
+
+> ## 🟢 §8 — the post-merge reconciliation. Everything between here and §8 was written BEFORE the merges.
 >
 > Six PRs shipped — **`acf2f0bc` #175 · `a63b776e` #176 · `d6969fef` #177 · `1d85b35f` #178 ·
 > `a10e1f88` #179 · `1c8fdd00` #180.** The four headlines:
@@ -22,7 +30,9 @@ T-0440/T-0441 reviews; **+ 2** filed at the wave-2 close-out. **34 total.**
 > 3. **The vacuous consistency green is DEAD** (`d6969fef`). §2.14's "⚠️ that fix is NOT on `master`"
 >    and §2.14's `OK (0 files scanned)` transcript are **superseded** — see §8.4 for the two
 >    measurements and the precise (not blanket) caveat on pre-#177 evidence.
-> 4. **Exactly ONE thing now blocks the demo chain, and it is the owner:** **Q-I18N-02**. §8.5.
+> 4. ~~**Exactly ONE thing now blocks the demo chain, and it is the owner: Q-I18N-02.**~~
+>    **⛔ SUPERSEDED BY §9 (2026-08-01) — Q-I18N-02 is ANSWERED. Nothing on the demo chain is waiting
+>    on the owner.** T-0450 is split and `ready`; T-0448/T-0449 clear when its write lands.
 >
 > **Stale statements below that §8 supersedes, listed so nobody re-derives them:** the `0f3b0d4c`
 > baseline in this header; "`c23b26e7` and `c9265298` are NOT on `master`" (both are now); §2.14's
@@ -623,7 +633,7 @@ T-0446 (backend read path, in flight)
 |---|---|---|
 | now, parallel | **T-0451** (iOS initials contrast) | The only new ticket that is `ready` with **zero** dependencies, and it is a lane head for two demo tickets (`ProfileTab.swift`). Running it first costs nothing and clears the way. It is also a live accessibility failure on a shipped screen. |
 | now, parallel | **T-0452** (og:image + apple-touch-icon + manifest) | Demo-adjacent and independent: the owner will share a link. Zero collision with any lane. Needs one short architect panel. |
-| after T-0440/T-0441/T-0451 | **T-0450** (ru/uk label + Poppins Cyrillic) | Sits in **four** lanes at once (Android strings, `ProfileTab.kt`, iOS xcstrings, `ProfileTab.swift`) and is a head for T-0448 **and** T-0449. It has to go before them, and it cannot go before T-0440/T-0441 without a collision. Also blocked on a **native-speaker answer** (Q-I18N-02). |
+| after T-0440/T-0441/T-0451 | **T-0450** (ru/uk label + Poppins Cyrillic) | Sits in **four** lanes at once (Android strings, `ProfileTab.kt`, iOS xcstrings, `ProfileTab.swift`) and is a head for T-0448 **and** T-0449. It has to go before them, and it cannot go before T-0440/T-0441 without a collision. ~~Also blocked on a **native-speaker answer** (Q-I18N-02).~~ **SUPERSEDED §9: Q-I18N-02 answered, T-0450 split (Poppins → T-0472) and now `ready`; all four lane heads merged.** |
 | after T-0448 | **T-0453** (Android edge-to-edge hero) | Deliberately **behind** the demo path. It shares `ProfileTab.kt` with T-0448, and inserting a non-demo restructure in front of a demo ticket is exactly the wrong trade after the owner's ruling. Doing it after T-0448 also means restructuring against the final hero, not a placeholder. |
 | post-demo | **T-0454** (weight-starvation rule) | Prevents the *next* occurrence of a class already fixed. Same reasoning that put T-0439 behind the wave it guards. |
 | post-demo | **T-0455** (circular deps) | Zero user-visible change; buys back a checker nobody reads. Sole writer across four libs, so it wants a quiet window, not a busy one. |
@@ -692,7 +702,12 @@ charter documents (only in seven ticket files), and `git stash` appears **nowher
 
 ## 6. Escalations to the owner
 
-1. **Q-I18N-02 — `blocking: yes`, and it may gate the demo.** The shorter `ru`/`uk` wording for the
+> ⛔ **This whole section is SUPERSEDED — read §9.7 for the current owner-owed list.** Item 0 (the DEV
+> photo check) was discharged in §8.9, and **item 1 (Q-I18N-02) was ANSWERED on 2026-08-01.** Kept as
+> the record of what was escalated and when.
+
+1. ~~**Q-I18N-02 — `blocking: yes`, and it may gate the demo.**~~ **ANSWERED 2026-08-01 — see §9.2.**
+   The shorter `ru`/`uk` wording for the
    profile "Edit profile" chip. Needs a **native speaker**; the PM deliberately took **no default**.
    T-0450 AC2 will not pass without it. On the pre-prod blocking index.
 2. **Q-BRAND-01 — Poppins covers 0/98 Cyrillic code points on every platform.** All three Poppins
@@ -1058,7 +1073,7 @@ confirmed post-demo**, exactly as filed, rather than promoted to demo-blocking.
 | Ticket | Blocked on | Note |
 |---|---|---|
 | **T-0448**, **T-0449** | **T-0450 only** | Every other dependency is cleared — T-0446 ✅, the spec redump ✅, T-0451 ✅ `done`, and T-0440/T-0441's lane heads + fields **merged**. **Do not "unblock" these by dropping the T-0450 dep**: it writes the same `values-{ru,uk}/strings.xml` and changes what the hero renders in ru/uk |
-| **T-0450** | **Q-I18N-02** — the owner | **All four of its lane heads have merged**, so DoR item 4 is satisfied. AC2 needs a **native ru/uk speaker**; no PM default was taken, deliberately |
+| **T-0450** | ~~**Q-I18N-02** — the owner~~ **SUPERSEDED BY §9 — answered 2026-08-01; T-0450 is now `ready` and split** | **All four of its lane heads have merged**, so DoR item 4 is satisfied. ~~AC2 needs a **native ru/uk speaker**~~ — the owner supplied the wording; the Poppins half moved to **T-0472** |
 | **T-0465** | **T-0464** | Now `ready`, not `done`. Lane T-0446 ✅ → T-0464 → T-0465 |
 | **T-0461**, **T-0462** | *nothing* | Both deps satisfied. Both stay `draft` on their **own content** — §8.5 |
 
@@ -1291,7 +1306,9 @@ dispatch.**
 closed T-0446's AC4. Item **3**'s first risk (the owner-run regen inside the critical path) is
 **discharged** — the regen ran and `master` stayed green.
 
-1. **`Q-I18N-02` — `blocking: yes`, unanswered, and it is now THE bottleneck.** The shorter `ru`/`uk`
+1. ⛔ **SUPERSEDED BY §9 — `Q-I18N-02` IS ANSWERED (2026-08-01). Do not act on this item.** The owner
+   chose the verb-only label + truncate-don't-wrap; T-0450 is split and `ready`; the owner is off the
+   demo chain. Kept below as the record of what was escalated. ~~**`Q-I18N-02` — `blocking: yes`, unanswered, and it is now THE bottleneck.**~~ The shorter `ru`/`uk`
    wording for the profile "Edit profile" chip. Needs a **native speaker**; the PM deliberately took no
    default. It gates **T-0450 → T-0448 + T-0449**, i.e. **both remaining mobile legs of the avatar
    feature you ruled into the demo**. Nothing else in the sprint is blocked on anything but this.
@@ -1315,3 +1332,321 @@ closed T-0446's AC4. Item **3**'s first risk (the owner-run regen inside the cri
    generation is unknown. If it exits 0, `generate-*-client` would typecheck a stale tree and report
    success. **Do not read a green `generate-*-client` as proof the client regenerated.** Your next
    regen is the cheapest place to find out.
+
+---
+
+# 9. FIFTH PM PASS — 2026-08-01. Q-I18N-02 answered · T-0450 split · two new defects filed
+
+**Baseline: `master` at `f649c3bd`** — a docs-only commit on top of `1c8fdd00` (§8's own reconcile).
+Working tree carries the owner's uncommitted iOS files; **no agent opened `Info.plist` or `project.yml`.**
+
+## 9.1 The headline, in one line
+
+**`Q-I18N-02` is answered, it was the last `blocking: yes` question in the whole backlog, and the owner
+is now off the demo chain entirely.** What stands between the two mobile avatar tickets and `ready` is
+one `ready` ticket's write landing on four shared files — not a reply from you.
+
+## 9.2 The answer, and the two things it does NOT settle
+
+**Your words, recorded verbatim in `questions/answered.md` and quoted in T-0450's AC2:**
+
+> *"the ios and android apps have 'Edit profile'. And when translated then it's a long one. I want just
+> to keep 'Edit'/'Редактировать' and truncate it if it doesn't fit by the whole length."*
+
+**Two separate rulings, and both matter:**
+
+1. **The label is the verb alone** — `Edit` / `Редактировать`, plus the equivalent verb in `cs`, `sk`,
+   `uk`. Those three come from the **leading verb already inside the shipped long string**
+   (`Редагувати`, `Upravit`, `Upraviť`) — a derivation from strings a native speaker already approved,
+   **not a fresh machine translation.** The ticket says so explicitly, because "check it in a
+   translator" is exactly how the right word gets replaced by a plausible wrong one.
+2. **Overflow is TRUNCATION** — not wrapping to a second line, not shrinking the type. **This is live,
+   not theoretical:** `Редактировать` is 13 characters against `Edit`'s 4, so the truncation path will
+   still fire at 320dp.
+
+### ⚠️ What the answer does NOT touch — do not let anyone tell you otherwise
+
+**`Q-BRAND-01` — Poppins — is completely unaffected.** All three bundled Poppins weights cover **0 of
+98** Cyrillic code points, on **both** mobile platforms (the binaries are byte-identical, sha1-verified),
+while all three Nunito weights cover 98/98. So `Редактировать` — and every `ru`/`uk` user's name in the
+profile hero — **still falls back to a system face regardless of how short the string is.** A shorter
+Russian word is still a Russian word.
+
+The two defects sat on one screen; they never had one cause. **That is why T-0450 was split** (§9.3).
+
+### And two things I deliberately did not decide for you
+
+Neither is an owner call — both are implementation questions. But an unwritten implementation question
+is an *invented* answer, so both are now **explicit AC** on T-0450:
+
+- **AC4 — the truncation mode.** Is it a tail ellipsis? Android already ships one
+  (`ProfileTab.kt:339-346`, `TextOverflow.Ellipsis`). **iOS has no `.lineLimit` and no
+  `.truncationMode` at all** (`ProfileTab.swift:332-350`), which is why the iOS chip currently *wraps to
+  two lines* rather than truncating. The AC requires both modifiers to be set **explicitly** and the
+  chosen mode **named with a reason**; the default, if nothing argues otherwise, is `.tail` to match
+  Android. **Relying on SwiftUI's unstated default fails the AC even if the pixels come out right.**
+- **AC5 — the accessibility label under truncation.** When the label is visually cut, what does
+  VoiceOver / TalkBack announce? The AC requires the **complete** string, **verified by executing the
+  read**, and — if the platform already guarantees it — the mechanism **named and cited** rather than
+  assumed. No "the framework probably handles this".
+
+**One residual I defaulted rather than escalated:** the original question also asked whether the chip
+should diverge from the **screen title** (`profile_edit_title`, the same wording today). Your answer
+named the app label without separating the surfaces. **T-0450 AC6 defaults to changing the chip only** —
+your complaint was truncation, and only the chip truncates; a screen header reading "Edit" is a
+different change from the one asked for. **The AC forces it to be recorded**, so if you meant all three
+surfaces (there is also a partner Android `edit_profile`) it is a one-line extension, not a rediscovery.
+
+## 9.3 T-0450 is SPLIT, and here is the corrected dependency graph
+
+**Before:**
+```
+T-0448 ─┐
+T-0449 ─┴─> T-0450 { (A) the label  +  (B) Poppins/Cyrillic } ─> Q-I18N-02 ─> THE OWNER
+                                        └─> also needed an architect panel + Q-BRAND-01 (unanswered)
+```
+
+**After:**
+```
+T-0448 ─┐
+T-0449 ─┴─> T-0450  READY   { (A) the label only }        ← dispatch this; nothing above it
+
+T-0472  draft  { (B) Poppins covers 0/98 Cyrillic }       ← blocks NOTHING
+                needs an architect panel; feeds Q-BRAND-01 (still yours, still non-blocking)
+                ⚠️ but sequence it LAST on the ProfileTab.kt lane — see 9.3.1
+```
+
+**Which half blocks the avatar tickets: the LABEL (T-0450). Which half does not: the FONT (T-0472).**
+
+The label half blocks them because it writes the **same four files** they rebuild —
+`values-{ru,uk}/strings.xml`, `ProfileTab.kt`, `Localizable.xcstrings`, `ProfileTab.swift` — and it
+changes what the hero chip renders in `ru`/`uk`. These are **shared-file lane** dependencies, not logic:
+an avatar dropped into a hero whose label is about to change underneath it, on the same files, is a
+three-way conflict on one 40-line view.
+
+The font half blocks nothing. Keeping it inside T-0450 would have made both avatar tickets wait on an
+architect panel and an unanswered **brand** decision that neither of them needs.
+
+### 9.3.1 The honest caveat: the split does NOT fully decouple the lanes
+
+If T-0472's architect ruling reaches the **hard-coded** Poppins call sites, it writes
+`ProfileTab.kt:437` and `EditProfileScreen.kt:215` — and `EditProfileScreen.kt:230` is T-0448's own
+photo-picker TODO. **So T-0472 is appended LAST on that lane**, after T-0448, or its scope is confined
+to `Type.kt` with the call sites deferred. Written into both tickets. Claiming a clean split would have
+been the easy thing to say and would have produced a conflict later.
+
+### 9.3.2 Two dependency discharges that look like dropped dependencies and are not
+
+`T-0450` lost all three of its `depends_on`; `T-0448` lost `T-0441`; `T-0449` lost `T-0440`. **Every one
+was a lane dependency, and a lane dependency is satisfied when the head's write lands** — all four are
+on `master` (`1d85b35f`, `ce2416a0`, `a10e1f88`, `1c8fdd00`).
+
+**T-0440 and T-0441 are still `qa`, each owing an AC screenshot.** Leaving them in `depends_on` would
+have kept T-0450 — and therefore the entire avatar chain — un-`ready` **on a screenshot**. §8.2 already
+ruled *"a screenshot does not gate a code lane"*; this is that ruling applied rather than re-derived.
+The reasoning is written into all three ticket status logs, in a table, precisely because "the PM
+dropped a dependency" is what it looks like from the outside.
+
+## 9.4 NEW — "Report an issue" goes red (T-0473), and the semantics question I did not absorb
+
+**Your report:** on the order detail screen, both iOS and Android, "Report an issue" uses the secondary
+colour; you want it red. **One decision applied twice → one ticket.**
+
+**One correction to the report, so nobody wastes a cycle:** the token in force is **`primary`**, not
+`secondary` — `CleansiaColors.primary` on iOS (`OrderDetailView.swift:300-307`) and
+`MaterialTheme.colorScheme.primary` on Android (`OrderDetailScreen.kt:510-535`). Your "secondary"
+describes the button's **rank** (it is an outlined, second-tier affordance), not its colour role. There
+is no `secondary` token to hunt for.
+
+**Three different reds exist and they are not interchangeable** — this is exactly what I was asked not
+to let a developer guess:
+
+| | Treatment | Shape |
+|---|---|---|
+| 1 | iOS `CleansiaDangerButton` (`CleansiaButton.swift:157`) | error-**tinted surface** — `error.opacity(0.12)` fill, `error` glyph/label, `0.4` hairline. Catalog law, `patterns-mobile.md:245`, *"the ONE way"* |
+| 2 | Android `CleansiaDestructiveButton` (`CleansiaButton.kt:101`) | **filled, fixed-red container**, deliberately **NOT** `colorScheme.error`, with a written argument at `:80-99`: in dark mode `error` is red-300 and out-luminates the Sky400 primary — *"Danger must not out-rank the primary; it must read as danger."* |
+| 3 | outlined + `error` tint | **what Cancel already uses on both platforms** |
+
+**The two Core components are not parity siblings** (tinted surface vs filled container), so "adopt the
+danger component on both platforms" would make the platforms **diverge** — an ADR-0018 parity problem —
+while closing a colour complaint. That is a strong argument for treatment 3, and it is the **panel's**
+call to make and defend, not mine. **AC1 forces the choice with a why-not for the other two.**
+
+**Two things already true in the code that the ticket carries:**
+
+- **Cancel and Report issue are adjacent** — one 8dp spacer between them (`OrderDetailScreen.kt:505-508`;
+  the same `VStack` on iOS). Painting Report issue with Cancel's colour leaves **two adjacent buttons of
+  the same colour, shape and rank** — one cancels a booking, the other files a complaint. **AC3** forces
+  a stated differentiator.
+- **A shipped test will stay GREEN while its comment becomes false.**
+  `OutlinedButtonColorsTests.swift:61-70` is prefaced *"Cancel destructive, Make recurring + Report issue
+  primary"* — and its body asserts the **colour resolver**, not the call site, so it cannot see this
+  change at all. **AC4** makes repairing it non-optional. A green suite carrying a lie about the screen
+  it names is the exact failure Gate 0.5 exists for.
+
+**The scope question you asked me to answer: the hand-rolled violation is OUT.** Partner
+`ProfileHubContent.swift:298-320` (`LogoutRow`) hand-rolls `CleansiaDangerButton` — PM-verified, it
+reproduces the fill, the glyph colour and the `0.4` hairline inline. That is the **non-zero baseline**
+keeping the catalog entry at `(gate pending: FT-5)` in `catalog-governance.md:111`, because
+`enforcement.md:104-106` forbids making a check blocking until its baseline is zero. **Excluded from
+T-0473** — different app, different screen, different affordance — so a two-line colour change does not
+carry a catalog-tier promotion. It is **named** in the ticket so a reviewer does not read its absence as
+an oversight. **Open item: ADR-0032's FT-5 has no `T-*` id.** It is named in the ADR and in
+`catalog-governance.md` as the ticket that discharges `(gate pending:)`, but no ticket file exists. **I
+did not file it** — you asked for specific tickets and this is not one of them; it should be filed
+deliberately, not as a side effect of a colour fix.
+
+### 🔶 Q-DESIGN-01 — recorded rather than absorbed, and it is NOT blocking
+
+"Report an issue" is a **reporting** affordance. Red means **destructive or error** on both design
+systems. Nothing is destroyed and nothing has failed.
+
+**You asked for red explicitly, so it is going red — T-0473 ships it.** What is open is what the design
+system says afterwards: does the danger role gain a **second sanctioned meaning**, is this a **named
+exception**, or does the system need a distinct **warning/attention** role? Two catalog entries state
+laws about what red means (`patterns-mobile.md:245` *"the ONE way"*; `CleansiaButton.kt:80-99`'s rank
+argument), and painting a non-destructive action red without amending either leaves the next developer
+with a catalog that says one thing and a codebase that does another — and the reviewer after that with
+no way to tell an approved exception from a defect.
+
+**Filed `blocking: no`, `post-prod`, default = "named exception".** It does not gate T-0473; T-0473
+produces its input.
+
+## 9.5 NEW — the two process fixes you approved (T-0474, T-0475)
+
+Both are being implemented by the coordinating agent outside the normal dispatch. **Filed for
+traceability and reconciliation** — if the implementation differs from the AC, the implementation wins
+and the ticket is corrected to match.
+
+### T-0474 — post-checkout regeneration for iOS
+
+Two gitignored, machine-owned artifacts go stale on every pull touching `src/cleansia_ios`: the Swift
+API clients (`src/cleansia_ios/scripts/generate-api-clients.sh` — note the path is under
+`src/cleansia_ios/`, not the repo root) and both `.xcodeproj`s (`xcodegen generate`, in both app dirs).
+
+**It has cost twice, in two different ways, and the second one is the argument:**
+1. It broke your build — a **Jul-25** client with no `accessInstructions`, and `BookingInstructions.swift`
+   with **0** references in `project.pbxproj`, so **code that was on `master` was silently absent from
+   the target**. Not a compile error pointing at the cause; a file simply not in the build.
+2. It cost a reviewer a false conclusion — it read the stale client, found the field missing, and
+   declared **T-0440** owner-regen-blocked, **contradicting that ticket's own warning at its lines
+   34-39.** *A warning written on the ticket, in the ticket about to hit the trap, did not prevent it.*
+   That is why the fix is not another warning, and it is why **AC2 asks the mechanism directly: "would
+   this have stopped that reviewer?"*
+
+*(I verified the **repaired** state — both artifacts now dated 2026-08-01 15:07, 8 `BookingInstructions`
+references in `project.pbxproj`, `accessInstructions` present in the generated `CreateOrderCommand.swift`.
+The pre-repair figures are yours, recorded as reported; they are no longer re-derivable.)*
+
+**De-dup:** **T-0456 AC8** already owns the *rule* (regeneration destroying uncommitted state, in
+`shared-file-lanes.md`, with `xcodegen`→`Info.plist` as its worked example). **T-0474 owns the
+mechanism**, pointing the opposite way. Both are wanted; neither writes the other's file.
+
+### T-0475 — Stripe key + `DEVELOPMENT_TEAM` into a gitignored xcconfig
+
+Mirrors the pattern `**/GoogleService-Info.plist` already uses in the same `.gitignore` — owner-local,
+gitignored, never committed, referenced by the build.
+
+**One refinement to the brief, and it strengthens the case.** I did **not** open either working-tree
+file. Read against the **committed** `project.yml` via `git show`: the value has **two homes and two
+destruction paths** —
+
+| Home | Destroyed by |
+|---|---|
+| `project.yml:22` (`DEVELOPMENT_TEAM`), `:137` (`STRIPE_PUBLISHABLE_KEY`) | **git** operations — `pull`, `checkout`, `reset`. **Not** xcodegen, which only *reads* project.yml |
+| the generated `Info.plist` | **`xcodegen generate`**, which rewrites it from `project.yml` |
+
+`git status` shows **both** files modified right now. So the fix has to close **both** paths — hence
+**AC1 (git-side)** and **AC2 (xcodegen-side)** as separate criteria rather than one.
+
+**Why it is `S`:** the indirection **already exists** — `project.yml:99` is already
+`STRIPE_PUBLISHABLE_KEY: $(STRIPE_PUBLISHABLE_KEY)`, and an xcconfig's entire job is to supply that
+build setting. This is plumbing that is already built.
+
+**The one real decision, carried as AC4 rather than defaulted:** `DEVELOPMENT_TEAM` is **not a secret**.
+Putting it in the gitignored file means a fresh clone **cannot build at all** rather than merely having
+a broken Stripe path. Either answer is defensible; an unstated one is not. **AC5** requires a committed
+`*.xcconfig.example` + a README line, so a missing file presents as an instruction rather than a
+mysterious signing failure.
+
+### ⚠️ The sequencing that must not be got backwards
+
+```
+T-0475 lands  →  you drop your values into the new file  →  T-0474's xcodegen leg is safe
+T-0474's generate-api-clients leg is safe TODAY and may ship first
+```
+
+**`xcodegen generate` wipes your Stripe key today.** Prescribing "regenerate after every pull" before
+T-0475 lands converts an **occasional** loss into one on **every single pull** — strictly worse than the
+staleness being fixed. Recorded as `T-0474 depends_on: [T-0475]` with the reason, and as **AC4** on
+T-0474 so a partial implementation cannot silently ship the unsafe half.
+
+## 9.6 You asked where the iOS photo uploader is. Here is the answer, for the record.
+
+**Only the read path shipped. The avatar feature is one-third done.**
+
+| Leg | Ticket | State | What exists in the code |
+|---|---|---|---|
+| **Read path** — the API returns a resolvable 1-hour SAS instead of a bare blob name | **T-0446** | **`done` ✅** `a63b776e` (#176) | shipped |
+| **Web** upload + removal | **T-0447** | **`ready`** — never dispatched | `updateUserCurrent` is **dead code**; no component dispatches it |
+| **Android** upload + removal | **T-0448** | **`blocked`** on T-0450 | `EditProfileScreen.kt:230` = `.clickable { /* TODO: launch photo picker */ }` — the camera pill is tappable and does nothing |
+| **iOS** upload + removal | **T-0449** | **`blocked`** on T-0450 | **no avatar UI at all** — `HeroGradient` is an initials-only circle; there is no picker on `EditProfileView.swift` |
+
+**There is no iOS photo uploader because it has not been built.** T-0446 was the *spine*: without it no
+client could render an avatar even after a successful upload, because the API returned
+`{fileName:"<guid>", base64Content:null, contentType:null}`. It was necessary and it is invisible on its
+own. **"T-0446 done" must not be read as "avatars work"** — that sentence is now in `INDEX.md` as a
+standing callout, not just here.
+
+## 9.7 What the owner still owes — the complete list, shortest first
+
+1. ~~**`Q-I18N-02`**~~ ✅ **ANSWERED.** It was the last `blocking: yes` question in the backlog. **You are
+   off the demo chain.**
+2. **Supply the xcconfig values** once **T-0475** lands — the Stripe publishable key, and
+   `DEVELOPMENT_TEAM` if AC4 puts it there, in **both** app directories. **Until you do, your own build
+   has no key**, and T-0474's xcodegen leg must not be prescribed. *(`manual_step: xcode-project`.)*
+3. **Two `CLAUDE.md` lines** (owner-gated; no agent edits that file) — `:29` still calls
+   `core/services/` "NSwag-generated" (it holds a **stale 280 KB client no regen writes**), and
+   `generate-clients` is undocumented at `:97-100`. **T-0462 owns the corrected text (AC5b);** T-0439's
+   M6 text is stale. Unchanged from §8.9.
+4. **Awareness, not a decision — `T-0457` is `ready` and P1.** `GET /api/User/GetCurrent` is still
+   writing every caller's email, name, phone and birth date into Information-level logs on all five
+   hosts, on every request, on **live DEV**. Unchanged from §8.9.
+5. **Non-blocking questions carried:** **`Q-BRAND-01`** (Poppins/Cyrillic — now carried by T-0472; the
+   platform-wide brand call is still yours), **`Q-CI-01`** (branch protection, `post-prod`), and
+   **new — `Q-DESIGN-01`** (does the danger role gain a second sanctioned meaning, or is "Report an
+   issue" a named exception; `post-prod`, default = named exception).
+6. **Unchanged from §8.9:** `npx nswag run`'s exit code on a **failed** generation is still unknown.
+   **Do not read a green `generate-*-client` as proof the client regenerated.**
+
+## 9.8 What THIS pass did NOT do (Gate 0.5 leg 3, applied to the PM's own work)
+
+- **No specialist agent was dispatched and no code was written.** Every edit is under `agents/`.
+  Nothing was committed, staged or pushed; no `git stash`; `CLAUDE.md` untouched.
+- **No build, suite, Gradle task or iOS build was run.** This pass reconciled state and filed tickets.
+- **`src/cleansia_ios/**/Info.plist` and `**/project.yml` were NOT opened.** T-0475's grounding comes
+  entirely from `git show HEAD:…` of the **committed** `project.yml`, which is key-free by design.
+- **What I DID execute first-hand, on `f649c3bd`:** `git log`/`git show --stat`; reads of both order-detail
+  footers (`OrderDetailView.swift:240-313`, `OrderDetailScreen.kt:470-537`); both Core button files
+  (`CleansiaButton.swift:25-160`, `CleansiaButton.kt:75-110`); `OutlinedButtonColorsTests.swift` in full;
+  `ProfileTab.kt:325-350` + `:248`/`:269`/`:437` and `EditProfileScreen.kt:100`/`:215`/`:230`;
+  `ProfileTab.swift:302-350`; `ProfileHubContent.swift:290-325`; `src/cleansia_ios/.gitignore` and
+  `openapi/README.md`; `grep -c BookingInstructions project.pbxproj` → **8**; the presence of
+  `accessInstructions` in the regenerated `CleansiaCustomerApi/Models/CreateOrderCommand.swift`;
+  and a grep for `report_issue` across all three web apps' i18n bundles and `apps/`+`libs/`.
+- **Two claims are RELAYED, not verified, and are labelled as such where they appear:** the owner's
+  pre-repair observations (a Jul-25 client, 0 `project.pbxproj` references for `BookingInstructions`) —
+  **no longer re-derivable, because the tree is repaired**; and the owner's approval of the two process
+  fixes, which reached me through the coordinating agent rather than directly.
+- **The `216.8dp` / `120.2dp` label measurements were NOT re-derived.** They remain T-0442's dev's
+  report. T-0450 **AC3** requires the width to be re-measured against the `EditChipMaxWidthFraction`
+  band rather than inherited — the ticket's own standing trap note.
+- **No panel was convened.** T-0472 and T-0473 both go to `draft` **needing** one; that is DoR item 2,
+  not a dependency, and both are dispatchable today with the panel as step 1.
+- **ADR-0032's FT-5 was not filed as a ticket.** Named in §9.4 as an open item, deliberately not created.
+- **Written this pass:** 4 new ticket files (**T-0472, T-0473, T-0474, T-0475**); 3 existing tickets
+  updated (**T-0450** rewritten to half (A) + `ready`; **T-0448** and **T-0449** dependency discharges +
+  re-sequencing); `questions/open.md` (Q-I18N-02 closed, the blocking index updated, Q-BRAND-01
+  annotated, **Q-DESIGN-01** added); `questions/answered.md` (the full Q-I18N-02 record); the `INDEX.md`
+  SPRINT-14 block, its ready/blocked tables, the demo-chain diagram, the lane list and the owner-owed
+  table; and this section.

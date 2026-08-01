@@ -19,13 +19,46 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > entirely. **Ground yourself in the CODE, not in these rows**, for any question about post-#148
 > state. Routing through the PM resumes with SPRINT-14 below.
 
-> ## 🚀 SPRINT-14 — owner batch (demo-preparation): **34 tickets — 8 done (PRs #170–#176, #180), 2 MERGED-BUT-OPEN in QA, 3 ready, 21 draft/blocked**
+> ## 🚀 SPRINT-14 — owner batch (demo-preparation): **38 tickets — 8 done (PRs #170–#176, #180), 2 MERGED-BUT-OPEN in QA, 5 ready, 23 draft/blocked**
 >
-> **Baseline: `master` at `1c8fdd00`.** Updated **2026-08-01 — FOURTH PM pass: post-merge
-> reconciliation of all six sprint-14 PRs.** (Was `ce2416a0`; the third pass's `0f3b0d4c` note is
-> superseded.) Working tree clean apart from a pre-existing
-> `src/cleansia_ios/Cleansia.xcworkspace/.../Package.resolved`; **all worktrees removed, all local
-> branches deleted** — `git worktree list` shows the main checkout only.
+> **Baseline: `master` at `f649c3bd`** (a docs-only commit on top of `1c8fdd00` — the fourth pass's own
+> reconcile). Updated **2026-08-01 — FIFTH PM pass: Q-I18N-02 answered, T-0450 split, two new owner
+> defects filed.** (Fourth pass: post-merge reconciliation of all six sprint-14 PRs.) Working tree
+> carries the owner's uncommitted iOS files (`Info.plist` ×3, `project.yml`, `Localizable.xcstrings` ×2,
+> `Package.resolved`) — **the live Stripe key is in them; no agent opens those files.** All worktrees
+> removed, all local branches deleted.
+>
+> ### 🟩 FIFTH PASS — **Q-I18N-02 IS ANSWERED. The demo chain has no owner blocker left.**
+>
+> 1. **`Q-I18N-02` → `answered.md`.** The owner: *"…I want just to keep 'Edit'/'Редактировать' and
+>    truncate it if it doesn't fit by the whole length."* **It was the last `blocking: yes` question in
+>    `questions/open.md`.**
+> 2. **T-0450 is SPLIT and `ready`** (size `M`→`S`). It keeps **half (A) — the label**. **Half (B) —
+>    Poppins covering 0/98 Cyrillic — moved to `T-0472`, which blocks nothing.** The filename still
+>    says `-and-poppins-cyrillic`; that is deliberate (link stability), not a leftover.
+> 3. **T-0448 and T-0449 still say `blocked` — read that correctly.** Their blocker is no longer *an
+>    owner reply*; it is **one `ready` ticket's write landing** on four shared files. They clear the
+>    moment T-0450 is `done`.
+> 4. **Two new owner defects filed: `T-0473`** ("Report an issue" → red, iOS + Android) and **two
+>    process fixes the owner approved, `T-0474` + `T-0475`**, both being implemented outside the normal
+>    dispatch and filed for reconciliation.
+> 5. **⚠️ The avatar feature is ONE-THIRD SHIPPED.** T-0446 (`done`) shipped the **read path only**.
+>    **No client has upload or removal UI.** See the callout below — do not read "T-0446 done" as
+>    "avatars work".
+>
+> ### ⚠️ AVATARS: one-third shipped. State this plainly to anyone who asks.
+>
+> | Leg | Ticket | State |
+> |---|---|---|
+> | **Read path** (API returns a resolvable 1-hour SAS instead of a bare blob name) | **T-0446** | **`done` ✅** `a63b776e` (#176) |
+> | **Web** upload + removal UI | **T-0447** | **`ready`** — never dispatched |
+> | **Android** upload + removal UI | **T-0448** | **`blocked`** on T-0450 |
+> | **iOS** upload + removal UI | **T-0449** | **`blocked`** on T-0450 |
+>
+> **No client can upload or remove an avatar today.** Android's camera pill is
+> `.clickable { /* TODO: launch photo picker */ }` (`EditProfileScreen.kt:230`); iOS has **no avatar UI
+> at all** (`HeroGradient` is initials-only); web's `updateUserCurrent` is **dead code**. The read path
+> is a spine — necessary, and on its own invisible to a user.
 >
 > ### 🟢 WAVE 2 SHIPPED — six PRs merged. Read these four lines before using anything below.
 >
@@ -160,23 +193,29 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > | **T-0447** | **Web** avatar upload/render/removal. **Both halves of its block are gone** — T-0446 `done` **and** the owner's regen shipped inside it. **The only one of the three avatar client tickets that is genuinely `ready`.** 🔒 binding security conditions + ⚠️ QA constraints (CORS kills any crop-or-canvas design; an `<img>` cannot see 403 vs 404) | M | T-0446 ✅, T-0438 ✅ | frontend | **yes** | demo scope |
 > | **T-0464** | **`MetadataName.ContentType` is a decoy codebase-wide.** SAS mint lane released by T-0446; this ticket is now its sole writer. Architect A-vs-B call is **step 1 of the dispatch**, not a precondition. 🚨 **The trap has not moved:** the naive fix activates `Cache-Control: public` on a SAS-protected private avatar | M | T-0446 ✅ | backend, architect | **yes** | post-demo — **confirmed not demo-blocking** by the owner's DEV check |
 > | **T-0471** | **ADR-0033 needs its one challenger round on the test-2 floor** before it binds. The lead **authored that floor itself** to answer a challenge that demanded one without proposing one, and **correctly declined to ratify its own repair**. One item, one round, three pre-named lines of attack | S | — | architect | no | post-demo, but do not let it rot |
+> | **T-0450** | **Profile edit chip — the label, and ONLY the label.** **Q-I18N-02 ANSWERED 2026-08-01:** the owner chose the **verb alone** (`Edit`/`Редактировать`, + the equivalent verb in cs/sk/uk) and **truncate rather than wrap or shrink**. Split: the Poppins half is now **T-0472**. Android already has `maxLines=1 + TextOverflow.Ellipsis` (`ProfileTab.kt:339-346`) so it needs **only the string**; **iOS has neither `.lineLimit` nor `.truncationMode`** (`ProfileTab.swift:332-350`) so its chip **wraps to two lines** and needs both, explicitly. **The three things the owner did NOT decide are forced as AC**, not left to invention: the truncation mode (**AC4**, default `.tail` to match Android), the accessibility label under truncation (**AC5** — *executed*, not assumed), and the surface scope (**AC6** — chip only; `profile_edit_title` and partner `edit_profile` untouched unless recorded otherwise). **Panel discharged** — an owner decision outranks the analyst panel that existed to produce one | S | — *(all four lane deps **discharged**, not dropped — see the ticket)* | android, ios | no | **P1 of the demo chain — T-0448 + T-0449 sit behind it** |
 >
 > ### 🔴 Still blocked — and on exactly one thing
 >
 > | ID | Status | Blocked on | Note |
 > |----|--------|-----------|------|
-> | **T-0448** | **blocked** | **T-0450 only** | T-0446 ✅, the `mobile-spec-redump` ✅ (the Kotlin client generates from the committed spec at Gradle build time — no owner action), T-0441's lane + field **merged**. T-0450 writes the same `values-{ru,uk}/strings.xml` and changes what the hero renders in ru/uk. **Do not "unblock" by dropping the T-0450 dep** |
-> | **T-0449** | **blocked** | **T-0450 only** | T-0446 ✅, the spec ✅ (iOS reads the *same* two committed specs; `./scripts/generate-api-clients.sh` is agent-authorised, **not** the owner-only NSwag step), T-0451 ✅ **done**, T-0440's lane + field **merged** |
-> | **T-0450** | **draft** | **Q-I18N-02** (`blocking: yes`, unanswered) | **All four of its lane heads have merged.** DoR item 4 is satisfied; AC2 needs a **native ru/uk speaker** and no PM default was taken. **Split recommendation on the ticket:** half (B), Poppins Cyrillic, needs an architect panel that can convene **today** and blocks nothing — split it out if Q-I18N-02 stays unanswered past the next checkpoint |
+> | **T-0448** | **blocked** | **T-0450 only — now a `ready` ticket, no longer the owner** | T-0446 ✅, the `mobile-spec-redump` ✅ (the Kotlin client generates from the committed spec at Gradle build time — no owner action), T-0441's lane + field **merged** and now **discharged from `depends_on`** (a screenshot does not gate a code lane). T-0450 writes the same `values-{ru,uk}/strings.xml` and changes what the hero renders in ru/uk. **Do not "unblock" by dropping the T-0450 dep.** ⚠️ **New lane neighbour T-0472** — if its ruling touches `ProfileTab.kt:437` / `EditProfileScreen.kt:215` it is sequenced **after** this ticket |
+> | **T-0449** | **blocked** | **T-0450 only — now a `ready` ticket, no longer the owner** | T-0446 ✅, the spec ✅ (iOS reads the *same* two committed specs; `scripts/generate-api-clients.sh` is agent-authorised, **not** the owner-only NSwag step), T-0451 ✅ **done**, T-0440's lane + field **merged** and now **discharged from `depends_on`**. T-0450 adds `.lineLimit(1)` + `.truncationMode` inside the very `EditProfileChip`/`HeroGradient` region this ticket rebuilds |
 > | **T-0465** | **draft** | **T-0464** | T-0446 ✅. Lane **T-0446 ✅ → T-0464 → T-0465**; must not run concurrently with T-0464 |
+> | **T-0474** | **draft** | **T-0475** *(one leg only)* | The `generate-api-clients.sh` leg is **safe today and may ship first**; the **`xcodegen generate`** leg must wait, because today that command **wipes the owner's Stripe key on every run**. See the new-tickets block |
 >
-> **The demo chain, restated after the merges:**
+> **The demo chain, restated after the Q-I18N-02 answer:**
 > ```
 > T-0446 ✅ + owner regen ✅
->    ├─> T-0447   READY  ← dispatch this
+>    ├─> T-0447   READY   ← web; independent, never dispatched
 >    ├─> T-0448   blocked ─┐
->    └─> T-0449   blocked ─┴─> T-0450 ─> Q-I18N-02  ← THE OWNER
+>    └─> T-0449   blocked ─┴─> T-0450  READY ← dispatch this; nothing above it
+>
+> T-0472 (Poppins/Cyrillic)  — split out of T-0450, blocks NOTHING, needs an architect panel
+>                              ⚠️ but sequence it LAST on the ProfileTab.kt lane
 > ```
+> **The owner is no longer on this chain.** The only thing between T-0448/T-0449 and `ready` is
+> T-0450's write landing.
 >
 > ### 🆕 NEW — filed at the wave-2 close-out (2026-08-01, fourth PM pass)
 >
@@ -184,6 +223,24 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > |----|-------|------|--------|-----------|--------|-----|-------|
 > | **T-0470** | **Credential-shape guard — the class T-0446 closed AROUND.** T-0446 closed two classes (a *listed* field is now redacted in behaviour; a DTO whose redaction *unmasks* free text has its route suppressed) and left one **explicitly open**: *a secret whose field name was never in the token list is caught by nothing.* **Both live Stripe credentials found this sprint were in that class**, and `ephemeralKey` was found **by luck** — it happened to sit behind an already-redacted field. Sibling guard: a name/shape heuristic (`*Secret*`/`*Token*`/`*Key*`/`*Password*`, values `sk_`/`ek_`/`seti_`) over the **same wire-DTO walk**, with the same curated-exception discipline. **The expensive half is already written and already in CI** — the route→DTO walk, the flattening, the anti-vacuity self-check. That guard found two live credentials within minutes of existing | S | **draft** | T-0446 ✅ | backend, architect | **yes** | none (no-decision — applies S6 with an existing mechanism) |
 > | **T-0471** | **ADR-0033's one challenger round** — see the READY table above | S | **ready** | — | architect | no | **it IS the panel** |
+>
+> ### 🆕 NEW — filed on the fifth PM pass (2026-08-01): one split + one owner defect + two owner-approved process fixes
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Panel |
+> |----|-------|------|--------|-----------|--------|-----|-------|
+> | **T-0472** | **Poppins covers 0 of 98 Cyrillic code points — SPLIT OUT of T-0450.** All three bundled Poppins weights: **0/98**; all three Nunito weights: **98/98** (PM parsed the `cmap`). Android and iOS TTFs are **byte-identical** (sha1-verified) → the same defect on both. Every `ru`/`uk` name in the hero falls back to Roboto/system beside Nunito body text — **three typefaces on one card**. **Untouched by the Q-I18N-02 answer**: a shorter Russian string is still Cyrillic and still falls back. **This half blocks nothing** — that is why it was split. **Three NEW AC the original ticket never carried:** the alternatives-with-why-not obligation (**AC3** — and *verify option (a) empirically first*: Compose resolves within a family by **weight/style, not coverage**, so the cheap option may simply not work), the **font-licence** question (**AC5** — a subset-merge produces a derivative binary; that is legal, not technical), and the **byte-identical-binary invariant** (**AC6**). ⚠️ **The split does NOT fully decouple the lanes** — if the ruling touches `ProfileTab.kt:437` / `EditProfileScreen.kt:215` it enters the avatar lane and must be sequenced **last** | M | **draft** | — | architect, android, ios | no | **architect** — four options, a real trade-off space, a licence dimension |
+> | **T-0473** | **"Report an issue" is `primary`; the owner wants it RED.** Order detail, **both** iOS (`OrderDetailView.swift:300-307`) and Android (`OrderDetailScreen.kt:510-535`) — one decision applied twice. **Correction to the report: the token is `primary`, not `secondary`** — the owner's "secondary" describes the button's *rank*, not its colour role. **Do not hunt for a `secondary` token.** 🚨 **Three different reds exist and they are not interchangeable:** iOS `CleansiaDangerButton` (tinted **surface**) · Android `CleansiaDestructiveButton` (**filled fixed-red container**, deliberately NOT `colorScheme.error`, with a written rank argument at `CleansiaButton.kt:80-99`) · the outlined+`error` tint **Cancel already uses on both platforms**. The two Core components are **not parity siblings**, so "adopt the component" would make the platforms **diverge** (ADR-0018) while closing a colour complaint. 🚨 **Cancel and Report issue are ADJACENT** (`OrderDetailScreen.kt:505-508` puts one 8dp spacer between them) — same colour makes them indistinguishable (**AC3**). 🚨 **A shipped test will stay GREEN through this change while its comment becomes false** — `OutlinedButtonColorsTests.swift:61-70` asserts the colour *resolver*, not the call site, and its preamble says *"Make recurring + Report issue primary"* (**AC4**) | S | **draft** | — | analyst, architect, ios, android | no | **analyst** (semantics) **+ architect** (component-vs-token, ADR-0018 parity) |
+> | **T-0474** | **PROCESS (owner-approved) — two gitignored iOS artifacts go stale on every pull, and nothing says so.** The API clients (`scripts/generate-api-clients.sh`) and both `.xcodeproj`s (`xcodegen generate`). **Cost twice:** (1) it broke the owner's build — a **Jul-25** client with no `accessInstructions`, and `BookingInstructions.swift` with **0** `project.pbxproj` references, so **new code on `master` was silently absent from the target**; (2) it cost a reviewer a false conclusion — it read the stale client and declared T-0440 owner-regen-blocked, **contradicting that ticket's own warning at its lines 34-39**. That second instance is the argument: *a warning on the ticket, in the ticket about to hit the trap, did not prevent it.* **AC2 asks the mechanism the direct question — "would this have stopped that reviewer?"** **De-dup: T-0456 AC8 owns the RULE** (regeneration destroying uncommitted state, in `shared-file-lanes.md`); **this owns the MECHANISM**, opposite direction. Neither writes the other's file | S | **draft** | **T-0475** *(the `xcodegen` leg only)* | ios, docs | no | none (no-decision — makes an already-documented step runnable; **AC3** forces an honest ADR-0032 tier, and *"(guidance — no gate)"* is acceptable) |
+> | **T-0475** | **PROCESS (owner-approved) — move the Stripe key + `DEVELOPMENT_TEAM` into a gitignored xcconfig**, the pattern `**/GoogleService-Info.plist` already uses in the same `.gitignore`. **Wiped twice this sprint; offered before and never taken up — this is the third occurrence.** **PM refinement to the brief (grounded from the COMMITTED `project.yml` via `git show`; the working copies deliberately not opened): the value has TWO homes and TWO destruction paths** — `project.yml` (`:22 DEVELOPMENT_TEAM`, `:137 STRIPE_PUBLISHABLE_KEY`), destroyed by **git** operations and **not** by xcodegen; and the generated `Info.plist`, destroyed by **`xcodegen generate`**, which rewrites it. `git status` shows **both** modified. Hence **AC1 (git-side) and AC2 (xcodegen-side) as separate criteria**. **Why this is `S`:** the `$(STRIPE_PUBLISHABLE_KEY)` indirection **already exists** at `project.yml:99` — an xcconfig only has to supply the build setting. **The one real decision is AC4:** `DEVELOPMENT_TEAM` is **not a secret**, so putting it in the gitignored file means a fresh clone **cannot build at all** rather than merely having a broken Stripe path. **AC5** requires a committed `*.xcconfig.example` + README line so a missing file is not diagnosed as a mystery signing failure | S | **draft** | — | ios, docs | **yes** | none (applies an existing pattern; the one trade-off is carried as **AC4**) |
+>
+> **Both process tickets are being implemented by the coordinating agent outside the normal dispatch.**
+> They are filed for **traceability and reconciliation** — if the implementation differs from the AC,
+> the implementation wins and the ticket is corrected to match.
+>
+> **⚠️ Sequencing that must not be got backwards:** T-0474 prescribes running `xcodegen generate` after
+> every pull; **today that command wipes the owner's Stripe key.** Shipping T-0474's xcodegen leg before
+> T-0475 lands (and before the owner drops their values into the new file) converts an **occasional**
+> key loss into one on **every single pull** — strictly worse than the staleness being fixed.
 >
 > ### In flight — dispatched, running now (historical rows below; superseded by the tables above)
 >
@@ -199,8 +256,8 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > | ID | Title | Size | Status | depends_on | Layers | sec |
 > |----|-------|------|--------|-----------|--------|-----|
 > | **T-0447** | **Web** avatar upload/render/removal. `updateUserCurrent` is **still dead code** (re-verified post-#171); the only live caller is `profile.component.ts:224`. **🔒 binding conditions attached**: never `RenderMode.Server` on an authenticated profile route (a live SAS in a proxy-cacheable HTML doc); cache on `fileName` not `blobUrl` | M | **READY ✅** | T-0446 ✅ + owner `nswag-regen` ✅ | frontend | yes |
-> | **T-0448** | **Android** avatar upload/render/removal. `EditProfileScreen.kt:230` is `.clickable { /* TODO: launch photo picker */ }`. T-0442 dep **cleared**; **T-0450 added** to the lane. **🔒 binding conditions attached**: never raise OkHttp to `Level.BODY` (`HEADERS` debug / `NONE` release today); cache on `fileName` not `blobUrl`; S11 session-wipe set | M | **blocked — on T-0450 ONLY** | T-0446 ✅, T-0441 merged, **T-0450** ⛔ | android | yes |
-> | **T-0449** | **iOS** avatar upload/render/removal. No avatar UI; `HeroGradient` is initials-only. **T-0451 + T-0450 added** to the `ProfileTab.swift` lane. **🔒 binding conditions attached**: Kingfisher `cacheKey` = `fileName` not `blobUrl`; S11 registry; never persist the URL | M | **blocked — on T-0450 ONLY** | T-0446 ✅, T-0440 merged, T-0451 ✅, **T-0450** ⛔ | ios | yes |
+> | **T-0448** | **Android** avatar upload/render/removal. `EditProfileScreen.kt:230` is `.clickable { /* TODO: launch photo picker */ }`. T-0442 dep **cleared**; **T-0441 discharged 2026-08-01** (lane write merged; its owed screenshot does not gate a code lane). **🔒 binding conditions attached**: never raise OkHttp to `Level.BODY` (`HEADERS` debug / `NONE` release today); cache on `fileName` not `blobUrl`; S11 session-wipe set | M | **blocked — on T-0450 ONLY, and T-0450 is now `ready`** | T-0446 ✅, **T-0450** ⛔ | android | yes |
+> | **T-0449** | **iOS** avatar upload/render/removal. No avatar UI; `HeroGradient` is initials-only. **T-0440 discharged 2026-08-01** (lane write merged). **🔒 binding conditions attached**: Kingfisher `cacheKey` = `fileName` not `blobUrl`; S11 registry; never persist the URL | M | **blocked — on T-0450 ONLY, and T-0450 is now `ready`** | T-0446 ✅, T-0451 ✅, **T-0450** ⛔ | ios | yes |
 >
 > ### NEW — wave-1 findings that had no home (filed 2026-07-30, second PM pass)
 >
@@ -211,7 +268,7 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > |----|-------|------|--------|-----------|--------|-----|-------|
 > | **T-0451** | **iOS avatar initials fail WCAG in dark mode** — sky400 on a hardcoded white circle = **2.14:1** (floor is 3:1); light mode is 4.10:1. **Two** call sites (`ProfileTab.swift:276-282`, `ProfileHubContent.swift:156-162`). Android already deviated to Sky600 with the reasoning written in (`ProfileTab.kt:279-284`); iOS is the unfixed side | S | **done ✅ `1c8fdd00` (#180)** | — | ios | no | none (no-decision) |
 > | **T-0452** | **No social-preview card on the public SSR customer site** — no `og:*`, no `twitter:card`, no `apple-touch-icon`, no manifest (verified: zero `og:` in `index.html`, zero `Meta` service usage). T-0444's 1024 master makes it cheap. apple-touch-icon + manifest **ruled in-scope** (same master, same `<head>`, and **no service worker** exists so a manifest is metadata, not installability) | S | **draft** | T-0444 ✅ | architect, frontend | no | **architect** — static `<head>` vs per-route SSR meta |
-> | **T-0450** | **ru/uk profile hero — two defects, one surface.** (A) `"Редактировать профиль"` ≈216.8dp vs en ≈120.2dp, so it renders **"Редактиров…"** behind T-0442's `0.45` cap; the real fix is a shorter string needing **native-speaker sign-off** (Q-I18N-02). (B) **All three Poppins weights cover 0/98 Cyrillic code points** (PM parsed the `cmap`) while all three Nunito weights cover 98/98 — so every ru/uk name falls back to Roboto beside Nunito. Android and iOS TTFs are **byte-identical** (sha1-verified) → the same defect on both. Also fixes the iOS chip **wrapping to two lines** (`ProfileTab.swift:332-350` has no `.lineLimit`) | M | **draft — ALL FOUR LANE HEADS MERGED; blocked on Q-I18N-02 (owner)** | T-0440 merged, T-0441 merged, T-0451 ✅ | analyst, architect, android, ios | no | **analyst** (the string) **+ architect** (the family) |
+> | **T-0450** | ⚠️ **SPLIT 2026-08-01 — this row is superseded by the READY table above.** Was two defects on one surface; **Q-I18N-02 is answered** and it now carries **half (A), the label, only** (`ready`, `S`). **Half (B) — Poppins/Cyrillic — is `T-0472`.** The filename keeps `-and-poppins-cyrillic` for link stability | ~~M~~ **S** | **ready** | ~~T-0440, T-0441, T-0451~~ **discharged** | ~~analyst, architect~~ **android, ios** | no | ~~analyst + architect~~ **none — discharged by the owner's answer** |
 > | **T-0453** | **Android hero does not bleed under the status bar; iOS does.** iOS gives the inset to the hero (`ProfileTab.swift:306` `.padding(.top, 48 + topInset)`); Android gives it to the scroll container (`ProfileTab.kt:135` `.windowInsetsPadding(...)` + a deliberate 12dp spacer at `:141`). Reviewers: the most visible remaining phone-to-phone delta. Converging it changes **who owns the top inset for the whole tab**, and the status-bar **icon** appearance is set globally at `Theme.kt:84` | M | **draft** | **T-0448** | architect, android | no | **architect** — inset ownership |
 > | **T-0454** | **Compose weight-starvation consistency rule** — flag a `Row`/`Column` holding both a `Modifier.weight(` child and an unbounded non-weighted `Text`. The bug class that nearly shipped on T-0442 (see its own comment at `ProfileTab.kt:266-268`). `check-consistency.mjs` already has the `add()`/`warn()` two-tier seam at `:36`/`:44`. **Routed, not written by the PM** | S | **draft** | — | architect, android, docs | no | **architect** — a new rule is an architect call |
 > | **T-0455** | **`partner-stores` ↔ `partner-services` circular dependency** — **33 errors** re-derived by the PM (`partner-stores` 19 · `services` 6 · `partner-services` 5 · `pipes` 3), all `@nx/enforce-module-boundaries`, in **two distinct cycles**: one caused by a **single import** (`loading.interceptor.ts:3-6`), one a type-location problem through `pipes`. Invisible because lint is `continue-on-error: true` (`frontend-ci.yml:40-42`) | M | **draft** | — | architect, frontend | no | **architect** — two seams |
@@ -289,10 +346,26 @@ One row per ticket. Source of truth for "what's the team doing right now".
 >
 > **All four lane heads that gated the demo chain have MERGED.** Heads marked ✅ below are released.
 >
-> - Android customer `values-*/strings.xml` ×5 → **T-0441 ✅ (merged `1d85b35f`) → T-0450 → T-0448**
-> - Android `customer-app/.../profile/ProfileTab.kt` → T-0442 ✅ → **T-0450 → T-0448 → T-0453**
-> - iOS `CleansiaCustomer/Resources/Localizable.xcstrings` → **T-0440 ✅ (merged `a10e1f88`) → T-0450 → T-0449**
+> - Android customer `values-*/strings.xml` ×5 → **T-0441 ✅ (merged `1d85b35f`) → T-0450 `ready` → T-0448**
+> - Android `customer-app/.../profile/ProfileTab.kt` → T-0442 ✅ → **T-0450 → T-0448 → T-0453 → T-0472**
+>   *(**T-0450 may not need to touch this file at all** — the `maxLines=1 + TextOverflow.Ellipsis` it
+>   needs is already there at `:339-346`. A lane head that writes nothing releases the lane sooner; the
+>   T-0450 dev should say so explicitly. **T-0472 is appended LAST** — if its ruling reaches the
+>   hard-coded Poppins call site at `:437` it is a writer, and the split does not decouple it.)*
+> - Android `customer-app/.../profile/EditProfileScreen.kt` → **T-0448** (`:230`, the photo-picker TODO)
+>   **→ T-0472** (`:215`, a hard-coded Poppins call site) — **new cluster, added 2026-08-01**
+> - iOS `CleansiaCustomer/Resources/Localizable.xcstrings` → **T-0440 ✅ (merged `a10e1f88`) → T-0450 `ready` → T-0449**
 > - iOS `CleansiaCustomer/.../Profile/ProfileTab.swift` → **T-0451 ✅ (merged `1c8fdd00`) → T-0450 → T-0449**
+> - **🆕 iOS `CleansiaCustomer/.../Orders/OrderDetailView.swift` → T-0473** sole writer
+> - **🆕 Android `customer-app/.../orders/OrderDetailScreen.kt` → T-0473** sole writer
+> - **🆕 `CleansiaCore/Tests/CleansiaCoreTests/OutlinedButtonColorsTests.swift` → T-0473** sole writer (AC4)
+> - **🆕 `core/.../ui/theme/Type.kt` + the six bundled font binaries (both platforms) → T-0472** sole writer
+> - **🆕 `src/cleansia_ios/.gitignore` + the new `*.xcconfig` / `*.xcconfig.example` → T-0475** sole writer
+> - **🆕 `src/cleansia_ios/openapi/README.md` → T-0474** sole writer (its §"Regenerate" is the likely AC5 home)
+> - **🚫 `src/cleansia_ios/**/project.yml` and `**/Info.plist` → OWNER ONLY, and T-0475 by explicit
+>   exception, in a scratch worktree.** The owner's live Stripe key is in the working copies. **No other
+>   ticket opens these files** — T-0472 in particular must **write up** any needed `UIAppFonts` entry as
+>   a note for the owner rather than editing either file
 >
 > ⚠️ **T-0440 and T-0441 are still `qa`, and that does NOT hold their lanes.** What a lane serializes is
 > **writes to the file**, and both writes are on `master`. What those tickets still owe is a screenshot.
@@ -330,7 +403,8 @@ One row per ticket. Source of truth for "what's the team doing right now".
 >
 > | # | Item | Blocks | Where |
 > |---|---|---|---|
-> | 1 | **Answer `Q-I18N-02`** — the shorter `ru`/`uk` wording for the profile "Edit profile" chip. Needs a **native speaker**; **no PM default was taken, deliberately** | **T-0450 → T-0448 + T-0449.** The single largest blocker in the sprint | `questions/open.md`, pre-prod blocking index |
+> | ~~1~~ | ~~**Answer `Q-I18N-02`**~~ ✅ **DONE 2026-08-01.** The owner answered: verb-only label + truncate, don't wrap. **It was the last `blocking: yes` question in the backlog.** T-0450 → `ready`; T-0448/T-0449 clear when it lands | ~~T-0450 → T-0448 + T-0449~~ **nothing** | `questions/answered.md` |
+> | **1a** | **Supply the xcconfig values** once **T-0475** lands — the Stripe publishable key and (if AC4 puts it there) `DEVELOPMENT_TEAM`, in **both** app directories. **Until you do, your own build has no key.** This is the `manual_step: xcode-project` on T-0475 | **T-0474's `xcodegen` leg** — prescribing "regenerate after every pull" is unsafe until this is in place | `tickets/T-0475-…md` AC2 + AC5 |
 > | 2 | **Two `CLAUDE.md` lines** (owner-gated; no agent edits that file) — the repo map at `:29` still calls `core/services/` "NSwag-generated" (it is not; that lib holds a **stale 280 KB client no regen writes**), and `generate-clients` is still undocumented at `:97-100`. **The third correction is already done — you applied it in `d6969fef`**, using the npm aliases T-0462 recommended | nothing; it costs every agent a cycle | **T-0462 owns the corrected text (AC5b).** T-0439's M6 text is stale — do not use it |
 > | 3 | *(optional, expired)* the `markOptionalProperties: true` scratch experiment | nothing | The window was the T-0446 regen and it has passed. Costs a whole regen cycle now |
 >
@@ -367,9 +441,12 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > owner-gated `CLAUDE.md`, proposed as literal text. It is **not** part of the regen bundle and must
 > not be batched with it: T-0462 is post-demo and its text is only final **after T-0439 merges**.
 >
-> **Open owner questions:** **Q-I18N-02** (`blocking: yes` — the shorter ru/uk string; gates T-0450 AC2)
-> and **Q-BRAND-01** (Poppins/Cyrillic strategy platform-wide). Both in `questions/open.md`; Q-I18N-02
-> is on the pre-prod blocking index.
+> **Open owner questions — UPDATED 2026-08-01:** ~~**Q-I18N-02**~~ ✅ **ANSWERED and moved to
+> `answered.md`**; it was the **last `blocking: yes` entry in the backlog**. Still open, all
+> **non-blocking**: **Q-BRAND-01** (Poppins/Cyrillic strategy platform-wide — now fed by **T-0472**),
+> **Q-CI-01** (branch protection, `post-prod`) and **🆕 Q-DESIGN-01** (does the danger/error role gain a
+> second sanctioned meaning, or is "Report an issue" a named exception — `post-prod`, default = named
+> exception; it does **not** gate T-0473).
 >
 > **⚠️ Owner-visible, non-blocking (from the security gate):** the demo will run against a DEV
 > environment that is **writing real people's email, name, phone and birth date into Information-level

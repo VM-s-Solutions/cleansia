@@ -266,6 +266,42 @@ reuse the interceptor `api.*` path instead (EP-3 root cause was the proliferatio
   `RetryAfterInterceptorFn` sits after `HttpErrorInterceptorFn` so the snackbar fires only once the
   back-off retry is exhausted). Customer is SSR — guard wait/retry logic with `isPlatformServer`.
 
+## Building a generated DTO — construct-then-assign, never an object literal
+
+All three NSwag configs set `"markOptionalProperties": false`, so **every** member of a generated DTO
+is emitted **required** on its `I*` interface — a C# `= null` / `= false` default does not change that
+(`bool RemovePhoto = false` → `removePhoto: boolean;`). The moment the backend adds a field, every
+object literal that builds that DTO stops compiling, and the break surfaces at `npm ci` on `master`
+rather than in the ticket that caused it. This has landed on `master` three times
+(`specialInstructions`, then `accessInstructions` + `removePhoto`, then `BlobFileDto.blobUrl`).
+
+So build generated DTOs by constructing then assigning:
+
+```ts
+const photo = new BlobFileDto();
+photo.fileName = file.name;
+photo.base64Content = base64Content;
+photo.contentType = file.type;
+```
+
+not `new BlobFileDto({ fileName, base64Content, contentType })`. The literal is the *only* form that
+is regen-fragile: the constructor's parameter is typed `IBlobFileDto`, so a literal is checked for
+completeness, while property assignment is not. Passing an already-built **instance** into an
+enclosing DTO (`new SaveOrderPhotosPhotoToSave({ file: blobFile, … })`) is fine — an instance gains
+the new member automatically.
+
+Two consequences worth knowing:
+
+- **You cannot pre-add the field.** Writing `blobUrl: undefined` into the literal ahead of the regen
+  fails the excess-property check against today's interface (`TS2353: Object literal may only specify
+  known properties`). Construct-then-assign is the only form that compiles against *both* the current
+  and the post-regen client.
+- **A lambda-parameter default can't hold the statements**, so extract a module-level factory and call
+  it: `const createEmptyPhoto = (): BlobFileDto => { … }` used as `photo = createEmptyPhoto()`.
+
+When a ticket carries `manual_step: nswag-regen`, sweep the call sites into this form **before** the
+owner regenerates; that work needs no regenerated client and unblocks the regen.
+
 ## Module boundaries — the per-app client is the only client a feature may import
 
 Each app owns its **own generated client lib**: `@cleansia/customer-services`

@@ -677,3 +677,44 @@ stored blob has been fetched — `status/sprint-14.md` §7). The reviewer re-gat
 approve its own reconciliation.
 
 <!-- reviewer + security verdicts here; AC6 must name the mutation-proving test -->
+
+### FINAL VERDICT — reviewer, 2026-08-01, at `598f09e3`: **APPROVED**
+
+Six rounds. Own runs at the head: build 0 errors, unit **2377/0**, IntegrationTests **110/0**,
+HostTests **75/0**, consistency 65 = master baseline. Mutations A/E/I/N/N′/S re-run by the reviewer
+across rounds, each restored byte-exact; O/P/Q/R taken on the developer's report.
+
+**AC6 mutation-proving test:** `GetCurrentUserProfilePhotoReadPathTests
+.Profile_WithStoredPhoto_CarriesAResolvableUrlAlongsideTheStableBlobName` — red against the stubbed
+read path.
+
+**Both Stripe credentials confirmed redacted in behaviour, not just in the token list.** The exact
+body that logged a raw setup-intent secret in round 5 now returns
+`setupIntentSecretInLog=False, ephemeralKeyInLog=False` on all five hosts.
+
+**Per-member accounting is load-bearing.** Dropping one accepted entry fails naming the member, the
+DTO and both route variants — structurally invisible under the old first-offender logic.
+
+**One precision note, explicitly NOT a condition of approval.** The reviewer rebuilt the
+`reviewNotes` fixture from the real stored-path shape (`SaveMyDocuments.cs:120-123`, 82 chars) rather
+than reusing the developer's, and confirmed `OLD=True` across the realistic range — so the
+pre-existing classification is robust, not fixture-luck. Walking the boundary: at a document
+description beyond **~155 characters** `reviewNotes` crosses out of the pre-change window, so for long
+descriptions this change *does* newly expose it. "Pre-existing" is therefore a typical-case claim, not
+a universal one. Not worth another round: `Description` on the same route is unconditionally
+pre-existing and already on T-0457, so whatever T-0457 does to that route necessarily covers
+`ReviewNotes`. Worth one clause on the accepted-list comment if that file is touched again.
+
+**Still owed before `done`:** AC4's rendering half — headers were evidenced against live Azurite in
+round 3 (200, `application/octet-stream`, no `Cache-Control`, no `nosniff`, magic bytes intact); the
+visual confirm in a browser, Coil and `UIImage(data:)` is QA's.
+
+**Merge order:** T-0439 before T-0446. ADR-0031 lives on `feat/T-0439-sprint14`, is absent from
+master, and `patterns-frontend.md` cites it.
+
+Two things the reviewer asked to be recorded as this closes. The guard paid for itself immediately —
+it found a live payment credential that five rounds of careful reading, the reviewer's included,
+walked past. And when the reviewer proposed a bad test retarget in round 4, the suite's own
+non-vacuity guard rejected it rather than a human catching it. The pattern across all six rounds was
+the same: **every time a judgement was replaced with a measurement, the measurement found something
+the judgement had missed.**

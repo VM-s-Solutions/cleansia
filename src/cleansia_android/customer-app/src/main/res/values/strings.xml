@@ -370,7 +370,7 @@
     <!-- Profile tab -->
     <string name="profile_greeting">Hi, there!</string>
     <string name="profile_email_placeholder">you@example.com</string>
-    <string name="profile_row_edit">Edit profile</string>
+    <string name="profile_row_edit">Edit</string>
     <string name="profile_row_addresses">Saved addresses</string>
     <string name="profile_row_payment">Payment methods</string>
     <string name="profile_row_notifications">Notifications</string>

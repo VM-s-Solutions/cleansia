@@ -364,7 +364,7 @@
     <!-- Profile tab -->
     <string name="profile_greeting">Привет!</string>
     <string name="profile_email_placeholder">вы@example.com</string>
-    <string name="profile_row_edit">Редактировать профиль</string>
+    <string name="profile_row_edit">Редактировать</string>
     <string name="profile_row_addresses">Сохранённые адреса</string>
     <string name="profile_row_payment">Способы оплаты</string>
     <string name="profile_row_notifications">Уведомления</string>

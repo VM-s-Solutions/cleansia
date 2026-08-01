@@ -31,7 +31,15 @@
         <!-- User Info Card -->
         <div class="customer-profile__user-card">
           <div class="customer-profile__user-avatar">
+            @if (avatarUrl(); as url) {
+            <img
+              class="customer-profile__avatar-image"
+              [src]="url"
+              [alt]="'pages.profile.avatar.alt' | translate"
+            />
+            } @else {
             {{ userInitials() || '?' }}
+            }
           </div>
           <div class="customer-profile__user-info">
             <div class="customer-profile__user-name">
@@ -75,6 +83,60 @@
             <p class="customer-profile__section-subtitle">
               {{ 'pages.profile.personal_info_desc' | translate }}
             </p>
+          </div>
+        </div>
+
+        <div class="customer-profile__avatar-editor">
+          <div class="customer-profile__avatar">
+            @if (avatarUrl(); as url) {
+            <img
+              class="customer-profile__avatar-image"
+              [src]="url"
+              [alt]="'pages.profile.avatar.alt' | translate"
+              (load)="onAvatarLoaded()"
+              (error)="onAvatarLoadFailed()"
+            />
+            } @else {
+            <span class="customer-profile__avatar-initials">
+              {{ userInitials() || '?' }}
+            </span>
+            }
+          </div>
+
+          <div class="customer-profile__avatar-actions">
+            <p class="customer-profile__avatar-hint">
+              {{ 'pages.profile.avatar.hint' | translate }}
+            </p>
+            <div class="customer-profile__avatar-buttons">
+              <input
+                #avatarInput
+                type="file"
+                hidden
+                [accept]="avatarAccept"
+                (change)="onAvatarSelected($event)"
+              />
+              <cleansia-button
+                [buttonType]="'button'"
+                [style]="'raised-button'"
+                [title]="'pages.profile.avatar.change' | translate"
+                [icon]="'pi pi-camera'"
+                [loading]="avatarSaving()"
+                [disabled]="avatarSaving()"
+                (clickFn)="avatarInput.click()"
+              />
+              @if (avatarUrl()) {
+              <cleansia-button
+                [buttonType]="'button'"
+                [severity]="'danger'"
+                [title]="'pages.profile.avatar.remove' | translate"
+                [icon]="'pi pi-trash'"
+                [iconPosition]="'left'"
+                [outlined]="true"
+                [disabled]="avatarSaving()"
+                (clickFn)="removeAvatar()"
+              />
+              }
+            </div>
           </div>
         </div>
 

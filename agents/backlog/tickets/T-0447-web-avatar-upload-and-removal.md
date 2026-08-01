@@ -212,5 +212,67 @@ same state** — this is not an Azurite artifact.
       hold on to: **previewing what the user just picked is fine; reading back what is stored is
       not.**
 
+- 2026-08-01 — **implemented** (frontend, branch `feat/T-0447-web-avatar` → PR #184).
+  Four files under `libs/cleansia-customer-features/profile/src/lib/profile/`: the new
+  `profile.models.ts` (validation + the `AvatarIntent` union + the construct-then-assign
+  `buildUpdateCurrentUserCommand`, per ADR-0031), `profile.facade.ts` (all logic — signals,
+  the generated-client calls, the file→`BlobFileDto` read), and the component/template as pure
+  delegation. `BlobFileDto`/`IBlobFileDto` added to the hand-maintained
+  `libs/core/customer-services/src/index.ts` barrel (a barrel re-export, **not** a regen).
+  Nine `pages.profile.avatar.*` keys in all five customer locales; no new `api.*` key was needed —
+  the backend's `file.content_type_doesnt_match` is already in the contract and in all five bundles.
+  - **CORS/C2 honoured:** the SAS is bound straight into `[src]` in both places it renders; nothing
+    reads the stored blob back. No cropper, no canvas, no `fetch`. The only local read is
+    `FileReader.readAsDataURL` on the **newly picked file**, which never touches the blob URL.
+  - **C1 honoured:** `onAvatarLoadFailed()` re-reads the profile **once** (no status branching —
+    an `<img>` cannot see 403 vs 404); a second failure falls back to the initials. `(load)` re-arms
+    the guard so a later SAS expiry in a long-lived session can still recover.
+  - **Cache key = `fileName`:** `applyAvatar` holds the rendered URL steady while the blob name is
+    unchanged, so a re-read's fresh signature does not re-download the image. T-0446 AC10 (fresh
+    blob name per replace) verified present at `UpdateCurrentUser.cs:148-152`, so no eviction is
+    needed. No render-mode change (profile stays under `**` → `RenderMode.Client`), and nothing logs
+    the profile response or the SAS.
+  - **AC5 limits, read not invented:** `UpdateCurrentUser` uses `ImageFileValidator`
+    (`UpdateCurrentUser.cs:61-63`), which enforces **type only**, by magic bytes
+    (`Constants.ImageSignatures:88-97` → jpeg/png/gif/bmp/tiff/webp) and **no size cap**. The client
+    mirrors that type list and applies the platform's existing 10 MB convention
+    (`FileValidator.MaxFileSizeInMB`, `order-photos.helpers.ts` `PHOTO_MAX_SIZE`,
+    `CleansiaFileComponent.maxFileSize`) — flagged here because it is a client-only floor.
+  - **Gate 8:** `nx test cleansia-customer-profile` 53/53 (4 suites); `nx affected -t test
+    --base=95debd57` **19 projects green**, incl. `error-contract-parity.spec.ts` 5/5; all three
+    production builds exit 0; `check-consistency.mjs` OK (37 files).
+    `nx lint`: profile lib **0 errors, 2 warnings**, both pre-existing and on untouched lines —
+    baselined by running the same lint in a clean worktree at `95debd57`, which showed **3**
+    warnings, the third being the `as any` this ticket deletes. `cleansia.app` (5 errors) and
+    `customer-services` (3 errors, the customer twin of T-0455's cycle) are **byte-identical to the
+    baseline** and touch no file in this diff.
+  - **Gate 0.5 leg 1 / Gate 6.5 — mutation-proved, restored byte-exact:**
+    `command.removePhoto = intent.kind === 'remove'` → `= true` turns **5 tests RED**, named:
+    `buildUpdateCurrentUserCommand › sends neither a photo nor a removal for an unchanged avatar`,
+    `… › serializes an unchanged-avatar save without a photo or a removal flag`,
+    `… › sends the photo and no removal for an upload`,
+    `ProfileFacade › uploading an avatar › sends the picked image and never a removal`, and the AC4
+    case `ProfileFacade › saving the profile details › sends no photo and no removal, so an existing
+    avatar survives` (5 failed / 0 after restore). The cache-key branch and the retry guard were
+    each mutated separately: 1 failed each
+    (`… › keeps the rendered url when a re-read returns the same file with a fresh signature`,
+    `… › falls back to the placeholder instead of re-reading a second time`), 0 after restore.
+  - **BLOCKER for AC2/AC3 manual evidence — `Q-PROFILE-01` filed in `questions/open.md`.**
+    `UpdateCurrentUser.Validator.AllowedToUpdateUser` (`UpdateCurrentUser.cs:33-36, 66-71`) requires
+    a client-supplied `Command.Id` equal to the session user's id, the customer controller does not
+    stamp it (`UserController.cs:28-38`), and **the customer web app has no id to send**:
+    `MyProfileDto` carries none (`UserMappers.cs:44`) and the web session is an HttpOnly cookie, so
+    JS cannot read the JWT — which is exactly where Android (`UserRepository.kt:82-86`) and iOS
+    (`UserProfileClient.swift:55`) get it. Every customer-web profile save therefore 400s with
+    `user.not_allowed_to_update`. **Pre-existing** (`id: undefined` since `29de7b48`, 2026-05-16) and
+    **not fixable from the frontend**; this ticket sends the same `id` it always did, so it
+    regresses nothing, but the AC2/AC3 round-trip cannot be demonstrated until the backend is fixed.
+  - **Dead-code report the ticket asked for:** the partner-store `updateUserCurrent`
+    action/reducer/effect chain (`libs/data-access/partner-stores/src/lib/user/user.effects.ts:80-119`)
+    is **still dead** — re-verified on this branch, no dispatcher anywhere. Note `partner-stores` has
+    **no `test` target at all**, so anything landing there is untested by construction.
+  - **Not verified by me:** the three screenshot ACs (AC1 both states, AC2, AC3) and the AC3 manual
+    round-trip — no running app/DEV session here, and AC2/AC3 are blocked by `Q-PROFILE-01` regardless.
+
 ## Review
 <!-- reviewer + security verdicts here -->

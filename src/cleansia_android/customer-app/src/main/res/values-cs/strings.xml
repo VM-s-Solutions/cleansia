@@ -401,6 +401,12 @@
     <string name="profile_edit_phone">Telefon</string>
     <string name="profile_edit_birthdate">Datum narození</string>
     <string name="profile_edit_save">Uložit změny</string>
+    <string name="profile_avatar_change">Změnit fotku</string>
+    <string name="profile_avatar_remove">Odebrat fotku</string>
+    <string name="profile_avatar_content_description">Profilová fotka</string>
+    <string name="profile_avatar_encode_failed">Tento obrázek se nepodařilo použít. Zkuste jinou fotku.</string>
+    <string name="profile_avatar_picker_unavailable_title">Žádný výběr fotek</string>
+    <string name="profile_avatar_picker_unavailable_message">V tomto zařízení není žádná aplikace pro výběr fotky.</string>
 
     <!-- Profile — addresses -->
     <string name="profile_addresses_title">Uložené adresy</string>

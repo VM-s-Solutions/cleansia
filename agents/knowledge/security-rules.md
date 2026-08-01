@@ -27,6 +27,21 @@ clients send empty, backend overwrites), be commented as server-enriched, and be
 controller from the JWT **before** `Mediator.Send`. Anonymous endpoints should need no `UserId` at
 all.
 
+**An identity a client cannot know is not an authorization check.** A self-write that authorizes by
+comparing the session user to a *client-supplied* id passes only for callers that already know the
+answer, so it protects nothing and silently locks out any client that cannot guess it. `MyProfileDto`
+carries no `Id` and the web session is an HttpOnly cookie, so the web can never supply one — mobile
+only satisfied such checks because it decodes its own token. Resolve the subject from
+`IUserSessionProvider` in **every** arm of the feature (ownership rule, uniqueness rules that must
+exempt the caller's own row, and the handler), and leave the wire field inert.
+
+**A wire field kept for compatibility must be `string?`, not `string`.** MVC's implicit-required for
+non-nullable reference types rejects an *absent* member with
+`400 {"errors":{"Id":["The Id field is required."]}}` **before** the command reaches MediatR — so no
+validator or handler change can make the endpoint callable without it. This layer is invisible to
+unit tests (they construct the command directly); only a host/route test catches it. The `= ""`
+default above is not an alternative when the field is not last in the positional parameter list.
+
 ## S2 — Authorization on every endpoint
 
 Every controller method has exactly one of:

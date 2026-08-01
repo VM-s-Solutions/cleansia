@@ -6,7 +6,7 @@ size: M
 owner: ios
 created: 2026-07-30
 updated: 2026-08-01
-depends_on: [T-0446, T-0440, T-0451, T-0450]
+depends_on: [T-0446, T-0451, T-0450]
 blocks: []
 stories: [US-user-avatar]
 adrs: []
@@ -131,6 +131,36 @@ Related, and also not a defect: the **ru/uk two-line placeholder** on iOS. Wheth
   **So: `blocked` on T-0450 alone, and T-0450 is blocked on the owner.** Lane unchanged:
   **T-0451 ✅ → T-0450 → T-0449** on `ProfileTab.swift`, and **T-0440 ✅ → T-0450 → T-0449** on
   `Localizable.xcstrings`.
+- 2026-08-01 — **Q-I18N-02 IS ANSWERED. T-0450 is `ready`. This ticket stays `blocked`, on T-0450
+  alone, and here is exactly what changed and what did not.**
+
+  | | Before | Now |
+  |---|---|---|
+  | **Q-I18N-02** | `blocking: yes`, unanswered, no PM default | **ANSWERED** — verb-only label (`Edit`/`Редактировать`) + truncate, don't wrap |
+  | **T-0450** | `draft`, blocked on the owner, size `M`, two defects | **`ready`**, size `S`, **half (A) only** — the label |
+  | **the Poppins half** | inside T-0450, needing an architect panel + the unanswered Q-BRAND-01 | **split out to `T-0472`** — and **T-0472 does NOT block this ticket** |
+  | **this ticket** | `blocked` on T-0450, which was blocked on the owner | `blocked` on T-0450, which is **dispatchable today** |
+
+  **The blocker is no longer an owner reply — it is one `ready` ticket's write landing.** T-0450 writes
+  `Localizable.xcstrings` and `ProfileTab.swift` — **both** files this ticket rebuilds — and it adds an
+  explicit `.lineLimit(1)` + `.truncationMode(…)` to `EditProfileChip` (`ProfileTab.swift:332-350`),
+  which today has neither. That is inside the `HeroGradient`/chip region this ticket restructures. **Do
+  not "unblock" by dropping the T-0450 dep.**
+
+  **T-0472 (the Poppins split) does not enter this ticket's lane** unless its architect ruling reaches
+  iOS call sites; if it does, it is sequenced **after** this ticket. Do not run them concurrently.
+- 2026-08-01 — **`T-0440` REMOVED from `depends_on` — a discharge, not a drop.** It was a **lane**
+  dependency (the `Localizable.xcstrings` head) and its write is on `master` (`a10e1f88` #179). T-0440
+  itself is still `qa` on an owed AC1 screenshot + the Gate 8.5 render leg — *neither gates a code lane*
+  (`status/sprint-14.md` §8.2). **T-0446 and T-0451 stay listed; both are `done`.** Full remaining lanes:
+  T-0451 ✅ → **T-0450 → T-0449** on `ProfileTab.swift`, and T-0440 ✅ → **T-0450 → T-0449** on
+  `Localizable.xcstrings`.
+- 2026-08-01 — **the stale-client trap in `## Context` is now a TICKET, not just a warning.** The
+  gitignored `CleansiaCustomerApi/` going stale on every pull — the trap this ticket has warned about
+  since it was created, and which **still** cost the T-0440 reviewer a false blocker — is filed as
+  **T-0474** (post-checkout regeneration). **The warning at `## Context` stands and must still be
+  obeyed**: run `src/cleansia_ios/scripts/generate-api-clients.sh` before concluding any field is
+  missing. T-0474 is not a dependency of this ticket.
 - 2026-08-01 — **two carry-forwards from T-0451 and T-0440, both "do not undo this later":**
   - **T-0451's fix must survive.** It pinned the initials ink to a **fixed-white-surface** token
     (`CleansiaColors.onFixedWhite`) because the disc is `Color.white` in both themes. When an image is
@@ -142,6 +172,12 @@ Related, and also not a defect: the **ru/uk two-line placeholder** on iOS. Wheth
     reviewer **refuted** it for iOS (Android's float label ellipsizes; iOS's hint is plain wrapping
     text with no line limit in a container with ample headroom). PM-verified 2026-08-01: this ticket
     does not carry it today — this note is prevention, not removal.
+- 2026-08-01 — **implemented (ios), awaiting review.** Branch `feat/T-0449-ios-avatar` onto PR #184.
+  Evidence + the four mutation proofs + the 16.4 floor legs are in "Implementation evidence" below.
+  **iOS goes first on this feature**: neither the Android customer app nor the web customer profile has
+  an avatar surface yet (`removePhoto: false` is hardcoded in `profile.component.ts:231-232`), so there
+  is no sibling to mirror — T-0447/T-0448 should mirror THIS shape, and the parity check belongs on
+  them.
 
 ## Security conditions — BINDING (from the T-0446 gate, 2026-07-30)
 
@@ -188,6 +224,77 @@ against the real stored bytes and it correctly sniffed **`public.jpeg`** and **`
 bare-GUID blob served as `application/octet-stream`. **No content-type handling, no file extension
 and no MIME hint is needed on this platform.** If an image fails to load here, the cause is
 something other than the content type — look elsewhere before proposing a backend change.
+
+## Implementation evidence (ios, 2026-08-01)
+
+Branch `feat/T-0449-ios-avatar` off `docs/sprint-14-owner-rulings`.
+
+**Shape.** `AvatarEdit` (`unchanged | removed | picked(image, upload)`) is the sealed save-intent enum on
+`ProfileViewModel`; `AvatarDisplay.resolve(photo:edit:)` derives what a surface draws. One
+`ProfileAvatar` disc serves the hero (72pt, white 35% ring) and the edit screen (96pt, outline ring) —
+the initials stay the no-photo fallback with T-0451's pinned `onFixedWhite` ink. Core gained
+`RemoteImageCache` + `CachedRemoteImage` (see `patterns-mobile.md`, "A re-rendered SAS-backed image").
+
+- **AC5 bound:** `ImageFileValidator` (`UpdateCurrentUser.cs:61-63`) validates the **decoded signature
+  only** — JPEG/PNG/GIF/BMP/TIFF/WEBP magic bytes, `Constants.cs:88-97`; it caps **no size**. So the
+  bound is client-side: the Core `ImageCompressor` default already used by order photos and dispute
+  evidence — longest side ≤1920px, JPEG 0.7, EXIF/GPS stripped by re-render. Not invented, not a
+  backend echo.
+- **Cache key:** T-0446 **AC10 verified shipped** — `UpdateCurrentUser.cs` mints `Guid.NewGuid()` per
+  upload and deletes the superseded blob after, so `fileName` is content-addressed and needs no
+  eviction. Cached on `fileName`, never `blobUrl`.
+- **S11:** `CustomerAppContainer` registers `avatarCache` with the `SessionScopedCacheRegistry` beside
+  `userProfileRepository`. Memory-only `NSCache` + `.ephemeral` `URLSession` — no disk cache, so the
+  SAS URL is never at rest; nothing logs the profile response or the URL.
+- **C1 retry:** `ProfileViewModel.avatarLoadFailed(fileName:)` re-fetches once per blob name; no status
+  branching.
+
+**Gate 8 — all six runs are mine, un-cached (`clean build test` on the floor):**
+
+| Scheme | iOS 16.4 (iPhone 14) | iOS 26.3 (iPhone 17 Pro) |
+|---|---|---|
+| CleansiaCore | 525 passed / 0 failed | 525 passed / 0 failed |
+| CleansiaCustomer | 724 passed / 0 failed | 724 passed / 0 failed / 1 skipped |
+| CleansiaPartner | 527 passed / 0 failed | 527 passed / 0 failed |
+
+The customer app-scheme tests **did compile and run** (counts above; +19 new). SwiftFormat 0.60.1
+`--lint` and SwiftLint 0.65.0 `--strict`: 0 violations. `check-consistency.mjs`: **NOT RUN** — it scans
+`.cs`/`.ts`/`.kt` only, no Swift rules.
+
+**Gate 0.5 leg 1 — four mutations, each run and restored byte-exact (`git diff` clean after each):**
+
+1. delete `removePhoto: update.removePhoto` from the generated-command mapper →
+   **`testUpdateCommandLeavesTheStoredPhotoAloneWhenNothingWasTouched`** 3 failed / 0 after restore.
+2. delete `photo: update.photo.map(BlobFileDto.init)` →
+   `testUpdateCommandCarriesThePickedPhotoAndAsksForNoRemoval` 3 failed / 0 after restore.
+3. `save()` sends `removePhoto: true` unconditionally (the AC4 wording) →
+   **`testSaveWithAnUntouchedAvatarSendsNeitherAPhotoNorARemoval`** + 2 siblings, 3 failed / 0 after.
+4. initials ink → `CleansiaColors.primary` → `AvatarDiscBindingTests` 2 failed / 0 after restore.
+
+**Gate 6.5:** stub `ProfileAvatar.photo` to `EmptyView()` → `ProfileAvatarRenderingTests` 3 failed
+(picked render, remote render, failure callback) / 0 after restore.
+
+**Gate 8.5 — iOS 16.4 floor.** All three suites run against the 16.4 destination (table above), and the
+picker + async-image legs are executed there rather than asserted on paper:
+`ProfileAvatarRenderingTests` hosts the disc in a `UIWindow` on 16.4 and reads the rendered pixels —
+picked bitmap renders, a stored photo is fetched/decoded/rendered, a failed load falls back to the
+initials **and** reports once, and `CameraOrLibraryPicker` builds a real `UIImagePickerController`
+(`sourceType == .photoLibrary`). App launch on the 16.4 sim: installs, launches, sign-in screen renders,
+0 crash/`NavigationAuthority`/`comparisonTypeMismatch` hits in the log.
+
+**AC1/AC2 screenshots** were rendered from the real `ProfileTab`/`EditProfileView` on the 16.4 runtime
+(hero with photo / hero initials / editor with photo / editor "Add photo") via a temporary harness that
+was **deleted before handover** — the same paths stay asserted by `ProfileAvatarRenderingTests`.
+
+**Not verified:** a signed-in walk on a real device/DEV account (no credentials here) — so the live
+`GET /User/GetCurrent` → SAS → render and a real `UpdateCurrentUser` round-trip are unproven end to end;
+everything up to the generated command is. Camera capture is simulator-unavailable, so only the library
+branch of the picker was exercised. Dark mode was not screenshotted (the disc is theme-invariant by
+construction and `AvatarDiscBindingTests` covers the ink).
+
+**No new Info.plist key needed** — `NSCameraUsageDescription`/`NSPhotoLibraryUsageDescription` already
+ship in the customer target (T-0314's dispute-evidence capture); the avatar reuses the same picker.
+Please have the PM confirm against `project.yml`, which this agent may not read.
 
 ## Review
 <!-- reviewer + security verdicts here -->

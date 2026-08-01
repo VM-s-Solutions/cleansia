@@ -1,11 +1,13 @@
 import CleansiaCore
 import Combine
 import Foundation
+import UIKit
 
 @MainActor
 final class ProfileViewModel: ViewModel {
     @Published private(set) var refreshState: ActionState = .idle
     @Published private(set) var saveState: ActionState = .idle
+    @Published private(set) var avatarEdit: AvatarEdit = .unchanged
 
     let saved = PassthroughSubject<Void, Never>()
 
@@ -13,6 +15,7 @@ final class ProfileViewModel: ViewModel {
     private let settings: AppSettingsStore
     private let snackbar: SnackbarController
     private let localizer = ApiErrorLocalizer()
+    private var avatarRetriedFor: String?
 
     init(
         repository: UserProfileRepository,
@@ -27,6 +30,49 @@ final class ProfileViewModel: ViewModel {
 
     var currentUser: CurrentUserProfile? {
         repository.currentUser
+    }
+
+    var editorAvatar: AvatarDisplay {
+        AvatarDisplay.resolve(photo: currentUser?.profilePhoto, edit: avatarEdit)
+    }
+
+    var canRemoveAvatar: Bool {
+        editorAvatar.isImage
+    }
+
+    /// Downscaled to the same 1920px / JPEG-0.7 bound every other upload on this platform uses, and
+    /// stripped of EXIF/GPS, before it is base64'd into the save. The backend validates the decoded
+    /// bytes are a real image but caps no size, so the bound is ours.
+    func pickAvatar(_ image: UIImage) {
+        guard let encoded = ImageCompressor.encode(image) else {
+            snackbar.showError(L10n.EditProfile.photoUnreadable)
+            return
+        }
+        avatarEdit = .picked(
+            image: image,
+            upload: ProfilePhotoUpload(
+                base64: encoded.base64,
+                contentType: encoded.contentType,
+                fileName: encoded.fileName
+            )
+        )
+    }
+
+    func removeAvatar() {
+        avatarEdit = .removed
+    }
+
+    func discardAvatarEdit() {
+        avatarEdit = .unchanged
+    }
+
+    /// An image view sees neither the 403 of an expired signature nor the 404 of a deleted blob, so
+    /// re-fetch the profile for a freshly signed URL and let a second failure fall back to the
+    /// initials. The guard is per blob name: a later upload mints a new one and earns its own retry.
+    func avatarLoadFailed(fileName: String) async {
+        guard avatarRetriedFor != fileName else { return }
+        avatarRetriedFor = fileName
+        await refresh()
     }
 
     func refresh() async {
@@ -57,11 +103,14 @@ final class ProfileViewModel: ViewModel {
             lastName: lastName.trimmed,
             phoneNumber: phoneNumber?.trimmed.nilIfEmpty,
             birthDate: birthDate,
-            languageCode: languageCode
+            languageCode: languageCode,
+            photo: avatarEdit.upload,
+            removePhoto: avatarEdit.isRemoval
         )
         switch await repository.update(update) {
         case .success:
             saveState = .idle
+            avatarEdit = .unchanged
             saved.send()
         case let .failure(error):
             let message = localizer.message(for: error)

@@ -195,6 +195,7 @@ struct CustomerShellView: View {
                 profileVM: profileVM,
                 membershipVM: membershipVM,
                 preferences: preferences,
+                avatarCache: container.avatarCache,
                 onOpen: { model.path.append($0) },
                 onSignOut: signOut
             )
@@ -280,7 +281,12 @@ extension CustomerShellView {
                 onSelected: { _ in model.pop() }
             )
         case let .editProfile(showBookingHint):
-            EditProfileView(vm: profileVM, showBookingHint: showBookingHint, onSaved: { model.pop() })
+            EditProfileView(
+                vm: profileVM,
+                avatarCache: container.avatarCache,
+                showBookingHint: showBookingHint,
+                onSaved: { model.pop() }
+            )
         default:
             settingsDestination(route)
         }

@@ -31,12 +31,21 @@ each gets a line on the pre-PROD readiness checklist.
   + Postgres-MI auth? Default for dev: public-endpoint + firewall + MI-to-KeyVault/Storage.
 - **Q-IOS-04** (`pre-submission` — gates only the SIWA iOS ticket T-0326; non-blocking for the rest of the iOS
   plan) — the Sign-in-with-Apple backend integration mechanism (likely a backend `appleauth` endpoint).
-- **Q-I18N-02** (`pre-prod`, **blocking: yes** — gates T-0450 AC2, and gates the demo if it is shown in
-  `ru`/`uk`) — the shorter `ru`/`uk` wording for the profile "Edit profile" chip. **No default taken**;
-  needs a native speaker.
+- _(**Q-I18N-02 — ANSWERED 2026-08-01**; the owner chose the verb-only label + truncate-don't-wrap.
+  Moved to `answered.md`. It was the last `blocking: yes` entry in this file. **T-0450 is now `ready`**
+  and T-0448/T-0449 clear when it lands.)_
 - **Q-BRAND-01** (`pre-prod`, blocking: no) — Poppins covers **0/98** Cyrillic code points on all three
-  platforms (byte-identical binaries). Strategy for `ru`/`uk` headings. Default: T-0450 fixes the
-  profile hero only; the platform-wide remediation stays open here.
+  platforms (byte-identical binaries). Strategy for `ru`/`uk` headings. **Untouched by the Q-I18N-02
+  answer** — a shorter Russian string still renders in a system fallback face. Now carried by its own
+  ticket **T-0472** (split out of T-0450 on 2026-08-01); T-0472 fixes the mobile profile hero and its
+  architect panel rules on the mechanism, the platform-wide remediation stays open here.
+- **Q-PROFILE-01** (`pre-prod`, **blocking: yes**) — `UpdateCurrentUser` requires a client-supplied
+  `Command.Id` that the customer **web** app cannot obtain (no `id` on `MyProfileDto`; HttpOnly-cookie
+  session, so no JWT to decode as Android/iOS do). Every customer-web profile save 400s with
+  `user.not_allowed_to_update`. Pre-existing since `29de7b48`; raised by T-0447, which it blocks for
+  AC2/AC3 round-trip evidence. Needs a **backend** decision, not a frontend workaround.
+
+**One `blocking: yes` question is open in this file as of 2026-08-01: Q-PROFILE-01.**
 
 Format:
 
@@ -575,25 +584,45 @@ _No open Wave-1 *planning* questions remain._
 
 ## Sprint-14 questions (2026-07-30) — see `status/sprint-14.md`
 
-### Q-I18N-02 — [blocking: yes] Shorter `ru`/`uk` wording for the profile "Edit profile" chip
+### Q-I18N-02 — [**ANSWERED 2026-08-01 — moved to `answered.md`**] Shorter `ru`/`uk` wording for the profile "Edit profile" chip
 - Raised by: pm (T-0450 — from T-0442's implementation and review)
 - Owner: **owner** (needs a native Russian and native Ukrainian speaker; this is not a technical default)
 - Resolve-by: pre-prod (and **before the demo** if the demo is shown in `ru`/`uk`)
-- Date: 2026-07-30
+- Date: 2026-07-30 · **Answered: 2026-08-01**
 - Question: `profile_row_edit` is `"Edit profile"` (en) and `"Редактировать профиль"` (ru) /
   `"Редагувати профіль"` (uk). The ru string measures ~216.8dp against en's ~120.2dp and does not fit
   the chip, which is capped at `0.45 × width` (`ProfileTab.kt:246-248`) to stop it starving the name
   column — so it renders **"Редактиров…"**. What is the correct shorter ru/uk wording? And should the
   **chip** label diverge from the **screen title** (`profile_edit_title`, same string today), given
   that only the chip is width-constrained?
-- Why it matters: a truncated verb on the primary action of the profile screen reads as a bug to a
-  native speaker, and this is one of the five shipped locales. A PM- or machine-chosen shortening is
-  exactly the kind of "looks fine to a non-speaker" change that ships wrong and never gets revisited.
-  T-0450 AC2 will not pass without a recorded sign-off.
-- Default taken (if non-blocking): **none — deliberately not taken.** Candidate shortenings exist
-  (e.g. ru `Изменить` / `Профиль`, uk `Змінити`) but the PM will not pick one; the ticket is blocked
-  on this answer rather than proceeding on a guess.
-- Answer: _(owner fills in)_
+- **ANSWER (owner, 2026-08-01), verbatim:**
+  > *"the ios and android apps have 'Edit profile'. And when translated then it's a long one. I want
+  > just to keep 'Edit'/'Редактировать' and truncate it if it doesn't fit by the whole length."*
+- **What that settles, stated so it is not re-litigated:**
+  1. **The label is the verb alone** — `Edit` / `Редактировать`, and the equivalent verb in `cs`, `sk`
+     and `uk`. The noun ("profile" / "профиль" / "профіль") is dropped.
+  2. **Overflow is handled by TRUNCATION**, not by wrapping to a second line and not by shrinking the
+     type. This is the answer to "what if the verb alone still does not fit at 320dp" — and it is a
+     real case, because `Редактировать` is 13 characters against `Edit`'s 4.
+- **What it does NOT settle (do not infer either):**
+  - **Q-BRAND-01 is untouched.** Poppins still covers **0 of 98** Cyrillic code points on both mobile
+    platforms, so `Редактировать` and every `ru`/`uk` hero name still falls back to a system face
+    regardless of length. Shortening the string does **not** touch that defect. Split out as **T-0472**.
+  - **Whether the truncation is a tail ellipsis**, and **what the accessibility label announces when the
+    label is visually truncated.** Both are implementation questions, not owner decisions — they are
+    written as **explicit AC on T-0450 (AC4, AC5)** so no developer invents an answer silently.
+  - **The second half of the original question — chip-vs-screen-title divergence — was not separately
+    named** by the answer. T-0450 **AC6** carries a stated PM default (apply the verb-only form to the
+    width-constrained chip `profile_row_edit`; leave `profile_edit_title` and the partner `edit_profile`
+    alone) and requires the choice to be **recorded**, not inferred. Cheap to extend if the owner meant
+    all three surfaces.
+- **Locked into:** `tickets/T-0450-…md` (rewritten 2026-08-01 to half (A) only, now `ready`, size `S`).
+  The analyst panel T-0450 was carrying is **discharged** — it existed to produce a defensible answer to
+  this question, and an owner decision outranks a panel.
+- **Downstream:** T-0450 → `ready`; **T-0448** and **T-0449** keep **T-0450 as their sole remaining
+  dependency** and clear when it lands (shared-file lanes on `ProfileTab.kt` / `ProfileTab.swift` /
+  `values-{ru,uk}/strings.xml` / `Localizable.xcstrings`).
+- **RESOLVED.** Full entry copied to `answered.md`.
 
 ### Q-BRAND-01 — [blocking: no] Poppins has no Cyrillic — what renders `ru`/`uk` headings on all three platforms?
 - Raised by: pm (T-0450 — measured while grounding a T-0442 finding)
@@ -613,9 +642,14 @@ _No open Wave-1 *planning* questions remain._
   Nunito body text — three typefaces on one card. Replacing Poppins is a **brand** decision, not an
   engineering one; the other three options are engineering decisions with different costs. Getting it
   wrong once means re-cutting every heading on three platforms.
-- Default taken (non-blocking): **T-0450 fixes only the profile hero name** and its architect panel
-  rules on the mechanism for that surface. The platform-wide remediation is explicitly out of T-0450's
-  scope and stays here until answered — it is *not* silently deferred.
+- Default taken (non-blocking): **T-0450 fixed only the label**; the font half is now **T-0472**, which
+  fixes the two mobile profile heroes and whose architect panel rules on the mechanism for that surface.
+  The platform-wide remediation (web + every other Poppins slot) is explicitly out of T-0472's scope and
+  stays here until answered — it is *not* silently deferred.
+- **2026-08-01 — Q-I18N-02's answer does NOT touch this.** The owner shortened the label to the verb
+  alone; a shorter Russian string is still Cyrillic and still falls back. The two defects were on one
+  surface, never one cause. This question is the reason T-0450 was split: the label half is the one that
+  gates the avatar tickets; **this half gates nothing.**
 - Answer: _(owner fills in)_
 
 ### Q-CI-01 — [blocking: no] Should `master` carry branch protection (required status checks)?
@@ -637,3 +671,80 @@ _No open Wave-1 *planning* questions remain._
   question is the repo-settings side of it.
 - Default taken: **none applied** — no agent can change repo settings, and nothing is blocked on it.
 - Answer: _(owner fills in)_
+
+---
+
+### Q-DESIGN-01 — [blocking: no — does NOT gate T-0473] "Report an issue" is going RED. Does the danger token now carry a second sanctioned meaning, or is this a named exception?
+- Raised by: pm (T-0473 — from the owner's 2026-08-01 defect report)
+- Owner: **owner to ratify**; `analyst` to author the semantics, `architect` to rule on the catalog entry
+- Resolve-by: post-prod
+- Date: 2026-08-01
+- **This is not a request to reverse the owner's decision.** The owner asked for red explicitly and it
+  is going red — T-0473 ships it. What is open is what the **design system** says afterwards.
+- Question: red/error on both mobile design systems currently means **destructive or error**.
+  "Report an issue" is a **reporting** affordance — it opens a dispute form; nothing is destroyed and
+  nothing has failed. So one of three things must become true, and somebody has to choose which:
+  **(a)** the danger/error role gains a **second sanctioned meaning** ("this is the serious/attention
+  path", covering both destructive and problem-reporting), **(b)** "Report an issue" is recorded as a
+  **named exception** with the reason written next to it, or **(c)** the design system grows a distinct
+  **warning/attention** role separate from both `primary` and `error`.
+- Why it matters — and why absorbing it silently is the bad outcome: `agents/knowledge/patterns-mobile.md:245`
+  states the iOS destructive affordance as *"the ONE way"*, and `core/.../CleansiaButton.kt:80-99`
+  (Android's `CleansiaDestructiveButton`) carries a written rank argument — *"Danger must not out-rank
+  the primary; it must read as danger."* Both are laws about **what red means**. Painting a
+  non-destructive action red without amending either one leaves the next developer with a catalog that
+  says one thing and a codebase that does another, and the reviewer after that with no way to tell an
+  approved exception from a defect. That is exactly the class ADR-0032 exists to prevent.
+- **Aggravating, concrete, and already true in the code:** the order-detail footer stacks **Cancel**
+  (already `error` on both platforms) directly above **Report issue**, separated by one 8dp spacer
+  (`OrderDetailScreen.kt:505-508`; iOS the same `VStack` at `OrderDetailView.swift:288-307`). After this
+  change the two adjacent buttons are the same colour, the same shape and the same rank — one cancels a
+  booking, the other files a complaint. T-0473 **AC3** forces a stated differentiator; this question is
+  whether the *system* should have prevented the collision rather than each ticket noticing it.
+- Default taken (non-blocking): **(b) — treat it as a named exception for now.** T-0473 ships the colour
+  and records the reasoning at the call site and in its `## Review`; no catalog law is amended by a
+  ticket that is fundamentally a two-line colour change. The durable ruling waits for this answer.
+- Answer: _(owner fills in — ratify the exception, or commission (a) a second sanctioned meaning for the
+  danger role, or (c) a distinct warning/attention role)_
+
+---
+
+### Q-PROFILE-01 — [blocking: YES — blocks T-0447 AC2/AC3 end-to-end, and the customer web "Save profile" button is already dead] `UpdateCurrentUser` requires a client-supplied `Id` the customer **web** app cannot obtain
+- Raised by: frontend (T-0447)
+- Owner: **backend** to author the fix; **owner/architect** to pick which of the three shapes
+- Resolve-by: **pre-prod** (it is in demo scope — the avatar feature was ruled demo scope 2026-07-30)
+- Date: 2026-08-01
+- **Traced, not suspected.** `UpdateCurrentUser.Validator` gates every call on
+  `AllowedToUpdateUser` (`src/Cleansia.Core.AppServices/Features/Users/UpdateCurrentUser.cs:33-36,
+  66-71`): it loads the session user by email and returns `user?.Id == command.Id`. The command's
+  `Id` is **client-supplied** (`UpdateCurrentUser.cs:97-98` positional record) and the customer
+  `UserController.UpdateCurrentUser` (`src/Cleansia.Web.Customer/Controllers/UserController.cs:28-38`)
+  does **not** stamp it from the session.
+- **The customer web app has no id to send, by construction.** `MyProfileDto` carries no `id`
+  (`UserMappers.cs:28-51`), and the customer web session is an **HttpOnly cookie**
+  (`libs/core/customer-services/src/lib/interceptors/auth.interceptor.ts`) — so JS cannot read the
+  JWT. Both mobile clients solve it by decoding the token, and say so in their own comments:
+  Android `UserRepository.kt:82-86` — *"User id isn't part of the profile response — it's in the JWT
+  sub claim"*; iOS `UserProfileClient.swift:55` — `JwtDecoder.userId(of: accessToken)`.
+  Web therefore sends `id: undefined`, `user.Id == null` is false, and every customer-web profile
+  save fails validation with `user.not_allowed_to_update` (400).
+- **This is pre-existing, not introduced by T-0447.** `id: undefined` has been in
+  `profile.component.ts` since `29de7b48` (2026-05-16). Nobody has filed it, and there is no
+  integration/host test for the customer `UpdateCurrentUser` route — only unit tests that pass a
+  matching `Id` (`Cleansia.Tests/Features/Users/UpdateCurrentUserValidatorTests.cs:57-63`). Note
+  `user.not_allowed_to_update` is **not** in the customer error contract
+  (`apps/cleansia.app/src/app/i18n/error-contract-parity.spec.ts`), so the user currently sees only
+  the generic `api.common.error_occurred`.
+- Question: which shape? **(a)** the handler/validator resolves the user from
+  `IUserSessionProvider` and `Command.Id` is dropped — it is redundant on a *current-user* endpoint
+  and is an IDOR-shaped parameter; **(b)** the customer controller stamps `command.Id` from the
+  session before `Mediator.Send`; **(c)** `MyProfileDto` gains `Id` so every client can echo it back
+  — the weakest option (it keeps a client-supplied identity on an authenticated self-service write,
+  and it needs an `nswag-regen` + Android/iOS regen).
+- **Not fixable from the frontend.** There is no id source in the customer web app, and inventing one
+  (reading the cookie, a second endpoint) would be working around an authorization check.
+- Default taken: **none — T-0447 ships the avatar UI built to the current contract** (it sends the
+  same `id: undefined` the profile save has always sent, so nothing regresses) and its facade-level
+  ACs are proven by unit tests. AC2/AC3's **manual round-trip evidence cannot be produced** until
+  this is answered.
+- Answer: _(owner/architect fills in — (a), (b) or (c), then a backend ticket)_

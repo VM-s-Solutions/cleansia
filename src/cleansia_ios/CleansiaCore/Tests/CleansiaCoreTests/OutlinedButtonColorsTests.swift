@@ -58,10 +58,15 @@ final class OutlinedButtonColorsTests: XCTestCase {
         )
     }
 
-    /// The footer's three tinted actions, asserted as the pairs they render:
-    /// Cancel destructive, Make recurring + Report issue primary — matching
-    /// Android's `ActionsFooter`, which sets `contentColor` and `BorderStroke`
-    /// to the same role colour on each.
+    /// The two role colours the order-detail footer tints with — matching
+    /// Android's `ActionsFooter`, which sets `contentColor` and `BorderStroke` to
+    /// the same role colour on each button.
+    ///
+    /// This asserts the resolver only, so it cannot see WHICH action gets WHICH
+    /// role and stays green through any reassignment of them: it survived Report
+    /// issue moving off `primary` onto `error` without a word. The assignment is
+    /// pinned at the call site instead, in the customer app's
+    /// `OrderDetailFooterStyleTests`.
     func testOrderDetailFooterPairsMatchAndroidRoles() {
         for role in [CleansiaColors.error, CleansiaColors.primary] {
             XCTAssertEqual(CleansiaOutlinedButtonColors.content(role), role)

@@ -3,17 +3,25 @@ import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddSavedAddressCommand,
+  BlobFileDto,
   ChangePasswordCommand,
   CustomerClient,
   GetCurrentUserQuery,
   MyProfileDto,
-  UpdateCurrentUserCommand,
   UpdateSavedAddressCommand,
 } from '@cleansia/customer-services';
 import { SavedAddressStore } from '@cleansia/customer-stores';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
+import {
+  AvatarIntent,
+  ProfileDetails,
+  buildAvatarBlobFile,
+  buildUpdateCurrentUserCommand,
+  readFileAsDataUrl,
+  validateAvatarFile,
+} from './profile.models';
 
 @Injectable()
 export class ProfileFacade extends UnsubscribeControlDirective {
@@ -25,6 +33,13 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   user = signal<MyProfileDto | null>(null);
   loading = signal(true);
   saving = signal(false);
+
+  readonly avatarUrl = signal<string | null>(null);
+  readonly avatarSaving = signal(false);
+
+  private avatarFileName: string | null = null;
+  private avatarRetryAvailable = true;
+  private adoptNextAvatarUrl = false;
 
   readonly addresses = this.savedAddressStore.addresses;
   readonly addressesLoading = this.savedAddressStore.loading;
@@ -40,6 +55,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
       .subscribe({
         next: (user) => {
           this.user.set(user);
+          this.applyAvatar(user.profilePhoto);
           this.loading.set(false);
           onSuccess?.(user);
         },
@@ -50,12 +66,14 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   }
 
   saveProfile(
-    cmd: UpdateCurrentUserCommand,
+    details: ProfileDetails,
     onSuccess?: () => void,
   ): void {
     this.saving.set(true);
     this.customerClient.userClient
-      .updateCurrentUser(cmd)
+      .updateCurrentUser(
+        buildUpdateCurrentUserCommand(details, { kind: 'unchanged' }),
+      )
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: () => {
@@ -72,6 +90,116 @@ export class ProfileFacade extends UnsubscribeControlDirective {
           );
         },
       });
+  }
+
+  async uploadAvatar(file: File): Promise<void> {
+    const validation = validateAvatarFile(file);
+    if (!validation.valid) {
+      this.snackbar.showErrorTranslated(validation.errorKey);
+      return;
+    }
+
+    let photo: BlobFileDto;
+    try {
+      photo = buildAvatarBlobFile(file, await readFileAsDataUrl(file));
+    } catch {
+      this.snackbar.showErrorTranslated('pages.profile.avatar.read_failed');
+      return;
+    }
+
+    this.submitAvatarChange(
+      { kind: 'upload', photo },
+      'pages.profile.avatar.upload_success',
+    );
+  }
+
+  removeAvatar(): void {
+    if (!this.user()?.profilePhoto?.fileName) return;
+
+    this.submitAvatarChange(
+      { kind: 'remove' },
+      'pages.profile.avatar.remove_success',
+    );
+  }
+
+  onAvatarLoaded(): void {
+    this.avatarRetryAvailable = true;
+  }
+
+  /**
+   * An `<img>` error carries no status — ORB strips the body, so an expired SAS and a deleted blob
+   * are indistinguishable here. Re-read the profile once for a fresh signature; a second failure
+   * means the blob is gone, so fall back to the initials.
+   */
+  onAvatarLoadFailed(): void {
+    if (!this.avatarRetryAvailable) {
+      this.avatarUrl.set(null);
+      return;
+    }
+
+    this.avatarRetryAvailable = false;
+    this.adoptNextAvatarUrl = true;
+    this.loadProfile();
+  }
+
+  private submitAvatarChange(intent: AvatarIntent, successKey: string): void {
+    const user = this.user();
+    if (!user) return;
+
+    this.avatarSaving.set(true);
+    this.customerClient.userClient
+      .updateCurrentUser(
+        buildUpdateCurrentUserCommand(this.detailsOf(user), intent),
+      )
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null)),
+        finalize(() => this.avatarSaving.set(false)),
+      )
+      .subscribe((response) => {
+        if (!response) return;
+        this.snackbar.showSuccess(this.translate.instant(successKey));
+        this.loadProfile();
+      });
+  }
+
+  private detailsOf(user: MyProfileDto): ProfileDetails {
+    return {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phoneNumber: user.phoneNumber,
+      birthDate: user.birthDate,
+      languageCode: user.preferredLanguageCode,
+    };
+  }
+
+  /**
+   * The signed url is minted per read, so it is not a cache key — the blob name is, and the backend
+   * mints a new one on every replace. Holding the url steady while the name is unchanged keeps the
+   * browser's copy of the image.
+   */
+  private applyAvatar(photo: BlobFileDto | undefined): void {
+    const adopt = this.adoptNextAvatarUrl;
+    this.adoptNextAvatarUrl = false;
+
+    const fileName = photo?.fileName ?? null;
+    const url = photo?.blobUrl ?? null;
+
+    if (!fileName || !url) {
+      this.avatarFileName = null;
+      this.avatarRetryAvailable = true;
+      this.avatarUrl.set(null);
+      return;
+    }
+
+    if (fileName !== this.avatarFileName) {
+      this.avatarRetryAvailable = true;
+      this.avatarUrl.set(url);
+    } else if (adopt) {
+      this.avatarUrl.set(url);
+    }
+
+    this.avatarFileName = fileName;
   }
 
   changePassword(

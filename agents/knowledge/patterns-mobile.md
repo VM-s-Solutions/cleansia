@@ -252,6 +252,19 @@ raw components one-off; never duplicate a `:core` component.
 > the delete-account confirm both consume it; partner `ProfileHubContent`'s hand-rolled copy is the
 > remaining convergence target.
 
+> **A colour-resolver test does not cover the call site (T-0473).** Hoisting a component's colour rules
+> into a pure resolver (`CleansiaOutlinedButtonColors`) makes the *component* assertable and stops
+> there: it proves the button honours whatever colour it is handed, never which colour a screen hands
+> it. Reassigning a role at the call site leaves that suite green — the order-detail footer moved Report
+> issue from `primary` to `error` without a single failure, under a comment that named the old pairing.
+> **So when a screen's styling is a bare argument** (`contentColor:` / `colorScheme.x`), hoist it one
+> level further, into a value type the screen and a test can both name — iOS
+> `OrderDetailFooterStyle` (glyph + tint per action) is the shape. Hoist the **glyph** with the tint
+> whenever two actions share a colour: the icon is then the only differentiator, and nothing else in the
+> repo can see it change. Where the platform has no seam to hoist into (a Compose screen with no test
+> harness), the sanctioned fallback is a source-text assertion scoped to the one block —
+> `NotificationsScreenTogglesTest` / `OrderDetailFooterTintTest`, not a whole-file `contains`.
+
 > **Ink on a theme-INVARIANT surface — the ONE way (T-0451):** a `Color.dynamic` token is right almost
 > everywhere and wrong wherever the surface beneath it refuses to adapt. Both profile-hero avatar discs
 > are a fixed `Color.white` in **both** schemes, so `CleansiaColors.primary` resolved to sky400 on them
@@ -265,6 +278,20 @@ raw components one-off; never duplicate a `:core` component.
 > rule). The generalizable law: **an adaptive foreground over a hardcoded background is a contrast
 > defect until someone measures it** — the same shape as the `onError`-on-`error` collapse above, and
 > neither is visible in the theme the author develops in.
+
+> **A re-rendered SAS-backed image — the ONE way (T-0449):** `AsyncImage` stays right for a URL a
+> screen shows once (order photos, dispute evidence). It is wrong for an image the session re-renders —
+> the avatar — because every blob URL this backend returns is **re-signed per fetch**, so a URL-keyed
+> cache (`AsyncImage`'s, `URLCache`'s, Kingfisher's default) misses every time and re-downloads the same
+> face. Core owns the pair: **`RemoteImageCache`** (`Media/`) keyed on the caller's key with the URL as
+> the fetch target only, and **`CachedRemoteImage`** (`Components/`) rendering it with a placeholder.
+> Three rules the seam encodes: the key is the **content-addressed `fileName`** the backend re-mints on
+> every upload (never the URL, never a per-user id); the holder is **per-user state** and `register`s
+> with the `SessionScopedCacheRegistry` (S11); and the loader runs on an **`.ephemeral`** `URLSession`
+> so neither the bytes nor the credential-bearing URL that keyed them land in an on-disk `URLCache`. On
+> a load failure **re-fetch the owning DTO once, guarded per key** — an image view cannot tell an
+> expired signature (403) from a deleted blob (404), so branching on the status is not implementable;
+> the second failure falls through to the placeholder instead of looping.
 
 > **iOS snackbar pill — the ONE way (T-0432):** `SnackbarPill`/`SnackbarPalette` in
 > `Core/Snackbar/GlobalSnackbarHost.swift` render on a **theme-adaptive** `CleansiaColors.surface` pill
@@ -306,6 +333,39 @@ All user text in `res/values/strings.xml`, accessed via `stringResource(R.string
 `appContext.getString` in the VM), domain-prefixed (`order_`, `auth_`, `error_`). Loading/Error/Loaded
 handled by the sealed `*UiState`; empty states use `MascotEmptyState`; transient errors go to the
 snackbar (not the main state); submit errors use `ActionState.Error`.
+
+## Picking an image, and rendering one that lives behind a SAS (T-0448)
+
+Three rules, each of which was a bug before it was a rule.
+
+**Picking.** An **image-only** pick uses `ActivityResultContracts.PickVisualMedia` +
+`PickVisualMediaRequest(…ImageOnly)` (customer `EditProfileScreen.kt`). It grants per-item access to
+exactly what the user chose, so **it needs no runtime permission on any API level from 26 up** — there
+is no `READ_MEDIA_IMAGES`, no rationale dialog, and no denial branch to write, because androidx falls
+back through the Play-services picker to `ACTION_OPEN_DOCUMENT`, which is equally permission-free. A
+**mixed-content** pick (documents, dispute evidence — PDFs arrive too) keeps
+`GetContent`/`GetMultipleContents` + the `isImageMimeType` split. `PhotosSection.kt` is an image-only
+`GetContent` predating this and is not a counter-example. The one failure the picker still has is
+`launch()` **throwing** on a device with neither a picker nor a document provider — wrap it and show a
+translated message; an uncaught throw takes the screen down.
+
+**Compressing.** Every upload path goes through the `:core` `ImageCompressor.compressToBase64` —
+never a second read/encode. It is what strips EXIF/GPS (by re-encode, not by erasure) and bounds the
+payload; the VM owns the call so the outcome is JVM-testable with `mockkObject(ImageCompressor)`
+(`OrderPhotosViewModelTest`, `ProfileViewModelTest`).
+
+**Rendering a SAS-backed image.** The `blobUrl` on a `BlobFileDto` is a **one-hour read credential
+minted fresh on every fetch**, so it is a fetch target and nothing else: key Coil's cache on the
+**`fileName`** (content-addressed — the backend re-mints the GUID on replace), never on the URL, or
+every read is a cache miss pinning a URL that dies within the hour. Never persist the URL, and never
+raise OkHttp logging to `Level.BODY` while debugging one (`HEADERS` debug / `NONE` release, both apps)
+— that writes the whole signed URL into logcat. For a **personal** image (the avatar), also
+`diskCachePolicy(CachePolicy.DISABLED)`: memory-only removes the "when do we evict the previous user's
+face from disk" question rather than answering it, at the cost of one small refetch per cold start.
+**On a load error there is nothing to branch on** — an expired SAS is 403 and a deleted blob is 404,
+and the loader surfaces neither, so the only implementable rule is **refetch the profile once, guarded
+by the `fileName` already retried**, with the composable falling back to its placeholder meanwhile so
+a genuinely deleted blob cannot loop.
 
 ---
 

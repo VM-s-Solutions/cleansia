@@ -5,6 +5,36 @@ permanent record so a settled decision is never re-litigated.
 
 ---
 
+### Q-I18N-02 — Shorter `ru`/`uk` wording for the profile "Edit profile" chip
+- Raised by: pm (T-0450, from T-0442's implementation + review) · Answered: **2026-08-01**
+- Was: `blocking: yes`, `pre-prod`, on the pre-prod blocking index. It was the **last** `blocking: yes`
+  entry in `open.md`, and the single item gating the remaining mobile legs of the avatar feature.
+- Question: `profile_row_edit` is `"Edit profile"` (en) / `"Редактировать профиль"` (ru) /
+  `"Редагувати профіль"` (uk). The `ru` string measures ~216.8dp against en's ~120.2dp and does not fit
+  a chip capped at `0.45 × width` (`ProfileTab.kt:248`, applied `:269`), so it renders **"Редактиров…"**.
+  What is the correct shorter `ru`/`uk` wording, and should the chip diverge from the screen title?
+- **Answer (owner), verbatim:**
+  > *"the ios and android apps have 'Edit profile'. And when translated then it's a long one. I want
+  > just to keep 'Edit'/'Редактировать' and truncate it if it doesn't fit by the whole length."*
+- **Decision, stated as two separate rulings so neither is lost:**
+  1. **Wording — the verb alone.** `Edit` / `Редактировать`, and the equivalent verb in `cs`, `sk`, `uk`.
+     The noun is dropped. The four non-English forms are the **leading verb already present in the
+     shipped long string** (`Редагувати`, `Upravit`, `Upraviť`) — a derivation, not a new translation,
+     which is what keeps the native-speaker requirement satisfied.
+  2. **Overflow — truncate.** Not wrap to a second line, not shrink the type. This matters because
+     `Редактировать` is 13 characters against `Edit`'s 4, so the truncation path is live, not theoretical.
+- **Deliberately NOT decided by this answer** (recorded so no one infers it): **Q-BRAND-01** (Poppins
+  covers 0/98 Cyrillic — a shorter Russian string still falls back to a system face) stays open and is
+  now carried by **T-0472**; the **truncation mode** and the **accessibility label under truncation** are
+  implementation questions written as T-0450 **AC4/AC5**; the **chip-vs-screen-title** half of the original
+  question carries a stated PM default in T-0450 **AC6** rather than an inference.
+- **Locked in:** `tickets/T-0450-…md` rewritten to half (A) only — `ready`, size `S`, panel discharged
+  (an owner decision outranks the analyst panel that existed to produce one). **T-0472** created for the
+  Poppins half. **T-0448** and **T-0449** keep T-0450 as their sole remaining dependency and clear when
+  it lands (shared-file lanes, not logic). **RESOLVED.**
+
+---
+
 ### Q-W5-1 — Plus-membership free-cancellation-window direction
 - Raised by: pm (T-0242 / carried T-0211 TC-7 finding) · Answered: 2026-06-14
 - Question: `BookingPolicy.CalculateCancellationFeeRate` treated `freeCancellationHoursOverride` so that a

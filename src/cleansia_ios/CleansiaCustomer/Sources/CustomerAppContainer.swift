@@ -93,6 +93,7 @@ final class CustomerAppContainer: AppContainer {
     let savedAddressRepository: SavedAddressRepository
 
     let userProfileRepository: UserProfileRepository
+    let avatarCache = RemoteImageCache()
     let devicesClient: CustomerDevicesClient
     let notificationFeedClient: NotificationFeedClient
     let notificationBadge: NotificationBadgeModel
@@ -161,6 +162,7 @@ final class CustomerAppContainer: AppContainer {
         sessionScopedCaches.register(disputeRepository)
         sessionScopedCaches.register(savedAddressRepository)
         sessionScopedCaches.register(userProfileRepository)
+        sessionScopedCaches.register(avatarCache)
         sessionScopedCaches.register(notificationBadge)
         sessionScopedCaches.register(pushTokenRegistrar)
         authStack.spine.setPreLogout { [pushTokenRegistrar] in

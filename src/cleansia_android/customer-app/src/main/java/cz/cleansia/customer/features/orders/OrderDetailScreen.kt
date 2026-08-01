@@ -508,6 +508,15 @@ private fun ActionsFooter(
                 Spacer(Modifier.height(8.dp))
             }
 
+            // Error-tinted by owner decision although reporting destroys nothing.
+            // It borrows the error PALETTE, deliberately not
+            // CleansiaDestructiveButton: that component fills a fixed red
+            // container, which on a completed order would out-shout the filled
+            // primary "Book again" above it — the exact rank inversion its own
+            // doc was written to prevent — and iOS has no filled sibling to match
+            // it with. Staying outlined also keeps the red confined to a 1dp
+            // stroke plus the glyph and label, so red-300 in dark mode never
+            // paints an area.
             if (showReportIssue) {
                 OutlinedButton(
                     onClick = onReportIssue,
@@ -517,10 +526,10 @@ private fun ActionsFooter(
                     shape = CircleShape,
                     border = BorderStroke(
                         1.dp,
-                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.error,
                     ),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.error,
                     ),
                 ) {
                     Icon(

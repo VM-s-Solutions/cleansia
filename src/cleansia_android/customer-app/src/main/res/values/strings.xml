@@ -718,6 +718,7 @@
     <string name="booking_pay_cash">Cash</string>
     <string name="booking_pay_cash_desc">Pay on delivery</string>
     <string name="booking_special_instructions_hint">Any special requests? (optional)</string>
+    <string name="booking_access_instructions_hint">How do we get in? (optional)</string>
 
     <string name="booking_success_title">Booking confirmed!</string>
     <string name="booking_success_subtitle">Your cleaning is booked. Sit back and relax.</string>

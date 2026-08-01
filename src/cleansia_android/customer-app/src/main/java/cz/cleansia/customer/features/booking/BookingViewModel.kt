@@ -289,6 +289,19 @@ class BookingViewModel @Inject constructor(
     }
 
     /**
+     * Clamps to the backend's own limit at the keystroke, so an over-long note
+     * is stopped while the user is still typing rather than coming back as a
+     * `CreateOrder` MaximumLength rejection at submit. `take` counts UTF-16
+     * code units, exactly as .NET `string.Length` does, so the client cap can
+     * never be more permissive than the server's.
+     */
+    fun updateAccessInstructions(text: String) {
+        _state.value = _state.value.copy(
+            accessInstructions = text.take(ACCESS_INSTRUCTIONS_MAX_LENGTH),
+        )
+    }
+
+    /**
      * Calls /Quote then /Create. Returns an outcome the sheet uses to decide
      * navigation: Success → confirmation screen; ProfileIncomplete → deep-link
      * to Edit Profile with a helpful snackbar; Failed → stay put (snackbar fired).
@@ -453,6 +466,7 @@ class BookingViewModel @Inject constructor(
                 // so a user who taps in and out leaves whitespace behind —
                 // normalise to null rather than persisting an empty note.
                 specialInstructions = s.specialInstructions.trim().ifBlank { null },
+                accessInstructions = s.accessInstructions.trim().ifBlank { null },
             )
 
             val createResp = try {
@@ -557,4 +571,9 @@ class BookingViewModel @Inject constructor(
         bathrooms = bathrooms,
         cleaningInstant = selectedInstant,
     )
+
+    companion object {
+        /** Mirrors `CreateOrder`'s `RuleFor(x => x.AccessInstructions).MaximumLength(2000)`. */
+        const val ACCESS_INSTRUCTIONS_MAX_LENGTH = 2000
+    }
 }

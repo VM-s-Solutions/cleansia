@@ -168,6 +168,18 @@ class OrderRepository @Inject constructor(
 other throwable. API services are provided per feature via a Hilt `@Module @InstallIn(SingletonComponent::class) object`
 using `@AuthRetrofit` (main) vs `@NoAuthRetrofit` (refresh-only) qualifiers.
 
+> **Testing the request side of an Api adapter: assert the GENERATED command, not the app one (T-0441).**
+> Adding a field to a request means editing two DTOs and one `toWire()` mapper. **Every field on an
+> OpenAPI-generated command is optional with a `= null` default**, so forgetting the mapper line is
+> invisible to the compiler *and* to a ViewModel test that mocks the adapter — the app DTO carries the
+> value, the wire does not, and the suite stays green. This shipped as a review finding: deleting the
+> `accessInstructions = accessInstructions` line from `BookingApi.toWire()` left the booking suite
+> **24/24 green and compiling**. So when an adapter maps app→generated, one test mocks the **generated**
+> client (`mockk<OrderApi>()`), calls the adapter, and asserts the captured **generated** command —
+> `BookingApiTest` is the model; `UserRepositoryTest` shows the same generated-client mocking. Mutate it
+> by deleting a mapper line: if nothing goes red, the test is one hop short. iOS mirrors this — its
+> generated models have the same all-optional shape.
+
 **Joining the `SessionScopedCache` multibinding (three non-obvious rules).** ANY `@Singleton` holding
 per-user state — a cached `StateFlow`, a persistent DataStore, OR a bare freshness watermark — is a
 member and must `clear()` on sign-out; leaving one out leaks the prior user's data to the next account

@@ -50,6 +50,10 @@ data class BookingState(
     // Step 3 — Confirm
     val paymentMethod: String = "", // "card" or "cash"
     val specialInstructions: String = "",
+    // How the cleaner gets in ("side gate, key box 4417"). Capped on input at
+    // BookingViewModel.ACCESS_INSTRUCTIONS_MAX_LENGTH to match the backend
+    // validator, so this never holds a value CreateOrder would reject.
+    val accessInstructions: String = "",
     // Loyalty Phase B — raw user input. Trimmed + uppercased before validation.
     // Empty string = no promo intent. Validity tracked separately on the VM as
     // PromoCodeUiState; the wire payload only sends this when state is Valid.

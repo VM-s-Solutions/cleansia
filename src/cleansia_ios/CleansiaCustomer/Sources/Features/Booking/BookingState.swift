@@ -23,6 +23,7 @@ struct BookingState: Equatable {
 
     var paymentMethod: PaymentMethod?
     var specialInstructions: String = ""
+    var accessInstructions: String = ""
     var promoCode: String = ""
     var referralCode: String = ""
 

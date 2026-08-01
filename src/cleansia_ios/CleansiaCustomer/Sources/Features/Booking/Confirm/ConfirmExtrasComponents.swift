@@ -1,13 +1,14 @@
 import CleansiaCore
 import SwiftUI
 
-struct SpecialInstructionsField: View {
+struct InstructionsField: View {
+    let hint: String
     @Binding var text: String
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             if text.isEmpty {
-                Text(L10n.Booking.specialInstructionsHint)
+                Text(hint)
                     .font(CleansiaTypography.bodyLarge)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
                     .padding(.horizontal, Spacing.s + 4)

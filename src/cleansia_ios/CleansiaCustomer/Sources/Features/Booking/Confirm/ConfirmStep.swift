@@ -71,6 +71,7 @@ struct ConfirmStep: View {
                 promoRow
                 paymentSection
                 specialInstructionsSection
+                accessInstructionsSection
                 PreferredCleanerPicker(
                     viewModel: extras,
                     selectedId: viewModel.state.preferredEmployeeId,
@@ -172,16 +173,23 @@ struct ConfirmStep: View {
     }
 
     private var specialInstructionsSection: some View {
-        SpecialInstructionsField(text: Binding(
-            get: { viewModel.state.specialInstructions },
-            set: { value in
-                viewModel.update { current in
-                    var next = current
-                    next.specialInstructions = value
-                    return next
-                }
-            }
-        ))
+        InstructionsField(
+            hint: L10n.Booking.specialInstructionsHint,
+            text: Binding(
+                get: { viewModel.state.specialInstructions },
+                set: viewModel.setSpecialInstructions
+            )
+        )
+    }
+
+    private var accessInstructionsSection: some View {
+        InstructionsField(
+            hint: L10n.Booking.accessInstructionsHint,
+            text: Binding(
+                get: { viewModel.state.accessInstructions },
+                set: viewModel.setAccessInstructions
+            )
+        )
     }
 
     private func setPreferredCleaner(_ id: String?) {

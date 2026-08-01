@@ -192,10 +192,156 @@ the `onError`-on-`error` contrast trap it records are directly relevant.
   id.** It is named in the ADR (`0032-…md:472`) and in `catalog-governance.md:111` as the ticket that
   discharges `(gate pending:)`, but no ticket file exists. **Not filed here** — the owner asked for two
   new tickets and this is not one of them; file it deliberately, not as a side effect.
+- 2026-08-01 — **implemented on both platforms in one change** (`fix/T-0473-report-issue-red`, targeting
+  PR #184). Ruling: **the colour, not the component** — treatment 3, `error` on the existing outlined
+  shape, both platforms. Full reasoning + the AC2/AC3/AC4/AC5 verdicts in `## Review`.
+  **Verified:** Android `:customer-app` compile + `testDebugUnitTest` `--rerun-tasks --no-build-cache`
+  → **326 tests, 0 failures**; iOS on the **16.4 floor** — `CleansiaCore` **519 pass**, `CleansiaCustomer`
+  **701 pass**, `CleansiaPartner` pass; SwiftFormat 0.60.1 `--lint` **0/662 need formatting**, SwiftLint
+  0.65.0 `--strict` **0 violations in 515 files**. Both new assertions **mutation-proved** (revert the
+  token → 3 iOS / 3 Android tests fail; collapse the glyph → the AC3 test fails; swap the label key →
+  the AC6 test fails).
+  **Outstanding:** the AC1/AC2/AC3 **screenshots** are not discharged — they need a signed-in DEV session
+  with an order in Confirmed and one in Completed-with-Plus. The dark-mode rank claim is backed by
+  measured luminance/contrast instead; see `## Review` AC2.
 - 2026-08-01 — **stays `draft` on the panel** (DoR item 2 — AC1's ruling is the ticket's core content and
   cannot be pre-written by the PM). `depends_on: []`; nothing sequences ahead of it; dispatchable today
   with the panel as step 1. Sized **S**: two call sites, one comment repair, one ruling.
 
 ## Review
-<!-- panel ruling (AC1) · dark-mode verdict (AC2) · the stated differentiator (AC3) · the test-comment
-     repair + the call-site-assertion decision (AC4) · the enforcer read (AC5) go here -->
+
+### AC1 — the ruling: **the colour, not the component. Treatment 3, on both platforms.**
+
+"Report an issue" now renders `error` on the **existing outlined shape** — `contentColor` + border on
+both platforms, exactly the pair Cancel already uses. It borrows the destructive **palette**; it does
+**not** adopt either danger component.
+
+**Why not treatment 1 (iOS `CleansiaDangerButton`) — three independent reasons, any one sufficient:**
+
+1. **It is a semantic claim, not a style.** `CleansiaButton.swift:182` is `Button(role: .destructive)`.
+   That role is surfaced by the platform — VoiceOver and every system-rendered context read it as
+   "this destroys data". "Report an issue" pushes a complaint form. Adopting the component would put a
+   false promise in the accessibility tree in order to settle a colour question.
+2. **Its Android counterpart is a different button.** iOS's is a *tinted surface*; Android's is a
+   *filled fixed-red container*. "Adopt the danger component on each platform" produces two visibly
+   different buttons — an ADR-0018 divergence **created while closing a parity complaint**.
+3. **It grows the very baseline FT-5 needs at zero.** Adding a non-destructive consumer to
+   `CleansiaDangerButton` widens what the destructive law means, which is the opposite of what
+   `catalog-governance.md:111` is waiting for.
+
+**Why not treatment 2 (Android `CleansiaDestructiveButton`):** all of the above, plus it is **filled**.
+On a Completed order the footer already carries a filled primary "Book again". A filled red button at
+the bottom of that stack out-shouts it — the exact rank inversion `CleansiaButton.kt:80-99` was written
+to prevent, arriving through the front door instead of through dark mode.
+
+**What we did adopt from treatment 3, and what we did not.** The token is Cancel's; the shape is
+Cancel's. The differentiator is AC3, below — and it is thinner than it should be. See the note to
+`Q-DESIGN-01` at the end.
+
+### AC2 — dark mode: Report issue does **not** out-rank Book again. Measured, not eyeballed.
+
+Both platforms resolve `error` to the same pair (**#B91C1C** light / **#FCA5A5** dark) and `surface` to
+the same pair (white / **#1E293B**), so one set of numbers covers both:
+
+| | contrast on the footer surface |
+|---|---|
+| light — `error` #B91C1C on white | **6.47:1** (WCAG AA normal text) |
+| dark — `error` #FCA5A5 on slate-800 | **7.71:1** |
+| dark — `primary` #38BDF8 on slate-800 (the Make recurring row) | 6.83:1 |
+
+The `CleansiaButton.kt:80-99` trap is **real and does not fire here**, and the distinction is the whole
+point: red-300's relative luminance (**0.5032**) genuinely *is* higher than Sky400's (**0.4401**), so a
+red-300 **container** would out-luminance the primary. This change paints a **1dp stroke plus the glyph
+and label**. The button's area stays slate-800 (0.0218) while "Book again" fills its entire 48dp pill
+with Sky400. The filled primary keeps roughly two orders of magnitude more coloured area. **Verdict:
+Report issue reads as the lowest-rank action in the stack in both schemes.**
+
+⚠️ **Not verified: device screenshots.** Reproducing the footer needs a signed-in session against DEV
+with an order parked in Confirmed and another in Completed-with-Plus. The rank claim above is a
+luminance/contrast computation, which is *stronger* evidence for the specific question AC2 asks than a
+screenshot would be — but the AC asks for screenshots and this does not discharge them. **Owner or QA
+still owes the four shots** (Confirmed + Completed, light + dark, per platform).
+
+### AC3 — the differentiator: **the glyphs, plus fixed order.** Stated honestly as the weak leg.
+
+The adjacency is narrower than it first looks, and this is load-bearing. From
+`OrderStatusMapping.swift:42-58` / `OrderDetailScreen.kt:227-247`, exactly **one** status renders both:
+
+| status | footer |
+|---|---|
+| New / Pending | Cancel only |
+| **Confirmed** | **Cancel + Report issue** — the AC3 case, and there is **no primary CTA on screen** |
+| OnTheWay / InProgress | Report issue only |
+| Completed | Book again (+ Make recurring w/ Plus) + Report issue — the AC2 case, **no Cancel** |
+| Cancelled | no footer |
+
+So AC2's and AC3's worry states are **mutually exclusive**. On Confirmed the differentiator is
+`xmark.circle` vs `exclamationmark.triangle` (iOS) / `Icons.Outlined.Cancel` vs
+`Icons.Outlined.ReportProblem` (Android), plus a fixed order (Cancel always above), plus Cancel being
+the only one that ever renders disabled.
+
+**This is accepted, and it is thin.** Two same-coloured, same-shaped, same-sized pills separated by an
+8dp spacer and a 18dp glyph is a real weakening. It was accepted rather than fixed because every fix
+available inside this ticket is worse: matching-but-different reds means a new token (Architect call);
+de-bordering Report changes its hit target and its rank in a way the owner did not ask for; reordering
+breaks Android parity. **The right fix is the inverse of this ticket** — if reporting is red, then
+*destructive* needs a rank **above** reporting, and in the outlined tier it currently has none. That is
+`Q-DESIGN-01` input, not a silent iOS-only change.
+
+Because the glyphs are now the entire differentiator, **they are pinned by test on both platforms** —
+collapsing them onto one symbol was previously invisible to every check in the repo.
+
+### AC4 — the stale comment, and yes, a call-site assertion was warranted
+
+`OutlinedButtonColorsTests.swift:61-70` had its preamble rewritten. Its **body is unchanged and still
+correct**: the footer still tints with exactly two role colours, so the `[error, primary]` loop holds.
+What was false was the enumeration of *which action* got *which role*. The new comment states the
+limitation outright — it asserts the resolver, cannot see the assignment, and *"survived Report issue
+moving off `primary` onto `error` without a word"* — and points at where the assignment is pinned.
+
+**A call-site assertion was warranted, and both platforms now have one:**
+
+- **iOS** — glyph + tint hoisted into `OrderDetailFooterStyle` (`OrderDetailView.swift`), asserted by
+  the new `CleansiaCustomer/Tests/OrderDetailFooterStyleTests.swift`. Same hoist-the-decision-out-of-
+  the-view move `CleansiaOutlinedButtonColors` already made inside Core, applied one level up.
+- **Android** — `ActionsFooter` is one `@Composable` with no seam and the module has no Compose test
+  harness, so `OrderDetailFooterTintTest` reads the source and brace-extracts each `if (show…) {`
+  block. Literal, but it is the repo's own established idiom for this exact situation
+  (`NotificationsScreenTogglesTest.kt:17-21`), and it is precise: a token named elsewhere in the footer
+  cannot satisfy it.
+
+### AC5 — enforcer read: **no new violation, on either platform, either way**
+
+- **iOS consumes a Core component**: `CleansiaOutlinedButton`, with `contentColor`/`borderColor` — the
+  parameters Core added for precisely this. `CleansiaDangerButton`'s consumer set is **unchanged**, so
+  the `catalog-governance.md:111` baseline does not grow and FT-5 is no further from zero.
+- **Android hand-rolls a raw `OutlinedButton`** — as it already did for this button, for Cancel and for
+  Make recurring, because `core`'s `CleansiaOutlinedButton` takes no content colour. **Pre-existing, not
+  introduced here.** The diff carries the required in-source statement that this is a **reporting**
+  affordance borrowing the palette and **not** a claim on the destructive law.
+- `ProfileHubContent.swift:298-320` (`LogoutRow`) — **untouched**, per the PM's scope ruling.
+
+### AC6 — strings untouched
+
+Zero i18n churn on either platform. `order_action_report_issue` and `.xcstrings` are unchanged, and the
+Android test pins the label key so a colour change cannot quietly become a relabel.
+
+**Recorded, not fixed (out of scope, as instructed):** `values/strings.xml:283`
+`order_detail_report_issue` still has no code reference — `OrderDetailScreen.kt` uses
+`order_action_report_issue`. Confirmed orphan; left alone.
+
+### Harvested back
+
+`patterns-mobile.md` gains a short clarification under the destructive-affordance entry: **a component
+colour-resolver test does not cover the call site's choice of colour**, and a screen whose styling is
+plain arguments should hoist them into a value type that a test can name. That is a testability
+clarification, not a redefinition of the destructive law — **the "what does red mean now" question is
+deliberately left to `Q-DESIGN-01` / the Architect.**
+
+### Evidence for `Q-DESIGN-01`
+
+This ticket's honest finding: the design system now has **two sanctioned meanings for `error`** on the
+customer order detail — *destructive* (Cancel) and *reporting* (Report issue) — distinguished by
+nothing but an icon, on the one screen that shows both. Red is no longer sufficient to tell a user what
+a button will do. The catalog should either name reporting as an explicit exception **or** give
+destructive a rank above it in the outlined tier. It cannot keep saying red means destructive.

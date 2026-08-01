@@ -252,6 +252,19 @@ raw components one-off; never duplicate a `:core` component.
 > the delete-account confirm both consume it; partner `ProfileHubContent`'s hand-rolled copy is the
 > remaining convergence target.
 
+> **A colour-resolver test does not cover the call site (T-0473).** Hoisting a component's colour rules
+> into a pure resolver (`CleansiaOutlinedButtonColors`) makes the *component* assertable and stops
+> there: it proves the button honours whatever colour it is handed, never which colour a screen hands
+> it. Reassigning a role at the call site leaves that suite green — the order-detail footer moved Report
+> issue from `primary` to `error` without a single failure, under a comment that named the old pairing.
+> **So when a screen's styling is a bare argument** (`contentColor:` / `colorScheme.x`), hoist it one
+> level further, into a value type the screen and a test can both name — iOS
+> `OrderDetailFooterStyle` (glyph + tint per action) is the shape. Hoist the **glyph** with the tint
+> whenever two actions share a colour: the icon is then the only differentiator, and nothing else in the
+> repo can see it change. Where the platform has no seam to hoist into (a Compose screen with no test
+> harness), the sanctioned fallback is a source-text assertion scoped to the one block —
+> `NotificationsScreenTogglesTest` / `OrderDetailFooterTintTest`, not a whole-file `contains`.
+
 > **Ink on a theme-INVARIANT surface — the ONE way (T-0451):** a `Color.dynamic` token is right almost
 > everywhere and wrong wherever the surface beneath it refuses to adapt. Both profile-hero avatar discs
 > are a fixed `Color.white` in **both** schemes, so `CleansiaColors.primary` resolved to sky400 on them

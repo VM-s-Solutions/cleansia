@@ -256,6 +256,32 @@ enum OrderDetailFooterActions {
     }
 }
 
+/// Glyph + tint for the footer's three outlined actions, hoisted out of the view
+/// because both are plain arguments there and so invisible to every check
+/// available without a snapshot harness — `OutlinedButtonColorsTests` proves the
+/// component honours whatever colour it is handed, never which colour this
+/// screen hands it.
+///
+/// Report issue is error-tinted by owner decision although it destroys nothing.
+/// It borrows the destructive *palette*, deliberately not the destructive
+/// *component*: `CleansiaDangerButton` is a `Button(role: .destructive)`, and
+/// claiming that role for a form that files a complaint would put a false
+/// promise in the accessibility tree to settle a colour question. It also stays
+/// outlined rather than filled so it cannot out-rank the primary Book again CTA
+/// above it on a completed order.
+///
+/// Cancel carries the same tint, and Confirmed is the one status that offers
+/// both, so on that screen the glyphs are the entire differentiator between
+/// cancelling a booking and filing a complaint.
+struct OrderDetailFooterStyle {
+    let icon: String
+    let tint: Color
+
+    static let makeRecurring = Self(icon: "calendar", tint: CleansiaColors.primary)
+    static let cancel = Self(icon: "xmark.circle", tint: CleansiaColors.error)
+    static let reportIssue = Self(icon: "exclamationmark.triangle", tint: CleansiaColors.error)
+}
+
 /// The order-detail footer (`ActionsFooter`, `OrderDetailScreen.kt:393-500`).
 /// Several actions overlap on one status, so they are stacked in Android's order
 /// rather than each owning its own footer: Book again (primary) on top, then
@@ -283,16 +309,16 @@ private struct OrderDetailActionsFooter: View {
             if showMakeRecurring {
                 CleansiaOutlinedButton(
                     L10n.OrderDetail.actionMakeRecurring,
-                    leadingIcon: "calendar",
-                    contentColor: CleansiaColors.primary,
+                    leadingIcon: OrderDetailFooterStyle.makeRecurring.icon,
+                    contentColor: OrderDetailFooterStyle.makeRecurring.tint,
                     action: onMakeRecurring
                 )
             }
             if showCancel {
                 CleansiaOutlinedButton(
                     L10n.OrderDetail.actionCancel,
-                    leadingIcon: "xmark.circle",
-                    contentColor: CleansiaColors.error,
+                    leadingIcon: OrderDetailFooterStyle.cancel.icon,
+                    contentColor: OrderDetailFooterStyle.cancel.tint,
                     enabled: cancelEnabled,
                     action: onCancel
                 )
@@ -300,8 +326,8 @@ private struct OrderDetailActionsFooter: View {
             if showReportIssue {
                 CleansiaOutlinedButton(
                     L10n.OrderDetail.actionReportIssue,
-                    leadingIcon: "exclamationmark.triangle",
-                    contentColor: CleansiaColors.primary,
+                    leadingIcon: OrderDetailFooterStyle.reportIssue.icon,
+                    contentColor: OrderDetailFooterStyle.reportIssue.tint,
                     action: onReportIssue
                 )
             }

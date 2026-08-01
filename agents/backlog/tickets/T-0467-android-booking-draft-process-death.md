@@ -5,7 +5,7 @@ status: draft
 size: M
 owner: analyst
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 depends_on: [T-0441]
 blocks: []
 stories: [US-customer-access-instructions]
@@ -114,6 +114,16 @@ _(PM floor; the panel finalizes)_
 ## Status log
 - 2026-07-30 — draft (created by pm from the T-0441 review). **PM-verified:** no `SavedStateHandle` in any `customer-app` source file (all hits are `build/generated/**`), and `reset()` at `BookingBottomSheet.kt:241`/`:301`/`:583`.
 - 2026-07-30 — **not `ready`**: awaiting the analyst panel (DoR item 2 — this is a product behaviour change, and the current behaviour is deliberate).
+- 2026-08-01 — **T-0441's code is on `master`** (`1d85b35f`, PR #178), so the field this ticket's
+  security constraint is about — `accessInstructions`, which can hold a **key-box or alarm code** — is
+  now shipped and being typed into by real users on DEV. **`depends_on: [T-0441]` is formally
+  unsatisfied** (T-0441 is `qa` on an owed screenshot) **but discharged in substance**: a screenshot
+  does not change what the ViewModel persists. **Stays `draft` on the analyst panel**, which is DoR
+  item 2 and not a dependency; it can be dispatched now.
+  **The S11 constraint written into this ticket up front is now live, not anticipatory** — if the panel
+  rules that drafts should survive process death, the persisted blob contains a door code, so
+  "never unencrypted at rest, cleared on sign-out via `SessionScopedCache`" is a hard requirement of
+  the ruling and not a nice-to-have bolted on afterwards.
 
 ## Review
 <!-- analyst / reviewer / security verdicts here -->

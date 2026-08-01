@@ -5,7 +5,7 @@ status: blocked
 size: M
 owner: ios
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 depends_on: [T-0446, T-0440, T-0451, T-0450]
 blocks: []
 stories: [US-user-avatar]
@@ -117,6 +117,31 @@ Related, and also not a defect: the **ru/uk two-line placeholder** on iOS. Wheth
 - 2026-07-30 — **security conditions attached** from the T-0446 gate (APPROVE-WITH-CONDITIONS). See
   the block below; they are binding on this ticket and its reviewer. Source:
   `agents/backlog/security/user-profile-avatar.md`. Still `blocked` — dependencies unchanged.
+- 2026-08-01 — **RE-CHECKED against the merged tree; STAYS `blocked`, but the blocker has shrunk to
+  ONE item.** Each dependency taken separately, PM-verified on `master` at `1c8fdd00`:
+
+  | `depends_on` | State | Effect on this ticket |
+  |---|---|---|
+  | **T-0446** | **`done`** — merged `a63b776e` (#176) | cleared |
+  | *the owner's `mobile-spec-redump`* | **DONE, shipped inside `a63b776e`.** `src/cleansia_ios/openapi/README.md` §"Source of truth" is explicit that **iOS and Android read the SAME two committed specs** under `src/cleansia_android/openapi/`; both now carry `blobUrl`. Generating the Swift client is `./scripts/generate-api-clients.sh` — **offline codegen, agent-authorised, NOT the owner-only NSwag step** (see the RETRACTION on T-0440 before re-deriving a false blocker here) | cleared |
+  | **T-0440** | **`qa`, code MERGED** `a10e1f88` (#179) | **cleared in substance.** The dependency was the `Localizable.xcstrings` lane head plus the field; both are on `master`. T-0440 still owes an **AC1 screenshot** + the Gate 8.5 render leg — neither gates a code lane. Do not wait for them |
+  | **T-0451** | **`done`** — merged `1c8fdd00` (#180) | cleared. `ProfileTab.swift` lane head released |
+  | **T-0450** | **`draft`** — blocked on **Q-I18N-02**, an unanswered `blocking: yes` owner question | **THE ONLY REMAINING BLOCKER** |
+
+  **So: `blocked` on T-0450 alone, and T-0450 is blocked on the owner.** Lane unchanged:
+  **T-0451 ✅ → T-0450 → T-0449** on `ProfileTab.swift`, and **T-0440 ✅ → T-0450 → T-0449** on
+  `Localizable.xcstrings`.
+- 2026-08-01 — **two carry-forwards from T-0451 and T-0440, both "do not undo this later":**
+  - **T-0451's fix must survive.** It pinned the initials ink to a **fixed-white-surface** token
+    (`CleansiaColors.onFixedWhite`) because the disc is `Color.white` in both themes. When an image is
+    present this ticket may drop the initials — **keep the initials path as the no-photo fallback and
+    keep the pinned token in it.** `AvatarDiscBindingTests` binds **both** apps' disc fill *and* ink to
+    the Core token by brace-matching outward from `Text(initials)`; a restructure that moves that block
+    will go red, and that is the guard working, not a flake.
+  - **Do NOT carry the "hint no longer than its sibling" constraint into this ticket.** The T-0440
+    reviewer **refuted** it for iOS (Android's float label ellipsizes; iOS's hint is plain wrapping
+    text with no line limit in a container with ample headroom). PM-verified 2026-08-01: this ticket
+    does not carry it today — this note is prevention, not removal.
 
 ## Security conditions — BINDING (from the T-0446 gate, 2026-07-30)
 

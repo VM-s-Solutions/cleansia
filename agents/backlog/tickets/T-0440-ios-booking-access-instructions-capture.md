@@ -6,6 +6,7 @@ size: S
 owner: qa
 created: 2026-07-30
 updated: 2026-08-01
+merged: a10e1f88            # PR #179 — code is on master; the TICKET is not done (AC1 + Gate 8.5 render owed)
 depends_on: []
 blocks: [T-0450, T-0449, T-0469]
 stories: [US-customer-access-instructions]
@@ -98,6 +99,13 @@ appear not to exist. This is a local build artifact, not the owner-only NSwag st
 - 2026-07-30 — ~~**`manual_steps: [ios-client-regen]` ADDED.**~~ **RETRACTED the same day — the
   blocker was false. See the correction block below. `manual_steps` is back to `[]` and this ticket is
   NOT owner-gated.**
+- 2026-08-01 — reviewer **APPROVED** → `qa` (verdict in `## Review`).
+- 2026-08-01 — **MERGED to `master` as `a10e1f88` (PR #179). Status stays `qa` — NOT `done`.** The
+  lifecycle does not permit `done` with an owed AC; the reasoning, the text it rests on, and the list
+  of what is owed are in the 🟡 block below. `merged:` is recorded in the frontmatter so the two facts
+  (code shipped / ticket open) cannot be confused for each other.
+- 2026-08-01 — **provenance warning retired.** `c23b26e7` is no longer branch-only: `d6969fef` (#177)
+  put the verdict on `master` and `a10e1f88` put the code there. PM-verified: `master` at `1c8fdd00`.
 
 ## ❌ RETRACTED 2026-07-30 — the `ios-client-regen` blocker was FALSE. Do not re-derive it
 
@@ -142,6 +150,55 @@ verified it is **factually true** (`CreateOrderCommand.swift:15-32`, every prope
 correctly left it **descriptive, not prescriptive**, since an Android ticket wrote it toward a stack it
 never executed. **When this ticket lands with real iOS evidence, the Architect confirms or promotes
 it.** Do not silently promote it from inside this ticket.
+
+## 🟡 2026-08-01 (PM close-out pass) — MERGED, and **deliberately NOT closed**. Stays `qa`
+
+**The code is on `master`.** Merged as **`a10e1f88` (PR #179)**, "feat(ios): capture entry
+instructions on the booking confirm step [T-0440]". The reviewer **APPROVED** (verdict in `## Review`
+below). The `c23b26e7` provenance warning at `:148-151` is now **historical** — that branch merged;
+`d6969fef` (#177) carried the verdict text onto `master`, and `a10e1f88` carried the code. Nobody
+needs to hunt for it any more.
+
+**Asked directly: does this lifecycle allow `done` with an owed QA item? NO — and the answer is not
+a judgement call, it is the text.** `ticket-lifecycle.md` §"Done means" (`:154-163`) lists five
+conditions with no exceptions clause and closes *"Anything short of this stays out of `done`. We do
+not mark work complete on hope."* Two of the five fail here:
+
+- **item 1** — *"AC each have verifiable evidence."* **AC1** has none. **AC6** (Gate 8.5) has its
+  launch/navigate legs but **not** its render leg.
+- **item 3** — *"QA executed the test plan and recorded the result."* QA has not run.
+
+**The one escape hatch in the lifecycle does not reach this case.** §"When the in-workflow gate did
+not run (hand-gating)" (`:165-179`) permits `done` when a **reviewer** lane died on a
+StructuredOutput failure while the work landed — it is about a *dead reviewer lane*, gated by a
+MANUAL-GATE block of hand-inspected evidence. Here the reviewer lane **ran and approved**; what is
+missing is **evidence that does not exist yet**. A MANUAL-GATE block cannot be written for a
+screenshot nobody has taken. Hand-gating substitutes an inspection for a dead lane; it does not
+substitute an assertion for an absent artifact.
+
+**And the owed item is not a formality — a reviewer PROVED it is not capturable in-suite.** It hosted
+`InstructionsField` in a real `UIWindow` and captured through **two independent mechanisms**
+(`drawHierarchy(afterScreenUpdates:)` and `window.layer.render(in:)`); all four PNGs came back
+`distinctColors=1`, byte-identical empty vs filled. That is why this is a **handoff to QA on a real
+16.4 device**, not a deferral and not a gap in the review. Closing it silently would retire the
+question — the exact Gate 0.5 failure mode this sprint shipped a gate against.
+
+**So the ticket stays `qa` while its code is on `master`.** That is the honest state and the INDEX row
+says both halves. Nothing downstream is gated by it: T-0449's and T-0450's dependency on this ticket
+was the **`Localizable.xcstrings` lane head plus the field itself**, and both have merged — a
+screenshot does not gate a code lane. Recorded on both.
+
+### What is still owed, and by whom
+
+| # | Item | Owner | Note |
+|---|---|---|---|
+| 1 | **AC1 screenshot** — confirm step, both fields empty and filled, on a **16.4** device | **qa** | `xcrun simctl io <udid> screenshot` after sign-in → booking sheet → confirm |
+| 2 | **AC6 / Gate 8.5 render leg** | **qa** | same session, one screen; the diff introduces no new navigation |
+| 3 | **F-3 — record the actual test-first ordering** | **ios (the implementing agent)** | **still open**: no `red→green` line exists in this status log. Not an assertion of non-compliance — the reviewer explicitly declined to assert that. If it turns out implementation-first, it becomes a real Gate 6 question and the reviewer re-reviews. Do **not** close it by asserting compliance retroactively |
+| 4 | *(judgement, while QA is on the device)* does the **ru/uk two-line placeholder** read as intentional beside the sibling's one line? | **qa** | not an AC; an eyes-on call |
+
+**F-1, F-2 and the `specialInstructions` divergence are NOT owed here** — they are **T-0469**'s, by
+the reviewer's own routing. This ticket does not wait on that panel.
 
 ## 🚦 2026-08-01 — APPROVED → `qa`. THREE items still open before `done`
 

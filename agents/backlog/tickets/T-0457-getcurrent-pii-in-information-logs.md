@@ -1,11 +1,11 @@
 ---
 id: T-0457
 title: S6 — GET /api/User/GetCurrent writes the caller's email, name, phone and birth date to Information-level logs on all five hosts
-status: draft
+status: ready
 size: S
 owner: backend
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 depends_on: [T-0446]
 blocks: []
 stories: []
@@ -120,6 +120,34 @@ posed as AC1 and belongs to the implementer + reviewer, not to a panel.
 ## Status log
 - 2026-07-30 — draft (created by pm from the T-0446 security gate, finding SEC-2; no-decision, no panel needed)
 - 2026-07-30 — **not `ready`**: `depends_on: [T-0446]` is unsatisfied (shared-file lane on all five middleware copies). DoR items 2–7 are otherwise met.
+- 2026-08-01 — **`draft` → `ready`. `depends_on: [T-0446]` is satisfied** — T-0446 merged `a63b776e`
+  (#176), so the **five copies of `RequestLoggingMiddleware.cs` are released** and this ticket is now
+  the lane's sole writer. DoR: AC observable ✅ · sized S ✅ · deps `done` ✅ · `manual_steps: []` (it
+  touches **no DTO**, so it adds nothing to any owner bundle) ✅ · `security_touching: true` +
+  `layers: [backend]` ✅ · archetype = the five-file middleware cluster T-0446 AC9 just moved ✅ ·
+  no-decision note already recorded ✅.
+- 2026-08-01 — **P1: this is the highest-priority unblocked backend ticket.** DEV is live, the owner's
+  iPhone is pointed at it, and `GET /api/User/GetCurrent` — the most-called authenticated endpoint on
+  the platform — is writing the caller's email, first name, last name, phone number and birth date
+  into Information-level logs on all five hosts on **every** request. It is accruing exposure right
+  now.
+- 2026-08-01 — **three things the merged T-0446 changed about how you implement this. Read them
+  first:**
+  1. **The composition is now `TruncateBody(RedactSensitiveFields(...))`** on all five hosts
+     (`Middleware/RequestLoggingMiddleware.cs:182` on `Cleansia.Web.Customer`). AC9 already inverted
+     it, so **do not re-derive the ordering** — build on it.
+  2. **`IsSensitivePath` has grown** and is the precedent for the "suppress" arm of AC1: it now covers
+     `/adminauth/`, `/savemydocuments`, `/savephotos`, `/uploadphoto`, `/getphotos`, `/photos/`
+     alongside the original four, each with a comment saying **which** free text it is suppressing.
+     Match that discipline — a bare path string with no reason is not the house style here.
+  3. **You inherit an explicit debt list.** `RedactionUnmaskedFreeTextGuardTests.AcceptedPreExisting`
+     names seven members as *"pre-existing exposure, owned by T-0457"*:
+     `CreateAdminUser.Command.{FirstName,LastName,PhoneNumber}` and
+     `GetMyDocuments.{MyDocumentDto,Response}.{Description,ReviewNotes}`. **Whatever this ticket does
+     must let those entries be deleted** — an entry that survives is a claim nobody owns. The T-0446
+     reviewer also recorded a boundary worth knowing: beyond a ~155-character document description,
+     `ReviewNotes` crosses out of the pre-change window, so "pre-existing" was a typical-case claim,
+     not a universal one.
 
 ## Review
 <!-- reviewer + security verdicts here; AC3 must name the assertion that flips -->

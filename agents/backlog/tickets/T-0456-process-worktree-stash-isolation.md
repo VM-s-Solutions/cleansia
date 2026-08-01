@@ -5,7 +5,7 @@ status: draft
 size: S
 owner: architect
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 depends_on: []
 blocks: []
 stories: []
@@ -143,6 +143,72 @@ The reasoning, which the panel should keep or overrule explicitly:
       independent, exactly as the i18n bundles serialize per app) or across the family. **Recorded in
       `INDEX.md`'s lane list immediately by the PM**; this AC is the durable home.
 
+## ⚠️ SCOPE EXTENDED 2026-08-01 — two MORE incidents of the same class, both hit for real this sprint
+
+**Routed here rather than forked, for the reason this ticket already argues:** its own thesis
+(`## Context`, AC1) is that `shared-file-lanes.md` enumerates **commands** where it should describe the
+**class** — *tree-wide state operations that discard or relocate uncommitted work an agent does not
+own.* Two more instances landed this sprint. **Both are that class; neither is `git stash`.** Filing
+them separately would repeat, a third time, the enumerate-instances-not-the-class bug this ticket
+exists to fix. They are also both **already covered by AC1's wording** — what they add is *evidence
+that the wording has to reach further than `git`.*
+
+### Hazard 2 — `cd X && <destructive git>` silently redirects to the MAIN checkout when `X` is missing
+
+**What happened:** an agent ran a compound `cd <worktree> && <git command>`. The worktree path did not
+exist, `cd` failed, the shell **carried on to the second command**, and the destructive git ran in the
+**owner's main checkout** — leaving it on a **detached HEAD**.
+
+**Why it is the same class and not a new one:** the agent's *intent* was scoped to a tree it owned;
+the *effect* landed on a tree it did not. The mechanism is different from `git stash` (mis-targeting
+rather than a shared ref), the consequence is identical — someone else's tree mutated under them.
+
+**Why an enumeration of git commands cannot catch it:** the dangerous half is **the shell**, not git.
+`cd X && Y` runs `Y` in whatever directory the process was already in when `cd` fails. A rule that
+lists forbidden git verbs is silent about the connective that decides *where* they run. Any rule
+written here has to say: **a command that must run in a specific tree names that tree unconditionally**
+— `git -C <path> …`, or `cd X || exit 1`, or a `set -e` script — **never `cd X && <destructive>`.**
+
+**Aggravating detail worth writing down:** this instance is *harder* to notice than the stash one,
+because nothing errors. `cd` prints its failure, the git command succeeds, and the overall exit code is
+the git command's — **0**. It reads as a clean run.
+
+### Hazard 3 — `xcodegen generate` regenerates `Info.plist` from `project.yml`, wiping the owner's working-tree-only Stripe key
+
+**What happened / what is at risk:** the iOS `Info.plist` files are **generated artifacts**, produced
+by `xcodegen` from `info.properties` in each app's `project.yml`. The owner's live Stripe key exists
+**only in the working tree** — it is deliberately never committed. Running `xcodegen generate` in the
+main checkout **overwrites `Info.plist` from the committed `project.yml`** and the key is gone. It is
+also why `git pull` costs the same thing, and why the standing instruction on every iOS ticket is *do
+not read or modify `Info.plist` / `project.yml`*.
+
+**Why it belongs in this rule and not only on iOS tickets:** it is the **general** shape —
+*regenerating an artifact from its source destroys any uncommitted local state layered on top of it* —
+and today it is carried entirely by per-ticket warnings, i.e. by whoever remembers to write one. That
+is exactly the fragile mechanism a lane table replaces. The same shape exists elsewhere in this repo
+(`./scripts/generate-api-clients.sh`, `npm run generate-*-client`, Gradle's openapi codegen) and is
+**harmless there** because those outputs carry no hand-edited state — which is the discriminator the
+rule should state, rather than banning regeneration.
+
+**The safe form is already known and should be written down as the prescribed alternative:**
+`xcodegen generate` is safe **in a scratch worktree** (the committed `project.yml` holds no key) and
+unsafe in the main checkout. That is AC3's "prescribed alternative" applied to this hazard.
+
+- [ ] **AC7 (added)** — The rule covers a **destructive command that ran in the wrong tree**, not only
+      one that ran in the right tree with the wrong effect. It names the `cd X && <destructive>`
+      redirect explicitly, states the mechanism (`cd` fails, `&&`'s left side is false only for `&&` —
+      the compound still resolves to the second command's exit code in the observed incident, so the
+      run reads as clean), and prescribes the unconditional form (`git -C <path>`, or `cd X || exit 1`).
+      Evidence: the diff.
+- [ ] **AC8 (added)** — The rule reaches **non-git** operations that regenerate a tracked-but-generated
+      file over uncommitted local state, with `xcodegen generate` → `Info.plist` (owner's Stripe key)
+      as the worked example, and states the **discriminator** — regeneration is safe when the output
+      carries no hand-edited state (`generate-api-clients.sh`, `generate-*-client`) and unsafe when it
+      does. Include the prescribed safe form: scratch worktree, never the main checkout. Evidence: the
+      diff. **Do not open `Info.plist` or `project.yml` to write this AC** — the key is live; the
+      generated-from-`project.yml` relationship is established by `d6969fef`-era history and the
+      standing ticket warnings, not by reading the file.
+
 ## Status log
 - 2026-07-30 — draft (created by pm; wave-1 process finding with no home — a reviewer's `git stash -u`
   hard-reset a developer's worktree, ~50 minutes lost; routed to an architect+docs panel per the
@@ -151,6 +217,26 @@ The reasoning, which the panel should keep or overrule explicitly:
   above). Routed here rather than forked: this ticket is already `shared-file-lanes.md`'s sole writer,
   and the two changes are the same edit to the same table. Size unchanged (**S**) — it is one more row
   plus a rationale line.
+- 2026-08-01 — **scope extended again: two more incidents of the same class, both hit for real this
+  sprint** — the `cd X && <destructive git>` redirect (an agent detached HEAD in the **owner's** repo)
+  and `xcodegen generate` regenerating `Info.plist` over the owner's working-tree-only Stripe key.
+  **AC7 and AC8 added.** Routed here rather than forked for this ticket's own reason: it already argues
+  that the rule must describe the **class** (tree-wide state operations that discard work an agent does
+  not own) rather than enumerate commands, and forking two more command-specific tickets would commit
+  that error a third time. **Both hazards were already inside AC1's wording** — what they add is the
+  evidence that the class reaches past `git` (hazard 3 is not a git command at all) and past the tree
+  the agent *meant* to touch (hazard 2 is a shell mis-target).
+- 2026-08-01 — **size re-checked: still `S`, and this is a deliberate call, not an oversight.** The
+  deliverable is unchanged in kind — one rewritten rule in `shared-file-lanes.md` plus the charter
+  constraints in AC4. Three incidents make the rule *better argued*, not larger; the whole point is
+  that one class-shaped sentence replaces N command-shaped ones. **If the panel finds itself writing
+  three separate rules, that is the signal to stop and tell the PM to split** (per `ticket-lifecycle.md`
+  §Sizing), not to let it grow into an `L`.
+- 2026-08-01 — **dependencies re-checked: none, and nothing blocks dispatch.** `depends_on: []` is
+  correct; `agents/process/shared-file-lanes.md` has no other writer this sprint (T-0439's
+  `quality-gates.md` lane is a different file and is now `done`). **T-0455 still wants a new cluster row
+  in the same file** — serialize (**T-0456 → T-0455's row**, or hand the row to T-0456). The value of
+  writing an incident down decays fast and there are now three of them; this is cheap and overdue.
 
 ## Review
 <!-- reviewer writes verdict here; AC4's charter verification goes here -->

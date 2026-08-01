@@ -307,6 +307,39 @@ All user text in `res/values/strings.xml`, accessed via `stringResource(R.string
 handled by the sealed `*UiState`; empty states use `MascotEmptyState`; transient errors go to the
 snackbar (not the main state); submit errors use `ActionState.Error`.
 
+## Picking an image, and rendering one that lives behind a SAS (T-0448)
+
+Three rules, each of which was a bug before it was a rule.
+
+**Picking.** An **image-only** pick uses `ActivityResultContracts.PickVisualMedia` +
+`PickVisualMediaRequest(…ImageOnly)` (customer `EditProfileScreen.kt`). It grants per-item access to
+exactly what the user chose, so **it needs no runtime permission on any API level from 26 up** — there
+is no `READ_MEDIA_IMAGES`, no rationale dialog, and no denial branch to write, because androidx falls
+back through the Play-services picker to `ACTION_OPEN_DOCUMENT`, which is equally permission-free. A
+**mixed-content** pick (documents, dispute evidence — PDFs arrive too) keeps
+`GetContent`/`GetMultipleContents` + the `isImageMimeType` split. `PhotosSection.kt` is an image-only
+`GetContent` predating this and is not a counter-example. The one failure the picker still has is
+`launch()` **throwing** on a device with neither a picker nor a document provider — wrap it and show a
+translated message; an uncaught throw takes the screen down.
+
+**Compressing.** Every upload path goes through the `:core` `ImageCompressor.compressToBase64` —
+never a second read/encode. It is what strips EXIF/GPS (by re-encode, not by erasure) and bounds the
+payload; the VM owns the call so the outcome is JVM-testable with `mockkObject(ImageCompressor)`
+(`OrderPhotosViewModelTest`, `ProfileViewModelTest`).
+
+**Rendering a SAS-backed image.** The `blobUrl` on a `BlobFileDto` is a **one-hour read credential
+minted fresh on every fetch**, so it is a fetch target and nothing else: key Coil's cache on the
+**`fileName`** (content-addressed — the backend re-mints the GUID on replace), never on the URL, or
+every read is a cache miss pinning a URL that dies within the hour. Never persist the URL, and never
+raise OkHttp logging to `Level.BODY` while debugging one (`HEADERS` debug / `NONE` release, both apps)
+— that writes the whole signed URL into logcat. For a **personal** image (the avatar), also
+`diskCachePolicy(CachePolicy.DISABLED)`: memory-only removes the "when do we evict the previous user's
+face from disk" question rather than answering it, at the cost of one small refetch per cold start.
+**On a load error there is nothing to branch on** — an expired SAS is 403 and a deleted blob is 404,
+and the loader surfaces neither, so the only implementable rule is **refetch the profile once, guarded
+by the `fileName` already retried**, with the composable falling back to its placeholder meanwhile so
+a genuinely deleted blob cannot loop.
+
 ---
 
 ## iOS — SwiftUI/MVVM parity port

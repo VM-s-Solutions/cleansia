@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -410,11 +411,23 @@ fun CleansiaNavHost(
             val user by vm.currentUser.collectAsState()
             val saveState by vm.saveState.collectAsState()
             val saving = saveState is cz.cleansia.customer.ui.state.ActionState.Submitting
+            val avatarDraft by vm.avatarDraft.collectAsState()
+            val avatarState by vm.avatarState.collectAsState()
+
+            // A pending pick must not survive an abandoned edit — the hero would
+            // otherwise show an image the server never received.
+            DisposableEffect(vm) { onDispose { vm.discardAvatarDraft() } }
 
             EditProfileScreen(
                 user = user,
                 saving = saving,
+                avatarPhoto = cz.cleansia.customer.features.profile.avatarPhotoFor(user, avatarDraft),
+                avatarBusy = avatarState is cz.cleansia.customer.ui.state.ActionState.Submitting,
                 onBack = { navController.popBackStack() },
+                onPickPhoto = vm::pickAvatar,
+                onRemovePhoto = vm::removeAvatar,
+                onAvatarLoadFailed = vm::onAvatarLoadFailed,
+                onAvatarLoadSucceeded = vm::onAvatarLoadSucceeded,
                 onSave = { firstName, lastName, phone, birthDate ->
                     vm.saveProfile(
                         firstName = firstName,

@@ -6,7 +6,9 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.api.client.GdprApi
 import cz.cleansia.customer.api.client.UserApi
 import cz.cleansia.customer.api.model.UpdateCurrentUserCommand
+import cz.cleansia.customer.api.model.BlobFileDto as WireBlobFile
 import cz.cleansia.customer.core.auth.ApiErrorParser
+import cz.cleansia.core.media.Base64Image
 import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.core.auth.SessionManager
 import cz.cleansia.core.auth.SessionScopedCache
@@ -100,6 +102,12 @@ class UserRepository @Inject constructor(
     /**
      * Update the authenticated user's profile. On success, re-fetches so the
      * cached snapshot reflects server-side normalisations.
+     *
+     * The avatar is a three-way choice, not a nullable field. [photo] carries a
+     * NEW image; [removePhoto] asks for deletion; both defaults mean the caller
+     * said nothing about the avatar and the server leaves it alone
+     * (`UpdateCurrentUser.cs:135`). A save that defaulted to removal is how the
+     * avatar was silently destroyed once already.
      */
     suspend fun updateCurrentUser(
         firstName: String,
@@ -107,6 +115,8 @@ class UserRepository @Inject constructor(
         phoneNumber: String?,
         birthDate: String?,
         languageCode: String?,
+        photo: Base64Image? = null,
+        removePhoto: Boolean = false,
     ): ApiResult<Unit> {
         val userId = _currentUser.value?.id ?: return networkError()
 
@@ -126,6 +136,14 @@ class UserRepository @Inject constructor(
                     phoneNumber = phoneNumber?.ifBlank { null },
                     birthDate = parsedBirthDate,
                     languageCode = languageCode,
+                    photo = photo?.let {
+                        WireBlobFile(
+                            fileName = it.fileName,
+                            base64Content = it.base64,
+                            contentType = it.contentType,
+                        )
+                    },
+                    removePhoto = removePhoto,
                 ),
             )
         } ?: return networkError()

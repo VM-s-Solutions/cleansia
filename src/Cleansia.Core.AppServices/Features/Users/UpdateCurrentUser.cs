@@ -63,18 +63,21 @@ public class UpdateCurrentUser
                 .When(command => !string.IsNullOrWhiteSpace(command.Photo?.Base64Content));
         }
 
+        // No longer an ownership comparison — the subject is server-resolved, so there is nothing for a
+        // client to get wrong. What survives is the precondition the handler dereferences: the JWT
+        // subject must resolve to a row.
         private async Task<bool> AllowedToUpdateUser(Command command, CancellationToken cancellationToken)
         {
-            var currentUserEmail = _userSessionProvider.GetUserEmail();
-            var user = await _userRepository.GetByEmailAsync(currentUserEmail ?? string.Empty, cancellationToken);
-            return user?.Id == command.Id;
+            var user = await _userRepository.GetByIdAsync(
+                _userSessionProvider.GetUserId() ?? string.Empty, cancellationToken);
+            return user is not null;
         }
 
         private async Task<bool> UserWithPhoneNumberNotExistsAsync(Command command, string phoneNumber,
             CancellationToken cancellationToken)
         {
             var user = await _userRepository.GetByPhoneNumberAsync(phoneNumber, cancellationToken);
-            return user?.Id is null || user.Id == command.Id;
+            return user?.Id is null || user.Id == _userSessionProvider.GetUserId();
         }
 
         private static bool BeAValidDate(DateOnly? date)
@@ -95,7 +98,13 @@ public class UpdateCurrentUser
     }
 
     public record Command(
-        string Id,
+        // [OWN-DATA] (S1): the row written is ALWAYS the JWT caller's — this id is never read. It stays
+        // on the wire only so the Android/iOS clients, which decode their own token to fill it, keep
+        // deserializing unchanged. Nullable because the web clients CANNOT fill it (the session is an
+        // HttpOnly cookie and MyProfileDto carries no id) and a non-nullable reference parameter makes
+        // MVC reject the absent member with "The Id field is required." before this command is ever
+        // dispatched.
+        string? Id,
         string FirstName,
         string LastName,
         string PhoneNumber,
@@ -112,11 +121,12 @@ public class UpdateCurrentUser
     public class Handler(
         IUserRepository userRepository,
         IOrderRepository orderRepository,
+        IUserSessionProvider userSessionProvider,
         IBlobContainerClientFactory clientFactory) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var user = await userRepository.GetByIdAsync(command.Id, cancellationToken);
+            var user = await userRepository.GetByIdAsync(userSessionProvider.GetUserId()!, cancellationToken);
             var userOrders = await orderRepository.GetOrdersByPhoneNumberAsync(
                 user!.PhoneNumber ?? string.Empty, cancellationToken);
 

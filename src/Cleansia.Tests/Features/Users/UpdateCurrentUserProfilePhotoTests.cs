@@ -31,12 +31,14 @@ public class UpdateCurrentUserProfilePhotoTests
 
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IOrderRepository> _orderRepository = new();
+    private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IBlobContainerClientFactory> _blobFactory = new();
     private readonly Mock<IBlobContainerClient> _blobClient = new();
     private readonly List<string> _blobCalls = [];
 
     private UpdateCurrentUser.Handler CreateHandler(User user)
     {
+        _session.Setup(s => s.GetUserId()).Returns(UserId);
         _userRepository
             .Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
@@ -58,7 +60,7 @@ public class UpdateCurrentUserProfilePhotoTests
             .Returns(Task.CompletedTask);
 
         return new UpdateCurrentUser.Handler(
-            _userRepository.Object, _orderRepository.Object, _blobFactory.Object);
+            _userRepository.Object, _orderRepository.Object, _session.Object, _blobFactory.Object);
     }
 
     private static User UserWith(string? profilePhotoName)

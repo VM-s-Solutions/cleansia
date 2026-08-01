@@ -5,7 +5,7 @@ status: draft
 size: S
 owner: backend
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 depends_on: [T-0446, T-0464]
 blocks: []
 stories: []
@@ -95,6 +95,19 @@ chosen, **the security reviewer must re-gate**, because a predictable, longer-li
 ## Status log
 - 2026-07-30 — draft (created by pm from QA's T-0446 AC4 run, DEF-3)
 - 2026-07-30 — **not `ready`**: `depends_on: [T-0446, T-0464]`; also wants a short architect call because option B moves a security bound.
+- 2026-08-01 — **RE-CHECKED; stays `draft`. One of two dependencies cleared.** T-0446 merged
+  `a63b776e` (#176) → `done`, which released the shared SAS mint
+  (`src/Cleansia.Infra.Azure.Storage.Blobs/BlobContainerClient.cs`). **T-0464 is now `ready` but not
+  `done`**, and it is the lane's next writer — lane **T-0446 ✅ → T-0464 → T-0465**. This ticket must
+  not run concurrently with it: T-0464's fix is a `rsct`/`rscc` response-header override on the same
+  mint, and half of *this* ticket's problem (the missing `Cache-Control`) is fixed there.
+  **What remains genuinely this ticket's own** is the half T-0464 cannot fix: the SAS query (`se` +
+  `sig`) changes on every mint, so the HTTP cache key changes on every profile read. That is
+  **inherent to the per-read-SAS design** and must be recorded as **accepted**, not silently carried.
+- 2026-08-01 — **do not fold this into T-0464.** They look like one ticket and are not: T-0464 is a
+  codebase-wide correctness fix on every blob read path (`security_touching: true`), this is a Gate 5
+  design acceptance on one. Merging them would let the accepted-limitation half ride in unexamined
+  under a correctness banner.
 
 ## Review
 <!-- reviewer verdict here -->

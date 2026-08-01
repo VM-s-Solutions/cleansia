@@ -1,11 +1,11 @@
 ---
 id: T-0447
 title: Web — avatar upload, render and removal on the customer profile
-status: blocked
+status: ready
 size: M
 owner: frontend
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 depends_on: [T-0446, T-0438]
 blocks: []
 stories: [US-user-avatar]
@@ -104,6 +104,39 @@ _(PM floor; the `US-user-avatar` analyst panel finalizes)_
 - 2026-07-30 — **security conditions attached** from the T-0446 gate (APPROVE-WITH-CONDITIONS). See
   the block below; they are binding on this ticket and its reviewer. Source:
   `agents/backlog/security/user-profile-avatar.md`. Still `blocked` — dependencies unchanged.
+- 2026-08-01 — **`blocked` → `ready`. BOTH halves of the block are gone, and each was verified rather
+  than assumed** (PM, first-hand, on `master` at `1c8fdd00`):
+  1. **`depends_on: [T-0446, T-0438]` — both `done`.** T-0438 merged `7c82cd2e` (#171); T-0446 merged
+     `a63b776e` (#176) with reviewer APPROVED, the security gate's two conditions shipped as AC9/AC10,
+     and AC4 closed by the owner on DEV.
+  2. **The owner's `nswag-regen` is DONE and shipped inside `a63b776e`.** `blobUrl` is present on the
+     `BlobFileDto` shape in `libs/core/customer-services/src/lib/client/customer-client.ts` and
+     `libs/core/partner-services/src/lib/client/partner-client.ts`. `admin-client.ts` already carried
+     `blobUrl` on another DTO and needed no delta. **This ticket now compiles against a client that
+     has the field** — which was the entire block.
+  **The hold clause on T-0446 ("T-0447/0448/0449 are HELD until the owner confirms this bundle") is
+  therefore discharged for this ticket.** This is the **only** one of the three avatar client tickets
+  that is genuinely `ready` — T-0448 and T-0449 remain blocked on **T-0450**, not on T-0446.
+- 2026-08-01 — **DoR check, with the one gap named rather than hidden.** AC observable ✅ · sized M ✅ ·
+  deps `done` ✅ · `manual_steps: []` and the regen is already run ✅ · `security_touching: true` +
+  `layers: [frontend]` ✅ · archetype identified ✅ (the binding security-conditions block, the QA
+  constraints block, and `agents/knowledge/patterns-frontend.md` §"Building a generated DTO —
+  construct-then-assign, never an object literal", which is the shape the regen keeps breaking).
+  **The gap:** the story `US-user-avatar` **does not exist as an artifact** — PM-verified, a search of
+  `agents/backlog/stories/` and `agents/analysts/` returns nothing, and T-0446's own log records that
+  "no ADR / panel record existed in the tree at implementation time". This ticket is going `ready`
+  **without** that panel, on the ground that it introduces **no new decision**: the read-path option
+  was chosen and has now shipped, the security conditions below are already adjudicated and binding,
+  and QA has already executed the constraint that would otherwise have been the open design question
+  (the CORS finding — any crop-or-canvas design that reads the stored avatar is dead client-side).
+  **Stated explicitly so it can be overruled**: if the orchestrator wants the analyst panel, convene
+  it before dispatch rather than after.
+- 2026-08-01 — **read the QA constraints block below before writing a line.** The two that will
+  otherwise cost a rewrite: (a) **CORS** — `storage.bicep` has no `cors` block, so `fetch()`,
+  `crossorigin="anonymous"`, canvas `getImageData` and `HttpClient.get(blobUrl, {responseType:'blob'})`
+  all fail against the stored blob; only a plain `[src]` binding works, and a **pre-upload preview of
+  the locally picked file is still fine**. (b) **an `<img>` cannot see a 403 vs a 404** — on any image
+  error, re-fetch the profile once, with a single-retry guard.
 
 ## Security conditions — BINDING (from the T-0446 gate, 2026-07-30)
 

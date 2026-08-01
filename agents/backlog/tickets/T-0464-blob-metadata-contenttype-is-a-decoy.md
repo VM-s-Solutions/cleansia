@@ -1,11 +1,11 @@
 ---
 id: T-0464
 title: MetadataName.ContentType is a decoy — every order photo and dispute-evidence file is served as application/octet-stream; fix via SAS response-header override
-status: draft
+status: ready
 size: M
 owner: backend
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 depends_on: [T-0446]
 blocks: []
 stories: []
@@ -151,6 +151,28 @@ avoidable.
 ## Status log
 - 2026-07-30 — draft (created by pm from QA's T-0446 AC4 run, DEF-1). **PM-verified independently:** the `SetMetadataAsync` routing at `BlobContainerClient.cs:64-67`, the five constants at `Metadata.cs:22-26`, and — **not in the QA report** — that `Metadata.CacheMetadata` hardcodes `"public, max-age=31536000"` and is used by the avatar, making the naive fix a live security-condition violation. That is now AC5 and the ticket's lead warning.
 - 2026-07-30 — **not `ready`**: `depends_on: [T-0446]` (shared-file lane on the SAS mint) and the A-vs-B call wants a short architect confirmation.
+- 2026-08-01 — **`draft` → `ready`. `depends_on: [T-0446]` is satisfied** — T-0446 merged `a63b776e`
+  (#176), so the shared SAS mint `src/Cleansia.Infra.Azure.Storage.Blobs/BlobContainerClient.cs` is
+  released. Lane: **T-0446 ✅ → T-0464 → T-0465** — this ticket is now the lane's sole writer and
+  T-0465 sits behind it. DoR: AC observable ✅ · sized M ✅ · deps `done` ✅ · `manual_steps: []` ✅ ·
+  `security_touching: true` + layers set ✅ · archetype identified ✅ (the SAS response-header override
+  QA already executed against an **already-stored** blob).
+  **The architect A-vs-B call is the FIRST step of the dispatch, not a precondition to `ready`** — the
+  ticket's own `## Deliberation` section says it is "a short call, not a defended decision" because
+  both options were *executed*, and escalates to a full panel **only if the implementer wants A**
+  (which reintroduces a migration the evidence says is avoidable).
+- 2026-08-01 — **CONFIRMED post-demo, not demo-blocking** — and that is now settled by evidence
+  rather than by prediction. The owner checked DEV order-detail photos and they **render**; those
+  blobs travel the identical path (no `BlobHttpHeaders`, `application/octet-stream`, 1-hour SAS), so
+  **real Azure does not send `X-Content-Type-Options: nosniff`** and content sniffing carries every
+  render today. That was the one scenario that would have promoted this ticket to demo-blocking. It
+  did not happen.
+- 2026-08-01 — **the trap in the block above has not moved. Re-read AC5 before writing code.**
+  `Metadata.CacheMetadata` still hardcodes `"public, max-age=31536000"` and the **avatar still uses
+  it** (`UpdateCurrentUser.cs`). It is inert only because of the very decoy this ticket removes — so
+  the naive fix **activates `Cache-Control: public` on a SAS-protected private avatar**, violating a
+  security condition already on record from the T-0446 gate. That is the single most likely way this
+  ticket ships a regression.
 
 ## Review
 <!-- reviewer + security verdicts here; AC6 must name the mutation-proving test -->

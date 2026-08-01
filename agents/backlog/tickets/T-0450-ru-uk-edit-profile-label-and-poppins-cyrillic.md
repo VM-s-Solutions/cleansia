@@ -5,7 +5,7 @@ status: draft
 size: M
 owner: analyst
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 depends_on: [T-0440, T-0441, T-0451]
 blocks: [T-0448, T-0449]
 stories: []
@@ -171,6 +171,38 @@ Related, and also not a defect: the **ru/uk two-line placeholder** on iOS. Wheth
 ## Status log
 - 2026-07-30 — draft (created by pm; wave-1 finding with no home, from T-0442's implementation and
   review; two panels required, plus two owner questions Q-I18N-02 and Q-BRAND-01)
+- 2026-08-01 — **ALL FOUR of this ticket's lane heads have MERGED. It is now the head of the
+  remaining demo chain, and it is the ONLY thing standing between T-0448/T-0449 and `ready`.**
+  PM-verified on `master` at `1c8fdd00`:
+
+  | Lane | Head | State |
+  |---|---|---|
+  | `customer-app/src/main/res/values*/strings.xml` ×5 | **T-0441** | merged `1d85b35f` (#178) — lane clear |
+  | `customer-app/.../profile/ProfileTab.kt` | **T-0442** | merged `ce2416a0` (#174) — lane clear |
+  | `CleansiaCustomer/Resources/Localizable.xcstrings` | **T-0440** | merged `a10e1f88` (#179) — lane clear |
+  | `CleansiaCustomer/.../Profile/ProfileTab.swift` | **T-0451** | merged `1c8fdd00` (#180) — lane clear |
+
+  *(T-0440 and T-0441 are still `qa` on owed screenshots. That does **not** hold this ticket: what it
+  waited on was their writes to these four files, and those are on `master`.)*
+- 2026-08-01 — **stays `draft`, and the reason is the owner, not sequencing.** DoR item 4
+  (dependencies) is now **satisfied**; what is not satisfied is **AC2**, which needs **Q-I18N-02** —
+  a `blocking: yes` question on the pre-prod blocking index that has **no answer**, deliberately
+  carries **no PM default** (it needs a native ru/uk speaker), and cannot be guessed. Kept `draft`
+  rather than moved to `blocked` because the other half of the ticket is genuinely un-started
+  deliberation, not a stalled implementation.
+- 2026-08-01 — **the two halves can be split if the answer is slow, and that is now the recommended
+  move.** Half **(A)** — the shorter ru/uk chip string — is the one gated on Q-I18N-02. Half **(B)** —
+  Poppins covering **0/98** Cyrillic code points on all three platforms (Q-BRAND-01, `blocking: no`)
+  — needs an **architect** panel that can convene **today**, and it is the half that actually blocks
+  nothing downstream. **If Q-I18N-02 stays unanswered through the next checkpoint, split (B) out so
+  T-0448/T-0449 stop waiting on an owner reply about a chip label.** Flagged to the PM/orchestrator
+  rather than done unilaterally, because splitting changes what T-0448/T-0449 depend on.
+- 2026-08-01 — **two corrections from the T-0440/T-0441 reviews that this ticket must not undo:**
+  - **`uk` uses the typographic apostrophe U+2019** (`необов’язково`), not ASCII U+0027. The shipped
+    iOS form is the correct one. If you are diffing locale files and see `’`, **leave it alone.**
+  - **Do NOT apply the "hint no longer than its sibling" constraint to iOS** — refuted by the T-0440
+    reviewer (Android's float label ellipsizes; iOS's hint is plain wrapping text with no line limit).
+    PM-verified this ticket does not carry it today; this is prevention, not removal.
 
 ## Review
 <!-- reviewer writes verdict here; AC6's triage table and AC1's re-measurement go here -->

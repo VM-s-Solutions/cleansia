@@ -1,11 +1,11 @@
 ---
 id: T-0439
 title: Guard against NSwag regen drift breaking the web build silently
-status: in_review
+status: done
 size: S
 owner: backend
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 depends_on: [T-0438, T-0445]
 blocks: []
 stories: []
@@ -181,6 +181,34 @@ _(to be finalized by the panel; these are the PM's floor)_
 - 2026-07-30 — **round 2 shipped: M1, M2, M4, M5, M6 + reviewer F2/F3/F5.** M3 stays a PM follow-up.
   Test-first held again: the two new M2 cases were run **red against the pre-M2 discovery** (2/8 FAILED)
   before the fix was kept. Full re-verification in `## Review — round 2`.
+- 2026-08-01 — **`in_review` → `done`. MERGED as `acf2f0bc` (PR #175)**, "feat(web): guard the NSwag
+  regen against client/call-site drift [T-0439]". Reviewer verdict **APPROVED** (relayed by the
+  orchestrator at close-out; the architect panel's lead verdict and the round-2 re-verification are in
+  `## Review` above). PM-verified on `master` at `1c8fdd00`, first-hand:
+  - `src/Cleansia.App/package.json` carries `typecheck`, `typecheck:test`, the internal `_nswag:{partner,admin,customer}`
+    (M1's rename landed — there is **no public `nswag:*`**) and `generate-clients`; all four public
+    generate names are present.
+  - The chain was exercised for real by the owner's T-0446 regen bundle in the very next commit
+    (`a63b776e`): `customer-client.ts` and `partner-client.ts` each gained the `blobUrl` member and
+    `master` did **not** go red — the failure mode this ticket exists to prevent did not recur on its
+    first live use.
+  - **`npx nswag run`'s failure exit code is still UNVERIFIED** (owner-only generator). Recorded as
+    carried, not closed.
+  - **Related unknown now CLOSED, and not by this ticket:** all three `*-client-formatter.sh` scripts
+    lacked `set -e` and always exited 0. **Fixed on `master` by `d6969fef` (PR #177)** — `set -euo
+    pipefail` + an input-exists guard on each. The "the `&&` chain cannot see a formatter failure"
+    caveat in `## Review` is now historical.
+- 2026-08-01 — **STILL OWED BY THE OWNER (does not block `done`).** `manual_steps:
+  claude-md-generate-clients-line` is **flagged, not executed** — which is what `ticket-lifecycle.md`
+  §"Done means" item 4 requires (flag owner-only steps; the agents do not run them). It is **not** an
+  EF migration or an NSwag regen, so `quality-gates.md` §"Owner-only steps" ("a ticket that needs
+  either and hasn't had it confirmed cannot reach `done`") does not bind it.
+  **Partially discharged already:** the owner applied the six wrong `npx nx` names in `d6969fef`
+  (#177) — and adopted the **npm aliases**, i.e. exactly the departure T-0462 argued for over the
+  reported "insert the dots" fix. **What remains** (PM-verified on `master`, `CLAUDE.md:97-100`):
+  `generate-clients` is still undocumented and the "every `generate-*` ends in `npm run typecheck`"
+  sentence is still absent. Carried on the owner's list; **the literal text in M6 above is now STALE**
+  — see T-0462, which owns the corrected proposal.
 
 ## Files changed
 

@@ -5,7 +5,7 @@ status: draft
 size: S
 owner: architect
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 depends_on: [T-0439]
 blocks: []
 stories: []
@@ -99,6 +99,21 @@ panel:
 ## Status log
 - 2026-07-30 — draft (created by pm from the T-0441 review; routed to architect because `agents/process/*.md` is not the PM's file)
 - 2026-07-30 — **not `ready`**: awaiting the architect panel, and lane-blocked behind T-0439 on `quality-gates.md`.
+- 2026-08-01 — **the LANE is clear; the PANEL is not.** T-0439 merged as `acf2f0bc` (PR #175) —
+  `agents/process/quality-gates.md` lane is now **T-0445 ✅ → T-0439 ✅ → T-0468**, and this ticket is
+  its sole remaining writer this sprint. **Stays `draft`** on the other half of the reason: it needs
+  the architect panel, which is DoR item 2, not a dependency. Ready to dispatch to that panel today.
+- 2026-08-01 — **one more instance for the panel, and it is not a build cache.** The same *class* —
+  *a check that reports success without doing anything* — was hit twice more this sprint by a different
+  mechanism: `check-consistency.mjs` printed `OK (0 files scanned)` **exit 0** for every **absolute**
+  `--paths` (it joined the absolute path onto the repo root), and every agent in this backlog is
+  instructed to pass absolute paths. Fixed on `master` by `d6969fef` (#177): absolute paths now
+  resolve, and an explicit `--paths` matching nothing exits **1** as `NOT RUN`. **Relevance to this
+  ticket:** Gate 0.5 leg 2 already says "zero files scanned is a non-run", and the tool still returned
+  a green anyway — which is the same gap this ticket names for the build cache. **Worth the panel
+  ruling on whether the rule should oblige the tool to make a non-run un-representable as a pass**,
+  not just oblige the human to notice. Recorded as input, not as scope creep: if the panel wants it,
+  it is one clause; if not, this line is the record that it was considered.
 
 ## Review
 <!-- architect + docs verdicts here -->

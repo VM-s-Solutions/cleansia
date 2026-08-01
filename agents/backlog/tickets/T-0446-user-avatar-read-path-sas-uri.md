@@ -1,11 +1,11 @@
 ---
 id: T-0446
 title: User avatar READ path — return a resolvable URI for the profile photo instead of a bare blob name
-status: in_progress
+status: done
 size: M
 owner: backend
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 depends_on: [T-0438]
 blocks: [T-0447, T-0448, T-0449, T-0457]
 stories: [US-user-avatar]
@@ -210,6 +210,37 @@ _(PM floor; the panels finalize)_
   - `dotnet test src/Cleansia.HostTests` → **75 passed / 0 failed**
   - `check-consistency.mjs` → **47 violations = the master baseline of 47**, no new violation
   **AC4 is CLOSED by QA's Azurite run** (see below); nothing in this ticket is now unverified.
+- 2026-08-01 — **`in_progress` → `done`. MERGED as `a63b776e` (PR #176)**, "feat(api): return a
+  resolvable URL for the user's avatar [T-0446]". Reviewer **FINAL VERDICT: APPROVED** at `598f09e3`
+  (`## Review`, `### FINAL VERDICT`); security gate **APPROVE-WITH-CONDITIONS** with both conditions
+  folded in and shipped as **AC9** and **AC10**; **AC4 CLOSED by the owner on DEV** (`### AC4 — CLOSED
+  by the owner, 2026-08-01`). **Every AC now carries evidence and nothing is owed by QA** — the
+  reviewer's "still owed before `done`: AC4's rendering half" line is discharged by that owner check.
+- 2026-08-01 — **THE OWNER'S MANUAL-STEP BUNDLE IS DONE, and it shipped inside this same commit** —
+  which is why AC8 closes. PM-verified first-hand on `master` at `1c8fdd00`:
+  - `nswag-regen` — `libs/core/customer-services/.../customer-client.ts` and
+    `libs/core/partner-services/.../partner-client.ts` each gained the `blobUrl` member (4 lines each
+    in `a63b776e`). `admin-services/.../admin-client.ts` already carried `blobUrl` on another DTO, so
+    it needed no delta. No consumer broke — `master` did not go red after the regen, the first time
+    that has held.
+  - `mobile-spec-redump` — `src/cleansia_android/openapi/customer-mobile-api.json` (4 hits) and
+    `partner-mobile-api.json` (6 hits) both carry `blobUrl`. **Both mobile platforms are served by
+    those two committed specs** (`src/cleansia_ios/openapi/README.md` §"Source of truth" — iOS's
+    swift5 generator and Android's kotlin generator read the *same* files), so **T-0448 and T-0449 can
+    both see the field**. The iOS side needs only `./scripts/generate-api-clients.sh`, which is
+    agent-authorised.
+  - **Consequence: `T-0447/T-0448/T-0449 are HELD until the owner confirms this bundle` is
+    DISCHARGED.** The hold is lifted for all three; what still gates T-0448/T-0449 is T-0450, not this
+    ticket. See each of their status logs.
+- 2026-08-01 — **One thing this ticket closed and one it left open, recorded because the open one is
+  now a ticket.** Closed: a field whose name **is** in the redaction token list is redacted in
+  behaviour (AC9's ordering fix), and a DTO whose redaction *unmasks* free text has its route
+  suppressed (`RedactionUnmaskedFreeTextGuardTests`). **Left explicitly open: a secret whose field
+  name was never in the token list is caught by nothing.** Both live Stripe credentials found this
+  sprint — `ephemeralKey` and `setupIntentClientSecret`, now at
+  `Middleware/RequestLoggingMiddleware.cs:244` on all five hosts — were in that class, and the first
+  was found **by luck**, because it happened to sit behind an already-redacted field. **Filed as
+  T-0470** (the sibling name/shape guard over the same wire-DTO walk).
 
 ## Review
 

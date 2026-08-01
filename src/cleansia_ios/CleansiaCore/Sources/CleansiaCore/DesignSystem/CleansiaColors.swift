@@ -38,6 +38,18 @@ public enum CleansiaColors {
     public static let errorContainer = Color.dynamic(light: Palette.errorBg, dark: Palette.darkErrorContainer)
     public static let onErrorContainer = Color.dynamic(light: Palette.errorText, dark: Palette.darkOnErrorContainer)
 
+    /// Content colour for a surface that is deliberately theme-INVARIANT — the profile-hero avatar
+    /// disc, which reads as a cut-out in the brand gradient and stays white in both schemes. Because
+    /// the surface never adapts, its ink must not either: `primary` resolves to sky400 in dark and
+    /// measures 2.14:1 on white, under the WCAG 3:1 large-text floor, so this pins the light-mode
+    /// brand blue (4.10:1 in both schemes). Android pins the same colour for the same reason
+    /// (customer `ProfileTab.kt`). The hexes are the source of truth and the testable surface — a
+    /// `Color` → `UIColor` roundtrip is trait-dependent on the iOS-16 floor, they are not.
+    public static let onFixedWhite = Color(hex: onFixedWhiteHex)
+
+    static let fixedWhiteHex: UInt32 = 0xFFFFFF
+    static let onFixedWhiteHex: UInt32 = 0x0284C7
+
     public static let successText = Palette.successText
     public static let successBg = Palette.successBg
     public static let warningStar = Palette.warningStar

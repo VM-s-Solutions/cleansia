@@ -159,7 +159,7 @@ private struct ProfileHero: View {
                     .frame(width: 72, height: 72)
                 Text(initials)
                     .font(CleansiaTypography.headlineSmall)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.onFixedWhite)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(name)

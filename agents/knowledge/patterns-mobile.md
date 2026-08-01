@@ -240,6 +240,20 @@ raw components one-off; never duplicate a `:core` component.
 > the delete-account confirm both consume it; partner `ProfileHubContent`'s hand-rolled copy is the
 > remaining convergence target.
 
+> **Ink on a theme-INVARIANT surface — the ONE way (T-0451):** a `Color.dynamic` token is right almost
+> everywhere and wrong wherever the surface beneath it refuses to adapt. Both profile-hero avatar discs
+> are a fixed `Color.white` in **both** schemes, so `CleansiaColors.primary` resolved to sky400 on them
+> and measured **2.14:1** — under the WCAG **3:1** large-text floor — while light mode stayed fine at
+> 4.10:1, which is why it survived review. **Pin the light-mode value; do not make the surface adaptive:**
+> the disc is a deliberate cut-out in the brand gradient and Android's customer hero pins `Sky600` for
+> the same reason (`ProfileTab.kt`), so adapting the disc would open a fresh divergence while closing a
+> defect. Core owns the pinned pair — **`CleansiaColors.onFixedWhite`**, derived from the internal
+> `fixedWhiteHex`/`onFixedWhiteHex` so `FixedWhiteContrastTests` can pin the **ratio** from the hexes
+> (a `Color` → `UIColor` roundtrip is trait-dependent on the iOS-16 floor — the `BrandGradientTests`
+> rule). The generalizable law: **an adaptive foreground over a hardcoded background is a contrast
+> defect until someone measures it** — the same shape as the `onError`-on-`error` collapse above, and
+> neither is visible in the theme the author develops in.
+
 > **iOS snackbar pill — the ONE way (T-0432):** `SnackbarPill`/`SnackbarPalette` in
 > `Core/Snackbar/GlobalSnackbarHost.swift` render on a **theme-adaptive** `CleansiaColors.surface` pill
 > with `onSurface` text (NOT a fixed pastel fill — that never adapted to dark), a filled circular

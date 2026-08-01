@@ -1,13 +1,16 @@
 # Sprint 14 — owner batch, demo preparation
 
-**Baseline now:** `master` at **`ce2416a0`**. (Planning baseline was `bbcf5b24`.)
+**Baseline now:** `master` at **`0f3b0d4c`** (moved 2026-08-01; was `ce2416a0`, planning baseline
+`bbcf5b24`). **Two review commits — `c23b26e7` (T-0440 verdict) and `c9265298` (the tooling
+false-green fix) — are on `fix/tooling-false-green-and-broken-docs` and are NOT on `master`.**
 **Updated:** 2026-07-30 — **third PM pass**: the **T-0446 security gate**, the **ADR-0031 panel**,
 **QA's AC4 run** and the **T-0441 review**.
 **Input:** one owner batch of 5 items + 1 approved process change → 12 tickets; **+ 7** from wave-1
 findings; **+ 4** from the security gate; **+ 3** from the ADR-0031 panel; **+ 5** from QA and the
 T-0440/T-0441 reviews. **32 total.**
 
-> **Three things on this page changed status today and are easy to miss:** **T-0446's AC4 is CLOSED**
+> **Four things on this page changed status and are easy to miss:** **T-0440 is APPROVED and in `qa`**
+> with three items still open (§2.14), **T-0446's AC4 is CLOSED**
 > (§2.10 — the avatar renders; executed, not reasoned), **T-0441 is APPROVED and in `qa`** (§2.11),
 > and **§2.12 RETRACTS a false blocker the PM filed against T-0440** — the owner's regen bundle is back
 > to **two** items and T-0440 is **not** owner-gated. Also **§2.9 retires the "DEFERRED-TO-CI" caveat**
@@ -493,6 +496,70 @@ T-0441 as **an offer, not a change request** — with a warning that adopting it
 That key exists but is the partner/detail **display** label; the confirm-step hint genuinely did not
 exist and is `booking_access_instructions_hint`. Corrected in place so the next reader does not chase
 it.
+
+---
+
+## 2.14 T-0440 APPROVED → `qa`, and F-4's vacuous-green — with one correction to the report
+
+**T-0440 is APPROVED.** The verdict is committed as **`c23b26e7`**. **⚠️ PM correction: that commit is
+on `fix/tooling-false-green-and-broken-docs`, NOT on `master`** — verified with
+`git merge-base --is-ancestor`. Nobody should go looking for it in `master`'s history yet.
+
+**Three items remain open before `done`:**
+
+1. **F-3 — test-first ordering is unverifiable from the artifact** (one squashed commit, no `red→green`
+   status-log entry). The reviewer **explicitly declined to assert the tests were written after the
+   fact**, and noted its own mutations substantively cover what TDD protects against here. So this is
+   a **traceability gap, not a quality finding**. The **developer records the ordering**; if it was
+   implementation-first, **that becomes a real Gate 6 question and the reviewer re-reviews.** Recorded
+   this way deliberately — the record is only worth having if it is allowed to come back wrong.
+2. **AC1 screenshot** and **3. the Gate 8.5 render leg** — both at QA, both reachable only by driving
+   the real app on a **16.4 device**. **This is a genuine handoff, not a deferral:** the reviewer
+   **proved** neither is capturable in-suite by hosting the field in a **real window** and capturing
+   through **two independent mechanisms** — both blank. Same shape as T-0441's screenshot handoff.
+   While QA is on the device: does the **ru/uk two-line placeholder** read as intentional beside the
+   sibling's one line?
+
+### F-4 — the vacuous consistency gate. Recorded, NOT ticketed — but the fix is not live yet
+
+The reviewer found that `check-consistency.mjs` has **no Swift coverage**, so every `layers: [ios]`
+ticket has been recording a **vacuous green** on Gate 8's consistency leg.
+
+**The *silent* half is fixed on a branch** (`c9265298`): an explicit `--paths` matching nothing now
+exits **1** with `NOT RUN`, and **absolute paths resolve** — they previously joined onto the repo root
+and printed `OK (0 files scanned)`.
+
+**⚠️ PM correction — that fix is NOT on `master`.** It sits on the same unmerged
+`fix/tooling-false-green-and-broken-docs` branch. Verified on `master` at `0f3b0d4c` just now:
+
+```
+$ node agents/tools/check-consistency.mjs --paths=src/cleansia_ios/CleansiaCustomer
+consistency: OK (0 files scanned, stacks: backend, frontend, mobile)   → exit 0
+```
+
+**So the vacuous green is still live for anyone working from `master` today.** Treat any
+consistency-leg evidence produced from `master` as unproven until that branch merges.
+
+**The retroactive part deserves naming:** the absolute-path bug meant the gate **passed without
+reading a file for every agent that followed the absolute-path instruction** — which is what this
+backlog's own tickets instruct. That is not iOS-specific; it would have produced a false green on
+**any** stack. Consistency-leg evidence recorded across this sprint should be read with that in mind.
+
+**Do NOT file an "add Swift to the walker" ticket.** That is **ADR-0032's** call — it rules that iOS
+enforcement belongs in a **SwiftLint `custom_rule` or an XCTest guard, never the walker** — and a
+challenger is on it now. Filing one would pre-empt the panel.
+
+### Two smaller items, both recorded as "do not do the wrong thing later"
+
+- **The "hint no longer than its sibling" constraint is REFUTED for iOS.** Android's float label
+  ellipsizes; **iOS's hint is plain wrapping text with no line limit in a container with ample
+  headroom** — an Android-shaped rule generalized to a platform whose premise fails. **Must not be
+  carried into T-0449 or T-0450.** PM-verified neither carries it today, so both received a
+  **"do not add"** note — prevention, not removal.
+- **The `uk` string ships a typographic apostrophe (U+2019), and that form is CORRECT.** **The PM's own
+  parity table in T-0441 had the straight ASCII `'` (U+0027)** — i.e. the artifact most likely to cause
+  someone to "fix" it backwards was one I wrote. Corrected in place, annotated with the codepoint, and
+  flagged so nobody reverses it.
 
 ---
 

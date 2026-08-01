@@ -19,43 +19,212 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > entirely. **Ground yourself in the CODE, not in these rows**, for any question about post-#148
 > state. Routing through the PM resumes with SPRINT-14 below.
 
-> ## 🚀 SPRINT-14 — owner batch, 2026-07-30 (demo-preparation): **1 red-build blocker + 4 owner items + 1 approved process change → 12 tickets**
+> ## 🚀 SPRINT-14 — owner batch, 2026-07-30 (demo-preparation): **32 tickets — 5 done (PRs #170–#174), T-0441 in QA, 3 in flight, 7 from wave-1 findings, 4 from the SECURITY GATE, 3 from the ADR-0031 PANEL, 6 from QA + the T-0440/T-0441 REVIEWS**
 >
-> The owner is preparing a **demo** and considers the app otherwise ship-ready for one. Tickets are
-> ranked by **user-visible impact per unit of effort**, with the red build first because it blocks
-> every other lane. **PM recommendation: the avatar feature (T-0446…T-0449) should NOT gate the demo**
-> — it is the largest item by far, it is invisible until its backend read path lands, and it carries an
-> owner-only regen bundle in the middle of the chain. Rationale in `status/sprint-14.md` §3.
+> **Baseline: `master` at `ce2416a0`.** Updated 2026-07-30 (third PM pass — T-0446 security gate).
 >
-> **Verified by the PM before ticketing** (`--skip-nx-cache` production builds on `bbcf5b24`,
-> 2026-07-30): **all three** web apps fail, not two — `cleansia-admin.app` also consumes
-> `libs/data-access/partner-stores/src/lib/user/user.effects.ts`. Exit 1 on customer (4 errors),
-> partner, and admin.
+> **🔒 T-0446 SECURITY GATE RETURNED: `APPROVE-WITH-CONDITIONS`.** No live vulnerability; the read
+> path is correctly scoped and no exploit could be constructed against it. **T-0446 stays
+> `in_progress`** (per `ticket-lifecycle.md`, a ticket with change-requests does not go backwards —
+> the same developer fixes it). **Two findings folded into T-0446** as new AC (SEC-1 vacuous redaction
+> + vacuous test; SEC-4 blob-name reuse); **four tickets filed out of it** so they cannot compress the
+> demo path. Findings doc: **`agents/backlog/security/user-profile-avatar.md`**.
 >
-> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Owner item |
-> |----|-------|------|--------|-----------|--------|-----|-------------|------------|
-> | **T-0438** | **URGENT — unbreak `master`**: three web call sites missing the newly-required regen fields; **and** wire the wizard's long-collected `entryInstructions` into `accessInstructions` (a live data-loss bug — collected at `order-wizard.component.html:491`, displayed back at `wizard-summary-step.component.ts:240`, never sent at `order-wizard.facade.ts:551`). Cap 2000 | S | **ready** (needs dispatch) | — | frontend | no | — | 1 + 2 (web) |
-> | **T-0439** | NSwag **regen-drift guard** — second occurrence of this failure (first was `specialInstructions`, `ccca1496`/PR #166). Architect panel must rule on 4 options incl. **making nullable DTO members emit as optional** (kills the class outright) | S | **draft** — needs architect panel | T-0438 | architect, frontend, docs | no | — | 1 (guard) |
-> | **T-0440** | **iOS** — capture entry/access instructions on the booking confirm step. Contract READY (spec carries it); local generated client is **stale**, run `scripts/generate-api-clients.sh` first | S | **draft** — needs analyst panel | — | ios | no | — | 2 |
-> | **T-0441** | **Android** — same capture on the booking confirm step. **New `booking_access_instructions_hint` key ×5 IS required** — the pre-seeded `order_detail_access_instructions` is the *display* label only | S | **draft** — needs analyst panel | — | android | no | — | 2 |
-> | **T-0442** | **Android customer profile hero → match iOS.** Root cause found: iOS `HeroGradient` is ONE `HStack` with the edit chip `.frame(maxHeight: .infinity, alignment: .center)` (`ProfileTab.swift:296-303`); Android stacks a second row below a `Spacer(16.dp)` (`ProfileTab.kt:305-330`). 11-row delta table in the ticket | S | **ready** (needs dispatch) | — | android | no | — | 3 |
-> | **T-0443** | **Android brand assets from iOS** — both apps. Confirmed: the two Android apps ship **different hand-drawn vector marks**, neither matching iOS; the system splash is already wired to `ic_launcher_foreground` (`themes.xml:7`) so it comes free; the **partner has no in-app splash composable at all**; `ic_notification` must stay monochrome | M | **ready** (needs dispatch) | — | android | no | — | 4 |
-> | **T-0444** | **Web logo/favicon from iOS** — all 3 apps. Two defects found while grounding: every app serves a **PNG under a `.webp` extension** (all three `Logo.webp` share sha1 `365adf5963`, which `file(1)` reports as PNG 48×48), and the 28px header logo has a 48px source (soft on 2×) | S | **ready** (needs dispatch) | T-0438 | frontend | no | — | 4 |
-> | **T-0445** | **PROCESS (owner-approved)** — new **verification-integrity gate**: mutation-prove the test, re-run rather than trust, declare what could NOT be verified. Closes 3 real misses (a security test green before AND after the fix; an `UP-TO-DATE` Gradle run; iOS tests that never compiled). Distinct from Gate 6.5 and from the Gate 8 verify-not-trust blockquote — the ticket argues why | S | **ready** (needs dispatch) | — | architect, docs | no | — | process |
-> | **T-0446** | **Avatar READ path (SPINE)** — the API returns `{fileName: "<guid>", base64Content: null, contentType: null}` (`Mappers/BlobMappers.cs:12-18`), so **no client can render an avatar even after a successful upload**. Needs analyst + architect panels (SAS-on-DTO vs streaming endpoint vs base64) | M | **draft** — needs both panels | T-0438 | backend | **yes** | **nswag-regen + mobile-spec-redump** | 5 |
-> | **T-0447** | **Web** avatar upload/render/**removal**. Found: `updateUserCurrent` is **never dispatched** by any component — the partner-store effect chain is dead code, not a reference. Only live caller is `profile.component.ts:224` (`photo: undefined as any`) | M | **blocked** | T-0446, T-0438 | frontend | yes | — | 5 |
-> | **T-0448** | **Android** avatar upload/render/removal. `EditProfileScreen.kt:230` is `.clickable { /* TODO: launch photo picker */ }` | M | **blocked** | T-0446, T-0442, T-0441 | android | yes | — | 5 |
-> | **T-0449** | **iOS** avatar upload/render/removal. No avatar UI exists; `HeroGradient` is initials-only | M | **blocked** | T-0446, T-0440 | ios | yes | — | 5 |
+> **⚠️ OWNER RULING — the avatar feature IS part of the demo.** The PM's original recommendation
+> (`status/sprint-14.md` §3: ship the demo without T-0446…T-0449) has been **overruled by the owner**.
+> T-0446 is therefore the **demo critical path**: three client tickets and the demo sit behind it, and
+> it carries an **owner-run regen bundle mid-chain**. Sequencing below reflects the ruling — nothing
+> non-demo may be inserted in front of T-0446/T-0448/T-0449.
 >
-> **Shared-file lanes validated before dispatch** (`process/shared-file-lanes.md`): customer-web i18n →
-> T-0447 sole writer · Android `customer-app` `strings.xml` ×5 → **T-0441 then T-0448** · Android
-> `ProfileTab.kt` → **T-0442 then T-0448** · iOS `Localizable.xcstrings` → **T-0440 then T-0449** ·
-> `agents/process/quality-gates.md` → **T-0445 then T-0439** · `INDEX.md` → PM only.
+> **⚠️ The PM has no `Agent` tool.** This charter cannot dispatch; the orchestrator does. Do not plan
+> around a capability this role lacks. See `status/sprint-14.md` §Process.
 >
-> **MANUAL_STEPS bundle for the owner (batched, one handoff — do NOT interleave):** none until T-0446
-> is implemented; then **one** bundle = `nswag-regen` (all three TS clients) + `mobile-spec-redump`
-> (`customer-mobile-api.json`, and `partner-mobile-api.json` if reachable). After that regen, **build
-> all three web apps before pushing** — skipping that is what produced T-0438.
+> ### Wave 1 — SHIPPED (all merged to `master`)
+>
+> | ID | Title | Size | Status | Merged | Layers |
+> |----|-------|------|--------|--------|--------|
+> | **T-0438** | Unbreak `master` after the regen (3 web call sites) **+** close the order-wizard entry-instructions **data-loss** bug in the same edit | S | **done ✅** | `7c82cd2e` (PR #171) | frontend |
+> | **T-0442** | Android customer profile hero → single row, edit chip vertically centred (matches `ProfileTab.swift:296-303`) | S | **done ✅** | `ce2416a0` (PR #174) | android |
+> | **T-0443** | Android brand assets from iOS — both apps re-cut, `ic_notification` now byte-identical across apps, shared `WordmarkSplash` in `:core` | M | **done ✅** | `10d03f14` (PR #173) | android |
+> | **T-0444** | Web brand mark, all 3 apps — **reworked twice by owner ruling**: monogram **overruled** → iOS wordmark; then a **distinct stacked "Cleansia Partner" lockup** for the partner app. Also fixed "PNG served as `.webp`" | S | **done ✅** | `3c27cd5a` (PR #172) | frontend |
+> | **T-0445** | PROCESS — **Gate 0.5 Verification integrity** (mutation-prove the test · a cached run is not a run · declare what you could NOT verify). Live at `process/quality-gates.md:52-90` | S | **done ✅** | `8241d3cd` (PR #170) | architect, docs |
+>
+> Also merged in the window and **not ticketed**: the Google sign-in **sub-first** resolution fix
+> (`8241d3cd`, PR #170) — routed outside this process; recorded here so the history is honest.
+>
+> ### In flight — dispatched, running now
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step |
+> |----|-------|------|--------|-----------|--------|-----|-------------|
+> | **T-0446** | **Avatar READ path (SPINE) — DEMO CRITICAL PATH.** API returns `{fileName:"<guid>", base64Content:null, contentType:null}` (`Mappers/BlobMappers.cs:12-18`), so no client can render an avatar even after a successful upload. **🔒 SECURITY GATE: APPROVE-WITH-CONDITIONS** — cleared (no IDOR · `sr=b sp=r` 1h asserted against a real client · container private on two switches · no SAS on any paged list); **+AC9** (SEC-1: the redaction added by this diff never executes — truncate runs before redact, so it fires **0%** of the time here, and its test uses a 335-byte fixture vs a real ~786-byte response) and **+AC10** (SEC-4: mint a fresh blob name on replace — the **only** blob in the codebase that reuses one). `## Out of scope` **amended** to admit `UpdateCurrentUser` for AC10 | M | **in_progress** | T-0438 ✅ | backend | **yes** | **nswag-regen + mobile-spec-redump** |
+> | **T-0439** | NSwag regen-drift guard (2nd occurrence; first was `specialInstructions`, PR #166). `quality-gates.md` lane now clear — T-0445 merged | S | **in_progress** | T-0438 ✅ | architect, frontend, docs | no | — |
+> | **T-0440** | **iOS** — capture entry/access instructions on booking confirm. **❌ The `ios-client-regen` blocker filed against this row on 2026-07-30 was FALSE and is RETRACTED** — `CleansiaCustomerApi/` is **gitignored and untracked** (`git ls-files` → 0 files), the local copy was merely **stale (Jul 25)**, and the **committed** spec already carries the field. Regenerate with `./scripts/generate-api-clients.sh` (**agent-authorised offline codegen, not an owner step**); the dev did, got the field at `CreateOrderCommand.swift:34`, **694 tests pass**. **⚠️ Read the ticket's own lines 34-39 first** — it documented this exact trap before anyone walked into it. **Nothing here is owner-gated** | S | **in_progress** | — | ios | no | **none** (retracted) |
+> | **T-0441** | **Android** — same capture. A **new** `booking_access_instructions_hint` key ×5 **is** required (`order_detail_access_instructions` is the display label only). **✅ REVIEWER APPROVED** — 321/321 tests, **53/53 Gradle tasks executed** (not cached), no new consistency violations, both findings closed **and independently re-proved**. Only AC1's screenshot is open and it is **QA's**, correctly deferred. `values-*/strings.xml` lane now **clear for T-0450** | S | **qa** | — | qa | no | — |
+>
+> ### Behind the spine — demo scope by owner ruling
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec |
+> |----|-------|------|--------|-----------|--------|-----|
+> | **T-0447** | **Web** avatar upload/render/removal. `updateUserCurrent` is **still dead code** (re-verified post-#171); the only live caller is `profile.component.ts:224`. **🔒 binding conditions attached**: never `RenderMode.Server` on an authenticated profile route (a live SAS in a proxy-cacheable HTML doc); cache on `fileName` not `blobUrl` | M | **blocked** | T-0446 + owner `nswag-regen` | frontend | yes |
+> | **T-0448** | **Android** avatar upload/render/removal. `EditProfileScreen.kt:230` is `.clickable { /* TODO: launch photo picker */ }`. T-0442 dep **cleared**; **T-0450 added** to the lane. **🔒 binding conditions attached**: never raise OkHttp to `Level.BODY` (`HEADERS` debug / `NONE` release today); cache on `fileName` not `blobUrl`; S11 session-wipe set | M | **blocked** | T-0446, T-0441, **T-0450** | android | yes |
+> | **T-0449** | **iOS** avatar upload/render/removal. No avatar UI; `HeroGradient` is initials-only. **T-0451 + T-0450 added** to the `ProfileTab.swift` lane. **🔒 binding conditions attached**: Kingfisher `cacheKey` = `fileName` not `blobUrl`; S11 registry; never persist the URL | M | **blocked** | T-0446, T-0440, **T-0451**, **T-0450** | ios | yes |
+>
+> ### NEW — wave-1 findings that had no home (filed 2026-07-30, second PM pass)
+>
+> Each was surfaced by real work in wave 1 and **re-grounded by the PM against the code** before
+> ticketing — the measurements below are the PM's own, not the reporting agent's.
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Panel |
+> |----|-------|------|--------|-----------|--------|-----|-------|
+> | **T-0451** | **iOS avatar initials fail WCAG in dark mode** — sky400 on a hardcoded white circle = **2.14:1** (floor is 3:1); light mode is 4.10:1. **Two** call sites (`ProfileTab.swift:276-282`, `ProfileHubContent.swift:156-162`). Android already deviated to Sky600 with the reasoning written in (`ProfileTab.kt:279-284`); iOS is the unfixed side | S | **ready** | — | ios | no | none (no-decision) |
+> | **T-0452** | **No social-preview card on the public SSR customer site** — no `og:*`, no `twitter:card`, no `apple-touch-icon`, no manifest (verified: zero `og:` in `index.html`, zero `Meta` service usage). T-0444's 1024 master makes it cheap. apple-touch-icon + manifest **ruled in-scope** (same master, same `<head>`, and **no service worker** exists so a manifest is metadata, not installability) | S | **draft** | T-0444 ✅ | architect, frontend | no | **architect** — static `<head>` vs per-route SSR meta |
+> | **T-0450** | **ru/uk profile hero — two defects, one surface.** (A) `"Редактировать профиль"` ≈216.8dp vs en ≈120.2dp, so it renders **"Редактиров…"** behind T-0442's `0.45` cap; the real fix is a shorter string needing **native-speaker sign-off** (Q-I18N-02). (B) **All three Poppins weights cover 0/98 Cyrillic code points** (PM parsed the `cmap`) while all three Nunito weights cover 98/98 — so every ru/uk name falls back to Roboto beside Nunito. Android and iOS TTFs are **byte-identical** (sha1-verified) → the same defect on both. Also fixes the iOS chip **wrapping to two lines** (`ProfileTab.swift:332-350` has no `.lineLimit`) | M | **draft** | T-0440, T-0441, T-0451 | analyst, architect, android, ios | no | **analyst** (the string) **+ architect** (the family) |
+> | **T-0453** | **Android hero does not bleed under the status bar; iOS does.** iOS gives the inset to the hero (`ProfileTab.swift:306` `.padding(.top, 48 + topInset)`); Android gives it to the scroll container (`ProfileTab.kt:135` `.windowInsetsPadding(...)` + a deliberate 12dp spacer at `:141`). Reviewers: the most visible remaining phone-to-phone delta. Converging it changes **who owns the top inset for the whole tab**, and the status-bar **icon** appearance is set globally at `Theme.kt:84` | M | **draft** | **T-0448** | architect, android | no | **architect** — inset ownership |
+> | **T-0454** | **Compose weight-starvation consistency rule** — flag a `Row`/`Column` holding both a `Modifier.weight(` child and an unbounded non-weighted `Text`. The bug class that nearly shipped on T-0442 (see its own comment at `ProfileTab.kt:266-268`). `check-consistency.mjs` already has the `add()`/`warn()` two-tier seam at `:36`/`:44`. **Routed, not written by the PM** | S | **draft** | — | architect, android, docs | no | **architect** — a new rule is an architect call |
+> | **T-0455** | **`partner-stores` ↔ `partner-services` circular dependency** — **33 errors** re-derived by the PM (`partner-stores` 19 · `services` 6 · `partner-services` 5 · `pipes` 3), all `@nx/enforce-module-boundaries`, in **two distinct cycles**: one caused by a **single import** (`loading.interceptor.ts:3-6`), one a type-location problem through `pipes`. Invisible because lint is `continue-on-error: true` (`frontend-ci.yml:40-42`) | M | **draft** | — | architect, frontend | no | **architect** — two seams |
+> | **T-0456** | **PROCESS — worktrees share one repo-global `git stash` stack.** A reviewer's `git stash -u` in a developer's worktree hard-reset it mid-ticket (~50 min lost). `shared-file-lanes.md:40-42` bans `git restore` for the same class but enumerates *commands*, not the class. Verified: `worktree` appears in **0** process/charter docs and `git stash` in **none at all** | S | **draft** | — | architect, docs | no | **architect + docs** (T-0445 precedent) |
+>
+> ### 🔒 NEW — filed OUT of the T-0446 security gate (2026-07-30, third PM pass)
+>
+> Findings **SEC-1** and **SEC-4** were folded **into** T-0446 (they are that ticket's own defects).
+> These four are the findings that are **not** T-0446's, filed separately so a pre-existing problem
+> cannot compress a demo-path ticket. Every file:line below was **re-verified by the PM against the
+> code on the T-0446 branch** before ticketing. Full write-up:
+> **`agents/backlog/security/user-profile-avatar.md`**.
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Panel | Demo |
+> |----|-------|------|--------|-----------|--------|-----|-------|------|
+> | **T-0457** | **S6 — `GET /api/User/GetCurrent` writes the caller's `email`, `firstName`, `lastName`, `phoneNumber`, `birthDate` to the **Information**-level log on all five hosts.** All five close by index **~264–302** (PM's own measurement), **inside** the 500-byte `ResponseBodyLimit`, on **every** request. `IsSensitivePath` covers `/auth/`, `/login`, `password`, `/order/lookup` — **not** this route. Arguably the **largest S6 exposure in the codebase**: it is the most-called authenticated endpoint. **Pre-existing — does NOT block T-0446** | S | **draft** | **T-0446** (same five files) | backend | **yes** | none (no-decision — enforcing an existing law) | **PRE-DEMO (P1)** |
+> | **T-0458** | **Image-upload sanitization — decide the policy + build the shared seam** (EXIF strip · size cap · resize), piloted on the avatar. `ImageFileValidator` is a **3–4 byte magic-prefix** check and `UpdateCurrentUser:160-164` stores bytes verbatim; JPEG/TIFF carry GPS. **No per-image size limit exists anywhere** beyond Kestrel's 30 MB default. Panel must rule on library (**ImageSharp licence** is a legal question, not a technical one), strip-vs-re-encode, seam location (a FluentValidation validator **cannot** mutate), and **EXIF `Orientation`** — strip it naively and photos ship rotated | M | **draft** | — | architect, backend | **yes** | **architect** (new dependency + new cross-cutting policy → ADR) | post-demo · **HARD PRECONDITION for cross-user avatar display** |
+> | **T-0459** | **Apply the sanitizer to order photos + dispute evidence** (`SaveOrderPhotos.cs`, `UploadOrderPhoto.cs`, `UploadDisputeEvidence.cs`). **These are the actually-exposed instances** — already **cross-user visible today**: a cleaner's photos of a customer's home carry the customer's coordinates and customer + cleaner + admin can all fetch them. The avatar is the *least* exposed instance. Split from T-0458 so neither is an **`L`** | M | **draft** | **T-0458** | backend | **yes** | none (T-0458's ADR is binding) | post-demo |
+> | **T-0460** | **SECURITY RULE — user-supplied artifacts served back by URL are sanitized at upload; magic-byte validation is an accept/reject check, not a sanitizer.** A **gap in the rule set, not a violation of it**: S4 governs DTO *fields*, S6 governs *logs*, nothing reaches bytes inside a stored artifact — which is why SEC-3 sat in **three** shipped pipelines uncaught. Panel also rules on scope (images only? PDFs carry author metadata and employee documents are a PDF pipeline) and whether it is mechanically checkable | S | **draft** | — | architect, docs | no | **architect** (a new S-series law — T-0445 / T-0456 precedent) | post-demo |
+>
+> ### 📐 NEW — filed from the **ADR-0031 panel** (accepted, 2026-07-30)
+>
+> Two code changes were mandated before **T-0439** merges and are **already dispatched to its
+> developer** — they are not tickets here. The panel lead handed the PM the findings below. Every
+> file:line was **re-verified by the PM**, and two of the three reports were found to be
+> **understated** — corrections are in the tickets.
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Panel | Demo |
+> |----|-------|------|--------|-----------|--------|-----|-------|------|
+> | **T-0461** | **M3 — consistency rule pinning `strictTemplates: true` per app.** Flipping it off in one app's `tsconfig.json` leaves T-0439's guard suite **5/5 green** while the **template half** silently stops catching what it was proven to catch — and because the flag also weakens the **production build**, this is a **repo-wide** gate weakening, not a guard-local one. PM-verified: all three apps carry it today (`apps/*/tsconfig.json:20`), so the rule pins a correct state rather than fixing a broken one; libs are **59/65**, the two gaps being `data-access/{admin,partner}-stores`. Rule goes in `check-consistency.mjs`; **this ticket owns the `knowledge/consistency.md` entry** — the lead deliberately left it untouched to avoid a lane collision | S | **draft** | **T-0439** | architect, frontend, docs | no | none (enforces accepted ADR-0031) | post-demo |
+> | **T-0462** | **"Code no gate can see" — three instances, one class.** (1) `libs/core/services/src/lib/client/admin-client.ts` is a **second, stale generated admin client** — PM-verified that no `nswag-*.json` writes it (`nswag-admin.json:39` targets `admin-**services**`), no barrel exports it, nothing imports it, no build typechecks it. (2) The app-unreachable `email-template-form.facade.ts` (T-0439 finding 3), caught by **nothing** because lint is `continue-on-error` (`frontend-ci.yml:41` on master / `:63` in T-0439's tree). (3) **THREE `CLAUDE.md` corrections** — owner-gated, ticket proposes literal text: the repo map calls `core/services/` "NSwag-generated" (`:29`), `generate-clients` is undocumented (`:93-96`), and **all six Nx commands at `:84-91` FAIL** — real names are `cleansia.app` / `cleansia-partner.app` / `cleansia-admin.app`, a **dot** not a hyphen | S | **draft** | **T-0439** | frontend, architect, docs | no | none (mechanical + owner-gated doc) | post-demo |
+> | **T-0463** | **All three data-access libs have NO `test` target** — `nx test partner-stores` → `Cannot find configuration for task`. **Reported as `partner-stores`; PM verified and widened — `admin-stores` and `customer-stores` are `lint`-only too.** So the partner app's NgRx effects are **entirely untested**, including `user.effects.ts`, which broke in **T-0438**, is **one of the three regen call sites**, and is **being edited right now** for T-0446. **Two of the last three regen breaks landed in a project with no test target.** Ranked above the cosmetic items by the panel lead, and the PM agrees | M | **draft** | — | frontend, architect | no | scope only — escalate if AC3's bound is contested | post-demo, **highest value of the three** |
+>
+> **⚠️ Lane corrections this block forces:** `agents/tools/check-consistency.mjs` and
+> `agents/knowledge/consistency.md` are **no longer T-0454 sole-writer** — both become
+> **T-0454 → T-0461**. And `libs/data-access/partner-stores/**` is now contested **three ways**
+> (T-0455 rewrites its imports · T-0446's frontend leg edits `user.effects.ts` · T-0463 adds its test
+> target): safe order **T-0446 → T-0455 → T-0463**.
+>
+> **Also from this panel:** **Q-CI-01** (branch protection) filed in `questions/open.md` as
+> **`post-prod`, non-blocking** — ADR-0031 does not depend on it, because the prod deploy is
+> `workflow_dispatch`-only behind the `prod-weu` Environment (`deploy-pro.yml:19-29`), so **an unbuilt
+> `master` push cannot ship itself**. And a **free owner experiment** is attached to the T-0446 regen
+> bundle — see the MANUAL_STEPS note below.
+>
+> ### 🧪 NEW — filed from **QA's T-0446 AC4 run** and the **T-0441 review** (2026-07-30)
+>
+> **AC4 PASSES.** Executed against Azurite with the app's **own** `BlobContainerClientFactory` and the
+> **real** `UpdateCurrentUser.Handler` (only the two repositories mocked): **Chromium 140** rendered
+> the JPEG at 800×600 and the PNG at 48×48 from a bare-GUID URL served as
+> `Content-Type: application/octet-stream`; **WebKit** did the same; **`CGImageSource`** sniffed
+> `public.jpeg`/`public.png` from the bytes. `nosniff` absent, SAS fetch 200 with sha256-identical
+> bytes, wire grant exactly `sr=b sp=r` 1h, container-list → **403**. **No content-type work is needed
+> in T-0446.**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Demo |
+> |----|-------|------|--------|-----------|--------|-----|------|
+> | **T-0464** | **`MetadataName.ContentType` is a DECOY across the whole codebase — the root cause behind AC4.** All five `MetadataName.*` constants are named as if they map to `BlobHttpHeaders`; `BlobContainerClient.cs:64-67` routes them to **`SetMetadataAsync`** (`x-ms-meta-*`). QA proved it: `x-ms-meta-ContentType: image/jpeg` **alongside** `Content-Type: application/octet-stream`. **So every order photo and dispute-evidence file in production is already served as octet-stream.** Fix via **SAS response-header override** (`rsct`/`rscc`) — QA fetched an **already-stored** blob and got `image/jpeg` + `max-age=3600, private`: **zero migration, one file, retro-fixes every existing blob.** 🚨 **PM-found trap (not in the QA report): `Metadata.CacheMetadata` hardcodes `"public, max-age=31536000"` and the AVATAR uses it — the naive fix ACTIVATES `Cache-Control: public` on a SAS-protected avatar, violating the recorded security condition.** Downloads cleared — all four read the DB record | M | **draft** | **T-0446** | backend, architect | **yes** | post-demo |
+> | **T-0465** | **Avatars are not cached at all — over-determined.** No `Cache-Control` **and** the SAS query (`se`+`sig`) changes on every mint, so the HTTP cache key changes every profile read. T-0464's override fixes **half**; the changing-key half is **inherent to the per-read-SAS design** and must be **stated as accepted, not silently carried**. Gate 5 | S | **draft** | T-0446, **T-0464** | backend, architect | no | post-demo |
+> | **T-0466** | **Test infra** — obsolete parameterless `PostgreSqlBuilder()` (`PostgresContainerFixture.cs:15`, `UserMembershipCancellationSweepIndexPlanTests.cs:29`) that Testcontainers 4.10.0 says **will be removed**, plus `xUnit2031` at `RefreshTokenFlowTests.cs:327`. Not cosmetic — the fixture backs **every** integration/host test, so it is a future-blocked upgrade | S | **draft** (ready on merit) | — | backend | no | post-demo filler |
+> | **T-0467** | **Android booking draft is lost on process death** — plain in-memory `StateFlow`, **no `SavedStateHandle` in any `customer-app` source** (PM-verified: all hits are `build/generated/**`). Address, promo, slot, services and both instruction fields all lost. **Medium, and deliberately not inflated:** `BookingBottomSheet.kt:301` already `reset()`s on every fresh non-rebook open, so persisting is a **product behaviour change**, not a bug fix → `analyst` panel first. 🔒 **Constraint written in UP FRONT:** `accessInstructions` can hold a **key-box/alarm code** — never unencrypted at rest, must clear on sign-out via `SessionScopedCache` (S11). T-0441 is what made that material | M | **draft** | **T-0441** | analyst, android | **yes** | post-demo |
+> | **T-0469** | **Instructions-field validation diverges across clients — two findings, one surface.** **(A)** Swift's `String.count` is **grapheme-based**, so a naive iOS cap is **MORE PERMISSIVE** than the backend's `MaximumLength(2000)`, which counts **UTF-16 units** — one ZWJ/emoji cluster is many units, so iOS passes input the server rejects and the user gets a bare 400. Kotlin's `.take(2000)` gets it right for free. **Genuinely iOS-only; not covered by T-0441's hunk. Reported, not written — the dev complied with the `patterns-mobile.md` lane** (`git diff --stat -- agents/` empty). **(B)** T-0440 **capped** `specialInstructions` on iOS; **T-0441's reviewer explicitly ruled the opposite on Android** — two reviewers, opposite rulings, same field, same flow. Route A's catalog write to the architect **already ruling on iOS catalog laws** | S | **draft** | T-0440, T-0441 | architect, ios, android, docs | no | post-demo |
+> | **T-0468** | **PROCESS — Gate 0.5 does not name the case where a build cache serves the mutation proof itself.** The T-0441 reviewer caught its own evidence cache-served mid-mutation and re-ran with `--no-build-cache`; *"it still compiles"* was the load-bearing half. **A mutation that reproduces a previous mutation byte-for-byte will legitimately hit cache** — the build system is behaving *correctly*, which is why leg 2's general "a cached run is not a run" did not prevent it. Panel must give the **flag per stack** (Gradle/Nx/dotnet/Xcode/Jest), not just Gradle | S | **draft** | T-0439 (lane) | architect, docs | no | post-demo |
+>
+> **Known-not-fixed, recorded deliberately (no ticket)** — in the findings doc:
+> **(1)** the managed-identity SAS branch (`BlobContainerClient.cs:99-111`) is **dead code in every
+> environment** (PM-verified: `AccountUrl` is set in **no** config file in the repo) and untested — it
+> **must be re-reviewed before managed identity is switched on**, which also adds a **blocking
+> synchronous `GetUserDelegationKey` round-trip to every profile read**.
+> **(2)** `user-files` is a **flat container shared by all tenants** — the only thing preventing
+> cross-tenant enumeration is the `sr=b` grant, which makes `ProfilePhotoSasGrantScopeTests` a
+> **tenant-isolation control**: **it must not be softened.**
+>
+> ### Shared-file lanes — REVALIDATED 2026-07-30 (`process/shared-file-lanes.md`)
+>
+> - Android customer `values-*/strings.xml` ×5 → **T-0441 → T-0450 → T-0448**
+> - Android `customer-app/.../profile/ProfileTab.kt` → T-0442 ✅ → **T-0450 → T-0448 → T-0453**
+> - iOS `CleansiaCustomer/Resources/Localizable.xcstrings` → **T-0440 → T-0450 → T-0449**
+> - iOS `CleansiaCustomer/.../Profile/ProfileTab.swift` → **T-0451 → T-0450 → T-0449**
+> - customer-web i18n bundle → **T-0447** sole writer
+> - `apps/cleansia.app/src/index.html` + `project.json` → **T-0452** sole writer
+> - `libs/core/partner-services` + `libs/core/services` + `libs/data-access/partner-stores` + `libs/shared/pipes` → **T-0455** sole writer (**new cluster — add the row to `shared-file-lanes.md`, T-0456 or T-0455 to carry it**)
+> - `agents/tools/check-consistency.mjs` → **T-0454** sole writer
+> - `agents/process/quality-gates.md` → T-0445 ✅ → **T-0439**
+> - `agents/process/shared-file-lanes.md` → **T-0456** sole writer
+> - **`src/Cleansia.Web.{Admin,Customer,Mobile.Customer,Mobile.Partner,Partner}/Middleware/RequestLoggingMiddleware.cs`** → **T-0446 (AC9) → T-0457** (**new cluster — 5 copies of one file; all five must change together, four-of-five is a hole.** Line offsets differ: `Cleansia.Web.Customer` is +4 vs the other four)
+> - **`src/Cleansia.Core.AppServices/Features/Users/UpdateCurrentUser.cs`** → **T-0446 sole writer** (AC4 content-type + AC10 fresh blob name) → then **T-0458** (sanitizer pilot). New entry: T-0446's scope amendment made it a writer of this file.
+> - **`src/Cleansia.Core.AppServices/Features/{Orders,Disputes}/*Photo*.cs` + `UploadDisputeEvidence.cs`** → **T-0459** sole writer
+> - **`agents/knowledge/security-rules.md`** → **T-0460** sole writer
+> - **`agents/tools/check-consistency.mjs`** → **T-0454 → T-0461** (**correction: T-0454 is NO LONGER sole writer**)
+> - **`agents/knowledge/consistency.md`** → **T-0454 → T-0461** (T-0461 owns its own entry; the ADR-0031 lead deliberately left this file untouched to avoid the collision)
+> - **`libs/data-access/partner-stores/**`** → **contested THREE ways**: T-0455 (import rewrite, 19 of the 33 lint errors) · T-0446 frontend leg (`user.effects.ts`, **in flight now**) · T-0463 (test target). **Safe order: T-0446 → T-0455 → T-0463.** T-0461 is explicitly told **not** to touch this lib's `tsconfig.json`
+> - **`libs/core/services/**`** → **T-0462**, but T-0455's cluster **overlaps** on this lib — serialize if both are dispatched
+> - **`CLAUDE.md`** → **OWNER ONLY**. T-0462 proposes text; no agent edits it
+> - **`src/Cleansia.Infra.Azure.Storage.Blobs/BlobContainerClient.cs`** (the shared SAS mint — used by order photos, dispute evidence **and** the avatar) → **T-0446 → T-0464 → T-0465**
+> - **`agents/process/quality-gates.md`** → T-0445 ✅ → **T-0439 → T-0468**
+> - **🆕 `agents/knowledge/patterns-*.md` — PM LANE RULING 2026-07-30: this family IS a shared-file lane, effective now.** It is **not** in `process/shared-file-lanes.md` (which enumerates only `consistency.md`, `INDEX.md`, the 15 i18n bundles, the Policy trio and root `CLAUDE.md` — PM-verified at `:19-23`). The table's own rationale for `consistency.md` — *"every ticket appends its note; two concurrent writers destroy each other's hunks"* — applies **verbatim**, and **three of these files were written this sprint by three different tickets**: `patterns-mobile.md` (T-0441), `patterns-backend.md` (T-0446), `patterns-frontend.md` (T-0439's dev). **Serialize per file** (the four are independent, exactly as the i18n bundles serialize per app). The durable edit to `shared-file-lanes.md` is routed through **T-0456** (already that file's sole writer — extended, not forked). Live lane: `patterns-mobile.md` → **T-0441 ✅ → T-0440** *(T-0440 already told not to re-harvest)*
+> - `INDEX.md` → PM only
+>
+> **MANUAL_STEPS bundle for the owner (batched, ONE handoff — do NOT interleave):** still none until
+> T-0446 is implemented; then **one** bundle of **two** items:
+> 1. `nswag-regen` — the TS clients (customer + partner; admin if reachable);
+> 2. `mobile-spec-redump` — `customer-mobile-api.json`, and `partner-mobile-api.json` if reachable.
+>
+> **➕ Ride along with the same session:** the **`markOptionalProperties: true` scratch experiment**
+> (see above), and the **two exit-code unknowns the architect folded in** — **(a)** `npx nswag run`'s
+> exit code on failure is unknown, so a generator that exits 0 on a failed generation would let
+> `generate-*-client` typecheck a **stale** tree and report success; **(b)** all three
+> `*-client-formatter.sh` scripts lack `set -e` and end in an `echo`, so each **always exits 0**.
+> **Do not read a green `generate-*-client` as proof the client regenerated** — the owner's first
+> regen is the real test of that chain (T-0439).
+>
+> **❌ `ios-client-regen` was added to this bundle on 2026-07-30 and RETRACTED the same day — the
+> blocker was FALSE.** Kept visible rather than deleted so nobody re-derives it. `src/cleansia_ios/CleansiaCustomerApi/`
+> is **gitignored and untracked** (`git ls-files` → **0 files**; `.gitignore` calls it *"machine-owned,
+> never committed"*); the local copy was simply **stale (Jul 25)**, and the **committed** spec at
+> `HEAD` already carries `accessInstructions`. Regenerating it is `./scripts/generate-api-clients.sh`
+> — **offline codegen from the committed spec, authorised for agents, NOT an owner step.**
+> **T-0440 is not owner-gated in any respect.**
+>
+> After the regen, **build all three web apps before pushing** — skipping that is what produced
+> T-0438, and T-0439 (the mechanical guard) will not have landed in time to catch it.
+>
+> **➕ FREE EXPERIMENT to ride along with that regen (ADR-0031 panel).** The owner is regenerating
+> anyway. **One extra run with `markOptionalProperties: true` into a scratch output, diffed and
+> discarded** — nothing committed, nothing overwritten — empirically settles whether
+> `removePhoto: boolean` would even become **optional** under **Option D**, which is *currently the
+> unverified premise the whole D rejection rests on*. Cheap, decisive, and it expires the moment the
+> regen is done. **The result is recorded by the `architect` in the living doc
+> `agents/architecture/decisions/generated-client-contract.md` — NOT in the ADR** (that doc currently
+> exists only in T-0439's worktree, so the recording waits for T-0439 to merge). The lead's revisit
+> trigger for D is **call-site-count-shaped**: *one regen breaking >10 call sites for a single added
+> **optional** field.*
+>
+> **A third `manual_step` now exists:** **`owner-claude-md`** on **T-0462** — three corrections to the
+> owner-gated `CLAUDE.md`, proposed as literal text. It is **not** part of the regen bundle and must
+> not be batched with it: T-0462 is post-demo and its text is only final **after T-0439 merges**.
+>
+> **Open owner questions:** **Q-I18N-02** (`blocking: yes` — the shorter ru/uk string; gates T-0450 AC2)
+> and **Q-BRAND-01** (Poppins/Cyrillic strategy platform-wide). Both in `questions/open.md`; Q-I18N-02
+> is on the pre-prod blocking index.
+>
+> **⚠️ Owner-visible, non-blocking (from the security gate):** the demo will run against a DEV
+> environment that is **writing real people's email, name, phone and birth date into Information-level
+> logs on every profile read** (T-0457). Nothing needs an owner *decision* — it needs an owner
+> *awareness* that the log store is PII-bearing until T-0457 lands. See `status/sprint-14.md` §6.
 
 > ## 📱 PHASE/IOS-FIX1 — on-device iOS-16 shakeout (sprint-12): **16 owner-reported issues → 4-cluster diagnosis → 6 slices + 1 process ticket — ALL 6 SLICES DONE · PHASE GATE PASS · PR DRAFTED** (2026-07-03, `phase/ios-fix1`, 11 commits pushed; **remaining acceptance: the OWNER DEVICE PASS**)
 >

@@ -1,13 +1,13 @@
 ---
 id: T-0444
 title: Web — refresh the logo and favicon across all three Angular apps from the iOS mark
-status: ready
+status: done
 size: S
 owner: frontend
 created: 2026-07-30
 updated: 2026-07-30
 depends_on: [T-0438]
-blocks: []
+blocks: [T-0452]
 stories: []
 adrs: []
 layers: [frontend]
@@ -325,6 +325,20 @@ dimensions, so the two cannot drift apart into a layout shift. Plus the i18n key
 with the right value in all five locales per app. Mutation-checked, all restored afterwards:
 partner reverted to the customer wordmark → **3 failures**; the aspect var moved 2px → **1 failure**;
 the key deleted from partner `uk.json` → **1 failure**.
+
+- 2026-07-30 — **done** — merged to `master` as `3c27cd5a` (PR #172), 62 files, +846/-155.
+  **Two owner rulings are recorded above and are the substance of this ticket's history:** (1) the
+  monogram was **overruled** in favour of the iOS wordmark, and (2) the partner web app then got a
+  **distinct stacked "Cleansia Partner" lockup**, matching the partner iOS app. Both were reworks
+  after the first implementation, not the original plan.
+  **PM re-verification:** `apps/{cleansia.app,cleansia-admin.app}/src/assets/logos/Logo.png` are
+  byte-identical (sha1 `b303b295b302`) at **616×112**; `cleansia-partner.app`'s is **616×172** and
+  distinct (sha1 `74c42e6dd5e6`) — the shape guard the ticket describes. Every `Logo.webp` now really
+  is `RIFF … Web/P` per `file(1)`, closing the "PNG served as .webp" defect (all three previously
+  shared sha1 `365adf5963`, a 48×48 PNG). `cleansia-brand-name.component.spec.ts` carries the
+  invariants at `:171-221` and `:289-292`. Jest/build evidence is as reported in the PR.
+- 2026-07-30 — **follow-up filed:** the 1024 master this ticket established makes social-preview
+  metadata cheap, and the public SSR site has none → **T-0452**.
 
 ## Review
 <!-- reviewer writes verdict here -->

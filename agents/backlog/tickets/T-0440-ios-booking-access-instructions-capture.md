@@ -1,13 +1,13 @@
 ---
 id: T-0440
 title: iOS — capture entry/access instructions on the booking confirm step
-status: draft
+status: in_progress
 size: S
-owner: —
+owner: ios
 created: 2026-07-30
 updated: 2026-07-30
 depends_on: []
-blocks: []
+blocks: [T-0450, T-0449]
 stories: [US-customer-access-instructions]
 adrs: []
 layers: [ios]
@@ -75,8 +75,11 @@ appear not to exist. This is a local build artifact, not the owner-only NSwag st
   3. `CleansiaCustomer/Sources/Features/Booking/Submit/BookingOrderCommandFactory.swift` — the
      `instructions` closure at `:31-37` is the exact trim/nil pattern to copy; add the field to the
      `CreateOrderCommand(...)` call at `:56`.
-- **i18n (verified 2026-07-30):** the *display* keys already exist and must be reused, not
-  duplicated — `L10n.OrderDetail.accessInstructions` (`CleansiaCustomer/Sources/L10n+Orders.swift:148`).
+- **i18n (verified 2026-07-30; CORRECTED 2026-07-30 — see below):** ~~the *display* keys already
+  exist and must be reused, not duplicated —~~ `L10n.OrderDetail.accessInstructions`
+  (`CleansiaCustomer/Sources/L10n+Orders.swift:148`) **exists, but it is the partner/detail DISPLAY
+  label. Do NOT reuse it for the confirm-step hint** — "reused, not duplicated" was the wrong
+  instruction and sent readers chasing a key that does not fit.
   A **confirm-step input hint does NOT exist** — `booking_special_instructions_hint` is the only one
   (`L10n+BookingConfirm.swift:4`). A new `booking_access_instructions_hint` key **is** required in
   all 5 locales. Do not assume the pre-seeded display key covers the input label.
@@ -90,6 +93,55 @@ appear not to exist. This is a local build artifact, not the owner-only NSwag st
 ## Status log
 - 2026-07-30 — draft (created by pm; owner batch item 2, iOS half)
 - 2026-07-30 — awaiting analyst deliberation panel (shared story US-customer-access-instructions) before `ready`
+
+- 2026-07-30 — **in_progress** — dispatched by the orchestrator: analyst panel on US-customer-access-instructions, then ios + paired reviewer. **Now also a lane head:** T-0450 and T-0449 both wait on this ticket's `Localizable.xcstrings` write.
+- 2026-07-30 — ~~**`manual_steps: [ios-client-regen]` ADDED.**~~ **RETRACTED the same day — the
+  blocker was false. See the correction block below. `manual_steps` is back to `[]` and this ticket is
+  NOT owner-gated.**
+
+## ❌ RETRACTED 2026-07-30 — the `ios-client-regen` blocker was FALSE. Do not re-derive it
+
+**This block is kept deliberately instead of deleting the row.** An agent that reads the old note —
+or that repeats the same read I did — will re-derive the same false blocker and stall this ticket
+again. Here is exactly why it is wrong.
+
+**What I claimed:** iOS's generated models are committed, `accessInstructions` is absent from
+`CreateOrderCommand.swift`, therefore the owner must regenerate.
+
+**Why it is wrong — four independent checks, all run by the PM this time:**
+
+| Check | Result |
+|---|---|
+| `git ls-files src/cleansia_ios/CleansiaCustomerApi` | **0 files. Never committed.** |
+| `src/cleansia_ios/.gitignore` | ignores `CleansiaCustomerApi/` **and** `CleansiaPartnerApi/`, under the comment *"openapi-generator output — machine-owned, never committed, never hand-edited (regenerate with `scripts/generate-api-clients.sh`)"* |
+| local `CreateOrderCommand.swift` timestamp | **Jul 25 22:35** — generated **before** the spec gained the field |
+| `accessInstructions` in the **committed** spec at `HEAD` | **present** in `src/cleansia_android/openapi/customer-mobile-api.json` |
+
+**The generated client is a machine-owned local build artifact, not repo state.** Regenerating it is
+`./scripts/generate-api-clients.sh` — **offline codegen from the committed spec, authorised for
+agents** — and is *not* the owner-only NSwag step. The developer ran it, got the field at
+`CreateOrderCommand.swift:34`, and **694 tests compile and pass** with it set.
+
+**The lesson, recorded because it is the reusable part:** I read the file, confirmed the field was
+absent, and stamped it "PM-verified". The read was accurate; **the artifact was not repo truth.** I
+checked *existence and content* and never checked *tracked status* — one `git ls-files` would have
+caught it. **Reading an untracked, gitignored build artifact and reporting it as a repo fact is not
+verification.** Any claim about "what the repo contains" must be grounded in a `git`-tracked path.
+
+**Most damning: this ticket already said so, at lines 34-39**, in a warning written before any of
+this — *"The working copy on this machine is STALE… Run `./scripts/generate-api-clients.sh` before
+starting, or the field will appear not to exist."* The trap was documented, and I walked into it and
+then contradicted the ticket's own correct warning. **Read lines 34-39 before touching this ticket.**
+
+**Net effect: nothing about this ticket is owner-gated.** It proceeds in full — UI, strings, the
+`Localizable.xcstrings` lane head that T-0450 and T-0449 wait on, and the model-dependent work alike.
+
+**Also open, routed to the Architect (from the T-0441 review):** T-0441's `patterns-mobile.md` harvest
+asserts *"iOS mirrors this — its generated models have the same all-optional shape."* The reviewer
+verified it is **factually true** (`CreateOrderCommand.swift:15-32`, every property optional) but
+correctly left it **descriptive, not prescriptive**, since an Android ticket wrote it toward a stack it
+never executed. **When this ticket lands with real iOS evidence, the Architect confirms or promotes
+it.** Do not silently promote it from inside this ticket.
 
 ## Review
 <!-- reviewer writes verdict here -->

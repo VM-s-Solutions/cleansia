@@ -1,12 +1,12 @@
 ---
 id: T-0439
 title: Guard against NSwag regen drift breaking the web build silently
-status: draft
+status: in_progress
 size: S
-owner: —
+owner: architect
 created: 2026-07-30
 updated: 2026-07-30
-depends_on: [T-0438]
+depends_on: [T-0438, T-0445]
 blocks: []
 stories: []
 adrs: []
@@ -103,6 +103,8 @@ _(to be finalized by the panel; these are the PM's floor)_
 ## Status log
 - 2026-07-30 — draft (created by pm; owner batch item 1, the "consider a guard" half)
 - 2026-07-30 — awaiting architect deliberation panel before `ready` (DoR not met: option not chosen)
+
+- 2026-07-30 — **in_progress** — dispatched by the orchestrator: architect panel (4 options incl. making nullable DTO members emit as optional); the `quality-gates.md` lane is now clear — T-0445 is merged.
 
 ## Review
 <!-- reviewer / architect write verdicts here -->

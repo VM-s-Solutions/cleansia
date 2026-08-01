@@ -31,6 +31,12 @@ each gets a line on the pre-PROD readiness checklist.
   + Postgres-MI auth? Default for dev: public-endpoint + firewall + MI-to-KeyVault/Storage.
 - **Q-IOS-04** (`pre-submission` — gates only the SIWA iOS ticket T-0326; non-blocking for the rest of the iOS
   plan) — the Sign-in-with-Apple backend integration mechanism (likely a backend `appleauth` endpoint).
+- **Q-I18N-02** (`pre-prod`, **blocking: yes** — gates T-0450 AC2, and gates the demo if it is shown in
+  `ru`/`uk`) — the shorter `ru`/`uk` wording for the profile "Edit profile" chip. **No default taken**;
+  needs a native speaker.
+- **Q-BRAND-01** (`pre-prod`, blocking: no) — Poppins covers **0/98** Cyrillic code points on all three
+  platforms (byte-identical binaries). Strategy for `ru`/`uk` headings. Default: T-0450 fixes the
+  profile hero only; the platform-wide remediation stays open here.
 
 Format:
 
@@ -528,4 +534,71 @@ _No open Wave-1 *planning* questions remain._
 - Default taken (non-blocking): **not invented inside T-0393** — the feed v1 shows only events that
   exist. Recommended: a dedicated follow-up ticket (the T-0393 notify seam gives any new producer a
   feed row for free; the cancellation-of-accepted-job event is the highest-impact candidate).
+- Answer: _(owner fills in)_
+
+---
+
+## Sprint-14 questions (2026-07-30) — see `status/sprint-14.md`
+
+### Q-I18N-02 — [blocking: yes] Shorter `ru`/`uk` wording for the profile "Edit profile" chip
+- Raised by: pm (T-0450 — from T-0442's implementation and review)
+- Owner: **owner** (needs a native Russian and native Ukrainian speaker; this is not a technical default)
+- Resolve-by: pre-prod (and **before the demo** if the demo is shown in `ru`/`uk`)
+- Date: 2026-07-30
+- Question: `profile_row_edit` is `"Edit profile"` (en) and `"Редактировать профиль"` (ru) /
+  `"Редагувати профіль"` (uk). The ru string measures ~216.8dp against en's ~120.2dp and does not fit
+  the chip, which is capped at `0.45 × width` (`ProfileTab.kt:246-248`) to stop it starving the name
+  column — so it renders **"Редактиров…"**. What is the correct shorter ru/uk wording? And should the
+  **chip** label diverge from the **screen title** (`profile_edit_title`, same string today), given
+  that only the chip is width-constrained?
+- Why it matters: a truncated verb on the primary action of the profile screen reads as a bug to a
+  native speaker, and this is one of the five shipped locales. A PM- or machine-chosen shortening is
+  exactly the kind of "looks fine to a non-speaker" change that ships wrong and never gets revisited.
+  T-0450 AC2 will not pass without a recorded sign-off.
+- Default taken (if non-blocking): **none — deliberately not taken.** Candidate shortenings exist
+  (e.g. ru `Изменить` / `Профиль`, uk `Змінити`) but the PM will not pick one; the ticket is blocked
+  on this answer rather than proceeding on a guess.
+- Answer: _(owner fills in)_
+
+### Q-BRAND-01 — [blocking: no] Poppins has no Cyrillic — what renders `ru`/`uk` headings on all three platforms?
+- Raised by: pm (T-0450 — measured while grounding a T-0442 finding)
+- Owner: **owner** to ratify (a brand-typeface change is an owner call); `architect` to author the options
+- Resolve-by: pre-prod
+- Date: 2026-07-30
+- Question: All three bundled Poppins weights cover **0 of 98** Cyrillic code points
+  (`poppins_{medium,semibold,bold}.ttf`; PM parsed the `cmap` directly, 2026-07-30), while all three
+  Nunito weights cover 98/98. The Android and iOS binaries are **byte-identical** (sha1-verified), and
+  the web apps load the same Google-Fonts family. So on **every** platform, every Poppins slot
+  (`displayLarge/Medium/Small`, `headlineLarge/Medium/Small`, plus the hard-coded call sites in
+  `WordmarkSplash.kt`, `CleansiaErrorState.kt`, `CodeInput.kt`, `ProfileTab.kt:437`,
+  `EditProfileScreen.kt:214`) falls back to a system face for `ru`/`uk`. What is the strategy —
+  a Cyrillic-capable fallback inside the family, a per-locale family swap, a subset-merge, or replacing
+  Poppins outright?
+- Why it matters: two of five shipped locales currently render headings in Roboto/system-serif beside
+  Nunito body text — three typefaces on one card. Replacing Poppins is a **brand** decision, not an
+  engineering one; the other three options are engineering decisions with different costs. Getting it
+  wrong once means re-cutting every heading on three platforms.
+- Default taken (non-blocking): **T-0450 fixes only the profile hero name** and its architect panel
+  rules on the mechanism for that surface. The platform-wide remediation is explicitly out of T-0450's
+  scope and stays here until answered — it is *not* silently deferred.
+- Answer: _(owner fills in)_
+
+### Q-CI-01 — [blocking: no] Should `master` carry branch protection (required status checks)?
+- Raised by: architect (ADR-0031 panel lead, 2026-07-30)
+- Owner: **owner** (a repo-administration setting; no agent can apply it)
+- Resolve-by: **post-prod**
+- Date: 2026-07-30
+- Question: `master` has no branch protection, so a push whose frontend/backend CI is red is not
+  prevented from landing. Should required status checks be enabled, and on which workflows?
+- **Explicitly non-blocking, and ADR-0031 does not depend on the answer.** The lead's reasoning for
+  filing this `post-prod` rather than `pre-prod` is worth preserving, because it is the part a future
+  reader would otherwise re-litigate: **the prod deploy is `workflow_dispatch`-only behind the
+  `prod-weu` Environment (`deploy-pro.yml:19-29`), so an unbuilt `master` push cannot ship itself.**
+  Branch protection would improve the *inner loop* (a red `master` costs the next agent a confusing
+  build), not the *release* safety property — which is already held by the Environment gate.
+- Why it matters anyway: a red `master` is what produced T-0438, and the cost lands on whoever picks
+  up the next ticket rather than on whoever pushed. T-0439 (regen-drift guard) and T-0455 (whether the
+  lint gate can be flipped to blocking) both sharpen the same edge from the workflow side; this
+  question is the repo-settings side of it.
+- Default taken: **none applied** — no agent can change repo settings, and nothing is blocked on it.
 - Answer: _(owner fills in)_

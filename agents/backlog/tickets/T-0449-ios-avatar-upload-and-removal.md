@@ -3,10 +3,10 @@ id: T-0449
 title: iOS — avatar upload, render and removal on the customer profile
 status: blocked
 size: M
-owner: —
+owner: ios
 created: 2026-07-30
 updated: 2026-07-30
-depends_on: [T-0446, T-0440]
+depends_on: [T-0446, T-0440, T-0451, T-0450]
 blocks: []
 stories: [US-user-avatar]
 adrs: []
@@ -90,6 +90,66 @@ _(PM floor; the `US-user-avatar` analyst panel finalizes)_
 ## Status log
 - 2026-07-30 — draft (created by pm; owner batch item 5, iOS client)
 - 2026-07-30 — blocked (on T-0446 + the owner's mobile-spec-redump; serialized behind T-0440 on the xcstrings lane; awaiting the US-user-avatar panel)
+
+- 2026-07-30 — **re-prioritised, still blocked.** Owner ruling: the avatar is demo scope. This is now
+  the iOS leg of the demo critical path behind T-0446 + the owner's `mobile-spec-redump`.
+- 2026-07-30 — **dependencies updated.** Two new lane heads on
+  `CleansiaCustomer/Sources/Features/Profile/ProfileTab.swift`: **T-0451** (dark-mode initials
+  contrast — 2.14:1 today, live) and **T-0450** (ru/uk label + Poppins Cyrillic). Full lane:
+  **T-0451 → T-0450 → T-0449**. Both touch the exact `HeroGradient` region this ticket rebuilds, so
+  running them first avoids a three-way conflict on one 40-line view.
+  **Note:** T-0451 changes the initials colour, which this ticket may delete outright when an image is
+  present — keep the initials path as the no-photo fallback and preserve T-0451's fix in it.
+
+- 2026-07-30 — **security conditions attached** from the T-0446 gate (APPROVE-WITH-CONDITIONS). See
+  the block below; they are binding on this ticket and its reviewer. Source:
+  `agents/backlog/security/user-profile-avatar.md`. Still `blocked` — dependencies unchanged.
+
+## Security conditions — BINDING (from the T-0446 gate, 2026-07-30)
+
+These are not advisory. The reviewer checks them, and a diff that violates one does not pass Gate 3.
+
+- [ ] **Cache on `fileName`, never on `blobUrl`.** The URL **changes on every fetch** — minted per
+      request with a fresh expiry — so Kingfisher would treat every profile read as a cache miss and
+      re-download the image. Set an explicit `cacheKey` of `fileName` on the `KF.ImageResource` /
+      `Source`, and let the URL be the fetch target only.
+      **Note the change since this condition was first written:** T-0446 **AC10** now mints a fresh
+      blob name on replace, so `fileName` changes when the user uploads a new photo — which is what
+      makes "cache on `fileName`" safe. The per-client eviction workaround is **no longer needed**,
+      but **verify AC10 actually shipped** before relying on it. Without AC10, caching on `fileName`
+      renders the **stale** avatar forever.
+- [ ] **S11 — the avatar is per-user state.** Any long-lived injected holder of the decoded avatar,
+      its URL, or a Kingfisher cache key must conform to `SessionScopedCache` and `register(self)`
+      with the injected `SessionScopedCacheRegistry` — or the previous user's face survives to the
+      next account on a shared device. If you reuse an existing profile store, confirm **it** is
+      already registered. Decide explicitly whether Kingfisher's disk cache needs clearing on session
+      end and **write down the reasoning either way**.
+- [ ] **Do not persist the `blobUrl` to `UserDefaults`, Keychain or any on-disk cache.** It expires
+      within the hour, so it is useless at rest — and it is a credential.
+- [ ] **Do not log the profile response or the URL** in any networking interceptor or `print`. The
+      backend redacts it in server logs; do not re-create the leak on the device.
+
+## ⚠️ QA constraints — added 2026-07-30, READ BEFORE STARTING
+
+### C1 — Image-error handling: re-fetch once, do NOT branch on the status code
+
+**Record correction:** a "403 means expiry, 404 means deleted" rule was reported as having been
+written into this ticket. **It never was** — there is nothing to reword; this is the first version.
+
+The codes are real (QA confirmed 403 on expiry / tampered `sig` / no SAS, 404 on a deleted blob), but
+an image loader does not reliably surface the distinction, and an AC built on it cannot be
+implemented.
+
+- [ ] **On ANY Kingfisher load failure, re-fetch the profile once**, with a **single-retry guard** so
+      a genuinely deleted blob falls back to the initials placeholder rather than looping.
+
+### C2 — The decode path is already proven; do not re-litigate it
+
+QA executed **`CGImageSource`** — the layer `UIImage(data:)`, Kingfisher and SDWebImage all sit on —
+against the real stored bytes and it correctly sniffed **`public.jpeg`** and **`public.png`** from a
+bare-GUID blob served as `application/octet-stream`. **No content-type handling, no file extension
+and no MIME hint is needed on this platform.** If an image fails to load here, the cause is
+something other than the content type — look elsewhere before proposing a backend change.
 
 ## Review
 <!-- reviewer + security verdicts here -->

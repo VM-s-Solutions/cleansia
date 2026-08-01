@@ -21777,31 +21777,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Upravit profil"
+            "value" : "Upravit"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edit profile"
+            "value" : "Edit"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Редактировать профиль"
+            "value" : "Редактировать"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Upraviť profil"
+            "value" : "Upraviť"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Редагувати профіль"
+            "value" : "Редагувати"
           }
         }
       }

@@ -13,6 +13,12 @@ struct ProfileTab: View {
     /// test (a money surface that must not silently regress its destination).
     static let subscribeRoute: ShellRoute = .subscribePlus
 
+    /// The account row opens the edit screen, so it carries that screen's full title. The hero chip's
+    /// label is the verb alone and would read as a bare "Edit" in a list of destinations.
+    static var editRowLabel: String {
+        L10n.EditProfile.title
+    }
+
     @State private var showSignOutDialog = false
 
     private var tierLabel: String {
@@ -63,7 +69,7 @@ struct ProfileTab: View {
         [
             ProfileRowItem(
                 icon: "person.crop.circle",
-                label: L10n.Profile.rowEditProfile,
+                label: Self.editRowLabel,
                 route: .editProfile(showBookingHint: false)
             ),
             ProfileRowItem(icon: "mappin.and.ellipse", label: L10n.AddressManager.profileRow, route: .addresses),
@@ -329,7 +335,7 @@ private struct TierBadge: View {
     }
 }
 
-private struct EditProfileChip: View {
+struct EditProfileChip: View {
     let onEdit: () -> Void
 
     var body: some View {
@@ -337,8 +343,12 @@ private struct EditProfileChip: View {
             HStack(spacing: Spacing.xxs) {
                 Image(systemName: "pencil")
                     .font(.system(size: 12, weight: .semibold))
+                // Android ships maxLines=1 + TextOverflow.Ellipsis here; a divergence in where the
+                // ellipsis lands is a parity defect, so both are stated rather than inherited.
                 Text(L10n.Profile.rowEditProfile)
                     .font(CleansiaTypography.labelLarge)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
             .foregroundColor(.white)
             .padding(.horizontal, 14)

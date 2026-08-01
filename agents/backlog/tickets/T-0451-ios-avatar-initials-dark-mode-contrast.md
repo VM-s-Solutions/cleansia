@@ -100,6 +100,31 @@ implementation choice is *recorded*, not *litigated*. Sizing/AC/deps/layers set 
 ## Status log
 - 2026-07-30 — draft (created by pm; wave-1 finding with no home, from T-0442's reviewer)
 - 2026-07-30 — ready (no deps; DoR met; no-decision note recorded)
+- 2026-08-01 — red→green (ios; recorded here as the branch carries one squashed commit).
+  Test-first: `FixedWhiteContrastTests` written against a token that did not exist → RED
+  ("Type 'CleansiaColors' has no member 'onFixedWhiteHex'"); added `CleansiaColors.onFixedWhite`
+  + both call sites → GREEN.
+- 2026-08-01 — reviewer F1/F2 addressed: `AvatarDiscBindingTests` (the `ConsentCatalogTests`
+  `#filePath` idiom) binds both heroes' disc fill AND ink to the Core token; dropped the
+  tautological `testTheFixedWhiteSurfaceIsWhiteInBothSchemes` — `fixedWhiteHex` now observes the
+  disc rather than modelling it. The disc block is found by brace-matching outward from
+  `Text(initials)`, not by grepping the file: `ProfileTab.swift:163` carries a legitimate
+  `CleansiaColors.primary` on a row icon over an adaptive surface, which a file-wide check
+  would have false-failed.
+- 2026-08-01 — Gate 0.5 leg 1, three mutations, each restored byte-exact (sha256 re-verified):
+  M1 token 0x0284C7→0x38BDF8 → `testInkClearsTheLargeTextFloorAgainstTheFixedWhiteSurface` RED
+  (2.142277591669845 < 3.0), 1→0. M2 customer ink→`primary` → both `AvatarDiscBindingTests` RED,
+  2→0 (the three arithmetic tests stayed green — exactly the gap F1 named). M3 partner
+  fill→`primaryContainer` (1.4489:1) → both RED, 2→0. M2 and M3 hit different files, so both
+  heroes are proven covered.
+- 2026-08-01 — Gate 8 on the iOS 16.4 floor: Core 519/0 (clean build test), Customer 677/0,
+  Partner 527/0, all exit 0; SwiftFormat 0.60.1 + SwiftLint 0.65.0 --strict clean. Gate 8.5: both
+  apps installed and launched on 16.4 in dark, no crash.
+- 2026-08-01 — DECLARED, unresolved: the first Core `clean build test` after the guard landed
+  reported 519 tests / **1 failure**; the log was not retained, so the test cannot be named. Six
+  subsequent runs (4 incremental, 1 `test`, 1 identical `clean build test`) were 519/0. This is
+  **not** claimed to be the known flake — it is an unidentified, non-reproducing failure in a suite
+  with flake history. Naming it needs a re-run loop that keeps the full log.
 
 ## Review
 <!-- reviewer writes verdict here; AC1/AC2 ratios and AC4's rationale go here -->

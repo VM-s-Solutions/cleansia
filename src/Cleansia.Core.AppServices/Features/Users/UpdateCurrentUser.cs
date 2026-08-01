@@ -137,24 +137,28 @@ public class UpdateCurrentUser
                 return;
             }
 
-            var hasExistingPhoto = !string.IsNullOrWhiteSpace(user.ProfilePhotoName);
+            var supersededPhotoName = user.ProfilePhotoName;
             var client = clientFactory.GetBlobContainerClient(Constants.BlobContainers.UserFiles);
 
-            if (hasExistingPhoto)
+            if (hasNewPhoto)
             {
-                await client.DeleteAsync(user.ProfilePhotoName!, cancellationToken);
+                // A fresh name per upload keeps the stored name content-addressed: clients cache their
+                // avatar bitmap on it, so reusing it would render the previous image forever, and an
+                // outstanding SAS keeps resolving to the image it was issued for. Upload BEFORE
+                // deleting — a failed upload must not destroy the avatar the user still has.
+                var fileName = Guid.NewGuid().ToString();
+                await UploadPhotoAsync(client, fileName, command.Photo!.Base64Content!, cancellationToken);
+                user.UpdateProfilePhotoName(fileName);
             }
-
-            if (!hasNewPhoto)
+            else
             {
                 user.UpdateProfilePhotoName(null);
-                return;
             }
 
-            // Replacing reuses the stored blob name so URLs already handed out keep resolving.
-            var fileName = hasExistingPhoto ? user.ProfilePhotoName! : Guid.NewGuid().ToString();
-            await UploadPhotoAsync(client, fileName, command.Photo!.Base64Content!, cancellationToken);
-            user.UpdateProfilePhotoName(fileName);
+            if (!string.IsNullOrWhiteSpace(supersededPhotoName))
+            {
+                await client.DeleteAsync(supersededPhotoName, cancellationToken);
+            }
         }
 
         private static async Task UploadPhotoAsync(IBlobContainerClient client, string fileName, string base64Content, CancellationToken cancellationToken)

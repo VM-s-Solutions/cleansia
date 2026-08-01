@@ -15,9 +15,16 @@
     "test": "nx e2e cleansia.app-e2e",
     "lint": "nx lint",
     "e2e": "nx e2e",
-    "generate-partner-client": "npx nswag run nswag-partner.json && bash partner-client-formatter.sh",
-    "generate-admin-client": "npx nswag run nswag-admin.json && bash admin-client-formatter.sh",
-    "generate-customer-client": "npx nswag run nswag-customer.json && bash customer-client-formatter.sh"
+    "typecheck": "node tools/typecheck-apps.mjs",
+    "typecheck:test": "node tools/typecheck-apps.test.mjs",
+    "//": "_nswag:* are internal composition steps, not entry points. No script that invokes NSwag may be runnable without ending in `npm run typecheck` (ADR-0031 D1).",
+    "_nswag:partner": "npx nswag run nswag-partner.json && bash partner-client-formatter.sh",
+    "_nswag:admin": "npx nswag run nswag-admin.json && bash admin-client-formatter.sh",
+    "_nswag:customer": "npx nswag run nswag-customer.json && bash customer-client-formatter.sh",
+    "generate-partner-client": "npm run _nswag:partner && npm run typecheck",
+    "generate-admin-client": "npm run _nswag:admin && npm run typecheck",
+    "generate-customer-client": "npm run _nswag:customer && npm run typecheck",
+    "generate-clients": "npm run _nswag:partner && npm run _nswag:admin && npm run _nswag:customer && npm run typecheck"
   },
   "private": true,
   "dependencies": {

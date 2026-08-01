@@ -98,27 +98,11 @@ _(PM floor; the panels finalize)_
       more. The security verdict must name the **specific** risk it cleared — e.g. "the SAS grants
       read on one blob name for 1h and cannot be widened to list the container" — not "authorization
       checked". Walk S1-S10.
-- [x] **AC4 — CLOSED 2026-07-30 by QA. PASSES.** Given the blob name is a raw `Guid` with no extension
-      and the upload sets no content-type, When the reference is fetched, Then the image renders.
-      **Executed, not reasoned** — Azurite, the app's **own** `BlobContainerClientFactory`, the **real**
-      `UpdateCurrentUser.Handler` (only the two repositories mocked), real image files from this repo:
-      - **Chromium 140** rendered the JPEG at **800×600** and the PNG at **48×48** from a bare-GUID URL
-        served as `Content-Type: application/octet-stream`.
-      - **WebKit** (Safari's engine) did the same.
-      - **`CGImageSource`** — what `UIImage(data:)`, Kingfisher and SDWebImage all sit on — sniffed
-        `public.jpeg` and `public.png` from the bytes.
-      - `X-Content-Type-Options: nosniff` is **absent**; SAS fetch returns **200** with byte-identical
-        content (sha256 match on both files); grant on the wire is exactly `sr=b`, `sp=r`, 1h, and a
-        container-list with the same token returns **403**.
-      **No content-type work is required in this ticket.** The blob-header defect is real but is
-      codebase-wide and pre-existing — filed as **T-0464**, deliberately *not* folded in here (see
-      Out of scope).
-      **⚠️ The one honest threat to this result: real Azure was not reachable.** QA had no credentials
-      and **correctly declined to use any**. If real Azure returns `nosniff`, every render above
-      breaks. Corroboration is strong but is **inference from a shipped feature** — order photos
-      already travel this identical `application/octet-stream` path and are already bound to
-      `<img [src]>` on DEV today (`order-photos.component.html:125`, `:207`). **A one-minute owner
-      check settles it** (see `status/sprint-14.md` §6) — it is not a ticket and not a blocker.
+- [ ] **AC4** — Given the blob name is a raw `Guid` with no extension and the upload sets no
+      content-type (`UpdateCurrentUser.cs:160-164` uploads the stream with `Metadata.CacheMetadata`
+      only), When the reference is fetched, Then the image renders in a browser and in both mobile
+      image loaders. **Verify this — do not assume.** If a content-type must be recorded at upload
+      time, that is in scope here. Evidence: an actual fetch, headers shown.
 - [ ] **AC5 (Gate 6, TDD)** — The tests are written **before** the implementation, red→green, and the
       status log records it. Handler unit test (mocked blob client, asserting the emitted shape) +
       route integration test.
@@ -178,11 +162,6 @@ _(PM floor; the panels finalize)_
 - PII in the `GetCurrent` response log — a pre-existing S6 violation on all five hosts, filed as
   **T-0457**. It shares a file with AC9, so **T-0457 is serialized behind this ticket** on the
   `RequestLoggingMiddleware` lane. Do not fix it here and do not let it block this.
-- **The blob `Content-Type` defect — filed as `T-0464`, NOT folded in.** AC4 proved the avatar renders
-  *without* it, so this ticket has no need of it. The fix touches the **shared SAS mint used by three
-  other features** and deserves its own review. **Do not touch `BlobContainerClient.GenerateSasUri`
-  here.**
-- **Avatar caching — filed as `T-0465`.** Not a blocker for the read path.
 - Partner **employee document** photos — a separate, working pipeline.
 
 ## Manual steps (owner-only — batch these, do not interleave)
@@ -202,6 +181,13 @@ _(PM floor; the panels finalize)_
 - 2026-07-30 — awaiting analyst + architect deliberation panels before `ready` (DoR not met: read-path option not chosen)
 
 - 2026-07-30 — **in_progress** — dispatched by the orchestrator: analyst + architect panels, then backend + paired reviewer. **Re-sequenced: the owner has ruled the avatar feature IS part of the demo**, overriding the PM's recommendation in `status/sprint-14.md` §3. This ticket is now the demo **critical path** — T-0447, T-0448 and T-0449 and the demo itself sit behind it, with an owner-run regen bundle mid-chain.
+- 2026-07-30 — **backend implemented (round 1), option A.** No ADR / panel record existed in the tree
+  at implementation time, so option A (time-limited SAS on the DTO) was taken as the ticket's own named
+  precedent and the only shape already proven in this codebase. Nothing implemented forecloses B or C.
+  - **TDD red→green.** Tests first; the first build against the intended contract failed with
+    `'BlobFileDto' does not contain a definition for 'BlobUrl'` and `'GetCurrentUser.Handler' does not
+    contain a constructor that takes 5 arguments`.
+  - Baseline `Cleansia.Tests` on master: **2295 passed / 0 failed** (run, not assumed).
 - 2026-07-30 — **security gate returned: APPROVE-WITH-CONDITIONS.** Stays `in_progress` per
   `ticket-lifecycle.md` ("a ticket that fails review does not go backwards; the same developer
   instance fixes it"). **Two findings folded in as AC9 (SEC-1) and AC10 (SEC-4)**; `## Out of scope`
@@ -209,8 +195,357 @@ _(PM floor; the panels finalize)_
   as **T-0457 / T-0458 / T-0459 / T-0460** so they cannot compress the demo path. Full verdict and
   the PM's reconciliation in `## Review`; findings doc opened at
   `agents/backlog/security/user-profile-avatar.md`.
+- 2026-07-30 — **AC9 + AC10 implemented (round 2, same developer instance).** Evidence in
+  `### 2026-07-30 — BACKEND round 2`.
+- 2026-07-30 — **AC11 implemented (round 3, same developer instance)** — the free-text exposure the
+  AC9 ordering fix newly created, suppressed via `IsSensitivePath` on all five hosts. Evidence in
+  `### 2026-07-30 — BACKEND round 3`.
+- 2026-07-30 — **ALL THREE SUITES GREEN LOCALLY — the DEFERRED-TO-CI entries are withdrawn.** Docker
+  came back up, so the two Testcontainers suites were run here rather than predicted:
+  - `dotnet build src/Cleansia.Api.sln` → **0 Error(s)**, Build succeeded
+  - `dotnet test src/Cleansia.Tests` → **2333 passed / 0 failed / 0 skipped**
+  - `dotnet test src/Cleansia.IntegrationTests` → **110 passed / 0 failed** (the 108 master baseline
+    **+ this ticket's 2**, which were confirmed running green in their own filtered run — so AC1/AC2
+    now have real-Postgres evidence, not just a compile)
+  - `dotnet test src/Cleansia.HostTests` → **75 passed / 0 failed**
+  - `check-consistency.mjs` → **47 violations = the master baseline of 47**, no new violation
+  **AC4 is CLOSED by QA's Azurite run** (see below); nothing in this ticket is now unverified.
 
 ## Review
+
+### 2026-07-30 — BACKEND round 2 (AC9 + AC10)
+
+#### AC9 — redact BEFORE truncate, on both paths, on all five hosts
+
+The security gate is right and the control was inert. Fixed by composing
+`TruncateBody(RedactSensitiveFields(rawBody), <limit>)` on the response path, and by **moving** the
+truncation out of `ReadRequestBodyAsync` (it now returns the raw body) up into `LogRequestAsync` after
+redaction. **Located by reading each file, not by line number** — the coordinator's `:96`/`:143` and the
+ticket's `:100`/`:78` both mis-describe the request path, whose truncation was one level down. Verified
+after editing: **5 response paths + 5 request paths**, at `:104`/`:80` on `Cleansia.Web.Customer` and
+`:100`/`:76` on the other four.
+
+**Measured fixture geometry** (printed from the real serialized DTOs, not estimated). The rebuilt
+fixtures are real `MyProfileDto` / `GetOrderPhotos.Response` / `UpdateCurrentUser.Command` instances
+carrying a **real** SAS from the real `BlobContainerClient`, serialized through the hosts' own
+`CleansiaStartupBase.ConfigureJsonSerialization`:
+
+| Fixture | Length | Limit | Key offsets |
+|---|---|---|---|
+| `MyProfileDto` response | **818–819 B** | 500 | `blobUrl` key at **416**, value closes at **639**, `sig=` at **591** |
+| `GetOrderPhotos.Response` | **555 B** | 500 | `sig=` at **216** — *inside* the window |
+| `UpdateCurrentUser.Command` request | **4270 B** | 1000 | base64 payload starts at **164** |
+
+That brackets the PM's independently-derived 381–419 / 574–612 range from the top (Azurite's SAS is
+slightly longer than the 193-char floor) and confirms the conclusion exactly: **the value always
+straddles the 500-byte cut.**
+
+**The load-bearing assertion is the raw-prefix one, not the signature one.** Asserting only "no `sig=`
+in the log" passes under BOTH orderings at this limit, because the cut lands before `sig=` — that is
+truncation doing the work. The tests therefore assert `DoesNotContain("\"blobUrl\":\"http")` **and**
+`Contains("\"blobUrl\":\"***REDACTED***\"")`. The old vacuous `Contains("***REDACTED***")` (satisfied
+by `"base64Content":null` alone) is gone.
+
+#### AC10 — fresh blob name per upload, superseded blob deleted
+
+Implemented, with **one deliberate divergence from the AC text, flagged rather than done quietly.**
+AC10 says the existing blob "is already deleted first at `:145`, so a fresh name orphans nothing".
+That is true for orphaning but it keeps a **delete-before-upload** order, which with distinct names
+means a failed upload deletes the user's current avatar and leaves the row pointing at a blob that no
+longer exists. The handler now **uploads the replacement first, then deletes the superseded blob**.
+Worst case flips from *avatar destroyed* to *one orphaned blob on a failed delete*. The stale
+`// Replacing reuses the stored blob name…` comment is deleted, as instructed.
+
+**On the reasoning:** the product argument is the right one and I agree with it. The security framing
+would not have carried this on its own — the SAS only ever reaches the photo's own owner. But my own
+contract comment told clients to cache on `fileName`, and with name reuse that guidance renders the
+previous avatar indefinitely after a successful upload. The comment on `BlobFileDto` is now inverted
+to say `fileName` is content-addressed and needs **no** eviction on save.
+
+#### Mutation proof — Gate 0.5 leg 1 (each applied, run, reverted)
+
+| # | Mutation | Result | Named test that goes RED |
+|---|---|---|---|
+| **A** | read path stubbed back to `MapToDto`'s bare-filename behaviour (**AC6's exact mutation**) | **6 failed / 2317 passed** | `GetCurrentUserProfilePhotoReadPathTests.Profile_WithStoredPhoto_CarriesAResolvableUrlAlongsideTheStableBlobName` (+ all 5 `ProfileResponse_SignedUrl_IsRedacted_NotMerelyTruncatedAway` cases, which are coupled to the real read path) |
+| **B** | `ResolveProfilePhotoUrl` body no-opped to `return null` | 4 failed / 2306 passed *(round 1)* | `Profile_WithStoredPhoto_AsksForExactlyOneOneHourSasOnTheStoredBlobName` |
+| **E** | `Web.Partner` **response** path back to truncate-then-redact | **1 failed / 14 passed** | `RequestLogSignedUrlRedactionTests.ProfileResponse_SignedUrl_IsRedacted_NotMerelyTruncatedAway(Web.Partner)` — fails on the raw URL found at **pos 551** |
+| **F** | `Web.Admin` **request** path back to truncate-then-redact | **1 failed / 14 passed** | `RequestLogSignedUrlRedactionTests.UploadRequest_Base64Payload_IsRedacted_NotMerelyTruncatedAway(Web.Admin)` |
+| **G** | `blobUrl` removed from `Web.Customer`'s redaction list | **2 failed / 13 passed** | `RequestLogSignedUrlRedactionTests.OrderPhotoResponse_CompleteSignedUrl_IncludingSignature_NeverReachesTheLog(Web.Customer)` — the **pre-existing** leak |
+| **H** | replacement reuses the stored blob name again | **2 failed / 8 passed** | `UpdateCurrentUserProfilePhotoTests.SaveWithNewImage_MintsAFreshBlobName_NeverReusingTheStoredOne` |
+| **I** | superseded blob no longer deleted | **3 failed / 7 passed** | `UpdateCurrentUserProfilePhotoTests.SaveWithNewImage_DeletesTheSupersededBlob_SoAReplaceDoesNotOrphan` |
+| **D** | handler made to log the resolved URL | 1 failed / 6 passed *(round 1)* | `GetCurrentUserProfilePhotoReadPathTests.Profile_NeverLogsTheSignedUrl_OnTheSuccessPath` |
+
+Restored after every mutation; a **sha256 manifest of all 16 touched files** verifies byte-exact
+restore (`shasum -c` clean). No mutation left in the tree.
+
+### 2026-07-30 — BACKEND round 3 (AC11)
+
+#### The exposure my own AC9 fix created
+
+Security's sweep is correct and I had not done it. Redacting before truncating collapses a
+`base64Content` from thousands of characters to 17, so everything after it in the record now fits the
+1000-byte request window. Two endpoints carry **operator free text immediately after** that payload:
+
+- `SaveMyDocuments.DocumentToSave.Description` — beside identity documents (ID cards, criminal-record
+  extracts, work permits).
+- `SaveOrderPhotos.PhotoToSave.Notes` — what a cleaner writes about a customer's household.
+
+**Reproduced before fixing**, on all five hosts: `"description":"ID-card-no-990417-482"` at **pos 283**
+of the emitted Information-level log line, and 4/4 notes visible on a four-photo batch — matching
+security's measurement exactly.
+
+#### The instrument is `IsSensitivePath`, not the regex
+
+A field-name denylist cannot reach free text, and widening the regex to `description`/`notes` would
+denylist two of the most generic field names in the codebase. Added `/savemydocuments` and
+`/savephotos` to the existing wholesale-suppression list beside `/auth/`, `/login`, `password` and
+`/order/lookup`, on **all five hosts** — matching the file's existing convention that the list is
+uniform across hosts (`/order/lookup` is a Customer-only route yet appears in all five).
+
+**Route tokens verified unique** before adding: a grep of every `[HttpPost|Get|Put|Delete|Patch]`
+template across the five hosts returns exactly `SaveMyDocuments` and `SavePhotos`, so neither entry
+over-suppresses another endpoint. Routes confirmed as `/api/Employee/SaveMyDocuments` and
+`/api/Order/SavePhotos` (Partner + Mobile.Partner).
+
+#### Tests
+
+New `RequestLogSensitiveUploadPathTests` (10 cases), built on real `SaveMyDocuments.Command` /
+`SaveOrderPhotos.Command` instances serialized through the hosts' own JSON configuration. Each asserts
+the marker is absent AND the body was suppressed.
+
+**The non-vacuity guard is the point.** Suppression proves nothing if truncation would have hidden the
+text anyway, so each test first reproduces what redaction leaves behind (the base64 collapsed to its
+sentinel) and asserts the marker then falls **inside** the request window. Without that, this suite
+would repeat exactly the Gate 0.5 defect AC9 was written to close.
+
+The middleware harness (`RunAsync`, `LimitOf`, `WireOptions`, host list) was extracted to
+`RequestLoggingHarness` so both logging suites drive the production middleware rather than a
+re-implementation. The extraction is behaviour-neutral: the redaction suite was **15/15 before and
+15/15 after**.
+
+#### AC11 mutation proof
+
+| # | Mutation | Result | Named test that goes RED |
+|---|---|---|---|
+| **J** | both upload paths removed from `Web.Mobile.Partner`'s `IsSensitivePath` | **2 failed / 8 passed** | `SaveMyDocumentsRequest_DocumentDescription_IsSuppressed(Web.Mobile.Partner)` + `SaveOrderPhotosRequest_EveryPhotoNote_IsSuppressed(Web.Mobile.Partner)` |
+| **K** | only `/savephotos` removed on `Web.Customer` (proves the two entries are independently load-bearing) | **1 failed / 9 passed** | `SaveOrderPhotosRequest_EveryPhotoNote_IsSuppressed(Web.Customer)` |
+
+**A** re-run against the final tree: **6 failed / 2327 passed**. Restored after every mutation; an
+18-file sha256 manifest verifies byte-exact restore (`shasum -c` clean).
+
+> One process note worth recording: the first attempt to revert **A** was **stopped by its own
+> assertion** — `ProfilePhoto: user.ProfilePhotoName?.MapToDto(),` matches **3** sites in
+> `UserMappers.cs` (`UserListItem`, `MyProfileDto`, `UserItem`), not 1. The guard prevented silently
+> rewriting the two list mappers. Re-reverted with full surrounding context and re-verified against the
+> manifest. Cited because a mutation left in the tree is a shipped defect, and this is the check that
+> catches it.
+
+#### Round 4 — the third upload path, and a bound on the scan I introduced
+
+**`/uploadphoto` (the endpoint `/savephotos` does not match).** `UploadOrderPhoto` posts a SINGLE
+photo to `/api/Order/UploadPhoto`; its `Notes` sits after a `byte[] FileData` the regex collapses, so
+it has the same shape and the same exposure as the batch endpoint. Added as a third `IsSensitivePath`
+entry on all five hosts, with a third theory method. Route tokens re-verified unique against every
+`Http*` template on the five hosts: only `SaveMyDocuments`, `SavePhotos`, `UploadPhoto` exist in that
+space (`UploadEvidence` is the dispute route, correctly left alone — no free text at all).
+
+**The scan bound.** Redact-before-truncate is required for correctness but made the scan cover the
+whole body: 1 MB → 187 ms, 25 MB → 5716 ms, synchronously before `_next`, with no server-side image
+cap beyond Kestrel's 30 MB. That is a cost regression *this ticket introduced*. Bodies past
+`RedactionScanLimit` (64 KB) are now **suppressed wholesale** rather than scanned — suppressed, not
+truncated, because truncating an unscanned body is exactly the prefix leak AC9 removed. Both paths,
+all five hosts.
+
+Implemented as a single `SafeBody(path, rawBody, logLimit)` helper rather than two parallel ternaries:
+the request and response branches have now drifted into the *same* bug twice, so they share one body.
+
+**Round-4 mutation proof**
+
+| # | Mutation | Result | Named test that goes RED |
+|---|---|---|---|
+| **L** | `/uploadphoto` removed from `Web.Mobile.Partner` | **1 failed / 14 passed** | `RequestLogSensitiveUploadPathTests.UploadOrderPhotoRequest_PhotoNote_IsSuppressed(Web.Mobile.Partner)` — note found at **pos 250** |
+| **M** | scan-limit guard removed on `Web.Customer` (unbounded scan) | **2 failed / 13 passed** | `RequestLogRedactionScanLimitTests.RequestBody_OverTheScanLimit_IsSuppressedWholesale(Web.Customer)` |
+| **N** | `RedactionScanLimit = 0` on `Web.Admin` (bound swallows everything) | **3 failed / 12 passed** | `RequestLogRedactionScanLimitTests.RequestBody_JustUnderTheScanLimit_IsStillRedacted(Web.Admin)` |
+
+**N is the one that matters most.** A cost bound is the kind of change that silently disables the
+control it is protecting, so the boundary is pinned from **both** sides — under the cap must still
+redact, over it must suppress. Without the under-the-cap test, `RedactionScanLimit = 0` would have
+turned every log into a suppression sentinel and the suite would have stayed green.
+
+Restored after each; 9-file sha256 manifest byte-exact (`shasum -c` clean).
+
+#### Round 5 — the fourth instance, a mechanical guard, and what the guard then found
+
+**The fourth instance (response path).** `GET /api/Order/GetPhotos` returns `OrderPhotoDto` with
+`BlobUrl` 3rd and `Notes` last; redacting the SAS frees ~170 bytes and pulls the note in. Suppressed
+via two tokens, because `GET /api/AdminOrder/photos/{orderId}` returns the **same** response and its
+path contains no `/getphotos`. Both re-verified against an exhaustive extraction of all **449**
+`[Http*]` templates on the five hosts: `/getphotos` → 1 route, `/photos/` → 1 route, no collisions.
+
+**`OrderPhotoResponse_…` was retargeted, and the first attempt was wrong.** It had been asserting
+redaction against `/api/OrderPhoto/GetByOrder`, which no host serves. I first moved it to
+`DisputeDetails` as suggested — and its own non-vacuity guard rejected it: `Evidence` is 13th of 15
+fields, so a realistic body puts the signature at byte **643**, outside the window, where truncation
+rather than redaction would be doing the work. Shrinking the fixture to force it inside would be the
+exact hand-trimmed-payload defect this suite exists to prevent. Retargeted instead to
+**`POST /api/Dispute/UploadEvidence`** → `UploadDisputeEvidence.Response`, where `BlobUrl` is 3rd and
+the signature genuinely sits inside the window, on a real and deliberately-unsuppressed route.
+
+**The guard: `RedactionUnmaskedFreeTextGuardTests`.** Reads the token list out of the live
+`SensitiveFieldRegex` (so a new token widens it automatically), walks every wire DTO reachable from a
+controller action on the five hosts, flattens it in JSON order — honouring `[JsonIgnore]` and
+resolving collection element types off the `IEnumerable<>` interface — and fails, naming type, member
+and route, when a redaction token is followed by a free-text member on an unsuppressed route. Two
+curated lists carry the judgement: `StructuralMembers` (machine values) and `AcceptedPreExisting`
+(measured-pre-existing, T-0457's, explicitly NOT for anything newly unmasked).
+
+**It immediately found two things five rounds of human review had missed:**
+
+1. **A live credential in the logs.** `CreatePaymentIntent.Response` / `ConfirmRecurringOrder.Response`
+   carry a Stripe **`ephemeralKey`** (`ek_…`, a short-lived credential granting scoped access to a
+   Stripe customer) one field behind the already-redacted `clientSecret`, written verbatim at
+   Information. Added to the redaction regex on all five hosts. The hand sweeps missed it because it
+   does not *read* like free text — which is the whole argument for a mechanical guard.
+2. **`/auth/` never matched `/api/AdminAuth/…`** — no slash precedes "auth" there. The admin
+   refresh/logout responses return a `JwtTokenResponse` whose leading `Token` is a ~800-char JWT;
+   redacting it frees ~785 bytes and pulls the admin's `Email` into the window. **Caused by the AC9
+   ordering change.** Added `/adminauth/` alongside `/auth/`.
+
+Two detector bugs were found and fixed while building it, both of which had produced false findings:
+`[JsonIgnore]` members were being counted (`RefreshToken.Command.RequiredAudience` never reaches the
+wire), and `Dictionary<string, T>` was reporting its **key** type, so `UpdateEmployee.Availability`
+looked like a string.
+
+**Round-5 mutation proof**
+
+| # | Mutation | Result | Named test that goes RED |
+|---|---|---|---|
+| **O** | `/getphotos` removed on `Web.Admin` | **2 failed** | `RedactionUnmaskedFreeTextGuardTests.EveryDtoWhoseRedactedFieldUnmasksFreeText_HasItsRoutesSuppressed` (names `GetOrderPhotos.OrderPhotoDto.Notes` + the route) and `TheKnownUnmaskingRoutes_AreSuppressed("/api/Order/GetPhotos")` |
+| **P** | `ephemeralKey` removed from `Web.Partner`'s regex | **1 failed / 72 passed** | `RequestLogSignedUrlRedactionTests.PaymentIntentResponse_EphemeralKey_IsRedacted(Web.Partner)` |
+| **Q** | `/adminauth/` removed on `Web.Mobile.Customer` | **3 failed / 70 passed** | `TheKnownUnmaskingRoutes_AreSuppressed("/api/AdminAuth/RefreshToken")` + `…("/api/AdminAuth/Logout")` + the main guard |
+| **N′** | `RedactionScanLimit = 0`, fixtures now decoupled | **2 failed / 18 passed** | `RequestBody_JustUnderTheScanLimit_IsStillRedacted(Web.Admin)` — now failing on the ASSERTION, plus `TheFixturesStillBracketTheConfiguredCap` |
+
+10-file sha256 manifest byte-exact after every revert.
+
+#### Round 6 — the sibling credential, per-member accounting, and an honest third clause
+
+**A second live Stripe credential.** `CreateMembershipSubscription.Response:46-50` carries
+`SetupIntentClientSecret` (`seti_…_secret_…`, what the mobile PaymentSheet uses to confirm a card
+setup against a customer). The alternation is quote-anchored, so the `clientSecret` token never
+matched `"setupIntentClientSecret"` and the value logged raw — beside an `ephemeralKey` that this
+ticket had just fixed. Token added on all five hosts with a test beside the ephemeral-key one.
+Shipping the ephemeral-key fix while its neighbour in the same DTO stayed raw was not defensible.
+
+**Two corrections to my round-5 narrative, both accepted:** `EphemeralKey` appears in **three** DTOs
+(`CreatePaymentIntent`, `ConfirmRecurringOrder`, `CreateMembershipSubscription:50`), not two — the
+regex fix covered all three by construction, so only the writeup was short — and it sits **3 fields**
+behind `ClientSecret` (`ClientSecret → PaymentIntentId → StripeCustomerId → EphemeralKey`), not one.
+
+**`AcceptedPreExisting` was hiding later offenders.** `UnmaskedFreeTextMember` returned only the
+FIRST offender, so accepting one member silently accepted every free-text member behind it in the
+same DTO — three fields absorbed without ever being measured, contradicting the list's own
+doc-comment. Now returns **all** offenders and each must be listed individually. That forced four
+more entries, and I measured each rather than inheriting its neighbour's claim:
+
+| Entry | Measurement | Verdict |
+|---|---|---|
+| `CreateAdminUser.Command.{FirstName,LastName,PhoneNumber}` | body **190 B → 192 B** after redaction (the short password value LENGTHENS it); fields at **68 / 94 / 122**, far inside the 1000 B request window either way | pre-existing, nothing moved |
+| `GetMyDocuments.{MyDocumentDto,Response}.{Description,ReviewNotes}` | 1-document body **484 B**; `description` at **427**, `reviewNotes` at **462** — both inside the 500 B response window BEFORE the change | pre-existing, `OLD=True` for **each** |
+
+**The framing needed a third clause, and its absence is what left `SetupIntentClientSecret` unfixed.**
+Recorded in the catalog and in the guard's own doc-comment:
+1. *Free text behind a token* — closed by enumeration.
+2. *A field unmasked when the token in front collapses* — closed by a test.
+3. *A secret whose field name was never in the token list* — **NOT closed; nothing detects it.**
+   `ephemeralKey` was found by luck, because it happened to sit behind an already-redacted field.
+   The sibling name/shape guard (`*Secret*`/`*Token*`/`*Key*`/`*Password*`, values shaped
+   `sk_`/`ek_`/`seti_`/`pi_`) is a follow-up ticket, not this one.
+
+**Two bounded reach limits documented on the guard** (verified, not assumed): response types come
+from `[ProducesResponseType]` and **14 of 449 actions (3.1%) declare none** — all GDPR/feature-flag
+deletes, none token-carrying today; and `DeclaredOnly` would miss an action moved onto a shared base
+class — refuted as live (the four base controllers declare zero actions), latent. Also recorded:
+member order is reflection order, which equals wire order **by construction** because
+`[JsonPropertyOrder]` appears nowhere in the repository.
+
+**Round-6 mutation proof**
+
+| # | Mutation | Result | Named test that goes RED |
+|---|---|---|---|
+| **R** | `setupIntentClientSecret` removed from `Web.Customer`'s regex | **1 failed / 77 passed** | `RequestLogSignedUrlRedactionTests.MembershipSubscriptionResponse_SetupIntentClientSecret_IsRedacted(Web.Customer)` |
+| **S** | one per-member entry (`GetMyDocuments.MyDocumentDto.ReviewNotes`) dropped from `AcceptedPreExisting` | **1 failed** | `EveryDtoWhoseRedactedFieldUnmasksFreeText_HasItsRoutesSuppressed` — names that exact member, proving the per-member accounting is load-bearing rather than decorative |
+
+10-file sha256 manifest byte-exact after both reverts.
+
+#### Corrections to my round-4 report
+
+- **Mutation N's demonstration was weaker than I described, and the reviewer is right.** Because
+  `BodyOfLength` derived from `RedactionScanLimit`, setting the limit to 0 tripped the fixture's own
+  `Assert.True(padding > 0)` rather than the assertion — so the green-suite scenario I argued could
+  not actually be exhibited. Fixed: `UnderCapSize` (2 KB) and `OverCapSize` (128 KB) are now fixed
+  constants, and a new `TheFixturesStillBracketTheConfiguredCap` asserts they still straddle the cap
+  so a future change to the constant fails loudly instead of silently no-opping a boundary test.
+  Re-run as **N′** above; the demonstration now holds.
+- **The T-0457 "win" was overstated — it is PARTIAL, above 64 KB only.** `UpdateCurrentUser.Command`
+  puts `FirstName`, `LastName`, `PhoneNumber`, `BirthDate` in the first ~150 bytes, so they disappear
+  only when the WHOLE body exceeds the scan cap. A 1–5 MB avatar: closed. A **40 KB** avatar — normal
+  for a resized upload, and the common case once T-0459's resize lands — still logs name, phone and
+  birth date. Recorded as partially closed, not closed.
+- **T-0457 is WIDENED by one measured item:** `GetMyDocuments`' `Description` / `ReviewNotes` behind
+  `BlobUrl`, measured `OLD=True` (visible before this diff). It is on this ticket's
+  `AcceptedPreExisting` list with that reason rather than being silently absorbed here.
+
+#### Deliberately NOT chased
+
+`GetOrderPhotos`' response `notes`, `UpdateCurrentUser`, `UploadDisputeEvidence` and `DisputeDetails`
+— all T-0457's, per instruction. The regex was **not** widened.
+
+#### AC4 — CLOSED by QA's Azurite run
+
+QA ran the real upload path against Azurite (the app's own `BlobContainerClientFactory` and the real
+`UpdateCurrentUser.Handler`, only the two repositories mocked) and **closed this**. Both halves of the
+code trace confirmed empirically: `Content-Type: application/octet-stream`, and
+`Metadata.CacheMetadata` lands as `x-ms-meta-CacheControl` with **zero** caching effect —
+`Metadata`/`MetadataName` name the five blob HTTP headers but `BlobContainerClient.UploadAsync`
+(`:57-68`) routes them all through `SetMetadataAsync`. Dispute evidence has the identical gap
+(`UploadDisputeEvidence.cs:101-103`).
+
+The rendering prediction also held, now with evidence rather than reasoning: **Chromium loaded the
+JPEG at 800×600 and the PNG at 48×48 from a bare-GUID URL, WebKit did the same, and `CGImageSource`
+sniffed `public.jpeg` / `public.png` from the bytes.** SAS fetch 200, bytes identical, sha256 match.
+So no content-type is required at upload time and the write path was correctly left alone for AC4.
+
+Standing note for whoever later closes the header gap: per the security conditions, do **not** set
+`Cache-Control: public` on an avatar.
+
+#### Handed to the SEC-4 follow-up — the commit leg, which I did not reason about
+
+I reasoned about upload failure and delete failure and **missed the commit leg**. Recording it so it
+is not lost: `UnitOfWorkPipelineBehavior` runs the handler and commits **after** it, so
+upload OK → name updated → old blob deleted → **commit fails** → EF rolls back → the persisted row
+still holds the OLD name, whose blob was just deleted. The profile then points at a blob that does not
+exist, and `GenerateSasUri` is a local HMAC that neither checks existence nor throws — it happily mints
+a URL that 404s.
+
+The pre-AC10 code was structurally immune, because delete-then-upload-under-the-same-name meant a
+rolled-back row always pointed at the freshly uploaded blob. Reachable via the check-then-act
+phone-uniqueness rule in `UpdateCurrentUser.Validator` under concurrency. Rated LOW and not a security
+failure — it degrades to the fallback-to-initials path the client tickets must build anyway.
+
+The fix is structural (take the supersede-delete off the transactional path so it is retryable and
+cannot precede a rollback) and it also closes a GDPR gap: erasure deletes only the *current*
+`ProfilePhotoName`, so an orphan would survive an erasure request. **Both belong to the SEC-4
+follow-up; this handler was deliberately not reopened for them.**
+
+#### One consequence of the AC9 ordering fix that strengthens T-0457
+
+Redacting the full body before truncating means a redacted `base64Content` no longer consumes the
+window, so **more of the remaining body now reaches the log**. On `GetCurrent` that changes nothing
+(the PII already closes by ~byte 302, inside the window), but on any endpoint where a large blob
+previously pushed PII past the cut, that PII is now visible. It is the correct trade — a credential
+prefix is worse than a name — but it raises the urgency of T-0457 rather than lowering it.
+
+### Earlier round-1 review content follows
 
 ### 2026-07-30 — SECURITY GATE (Gate 3): **APPROVE-WITH-CONDITIONS** for the demo
 
@@ -335,24 +670,73 @@ Appended to each ticket individually; the single source is the findings doc.
   required**.
 - **Anyone** closing the AC4 content-type gap must **not** set `Cache-Control: public` on an avatar.
 
-### 2026-07-30 — knowledge harvest from this ticket (folded in by the PM, not by its author)
-
-The frontend developer working this ticket's lane added a catalog section to
-`agents/knowledge/patterns-frontend.md` — **"Building a generated DTO — construct-then-assign, never
-an object literal"** — and **deliberately did not write this note here**, because the backend
-developer and a reviewer were both live in this file at the time. **That was the correct call** (a
-concurrent write to a file two agents are editing is the T-0456 class of incident), and it is recorded
-as such rather than as an omission.
-
-The PM is folding the note in now that the lane has cleared. Implementers and reviewers on this
-ticket and on **T-0447 / T-0448 / T-0449** should read that section before touching a generated
-client — it is the pattern the regen breaks in T-0438 and PR #166 kept violating, and **T-0463 AC4**
-now tests for the same shape.
-
 #### What this ticket still needs before `in_review`
 
-AC9 + AC10 implemented, and AC6's mutation-proving test **named**. **AC4 is now CLOSED** — see below.
-The reviewer re-gates; the PM does not approve its own reconciliation.
+AC9 + AC10 implemented, AC6's mutation-proving test **named**, and AC4 still an **open unknown** (no
+stored blob has been fetched — `status/sprint-14.md` §7). The reviewer re-gates; the PM does not
+approve its own reconciliation.
+
+<!-- reviewer + security verdicts here; AC6 must name the mutation-proving test -->
+
+### FINAL VERDICT — reviewer, 2026-08-01, at `598f09e3`: **APPROVED**
+
+Six rounds. Own runs at the head: build 0 errors, unit **2377/0**, IntegrationTests **110/0**,
+HostTests **75/0**, consistency 65 = master baseline. Mutations A/E/I/N/N′/S re-run by the reviewer
+across rounds, each restored byte-exact; O/P/Q/R taken on the developer's report.
+
+**AC6 mutation-proving test:** `GetCurrentUserProfilePhotoReadPathTests
+.Profile_WithStoredPhoto_CarriesAResolvableUrlAlongsideTheStableBlobName` — red against the stubbed
+read path.
+
+**Both Stripe credentials confirmed redacted in behaviour, not just in the token list.** The exact
+body that logged a raw setup-intent secret in round 5 now returns
+`setupIntentSecretInLog=False, ephemeralKeyInLog=False` on all five hosts.
+
+**Per-member accounting is load-bearing.** Dropping one accepted entry fails naming the member, the
+DTO and both route variants — structurally invisible under the old first-offender logic.
+
+**One precision note, explicitly NOT a condition of approval.** The reviewer rebuilt the
+`reviewNotes` fixture from the real stored-path shape (`SaveMyDocuments.cs:120-123`, 82 chars) rather
+than reusing the developer's, and confirmed `OLD=True` across the realistic range — so the
+pre-existing classification is robust, not fixture-luck. Walking the boundary: at a document
+description beyond **~155 characters** `reviewNotes` crosses out of the pre-change window, so for long
+descriptions this change *does* newly expose it. "Pre-existing" is therefore a typical-case claim, not
+a universal one. Not worth another round: `Description` on the same route is unconditionally
+pre-existing and already on T-0457, so whatever T-0457 does to that route necessarily covers
+`ReviewNotes`. Worth one clause on the accepted-list comment if that file is touched again.
+
+**Still owed before `done`:** AC4's rendering half — headers were evidenced against live Azurite in
+round 3 (200, `application/octet-stream`, no `Cache-Control`, no `nosniff`, magic bytes intact); the
+visual confirm in a browser, Coil and `UIImage(data:)` is QA's.
+
+**Merge order:** T-0439 before T-0446. ADR-0031 lives on `feat/T-0439-sprint14`, is absent from
+master, and `patterns-frontend.md` cites it.
+
+Two things the reviewer asked to be recorded as this closes. The guard paid for itself immediately —
+it found a live payment credential that five rounds of careful reading, the reviewer's included,
+walked past. And when the reviewer proposed a bad test retarget in round 4, the suite's own
+non-vacuity guard rejected it rather than a human catching it. The pattern across all six rounds was
+the same: **every time a judgement was replaced with a measurement, the measurement found something
+the judgement had missed.**
+
+### AC4 — CLOSED by the owner, 2026-08-01
+
+The owner confirmed on DEV that partner/admin order-detail photos **render**. Those blobs travel the
+identical path this ticket's avatars take — stored with no `BlobHttpHeaders`, served as
+`application/octet-stream`, fetched through a 1-hour SAS. So real Azure does **not** send
+`X-Content-Type-Options: nosniff`, and content sniffing carries the render.
+
+That was the single largest threat to the AC4 verdict and the only thing no agent could test (no
+credentials, and none should have been used). QA's Azurite evidence — 200, `application/octet-stream`,
+`Cache-Control` absent, `x-ms-meta-CacheControl` inert, magic bytes intact, byte-identical round-trip
+— now stands corroborated by production behaviour rather than by an assumption about Azure's headers.
+
+**AC4 is closed. Nothing on this ticket is owed by QA.**
+
+Unchanged by this: T-0464 (the `MetadataName.ContentType` decoy — every order photo and dispute
+evidence file is still served as `application/octet-stream`) and T-0465 (no avatar caching at all).
+Both remain post-demo. The confirmation lowers T-0464 from "possibly demo-blocking" to post-demo,
+which was its filed sequencing.
 
 ### 2026-07-30 — QA: AC4 CLOSED, and the prediction was right
 
@@ -374,3 +758,23 @@ Three things this changes, recorded so nobody re-opens them:
    a ticket and **not** a blocker.
 
 <!-- reviewer + security verdicts here; AC6 must name the mutation-proving test -->
+
+### 2026-07-30 — knowledge harvest from this ticket (folded in by the PM, not by its author)
+
+The frontend developer working this ticket's lane added a catalog section to
+`agents/knowledge/patterns-frontend.md` — **"Building a generated DTO — construct-then-assign, never
+an object literal"** — and **deliberately did not write this note here**, because the backend
+developer and a reviewer were both live in this file at the time. **That was the correct call** (a
+concurrent write to a file two agents are editing is the T-0456 class of incident), and it is recorded
+as such rather than as an omission.
+
+The PM is folding the note in now that the lane has cleared. Implementers and reviewers on this
+ticket and on **T-0447 / T-0448 / T-0449** should read that section before touching a generated
+client — it is the pattern the regen breaks in T-0438 and PR #166 kept violating, and **T-0463 AC4**
+now tests for the same shape.
+
+#### What this ticket still needs before `in_review`
+
+AC9 + AC10 implemented, and AC6's mutation-proving test **named**. **AC4 is now CLOSED** — see below.
+The reviewer re-gates; the PM does not approve its own reconciliation.
+

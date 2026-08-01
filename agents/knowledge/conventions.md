@@ -133,6 +133,57 @@ The bar: a pattern earns a catalog entry when it would make **future** changes c
 codebase **more consistent**, not because it's merely a preference. Reviewer and Architect are the
 guardrails against catalog bloat — the same "earns its place" test as any abstraction.
 
+### The price of a law — a constraining entry names its enforcer and declares its tier (ADR-0032)
+
+An entry that constrains **call sites** — code other people write — states, inline:
+
+```
+**Enforced by:** <named enforcer> — <tier token>
+```
+
+The **named enforcer** is a SwiftLint rule id, a test file + test class, a `check-consistency.mjs`
+rule id, or a **named** standing-checklist item (e.g. Gate-DP §G of `ios-app-review-checklist.md`).
+The **tier token** is one of:
+
+| Token | Means |
+|---|---|
+| `T1-CI` | fails a CI job on the offending change |
+| `T2-ADVISORY` | runs on demand, reports, never sets the exit code (`check-consistency.mjs` today, on every stack) |
+| `T3-HUMAN` | a **named** item in a standing checklist the Reviewer runs |
+| `(gate pending: <ticket>)` | the gate is specified and ticketed, but a live violation blocks it (`enforcement.md`'s zero-baseline rule); promotes to `T1-CI` when the ticket lands |
+| `(guidance — no gate)` | nobody enforces it; it is advice |
+
+**`T1-CI` is required when — and only when — both hold:** (a) the rule is mechanically expressible on
+that stack, **and** (b) its baseline on that stack is **zero**. If (a) fails, the tier is `T3-HUMAN`
+with a named checklist item — ADR-0018's Gate-DP ("this screen's layout, flow and branding match the
+Android screen") is unmechanizable *in principle* and is nonetheless a real, load-bearing law. If (b)
+fails, the tier is `(gate pending: <ticket>)`. **Imperative framing does not buy a CI gate and does not
+require one** — it buys nothing, because every constraining entry declares a tier whatever its wording.
+
+- **`T3-HUMAN` needs a *named* checklist item.** "The reviewer will notice" is not T3; an unnamed human
+  enforcer is `(guidance — no gate)`.
+- **The named enforcer's assertion must cover the scope the sentence claims.** A closed-roster
+  enforcer is legitimate, but say so in the entry ("gated on the two heroes; the rest are enumerated by
+  `<ticket>`"). A hand-maintained roster does not catch the next instance, and the reader must see that
+  boundary. *The failure this closes is real and was verified: an entry claiming "a second literal
+  domain anywhere in the iOS tree is a defect" named a test that asserts **two sentences**.*
+- **A guard test that walks the tree must fail when its corpus is empty or its anchor is missing**
+  (`XCTUnwrap` the file read; assert the anchor count). A test that passes because the files were
+  renamed away is not an enforcer.
+- **An entry describing a shared component's own internals is not a law over call sites** and needs no
+  enforcer — it needs accurate prose.
+- **Per stack:** backend / frontend / Android — a unit/integration test in a CI job is `T1-CI`; a
+  `check-consistency.mjs` rule is `T2-ADVISORY` until that stack's checker step is in its CI workflow.
+  **iOS** — a SwiftLint `custom_rules` entry (`swiftlint lint --strict` blocks in `ios-ci.yml`) for a
+  single-line token/literal ban, or an **XCTest guard** for anything relational, computed, or over
+  non-Swift files (`.xcstrings`, plists), using the `#filePath` walk-out-of-the-package idiom of
+  `ConsentCatalogTests`. A `custom_rule` may only claim the scope `.swiftlint.yml`'s `included:`
+  actually lints. `check-consistency.mjs` **cannot read Swift at all**.
+
+Why it matters: an entry that reads as settled while nothing is watching buys compliance today at the
+cost of a reviewer who stops looking tomorrow. Naming the tier costs a line and makes the difference
+visible.
+
 ## Naming (canonical)
 
 | Thing | Backend (C#) | Frontend (Angular) | Mobile |

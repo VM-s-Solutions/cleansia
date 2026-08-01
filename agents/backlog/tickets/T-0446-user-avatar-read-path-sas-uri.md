@@ -340,6 +340,40 @@ re-implementation. The extraction is behaviour-neutral: the redaction suite was 
 > manifest. Cited because a mutation left in the tree is a shipped defect, and this is the check that
 > catches it.
 
+#### Round 4 — the third upload path, and a bound on the scan I introduced
+
+**`/uploadphoto` (the endpoint `/savephotos` does not match).** `UploadOrderPhoto` posts a SINGLE
+photo to `/api/Order/UploadPhoto`; its `Notes` sits after a `byte[] FileData` the regex collapses, so
+it has the same shape and the same exposure as the batch endpoint. Added as a third `IsSensitivePath`
+entry on all five hosts, with a third theory method. Route tokens re-verified unique against every
+`Http*` template on the five hosts: only `SaveMyDocuments`, `SavePhotos`, `UploadPhoto` exist in that
+space (`UploadEvidence` is the dispute route, correctly left alone — no free text at all).
+
+**The scan bound.** Redact-before-truncate is required for correctness but made the scan cover the
+whole body: 1 MB → 187 ms, 25 MB → 5716 ms, synchronously before `_next`, with no server-side image
+cap beyond Kestrel's 30 MB. That is a cost regression *this ticket introduced*. Bodies past
+`RedactionScanLimit` (64 KB) are now **suppressed wholesale** rather than scanned — suppressed, not
+truncated, because truncating an unscanned body is exactly the prefix leak AC9 removed. Both paths,
+all five hosts.
+
+Implemented as a single `SafeBody(path, rawBody, logLimit)` helper rather than two parallel ternaries:
+the request and response branches have now drifted into the *same* bug twice, so they share one body.
+
+**Round-4 mutation proof**
+
+| # | Mutation | Result | Named test that goes RED |
+|---|---|---|---|
+| **L** | `/uploadphoto` removed from `Web.Mobile.Partner` | **1 failed / 14 passed** | `RequestLogSensitiveUploadPathTests.UploadOrderPhotoRequest_PhotoNote_IsSuppressed(Web.Mobile.Partner)` — note found at **pos 250** |
+| **M** | scan-limit guard removed on `Web.Customer` (unbounded scan) | **2 failed / 13 passed** | `RequestLogRedactionScanLimitTests.RequestBody_OverTheScanLimit_IsSuppressedWholesale(Web.Customer)` |
+| **N** | `RedactionScanLimit = 0` on `Web.Admin` (bound swallows everything) | **3 failed / 12 passed** | `RequestLogRedactionScanLimitTests.RequestBody_JustUnderTheScanLimit_IsStillRedacted(Web.Admin)` |
+
+**N is the one that matters most.** A cost bound is the kind of change that silently disables the
+control it is protecting, so the boundary is pinned from **both** sides — under the cap must still
+redact, over it must suppress. Without the under-the-cap test, `RedactionScanLimit = 0` would have
+turned every log into a suppression sentinel and the suite would have stayed green.
+
+Restored after each; 9-file sha256 manifest byte-exact (`shasum -c` clean).
+
 #### Deliberately NOT chased
 
 `GetOrderPhotos`' response `notes`, `UpdateCurrentUser`, `UploadDisputeEvidence` and `DisputeDetails`

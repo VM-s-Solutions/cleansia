@@ -442,9 +442,9 @@ degradation plus no silent swallow — the image is decoration, the read is the 
 **not** retrofit the other two. **Open for the architect:** ratify one shape and decide whether to
 retrofit; until then, mirroring the third is the safe default, not a rule.
 
-Two things that are **not** open, because they are security invariants rather than style:
+Two things that are **not** open — one a security invariant, one a durability/cache-correctness one:
 
-- **Never log the URI.** Log the blob name; a signed URL in a log is a credential in a log (S6). The
+- **Never log the URI** *(security — S6)*. Log the blob name; a signed URL in a log is a credential in a log. The
   hosts' `RequestLoggingMiddleware` slices request/response bodies into Information-level logs, so
   every host's `SensitiveFieldRegex` carries `blobUrl` (five copies) and every host **redacts before
   it truncates** — truncate-first cannot match a value whose closing quote falls past the cut, so it
@@ -456,11 +456,18 @@ Two things that are **not** open, because they are security invariants rather th
   cannot be protected by a field-name denylist and must instead be added to **`IsSensitivePath`**, the
   wholesale body suppression — pinned by `RequestLogSensitiveUploadPathTests`. When you add a
   redaction, re-check what the freed window now exposes.
-- **Mint a new blob name on every upload** (`UpdateCurrentUser`, `SaveOrderPhotos`,
-  `UploadOrderPhoto`, `UploadDisputeEvidence`). That keeps the name content-addressed, which is what
-  lets clients cache the image on the name; reusing a name makes a replaced image unrenderable behind
-  any name-keyed cache. Upload the new blob **before** deleting the superseded one, and do delete it,
-  or each replace orphans a blob.
+- **Mint a new blob name on every upload** *(cache correctness, not S1–S10)* — `UpdateCurrentUser`,
+  `SaveOrderPhotos`, `UploadOrderPhoto` and `UploadDisputeEvidence` all do. That keeps the name
+  content-addressed, which is what lets a client cache the image on the name; reuse makes a replaced
+  image unrenderable behind any name-keyed cache.
+  **The supersede rules apply only where a blob is REPLACED in place** — today that is
+  `UpdateCurrentUser` alone; the other three only ever add. Where you do replace: upload the new blob
+  **before** deleting the superseded one (a failed upload must not destroy what the user still has),
+  and do delete it, or every replace orphans a blob. **Open:** deleting inline still races the
+  commit — the UoW pipeline commits *after* the handler, so a failed commit rolls the row back to a
+  name whose blob is already gone. The durable shape is to not delete inline at all (a retryable
+  sweep keyed off the superseded name); that is the SEC-4 follow-up, and it also closes the GDPR gap
+  where erasure only deletes the *current* name.
 
 The field is nullable + defaulted so it is additive on the wire (S9).
 

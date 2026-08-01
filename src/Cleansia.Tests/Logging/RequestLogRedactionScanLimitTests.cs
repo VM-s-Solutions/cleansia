@@ -75,7 +75,7 @@ public class RequestLogRedactionScanLimitTests
     /// </summary>
     private static string BodyOfLength(int length)
     {
-        var head = $$"""{"apiKey":"{{Secret}}","filler":"""";
+        var head = "{\"apiKey\":\"" + Secret + "\",\"filler\":\"";
         const string tail = "\"}";
         var padding = length - head.Length - tail.Length;
         Assert.True(padding > 0);

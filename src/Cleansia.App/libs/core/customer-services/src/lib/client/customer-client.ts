@@ -6420,6 +6420,7 @@ export class BlobFileDto implements IBlobFileDto {
     fileName!: string | undefined;
     base64Content!: string | undefined;
     contentType!: string | undefined;
+    blobUrl!: string | undefined;
 
     constructor(data?: IBlobFileDto) {
         if (data) {
@@ -6435,6 +6436,7 @@ export class BlobFileDto implements IBlobFileDto {
             this.fileName = Data["fileName"];
             this.base64Content = Data["base64Content"];
             this.contentType = Data["contentType"];
+            this.blobUrl = Data["blobUrl"];
         }
     }
 
@@ -6450,6 +6452,7 @@ export class BlobFileDto implements IBlobFileDto {
         data["fileName"] = this.fileName;
         data["base64Content"] = this.base64Content;
         data["contentType"] = this.contentType;
+        data["blobUrl"] = this.blobUrl;
         return data;
     }
 }
@@ -6458,6 +6461,7 @@ export interface IBlobFileDto {
     fileName: string | undefined;
     base64Content: string | undefined;
     contentType: string | undefined;
+    blobUrl: string | undefined;
 }
 
 export class CancelMembershipSubscriptionResponse implements ICancelMembershipSubscriptionResponse {

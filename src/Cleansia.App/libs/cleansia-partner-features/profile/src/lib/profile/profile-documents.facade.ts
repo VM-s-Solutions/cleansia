@@ -152,11 +152,10 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
 
       const base64Content = await base64Promise;
 
-      const blobFileDto = new BlobFileDto({
-        fileName: file.name,
-        base64Content: base64Content,
-        contentType: file.type,
-      });
+      const blobFileDto = new BlobFileDto();
+      blobFileDto.fileName = file.name;
+      blobFileDto.base64Content = base64Content;
+      blobFileDto.contentType = file.type;
 
       const stagedDoc: StagedDocument = {
         file: blobFileDto,

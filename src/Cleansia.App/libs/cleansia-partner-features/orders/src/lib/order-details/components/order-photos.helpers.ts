@@ -94,12 +94,13 @@ export function createStagedPhoto(
   file: File,
   photoType: PhotoType
 ): StagedPhoto {
+  const blobFile = new BlobFileDto();
+  blobFile.fileName = file.name;
+  blobFile.base64Content = base64Content;
+  blobFile.contentType = file.type;
+
   return {
-    file: new BlobFileDto({
-      fileName: file.name,
-      base64Content,
-      contentType: file.type,
-    }),
+    file: blobFile,
     photoType,
     preview: base64Content,
   };

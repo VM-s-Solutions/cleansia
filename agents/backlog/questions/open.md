@@ -510,6 +510,41 @@ _No open Wave-1 *planning* questions remain._
   iOS-display follow-up ticket so marketing surfaces are decided once, coherently.
 - Answer: _(owner fills in)_
 
+---
+
+## CI / branch-policy question (2026-07-30) — raised by ADR-0031 (T-0439), challenge CH-1
+
+### Q-CI-01 — [blocking: no — does NOT gate ADR-0031 or T-0439] Require PRs for `master` (branch protection), instead of / in addition to placing checks?
+- Raised by: architect (T-0439 / ADR-0031 D4, panel challenge CH-1)
+- Owner: **owner** (this constrains the owner's own git workflow — no agent may decide it)
+- Resolve-by: post-prod
+- Date: 2026-07-30
+- Question: Should `master` be **branch-protected** — no direct pushes, changes land via PR, with the
+  existing `frontend-ci` / `backend-ci` checks required to pass before merge?
+- Why it matters: **the evidence is unusually direct.** Of the last **25** first-parent commits on
+  `master`, every one carries a `(#NNN)` PR number **except two** — `bbcf5b24` and `2ce848cb`. Those two
+  are exactly the commits that broke the frontend build for all three web apps (repaired by `7c82cd2e` /
+  PR #171 and `ccca1496` / PR #166). **The only two un-PR'd commits in recent history are the two that
+  caused the defect ADR-0031 exists to guard.** Under branch protection each would have been a PR, and the
+  *already-existing, already-correct* PR-triggered build would have gone red **before** merge — with zero
+  new machinery. Every option ADR-0031 enumerated (A–D) placed a *check*; this is the only one on the
+  "who may make `master` red" axis, and it is the only invariant-shaped one (it does not depend on anyone
+  remembering to run a command, or on a check being placed at the right point).
+- The costs only the owner can weigh: a solo operator can lock themselves out of their own repo unless
+  `enforce_admins` stays off / self-approval is allowed; every trivial docs push becomes a PR; the hotfix
+  path lengthens; CI minutes rise on pushes that today are free.
+- **Not a go-live blocker:** prod deploys are `workflow_dispatch`-only behind the `prod-weu` GitHub
+  Environment's required reviewers (`deploy-pro.yml:19-29`), so an unbuilt `master` push cannot ship
+  itself. This is a velocity/attribution question, not a release-safety one — hence `post-prod`.
+- Default taken (non-blocking): **no branch protection changed.** ADR-0031 ships its two mechanisms and is
+  **not conditional** on this answer — the regen-time typecheck fires earlier than any branch-protection
+  rule can (before a commit exists), and the `master` push build is either the safety net (this question
+  answered "no") or harmless redundancy (answered "yes"). The two compose; neither substitutes.
+- Answer: _(owner fills in — confirm direct pushes stay allowed, or protect `master` and name the
+  self-approval / admin-bypass posture)_
+
+---
+
 ### Q-FEED-02 — [blocking: no] Partner-targeted notification events (job assignment / customer cancellation / invoice ready)?
 - Raised by: analyst (T-0393 — feed design panel, D2)
 - Owner: owner

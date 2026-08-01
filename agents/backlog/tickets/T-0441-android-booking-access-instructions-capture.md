@@ -1,11 +1,12 @@
 ---
 id: T-0441
 title: Android — capture entry/access instructions on the booking confirm step
-status: draft
+status: qa
 size: S
-owner: —
+owner: qa
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
+merged: 1d85b35f            # PR #178 — code is on master; the TICKET is not done (AC1 screenshot owed)
 depends_on: []
 blocks: [T-0448]
 stories: [US-customer-access-instructions]
@@ -90,6 +91,38 @@ because the confirm step never collects it and the create DTO has no such field.
   reworded at `BookingDtos.kt`, `BookingViewModel.kt`, `BookingViewModelTest.kt`; the UTF-16 claim is
   corrected from "character-for-character" to "code-unit-for-code-unit" with the conservative-not-exact
   behaviour spelled out. Suite 320 → **321**, 0 failures.
+- 2026-07-30 — reviewer **APPROVED** → `qa`. *(The frontmatter was left at `draft` by mistake at the
+  time; corrected 2026-08-01 in this pass. The body has said `qa` since the review — the row, the
+  sprint doc and the ticket now agree.)*
+- 2026-08-01 — **MERGED to `master` as `1d85b35f` (PR #178)**, "feat(android): capture entry
+  instructions on the booking confirm step [T-0441]". **Status stays `qa` — NOT `done`.** See the 🟡
+  block below.
+
+## 🟡 2026-08-01 (PM close-out pass) — MERGED, and **deliberately NOT closed**. Stays `qa`
+
+**The code is on `master`** (`1d85b35f`, PR #178) and the reviewer **APPROVED** — 321/321 tests,
+**53/53 Gradle tasks executed** (not `UP-TO-DATE`), 11 consistency violations identical to the
+pre-change baseline, both findings closed and independently re-proved.
+
+**One AC is still open and it is genuinely owed: AC1's screenshot.** The reviewer said so itself
+("AC1's screenshot remains open and belongs to QA") and was right to hand it off rather than assert
+it. `ticket-lifecycle.md` §"Done means" (`:154-163`) item 1 (*every AC has verifiable evidence*) and
+item 3 (*QA executed the test plan and recorded the result*) both fail while it is outstanding, and
+the section carries no exceptions clause — *"Anything short of this stays out of `done`."* The
+hand-gating escape at `:165-179` does not apply: it exists for a **dead reviewer lane** on work that
+landed, and is discharged by a MANUAL-GATE block of hand-inspected evidence. This reviewer lane ran
+and approved; a MANUAL-GATE block cannot be written for a screenshot nobody has taken.
+
+**So the ticket stays `qa` while its code is on `master`.** `merged:` in the frontmatter records the
+shipped half so nobody reads `qa` as "not shipped".
+
+**Nothing downstream is gated by this.** T-0448's and T-0450's dependency on this ticket was the
+**`customer-app/src/main/res/values*/strings.xml` lane head plus the field itself** — both merged, so
+the lane is clear. A screenshot does not gate a code lane. Recorded on both.
+
+**Also not owed here:** T-0467 (draft persistence across process death — a product decision, not this
+ticket's bug: `specialInstructions`, `promoCode`, the address and the slot are all lost today too)
+and T-0469 (the cap/labelling parity ruling). Both are separate tickets by design.
 
 ## Implementation surface (iOS port reproduces this 1:1 — T-0440)
 

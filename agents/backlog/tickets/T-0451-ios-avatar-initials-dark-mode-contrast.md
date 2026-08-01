@@ -1,11 +1,11 @@
 ---
 id: T-0451
 title: iOS avatar initials fail WCAG in dark mode — 2.14:1 against a hardcoded white circle
-status: ready
+status: done
 size: S
 owner: ios
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 depends_on: []
 blocks: [T-0450, T-0449]
 stories: []
@@ -125,6 +125,48 @@ implementation choice is *recorded*, not *litigated*. Sizing/AC/deps/layers set 
   subsequent runs (4 incremental, 1 `test`, 1 identical `clean build test`) were 519/0. This is
   **not** claimed to be the known flake — it is an unidentified, non-reproducing failure in a suite
   with flake history. Naming it needs a re-run loop that keeps the full log.
+- 2026-08-01 — **`ready` → `done`. MERGED as `1c8fdd00` (PR #180)**, "fix(ios): pin the avatar
+  initials to a colour that survives dark mode [T-0451]". Reviewer **APPROVED** (relayed by the
+  orchestrator at close-out). AC evidence lives in the status log above and in the merge-commit body,
+  not in `## Review` — see the PM reconciliation note below, which says so rather than papering over it.
+- 2026-08-01 — **carried forward, NOT closed and deliberately NOT ticketed:** the declared
+  unreproduced **519 tests / 1 failure** on the first Core `clean build test` (entry above). It stays
+  a declared unknown rather than becoming a ticket because it cannot satisfy **Gate 0**: no named
+  test, no file:line, no reproducible trigger, and six subsequent runs (including an identical
+  `clean build test`) were 519/0. Filing it would manufacture a finding. It is surfaced to the owner
+  in `status/sprint-14.md` instead, and the next agent to see a Core red should keep the full log.
 
 ## Review
-<!-- reviewer writes verdict here; AC1/AC2 ratios and AC4's rationale go here -->
+
+### PM reconciliation, 2026-08-01 — what this section does and does NOT contain
+
+**This is not a verdict and the PM does not write one.** It records the state of the artifact, because
+a later reader will otherwise assume a missing verdict means a missing review.
+
+**The reviewer's verdict text was never committed into this file.** The in-artifact trace of the
+review is the status-log line *"2026-08-01 — reviewer F1/F2 addressed"* (`:107-113`) — two named
+findings raised, both closed with the reasoning recorded, including the reviewer's specific objection
+that a file-wide `CleansiaColors.primary` grep would have false-failed on the legitimate row icon at
+`ProfileTab.swift:163`. That is a real review lane that ran; only its write-up is absent.
+**APPROVED is relayed by the orchestrator, and is labelled as relayed.**
+
+**Where each AC's evidence actually is** (AC1/AC2 asked for it here; it is one section up):
+
+| AC | Evidence | Where |
+|---|---|---|
+| AC1 / AC2 | computed ratio `2.142277591669845 < 3.0` going RED under mutation M1; `AvatarDiscBindingTests` binding **both** heroes' disc fill and ink, RED under M2 (customer) and M3 (partner) — different files, so both heroes are proven covered | status log `:114-119` |
+| AC3 | light mode unchanged — "Light mode is bit-for-bit identical before and after" | merge-commit body, `1c8fdd00` |
+| AC4 | **pins the static colour** (Android's shipped deviation), and does it in the **token** rather than at the call sites, because `Palette` and `Color(hex:)` are internal to `CleansiaCore` so an app target cannot name `sky600`; `CleansiaColors.primary` untouched (correct in its other 293 usages) | merge-commit body, `1c8fdd00` |
+| AC5 | Core 519/0, Customer 677/0, Partner 527/0, exit 0; SwiftFormat 0.60.1 + SwiftLint 0.65.0 `--strict` clean; **run on the 16.4 floor**; Gate 8.5 both apps installed and launched on 16.4 in dark | status log `:120-122` |
+
+**Gate 8 consistency leg: correctly UNVERIFIED, not PASS.** `check-consistency.mjs` has no Swift
+coverage, and as of `d6969fef` (#177) it now says so out loud — `--paths=src/cleansia_ios` prints
+`NOT RUN` and exits **1** (PM-re-ran it on `1c8fdd00`). This ticket never claimed a green there.
+Swift enforcement is **ADR-0032's** call (SwiftLint `custom_rules` or an XCTest guard, never the
+walker) — do not file a "add Swift to the walker" ticket.
+
+**This ticket is the origin of ADR-0032 and ADR-0033.** Its `patterns-mobile.md` hunk ("Ink on a
+theme-INVARIANT surface — the ONE way") is what the reviewer refused to ratify inline, which produced
+ADR-0032 (accepted, amended) and the split-off ADR-0033 (`proposed`). ADR-0032's **FT-3** (the iOS
+theme-invariant contrast sweep) is this ticket's deferred `## Out of scope` item and is sequenced
+after this merge — it is not owed by this ticket.

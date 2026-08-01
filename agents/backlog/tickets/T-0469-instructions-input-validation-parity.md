@@ -5,7 +5,7 @@ status: draft
 size: S
 owner: architect
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 depends_on: [T-0440, T-0441]
 blocks: []
 stories: [US-customer-access-instructions]
@@ -172,6 +172,18 @@ mistake on web.
   Core text field). **AC1a is new and is the one honestly open leg** — Android's serializer behaviour
   on an orphan surrogate was **traced, not executed**. Both T-0440 and T-0441 are now `qa`, so the
   panel can run against near-final code.
-
-## Review
+- 2026-08-01 — **both predecessors' CODE IS ON `master`, so "near-final" is now "final".** T-0441
+  merged `1d85b35f` (#178); T-0440 merged `a10e1f88` (#179). **`depends_on` is formally unsatisfied**
+  — both tickets remain `qa` on owed screenshots — **but the dependency's substance is discharged**:
+  what this panel needs is the two shipped implementations to rule against, and it has them. A
+  screenshot cannot change what `.take(2000)` does to a surrogate pair.
+  **Stays `draft` on the panel, not on the dependency.** It may be dispatched to the architect panel
+  now; the PM will not promote it to `ready` until the panel finalizes its AC (the deliberation-first
+  rule), and the two predecessors will close on QA independently.
+- 2026-08-01 — **read the merged code, not the tickets, for Finding A.** The T-0440 reviewer proved
+  iOS's `capped(_:)` total rather than merely tested — 4000 fuzzed notes across every UTF-16 width
+  class plus a `pad ∈ 0…12` × 6-cluster-kind sweep forcing the cut inside every cluster, **2464
+  truncating / 332 exact-fit / 0 failures**, with losslessness and no-halved-cluster as proven
+  invariants. That is the reference implementation this panel converges Android onto. **AC1a is still
+  the one honestly open leg** and it is executable now: Android's serializer is on `master`.
 <!-- architect / reviewer verdicts here; AC1 must use a real multi-unit cluster -->

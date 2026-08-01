@@ -83,7 +83,7 @@ private data class ProfileRow(
 
 /**
  * Wolt/Bolt-style profile — tall gradient hero with rounded bottom corners,
- * big avatar + name + tier badge + "Edit profile" pill CTA. A stats card
+ * big avatar + name + tier badge + edit pill CTA. A stats card
  * overlaps the hero bottom. Settings below are grouped into rounded sections.
  */
 @Composable
@@ -243,8 +243,9 @@ fun ProfileTab(
     }
 }
 
-// Feasible band at 320dp: >= 0.43 or the English label ellipsizes, <= 0.45 to hold the name column
-// at >= 56dp. Only 5.8dp of English headroom, so re-measure if the label, icon, padding or font moves.
+// 0.45 is the largest fraction that still leaves the name column 56dp at 320dp. Nothing sets a lower
+// bound now that the label is a verb alone: en needs 0.26, ru needs 0.54 — more than the name can
+// spare — so ru ellipsizes below ~376dp by design.
 private const val EditChipMaxWidthFraction = 0.45f
 
 @Composable
@@ -657,7 +658,7 @@ private fun ProfileHeroNoEmailPreview() {
     }
 }
 
-@Preview(locale = "ru", widthDp = 360)
+@Preview(locale = "ru", widthDp = 320)
 @Composable
 private fun ProfileHeroRussianPreview() {
     CleansiaTheme {

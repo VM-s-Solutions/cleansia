@@ -364,7 +364,7 @@
     <!-- Profile tab -->
     <string name="profile_greeting">Ahoj!</string>
     <string name="profile_email_placeholder">vy@example.com</string>
-    <string name="profile_row_edit">Upraviť profil</string>
+    <string name="profile_row_edit">Upraviť</string>
     <string name="profile_row_addresses">Uložené adresy</string>
     <string name="profile_row_payment">Platobné metódy</string>
     <string name="profile_row_notifications">Upozornenia</string>

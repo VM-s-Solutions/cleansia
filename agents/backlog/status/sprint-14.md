@@ -1,20 +1,36 @@
 # Sprint 14 — owner batch, demo preparation
 
-**Baseline now:** `master` at **`0f3b0d4c`** (moved 2026-08-01; was `ce2416a0`, planning baseline
-`bbcf5b24`). **Two review commits — `c23b26e7` (T-0440 verdict) and `c9265298` (the tooling
-false-green fix) — are on `fix/tooling-false-green-and-broken-docs` and are NOT on `master`.**
-**Updated:** 2026-07-30 — **third PM pass**: the **T-0446 security gate**, the **ADR-0031 panel**,
-**QA's AC4 run** and the **T-0441 review**.
+**Baseline now:** `master` at **`1c8fdd00`** — **all six wave-2 PRs are merged** (moved 2026-08-01;
+was `0f3b0d4c`, then `ce2416a0`, planning baseline `bbcf5b24`). Working tree clean apart from a
+pre-existing `src/cleansia_ios/Cleansia.xcworkspace/.../Package.resolved`; **all worktrees removed,
+all local branches deleted** (`git worktree list` → main checkout only).
+**Updated:** 2026-08-01 — **FOURTH PM pass: post-merge reconciliation.** (Third pass, 2026-07-30: the
+T-0446 security gate, the ADR-0031 panel, QA's AC4 run, the T-0441 review.)
 **Input:** one owner batch of 5 items + 1 approved process change → 12 tickets; **+ 7** from wave-1
 findings; **+ 4** from the security gate; **+ 3** from the ADR-0031 panel; **+ 5** from QA and the
-T-0440/T-0441 reviews. **32 total.**
+T-0440/T-0441 reviews; **+ 2** filed at the wave-2 close-out. **34 total.**
 
-> **Four things on this page changed status and are easy to miss:** **T-0440 is APPROVED and in `qa`**
-> with three items still open (§2.14), **T-0446's AC4 is CLOSED**
-> (§2.10 — the avatar renders; executed, not reasoned), **T-0441 is APPROVED and in `qa`** (§2.11),
-> and **§2.12 RETRACTS a false blocker the PM filed against T-0440** — the owner's regen bundle is back
-> to **two** items and T-0440 is **not** owner-gated. Also **§2.9 retires the "DEFERRED-TO-CI" caveat**
-> — those suites were never broken.
+> ## 🟢 READ §8 FIRST. Everything between here and §8 was written BEFORE the merges.
+>
+> Six PRs shipped — **`acf2f0bc` #175 · `a63b776e` #176 · `d6969fef` #177 · `1d85b35f` #178 ·
+> `a10e1f88` #179 · `1c8fdd00` #180.** The four headlines:
+>
+> 1. **T-0439, T-0446 and T-0451 are `done`.** **T-0440 and T-0441 are MERGED but deliberately NOT
+>    `done`** — they stay `qa` on owed AC screenshots. §8.2 gives the lifecycle text that forced that.
+> 2. **The owner's regen bundle is DONE** and shipped inside `a63b776e`. §2.12's "two items" and
+>    T-0446's "T-0447/0448/0449 are HELD" are both **discharged**. §8.3.
+> 3. **The vacuous consistency green is DEAD** (`d6969fef`). §2.14's "⚠️ that fix is NOT on `master`"
+>    and §2.14's `OK (0 files scanned)` transcript are **superseded** — see §8.4 for the two
+>    measurements and the precise (not blanket) caveat on pre-#177 evidence.
+> 4. **Exactly ONE thing now blocks the demo chain, and it is the owner:** **Q-I18N-02**. §8.5.
+>
+> **Stale statements below that §8 supersedes, listed so nobody re-derives them:** the `0f3b0d4c`
+> baseline in this header; "`c23b26e7` and `c9265298` are NOT on `master`" (both are now); §2.14's
+> live-`master` consistency transcript; and §2.12/§4's owner regen bundle.
+
+> **From the third pass, still true:** **T-0446's AC4 is CLOSED** (§2.10, and now double-closed by the
+> owner's DEV check — §8.3), **§2.12 RETRACTS a false blocker the PM filed against T-0440**, and
+> **§2.9 retires the "DEFERRED-TO-CI" caveat** — those suites were never broken.
 
 ---
 
@@ -914,3 +930,388 @@ records what it got wrong.
   (`L10n.OrderDetail.accessInstructions` is the **display** label, not the confirm-step hint).
 - **Still not run by the PM:** any iOS build, any Swift test, and `./scripts/generate-api-clients.sh`.
   The 694-tests-pass figure is the developer's, relayed — **and this time labelled as relayed.**
+
+---
+
+# 8. FOURTH PM PASS — 2026-08-01, post-merge reconciliation
+
+Everything above §8 was written before wave 2 merged. This section is the reconciliation against
+`master` at **`1c8fdd00`**. Every claim below is the PM's own read or run unless labelled *relayed*.
+
+## 8.1 What shipped
+
+| Commit | PR | Ticket | Title |
+|---|---|---|---|
+| `acf2f0bc` | #175 | **T-0439** | guard the NSwag regen against client/call-site drift |
+| `a63b776e` | #176 | **T-0446** | return a resolvable URL for the user's avatar |
+| `d6969fef` | #177 | *(untitcketed)* | three gates that reported success without doing anything |
+| `1d85b35f` | #178 | **T-0441** | android — capture entry instructions on the booking confirm step |
+| `a10e1f88` | #179 | **T-0440** | ios — capture entry instructions on the booking confirm step |
+| `1c8fdd00` | #180 | **T-0451** | pin the avatar initials to a colour that survives dark mode |
+
+**`d6969fef` (#177) is not a ticket and should not be back-filled into one.** It is owner-routed work
+that (a) fixed three false-green gates in tooling and (b) carried the whole wave-2 backlog — ADR-0032,
+ADR-0033, the security findings doc, and T-0450…T-0469 — onto `master`. Recorded here the same way the
+Google **sub-first** fix (`8241d3cd`, PR #170) was, so the history stays honest.
+
+## 8.2 Three tickets closed; **two deliberately NOT closed**, and the reasoning is the load-bearing part
+
+**`done`:** **T-0439**, **T-0446**, **T-0451**. Each has a dated status-log line naming its merge
+commit and PR, and each was APPROVED by its reviewer.
+
+**Still `qa`, with their code on `master`: T-0440 and T-0441.**
+
+### The question, answered directly
+
+**Does this lifecycle allow `done` with an owed QA item? No.** `ticket-lifecycle.md` §"Done means"
+(`:154-163`) lists five conditions, carries **no exceptions clause**, and closes *"Anything short of
+this stays out of `done`. We do not mark work complete on hope."* Two fail on both tickets:
+
+- **item 1** — *"AC each have verifiable evidence."* T-0440's **AC1** and T-0441's **AC1** have none;
+  T-0440's **AC6** has its launch/navigate legs but not its **render** leg.
+- **item 3** — *"QA executed the test plan and recorded the result."* QA has not run.
+
+**The one escape hatch does not reach this case.** §"When the in-workflow gate did not run
+(hand-gating)" (`:165-179`) permits `done` when a **reviewer lane died** (a StructuredOutput failure)
+while the work landed — discharged by a **MANUAL-GATE block** of hand-inspected evidence plus a
+provenance marker in `INDEX.md`. **Both reviewer lanes here ran and approved.** What is missing is not
+an inspection but an **artifact that does not exist yet**, and a MANUAL-GATE block cannot be written
+for a screenshot nobody has taken. Hand-gating substitutes an inspection for a dead lane; it does not
+substitute an assertion for an absent artifact.
+
+### Why the owed item is real, and why this is a handoff rather than a gap
+
+The T-0440 reviewer **proved** the screenshot is not capturable in-suite: it hosted `InstructionsField`
+in a **real `UIWindow`** and captured through **two independent mechanisms** —
+`drawHierarchy(afterScreenUpdates:)` and `window.layer.render(in:)`, the second of which the developer
+had not tried. All four PNGs came back `distinctColors=1`, byte-identical empty vs filled;
+`InstructionsField` is never instantiated by any test. It then measured the wrapping **analytically**
+instead (295pt available at the narrowest 16.4 device; en/cs/sk wrap to 1 line, ru/uk to 2). That is
+evidence of impossibility, not an untried claim.
+
+**Stamping these `done` would retire the question** — which is precisely the failure mode
+`T-0445`/Gate 0.5 shipped a gate against, one wave earlier, in this same sprint.
+
+### Recorded so the two facts cannot be confused
+
+Both tickets carry **`merged: <sha>`** in their frontmatter and a 🟡 block in the body; `INDEX.md` has
+a dedicated **"MERGED but NOT `done`"** table. `qa` here means *the ticket is open*, not *the code is
+unshipped*.
+
+### What is owed, and by whom — the whole list
+
+| Ticket | Owed | Owner |
+|---|---|---|
+| **T-0440** | AC1 screenshot (confirm step, both fields empty + filled) on a **16.4 device** | **qa** |
+| **T-0440** | Gate 8.5 **render** leg — same session, one screen, no new navigation | **qa** |
+| **T-0440** | **F-3** — record the actual test-first ordering; there is still no `red→green` line. If it was implementation-first, that becomes a real Gate 6 question and the reviewer re-reviews | **ios** |
+| **T-0441** | AC1 screenshot | **qa** |
+| *(both, judgement)* | does the **ru/uk two-line placeholder** read as intentional beside the sibling's one line? | **qa**, while on the device |
+
+**Nothing downstream is gated by any of it.** T-0448/T-0449/T-0450 depended on these two for their
+**shared-file lane heads plus the field itself** (`values*/strings.xml`, `Localizable.xcstrings`) —
+both writes are on `master`. **A screenshot does not gate a code lane.** Recorded on all five tickets.
+
+### One further thing NOT closed, and deliberately not ticketed either
+
+T-0451's status log declares an **unreproduced 519 tests / 1 failure** on the first Core
+`clean build test`; the log was not retained, so the test cannot be named, and six subsequent runs
+(including an identical `clean build test`) were 519/0. **It is carried as a declared unknown, not
+filed.** Filing it would fail **Gate 0** on three legs at once — no named test, no file:line, no
+reproducible trigger — i.e. it would be a manufactured finding. **Ask instead:** the next agent that
+sees a Core red keeps the full log. The developer was right to declare it rather than absorb it into
+a green.
+
+## 8.3 The owner's regen bundle is DONE — and this is what it unblocked
+
+**Both items shipped inside `a63b776e` (#176).** PM-verified first-hand, not relayed:
+
+| Item | Evidence |
+|---|---|
+| `nswag-regen` | `libs/core/customer-services/.../customer-client.ts` **+4** and `libs/core/partner-services/.../partner-client.ts` **+4** — the `BlobFileDto.blobUrl` member. `admin-client.ts` already carried `blobUrl` on another DTO, so no delta was needed |
+| `mobile-spec-redump` | `src/cleansia_android/openapi/customer-mobile-api.json` (4 hits) + `partner-mobile-api.json` (6). **`src/cleansia_ios/openapi/README.md` §"Source of truth" is explicit that iOS and Android read the SAME two committed specs** — so this one redump serves **both** platforms, and iOS needs only `./scripts/generate-api-clients.sh`, which is agent-authorised |
+
+**`master` did not go red after this regen.** That is the first time, and it is T-0439's guard doing
+its job on its first live use — one commit after it merged. Worth naming: the two prior regens
+(`bbcf5b24`, and `2ce848cb` before it) are, per the ADR-0031 panel, **exactly the two of the last 25
+first-parent `master` commits that lack a `(#NNN)`** — i.e. the two that bypassed review.
+
+**T-0446's AC4 is now double-closed.** QA's Azurite run closed it on executed evidence (§2.10); the
+**owner** then confirmed on DEV that partner/admin order-detail photos **render**, and those blobs
+travel the identical path — stored with no `BlobHttpHeaders`, served `application/octet-stream`,
+fetched through a 1-hour SAS. **So real Azure does not send `X-Content-Type-Options: nosniff`.** That
+was the single largest threat to the AC4 verdict and the only thing no agent could test. **The
+one-minute check in §6 item 0 is discharged — do not ask for it again.** Consequence: **T-0464 is
+confirmed post-demo**, exactly as filed, rather than promoted to demo-blocking.
+
+### What became `ready`
+
+| Ticket | Was | Now | Why |
+|---|---|---|---|
+| **T-0447** (web avatar) | `blocked` | **`ready`** | **Both** halves of its block are gone: T-0446 `done` **and** the regen shipped. **The only one of the three avatar client tickets that is genuinely ready** |
+| **T-0457** (S6 PII in `GetCurrent` logs) | `draft` | **`ready`** | The five-copy `RequestLoggingMiddleware.cs` lane is released. **P1** — DEV is live, the owner's iPhone points at it, and this is accruing right now |
+| **T-0464** (`ContentType` decoy) | `draft` | **`ready`** | The shared SAS mint is released; sole writer. The architect A-vs-B call is step 1 of the dispatch, not a precondition |
+| **T-0471** (ADR-0033 challenger round) | *(new)* | **`ready`** | No dependencies; see §8.6 |
+
+### What did NOT become ready, and on exactly what
+
+| Ticket | Blocked on | Note |
+|---|---|---|
+| **T-0448**, **T-0449** | **T-0450 only** | Every other dependency is cleared — T-0446 ✅, the spec redump ✅, T-0451 ✅ `done`, and T-0440/T-0441's lane heads + fields **merged**. **Do not "unblock" these by dropping the T-0450 dep**: it writes the same `values-{ru,uk}/strings.xml` and changes what the hero renders in ru/uk |
+| **T-0450** | **Q-I18N-02** — the owner | **All four of its lane heads have merged**, so DoR item 4 is satisfied. AC2 needs a **native ru/uk speaker**; no PM default was taken, deliberately |
+| **T-0465** | **T-0464** | Now `ready`, not `done`. Lane T-0446 ✅ → T-0464 → T-0465 |
+| **T-0461**, **T-0462** | *nothing* | Both deps satisfied. Both stay `draft` on their **own content** — §8.5 |
+
+## 8.4 The tooling fix is LIVE on `master`, and here is the precise caveat
+
+`d6969fef` (#177) fixed a false green in `agents/tools/check-consistency.mjs`: `dir()` did
+`join(REPO, rel)`, so an **absolute** `--paths` became `<repo>/<abs>` — a directory that cannot exist.
+It walked to nothing and printed `OK (0 files scanned)` with **exit 0**. **Every agent in this backlog
+is instructed to pass absolute paths.**
+
+**PM re-ran both legs on `1c8fdd00` (own runs, exit codes captured, not piped):**
+
+| Command | Result |
+|---|---|
+| `--paths=<absolute>/src/Cleansia.App/libs` | **32 violation(s)**, exit **1** *(was `OK (0 files scanned)`, exit 0)* |
+| `--paths=src/cleansia_ios` | **`consistency: NOT RUN — --paths matched no scannable files`**, exit **1** |
+| *(no `--paths`, whole repo)* | **85 violation(s)**, exit **1** |
+
+**So the vacuous green is dead.** §2.14's live-`master` transcript and its "⚠️ that fix is NOT on
+`master`" warning are **superseded**.
+
+### The retroactive caveat, stated precisely rather than as a blanket warning
+
+**Any Gate 8 consistency evidence recorded before #177 from an ABSOLUTE path was a non-run, however
+green.** But the sprint-14 records the PM can actually see used **relative** paths and reported
+non-zero counts, so **those ran**: T-0439's `--paths=src/Cleansia.App/libs` → 32, T-0441's
+`--paths=src/cleansia_android/customer-app` → 11. And the two that scanned nothing —
+T-0439's `.../tools` (`.mjs` is not walked) and T-0440's `src/cleansia_ios/CleansiaCustomer` (no Swift
+coverage at all) — were **correctly recorded as non-runs at the time, by the agents themselves.** That
+is the gate working. Record the caveat where it applies; do not use it to discount evidence that was
+honest.
+
+**Do not inherit a baseline number.** **47**, **65** and **85** all appear in this sprint's records for
+"the consistency baseline". They are scope-specific and some predate the fix. **Measure, and state the
+command.** T-0461's AC5 is amended for exactly this reason.
+
+**Two things that did NOT change:** the checker still has **no Swift coverage**, and it is still in
+**zero `.github/workflows`** (PM-verified) — so **ADR-0032 D1 prices it `T2-ADVISORY` on every stack**.
+iOS enforcement is ADR-0032's call (SwiftLint `custom_rules` or an XCTest guard, **never** the walker).
+**Do not file an "add Swift to the walker" ticket.** ADR-0032's **FT-1** — "verify and close the
+zero-file-scope `NOT RUN` banner" — is **discharged** by #177; the panel re-scoped it from "build it"
+to "verify + close" for exactly this case.
+
+**Two more things #177 fixed, both of which retire open items:**
+- **All three `*-client-formatter.sh` now carry `set -euo pipefail` + an input-exists guard.** One of
+  the two exit-code unknowns the architect folded into the owner's bundle is closed. **The other
+  survives:** `npx nswag run`'s failure exit code is still unknown, so a green `generate-*-client` is
+  still not proof the client regenerated.
+- **The six broken `CLAUDE.md` Nx commands are fixed** — and the owner used the **npm aliases**, i.e.
+  **exactly the departure T-0462 argued for** over the reported "insert the dots" fix. See §8.5.
+
+## 8.5 T-0461 and T-0462 — both unblocked by T-0439, and **both still `draft` on their own content**
+
+This is the part most likely to be got wrong by someone reading only `depends_on`.
+
+### T-0461 — the premise moved twice, and both moves cut against the fix as specified
+
+1. **ADR-0032 (accepted) prices its chosen enforcer `T2-ADVISORY`.** The ticket asks for a
+   `check-consistency.mjs` rule *"so T-0439's guard cannot be silently de-fanged"* — but a checker in
+   **zero** CI workflows cannot prevent a de-fang; it can only report one to whoever chooses to look.
+   **An advisory enforcer for a rule whose whole value is non-bypassability is the defect the ticket
+   was filed to prevent.** Meanwhile T-0439 shipped `tools/typecheck-apps.test.mjs`, an 8-case suite
+   **already run by `frontend-ci.yml` as a named step** — which is **T1-CI** under ADR-0032 D1, and
+   which already discovers each app's compilation unit from that app's `project.json` build target.
+   **AC6 added:** choose the enforcer against the tier table and record the reasoning. *"Both"* is a
+   legitimate answer; *"the checker rule, described as a gate"* is not.
+2. **`check-consistency.mjs` itself changed on `master`** (`d6969fef`, outside the ticket flow), so the
+   `T-0454 → T-0461` lane note is stale — a third writer landed ahead of both — and **AC5's "lands
+   green" premise is void**: the checker does not exit 0 on this repo.
+3. **AC7** (ADR-0032 D2 obliges the `consistency.md` entry to carry
+   `**Enforced by:** <enforcer> — <tier>`; this would be the **first** new entry after ADR-0032) and
+   **AC8** (the apps/libs scope split is now **decidable**: apps 3/3 → zero baseline → T1-CI legal;
+   libs 59/65 → non-zero → `enforcement.md:104-106` **forbids** gating it) added.
+
+**AC1, AC3 and AC4 stand. The defect is still real.** Only the enforcer choice, the tier declaration
+and the baseline arithmetic are re-opened.
+
+### T-0462 — the re-verification it demanded is now DONE, and it changed two of three answers
+
+The ticket said its proposed `CLAUDE.md` text was **quoted from an unmerged worktree** and that AC5
+required re-verification against the merged `package.json`. **That re-verification has now been run —
+as an explicit step, not an assumption.** PM parsed `src/Cleansia.App/package.json` on `1c8fdd00`:
+
+| Claim in the ticket | Verified? |
+|---|---|
+| `generate-clients` exists | **YES** — real now |
+| the three `generate-*-client` names survived T-0439's restructure | **YES** — unchanged, as M1 promised |
+| "T-0439 restructures all four onto `nswag:*`" | **NO.** M1 renamed them **`_nswag:*`** — underscore-prefixed, internal. There is **no public `nswag:*`**. Never propose or document those; the point of M1 is that a human never invokes one |
+
+**⛔ And Correction 3 is DISCHARGED — its literal text is now a trap.** The owner already fixed the six
+Nx commands in `d6969fef`, **adopting this ticket's own npm-alias recommendation** over the reported
+"insert the dots" fix. The block the ticket instructs the owner to *replace* **no longer exists**, so
+applying the text as written would **revert the owner's edit**. AC5a's "prove one failing and one
+succeeding command" obligation is discharged with it.
+
+**Scope: 3 corrections → 2.** Still genuinely owed: `CLAUDE.md:29` (the repo map calls `core/services/`
+"NSwag-generated"; it holds a **stale 280 KB client no regen writes** — PM-verified still present) and
+`:97-100` (`generate-clients` undocumented). **AC5b added.** **De-dup ruling: T-0462 owns this edit,
+not T-0439** — T-0439's M6 text is stale for the same reason, and the owner gets **one** proposal.
+
+**Both code instances are still live on `master`, PM-verified:** the stale
+`libs/core/services/src/lib/client/admin-client.ts` (280 KB, and `nswag-admin.json:39` writes to
+`admin-services` instead), and the app-unreachable `email-template-form.facade.ts`.
+
+## 8.6 Two follow-ups filed at close-out
+
+### T-0470 — the credential-shape guard (the class T-0446 closed *around*)
+
+T-0446 closed two classes and **left one explicitly open, in the reviewer's own words**: *a secret
+whose field name was never in the redaction token list is caught by nothing.* Nothing in the
+middleware, the guard suite or any checklist looks at a value and asks whether it is shaped like a
+credential.
+
+**Both live Stripe credentials found this sprint were in that class** — `setupIntentClientSecret`
+(found in review round 5) and `ephemeralKey`, which was found **by luck**: it happened to sit behind an
+**already-redacted** field, so the *unmasking* guard surfaced it while looking for something else.
+A guard that catches a live payment credential as a **side effect** is telling you it had no coverage.
+
+**The sibling guard is cheap because the expensive half already exists and already runs in CI.**
+`src/Cleansia.Tests/Logging/RedactionUnmaskedFreeTextGuardTests.cs` already carries the route→wire-DTO
+walk, the recursive member flattening, the collection unwrapping, the host-assembly scan, the
+anti-vacuity self-check, and `ReadRedactionTokens()` — which parses the **live regex** so a token added
+to the middleware widens the guard automatically. The new part is a name/shape predicate (`*Secret*`,
+`*Token*`, `*Key*`, `*Password*`; values shaped `sk_`/`ek_`/`seti_`) plus the **same curated-exception
+discipline** the existing guard uses (short, per-entry reasoned, and *a newly-added member may never be
+silenced by adding it to the list*). **AC4 names the honest mutation:** remove `ephemeralKey` from the
+regex and prove the guard names it — i.e. prove it would have caught, deliberately, the credential
+that was found by accident.
+
+**Sized S. Sequenced post-demo, behind T-0457 on the middleware lane** — unlike T-0457 there is **no
+known live exposure** (both credentials in this class are now listed). This buys the *next* one, which
+is the same argument that put T-0439 and T-0454 behind the waves they guard. `security_touching: true`.
+**The existing guard found two live credentials within minutes of existing** — that is the expected
+value, not a hypothetical.
+
+### T-0471 — ADR-0033's one challenger round on the test-2 floor
+
+**ADR-0033 is `proposed` and cannot bind until one challenger round runs against exactly one item.**
+The panel lead **authored the test-2 floor itself**, in answer to challenge C5 which demanded a floor
+without proposing one, and then **correctly declined to ratify its own repair** — its status block
+says *"A lead may adjudicate between positions the parties argued; inventing the repair and then
+ratifying it is not adjudication."*
+
+**One item, one round, three lines of attack the lead already nominated** (is "previously permitted"
+decidable, or is the floor an escape hatch? · does the floor contradict test 1, letting the catalog
+acquire canonical forms with no Architect at all? · is the retro-validation honest or fitted — the
+floor moves **exactly one row** of four). **AC1 forbids a self-challenge**; T-0439 already had to
+re-panel an ADR for that reason. **AC2 holds the scope** — test 1 and D2 carried consensus in the
+ADR-0032 panel and are not re-opened. `ready`, sized **S**, `depends_on: []`.
+
+**Nothing regresses while it sits** — `conventions.md:125-127` still routes conservatively and
+ADR-0032 is accepted. What deferring costs is that **every catalog edit made meanwhile is routed by an
+unratified rule**, with nothing to appeal to when a reviewer and a developer disagree.
+
+**Found while writing it, and NOT fixed from inside another ticket:** ADR-0032 and ADR-0033 both carry
+a "Number note" saying *0031 exists only in T-0439's worktree and a reader on `master` sees a gap at
+0031.* **That is no longer true** — `agents/backlog/adr/0031-….md` is on `master`. ADR-0032 is
+`accepted`, and `adr/README.md` rules an unsigned in-body edit to an accepted ADR a process violation,
+so each needs a **signed erratum**. T-0471 folds the ADR-0033 one into its verdict and routes the
+ADR-0032 one to the PM as a separate finding.
+
+## 8.7 The two process hazards — routed to T-0456, and why there rather than anywhere else
+
+**Both were hit for real this sprint and both generalize:**
+
+- **`cd X && <destructive git>` silently redirects to the MAIN checkout when `X` is missing.** An agent
+  **detached HEAD in the owner's repo** this way. The sharp part: **nothing errors.** `cd` complains,
+  the git command succeeds, the compound's exit code is the git command's — **0**. It reads as a clean
+  run. A rule that lists forbidden git verbs is silent about the **connective that decides where they
+  run**; the safe form is `git -C <path>`, or `cd X || exit 1`, never `cd X && <destructive>`.
+- **`xcodegen generate` regenerates `Info.plist` from `project.yml`**, wiping the owner's
+  **working-tree-only Stripe key** — which is also why a `git pull` costs the same thing. Safe in a
+  **scratch worktree** (the committed `project.yml` carries no key), unsafe in the main checkout.
+
+**Routed to T-0456 — extended, not forked — and the reason is T-0456's own thesis.** That ticket
+already argues that `shared-file-lanes.md` enumerates **commands** where it should describe the
+**class**: *tree-wide state operations that discard or relocate uncommitted work an agent does not
+own.* Both hazards are that class. **Filing them as two new tickets would commit, a third time, the
+exact error T-0456 exists to fix.** T-0456 is also already the **sole writer** of
+`agents/process/shared-file-lanes.md`, so extending it costs one lane and forking would cost two.
+
+**What they add — and this is why they are worth writing down rather than just noting:** they show the
+class reaches **further than the current draft**. Hazard 2 reaches past the tree the agent *meant* to
+touch (a shell mis-target, not a shared ref). Hazard 3 **is not a git command at all** — it is
+regeneration destroying uncommitted local state, and the discriminator the rule must state is *"safe
+when the output carries no hand-edited state"* (`generate-api-clients.sh`, `generate-*-client`) versus
+*"unsafe when it does"* (`Info.plist`). **AC7 and AC8 added; size still `S`** — three incidents make
+the rule better argued, not larger, and one class-shaped sentence replaces N command-shaped ones. *(If
+the panel finds itself writing three separate rules, that is the signal to stop and split, not to let
+it grow into an `L`.)*
+
+Today this is carried entirely by per-ticket warnings — i.e. by whoever remembers to write one — which
+is the fragile mechanism a lane table replaces. **T-0456 has no dependencies and nothing blocks its
+dispatch.**
+
+## 8.8 What THIS pass did NOT do (Gate 0.5 leg 3, applied to the PM's own work)
+
+- **No specialist agent was dispatched and no code was written.** No source file was touched; every
+  edit is under `agents/`.
+- **No test suite, build, Gradle task or iOS build was run.** The gate evidence on the five closed and
+  merged tickets is **as recorded by their developers and reviewers**; this pass reconciled state, it
+  did not re-gate. Where a number is relayed it is labelled relayed.
+- **What the PM DID execute, first-hand, on `1c8fdd00`:** `git log`/`git show --stat` on all six merge
+  commits; three `check-consistency.mjs` runs with exit codes captured (32 / NOT RUN / 85); a `node -e`
+  parse of `src/Cleansia.App/package.json` for the full script list; a `node -e` parse of every
+  `apps/*/project.json` `name` field; `grep` for `blobUrl` across all three TS clients and both mobile
+  specs; `grep -rn "check-consistency" .github/workflows/` (**zero hits**); `git show d6969fef --
+  CLAUDE.md` and a read of the merged `CLAUDE.md:95-104`; existence checks on
+  `libs/core/services/.../admin-client.ts` and `email-template-form.facade.ts`; and reads of
+  `RequestLoggingMiddleware.cs:195-249` and `RedactionUnmaskedFreeTextGuardTests.cs`. Those are the
+  PM's own.
+- **`gh` is not authenticated in this environment** (`gh auth login` prompt), so **PR bodies and review
+  states were not read.** The PR numbers come from the merge-commit subjects; the APPROVED verdicts
+  come from the ticket files, **except T-0451's, which is relayed by the orchestrator** — see below.
+- **T-0451's reviewer verdict text is NOT in its `## Review`.** The only in-artifact trace is a
+  status-log line, *"reviewer F1/F2 addressed"*, with both findings closed and reasoned. The ticket now
+  says so explicitly under a **PM reconciliation** heading (not a verdict — the PM does not write one),
+  with a table pointing at where each AC's evidence actually lives. **Recorded rather than papered
+  over**, because a later reader would otherwise take a missing verdict for a missing review.
+- **T-0451's declared 519/1 was not investigated** — it does not reproduce and cannot be named.
+- **`CLAUDE.md` was read, never written.** No commit, no stage, no push, no `git stash`.
+- **Written this pass:** 2 new ticket files (T-0470, T-0471); **18** existing ticket files updated
+  (T-0439, T-0440, T-0441, T-0446, T-0447, T-0448, T-0449, T-0450, T-0451, T-0456, T-0457, T-0461,
+  T-0462, T-0464, T-0465, T-0467, T-0468, T-0469 — status/owner/`merged`/`adrs`/status-log/scope
+  blocks); the `INDEX.md` SPRINT-14 block and its lane list; and this section.
+
+## 8.9 Escalations — the short list of what the owner still owes
+
+**Superseded from §6:** item **0** (the one-minute DEV photo check) is **DONE — you did it**, and it
+closed T-0446's AC4. Item **3**'s first risk (the owner-run regen inside the critical path) is
+**discharged** — the regen ran and `master` stayed green.
+
+1. **`Q-I18N-02` — `blocking: yes`, unanswered, and it is now THE bottleneck.** The shorter `ru`/`uk`
+   wording for the profile "Edit profile" chip. Needs a **native speaker**; the PM deliberately took no
+   default. It gates **T-0450 → T-0448 + T-0449**, i.e. **both remaining mobile legs of the avatar
+   feature you ruled into the demo**. Nothing else in the sprint is blocked on anything but this.
+   *(If it will be slow, say so and we will split T-0450's Poppins-Cyrillic half out so the two mobile
+   tickets stop waiting on a chip label — the split is written up on the ticket.)*
+2. **Two `CLAUDE.md` lines** (owner-gated; no agent edits that file): `:29` still calls
+   `core/services/` "NSwag-generated" — it holds a **stale 280 KB client no regen writes** — and
+   `generate-clients` is undocumented at `:97-100`. **The third correction is already done: you applied
+   it in `d6969fef`**, using the npm aliases T-0462 recommended. **T-0462 owns the corrected text
+   (AC5b); T-0439's M6 text is stale — do not use it.** Not batched with anything.
+3. **Awareness, not a decision — `T-0457` is now `ready` and is P1.** `GET /api/User/GetCurrent` is
+   still writing every caller's email, name, phone and birth date into Information-level logs on all
+   five hosts, on every request, on **live DEV**. Two things are yours rather than ours: (a) whether
+   existing DEV log retention should be shortened or current logs purged once it lands, and (b)
+   whether it changes who you are comfortable demoing to. Neither blocks a ticket.
+4. **Carried, unchanged:** `Q-BRAND-01` (Poppins covers **0/98** Cyrillic on all three platforms — a
+   **brand** decision, `blocking: no`) and `Q-CI-01` (branch protection, `post-prod`, explicitly
+   non-blocking — the prod deploy is `workflow_dispatch`-only behind the `prod-weu` Environment, so an
+   unbuilt `master` push cannot ship itself).
+5. **One thing nobody can close and you should know about:** `npx nswag run`'s exit code on a **failed**
+   generation is unknown. If it exits 0, `generate-*-client` would typecheck a stale tree and report
+   success. **Do not read a green `generate-*-client` as proof the client regenerated.** Your next
+   regen is the cheapest place to find out.

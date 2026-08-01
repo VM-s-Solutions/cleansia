@@ -5,7 +5,7 @@ status: draft
 size: S
 owner: frontend
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 depends_on: [T-0439]
 blocks: []
 stories: []
@@ -160,7 +160,88 @@ fork.
       is touched. This ticket removes a **duplicate**; the three live clients are T-0439's and the
       owner's territory.
 
+## 🔁 2026-08-01 — THE RE-VERIFICATION AC5/AC5a DEMANDED IS NOW POSSIBLE, AND THE PM HAS RUN THE FIRST HALF
+
+`depends_on: [T-0439]` is satisfied — T-0439 merged as `acf2f0bc` (PR #175). The block at
+`## Dependency` said the proposed text was **quoted from an unmerged worktree** and must be re-read
+against the merged `package.json`. **That re-read has now been done, and it changed the answer for two
+of the three corrections. This is a step, not an assumption — read this before touching the text
+below.**
+
+**PM-run on `master` at `1c8fdd00`** (`node -e` over `src/Cleansia.App/package.json`, so the names are
+parsed, not eyeballed). The full public script list is:
+
+```
+start:cleansia · start:cleansia-partner · start:cleansia-admin · start:cleansia-ssr
+build · build:prod · build:cleansia-partner · build:cleansia-customer · build:cleansia-admin
+test · lint · e2e · typecheck · typecheck:test
+_nswag:partner · _nswag:admin · _nswag:customer
+generate-partner-client · generate-admin-client · generate-customer-client · generate-clients
+```
+
+| Claim in the text below | Verified on merged `master`? |
+|---|---|
+| `generate-clients` exists | **YES** — it is real now. Correction 2's premise holds |
+| the three `generate-*-client` names survived T-0439's restructure | **YES** — unchanged, exactly as M1 promised |
+| T-0439 "restructures all four onto `nswag:*`" | **NO — and the warning at `:202-204` is now MISLEADING.** M1 renamed them to **`_nswag:*`** (underscore-prefixed = internal). There is **no public `nswag:*` script.** Do not propose one, and do not document `_nswag:*` — the whole point of M1 is that a human never invokes it |
+
+### ⛔ Correction 3 is **STALE and must NOT be applied as written — it would REVERT a shipped fix**
+
+**The owner already fixed the six Nx commands, in `d6969fef` (PR #177), while this ticket sat in
+`draft`.** PM-verified against the merged file. And the owner adopted **the npm aliases** — i.e.
+**exactly the departure this ticket argued for** at `:78-98` over the reported "insert the dots" fix.
+That argument was accepted and shipped. `CLAUDE.md` now reads:
+
+```
+# Dev servers — prefer the npm aliases; CI invokes these same ones
+npm run start:cleansia-partner          # Partner :4200
+npm run start:cleansia-admin            # Admin :4201
+npm run start:cleansia                  # Customer :4202
+
+# Production builds
+npm run build:cleansia-partner
+npm run build:cleansia-admin
+npm run build:cleansia-customer
+
+# The Nx project names are cleansia-partner.app / cleansia-admin.app / cleansia.app
+# — a DOT before `app`, not a hyphen. `npx nx build cleansia-partner-app` fails with
+# "Cannot find project". Check with `npx nx show projects` before hand-writing one.
+```
+
+**The `find` block Correction 3 tells the owner to replace no longer exists in the file.** Handing the
+owner a replacement for absent text is the same class of error the ticket was filed about. **Correction
+3 is DISCHARGED — strike it from the owner's handoff.** Its AC5a obligation (prove one failing and one
+succeeding command) is discharged with it: the owner's edit already carries the dot rule inline, and
+the six commands it documents are the aliases `frontend-ci.yml` itself invokes.
+
+### What is still genuinely owed to the owner — TWO corrections, not three
+
+- **Correction 1** (`CLAUDE.md:29`, `core/services/` described as "NSwag-generated API clients") —
+  **still wrong on `master`, PM-verified.** And still a live trap: `libs/core/services/src/lib/client/admin-client.ts`
+  (280 KB, dated Jun 25) is still present, and `nswag-admin.json:39` still writes to
+  `libs/core/admin-services/...` instead. Instance 1 is unchanged.
+- **Correction 2** (`CLAUDE.md:97-100`) — **still owed.** `generate-clients` is still undocumented, and
+  so is the sentence that every `generate-*` ends in `npm run typecheck`. **This is the same owner
+  action as T-0439's `manual_steps: claude-md-generate-clients-line`** — they are one edit, and T-0439's
+  M6 text is now stale for the same reason Correction 3 was. **This ticket owns the corrected
+  proposal**; T-0439 does not re-propose it.
+
+**Instance 2 is unchanged and still live** — `libs/cleansia-admin-features/template-management/src/lib/email-template-form/email-template-form.facade.ts`
+is still present (PM-verified). Note the line-number caveat at `:48-50` resolves now that T-0439 has
+merged: quote `frontend-ci.yml` from **`master`**, and re-locate `continue-on-error` rather than
+reusing `:41` or `:63` — T-0439's F2 change added ~10 lines to that workflow.
+
+- [ ] **AC5b (NEW) — the handoff to the owner contains exactly the corrections that are still true.**
+      Correction 3 is struck as discharged; Corrections 1 and 2 are re-quoted against the file **as it
+      stands after `d6969fef`**, with line numbers re-read rather than carried. Evidence: the `git
+      show d6969fef -- CLAUDE.md` diff cited in the handoff, so the owner can see their own prior edit
+      was accounted for rather than reverted.
+
 ## Proposed CLAUDE.md corrections (owner applies — exact text)
+
+> **⚠️ 2026-08-01 — READ THE BLOCK ABOVE FIRST. Correction 3 below is STALE and DISCHARGED** (the
+> owner shipped it in `d6969fef`); Correction 2's `nswag:*` warning is wrong (the real name is
+> `_nswag:*`, internal). Only Corrections 1 and 2 go to the owner, re-quoted per AC5b.
 
 **Correction 1 — `CLAUDE.md:29`, the repo map.** Replace:
 
@@ -273,6 +354,25 @@ this to the owner** — do not copy it from this ticket on trust.
 ## Status log
 - 2026-07-30 — draft (created by pm from the ADR-0031 panel; three instances of one class, filed as one ticket per the lead's hand-off)
 - 2026-07-30 — **not `ready`**: `depends_on: [T-0439]` unsatisfied — `generate-clients` does not exist on `master` (PM-verified), so AC5's proposed text cannot be finalized yet. Lane overlap with T-0455 on `libs/core/services` noted.
+- 2026-08-01 — **`depends_on: [T-0439]` SATISFIED** (merged `acf2f0bc`, PR #175). **The re-verification
+  this ticket said was impossible is now done and is recorded as an explicit step, not assumed** — see
+  the 🔁 block. Outcome: `generate-clients` is real; T-0439's scripts are `_nswag:*` (internal), not
+  the `nswag:*` the text warns about; and **Correction 3 is DISCHARGED — the owner shipped it in
+  `d6969fef` (#177), adopting this ticket's npm-alias recommendation over the reported "insert the
+  dots" fix.** Applying the text as written would now **revert** the owner's edit.
+- 2026-08-01 — **stays `draft`, and NOT because of a dependency.** Every `depends_on` is satisfied; what
+  is unsatisfied is the ticket's own content. AC5's proposal is now provably stale in two of three
+  parts, and **AC5b** (added above) is the work that has to happen before this can be handed to anyone.
+  Scope shrank: 3 corrections → **2**, and the AC5a "prove one failing and one succeeding command"
+  obligation is discharged with Correction 3.
+  **Promote to `ready` once AC5b's re-quote is written** — the two code instances (the stale
+  `libs/core/services/.../admin-client.ts`, the unreachable `email-template-form.facade.ts`) are both
+  still live on `master`, PM-verified, and neither has moved.
+- 2026-08-01 — **de-duplication ruling: this ticket owns the `CLAUDE.md` `generate-clients` line, not
+  T-0439.** T-0439 is `done` and carries `manual_steps: claude-md-generate-clients-line` as a flagged
+  owner action (which `ticket-lifecycle.md` §"Done means" item 4 permits — it is neither a migration
+  nor a regen). Its M6 literal text is stale for the same reason Correction 3 was. **One edit, one
+  owner, one proposal — this one.** Do not send the owner two versions of the same block.
 
 ## Review
 <!-- reviewer verdict here -->

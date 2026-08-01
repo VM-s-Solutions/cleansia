@@ -5,7 +5,7 @@ status: blocked
 size: M
 owner: android
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 depends_on: [T-0446, T-0441, T-0450]
 blocks: [T-0453]
 stories: [US-user-avatar]
@@ -104,6 +104,27 @@ _(PM floor; the `US-user-avatar` analyst panel finalizes)_
 - 2026-07-30 — **security conditions attached** from the T-0446 gate (APPROVE-WITH-CONDITIONS). See
   the block below; they are binding on this ticket and its reviewer. Source:
   `agents/backlog/security/user-profile-avatar.md`. Still `blocked` — dependencies unchanged.
+- 2026-08-01 — **RE-CHECKED against the merged tree; STAYS `blocked`, but the blocker has changed
+  shape and shrunk to ONE item.** Each dependency taken separately, PM-verified on `master` at
+  `1c8fdd00`:
+
+  | `depends_on` | State | Effect on this ticket |
+  |---|---|---|
+  | **T-0446** | **`done`** — merged `a63b776e` (#176) | cleared |
+  | *the owner's `mobile-spec-redump`* | **DONE, and it shipped inside `a63b776e`** — `src/cleansia_android/openapi/customer-mobile-api.json` carries `blobUrl` (4 hits), `partner-mobile-api.json` 6. The Kotlin client generates from that committed spec at Gradle build time, so **this ticket can see the field with no owner action** | cleared |
+  | **T-0441** | **`qa`, code MERGED** `1d85b35f` (#178) | **cleared in substance.** The dependency was the `values*/strings.xml` lane head plus the field itself; both are on `master`. What T-0441 still owes is an **AC1 screenshot**, which does not gate a code lane. Do not wait for it |
+  | **T-0450** | **`draft`** — and blocked on **Q-I18N-02**, an unanswered `blocking: yes` owner question | **THE ONLY REMAINING BLOCKER** |
+
+  **So: `blocked` on T-0450 alone, and T-0450 is blocked on the owner.** It writes the same
+  `values-{ru,uk}/strings.xml` and changes what the hero renders in ru/uk, so it must precede this
+  ticket on both lanes. Full lane unchanged: T-0442 ✅ → **T-0450 → T-0448 → T-0453**.
+  **Do not "unblock" this by dropping the T-0450 dependency** — that would put an Android avatar into
+  a hero whose ru/uk label is about to change underneath it, on the same five files.
+- 2026-08-01 — **when it does run, AC evidence must be a DEVICE RUN, not an inference from the other
+  two platforms.** QA could execute Chromium, WebKit and `CGImageSource`; it could **not** execute
+  Android (no emulator, and `BitmapFactory` is not exercisable on the JVM). The static trace found no
+  `image/*` MIME literal anywhere in Coil 3.0.4, so there is no MIME gate to fail — **but that is a
+  trace, not a run.** See the QA constraints block.
 
 ## Security conditions — BINDING (from the T-0446 gate, 2026-07-30)
 

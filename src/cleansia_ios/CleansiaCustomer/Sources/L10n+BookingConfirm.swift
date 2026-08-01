@@ -5,6 +5,10 @@ extension L10n.Booking {
         L10n.localized("booking_special_instructions_hint")
     }
 
+    static var accessInstructionsHint: String {
+        L10n.localized("booking_access_instructions_hint")
+    }
+
     static var preferredCleanerTitle: String {
         L10n.localized("booking_preferred_cleaner_title")
     }

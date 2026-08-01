@@ -1,7 +1,7 @@
 ---
 id: T-0443
 title: Android brand assets — adopt the iOS mark for both apps (launcher icon, splash, notification icon)
-status: ready
+status: done
 size: M
 owner: android
 created: 2026-07-30
@@ -117,6 +117,18 @@ recorded above, not open choices. Sizing/AC/deps/layers set → DoR met.
 ## Status log
 - 2026-07-30 — draft (created by pm; owner batch item 4, Android half)
 - 2026-07-30 — ready (no deps; DoR met; no-decision note recorded)
+
+- 2026-07-30 — dispatched by the orchestrator, android + paired reviewer.
+- 2026-07-30 — **done** — merged to `master` as `10d03f14` (PR #173), 22 files.
+  **PM re-verification:** both apps' `ic_launcher_foreground.xml` are re-cut to the same 10-line /
+  108dp / `viewport 108` structure (they were 15 and 24 lines with different structures before), and
+  `ic_notification.xml` is now **byte-identical across the two apps** (sha1 `981999053b21`). The
+  partner gained the shared `WordmarkSplash.kt` composable in `:core` and a
+  `BrandIconCatalogTest.kt` guard. **Not verified by the PM:** whether the two foreground vectors
+  *should* still differ in path data (sha1 `a836259a` vs `61021817`) — that may be the deliberate
+  partner-lockup distinction the owner later ruled for the web in T-0444, or a miss. Recorded as an
+  open question in `status/sprint-14.md` rather than asserted either way. No Android build was run by
+  the PM; Gate 8 evidence is as reported in the PR.
 
 ## Review
 <!-- reviewer writes verdict here -->

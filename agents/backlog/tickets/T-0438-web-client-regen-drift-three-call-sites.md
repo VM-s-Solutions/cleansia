@@ -1,13 +1,13 @@
 ---
 id: T-0438
 title: Unbreak master — three web call sites missing the newly-required regen fields (and wire the wizard's entry instructions through)
-status: ready
+status: done
 size: S
 owner: frontend
 created: 2026-07-30
 updated: 2026-07-30
 depends_on: []
-blocks: [T-0439, T-0440, T-0446]
+blocks: [T-0439, T-0444, T-0446, T-0447]
 stories: []
 adrs: []
 layers: [frontend]
@@ -141,6 +141,15 @@ assignable to parameter of type 'ICreateOrderCommand'.
 
 These three commands are the AC1 gate; re-run them **after** the fix, un-cached, and record the exit
 codes. A cached/`nx cloud`-replayed green is not evidence.
+
+- 2026-07-30 — dispatched by the orchestrator (**not** by the PM — see the capability note in
+  `status/sprint-14.md`), frontend + paired reviewer.
+- 2026-07-30 — **done** — merged to `master` as `7c82cd2e` (PR #171).
+  **PM re-verification (not taken on report):** `order-wizard.facade.ts:589` now reads
+  `accessInstructions: data.entryInstructions.trim() || undefined` — the data-loss path is closed at
+  the exact call site the ticket named (previously `:551`, absent). Gate evidence (three production
+  builds, 109 tests, the two mutation proofs) is **as reported in the PR body**; the PM did not re-run
+  the suites.
 
 ## Review
 <!-- reviewer writes verdict here; PM reconciles before advancing state -->

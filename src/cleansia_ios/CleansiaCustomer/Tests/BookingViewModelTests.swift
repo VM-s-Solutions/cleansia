@@ -72,6 +72,43 @@ final class BookingViewModelTests: XCTestCase {
         XCTAssertEqual(vm.state.rooms, 3)
     }
 
+    func testAccessInstructionsAreCappedAtTheBackendLimit() {
+        let vm = BookingViewModel()
+        vm.setAccessInstructions(String(repeating: "a", count: BookingInstructions.maxUtf16Length + 250))
+
+        XCTAssertEqual(vm.state.accessInstructions.utf16.count, BookingInstructions.maxUtf16Length)
+    }
+
+    func testSpecialInstructionsAreCappedAtTheBackendLimit() {
+        let vm = BookingViewModel()
+        vm.setSpecialInstructions(String(repeating: "a", count: BookingInstructions.maxUtf16Length + 250))
+
+        XCTAssertEqual(vm.state.specialInstructions.utf16.count, BookingInstructions.maxUtf16Length)
+    }
+
+    /// The field the customer actually types into must hold the server's
+    /// measure, not Swift's: 1500 emoji are under Swift's 2000 and over the
+    /// validator's.
+    func testAstralInstructionsAreCappedByUtf16Width() {
+        let vm = BookingViewModel()
+        vm.setAccessInstructions(String(repeating: "😀", count: 1500))
+
+        XCTAssertLessThanOrEqual(
+            vm.state.accessInstructions.utf16.count,
+            BookingInstructions.maxUtf16Length
+        )
+        XCTAssertEqual(vm.state.accessInstructions.count, 1000)
+    }
+
+    func testInstructionsUnderTheLimitAreStoredVerbatim() {
+        let vm = BookingViewModel()
+        vm.setAccessInstructions("  Key box, code 4321 ")
+        vm.setSpecialInstructions("Eco products only")
+
+        XCTAssertEqual(vm.state.accessInstructions, "  Key box, code 4321 ")
+        XCTAssertEqual(vm.state.specialInstructions, "Eco products only")
+    }
+
     func testResetReturnsToStepOneAndCleanState() {
         let vm = BookingViewModel()
         vm.update { current in

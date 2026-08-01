@@ -1541,6 +1541,41 @@
         }
       }
     },
+    "booking_access_instructions_hint" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jak se dostaneme dovnitř? (nepovinné)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How should we get in? (optional)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как нам попасть внутрь? (необязательно)"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ako sa dostaneme dnu? (nepovinné)"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Як нам потрапити всередину? (необов’язково)"
+          }
+        }
+      }
+    },
     "booking_address_default" : {
       "extractionState" : "stale",
       "localizations" : {

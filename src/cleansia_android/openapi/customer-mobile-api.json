@@ -6645,6 +6645,10 @@
           "contentType": {
             "type": "string",
             "nullable": true
+          },
+          "blobUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

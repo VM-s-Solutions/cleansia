@@ -82,6 +82,197 @@ because the confirm step never collects it and the create DTO has no such field.
 ## Status log
 - 2026-07-30 — draft (created by pm; owner batch item 2, Android half)
 - 2026-07-30 — awaiting analyst deliberation panel (shared story US-customer-access-instructions) before `ready`
+- 2026-07-30 — android: implemented on `feat/T-0441-sprint14`. Red→green recorded below.
+- 2026-07-30 — android: review findings F1 (blocking) + F2 (minor) closed. F1 — added `BookingApiTest`
+  covering the untested app→generated hop for **both** `accessInstructions` and `specialInstructions`;
+  mutation-proved by deleting `BookingApi.kt:74` and `:73` in turn (both red, both restored byte-exact).
+  F2 — the cap rationale was factually inverted (`CreateOrder` runs *before* PaymentSheet opens) and is
+  reworded at `BookingDtos.kt`, `BookingViewModel.kt`, `BookingViewModelTest.kt`; the UTF-16 claim is
+  corrected from "character-for-character" to "code-unit-for-code-unit" with the conservative-not-exact
+  behaviour spelled out. Suite 320 → **321**, 0 failures.
+
+## Implementation surface (iOS port reproduces this 1:1 — T-0440)
+
+| Concern | Android landing point |
+|---|---|
+| State | `BookingState.accessInstructions: String = ""` (`BookingState.kt:56`) — in-memory only, same as every other booking field |
+| Input write path | `BookingViewModel.updateAccessInstructions(text)` (`BookingViewModel.kt:294-300`) — clamps `text.take(2000)` |
+| Cap constant | `BookingViewModel.ACCESS_INSTRUCTIONS_MAX_LENGTH = 2000` (`BookingViewModel.kt:575`), mirrors `CreateOrder` `.MaximumLength(2000)` |
+| Wire mapping | `BookingViewModel.kt:467` → `s.accessInstructions.trim().ifBlank { null }` |
+| App DTO | `CreateOrderCommand.accessInstructions: String?` (`BookingDtos.kt:127`) |
+| Generated DTO | already present — `customer-app/build/generated/openapi/.../model/CreateOrderCommand.kt:110-111`, from the committed spec. **Nothing hand-written.** Mapped at `BookingApi.kt:74` |
+| UI | `InstructionsFields` (`ConfirmStep.kt:418-438`) — a stateless pair (special + access), called at `ConfirmStep.kt:349`. Both are full-width `CleansiaTextField`s in a `Column`; **no weighted `Row`**, so the T-0442 weight-starvation class does not apply here |
+| String | `booking_access_instructions_hint` ×5 locales |
+| Navigation / API calls | **unchanged** — no new endpoint, no new route, no new state machine. `POST /Order/CreateOrder` gains one optional field |
+| Wire-hop test | `BookingApiTest.create_carriesBothInstructionNotesOntoTheGeneratedCommand` — mocks the **generated** client, asserts the **generated** command. **Port this too:** the generated model's all-optional fields mean a dropped mapping is invisible to both the compiler and the ViewModel suite (mutation-proved below), and the iOS generated model has the same shape |
+
+No new states, no new effects, no new screens. iOS parity = the same five landing points.
+
+**Two parity traps for T-0440**, both found by review on this ticket:
+1. Cap with a **UTF-16 code-unit** count, not Swift's grapheme-cluster `String.count` — see the AC3
+   note under Evidence.
+2. Assert the **generated** create command, not the app-level one. A test one hop short passes with the
+   field never leaving the device.
+
+## Evidence
+
+**AC1** — field present, mirroring special instructions: `ConfirmStep.kt:429-437` (the access field is
+the sibling of the special-instructions field in the same `InstructionsFields` composable). The two
+inline `CleansiaTextField` calls were lifted into that one private stateless composable so the pair is
+preview-renderable; behaviour of the existing special-instructions field is unchanged. Screenshot: QA.
+
+**AC2** — trimmed on the wire, blank → null. `BookingViewModel.kt:467`.
+- `BookingViewModelTest.kt:259 submit_givenAccessInstructions_sendsThemOnTheCreateCommand`
+- `BookingViewModelTest.kt:297 submit_givenBlankAccessInstructions_sendsNull`
+- `BookingApiTest.kt:47 create_carriesBothInstructionNotesOntoTheGeneratedCommand` — the **last hop**,
+  covering both notes. The two VM tests capture the **app** DTO one hop before `toWire()`; this one
+  mocks the **generated** `OrderApi` and asserts the captured **generated** `CreateOrderCommand`.
+  Necessary because every field on the generated command defaults to `= null`, so a dropped mapping in
+  `BookingApi.toWire()` compiles, ships silently, and leaves the VM suite green (see the mutation
+  numbers under Gate 0.5 leg 1 — `BookingViewModelTest` stayed **24/24** under both mutations).
+
+**AC3** — capped at 2000. `BookingViewModel.kt:298` + const at `:575`.
+- `BookingViewModelTest.kt:338 updateAccessInstructions_whenLongerThanBackendLimit_capsAtMaxLength`
+- `BookingViewModelTest.kt:350 updateAccessInstructions_whenWithinBackendLimit_keepsTextVerbatim`
+  (guards over-eager truncation)
+
+`.take(2000)` counts UTF-16 code units, which is exactly what .NET `string.Length` (and therefore
+FluentValidation `MaximumLength`) counts — the client cap and the server cap agree
+**code-unit-for-code-unit**, not character-for-character. Above the BMP the cap is *conservative*: 2000
+emoji are `String.length == 4000`, so `.take(2000)` silently keeps 1000 of them, and a cut can split a
+surrogate pair (the orphaned high surrogate encodes to `'?'` in UTF-8 — no crash, length preserved).
+The cap can never be **more permissive** than `string.Length`, which is the only property that matters
+here, so the behaviour stands. **iOS port note (T-0440):** mirror this with a UTF-16 count
+(`prefix` over `utf16`), NOT Swift's grapheme-cluster `String.count` — that one *would* be more
+permissive and would let the server reject at submit.
+
+**AC4 — Gate 8 / Gate 0.5 leg 2 (a cached run is not a run).**
+```
+./gradlew :customer-app:compileDebugKotlin :customer-app:testDebugUnitTest --rerun-tasks --console=plain --no-daemon
+BUILD SUCCESSFUL in 8m 20s — 53 actionable tasks: 53 executed, 0 up-to-date
+:core:compileDebugKotlin           EXECUTED
+:customer-app:compileDebugKotlin   EXECUTED
+:customer-app:testDebugUnitTest    EXECUTED
+customer-app testDebugUnitTest: tests=321 failures=0 errors=0 skipped=0
+```
+(**321**, up from 320 — the one new `BookingApiTest`.) The only `UP-TO-DATE` lines in the log are the
+five empty lifecycle anchors — `:customer-app:preBuild`, `:core:preBuild`,
+`:customer-app:preDebugBuild`, `:customer-app:preDebugUnitTestBuild`, `:core:preDebugBuild` — which
+have no work to do. `:core:compileDebugKotlin` executed (it is upstream of
+`:customer-app:compileDebugKotlin`); `:core:testDebugUnitTest` was NOT run — nothing in `:core` changed.
+
+**Gate 0.5 leg 1 — mutation proof (both numbers).**
+- Pre-implementation (VM method stubbed without `.take`, submit not wired):
+  `updateAccessInstructions_whenLongerThanBackendLimit_capsAtMaxLength` **FAILED** and
+  `submit_givenAccessInstructions_sendsThemOnTheCreateCommand` **FAILED** — `24 tests completed, 2 failed`.
+- `submit_givenBlankAccessInstructions_sendsNull` passed **vacuously** in that state (the DTO field
+  defaults to `null`), so it was mutation-proved separately: replacing `BookingViewModel.kt:467` with
+  a bare `accessInstructions = s.accessInstructions` turned **both** wire tests red —
+  `24 tests completed, 2 failed`.
+- Restored: `24 tests completed, 0 failed`; the restore is **byte-exact** (`git diff` sha256 identical
+  before mutation and after restore).
+
+**Gate 0.5 leg 1 — mutation proof for the wire hop (`BookingApiTest`, review finding F1).**
+The review reproduced the gap: deleting `BookingApi.kt:74` left the suite **24/24 green and still
+compiling**, because the generated `CreateOrderCommand.accessInstructions` carries a `= null` default.
+Both hops are now covered and both were re-run un-cached (`--rerun-tasks`, 53 executed each):
+
+| Mutation | Result | `BookingApiTest` | `BookingViewModelTest` |
+|---|---|---|---|
+| delete `BookingApi.kt:74` (`accessInstructions`) | `321 tests completed, 1 failed` — BUILD FAILED | FAILED: `expected:<Side gate, key box code 4417.> but was:<null>` | 24/24 **green** |
+| delete `BookingApi.kt:73` (`specialInstructions`) | `321 tests completed, 1 failed` — BUILD FAILED | FAILED: `expected:<Gate code 1234, dog is friendly.> but was:<null>` | 24/24 **green** |
+| restored | `321 tests completed, 0 failed` — BUILD SUCCESSFUL | 1/1 green | 24/24 green |
+
+`:customer-app:compileDebugKotlin` **succeeded under both mutations** — that is the whole point of the
+finding: the defect is invisible to the compiler and to the VM suite. Restore is **byte-exact** —
+`BookingApi.kt` sha256 `a9399594…f973ec` and its `git diff` sha256 `281b0dfe…5eb9d0` are identical
+before the first mutation and after the last restore.
+
+**AC5 — byte-level encoding.** All 12 changed files checked as bytes (11 + the new `BookingApiTest.kt`):
+no UTF-8 BOM, no CRLF, decodes as valid UTF-8, no mojibake sequences (`Ã`, `Ð`, `â\x80`, `ï»¿`, U+FFFD).
+The five `strings.xml` parse as XML and carry **identical key sets — 1046 keys each, zero missing, zero
+extra**. Re-checked after the F1/F2 edits: `BookingApiTest.kt`, `BookingDtos.kt`, `BookingViewModel.kt`,
+`BookingViewModelTest.kt` all clean.
+
+**Gate 8 consistency:** `check-consistency.mjs --paths=src/cleansia_android/customer-app` → 11
+violations, **identical to the pre-change baseline** (all in `AuthViewModel.kt` / `RewardsTab.kt` /
+`CleansiaNavHost.kt`, none in a file this ticket touched). No new violation. Re-run after F1/F2: still 11.
+
+## Notes for the PM
+
+- **Draft does not survive process death — and did not before this ticket either.** `BookingState`
+  lives only in `BookingViewModel`'s in-memory `MutableStateFlow` (`BookingViewModel.kt:156`): no
+  `SavedStateHandle`, no `@Parcelize`, no DataStore, no `rememberSaveable` anywhere in
+  `features/booking/`. `specialInstructions`, `promoCode`, the address and the picked slot are all
+  lost on process death today. `accessInstructions` inherits exactly that behaviour, which is correct
+  parity with its template. **There is no existing draft-persistence test to extend.** If the platform
+  wants booking drafts to survive process death that is a separate ticket covering the whole
+  `BookingState`, not this field.
+- **`:core` untouched.** `CleansiaTextField` has no `maxLength` parameter and I deliberately did not
+  add one — the cap belongs on the ViewModel (where it is unit-testable and mutation-provable), and
+  `:core` is a serialized lane this ticket has no claim on.
+- **One deliberate divergence from the `specialInstructions` template**, flagged for the reviewer: the
+  access field writes through a named VM function (`bookingVm::updateAccessInstructions`) instead of
+  the generic `onUpdate(state.copy(...))` the other fields use. AC3's cap is logic, and logic in an
+  `onValueChange` lambda is (a) business logic in a composable and (b) not reachable from a JVM unit
+  test. `specialInstructions` keeps its existing `onUpdate` path untouched — it has no cap to enforce.
 
 ## Review
+
+**Dev harvest note (android, F1 close-out — not a verdict).** F1 is a repeatable bug class, not a
+one-off miss, so per the charter's harvest rule the idiom is folded back into
+`agents/knowledge/patterns-mobile.md` → "Networking & Repository — exact idiom": *when an Api adapter
+maps an app DTO onto an OpenAPI-generated command, assert the **generated** command — every generated
+field defaults to `= null`, so a dropped `toWire()` line compiles and leaves an adapter-mocking
+ViewModel test green.* It is a **clarification to the existing adapter pattern**, not a new "one way to
+do X" — `consistency.md` was deliberately left alone (serialized lane, and promoting this to a numbered
+E-entry is an Architect call). Flagging it in case the Architect wants it as an E-entry with checker
+support.
+
 <!-- reviewer writes verdict here -->
+
+## Ready-made parity wording — for the reviewer or QA, if wanted (added 2026-07-30)
+
+The T-0440 (iOS) work produced these, **shaped to match the sibling hint** rather than the web's
+longer label+placeholder pair, because the iOS field is **hint-only**. Offered for Android parity —
+**not a change request**; adopt only if QA or the reviewer wants the alignment.
+
+| Locale | String |
+|---|---|
+| `en` | How should we get in? (optional) |
+| `cs` | Jak se dostaneme dovnitř? (nepovinné) |
+| `sk` | Ako sa dostaneme dnu? (nepovinné) |
+| `uk` | Як нам потрапити всередину? (необов’язково) |  ← **U+2019**, a typographic apostrophe, NOT `'` (U+0027)
+| `ru` | Как нам попасть внутрь? (необязательно) |
+
+**⚠️ CORRECTED 2026-08-01 — the `uk` apostrophe.** This table originally carried `необов'язково` with
+a **straight ASCII apostrophe (U+0027)**. **The shipped iOS form uses U+2019 (`’`) and is the correct
+one.** The table above is now fixed. **Nobody should "correct" U+2019 back to `'`** — that would be a
+regression, and this table was the thing that would have caused it. If you are diffing locale files
+and see `’` in `uk`, leave it alone.
+
+**⚠️ If adopted, the `values-*/strings.xml` lane reopens** (this ticket is currently `qa` and the lane
+was declared clear for **T-0450**). Tell the PM first — do not edit the bundles from `qa` without
+re-serializing the lane.
+
+
+### 2026-07-30 — REVIEWER: **APPROVED**
+
+321/321 tests and 53/53 Gradle tasks executed; no new consistency violations; both findings raised
+during review were closed and **independently re-proved**. AC1's screenshot remains open and belongs
+to QA.
+
+**Process note — the reviewer caught its own evidence being served from the Gradle build cache
+mid-mutation and re-ran with `--no-build-cache`.** That was correct and load-bearing: *"it still
+compiles"* was half the finding, and a cache-served compile does not establish it. **Gate 0.5 does not
+currently name this case** — a mutation that reproduces a *previous* mutation byte-for-byte will
+legitimately hit the cache, with the build system behaving perfectly correctly. **Filed as T-0468**
+(architect + docs; `quality-gates.md` is not the PM's file).
+
+**Catalog harvest — one sentence routed to the Architect, deliberately not acted on here.** This
+ticket's `patterns-mobile.md` hunk closes with *"iOS mirrors this — its generated models have the same
+all-optional shape."* The reviewer **verified the claim is factually true** (`CreateOrderCommand.swift:15-32`,
+every property optional) but correctly noted it is an **Android-layer ticket writing toward a stack it
+never executed**, and let it stand as **descriptive, not prescriptive**. That is the right call.
+**The Architect confirms or promotes it once T-0440 lands with its own iOS evidence** — recorded in
+`status/sprint-14.md` §2.10 so it is not lost when this ticket closes.

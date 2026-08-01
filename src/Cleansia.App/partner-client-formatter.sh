@@ -1,6 +1,10 @@
 #!/bin/bash
+# Fail loudly: without this the script always exits 0 — even if sed fails or the client is
+# missing — so `generate-*-client`'s && chain could not see a broken rename (T-0439).
+set -euo pipefail
 # Directory containing your TypeScript files
 file="libs/core/partner-services/src/lib/client/partner-client.ts"
+[ -f "$file" ] || { echo "formatter: $file not found — did the generator run?" >&2; exit 1; }
 echo "Processing $file..."
 # Use sed to rename classes and interfaces
 sed -i.bak -E '

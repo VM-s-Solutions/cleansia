@@ -18,7 +18,7 @@
  * violations in agents/backlog/audits/consistency-violations.md are cleared.
  */
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REPO = join(fileURLToPath(import.meta.url), "..", "..", ".."); // agents/tools -> repo root
@@ -79,7 +79,11 @@ const read = (f) => {
         return [];
     }
 };
-const dir = (rel) => join(REPO, rel);
+// Accepts repo-relative or absolute paths. Agents are instructed to pass absolute paths, and
+// join(REPO, "/abs/path") silently yields a directory that cannot exist — which walked to nothing
+// and reported "OK (0 files scanned)". A checker that reports a pass for a path it never read is
+// worse than no checker.
+const dir = (rel) => (isAbsolute(rel) ? resolve(rel) : join(REPO, rel));
 
 // The enclosing C# method/local-function name for a 0-based line index, or "" if none found.
 // Walks backwards to the nearest `<modifiers> <returnType> <Name>(` signature, skipping the
@@ -515,6 +519,18 @@ if (onlyStacks.includes("mobile"))
 if (advisories.length) {
     console.log(`consistency: ${advisories.length} advisory warning(s) (non-blocking)`);
     for (const w of advisories.sort()) console.log("  " + w);
+}
+// Explicit --paths that matched nothing is a non-run, not a pass: the caller asked for specific
+// directories and got no coverage at all. Fail loudly so it cannot be recorded as a green gate.
+// (No --paths means the defaults are in play, and a stack legitimately having no files is fine.)
+if (custom && scanned === 0) {
+    console.log(
+        `consistency: NOT RUN — --paths matched no scannable files (${custom.join(", ")})`,
+    );
+    console.log(
+        "  Check the path exists and holds files this stack scans (backend .cs, frontend .ts, mobile .kt).",
+    );
+    process.exit(1);
 }
 if (violations.length === 0) {
     console.log(

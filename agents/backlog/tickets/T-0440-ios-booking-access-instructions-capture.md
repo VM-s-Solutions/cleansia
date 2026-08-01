@@ -1,13 +1,13 @@
 ---
 id: T-0440
 title: iOS — capture entry/access instructions on the booking confirm step
-status: in_progress
+status: qa
 size: S
-owner: ios
+owner: qa
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-01
 depends_on: []
-blocks: [T-0450, T-0449]
+blocks: [T-0450, T-0449, T-0469]
 stories: [US-customer-access-instructions]
 adrs: []
 layers: [ios]
@@ -142,6 +142,45 @@ verified it is **factually true** (`CreateOrderCommand.swift:15-32`, every prope
 correctly left it **descriptive, not prescriptive**, since an Android ticket wrote it toward a stack it
 never executed. **When this ticket lands with real iOS evidence, the Architect confirms or promotes
 it.** Do not silently promote it from inside this ticket.
+
+## 🚦 2026-08-01 — APPROVED → `qa`. THREE items still open before `done`
+
+Reviewer verdict is in this file's `## Review` and committed as **`c23b26e7`**.
+**⚠️ Provenance:** that commit is on **`fix/tooling-false-green-and-broken-docs`**, **not on
+`master`** (PM-verified: `git merge-base --is-ancestor` → not an ancestor of `master`). Do not look
+for it in `master`'s history yet.
+
+### F-3 — test-first ordering must be RECORDED before this ticket reaches `done` (developer)
+
+Test-first ordering is **unverifiable from the artifact**: one squashed commit, and **no `red→green`
+entry in the status log**. The reviewer **explicitly declined to assert the tests were written after
+the fact**, and noted its own mutations substantively cover what TDD protects against here — so this
+is a **traceability gap, not a quality finding**, and it is recorded as such.
+
+- [ ] **The developer records the actual ordering in the status log.** If it turns out to have been
+      implementation-first, **that becomes a real Gate 6 question and the reviewer re-reviews.** Do
+      not close this by asserting compliance retroactively — the point of the record is that it can be
+      wrong.
+
+### Open at QA — a genuine handoff, NOT a deferral (per the T-0441 precedent)
+
+The reviewer **proved** these cannot be captured in-suite: it hosted the field in a **real window** and
+captured through **two independent mechanisms**, and **both came back blank**. That is evidence of
+impossibility, not an untried claim — so this is a real handoff.
+
+- [ ] **AC1 screenshot** — reachable only by driving the real app on a **16.4 device**.
+- [ ] **Gate 8.5 render leg** — same constraint.
+- [ ] **While QA is on the device:** does the **ru/uk two-line placeholder** read as *intentional*
+      beside the sibling's one line? A judgement call that needs eyes on a real screen, not a rule.
+
+### ⛔ Do NOT re-apply the "hint no longer than its sibling" constraint
+
+The reviewer **refuted** it for iOS: Android's float label **ellipsizes**, but iOS's hint is **plain
+wrapping text with no line limit**, in a container with **ample headroom**. The constraint was an
+Android-shaped rule generalized to a platform where its premise does not hold.
+
+**It must not be carried into T-0449 or T-0450** — both have been given the same note. (PM-verified
+2026-08-01: neither ticket currently carries it, so this is prevention, not removal.)
 
 ## Review
 

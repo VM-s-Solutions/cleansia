@@ -155,6 +155,19 @@ wide for English — so any change to the icon, padding or font invalidates it.
 **Do not** delete `EditChipMaxWidthFraction` when the string gets shorter. It is the guard that stops
 the chip starving the name column; a shorter label makes it non-binding, not unnecessary.
 
+## ⛔ Do NOT apply a "hint no longer than its sibling" constraint (added 2026-08-01)
+
+The T-0440 reviewer **refuted** this constraint for iOS. Android's float label **ellipsizes**, which is
+where the rule came from; **iOS's hint is plain wrapping text with no line limit, in a container with
+ample headroom**. It is an Android-shaped rule generalized to a platform whose premise does not hold.
+
+**It is not in this ticket today** (PM-verified 2026-08-01) — this note is **prevention, not removal**.
+Do not add it, and do not let a reviewer request it by analogy with Android.
+
+Related, and also not a defect: the **ru/uk two-line placeholder** on iOS. Whether it reads as
+*intentional* beside the sibling's one line is a **QA judgement on a real device**, open under T-0440
+— not a constraint to design against here.
+
 ## Status log
 - 2026-07-30 — draft (created by pm; wave-1 finding with no home, from T-0442's implementation and
   review; two panels required, plus two owner questions Q-I18N-02 and Q-BRAND-01)

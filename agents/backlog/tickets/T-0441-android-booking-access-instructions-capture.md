@@ -109,8 +109,14 @@ longer label+placeholder pair, because the iOS field is **hint-only**. Offered f
 | `en` | How should we get in? (optional) |
 | `cs` | Jak se dostaneme dovnitř? (nepovinné) |
 | `sk` | Ako sa dostaneme dnu? (nepovinné) |
-| `uk` | Як нам потрапити всередину? (необов'язково) |
+| `uk` | Як нам потрапити всередину? (необов’язково) |  ← **U+2019**, a typographic apostrophe, NOT `'` (U+0027)
 | `ru` | Как нам попасть внутрь? (необязательно) |
+
+**⚠️ CORRECTED 2026-08-01 — the `uk` apostrophe.** This table originally carried `необов'язково` with
+a **straight ASCII apostrophe (U+0027)**. **The shipped iOS form uses U+2019 (`’`) and is the correct
+one.** The table above is now fixed. **Nobody should "correct" U+2019 back to `'`** — that would be a
+regression, and this table was the thing that would have caused it. If you are diffing locale files
+and see `’` in `uk`, leave it alone.
 
 **⚠️ If adopted, the `values-*/strings.xml` lane reopens** (this ticket is currently `qa` and the lane
 was declared clear for **T-0450**). Tell the PM first — do not edit the bundles from `qa` without

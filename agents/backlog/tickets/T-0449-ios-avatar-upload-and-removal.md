@@ -87,6 +87,19 @@ _(PM floor; the `US-user-avatar` analyst panel finalizes)_
   xcstrings churn (the T-0372 lesson).
 - Read `agents/knowledge/patterns-mobile.md` first.
 
+## ⛔ Do NOT apply a "hint no longer than its sibling" constraint (added 2026-08-01)
+
+The T-0440 reviewer **refuted** this constraint for iOS. Android's float label **ellipsizes**, which is
+where the rule came from; **iOS's hint is plain wrapping text with no line limit, in a container with
+ample headroom**. It is an Android-shaped rule generalized to a platform whose premise does not hold.
+
+**It is not in this ticket today** (PM-verified 2026-08-01) — this note is **prevention, not removal**.
+Do not add it, and do not let a reviewer request it by analogy with Android.
+
+Related, and also not a defect: the **ru/uk two-line placeholder** on iOS. Whether it reads as
+*intentional* beside the sibling's one line is a **QA judgement on a real device**, open under T-0440
+— not a constraint to design against here.
+
 ## Status log
 - 2026-07-30 — draft (created by pm; owner batch item 5, iOS client)
 - 2026-07-30 — blocked (on T-0446 + the owner's mobile-spec-redump; serialized behind T-0440 on the xcstrings lane; awaiting the US-user-avatar panel)

@@ -294,6 +294,17 @@ partner,admin}`) and fix the consumers before pushing. The blocking frontend pro
 this too, but catching it locally avoids a red PR. (No dedicated client-drift CI job: the build gate
 already fails on the drift symptom.)
 
+**Mechanized after the second occurrence — [ADR-0031](../backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md).**
+The rule above is unchanged and still binds; it is now carried by two mechanisms instead of by memory.
+Every `generate-*-client` script ends in `npm run typecheck`, which runs the Angular compiler over
+**all** app compilation units and names the offending file:line before anything is pushed
+(`generate-clients` regenerates all three and typechecks once). That guard is a **typecheck, not a
+build** — no bundling, budgets, SSR prerender or styles — so the three production builds stay the
+pre-push step and CI stays the authority. `frontend-ci.yml` now also builds pushes to `master`
+(paths-scoped, e2e PR-only), so a regen that slips past both reddens **its own** commit instead of the
+next contributor's PR. The "no dedicated client-drift CI job" position above is **upheld** — no job was
+added; the existing build gate was pointed at the branch where the damage lands.
+
 ### Match agent count to task risk (don't fan out mechanical work)
 Multi-agent fan-out earns its overhead on **wide, parallel, or risky** work (a many-file migration, a
 consistency sweep, anything needing independent verification). For **narrow, deterministic** work

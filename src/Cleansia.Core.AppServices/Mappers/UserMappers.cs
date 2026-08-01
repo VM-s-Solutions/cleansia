@@ -25,7 +25,10 @@ public static class UserMappers
                 PreferredLanguageName: user.PreferredLanguage?.Name);
     }
 
-    public static MyProfileDto? MapToMyProfileDto(this User? user, CustomerProfileStats? stats = null)
+    public static MyProfileDto? MapToMyProfileDto(
+        this User? user,
+        CustomerProfileStats? stats = null,
+        string? profilePhotoUrl = null)
     {
         return user is null
             ? null
@@ -38,7 +41,7 @@ public static class UserMappers
                 AuthenticationType: user.AuthenticationType.MapToCode(),
                 IsEmailConfirmed: user.IsEmailConfirmed,
                 BirthDate: user.BirthDate,
-                ProfilePhoto: user.ProfilePhotoName?.MapToDto(),
+                ProfilePhoto: user.ProfilePhotoName?.MapToDto(profilePhotoUrl),
                 PreferredLanguageCode: user.PreferredLanguageCode,
                 PreferredLanguageName: user.PreferredLanguage?.Name,
                 MemberSince: user.CreatedOn,

@@ -266,6 +266,32 @@ reuse the interceptor `api.*` path instead (EP-3 root cause was the proliferatio
   `RetryAfterInterceptorFn` sits after `HttpErrorInterceptorFn` so the snackbar fires only once the
   back-off retry is exhausted). Customer is SSR — guard wait/retry logic with `isPlatformServer`.
 
+## Building a generated DTO — construct-then-assign, never an object literal (ADR-0031)
+
+**ADR-0031 is the source of truth** for why: the derivation, the `markOptionalProperties: false`
+consequence, the three `master` breaks it is drawn from, and the scope of the rule all live there.
+This entry is the call-site form only.
+
+```ts
+const photo = new BlobFileDto();
+photo.fileName = file.name;
+photo.base64Content = base64Content;
+photo.contentType = file.type;
+```
+
+not `new BlobFileDto({ fileName, base64Content, contentType })`. Only the **literal** is
+regen-fragile — the constructor's parameter is typed `IBlobFileDto`, so a literal is checked for
+completeness while property assignment is not. Passing an already-built **instance** into an
+enclosing DTO (`new SaveOrderPhotosPhotoToSave({ file: blobFile, … })`) is fine.
+
+Two things that bite in practice: you **cannot** pre-add the field ahead of a regen (`blobUrl:
+undefined` in a literal fails today's excess-property check, `TS2353`), and a lambda-parameter
+default cannot hold the statements — extract a module-level factory (`const createEmptyPhoto =
+(): BlobFileDto => { … }`).
+
+When a ticket carries `manual_step: nswag-regen`, sweep the call sites into this form **before** the
+owner regenerates; that work needs no regenerated client and unblocks the regen.
+
 ## Module boundaries — the per-app client is the only client a feature may import
 
 Each app owns its **own generated client lib**: `@cleansia/customer-services`

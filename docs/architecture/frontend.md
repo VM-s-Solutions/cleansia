@@ -98,10 +98,12 @@ API clients are auto-generated from the backend Swagger/OpenAPI specs using NSwa
 npm run generate-partner-client    # nswag-partner.json
 npm run generate-admin-client      # nswag-admin.json
 npm run generate-customer-client   # nswag-customer.json
+
+npm run generate-clients           # all three, then ONE typecheck
 ```
 
 ::: info
-Each generator produces a TypeScript client class (e.g., `PartnerClient`, `AdminClient`, `CustomerClient`) containing sub-clients for each API controller. After generation, formatter scripts clean up the output.
+Each generator produces a TypeScript client class (e.g., `PartnerClient`, `AdminClient`, `CustomerClient`) containing sub-clients for each API controller. After generation, formatter scripts clean up the output and `npm run typecheck` compiles every app against the regenerated client — NSwag emits a nullable DTO member as a *required* interface key, so a new backend field breaks existing call sites, and the guard names them before anything is pushed (ADR-0031). It is a typecheck, not a build: still run the three production builds before pushing.
 :::
 
 The generated clients are injected via Angular DI with a base URL token:

@@ -11,6 +11,10 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     private const int RequestBodyLimit = 1000;
     private const int ResponseBodyLimit = 500;
 
+    // Redacting scans the WHOLE body (see SafeBody), so it must be bounded: without a cap an
+    // authenticated caller can spend seconds of request-thread CPU per call on a multi-MB upload.
+    private const int RedactionScanLimit = 64 * 1024;
+
     private readonly RequestDelegate _next = next;
     private readonly ILogger<RequestLoggingMiddleware> _logger = logger;
 
@@ -73,9 +77,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
         var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
 
         var rawBody = await ReadRequestBodyAsync(request);
-        var safeBody = IsSensitivePath(request.Path)
-            ? "[suppressed: sensitive endpoint]"
-            : RedactSensitiveFields(rawBody);
+        var safeBody = SafeBody(request.Path, rawBody, RequestBodyLimit);
 
         _logger.LogInformation(
             "[{RequestId}] {Method} {Path}{QueryString} | User: {UserId} | IP: {IP} | Body: {Body}",
@@ -95,9 +97,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
         var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
 
         var rawBody = await ReadResponseBodyAsync(response);
-        var safeBody = IsSensitivePath(context.Request.Path)
-            ? "[suppressed: sensitive endpoint]"
-            : RedactSensitiveFields(TruncateBody(rawBody, ResponseBodyLimit));
+        var safeBody = SafeBody(context.Request.Path, rawBody, ResponseBodyLimit);
 
         var logLevel = response.StatusCode >= 500 ? LogLevel.Error :
                       response.StatusCode >= 400 ? LogLevel.Warning :
@@ -144,7 +144,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
 
         request.Body.Position = 0;
 
-        return TruncateBody(body, RequestBodyLimit);
+        return body;
     }
 
     private static async Task<string> ReadResponseBodyAsync(HttpResponse response)
@@ -157,6 +157,29 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
         response.Body.Seek(0, SeekOrigin.Begin);
 
         return body;
+    }
+
+    /// <summary>
+    /// Redact BEFORE truncating. The regex matches a complete quoted value, so truncating first leaves
+    /// the raw visible prefix of any secret whose closing quote falls past the cut.
+    ///
+    /// Redacting first costs a scan of the whole body, so anything past <see cref="RedactionScanLimit"/>
+    /// is suppressed outright rather than scanned or truncated — bounding the per-request cost without
+    /// reopening the prefix leak that truncating first would.
+    /// </summary>
+    private static string SafeBody(PathString path, string rawBody, int logLimit)
+    {
+        if (IsSensitivePath(path))
+        {
+            return "[suppressed: sensitive endpoint]";
+        }
+
+        if (rawBody.Length > RedactionScanLimit)
+        {
+            return "[suppressed: body too large to redact]";
+        }
+
+        return TruncateBody(RedactSensitiveFields(rawBody), logLimit);
     }
 
     private static string TruncateBody(string body, int maxLength)
@@ -185,9 +208,24 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     {
         var pathValue = path.Value?.ToLowerInvariant() ?? string.Empty;
         return pathValue.Contains("/auth/") ||
+               // "/auth/" does NOT match "/api/AdminAuth/..." — no slash precedes "auth" there — so the
+               // admin refresh/logout responses fell outside it. They return a JwtTokenResponse whose
+               // leading JWT is redacted, freeing ~785 bytes and pulling the admin's Email into view.
+               pathValue.Contains("/adminauth/") ||
                pathValue.Contains("/login") ||
                pathValue.Contains("password") ||
-               pathValue.Contains("/order/lookup");
+               pathValue.Contains("/order/lookup") ||
+               // Operator free text riding beside a base64 payload — an identity-document description
+               // and a cleaner's note about a customer's household. No field-name denylist can reach
+               // free text, so the whole body is suppressed.
+               pathValue.Contains("/savemydocuments") ||
+               pathValue.Contains("/savephotos") ||
+               pathValue.Contains("/uploadphoto") ||
+               // Reading photos back leaks the same way: redacting the SAS frees ~170 bytes of window
+               // and pulls the trailing per-photo note in. Two route shapes — the four hosts'
+               // /api/Order/GetPhotos and the admin /api/AdminOrder/photos/{orderId}.
+               pathValue.Contains("/getphotos") ||
+               pathValue.Contains("/photos/");
     }
 
     private static bool ShouldSkipLogging(PathString path)
@@ -203,7 +241,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
                pathValue.Contains("/payment/webhook");
     }
 
-    [GeneratedRegex("\"(password|currentPassword|newPassword|confirmPassword|token|refreshToken|accessToken|clientSecret|apiKey|base64Content|fileData|fileBase64)\"\\s*:\\s*(\"(?:[^\"\\\\]|\\\\.)*\"|null)",
+    [GeneratedRegex("\"(password|currentPassword|newPassword|confirmPassword|token|refreshToken|accessToken|clientSecret|setupIntentClientSecret|apiKey|base64Content|fileData|fileBase64|blobUrl|ephemeralKey)\"\\s*:\\s*(\"(?:[^\"\\\\]|\\\\.)*\"|null)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled)]
     private static partial Regex SensitiveFieldRegex();
 

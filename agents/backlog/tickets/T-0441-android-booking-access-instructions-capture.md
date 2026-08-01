@@ -230,3 +230,49 @@ E-entry is an Architect call). Flagging it in case the Architect wants it as an 
 support.
 
 <!-- reviewer writes verdict here -->
+
+## Ready-made parity wording — for the reviewer or QA, if wanted (added 2026-07-30)
+
+The T-0440 (iOS) work produced these, **shaped to match the sibling hint** rather than the web's
+longer label+placeholder pair, because the iOS field is **hint-only**. Offered for Android parity —
+**not a change request**; adopt only if QA or the reviewer wants the alignment.
+
+| Locale | String |
+|---|---|
+| `en` | How should we get in? (optional) |
+| `cs` | Jak se dostaneme dovnitř? (nepovinné) |
+| `sk` | Ako sa dostaneme dnu? (nepovinné) |
+| `uk` | Як нам потрапити всередину? (необов’язково) |  ← **U+2019**, a typographic apostrophe, NOT `'` (U+0027)
+| `ru` | Как нам попасть внутрь? (необязательно) |
+
+**⚠️ CORRECTED 2026-08-01 — the `uk` apostrophe.** This table originally carried `необов'язково` with
+a **straight ASCII apostrophe (U+0027)**. **The shipped iOS form uses U+2019 (`’`) and is the correct
+one.** The table above is now fixed. **Nobody should "correct" U+2019 back to `'`** — that would be a
+regression, and this table was the thing that would have caused it. If you are diffing locale files
+and see `’` in `uk`, leave it alone.
+
+**⚠️ If adopted, the `values-*/strings.xml` lane reopens** (this ticket is currently `qa` and the lane
+was declared clear for **T-0450**). Tell the PM first — do not edit the bundles from `qa` without
+re-serializing the lane.
+
+
+### 2026-07-30 — REVIEWER: **APPROVED**
+
+321/321 tests and 53/53 Gradle tasks executed; no new consistency violations; both findings raised
+during review were closed and **independently re-proved**. AC1's screenshot remains open and belongs
+to QA.
+
+**Process note — the reviewer caught its own evidence being served from the Gradle build cache
+mid-mutation and re-ran with `--no-build-cache`.** That was correct and load-bearing: *"it still
+compiles"* was half the finding, and a cache-served compile does not establish it. **Gate 0.5 does not
+currently name this case** — a mutation that reproduces a *previous* mutation byte-for-byte will
+legitimately hit the cache, with the build system behaving perfectly correctly. **Filed as T-0468**
+(architect + docs; `quality-gates.md` is not the PM's file).
+
+**Catalog harvest — one sentence routed to the Architect, deliberately not acted on here.** This
+ticket's `patterns-mobile.md` hunk closes with *"iOS mirrors this — its generated models have the same
+all-optional shape."* The reviewer **verified the claim is factually true** (`CreateOrderCommand.swift:15-32`,
+every property optional) but correctly noted it is an **Android-layer ticket writing toward a stack it
+never executed**, and let it stand as **descriptive, not prescriptive**. That is the right call.
+**The Architect confirms or promotes it once T-0440 lands with its own iOS evidence** — recorded in
+`status/sprint-14.md` §2.10 so it is not lost when this ticket closes.

@@ -13,7 +13,8 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 | Frontend build | `nx build` (CI: `frontend-ci.yml`) | the 3 apps compile | **live in CI** |
 | Formatting/style (C#) | `/.editorconfig` (root) | file-scoped namespaces, braces, unused usings, nullability warnings | **added — surfaces as warnings** |
 | Formatting/style (TS) | `src/Cleansia.App/.editorconfig` + ESLint (`eslint.config.mjs`) | TS formatting + lint | **present** |
-| Project-specific rules | `agents/tools/check-consistency.mjs` | the A/B/C/D/E rules in `knowledge/consistency.md` no linter knows | **added — run by Reviewer** |
+| Project-specific rules | `agents/tools/check-consistency.mjs` | the A/B/C/D/E rules in `knowledge/consistency.md` no linter knows | **added — run by Reviewer** (in **no** CI workflow yet — verified: zero hits under `.github/`) |
+| iOS (Swift) | `swiftformat --lint` + `swiftlint lint --strict` (pinned 0.60.1 / 0.65.0) + 3 XCTest schemes (CI: `ios-ci.yml`) | formatting, lint, and whatever the guard tests assert. **`check-consistency.mjs` covers NO Swift** — its walker globs `.cs`/`.ts`/`.kt` only | **live in CI** (lint + tests); **no project-specific rules yet** — `.swiftlint.yml` has no `custom_rules:`, and its `included:` omits `CleansiaCustomer/LiveActivity/` + both apps' `Tests/` |
 
 ## The consistency checker — `agents/tools/check-consistency.mjs`
 
@@ -104,6 +105,36 @@ and the canonicalization tickets (T-0001…T-0016). **Existing violations do not
 > **Rule of thumb:** a check only becomes *blocking in CI* once its baseline is zero for that stack —
 > otherwise CI is red for reasons unrelated to the current change, and people learn to ignore it. Add
 > enforcement behind the cleanup, never in front of it.
+
+## Enforcement tiers — what a rule is worth (ADR-0032)
+
+A catalog entry that constrains call sites names its enforcer and declares one of these
+(`knowledge/conventions.md` §"The price of a law"). **The tier is a property of *where the check runs*,
+not of *which tool* runs it** — a `check-consistency.mjs` rule promoted into a stack's CI workflow
+(Rollout step 3 below) is T1-CI from that day.
+
+- **T1-CI** — fails a CI job on the offending change. Backend/frontend/Android: a test in a CI job.
+  iOS: a SwiftLint `custom_rules` entry, or an XCTest guard in one of the three schemes CI runs.
+- **T2-ADVISORY** — reports, never sets the exit code. `check-consistency.mjs` sits here today on
+  **every** stack (it is in no `.github/` workflow), including its warn-only rules (E9).
+- **T3-HUMAN** — a **named** item in a standing checklist the Reviewer runs (Gate-DP §G of
+  `ios-app-review-checklist.md`, Gate-AR, a numbered reviewer-check). An **unnamed** human enforcer
+  ("someone will notice") is not T3 — it is `(guidance — no gate)`.
+- **`(gate pending: <ticket>)`** — the gate is specified and ticketed, but its baseline is non-zero, so
+  the "rule of thumb" below forbids blocking on it yet. It promotes to T1-CI when the ticket lands.
+- **`(guidance — no gate)`** — nobody enforces it.
+
+**T1-CI is required only where the rule is mechanically expressible AND its baseline is zero.** An
+unmechanizable rule is not thereby demoted to advice: ADR-0018's design-parity gate cannot be asserted
+by any tool and is a load-bearing law at T3-HUMAN. Adding Swift to the consistency walker would land at
+**T2-ADVISORY** — a legitimate declared tier, just not a CI gate.
+
+**Zero-file scopes report `NOT RUN`, never `OK` (ADR-0032 D5).** A `--paths=` scope that matches zero
+files used to print `consistency: OK (0 files scanned)` and exit 0 — so `--paths=src/cleansia_ios` read
+as a **pass** for a stack the tool cannot parse. The fix (a loud `NOT RUN` banner) is ratified; it
+landed on `fix/tooling-false-green-and-broken-docs` and reaches `master` with that branch. A green
+banner tells you the tool *read* the stack; it can never tell you whether a named enforcer asserts what
+its catalog sentence claims — that is the reviewer's read-the-enforcer check.
 
 ## When a new rule is needed
 

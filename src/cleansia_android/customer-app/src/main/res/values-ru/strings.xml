@@ -705,6 +705,7 @@
     <string name="booking_pay_cash">Наличными</string>
     <string name="booking_pay_cash_desc">Оплата при доставке</string>
     <string name="booking_special_instructions_hint">Особые пожелания? (необязательно)</string>
+    <string name="booking_access_instructions_hint">Как войти? (необязательно)</string>
 
     <string name="booking_success_title">Бронирование подтверждено!</string>
     <string name="booking_success_subtitle">Ваша уборка забронирована. Расслабьтесь.</string>

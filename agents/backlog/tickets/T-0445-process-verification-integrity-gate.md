@@ -1,7 +1,7 @@
 ---
 id: T-0445
 title: PROCESS — add a verification-integrity gate (mutation-prove the test, re-run don't trust, declare what could not be verified)
-status: ready
+status: done
 size: S
 owner: architect
 created: 2026-07-30
@@ -106,6 +106,15 @@ verification act itself*, orthogonal to which gate is being verified.
 ## Status log
 - 2026-07-30 — draft (created by pm; owner-approved process change, this batch)
 - 2026-07-30 — ready (no deps; DoR met; routed architect-panel → docs)
+
+- 2026-07-30 — dispatched by the orchestrator, architect panel → docs.
+- 2026-07-30 — **done** — landed on `master` inside `8241d3cd` (PR #170), which also carried the
+  sprint-14 planning artifacts. **PM re-verification:** **Gate 0.5 — Verification integrity** is live
+  at `agents/process/quality-gates.md:52-90`, with all three legs (mutation-prove the test; a cached
+  run is not a run; declare what you could NOT verify) and the against-its-neighbours paragraph that
+  separates it from Gate 6.5 and the Gate 8 verify-not-trust blockquote. `agents/knowledge/testing.md`
+  (+11) and `agents/process/routing.md` (+9) were updated in the same change. It is already being
+  cited: every ticket filed today carries a Gate 0.5 leg-3 AC.
 
 ## Review
 

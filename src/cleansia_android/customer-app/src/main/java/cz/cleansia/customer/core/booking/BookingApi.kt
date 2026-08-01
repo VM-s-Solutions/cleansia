@@ -71,6 +71,7 @@ private fun CreateOrderCommand.toWire(): GenCreateOrderCommand = GenCreateOrderC
     referralCode = referralCode,
     preferredEmployeeId = preferredEmployeeId,
     specialInstructions = specialInstructions,
+    accessInstructions = accessInstructions,
 )
 
 private fun CreateOrderAddressDto.toWire(): GenAddressDto = GenAddressDto(

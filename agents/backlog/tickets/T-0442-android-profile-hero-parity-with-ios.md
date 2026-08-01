@@ -1,13 +1,13 @@
 ---
 id: T-0442
 title: Android customer profile hero — match the iOS layout (edit chip vertically centred in the same row)
-status: ready
+status: done
 size: S
 owner: android
 created: 2026-07-30
 updated: 2026-07-30
 depends_on: []
-blocks: [T-0448]
+blocks: []
 stories: []
 adrs: []
 layers: [android]
@@ -102,6 +102,18 @@ seam — a layout port against a shipped reference. Sizing/AC/deps/layers set �
 ## Status log
 - 2026-07-30 — draft (created by pm; owner batch item 3)
 - 2026-07-30 — ready (no deps; DoR met; no-decision note recorded — owner ruling supplies the decision)
+
+- 2026-07-30 — dispatched by the orchestrator, android + paired reviewer.
+- 2026-07-30 — **done** — merged to `master` as `ce2416a0` (PR #174), single file, +156/-72.
+  **PM re-verification:** `ProfileTab.kt:271-318` is now ONE `Row(verticalAlignment = Alignment.Top)`
+  with the chip carrying `.align(Alignment.CenterVertically)` at `:315` — AC1's structure matches
+  `ProfileTab.swift:296-303` as specified. Two things the ticket did not ask for and got:
+  `EditChipMaxWidthFraction` (`:246-248`) caps the chip so it cannot starve the name column, and the
+  initials colour is pinned to `Sky600` with the dark-mode contrast reasoning written in at `:279-280`.
+  Both spawned follow-ups — **T-0450** (the cap truncates ru/uk; the string is the real fix) and
+  **T-0451** (iOS never got the initials-colour deviation). Gate 8/0.5 evidence as reported in the PR.
+- 2026-07-30 — **out-of-scope delta confirmed still open:** the hero gradient starts *below* the
+  status bar on Android and *under* it on iOS. Correctly excluded here; now **T-0453**.
 
 ## Review
 <!-- reviewer writes verdict here; AC2's annotated delta table goes here -->

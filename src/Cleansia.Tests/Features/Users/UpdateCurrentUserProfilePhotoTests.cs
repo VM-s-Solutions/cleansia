@@ -33,6 +33,7 @@ public class UpdateCurrentUserProfilePhotoTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IBlobContainerClientFactory> _blobFactory = new();
     private readonly Mock<IBlobContainerClient> _blobClient = new();
+    private readonly List<string> _blobCalls = [];
 
     private UpdateCurrentUser.Handler CreateHandler(User user)
     {
@@ -49,9 +50,11 @@ public class UpdateCurrentUserProfilePhotoTests
         _blobClient
             .Setup(c => c.UploadAsync(
                 It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<Metadata?>(), It.IsAny<CancellationToken>()))
+            .Callback((string name, Stream _, Metadata? _, CancellationToken _) => _blobCalls.Add($"upload:{name}"))
             .Returns(Task.CompletedTask);
         _blobClient
             .Setup(c => c.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback((string name, CancellationToken _) => _blobCalls.Add($"delete:{name}"))
             .Returns(Task.CompletedTask);
 
         return new UpdateCurrentUser.Handler(
@@ -114,19 +117,76 @@ public class UpdateCurrentUserProfilePhotoTests
         VerifyNoDelete();
     }
 
+    /// <summary>
+    /// A replacement is stored under a NEW name. The old behaviour reused the stored name, which made
+    /// the name non-content-addressed: every client caches its avatar bitmap on <c>fileName</c>, so a
+    /// reused name renders the PREVIOUS image forever after a successful upload.
+    /// </summary>
     [Fact]
-    public async Task SaveWithNewImage_ReplacesTheBlobInPlace_AndKeepsTheSameName()
+    public async Task SaveWithNewImage_MintsAFreshBlobName_NeverReusingTheStoredOne()
     {
         var user = UserWith(StoredPhotoName);
         var newImage = new BlobFileDto(FileName: "avatar.png", Base64Content: NewImageBase64, ContentType: "image/png");
 
         await CreateHandler(user).Handle(Save(newImage), CancellationToken.None);
 
-        Assert.Equal(StoredPhotoName, user.ProfilePhotoName);
+        Assert.NotEqual(StoredPhotoName, user.ProfilePhotoName);
+        Assert.True(Guid.TryParse(user.ProfilePhotoName, out _));
+        _blobClient.Verify(
+            c => c.UploadAsync(
+                user.ProfilePhotoName!, It.IsAny<Stream>(), It.IsAny<Metadata?>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    /// The other half of minting a fresh name: the superseded blob must still be deleted, or every
+    /// replacement orphans one blob in the container forever.
+    /// </summary>
+    [Fact]
+    public async Task SaveWithNewImage_DeletesTheSupersededBlob_SoAReplaceDoesNotOrphan()
+    {
+        var user = UserWith(StoredPhotoName);
+        var newImage = new BlobFileDto(FileName: "avatar.png", Base64Content: NewImageBase64, ContentType: "image/png");
+
+        await CreateHandler(user).Handle(Save(newImage), CancellationToken.None);
+
         _blobClient.Verify(c => c.DeleteAsync(StoredPhotoName, It.IsAny<CancellationToken>()), Times.Once);
         _blobClient.Verify(
-            c => c.UploadAsync(StoredPhotoName, It.IsAny<Stream>(), It.IsAny<Metadata?>(), It.IsAny<CancellationToken>()),
-            Times.Once);
+            c => c.DeleteAsync(user.ProfilePhotoName!, It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Ordering is the safety property: with distinct names the upload must land BEFORE the old blob is
+    /// deleted, so a failed upload cannot leave the user with no avatar and a row pointing at a blob
+    /// that no longer exists.
+    /// </summary>
+    [Fact]
+    public async Task SaveWithNewImage_UploadsTheReplacementBeforeDeletingTheSuperseded()
+    {
+        var user = UserWith(StoredPhotoName);
+        var newImage = new BlobFileDto(FileName: "avatar.png", Base64Content: NewImageBase64, ContentType: "image/png");
+
+        await CreateHandler(user).Handle(Save(newImage), CancellationToken.None);
+
+        Assert.Equal([$"upload:{user.ProfilePhotoName}", $"delete:{StoredPhotoName}"], _blobCalls);
+    }
+
+    [Fact]
+    public async Task SaveWithNewImage_WhenTheUploadFails_LeavesTheStoredPhotoAndItsBlobIntact()
+    {
+        var user = UserWith(StoredPhotoName);
+        var newImage = new BlobFileDto(FileName: "avatar.png", Base64Content: NewImageBase64, ContentType: "image/png");
+        var handler = CreateHandler(user);
+        _blobClient
+            .Setup(c => c.UploadAsync(
+                It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<Metadata?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("storage unreachable"));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => handler.Handle(Save(newImage), CancellationToken.None));
+
+        Assert.Equal(StoredPhotoName, user.ProfilePhotoName);
+        VerifyNoDelete();
     }
 
     [Fact]

@@ -705,6 +705,7 @@
     <string name="booking_pay_cash">Hotovosťou</string>
     <string name="booking_pay_cash_desc">Platba pri dodaní</string>
     <string name="booking_special_instructions_hint">Špeciálne požiadavky? (nepovinné)</string>
+    <string name="booking_access_instructions_hint">Pokyny ku vstupu? (nepovinné)</string>
 
     <string name="booking_success_title">Rezervácia potvrdená!</string>
     <string name="booking_success_subtitle">Vaše upratovanie je rezervované. Oddýchnite si.</string>

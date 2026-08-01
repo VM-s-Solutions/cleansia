@@ -708,6 +708,7 @@
     <string name="booking_pay_cash">Hotově</string>
     <string name="booking_pay_cash_desc">Platba při dodání</string>
     <string name="booking_special_instructions_hint">Speciální požadavky? (nepovinné)</string>
+    <string name="booking_access_instructions_hint">Pokyny ke vstupu? (nepovinné)</string>
 
     <string name="booking_success_title">Rezervace potvrzena!</string>
     <string name="booking_success_subtitle">Váš úklid je rezervován. Odpočiňte si.</string>

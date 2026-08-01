@@ -49,11 +49,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.CleansiaTextField
+import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.selectionTint
 import cz.cleansia.customer.ui.theme.SuccessText
 
@@ -344,12 +346,11 @@ fun ConfirmStep(
 
         Spacer(Modifier.height(16.dp))
 
-        // ── Special instructions ──
-        CleansiaTextField(
-            value = state.specialInstructions,
-            onValueChange = { onUpdate(state.copy(specialInstructions = it)) },
-            label = stringResource(R.string.booking_special_instructions_hint),
-            singleLine = false,
+        InstructionsFields(
+            specialInstructions = state.specialInstructions,
+            accessInstructions = state.accessInstructions,
+            onSpecialInstructionsChange = { onUpdate(state.copy(specialInstructions = it)) },
+            onAccessInstructionsChange = bookingVm::updateAccessInstructions,
         )
 
         Spacer(Modifier.height(16.dp))
@@ -404,6 +405,87 @@ fun ConfirmStep(
             onValidate = { code -> bookingVm.validatePromoCodeNow(code) },
             // VM persisted code + state; the sheet only signals so we can close it.
             onApplied = { _, _ -> },
+        )
+    }
+}
+
+/**
+ * The two free-text notes the customer leaves for the cleaner: what to focus on,
+ * and how to get in. Both are optional and reach the assigned cleaner read-only
+ * on their order detail.
+ */
+@Composable
+private fun InstructionsFields(
+    specialInstructions: String,
+    accessInstructions: String,
+    onSpecialInstructionsChange: (String) -> Unit,
+    onAccessInstructionsChange: (String) -> Unit,
+) {
+    Column(Modifier.fillMaxWidth()) {
+        CleansiaTextField(
+            value = specialInstructions,
+            onValueChange = onSpecialInstructionsChange,
+            label = stringResource(R.string.booking_special_instructions_hint),
+            singleLine = false,
+        )
+        Spacer(Modifier.height(12.dp))
+        CleansiaTextField(
+            value = accessInstructions,
+            onValueChange = onAccessInstructionsChange,
+            label = stringResource(R.string.booking_access_instructions_hint),
+            singleLine = false,
+        )
+    }
+}
+
+@Preview(widthDp = 390)
+@Composable
+private fun InstructionsFieldsPreview() {
+    CleansiaTheme {
+        InstructionsFields(
+            specialInstructions = "",
+            accessInstructions = "",
+            onSpecialInstructionsChange = {},
+            onAccessInstructionsChange = {},
+        )
+    }
+}
+
+@Preview(locale = "ru", widthDp = 320)
+@Composable
+private fun InstructionsFieldsRussianNarrowPreview() {
+    CleansiaTheme {
+        InstructionsFields(
+            specialInstructions = "",
+            accessInstructions = "",
+            onSpecialInstructionsChange = {},
+            onAccessInstructionsChange = {},
+        )
+    }
+}
+
+@Preview(locale = "uk", widthDp = 320)
+@Composable
+private fun InstructionsFieldsUkrainianNarrowPreview() {
+    CleansiaTheme {
+        InstructionsFields(
+            specialInstructions = "",
+            accessInstructions = "Бічна хвіртка, кодовий замок 4417.",
+            onSpecialInstructionsChange = {},
+            onAccessInstructionsChange = {},
+        )
+    }
+}
+
+@Preview(locale = "cs", widthDp = 320)
+@Composable
+private fun InstructionsFieldsCzechNarrowPreview() {
+    CleansiaTheme {
+        InstructionsFields(
+            specialInstructions = "",
+            accessInstructions = "",
+            onSpecialInstructionsChange = {},
+            onAccessInstructionsChange = {},
         )
     }
 }

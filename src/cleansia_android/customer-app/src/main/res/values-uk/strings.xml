@@ -705,6 +705,7 @@
     <string name="booking_pay_cash">Готівкою</string>
     <string name="booking_pay_cash_desc">Оплата при доставці</string>
     <string name="booking_special_instructions_hint">Особливі побажання? (необов’язково)</string>
+    <string name="booking_access_instructions_hint">Як увійти? (необов’язково)</string>
 
     <string name="booking_success_title">Бронювання підтверджено!</string>
     <string name="booking_success_subtitle">Ваше прибирання заброньовано. Розслабтеся.</string>

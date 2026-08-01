@@ -613,6 +613,17 @@
       "password_change_note": "Password must be at least 8 characters with uppercase, lowercase, and a number.",
       "save_success": "Profile saved successfully",
       "save_error": "Failed to save profile",
+      "avatar": {
+        "alt": "Profile photo",
+        "hint": "Use a square image up to 10 MB — JPG, PNG, WebP or GIF.",
+        "change": "Change photo",
+        "remove": "Remove photo",
+        "upload_success": "Profile photo updated",
+        "remove_success": "Profile photo removed",
+        "invalid_type": "Choose an image file (JPG, PNG, WebP or GIF).",
+        "size_exceeded": "The image is too large. The maximum size is 10 MB.",
+        "read_failed": "We couldn't read that file. Please try another one."
+      },
       "addresses_title": "Addresses",
       "addresses_desc": "Manage your saved addresses for quick booking",
       "preferences_title": "Preferences",

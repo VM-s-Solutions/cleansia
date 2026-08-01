@@ -613,6 +613,17 @@
       "password_change_note": "Heslo musí obsahovat alespoň 8 znaků, velké a malé písmeno a číslo.",
       "save_success": "Profil úspěšně uložen",
       "save_error": "Nepodařilo se uložit profil",
+      "avatar": {
+        "alt": "Profilová fotka",
+        "hint": "Použijte čtvercový obrázek do 10 MB — JPG, PNG, WebP nebo GIF.",
+        "change": "Změnit fotku",
+        "remove": "Odstranit fotku",
+        "upload_success": "Profilová fotka byla aktualizována",
+        "remove_success": "Profilová fotka byla odstraněna",
+        "invalid_type": "Vyberte obrázek (JPG, PNG, WebP nebo GIF).",
+        "size_exceeded": "Obrázek je příliš velký. Maximální velikost je 10 MB.",
+        "read_failed": "Soubor se nepodařilo načíst. Zkuste prosím jiný."
+      },
       "addresses_title": "Adresy",
       "addresses_desc": "Spravujte uložené adresy pro rychlé objednávky",
       "preferences_title": "Předvolby",

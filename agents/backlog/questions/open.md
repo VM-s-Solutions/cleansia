@@ -39,8 +39,13 @@ each gets a line on the pre-PROD readiness checklist.
   answer** — a shorter Russian string still renders in a system fallback face. Now carried by its own
   ticket **T-0472** (split out of T-0450 on 2026-08-01); T-0472 fixes the mobile profile hero and its
   architect panel rules on the mechanism, the platform-wide remediation stays open here.
+- **Q-PROFILE-01** (`pre-prod`, **blocking: yes**) — `UpdateCurrentUser` requires a client-supplied
+  `Command.Id` that the customer **web** app cannot obtain (no `id` on `MyProfileDto`; HttpOnly-cookie
+  session, so no JWT to decode as Android/iOS do). Every customer-web profile save 400s with
+  `user.not_allowed_to_update`. Pre-existing since `29de7b48`; raised by T-0447, which it blocks for
+  AC2/AC3 round-trip evidence. Needs a **backend** decision, not a frontend workaround.
 
-**No `blocking: yes` question is open in this file as of 2026-08-01.**
+**One `blocking: yes` question is open in this file as of 2026-08-01: Q-PROFILE-01.**
 
 Format:
 
@@ -701,3 +706,45 @@ _No open Wave-1 *planning* questions remain._
   ticket that is fundamentally a two-line colour change. The durable ruling waits for this answer.
 - Answer: _(owner fills in — ratify the exception, or commission (a) a second sanctioned meaning for the
   danger role, or (c) a distinct warning/attention role)_
+
+---
+
+### Q-PROFILE-01 — [blocking: YES — blocks T-0447 AC2/AC3 end-to-end, and the customer web "Save profile" button is already dead] `UpdateCurrentUser` requires a client-supplied `Id` the customer **web** app cannot obtain
+- Raised by: frontend (T-0447)
+- Owner: **backend** to author the fix; **owner/architect** to pick which of the three shapes
+- Resolve-by: **pre-prod** (it is in demo scope — the avatar feature was ruled demo scope 2026-07-30)
+- Date: 2026-08-01
+- **Traced, not suspected.** `UpdateCurrentUser.Validator` gates every call on
+  `AllowedToUpdateUser` (`src/Cleansia.Core.AppServices/Features/Users/UpdateCurrentUser.cs:33-36,
+  66-71`): it loads the session user by email and returns `user?.Id == command.Id`. The command's
+  `Id` is **client-supplied** (`UpdateCurrentUser.cs:97-98` positional record) and the customer
+  `UserController.UpdateCurrentUser` (`src/Cleansia.Web.Customer/Controllers/UserController.cs:28-38`)
+  does **not** stamp it from the session.
+- **The customer web app has no id to send, by construction.** `MyProfileDto` carries no `id`
+  (`UserMappers.cs:28-51`), and the customer web session is an **HttpOnly cookie**
+  (`libs/core/customer-services/src/lib/interceptors/auth.interceptor.ts`) — so JS cannot read the
+  JWT. Both mobile clients solve it by decoding the token, and say so in their own comments:
+  Android `UserRepository.kt:82-86` — *"User id isn't part of the profile response — it's in the JWT
+  sub claim"*; iOS `UserProfileClient.swift:55` — `JwtDecoder.userId(of: accessToken)`.
+  Web therefore sends `id: undefined`, `user.Id == null` is false, and every customer-web profile
+  save fails validation with `user.not_allowed_to_update` (400).
+- **This is pre-existing, not introduced by T-0447.** `id: undefined` has been in
+  `profile.component.ts` since `29de7b48` (2026-05-16). Nobody has filed it, and there is no
+  integration/host test for the customer `UpdateCurrentUser` route — only unit tests that pass a
+  matching `Id` (`Cleansia.Tests/Features/Users/UpdateCurrentUserValidatorTests.cs:57-63`). Note
+  `user.not_allowed_to_update` is **not** in the customer error contract
+  (`apps/cleansia.app/src/app/i18n/error-contract-parity.spec.ts`), so the user currently sees only
+  the generic `api.common.error_occurred`.
+- Question: which shape? **(a)** the handler/validator resolves the user from
+  `IUserSessionProvider` and `Command.Id` is dropped — it is redundant on a *current-user* endpoint
+  and is an IDOR-shaped parameter; **(b)** the customer controller stamps `command.Id` from the
+  session before `Mediator.Send`; **(c)** `MyProfileDto` gains `Id` so every client can echo it back
+  — the weakest option (it keeps a client-supplied identity on an authenticated self-service write,
+  and it needs an `nswag-regen` + Android/iOS regen).
+- **Not fixable from the frontend.** There is no id source in the customer web app, and inventing one
+  (reading the cookie, a second endpoint) would be working around an authorization check.
+- Default taken: **none — T-0447 ships the avatar UI built to the current contract** (it sends the
+  same `id: undefined` the profile save has always sent, so nothing regresses) and its facade-level
+  ACs are proven by unit tests. AC2/AC3's **manual round-trip evidence cannot be produced** until
+  this is answered.
+- Answer: _(owner/architect fills in — (a), (b) or (c), then a backend ticket)_

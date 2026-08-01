@@ -266,6 +266,20 @@ raw components one-off; never duplicate a `:core` component.
 > defect until someone measures it** — the same shape as the `onError`-on-`error` collapse above, and
 > neither is visible in the theme the author develops in.
 
+> **A re-rendered SAS-backed image — the ONE way (T-0449):** `AsyncImage` stays right for a URL a
+> screen shows once (order photos, dispute evidence). It is wrong for an image the session re-renders —
+> the avatar — because every blob URL this backend returns is **re-signed per fetch**, so a URL-keyed
+> cache (`AsyncImage`'s, `URLCache`'s, Kingfisher's default) misses every time and re-downloads the same
+> face. Core owns the pair: **`RemoteImageCache`** (`Media/`) keyed on the caller's key with the URL as
+> the fetch target only, and **`CachedRemoteImage`** (`Components/`) rendering it with a placeholder.
+> Three rules the seam encodes: the key is the **content-addressed `fileName`** the backend re-mints on
+> every upload (never the URL, never a per-user id); the holder is **per-user state** and `register`s
+> with the `SessionScopedCacheRegistry` (S11); and the loader runs on an **`.ephemeral`** `URLSession`
+> so neither the bytes nor the credential-bearing URL that keyed them land in an on-disk `URLCache`. On
+> a load failure **re-fetch the owning DTO once, guarded per key** — an image view cannot tell an
+> expired signature (403) from a deleted blob (404), so branching on the status is not implementable;
+> the second failure falls through to the placeholder instead of looping.
+
 > **iOS snackbar pill — the ONE way (T-0432):** `SnackbarPill`/`SnackbarPalette` in
 > `Core/Snackbar/GlobalSnackbarHost.swift` render on a **theme-adaptive** `CleansiaColors.surface` pill
 > with `onSurface` text (NOT a fixed pastel fill — that never adapted to dark), a filled circular

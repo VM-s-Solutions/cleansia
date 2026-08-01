@@ -82,6 +82,22 @@ final class BookingViewModel: ViewModel {
         state = transform(state)
     }
 
+    func setSpecialInstructions(_ value: String) {
+        update { current in
+            var next = current
+            next.specialInstructions = BookingInstructions.capped(value)
+            return next
+        }
+    }
+
+    func setAccessInstructions(_ value: String) {
+        update { current in
+            var next = current
+            next.accessInstructions = BookingInstructions.capped(value)
+            return next
+        }
+    }
+
     @discardableResult
     func advance() -> Bool {
         guard currentStep < BookingStepGate.totalSteps else { return false }

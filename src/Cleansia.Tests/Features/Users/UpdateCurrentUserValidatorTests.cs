@@ -33,7 +33,7 @@ public class UpdateCurrentUserValidatorTests
         return user;
     }
 
-    private void ArrangeOwner(bool confirmed = true, bool ownsCommand = true)
+    private void ArrangeOwner(bool confirmed = true)
     {
         var user = User.CreateWithPassword(UserEmail, "Password1", "First", "Last");
         if (confirmed)
@@ -41,11 +41,15 @@ public class UpdateCurrentUserValidatorTests
             user.ConfirmEmail();
         }
 
-        user.Id = ownsCommand ? UserId : "someone-else";
+        user.Id = UserId;
 
         _session.Setup(s => s.GetUserEmail()).Returns(UserEmail);
+        _session.Setup(s => s.GetUserId()).Returns(UserId);
         _userRepository
             .Setup(r => r.GetByEmailAsync(UserEmail, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _userRepository
+            .Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
     }
 
@@ -86,10 +90,13 @@ public class UpdateCurrentUserValidatorTests
     }
 
     [Fact]
-    public async Task Not_Owner_Fails_NotAllowedToUpdateUser()
+    public async Task Unresolvable_Session_Subject_Fails_NotAllowedToUpdateUser()
     {
-        ArrangeOwner(ownsCommand: false);
+        ArrangeOwner();
         ArrangePhoneFree("+420123456789");
+        _userRepository
+            .Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
 
         var result = await CreateValidator().ValidateAsync(Valid());
 

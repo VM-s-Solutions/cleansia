@@ -718,3 +718,22 @@ walked past. And when the reviewer proposed a bad test retarget in round 4, the 
 non-vacuity guard rejected it rather than a human catching it. The pattern across all six rounds was
 the same: **every time a judgement was replaced with a measurement, the measurement found something
 the judgement had missed.**
+
+### AC4 — CLOSED by the owner, 2026-08-01
+
+The owner confirmed on DEV that partner/admin order-detail photos **render**. Those blobs travel the
+identical path this ticket's avatars take — stored with no `BlobHttpHeaders`, served as
+`application/octet-stream`, fetched through a 1-hour SAS. So real Azure does **not** send
+`X-Content-Type-Options: nosniff`, and content sniffing carries the render.
+
+That was the single largest threat to the AC4 verdict and the only thing no agent could test (no
+credentials, and none should have been used). QA's Azurite evidence — 200, `application/octet-stream`,
+`Cache-Control` absent, `x-ms-meta-CacheControl` inert, magic bytes intact, byte-identical round-trip
+— now stands corroborated by production behaviour rather than by an assumption about Azure's headers.
+
+**AC4 is closed. Nothing on this ticket is owed by QA.**
+
+Unchanged by this: T-0464 (the `MetadataName.ContentType` decoy — every order photo and dispute
+evidence file is still served as `application/octet-stream`) and T-0465 (no avatar caching at all).
+Both remain post-demo. The confirmation lowers T-0464 from "possibly demo-blocking" to post-demo,
+which was its filed sequencing.

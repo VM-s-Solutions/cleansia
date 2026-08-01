@@ -374,6 +374,77 @@ turned every log into a suppression sentinel and the suite would have stayed gre
 
 Restored after each; 9-file sha256 manifest byte-exact (`shasum -c` clean).
 
+#### Round 5 — the fourth instance, a mechanical guard, and what the guard then found
+
+**The fourth instance (response path).** `GET /api/Order/GetPhotos` returns `OrderPhotoDto` with
+`BlobUrl` 3rd and `Notes` last; redacting the SAS frees ~170 bytes and pulls the note in. Suppressed
+via two tokens, because `GET /api/AdminOrder/photos/{orderId}` returns the **same** response and its
+path contains no `/getphotos`. Both re-verified against an exhaustive extraction of all **449**
+`[Http*]` templates on the five hosts: `/getphotos` → 1 route, `/photos/` → 1 route, no collisions.
+
+**`OrderPhotoResponse_…` was retargeted, and the first attempt was wrong.** It had been asserting
+redaction against `/api/OrderPhoto/GetByOrder`, which no host serves. I first moved it to
+`DisputeDetails` as suggested — and its own non-vacuity guard rejected it: `Evidence` is 13th of 15
+fields, so a realistic body puts the signature at byte **643**, outside the window, where truncation
+rather than redaction would be doing the work. Shrinking the fixture to force it inside would be the
+exact hand-trimmed-payload defect this suite exists to prevent. Retargeted instead to
+**`POST /api/Dispute/UploadEvidence`** → `UploadDisputeEvidence.Response`, where `BlobUrl` is 3rd and
+the signature genuinely sits inside the window, on a real and deliberately-unsuppressed route.
+
+**The guard: `RedactionUnmaskedFreeTextGuardTests`.** Reads the token list out of the live
+`SensitiveFieldRegex` (so a new token widens it automatically), walks every wire DTO reachable from a
+controller action on the five hosts, flattens it in JSON order — honouring `[JsonIgnore]` and
+resolving collection element types off the `IEnumerable<>` interface — and fails, naming type, member
+and route, when a redaction token is followed by a free-text member on an unsuppressed route. Two
+curated lists carry the judgement: `StructuralMembers` (machine values) and `AcceptedPreExisting`
+(measured-pre-existing, T-0457's, explicitly NOT for anything newly unmasked).
+
+**It immediately found two things five rounds of human review had missed:**
+
+1. **A live credential in the logs.** `CreatePaymentIntent.Response` / `ConfirmRecurringOrder.Response`
+   carry a Stripe **`ephemeralKey`** (`ek_…`, a short-lived credential granting scoped access to a
+   Stripe customer) one field behind the already-redacted `clientSecret`, written verbatim at
+   Information. Added to the redaction regex on all five hosts. The hand sweeps missed it because it
+   does not *read* like free text — which is the whole argument for a mechanical guard.
+2. **`/auth/` never matched `/api/AdminAuth/…`** — no slash precedes "auth" there. The admin
+   refresh/logout responses return a `JwtTokenResponse` whose leading `Token` is a ~800-char JWT;
+   redacting it frees ~785 bytes and pulls the admin's `Email` into the window. **Caused by the AC9
+   ordering change.** Added `/adminauth/` alongside `/auth/`.
+
+Two detector bugs were found and fixed while building it, both of which had produced false findings:
+`[JsonIgnore]` members were being counted (`RefreshToken.Command.RequiredAudience` never reaches the
+wire), and `Dictionary<string, T>` was reporting its **key** type, so `UpdateEmployee.Availability`
+looked like a string.
+
+**Round-5 mutation proof**
+
+| # | Mutation | Result | Named test that goes RED |
+|---|---|---|---|
+| **O** | `/getphotos` removed on `Web.Admin` | **2 failed** | `RedactionUnmaskedFreeTextGuardTests.EveryDtoWhoseRedactedFieldUnmasksFreeText_HasItsRoutesSuppressed` (names `GetOrderPhotos.OrderPhotoDto.Notes` + the route) and `TheKnownUnmaskingRoutes_AreSuppressed("/api/Order/GetPhotos")` |
+| **P** | `ephemeralKey` removed from `Web.Partner`'s regex | **1 failed / 72 passed** | `RequestLogSignedUrlRedactionTests.PaymentIntentResponse_EphemeralKey_IsRedacted(Web.Partner)` |
+| **Q** | `/adminauth/` removed on `Web.Mobile.Customer` | **3 failed / 70 passed** | `TheKnownUnmaskingRoutes_AreSuppressed("/api/AdminAuth/RefreshToken")` + `…("/api/AdminAuth/Logout")` + the main guard |
+| **N′** | `RedactionScanLimit = 0`, fixtures now decoupled | **2 failed / 18 passed** | `RequestBody_JustUnderTheScanLimit_IsStillRedacted(Web.Admin)` — now failing on the ASSERTION, plus `TheFixturesStillBracketTheConfiguredCap` |
+
+10-file sha256 manifest byte-exact after every revert.
+
+#### Corrections to my round-4 report
+
+- **Mutation N's demonstration was weaker than I described, and the reviewer is right.** Because
+  `BodyOfLength` derived from `RedactionScanLimit`, setting the limit to 0 tripped the fixture's own
+  `Assert.True(padding > 0)` rather than the assertion — so the green-suite scenario I argued could
+  not actually be exhibited. Fixed: `UnderCapSize` (2 KB) and `OverCapSize` (128 KB) are now fixed
+  constants, and a new `TheFixturesStillBracketTheConfiguredCap` asserts they still straddle the cap
+  so a future change to the constant fails loudly instead of silently no-opping a boundary test.
+  Re-run as **N′** above; the demonstration now holds.
+- **The T-0457 "win" was overstated — it is PARTIAL, above 64 KB only.** `UpdateCurrentUser.Command`
+  puts `FirstName`, `LastName`, `PhoneNumber`, `BirthDate` in the first ~150 bytes, so they disappear
+  only when the WHOLE body exceeds the scan cap. A 1–5 MB avatar: closed. A **40 KB** avatar — normal
+  for a resized upload, and the common case once T-0459's resize lands — still logs name, phone and
+  birth date. Recorded as partially closed, not closed.
+- **T-0457 is WIDENED by one measured item:** `GetMyDocuments`' `Description` / `ReviewNotes` behind
+  `BlobUrl`, measured `OLD=True` (visible before this diff). It is on this ticket's
+  `AcceptedPreExisting` list with that reason rather than being silently absorbed here.
+
 #### Deliberately NOT chased
 
 `GetOrderPhotos`' response `notes`, `UpdateCurrentUser`, `UploadDisputeEvidence` and `DisputeDetails`

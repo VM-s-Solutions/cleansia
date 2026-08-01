@@ -1,11 +1,10 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Cleansia.Core.AppServices.Common;
-using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.AppServices.Features.Users;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
-using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Azure.Storage.Blobs;
@@ -70,22 +69,33 @@ public class RequestLogSignedUrlRedactionTests
     }
 
     /// <summary>
-    /// Defect 2 — the order-photo response, where the signed URL fits the window whole. This is the
-    /// pre-existing leak the change closes: before <c>blobUrl</c> joined the redaction list a COMPLETE
-    /// signed URL, signature included, was written at Information on every call. Ordering is irrelevant
-    /// here; regex membership is what this pins.
+    /// Defect 2 — a response where the signed URL fits the window whole. This is the pre-existing leak
+    /// the change closes: before <c>blobUrl</c> joined the redaction list a COMPLETE signed URL,
+    /// signature included, was written at Information on every call. Ordering is irrelevant here;
+    /// regex membership is what this pins.
+    ///
+    /// Driven through <c>POST /api/Dispute/UploadEvidence</c> — a REAL route that still carries a SAS
+    /// and is deliberately NOT in <c>IsSensitivePath</c> (its response has no free text at all, so the
+    /// redaction IS the whole control). The order-photo routes this used to exercise are now suppressed
+    /// wholesale, which would have left it asserting redaction against a path no host serves.
+    ///
+    /// <c>DisputeDetails</c> was tried first and rejected on evidence: its <c>Evidence</c> array is 13th
+    /// of 15 fields, so a realistic body puts the signature at byte 643 — outside the window, where
+    /// truncation and not redaction would be doing the work. Shrinking the fixture to force it inside
+    /// would be exactly the hand-trimmed-payload defect this suite exists to prevent.
     /// </summary>
     [Theory]
     [MemberData(nameof(HostMiddlewareTypes))]
-    public async Task OrderPhotoResponse_CompleteSignedUrl_IncludingSignature_NeverReachesTheLog(Type middlewareType)
+    public async Task UnsuppressedResponse_CompleteSignedUrl_IncludingSignature_NeverReachesTheLog(Type middlewareType)
     {
-        var (json, signature) = RealOrderPhotoResponse();
+        var (json, signature) = RealDisputeEvidenceResponse();
         var responseLimit = RequestLoggingHarness.LimitOf(middlewareType, "ResponseBodyLimit");
 
         // Non-vacuity: the signature genuinely sits inside the window, so only redaction can remove it.
         Assert.InRange(json.IndexOf(signature, StringComparison.Ordinal), 0, responseLimit - 1);
 
-        var logged = await RequestLoggingHarness.RunAsync(middlewareType, "/api/OrderPhoto/GetByOrder", responseJson: json);
+        var logged = await RequestLoggingHarness.RunAsync(
+            middlewareType, "/api/Dispute/UploadEvidence", responseJson: json, method: HttpMethods.Post);
 
         Assert.NotEmpty(logged);
         Assert.All(logged, message => Assert.DoesNotContain(signature, message));
@@ -119,6 +129,29 @@ public class RequestLogSignedUrlRedactionTests
         Assert.Contains(logged, message => message.Contains($"\"base64Content\":\"{Redacted}\""));
     }
 
+    /// <summary>
+    /// A Stripe **ephemeral key** (<c>ek_…</c>) is a short-lived credential granting a mobile client
+    /// scoped access to a Stripe customer. It rode in the payment-intent response one field behind the
+    /// already-redacted <c>clientSecret</c> and was written to Information-level logs verbatim.
+    ///
+    /// Found by <c>RedactionUnmaskedFreeTextGuardTests</c>, not by a human — the hand sweeps missed it
+    /// three times because it does not read like free text, which is the argument for the guard.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(HostMiddlewareTypes))]
+    public async Task PaymentIntentResponse_EphemeralKey_IsRedacted(Type middlewareType)
+    {
+        const string ephemeralKey = "ek_test_YWNjdF90aGlzX2lzX2FfY3JlZGVudGlhbA";
+        var json = $$"""{"clientSecret":"pi_3Abc_secret_xyz","ephemeralKey":"{{ephemeralKey}}","stripeCustomerId":"cus_Abc123"}""";
+
+        var logged = await RequestLoggingHarness.RunAsync(
+            middlewareType, "/api/Payment/CreatePaymentIntent", responseJson: json, method: HttpMethods.Post);
+
+        Assert.NotEmpty(logged);
+        Assert.All(logged, message => Assert.DoesNotContain(ephemeralKey, message));
+        Assert.Contains(logged, message => message.Contains($"\"ephemeralKey\":\"{Redacted}\""));
+    }
+
     // ── fixtures: real DTOs, real SAS, the hosts' own JSON configuration ─────────────────────────────
 
     private static Uri RealSasUri() =>
@@ -147,30 +180,15 @@ public class RequestLogSignedUrlRedactionTests
         return (JsonSerializer.Serialize(dto, RequestLoggingHarness.WireOptions), SignatureOf(sas));
     }
 
-    private static (string Json, string Signature) RealOrderPhotoResponse()
+    private static (string Json, string Signature) RealDisputeEvidenceResponse()
     {
         var sas = RealSasUri();
 
-        var dto = new GetOrderPhotos.Response(
-            Photos:
-            [
-                new GetOrderPhotos.OrderPhotoDto(
-                    Id: "photo-1",
-                    PhotoType: PhotoType.Before,
-                    BlobUrl: sas.ToString(),
-                    FileName: "before-1.jpg",
-                    OriginalFileName: "IMG_0042.jpg",
-                    FileSizeBytes: 148_221,
-                    ContentType: "image/jpeg",
-                    CapturedAt: new DateTime(2026, 7, 30, 9, 15, 0, DateTimeKind.Utc),
-                    CapturedByEmployeeId: null,
-                    CapturedByEmployeeName: "Petr",
-                    Width: 1920,
-                    Height: 1080,
-                    Notes: null)
-            ],
-            BeforePhotoCount: 1,
-            AfterPhotoCount: 0);
+        var dto = new UploadDisputeEvidence.Response(
+            EvidenceId: "evidence-1",
+            FileName: "receipt.jpg",
+            BlobUrl: sas.ToString(),
+            UploadedOn: new DateTimeOffset(2026, 7, 30, 9, 15, 0, TimeSpan.Zero));
 
         return (JsonSerializer.Serialize(dto, RequestLoggingHarness.WireOptions), SignatureOf(sas));
     }

@@ -204,6 +204,10 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     {
         var pathValue = path.Value?.ToLowerInvariant() ?? string.Empty;
         return pathValue.Contains("/auth/") ||
+               // "/auth/" does NOT match "/api/AdminAuth/..." — no slash precedes "auth" there — so the
+               // admin refresh/logout responses fell outside it. They return a JwtTokenResponse whose
+               // leading JWT is redacted, freeing ~785 bytes and pulling the admin's Email into view.
+               pathValue.Contains("/adminauth/") ||
                pathValue.Contains("/login") ||
                pathValue.Contains("password") ||
                pathValue.Contains("/order/lookup") ||
@@ -212,7 +216,12 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
                // free text, so the whole body is suppressed.
                pathValue.Contains("/savemydocuments") ||
                pathValue.Contains("/savephotos") ||
-               pathValue.Contains("/uploadphoto");
+               pathValue.Contains("/uploadphoto") ||
+               // Reading photos back leaks the same way: redacting the SAS frees ~170 bytes of window
+               // and pulls the trailing per-photo note in. Two route shapes — the four hosts'
+               // /api/Order/GetPhotos and the admin /api/AdminOrder/photos/{orderId}.
+               pathValue.Contains("/getphotos") ||
+               pathValue.Contains("/photos/");
     }
 
     private static bool ShouldSkipLogging(PathString path)
@@ -228,7 +237,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
                pathValue.Contains("/payment/webhook");
     }
 
-    [GeneratedRegex("\"(password|currentPassword|newPassword|confirmPassword|token|refreshToken|accessToken|clientSecret|apiKey|base64Content|fileData|fileBase64|blobUrl)\"\\s*:\\s*(\"(?:[^\"\\\\]|\\\\.)*\"|null)",
+    [GeneratedRegex("\"(password|currentPassword|newPassword|confirmPassword|token|refreshToken|accessToken|clientSecret|apiKey|base64Content|fileData|fileBase64|blobUrl|ephemeralKey)\"\\s*:\\s*(\"(?:[^\"\\\\]|\\\\.)*\"|null)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled)]
     private static partial Regex SensitiveFieldRegex();
 

@@ -450,12 +450,17 @@ Two things that are **not** open — one a security invariant, one a durability/
   it truncates** — truncate-first cannot match a value whose closing quote falls past the cut, so it
   logs the visible prefix raw. Both are pinned by `RequestLogSignedUrlRedactionTests`; a new
   signed-URL field under a different name must join that list in the same change.
-  **The corollary is the trap:** redacting first collapses a base64 payload to 17 characters, so
-  fields that the payload used to push out of the window are now inside it. Any endpoint carrying
-  operator **free text** beside an upload (`SaveMyDocuments.Description`, `SaveOrderPhotos.Notes`)
-  cannot be protected by a field-name denylist and must instead be added to **`IsSensitivePath`**, the
-  wholesale body suppression — pinned by `RequestLogSensitiveUploadPathTests`. When you add a
-  redaction, re-check what the freed window now exposes.
+  **The corollary is the trap, and it is not an upload-only concern** — that framing is exactly why
+  the first three fixes missed the fourth. Redacting collapses ANY long value (a base64 payload, a
+  SAS, a JWT) to a 15-character sentinel, so whatever sat behind it in the record moves INTO the
+  window: `SaveMyDocuments.Description`, `SaveOrderPhotos.Notes`, `UploadOrderPhoto.Notes`,
+  `GetOrderPhotos`' per-photo `Notes` on the RESPONSE, and `JwtTokenResponse.Email` behind the
+  admin refresh token. Free text cannot be reached by a field-name denylist, so those routes go in
+  **`IsSensitivePath`** (wholesale suppression); a *named secret* behind another one — the Stripe
+  `ephemeralKey` behind `clientSecret` — belongs in the regex instead.
+  **Do not rely on remembering this.** `RedactionUnmaskedFreeTextGuardTests` walks every wire DTO
+  reachable from a controller action, reads the token list out of the live regex, and fails naming
+  the type, member and route. Adding a redaction token automatically widens it.
 - **Mint a new blob name on every upload** *(cache correctness, not S1–S10)* — `UpdateCurrentUser`,
   `SaveOrderPhotos`, `UploadOrderPhoto` and `UploadDisputeEvidence` all do. That keeps the name
   content-addressed, which is what lets a client cache the image on the name; reuse makes a replaced

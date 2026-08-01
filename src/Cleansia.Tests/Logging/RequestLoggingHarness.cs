@@ -16,7 +16,8 @@ namespace Cleansia.Tests.Logging;
 /// </summary>
 internal static class RequestLoggingHarness
 {
-    public static TheoryData<Type> HostMiddlewareTypes() =>
+    /// <summary>The five hosts' middleware copies, as a plain list for non-theory callers.</summary>
+    public static readonly IReadOnlyList<Type> AllHostMiddleware =
     [
         typeof(Cleansia.Web.Customer.Middleware.RequestLoggingMiddleware),
         typeof(Cleansia.Web.Mobile.Customer.Middleware.RequestLoggingMiddleware),
@@ -24,6 +25,17 @@ internal static class RequestLoggingHarness
         typeof(Cleansia.Web.Admin.Middleware.RequestLoggingMiddleware),
         typeof(Cleansia.Web.Mobile.Partner.Middleware.RequestLoggingMiddleware),
     ];
+
+    public static TheoryData<Type> HostMiddlewareTypes()
+    {
+        var data = new TheoryData<Type>();
+        foreach (var middleware in AllHostMiddleware)
+        {
+            data.Add(middleware);
+        }
+
+        return data;
+    }
 
     /// <summary>The wire shape the hosts actually emit — MVC's web defaults plus the shared converters.</summary>
     public static readonly JsonSerializerOptions WireOptions = BuildWireOptions();

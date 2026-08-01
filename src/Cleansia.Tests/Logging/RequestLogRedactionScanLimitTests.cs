@@ -18,6 +18,14 @@ namespace Cleansia.Tests.Logging;
 public class RequestLogRedactionScanLimitTests
 {
     private const string Secret = "sk_live_this_must_never_reach_a_log";
+
+    // FIXED sizes, deliberately NOT derived from RedactionScanLimit. Deriving them made the mutation
+    // "set the limit to 0" trip the fixtures' own padding guard instead of the assertions, so the
+    // bound-silently-disabled scenario could be argued but never DEMONSTRATED. With fixed sizes,
+    // limit=0 leaves the over-cap test correctly green and turns the under-cap one red, which is
+    // exactly the failure a disabled bound produces.
+    private const int UnderCapSize = 2 * 1024;
+    private const int OverCapSize = 128 * 1024;
     private const string SizeSuppressed = "[suppressed: body too large to redact]";
     private const string Redacted = "***REDACTED***";
 
@@ -27,9 +35,7 @@ public class RequestLogRedactionScanLimitTests
     [MemberData(nameof(HostMiddlewareTypes))]
     public async Task RequestBody_JustUnderTheScanLimit_IsStillRedacted(Type middlewareType)
     {
-        var json = BodyOfLength(ScanLimit(middlewareType) - 1);
-
-        var logged = await RunRequest(middlewareType, json);
+        var logged = await RunRequest(middlewareType, BodyOfLength(UnderCapSize));
 
         Assert.All(logged, message => Assert.DoesNotContain(Secret, message));
         Assert.All(logged, message => Assert.DoesNotContain(SizeSuppressed, message));
@@ -40,9 +46,7 @@ public class RequestLogRedactionScanLimitTests
     [MemberData(nameof(HostMiddlewareTypes))]
     public async Task RequestBody_OverTheScanLimit_IsSuppressedWholesale(Type middlewareType)
     {
-        var json = BodyOfLength(ScanLimit(middlewareType) + 1);
-
-        var logged = await RunRequest(middlewareType, json);
+        var logged = await RunRequest(middlewareType, BodyOfLength(OverCapSize));
 
         Assert.All(logged, message => Assert.DoesNotContain(Secret, message));
         Assert.Contains(logged, message => message.Contains(SizeSuppressed));
@@ -52,17 +56,26 @@ public class RequestLogRedactionScanLimitTests
     [MemberData(nameof(HostMiddlewareTypes))]
     public async Task ResponseBody_OverTheScanLimit_IsSuppressedWholesale(Type middlewareType)
     {
-        var json = BodyOfLength(ScanLimit(middlewareType) + 1);
-
         var logged = await RequestLoggingHarness.RunAsync(
-            middlewareType, "/api/User/GetCurrent", responseJson: json);
+            middlewareType, "/api/User/GetCurrent", responseJson: BodyOfLength(OverCapSize));
 
         Assert.All(logged, message => Assert.DoesNotContain(Secret, message));
         Assert.Contains(logged, message => message.Contains(SizeSuppressed));
     }
 
-    private static int ScanLimit(Type middlewareType) =>
-        RequestLoggingHarness.LimitOf(middlewareType, "RedactionScanLimit");
+    /// <summary>
+    /// The fixtures only mean anything while they bracket the real cap. This says so out loud, so a
+    /// future change to RedactionScanLimit fails HERE with a clear reason rather than quietly turning
+    /// one of the boundary tests into a no-op.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(HostMiddlewareTypes))]
+    public void TheFixturesStillBracketTheConfiguredCap(Type middlewareType)
+    {
+        var cap = RequestLoggingHarness.LimitOf(middlewareType, "RedactionScanLimit");
+
+        Assert.InRange(cap, UnderCapSize + 1, OverCapSize - 1);
+    }
 
     private static Task<List<string>> RunRequest(Type middlewareType, string json) =>
         RequestLoggingHarness.RunAsync(

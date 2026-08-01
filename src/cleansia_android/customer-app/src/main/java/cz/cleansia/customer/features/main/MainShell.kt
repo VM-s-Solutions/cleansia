@@ -296,6 +296,8 @@ fun MainShell(
                     isPlus = isPlus,
                     onLogout = onLogout,
                     onRowClick = onProfileRow,
+                    onAvatarLoadFailed = profileVm::onAvatarLoadFailed,
+                    onAvatarLoadSucceeded = profileVm::onAvatarLoadSucceeded,
                 )
             }
         }

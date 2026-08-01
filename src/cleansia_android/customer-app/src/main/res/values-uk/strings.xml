@@ -398,6 +398,12 @@
     <string name="profile_edit_phone">Телефон</string>
     <string name="profile_edit_birthdate">Дата народження</string>
     <string name="profile_edit_save">Зберегти зміни</string>
+    <string name="profile_avatar_change">Змінити фото</string>
+    <string name="profile_avatar_remove">Видалити фото</string>
+    <string name="profile_avatar_content_description">Фото профілю</string>
+    <string name="profile_avatar_encode_failed">Не вдалося використати це зображення. Спробуйте інше фото.</string>
+    <string name="profile_avatar_picker_unavailable_title">Немає засобу вибору фото</string>
+    <string name="profile_avatar_picker_unavailable_message">На цьому пристрої немає програми для вибору фото.</string>
 
     <!-- Profile — addresses -->
     <string name="profile_addresses_title">Збережені адреси</string>

@@ -93,6 +93,8 @@ fun ProfileTab(
     isPlus: Boolean = false,
     onLogout: () -> Unit = {},
     onRowClick: (key: String) -> Unit = {},
+    onAvatarLoadFailed: () -> Unit = {},
+    onAvatarLoadSucceeded: () -> Unit = {},
 ) {
     // Fall back to placeholders while the first /GetCurrent call is in flight
     // (or in Compose previews). The blanks render as empty initials / empty email,
@@ -147,7 +149,10 @@ fun ProfileTab(
                 lastName = lastName,
                 email = email,
                 tier = tier,
+                photo = avatarPhotoFor(user, AvatarDraft.Unchanged),
                 onEditClick = { onRowClick("edit") },
+                onAvatarLoadFailed = onAvatarLoadFailed,
+                onAvatarLoadSucceeded = onAvatarLoadSucceeded,
             )
             // Stats card sits on the hero's curved lip, half in half out.
             Box(
@@ -255,6 +260,9 @@ private fun ProfileHero(
     email: String,
     tier: String,
     onEditClick: () -> Unit,
+    photo: AvatarPhoto? = null,
+    onAvatarLoadFailed: () -> Unit = {},
+    onAvatarLoadSucceeded: () -> Unit = {},
 ) {
     val initials = "${firstName.firstOrNull() ?: ""}${lastName.firstOrNull() ?: ""}"
 
@@ -277,12 +285,15 @@ private fun ProfileHero(
                     .border(3.dp, Color.White.copy(alpha = 0.35f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                // The circle is fixed white in both themes, so the initials pin the light-mode
-                // brand blue; the theme-adaptive primary drops to 2.1:1 against it in dark.
-                Text(
-                    initials.uppercase(),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = Sky600,
+                ProfileAvatarContent(
+                    initials = initials,
+                    // The circle is fixed white in both themes, so the initials pin the light-mode
+                    // brand blue; the theme-adaptive primary drops to 2.1:1 against it in dark.
+                    initialsStyle = MaterialTheme.typography.headlineSmall,
+                    initialsColor = Sky600,
+                    photo = photo,
+                    onLoadFailed = onAvatarLoadFailed,
+                    onLoadSucceeded = onAvatarLoadSucceeded,
                 )
             }
             Spacer(Modifier.width(14.dp))

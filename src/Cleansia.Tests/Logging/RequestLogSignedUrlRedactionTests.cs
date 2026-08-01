@@ -152,6 +152,32 @@ public class RequestLogSignedUrlRedactionTests
         Assert.Contains(logged, message => message.Contains($"\"ephemeralKey\":\"{Redacted}\""));
     }
 
+    /// <summary>
+    /// The sibling credential in the same DTO. <c>CreateMembershipSubscription.Response</c> carries a
+    /// <c>SetupIntentClientSecret</c> (<c>seti_…_secret_…</c>) — what the mobile PaymentSheet uses to
+    /// confirm a card setup against a customer. The alternation is quote-anchored, so the
+    /// <c>clientSecret</c> token never matched <c>"setupIntentClientSecret"</c> and the value was
+    /// logged raw beside an already-redacted <c>ephemeralKey</c>.
+    ///
+    /// This is the class the guard CANNOT see: not a field unmasked by a redaction, but a secret whose
+    /// name was simply never in the token list. Nothing detects that today — see the class note on
+    /// <c>RedactionUnmaskedFreeTextGuardTests</c>.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(HostMiddlewareTypes))]
+    public async Task MembershipSubscriptionResponse_SetupIntentClientSecret_IsRedacted(Type middlewareType)
+    {
+        const string setupIntentSecret = "seti_1PxyzLiveValue_secret_LIVEVALUE123456789";
+        var json = $$"""{"membershipId":"m-1","setupIntentClientSecret":"{{setupIntentSecret}}","stripeCustomerId":"cus_Abc123","ephemeralKey":"ek_test_abc"}""";
+
+        var logged = await RequestLoggingHarness.RunAsync(
+            middlewareType, "/api/Membership/CreateSubscription", responseJson: json, method: HttpMethods.Post);
+
+        Assert.NotEmpty(logged);
+        Assert.All(logged, message => Assert.DoesNotContain(setupIntentSecret, message));
+        Assert.Contains(logged, message => message.Contains($"\"setupIntentClientSecret\":\"{Redacted}\""));
+    }
+
     // ── fixtures: real DTOs, real SAS, the hosts' own JSON configuration ─────────────────────────────
 
     private static Uri RealSasUri() =>

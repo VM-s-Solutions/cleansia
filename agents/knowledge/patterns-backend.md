@@ -461,6 +461,18 @@ Two things that are **not** open — one a security invariant, one a durability/
   **Do not rely on remembering this.** `RedactionUnmaskedFreeTextGuardTests` walks every wire DTO
   reachable from a controller action, reads the token list out of the live regex, and fails naming
   the type, member and route. Adding a redaction token automatically widens it.
+
+  **Where this stands, in three parts — do not read the first two as covering the third:**
+  1. *Free text behind a token* — **closed by enumeration** (four instances, all suppressed).
+  2. *A field unmasked when the token in front of it collapses* — **closed by a test**, the guard above.
+  3. *A secret whose field name was never in the token list at all* — **NOT closed. Nothing detects
+     it.** `SetupIntentClientSecret` is the proof: the alternation is quote-anchored, so the
+     `clientSecret` token never matched it and a live Stripe setup-intent secret logged raw.
+     `ephemeralKey` was the same class and was found only by luck, because it happened to sit behind
+     an already-redacted field. Closing it needs a name/shape heuristic (`*Secret*`, `*Token*`,
+     `*Key*`, `*Password*`, values shaped `sk_`/`ek_`/`seti_`/`pi_`) over the same wire walk — a
+     follow-up ticket, not done here. **Adding a credential-shaped field to a DTO today is caught by
+     nothing; add the token by hand.**
 - **Mint a new blob name on every upload** *(cache correctness, not S1–S10)* — `UpdateCurrentUser`,
   `SaveOrderPhotos`, `UploadOrderPhoto` and `UploadDisputeEvidence` all do. That keeps the name
   content-addressed, which is what lets a client cache the image on the name; reuse makes a replaced

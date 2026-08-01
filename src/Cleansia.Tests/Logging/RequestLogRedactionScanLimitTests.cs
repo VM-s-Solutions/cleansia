@@ -68,6 +68,12 @@ public class RequestLogRedactionScanLimitTests
     /// future change to RedactionScanLimit fails HERE with a clear reason rather than quietly turning
     /// one of the boundary tests into a no-op.
     /// </summary>
+
+    /// <summary>
+    /// The fixtures only mean anything while they bracket the real cap. This says so out loud, so a
+    /// future change to RedactionScanLimit fails HERE with a clear reason rather than quietly turning
+    /// one of the boundary tests into a no-op.
+    /// </summary>
     [Theory]
     [MemberData(nameof(HostMiddlewareTypes))]
     public void TheFixturesStillBracketTheConfiguredCap(Type middlewareType)

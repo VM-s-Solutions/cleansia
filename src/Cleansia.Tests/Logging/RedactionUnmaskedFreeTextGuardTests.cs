@@ -23,6 +23,27 @@ namespace Cleansia.Tests.Logging;
 /// Failure message names the type, the member and the route, so the fix is obvious: add the route to
 /// <c>IsSensitivePath</c>, or add the member to <see cref="StructuralMembers"/> if it is not free text.
 ///
+/// <b>WHAT THIS GUARD DOES NOT COVER — read before trusting it.</b>
+/// It detects <i>unmasking</i>: a field pulled into the window because the token in front of it
+/// collapsed. It does NOT detect a secret whose field name is simply <i>absent from the token list</i>
+/// — nothing does. <c>SetupIntentClientSecret</c> is the proof: the alternation is quote-anchored, so
+/// the <c>clientSecret</c> token never matched it and the value logged raw. <c>ephemeralKey</c> was in
+/// the same category and was found only by luck, because it happened to sit behind an already-redacted
+/// field. A sibling guard (a name/shape heuristic over this same wire walk — <c>*Secret*</c>,
+/// <c>*Token*</c>, <c>*Key*</c>, <c>*Password*</c>, and values shaped <c>sk_</c>/<c>ek_</c>/
+/// <c>seti_</c>/<c>pi_</c>) is the follow-up that would close it.
+///
+/// Two bounded limits on its reach, both verified rather than assumed:
+/// <list type="bullet">
+/// <item>Response types are sourced from <c>[ProducesResponseType]</c>. <b>14 of 449 actions (3.1%)
+/// declare none</b> and are therefore invisible to the walk — all GDPR/feature-flag deletes, none
+/// returning a token-carrying DTO today.</item>
+/// <item><c>DeclaredOnly</c> means an action moved onto a shared controller base class would be
+/// missed. Refuted as live — the four base controllers declare zero actions — but latent.</item>
+/// </list>
+/// Member order is reflection order, which equals wire order here because <c>[JsonPropertyOrder]</c>
+/// appears nowhere in the repository; if that ever changes, this flattening must change with it.
+///
 /// Sibling guards in this idiom: <c>RateLimitCoverageGuardTests</c>,
 /// <c>AnonymousAllowListExhaustivenessTests</c>, <c>FrozenPermissionMapTests</c>.
 /// </summary>
@@ -78,13 +99,21 @@ public class RedactionUnmaskedFreeTextGuardTests
     /// </summary>
     private static readonly HashSet<string> AcceptedPreExisting = new(StringComparer.Ordinal)
     {
-        // Behind `password`, whose value is SHORT — redacting it lengthens the body rather than
-        // freeing window, so these were always visible. Pre-existing S6, T-0457.
+        // CreateAdminUser.Command, measured: body 190 B before redaction and 192 B after — redacting
+        // the SHORT password value LENGTHENS the body, so no window is freed and nothing moved. All
+        // three sit far inside the 1000 B request window either way (68 / 94 / 122). Pre-existing
+        // S6 exposure of admin PII, owned by T-0457.
         "CreateAdminUser.Command.FirstName",
+        "CreateAdminUser.Command.LastName",
+        "CreateAdminUser.Command.PhoneNumber",
 
-        // Measured OLD=True by the security review: visible before the ordering change. T-0457.
+        // GetMyDocuments (one document), measured: body 484 B, description at 427 and reviewNotes at
+        // 462 — both already inside the 500 B response window BEFORE the ordering change. OLD=True for
+        // each, measured separately rather than inherited from its neighbour. T-0457.
         "GetMyDocuments.MyDocumentDto.Description",
+        "GetMyDocuments.MyDocumentDto.ReviewNotes",
         "GetMyDocuments.Response.Description",
+        "GetMyDocuments.Response.ReviewNotes",
     };
 
     [Fact]
@@ -96,20 +125,21 @@ public class RedactionUnmaskedFreeTextGuardTests
         {
             foreach (var dto in dtoTypes)
             {
-                var unmasked = UnmaskedFreeTextMember(dto);
-                if (unmasked is null)
+                if (IsSensitivePathOnEveryHost(route))
                 {
                     continue;
                 }
 
-                var key = $"{dto.DeclaringType?.Name}.{dto.Name}.{unmasked}";
-                if (AcceptedPreExisting.Contains(key))
+                foreach (var unmasked in UnmaskedFreeTextMembers(dto))
                 {
-                    continue;
-                }
+                    // Accepting is PER MEMBER. Accepting the first offender used to absorb every later
+                    // one in the same DTO silently — so a genuinely new field added behind an accepted
+                    // one kept the guard green, which is the exact failure it exists to prevent.
+                    if (AcceptedPreExisting.Contains($"{dto.DeclaringType?.Name}.{dto.Name}.{unmasked}"))
+                    {
+                        continue;
+                    }
 
-                if (!IsSensitivePathOnEveryHost(route))
-                {
                     failures.Add(
                         $"{dto.DeclaringType?.Name}.{dto.Name}: a redaction token is followed by free-text " +
                         $"member '{unmasked}', and route '{route}' is NOT in IsSensitivePath. " +
@@ -154,10 +184,12 @@ public class RedactionUnmaskedFreeTextGuardTests
     // ── detection ───────────────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Returns the first free-text member that sits AFTER a redaction token in JSON order, or null.
+    /// Returns EVERY free-text member sitting after a redaction token in JSON order — not just the
+    /// first. Returning only the first meant accepting one member silently accepted all the ones
+    /// behind it, so the list stopped being the per-member measured claim its doc-comment promises.
     /// Nested DTOs are flattened in place, which is how the serializer emits them.
     /// </summary>
-    private static string? UnmaskedFreeTextMember(Type dto)
+    private static IEnumerable<string> UnmaskedFreeTextMembers(Type dto)
     {
         var seenToken = false;
 
@@ -171,11 +203,9 @@ public class RedactionUnmaskedFreeTextGuardTests
 
             if (seenToken && type == typeof(string) && !StructuralMembers.Contains(name))
             {
-                return name;
+                yield return name;
             }
         }
-
-        return null;
     }
 
     /// <summary>

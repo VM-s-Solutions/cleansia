@@ -427,6 +427,56 @@ looked like a string.
 
 10-file sha256 manifest byte-exact after every revert.
 
+#### Round 6 — the sibling credential, per-member accounting, and an honest third clause
+
+**A second live Stripe credential.** `CreateMembershipSubscription.Response:46-50` carries
+`SetupIntentClientSecret` (`seti_…_secret_…`, what the mobile PaymentSheet uses to confirm a card
+setup against a customer). The alternation is quote-anchored, so the `clientSecret` token never
+matched `"setupIntentClientSecret"` and the value logged raw — beside an `ephemeralKey` that this
+ticket had just fixed. Token added on all five hosts with a test beside the ephemeral-key one.
+Shipping the ephemeral-key fix while its neighbour in the same DTO stayed raw was not defensible.
+
+**Two corrections to my round-5 narrative, both accepted:** `EphemeralKey` appears in **three** DTOs
+(`CreatePaymentIntent`, `ConfirmRecurringOrder`, `CreateMembershipSubscription:50`), not two — the
+regex fix covered all three by construction, so only the writeup was short — and it sits **3 fields**
+behind `ClientSecret` (`ClientSecret → PaymentIntentId → StripeCustomerId → EphemeralKey`), not one.
+
+**`AcceptedPreExisting` was hiding later offenders.** `UnmaskedFreeTextMember` returned only the
+FIRST offender, so accepting one member silently accepted every free-text member behind it in the
+same DTO — three fields absorbed without ever being measured, contradicting the list's own
+doc-comment. Now returns **all** offenders and each must be listed individually. That forced four
+more entries, and I measured each rather than inheriting its neighbour's claim:
+
+| Entry | Measurement | Verdict |
+|---|---|---|
+| `CreateAdminUser.Command.{FirstName,LastName,PhoneNumber}` | body **190 B → 192 B** after redaction (the short password value LENGTHENS it); fields at **68 / 94 / 122**, far inside the 1000 B request window either way | pre-existing, nothing moved |
+| `GetMyDocuments.{MyDocumentDto,Response}.{Description,ReviewNotes}` | 1-document body **484 B**; `description` at **427**, `reviewNotes` at **462** — both inside the 500 B response window BEFORE the change | pre-existing, `OLD=True` for **each** |
+
+**The framing needed a third clause, and its absence is what left `SetupIntentClientSecret` unfixed.**
+Recorded in the catalog and in the guard's own doc-comment:
+1. *Free text behind a token* — closed by enumeration.
+2. *A field unmasked when the token in front collapses* — closed by a test.
+3. *A secret whose field name was never in the token list* — **NOT closed; nothing detects it.**
+   `ephemeralKey` was found by luck, because it happened to sit behind an already-redacted field.
+   The sibling name/shape guard (`*Secret*`/`*Token*`/`*Key*`/`*Password*`, values shaped
+   `sk_`/`ek_`/`seti_`/`pi_`) is a follow-up ticket, not this one.
+
+**Two bounded reach limits documented on the guard** (verified, not assumed): response types come
+from `[ProducesResponseType]` and **14 of 449 actions (3.1%) declare none** — all GDPR/feature-flag
+deletes, none token-carrying today; and `DeclaredOnly` would miss an action moved onto a shared base
+class — refuted as live (the four base controllers declare zero actions), latent. Also recorded:
+member order is reflection order, which equals wire order **by construction** because
+`[JsonPropertyOrder]` appears nowhere in the repository.
+
+**Round-6 mutation proof**
+
+| # | Mutation | Result | Named test that goes RED |
+|---|---|---|---|
+| **R** | `setupIntentClientSecret` removed from `Web.Customer`'s regex | **1 failed / 77 passed** | `RequestLogSignedUrlRedactionTests.MembershipSubscriptionResponse_SetupIntentClientSecret_IsRedacted(Web.Customer)` |
+| **S** | one per-member entry (`GetMyDocuments.MyDocumentDto.ReviewNotes`) dropped from `AcceptedPreExisting` | **1 failed** | `EveryDtoWhoseRedactedFieldUnmasksFreeText_HasItsRoutesSuppressed` — names that exact member, proving the per-member accounting is load-bearing rather than decorative |
+
+10-file sha256 manifest byte-exact after both reverts.
+
 #### Corrections to my round-4 report
 
 - **Mutation N's demonstration was weaker than I described, and the reviewer is right.** Because

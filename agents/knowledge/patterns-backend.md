@@ -586,6 +586,60 @@ When a rule must give one actor **temporary exclusive access** to a work item on
   non-monotone** rule breaks that assumption; a fix for one such rule is a point fix, not a class fix,
   and the ADR must say so rather than claim convergence.
 
+## A predicate that spans STACKS needs a parity test; a state set needs a writer census (ADR-0037)
+
+> **PROPOSED — not yet law.** ADR-0037 is `proposed` and unchallenged as of 2026-08-02. Do not cite
+> this section as binding until its `## Verdict` declares consensus.
+> **Enforcer / tier (ADR-0032):** (a) *structural* — the duplication is deleted, so there is nothing
+> to drift; (b) **T1-CI** — `available-status-parity.spec.ts` in the frontend job, parsing the
+> canonical C# and asserting the three clients' literals, baseline zero; (c) **T2-advisory** — a
+> `check-consistency.mjs` line rule for availability status literals outside the owning class.
+> Layer (b) is the load-bearing one: it is the only enforcer that spans the four languages.
+
+Extends the ADR-0036 section above (write the rule once · classify surfaces by kind · call sites not
+grep hits · two evaluation forms + an equivalence test). What that section does not cover, and what
+cost Cleansia **eight** disagreeing definitions of "which orders may a cleaner take":
+
+- **A "mirrors X" comment is an assertion the compiler never checks, and it is worse than no comment
+  — a reviewer reads it and stops looking.** Cleansia shipped *three* of them, all false, two of which
+  claimed to mirror sets that disagreed on their **first term**. When you find one, the fix is to
+  **delete the duplication so the comment has nothing to assert** — not to correct the sentence.
+  Amending it to "mostly mirrors" is a fail.
+- **When the same predicate exists in C#, TypeScript, Kotlin and Swift, no compiler and no
+  single-stack linter spans it — so the enforcer must parse across stacks.** This is cheap and there
+  is a working precedent: `error-contract-parity.spec.ts:43-52` reads **C# source** from a Jest spec,
+  locating the solution root by walking up to `Cleansia.Api.sln` (`:9-20`). Copy that shape. Note the
+  trap in the precedent itself: it is scoped to **one** app (`:27-30`), so it silently covers none of
+  the others — a parity test must state which surfaces it covers, and the ADR must list the ones it
+  does not.
+- **Push the rule to the SERVER floor and let the clients be a display refinement.** Three clients
+  sending three different status lists is a symptom; the disease is that the server had no floor of
+  its own (`GetPagedOrders.cs:87` forwards whatever the client asks for). Once the server-side scope
+  predicate carries the rule, a wrong client list is a cosmetic bug instead of an authorization hole
+  (S1 server-truth) — and clients that already agree need no change.
+- **Before writing a state set, take a writer census of every member.** Grep each enum member for a
+  production writer. Cleansia carried `OrderStatus.Pending` in three availability sets for years with
+  **no writer anywhere**, so `{Pending, Confirmed}` silently meant `{Confirmed}` — and the surface
+  that used it reported a structurally impossible **zero**. A member with no writer makes some set
+  that contains it a lie.
+- **A member with no writer is usually a fact already stored on another axis — do not "add the
+  missing writer".** `OrderStatus.Pending` names "card payment initiated", which the system already
+  tracks as `PaymentType.Card + PaymentStatus.Pending` — the pair the live cleanup sweep actually
+  keys on. Adding the writer would create **two sources of truth for one fact** and force every
+  reader to know which wins. Deprecate the duplicate, remove it from the sets **and from any generic
+  admin/override writer that could resurrect it**, and keep readers tolerating legacy rows.
+  Correct the documentation: if `CLAUDE.md` and the code disagree about a lifecycle, **the code is
+  the evidence and the doc is the bug** — but only after a writer census proves which is which.
+- **Ask which AXES the predicate really spans before naming the set.** "Which orders are offerable"
+  looks like a question about `OrderStatus` and is not: it is `OrderStatus` **× the payment model**,
+  because an unsettled card order gets cancelled out from under the cleaner while a cash order is only
+  ever confirmed *by* the take. Every one of the eight surfaces consulted one axis. **A set of literals
+  cannot express a two-axis rule** — which is exactly why eight of them disagreed.
+- **Dead code that asserts a safety net is the same defect at class scope.** `StaleOrderCleanupService`
+  has an unsatisfiable `WHERE` (it requires the writerless status above) **and no caller** — yet it was
+  cited in good faith as the reason a risk was covered. When you retire a mechanism, delete the class;
+  a resident class is read as a live guarantee.
+
 ## Tenancy is APP; region is INFRA — they are orthogonal (ADR-0017)
 
 Two isolation axes meet in this codebase, and they live in **different layers** — keep them there.

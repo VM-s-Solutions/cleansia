@@ -284,5 +284,15 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
 - **B4 fetch-and-guard:** the "redundant null-check after validator" flagged by analysis is **not**
   redundant when the handler must load the entity to act on it — that's the canonical guard. We only
   forbid duplicating an existence check that the handler's own fetch already covers.
+- **Order offerability (ADR-0037, `proposed` — not binding until its `## Verdict`):** eight surfaces
+  answered "which orders may a cleaner be offered / take" with six different status sets. We
+  canonicalize on **none of them** — the majority set (`{New, Pending, Confirmed}`, held by the push
+  and the web pane) contains a status with **no production writer**, and the dashboard's
+  `{Pending, Confirmed}` reduces to `{Confirmed}`, which is structurally **zero** for cash orders.
+  The rule is not a status list at all: it is **status × payment model** — `Confirmed`, plus `New`
+  **only for `PaymentType.Cash`** — owned by `Cleansia.Core.Domain.Orders.OrderAvailability`. Two of
+  the three clients were already right and were left unchanged. Deviating form: **any availability
+  status literal outside `OrderAvailability`**, and **any set containing `OrderStatus.Pending`**
+  (deprecated, no writer). Migration of the remaining call sites is T-0530.
 
 These judgment calls are **Architect-owned**; changing one is an ADR, not an ad-hoc reversal.

@@ -28,7 +28,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import cz.cleansia.partner.ui.theme.CleansiaPartnerTheme
 
 /**
  * Floating island bottom bar — pill-shaped surface inset from the screen
@@ -76,6 +80,7 @@ fun FloatingIslandBottomBar(
                     labelRes = tab.labelRes,
                     selected = selected,
                     onSelect = onSelect,
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -89,6 +94,7 @@ private fun NavSlot(
     labelRes: Int,
     selected: MainTab,
     onSelect: (MainTab) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val isSelected = tab == selected
     val color = if (isSelected) MaterialTheme.colorScheme.primary
@@ -101,12 +107,12 @@ private fun NavSlot(
     )
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
             ) { onSelect(tab) }
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .padding(horizontal = 4.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
@@ -122,6 +128,9 @@ private fun NavSlot(
                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
             ),
             color = color,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(3.dp))
         Box(
@@ -130,5 +139,20 @@ private fun NavSlot(
                 .clip(RoundedCornerShape(999.dp))
                 .background(MaterialTheme.colorScheme.primary),
         )
+    }
+}
+
+/**
+ * 320dp is the narrowest width the bar has to survive, and uk/ru carry the
+ * longest labels we ship — `dashboard` is "Панель керування" — so this pair is
+ * where a label first stops fitting. Every label must read as one ellipsized
+ * line inside the pill.
+ */
+@Preview(name = "Island bar — uk @ 320dp", widthDp = 320, heightDp = 120, locale = "uk")
+@Preview(name = "Island bar — ru @ 320dp", widthDp = 320, heightDp = 120, locale = "ru")
+@Composable
+private fun FloatingIslandBottomBarNarrowPreview() {
+    CleansiaPartnerTheme {
+        FloatingIslandBottomBar(selected = MainTab.Dashboard, onSelect = {})
     }
 }

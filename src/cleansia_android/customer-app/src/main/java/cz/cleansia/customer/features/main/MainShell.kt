@@ -51,6 +51,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
@@ -394,12 +396,12 @@ private fun CustomBottomBar(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            NavSlot(MainTab.Home, Icons.Outlined.Home, R.string.nav_home, selected, onSelect)
-            NavSlot(MainTab.Orders, Icons.Outlined.Receipt, R.string.nav_orders, selected, onSelect)
+            NavSlot(MainTab.Home, Icons.Outlined.Home, R.string.nav_home, selected, onSelect, Modifier.weight(1f))
+            NavSlot(MainTab.Orders, Icons.Outlined.Receipt, R.string.nav_orders, selected, onSelect, Modifier.weight(1f))
             // Center spacer for FAB
             Spacer(Modifier.size(72.dp))
-            NavSlot(MainTab.Rewards, Icons.Outlined.CardGiftcard, R.string.nav_rewards, selected, onSelect)
-            NavSlot(MainTab.Profile, Icons.Outlined.Person, R.string.nav_profile, selected, onSelect)
+            NavSlot(MainTab.Rewards, Icons.Outlined.CardGiftcard, R.string.nav_rewards, selected, onSelect, Modifier.weight(1f))
+            NavSlot(MainTab.Profile, Icons.Outlined.Person, R.string.nav_profile, selected, onSelect, Modifier.weight(1f))
         }
 
         // Elevated Book FAB — half-overlapping the top of the pill
@@ -420,6 +422,7 @@ private fun NavSlot(
     labelRes: Int,
     currentSelected: MainTab,
     onSelect: (MainTab) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val isSelected = tab == currentSelected
     val color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
@@ -430,12 +433,12 @@ private fun NavSlot(
         label = "nav-dot",
     )
     Column(
-        modifier = Modifier
+        modifier = modifier
             .clickable(
                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                 indication = null,
             ) { onSelect(tab) }
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .padding(horizontal = 4.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
@@ -444,6 +447,9 @@ private fun NavSlot(
             stringResource(labelRes),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal),
             color = color,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(3.dp))
         // Animated active indicator — pill that grows in when selected
@@ -484,4 +490,18 @@ private fun BookFab(onClick: () -> Unit) {
 @Composable
 private fun MainShellPreview() {
     CleansiaTheme { MainShell() }
+}
+
+/**
+ * 320dp is the narrowest width the bar has to survive, and uk/ru carry the
+ * longest labels we ship, so this pair is where a label first stops fitting.
+ * Every label must read as one ellipsized line inside the pill.
+ */
+@Preview(name = "Bottom bar — uk @ 320dp", widthDp = 320, heightDp = 120, locale = "uk")
+@Preview(name = "Bottom bar — ru @ 320dp", widthDp = 320, heightDp = 120, locale = "ru")
+@Composable
+private fun CustomBottomBarNarrowPreview() {
+    CleansiaTheme {
+        CustomBottomBar(selected = MainTab.Profile, onSelect = {}, onBookClick = {})
+    }
 }

@@ -10,6 +10,60 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## 🚀 SPRINT-15 — the owner's 15-remark batch + 4 investigations: **35 new tickets, `T-0476`…`T-0510`**
+>
+> **Baseline: `master` at `0e4ede1b`.** Filed 2026-08-02. Full plan, PR batches, owner-decision list
+> and urgency split: **`agents/backlog/status/sprint-15.md`** — read that, not this row.
+>
+> ### 🟥 Three of the owner's remarks name the wrong file. Do not dispatch from the remark text.
+>
+> | Remark | Reality (PM-verified at `0e4ede1b`) |
+> |---|---|
+> | *"iOS order detail has no progress bar / mascot"* | **True for PARTNER, false for CUSTOMER.** Customer iOS already has all three — `LiveProgressHero.swift:73`, `:88-94`, `:121` → **T-0482** is partner-scoped |
+> | *"hide the order panel to reveal the map, both apps"* | **There is no map on customer order detail on either platform.** It is the PARTNER screen. And it is asymmetric: iOS has a `.mapFocus` anchor at 0.30 already; Android's sheet cannot go below 0.75 → **T-0489** |
+> | *"no back button on invoice detail"* | **The button exists and is wired** (`InvoiceDetailScreen.kt:117-122`, `PartnerNavHost.kt:283`). It has **no status-bar inset** under `enableEdgeToEdge()` → **T-0490** |
+> | *"no translations for the recurring setup"* | **All keys exist in all 5 locales on both platforms.** Android's catalog *names* bypass the `translations` map (`CreateRecurringScreen.kt:977/980/998`); **iOS does it correctly and is the reference** → **T-0477**; iOS half **T-0478** is *reproduce-first* |
+>
+> ### The 35 tickets
+>
+> | Group | Ids |
+> |---|---|
+> | **Owner remarks** | T-0476 · T-0477 · T-0478 · T-0479 · T-0480 · **T-0481** 🔍 · T-0482 · T-0483 🔒 · **T-0484** 🎨 · **T-0485** 📋 · T-0486 · T-0487 · **T-0488** 🎨 · T-0489 · T-0490 |
+> | **Cleansia Plus** | **T-0491** 📋 · T-0492 · T-0493 · **T-0494** 🔒 · T-0495 · T-0496 · T-0497 🚫 · T-0498 |
+> | **Azure / observability / cold start** | T-0499 · **T-0500** 🔴 · T-0501 · T-0502 · T-0503 |
+> | **Partner onboarding** | **T-0504** 📋 · T-0505 · T-0506 · **T-0507** 🔴 · **T-0508** 🔴🚫 · T-0509 · T-0510 |
+>
+> 📋 story/decision panel · 🎨 design-first, **no implementation ticket behind it** · 🔍 discovery ·
+> 🔒 `security_touching` · 🔴 legal/consumer-protection · 🚫 `blocked` on an owner answer
+>
+> ### Dispatchable TODAY with no dependency and no panel
+> **T-0479 · T-0490 · T-0494 · T-0496** — plus the eight panels (T-0480, T-0483, T-0484, T-0485,
+> T-0488, T-0489, T-0491, T-0504), which are dispatchable with the panel as **step 1**.
+>
+> ### 🚨 PR-A goes first and it is not close
+> **`T-0475` → `T-0474`** (sprint-14). **Seven** sprint-15 iOS tickets open with *"run
+> `generate-api-clients.sh` + `xcodegen generate`"* — and **today that instruction wipes the owner's
+> Stripe key.** The regen trap has broken the build **three times** and cost one reviewer a false
+> conclusion. Order is not interchangeable: T-0475 → owner supplies values → T-0474's xcodegen leg.
+>
+> ### 🔴 Four `blocking: yes` owner questions are now open
+> **`Q-PROFILE-01`** (carried) · **`Q-PLUS-01`** (Stripe trial — the two candidate defects have
+> **opposite fixes**) · **`Q-PAYOUT-01`** + **`Q-PAYOUT-02`** (**legal — no agent may answer these**).
+> Plus `Q-OBS-01` (non-blocking, but it changes what "green on DEV" means).
+>
+> ### 🔴 The one sentence to say out loud
+> **DEV — the only live environment, the one the owner's iPhone runs against — has no error tracking
+> from any source.** No App Insights exporter in any of the five APIs (PM-verified: zero references);
+> Sentry's DSN is empty by a documented dev decision (`AZURE-DEV-RUNBOOK.md:239`); and **prod has
+> never been deployed**, so the "prod" that was going to have Sentry does not exist. → **T-0500**.
+>
+> ### New shared-file lanes added this sprint
+> `ProfileTab.kt` now has **five** claimants (T-0450 → T-0448 → **T-0476** → T-0453 → T-0472) ·
+> `CreateRecurringScreen.kt` (**T-0477** → **T-0486**) · partner `OrderDetailScreen.kt` (**T-0489** →
+> **T-0483**) · partner iOS `OrderDetailView.swift` + `SnapSheet.swift` (**T-0489** → **T-0482** →
+> **T-0483**) · `main.bicep` (**T-0500** → **T-0502**, own hunks only) · the onboarding command(s)
+> (T-0505/0506 → T-0507 → T-0508/0509 → **T-0510**).
+
 > ## ⚠️ INDEX STALENESS NOTICE (2026-07-30)
 >
 > **Everything below the SPRINT-14 block is stale for anything merged after PR #148 (2026-07-25).**

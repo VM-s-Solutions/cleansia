@@ -6125,6 +6125,124 @@
           }
         }
       }
+    },
+    "/api/User/GetCurrent": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "operationId": "User_GetCurrentUser",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/GetCurrentUser_Query"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyProfileDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyProfileDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyProfileDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/User/UpdateCurrentUser": {
+      "put": {
+        "tags": [
+          "User"
+        ],
+        "operationId": "User_UpdateCurrentUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCurrentUser_Command"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCurrentUser_Command"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCurrentUser_Command"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateCurrentUser_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -7432,6 +7550,10 @@
         "type": "object",
         "additionalProperties": false
       },
+      "GetCurrentUser_Query": {
+        "type": "object",
+        "additionalProperties": false
+      },
       "GetMyDocuments_MyDocumentDto": {
         "type": "object",
         "properties": {
@@ -7792,6 +7914,69 @@
             "format": "double"
           },
           "monthName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MyProfileDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "firstName": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastName": {
+            "type": "string",
+            "nullable": true
+          },
+          "phoneNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "profile": {
+            "$ref": "#/components/schemas/Code"
+          },
+          "authenticationType": {
+            "$ref": "#/components/schemas/Code"
+          },
+          "isEmailConfirmed": {
+            "type": "boolean"
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "profilePhoto": {
+            "$ref": "#/components/schemas/BlobFileDto"
+          },
+          "preferredLanguageCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "preferredLanguageName": {
+            "type": "string",
+            "nullable": true
+          },
+          "memberSince": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "totalBookings": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalSavings": {
+            "type": "number",
+            "format": "double"
+          },
+          "savingsCurrencyCode": {
             "type": "string",
             "nullable": true
           }
@@ -9590,6 +9775,53 @@
         },
         "additionalProperties": false
       },
+      "UpdateCurrentUser_Command": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "firstName": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastName": {
+            "type": "string",
+            "nullable": true
+          },
+          "phoneNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "photo": {
+            "$ref": "#/components/schemas/BlobFileDto"
+          },
+          "languageCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "removePhoto": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateCurrentUser_Response": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "UpdateEmergencyContact_Command": {
         "type": "object",
         "properties": {
@@ -9662,10 +9894,6 @@
             "nullable": true
           },
           "phone": {
-            "type": "string",
-            "nullable": true
-          },
-          "email": {
             "type": "string",
             "nullable": true
           },
@@ -9878,10 +10106,6 @@
             "format": "date"
           },
           "phone": {
-            "type": "string",
-            "nullable": true
-          },
-          "email": {
             "type": "string",
             "nullable": true
           }
@@ -10116,6 +10340,9 @@
     },
     {
       "name": "ServiceCity"
+    },
+    {
+      "name": "User"
     }
   ]
 }

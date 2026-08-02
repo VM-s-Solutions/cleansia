@@ -12912,7 +12912,6 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
     state!: string | undefined;
     nationalityId!: string | undefined;
     phone!: string | undefined;
-    email!: string | undefined;
     passportId!: string | undefined;
     entityType!: EmployeeEntityType;
     registrationNumber!: string | undefined;
@@ -12947,7 +12946,6 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
             this.state = Data["state"];
             this.nationalityId = Data["nationalityId"];
             this.phone = Data["phone"];
-            this.email = Data["email"];
             this.passportId = Data["passportId"];
             this.entityType = Data["entityType"];
             this.registrationNumber = Data["registrationNumber"];
@@ -12992,7 +12990,6 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
         data["state"] = this.state;
         data["nationalityId"] = this.nationalityId;
         data["phone"] = this.phone;
-        data["email"] = this.email;
         data["passportId"] = this.passportId;
         data["entityType"] = this.entityType;
         data["registrationNumber"] = this.registrationNumber;
@@ -13030,7 +13027,6 @@ export interface IUpdateEmployeeCommand {
     state: string | undefined;
     nationalityId: string | undefined;
     phone: string | undefined;
-    email: string | undefined;
     passportId: string | undefined;
     entityType: EmployeeEntityType;
     registrationNumber: string | undefined;

@@ -225,6 +225,7 @@
     <string name="orders_payment_failed">Не вдалося</string>
     <string name="orders_payment_refunded">Повернуто</string>
     <string name="orders_payment_disputed">Оскаржено</string>
+    <string name="orders_payment_partially_refunded">Частково повернуто</string>
     <string name="orders_filter_all">Усі</string>
     <string name="orders_filter_upcoming">Майбутні</string>
     <string name="orders_filter_completed">Завершені</string>
@@ -377,7 +378,6 @@
     <string name="profile_row_notifications">Сповіщення</string>
     <string name="profile_row_security">Безпека</string>
     <string name="profile_row_help">Довідка та підтримка</string>
-    <string name="profile_row_privacy">Конфіденційність і дані</string>
     <string name="profile_logout">Вийти</string>
     <string name="profile_logout_dialog_title">Вийти?</string>
     <string name="profile_logout_dialog_message">Ви вийдете з цього пристрою. Ваші замовлення та винагороди залишаться на акаунті — увійдіть знову, щоб продовжити з того ж місця.</string>

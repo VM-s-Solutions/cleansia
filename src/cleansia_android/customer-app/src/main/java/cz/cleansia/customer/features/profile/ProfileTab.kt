@@ -39,7 +39,6 @@ import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Policy
 import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -122,7 +121,6 @@ fun ProfileTab(
     )
     val supportRows = listOf(
         ProfileRow("help", Icons.Outlined.HelpOutline, R.string.profile_row_help),
-        ProfileRow("privacy", Icons.Outlined.Policy, R.string.profile_row_privacy),
     )
 
     // Logout confirm — destructive, irreversible from the user's POV (kicks

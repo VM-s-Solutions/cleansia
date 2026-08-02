@@ -227,6 +227,7 @@
     <string name="orders_payment_failed">Failed</string>
     <string name="orders_payment_refunded">Refunded</string>
     <string name="orders_payment_disputed">Disputed</string>
+    <string name="orders_payment_partially_refunded">Partially refunded</string>
     <string name="orders_filter_all">All</string>
     <string name="orders_filter_upcoming">Upcoming</string>
     <string name="orders_filter_completed">Completed</string>
@@ -383,7 +384,6 @@
     <string name="profile_row_notifications">Notifications</string>
     <string name="profile_row_security">Security</string>
     <string name="profile_row_help">Help &amp; support</string>
-    <string name="profile_row_privacy">Privacy &amp; data</string>
     <string name="profile_logout">Log out</string>
     <string name="profile_logout_dialog_title">Log out?</string>
     <string name="profile_logout_dialog_message">You\'ll be signed out of this device. Your bookings and rewards stay on your account — just sign in again to pick up where you left off.</string>

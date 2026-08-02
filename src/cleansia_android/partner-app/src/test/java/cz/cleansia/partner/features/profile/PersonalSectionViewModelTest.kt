@@ -102,7 +102,7 @@ class PersonalSectionViewModelTest {
         assertNull(loaded.form.lastNameError)
         assertEquals(ActionState.Idle, vm.saveState.value)
         coVerify(exactly = 0) {
-            repository.updatePersonalInfo(any(), any(), any(), any(), any(), any())
+            repository.updatePersonalInfo(any(), any(), any(), any(), any())
         }
     }
 
@@ -125,7 +125,7 @@ class PersonalSectionViewModelTest {
     fun `save success sends the birth date and emits the saved effect`() = runTest {
         coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee)
         coEvery {
-            repository.updatePersonalInfo(any(), any(), any(), any(), any(), any())
+            repository.updatePersonalInfo(any(), any(), any(), any(), any())
         } returns ApiResult.Success(Unit)
 
         val vm = viewModel()
@@ -144,7 +144,6 @@ class PersonalSectionViewModelTest {
                 lastName = "Nováková",
                 birthDate = "1991-01-01",
                 phone = "+420123456789",
-                email = "jana@example.com",
             )
         }
     }
@@ -153,7 +152,7 @@ class PersonalSectionViewModelTest {
     fun `save failure snackbars and returns to Idle`() = runTest {
         coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee)
         coEvery {
-            repository.updatePersonalInfo(any(), any(), any(), any(), any(), any())
+            repository.updatePersonalInfo(any(), any(), any(), any(), any())
         } returns ApiResult.Error(ApiError.Network("down"))
 
         val vm = viewModel()

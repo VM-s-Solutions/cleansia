@@ -244,6 +244,8 @@ public static class ServiceExtensions
         services.AddScoped<IAddressGeocoder, AddressGeocoder>();
         services.AddScoped<IGdprDeletionService, GdprDeletionService>();
         services.AddScoped<IGdprExportService, GdprExportService>();
+        // The one consent-write path: the GDPR consent endpoints and the partner-onboarding checkbox.
+        services.AddScoped<IConsentService, ConsentService>();
         services.AddInfrastructureServices();
 
         return services;

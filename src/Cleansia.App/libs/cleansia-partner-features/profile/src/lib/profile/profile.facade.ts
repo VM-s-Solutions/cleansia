@@ -47,6 +47,9 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   profileLoading = signal(false);
   profileSubmitLoading = signal(false);
   countries = signal<ICleansiaSelectOption[]>([]);
+  // Display only — the signed-in partner's login address. It is deliberately not a form control:
+  // the onboarding command carries no email, so anything typed here could never be saved.
+  email = signal('');
 
   private profileData$: Observable<any> | null = null;
 
@@ -67,6 +70,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
       tap(([employee, countries]) => {
         const formData = ProfileFormFactory.mapEmployeeToFormData(employee);
         FormUtils.safePatchValue(this.formGroup, formData);
+        this.email.set(employee.email ?? '');
 
         const countryOptions: ICleansiaSelectOption[] = countries.map(
           (country) => {

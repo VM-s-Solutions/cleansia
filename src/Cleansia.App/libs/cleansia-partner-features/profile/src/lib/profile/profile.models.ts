@@ -23,7 +23,6 @@ export interface ProfileFormData {
   employeeId?: string;
   firstName?: string;
   lastName?: string;
-  email?: string;
   phone?: string;
   dateOfBirth?: Date | string | null;
   street?: string;
@@ -96,11 +95,6 @@ export class ProfileFormFactory {
         Validators.required,
         CustomValidators.phoneNumber(),
       ]),
-      email: new FormControl(undefined, [
-        Validators.required,
-        Validators.email,
-        Validators.maxLength(254),
-      ]),
       passportId: new FormControl(undefined, [
         Validators.required,
         Validators.minLength(5),
@@ -149,7 +143,6 @@ export class ProfileFormFactory {
       employeeId: employee.id || undefined,
       firstName: employee.firstName || undefined,
       lastName: employee.lastName || undefined,
-      email: employee.email || undefined,
       phone: employee.phoneNumber || '+420',
       dateOfBirth: employee.birthDate || employee.birthDate || null,
       street: employee.street || undefined,
@@ -223,34 +216,37 @@ export class ProfileFormFactory {
           )
         : undefined;
 
-    return new UpdateEmployeeCommand({
-      employeeId: formData.employeeId,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
-      phone: formData.phone,
-      birthDate,
-      street: formData.street,
-      city: formData.city,
-      zipCode: formData.zipCode,
-      countryId: formData.countryId,
-      state: formData.state,
-      nationalityId: formData.nationalityId,
-      passportId: formData.passportId,
-      entityType: formData.entityType ?? EmployeeEntityType.NaturalPerson,
-      registrationNumber: formData.registrationNumber,
-      vatNumber: formData.vatNumber || undefined,
-      legalEntityName:
-        formData.entityType === EmployeeEntityType.LegalEntity
-          ? formData.legalEntityName
-          : undefined,
-      iban: formData.iban,
-      emergencyName: formData.emergencyName,
-      emergencyPhone: formData.emergencyPhone,
-      documents,
-      availability,
-      consent: formData.consent ?? false,
-    });
+    // Construct-then-assign, not an object literal: the generated client still declares the removed
+    // `email` as required, so a literal would not compile until the owner regenerates. This shape
+    // compiles against both the current and the post-regen client.
+    const command = new UpdateEmployeeCommand();
+    command.employeeId = formData.employeeId;
+    command.firstName = formData.firstName;
+    command.lastName = formData.lastName;
+    command.phone = formData.phone;
+    command.birthDate = birthDate;
+    command.street = formData.street;
+    command.city = formData.city;
+    command.zipCode = formData.zipCode;
+    command.countryId = formData.countryId;
+    command.state = formData.state;
+    command.nationalityId = formData.nationalityId;
+    command.passportId = formData.passportId;
+    command.entityType = formData.entityType ?? EmployeeEntityType.NaturalPerson;
+    command.registrationNumber = formData.registrationNumber;
+    command.vatNumber = formData.vatNumber || undefined;
+    command.legalEntityName =
+      formData.entityType === EmployeeEntityType.LegalEntity
+        ? formData.legalEntityName
+        : undefined;
+    command.iban = formData.iban;
+    command.emergencyName = formData.emergencyName;
+    command.emergencyPhone = formData.emergencyPhone;
+    command.documents = documents;
+    command.availability = availability;
+    command.consent = formData.consent ?? false;
+
+    return command;
   }
 
   static getUploadedFiles(formGroup: FormGroup): File[] {

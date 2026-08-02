@@ -10,7 +10,7 @@ namespace Cleansia.Tests.Features.Employees;
 
 /// <summary>
 /// Characterization of UpdateEmployee.Validator focused on the rules that the B3 base-class
-/// composition refactor moves — the first-name / last-name / email rules previously supplied by the
+/// composition refactor moves — the first-name / last-name rules previously supplied by the
 /// BaseUserValidator helper methods — plus the ownership and existence rules that stay put. Pins the
 /// emitted BusinessErrorMessage codes so the refactor (AbstractValidator + composed shared rules)
 /// is behavior-preserving.
@@ -67,7 +67,6 @@ public class UpdateEmployeeValidatorTests
         State: null,
         NationalityId: CountryId,
         Phone: "+420123456789",
-        Email: "cleaner@cleansia.cz",
         PassportId: "AB12345",
         EntityType: EmployeeEntityType.NaturalPerson,
         RegistrationNumber: "12345678",
@@ -148,42 +147,5 @@ public class UpdateEmployeeValidatorTests
         Assert.Contains(result.Errors, e =>
             e.PropertyName == nameof(UpdateEmployee.Command.LastName)
             && e.ErrorMessage == BusinessErrorMessage.Required);
-    }
-
-    [Fact]
-    public async Task Empty_Email_Fails_Required()
-    {
-        ArrangePassingContext();
-
-        var result = await CreateValidator().ValidateAsync(Valid() with { Email = string.Empty });
-
-        Assert.Contains(result.Errors, e =>
-            e.PropertyName == nameof(UpdateEmployee.Command.Email)
-            && e.ErrorMessage == BusinessErrorMessage.Required);
-    }
-
-    [Fact]
-    public async Task Invalid_Email_Fails_InvalidEmailFormat()
-    {
-        ArrangePassingContext();
-
-        var result = await CreateValidator().ValidateAsync(Valid() with { Email = "not-an-email" });
-
-        Assert.Contains(result.Errors, e =>
-            e.PropertyName == nameof(UpdateEmployee.Command.Email)
-            && e.ErrorMessage == BusinessErrorMessage.InvalidEmailFormat);
-    }
-
-    [Fact]
-    public async Task Email_Too_Long_Fails_MaxLength()
-    {
-        ArrangePassingContext();
-
-        var longLocal = new string('a', 45);
-        var result = await CreateValidator().ValidateAsync(Valid() with { Email = $"{longLocal}@cleansia.cz" });
-
-        Assert.Contains(result.Errors, e =>
-            e.PropertyName == nameof(UpdateEmployee.Command.Email)
-            && e.ErrorMessage == BusinessErrorMessage.MaxLength);
     }
 }

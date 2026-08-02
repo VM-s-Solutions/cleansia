@@ -289,6 +289,11 @@ undefined` in a literal fails today's excess-property check, `TS2353`), and a la
 default cannot hold the statements — extract a module-level factory (`const createEmptyPhoto =
 (): BlobFileDto => { … }`).
 
+**Removal is the same rule, mirrored.** When the backend *drops* a field, a literal stops compiling
+against the still-stale client (`TS2345`, "property X is missing") — construct-then-assign simply
+omits it and compiles against both the current and the post-regen client. This is what lets a
+contract-narrowing fix land in one change instead of being blocked on the owner's regen.
+
 When a ticket carries `manual_step: nswag-regen`, sweep the call sites into this form **before** the
 owner regenerates; that work needs no regenerated client and unblocks the regen.
 

@@ -295,4 +295,38 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   status literal outside `OrderAvailability`**, and **any set containing `OrderStatus.Pending`**
   (deprecated, no writer). Migration of the remaining call sites is T-0530.
 
+- **Post-commit ordering + fail-soft admissibility (ADR-0038, `proposed` — not binding until its
+  `## Verdict`, except the live-outage fix it authorizes):** two rules from one outage.
+  (a) *"Post-persist" in a handler means **tracked**, not durable* — the commit is in
+  `UnitOfWorkPipelineBehavior:27-30`, after the handler returns. A self-committing write, or any write
+  referencing a not-yet-committed row under an FK, must ride the pipeline's `SaveChangesAsync` or run
+  **strictly after** the commit. Deviating form: a raw `SqlQueryRaw`/`ExecuteUpdate` write inside a
+  command handler that references `Order.Id` (or any sibling aggregate id created in the same request).
+  (b) *A `catch` that logs and continues is admissible only over an operation that **normally
+  succeeds*** — post-commit, proven happy-path by a **real-PostgreSQL** integration test, and detectable
+  by a named reconciliation predicate. Fail-soft over a deterministic failure converts a loud 500 into
+  silent, permanent data loss. Deviating form: a `try`/`catch` added around a call that is *currently
+  failing*. A **compensating** catch (release a reserved slot, then return the failure) stays allowed —
+  it restores an invariant rather than hiding one. Both rules in `patterns-backend.md`; seam contract in
+  `roles/post-commit-effects.md`.
+
 These judgment calls are **Architect-owned**; changing one is an ADR, not an ad-hoc reversal.
+
+## Interim implementations must name their end state (ADR-0038 §D4)
+
+An interim with no named end state is how a stop-gap becomes the architecture. Any deliberately
+temporary implementation shipped ahead of its end state carries, on the changed member:
+
+```csharp
+// INTERIM(ADR-NNNN §Dn → T-xxxx): <what this is>; delete when <the end state> lands.
+```
+
+- The ticket id must be **filled and open** before the interim merges — an unfilled marker blocks review.
+- The end-state PR **deletes the marker**; a PR that lands the end state and leaves the marker is
+  incomplete.
+- The ADR must state the **acceptance test for retirement** — the property/properties the end state
+  restores, as tests, not as prose. ("Restores" is measured against the *intended* property, not the
+  previous state, which may itself have been broken.)
+- **Mechanically checkable, and should be checked** (`agents/tools/check-consistency.mjs`, per
+  `process/enforcement.md`): every `INTERIM(ADR-NNNN → T-xxxx)` marker in `src/` must reference a ticket
+  id present and open in `agents/backlog/INDEX.md`. Filed as a small tooling ticket by ADR-0038.

@@ -523,6 +523,69 @@ modes in one consumer**, and never hide the mode behind a boolean — the member
 is the greppable evidence of which mode the consumer runs (ADR-0002 verification check #3 logic).
 Role card: `agents/knowledge/roles/idempotency-guard.md`.
 
+## "Post-persist" means POST-COMMIT, or the FK will say so (ADR-0038)
+
+> **PROPOSED — not yet law.** ADR-0038 is `proposed` and has one challenger pass outstanding as of
+> 2026-08-02. The **rule** below is binding on the live promo fix; the **seam** (`IPostCommitEffects`)
+> is not yet the standard for new work. Living doc:
+> `agents/architecture/decisions/promo-redemption-ordering.md`.
+
+The handler's `orderRepository.Add(order)` does **not** write a row. `UnitOfWorkPipelineBehavior:27-30`
+commits **after the handler returns**. So inside a handler, "the order is persisted" is false, and the
+word "post-persist" in a comment means *tracked*, not *durable*.
+
+> **The rule: no write that references a not-yet-committed row under a foreign key, and no write that
+> self-commits, may run inside the handler.** Either it rides the pipeline's `SaveChangesAsync` (a
+> change-tracked write — EF orders principal before dependent inside the one batch) or it runs
+> **strictly after** the commit.
+
+This cost a total outage: `CreateOrder.cs:315` → `OrderPromoApplier` → `PromoCodeService.ApplyAsync` →
+a raw self-committing `INSERT` against `FK_PromoCodeRedemptions_Orders_OrderId` — `23503`, no order
+created, on **every** promo booking. ADR-0035 AM-4 predicted the same shape in the membership path.
+
+**Where post-commit work goes — two seams, one line between them:**
+
+| Need | Seam |
+|---|---|
+| An **external** side effect (queue, email, push, fiscal, HTTP) | **`IPendingDispatch`** → outbox row atomic with the commit, drained by `OutboxDrainerFunction` (ADR-0002 D1, ADR-0008). Durable, at-least-once, ~10s. |
+| A **local, idempotent, same-database** write that must not join the order's transaction | **`IPostCommitEffects`** (ADR-0038) → in-process, same request scope, ambient tenant + actor, milliseconds. At-most-once. |
+
+*Durable-external → outbox; local-idempotent-post-commit → effect.* `IPendingDispatch` **cannot** be
+overloaded for the second row: under the durable backing `OutboxPendingDispatch.Drain()` returns `[]`
+by construction, so an in-process effect recorded there is silently discarded. An effect must be a
+**serializable intent record, never a closure** (that is what keeps an outbox leg additive), must own
+its own commit (**a tracked `Add` inside an effect is a silent no-op**), must not fail the request, and
+must carry a named detection query in its doc-comment. Full contract + the five laws:
+`agents/knowledge/roles/post-commit-effects.md`.
+
+**Corollary — the ledger row reads the PERSISTED entity, never the preview.** `OrderFactory`
+may discard a previewed promo when membership+tier is larger (`ResolveLoy003Discount`), so
+`Order.PromoCodeId` / `Order.PromoDiscountAmount` — not the preview — say what actually applied, and a
+redemption/usage row gated on the preview burns a one-shot benefit the customer never received. Record
+the **frozen** persisted amount; never recompute it later (§B8, ADR-0009 D2). This also makes the
+detection query exact: *an order with a discount source stamped and no matching ledger row*.
+
+## Fail-soft is admissible only over an operation that normally SUCCEEDS (ADR-0038 §D8)
+
+> **PROPOSED alongside ADR-0038.**
+
+A `catch` that logs and continues is admissible only when **all three** hold:
+
+1. **It is post-commit.** The committed state cannot be rolled back by rethrowing, so a throw buys
+   nothing but a 500 on an operation that already succeeded (ADR-0002 D1's adjudicated posture).
+2. **The wrapped operation succeeds in the normal case.** Evidence bar: an integration test against
+   **real PostgreSQL** proving the happy path lands its row. (SQLite does not enforce the FK the same
+   way — a mocked repository proves nothing here.)
+3. **The failure is detectable without the log** — a named reconciliation predicate over persisted state.
+
+**(2) is the one reviewers miss.** Fail-soft over a *deterministic* failure is not resilience, it is a
+silent outage: it converts a loud 500 into permanent, undetected data loss. That is why the promo FK
+bug must **not** be "fixed" with a try/catch, and why the integration test that proved the bug is also
+the acceptance evidence for the fix.
+
+**A compensating catch is the opposite of a swallowing catch and stays allowed:** releasing a reserved
+global slot before returning the failure restores an invariant. A catch that hides one does not.
+
 ## Bounded exclusivity on a pull board — the stored-deadline hold (ADR-0036)
 
 When a rule must give one actor **temporary exclusive access** to a work item on a first-come board

@@ -17,8 +17,11 @@
 | 5 | App Insights sampling + ingestion cap | module-internal env switch (`modules/appInsights.bicep`: `samplingPercentage`, `dailyCapGb`) | 100 (off), 1 GB/day | 50%, 5 GB/day | yes (module params) |
 | 6 | VNet + private endpoints (Q-INFRA-03) | `privateNetworkingEnabled` | `false` | **`false` — the documented flag** | yes, see §6 |
 
-Also env-switched in `main.bicep` (not a param): **Always On** — `alwaysOn: env == 'prod'` on the six
-web hosts. S1 keeps prod instances warm; dev B2 keeps the cost posture.
+**Always On is NOT env-switched** — `alwaysOn: true` on all six web hosts in every stage (it was
+`env == 'prod'`). Always On costs nothing on a plan already billed by the hour, and without it App
+Service unloads an idle dev host after ~20 minutes, so a demo opens on a cold start. Dev's B2
+(2 vCPU / 3.5 GB) now holds 7 resident processes (5 APIs + SSR + Functions, no slots); watch for
+memory-driven recycling there the same way §1's per-instance math says to on prod's S1.
 
 ## 1. Deployment slots + swap (`deploymentSlotsEnabled`)
 

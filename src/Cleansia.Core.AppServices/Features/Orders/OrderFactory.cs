@@ -84,16 +84,9 @@ public sealed class OrderFactory(
         LoyaltyTier? appliedTierAtPurchase = resolution.TierAmount > 0m ? tierAtPurchase : null;
         var appliedAmount = resolution.TotalAmount;
 
-        // Discount on raw subtotal first, then express surcharge on top of
-        // the discounted price. Same order as CreateOrder.Handler used
-        // post-LOY-FOLLOWUP-1 — keep these branches in lock-step.
-        var nowUtc = DateTime.UtcNow;
-        var discountedSubtotal = input.RawSubtotal - appliedAmount;
-        var finalTotalPrice = discountedSubtotal;
-        if (BookingPolicy.RequiresExpressSurcharge(input.CleaningDate, nowUtc))
-        {
-            finalTotalPrice = discountedSubtotal * (1 + BookingPolicy.ExpressSurchargeRate);
-        }
+        var finalTotalPrice = BookingPolicy.ApplyExpressSurcharge(
+            input.RawSubtotal - appliedAmount,
+            BookingPolicy.RequiresExpressSurcharge(input.CleaningDate, DateTime.UtcNow));
 
         var order = Order.Create(
             input.CustomerName,

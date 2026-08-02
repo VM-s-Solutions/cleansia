@@ -28,6 +28,11 @@ on:
         options:
           - deploy
           - what-if
+      forceProvision:
+        description: 'Re-run Bicep even if deploy/bicep is unchanged (normally skipped so an app deploy restarts each site once, not twice)'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   id-token: write
@@ -68,4 +73,6 @@ jobs:
       mode: ${{ needs.resolve.outputs.mode }}
       region: weu
       bicepparamFile: deploy/bicep/weu.dev.bicepparam
+      # A push-triggered run (if the trigger is ever restored) has no dispatch input — null → false.
+      forceProvision: ${{ inputs.forceProvision || false }}
     secrets: inherit

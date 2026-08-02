@@ -90,8 +90,9 @@ export class OrderDetailComponent implements OnInit {
   /**
    * Path B entry — stash the order's services/packages/rooms/payment/time
    * in sessionStorage and navigate into the recurring wizard. Non-Plus
-   * users are routed to the subscribe page first; the wizard would
-   * otherwise let them fill out a schedule they can't actually save.
+   * users are routed to the subscribe page first so they don't fill out a
+   * schedule the server will reject; the entitlement itself is enforced in
+   * CreateRecurringBooking.Handler, not here.
    */
   makeRecurring(): void {
     const order = this.order();

@@ -54,16 +54,21 @@ public sealed class OrderPricingCalculator(
         // determined, not user-determined. It's a flat +20% on the base
         // subtotal — applied here so the wizard summary line item matches
         // what gets persisted in Order.TotalPrice.
+        //
+        // Quoted in the CHARGE currency, like TotalPrice: CreateOrder.Handler derives its discount
+        // base as TotalPrice - ExpressSurchargeAmount, so an unscaled surcharge would be subtracted
+        // from a scaled total and inflate every discounted price at any exchange rate but 1.
+        var chargeSubtotal = baseSubtotal * exchangeRate;
         bool expressSurchargeApplied = false;
         decimal expressSurchargeAmount = 0m;
         if (cleaningDateUtc.HasValue
             && BookingPolicy.RequiresExpressSurcharge(cleaningDateUtc.Value, DateTime.UtcNow))
         {
             expressSurchargeApplied = true;
-            expressSurchargeAmount = baseSubtotal * BookingPolicy.ExpressSurchargeRate;
+            expressSurchargeAmount = chargeSubtotal * BookingPolicy.ExpressSurchargeRate;
         }
 
-        var totalPrice = (baseSubtotal + expressSurchargeAmount) * exchangeRate;
+        var totalPrice = chargeSubtotal + expressSurchargeAmount;
 
         return new OrderPricingResult(
             TotalPrice: totalPrice,

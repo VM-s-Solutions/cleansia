@@ -75,7 +75,7 @@ public class PayoutInvoicePdfDataTests
     {
         var data = Map();
 
-        Assert.Equal("CZ6555000000005885638003", data.Supplier.Iban);
+        Assert.Equal("CZ3155000000005885638003", data.Supplier.Iban);
         Assert.NotEqual(data.Company!.Iban, data.Supplier.Iban);
     }
 
@@ -219,7 +219,7 @@ public class PayoutInvoicePdfDataTests
         var employee = Employee.CreateWithUser(user);
         employee.UpdateAddress(address);
         employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null, null);
-        employee.UpdateBankDetails("CZ6555000000005885638003");
+        employee.UpdateBankDetails("CZ3155000000005885638003");
         return employee;
     }
 

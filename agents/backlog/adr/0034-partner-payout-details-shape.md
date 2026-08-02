@@ -1,19 +1,24 @@
-# ADR-0034 — Partner payout details are a **scheme-discriminated child record of cardinality one**; the **bank's own country** governs the format (not residence, not the discarded `BusinessCountryId`); `CountryConfiguration` grows **one** column (`PayoutScheme`) and no bank labels; validation is **real** (ISO 7064 mod-97 + the CZ/SK weighted mod-11) and **fails closed**; and the profile-completeness gate is **decoupled from payout validity** so no existing cleaner is locked off the job board by the migration
+# ADR-0034 — Partner payout details are a **scheme-discriminated child record of cardinality one**; the **bank's own country** governs the format (not residence, not the discarded `BusinessCountryId`); `CountryConfiguration` grows **one** column (`PayoutScheme`) and no bank labels; validation is **real** (ISO 7064 mod-97 + the CZ/SK weighted mod-11) and **fails closed**; and the profile-completeness gate is **decoupled from payout validity** — and, per the panel, **from the object graph** — so no existing cleaner is locked off the job board by the migration
 
-- **Status:** `proposed` — **needs the panel.** Written in `author` mode. Six of the eight decisions
-  below are real trade-offs with a live loser (D1 shape, D2 governing country, D3 config, D4 fail-closed,
-  D6 plaintext, D7 the legacy-row landing). Two challengers are named in `## Challenge` with the exact
-  seams to attack (`security` → D6/D8; `db` → D1/D7).
-- **Date:** 2026-08-02
+- **Status:** `accepted` — **2026-08-02, by panel verdict.** Two challengers ran (security → D6/D8/D9;
+  db → D1/D5/D7). Seventeen findings; **eight were blocking**. Every blocking finding is disposed of in
+  `## Defense` and its amendment is folded into the decision sections below, marked
+  **[AMENDED — CH-…]**. Two questions are escalated to the owner (`Q-PAYOUT-04`, `Q-PAYOUT-05`);
+  neither blocks acceptance, `Q-PAYOUT-05` gates **T-0518's scope** and is answered by a branch already
+  written into D7. **Immutable from this point — deviations require a superseding ADR.**
+- **Date:** 2026-08-02 (drafted) · 2026-08-02 (challenged, defended, adjudicated, accepted)
 - **Supersedes:** — (composes with **ADR-0017** — per-country variation is config-driven, never a
-  country-code branch in a handler; **ADR-0012 D4.1** — admin-action audit records ids, not the PII it
-  edited; **ADR-0007** — soft-delete/anonymization semantics)
+  country-code branch in a handler; **ADR-0012 D3/D4.1** — the admin-mutation audit gate and its
+  ids-not-PII rule; **ADR-0007** — soft-delete/anonymization semantics; **ADR-0003** — rate-limit
+  policies)
 - **Superseded by:** —
-- **Applies to:** `Cleansia.Core.Domain` (one new entity + two enums) · `Cleansia.Infra.Database`
-  (one entity configuration + **one owner-run migration** + **one owner-run backfill script**) ·
-  `Cleansia.Core.AppServices` (one new domain service + three write paths + the read contract) ·
-  **all five API hosts equally — no host coupling** · **breaking NSwag change** (`Iban` leaves two list
-  DTOs) · **no change to the tenancy filter, the pay formula, or the fiscal modes**
+- **Applies to:** `Cleansia.Core.Domain` (one new entity + **one denormalized `Employee` flag** + two
+  enums) · `Cleansia.Infra.Database` (one entity configuration + **one owner-run migration** +
+  **conditionally** one owner-run backfill script) · `Cleansia.Core.AppServices` (one new domain service
+  + three write paths + the read contract + one audited reveal **command**) · `Cleansia.Config`
+  (the completeness filter) · **all five API hosts equally — no host coupling** · **breaking NSwag
+  change** (`Iban` leaves two single-resource DTOs) · **no change to the tenancy filter, the pay
+  formula, or the fiscal modes**
 - **Ticket:** T-0517 (`security_touching: true`). Implementation: T-0518 (db) · T-0519 (backend) ·
   T-0520 (web/admin) · T-0521 (mobile) · consumed by T-0522 (payout invoice) and cross-checked against
   T-0508 (invoice field spec) and T-0511 AC5 (the same generality question).
@@ -31,103 +36,228 @@
 > payout methods, they are three renderings of one account — and for CZ/SK two of the three are
 > **derivable from the first**, which is why the parts, not the string, are what we store.
 
+> **The panel's one added constraint, which governs three of the amendments below:**
+> **This repository has no lazy loading** (`rg "UseLazyLoadingProxies|ILazyLoader"` across `src/` →
+> **zero hits**; the context is registered with `options.UseNpgsql(dataSource)` and nothing else). So
+> **every invariant relocated from a column onto a navigation property becomes load-order-dependent**,
+> and a hand-maintained `.Include` list is not a place to put an income gate or a GDPR erasure. Where
+> this ADR moves a value to a child record, it must **not** move the *invariant* with it. See D1.
+
 ---
 
-## Context — every citation verified in the working tree, 2026-08-02
+## Context — every citation verified in the working tree, 2026-08-02; corrected by the panel where marked
 
 ### What exists today
 
 | Thing | State (file:line) |
 |---|---|
 | `Employee.IBAN` | **one nullable string**, `Employee.cs:24`; `HasMaxLength(50)` at `EmployeeEntityConfiguration.cs:30-31`. **No value converter, no encryption** |
-| Its server validation | `ValidationExtensions.cs:122-130` — `Cascade(Stop).NotEmpty().Length(15, 34)`. **No country prefix. No checksum.** `"totally not an iban!!"` (21 chars) passes |
+| Its server validation | `ValidationExtensions.cs:122-130` — `Cascade(Stop).NotEmpty().Length(15, 34)`. **No country prefix. No checksum.** `"totally not an iban!!"` (21 chars) passes — **and so does a 16-digit card PAN** (D9a, CH-S5) |
 | Its three write paths | `UpdateBankDetails.cs:35-36` (self-service), `UpdateEmployee.cs:127-128`, `AdminUpdateEmployee.cs:73` — all three call the same `ValidateIban()` |
 | Its readers | `Employee.cs:283` (**the profile-completeness gate**), `Employee.cs:313` (`"profile.fields.iban"`), `GdprExportService.cs:38`, `EmployeeMappers.cs:61,115` |
-| **Its DTO exposure** | `EmployeeItem.cs:27` **and `EmployeeListItem.cs:52`** — the account identifier ships in a **paged list** response |
-| Anonymization | `Employee.Anonymize()` sets `IBAN = AnonymizationMarker.Value` = **`"[DELETED]"`** (`AnonymizationMarker.cs:5`) — 9 chars, i.e. **a stored value that the field's own validator would reject** |
+| **Its DTO exposure** — **[CORRECTED by CH-S1]** | **No payout identifier rides a paged list.** `Iban` appears on exactly two DTOs, both **single-resource** reads: **`EmployeeItem`** (`EmployeeItem.cs:27`, mapper `EmployeeMappers.cs:61`, handler `GetCurrentEmployeeDetail.cs:32-36` — a **self-read** resolved from the session email) and **`AdminEmployeeDetail`** (`EmployeeListItem.cs:52` — *line 52 is inside the fourth record in that file, not inside `EmployeeListItem`*; mapper `EmployeeMappers.cs:115`, handler `GetEmployeeDetail.cs`, route `AdminEmployeeController.cs:54`). The genuine paged DTO `AdminEmployeeListItem` (`EmployeeListItem.cs:18-30`) and its mapper `MapToAdminDto` (`EmployeeMappers.cs:76-91`) **do not carry `Iban` at all** |
+| **The real exposure** — **[ADDED by CH-S1]** | The **unmasked** account identifier is returned by an **enumerable resource-by-id** admin route (`GET admin/employee/details/{employeeId}`, `AdminEmployeeController.cs:54`) gated by **the same policy that grants the id list** (`Policy.CanViewPagedEmployee` on both `:17` and `:55`), **with no masking, no reveal record, and no rate limit** (`AdminEmployeeController` carries zero `[EnableRateLimiting]`). That — not a paged leak — is what D8 exists to close |
+| Anonymization | `Employee.Anonymize()` (`Employee.cs:257-267`) sets `IBAN = AnonymizationMarker.Value` = **`"[DELETED]"`** (`AnonymizationMarker.cs:5`) — 9 chars, i.e. **a stored value that the field's own validator would reject**. It works today **only because `IBAN` is a column on the row already loaded** (CH-S4/CH-D9) |
+| Its only erasure caller | `GdprDeletionService.cs:235`, on an aggregate loaded at `:43-46` with `.Include(u => u.Employee).ThenInclude(e => e!.Address)` — **no other employee navigation** |
+| The completeness gate's loader | `RequireCompleteProfileAttribute.cs:25` → `EmployeeRepository.GetByUserEmailAsync` (`:9-17`), whose include list is **hand-written**: `User`, `Address`, `Nationality`, `Documents`. `:32-49` returns **403** when the gate fails. Applied class-level on the partner host's `OrderController`, `EmployeePayrollController`, `DashboardController`, `DisputeController` |
 | Web client validation | `custom-validators.ts:74-86` — a **structural** regex `^[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}$`. No mod-97 |
 | Android client validation | `BankSectionViewModel.kt:75-85` — **blank check only**, and `onIbanChange` **strips every non-alphanumeric character** (`filter { ch -> ch.isLetterOrDigit() }`) |
 | iOS client validation | `BankSectionViewModel.swift:42-48, 66-75` — **blank check only**, same `filter { $0.isLetter \|\| $0.isNumber }` normalizer |
-| The richer shape that already exists | `CompanyInfo` — `BankName` / `BankAccountNumber` / `Iban` / `Swift` (`CompanyInfo.cs:60-70`), updated by `UpdateCompanyInfo.cs:154`, rendered at `DefaultReceiptLayoutBuilder.cs:167-168` |
+| The richer shape that already exists | `CompanyInfo` — `BankName` / `BankAccountNumber` / `Iban` / `Swift` (`CompanyInfo.cs:60-70`), updated by `UpdateCompanyInfo.cs:154` |
+| **The cleaner's IBAN is already printed** — **[CORRECTED by CH-S1/found-sound-1]** | The prior draft said *"the bank block on today's PDF is Cleansia's, not the cleaner's."* **That describes the customer receipt, not the payout invoice.** On a payout invoice the supplier block **is** the cleaner and carries **their** account: `FileExtensions.cs:87-108` (`CreateSupplierData(this Employee employee)`, `Iban = employee.IBAN` at `:107`) → `InvoicePdfData.cs:36-59` (`InvoiceSupplierData`, whose own doc comment says sourcing them from `CompanyInfoData` *"would print an account that tells the cleaner to pay us"*) → `DefaultInvoiceLayoutBuilder.cs:166-188` (`supplier.Iban` at `:175`), **pinned by an existing test**: `PayoutInvoiceLayoutTests.cs:56` `Payment_Block_Carries_The_Suppliers_Bank_Details_And_The_Variable_Symbol`, fixture at `:186-187`. **This is the fact D6 now rests on** |
 | Per-country **label/format/required** machinery | `CountryConfiguration.cs:37-57` — `TaxIdLabel/Format`, `RegistrationNumberLabel/Format/Required`, `VatNumberLabel/Format/Required`. **No bank equivalent** |
 | Per-country **validation** machinery | `ITaxIdValidator` → `TaxIdValidator.cs`, consumed at `UpdateIdentificationInfo.cs:73-96`. `MatchesFormat` (`:54-73`) returns **`true`** on a null format, on `RegexMatchTimeoutException`, and on `ArgumentException` — i.e. **fail-open** |
 | Per-country **enum** precedent on the same entity | `CountryConfiguration.FiscalEnforcementMode` (`:65-71`) — an enum column with a documented default, exactly the shape D3 needs |
 | Employee's three country fields | residence `Address.CountryId`; work jurisdiction `WorkCountryId` (`Employee.cs:68-81`, admin-set at approval, `AssignWorkCountry` `:213-221`); nationality `NationalityId`. **`BusinessCountryId` is not among them** |
 | `BusinessCountryId` | exists **only** as a command parameter — `UpdateIdentificationInfo.cs:121`, used at `:77` and `:92`, and **never assigned to the aggregate** in the handler (`:131-150`). It is read, used, and thrown away |
 | Who sends it | **mobile only.** `IdentificationSectionViewModel.kt:96-98` pre-fills it from `e.countryId` (the *address* country) and lets the cleaner override it. `businessCountryId` has **zero occurrences anywhere under `src/Cleansia.App`** |
-| Owned types / value objects in EF | **none** — `grep OwnsOne\|OwnsMany\|ComplexProperty src/Cleansia.Infra.Database` returns nothing. The house archetype for a related record is a **class : `Auditable, ITenantEntity`** (`PayPeriod`, `OrderEmployeePay`, `EmployeePayConfig`, `EmployeeInvoice`) |
-| Column-level encryption anywhere in the repo | **none.** The only sensitive-value converter is `PasswordConverter.cs:6` — a **one-way hash**, structurally unusable for a value that must be printed. The single `Encrypt*` hit in `src/` is a doc comment about `EncryptedSharedPreferences` on the *client* (`Web.Mobile.Customer/Controllers/AuthController.cs:21`) |
-| Invoice-side facts already settled by T-0508 | `EmployeeInvoice.VariableSymbol` **exists** (`:72`, generated `:331`, rendered `DefaultInvoiceLayoutBuilder.cs:38-39`). The bank block on today's PDF is **Cleansia's**, not the cleaner's |
+| Owned types / value objects in EF | **none** — `grep OwnsOne\|OwnsMany\|ComplexProperty src/Cleansia.Infra.Database` returns nothing (independently confirmed by both challengers). The house archetype for a related record is a **class : `Auditable, ITenantEntity`** (`PayPeriod`, `OrderEmployeePay`, `EmployeePayConfig`, `EmployeeInvoice`) |
+| **Tenant-scoped unique indexes** — **[CORRECTED by the lead against CH-D2]** | The claim *"not one `.IsUnique()` site includes `TenantId`"* is **false**. **Nine** do: `UserEntityConfiguration.cs:106`, `UserMembershipEntityConfiguration.cs:112`, `TenantConfigurationEntityConfiguration.cs:27`, `LoyaltyTransactionEntityConfiguration.cs:91`, `LoyaltyTierConfigEntityConfiguration.cs:33`, `PromoCodeEntityConfiguration.cs:63`, `PromoCodeRedemptionEntityConfiguration.cs:66`, `ReferralCodeEntityConfiguration.cs:38`, `FiscalCounterEntityConfiguration.cs:26`. And `.AreNullsDistinct(false)` is **not** a novel construct: `FiscalCounterEntityConfiguration.cs:23-29` already uses it, with a comment explaining exactly the null-tenant collapse |
+| **The documented null-tenant tradeoff** | `UserMembershipEntityConfiguration.cs:100-109` states it deliberately: *"Postgres treats NULLs as DISTINCT in a UNIQUE index by default, so two NULL-TenantId active rows for the same user are NOT rejected… there the app-level assert + the StripeSubscriptionId unique index are the guards, and the index hardens multi-tenant mode."* **The schema is not the sole arbiter; an app-level guard rides alongside it.** That is the house posture (D1) |
+| Column-level encryption anywhere in the repo | **none.** The only sensitive-value converter is `PasswordConverter.cs:6` — a **one-way hash**, structurally unusable for a value that must be printed. No `IDataProtection` on any server path |
+| Direct-DB principal in the infrastructure | `postgres.bicep:81` declares the Flexible Server with **no `dataEncryption` block** → platform default (**service-managed keys, not CMK**), and not disable-able on this resource type. `postgres.bicep:153-161` provisions `allowAdminIp` whenever `publicNetworkAccess == 'Enabled'` (`main.bicep:347`) — a named human with `psql` (D6, CH-S6) |
+| Invoice-side facts already settled by T-0508 | `EmployeeInvoice.VariableSymbol` **exists** (`:72`, generated `:331`, rendered `DefaultInvoiceLayoutBuilder.cs:38-39`) |
+| **Pay-period cadence** — **[CORRECTED by CH-D8]** | **Monthly, not bi-weekly.** `PayPeriodBackgroundService.cs:89-90` and `:161-162` both use `AddMonths(1).AddDays(-1)`; the code's own comment at `:85-88` says *"a **monthly** window… matches the cadence the close-and-rollover job uses."* `PayPeriodService.GenerateBiWeeklyPeriodsForYear` (`:30`) has **zero call sites**. CLAUDE.md's "bi-weekly" is a stale entity-table row |
+| The fiscal reconciliation sweep | `PayPeriodRepository.cs:85-101` — the candidate predicate is *stale pays for a `(PayPeriodId, EmployeeId)` pair with **no** `EmployeeInvoice` row*. A pair whose invoice is deliberately withheld matches **forever** (CH-D8) |
+| The admin-audit gate | `AdminMutationGate.cs:17-24` — audited **iff** `descriptor.Audited && request.GetType().Name.EndsWith("Command") && role == Administrator`. `AuditLogBehavior.cs:17-19` states it in prose: *"Queries and non-admin mutations produce no row."* **A query cannot be audited by this engine** (CH-S2) |
+| The rate-limit structural guard | `RateLimitCoverageGuardTests.cs:29-93` (`MoneyAndSideEffectControllers`, which does **not** list `AdminEmployeeController`) and `:95` (`MutatingMethods = POST/PUT/DELETE/PATCH`), with `:26-28`: *"Read/list actions (GET) are deliberately NOT asserted."* |
+| The migration set | **exactly one** migration — `Migrations/20260723182623_Initial.cs` (+ Designer + snapshot). The pre-prod practice is to **regenerate** `Initial`, not stack onto it. `sql-scripts/insert_seed_data.sql` seeds **no** `Employee."IBAN"` (its single `Iban` is `CompanyInfo`'s). Prod is **authored, not deployed**; the only live database is DEV (CH-D6) |
 
-### The three findings that shape the decision
+### The four findings that shape the decision
 
 **F1 — the inconsistency is already live, and it is worse than "phones don't validate".** The mobile
 normalizers strip `-` and `/`. A cleaner typing the perfectly correct Czech account `19-2000145399/0800`
 sends `1920001453990800` — 16 characters, which **passes** `Length(15, 34)` and is stored as an "IBAN".
-The same cleaner on web is *rejected* by the structural regex. So today the platform contains a
-population of silently mangled domestic account numbers whose separators are **irrecoverable**
-(`1920001453990800` is equally consistent with `19-2000145399/0800` and `192000145399/0800`). Any
-migration that guesses where the separators go is a transfer to a stranger. This is not hypothetical
-corruption to plan for — it is corruption to *classify*.
+The same cleaner on web is *rejected* by the structural regex. The stripped separators are
+**irrecoverable** (`1920001453990800` is equally consistent with `19-2000145399/0800` and
+`192000145399/0800`). Any migration that guesses where the separators go is a transfer to a stranger.
 
 **F2 — `Employee.IBAN` is not an unused field, it is a gate on a cleaner's income.**
 `Employee.cs:283` makes a non-empty `IBAN` part of `hasEmployeeInfo`, which makes it part of
 `IsProfileComplete()`, which is what decides whether a cleaner may take orders. Any design in which
 "the stored value is now invalid" implies "the profile is now incomplete" **takes working cleaners off
-the job board on the day the migration runs**. That constraint, not the schema, is the hard part of
-this ADR.
+the job board on the day the migration runs**.
 
 **F3 — the per-country precedent that "consistency" would have us copy is unused.**
 `RegistrationNumberLabel` / `VatNumberLabel` / `TaxIdLabel` exist on `CountryConfiguration` and **no
-client reads them** — the labels are hardcoded in every UI. Copying an unproven pattern is not
-consistency, it is compounding. This cuts *against* growing `CountryConfiguration` a family of bank
+client reads them**. This cuts *against* growing `CountryConfiguration` a family of bank
 label/format/required columns, and it is why D3 grows exactly **one** column instead of six.
+
+**F4 — [ADDED BY THE PANEL] the same field is *also* a gate on a cleaner's erasure, and there is no
+lazy loading.** F2's hazard has a twin the draft missed: `Employee.Anonymize()` is guaranteed to reach
+`IBAN` only because `IBAN` is a column. Both challengers, working independently in different lanes,
+reached the same structural conclusion — *the child-entity shape converts two guaranteed operations
+into `Include`-dependent ones*, and in both cases the ADR's own reviewer check (a hand-constructed
+`Employee` with the navigation populated) would pass **green** while production fails. **F4, not F2, is
+the hard part of this ADR**, and D1 is amended to answer it structurally rather than with a checklist.
 
 ---
 
 ## Decision
 
-### D1 — Shape: a dedicated `EmployeePayoutDetails` child entity, discriminated by **scheme**, with **cardinality one** enforced by a unique index
+### D1 — Shape: a dedicated `EmployeePayoutDetails` child entity, discriminated by **scheme**, with **cardinality one** — and **no invariant is relocated onto the navigation**
 
 **The generality principle this ADR establishes (and T-0511 AC5 must match):**
 
 > **Generalize along the axis that will actually vary. Pin the axis that will not.**
 > A keyed/discriminated table earns its place when the *set of kinds* grows without warning. A column
 > per kind is right when the kinds are closed. **Cardinality is a separate question from kind** — and
-> pinning it at one with a unique index costs nothing and is trivially lifted later.
+> pinning it at one costs nothing and is trivially lifted later.
 
 For payout details the varying axis is the **scheme** (CZ/SK domestic ≠ SEPA ≠ a future non-IBAN
-market ≠ a PSP token). The axis that is *not* varying is **how many destinations a cleaner has** — one
-person, one place the money goes. So:
+market ≠ a PSP token). The axis that is *not* varying is **how many destinations a cleaner has**. So:
 
 ```
-EmployeePayoutDetails : Auditable, ITenantEntity     // the house archetype — see EmployeePayConfig
-    EmployeeId          string    NOT NULL   UNIQUE INDEX (TenantId, EmployeeId)   // cardinality = 1
+Employee                                                    // the AGGREGATE keeps the gate bit
+    HasPayoutDetails    bool NOT NULL DEFAULT false          // [AMENDED — CH-D1/CH-S7] see below
+
+EmployeePayoutDetails : Auditable, ITenantEntity            // the house archetype — see EmployeePayConfig
+    EmployeeId          string    NOT NULL
+        UNIQUE INDEX (TenantId, EmployeeId) .AreNullsDistinct(false)   // [AMENDED — CH-D2]
     Scheme              PayoutScheme?         NULL   // null ⇒ unusable for payout (legacy park only)
     BankCountryId       string? FK Country    NULL   // the country of the BANK — see D2
     ...identifier fields per D5...
     Status              PayoutDetailsStatus   NOT NULL
 ```
 
-- **The unique index is the cardinality decision.** Lifting it to "several destinations, one primary"
-  is *drop the unique index + add `IsPrimary`* — one additive migration, no re-shaping, no data
-  rewrite. That is the cheapest possible option on a change we have **no evidence we need**, which is
-  precisely why we do not build it now.
-- **It is a child entity, not columns on `Employee`, for three reasons that are not "it's tidier":**
-  1. **The read contract needs a different exposure than the aggregate has** (D8). Today `Iban` rides
-     `EmployeeListItem` (`:52`) into a paged response because it is a property of `Employee` and the
-     mapper flattens everything. A separate record is what makes "payout details are never on a list
-     DTO" a *structural* rule rather than a rule someone must remember.
-  2. **Its lifecycle is not the employee's.** It is written, re-confirmed, blocked, parked and (later)
-     verified. `Status` + `ConfirmedAt` on `Employee` would be six more fields on an aggregate that
-     `EmployeeUserAuditCoverageTests` already has to police field-by-field.
-  3. **A PSP payout account (D9) is not an employee attribute at all** — it is an external object with
-     its own id and its own webhook-driven lifecycle. It fits the record; it does not fit the person.
-- **Not EF owned types.** The repo has **zero** `OwnsOne`/`OwnsMany` (verified). Introducing a
-  persistence pattern the team has never used, for the one table that must never be got wrong, is a bad
-  trade. Follow `EmployeePayConfig`.
+#### D1.1 — **[AMENDED — CH-D1 / CH-S7 / CH-S4 / CH-D9] The two invariants stay off the navigation.**
+
+The child entity holds the **data**. It does **not** hold either operation that must never be missed.
+Both are made load-order-independent, which is stronger than any `.Include` obligation:
+
+1. **The completeness gate reads a scalar on `Employee`, never the navigation.**
+   `Employee.cs:283`'s `!string.IsNullOrEmpty(IBAN)` becomes **`HasPayoutDetails`** — a
+   `bool NOT NULL DEFAULT false` column on the `Employee` row, therefore **always materialized by every
+   loader that already loads an `Employee`**, including `EmployeeRepository.GetByUserEmailAsync`
+   (`:9-17`) with no change to its include list. It carries **exactly** the semantics the `IBAN` column
+   carried for this gate — *presence*, never validity (D7) — so migration-day behaviour is preserved
+   **by construction** rather than by a remembered line in a repository.
+   - **Its single invariant:** `HasPayoutDetails == (an EmployeePayoutDetails row exists for this
+     employee)`. It is written by **exactly two** writers — the one payout write path (D8) and, if it
+     runs, the backfill script (D7) — and cleared by `Employee.Anonymize()` and by the erasure path
+     (D1.2). An integration test asserts the invariant holds across the whole table (verification 6b).
+   - **Why a denormalized bit and not a compile-forced parameter.** Passing `hasPayoutDetails` into
+     `IsProfileComplete()` is structurally stronger (a missing argument is a compile error), but
+     `MapToAdminDto` (`EmployeeMappers.cs:89`) calls it **inside a paged projection** — supplying it
+     per row is an N+1 or a bespoke projection on the admin grid's hot path. The scalar costs one
+     column and one invariant test and is correct on every path.
+   - **Consequence that closes a third finding:** because the gate no longer needs the navigation,
+     `GetPagedEmployees` must **not** add `.Include(e => e.PayoutDetails)` — so the "fix the grid, and
+     the full unmasked payout record materializes on the paged path" corollary (CH-S7) never arises.
+     **`.Include(e => e.PayoutDetails)` is forbidden on any paged or list query** (verification 9b).
+
+2. **Erasure is a set-based, id-keyed write owned by `GdprDeletionService`, not a navigation walk.**
+   `Employee.Anonymize()` (`Employee.cs:257-267`) **does not** and **cannot** clear the child; it is
+   amended only to set `HasPayoutDetails = false` (a column on the row it already has).
+   `GdprDeletionService` gains an explicit call — `IEmployeePayoutDetailsRepository.RemoveForEmployee
+   Async(employeeId)`, an `ExecuteDelete`-shaped id-keyed write — so the erasure is correct **regardless
+   of what the caller `Include`d**. This is the one operation on this record where a hard delete, not
+   ADR-0007's `Deactivate`, is correct: a tombstoned payout destination is the compliance defect, not
+   the audit trail.
+
+#### D1.2 — **[AMENDED — CH-D3] Mutate in place. `EmployeePayoutDetails` is exempt from ADR-0007 D1's `Deactivate` default.**
+
+The record **is** the current destination; there is exactly one and it is replaced, not superseded.
+History belongs in the admin audit log (ADR-0012), not in tombstone rows. Therefore:
+- the unique index carries **no `IsActive` filter** and needs none;
+- the completeness gate and the issuance block need **no `.Where(x => x.IsActive)`** predicate;
+- a deactivated-but-present payout row — the trap that would otherwise satisfy `is not null` while
+  being logically deleted (CH-D3(a)) — **cannot exist**, because nothing deactivates it. Erasure
+  deletes (D1.1.2).
+
+Stated because there is no house answer to copy: neither `EmployeePayConfigEntityConfiguration.cs:84`
+nor `EmployeeInvoiceEntityConfiguration.cs:117-119` filters on `IsActive`, and
+`CompanyInfoEntityConfiguration.cs:38` is a live instance of the untaken decision. Silence here would
+have shipped CH-D3(a).
+
+#### D1.3 — **[AMENDED — CH-D2] The unique index, and why the schema is not the sole arbiter.**
+
+`(TenantId, EmployeeId) UNIQUE .AreNullsDistinct(false)`, **plus** an app-level create-or-update guard
+on the single write path.
+
+- CH-D2's *fact* is right: Postgres treats NULLs as distinct by default, and every row today has
+  `TenantId = null`, so a plain `(TenantId, EmployeeId)` unique index would enforce nothing in the only
+  mode that runs.
+- CH-D2's *evidence* and *remedy* are both wrong. **Nine** entity configurations put `TenantId` in a
+  unique index (see the context table). Dropping `TenantId` from the key would be the deviation, not the
+  consistency.
+- **`.AreNullsDistinct(false)` is precedented, not novel — it ships twice.**
+  `FiscalCounterEntityConfiguration.cs:23-29` (`(TenantId, Year, IssuerScope)`, *"NULLS NOT DISTINCT so a
+  single-tenant (null TenantId) deployment collapses onto ONE counter row… a plain unique index would
+  treat each null as distinct and let duplicates in, breaking gaplessness"*) and
+  `LiveActivityTokenConfiguration.cs:22-28` (`(UserId, DeviceId, OrderId)`). Both are **in the committed
+  `Initial` migration** — `Initial.cs:2653` and `:2685`, `.Annotation("Npgsql:NullsDistinct", false)` —
+  and in the snapshot at `CleansiaDbContextModelSnapshot.cs:1919, 3946`. It is a shipped construct on
+  this database, not a proposal.
+- **Two in-repo comments assert the opposite, and they are wrong.**
+  `UserMembershipEntityConfiguration.cs:106-109` and `LoyaltyTransactionEntityConfiguration.cs:82-88`
+  both decline it *"rather than introduce a one-off NULLS NOT DISTINCT."* At the time each was written
+  that may have read as true; **it is false in the committed tree today.** The panel records this as a
+  finding in its own right — *a comment asserting a false invariant is worse than no comment, because it
+  stops the next reviewer from checking* — and files it as a follow-up (see the Verdict's conditions).
+  **ADR-0034 does not re-decide those two indexes**: both are *filtered* partial indexes with their own
+  reasons, and changing them is their owners' call, not a side-effect of this ADR. What ADR-0034 refuses
+  is to inherit a false premise.
+- **The payout index is unfiltered**, so `.AreNullsDistinct(false)` applies cleanly with no
+  partial-index interaction to reason about — and it is *stricter* than `UserMembership`'s posture,
+  correctly so: `UserMembership` needs a partial index because re-subscribe-after-cancel is a legitimate
+  second row (`UserMembershipEntityConfiguration.cs:92-95`). **There is no legitimate second payout
+  row**, so the full collapse is available and we take it.
+- The app-level guard is required anyway, per the documented house posture at
+  `UserMembershipEntityConfiguration.cs:100-109`: *the index hardens the constraint, the application
+  asserts it.* The write path is a create-or-update keyed on `EmployeeId`, never a bare insert.
+- **Lifting cardinality later** remains one additive migration: drop the unique index, add `IsPrimary`.
+
+#### D1.4 — Why a child entity and not columns on `Employee` — **the three reasons, re-scored by the panel**
+
+1. ~~**The read contract needs a different exposure than the aggregate has.**~~ **[STRUCK — CH-S1.]**
+   The draft argued the child table makes "payout details never on a list DTO" *structural* because
+   `Iban` rides `EmployeeListItem` "*because* it is a property of `Employee` and the mapper flattens
+   everything." **Both halves are false.** No payout identifier rides a paged DTO
+   (`AdminEmployeeListItem` has none), and the mappers do **not** flatten — `MapToDto`
+   (`EmployeeMappers.cs:26-39`) and `MapToAdminDto` (`:76-91`) are hand-written positional
+   constructions that each *chose* to omit `Iban`. The existing code already honours the rule this
+   reason claimed only a child table could enforce. **The read contract is therefore secured by a
+   test, not by the shape** — see D8.6 and verification 9b.
+2. **Its lifecycle is not the employee's.** `Status`, `ConfirmedAt`, `LastRevealedAt`, `RevealCount`
+   and (conditionally) the legacy park are not employee attributes; they are six more fields on an
+   aggregate that `EmployeeUserAuditCoverageTests` already polices field-by-field. **Stands.**
+3. **A PSP payout account (D9) is not an employee attribute at all** — it is an external object with
+   its own id and its own webhook-driven lifecycle. It fits the record; it does not fit the person.
+   **Stands.**
+4. **[ADDED by the panel] The structure, not the count, is the real driver.** CZ alone needs
+   prefix + number + bank code + derived IBAN + SWIFT + bank name + holder name — seven columns whose
+   *meaningful subset* is decided by a discriminator. A1 puts all seven on `Employee` with nothing on
+   the row saying which are meaningful, and the first non-IBAN market adds more. **This is the leg
+   that survives challenge intact**, and D1 now rests primarily on it.
+
+**Not EF owned types.** The repo has **zero** `OwnsOne`/`OwnsMany` (verified twice, independently).
+Introducing a persistence pattern the team has never used, for the one table that must never be got
+wrong, is a bad trade. Follow `EmployeePayConfig`.
 
 ### D2 — The **bank's own country** governs the format; `WorkCountryId` governs *requirement*; `BusinessCountryId` governs nothing
+
+*(Not examined by either challenger — see the Verdict's coverage note.)*
 
 A bank account's format is decided by the bank, not by where the account holder lives, works, or is
 registered. The ticket offered "cleaner's / tenant's / order's"; **all three are the wrong kind of
@@ -143,14 +273,13 @@ answer**, because none of them is a property of the *account*. So the record car
 3. **`BusinessCountryId` is excluded, and the reason generalizes: a governing input that is not
    persisted cannot govern.** It is a request parameter that `UpdateIdentificationInfo`'s handler never
    assigns (`:131-150`). A format rule keyed to it could not be re-evaluated on read, could not be
-   re-run in a batch, and could not be rendered on an invoice — because on the next request the value
-   is whatever that client happened to send. It is also *only ever sent by mobile*
+   re-run in a batch, and could not be rendered on an invoice. It is also *only ever sent by mobile*
    (`IdentificationSectionViewModel.kt:96-98`; zero occurrences under `src/Cleansia.App`), so keying
    payout format to it would make a cleaner's payout format depend on **which app they last used**.
    That inconsistency is real and live; it is **not this ADR's to fix** — it belongs to the
    identification path. This ADR only refuses to inherit it.
 
-**Worked case — the Slovak cleaner working in CZ** (the case the ticket named):
+**Worked case — the Slovak cleaner working in CZ:**
 
 | | Value | Consequence |
 |---|---|---|
@@ -165,7 +294,8 @@ a single `if (country == "CZ")` anywhere. *(Refinement noted, not decided here: 
 counterparty for "is this cross-border" is the **paying entity's** country, i.e. `CompanyInfo.CountryId`.
 `WorkCountryId` is used because it is on the aggregate and, while Cleansia pays CZ cleaners from a CZ
 entity, the two are identical. If a paying entity is ever established in a country it does not operate
-in, this rule moves to `CompanyInfo.CountryId` — a one-line change in one validator.)*
+in, this rule moves to `CompanyInfo.CountryId` — a one-line change in one validator. **The panel did
+not challenge this; the lead records it as a named residual risk, not as a defended point.**)*
 
 ### D3 — `CountryConfiguration` grows **exactly one** column: `PayoutScheme`. It does **not** grow bank labels/formats/required flags
 
@@ -184,9 +314,7 @@ null/default meaning — not on the `*Label`/`*Format`/`*Required` triples.
    *name* and its *regex*. A bank account is a **structure whose field count changes per country**: CZ/SK
    has prefix + number + bank code (+ a derivable IBAN); a US ACH destination has routing + account +
    account type. `BankAccountLabel` + `BankAccountFormat` cannot express "this country has three parts".
-   Forcing it to would produce exactly the opaque single string this ADR exists to avoid.
-2. **The precedent has not proven itself.** F3: the existing labels are read by **no client**. Copying an
-   unexercised pattern is not consistency.
+2. **The precedent has not proven itself.** F3: the existing labels are read by **no client**.
 3. **The half that *is* per-country and *is* scalar — "which scheme" — is exactly what we take.** That is
    what keeps ADR-0017's seam intact: the validator reads `CountryConfiguration(BankCountryId).PayoutScheme`;
    **no handler branches on a country code**, and adding SK is a seed value (D10).
@@ -221,10 +349,6 @@ into the void or into a stranger's account.
 > not need our configuration to be checkable. Otherwise **reject** with a distinct key
 > `validation.payout.country_not_supported`.
 
-That exception is what keeps a German- or Polish-bank cleaner working in CZ from being blocked by a
-`CountryConfiguration` row we have no other reason to create — while keeping the *local* schemes (the
-ones that genuinely need our knowledge) closed to markets we have not opened.
-
 **The checks, per scheme:**
 
 | Check | Standard | Applies to |
@@ -232,19 +356,49 @@ ones that genuinely need our knowledge) closed to markets we have not opened.
 | IBAN check digits — move the first 4 chars to the end, letters → digits (A=10…Z=35), **mod 97 must equal 1** | **ISO 13616-1** (structure) + **ISO 7064 MOD 97-10** (the check) | every scheme carrying an IBAN |
 | IBAN country prefix **must equal `BankCountryId`** | — (a cross-check, not a standard) | every scheme carrying an IBAN |
 | IBAN length must equal the registry length for its country **when the country is configured**; otherwise the generic 15–34 bound | ISO 13616 IBAN Registry | every scheme carrying an IBAN |
-| CZ/SK local: **prefix ≤ 6 digits**, **number 2–10 digits**, **bank code exactly 4 digits**; prefix and number each pass the **weighted modulo-11** check (weights 6,3,7,9,10,5,8,4,2,1 applied right-to-left; weighted sum mod 11 must be 0) | the ČNB account-numbering scheme — **see the honesty note below** | `CzskDomesticWithIban` |
+| **CZ/SK local** — see D4.1 for the corrected rule | the ČNB/NBS account-numbering scheme — see the honesty note | `CzskDomesticWithIban` |
 | BIC is 8 or 11 characters, `^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$`, and characters 5–6 equal `BankCountryId` | **ISO 9362** | wherever SWIFT is supplied |
+| **[ADDED — CH-S5] Card-PAN rejection** — a value that, after stripping separators, is **13–19 digits and passes the Luhn check** is **rejected** on **every** write path with `validation.payout.looks_like_card` | Luhn / ISO 7812-1 | **every scheme, every field** (D9a) |
 
-**Honesty note (AC15).** ISO 13616 / ISO 7064 / ISO 9362 are cited as public standards. The CZ/SK
-modulo-11 weight vector above is stated from **secondary reading, not from the decree text**, and this
-ADR does **not** assert a banking legal requirement. **T-0519 must verify the weight vector and the
-CZ/SK IBAN composition against a primary source (the ČNB/NBS numbering decree and the ISO 13616 IBAN
-Registry entry) before the check becomes blocking**, and must land a test vector table including at
-least one known-good and one known-bad real-format account per country. If verification fails, the
+#### D4.1 — **[AMENDED — CH-D4, verified twice] The CZ/SK modulo-11 rule, stated correctly**
+
+The prior draft said *"weights 6,3,7,9,10,5,8,4,2,1 applied **right-to-left**"*. **The vector is right;
+the direction is wrong**, and the honesty note told T-0519 to verify *the weights*, not the direction —
+so the flag that was supposed to catch this would not have. Computed independently by the db challenger
+and re-computed by the lead:
+
+| Account | Vector **left-to-right** over the zero-padded field | The prior draft's text taken literally (right-to-left) |
+|---|---|---|
+| `5885638003` — **the owner's own specimen** | weighted sum **297**, mod 11 = **0** → valid | **1** → **REJECTED** |
+| `2000145399` — the F1 example `19-2000145399/0800` | **0** → valid | 7 → REJECTED |
+
+Across the lead's sample of 18,416 valid accounts the reversed reading accepts **1,674** — it rejects
+**90.9%**. (The db challenger's independent run over a different sample of 18,135 gave 91.4%. The
+samples differ; the defect does not.) The listed vector is `2^k mod 11` read right-to-left
+(`[1,2,4,8,5,10,9,7,3,6]`) **reversed**, i.e. it is already a left-to-right vector; applying it
+right-to-left applies it to reversed digits, which is a different function. Because D4 **fails
+closed**, the failure mode of this one error would have been *rejecting nine out of ten real Czech bank
+accounts at a write path that gates income*.
+
+> **The rule, corrected and uniform:**
+> **Zero-pad each of the prefix and the account number to 10 digits. Apply the weights
+> 6, 3, 7, 9, 10, 5, 8, 4, 2, 1 LEFT-TO-RIGHT. The weighted sum mod 11 must be 0.**
+
+The second defect in the same sentence is fixed by the same wording: *"prefix and number **each**"*
+passing one 10-long vector is ambiguous, and taking the **first** six weights for a 6-digit prefix is
+wrong for ~13% of prefixes (the correct six are the **last** six). Zero-padding to 10 and applying the
+full vector left-to-right is the single uniform rule that is correct for both fields.
+
+**Honesty note (AC15), amended.** ISO 13616 / ISO 7064 / ISO 9362 / Luhn are cited as public standards.
+The CZ/SK modulo-11 weight vector is stated from **secondary reading, not from the decree text**, and
+this ADR does **not** assert a banking legal requirement. **T-0519 must verify the weight vector, *the
+direction*, and *the padding rule* against a primary source (the ČNB/NBS numbering decree) before the
+check becomes blocking**, and must land a test-vector table whose **required known-good entry is the
+owner's own specimen `5885638003`** plus at least one known-bad per country. If verification fails, the
 CZ/SK local check degrades to *structure only* and the ADR's other decisions are unaffected.
 
-**What happens to values already stored that would now fail:** nothing, on the day of the migration —
-that is D7, and it is the reason D7 exists as a separate decision.
+**What happens to values already stored that would now fail:** see D7 — which now opens with the
+question of whether any such values exist.
 
 ### D5 — The CZ field set, exactly, and what is required
 
@@ -253,77 +407,125 @@ For `Scheme = CzskDomesticWithIban` (CZ today, SK on a seed value):
 | Field | Type / length | CZ required? | Notes |
 |---|---|---|---|
 | `BankCountryId` | FK `Country` | **required** | D2. Governs scheme + checks |
-| `AccountPrefix` | `varchar(6)`, digits | optional | **Leading zeros are significant** — store as text, never as a number. Absent on the owner's specimen (`5885638003/5500` has no prefix) |
-| `AccountNumber` | `varchar(10)`, digits | **required** | Leading zeros significant |
+| `AccountPrefix` | `char(6)`, digits | optional | **[AMENDED — CH-D5]** stored **zero-padded canonical**; see D5.1 |
+| `AccountNumber` | `char(10)`, digits | **required** | **[AMENDED — CH-D5]** stored **zero-padded canonical**; see D5.1 |
 | `BankCode` | `varchar(4)`, digits | **required** | `5500` on the specimen |
-| `Iban` | `varchar(34)` | **required — but SERVER-DERIVED, not asked for** | See below |
+| `Iban` | `varchar(34)` | **required — but SERVER-DERIVED, not asked for** | See D5.2. **The comparison key for every equality/duplicate check** |
 | `Swift` | `varchar(11)` | optional for a CZ bank; **required when `BankCountryId != WorkCountryId`** (D2) | ISO 9362 |
 | `BankName` | `varchar(100)` | optional | Display only |
-| `HolderName` | `varchar(200)` | optional | The beneficiary name **as the bank knows it** — may differ from the platform's name (married name, legal entity). Defaults to `LegalEntityName` for a legal entity, else `User.FirstName + " " + User.LastName`. This is the "what else is needed to make a payment" the owner's phrasing gestured at |
-| `ProviderAccountRef` | `varchar(100)` | n/a | Reserved for D9. **Never a PAN** |
+| `HolderName` | `varchar(200)` | optional | The beneficiary name **as the bank knows it** — may differ from the platform's name. Defaults to `LegalEntityName` for a legal entity, else `User.FirstName + " " + User.LastName`. **PII: erased by D1.1.2, never in audit JSON** |
+| `ProviderAccountRef` | `varchar(100)` | n/a | Reserved for D9. **An id. Never a PAN** |
 | `Status` | enum | **required** | `Provided` \| `NeedsReconfirmation` |
 | `ConfirmedAt` | `timestamptz?` | — | When details last passed the real validator |
-| `LegacyRawValue` | `varchar(50)` | — | **Migration-only park.** D7 |
+| **`LastRevealedAt`** | `timestamptz?` | — | **[ADDED — CH-S2]** stamped by the admin reveal **command**, which is what makes the reveal auditable by the existing engine (D8.4) |
+| **`RevealCount`** | `int NOT NULL DEFAULT 0` | — | **[ADDED — CH-S2]** same |
+| ~~`LegacyRawValue`~~ | — | — | **[AMENDED — CH-D6/CH-D7] Removed from this entity.** If the legacy branch of D7 is taken at all, the parked value lives in a **non-mapped staging table**, not here |
 
-**The IBAN is computed, not collected.** For CZ/SK the IBAN is a deterministic function of the local
-parts: `CC` + 2 check digits + bank code (4) + prefix (6, zero-padded) + account number (10,
-zero-padded) = 24 characters, check digits by ISO 7064 mod-97-10. So:
+#### D5.1 — **[AMENDED — CH-D5] Leading zeros are NOT identity, and the derived IBAN is the comparison key**
+
+The prior draft said *"leading zeros are significant."* That is false and it contradicts the
+derivation: `compose('5500','','123456')` and `compose('5500','','0000123456')` produce the **identical**
+IBAN, as do `compose('5500','','5885638003')` and `compose('5500','0','5885638003')`. The IBAN is *the*
+international identifier of the account and it cannot distinguish them, so they are not distinguishable
+accounts. Therefore:
+
+- Store the **zero-padded canonical form** (`char(6)` / `char(10)`). Text, not integers — they are digit
+  strings, not quantities — but the *reason* is canonicalization, not significance.
+- **Every equality, duplicate and fraud check compares the derived `Iban`, never the typed parts.**
+  This is what keeps D6's "two employees sharing one account" signal working; on raw parts it would
+  silently under-report, which is the worst kind of fraud control.
+- **Rendering:** the invoice renders the **trimmed** local form (`5885638003/5500`), not the padded
+  storage form. Flagged to T-0522; the owner's specimen carries no leading zeros so it does not settle
+  the display convention on its own.
+- D7 class 1's decomposition is **deterministic and canonicalizing**, not *"lossless"* — it cannot
+  recover how many zeros the cleaner typed. Harmless, but a migration author would implement the wrong
+  word literally.
+
+#### D5.2 — The IBAN is computed, not collected
+
+For CZ/SK the IBAN is a deterministic function of the local parts: `CC` + 2 check digits + bank code (4)
++ prefix (6, zero-padded) + account number (10, zero-padded) = 24 characters, check digits by ISO 7064
+mod-97-10. **The db challenger verified this by composition, and the lead re-computed the owner's
+specimen by hand; both agree.** So:
 
 - The **local parts are the source of truth**; the server derives and stores the IBAN.
-- If the cleaner also types an IBAN, it must **equal** the derived value or the write is rejected with a
-  specific key. Two renderings of one account that disagree on one document is a failed payment; the
-  specimen shows both, so they must be provably the same account.
-- The CZ form is therefore **two fields** (`number` + `bank code`, plus an optional prefix) — which
-  kills a whole class of 24-character typos rather than validating them.
-- *(Marked for T-0519 verification with the same rigour as the mod-11 vector: the CZ/SK IBAN composition
-  above is a read of the ISO 13616 registry entry, not a run. If it does not hold, the IBAN becomes a
-  collected-and-checked field instead of a derived one — a change to one validator, not to the shape.)*
+- If the cleaner also types an IBAN, it must **equal** the derived value or the write is rejected.
+- The CZ form is therefore **two fields** (`number` + `bank code`, plus an optional prefix).
+- **The fallback does not become the primary.** The panel's question — *"should derivation be demoted to
+  an enhancement?"* — is answered **no**: the composition verifies clean, so the two-field capture form
+  and D7's class-1 decomposition both stand as written. T-0519's primary-source duty remains.
 
-**What is NOT a payout-details field, and where it lives instead:** **variabilní symbol** is already
-`EmployeeInvoice.VariableSymbol` (`:72`, generated `:331`) — it is per-invoice, not per-cleaner.
-**Konstantní symbol** and **due date** are per-invoice/per-policy and belong to **T-0508**. Neither
-enters this record. Stated explicitly so T-0508/T-0522 do not add them here.
+> **[ADDED by the lead — a concrete defect this verification surfaced.]** The owner's specimen composes
+> to **`CZ3155000000005885638003`** (BBAN + `CZ00` → remainder 67 → check digits 98−67 = **31**). The
+> **existing test fixtures pin `CZ6555000000005885638003`** — `PayoutInvoiceLayoutTests.cs:187` and
+> `:60`, `PayoutInvoicePdfDataTests.cs:78` and `:222`. That value computes to remainder **12**, not 1:
+> **it fails ISO 7064 mod-97 and D4 would reject it.** T-0519/T-0522 must update those fixtures to the
+> derived value; a test suite that pins an invalid IBAN for the owner's own account will otherwise
+> either fail or, worse, be "fixed" by weakening the validator.
 
-### D6 — **No column-level encryption in v1.** The boundary is storage-level encryption plus a masked read contract — and the reasons and the reversal triggers are written down
+**What is NOT a payout-details field:** **variabilní symbol** is already `EmployeeInvoice.VariableSymbol`
+(`:72`, generated `:331`) — per-invoice, not per-cleaner. **Konstantní symbol** and **due date** are
+per-invoice/per-policy and belong to **T-0508**. Neither enters this record.
 
-**Current posture, verified first:** the repo does **nothing** at the column level. The only sensitive
+### D6 — **No column-level encryption in v1** — on a corrected premise and a corrected threat model
+
+**Current posture, verified:** the repo does **nothing** at the column level. The only sensitive
 converter is `PasswordConverter.cs:6`, a one-way hash — structurally unusable for a value that must be
-rendered on a document. No `IDataProtection` usage on any server path.
+rendered on a document. No `IDataProtection` on any server path.
 
 **Decision: the new columns are plaintext, and that is a decision, not an omission.**
 
-1. **It would be theatre in this system.** The account number is **printed on an invoice the cleaner
-   receives**, emailed, exported in the GDPR export (`GdprExportService.cs:38`), and read by whoever
-   executes the transfer. Application-level encryption defends against *stolen database files and
-   backups* — a threat already covered by Azure Database for PostgreSQL Flexible Server's
-   service-managed encryption at rest *(read of the Azure product documentation; **not** verified
-   against this repo's Bicep — **T-0518 must confirm it on the DEV/PROD server and record the finding**)*.
-   It does **not** defend against the application, which is the component that reads and renders the
-   value. Encrypting a column whose contents we email is not a security control.
-2. **It removes controls we may want.** An encrypted column cannot be indexed or uniquified — and
-   "two employees sharing one account number" is a real fraud signal we may want to check.
-3. **Key management is the actual cost.** Rotation, envelope keys, dev/prod parity, restore-from-backup,
-   and a break-glass path — adopted for one field with no key-management story is worse than not
-   adopting it, because it produces confidence without protection.
+1. **It would be theatre in this system — and the proof is stronger than the draft claimed.**
+   **[AMENDED — CH-S1 found-sound-1]** The account identifier is not "printed on an invoice" as a future
+   T-0522 concern; **it is printed today and pinned by a test.** `FileExtensions.cs:107` sets
+   `Iban = employee.IBAN` on the supplier block; `InvoicePdfData.cs:36-59` documents that the supplier
+   *is* the cleaner; `DefaultInvoiceLayoutBuilder.cs:175` renders it; `PayoutInvoiceLayoutTests.cs:56`
+   asserts it, with the owner's specimen in the fixture. The PDF is blob-stored, downloadable and
+   emailed. **The payee account IS the payment instruction on a supplier invoice** — you cannot "fix the
+   printing", which is the author's nominated strongest counter and it fails. A `ValueConverter`
+   decrypting on every read for a value the application prints on a PDF it sends is not a control.
+2. **The threat model, stated honestly.** **[AMENDED — CH-S6]** The threat column encryption *uniquely*
+   addresses is **a principal holding a live DB session who is not the application** — and the
+   infrastructure provisions exactly one: `postgres.bicep:153-161` opens `allowAdminIp` whenever
+   `publicNetworkAccess == 'Enabled'` (`main.bicep:347`). **Today that principal is the owner — who is
+   also the person executing the transfers**, so the control would gate them from data they need
+   anyway. That is why the conclusion survives; the draft's "it does not defend against the
+   application" was true but not the whole answer.
+3. **It removes controls we may want.** An encrypted column cannot be indexed or uniquified — and "two
+   employees sharing one account" is a real fraud signal. Per D5.1 that check compares the **derived
+   IBAN**.
+4. **Key management is the actual cost.** Rotation, envelope keys, dev/prod parity,
+   restore-from-backup, break-glass — adopted for one field with no key-management story, it produces
+   confidence without protection.
 
-**What we do instead, and it is not weaker — it is aimed at the exposure that is actually real (D8):**
-the read contract, not the disk. Today's genuine leak is `EmployeeListItem.cs:52` shipping the account
-identifier in a **paged list** response — which no amount of at-rest encryption would have prevented.
+**What we do instead** is the read contract (D8), not the disk. **[AMENDED — CH-S1]** The prior draft
+justified this by "today's genuine leak is a paged list response." **There is no such leak** — the
+paged DTO carries no payout identifier. The real exposure is narrower and worse-shaped: the **unmasked**
+identifier on an **enumerable resource-by-id** admin route gated by the **same policy that grants the id
+list**, with **no masking, no reveal record and no rate limit**. D8 closes exactly that.
 
-**Reversal triggers — any one of these reopens this decision as a superseding ADR:**
+**At-rest posture, narrowed by the panel:** `postgres.bicep:81` declares the Flexible Server with **no
+`dataEncryption` block** → the platform default, i.e. **service-managed keys, not CMK**, and there is no
+ARM property on this resource type that disables encryption at rest. **T-0518's remaining duty is
+narrower than the draft stated**: confirm DEV/PROD were provisioned *from this Bicep* (not hand-created)
+and record at the column that key custody sits with Microsoft.
+
+**Reversal triggers — any one reopens this as a superseding ADR:**
 (i) the record starts holding something that is *not* printable on the cleaner's own invoice (a payout
-KYC national id, a PSP secret); (ii) a second tenant/franchise goes live with operators who must not see
-each other's cleaners beyond the tenancy filter; (iii) an external processor or BI tool gains direct DB
-access; (iv) the platform takes on a contractual/regulatory obligation naming encryption at rest for
-financial identifiers.
+KYC national id, a PSP secret); (ii) **a second tenant/franchise goes live with operators who must not
+see each other's cleaners** — noted as a **latent multi-tenant risk carried by D8's read contract**,
+since the tenancy filter already scopes reads and the new record inherits it; (iii) **[REWORDED —
+CH-S6]** a **non-owner** principal (external processor, BI tool, contractor, support vendor) gains
+direct DB access, **or `publicNetworkAccess` remains `Enabled` once a second operator exists**;
+(iv) a contractual/regulatory obligation naming encryption at rest for financial identifiers.
 
 **Out of scope here, already owned:** the IBAN's exposure in logs and in the GDPR export is **T-0509**.
-This ADR does not re-decide it; it only requires that the new fields inherit whatever T-0509 lands, and
-that S6 (never log the value) applies from day one.
+S6 (never log the value) applies from day one — verified clean today: `rg` over every
+`LogInformation`/`LogWarning`/`LogError` intersected with `iban|bank` returns **zero hits**.
+**[Noted by the lead, routed to T-0509, not decided here]** generated invoice PDFs in blob storage carry
+the plaintext account after an erasure; blob retention is T-0509's, not this record's.
 
-### D7 — The completeness gate is **decoupled from payout validity**; legacy rows are classified, never guessed; the hard stop moves to where money actually moves
-
-This is the decision F2 forces, and it is the one that protects live cleaners.
+### D7 — The completeness gate is decoupled from payout validity **and from the object graph**; the legacy apparatus is **conditional**; the hard stop moves to where money actually moves
 
 **The rule:**
 
@@ -331,110 +533,257 @@ This is the decision F2 forces, and it is the one that protects live cleaners.
 > valid". Real validation (D4) applies to **writes** from the day it ships, and to **payout issuance**.
 > It does **not** retroactively invalidate a profile.
 
-- `Employee.cs:283` changes from `!string.IsNullOrEmpty(IBAN)` to **`PayoutDetails is not null`** —
-  satisfied by *every* migrated row, including parked ones. **No cleaner loses job-board access on
-  migration day.** This is the single most important property of the migration.
-- **The hard stop moves to invoice/payout issuance**: `EmployeeInvoice` generation refuses when
-  `PayoutDetails is null || Scheme is null || Status != Provided`, recording an admin-visible
+- **[AMENDED — CH-D1/CH-S7]** `Employee.cs:283` changes from `!string.IsNullOrEmpty(IBAN)` to
+  **`HasPayoutDetails`** — the scalar of D1.1, **not** `PayoutDetails is not null`. The draft's version
+  was `Include`-dependent: `GetByUserEmailAsync` (`:9-17`) has a hand-written include list, there is no
+  lazy loading, so an unloaded navigation is `null` and **every cleaner would have 403'd on the entire
+  partner surface** — `[RequireCompleteProfile]` is class-level on the partner host's `OrderController`,
+  `EmployeePayrollController`, `DashboardController` and `DisputeController`. The scalar makes "no
+  cleaner loses job-board access on migration day" **true by construction** instead of true by a
+  remembered line.
+- **The hard stop moves to invoice/payout issuance**: `EmployeeInvoice` generation refuses when the
+  payout record is absent, `Scheme is null`, or `Status != Provided`, recording an admin-visible
   `PayoutBlocked` reason. **Why the invoice is withheld rather than issued without a payment block:** an
-  invoice is a sequence-numbered legal document (T-0508 AC5 already raises gaplessness). Deferring
-  issuance is reversible; burning a sequence number on a knowingly defective document and reissuing is
-  not. Pay periods are bi-weekly, so the reconfirmation prompt has a window measured in days, not hours.
+  invoice is a sequence-numbered legal document (T-0508 AC5 raises gaplessness). Deferring issuance is
+  reversible — verified: `GenerateInvoice.Command(EmployeeId, PayPeriodId)` (`:15-16`) stays valid
+  because the pays keep `EmployeeInvoiceId == null` (`OrderEmployeePayRepository.cs:46-49`) — burning a
+  sequence number on a knowingly defective document and reissuing is not.
+- **[CORRECTED — CH-D8(1)] Pay periods are MONTHLY, not bi-weekly.**
+  `PayPeriodBackgroundService.cs:89-90` and `:161-162` both use `AddMonths(1).AddDays(-1)`, and the
+  code's own comment at `:85-88` says so; `GenerateBiWeeklyPeriodsForYear` (`PayPeriodService.cs:30`)
+  has **zero call sites**. So the withholding window is **up to ~31 days, not ~14** — roughly twice the
+  grievance the draft priced. The mitigation is therefore not "the window is short"; it is D7.1.
+- **[ADDED — CH-D8(2)] D7.1 — somebody tells them, through the channel that already exists.**
+  Invoices are generated inside `SendPeriodClosedEmailsAsync` (`PayPeriodBackgroundService.cs:196-293`),
+  and today when generation yields nothing the period-closed email is **still sent, with a null
+  attachment** (`:229-238`, `:259-269`). Under D7 a payout-blocked cleaner would receive *"your pay
+  period closed"* with no invoice and no explanation. **The period-closed email must learn the
+  payout-blocked reason** and say what to do; "a prompt appears in the app" is not sufficient for a
+  document the cleaner needs for tax. The carrier already exists
+  (`_emailService.SendPeriodClosedEmailAsync`, `:259`).
+- **[ADDED — CH-D8(3)] D7.2 — a withheld invoice must not become a permanent fiscal-reconciliation
+  candidate.** `PayPeriodRepository.cs:85-101`'s candidate predicate is *stale pays with **no**
+  `EmployeeInvoice` row for the pair* — which a payout-blocked pair matches **forever**, so
+  `FiscalReconciliationService.ReconcileInvoicesAsync` would re-enqueue a message the new rule refuses,
+  every sweep tick, per blocked cleaner. That buries a **real** fiscal loss in noise, in the one sweep
+  that exists to detect it (ADR-0002 D3.4). **A payout-blocked pair must be excluded from candidacy** —
+  either by recording the block as a durable, admin-visible terminal state the anti-join sees, or by
+  the sweep's predicate excluding blocked pairs. T-0518/T-0522 pick the mechanism; the **observable** is
+  fixed here: a blocked pair is not returned by the candidate query after the first refusal
+  (verification 7b).
 - **`GetMissingProfileFields()` keeps emitting `"profile.fields.iban"` (`Employee.cs:313`) in v1.**
-  The server emits the key and **five shipped clients translate it**, two of them app-store-gated.
-  Renaming it to `profile.fields.payoutDetails` would show a raw key to every device that has not
-  updated, for zero user benefit. Rename on a coordinated mobile release; carry an in-code comment
-  saying exactly that, so the mismatch reads as a decision rather than as rot.
+  The server emits the key and **five shipped clients translate it**, two app-store-gated. Renaming it
+  would show a raw key to every un-updated device for zero user benefit. Rename on a coordinated mobile
+  release; carry an in-code comment saying exactly that.
+- **[ADDED — CH-D9 secondary] Anonymized employees change gate state, harmlessly, and it is now
+  stated.** Today `Anonymize()` leaves `IBAN = "[DELETED]"` (non-empty), so `IsProfileComplete()` stays
+  **true**. Under D7 it becomes **false** (`HasPayoutDetails = false`, D1.1.2). Harmless — the same
+  service deactivates the employee at `GdprDeletionService.cs:237` — but `GetMissingProfileFields()`
+  output changes for anonymized rows, and that is a deliberate consequence, not a regression.
 
-**The backfill classifier — three classes, and a fourth that is not migrated:**
+#### D7.3 — **[AMENDED — CH-D6] The legacy apparatus is CONDITIONAL, and the condition is an owner question, not a dry-run**
+
+The four-class classifier, the parked raw value, the reconfirmation campaign and the deliberate
+`"profile.fields.iban"` mismatch are **all** justified by a population of pre-existing `Employee.IBAN`
+values whose existence at launch the draft never established. The repository says it may not exist:
+**one** migration (`20260723182623_Initial.cs`) with a pre-prod practice of **regenerating** it rather
+than stacking; prod **authored, not deployed**; `insert_seed_data.sql` seeds **no** `Employee."IBAN"`
+(its only `Iban` is `CompanyInfo`'s). The "legacy population" is whatever the owner typed by hand into
+DEV. *"How many in each class"* is the second question; *"does this data survive to launch"* is the
+first, it is not answerable by a dry-run that runs **after** the schema is designed, and it decides
+**whether a column and a table exist at all**.
+
+> **Precondition, escalated as `Q-PAYOUT-05` (see Escalations).** Before T-0518 begins:
+>
+> **Branch A — the launch database carries no legacy `Employee.IBAN` values** (DEV data discarded, or
+> `Initial` regenerated for launch): **D7 collapses to "create the table."** No classifier, no staging
+> table, no parked raw value, no campaign, no withheld-invoice population on day one. D7's gate rule,
+> D7.1, D7.2 and the issuance block all still apply — to *future* rows, which is their permanent job.
+> **This is the branch the repository's own evidence points at, and it is the default if the owner does
+> not say otherwise.**
+>
+> **Branch B — legacy values are carried into launch:** the four-class classifier below runs, plus
+> class −1, plus the staging table of D7.4.
+
+#### D7.4 — The backfill classifier (Branch B only) — **five classes**
 
 | Class | Test | Lands as |
 |---|---|---|
-| **0 — anonymized** | value == `AnonymizationMarker.Value` (`"[DELETED]"`) | **No payout record at all.** The person is gone; parking their row as "please reconfirm" would be both wrong and a re-identification prompt |
-| **1 — a real IBAN** | passes ISO 7064 mod-97 | Migrated as valid. If the prefix is **CZ or SK**, the IBAN is **decomposed** back into bank code / prefix / account number (deterministic and lossless) → **`Scheme = CzskDomesticWithIban`, `Status = Provided`, `ConfirmedAt` = migration time, a complete payment block for T-0522 with zero cleaner action.** Otherwise `Scheme = SepaIban`, `Status = Provided` |
-| **2 — a mangled domestic number** | fails mod-97, but looks like a stripped CZ/SK account | **Class 3. Do not reconstruct.** F1: the stripped separators are irrecoverable and a wrong guess is a transfer to a stranger. Deliberately not clever |
-| **3 — everything else** | anything remaining | `Scheme = null`, `BankCountryId = null`, identifier fields null, **`LegacyRawValue` = the original string verbatim**, `Status = NeedsReconfirmation`. Profile stays complete; a non-blocking prompt appears; the next write must pass D4; payout is blocked until it does |
+| **−1 — a card PAN** **[ADDED — CH-S5]** | 13–19 digits after stripping separators **and** passes **Luhn** | **No payout record identifier and NO parked value.** `Status = NeedsReconfirmation`; the prompt says *"we cannot use what we have on file"* and **never echoes it**. **T-0518 also nulls the source `Employee.IBAN` column for these rows** — the migration must not carry a PAN forward (D9a). The dry-run reports this count **separately**, so the owner learns whether it is real |
+| **0 — anonymized** | value == `AnonymizationMarker.Value` (`"[DELETED]"`) | **No payout record at all.** The person is gone; parking their row as "please reconfirm" would be wrong and a re-identification prompt |
+| **1 — a real IBAN** | passes ISO 7064 mod-97 | Migrated as valid. If the prefix is **CZ or SK**, the IBAN is **decomposed** back into bank code / prefix / account number (deterministic and **canonicalizing**, D5.1) → `Scheme = CzskDomesticWithIban`, `Status = Provided`, `ConfirmedAt` = migration time, **a complete payment block for T-0522 with zero cleaner action**. Otherwise `Scheme = SepaIban`, `Status = Provided` |
+| **2 — a mangled domestic number** | fails mod-97, looks like a stripped CZ/SK account | **Class 3. Do not reconstruct.** F1: the stripped separators are irrecoverable and a wrong guess is a transfer to a stranger. Deliberately not clever |
+| **3 — everything else** | anything remaining | `Scheme = null`, identifier fields null, the original string parked **in the staging table of D7.5**, `Status = NeedsReconfirmation`. `HasPayoutDetails = true` → profile stays complete; a non-blocking prompt appears; the next write must pass D4; payout is blocked until it does |
 
 **The backfill principle, stated once so T-0518 does not re-derive it:**
 > **Legacy validity is decided by running the *new* validator over the *old* value. Anything the new
 > validator would accept on a fresh write, we accept without troubling the cleaner. Everything else is
-> parked, preserved, and re-asked.**
+> parked, preserved, and re-asked — except a PAN, which is neither parked nor preserved.**
 
-`LegacyRawValue` exists so nothing is ever silently dropped and so the cleaner's prompt can say *"we
-have `1920001453990800` on file — please re-enter it as number and bank code"*, which is a far better ask
-than an empty form. It is **write-once by the backfill script, never written by application code**, and
-a follow-up ticket **drops the column** once the reconfirmation campaign closes. That lifecycle is part
-of this decision — an unbounded escape-hatch column would be a smell; a scheduled one is a plan.
+#### D7.5 — **[AMENDED — CH-D7] The parked value lives OUTSIDE the operational table**
 
-**Operational shape:** owner-run EF migration (`manual_steps: ef-migration`, T-0518) and an owner-run
-**SQL script**, not startup code (T-0518 AC9), with a dry-run that reports the class counts before
-anything is written.
+By the draft's own words the column is *"write-once by the backfill script, never written by
+application code"* — and a column application code must never write should not sit on the entity
+application code writes. On `EmployeePayoutDetails` it would be in every `SELECT` EF generates, in the
+audit JSON verification 10 obliges the coverage test to police, in the GDPR-export surface handed to
+T-0509, and it would be **the one field on the record with no scheme, no validator and no masking
+rule** — while holding, per F1, mangled raw PII. And *"dropped once the campaign closes"* has **no
+trigger**: the campaign closes when the last class-3 cleaner reconfirms, and a cleaner who stops working
+never reconfirms.
 
-### D8 — The read contract: payout details never ride a list DTO, are masked by default, and an admin reveal is an audited action
+> **Under Branch B: `payout_legacy_import` — a staging table keyed by `EmployeeId`, written by the
+> owner-run backfill script, with NO `DbSet<T>`, NO entity configuration and NO `OnModelCreating`
+> registration.** Plain SQL, read by exactly one dedicated query that builds the reconfirmation prompt.
+> Dropping it is then `DROP TABLE` with zero blast radius on the entity, the DTO surface, the
+> audit-coverage test and the GDPR export. **It is erased by the erasure path** (D1.1.2 clears the
+> staging row by `EmployeeId` too) — a cleaner may be erased before the campaign closes, and the
+> scheduled drop is not a substitute for erasure (CH-S4 item 4). Under Branch A the table never exists.
 
-The exposure D6 declines to solve with cryptography is solved here, structurally:
+**Operational shape:** owner-run EF migration (`manual_steps: ef-migration`, T-0518) and, under Branch B,
+an owner-run **SQL script**, not startup code, with a dry-run that reports the **five** class counts
+before anything is written. If class 3 is the majority, T-0518 stops and re-opens D7 rather than
+proceeding.
 
-1. **`Iban` is removed from `EmployeeListItem` (`:52`) and `EmployeeItem` (`:27`).** A paged list of
-   employees must not carry payout identifiers. *(**Breaking NSwag change** → `MANUAL_STEP` for the
-   owner; the admin employee-detail feature reads `iban` today and is reworked by T-0520.)*
-2. **One single-resource read** — `GET .../employees/{id}/payout-details` — authorized to the **owner of
-   the record** or an **admin**, following S3 (resource-by-id ownership check) exactly as
-   `UpdateBankDetails.Validator.AllowedToUpdateEmployee` (`:39-44`) does for writes.
-3. **Masked by default** (`****3003`) everywhere except (a) the owner's own edit form — it is their
-   account and they must be able to check it — and (b) the **server-side** invoice renderer.
-4. **An admin viewing the unmasked value is an explicit reveal action that writes an audit entry**, per
-   ADR-0012 D4.1 (ids, not the PII — `AdminUpdateEmployee.cs:101` is the precedent).
-5. **S6:** the value is never logged at any level; **anonymization:** `Employee.Anonymize()` clears the
-   whole payout record (T-0518 AC6), and `EmployeeUserAuditCoverageTests` is extended to assert every
-   new field is absent from audit JSON — not just the one that used to be there.
+### D8 — The read contract: three routes, masked by default, and the reveal is an **audited command**
 
-### D9 — **No PAN column. Ever.** "Card number" in the owner's list is not a schema field
+The exposure D6 declines to solve with cryptography is solved here, structurally.
 
-**Stated plainly, because the owner's phrasing must not be read as a column request:** a card number
-(PAN) will not be stored in this database, encrypted or otherwise, and no field on
+1. **`Iban` is removed from `AdminEmployeeDetail` (`EmployeeListItem.cs:52`, mapper
+   `EmployeeMappers.cs:115`) and from `EmployeeItem` (`:27`, mapper `:61`).** **[AMENDED — CH-S1]** Not
+   because they are paged — they are not — but because **payout identifiers live on exactly one DTO
+   family and nowhere else**, which is a rule a test can check (D8.6). `AdminEmployeeDetail` is the one
+   that actually matters: it ships the unmasked value on an **enumerable** admin route today.
+   *(**Breaking NSwag change** → `MANUAL_STEP` for the owner; the admin employee-detail feature is
+   reworked by T-0520 and the mobile self-read by T-0521.)*
+2. **[AMENDED — CH-S8 Part B] Three routes, three DTOs — never one route with role-dependent content.**
+   A single DTO whose contents depend on the caller's role makes "masked by default" a property of five
+   clients' rendering code instead of a server guarantee, and two of those clients are app-store-gated.
+
+   | Route | Caller | Body |
+   |---|---|---|
+   | `GET .../me/payout-details` | the **owner** of the record (session-resolved, like `GetCurrentEmployeeDetail.cs:32-36`) | **full value** — it is their own account and they must be able to check it (S4 self-data) |
+   | `GET .../employees/{id}/payout-details` | **admin** | **masked only** (`****3003`). The DTO has **no unmasked field at all**, so a client cannot render what it was never sent |
+   | `POST .../employees/{id}/payout-details/reveal` | **admin** | **full value** — the audited, rate-limited reveal **command** (D8.4) |
+
+3. **[AMENDED — CH-S8 Part A] Authorization follows `DownloadInvoice.Handler` (`DownloadInvoice.cs:39-58`),
+   not `UpdateBankDetails`.** The draft cited `UpdateBankDetails.Validator.AllowedToUpdateEmployee`
+   (`:39-44`) as the owner-or-admin precedent; that method is **owner-only** — it compares the
+   session employee's id to the command's and has **no admin arm**, so a developer following it
+   "exactly" would ship a read no admin can call. The correct two-arm in-repo precedent checks the role
+   claim first and otherwise requires caller-employee-id equality, returning **`NotFound`, not
+   `Forbidden`**, on mismatch (S3's don't-confirm-existence convention).
+4. **[AMENDED — CH-S2] The admin reveal is a `Command`, and that is what makes it audited.**
+   The draft said the reveal "writes an audit entry per ADR-0012 D4.1". **It could not.**
+   `AdminMutationGate.cs:17-24` audits **iff** the request type name ends `Command`; `AuditLogBehavior.cs:19`
+   says in prose *"Queries and non-admin mutations produce no row."* A `GetPayoutDetails.Query` would be
+   **silently unaudited** — and the audit trail is the compensating control D6 leans on when it declines
+   encryption, so an unaudited reveal on an unmasked financial identifier would be **worse than today**.
+   Therefore: **`RevealPayoutDetailsCommand`** — it stamps `LastRevealedAt` and increments `RevealCount`
+   (D5), returns the unmasked value, and is audited **atomically by the existing engine with zero new
+   audit code**, riding the UoW's single `SaveChangesAsync` (`AuditLogBehavior.cs:10-16`).
+   - The two rejected routes: naming a read `…Command` without mutating is a lie the next reader must
+     decode; hand-writing an audit insert in a query handler contradicts ADR-0012's mechanism and has
+     **no commit to ride**, making it the best-effort success-audit shape S2 names as a violation.
+   - **No CQRS-rule breach:** a reveal genuinely *is* a state change, and the command returns one
+     record, not a collection (`CLAUDE.md`: *"Queries never modify data; Commands never return
+     collections"*).
+5. **[ADDED — CH-S3] The reveal carries a rate-limit window, and the structural guard covers it.**
+   Masking converts "one query returns everything" into "N deliberate reveals" — which is only a control
+   if N is bounded. Unbounded, an audited reveal *records* bulk exfiltration instead of stopping it: a
+   compromised admin session runs the paged id list (`AdminEmployeeController.cs:16`, the **same**
+   `CanViewPagedEmployee` policy) then N reveals. S5 was named nowhere in the draft.
+   - The reveal route carries `[EnableRateLimiting]` on the per-JWT-`sub`-partitioned policy
+     (`security-rules.md` S5 / ADR-0003 — reuse, do not hand-roll).
+   - **The controller hosting it is added to `RateLimitCoverageGuardTests.MoneyAndSideEffectControllers`
+     (`:29-93`).** Because the reveal is a `POST` (D8.4), the guard's existing `MutatingMethods`
+     contract (`:95`) then covers it automatically — **one decision closes CH-S2 and CH-S3 together**,
+     which is the strongest argument for modelling the reveal as a command.
+6. **[ADDED — replacing D1's struck reason (i)] The "never on the wrong DTO" rule is a frozen-surface
+   test, not a shape claim.** A test asserts that **no type under `…Features.*.DTOs` other than the
+   single named payout DTO family declares a payout-identifier property**, in the idiom this repo
+   already uses (`FrozenPermissionMapTests`, `RateLimitCoverageGuardTests`, `AuthWireContractTests`,
+   `HandleFailureErrorsContractTests`). Without it the rule is something a future author must remember —
+   which is exactly what the child-entity shape was claimed to eliminate and, per CH-S1, does not.
+7. **S6:** the value is never logged at any level (clean today; verified).
+8. **[AMENDED — CH-S4/CH-D9] Erasure is an id-keyed repository call in `GdprDeletionService`, not
+   `Employee.Anonymize()`.** See D1.1.2. The draft's clause — *"`Employee.Anonymize()` clears the whole
+   payout record"* — was a **silent no-op**: `GdprDeletionService.cs:43-46` includes only
+   `Employee → Address`, there is no lazy loading, so the navigation is `null`, the null-guarded clear
+   does nothing, `SaveChanges` succeeds and **the erasure returns success while the account number,
+   SWIFT, holder legal name and parked raw value survive in plaintext**, orphaned to an anonymized user
+   with no code path that will ever look at them again. **Verification 10 is rewritten to require an
+   integration test through `GdprDeletionService`'s real query shape** — an in-memory unit test with a
+   hand-populated navigation passes green while production fails, and the ADR must say so.
+9. **Audit hygiene:** `EmployeeUserAuditCoverageTests` is extended to assert every new field is absent
+   from audit JSON, using a **distinct sentinel per field** — a single `DoesNotContain` across ten
+   fields passes if nine are checked and one is not (`EmployeeUserAuditCoverageTests.cs:37,279,301` is
+   the existing single-sentinel idiom).
+
+### D9 — Card numbers: the storage half is decided; the product half is escalated
+
+#### D9a — **No PAN column. Ever. Decided, and now enforced.**
+
+A card number (PAN) will not be stored in this database, encrypted or otherwise, and no field on
 `EmployeePayoutDetails` accepts one.
 
-**Two reasons, and the second is the one that matters more:**
-
 1. **Scope.** Storing a PAN brings the platform, its database, its backups, its logs and everyone with
-   access to them into **PCI DSS** scope *(cited as an industry standard; this is not legal advice and
-   no agent here asserts a legal requirement — the scoping consequence is attributable to the PCI SSC's
-   published standard and is a business decision for the owner, several orders of magnitude larger than
-   a payout field)*.
+   access to them into **PCI DSS** scope *(cited as an industry standard; not legal advice; no agent
+   here asserts a legal requirement)*.
 2. **It is not how you pay someone by card anyway.** You do not push a payout to a PAN. A card payout is
-   a **network payout to a tokenised destination held by a PSP**, and what you store is an **id**.
+   a **network payout to a tokenised destination held by a PSP**, and what you store is an **id**. This
+   reason is decisive **on its own**, independent of reason 1.
+
+**[AMENDED — CH-S5 Part A] The invariant is now enforced at runtime, not asserted in prose.** A PAN can
+already be *in the data*: `ValidationExtensions.cs:122-130` is `NotEmpty().Length(15, 34)`, so a 16-digit
+Visa/Mastercard and a 15-digit Amex both **pass today**; `BankSectionViewModel.kt:74-76` normalizes
+`4111 1111 1111 1111` to 16 characters and sends it; and **the owner's own phrasing invites it**
+("Bank Account, **Card number**…"). So:
+- **`IPayoutDetailsValidator` rejects a Luhn-valid 13–19-digit value on every write path** with
+  `validation.payout.looks_like_card` (D4's check table).
+- **The backfill has class −1** and neither parks nor preserves such a value; T-0518 nulls the source
+  column for those rows (D7.4).
+- **Verification 11 gains a data check** — the draft's item inspected only field *names and shapes*,
+  which cannot catch data.
+- **T-0521:** the CZ form's numeric fields must not silently accept 16 digits into `AccountNumber`
+  (`char(10)` + mod-11 rejects it server-side, but the client must say **why**, or the cleaner retries).
 
 **What a card payout would actually require** (so the option stays open and is honestly priced):
 PSP payout onboarding (Stripe Connect Express or equivalent) · **KYC/KYB on each cleaner**, done by the
-PSP · an onboarding-link flow and a **webhook-driven account-status lifecycle** (`restricted` → `enabled`
-→ `disabled`) · a payout-execution path with idempotency (S7) · per-country PSP availability and fees ·
-and a reconciliation story against `EmployeeInvoice`. **That is a separate epic** ("moving money"), and
-it is explicitly out of scope of both this ADR and T-0518–T-0521.
+PSP · an onboarding-link flow and a **webhook-driven account-status lifecycle** · a payout-execution
+path with idempotency (S7) · per-country PSP availability and fees · reconciliation against
+`EmployeeInvoice`. **What this shape already does for it, at zero cost:** `Scheme = ProviderPayoutToken`
++ `ProviderAccountRef` (an id — e.g. `acct_…`) with every bank field null. **Zero migrations.**
 
-**What this shape already does for it, at zero cost:** `Scheme = ProviderPayoutToken` +
-`ProviderAccountRef` (an id — e.g. `acct_…`) with every bank field null. **Zero migrations.** That is
-the extensibility claim tested against the hardest case, not asserted.
+#### D9b — **[ESCALATED — CH-S5 Part B] What "Card number" meant is the owner's call, not the architect's**
+
+The draft named the scope question as the owner's (*"a business decision for the owner, several orders
+of magnitude larger than a payout field"*) **and then answered it in the same paragraph** (*"a separate
+epic… explicitly out of scope"*). Naming a decision as the owner's and taking it anyway is the failure
+mode `deliberation.md` step 3 calls ESCALATE. See **`Q-PAYOUT-04`** in Escalations. **It does not block
+T-0518–T-0521** — `ProviderAccountRef` + `Scheme = ProviderPayoutToken` costs zero migrations either way
+(D10) — and D9a stands regardless of the answer, because even "yes, cards" produces an **id**, not a PAN.
 
 ### D10 — What the second country actually costs (AC3 — priced, not asserted)
+
+*(Not examined by either challenger — see the Verdict's coverage note.)*
 
 | Adding… | Migrations | Backend code | Config/data | Client changes |
 |---|---|---|---|---|
 | **SK** | **0** | **0** | **1 value**: `CountryConfiguration('SK').PayoutScheme = CzskDomesticWithIban` | **0** — the CZ form already renders this scheme |
-| **A SEPA/IBAN market** (DE, PL, AT…) | **0** | **0** | 1 value (`SepaIban`) — **or 0**, because a valid IBAN self-identifies (D4) | **0** — the IBAN-only form is already a scheme layout |
-| **A non-IBAN market** (e.g. US ACH: routing + account + account type) | **1 additive** (the genuinely new columns) | 1 enum value + 1 scheme validator + its checksum | 1 value | **1 per client** — the new fields must be rendered somewhere. **Not zero, and this ADR does not pretend otherwise** |
+| **A SEPA/IBAN market** (DE, PL, AT…) | **0** | **0** | 1 value (`SepaIban`) — **or 0**, because a valid IBAN self-identifies (D4) | **0** |
+| **A non-IBAN market** (e.g. US ACH: routing + account + account type) | **1 additive** | 1 enum value + 1 scheme validator + its checksum | 1 value | **1 per client. Not zero, and this ADR does not pretend otherwise** |
 | **A PSP token payout** (D9) | **0** | payout epic, not schema | 1 value | 1 (an onboarding link, not a form) |
 | **A second destination per cleaner** | 1 (drop unique index, add `IsPrimary`) | primary-selection rule | 0 | 1 |
 
 **Why SK is free is not luck** — SK inherited the Czechoslovak account-numbering structure, so it is the
-*same scheme*, not a second one. That is the D1 framing paying off: we generalized along **scheme**, and
-two countries share one. *(SK's identity of structure and check-weights with CZ is a **read**; T-0519
-verifies it against the NBS source before SK ships, exactly as for CZ.)*
+*same scheme*. *(SK's identity of structure and check-weights with CZ is a **read**; T-0519 verifies it
+against the NBS source before SK ships, exactly as for CZ — **including the direction and padding rule
+of D4.1**.)*
 
-Compare, honestly, with the alternatives: under **(a) flat columns**, SK is also 0 migrations — but the
-first non-IBAN market adds its columns to `Employee` itself, and by the fourth market `Employee` is a
-sparse union of every country's bank scheme with no discriminator saying which subset is meaningful for
-a given row. Under **(c) config-only**, SK is 0 — and the CZ invoice **cannot be rendered at all**, which
-is a failure at country #1.
+Compare, honestly: under **(a) flat columns**, SK is also 0 migrations — but the first non-IBAN market
+adds its columns to `Employee` itself, and by the fourth market `Employee` is a sparse union of every
+country's bank scheme with no discriminator. Under **(c) config-only**, SK is 0 — and the CZ invoice
+**cannot be rendered at all**, a failure at country #1.
 
 ---
 
@@ -442,16 +791,19 @@ is a failure at country #1.
 
 | # | Alternative | Why not |
 |---|---|---|
-| **A1** | **Flat nullable columns on `Employee`, mirroring `CompanyInfo`** (`BankName`/`BankAccountNumber`/`Iban`/`Swift`) — the cheapest thing today | **Closest loser; it fails on three counts, none of which is cost.** (i) **No discriminator** — nothing on the row says which subset of columns is meaningful, so every reader re-derives it, which is a country branch in disguise; (ii) **the read contract stays broken by construction** — `Iban` rides `EmployeeListItem` (`:52`) *because* it is an `Employee` property that the mapper flattens, and four more such properties make it four times worse; (iii) `Status`/`ConfirmedAt`/`LegacyRawValue` (D7) are not employee attributes, and without them **there is no migration that does not lock cleaners out** (F2). `CompanyInfo` is a **singleton** describing **one** company in **one** country — it never had to be a discriminated shape, so it is not the precedent it looks like |
-| **A2** | **`CountryConfiguration` grows `BankAccountLabel/Format/Required`; the value stays one string** | **Fails at country #1.** The owner's own specimen needs local account number **and** IBAN **and** SWIFT *simultaneously on one document* — you cannot render three renderings from one opaque string (T-0517 AC9 / T-0508 AC8). It also copies an **unexercised** precedent (F3) and is the wrong arity for a multi-part identifier (D3) |
-| **A3** | **`Scheme` + a JSON `DetailsJson` bag** — zero migrations forever | Tempting, and the repo does have `JsonValueConverter` (`Employee.Availability`, `LegalRequirementsJson`). Rejected for **financial identifiers rendered on a legal document**: no DB constraint, no index, no uniqueness check, no typed DTO (NSwag emits an opaque blob and every client hand-parses), and the invoice builder becomes a JSON parser. "Zero migrations forever" is a real benefit paid for with **zero guarantees forever** — the wrong trade on the one table that must not be wrong. **Typed sparse columns keep the guarantees and cost one additive migration per genuinely new field** (D10) |
-| **A4** | **A general `PayoutMethod` collection with no cardinality constraint** ("real" extensibility) | Buys a capability with **no evidence of demand** and immediately owes a *"which one is primary"* rule that every reader (invoice, payout run, admin, GDPR export, profile completeness) must honour — five places to get wrong, today, for a feature nobody asked for. **The unique index is the reversible form of this**: lifting it later is one additive migration (D1) |
-| **A5** | **EF owned types / a `BankAccount` value object embedded on `Employee`** | Zero occurrences of `OwnsOne`/`OwnsMany`/`ComplexProperty` in `Cleansia.Infra.Database` (verified). Introducing an unfamiliar persistence pattern on the highest-consequence table is a bad trade; it also still leaves the fields flattened onto the `Employee` row for DTO purposes, so it does not buy A1's fix either |
-| **A6** | **Keep one string; just add mod-97 to `ValidateIban()`** — a two-line fix | Would **immediately reject the domestic account numbers already stored from mobile** (F1) and every future one, permanently entrenching the CZ specimen's `5885638003/5500` as unenterable. It also cannot produce the payment block (AC9). It is the *smallest* change and the *only* one that makes the live product worse |
-| **A7** | **Encrypt the columns at rest (`ValueConverter` + a key)** | D6: theatre while we print, email and GDPR-export the value; it removes indexing/uniqueness we may want; and key management is an unpaid operational bill. **Reversal triggers written down** rather than the question left silently open |
-| **A8** | **Make the migration re-derive separators for mangled domestic numbers** ("we can mostly tell") | `1920001453990800` is *equally consistent* with `19-2000145399/0800` and `192000145399/0800`. A wrong guess pays a stranger and looks like a successful payroll run. **Not clever on purpose** (D7 class 2 → 3) |
-| **A9** | **Key the format to `BusinessCountryId`** (the only country field that already drives a per-country validator) | It is **never persisted** (`UpdateIdentificationInfo.cs:131-150`), so it cannot be re-evaluated, re-run, or rendered; and it is **sent only by mobile**, so payout format would depend on which app the cleaner last used (D2) |
-| **A10** | **Require re-validation for the completeness gate** ("if it's invalid, the profile is incomplete") | Takes every class-2/3 cleaner off the job board on migration day (F2). Correctness of the *field* is not worth an outage of the *person's income*; the hard stop belongs at issuance, where the failure actually occurs (D7) |
+| **A1** | **Flat nullable columns on `Employee`, mirroring `CompanyInfo`** — the cheapest thing today | **Closest loser, and the panel narrowed the margin.** Two of the draft's three reasons survive; one was struck (D1.4). What remains: (i) **no discriminator** — nothing on the row says which subset of seven-plus columns is meaningful, so every reader re-derives it, which is a country branch in disguise; (ii) `Status`/`ConfirmedAt`/`LastRevealedAt`/`RevealCount` are not employee attributes. **A1's genuine advantage, which the draft's table omitted and the panel put on the record: a scalar column is always materialized, so A1 is structurally immune to the load-order hazard of F4.** D1.1 answers that by keeping the *gate* a scalar on `Employee` and the *erasure* an id-keyed write — i.e. **D1 adopts A1's immunity for exactly the two operations where it matters**, and pays one denormalized bit for it. `CompanyInfo` is a **singleton** describing **one** company in **one** country — it never had to be discriminated, so it is not the precedent it looks like |
+| **A2** | **`CountryConfiguration` grows `BankAccountLabel/Format/Required`; the value stays one string** | **Fails at country #1.** The owner's specimen needs local account number **and** IBAN **and** SWIFT *simultaneously on one document* — you cannot render three renderings from one opaque string. It also copies an **unexercised** precedent (F3) and is the wrong arity for a multi-part identifier (D3) |
+| **A3** | **`Scheme` + a JSON `DetailsJson` bag** — zero migrations forever | Rejected for **financial identifiers rendered on a legal document**: no DB constraint, no index, no uniqueness check, no typed DTO, and the invoice builder becomes a JSON parser. "Zero migrations forever" is bought with **zero guarantees forever** |
+| **A4** | **A general `PayoutMethod` collection with no cardinality constraint** | Buys a capability with **no evidence of demand** and immediately owes a *"which one is primary"* rule that five readers must honour. **The unique index is the reversible form of this** (D1.3) |
+| **A5** | **EF owned types / a `BankAccount` value object embedded on `Employee`** | Zero occurrences of `OwnsOne`/`OwnsMany`/`ComplexProperty` (verified independently by both challengers). Introducing an unfamiliar persistence pattern on the highest-consequence table is a bad trade; it also still leaves the fields flattened onto the `Employee` row for DTO purposes |
+| **A6** | **Keep one string; just add mod-97 to `ValidateIban()`** — a two-line fix | Would **immediately reject the domestic account numbers already stored from mobile** (F1) and every future one, entrenching `5885638003/5500` as unenterable. It cannot produce the payment block. The *smallest* change and the *only* one that makes the live product worse |
+| **A7** | **Encrypt the columns at rest (`ValueConverter` + a key)** | D6: theatre while the application prints, emails and GDPR-exports the value — **and the printing is live and test-pinned** (`PayoutInvoiceLayoutTests.cs:56`), so "fix the printing instead" is not available: the payee account **is** the payment instruction. Reversal triggers written down rather than the question left open |
+| **A8** | **Make the migration re-derive separators for mangled domestic numbers** | `1920001453990800` is *equally consistent* with `19-2000145399/0800` and `192000145399/0800`. **Not clever on purpose** (D7.4 class 2 → 3) |
+| **A9** | **Key the format to `BusinessCountryId`** | **Never persisted** (`UpdateIdentificationInfo.cs:131-150`), so it cannot be re-evaluated, re-run, or rendered; and it is **sent only by mobile**, so payout format would depend on which app the cleaner last used (D2) |
+| **A10** | **Require re-validation for the completeness gate** | Takes every class-2/3 cleaner off the job board on migration day (F2). The hard stop belongs at issuance (D7) |
+| **A11** | **[ADDED by the panel] Keep `PayoutDetails is not null` as the gate and discharge the hazard with an `.Include` obligation** — enumerate `EmployeeRepository.GetByUserEmailAsync` (`:9-17`), `GetPagedEmployees`, `GetEmployeeDetail`, `ApproveEmployee`, `GdprDeletionService.cs:44` in the ADR and require the include | **Rejected.** It is a reviewer checklist standing where an income gate and a GDPR erasure should be, on a codebase with **no lazy loading**, and the ADR's own tests would pass green while production 403s. Worse, adding `.Include(e => e.PayoutDetails)` to the **paged** query to fix the admin grid materializes the full unmasked record on the paged path — creating the exposure D8 exists to close. D1.1's scalar + id-keyed erasure removes the hazard instead of documenting it, and **forbids** the paged include |
+| **A12** | **[ADDED by the panel] Pass `hasPayoutDetails` into `IsProfileComplete()` as a parameter** (compile-forced) | Structurally the strongest — a missing argument is a compile error — but `MapToAdminDto` (`EmployeeMappers.cs:89`) calls it inside a **paged projection**, so supplying it per row is an N+1 or a bespoke projection on the admin grid's hot path. **D1.1's scalar is correct on every path for one column and one invariant test** |
+| **A13** | **[ADDED by the panel] `UNIQUE (EmployeeId)` single-column**, dropping `TenantId` from the key (CH-D2's proposed remedy) | **Rejected on evidence.** It would deviate from S8 and from **nine** existing `(TenantId, …)` unique indexes, on the strength of a claim ("not one includes `TenantId`") that is false. `.AreNullsDistinct(false)` is already in the repo (`FiscalCounterEntityConfiguration.cs:23-29`) for exactly this collapse, so the consistent *and* correct form is available at zero novelty cost (D1.3) |
 
 ---
 
@@ -459,60 +811,83 @@ is a failure at country #1.
 
 **Good**
 - Adding SK costs **one seed value**; adding an IBAN market costs **zero or one**; a PSP payout costs
-  **zero migrations**. The extensibility claim is priced (D10), including the case where it is *not* free.
-- The CZ payment block (T-0522) is renderable from the record, and **class-1 CZ rows produce a complete
-  payment block with no cleaner action at all** — the IBAN decomposes back into the local pair.
-- The CZ capture form drops to **two fields**, and the IBAN is derived rather than typed — removing an
-  entire class of 24-character typos instead of validating them.
-- Validation becomes real (mod-97 + mod-11) without any handler branching on a country code — ADR-0017's
-  seam intact.
-- **No cleaner is locked off the job board by the migration** (D7).
-- The genuine confidentiality leak (a payout identifier in a paged list, `EmployeeListItem.cs:52`) is
-  closed structurally.
+  **zero migrations**. The extensibility claim is priced (D10), including where it is *not* free.
+- The CZ payment block (T-0522) is renderable from the record, and class-1 CZ rows produce a complete
+  payment block with no cleaner action — the IBAN decomposes back into the local pair.
+- The CZ capture form drops to **two fields**, and the IBAN is derived rather than typed.
+- Validation becomes real (mod-97 + a **correctly directed** mod-11 + Luhn-rejection) without any handler
+  branching on a country code — ADR-0017's seam intact.
+- **No cleaner is locked off the job board by the migration — and now that is true by construction**
+  (a scalar on the row), not by a remembered `.Include` (D1.1).
+- **GDPR erasure of the payout destination is load-order-independent** (D1.1.2).
+- The real confidentiality exposure — an unmasked identifier on an enumerable, unrate-limited,
+  unrecorded admin route — is closed by three routes, a masked default DTO, an **audited command**, a
+  rate-limit window inside the existing structural guard, and a frozen DTO-surface test.
+- **One decision (reveal-as-command) closes three findings at once**: the audit gap, the rate-limit gap,
+  and the coverage-guard gap.
 
 **Costs, accepted**
-- One join on the profile read path. Mitigated by the unique index; the read is by employee id.
+- **One denormalized `bool` on `Employee`** with a stated invariant and an invariant test. This is a
+  real cost — a second place the truth can live — accepted because the alternative puts an income gate
+  on a hand-maintained include list.
+- One join on any path that actually needs the payout data (not the gate, not the paged grid).
 - A **breaking NSwag change** (two DTOs lose `Iban`) → owner regenerates; admin employee-detail is
-  reworked in T-0520.
+  reworked in T-0520 and the mobile self-read in T-0521.
 - Three write paths converge on one command shape; `UpdateEmployee`/`AdminUpdateEmployee` stop carrying a
-  bare `Iban` string. This is churn in T-0519, and it is the point — one write path for payout details.
-- A **reconfirmation campaign** for class-3 cleaners, plus a `LegacyRawValue` column that must be
-  **dropped by a follow-up ticket** once the campaign closes.
-- `"profile.fields.iban"` now names a record rather than a field until a coordinated mobile release
-  renames it (D7). A deliberate, commented mismatch.
+  bare `Iban` string.
+- Under Branch B only: a reconfirmation campaign, a staging table, and a `DROP TABLE` follow-up.
+- The period-closed email and the fiscal reconciliation sweep both learn about payout blocks (D7.1,
+  D7.2) — scope T-0518/T-0522 did not have.
+- Existing test fixtures pinning `CZ6555000000005885638003` must be corrected to the derived value
+  (D5.2) — a small but mandatory change, because they currently pin an IBAN that fails mod-97.
+- `"profile.fields.iban"` now names a record rather than a field until a coordinated mobile release.
 
 **Explicitly unchanged** — the tenancy filter and `ITenantEntity` usage; the `basePay/extras/expenses/
 clamp/bonus-deduction` formula and `EmployeePayConfig` (IMP-3); the fiscal enforcement modes; the
-per-audience host separation (this is Core + Infra + Config only).
+per-audience host separation.
+
+---
+
+## Escalations to the owner (recorded here; the PM files them in `questions/open.md`)
+
+| Id | Question | Blocks? |
+|---|---|---|
+| **Q-PAYOUT-04** | *"Card number" in your list — did it mean (a) cleaners are paid **to a card**, or (b) it was one example of "the identifiers needed to pay someone"? (a) requires a PSP payout rail (Stripe Connect Express or equivalent), per-cleaner KYC/KYB and a webhook-driven account lifecycle — a **separate epic**. (b) is what ADR-0034 builds.* | **No.** `ProviderAccountRef` + `Scheme = ProviderPayoutToken` costs zero migrations either way (D10), and **D9a holds regardless** — even "yes, cards" stores an id, never a PAN. It decides whether the payout epic is v1 or later |
+| **Q-PAYOUT-05** | *Will the launch database carry the `Employee.IBAN` values currently in DEV, or is DEV data discarded / `Initial` regenerated for launch?* Evidence for "discarded": one migration, prod authored-not-deployed, seed data carries no `Employee."IBAN"`, and the pre-prod practice is to regenerate `Initial`. | **Not for accepting this ADR** — D7.3 contains both branches. **Yes for T-0518's scope**: Branch A means no classifier, no staging table, no campaign. **T-0518 must not start until this is answered**, or must start on Branch A and treat Branch B as a separate ticket |
 
 ---
 
 ## Cross-references the panel must not let drift
 
-- **T-0511 AC5 (the same generality question, same week).** The answer must be the **same principle**,
-  not the same shape: *generalize along the axis that varies; pin the axis that does not.* For membership
-  benefits the varying axis **is** the benefit set (Plus has five perks and a sixth is plausible) → **one
-  table keyed by benefit** is right there. For payout details the varying axis is the **scheme**, and the
-  count is **not** varying → **discriminated, cardinality one**. Both ADRs generalize; they generalize
-  along **different axes**, and that is the consistent outcome, not a contradiction. **If T-0511 lands a
-  column-per-benefit answer, one of the two ADRs is wrong and the panel says so before either ships.**
-- **T-0508 / T-0522 (the invoice).** This ADR supplies the **cleaner's** bank block only. **Variabilní
-  symbol** is `EmployeeInvoice.VariableSymbol` (already exists, `:72`); **konstantní symbol**, **due
-  date**, and the QR *Platba+F* code are T-0508's, and **none of them enters this record**. T-0522 must
-  handle `Status = NeedsReconfirmation` per D7 (issuance withheld, admin-visible blocker).
-- **T-0509** owns the IBAN's exposure in logs and the GDPR export; the new fields inherit its outcome.
-- **The identification-path country inconsistency** (`BusinessCountryId` mobile-only, discarded) is a
-  real finding surfaced by this work and is **not fixed here** — D2 only refuses to inherit it. It needs
-  its own ticket.
+- **T-0511 AC5 (the same generality question).** The answer must be the **same principle**, not the same
+  shape: *generalize along the axis that varies; pin the axis that does not.* For membership benefits the
+  varying axis **is** the benefit set → **one table keyed by benefit**. For payout details the varying
+  axis is the **scheme** and the count is not varying → **discriminated, cardinality one**. **If T-0511
+  lands a column-per-benefit answer, one of the two ADRs is wrong and the panel says so before either
+  ships.**
+- **T-0508 / T-0522 (the invoice).** This ADR supplies the **cleaner's** bank block only. Variabilní
+  symbol is `EmployeeInvoice.VariableSymbol` (`:72`); konstantní symbol, due date and the QR *Platba+F*
+  code are T-0508's. T-0522 must handle `Status = NeedsReconfirmation` per D7, must implement D7.1's
+  notification and D7.2's sweep exclusion, must render the **trimmed** local form (D5.1), and must
+  correct the fixture IBANs (D5.2).
+- **T-0509** owns the IBAN's exposure in logs and the GDPR export — **and, per the lead's note in D6,
+  the plaintext account inside already-generated invoice PDFs in blob storage after an erasure.**
+- **ADR-0012** is **not** amended by this ADR. D8.4 was deliberately shaped to fit the existing
+  `AdminMutationGate` rather than widen it — extending the gate to a declared read-audit set would have
+  been a superseding amendment to ADR-0012 *and* would still owe an answer on atomicity for a query
+  pipeline that has no commit to ride.
+- **The identification-path country inconsistency** (`BusinessCountryId` mobile-only, discarded) is a real
+  finding surfaced by this work and is **not fixed here**. It needs its own ticket.
 
-## Ticket sizing (AC14) — three of the four downstream tickets are `L` as written
+## Ticket sizing (AC14) — the panel's amendments grow three of the four
 
-| Ticket | As filed | This ADR's shape makes it | Split |
-|---|---|---|---|
-| T-0518 (db) | `M` | **`L`** — entity + config + `CountryConfiguration` column + two enums + owner migration **+ a four-class backfill with a dry-run** | **Split**: schema/entity/migration ‖ **the backfill script + `Status` semantics + the issuance block**. The second is where the risk is and it should be reviewable alone |
-| T-0519 (backend) | — | **`L`** — validator service + checksums + **T-0519's primary-source verification duty** + three write paths converging + completeness-gate change + the D8 read contract | **Split**: validator + capture ‖ read contract/masking + the admin audited reveal |
-| T-0520 (web/admin) | — | `M` | Keep. Note the NSwag `MANUAL_STEP` and the admin employee-detail rework |
-| T-0521 (mobile) | — | **`L`** — two platforms × a scheme-driven multi-field form × 5 locales, **and the existing normalizers must stop stripping `-` and `/`** (F1) | **Split per platform** (Android ‖ iOS), as every other mobile ticket in this repo is |
+| Ticket | This ADR's shape makes it | Split |
+|---|---|---|
+| T-0518 (db) | **`L`** — entity + config (**`.AreNullsDistinct(false)`**) + `CountryConfiguration` column + **the `Employee.HasPayoutDetails` column and its invariant test** + two enums + owner migration + **conditionally** a five-class backfill with a dry-run and a staging table | **Split**: schema/entity/migration/flag ‖ **(Branch B only) the backfill + staging table + `Status` semantics + the issuance block + D7.2's sweep exclusion**. **Gated on `Q-PAYOUT-05`** |
+| T-0519 (backend) | **`L`** — validator + checksums (**with D4.1's corrected direction**) + Luhn rejection + primary-source verification duty + three write paths converging + the completeness-gate change + **the id-keyed erasure repository call** | **Split**: validator + capture ‖ read contract/masking + the **reveal command** + the frozen DTO-surface test |
+| T-0520 (web/admin) | `M`→**`M/L`** — NSwag `MANUAL_STEP`, admin employee-detail rework, **the masked-vs-reveal two-step UI** | Keep, note the reveal UX |
+| T-0521 (mobile) | **`L`** — two platforms × a scheme-driven multi-field form × 5 locales, the normalizers must stop stripping `-` and `/` (F1), the self-read moves off `EmployeeItem`, and the card-number rejection must be explained (D9a) | **Split per platform** (Android ‖ iOS) |
+| T-0522 (invoice) | +D7.1 email reason, +D7.2 sweep exclusion, +D5.1 trimmed rendering, +D5.2 fixture correction | Note the added scope |
 
 ---
 
@@ -523,103 +898,351 @@ A reviewer confirms this ADR was followed by checking, in order:
 1. **No country-code branch.** `rg -n '"CZ"|"SK"|== *"CZ"' src/Cleansia.Core.AppServices src/Cleansia.Core.Domain`
    returns **no hit in a handler or a validator**. Scheme selection reads
    `CountryConfiguration.PayoutScheme` (D3) or the IBAN's own prefix (D4).
-2. **Cardinality is enforced in the schema, not in code.** A unique index on `(TenantId, EmployeeId)` in
-   `EmployeePayoutDetailsEntityConfiguration`. No `IsPrimary` field exists.
-3. **`ITenantEntity` + `Auditable`** on the new entity, matching `EmployeePayConfig` (D1). No
-   hand-rolled tenant scoping.
-4. **Validation is real and fails closed.** A test asserts `"totally not an iban!!"` is **rejected**; a
-   test asserts a valid-structure/invalid-check-digit IBAN is **rejected**; a test asserts an unknown
-   `BankCountryId` with a non-IBAN value yields `validation.payout.country_not_supported`; and a test
-   asserts a valid IBAN for an **unconfigured** country is **accepted** as `SepaIban` (the D4 exception).
-   The CZ/SK weight vector carries a **cited primary source** in a code comment (D4 honesty note).
-5. **The IBAN is derived for CZ/SK**, and a test asserts a cleaner-supplied IBAN that disagrees with the
-   derived one is **rejected** (D5).
-6. **The completeness gate does not depend on validity.** A test constructs an employee whose payout
-   record has `Status = NeedsReconfirmation` and asserts `IsProfileComplete() == true`. `Employee.cs:313`
-   still emits `"profile.fields.iban"` and carries the D7 comment explaining why.
-7. **Issuance is blocked, not the profile.** A test asserts `EmployeeInvoice` generation refuses for
-   `Status != Provided` and records the admin-visible reason.
-8. **The backfill is a script the owner runs**, with a dry-run reporting the four class counts, and a
-   test/fixture proving class 0 (`"[DELETED]"`) produces **no** payout record and class 2 is **never**
-   reconstructed (D7 / A8).
-9. **`Iban` is gone from `EmployeeListItem` and `EmployeeItem`**; no list/paged DTO anywhere carries a
-   payout identifier; the single-resource read enforces owner-or-admin (S3) and masks by default; the
-   admin reveal writes an audit entry (D8 / ADR-0012 D4.1).
-10. **Anonymization and the audit test cover every new field** — `Employee.Anonymize()` clears the
-    record, and `EmployeeUserAuditCoverageTests` asserts each new field's absence from audit JSON
-    (T-0518 AC6).
-11. **No PAN.** No field on the entity, no DTO property, and no client input named or shaped like a card
-    number. `ProviderAccountRef` carries a comment saying it holds an **id**, never a number (D9).
+2. **Cardinality.** `HasIndex(e => new { e.TenantId, e.EmployeeId }).IsUnique().AreNullsDistinct(false)`
+   in `EmployeePayoutDetailsEntityConfiguration`, **plus** a create-or-update guard on the write path
+   (never a bare insert). No `IsPrimary` field exists. **A plain `(TenantId, EmployeeId)` unique index
+   without `AreNullsDistinct(false)` fails this check** — it enforces nothing while `TenantId` is null.
+3. **`ITenantEntity` + `Auditable`** on the new entity, matching `EmployeePayConfig`. No hand-rolled
+   tenant scoping. **No `IsActive` filter on the unique index and no `Deactivate` path on this entity**
+   (D1.2) — it is mutated in place; erasure deletes.
+4. **Validation is real and fails closed.** Tests assert: `"totally not an iban!!"` is **rejected**; a
+   valid-structure/invalid-check-digit IBAN is **rejected**; an unknown `BankCountryId` with a non-IBAN
+   value yields `validation.payout.country_not_supported`; a valid IBAN for an **unconfigured** country
+   is **accepted** as `SepaIban`; **a Luhn-valid 16-digit value is rejected with
+   `validation.payout.looks_like_card`** (D9a).
+5. **The mod-11 check is directed correctly.** The code comment states *zero-pad to 10, weights
+   6,3,7,9,10,5,8,4,2,1 **left-to-right**, sum mod 11 == 0*, carries a **cited primary source** (T-0519),
+   and the test-vector table contains **`5885638003` as a known-good** (D4.1). *A test that accepts
+   `5885638003` and rejects a known-bad is the minimum; a check that rejects `5885638003` is the bug this
+   ADR was amended to prevent.*
+6. **The completeness gate does not depend on validity — or on the object graph.**
+   (a) `Employee.cs:283` reads **`HasPayoutDetails`**, a column, **not** a navigation. `rg` finds no
+   `PayoutDetails` navigation reference inside `IsProfileComplete()`.
+   (b) An **invariant test** asserts `HasPayoutDetails` agrees with the existence of an
+   `EmployeePayoutDetails` row for every employee.
+   (c) A **host/route test** (`Cleansia.HostTests` already carries `Ac8RejectedCleanerCannotWorkTests`
+   on this exact gate) asserts a cleaner whose record is `NeedsReconfirmation` gets **200**, not 403,
+   from a `[RequireCompleteProfile]` route — **loaded through `EmployeeRepository.GetByUserEmailAsync`,
+   not a hand-constructed aggregate.** A unit test on a constructed `Employee` does **not** discharge
+   this item.
+   (d) `Employee.cs:313` still emits `"profile.fields.iban"` and carries the D7 comment.
+7. **Issuance is blocked, not the profile.**
+   (a) A test asserts `EmployeeInvoice` generation refuses for `Status != Provided` and records the
+   admin-visible reason.
+   (b) A test asserts a payout-blocked `(period, employee)` pair is **not** returned by
+   `PayPeriodRepository`'s reconciliation-candidate query after the first refusal (D7.2).
+   (c) A test asserts the period-closed email carries the payout-blocked reason when no invoice was
+   generated for that cleaner (D7.1).
+8. **The backfill (Branch B only) is a script the owner runs**, with a dry-run reporting **five** class
+   counts, and fixtures proving class −1 (Luhn-valid) is **neither parked nor preserved and the source
+   column is nulled**, class 0 (`"[DELETED]"`) produces **no** payout record, and class 2 is **never**
+   reconstructed. Under Branch A, none of this exists and **no `payout_legacy_import` table is in the
+   schema**.
+9. **The read contract.**
+   (a) `Iban` is gone from `AdminEmployeeDetail` (`EmployeeListItem.cs:52`) **and** `EmployeeItem`
+   (`:27`) **and their mappers** (`EmployeeMappers.cs:115`, `:61`). *(The draft's item named
+   "`EmployeeListItem`", which passes on day zero without anyone doing anything while the field that
+   matters goes unnamed — a reviewer following it literally would green-light the leak.)*
+   (b) A **frozen DTO-surface test** asserts no type under `…Features.*.DTOs` outside the named payout
+   DTO family declares a payout-identifier property; and **no paged or list query `.Include`s the payout
+   navigation**.
+   (c) Three routes exist per D8.2 with the masked-admin DTO carrying **no** unmasked field; a test
+   asserts the admin pre-reveal response body contains **no substring** of the stored identifier (the
+   assertion style already proven at `EmployeeUserAuditCoverageTests.cs:301`).
+   (d) Authorization follows `DownloadInvoice.cs:39-58` — role arm, then owner-id equality, **`NotFound`
+   on mismatch**.
+   (e) The reveal is a **`Command`**, a test asserts an `AdminActionAudit` row **exists** after a reveal
+   and that its payload contains **ids only**, and the route carries `[EnableRateLimiting]` with its
+   controller listed in `RateLimitCoverageGuardTests.MoneyAndSideEffectControllers`.
+10. **Erasure is load-order-independent.** `GdprDeletionService` makes an explicit id-keyed repository
+    call that removes the payout row (and, under Branch B, the staging row); `Employee.Anonymize()` sets
+    `HasPayoutDetails = false` and does **not** attempt to clear a navigation. **An integration test in
+    `Cleansia.IntegrationTests` runs the erasure through `GdprDeletionService`'s real query shape and
+    asserts zero `EmployeePayoutDetails` rows for the erased employee** — an in-memory unit test with a
+    hand-populated navigation does **not** discharge this item.
+11. **No PAN — name *and* data.** No field on the entity, no DTO property, no client input named or
+    shaped like a card number; `ProviderAccountRef` carries a comment saying it holds an **id**; **and**
+    the validator rejects Luhn-valid 13–19-digit input on every write path (item 4).
 12. **`CountryConfiguration` grew exactly one column.** If a `BankAccountLabel`/`Format`/`Required`
     triple appears, D3 was not followed.
-13. **The at-rest posture is recorded at the column** (T-0518 AC5): a comment naming ADR-0034 D6 and the
-    reversal triggers, plus T-0518's finding on whether Flexible Server encryption at rest is confirmed
-    on DEV/PROD.
+13. **The at-rest posture is recorded at the column**: a comment naming ADR-0034 D6, the reversal
+    triggers, and T-0518's finding that the server uses **service-managed keys, not CMK**
+    (`postgres.bicep:81` has no `dataEncryption` block).
+14. **Audit hygiene uses a distinct sentinel per new field** in `EmployeeUserAuditCoverageTests` — a
+    single `DoesNotContain` across many fields passes if one is unchecked.
 
 ---
 
 ## Gate 0.5 leg 3 — what this panel did NOT examine, and which claims are reads rather than runs
 
 **Not examined:**
-- **No code was executed.** No build, no test run, no migration, no query against DEV. Every claim
-  about the working tree is a **read at a cited file:line**, verified 2026-08-02.
-- **The actual contents of the DEV `Employee.IBAN` column were not inspected.** The four-class
-  classifier is designed from the *code paths* that write the column, not from a census of the data.
-  **T-0518's dry-run is what turns this from a design into a fact** — and if the class counts are
-  wildly different from the design's assumption (e.g. class 3 is the majority), T-0518 stops and
-  re-opens D7 rather than proceeding.
-- **The Angular admin/partner UI was surveyed only for IBAN occurrences**, not audited. T-0520 owns the
-  real inventory of call sites broken by the DTO change.
-- **No performance work.** The added join was reasoned about, not measured.
-- **Slovak, Ukrainian, Polish and German banking formats were not researched beyond the SK↔CZ
-  structural identity claim**, which is flagged for verification.
+- **No application code was executed.** No build, no test run, no migration, no query against DEV. Every
+  claim about the working tree is a **read at a cited file:line**. *(Exception: the panel **did** run
+  arithmetic — the mod-11 vector in both directions over sampled account ranges, and the ISO 7064
+  composition of the owner's specimen, independently by the db challenger and by the lead. Those are
+  runs, not reads, and they are what caught D4.1 and the fixture defect in D5.2.)*
+- **The actual contents of the DEV `Employee.IBAN` column were not inspected.** D7.3 now makes their
+  *existence* an owner question rather than a dry-run question.
+- **The Angular admin/partner UI was surveyed only for IBAN occurrences.** T-0520 owns the real
+  inventory of call sites broken by the DTO change.
+- **No performance work.** The added join and the denormalized flag were reasoned about, not measured.
+- **Slovak, Ukrainian, Polish and German banking formats were not researched** beyond the SK↔CZ
+  structural identity claim, which is flagged for verification.
+- **D2, D3 and D10 were examined by neither challenger** — see the Verdict's coverage note.
 
 **Claims that are reads, not runs, and who must verify them before they become blocking:**
 
 | Claim | Status | Verifier |
 |---|---|---|
-| CZ/SK domestic modulo-11 weight vector (6,3,7,9,10,5,8,4,2,1) | **read, secondary source** | **T-0519**, against the ČNB/NBS numbering decree, with a test-vector table |
-| CZ/SK IBAN composition (`CC` + 2 + bank 4 + prefix 6 + account 10 = 24) and therefore the derivation *and* the class-1 decomposition | **read, ISO 13616 registry** | **T-0519**, against the registry. If it fails, the IBAN becomes collected-and-checked; the shape is unaffected |
+| CZ/SK modulo-11 weight vector **and its left-to-right direction and 10-digit padding** (D4.1) | **read (vector) + panel computation (direction/padding)** | **T-0519**, against the ČNB/NBS numbering decree, with the test-vector table incl. `5885638003` |
+| CZ/SK IBAN composition, the derivation, and the class-1 decomposition | **computed twice, agreeing** (db challenger + lead) — no longer a bare read | **T-0519** confirms against the ISO 13616 registry; the shape is unaffected either way |
 | SK shares CZ's account structure and check weights | **read** | **T-0519**, before SK ships |
-| Azure Database for PostgreSQL Flexible Server encrypts at rest with service-managed keys by default | **read of product documentation; not verified in this repo's Bicep** | **T-0518**, on the actual DEV/PROD server |
-| Storing a PAN brings the platform into PCI DSS scope | **cited to the PCI SSC's published standard.** **Not legal advice; no agent here asserts a legal requirement.** The consequence (a materially larger compliance surface) is the owner's call, and D9's decision stands on reason 2 alone even if reason 1 is negotiated | **owner**, if card payouts are ever pursued |
-| What a CZ/SK supplier invoice must legally contain | **not decided here** — T-0508, from the owner's specimen. This ADR supplies data, not invoice law | **T-0508** |
+| Azure Flexible Server encrypts at rest with **service-managed** keys | **Bicep verified** (`postgres.bicep:81`, no `dataEncryption` block); **provisioning provenance not verified** | **T-0518**: confirm DEV/PROD came from this Bicep; record "service-managed, not CMK" |
+| Storing a PAN brings the platform into PCI DSS scope | **cited to the PCI SSC's published standard. Not legal advice.** D9a stands on reason 2 alone | **owner**, if card payouts are pursued (`Q-PAYOUT-04`) |
+| What a CZ/SK supplier invoice must legally contain | **not decided here** — T-0508 | **T-0508** |
+| Whether legacy `Employee.IBAN` rows reach launch | **owner question** (`Q-PAYOUT-05`) — repository evidence points at "no" | **owner**, before T-0518 |
 
 ---
 
 ## Challenge
 
-> **Awaiting the panel.** Two challengers, per T-0517's implementation notes: one from the **security**
-> angle (D6, D8, D9) and one from the **db** angle (D1, D5, D7). A challenger that finds nothing must
-> name what it checked — silence is not assent (`process/deliberation.md`).
+Two challengers ran in parallel on 2026-08-02, each naming what it checked (silence is not assent). Full
+texts: `agents/backlog/adr/challenges/0034-security.md`, `agents/backlog/adr/challenges/0034-db.md`.
 
-**The author's own assessment of where this decision is weakest — attack here first:**
+**Security lane (D6 / D8 / D9) — 3 blocking, 3 must-fix, 1 fatal out-of-lane, 1 spec gap:**
 
-1. **D1 vs A1 is the closest call in the ADR.** The honest case for flat columns on `Employee` is that
-   `CompanyInfo` already proves the shape works, the join is real, and cardinality-one means the child
-   table buys nothing *structurally* today. The defense rests on the discriminator, the read contract,
-   and the migration-state fields — press on whether those three are worth a table.
-2. **D5's derived IBAN depends on an unverified composition.** If the ISO 13616 CZ/SK composition read
-   is wrong, the two-field CZ form and the class-1 decomposition both fall back, and the "no cleaner
-   action needed" consequence weakens. Is flagging it for T-0519 enough, or should the ADR decide the
-   fallback as the *primary* and treat derivation as an enhancement?
-3. **D6 declines encryption on a compliance-adjacent field.** The strongest counter is not technical —
-   it is that "we print it anyway" is an argument for fixing the printing, not for leaving the column
-   bare, and that a reversal later means re-encrypting live data.
-4. **D7 keeps a `LegacyRawValue` column.** An escape hatch with a promised drop date is still an escape
-   hatch. Is the drop ticket enough, or should the parked value live outside the operational table?
-5. **D7 withholds the invoice for an unverified account.** A cleaner who has worked a full pay period
-   and does not get their tax document because a *migration* reclassified their bank details has a real
-   grievance. Is the "bi-weekly window" mitigation actually sufficient, and who tells them?
-6. **D2 uses `WorkCountryId` as the cross-border counterparty** where `CompanyInfo.CountryId` is
-   arguably the truthful payer. The ADR notes it and moves on — is noting it enough?
+| Id | Finding |
+|---|---|
+| **CH-S1** | **BLOCK.** The single factual claim D6, D8.1, D1 reason (i) and Consequences all rest on — *"the IBAN ships in a paged list"* — is **false**. `EmployeeListItem.cs:52` is inside `AdminEmployeeDetail`, the fourth record in that file; the genuine paged DTO carries no `Iban`; the mappers are hand-written and already omit it. Three consequences: D6's counterweight buys back a leak that does not exist, D1's reason (i) is misstated, and reviewer item 9 is a no-op that green-lights the real leak |
+| **CH-S2** | **BLOCK.** D8.4's audited reveal **cannot be built as specified**: `AdminMutationGate.cs:22` gates on a type name ending `Command`; a query produces **no audit row**. All three escape routes break something the ADR relies on |
+| **CH-S3** | Must-fix. The reveal route is **unrate-limited by construction** and excluded from `RateLimitCoverageGuardTests` twice (controller not listed; GETs not asserted). An audited-but-unbounded reveal *records* bulk exfiltration instead of stopping it. **S5 is named nowhere in the ADR** |
+| **CH-S4** | **BLOCK.** D8.5's anonymization clause is a **silent no-op**: `GdprDeletionService.cs:43-46` includes only `Employee → Address`, there is no lazy loading, so the payout navigation is null and the bank account, SWIFT, holder legal name and parked value **survive a GDPR erasure in plaintext** while the request returns success. The ADR's own verification would pass |
+| **CH-S5** | Must-fix + escalate. *"No PAN. Ever."* is **unenforced against D9's own migration path** — `Length(15,34)` accepts a PAN today, the Android normalizer helps it through, the owner's phrasing invites it, and D7 class 3 would copy it verbatim into a new plaintext column and echo it back in the prompt. Separately, D9 names the *scope* question as the owner's and then answers it |
+| **CH-S6** | Must-fix (wording). D6's threat model omits the threat column encryption *uniquely* covers — a direct-`psql` principal who is not the application, which `postgres.bicep:153-161` provisions. Reversal trigger (iii) is calibrated against a future that has partly already happened. **Conclusion survives; reasoning does not.** Also narrowed T-0518's duty: `postgres.bicep:81` has no `dataEncryption` block → service-managed, not CMK |
+| **CH-S7** | **BLOCK, out of lane, raised per brief.** D7's gate change implemented as written returns **403 to every cleaner on the entire partner surface** — `GetByUserEmailAsync`'s hand-written include list + no lazy loading. Secondary: the admin grid reads `IsProfileComplete` false for everyone, and fixing *that* with an `.Include` materializes the full unmasked record **on the paged path** |
+| **CH-S8** | Spec gap. D8.2 cites `UpdateBankDetails.AllowedToUpdateEmployee` (`:39-44`) — an **owner-only** check with no admin arm — as the precedent for an owner-or-admin read. And D8.3's role-dependent body on one route/one DTO is unspecified |
+
+**Found sound by the security lane** (recorded because it is load-bearing): D6's core argument lands on
+**firmer** ground than the ADR claimed — the cleaner's IBAN is **already printed** on payout invoices and
+**pinned by an existing test**, so the author's own nominated strongest counter ("fix the printing
+instead") fails. Also sound: the PDF path's ownership gate (S3 PASS), S6 clean today, S5 satisfied on the
+existing *write* path, the tenancy archetype (S8), zero owned types, no column encryption anywhere, the
+audit-hygiene precedent, the self-scoped GDPR export, and D9's security core.
+
+**DB lane (D1 / D5 / D7 + index/query-filter) — 5 blocking, 2 major, 1 moderate:**
+
+| Id | Finding |
+|---|---|
+| **CH-D1** | **BLOCK.** D1 converts the income gate from a data condition into a **query-shape** condition; `EmployeeRepository.GetByUserEmailAsync` (`:9-17`) has a hand-written include list, so a missing line **403s every cleaner**, silently and uniformly, and reviewer item 6 cannot catch it. **A1 is structurally immune to this and the alternatives table omits it** |
+| **CH-D2** | **BLOCK.** `(TenantId, EmployeeId)` unique **enforces nothing while `TenantId` is null**, which is every row today (Npgsql: NULLs distinct by default). *Its supporting claim — "not one `.IsUnique()` site in the repo includes `TenantId`" — is **false**; see the Defense* |
+| **CH-D3** | Major. Soft-delete × unique index is **one decision and the ADR takes neither half**: a deactivated record still satisfies `is not null` and still reads `Status = Provided`, so both gates pass on a deleted record; and superseding-by-insert would collide with the unique index |
+| **CH-D4** | **BLOCK.** D4's mod-11 rule is **stated backwards** — the vector is right, the direction is wrong; taken literally it **rejects the owner's own account** and ~91% of valid CZ accounts, and the honesty note flagged the *weights*, not the direction. Second defect: a 6-digit prefix needs the **last** six weights, not the first |
+| **CH-D5** | Major. D5's *"leading zeros are significant"* is **false** and contradicts the derivation the same challenger verified; it also **breaks D6's duplicate-account fraud check**, and "lossless" is the wrong word for a canonicalizing decomposition |
+| **CH-D6** | Major. The **entire legacy apparatus is designed for a population the repository says may not exist**: one `Initial` migration (regenerated, not stacked), prod authored-not-deployed, seed data carrying no `Employee."IBAN"`. The ADR asks "how many per class" without first asking "is there a class at all" — and that is an owner question, not a dry-run question |
+| **CH-D7** | Moderate. `LegacyRawValue` does not belong in the operational table (every EF `SELECT`, the audit-coverage surface, the GDPR export, the one field with no scheme/validator/masking rule) and *"a follow-up ticket drops it"* has **no trigger** |
+| **CH-D8** | **BLOCK.** Three defects in one paragraph: *"pay periods are bi-weekly"* is **false — they are monthly** (`AddMonths(1).AddDays(-1)`, and the bi-weekly helper has zero call sites), so the grievance is ~2× the priced size; **nobody tells the cleaner** and the period-closed email is sent anyway with a null attachment; and a payout-blocked pair matches the fiscal reconciliation sweep's candidate predicate **forever**, flooding the one sweep that detects real fiscal loss |
+| **CH-D9** | **BLOCK.** Same root cause as CH-S4, found independently: `Employee.Anonymize()` cannot clear a child record and the GDPR path does not load one. Secondary: `IsProfileComplete()` flips for anonymized rows, unstated |
+
+**Found sound by the db lane:** **D5's CZ/SK IBAN composition verifies clean by computation** — the
+derivation, the two-field capture form and the class-1 decomposition all stand, and the author's own
+worry #2 ("should the fallback become the primary?") is answered **no**. Also sound: the
+`Auditable, ITenantEntity` archetype, the A1-vs-`CompanyInfo` dismissal, "zero owned types", the
+"no global `IsActive` filter" reading, D7's reversibility claim, `ProviderAccountRef`'s zero-migration
+cost, and **no tenancy regression** — the new record picks up the global filter automatically.
+
+**The author's own nominated weak points**, for the record: (1) D1 vs A1 — pressed hard by both lanes;
+(2) D5's derivation — **verified sound**; (3) D6 vs "fix the printing" — **the counter fails**;
+(4) `LegacyRawValue` as an escape hatch — **conceded**; (5) the withheld invoice's grievance —
+**larger than priced**; (6) D2's `WorkCountryId`-vs-`CompanyInfo.CountryId` — **neither challenger
+examined it**.
 
 ## Defense
 
-> Pending — the author answers each challenge with REBUT (evidence at file:line) / CONCEDE + REVISE
-> (the artifact changes) / ESCALATE (`questions/open.md`).
+> **Recorded by the lead in adjudication.** The author was not reconvened for a second round; each entry
+> below is the panel's disposition of a challenge — **REBUT** (with evidence the lead read), **CONCEDE +
+> REVISE** (the amendment is folded into the decision sections above and marked `[AMENDED — …]`), or
+> **ESCALATE**. Per `deliberation.md`, a concede that does not change the artifact is not a concede.
+
+### The two rulings the panel was asked for explicitly
+
+**Ruling 1 — Does D1 survive? YES, with its justification re-scored and the hazard removed rather than
+documented.**
+
+Both lanes are right about the mechanism and I verified it myself: `EmployeeRepository.GetByUserEmailAsync`
+(`EmployeeRepository.cs:9-17`) hand-writes `User`/`Address`/`Nationality`/`Documents`;
+`RequireCompleteProfileAttribute.cs:25` calls exactly that method and `:32-49` returns 403;
+`GdprDeletionService.cs:43-46` includes only `Employee → Address` and `:235` calls `Anonymize()`; and
+`rg "UseLazyLoadingProxies|ILazyLoader"` across `src/` returns **zero**. Two independent lanes reaching
+the same structural conclusion is strong signal, and it is correct signal.
+
+But the conclusion the challengers *drew* — that this is an argument for flat columns — does not follow,
+and I decline it for three reasons:
+
+1. **The hazard is not intrinsic to the child entity; it is intrinsic to putting the *invariant* on the
+   child entity.** D1.1 separates them: the *gate* becomes a scalar on the `Employee` row
+   (`HasPayoutDetails`), and the *erasure* becomes an id-keyed set-based write in `GdprDeletionService`.
+   Neither can be missed by any loader, because neither reads a navigation. **This adopts A1's genuine
+   structural immunity for exactly the two operations where it matters** and pays one denormalized bit
+   for it — a cost I record honestly in Consequences.
+2. **A1 does not become cheaper for having won this point.** The reasons A1 lost — no discriminator over
+   seven-plus sparse columns whose meaningful subset varies by scheme, and lifecycle fields that are not
+   employee attributes — are untouched by the load-order finding. And the *count* of columns A1 must add
+   grows with every market.
+3. **D1's reason (i) is struck outright**, per CH-S1. The read contract is **not** secured by the shape;
+   it is secured by a frozen DTO-surface test (D8.6) in an idiom this repo already uses four times over.
+   Saying so is more honest and more enforceable than the claim it replaces. **D1 now rests on the
+   discriminator (D1.4.4), lifecycle (D1.4.2) and the PSP case (D1.4.3) — three legs, one of which is
+   new and is the strongest.**
+
+**The mechanism that makes both operations structurally unmissable**, as required: (a) the gate reads a
+column, never a navigation, and an invariant test pins the column to the table; (b) erasure is id-keyed
+and load-order-independent, verified by an integration test through `GdprDeletionService`'s **real**
+query; (c) `.Include(e => e.PayoutDetails)` is **forbidden on paged/list queries**, which also closes
+CH-S7's corollary. All three are reviewer items 6, 9b and 10. **No item on this ADR now depends on a
+developer remembering an `.Include`.**
+
+**Ruling 2 — D6/D8's premise: CONCEDE the premise, KEEP the conclusion, on a better footing.**
+
+CH-S1 is right and I verified every part of it. `EmployeeListItem.cs` declares four records; `:52` is
+`AdminEmployeeDetail`'s `string? Iban`. `AdminEmployeeListItem` (`:18-30`) has no `Iban`, and
+`MapToAdminDto` (`EmployeeMappers.cs:76-91`) does not map one. `MapToDto` (`:26-39`) likewise. **The two
+`Iban`-carrying DTOs are both single-resource reads.** The phrase "paged list" is deleted everywhere it
+appeared in connection with the IBAN, and the *actual* exposure — unmasked, on an **enumerable**
+resource-by-id route gated by the **same policy that grants the id list**, unrate-limited and unrecorded
+— is now what D8 is justified by. That exposure is real and D8 closes it precisely.
+
+D6's conclusion is **stronger** than the author argued, on the footing CH-S1's own found-sound section
+supplies and which I verified: `FileExtensions.cs:107` puts `employee.IBAN` on the supplier block,
+`InvoicePdfData.cs:36-59` documents that the supplier of a payout invoice **is the cleaner**,
+`DefaultInvoiceLayoutBuilder.cs:175` renders it, and `PayoutInvoiceLayoutTests.cs:56` pins it with the
+owner's own specimen in the fixture at `:186-187`. The author's nominated strongest counter — *"that is
+an argument for fixing the printing"* — **fails**, because the payee account **is** the payment
+instruction on a supplier invoice; there is nothing to fix. The context row claiming *"the bank block on
+today's PDF is Cleansia's"* described the **customer receipt** and is corrected. D6 is rewritten to rest
+on the printing (leg 1) and on an honest threat model (leg 2, per CH-S6), not on a leak that does not
+exist.
+
+### Per-challenge disposition
+
+| Id | Disposition | Ruling |
+|---|---|---|
+| **CH-S1** | **CONCEDE + REVISE** | Verified: `EmployeeListItem.cs:6-16/18-30/32-69`, `EmployeeMappers.cs:26-39/76-91/41-74/93-139`. Context row rewritten; "paged list" deleted throughout; D1 reason (i) **struck**; D6's counterweight leg replaced with the printing argument; D8.1 re-justified; reviewer item 9 rewritten to name **`AdminEmployeeDetail`** and its mapper. **The no-op reviewer check was the most dangerous part of this finding and it is gone.** |
+| **CH-S2** | **CONCEDE + REVISE** | Verified at `AdminMutationGate.cs:17-24` and `AuditLogBehavior.cs:17-19`. Option 1 adopted: **`RevealPayoutDetailsCommand`** stamping `LastRevealedAt`/`RevealCount` (added to D5). Chosen over extending the gate because that would be a **superseding amendment to ADR-0012** taken as a side-effect of ADR-0034 and would still owe atomicity for a pipeline with no commit to ride. **No CQRS breach** — a reveal genuinely mutates and returns one record. Reviewer item 9e requires a test asserting the audit row **exists** with ids only |
+| **CH-S3** | **CONCEDE + REVISE** | Verified: `RateLimitCoverageGuardTests.cs:26-28/29-93/95` excludes GETs and does not list `AdminEmployeeController`. D8.5 added. **The reveal-as-command decision closes this one for free**: a POST falls inside the guard's existing `MutatingMethods` contract once the controller is listed. Reused the per-`sub` policy per ADR-0003 rather than hand-rolling |
+| **CH-S4** | **CONCEDE + REVISE (blocking, correctly)** | Verified: `GdprDeletionService.cs:43-46` (`Employee → Address` only), `:235`, `Employee.cs:257-267`, zero lazy-loading hits. All four asks adopted: id-keyed repository erasure (D1.1.2), stated in D8.8 not buried in a ticket AC, reviewer item 10 rewritten to **require an integration test through the real query shape** with the in-memory test explicitly ruled insufficient, and the parked legacy value erased on the same path (D7.5) |
+| **CH-S5 (A)** | **CONCEDE + REVISE** | Verified `ValidationExtensions.cs:122-130` accepts a 16-char value. Class **−1** added (Luhn, 13–19 digits): not parked, not preserved, source column nulled, counted separately in the dry-run, never echoed in a prompt. Validator rejection added to D4's table with `validation.payout.looks_like_card`. Reviewer item 11 now checks **data**, not just names. T-0521 note added. **This is the finding that turns "no PAN, ever" from a sentence into an invariant** |
+| **CH-S5 (B)** | **ESCALATE** | Upheld. The ADR named the decision as the owner's and took it in the same paragraph. D9 split into **D9a (decided, security — not negotiable)** and **D9b (escalated)**; **`Q-PAYOUT-04`** recorded in Escalations, `blocking: no`, with the reason it is honestly non-blocking stated |
+| **CH-S6** | **CONCEDE + REVISE (wording)** | Verified `postgres.bicep:81` (no `dataEncryption` block) and `:153-161`. D6 reason 1 rewritten to name the threat column encryption *uniquely* covers and to answer it (today that principal is the owner, who executes the transfers). Trigger (iii) reworded to **non-owner** principal + the `publicNetworkAccess` clause; trigger (ii) marked latent multi-tenant risk carried by D8. T-0518's duty narrowed to provenance + "service-managed, not CMK". **The challenger explicitly did not ask for encryption and I do not impose it** |
+| **CH-S7** | **CONCEDE + REVISE (blocking, correctly; out of lane and right to raise)** | Verified end to end. Resolved by **D1.1's scalar**, which is strictly better than the challenger's own first option (enumerate every loader) — see A11. The paged-`Include` corollary is closed by **forbidding** that include, not by adding it. Reviewer item 6c now demands a host/route test through `GetByUserEmailAsync`. The challenger's last ask — downgrade D1 reason (i) and specify the frozen DTO-surface test — is adopted verbatim as D8.6 |
+| **CH-S8 (A)** | **CONCEDE + REVISE** | Verified `UpdateBankDetails.cs:39-44` is owner-only with no admin arm, and `DownloadInvoice.cs:39-58` is the correct two-arm precedent with `NotFound` on mismatch. Citation replaced |
+| **CH-S8 (B)** | **CONCEDE + REVISE, going further than asked** | The challenger asked for separate fields/DTOs on one route. The panel takes **three routes** (D8.2) — self-read, masked admin read, reveal command — so the admin DTO has **no unmasked field at all** and role-dependent body content never arises. This is cheaper than it looks because the reveal is already a separate command (CH-S2) |
+| **CH-D1** | **CONCEDE + REVISE** | See Ruling 1. Ask 2 (the challenger's own preferred remedy — a scalar on `Employee`) adopted; ask 3 (rewrite reviewer check 6 to load through `GetByUserEmailAsync`) adopted; ask 1 (document the `Include` obligation) **rejected as insufficient** and recorded as **A11**. The challenger's point that the alternatives table listed A1's failings and none of D1's is **upheld** and fixed in A1's row |
+| **CH-D2** | **CONCEDE the fact, REBUT the evidence, REJECT the remedy** | The *fact* stands: `EntityConfiguration.cs:27-29` makes `TenantId` nullable and Npgsql treats NULLs as distinct, so a plain `(TenantId, EmployeeId)` unique enforces nothing today. **Two supporting claims are false, and both were checked line-by-line rather than by grep** (the challenger's grep was single-line; these declarations span lines, which is how the undercount happened). **(1)** *"I checked all ~40 `.IsUnique()` sites: not one includes `TenantId`"* — **nine do**: `UserEntityConfiguration.cs:106`, `UserMembershipEntityConfiguration.cs:112`, `TenantConfigurationEntityConfiguration.cs:27`, `LoyaltyTransactionEntityConfiguration.cs:91`, `LoyaltyTierConfigEntityConfiguration.cs:33`, `PromoCodeEntityConfiguration.cs:63`, `PromoCodeRedemptionEntityConfiguration.cs:66`, `ReferralCodeEntityConfiguration.cs:38`, `FiscalCounterEntityConfiguration.cs:26`. The proposed index would be the **tenth**, not the first. **(2)** *"`.AreNullsDistinct(false)` … is a novel construct in this repo"* — it **ships twice** in committed configuration (`FiscalCounterEntityConfiguration.cs:28`, `LiveActivityTokenConfiguration.cs:28`) and twice in the committed `Initial` migration (`:2653`, `:2685`). So the remedy (drop `TenantId`) would be the deviation, and the construct it avoids is already running in production schema. **Adopted instead:** keep `(TenantId, EmployeeId)`, add `.AreNullsDistinct(false)`, **plus** an app-level create-or-update guard — the posture `UserMembershipEntityConfiguration.cs:100-109` documents deliberately (*the index hardens, the application asserts*). Reviewer check 2 restated, as the challenger rightly demanded. **Byproduct finding:** two in-repo comments assert `NULLS NOT DISTINCT` would be "a one-off" and are now false — filed as a follow-up |
+| **CH-D3** | **CONCEDE + REVISE** | Verified `Auditable.cs:35-39` sets `IsActive = false` and `CleansiaDbContext.ApplyTenantQueryFilters` filters `ITenantEntity` only. The challenger is right that silence ships defect (a). **Mutate-in-place adopted** (the challenger's own recommendation), stated as an explicit exemption from ADR-0007 D1 with its reason, in D1.2 — so the unfiltered index is correct and neither gate needs an `IsActive` predicate |
+| **CH-D4** | **CONCEDE + REVISE (blocking, correctly)** | **Independently re-computed by the lead**: `5885638003` with the vector left-to-right sums to **297**, mod 11 = **0** (valid); right-to-left as the draft stated it gives **243**, mod 11 = **1** (rejected). Across the lead's sample of 18,416 valid accounts the reversed rule accepts 1,674 — it rejects **90.9%** (the challenger's independent sample of 18,135 gave 91.4%; different samples, same defect). **Corrected in D4.1 as a uniform rule — zero-pad to 10, apply left-to-right — which fixes the prefix-weight defect in the same sentence.** AC15 extended to verify *direction and padding*, not just the vector; `5885638003` is now a required known-good vector. **The lead's insistence that this be corrected in the ADR text and not merely flagged is upheld: reviewer item 4 makes the code comment carry the corrected rule** |
+| **CH-D5** | **CONCEDE + REVISE** | The composition argument is decisive: `compose('5500','','123456')` and `compose('5500','','0000123456')` are the same IBAN, so leading zeros are not identity. D5.1 rewritten — canonical zero-padded storage, **the derived IBAN is the comparison key for every equality/duplicate/fraud check** (which repairs D6's leg 3), "lossless" → "canonicalizing". Added beyond the ask: the **rendering** form must be trimmed, flagged to T-0522, or the invoice prints padded zeros |
+| **CH-D6** | **CONCEDE + REVISE (and it disposes of CH-D7 in the cheapest way)** | Verified: exactly one migration (`20260723182623_Initial.cs` + Designer + snapshot), `sql-scripts/insert_seed_data.sql` carries one `Iban` and it is `CompanyInfo`'s, prod authored-not-deployed. The challenger is right that *"does this population exist"* precedes *"how many per class"* and is an **owner** question, not a dry-run question, because it decides whether a table and a column exist at all. **D7.3 adopts the precondition-and-branch, with Branch A (no classifier) as the default** the repository's own evidence points at. **`Q-PAYOUT-05` escalated; T-0518 is gated on it** |
+| **CH-D7** | **CONCEDE + REVISE** | Upheld on both legs — the location argument (every EF `SELECT`, the audit-coverage surface, the GDPR export, the one field with no scheme/validator/masking rule) and the missing drop trigger. `LegacyRawValue` **removed from the entity**; under Branch B it becomes the non-mapped `payout_legacy_import` staging table (D7.5) with `DROP TABLE` as its exit. Added beyond the ask, per CH-S4(4): **the staging row is erased by the erasure path** — a cleaner may be erased before the campaign closes. Under Branch A it never exists |
+| **CH-D8 (1)** | **CONCEDE + REVISE** | Cadence is **monthly** — independently established by the lead (`AddMonths(1).AddDays(-1)`) and by the challenger; `GenerateBiWeeklyPeriodsForYear` has zero call sites. The draft's only quantitative mitigation was wrong by ~2×. Corrected in D7, and the mitigation is no longer "the window is short" but D7.1 |
+| **CH-D8 (2)** | **CONCEDE + REVISE** | Upheld. D7.1 added: the period-closed email must carry the payout-blocked reason. "A prompt appears in the app" is not sufficient for a document needed for tax, and the carrier already exists |
+| **CH-D8 (3)** | **CONCEDE + REVISE** | Verified at `PayPeriodRepository.cs:85-101`: the anti-join is *no `EmployeeInvoice` row for the pair*, which a deliberately withheld pair matches forever. D7.2 added with a fixed **observable** (the pair leaves the candidate query after the first refusal) and the mechanism left to T-0518/T-0522. **Burying a real fiscal loss in noise is a worse outcome than the log volume**, which is why this was rightly blocking |
+| **CH-D9** | **CONCEDE + REVISE** | Same disposition as CH-S4 — two lanes, one root cause, and the fact that they found it independently is why D1.1.2 is a structural change and not an AC. The secondary point (anonymized rows flip `IsProfileComplete()`) is **adopted and stated** in D7, as the challenger asked |
+
+### Challenges the panel did not sustain
+
+- **CH-D2's evidence and remedy** — rebutted above with nine counter-citations plus four
+  `NULLS NOT DISTINCT` sites (two configurations, two migration lines). The finding itself is sustained;
+  the fix is not the one proposed. *(This is the miscounted grep — single-line, against multi-line
+  declarations. It is recorded because a future reader who takes the challenge file at face value would
+  remove `TenantId` from a unique index and call it consistency, and would also believe the repo has
+  never used `NULLS NOT DISTINCT` when it ships it twice.)*
+- **The db lane's "found sound" item claiming `EmployeeListItem.cs:52` and `EmployeeItem.cs:27` mean
+  "a payout identifier really does ride a paged list DTO today"** — **rebutted** by CH-S1 and verified by
+  the lead. Two challengers disagreed on this and the security lane is right. The db lane's dependent
+  conclusion ("of the three legs D1 stands on, this one is real") is therefore **inverted**: it is the
+  one leg that is **not** real, which is why D1 reason (i) is struck.
+- **CH-D1's ask 1** (document the `Include` obligation) — rejected as insufficient, recorded as **A11**
+  with its reasons.
 
 ## Verdict
 
-> Pending the lead. Consensus = zero blocking challenges. Not `accepted` until then; T-0518 does not
-> start before it.
+**ACCEPTED — 2026-08-02, with the amendments above folded into the decision sections. Zero blocking
+challenges remain.**
+
+All eight blocking findings (CH-S1, CH-S2, CH-S4, CH-S7, CH-D1, CH-D2, CH-D4, CH-D8, CH-D9) are
+disposed of by a change to the artifact, not by an acknowledgement. Every must-fix and spec-gap finding
+is likewise folded in. Two findings produced owner escalations; **neither blocks acceptance**, and
+`Q-PAYOUT-05` blocks only **T-0518's scope**, which D7.3 now answers with a written branch either way.
+
+**The decision that survived is the decision that was proposed** — a scheme-discriminated child record
+of cardinality one — but it survived with a **different justification** and **two structural changes**:
+
+1. **The shape stands; one of its three stated reasons does not.** The read-contract argument was built
+   on a misread DTO and is struck. What carries D1 is the *structure* (a multi-field identifier whose
+   meaningful subset is decided by a discriminator), the *lifecycle*, and the *PSP case*. The read
+   contract is now carried by a **test**, which is where it always belonged.
+2. **No invariant rides a navigation property.** The single most valuable thing this panel produced is
+   the constraint now stated at the top of the ADR: **this repository has no lazy loading, so every
+   invariant relocated onto a navigation becomes load-order-dependent.** Two independent lanes found the
+   same defect twice (a workforce-wide 403 and a silent GDPR-erasure failure) because the draft moved a
+   value and its invariants together. They are now separated, permanently, and three reviewer items
+   enforce it with tests that exercise the **real** query shapes rather than hand-constructed aggregates.
+
+**What would have shipped without this panel** (recorded so the cost of the panel is legible): a
+validator that **rejects nine out of ten real Czech bank accounts including the owner's own**; a
+**403 on the entire partner web surface** on migration day; a **GDPR erasure that returns success while
+retaining plaintext bank details**; an **unaudited, unrate-limited reveal** of a financial identifier
+presented as the compensating control for declining encryption; a **PAN copied forward into a new
+plaintext column and echoed back to the cleaner**; a **classifier and a schema artifact built for a data
+population that probably does not exist**; and a reviewer checklist whose key item **passes on day zero
+without anyone doing anything**. Six of those were caught by two challengers working in different lanes;
+two were caught only because a challenger raised a fatal finding **outside** its lane.
+
+### Coverage note — what the panel did not examine, stated rather than papered over
+
+The two lanes covered D1, D4, D5, D6, D7, D8, D9. **D2 (the governing country), D3 (`CountryConfiguration`
+grows one column) and D10 (the pricing table) were examined by neither challenger.** I am accepting them
+on the author's reasoning plus my own read, and I record the residual risks rather than call them
+defended:
+
+- **D2** carries a live, named residual: `WorkCountryId` stands in for the paying entity's country in the
+  cross-border SWIFT rule. The ADR itself notes the correct counterparty is `CompanyInfo.CountryId` and
+  that the two coincide today. That is a reasonable deferral **and it is undefended**, because nobody
+  attacked it. If a paying entity is ever established in a country it does not operate in, revisit D2
+  before assuming the note still holds.
+- **D3** is internally checkable (one enum column, modelled on `FiscalEnforcementMode`, with F3's
+  evidence against the alternative) and carries reviewer item 12. Low residual.
+- **D10** is a pricing table whose claims are re-derivable from D1/D3/D4 and which honestly prices the
+  case where extensibility is *not* free. Low residual.
+
+A third challenger on D2/D3/D10 would have been better. It is not worth blocking acceptance for, and I
+would rather write that down than let the absence of a challenge read as a successful defense.
+
+### Conditions on the accepted state
+
+1. **T-0518 does not start until `Q-PAYOUT-05` is answered**, or starts on **Branch A** with Branch B
+   filed as a separate ticket.
+2. **T-0519's primary-source verification duty now covers the mod-11 *direction and padding*, not just
+   the weight vector** — that is the specific gap that let CH-D4 through the draft's own honesty note.
+3. **T-0522 must correct the fixture IBANs** (`PayoutInvoiceLayoutTests.cs:187,60`,
+   `PayoutInvoicePdfDataTests.cs:78,222`) to the derived `CZ3155000000005885638003`. The pinned value
+   fails ISO 7064 mod-97 and the new validator would reject it — a suite that pins an invalid IBAN for
+   the owner's own account will otherwise be "fixed" by weakening the validator.
+4. **`Q-PAYOUT-04` is filed but blocks nothing.** D9a is not negotiable and does not depend on it.
+5. The companion living doc `agents/architecture/decisions/payout-details.md` is updated in the same
+   change (`deliberation.md`: a finalized artifact with stale docs is not finalized).
+6. **A follow-up ticket corrects two false code comments** (outside this ADR's scope, surfaced by it):
+   `UserMembershipEntityConfiguration.cs:106-109` and `LoyaltyTransactionEntityConfiguration.cs:82-88`
+   both justify declining `NULLS NOT DISTINCT` on the grounds that it would be *"a one-off"*. It is not:
+   it ships in `FiscalCounterEntityConfiguration.cs:28`, `LiveActivityTokenConfiguration.cs:28`, and in
+   the committed migration at `Initial.cs:2653` and `:2685`. **The ticket corrects the comments; it does
+   not change either index** — both are filtered partial indexes whose owners' reasoning about
+   `NULLS NOT DISTINCT` on a partial index is theirs to make, and re-deciding them is not a legitimate
+   side-effect of a payout ADR. The reason this is worth a ticket at all is the general rule:
+   **a comment that asserts a false invariant is worse than no comment, because it stops the next
+   reviewer from checking** — and here it very nearly propagated into a tenth index. *(A candidate rule
+   for `knowledge/consistency.md` if this recurs: "a comment claiming a construct is unprecedented must
+   name the search that established it, or not make the claim.")*
+
+**This ADR is now immutable.** Any deviation — including "we'll just add the `.Include` instead" —
+requires a superseding ADR, not a code comment.

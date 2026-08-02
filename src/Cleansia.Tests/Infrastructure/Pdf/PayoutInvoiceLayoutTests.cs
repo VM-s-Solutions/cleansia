@@ -57,7 +57,7 @@ public class PayoutInvoiceLayoutTests
     {
         var fields = Default.Payment(Data());
 
-        Assert.Contains(fields, f => f.Value == "CZ6555000000005885638003");
+        Assert.Contains(fields, f => f.Value == "CZ3155000000005885638003");
         Assert.Contains(fields, f => f.Value == "5885638003/5500");
         Assert.Contains(fields, f => f.Value == "RZBCCZPP");
         Assert.Contains(fields, f => f.Value == "0001000001");
@@ -184,7 +184,7 @@ public class PayoutInvoiceLayoutTests
         Phone = "+420777123456",
         BankName = "Raiffeisenbank",
         BankAccountNumber = "5885638003/5500",
-        Iban = "CZ6555000000005885638003",
+        Iban = "CZ3155000000005885638003",
         Swift = "RZBCCZPP"
     };
 

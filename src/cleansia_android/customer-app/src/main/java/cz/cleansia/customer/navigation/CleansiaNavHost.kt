@@ -559,10 +559,7 @@ fun CleansiaNavHost(
             popEnterTransition = popEnter,
             popExitTransition = popExit,
         ) {
-            LanguageScreen(
-                onBack = { navController.popBackStack() },
-                settingsRepository = settingsRepository,
-            )
+            LanguageScreen(onBack = { navController.popBackStack() })
         }
         composable<Routes.SubscribePlus>(
             enterTransition = pushEnter,

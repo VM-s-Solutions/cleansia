@@ -831,6 +831,11 @@
     <string name="membership_perk_express_title">Expresní upgrade zdarma</string>
     <string name="membership_perk_express_desc">Jedna bezplatná objednávka v den objednání měsíčně, bez příplatku.</string>
 
+    <!-- Perk pills on the active management card. -->
+    <string name="membership_perk_pill_discount">sleva %1$d %%</string>
+    <string name="membership_perk_pill_cancellation">zrušení %1$d h zdarma</string>
+    <string name="membership_perk_pill_recurring">Pravidelně</string>
+
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
     <string name="membership_inactive_subtitle" formatted="false">5% sleva, bezplatné zrušení, váš oblíbený uklízeč.</string>

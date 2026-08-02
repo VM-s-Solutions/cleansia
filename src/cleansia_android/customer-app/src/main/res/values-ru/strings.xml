@@ -828,6 +828,11 @@
     <string name="membership_perk_express_title">Бесплатный экспресс-апгрейд</string>
     <string name="membership_perk_express_desc">Одно бесплатное бронирование в тот же день в месяц, без надбавки.</string>
 
+    <!-- Perk pills on the active management card. -->
+    <string name="membership_perk_pill_discount">скидка %1$d%%</string>
+    <string name="membership_perk_pill_cancellation">отмена за %1$d ч</string>
+    <string name="membership_perk_pill_recurring">Регулярно</string>
+
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
     <string name="membership_inactive_subtitle" formatted="false">5% скидка, бесплатная отмена, ваш любимый клинер.</string>

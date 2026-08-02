@@ -387,6 +387,26 @@ All user text in `res/values/strings.xml`, accessed via `stringResource(R.string
 handled by the sealed `*UiState`; empty states use `MascotEmptyState`; transient errors go to the
 snackbar (not the main state); submit errors use `ActionState.Error`.
 
+**A conditional list of chips/pills/rows is a pure resolver, never a `buildList` inside the
+composable.** `MembershipPerks.resolve(response) -> List<MembershipPerk>` (customer
+`features/membership/MembershipPerks.kt`, mirrored by iOS `MembershipPerks.swift`) returns **semantic
+cases**, and the composable resolves `stringResource` per case. Both halves of the old inline version
+were bugs the shape prevents: the labels were English literals (`"$pct% off"`) because nothing in a
+`buildList` asks you for a resource id, and one `add(...)` sat outside every condition with no backing
+field. A resolver lets the test say "this case is not in the list" instead of grepping a view for a
+literal, and it makes the gating condition — not the rendering — the thing under test.
+
+**A local preference the server also stores needs a sync seam, not just a DataStore write.**
+`AppSettingsRepository.setLanguage` wrote DataStore only, so `User.PreferredLanguageCode` — the sole
+input to the language every server-rendered email is written in — stayed frozen at signup. The shape
+(customer `core/settings/LanguagePreferenceSync.kt`, mirrored by iOS `LanguagePreferenceSync.swift`):
+a `LanguagePreferenceSync` interface + a pure `LanguagePreferencePush.forUser(...)` decision + a
+`@Singleton` live impl, called from the VM after the local write. Three properties are load-bearing:
+send the **resolved** tag (`emailLanguageTag()`, never the "System" null — the server cannot see the
+device locale and the validator rejects a raw `de-DE`); **replay the whole cached profile**, because
+`UpdateCurrentUser` still replaces first/last name outright; and stay **silent on failure**, because
+a display-language tap is not a save anyone is waiting on.
+
 ## Picking an image, and rendering one that lives behind a SAS (T-0448)
 
 Three rules, each of which was a bug before it was a rule.

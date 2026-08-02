@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Autorenew
-import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Repeat
@@ -362,22 +361,7 @@ private fun ActiveCard(
         }
 
         // ── Perk pill row — quick visual reminder of what's unlocked ──
-        val perks = remember(response) {
-            buildList {
-                val pct = response.discountPercentage?.toInt()
-                if (pct != null && pct > 0) {
-                    add(PerkPill(Icons.Outlined.LocalOffer, "$pct% off"))
-                }
-                val freeHours = response.freeCancellationWindowHours
-                if (freeHours != null && freeHours > 0) {
-                    add(PerkPill(Icons.Outlined.Schedule, "${freeHours}h cancel"))
-                }
-                if (response.allowsExpressUpgrade == true) {
-                    add(PerkPill(Icons.Outlined.Bolt, "Express"))
-                }
-                add(PerkPill(Icons.Outlined.Repeat, "Recurring"))
-            }
-        }
+        val perks = remember(response) { MembershipPerks.resolve(response) }
         if (perks.isNotEmpty()) {
             androidx.compose.foundation.layout.FlowRow(
                 modifier = Modifier
@@ -386,28 +370,7 @@ private fun ActiveCard(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                perks.forEach { perk ->
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(accent.copy(alpha = 0.10f))
-                            .padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            imageVector = perk.icon,
-                            contentDescription = null,
-                            tint = accent,
-                            modifier = Modifier.size(14.dp),
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            text = perk.label,
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                }
+                perks.forEach { perk -> PerkPill(perk = perk, accent = accent) }
             }
         }
 
@@ -483,10 +446,40 @@ private fun ActiveCard(
     }
 }
 
-private data class PerkPill(
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val label: String,
-)
+@Composable
+private fun PerkPill(perk: MembershipPerk, accent: androidx.compose.ui.graphics.Color) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(accent.copy(alpha = 0.10f))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = when (perk) {
+                is MembershipPerk.Discount -> Icons.Outlined.LocalOffer
+                is MembershipPerk.FreeCancellation -> Icons.Outlined.Schedule
+                MembershipPerk.Recurring -> Icons.Outlined.Repeat
+            },
+            contentDescription = null,
+            tint = accent,
+            modifier = Modifier.size(14.dp),
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = when (perk) {
+                is MembershipPerk.Discount ->
+                    stringResource(R.string.membership_perk_pill_discount, perk.percent)
+                is MembershipPerk.FreeCancellation ->
+                    stringResource(R.string.membership_perk_pill_cancellation, perk.hours)
+                MembershipPerk.Recurring ->
+                    stringResource(R.string.membership_perk_pill_recurring)
+            },
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
 
 /**
  * Premium gold accent — drives the active+renewing membership card. Warmer

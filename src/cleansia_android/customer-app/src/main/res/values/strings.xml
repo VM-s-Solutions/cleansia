@@ -843,6 +843,12 @@
     <string name="membership_perk_express_title">Free express upgrade</string>
     <string name="membership_perk_express_desc">One free same-day booking per month, no surcharge.</string>
 
+    <!-- Perk pills on the active management card. No express pill: nothing in pricing reads
+         AllowsExpressUpgrade, so a member pays the standard express surcharge. -->
+    <string name="membership_perk_pill_discount">%1$d%% off</string>
+    <string name="membership_perk_pill_cancellation">%1$dh free cancel</string>
+    <string name="membership_perk_pill_recurring">Recurring</string>
+
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
     <string name="membership_inactive_subtitle" formatted="false">5% off, free cancellation, your favorite cleaner.</string>

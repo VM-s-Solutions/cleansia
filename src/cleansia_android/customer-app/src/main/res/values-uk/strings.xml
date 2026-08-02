@@ -828,6 +828,11 @@
     <string name="membership_perk_express_title">Безкоштовне експрес-оновлення</string>
     <string name="membership_perk_express_desc">Одне безкоштовне бронювання у той самий день щомісяця, без надбавки.</string>
 
+    <!-- Perk pills on the active management card. -->
+    <string name="membership_perk_pill_discount">знижка %1$d%%</string>
+    <string name="membership_perk_pill_cancellation">скасування за %1$d год</string>
+    <string name="membership_perk_pill_recurring">Регулярно</string>
+
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
     <string name="membership_inactive_subtitle" formatted="false">5% знижка, безкоштовне скасування, ваш улюблений клінер.</string>

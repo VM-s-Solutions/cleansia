@@ -102,14 +102,6 @@ extension L10n {
             localized("membership_perk_recurring_desc")
         }
 
-        static var perkExpressTitle: String {
-            localized("membership_perk_express_title")
-        }
-
-        static var perkExpressDesc: String {
-            localized("membership_perk_express_desc")
-        }
-
         static var inactiveBadge: String {
             localized("membership_inactive_badge")
         }

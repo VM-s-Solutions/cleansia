@@ -825,8 +825,6 @@
     <string name="membership_perk_cancellation_desc">Отмените за 4 часа до уборки без комиссий.</string>
     <string name="membership_perk_discount_title" formatted="false">5% скидка для участников</string>
     <string name="membership_perk_discount_desc" formatted="false">На каждую уборку. В сочетании с уровнем лояльности ограничена 12%.</string>
-    <string name="membership_perk_express_title">Бесплатный экспресс-апгрейд</string>
-    <string name="membership_perk_express_desc">Одно бесплатное бронирование в тот же день в месяц, без надбавки.</string>
 
     <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">скидка %1$d%%</string>

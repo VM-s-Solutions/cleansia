@@ -27,7 +27,6 @@ struct MembershipSuccessScreen: View {
                     PerkRow(text: L10n.Membership.perkCancellationTitle)
                     PerkRow(text: L10n.Membership.perkFavoriteCleanerTitle)
                     PerkRow(text: L10n.Membership.perkRecurringTitle)
-                    PerkRow(text: L10n.Membership.perkExpressTitle)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(Spacing.m)

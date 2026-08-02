@@ -233,6 +233,25 @@ the block disappears — the owner turns the line on or off by editing five JSON
 change and no boolean flag in the component. Used by `legal-pages` for `last_updated_date` and
 `review_notice`.
 
+### Retiring a claim the product does not deliver — pin the absence, don't just delete it
+
+When copy promises something no code enforces, **remove the claim rather than soften it**, then add a
+spec that asserts it is gone. Deleting the render site alone is not enough: the same claim usually
+lives on several surfaces plus five locale bundles, and the next person re-wires one of them from the
+key that was left behind. The Plus express perk shipped on the subscribe screen, the success screen
+and the management card; removing one pill left the other four live for a full release.
+
+The spec asserts three things, on the whole feature rather than the one component you edited:
+1. **No value** under the feature's i18n namespace matches the claim's stems **in any of the five
+   locales** (not just the retired key names — a re-introduction under a new key must fail too).
+2. **The retired keys are absent**, and the five locales still carry identical key sets.
+3. **No template renders the claim or branches on the unenforced flag** — read the `.html` files and
+   assert on their text.
+
+Reference: `apps/cleansia.app/src/app/i18n/membership-express-claim.spec.ts`, mirroring the mobile
+equivalents (`MembershipExpressClaimTest.kt`, `MembershipExpressClaimTests.swift`). Mutation-check it
+by re-adding the string before you call it done.
+
 ### Error-contract → i18n: the one canonical path is the interceptor `api.*` namespace
 
 The single canonical mechanism for surfacing a backend `BusinessErrorMessage` to the user is the

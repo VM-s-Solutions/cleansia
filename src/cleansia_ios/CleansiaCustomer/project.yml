@@ -14,12 +14,18 @@ knownRegions:
   - uk
   - ru
 
+# DEVELOPMENT_TEAM and STRIPE_PUBLISHABLE_KEY are supplied by ../Config/Base.xcconfig,
+# which includes the gitignored ../Config/Local.xcconfig. Never put either value here:
+# git destroys it on any pull or branch switch, and xcodegen re-bakes Info.plist from it.
+configFiles:
+  Debug: ../Config/Base.xcconfig
+  Release: ../Config/Base.xcconfig
+
 settings:
   base:
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "5.9"
-    DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
     # Pins compile-time string extraction OFF so no build ever sync-rewrites the
     # hand-managed Localizable.xcstrings (stale-marking + junk auto-extracted keys).
@@ -130,11 +136,10 @@ targets:
         GID_CLIENT_ID: "834394881207-4um0ikpfpavpl0usplaqpul413d8mvqq.apps.googleusercontent.com"
         GID_SERVER_CLIENT_ID: "834394881207-3r8mue033iimtrkn5u1ko9d5m5p7oh25.apps.googleusercontent.com"
         GID_REVERSED_CLIENT_ID: "com.googleusercontent.apps.834394881207-4um0ikpfpavpl0usplaqpul413d8mvqq"
-        # Owner-provisioned Stripe publishable key (pk_ only — NEVER a secret
-        # key). Empty until then → card payment is hidden and the cash path is
-        # the only option; STPAPIClient is not initialised and PaymentSheet is
-        # never presented (fail-closed).
-        STRIPE_PUBLISHABLE_KEY: ""
+    preBuildScripts:
+      - name: Verify local build configuration
+        basedOnDependencyAnalysis: false
+        script: '"$SRCROOT/../scripts/check-local-config.sh" STRIPE_PUBLISHABLE_KEY DEVELOPMENT_TEAM'
     dependencies:
       - package: CleansiaCore
       - package: CleansiaCustomerApi

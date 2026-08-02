@@ -140,7 +140,12 @@ final class BookingCardSubmitTests: XCTestCase {
         XCTAssertTrue(presenter.presentations.isEmpty)
     }
 
-    func testDefaultCardAvailabilityIsFailClosedUnderEmptyKey() {
+    func testEmptyKeyResolvesToUnavailableCardPayment() {
+        let vm = makeVM(cardAvailable: StripeConfig.isConfigured(publishableKey: ""))
+        XCTAssertFalse(vm.isCardPaymentAvailable)
+    }
+
+    func testDefaultCardAvailabilityIsDerivedFromStripeConfig() {
         let vm = BookingViewModel(
             quoteClient: FakeQuoteClient(),
             profileClient: FakeProfileClient(),
@@ -150,6 +155,6 @@ final class BookingCardSubmitTests: XCTestCase {
             tokenStore: FakeTokenStore.signedIn(),
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
         )
-        XCTAssertFalse(vm.isCardPaymentAvailable)
+        XCTAssertEqual(vm.isCardPaymentAvailable, StripeConfig.isCardPaymentAvailable)
     }
 }

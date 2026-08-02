@@ -174,4 +174,80 @@ documented for iOS work: a **scratch worktree**, where the committed `project.ym
   loss into one on every pull. AC2 is what discharges that.
 
 ## Review
-<!-- reviewer + security verdicts. AC4's decision and AC6's named fail-closed path go here. -->
+
+### Implementation (ios, 2026-08-02)
+
+**Layout.** One gitignored file, shared by both apps: `src/cleansia_ios/Config/Local.xcconfig`.
+`Config/Base.xcconfig` (committed) declares both keys empty and ends with `#include? "Local.xcconfig"`
+so the local file wins; both `project.yml` files bind every configuration to it via `configFiles:`.
+`DEVELOPMENT_TEAM: ""` (`:22`, both apps) and `STRIPE_PUBLISHABLE_KEY: ""` (customer `:137`) are gone
+from `project.yml`; the `$(STRIPE_PUBLISHABLE_KEY)` `info.properties` reference at `:99` is unchanged —
+it was already the indirection, which is why this stayed `S`.
+
+**AC4 — DECIDED: `DEVELOPMENT_TEAM` goes in the gitignored file, and the stated onboarding regression
+does not occur.** The ticket framed this as a binary (in ⇒ a fresh clone cannot build). That is only
+true if the gitignored file is the *only* source. It is not: the committed `Base.xcconfig` supplies an
+empty default and `Local.xcconfig` merely *overrides* it. A fresh clone therefore builds and tests on
+the simulator exactly as it does today (proven: both app schemes green on 16.4 with no local file), and
+only **device/TestFlight** signing needs the owner's value — which was already true. fastlane keeps
+overriding it via `ASC_TEAM_ID` as an xcarg, which the pre-build check accepts. Both apps changed:
+partner has the same `DEVELOPMENT_TEAM` shape (no Stripe key), so it gets the same treatment.
+
+**AC6 — fail-closed path, named.** Unchanged and still authoritative: `StripeConfig.swift:5-6` reads
+`Bundle.main` `STRIPE_PUBLISHABLE_KEY` and maps empty **or** an unexpanded `$(` to `""`;
+`isConfigured` (`:13-16`) then gates `StripePaymentController.swift:10` (`guard … else { return }` —
+`STPAPIClient` never initialised, PaymentSheet never presented), `ConfirmStep.swift:148` (card option
+hidden), `BookingViewModel+Submit.swift:51` and `MembershipViewModel.swift:36`. A missing xcconfig
+produces an **empty** key, not a crash: verified on the iOS 16.4 simulator — built app `Info.plist`
+carries `""` and the launch log reports `Stripe key: empty` (with the file present: the placeholder
+value and `Stripe key: configured`).
+
+**Missing-config diagnostic.** `scripts/check-local-config.sh` runs as a `preBuildScripts` phase on
+both app targets. It reads the **resolved** build settings (so an xcarg override counts as configured)
+and grades severity: Stripe empty ⇒ warning on Debug / **error** on Release; a non-`pk_` value ⇒ always
+an error (a secret key must never reach a client build); team empty ⇒ ok on simulator, error otherwise.
+TDD'd: `scripts/tests/check-local-config.test.sh`, 21 assertions, red (0/21) before the script existed,
+green (21/21) after; wired into `ios-ci.yml` as a step.
+
+**Honest limit on the team-id diagnostic.** Xcode resolves signing *before* any build phase, so a plain
+device build fails with Xcode's own *"requires a development team … Select a development team in the
+Signing & Capabilities editor"* and our named error never runs (it is reachable — proven under
+`CODE_SIGNING_ALLOWED=NO` — just pre-empted). Xcode's advice is actively wrong here: the editor writes
+the gitignored, regenerated `.xcodeproj`. `README.md` and `MANUAL_STEPS.md` say so explicitly rather
+than the README overclaiming a diagnostic that does not fire.
+
+**Finding — pre-existing latent defect this ticket would have made permanent.** Two customer tests were
+green only because the app was built with **no** Stripe key: they omitted the `isCardPaymentAvailable`
+argument and fell through to `BookingViewModel.swift:47`'s default, which reads the host app's
+`Bundle.main`. With a key configured they fail —
+`BookingCardSubmitTests.testDefaultCardAvailabilityIsFailClosedUnderEmptyKey` (`:153`, despite its name
+it never set an empty key) and `BookingSubmitTests.testCardSelectedWhenUnconfiguredCreatesOrderWithoutStripeHop`
+(`:80`). Latent before (the key was intermittent); **permanent after**, since the owner now always has
+one. Fixed by removing the ambient dependency: `BookingSubmitTests.makeVM` gains `cardAvailable: Bool =
+false`, and the misnamed test is split into a deterministic empty-key chain assertion plus a wiring
+assertion. Confirmed both directions: 728/0 with a key present **and** 728/0 with none.
+
+**Harvest-back:** `patterns-mobile.md` (iOS section) gains *"Owner-local build values — the ONE way"*.
+
+**Gate 8 / 8.5 — iOS 16.4 floor (clean builds, not cached).** `CleansiaCore` 525/0; `CleansiaPartner`
+527/0; `CleansiaCustomer` 728/0 with `Local.xcconfig` present and 728/0 absent. Release build with no
+key: `** BUILD FAILED **` with the named error (intended). SwiftFormat 0.60.1 `--lint` 0/670;
+SwiftLint 0.65.0 `--strict` 0 violations in 520 files. Secret scan of tracked files: no real key.
+**Not verified:** the latest-runtime suite (CI covers it) and any real-device/TestFlight archive — the
+owner's real key was **never** used; a `pk_test_T0475_placeholder` proved the plumbing.
+
+**`xcodegen generate` dirties three tracked files — pre-existing drift, NOT this ticket.**
+`CleansiaCustomer/Info.plist`, `CleansiaPartner/Info.plist`, `CleansiaCustomer/LiveActivity/Info.plist`
+are committed generated output that is stale against `project.yml` since PR #135 (`MARKETING_VERSION`
+wiring, `ITSAppUsesNonExemptEncryption`, `UILaunchStoryboardName`, `CFBundleDisplayName`,
+`NSSupportsLiveActivities`). Proven by regenerating from pristine `master` in a second worktree: all
+three are **byte-identical** either way, and the `STRIPE_PUBLISHABLE_KEY` line is untouched. Committing
+generated `Info.plist` is the same class of trap this ticket removes — candidate follow-up: gitignore
+it (safe now that it holds only `$(...)` placeholders).
+
+## Status log (cont.)
+- 2026-08-02 — **implemented (ios).** Test-first on the severity logic (21 assertions red→green).
+  AC4 decided in favour of the gitignored file *with* a committed empty default, which removes the
+  trade-off the AC assumed. AC1/AC2/AC7 proven by a branch round-trip in a scratch worktree: `git
+  checkout` restored `project.yml` to its pre-ticket state while `Local.xcconfig` survived byte-intact,
+  `xcodegen generate` left it alone, and `git status` stayed empty (`git add -A` cannot stage it).

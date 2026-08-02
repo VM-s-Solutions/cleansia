@@ -1,0 +1,15 @@
+// Committed defaults for the two owner-local build settings. Both app projects
+// point their Debug and Release configurations at this file; the real values
+// live in Local.xcconfig, which is gitignored and included LAST so it wins.
+//
+// The defaults stay here rather than in project.yml for two reasons: a value in
+// project.yml is destroyed by any git operation and re-baked into Info.plist by
+// `xcodegen generate`, and keeping a committed empty default is what lets a
+// fresh clone build and test on the simulator with no local file at all. An
+// empty Stripe key is fail-closed at runtime (card payment hidden, cash only);
+// an empty team is fine for the simulator and blocks only device signing.
+
+STRIPE_PUBLISHABLE_KEY =
+DEVELOPMENT_TEAM =
+
+#include? "Local.xcconfig"

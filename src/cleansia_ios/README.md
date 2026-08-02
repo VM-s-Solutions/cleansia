@@ -23,8 +23,9 @@ src/cleansia_ios/
 │   │   ├── Push/                # APNs registration (later ticket)
 │   │   └── Format/              # order/dispute formatters (later ticket)
 │   └── Tests/CleansiaCoreTests/
+├── Config/                      # Base.xcconfig (committed) + Local.xcconfig (gitignored, owner-local)
 ├── openapi/                     # openapi-generator config + codegen README (Swift business client)
-├── scripts/                     # generate-api-clients.sh, refresh-mobile-spec.sh
+├── scripts/                     # generate-api-clients.sh, refresh-mobile-spec.sh, check-local-config.sh
 ├── CleansiaPartnerApi/          # GENERATED swift5 client (gitignored — regenerate, never edit)
 ├── CleansiaCustomerApi/         # GENERATED swift5 client (gitignored — regenerate, never edit)
 ├── CleansiaPartner/             # partner app target (cz.cleansia.partner)
@@ -37,6 +38,40 @@ src/cleansia_ios/
 ├── .swiftlint.yml               # STRICT, blocking — force_* = error (ADR-0016)
 └── .swiftformat                 # STRICT — runs --lint in CI
 ```
+
+## Local build configuration (do this once, before you build)
+
+Two settings are per-developer and are **never committed**: the Stripe publishable key and your
+Apple `DEVELOPMENT_TEAM`. They live in one gitignored file shared by both apps:
+
+```sh
+cp src/cleansia_ios/Config/Local.xcconfig.example src/cleansia_ios/Config/Local.xcconfig
+# then fill in STRIPE_PUBLISHABLE_KEY (pk_...) and DEVELOPMENT_TEAM (10 chars)
+```
+
+`Config/Base.xcconfig` is committed, supplies empty defaults, and `#include?`s `Local.xcconfig`
+last so your values win. Because nothing tracked and nothing generated carries the values, `git
+pull`, a branch switch and `xcodegen generate` all leave them alone — fill the file in once and
+never touch it again.
+
+If you skip it, a build tells you so by name (`scripts/check-local-config.sh` runs as a pre-build
+phase on both app targets) rather than failing silently:
+
+| What is missing | Simulator / Debug | Release |
+|---|---|---|
+| `STRIPE_PUBLISHABLE_KEY` | warning; card payment hidden, cash only (fail-closed) | build **error** |
+| `DEVELOPMENT_TEAM` | no diagnostic — the simulator needs no signing | see below |
+
+A secret key (`sk_...`) pasted into the publishable slot is always a build error. Verify the
+severity rules with `./scripts/tests/check-local-config.test.sh`.
+
+> **A device build with no team fails with Xcode's own error, not ours** — Xcode resolves signing
+> before any build phase runs, so you get *"Signing for 'CleansiaPartner' requires a development
+> team. Select a development team in the Signing & Capabilities editor."* **Do not follow that
+> advice.** The Signing & Capabilities editor writes into the `.xcodeproj`, which is gitignored and
+> rebuilt by `xcodegen generate` — your team id would be silently dropped on the next regenerate,
+> which is the bug this whole layout exists to remove. Set `DEVELOPMENT_TEAM` in
+> `Config/Local.xcconfig` instead.
 
 ## Generating the Xcode projects (Mac, owner/dev)
 

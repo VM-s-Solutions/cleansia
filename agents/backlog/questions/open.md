@@ -70,6 +70,12 @@ each gets a line on the pre-PROD readiness checklist.
 - **Q-OBS-01** (`pre-prod`, **blocking: no** — shapes T-0500/T-0501) — DEV, the only live environment,
   has **no error tracking from any source**. Turn Sentry on for dev, add an App Insights exporter, or
   accept the gap with a date?
+- **Q-PROMISE-01** (`pre-prod`, **blocking: no**) — **NEW.** Both mobile clients promise every customer
+  *"Cleaner being assigned · Within 1 hour"*, unconditionally, in five languages. **Nothing enforces it.**
+  Is it true in practice on DEV/prod? If not, it is the same class as the express claim just removed.
+- **Q-PROMISE-02** (`pre-prod`, **blocking: no**) — **NEW.** On the **Plus checkout page**, cs/sk/ru
+  promise the favourite cleaner *"will be preferentially assigned"* where en/uk promise only priority.
+  Three locales sell a stronger product than the design delivers. Which is the intended promise?
 
 **Five `blocking: yes` questions are open in this file as of 2026-08-02: Q-PROFILE-01, Q-PLUS-01,
 Q-PLUS-02, Q-PLUS-03, Q-PAYOUT-02, Q-PAYOUT-03** *(six entries; Q-PAYOUT-01 came off the list when the
@@ -1031,6 +1037,76 @@ _No open Wave-1 *planning* questions remain._
   forgetting.
 - Default taken: **banner visible, date absent.** Preferred over deleting the text (not an agent's call)
   and over rewriting it (would replace unreviewed prose with more unreviewed prose).
+- Answer: _(owner fills in)_
+
+---
+
+## Challenger-round questions (2026-08-02) — surfaced by the ADR-0034/0035/0036 challenge lanes, belonging to no ADR
+
+### Q-PROMISE-01 — [blocking: no — but it decides whether T-0525's sibling class is one defect or two] Both mobile clients promise "Cleaner being assigned · Within 1 hour" after every booking. Is that true on DEV/prod?
+- Raised by: pm (challenger round on ADR-0036, `adr/challenges/0036-A-promise.md` CH-P1)
+- Owner: **owner** (only you can say what actually happens in practice)
+- Resolve-by: **pre-prod**
+- Date: 2026-08-02
+- Question: The screen shown immediately after a customer books states, as a **number**,
+  **unconditionally**, in **five languages**, on **both** mobile clients, that a cleaner is being assigned
+  **within 1 hour**. **Is that true in practice today on DEV — and will it be true in prod?**
+- Grounding, PM-verified 2026-08-02:
+  - Android `customer-app/src/main/res/values/strings.xml:741-742` —
+    `booking_success_t2_title` = *"Cleaner being assigned"*, `booking_success_t2_desc` = *"Within 1 hour"*;
+    plus `values-cs:731-732` (*"Do 1 hodiny"*), `values-sk:728-729`, `values-uk:728-729`
+    (*"Протягом 1 години"*), `values-ru:728-729` (*"В течение 1 часа"*).
+  - iOS `CleansiaCustomer/Resources/Localizable.xcstrings:4799` (`booking_success_t2_desc`) and `:4834`
+    (`booking_success_t2_title`) — the same claim, the same five locales.
+  - It is **unconditional**: `BookingSuccessTimeline.swift:10-14` is `CaseIterable` over
+    `received → assigning → confirmed → cleaningDay` and `:44-46` makes `assigning` `.active` whenever no
+    order status has loaded — i.e. exactly the moment after submit.
+  - **Nothing enforces it.** There is no SLA, no timer, no escalation and no alert anywhere behind that
+    sentence. Assignment is a **pull model**: an order sits on the board until a cleaner takes it. The only
+    proactive nudge is the new-jobs digest, which sweeps every **30 minutes** — and which currently drops
+    jobs permanently (**T-0528**) and can fail to advance its watermark (**T-0529**).
+- Why it matters: **this is the same class as the express claim just removed.** A numeric, customer-facing
+  time promise with no mechanism behind it. If the real median time-to-assignment is comfortably under an
+  hour, the sentence stays and this closes. If it is not, the sentence comes off all five locales on both
+  clients — corrective copy that ships ahead of any mechanism, exactly as the express perk did.
+- **The decisive check, and only you can run it:** on DEV (or from the order data), what is the actual
+  spread of *order created → first cleaner assigned*? Median and worst case. A rough answer is enough.
+- Default taken: **none.** No ticket is filed yet, deliberately — the two answers have different diffs
+  (leave it alone vs. a five-locale × two-platform copy correction) and filing the wrong one wastes a run.
+- Answer: _(owner fills in)_
+
+### Q-PROMISE-02 — [blocking: no — a copy/product call, but it is on the checkout page] cs/sk/ru tell the customer their favourite cleaner "will be assigned"; en/uk promise only "priority". Which is the intended promise?
+- Raised by: pm (challenger round on ADR-0036, `adr/challenges/0036-A-promise.md` CH-P3)
+- Owner: **owner** (product/marketing — no agent may pick which promise the platform makes)
+- Resolve-by: **pre-prod**
+- Date: 2026-08-02
+- Question: On the **Cleansia Plus checkout page**, the favourite-cleaner perk is described differently by
+  locale, and three locales sell a **stronger** product than the other two:
+
+  | Locale | `pages.membership.benefit_favorite_body` (`apps/cleansia.app/src/assets/i18n/<l>.json:1095`) | Literal |
+  |---|---|---|
+  | en | *"…they'll be **prioritized** when matching."* | priority |
+  | uk | *"…**матиме пріоритет** при підборі."* | priority |
+  | **cs** | *"…bude **přednostně přiřazen**."* | **will be preferentially ASSIGNED** |
+  | **sk** | *"…bude **prednostne priradený**."* | **will be preferentially ASSIGNED** |
+  | **ru** | *"…он **будет назначен в первую очередь**."* | **will be ASSIGNED first** |
+
+  Rendered by `libs/cleansia-customer-features/profile/src/lib/membership/membership-subscribe.component.html:102-103`
+  — **the page where the customer pays for Plus.**
+- Why it matters: **three locales promise an outcome the design does not deliver and is not planned to.**
+  The dispatch model is **pull** — a cleaner chooses a job; the platform never assigns one to a customer's
+  chosen cleaner. Even the favourite-cleaner work in flight (T-0495 / T-0515) is about giving that cleaner
+  a **first chance**, not an assignment. A Czech or Russian customer is therefore told, at the point of
+  sale, that something will happen which by design will not.
+  Note the English is **also** not free: *"prioritized when matching"* describes a matching algorithm that
+  does not exist — `PreferredEmployeeId` is written by the booking path and read by nothing.
+- The question is genuinely a product one, and there are three coherent answers: **(a)** the perk is a
+  *first chance* → all five locales say that, and cs/sk/ru's assignment verb comes off;
+  **(b)** the perk really should be *preferential assignment* → that is a dispatch-model change and a much
+  bigger ticket than anything currently filed; **(c)** something else you have in mind.
+- Default taken: **none.** No copy ticket is filed. The T-0491 copy panel is the natural home for the
+  wording **once the promise is decided** — but it cannot pick the promise, and a copy ticket written
+  before this answer would be a guess in five languages.
 - Answer: _(owner fills in)_
 
 ---

@@ -710,3 +710,136 @@ the express + favourite copy across **all three** clients (Android `strings.xml`
 The **owner's** four answers and their four housekeeping statements (relayed, acted on, and the two
 `done` transitions say on the ticket exactly what was and was not corroborated). Everything else in
 this addendum is a first-hand read at `dceed4f1`.
+
+---
+
+# ADDENDUM B — challenger-round fallout: 7 defects that belong to no ADR (`T-0525`…`T-0531`)
+
+**Filed:** 2026-08-02, during the ADR-0034 / 0035 / 0036 challenger round.
+**Input:** `agents/backlog/adr/challenges/*.md` — 8 lanes (0034-db, 0034-security, 0035-A/B/C,
+0036-A/B/C), all read; plus PM grounding against the working tree.
+**Output: 7 new tickets + 2 owner questions.** No ADR was read for *its own* content and
+**nothing under `agents/backlog/adr/**` was written** — three architects are live in that directory.
+
+## Why these exist as tickets at all
+
+The challengers were attacking three *designs*. Underneath the designs they hit **shipped defects that
+no ADR owns and that no ADR's adjudication will fix**. If they had stayed in the challenge files they
+would have been archived with the round. They are filed now, ADR-free, so they survive whichever way
+the three ADRs land.
+
+## The one to move first
+
+**T-0525 — the cancellation fee charges customers for a cleaner who never existed.** It is live, it moves
+real money on the card cohort (`CancelOrder.cs:137-145` issues the refund), and the fix is a one-line
+predicate behind a one-item architect ruling. Every paid order is treated as "a cleaner accepted it"
+because `OrderStatus.Confirmed` is written by the Stripe webhook, by cash auto-confirm and by the admin
+override as well as by `TakeOrder`. A customer who books tomorrow, pays by card and changes their mind
+20 minutes later is charged **25%**; inside 4 hours, **50%**.
+
+**PM recommendation on the ticket's one open decision** (the architect may overturn it): use the
+assignment row (`order.AssignedEmployees.Count > 0`), not a status-model change. It is already loaded in
+the same query, it costs nothing, and it is *strictly more correct* than any status predicate — because
+`TakeOrder.cs:188` adds the assignment unconditionally while the `Confirmed` track at `:194` is written
+only from `New`/`Pending`, so a cleaner taking an order the webhook already confirmed writes **no status
+track at all**. Splitting `Confirmed` into two statuses would touch a persisted enum on every order row,
+an index, five APIs, three web apps, two Android apps, iOS and the Live Activity payload — an `L` with a
+migration and two client regens, for the same customer-visible outcome.
+
+## What the scoping pass found that the challenges did not
+
+1. **iOS has the same cancel-fee defect as Android**, and the challenge named Android only.
+   `CancellationFeePreview.swift` mirrors `CancelOrderSheet.kt:344-404` faithfully — the parity is real;
+   what was mirrored was wrong. **And a committed iOS suite pins the wrong ladder**
+   (`OrderStatusLogicTests.swift:175-225`), so it goes red on the fix. It is in T-0527's scope explicitly,
+   because a developer hitting it blind fixes the test instead of the code (the same trap
+   `MembershipExpressClaimTest.kt` set for T-0513).
+2. **The web is correct and is out of scope.** It has no cancel action at all, and its wizard policy block
+   (`en.json:807-815`) already reads 25% / 50% with a Plus-aware tier. Recorded so nobody "fixes" it.
+3. **The digest's status-set divergence is three-way, not two-way.** `TakeOrder`'s validator has **no
+   status rule at all**, so a `New` order is pushed by the digest, absent from the board, and takeable.
+   That turned T-0530 from a comment fix into a ticket carrying a one-item ruling.
+4. **Two of the challengers' own premises are wrong** — see below.
+
+## 🔴 Two corrections the three live panels need, and no agent may deliver
+
+Found while verifying counts for T-0531. Neither changes a challenger's *conclusion*; both change what a
+panel should conclude *from* it. **These must reach the architects through you, not through an ADR edit.**
+
+1. **`0034-db.md` CH-D2** states *"all ~40 `.IsUnique()` sites … not one includes `TenantId`;
+   `(TenantId, EmployeeId)` would be the first."* → **Refuted. Nine do** — `PromoCode:63`,
+   `LoyaltyTransaction:91`, `UserMembership:112`, `PromoCodeRedemption:66`, `LoyaltyTierConfig:33`,
+   `ReferralCode:38`, `User:106`, `TenantConfiguration:27`, `FiscalCounter:26`. The proposed index would be
+   the **tenth**. CH-D2's conclusion (such an index enforces nothing while `TenantId` is null) stands; its
+   "no precedent exists" premise, which its recommendation leans on, does not.
+2. **`UserMembershipEntityConfiguration.cs:106-109`** says adopting `NULLS NOT DISTINCT` would *"introduce
+   a one-off"* — and both `0034-db.md` CH-D2 and `0035-C-concurrency.md` CH-C1 reason from that sentence.
+   → **False. It ships twice already**, in the committed Initial migration, against real PostgreSQL:
+   `FiscalCounterEntityConfiguration.cs:28` → `Initial.cs:2649-2653`, and
+   `LiveActivityTokenConfiguration.cs:28` → `Initial.cs:2680-2685`. **ADR-0035 CH-C1's option 1 is
+   precedented, not novel.** The novelty argument is unavailable to either side of that debate.
+
+## Dispatch
+
+| Order | Ticket | Why here |
+|---|---|---|
+| 1 | **T-0525** ruling → build | Money, live, one item, no dependency |
+| 2 | **T-0529** | `S`, no-decision, but it holds the `NewJobsDigestService.cs` lane — take it first and it clears in one run |
+| 3 | **T-0530** ruling → build | Same file; a constant and a comment |
+| 4 | **T-0528** ruling → build | Same file; the mechanism. Never concurrent with 2 or 3 |
+| 5 | **T-0526** | Needs T-0525's predicate to exist or it ships a second wrong surface |
+| 6 | **T-0527** | Needs T-0526's contract **and** the owner's `mobile-spec-redump` |
+| — | **T-0531** | Independent, any time. A note; **AC5 forbids fixing anything** |
+
+**Shared-file lane:** `NewJobsDigestService.cs` has three claimants (**T-0529 → T-0530 → T-0528**).
+**Never two instances in that file at once.**
+
+## ⚠️ Owner-only steps this addendum creates
+
+- **`nswag-regen` (customer client) + `mobile-spec-redump`** — created by **T-0526**'s new preview
+  endpoint. **T-0527 is held** until you confirm both. No agent runs either.
+- **No EF migration is created by any of these seven.** T-0531 AC5 forbids one explicitly; if the
+  architect concludes an index genuinely needs `AreNullsDistinct(false)` today, that is a separate ticket
+  with an `ef-migration` step, filed rather than absorbed.
+
+## Two questions for you (`questions/open.md`, both `blocking: no`, both `pre-prod`)
+
+- **Q-PROMISE-01** — both mobile clients tell every customer *"Cleaner being assigned · Within 1 hour"*,
+  unconditionally, in five languages (`values/strings.xml:741-742`, iOS `Localizable.xcstrings:4799`
+  and `:4834`). **Nothing enforces it**: assignment is a pull model and the only proactive nudge is a
+  30-minute digest that currently drops jobs (T-0528). *Is it true in practice on DEV?* One rough number —
+  median and worst-case order-created→first-assigned — settles it. If it is not true, it is the same class
+  as the express claim just removed, and the sentence comes off ten locale files.
+- **Q-PROMISE-02** — on the **Plus checkout page**, **cs/sk/ru** promise the favourite cleaner *"will be
+  preferentially assigned"* (`<locale>.json:1095`) where **en/uk** promise only priority. Three locales
+  sell a stronger product than the design delivers — and the dispatch model is **pull**, so nothing is ever
+  assigned to a chosen cleaner. **No copy ticket is filed**: the promise has to be chosen before it can be
+  written in five languages.
+
+## What this pass deliberately did NOT do
+
+- **Did not read the three ADRs' own text**, and did not write one byte under `agents/backlog/adr/**`.
+  Three architects are live in there. Every ADR fact above is quoted from a challenge file or verified
+  directly against source.
+- **Did not touch git** — no add, commit, branch, stash or checkout.
+- **Did not open** `.env`, `.p8`, `Info.plist` or `project.yml`.
+- **Did not file** the challengers' *cost* findings (the digest's per-cleaner country re-scan,
+  `HasOverlappingOrderAsync` scanning a cleaner's lifetime assignment history, the O(C²) per-cleaner
+  commit). They are real, they are the optimizer lane's, and folding them into T-0528 would have made the
+  correctness fix unreviewable. They are named in T-0528's `## Out of scope` so they are findable.
+- **Did not file** ADR-owned findings. Everything a challenger raised *about* a design stays with that
+  design's panel.
+
+### What the PM verified first-hand for this addendum
+
+`BookingPolicy.cs` in full · `CancelOrder.cs:55-179` · `TakeOrder.cs:30-205` ·
+the three literal `OrderStatusTrack.Create(OrderStatus.Confirmed` writers + `AdminOverrideOrderStatus`'s
+`Lifecycle` array · `NewJobsDigestService.cs:40-228` · `DashboardSpecifications.cs:15-30` ·
+`EmployeeRepository.cs:40-58` · `BaseRepository.cs:153-158` · `CancelOrderSheet.kt:68-90` and `:340-404` ·
+`CancellationFeePreview.swift` in full · the iOS `CancellationFeePreviewTests` call sites ·
+Android `order_cancel_fee_*` strings · `booking_success_t2_*` in all five Android locales + the two iOS
+xcstrings keys · web `cancel_policy_tier*` (`en.json:807-815`) · `benefit_favorite_body` in all five web
+locales + its render site · all nine `TenantId` unique indexes · `UserMembershipEntityConfiguration.cs:85-114`
+· `FiscalCounterEntityConfiguration.cs:26-29` · `LiveActivityTokenConfiguration.cs:28` ·
+`Initial.cs:2649-2653` and `:2680-2685` · the web customer feature libs (no cancel action) ·
+`agents/backlog/tickets/` for dedup (T-0211, T-0242 `done`, T-0511) and `agents/backlog/audits/`.

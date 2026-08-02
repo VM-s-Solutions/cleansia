@@ -10,6 +10,59 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## 🟥 CHALLENGER-ROUND FALLOUT — **7 live defects that belong to no ADR**, `T-0525`…`T-0531`
+>
+> Filed 2026-08-02 from the challenger round on **ADR-0034 / 0035 / 0036**
+> (`agents/backlog/adr/challenges/*.md`, 8 lanes). These are **not** ADR work. They are defects the
+> challengers found *underneath* the designs they were attacking, on shipped code, and they were filed
+> immediately so they are not lost when the three ADRs are adjudicated. **Three architects are live in
+> `agents/backlog/adr/**` — nothing in this block touches that directory.**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Panel / gate |
+> |----|-------|------|--------|-----------|--------|-----|-------|
+> | **T-0525** | 🚨 **Cancellation fee charges the customer for a cleaner who never took the job — real money, shipping now.** `BookingPolicy.cs:121-125` short-circuits to free with *"No cleaner has taken the order yet"*, on a `hasBeenAccepted` computed at `CancelOrder.cs:103-104` as *"an `OrderStatusHistory` entry of `Confirmed` exists"*. **`Confirmed` has four writers and one involves a cleaner** — `TakeOrder.cs:194` (real), `HandlePaymentNotification.cs:261` (the Stripe webhook), `ConfirmRecurringOrder.cs:111` (cash auto-confirm), `AdminOverrideOrderStatus.cs:56-64` (generic lifecycle writer). So **every card order is "accepted" seconds after payment** and the free arm never fires. Card + 20 min later + cleaning tomorrow → **25% charged, 75% refunded, refund actually issued** (`CancelOrder.cs:137-145`); inside 4 h it is **50%**. The web already promises the correct rule (`en.json:807-808` *"Before a cleaner accepts — Free"*). **PM recommends the assignment-row predicate** (`order.AssignedEmployees.Count > 0`) over a status-model change — already `Include`d at `CancelOrder.cs:62-63`, and strictly more correct: `TakeOrder.cs:188` adds the assignment **unconditionally** while the `Confirmed` track at `:194` is written **only** from `New`/`Pending`, so a cleaner taking an already-webhook-Confirmed order writes **no track at all** | S | **draft** | — | architect, backend | **yes** | **architect — 1-item ruling, dispatchable today.** ADR-free **by design**; must not wait on 0035/0036 |
+> | **T-0526** | **Server-side cancellation-fee preview — contract + backend.** `CalculateCancellationFeeRate` has **exactly one** production caller and `CancelOrder.cs:171-176` returns `FeeRate` **after** the cancel, the refund and the loyalty revoke. That is a receipt, not a disclosure. No client can be made right locally: the Plus window is per-member (**seeded 4**, not 24), acceptance is a history fact, the oops window is server-side | M | **draft** | **T-0525** | architect, backend | **yes** | architect **contract lock** = step 1 · ⚠️ `nswag-regen` + `mobile-spec-redump` |
+> | **T-0527** | **Android AND iOS cancel sheets lie about the fee.** `CancelOrderSheet.kt:344-404` shows **50%** where the backend charges **25%**, and **100% / "no refund available"** where it charges **50%**; hardcodes a 24 h window a Plus member does not have. 🚨 **iOS is the same defect and the challenge did not name it** — `CancellationFeePreview.swift` mirrors the Kotlin faithfully (its own comment says so), consumed at `CancelOrderSheet.swift:220`. 🚨 **A committed iOS suite pins the wrong ladder** — `OrderStatusLogicTests.swift:175-225` goes red on the fix and is **in scope**. **Web is CORRECT and out of scope** (no cancel action at all; its wizard policy block already reads 25%/50% with a Plus-aware tier) | M | **draft** | T-0525, **T-0526** | android, ios | no | ⚠️ held until the owner confirms `mobile-spec-redump` |
+> | **T-0528** | **The new-jobs digest permanently drops a job the cleaner was busy for.** `NewJobsDigestService.cs:135-143` filters overlaps per order; if ≥1 order is notifiable, `:182` stamps the watermark past **all** candidates, so the skipped ones can never satisfy `s.CreatedOn > sinceUtc` again — **the conflict clearing does not bring them back**. The `takeable == 0` no-stamp branch (`:145-149`) is correct but is a **deferral, not a mitigation**. **Narrow in logic, broad in incidence:** it fires whenever the cleaner was free for even one job. 🚨 The muted branch at `:158-166` stamps **deliberately** for a different reason and a naive fix will delete it | M | **draft** | — | architect, backend | no | **architect** — the watermark is a single scalar and cannot express a per-cleaner non-monotone rule; 3 options, one is an `L` |
+> | **T-0529** | **The digest watermark can never advance under multi-tenancy** *(latent now, fatal later)*. `StampWatermarkAsync` (`:216`) loads via `EmployeeRepository.GetByIdAsync` — **tenant-scoped** — inside a sweep that deliberately uses `GetQueryableIgnoringTenant` (`:63`) with no override. Non-null `TenantId` → null → `:217` returns **silently**, *after* the push at `:168` was enqueued → the same cleaner re-notified every 30 min forever. **One-line fix already in the class:** `GetByIdIgnoringTenantAsync` (`EmployeeRepository.cs:53-57`) — still change-tracked, so the `:179-181` atomicity holds; **do not** use `ExecuteUpdateAsync`. Existing coverage cannot see it (`ColdPathCurrentStatusQueryTests.cs:53` wires `tenantId: null`). AC5 walks for siblings — **`HasOverlappingOrderAsync` (`OrderRepository.cs:281`) is the known second one; file it, don't fix it here.** Cross-ref **ADR-0028** | S | **draft** | — | backend | **yes** (tenancy scoping) | none — **no-decision**, an existing method substituted |
+> | **T-0530** | **Two false "mirrors X" comments — and a three-way divergence behind one.** `NewJobsDigestService.cs:48-53` claims its status set *"Mirrors `DashboardSpecifications.CreateAvailableOrdersSpec`"*; it does not (`{New, Pending, Confirmed}` vs `{Pending, Confirmed}` at `DashboardSpecifications.cs:24`). 🚨 **Scoping found it is three-way, not two-way:** `TakeOrder`'s validator (`:38-60`) has **no status rule at all**, so a `New` order is **pushed**, **absent from the board**, and **takeable**. The second false comment (`CancelOrderSheet.kt:74-79`, *"BookingPolicy tiers … 50% 4–24h / 100% <4h"*) is owned by **T-0527 AC11** — shared-file lane | S | **draft** | — | architect, backend | no | **architect — 1-item ruling:** *is a `New` order offerable to a cleaner?* |
+> | **T-0531** | 📝 **KNOWN-CONSTRAINT NOTE, not a fix.** `TenantId` is nullable and Postgres treats NULLs as DISTINCT, so **9** unique indexes that include `TenantId` enforce nothing in single-tenant mode. `UserMembershipEntityConfiguration.cs:100-109` documents the tradeoff deliberately and names the compensating guards — **that decision is sound and is not reopened.** The rule being recorded: **no design may treat such an index as its sole arbiter** — ADR-0035 D3 tried to, which is how this surfaced. **AC5: nothing is fixed, no migration, no index change** | S | **draft** | — | architect, docs | no | none — writes `agents/architecture/decisions/multi-tenancy-and-region.md`. **NOT an ADR edit** |
+>
+> ### 🔴 Two corrections this filing makes to the challengers' own evidence — both matter to panels running RIGHT NOW
+>
+> The PM verified the counts while scoping T-0531 and **two load-bearing premises are wrong**. Neither
+> changes a finding's conclusion; both change what a panel should conclude *from* it. **Relay these to the
+> three architects — no agent may write them into a live ADR:**
+>
+> 1. **`0034-db.md` CH-D2: *"all ~40 `.IsUnique()` sites … not one includes `TenantId`; `(TenantId,
+>    EmployeeId)` would be the first."*** → **REFUTED. Nine do**, so the proposed index would be the
+>    **tenth**: `PromoCode:63` · `LoyaltyTransaction:91` · `UserMembership:112` · `PromoCodeRedemption:66` ·
+>    `LoyaltyTierConfig:33` · `ReferralCode:38` · `User:106` · `TenantConfiguration:27` · `FiscalCounter:26`.
+>    CH-D2's *conclusion* stands; its "no precedent" premise — which its recommendation leans on — does not.
+> 2. **`UserMembershipEntityConfiguration.cs:106-109`: adopting `NULLS NOT DISTINCT` would *"introduce a
+>    one-off."*** → **False. It already ships TWICE**, in the committed Initial migration, on real
+>    PostgreSQL: `FiscalCounterEntityConfiguration.cs:28` → `Initial.cs:2649-2653`, and
+>    `LiveActivityTokenConfiguration.cs:28` → `Initial.cs:2680-2685`. **ADR-0035 CH-C1's option 1 is
+>    precedented, not novel** — the "we'd be introducing a one-off" argument is unavailable to either side.
+>
+> ### ⚠️ Shared-file lane — three tickets edit `NewJobsDigestService.cs`. Serialize, do not fan out.
+> **`T-0529` (5 lines) → `T-0530` (a constant + a comment) → `T-0528` (the mechanism).** Never two
+> instances in that file at once.
+>
+> ### 🟩 Dispatchable TODAY with no dependency
+> **`T-0525`'s ruling** (money, 1 item — this is the one to move first) · **`T-0529`** (passes DoR on
+> merit; held only by the lane above) · **`T-0530`'s ruling** · **`T-0531`** · **`T-0528`'s ruling**.
+> `T-0526` waits on T-0525; `T-0527` waits on T-0526 **and** on the owner's `mobile-spec-redump`.
+>
+> ### 🔵 Two owner questions filed (`questions/open.md`) — both `blocking: no`, both `pre-prod`
+> **`Q-PROMISE-01`** — both mobile clients tell every customer *"Cleaner being assigned · Within 1 hour"*,
+> unconditionally, in five languages (`values/strings.xml:741-742` + iOS `Localizable.xcstrings:4799`,
+> `:4834`). **Nothing enforces it** — assignment is a pull model and the only nudge is a 30-minute digest.
+> *Is it true in practice on DEV?* If not, it is the same class as the express claim just removed.
+> **`Q-PROMISE-02`** — on the **Plus checkout page**, **cs/sk/ru** promise the favourite cleaner *"will be
+> preferentially assigned"* (`<l>.json:1095`) where **en/uk** promise only priority. Three locales sell a
+> stronger product than the design delivers. **No copy ticket is filed** — the promise must be chosen first.
+
 > ## 🟩 ADDENDUM to SPRINT-15 — the owner's **four product answers**: 14 new tickets, `T-0511`…`T-0524`
 >
 > **Baseline: `master` at `dceed4f1`.** Filed 2026-08-02. Full reasoning, the corrections, the dispatch

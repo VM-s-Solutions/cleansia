@@ -318,6 +318,15 @@ public class EmployeeInvoice : Auditable, ITenantEntity
         return this;
     }
 
+    // Derived, not stored: GeneratedAt is immutable once the invoice exists, so a regenerated PDF
+    // of an already-issued invoice always prints the same "datum splatnosti".
+    public DateTime CalculateDueDate(int paymentTermsDays)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(paymentTermsDays);
+
+        return GeneratedAt.Date.AddDays(paymentTermsDays);
+    }
+
     public string GenerateInvoiceNumber(string prefix = "EMP")
     {
         var employeeShort = EmployeeId.Substring(0, Math.Min(6, EmployeeId.Length)).ToUpper();

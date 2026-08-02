@@ -78,6 +78,13 @@ public class Constants
         public const string Czk = "CZK";
     }
 
+    public class PayoutInvoice
+    {
+        // Days from issue to "datum splatnosti". A platform payment policy, not a legal minimum —
+        // this constant is the single point to swap for per-country configuration.
+        public const int PaymentTermsDays = 14;
+    }
+
     public class ReceiptNumberFormat
     {
         public const string Prefix = "RCP";

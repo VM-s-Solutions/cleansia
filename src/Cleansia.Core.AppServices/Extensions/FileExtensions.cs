@@ -35,11 +35,8 @@ public static class FileExtensions
             VariableSymbol = invoice.VariableSymbol,
             PaymentReference = invoice.PaymentReference ?? invoice.VariableSymbol,
             GeneratedAt = invoice.GeneratedAt,
-            EmployeeName = $"{employee.User?.FirstName} {employee.User?.LastName}",
-            EmployeeAddress = employee.Address != null
-                ? $"{employee.Address.Street}, {employee.Address.City}, {employee.Address.ZipCode}"
-                : "N/A",
-            EmployeeEmail = employee.User?.Email ?? "N/A",
+            DueDate = invoice.CalculateDueDate(Constants.PayoutInvoice.PaymentTermsDays),
+            Supplier = employee.CreateSupplierData(),
             PayPeriodStart = invoice.PayPeriod!.StartDate.ToString(dateFormat),
             PayPeriodEnd = invoice.PayPeriod.EndDate.ToString(dateFormat),
             SubTotal = invoice.SubTotal,
@@ -49,14 +46,13 @@ public static class FileExtensions
             TotalAmount = invoice.TotalAmount,
             CurrencyCode = currency?.Code ?? Constants.Currency.Czk,
             CurrencySymbol = currency?.Symbol ?? "Kč",
-            Orders = orderPays.Select(op => new OrderLineItem
+            LineItems = orderPays.Select(op => new InvoiceLineItem
             {
                 OrderNumber = op.Order?.DisplayOrderNumber ?? "N/A",
-                CompletedAt = op.Order?.CleaningDateTime ?? DateTime.UtcNow,
-                BasePay = op.BasePay,
-                ExtrasPay = op.ExtrasPay,
-                ExpensesPay = op.ExpensesPay,
-                TotalPay = op.TotalPay
+                PerformedOn = op.Order?.CleaningDateTime ?? DateTime.UtcNow,
+                Quantity = 1,
+                UnitPrice = LineAmount(op),
+                LineTotal = LineAmount(op)
             }).ToList(),
             LegalDisclaimer = countryContext?.LegalDisclaimerTemplate,
             Company = new CompanyInfoData
@@ -79,6 +75,36 @@ public static class FileExtensions
                 Swift = companyInfo.Swift,
                 ContactInfo = companyInfo.GetFormattedContactInfo()
             }
+        };
+    }
+
+    // One line = one completed job. TotalPay already folds the period bonus/deduction in, so backing
+    // them out is what makes Σ lines equal the invoice's SubTotal — leaving them in would print them
+    // once per line and again in the summary.
+    private static decimal LineAmount(OrderEmployeePay pay) =>
+        pay.TotalPay - pay.BonusPay + pay.DeductionPay;
+
+    private static InvoiceSupplierData CreateSupplierData(this Employee employee)
+    {
+        // No dedicated "is a VAT payer" flag exists on Employee, unlike CompanyInfo.IsVatPayer. The
+        // presence of a validated DIČ is the only signal the model carries today.
+        var vatNumber = string.IsNullOrWhiteSpace(employee.VatNumber) ? null : employee.VatNumber;
+
+        return new InvoiceSupplierData
+        {
+            Name = !string.IsNullOrWhiteSpace(employee.LegalEntityName)
+                ? employee.LegalEntityName
+                : $"{employee.User?.FirstName} {employee.User?.LastName}".Trim(),
+            Street = employee.Address?.Street,
+            ZipCode = employee.Address?.ZipCode,
+            City = employee.Address?.City,
+            Country = employee.Address?.Country?.Name,
+            RegistrationNumber = employee.RegistrationNumber,
+            VatNumber = vatNumber,
+            IsVatPayer = vatNumber != null,
+            Email = employee.User?.Email,
+            Phone = employee.User?.PhoneNumber,
+            Iban = employee.IBAN
         };
     }
 }

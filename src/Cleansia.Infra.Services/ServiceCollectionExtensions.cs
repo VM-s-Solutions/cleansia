@@ -12,6 +12,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<IReceiptLayoutBuilder, DefaultReceiptLayoutBuilder>();
         services.AddSingleton<IInvoiceLayoutBuilder, DefaultInvoiceLayoutBuilder>();
+        services.AddSingleton<IInvoiceLayoutBuilder, CzechInvoiceLayoutBuilder>();
         services.AddSingleton<LayoutBuilderFactory>();
         services.AddScoped<IPdfService, QuestPdfService>();
 

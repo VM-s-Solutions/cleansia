@@ -65,9 +65,13 @@ public class QuestPdfService : IPdfService
         }
     }
 
-    private static InvoicePdfData ApplyCountryLogic(InvoicePdfData data, CountryInvoiceContext? context)
+    /// <summary>
+    /// The country's VAT setting governs what the platform charges its CUSTOMERS. It does not make a
+    /// cleaner a VAT payer, so it may only add VAT to a payout invoice whose supplier is registered.
+    /// </summary>
+    public static InvoicePdfData ApplyCountryLogic(InvoicePdfData data, CountryInvoiceContext? context)
     {
-        if (context?.VatRequired == true && data.VatAmount == 0)
+        if (context?.VatRequired == true && data.Supplier.IsVatPayer && data.VatAmount == 0)
         {
             var vatAmount = data.SubTotal * context.VatRate;
             return data with

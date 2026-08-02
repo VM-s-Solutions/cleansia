@@ -1,25 +1,35 @@
 # ADR-0035 — A metered membership benefit is a reserved-slot ledger row: `MembershipBenefitUsage`, keyed by a stored period key, reserved atomically before the price is waived, released only when the customer did not consume the booking
 
-- **Status:** proposed   <!-- proposed | accepted | superseded | rejected -->
-- **Date:** 2026-08-02
+- **Status:** accepted   <!-- proposed | accepted | superseded | rejected -->
+- **Date:** 2026-08-02 (authored) · **2026-08-02 (adjudicated — accepted with 16 binding amendments, see §Verdict)**
 - **Supersedes:** —
 - **Superseded by:** —
 - **Backs / extends:** **ADR-0023 D1** (the repeatable-effect test — this decision selects **Mode A,
   claim-before-act**, and explains why the ADR-0010 `IIdempotencyGuard` *mechanism* is nonetheless the
-  wrong tool here). Mirrors the **`PromoCodeRedemption` per-user slot-reservation archetype**
-  (`PromoCodeRedemptionRepository.TryReserveRedemptionSlotAsync`) and the **`UserMembership` filtered
-  partial unique index** (`UserMembership.cs:14-20`). Adopts the **`CancellationPolicyResolver` benefit
-  seam** unchanged (`BookingPolicy.cs:101-111`). Does not change ADR-0006/ADR-0009 (the refund money
-  path) — it only re-uses their "price is frozen at purchase" principle.
+  wrong tool here). Borrows the **statement shape** of the `PromoCodeRedemption` per-user
+  slot-reservation archetype (`PromoCodeRedemptionRepository.TryReserveRedemptionSlotAsync`) and
+  **deliberately inverts its ordering** — **[AM-3]**: the archetype is *reserve-after-persist and
+  fail-soft*, not claim-before-act. Borrows the **`UserMembership` filtered partial unique index**
+  shape (`UserMembership.cs:14-20`) **with one named deviation** — **[AM-6]**: `NULLS NOT DISTINCT`.
+  Adopts the **`CancellationPolicyResolver` benefit seam** in *shape* (`BookingPolicy.cs:101-111`);
+  **[AM-9]** the call-site topology differs and is scoped here. Does not change ADR-0006/ADR-0009 (the
+  refund money path) — it only re-uses their "price is frozen at purchase" principle.
 - **Applies to:** backend | database | cross-cutting (client read surface)
 - **Ticket:** T-0511 (this ADR) · **Consumers:** T-0512 (entity + EF config + ⚠️ `ef-migration`),
   T-0493 (the three pricing call sites + the consumption call), T-0514 (client render, ⚠️ `nswag-regen`),
   T-0513 (the copy — see §Copy, which this ADR *constrains* but does not own)
 
-> **⚠️ ADR number reservation.** Two sibling architect panels are in flight this sprint (T-0495 dispatch,
-> T-0517 payout details). `0034` was free at authoring time (verified: no `ADR-003[4-9]` reference exists
-> anywhere under `agents/`). If a sibling claims it first, this file renumbers — the number is not
-> load-bearing until `accepted`.
+> **⚠️ ADR number.** Settled at adjudication: this ADR is **0035** and the number is now load-bearing
+> (`accepted` ADRs are immutable). The reservation note that stood here during authoring is discharged.
+
+> **⚠️ READ THIS FIRST — the decision below is the ADJUDICATED text.** Three independent challengers
+> and a lead ran (`agents/process/deliberation.md`). **Sixteen binding amendments (AM-1…AM-16) were
+> folded into the decision sections**, several of which *replace* mechanisms the author proposed —
+> the ordinal derivation, the index's null-tenant behaviour, the order-attach statement, the orphan
+> reclaim, the period-key anchor, D4's release predicate, and the "50% fee bounds it" argument are all
+> **different from the draft**. Every amendment is marked inline as `**[AM-n — amended at
+> adjudication]**` and indexed in §Verdict. If you are implementing this, the amended text is the
+> contract; nothing in a challenge file is.
 
 > **One decision:** how the platform **counts, consumes, resets and reverses** a metered membership
 > benefit. This is one decision and not five because the parts are inseparable: the counted unit
@@ -84,6 +94,27 @@ the persist point.
 
 ### D1 — The counted unit: one unit = **one granted waiver**, decided at order creation
 
+> **[AM-1 — amended at adjudication] Why the waiver must be a stored row at all, restated on the
+> decisive fact.** The draft led with the concurrency race. The race is real (see A1), but it is not
+> what makes a ledger *necessary* — the mechanical, deployment-independent fact is:
+>
+> **The express decision is never persisted anywhere.** `Order` snapshots every *other* price
+> adjustment — `TierDiscountAmount` (`Order.cs:179`), `PromoDiscountAmount` (`:192`),
+> `MembershipDiscountAmount` (`:207`), `MembershipPlanIdAtPurchase` (`:215`) — and carries **no
+> express field of any kind**. The +20% is folded into `TotalPrice` at `OrderFactory.cs:100-102` and
+> the calculator's `ExpressSurchargeApplied` / `ExpressSurchargeAmount` pair
+> (`IOrderPricingCalculator.cs:25-26`) is consumed by no persistence path. **The information is
+> computed and thrown away.**
+>
+> And it cannot be reconstructed: `Order.CreatedOn` is stamped in `CleansiaDbContext.CommitAsync`
+> (`:71`, `:86`) — the **commit** instant, strictly later than the instant the surcharge was priced —
+> so `(CleaningDateTime − CreatedOn)` reports a *systematically smaller* lead time than the one that
+> actually priced the order, by the full duration of the request, and misclassifies at the 4h
+> boundary in the direction of counting orders that were never surcharged.
+>
+> **So: there is nothing to count unless we write something down.** Everything else (the race, the
+> history-recompute, GDPR) is additive. This is the argument a future reader should be given first.
+
 **One unit is consumed when, and only when, the platform charges a member 0 instead of
 `ExpressSurchargeRate` on a booking that genuinely fell inside the express window.** Not "an express
 booking". Not "a completed booking". **The waiver itself.**
@@ -143,10 +174,44 @@ the waiver on a move would mean re-pricing a paid order.
 
 **The timezone — the part the owner's answer does not settle, decided here.**
 
-> **The period key is computed in the time zone of the ORDER'S COUNTRY —
-> `CountryConfiguration.TimeZoneId` (`CountryConfiguration.cs:27`), resolved from the order's service
-> address country — with `TimeZoneInfo.Utc` as the documented fallback.**
-> **Not** the customer's device zone. **Not** bare UTC.
+> **[AM-10 — amended at adjudication] The ORDER'S-COUNTRY anchor is STRUCK. The key is built by one
+> collaborator, `IBenefitPeriodKeyFactory`, from the PLATFORM'S DEFAULT `CountryConfiguration`, and it
+> does not depend on the order.**
+>
+> **Why the draft's anchor fails:** three of the four places that need the key have no address.
+> `QuoteOrder.Command` is `(SelectedServiceIds, SelectedPackageIds, Rooms, Bathrooms, CurrencyId,
+> SelectedExtraSlugs?, CleaningDate?)` — no country (`QuoteOrder.cs:13-25`).
+> `CreateOrder.Validator.PriceMatchesAsync` calls the calculator with `command.*` only
+> (`CreateOrder.cs:165-173`); the address is resolved later, in the handler
+> (`orderAddressResolver.ResolveAsync`, `CreateOrder.cs:248`), and a `SavedAddressId` command carries
+> no country at all. `GetMyMembership.Query` is parameterless (`GetMyMembership.cs:11`). So the
+> preview paths would fall to the UTC fallback while the reservation used `Europe/Prague`, and for
+> **every booking made between 00:00 and 02:00 local on the 1st of the month** the quote would count
+> one month's slots and the reservation would write the other's. That is not a race — it is
+> deterministic, monthly, forever, and it is a *worse* version of the exact defect the country anchor
+> was chosen to fix.
+>
+> **The rule that replaces it:** one `IBenefitPeriodKeyFactory` — **the only place a `PeriodKey` is
+> ever built** — resolving the zone from the platform's default country configuration via the
+> degradation chain `OrderFactory.cs:153-154` already uses (active company info for the country →
+> otherwise the active company info → its `CountryId` → `ICountryConfigurationRepository
+> .GetByCountryIdAsync` → `TimeZoneId`), with `TimeZoneInfo.Utc` as the fallback, resolved once and
+> cached per request. Every call site takes that one collaborator and no call site needs an address,
+> so the key is **byte-identical at the quote, the validator, the factory and the membership read**.
+>
+> **What this costs and what it preserves.** For a CZ-only launch it is `Europe/Prague` and the
+> question is invisible — identical to the draft's outcome, minus the drift. It gives up per-order
+> country variation, which the platform cannot use today and which is a **resolver change with no
+> migration** when it can (this is now the *earned* version of the stored-key flexibility claim, not
+> a promissory one). A7 (the client `X-Time-Zone` header) and A8 (bare UTC) stay rejected for their
+> original reasons — both are answered below and neither is reopened by this amendment.
+>
+> **Also amended:** `GetDashboardStats.ResolveTimeZone` (`:252-266`) is `private static` inside a
+> nested handler class. "Reuse that helper" is not an instruction that can be followed — **T-0512 must
+> extract it to a shared helper first** (a small, mechanical refactor), and `IBenefitPeriodKeyFactory`
+> consumes the extracted one.
+
+The reasoning that survives, and that the amendment above implements:
 
 Three reasons, in the order that decides it:
 
@@ -166,25 +231,33 @@ Three reasons, in the order that decides it:
    a handler). For a CZ-only launch it is `Europe/Prague` and the question is invisible; the seam is
    what makes DE/PL/UA correct for free later.
 
-Pinned details:
-- **Which country:** the **order's service-address country** (`Address.CountryId`) — already the key
-  `OrderFactory.cs:152-157` uses to resolve `CompanyInfo` + `CountryConfiguration` for the VAT
-  breakdown. Same resolution, same call site, same failure posture. Not the user's profile country: the
-  booking is where the cleaning happens, and the platform already resolves country from the address for
-  its other money-shaped decision.
-- **Fallback:** `TimeZoneId` is nullable and `TimeZoneInfo.FindSystemTimeZoneById` throws on unknown /
-  invalid ids. Null / blank / `TimeZoneNotFoundException` / `InvalidTimeZoneException` → **`TimeZoneInfo.Utc`**,
-  exactly as `GetDashboardStats.ResolveTimeZone` (`:252-266`) already does. **A pricing call site must
-  never throw over a time zone.** Reuse that helper rather than writing a second one.
+Pinned details **[AM-10 applied]**:
+- **Which country:** the **platform's default country configuration**, resolved once by
+  `IBenefitPeriodKeyFactory`. **Not** the order's service address (not computable at 3 of 4 sites —
+  see the amendment above). **Not** the user's profile country. **Not** the client's device zone.
+- **Fallback:** `TimeZoneId` is nullable (`CountryConfiguration.cs:27`) and
+  `TimeZoneInfo.FindSystemTimeZoneById` throws on unknown / invalid ids. Null / blank /
+  `TimeZoneNotFoundException` / `InvalidTimeZoneException` → **`TimeZoneInfo.Utc`**, exactly as
+  `GetDashboardStats.ResolveTimeZone` (`:252-266`) already does. **A pricing call site must never
+  throw over a time zone.** (Extract that helper first — see AM-10.)
 - **Storage stays UTC.** Every timestamp column is UTC; the local calendar is materialized in exactly
-  one place — the key — and only once, at reservation. The "UTC internally, local presentation" rule is
+  one place — the key — by exactly one class. The "UTC internally, local presentation" rule is
   untouched.
+- **The key never crosses a DTO boundary** **[AM-16]**. It is storage vocabulary; no client field
+  carries it.
 
 **Owner confirmation requested (non-blocking).** The owner ruled the *boundary*, not the *zone*. The
-default taken is the order country's zone; the fallback is UTC; for a CZ-only launch the two differ by a
-~2-hour sliver at each month boundary. Recorded here for the PM to carry into `questions/open.md` as a
-follow-on to `Q-PLUS-02`; **this ADR does not block on it**, because both candidate answers use the same
-stored shape.
+answer taken is the platform default country's zone with a UTC fallback; for a CZ-only launch that is
+`Europe/Prague`. Recorded for the PM to carry into `questions/open.md` as a follow-on to `Q-PLUS-02`;
+**this ADR does not block on it**, because every candidate answer uses the same stored shape and the
+same single key-builder.
+
+> **[AM-14 — amended at adjudication] The partial-first-month double grant, named and accepted.**
+> A calendar boundary means a member who subscribes on the **28th** and books express cleans on the
+> 29th, 30th, 1st and 2nd draws **four** waivers under two `PeriodKey`s. For a *paying* member that is
+> the arithmetic of the boundary the owner ruled, and this ADR accepts it as an acquisition cost
+> rather than re-deciding the owner's ruling. The **trial** variant of the same scenario is a
+> different question and is escalated — see D6's trial ruling.
 
 ### D2.1 — The quota's value lives on `MembershipPlan`, not in `BookingPolicy`
 
@@ -215,15 +288,73 @@ can differ. A const also cannot vary per plan, which is the first thing a second
 
 ### D3 — Concurrency: a filtered partial UNIQUE index + one atomic reservation statement
 
-**The guarantee, named at the DB level:**
+**The guarantee, named at the DB level [AM-5 + AM-6 — amended at adjudication]:**
 
-> **A tenant-scoped, `IsActive`-filtered UNIQUE index on
+> **A tenant-scoped, `IsActive`-filtered, `NULLS NOT DISTINCT` UNIQUE index on
 > `(TenantId, UserId, BenefitKind, PeriodKey, SlotOrdinal)`, backing a single-statement
-> `INSERT … SELECT … HAVING <live count> < @maxPerPeriod … ON CONFLICT DO NOTHING RETURNING`
-> reservation that derives the ordinal in SQL.** The database is the arbiter. There is no
-> `SELECT`-then-`INSERT` anywhere in the consuming path.
+> `INSERT … SELECT <SMALLEST FREE ORDINAL, computed in SQL> … ON CONFLICT DO NOTHING RETURNING`
+> reservation.**
 
-`MembershipBenefitUsage` (`Cleansia.Core.Domain/Memberships/`, sibling to `UserMembership`):
+> **[AM-6] The "there is no `SELECT`-then-`INSERT` anywhere / the database is the sole arbiter" claim
+> is STRUCK.** It was both untrue of this design and dangerous, because it deleted the half of the
+> platform's posture that carries the other half.
+>
+> **What is actually true, in three named layers — this is the posture the codebase already runs:**
+>
+> | Layer | Here | Ancestor |
+> |---|---|---|
+> | **1. App-level read (non-authoritative)** | the pure resolver's live-slot count (D6) — it decides the *quoted* price and the "N left" display | `PromoCodeService.cs:120-128`, explicitly *"Cheap in-memory FAST PATH for the per-user cap … NOT the source of truth"* |
+> | **2. The atomic claim** | the single reservation statement below | `PromoCodeRedemptionRepository.cs:60-74` |
+> | **3. The backstop** | the unique index + `ON CONFLICT DO NOTHING` | `PromoCodeRedemptionEntityConfiguration.cs:58-67` |
+>
+> There *is* a read before the write. It is not the arbiter, it is not load-bearing for correctness,
+> and saying so plainly is what lets a reviewer check that layer 2 is doing the deciding.
+>
+> **[AM-6] The index is declared `NULLS NOT DISTINCT` — a named, deliberate one-off.**
+> `ITenantEntity.TenantId` is `string?` and single-tenant mode *is* `TenantId == null`
+> (`CleansiaDbContext.cs:239-246`; `CLAUDE.md`). PostgreSQL treats NULLs as **distinct** in a UNIQUE
+> index by default, so with a null tenant two identical `(UserId, BenefitKind, PeriodKey,
+> SlotOrdinal)` rows **do not conflict**, `ON CONFLICT DO NOTHING` never fires, and both land —
+> **quota 2 becomes quota 3+ under concurrency, in the platform's default deployment.**
+>
+> **This is NOT a one-off, and the comment that says it would be is factually wrong.**
+> `UserMembershipEntityConfiguration.cs:100-109` declines `NULLS NOT DISTINCT` on the stated ground
+> that the repo should *"stay consistent rather than introduce a one-off"*, and
+> `LoyaltyTransactionEntityConfiguration.cs:84` repeats the claim. **It already ships twice, in the
+> committed Initial migration:**
+> - **`FiscalCounterEntityConfiguration.cs:23-29`** — `(TenantId, Year, IssuerScope)`, `.IsUnique()
+>   .AreNullsDistinct(false)`. A **tenant-scoped** index, with *exactly this ADR's reasoning* written
+>   on it: *"The allocator's atomic UPSERT keys on this index. NULLS NOT DISTINCT so a single-tenant
+>   (null TenantId) deployment collapses onto ONE counter row … a plain unique index would treat each
+>   null as distinct and let duplicates in, breaking gaplessness."*
+> - **`LiveActivityTokenConfiguration.cs:26-28`** — `(UserId, DeviceId, OrderId)`, same option.
+>
+> Both appear in `Migrations/20260723182623_Initial.Designer.cs:3949` and `:1922` via
+> `NpgsqlIndexBuilderExtensions.AreNullsDistinct(..., false)`, so the provider supports it and the
+> migration emits it. **So AM-6 is not a deviation at all — it is the platform's existing answer for
+> precisely this case, and the `UserMembership` comment sent this panel's challenger looking for a
+> justification the codebase had already made.**
+>
+> **The distinction that actually governs, and that `consistency.md` gains on acceptance:**
+> > A tenant-scoped unique index may stay **nulls-distinct** when it is a *backstop* behind an
+> > authoritative app-level assert (`UserMembership`: "at most one active row" is a state you can read
+> > and assert on). It **must be `NULLS NOT DISTINCT`** when it is the *sole arbiter of a concurrent
+> > claim* (`FiscalCounter`'s allocator; `MembershipBenefitUsage`'s reservation) — because no read can
+> > arbitrate a race, so the index is the only thing standing between two simultaneous claims and it
+> > has to actually fire.
+>
+> ⚠️ **Finding for the reviewer/optimizer backlog (E-5):** `UserMembershipEntityConfiguration.cs:100-109`
+> and `LoyaltyTransactionEntityConfiguration.cs:84` assert a **false invariant** ("we don't do that
+> here") about something the repo does twice. A confidently-wrong comment is worse than no comment —
+> it stops a reviewer checking. Both should be corrected to state the *backstop vs. sole-arbiter* rule
+> above. Neither entity's index needs to change.
+>
+> T-0512 expresses it as `.IsUnique().AreNullsDistinct(false)` **plus** the `HasFilter` for the partial
+> index. **The reviewer checks the emitted DDL, not the C#.** (PostgreSQL 16 per `CLAUDE.md`.)
+
+`MembershipBenefitUsage` (`Cleansia.Core.Domain/Memberships/`, sibling to `UserMembership`) — **[AM-16]
+its class doc must say "order-linked": this is an order-linked waiver ledger with a discriminator, not
+a generic benefit ledger** (D5):
 
 | Field | Type | Notes |
 |---|---|---|
@@ -233,49 +364,81 @@ can differ. A const also cannot vary per plan, which is the first thing a second
 | `BenefitKind` | enum stored as int | `ExpressUpgrade = 1`. **Never reorder** (the `BillingInterval` convention, `MembershipPlan.cs:10`). |
 | `PeriodKey` | string, required, 64 | D2 |
 | `SlotOrdinal` | int, required | 0-based, in `[0, MaxPerPeriod-1]`, **derived inside the reservation statement**, never from a pre-read count (`PromoCodeRedemption.cs:39-41` documents why) |
-| `OrderId` | string**?**, 26 | the order the waiver was granted on. **Nullable by design** — see D3.2. FK `OnDelete.Restrict`. |
-| `UserMembershipId` | string, required, 26 | which enrolment earned it — makes a billing-anchored key computable and makes support answerable |
+| `OrderId` | string**?**, 26 | the order the waiver was granted on. **Nullable by design** — see D3.2. FK `OnDelete.Restrict`. **[AM-4]** stamped by a change-tracked update inside the UoW commit, never out-of-band. |
+| `UserMembershipId` | string, required, 26 | which enrolment earned it. **[AM-16]** justified on **present-day support value alone** ("which subscription was this against?"); the "makes a billing-anchored key computable" justification is withdrawn — a `NOT NULL` bought for a hypothetical is the one hook you cannot retract without a migration. |
 | `ReservedAtUtc` | `DateTime` (UTC) | audit + the orphan-reclaim cutoff |
 | `IsActive` | via `BaseEntity` | `true` = a live consumed slot; `false` = released (D4). **Soft-delete per the B6 judgment call** (`consistency.md` §Judgment calls). |
 
-**Index (T-0512 AC2):**
+**Index (T-0512 AC2) [AM-6 applied]:**
 ```
-UNIQUE (TenantId, UserId, BenefitKind, PeriodKey, SlotOrdinal) WHERE "IsActive" = TRUE
+UNIQUE NULLS NOT DISTINCT (TenantId, UserId, BenefitKind, PeriodKey, SlotOrdinal)
+    WHERE "IsActive" = TRUE
 ```
-A **filtered partial** unique index — the exact shape `UserMembership` already uses for
-"at most one active membership per user" (`UserMembership.cs:14-20`,
-`UserMembershipEntityConfiguration`). The filter is what makes D4's release restore capacity: a
-released row keeps its ordinal for the audit trail without occupying the slot. A second, non-unique
-index on `(TenantId, UserId, BenefitKind, PeriodKey)` serves the remaining-count read.
+A **filtered partial** unique index — the shape `UserMembership` already uses for "at most one active
+membership per user" (`UserMembership.cs:14-20`) — **plus the nulls-not-distinct deviation argued
+above**. The filter is what makes D4's release restore capacity: a released row keeps its ordinal for
+the audit trail without occupying the slot. A second, non-unique index on
+`(TenantId, UserId, BenefitKind, PeriodKey)` serves the remaining-count read; a third, partial, on
+`("ReservedAtUtc") WHERE "OrderId" IS NULL AND "IsActive"` serves the orphan reclaim (AM-7).
 
-**Reservation sketch** (T-0512/T-0493 write it; this is the contract, not the code):
+**Reservation statement [AM-5 — amended at adjudication]** (T-0512 writes it; this is the contract):
 ```sql
-INSERT INTO "MembershipBenefitUsages" (…)
-SELECT @id, @userId, @kind, @periodKey, COUNT(*) FILTER (WHERE u."IsActive"), …
-FROM   "MembershipBenefitUsages" u
-WHERE  u."UserId" = @userId AND u."BenefitKind" = @kind AND u."PeriodKey" = @periodKey
-  AND  u."TenantId" IS NOT DISTINCT FROM @tenantId
-HAVING COUNT(*) FILTER (WHERE u."IsActive") < @maxPerPeriod
+INSERT INTO "MembershipBenefitUsages"
+    ("Id","UserId","BenefitKind","PeriodKey","UserMembershipId","SlotOrdinal",
+     "ReservedAtUtc","IsActive","TenantId","CreatedBy","CreatedOn")
+SELECT @id, @userId, @kind, @periodKey, @userMembershipId, g, @now, TRUE,
+       @tenantId, @createdBy, @now
+FROM   generate_series(0, @maxPerPeriod - 1) AS g
+WHERE  NOT EXISTS (
+           SELECT 1 FROM "MembershipBenefitUsages" u
+           WHERE  u."UserId"      = @userId
+             AND  u."BenefitKind" = @kind
+             AND  u."PeriodKey"   = @periodKey
+             AND  u."TenantId" IS NOT DISTINCT FROM @tenantId
+             AND  u."IsActive"
+             AND  u."SlotOrdinal" = g)
+ORDER BY g
+LIMIT 1
 ON CONFLICT DO NOTHING
-RETURNING "Id", "SlotOrdinal";
+RETURNING "SlotOrdinal" AS "Value";
 ```
 
-- **`COUNT(*)`-of-live-rows, not `MAX(SlotOrdinal)+1` — a named, deliberate deviation from the promo
-  archetype.** Promo redemptions are never released, so `MAX+1` is safe there. Here a released row
-  would leave a gap that `MAX+1` skips, so capacity would **not** come back and D4's release would be a
-  no-op. `COUNT`-of-live is equally atomic (it is inside the statement, not a pre-read — the thing
-  `PromoCodeRedemption.cs:39-41` actually warns about) and the unique index still catches a
-  same-ordinal race via `ON CONFLICT DO NOTHING`.
+> **[AM-5] `COUNT(*)`-of-live is STRUCK — it was a correctness defect, not a style choice.**
+> `COUNT`-of-live gives the **cardinality of the live set**, not the **smallest free ordinal**. With
+> quota 2: reserve → ordinal 0; reserve → ordinal 1; release ordinal **0** (a cleaner cancel — exactly
+> the case D4 exists for); reserve again → live set is `{1}`, `COUNT` is `1`, the derived ordinal is
+> `1`, which **collides with the live row** → `ON CONFLICT DO NOTHING` → 0 rows → `null` → **no
+> waiver**, while the read path still truthfully computes `2 − 1 = 1` and tells the member "1 left".
+> Capacity is never restored for the rest of the period. D4's release would be a **no-op in precisely
+> the cases D4 calls indefensible**, behind a release path that appears to work.
+>
+> **The fix, above:** derive the smallest free ordinal from `generate_series(0, @max-1)`, ordered,
+> `LIMIT 1`. This is the honest generalization of the archetype's `MAX+1` to a set that can have
+> holes. It also makes the `HAVING` guard **redundant and therefore deleted**: a full quota yields
+> **zero candidate rows**, which is the same "0 rows ⇒ `null` ⇒ no slot" contract, reached without a
+> second guard that could disagree with the first.
+>
+> `RETURNING "SlotOrdinal" AS "Value"` — not `RETURNING "Id", "SlotOrdinal"`. `SqlQueryRaw<int>`
+> materializes a scalar projection named `Value` (`PromoCodeRedemptionRepository.cs:73`, `:99-101`);
+> a two-column `RETURNING` needs a keyless entity type, and the `Id` is already known client-side
+> (`@id`), so returning it buys nothing. This is exactly the "adapted, not copied" class of detail
+> that produced the `42P08` production bug last time.
+>
+> **The pinning test is respecified.** `TC-BENEFIT-SLOTREUSE-0` as drafted ("after a release, the next
+> reservation succeeds and takes the freed ordinal") is satisfied by reserve-one → release → reserve,
+> whose live set is empty and whose freed ordinal is `0` — **it passes over the defect**, which is
+> worse than no test. See §verify #17 for the corrected specification.
 - **`@tenantId` MUST be sent as an explicit `NpgsqlDbType.Text` parameter.** Not optional style: an
   untyped null tenant makes PostgreSQL deduce two different types for the same parameter and fails the
   whole statement with `42P08` — a real production 500 that only fires in single-tenant mode and
   survived a tenanted test run (`PromoCodeRedemptionRepository.cs:85-93`). Do not re-earn that bug.
 - **0 rows returned ⇒ no slot ⇒ `null` — a RESULT, never an exception.** Cap reached or a race loser.
   The caller does not waive.
-- **Declared UoW exception.** Like the promo reservation, this statement issues SQL immediately and
-  auto-commits **outside** the MediatR `UnitOfWork` pipeline. That is required for atomicity and is the
-  same sanctioned exception `IPromoCodeRedemptionRepository:34-39` already carries. Every other write in
-  this design rides the pipeline.
+- **Declared UoW exception — exactly ONE statement [AM-4].** The **reservation** issues SQL
+  immediately and auto-commits **outside** the MediatR `UnitOfWork` pipeline. That is required for
+  atomicity and is the same sanctioned exception `IPromoCodeRedemptionRepository:34-39` already
+  carries. **Every other write in this design — including the order-attach, which the draft made a
+  second out-of-band statement — rides the pipeline.** See D3.2.
 
 ### D3.1 — Why **not** `IIdempotencyGuard` / `ProcessedMessage` (ADR-0010 / ADR-0023)
 
@@ -286,6 +449,38 @@ reused; the class is not, and the distinction is the decision.**
 Yes — a duplicate free upgrade is a discount given twice, and the cap is defeatable on purpose by firing
 concurrent bookings. → **Mode A, claim-BEFORE-act, mandatory.** The reservation is taken **before** the
 waived price is computed. There is no path in which a price is waived without a committed slot (D3.2).
+
+> **[AM-3 — amended at adjudication] The `PromoCodeRedemption` archetype is NOT claim-before-act, and
+> this ADR inverts it on purpose.** The draft claimed to "mirror" the archetype while selecting the
+> opposite ordering, and so got Mode A for free instead of arguing for it. The record, corrected:
+>
+> **What the archetype does:** `CreateOrder.Handler` calls `orderFactory.CreateAsync` (`:283`) → then
+> `orderPaymentDispatcher.DispatchAsync` (`:305`) → and **only then** `orderPromoApplier.ApplyAsync`
+> (`:315`). The discount is already in `Order.TotalPrice` before any slot is reserved.
+> `OrderPromoApplier.cs:50-53` states it as policy — *"Best-effort: failure logs but never rolls back
+> … Apply runs post-persist so the redemption row gets the order id"* — and failure is a
+> `LogWarning` (`:61-66`). Consequently `PromoCodeRedemption.OrderId` is `[Required]`
+> (`PromoCodeRedemption.cs:23-24`), `CreateReserved` throws on a blank order id (`:70-73`), and there
+> is a unique index on `OrderId` alone (`PromoCodeRedemptionEntityConfiguration.cs:72-73`). **The
+> archetype is reserve-after-persist and fail-soft, and is structurally incapable of orphaning.**
+>
+> **Why this ADR inverts it — the asymmetry, stated because it was missing:** a promo discount
+> requires **possession of a code an operator issued**, and that code carries its own global cap
+> enforced by a conditional `UPDATE` (`PromoCodeService.cs:150-173`). A soft cap there over-grants a
+> discount the campaign owner chose to a user who was already entitled to *a* discount. An express
+> waiver requires **nothing but an active Plus subscription**: a soft cap is farmable by *every*
+> subscriber, with concurrent requests alone, at will. Mode A also narrows the read→claim window from
+> the whole request (order build + Stripe dispatch — seconds) to a few statements. **That is the
+> argument; it was not "the archetype does it".**
+>
+> **A13 (reserve-after-persist, fail-soft — the literal archetype ordering) is REJECTED**, and is now
+> in the Alternatives table. Two reasons: (1) it makes the cap soft, above; (2) it does **not** buy
+> back the machinery it appears to, because *"post-persist"* in this codebase means "after
+> `orderRepository.Add`", not "after the row is in the database" — the commit happens in
+> `UnitOfWorkPipelineBehavior.cs:27-30`, after the handler returns. So A13 does not remove the orphan
+> class; it moves it, adds a soft cap, and inherits the FK hazard AM-4 exists to close. The machinery
+> that *does* disappear is disposed of by **AM-4** instead: the second out-of-band statement becomes a
+> tracked update, and the orphan shrinks to a single, sweepable state.
 
 **Not reused — the `ProcessedMessage` mechanism**, for three reasons that are each disqualifying:
 
@@ -305,53 +500,164 @@ backing is for queue consumers.** A request-scoped, tenant-scoped, counted entit
 
 ### D3.2 — The ordering, and the orphan it creates
 
+**[AM-4 + AM-8 + AM-9 — amended at adjudication]. The sequence, corrected:**
+
 ```
-CreateOrder → OrderFactory.CreateAsync:
-  1. waiver = resolver.ResolveForUserAsync(...)          // PURE READ — no write, safe in quote+validator
-  2. if (waiver.Waived)                                   // Mode A: reserve BEFORE pricing
-        reserved = usageRepo.TryReserveBenefitSlotAsync(userId, kind, periodKey, max, ct)   // may be null
-  3. surchargeApplies = BookingPolicy.RequiresExpressSurcharge(cleaningUtc, nowUtc, waiverApplies: reserved != null)
-  4. order = Order.Create(..., finalTotalPrice, ...)      // price is now final and frozen
-  5. usageRepo.AttachOrderAsync(reserved.Id, order.Id, ct)  // stamp — the row stops being an orphan
+CreateOrder.Handler (NOT OrderFactory — see AM-9):
+  0. nowUtc = DateTime.UtcNow                              // captured ONCE, threaded everywhere
+  1. waiver = consumer.ResolveAsync(userId, cleaningUtc, nowUtc, ct)   // PURE READ
+  2. if (waiver.Waived)                                    // Mode A: reserve BEFORE pricing
+        reserved = consumer.TryReserveAsync(waiver, ct)    // ONE out-of-band statement; may be null
+     if (waiver.Waived && reserved == null)                // AM-8: the consent rule
+        return Failure(BusinessErrorMessage.ExpressWaiverNoLongerAvailable)
+  3. order = orderFactory.CreateAsync(input with { NowUtc = nowUtc, Waiver = reserved }, ct)
+        └─ inside: BookingPolicy.RequiresExpressSurcharge(cleaningUtc, nowUtc, waiverApplies: Waiver != null)
+        └─ then:   Order.Create(..., finalTotalPrice, ...)  // price is now final and frozen
+        └─ then:   orderRepository.Add(order)               // change-tracked; NOT yet in the database
+  4. consumer.AttachAsync(reserved, order.Id, ct)          // CHANGE-TRACKED UPDATE — rides the UoW commit
+  5. dispatch payment; UnitOfWorkPipelineBehavior commits AFTER the handler returns
 ```
 
-- **Step 2 returning `null` means the surcharge applies.** A cap loss is a price, never an error; the
-  booking always proceeds (D7).
-- **The orphan, named:** step 2 commits out-of-band, so a failure between step 2 and step 5 (a
-  downstream validation failure, a payment-dispatch failure, a crash) leaves a **live row with
-  `OrderId IS NULL`** — a credit spent on a booking that never existed. **Bounded by D4's release
-  rule:** an `OrderId IS NULL` row older than **1 hour** is released by the sweep that already exists
-  for exactly this failure class (`CleanupStalePendingOrders` — *"users who opened PaymentSheet but
-  closed it without confirming"*, `:13-23`, `OlderThanHours = 1`). No new job.
+> **[AM-4] Step 4 must NOT be out-of-band, and the draft's version would have thrown `23503`.**
+> The draft ordered `Order.Create(...)` then an out-of-band `UPDATE … SET "OrderId" = @orderId`
+> against an FK declared `OnDelete.Restrict`. **The `Orders` row does not exist in the database at
+> that point.** `OrderFactory.CreateAsync` ends at `orderRepository.Add(order)`
+> (`OrderFactory.cs:167`) — change tracking only. `CreateOrder.Handler` then dispatches payment
+> (`OrderPaymentDispatcher.DispatchAsync` mints a Stripe session or enqueues a receipt — no commit,
+> `OrderPaymentDispatcher.cs:30-74`) and returns. The insert happens **after the handler returns**, in
+> `UnitOfWorkPipelineBehavior.cs:27-30` → `CleansiaDbContext.CommitAsync` (`:67-99`), which opens no
+> transaction of its own. An out-of-band, self-committing `UPDATE` therefore fires against a
+> non-existent principal row → `23503 foreign_key_violation` → 500, order never persisted, Stripe
+> session already minted.
+>
+> **The fix:** the attach is an ordinary **change-tracked EF update**. The reserved row was inserted by
+> raw SQL and is *not* tracked (the archetype deliberately returns a detached object —
+> `PromoCodeRedemptionRepository.cs:99-109`), so the consumer **loads it** (`FindAsync` by the id it
+> just generated) and sets `OrderId`. EF's dependency-ordered command batch places the `Orders` INSERT
+> before the dependent UPDATE inside the single `SaveChangesAsync`, so the stamp is **atomic with the
+> order insert** and the orphan class shrinks to exactly *"the reservation committed and the order's
+> UoW commit did not"*.
+>
+> This is also the honest answer to the draft's own CH-2: there is now **one** out-of-band statement
+> in `CreateOrder`, not two. CH-2 is answered rather than conceded.
+>
+> **T-0512 must prove the batch ordering with an integration test against real PostgreSQL.** If EF
+> does not order it as expected, the fallback is the platform's existing post-commit seam
+> (`IPendingDispatch` + `PostCommitDispatchBehavior`, the ADR-0002 D1/D5 mechanism visible at
+> `OrderPaymentDispatcher.cs:60-61`) — which re-opens a bounded orphan window but never a FK
+> violation. **Do not ship the out-of-band variant.**
+>
+> ⚠️ **Escalation, out of this ADR's scope:** the **same hazard exists today** in the promo path.
+> `OrderPromoApplier.ApplyAsync` runs at `CreateOrder.cs:315` — before the commit — and inserts a
+> `PromoCodeRedemptions` row whose `OrderId` is under the non-deferrable
+> `FK_PromoCodeRedemptions_Orders_OrderId` (`Migrations/20260723182623_Initial.cs:2005-2010`). Its own
+> comment calls this *"post-persist"* (`OrderPromoApplier.cs:50-53`), which is true of
+> `orderRepository.Add` and not of the database, and the only tests touching
+> `TryReserveRedemptionSlotAsync` mock the repository. **This ADR does not fix it and must not be read
+> as blessing it.** Filed for the PM as a separate defect ticket (see §Verdict, escalation E-4).
+
+- **Step 2 returning `null` when the resolver said "waived" is NOT a silent price change** — see AM-8
+  in D7. A quota that was *already* exhausted at quote time is a price; a slot **lost between the
+  validator and the reservation** is a re-quote, never a higher charge than the customer approved.
+- **The orphan, named and bounded [AM-7].** The reservation commits out-of-band, so a failure between
+  step 2 and the UoW commit leaves a **live row with `OrderId IS NULL`** — a credit spent on a booking
+  that never existed.
+
+> **[AM-7] "No new job" is STRUCK. The reclaim is a new, named leg on the existing schedule.**
+> `CleanupStalePendingOrders` **cannot** see an orphan and never could: it queries `Orders`
+> (`:50-55`), an orphan is by definition a row whose order never committed, it is additionally scoped
+> to `PaymentType == Card`, and its tenant handling groups by `o.TenantId` so child writes inherit the
+> tenant (`:58-67`). Left as drafted, an orphan would be reclaimed **never** — a member who abandons
+> two payment sheets in a month silently loses the month's entire quota, with no row a support agent
+> could find by order id.
+>
+> **The actual mechanism, now in scope (D8):**
+> `IMembershipBenefitUsageRepository.ReleaseOrphanedReservationsAsync(cutoffUtc, ct)` — tenant-ignoring
+> (the global `ITenantEntity` filter applies to this entity, `CleansiaDbContext.cs:201-268`), setting
+> `IsActive = false` where `"OrderId" IS NULL AND "IsActive" AND "ReservedAtUtc" < @cutoff`; the
+> supporting partial index named in D3; a small command hung off the **existing hourly cleanup
+> schedule** (same cadence, `OlderThanHours = 1`) as a *second* command — **no new schedule, but a new
+> command, a new repository method, and a new index.** T-0512 carries all three.
+>
+> An orphan's `OrderId` stays NULL forever, so D7's "support can answer from the row" is qualified:
+> support finds orphans by `(UserId, PeriodKey, OrderId IS NULL)`, not by order id.
+
 - **Not chosen: a compensating delete on the failure path.** ADR-0023 CH-2 already rejected
   compensation for this shape — a crash between the failure and the compensating write strands the
   artifact and reproduces the bug. The sweep is idempotent and does not depend on the failing process
-  surviving.
+  surviving. **This defense stands** (the challenger's objection was to the *sweep's existence*, which
+  AM-7 supplies, not to the compensation argument).
 
 ### D4 — The reversal rule, and the exploit accepted
 
 > **A reserved slot is released if and only if the booking it paid for was never consumed by the
-> customer. Concretely: release when the order ends with `hasBeenAccepted == false` (no cleaner ever
-> took it), OR when the cancellation is not the customer's doing (`CancelledBy != Customer`), OR when
-> the row is an unstamped orphan (D3.2). Otherwise the slot is consumed permanently.**
+> customer. Concretely: release when the order reaches `Cancelled` with **no cleaner assigned to it**,
+> OR when an admin cancelled it, OR when the row is an unstamped orphan (D3.2). Otherwise the slot is
+> consumed permanently.**
 
 Release = **`IsActive = false`** (soft-delete, B6), which frees the ordinal through the filtered index
 (D3) while keeping the audit row.
 
+> **[AM-11 — amended at adjudication] The release predicate is `!order.AssignedEmployees.Any()`, NOT
+> `hasBeenAccepted`. And `CancelledBy` is no longer the primary key of the rule.**
+>
+> **Why `hasBeenAccepted` is the wrong flag — and why no rename or status change can fix it.** It is
+> `order.OrderStatusHistory.Any(s => s.Status == OrderStatus.Confirmed)` (`CancelOrder.cs:103-104`),
+> and `Confirmed` is written by **four** paths, only one of which involves a cleaner:
+> - `TakeOrder.cs:194` — a cleaner takes the order ✔
+> - **`HandlePaymentNotification.cs:261`** — the Stripe checkout-session webhook. No cleaner, seconds
+>   after booking.
+> - `ConfirmRecurringOrder.cs:111` — cash auto-confirm. No cleaner.
+> - `AdminOverrideOrderStatus.cs:56-64` — `Confirmed` sits in the generic forward-only `Lifecycle`
+>   array an admin may walk. No cleaner.
+>
+> `CLAUDE.md`'s own lifecycle admits it: *"`Confirmed`: Cleaner took the order (or cash payment
+> auto-confirmed)."* So the draft's release row — *"no cleaner was pulled onto a short-notice job"* —
+> is **unreachable for any paid card order past the webhook**, and the rule would consume a credit on
+> a booking no cleaner ever saw.
+>
+> **And the failure is not symmetric, which is the part that makes a status-keyed rule unsalvageable.**
+> `TakeOrder` writes the `Confirmed` track **conditionally** — only
+> `if (currentStatus is OrderStatus.New or OrderStatus.Pending)` (`TakeOrder.cs:190-196`). When a
+> cleaner takes an order the Stripe webhook has **already** Confirmed, **no status track is written at
+> all**. So the status history is simultaneously *false-positive* (webhook/admin/cash confirmations
+> with no cleaner) and *false-negative* (a real cleaner acceptance that leaves no trace). **The
+> assignment row is the only durable evidence that a cleaner exists.** No renaming of statuses, no new
+> status value, and no tightening of the predicate over `OrderStatusHistory` can repair this — the
+> information is not in that table.
+>
+> **The correct signal already exists and is already loaded.** `OrderEmployee` rows are written only
+> by `TakeOrder.cs:187-188` (`order.AddAssignedEmployee(...)`), never by the payment webhook, and
+> `CancelOrder` already `.Include(o => o.AssignedEmployees)` at `:62-63`. Cost: zero extra reads. The
+> rationale and the predicate that implements it now match.
+>
+> **Deliberate divergence, recorded so nobody "harmonizes" it:** the cancellation **fee** keeps using
+> `hasBeenAccepted` (`CancelOrder.cs:107-113`). That is a pre-existing decision this ADR does not
+> touch. That the fee therefore charges 50% on orders no cleaner ever took is a **live product defect
+> being ticketed separately** — it is not this ADR's to fix and it is not evidence that the release
+> rule should copy it.
+>
+> **`CancelledBy.Cleaner` and `.System` release rows are STRUCK as live rules.** The only production
+> writers of `CancelledBy` are `CancelOrder.cs:124` (`Customer`) and `AdminCancelOrder.cs:100`
+> (`Admin`). Both system sweeps append a status track **without calling `Order.Cancel`**
+> (`CleanupStalePendingOrders.cs:76-77`, `StaleOrderCleanupService.cs:45-46`), so `CancelledBy` stays
+> NULL. Expressing the rule on *what is true of the order* rather than on `CancelledBy` is what makes
+> the swept-stale-order case (a member who abandons a PaymentSheet: no clean, no charge, and under the
+> draft a permanently burned credit) release correctly **without changing either sweep**.
+
 | Case | Released? | Why |
 |---|---|---|
-| Customer cancels, **no cleaner had accepted** | **YES** | Nothing was consumed: no cleaner was pulled onto a 2-hour-notice job, no capacity was held. This is the same line `BookingPolicy` itself already draws — `CalculateCancellationFeeRate` returns `0m` immediately when `!hasBeenAccepted` (`:121-125`). Reusing that exact flag is consistency, not invention. It also subsumes the "oops window" mis-tap (`:59-62`) without a second rule. |
-| Customer cancels, **a cleaner had accepted** | **NO** | **This is the exploit being accepted — see below.** |
-| `CancelledBy.Cleaner` (cleaner cancel / no-show) | **YES** | Our failure. Charging the customer's perk for it is indefensible, and the customer cannot cause it, so there is nothing to farm. |
-| `CancelledBy.Admin` | **YES** | Same. Admin cancellation is a platform action. |
-| `CancelledBy.System` (stale unpaid order swept) | **YES** | The order never entered the fulfilment pipeline; the customer was never charged. |
+| Order `Cancelled` with **no assigned employee** — customer cancel, or a system sweep, or any other path | **YES** | Nothing was consumed: no cleaner was pulled onto a short-notice job, no capacity was held. Covers `CleanupStalePendingOrders` / `StaleOrderCleanupService` with no change to either. |
+| Customer cancels, **a cleaner was assigned** | **NO** | **This is the exploit being accepted — see below.** |
+| `CancelledBy.Admin` | **YES**, unconditionally (even with an assignment) | Our action, not the customer's. Reachable and tested (`AdminCancelOrder.cs:100`). |
+| `CancelledBy.Cleaner` (cleaner cancel / no-show) | **N/A — no such path exists today** | No production code writes `CancelledBy.Cleaner`. Named as an **open gap**, not a live rule: a cleaner is currently un-assigned or not, and if a future cleaner-cancel/no-show path lands it **must** call `Order.Cancel(..., CancelledBy.Cleaner, ...)` *and* this table gains an unconditional release row for it. (`BookingPolicy.NoShowCreditCzk` at `:65` implies such a flow is intended.) |
 | Refund (partial or full) on a **completed** order | **NO** | The clean happened. A refund is a money adjustment, not an un-booking. |
-| Orphan (`OrderId IS NULL` > 1h) | **YES** | No booking ever existed (D3.2). |
+| Orphan (`OrderId IS NULL` past the cutoff) | **YES** | No booking ever existed (D3.2 / AM-7). |
 
-`CancelledBy` already exists with exactly these four values (`CancelledBy.cs:10-13`) and is already
-recorded by `Order.Cancel(...)` (`CancelOrder.cs:122-127`). `hasBeenAccepted` is already computed by
-`CancelOrder.cs:103-104`. **The rule adds no new state — it reads two things the cancel path already
-has in hand.**
+**The draft's "the rule adds no new state — it reads two things the cancel path already has in hand"
+is STRUCK.** It reads one thing the cancel path already has (`AssignedEmployees`, already `Include`d)
+and one it has for exactly one of its four nominal cases (`CancelledBy`). The release hook is a real
+addition to `CancelOrder` and `AdminCancelOrder`, plus the orphan sweep of AM-7.
 
 #### The exploit accepted, named
 
@@ -359,22 +665,60 @@ has in hand.**
 (illness, a genuine change of plan) loses the credit they paid for.** They spent a perk on a cleaning
 that did not happen. That is a failure *against* the customer and I am choosing it.
 
-**What bounds it:** the cancellation-fee schedule already prices this case, and it prices it hard. An
-express booking is by construction 2–4 hours before its start (`BookingPolicy.cs:18-24`), so a customer
-cancelling an *accepted* express booking is inside `PartialCancellationHours = 4` and pays
-`LastMinuteCancellationFeeRate = 0.50` — **half the order** (`:136-141`). A customer facing a 50% fee is
-not casually cancelling; the lost credit is the smaller of the two costs and is not the deciding one.
-And the customer is *told* the fee before confirming (the cancel flow returns `FeeRate`,
-`CancelOrder.cs:171-176`).
+> **[AM-12 — amended at adjudication] "The 50% fee bounds it" is STRUCK. The bound is THE QUOTA
+> ITSELF, and the seeding constraint is DELETED.**
+>
+> **Why the fee argument fails — three verified reasons:**
+> 1. **The oops window fires first and ignores nothing.** `CalculateCancellationFeeRate` returns `0m`
+>    for any cancellation within 15 minutes of booking (`BookingPolicy.cs:127-132`,
+>    `OopsWindowMinutesStandard = 15`, and `CancelOrder.cs:102` hardcodes `isFirstTime = false` so the
+>    60-minute arm is dead). That check sits **after** the `!hasBeenAccepted` short-circuit
+>    (`:122-125`) and **before** the tier switch — so it is only ever *reached* when acceptance is
+>    true. The draft's claim that `!hasBeenAccepted` *"subsumes the oops-window mis-tap without a
+>    second rule"* is exactly backwards: the oops window exists **for** the case the draft says it
+>    subsumes. An express booking is 2–4h out, so the entire oops window sits inside the express lead:
+>    at every seeded value, an accepted express booking is free to cancel for 15 minutes.
+> 2. **The fee is a recorded rate, not collected money, for cash orders.** `Order.Cancel`
+>    (`Order.cs:545-558`) only *records* `CancellationFeeRate` / `CancellationRefundAmount`; money
+>    moves on one branch only — `PaymentType.Card && PaymentStatus.Paid && refundAmount > 0 &&
+>    HasRefundableChargeSurface` (`CancelOrder.cs:136-145`). Cash is settled at completion
+>    (`CompleteOrder.cs:174`) and there is no lead-time gate on cash. For the whole cash cohort the
+>    stated bound evaluates to **0 Kč**.
+> 3. **The seed is 4, not 24.** Both Plus plans ship `FreeCancellationWindowHours = 4`
+>    (`insert_seed_data.sql:1669`, `:1683` — `5.00, 4, true`), which the draft's own constraint
+>    ("strictly greater than 4") forbids, and which is **advertised**: *"Cancel up to 4 hours before
+>    your cleaning, no fees"* (Android `values/strings.xml:840`, rendered from the plan at `:849`).
+>
+> **The bound that actually holds, and that needed no seed value:** because D4 does **not** release on
+> a customer cancel of an **assigned** booking, every iteration of the loop *costs a credit*, and
+> there are **two per calendar month**. That bound is unconditional — it holds for cash and card
+> alike, at every value of `FreeCancellationWindowHours`, inside and outside the oops window, and it
+> does not depend on anyone seeding anything correctly. It was the real argument all along; the fee
+> was decoration.
+>
+> **Therefore:**
+> - The `FreeCancellationWindowHours > StandardLeadTimeHours` seeding constraint is **deleted** from
+>   this ADR, from Consequences and from the living doc.
+> - **CH-8's proposed validator is REJECTED** — the author recommended making it a blocking amendment
+>   and the lead declines, on evidence. It would reject the shipped production seed, fail
+>   `UpdateMembershipPlan` for both live plans on any benefits edit (`UpdateMembershipPlan.cs:62`,
+>   `:83`), and force the Plus free-cancel window **narrower than 4h** — a downgrade to a *different,
+>   already-shipped, advertised* perk, bought to protect an argument this verdict has just struck.
+>   **No validator. No seed note. No admin-form refusal.**
+> - What *does* change is the **fairness** half: a member can lose a credit on a cancellation that
+>   costs them **0 Kč** — silently. That is what makes AM-13's disclosure mandatory rather than a copy
+>   preference.
 
-> **⚠️ SEEDING CONSTRAINT this ADR pins, because it is invisible otherwise.**
-> `MembershipPlan.FreeCancellationWindowHours` **must be seeded strictly greater than
-> `BookingPolicy.StandardLeadTimeHours` (4)** — 24 is the natural value; 4 is the minimum that still
-> works. A *smaller* threshold is *more* generous (`BookingPolicy.cs:106-110`), so a Plus plan seeded at
-> **2** makes an accepted express booking free to cancel — at which point the fee schedule bounds
-> nothing and the farming loop below becomes free. **A seeding value ≤ 4 silently converts this ADR's
-> accepted exploit into the rejected one.** T-0512 must carry this as a seed-data note and the admin
-> plan form should refuse it.
+**What bounds it:** the quota. Two credits per calendar month, and a customer cancel of an assigned
+express booking spends one — every time, for every payment type, at every plan configuration. A
+member who wants to yank cleaners onto short-notice jobs gets **two attempts a month** and then pays
+the surcharge like everybody else.
+
+**What it costs the honest customer, stated plainly:** a member who cancels a real, assigned express
+booking for a genuine reason loses the credit, and *may lose it for no fee at all* (inside the 15-minute
+oops window, or on any cash order). The platform must therefore **say so before they confirm** — see
+**AM-13** in D7. A silent forfeiture against a paid subscription is not acceptable; a *disclosed* one
+is the trade this ADR makes.
 
 #### The exploit rejected, named
 
@@ -384,20 +728,43 @@ credit returns → repeat*, at zero cost, **indefinitely**. The harm is not the 
 repeatedly yanking cleaners onto 2-hour-notice jobs that evaporate. That is an attack on supply, which
 is the scarce side of this marketplace, and it is unbounded. **Rejected.**
 
-The asymmetry is the whole argument: the accepted exploit is **bounded by an existing 50% fee and
-costs at most two credits a month**; the rejected one is **unbounded and costs cleaner trust**.
+The asymmetry is the whole argument: the accepted exploit **costs at most two credits a month and is
+disclosed before the customer confirms**; the rejected one is **unbounded and costs cleaner trust**.
+
+**[AM-12] And the oops window makes A5 *worse*, not better.** With a release-on-every-cancel rule,
+`BookingPolicy.cs:127-132` returns `0m` regardless of assignment, so the loop *book → cleaner takes it
+→ cancel free within 15 minutes → credit returns → repeat* iterates **every 15 minutes, indefinitely,
+at zero cost**. The rejection of A5 is strengthened by the same finding that struck D4's stated bound.
 
 ### D5 — One table keyed by benefit, not a column per benefit
 
 `MembershipBenefitUsage` + a `BenefitKind` discriminator. Not `ExpressUpgradesUsedThisMonth` on
 `UserMembership`; not a table per benefit.
 
-The domain comment already names the tracker generically (`MembershipPlan.cs:102`), Plus advertises five
-perks, and a second metered one is plausible.
+The domain comment already names the tracker generically (`MembershipPlan.cs:102`).
 
-**Extension cost, stated honestly (AC5).** A second metered benefit costs: **one enum value + one
-`MembershipPlan` column + one resolver.** The table, the index, the reservation statement, the release
-path, the orphan sweep and the remaining-count query are **reused unchanged**. What is *not* avoided is
+> **[AM-16 — amended at adjudication] The generality claim is narrowed to what is true.**
+> *"A second metered one is plausible"* is **deleted** — it had no candidate. Of the five Plus perks,
+> the member discount is a **percentage** (`MembershipPlan.DiscountPercentage:89`), free cancellation
+> is a **window in hours** (`:97`), recurring bookings and the favourite cleaner are **boolean
+> capability gates**; **none of the other four is countable.** The discriminator is kept anyway
+> because an int column with one value is nearly free and removing it later costs a migration — that
+> is the honest justification, not a forecast.
+>
+> **And "reused unchanged" is false as written.** What this design is, precisely, is an
+> **order-linked** waiver ledger with a discriminator: the row carries an `OrderId` FK and D4's entire
+> release rule is expressed in `Order` vocabulary (assignment, `CancelledBy`, the stale-order sweep).
+> A second metered benefit that is **not order-shaped** (say "N priority-support contacts per month")
+> reuses the entity, the index, the reservation statement and the period key — and gets **nothing**
+> from the release path, while inheriting an `OrderId` column that is meaningless for it. The entity's
+> class doc must say "order-linked". Restated AC5: *reused unchanged **for order-shaped benefits**; a
+> non-order-shaped benefit reuses the entity, the index and the reservation and needs its own release
+> rule.*
+
+**Extension cost, stated honestly (AC5, as amended).** A second **order-shaped** metered benefit
+costs: **one enum value + one `MembershipPlan` column + one resolver.** The table, the index, the
+reservation statement, the release path, the orphan reclaim and the remaining-count query are
+**reused unchanged**. What is *not* avoided is
 the per-benefit plan column — a generic `MaxPerPeriod` cannot live on the usage row (it is a *plan*
 property, and putting it on the row would let it drift per row). So each benefit still carries one
 additive `MembershipPlan` migration; the generality saves the *usage-side* migration and the
@@ -417,24 +784,78 @@ correct and different answers.
 
 ### D6 — The resolver seam: `IExpressWaiverResolver`, mirroring `CancellationPolicyResolver` exactly
 
+**[AM-9 + AM-10 + AM-16 — amended at adjudication]. The seam, corrected:**
+
 ```csharp
 // Cleansia.Core.AppServices/Services/Interfaces/IExpressWaiverResolver.cs
 public interface IExpressWaiverResolver
 {
     /// PURE READ. Never writes, never consumes. Safe to call from the quote path,
     /// from CreateOrder.Validator, and from the pricing calculator.
+    /// cleaningUtc == null  =>  "no booking under consideration, just report the balance"
+    ///                          (GetMyMembership, and the pre-slot wizard quote).
     Task<ExpressWaiver> ResolveForUserAsync(
         string? userId,
-        string? countryId,
-        DateTime cleaningUtc,
+        DateTime? cleaningUtc,
         DateTime nowUtc,
         CancellationToken cancellationToken);
 }
 
-/// Waived = this booking is inside the express window AND the member has a live slot.
-/// Remaining = live slots left in PeriodKey AFTER this booking would be granted (0 when not a member).
-public record ExpressWaiver(bool Waived, int Remaining, int Quota, string? PeriodKey);
+/// InExpressWindow — decided by calling BookingPolicy.RequiresExpressSurcharge(cleaningUtc, nowUtc).
+///                   The resolver NEVER re-encodes the window (AM-9).
+/// Waived         — InExpressWindow && RemainingBeforeThisBooking > 0.
+/// RemainingBeforeThisBooking — live slots left in the current PeriodKey BEFORE this booking.
+///                   ONE definition, everywhere. A client that wants "after" computes
+///                   remaining - (waived ? 1 : 0). (AM-16)
+/// PeriodKey      — internal; NEVER crosses a DTO boundary. (AM-16)
+public sealed record ExpressWaiver(
+    bool InExpressWindow,
+    bool Waived,
+    int Quota,
+    int RemainingBeforeThisBooking,
+    string PeriodKey);
 ```
+
+> **[AM-9] What the draft's "mirror" hid, and what is now scoped.** `CancellationPolicyResolver` has
+> **one** caller, a handler that already holds the order and the user (`CancelOrder.cs:51`). This
+> resolver has four pricing call sites and a read site, none of which hold what the draft's signature
+> asked for. Consequences, all now **in scope (D8)**:
+>
+> 1. **`countryId` is dropped from the signature** — AM-10 makes the period key order-independent, so
+>    the resolver takes an `IBenefitPeriodKeyFactory`, not a country.
+> 2. **`IOrderPricingCalculator.CalculateAsync` gains `string? userId` and `DateTime nowUtc`** (today:
+>    `selectedServiceIds, selectedPackageIds, selectedExtraSlugs, rooms, bathrooms, currencyId,
+>    cleaningDateUtc, ct` — `OrderPricingCalculator.cs:14-22`). Without this, §verify #4's "every
+>    `RequiresExpressSurcharge` call site passes the resolver's answer" is **impossible**. This is a
+>    contract change and it is named here rather than discovered in the ticket.
+> 3. **There are FOUR production `CalculateAsync` call sites, not three**: `CreateOrder.cs:165`
+>    (validator), `CreateOrder.cs:266` (handler), `QuoteOrder.cs:101`, and
+>    **`MaterializeRecurringBookings.cs:105`** — a background job with no HTTP request, no session user
+>    and no tenant, which also calls `orderFactory.CreateAsync` in a loop (`:141`). It is inert today
+>    only because it passes `cleaningDateUtc: null` — an accident of the current template shape, not a
+>    guarantee.
+> 4. **Therefore the reservation does NOT live in `OrderFactory`.** `CreateOrderInput` gains
+>    `NowUtc` and `ExpressWaiver? Waiver` — *already resolved and already reserved*. The factory
+>    consumes the answer and never resolves or reserves, so it stays at **8** collaborators (it is
+>    already at 8: `OrderFactory.cs:22-30`) instead of going to 10, and **"exactly one consuming call
+>    site" becomes true by construction rather than by grep**. `MaterializeRecurringBookings` passes
+>    `Waiver: null` **explicitly** — a recurring materialization never reserves, as a rule rather than
+>    as an accident.
+> 5. **`CreateOrder.Handler` gains exactly ONE collaborator**, `IExpressWaiverConsumer`
+>    (resolve → reserve → attach, one responsibility), taking it from 8 to 9. Named as a deliberate,
+>    bounded step past the handler-dependency bar, with the reason: it replaces the two collaborators
+>    the draft would have added and gives the reviewer **one** grep target instead of three.
+> 6. **Read cost, priced.** Up to 2 membership+usage reads per `CreateOrder` (validator, handler) and
+>    1 per quote, plus one cached period-key resolution. `CancellationPolicyResolver` costs 1 read per
+>    cancel; this is not that, and the mirror table below compares **bodies**, not call-site topology.
+>    Resolve once per request and thread the answer where the shape allows it.
+> 7. **`nowUtc` is captured ONCE per request** and threaded through the resolver, the reservation and
+>    `RequiresExpressSurcharge`. Today every site reads the clock inline (`OrderPricingCalculator.cs:65`,
+>    `OrderFactory.cs:102`, `CreateOrder.cs:92,94`), and the express window is `[2h, 4h)` with lead
+>    time *shrinking* as the request proceeds — so an unthreaded clock lets the resolver see "in
+>    window" and the policy see "out of window" a few statements later, producing a **live slot
+>    attached to an order that carries no surcharge**: a state D1 forbids, D4 has no release row for,
+>    and the orphan reclaim never sees (the `OrderId` is stamped). §verify gains the grep.
 
 Point-by-point mirror of `CancellationPolicyResolver` (`:14-45`) — AC6 satisfied by adoption, not by
 argument:
@@ -470,8 +891,45 @@ expression of `UserMembership.IsActive` (`UserMembership.cs:84-85`: `Status == A
 UtcNow < CurrentPeriodEnd`), consumed by `CancellationPolicyResolver.cs:32`, `GetMyMembership.cs:35`,
 `OrderFactory.cs:76`, `QuoteOrder.cs:141` **and by the already-shipped T-0494 recurring gate**
 (`CreateRecurringBooking.cs:84-85`). `ExpressWaiverResolver` calls
-`GetActiveForUserNoTrackingAsync` and adds nothing. A `PastDue`/`Paused` member gets no waiver, by
-the existing predicate — no new rule.
+`GetActiveForUserNoTrackingAsync` and adds nothing **to the predicate**.
+
+> **[AM-16 — amended at adjudication] "A `PastDue` member gets no waiver — no new rule" is STRUCK.**
+> It is not "no new rule"; it is **picking a side in a live contradiction inside the domain, and
+> pinning it with a test**:
+> - `MembershipStatus.cs:18-19` — *"`PastDue`: Latest invoice failed; Stripe is retrying. **Benefits
+>   still apply during the grace window.**"*
+> - `UserMembership.cs:84-85` — `IsActive => Status == Active && UtcNow < CurrentPeriodEnd`, so
+>   `PastDue` is **not** active and benefits stop the instant the dunning webhook lands.
+> - `UserMembership.cs:46-51` sides with the enum: *"Used by benefit usage tracking … and by
+>   `IsActive` to **gate benefits during the grace window**"* — a grace window the `Status == Active`
+>   conjunct makes unreachable.
+>
+> This ADR ships the **predicate's** answer (no benefits while `PastDue`) because that is what every
+> other benefit already does and diverging per-benefit would be worse. But it is **escalated to the
+> owner** (E-2), and **whichever way it goes, one of those two files changes in T-0512** — shipping a
+> test that pins the predicate while the enum documents the opposite is worse than either answer.
+> `UserMembership.cs:46-51` must also stop saying *"free express upgrade once per period"*: the owner
+> ruled **two, per calendar month** (E-2 / D8).
+
+> **[AM-14 — amended at adjudication] The 14-day trial — ESCALATED, with a fail-closed holding
+> position.** Both Plus plans ship `TrialPeriodDays = 14` (`insert_seed_data.sql:1670`, `:1684`),
+> forwarded to Stripe (`CreateMembershipCheckoutSession.cs:98`, `CreateMembershipSubscription.cs:128`),
+> and `"trialing"` collapses to `MembershipStatus.Active` locally (`UserMembership.cs:124`). Combined
+> with the calendar boundary: a customer who subscribes on **28 August**, books express on the 29th,
+> 30th, 1st and 2nd, and cancels before the trial converts, draws **four waivers for 0 Kč** — and
+> nothing in D4 or the fee schedule touches it, because no cancellation is involved. Under
+> `Q-PLUS-01`'s "unlimited free-trial loop" answer, the waiver loop is unlimited too. **ADR-0035 must
+> reference `Q-PLUS-01`; the draft did not.**
+>
+> **Why it is escalated now and not later:** the platform **cannot distinguish a trialing member from
+> a paying one**. `UserMembership` carries `CurrentPeriodStart` (`:44`) but **no trial marker** — the
+> status is flattened at the webhook. So the answer *"waivers begin at first successful payment"*
+> costs an **additive column fed by the Stripe webhook**: cheap on T-0512's migration wave, expensive
+> after launch.
+>
+> **Holding position — this does not block the design.** D2.1's fail-closed default already covers it:
+> `ExpressUpgradesPerMonth` defaults to `0`, so **the seeded plans stay at `0` and the perk does not
+> turn on until the owner answers.** T-0493 may ship the mechanism; only the seed value turns it on.
 
 ### D7 — The read path, and what an exhausted member is told
 
@@ -480,9 +938,18 @@ the existing predicate — no new rule.
 | Field | Meaning |
 |---|---|
 | `int? ExpressUpgradesPerMonth` | the plan's quota (null when no membership) |
-| `int? ExpressUpgradesRemaining` | `max(0, quota − live slots in the current PeriodKey)` |
+| `int? ExpressUpgradesRemaining` | `max(0, quota − live slots in the current PeriodKey)` — **remaining BEFORE any booking under consideration**, the single definition (AM-16) |
 
-`GetMyMembership.Handler` gains one collaborator (3 total) — well inside the handler-dependency bar.
+`GetMyMembership.Handler` gains **one** collaborator — `IExpressWaiverResolver`, called with
+`cleaningUtc: null` (AM-9's signature) — so the resolver stays the **one** place `Remaining` and the
+`PeriodKey` are computed, and the handler does not acquire the usage repository *and* a period-key
+source separately. 2 collaborators total; well inside the bar.
+
+> **[AM-16] `Remaining` had two contradictory definitions in the draft** — D6 said "AFTER this booking
+> would be granted", D7 said "before" — shipping on two client DTOs under the same name, differing by
+> exactly 1 for the same member at the same instant. **One definition now: BEFORE.** A client that
+> wants "after" computes `remaining − (waived ? 1 : 0)`. An off-by-one in an ADR becomes an off-by-one
+> in five locales.
 
 **`QuoteOrder.Response` gains one bool** — `bool ExpressSurchargeWaivedByMembership`. Without it, a
 waived member's quote carries `ExpressSurchargeApplied: false, ExpressSurchargeAmount: 0`, which is
@@ -495,9 +962,10 @@ can say "1 left" at the moment of choice rather than making the client re-fetch 
 
 **An exhausted member is TOLD, never silently charged.** The decision, so no client has to guess:
 
-- **The booking is never blocked.** A quota loss is a price, never an error. There is no new
-  `BusinessErrorMessage` and no new failure path. (Same instinct as the fiscal seam: a secondary
-  concern never blocks the customer's primary flow — `docs/architecture/fiscal-compliance.md`.)
+- **A quota that is already exhausted at quote time never blocks the booking.** The quote itself
+  carries the surcharge, the customer consents to the charged price, and nothing fails. (Same instinct
+  as the fiscal seam: a secondary concern never blocks the customer's primary flow —
+  `docs/architecture/fiscal-compliance.md`.)
 - **The client has everything it needs to say why**: `ExpressUpgradesRemaining == 0` plus
   `ExpressSurchargeApplied == true` plus `ExpressSurchargeWaivedByMembership == false` is exactly the
   state T-0514 AC2 renders as *"you've used both free express bookings this month"*.
@@ -505,18 +973,126 @@ can say "1 left" at the moment of choice rather than making the client re-fetch 
   client that counts the member's own orders disagrees with the server the first time D4 releases a
   slot.
 
-**Where the count is visible:** the membership screen and the booking quote (both above). **Not on any
-partner/cleaner surface** — a cleaner must never see a customer's entitlements. **No admin endpoint is
-decided here** (out of scope); support can answer "did I really use both?" from the row today, because
-it carries `OrderId`, `PeriodKey`, `ReservedAtUtc` and `IsActive`. If an admin view is wanted, it is a
-separate ticket, and this shape already supports it.
+> **[AM-8 — amended at adjudication] "The booking is never blocked / there is no new failure path" is
+> STRUCK as written. There are two distinct states and both are decided here.**
+>
+> `CreateOrder.Validator.PriceMatchesAsync` re-runs the calculator and requires **exact decimal
+> equality** with the client's `TotalPrice`, wired as a hard failure (`CreateOrder.cs:159-176`, →
+> `BusinessErrorMessage.TotalPriceNotMatch`). Once the calculator is waiver-aware, the express waiver
+> becomes **the first pricing input in this system that can change between the validator and the
+> factory inside a single request** — every other input (services, packages, extras, currency,
+> cleaning date) is deterministic for a fixed command. Two consequences, both real:
+>
+> **(a) Quota exhausted between quote and submit** → the validator recomputes a *charged* total
+> against a *waived* submitted total → **400 `TotalPriceNotMatch`**. That is a pre-existing code, which
+> is *worse* than a new one: every client maps it to a generic "the price changed, re-quote" string,
+> so D7's promised *"you've used both free express bookings this month"* rendering **never runs** —
+> the request never reaches the handler. **Ruling:** this state is acceptable *as a re-quote* but must
+> be **distinguishable**. The validator's waiver-aware recompute returns the new dedicated code
+> **`BusinessErrorMessage.ExpressWaiverNoLongerAvailable`** when the only difference between the two
+> totals is the express waiver; `TotalPriceNotMatch` otherwise.
+>
+> **(b) The reservation is lost AFTER the validator approved a waived price** (a race loser, or a
+> concurrent booking on a second device) → under the draft, the factory prices at `waived + 20%`,
+> freezes it into `Order.TotalPrice`, and `OrderPaymentDispatcher` charges **that**
+> (`CreateOrder.cs:305-306`). **The customer is charged 20% more than the price they submitted and the
+> server approved, with no error, no confirmation and no field in the response to notice it by**
+> (`CreateOrder.Response` is `(Id, ConfirmationCode, StripeSessionId)`, `:226-229`). That is a consent
+> defect on a money path, created by this ADR's own Mode-A ordering.
+> **Ruling — the invariant, stated so it is checkable:**
+>
+> > **No path may persist an `Order.TotalPrice` greater than the `command.TotalPrice` the validator
+> > approved.** When the reservation fails after a waived validation, the handler returns
+> > `ExpressWaiverNoLongerAvailable` and the client re-quotes. It does **not** silently upcharge, and
+> > it does **not** honor the waived price without a slot — honoring it *is* the soft cap this ADR
+> > rejected (fire N concurrent requests, all validate waived, all get honored).
+>
+> This is the narrow, honest cost of Mode A: a rare same-user race becomes a re-quote instead of a
+> surprise charge. `TC-BENEFIT-RACE-0` is respecified accordingly (§verify #12) — as drafted (*"the
+> loser's order carries the surcharge"*) it **specified the defect as the expected behaviour**.
+
+> **[AM-13 — amended at adjudication] CH-4 is DECIDED: the cancel confirmation MUST warn, the warning
+> MUST be server-driven, and the field is defined here.**
+>
+> The author flagged this for the challenger round and asked for a decision. The decision is **yes**,
+> and it is this ADR's to make because it is a contract change, not a copy choice:
+> - **The disclosure the draft cited does not exist.** `order.Cancel(...)` executes at
+>   `CancelOrder.cs:122-127`; the `Response(… FeeRate …)` at `:171-176` is returned *after* the order
+>   is cancelled, the refund issued (`:142-145`) and the loyalty revoked (`:169`). That is a
+>   **receipt**, not a disclosure. And there is no preview: `CalculateCancellationFeeRate` has exactly
+>   one production caller (`CancelOrder.cs:107`).
+> - **The only pre-cancel disclosure today is a client-side guess and it is wrong.** Android's sheet
+>   computes the schedule itself (`CancelOrderSheet.kt:345-404`) with no membership input and with
+>   rates that do not match the backend's.
+> - **The zero-fee cases are exactly where the credit is silently taken** (AM-12): inside the
+>   15-minute oops window, and on every cash order, the fee is 0 and the credit is still consumed.
+> - **The client cannot compute it.** `OrderDetailDto` carries no waiver field, and the assignment
+>   predicate is server-side history.
+>
+> **Therefore, in scope (D8):** the customer order read gains a server-computed
+> **`bool ExpressWaiverForfeitedOnCancel`** — true iff a live `MembershipBenefitUsage` row is attached
+> to this order **and** D4's release rule would not fire for a customer-initiated cancel evaluated
+> now. ⚠️ **This is a THIRD `nswag-regen` surface**, named here rather than discovered by T-0514.
+> T-0513 gains copy constraint #5: the cancel confirmation states *"this uses up one of your free
+> express bookings this month"* whenever the flag is true — **including, and especially, when the fee
+> is 0**.
+
+**Where the count is visible [AM-16]:** the membership screen, the booking quote, **and the slot
+grid**. The slot grid is where the choice is made and the draft omitted it: the express badge is
+computed entirely client-side from constants with no membership input (`order-wizard.models.ts:211-214`
+→ `pages.order.slot_express` = *"Express +20%"*; Android `values/strings.xml:560` identically), and the
+pre-slot quote has no date at all (`QuoteOrder.Command.CleaningDate` is optional and *"null skips the
+surcharge check"*, `QuoteOrder.cs:22-25`). Left as drafted, a member with two unused credits sees every
+express slot badged **+20%** and avoids the perk they are paying for, and an exhausted member learns
+why only at the payment step. The grid renders `GetMyMembership.ExpressUpgradesRemaining` — read once
+when the wizard opens — against the client's existing lead-time computation. That is fully compliant
+with this section's own rule: **the count comes from the server; only the window is client-side, and
+it already is today.**
+
+**Not on any partner/cleaner surface** — a cleaner must never see a customer's entitlements. **No admin
+endpoint is decided here** (out of scope); support can answer "did I really use both?" from the row,
+because it carries `OrderId`, `PeriodKey`, `ReservedAtUtc` and `IsActive` — **except for orphan rows,
+whose `OrderId` stays NULL** and which support finds by `(UserId, PeriodKey, OrderId IS NULL)` (AM-7).
+
+**[AM-16] When a membership ends mid-month:** `GetMyMembership` returns `HasMembership: false` and
+every field **null** (`GetMyMembership.cs:36-51`), so `ExpressUpgradesRemaining` is **null, not 0** —
+the client renders the non-member state. **Unused slots are not carried, refunded or restored**, and
+consumed slots are not returned. A cancel-requested member keeps benefits until `CurrentPeriodEnd`
+(`UserMembership.MarkCancellationRequested`, `:169-173`), which the web copy already promises. T-0513
+gains copy constraint #6: *"unused free express bookings do not carry over and end with your
+membership."*
 
 ### D8 — Scope boundary
 
-- **In scope:** the entity + index + reservation/release/attach repository contract, the resolver seam,
-  the `BookingPolicy` parameter, the two DTO deltas, the release hooks in the cancel paths + the
-  existing stale-order sweep, the `MembershipPlan.ExpressUpgradesPerMonth` column, and the catalog +
-  living-doc updates.
+- **In scope (as amended — this list is the T-0512/T-0493/T-0514 scope of record):**
+  - the entity + the three indexes (unique `NULLS NOT DISTINCT` filtered partial, the count index, the
+    orphan index) + the reservation / release / attach repository contract;
+  - `IExpressWaiverResolver` (pure read) and `IExpressWaiverConsumer` (resolve → reserve → attach);
+  - **`IBenefitPeriodKeyFactory`** — the only builder of a `PeriodKey` (AM-10) — **plus extracting
+    `GetDashboardStats.ResolveTimeZone` (`:252-266`) into a shared helper first**;
+  - **`IOrderPricingCalculator.CalculateAsync` gains `string? userId` + `DateTime nowUtc`** (AM-9) —
+    a contract change touching all four call sites, `MaterializeRecurringBookings` included;
+  - **`CreateOrderInput` gains `NowUtc` and `ExpressWaiver? Waiver`** (AM-9); `OrderFactory` acquires
+    **no** new collaborator;
+  - the `BookingPolicy.RequiresExpressSurcharge` optional `waiverApplies` parameter;
+  - **three** DTO deltas → three `nswag-regen` surfaces: `GetMyMembership.Response` (+2),
+    `QuoteOrder.Response` (+2), and the customer order read (+1 `ExpressWaiverForfeitedOnCancel`,
+    AM-13);
+  - **a new `BusinessErrorMessage.ExpressWaiverNoLongerAvailable`** + its five-locale `errors.*` keys
+    on every client (AM-8);
+  - the release hooks in `CancelOrder` and `AdminCancelOrder` (AM-11) — **the two system sweeps are
+    NOT modified**;
+  - **`IMembershipBenefitUsageRepository.ReleaseOrphanedReservationsAsync` + a command on the existing
+    hourly cleanup schedule** (AM-7);
+  - the `MembershipPlan.ExpressUpgradesPerMonth` column (default `0`, fail-closed) and the fourth
+    `UpdateBenefits` parameter + admin CRUD + its i18n label;
+  - **doc corrections in the domain:** `UserMembership.cs:46-51` (*"free express upgrade once per
+    period"* → two, per calendar month) and either `MembershipStatus.cs:18-19` or
+    `UserMembership.cs:84-85` once E-2 is answered (AM-16);
+  - the slot-grid render surface (AM-16) and the cancel-confirmation copy (AM-13);
+  - **retiring/inverting the two mobile regression guards** in the same wave as the affirmative copy
+    (§Copy, AM-15);
+  - the catalog + living-doc updates.
 - **Byte-untouched:** `IIdempotencyGuard` and both its backings, `ProcessedMessage`, `PromoCodeRedemption`
   and its repository (mirrored, not modified), `UserMembership`, `RefundPolicy` / `IRefundService`,
   `LoyaltyService`, and every fiscal path.
@@ -531,7 +1107,8 @@ separate ticket, and this shape already supports it.
 | # | Alternative | Why not |
 |---|---|---|
 | **A1** | **Derive the count from `Order` rows at query time — no new table at all.** `COUNT(Orders WHERE UserId=@u AND CreatedOn in [month) AND (CleaningDateTime − CreatedOn) ∈ [2h,4h))`, and "the first 2 are the waived ones". **Genuinely attractive: zero schema, zero migration, no reversal bookkeeping.** | **Four disqualifying defects, in order of severity.** (1) **No arbiter.** It is a `SELECT`-then-act with nothing at the DB to break a tie — the exact S7 check-then-act race the platform already had to *fix* for promo codes (`PromoCodeRedemptionRepository.cs:37-46`). Two concurrent bookings both read "1 used" and both get waived. There is no index you can add to a *computed expression over two columns* that closes it. (2) **It re-computes history.** The predicate embeds `BookingPolicy.ExpressLeadTimeHours` / `StandardLeadTimeHours`. Tune 2→3 or 4→6 and **every past month's count silently changes**, retroactively. A quota that moves when a constant is tuned is not a quota — and it is the same defect ADR-0009 D2 already forbade for money (`Order.TotalPrice` is frozen; nothing re-applies discount/surcharge). (3) **It cannot distinguish waived from charged.** The predicate matches express orders, not *waived* ones — so a member who paid the surcharge (quota exhausted, or membership lapsed at booking time) still counts against next month if the plan number later changes. (4) **It loses history to GDPR.** `Order.AnonymizeCustomerData()` nulls `UserId` **and** `MembershipPlanIdAtPurchase` (`Order.cs:613-621`); an anonymized order silently drops out of the count. Plus: no reversal rule is expressible at all (there is no row to release), and `CreatedOn` is not set until the pipeline commits, so the *current* order cannot be counted at pricing time. |
-| **A2** | **A counter column on `UserMembership`** (`ExpressUpgradesUsedThisPeriod` + a reset when the period rolls). | Loses the audit trail entirely — nobody can answer *"which booking used my free one?"*, which is precisely the support question a metered perk generates. Reversal becomes a decrement, and a decrement has no idempotency: a retried cancel path double-refunds the credit. Concurrency needs an atomic conditional `UPDATE`, which works but caps at one benefit per column, so D5's generality dies. And the reset has to be *driven* (a sweep, or an opportunistic check on read) rather than falling out of a key — a reset job that misses a month is silently wrong. `UserMembership` already carries two reminder stamps that are reset on period rollover (`:60-76`, `:129-136`); adding a *money* counter to that same rollover path couples the quota to Stripe webhook timing. |
+| **A1b** | **[AM-2 — added at adjudication] Two nullable columns on `Order` + a filtered partial unique index.** `Order.ExpressWaiverPeriodKey string?` + `Order.ExpressWaiverOrdinal int?`, `UNIQUE (TenantId, UserId, ExpressWaiverPeriodKey, ExpressWaiverOrdinal) WHERE ExpressWaiverOrdinal IS NOT NULL`. **This is the steelman — the version a reviewer will actually propose**, and it beats the ledger on every axis this ADR prices: zero new tables, zero new repository, zero new entity, zero new role card; the audit trail sits *on the order it paid for*; D4's release is `ExpressWaiverOrdinal = NULL` on the existing cancel path; GDPR is already handled by `Order.AnonymizeCustomerData()`; **and there is no orphan class at all**, because the row *is* the order. | **It dies on one line the platform already paid for.** The `Order` insert rides EF change tracking inside the UoW pipeline (`OrderFactory.cs:167` → `CleansiaDbContext.CommitAsync`), so the ordinal **cannot** be computed inside that INSERT — EF emits the parameter values it was handed. The ordinal therefore comes from a pre-read (the race), and the unique index fires as a **constraint violation at the pipeline commit**: `PromoCodeRedemptionRepository.cs:48-53` — *"the reservation must land (or be rejected) on its own, not deferred to the order's UoW commit (**a unique violation there would roll back the whole paid order, which is worse than the bug**)"*. A waiver race would destroy a paid booking. |
+| **A2** | **A counter column on `UserMembership`** — in its **steelmanned** form: a counter **plus** a stored period key, consumed by one atomic conditional `UPDATE … SET used = CASE WHEN key = @k THEN used+1 ELSE 1 END … WHERE key IS DISTINCT FROM @k OR used < @max RETURNING used`. | **[AM-16 — rewritten at adjudication].** The draft's two headline objections do not survive the steelman and are **withdrawn**: the reset is *not* "driven" (it falls out of the `CASE` exactly as it falls out of the key), and concurrency *is* solved by the conditional `UPDATE` — so concurrency is **not** a discriminator between A2 and D3 and must not be claimed as one. What kills A2 is two things the draft missed: **(1) a yearly Plus member would get two express upgrades per YEAR.** The only period-rollover hooks on `UserMembership` are `UpdateFromStripeWebhook:133-136` and `ApplyPlanSwap:194`, both keyed on the **Stripe billing period**; `BillingInterval.Yearly` is a first-class value (`MembershipPlan.cs:16`) with dedicated pricing and ordering support. A calendar-month quota on a billing-period row is a category error for every annual subscriber — and fixing it means adding a period stamp, at which point A2 *is* D2's key, denormalized onto a row Stripe webhooks mutate. **(2) Churn resets the quota.** `UserMembership.cs:14-20` documents that a re-subscribe-after-cancel is a **new row**; a counter on it starts at zero. A quota keyed to *(user, period)* — what D3 does — is immune. **And the responsibility argument:** `UserMembership.cs:8-11` states its own card — *"the local row is a mirror, with Stripe as the authoritative source for billing state."* "How many benefits this human consumed this calendar month" is not on that card and Stripe cannot arbitrate it. The audit-trail objection survives intact and D7 depends on it. |
 | **A3** | **`IIdempotencyGuard` / `ProcessedMessage` with a composed key.** | D3.1 — wrong tenancy (tenant-global by design), wrong cardinality (binary claim, no count, no "remaining" query), wrong transaction scope (consumer-side own-commit). The ADR-0023 *rule* is reused; the ADR-0010 *backing* is for queue consumers. |
 | **A4** | **Consume at `Completed` instead of at creation.** | The price is charged at creation (`CreateOrder.cs:283-310`); counting days later lets price and count disagree whenever the order is cancelled, the membership lapses (`UserMembership.IsActive` is time-dependent), or the plan is edited in between. It also makes the quota unknowable at the moment the customer needs to know it — you cannot show "1 left" if the count only firms up after the clean. |
 | **A5** | **Release the credit on every cancellation (fully symmetric refund).** | D4 — creates the unbounded supply attack: waive → cleaner accepts → free cancel → credit returns → repeat, yanking cleaners onto 2-hour-notice jobs at zero cost. The bounded alternative (never release on a customer cancel of an *accepted* booking) costs the customer at most two credits a month, already alongside a 50% fee. |
@@ -542,6 +1119,8 @@ separate ticket, and this shape already supports it.
 | **A10** | **Put `2` in `BookingPolicy` as a const.** | D2.1 — `BookingPolicy` holds platform-wide numbers; a per-plan benefit number belongs on the plan next to `FreeCancellationWindowHours`, changeable by an admin without a deploy, and differentiable when a second tier lands. |
 | **A11** | **Give `BookingPolicy.RequiresExpressSurcharge` the membership itself** (or an `IUserMembershipRepository`). | Breaks the policy class's whole point: it would become async, DB-bound, untestable as a pure function, and would know about memberships. The archetype is explicit — the resolver knows the plan, the policy takes the *answer* (`BookingPolicy.cs:101-111`). |
 | **A12** | **A dedicated `POST /membership/express-credits/consume` endpoint / a separate quota service.** | Two round-trips, a second source of truth for the price, and a window in which a credit is consumed but the order is never created that is *wider* than D3.2's (a whole user-interaction, not a few milliseconds). The reservation belongs in the same request as the price. |
+| **A13** | **[AM-3 — added at adjudication] Reserve-after-persist, fail-soft — i.e. the `PromoCodeRedemption` ordering, literally.** Price with the pure resolver's answer → `Order.Create` → persist → reserve with the known `OrderId` → on `null`, log and move on. Cost: `OrderId` non-nullable, no attach, **no orphan class**, no reclaim, **one** out-of-band statement, byte-consistency with the archetype. | **Two reasons, and the first is the decision.** (1) **The cap becomes soft.** A promo code requires possession of a code an operator issued, and carries its own global cap (`PromoCodeService.cs:150-173`); a soft cap there over-grants a discount to someone already entitled to one. An express waiver requires **nothing but an active Plus subscription**, so a soft cap is farmable by every subscriber with concurrent requests alone. Mode A also narrows the read→claim window from the whole request (order build + Stripe dispatch) to a few statements. (2) **It does not buy back what it appears to**, because *"post-persist"* in this codebase means "after `orderRepository.Add`", not "after the row is in the database" — the commit is in `UnitOfWorkPipelineBehavior.cs:27-30`, after the handler returns. So A13 keeps the orphan class, adds a soft cap, and inherits the FK hazard AM-4 closes. **The machinery it promised to remove is removed by AM-4 instead.** |
+| **A14** | **[AM-6 — added at adjudication] Keep the bare nulls-distinct unique index (repo convention) and guard single-tenant mode at the application level.** | There is no app-level guard that can arbitrate a **concurrent** claim — a read cannot break a tie, which is why the promo path demotes its own pre-check to *"NOT the source of truth"* (`PromoCodeService.cs:120-128`). The `UserMembership` precedent works because "at most one active row" is a state you can assert on; "two simultaneous reservations" is not. With a NULL tenant the index would never fire and **quota 2 becomes quota 3+ in the platform's default deployment**. `COALESCE("TenantId",'')` in the index is the same one-off in uglier clothes; an advisory lock or `SELECT … FOR UPDATE` per `(user, period)` is the fallback if the provider cannot express `NULLS NOT DISTINCT`. |
 
 ---
 
@@ -560,21 +1139,43 @@ separate ticket, and this shape already supports it.
 - The resolver seam is a byte-for-byte adoption of `CancellationPolicyResolver`, so a reviewer checks
   it by diffing shapes rather than reasoning about it.
 
-**More expensive (accepted)**
-- **Two out-of-band SQL statements** in the create path (reserve, attach) that bypass the UoW pipeline.
-  Declared, mirroring the promo exception, and required for atomicity — but it is now **two** such
-  exceptions in `CreateOrder`, not one. A reviewer must know both are deliberate.
+**More expensive (accepted) — as amended**
+- **ONE out-of-band SQL statement** in the create path (the reservation). Declared, mirroring the promo
+  exception, required for atomicity. **[AM-4]** The attach is a change-tracked update riding the UoW,
+  so the draft's second exception is gone.
 - **The orphan window** (D3.2): a credit can be live for up to an hour against an order that never
-  existed. Reclaimed by the existing hourly sweep; visible in the interim as a wrong "remaining" count.
-- **A member can lose a credit to a legitimate cancellation** (D4, the accepted exploit) — bounded by
-  the 50% last-minute fee they are already paying, and by the seeding constraint on
-  `FreeCancellationWindowHours`.
-- **A seeding constraint that a person must respect:** `FreeCancellationWindowHours > 4`. This is the
-  one place the design depends on data being sane; T-0512 carries it as a note and the admin form
-  should refuse it.
-- **One `ef-migration` (owner-only)** — one new table + two indexes + one additive `MembershipPlan`
-  column (default `0`, fail-closed). **One `nswag-regen` (owner-only)** — two fields on
-  `GetMyMembership.Response`, two on `QuoteOrder.Response`.
+  committed; visible in the interim as a "remaining" count one lower than the truth. **[AM-7]**
+  Reclaimed by a **new** repository method + a **new** command on the **existing** hourly cleanup
+  schedule + a **new** partial index. *"No new job"* was false and is struck.
+- **A member can lose a credit to a legitimate cancellation** (D4, the accepted exploit) — and
+  **[AM-12]** may lose it for **0 Kč** (inside the 15-minute oops window, or on any cash order). This
+  is why **[AM-13]** the cancel confirmation must disclose it; the design does not accept a silent
+  forfeiture against a paid subscription.
+- **[AM-6] `NULLS NOT DISTINCT` on this index — NOT a deviation; the repo already does it twice**
+  (`FiscalCounterEntityConfiguration.cs:23-29` on a tenant-scoped index, for the same reason;
+  `LiveActivityTokenConfiguration.cs:26-28`). The cost is that two existing comments
+  (`UserMembershipEntityConfiguration.cs:100-109`, `LoyaltyTransactionEntityConfiguration.cs:84`)
+  claim the opposite and must be corrected (E-5), plus a new `consistency.md` rule so the next
+  tenant-scoped index picks the right side deliberately instead of by cargo cult.
+- **[AM-8] One new failure path.** `ExpressWaiverNoLongerAvailable` — a rare same-user race becomes a
+  re-quote rather than a surprise upcharge. The draft's "no new `BusinessErrorMessage`" is struck.
+- **[AM-9] Two contract changes beyond the DTOs** — `IOrderPricingCalculator.CalculateAsync` and
+  `CreateOrderInput` — plus `CreateOrder.Handler` at 9 collaborators.
+- **[AM-16 / CH-A7] The ledger preserves a `user → order` link that order anonymization deliberately
+  severs.** `Order.AnonymizeCustomerData()` nulls `UserId` (`Order.cs:618`) and
+  `MembershipPlanIdAtPurchase` (`:620`) for every order the user placed
+  (`GdprDeletionService.cs:181-192`), and `MembershipBenefitUsage` would keep the pair. **Ruling:
+  `MembershipBenefitUsage` is OUT of `GdprDeletionService`'s sweep**, because erasure anonymizes the
+  `User` row **in place** and never deletes it (`GdprDeletionService.cs:240-241`), so the retained
+  `UserId` no longer identifies a natural person — and `UserId` FK `OnDelete.Restrict` therefore
+  cannot block erasure. Precedent: `IPromoCodeRedemptionRepository` is likewise not among
+  `GdprDeletionService`'s fifteen repositories. Stated so a security reviewer does not have to re-open
+  it, and so the trade against A1 (which loses the count *because* the platform severs the link) is
+  honest in both directions.
+- **One `ef-migration` (owner-only)** — one new table + **three** indexes + one additive
+  `MembershipPlan` column (default `0`, fail-closed) + whatever E-1/E-2 add if the owner answers
+  before the wave. **THREE `nswag-regen` surfaces (owner-only)** — `GetMyMembership.Response` (+2),
+  `QuoteOrder.Response` (+2), the customer order read (+1).
 - **A `MembershipBenefitUsage` row per granted waiver, forever.** At 2/member/month this is trivial;
   no prune is specified, and the rows are audit-valuable. Revisit only if a future benefit is metered
   in the hundreds.
@@ -583,15 +1184,25 @@ separate ticket, and this shape already supports it.
 
 ## How a reviewer verifies compliance
 
+> **[Amended at adjudication]** Items 1, 2, 6, 8, 9, 10, 12, 17 are **rewritten**; items 19–24 are
+> **new**. A reviewer who checks the draft's version of 1/2/17 will pass a broken mechanism.
+
 **Mechanical**
-1. **The index is a FILTERED PARTIAL UNIQUE** on `(TenantId, UserId, BenefitKind, PeriodKey, SlotOrdinal)`
-   `WHERE "IsActive" = TRUE`, and `MembershipBenefitUsage` implements **`ITenantEntity`** (not the
-   ADR-0010 tenant-global exception). Compare against `UserMembershipEntityConfiguration`'s filtered
-   index and `PromoCodeRedemptionEntityConfiguration.cs:58-67`.
-2. **The reservation is ONE statement.** Grep the repository: there is no `CountAsync`/`AnyAsync`
-   followed by an `Add` in the consuming path. The ordinal is computed **in SQL**, the guard is a
-   `HAVING … < @maxPerPeriod` over **live** rows, and there is `ON CONFLICT DO NOTHING` +
-   `RETURNING`. `null` is returned for "no slot" — **no exception escapes to the order's commit**.
+1. **The index is a FILTERED PARTIAL UNIQUE, declared `NULLS NOT DISTINCT`**, on
+   `(TenantId, UserId, BenefitKind, PeriodKey, SlotOrdinal) WHERE "IsActive" = TRUE`, and
+   `MembershipBenefitUsage` implements **`ITenantEntity`** (not the ADR-0010 tenant-global exception).
+   **Check the emitted DDL in the migration, not the C#** — an index that is nulls-distinct here is a
+   **hard reject**: it does not fire in single-tenant mode, which is the platform's default
+   (`CleansiaDbContext.cs:239-246`), and the quota is then unenforced. The precedent is
+   `FiscalCounterEntityConfiguration.cs:23-29` (tenant-scoped, `.AreNullsDistinct(false)`, same
+   sole-arbiter reasoning) — **not** `UserMembershipEntityConfiguration.cs:100-109`, whose comment
+   asserts this option is unused here and is wrong (E-5). Do not "fix" it back.
+2. **The reservation is ONE statement and derives the SMALLEST FREE ORDINAL.** Grep the repository:
+   no `CountAsync`/`AnyAsync` followed by an `Add` in the consuming path. The ordinal comes from
+   `generate_series(0, @max-1)` + `NOT EXISTS` + `ORDER BY g LIMIT 1` — **a `COUNT(*)`-based ordinal
+   is a hard reject** (it cannot re-use a released non-maximal ordinal; see AM-5). There is
+   `ON CONFLICT DO NOTHING` + `RETURNING "SlotOrdinal" AS "Value"`. `null` is returned for "no slot" —
+   **no exception escapes to the order's commit**.
 3. **`@tenantId` is an explicit `NpgsqlDbType.Text` parameter.** If it is inferred, the reviewer has
    found the `42P08` bug again (`PromoCodeRedemptionRepository.cs:85-93`). This one is a hard reject.
 4. **Every `RequiresExpressSurcharge` call site passes the resolver's answer.** Grep
@@ -602,81 +1213,156 @@ separate ticket, and this shape already supports it.
    `ExecuteSql`/`Try*Reserve*` — there must be none. It is called from `QuoteOrder`, from the
    `CreateOrder` validator's pricing path, and from the factory; a consuming resolver burns a credit
    on every quote.
-6. **Exactly one consuming call site.** Grep `TryReserveBenefitSlotAsync` — one caller, in
-   `OrderFactory`, **before** `Order.Create`.
+6. **Exactly one consuming call site, TRUE BY CONSTRUCTION.** Grep `TryReserve*` — one caller, in
+   `IExpressWaiverConsumer`, invoked once from `CreateOrder.Handler` **before** `orderFactory
+   .CreateAsync`. **`OrderFactory` must not reference the consumer, the usage repository or the
+   resolver** — it receives `CreateOrderInput.Waiver` already reserved. `MaterializeRecurringBookings`
+   passes `Waiver: null` **explicitly** (not by omission).
 7. **`BookingPolicy` has no membership type in scope.** Grep the file for `Membership` — zero hits;
    the new parameter is a `bool`.
-8. **The period key is never recomputed for an existing row.** Grep for the key-builder: it is called
-   at reservation and (read-only) in the remaining-count query for the *current* period. No `UPDATE`
-   sets `PeriodKey`.
-9. **The timezone comes from `CountryConfiguration.TimeZoneId`, not from `GetTimeZoneId()`.** Grep the
-   resolver for `X-Time-Zone` / `GetTimeZoneId` — zero hits. The unknown-zone fallback is
-   `TimeZoneInfo.Utc` and does not throw (mirror `GetDashboardStats.cs:252-266`).
-10. **The release hooks match D4's table exactly** — `CancelOrder` releases only when
-    `!hasBeenAccepted`; the cleaner/admin/system cancel paths release unconditionally; no release on
-    refund of a completed order.
+8. **`PeriodKey` is built in exactly ONE class** (`IBenefitPeriodKeyFactory`) and never recomputed for
+   an existing row. Grep for the builder: called at reservation and (read-only) for the *current*
+   period at the quote, the validator and `GetMyMembership` — **all four through the same factory**.
+   No `UPDATE` sets `PeriodKey`. **`PeriodKey` appears in no DTO.**
+9. **The timezone comes from the platform-default `CountryConfiguration.TimeZoneId`, not from
+   `GetTimeZoneId()` and not from an order address.** Grep the factory for `X-Time-Zone` /
+   `GetTimeZoneId` — zero hits; grep for `Address` / `CountryId` **parameters on the key path** — zero
+   (AM-10: an address-derived key cannot be computed at 3 of the 4 sites). The unknown-zone fallback
+   is `TimeZoneInfo.Utc` and does not throw (the **extracted** `GetDashboardStats.ResolveTimeZone`
+   helper).
+10. **The release hooks match D4's amended table exactly** — `CancelOrder` releases when the order has
+    **no assigned employee** (`!order.AssignedEmployees.Any()`), **not** on `hasBeenAccepted`;
+    `AdminCancelOrder` releases unconditionally; no release on refund of a completed order; **neither
+    system sweep is modified**. A release keyed on `hasBeenAccepted` is a **finding** — it is written
+    by the Stripe webhook (`HandlePaymentNotification.cs:261`) and by cash auto-confirm
+    (`ConfirmRecurringOrder.cs:111`), not only by a cleaner.
 
 **Test contract (red first — `TC-BENEFIT-*`)**
 11. **TC-BENEFIT-QUOTA-0.** Third express booking in one period is **charged** the surcharge; first two
     are not. Assert on the persisted `Order.TotalPrice`, not on the resolver.
-12. **TC-BENEFIT-RACE-0.** Two concurrent reservations with **one** slot left, on separate scopes →
-    exactly **one** non-null result; exactly **one** live row; the loser's order carries the surcharge.
-    Mirrors `TC-IDEMP-RACE-0` / the promo race test.
+12. **TC-BENEFIT-RACE-0 [AM-6 + AM-8 — respecified].** Two concurrent reservations with **one** slot
+    left, on separate scopes → exactly **one** non-null result and exactly **one** live row. **Must be
+    run with `TenantId = NULL`** (plus a tenanted variant) — run only in a tenanted fixture it would
+    pass against a nulls-distinct index that does not work, i.e. prove the opposite of what it claims.
+    **And the loser is REJECTED with `ExpressWaiverNoLongerAvailable`, not silently surcharged** — the
+    draft's *"the loser's order carries the surcharge"* specified the consent defect as the expected
+    behaviour.
 13. **TC-BENEFIT-PERIOD-0.** A reservation at 23:59:59 local on the last day of the month and one at
     00:00:01 local on the 1st land in **different** `PeriodKey`s — and the same two instants expressed
     in UTC do **not** decide it. This is the test that pins D2's timezone ruling; it must fail against a
     bare-UTC implementation.
 14. **TC-BENEFIT-PREVIEW-0.** N quote calls + a validator run for the same member consume **zero**
     slots. (The regression this design exists to prevent.)
-15. **TC-BENEFIT-REVERSAL-0..3.** (0) customer cancel, **not accepted** → released, remaining restored.
-    (1) customer cancel, **accepted** → **not** released. (2) `CancelledBy.Cleaner` and `.Admin` →
-    released. (3) stale-pending system sweep → released.
-16. **TC-BENEFIT-ORPHAN-0.** A reservation whose order never persists is `OrderId IS NULL` and is
-    released by the sweep after the cutoff; before the cutoff, "remaining" is legitimately one lower.
-17. **TC-BENEFIT-SLOTREUSE-0.** After a release, the next reservation succeeds and takes the freed
-    ordinal — the test that proves the filtered index + `COUNT`-of-live derivation actually restores
-    capacity (it fails under a `MAX(SlotOrdinal)+1` derivation, which is why D3 deviates).
+15. **TC-BENEFIT-REVERSAL-0..3 [AM-11 — respecified].** (0) customer cancel with **no assigned
+    employee** → released, remaining restored. (1) customer cancel **with an assigned employee** →
+    **not** released — **and the same case with a `Confirmed` status written by the payment webhook
+    and no assignment must RELEASE** (this is the test that pins AM-11 and fails against a
+    `hasBeenAccepted` implementation). (2) `AdminCancelOrder` → released even with an assignment.
+    (3) an order swept by `CleanupStalePendingOrders` (never assigned, `CancelledBy` NULL) → released,
+    **with no change to the sweep**.
+16. **TC-BENEFIT-ORPHAN-0.** A reservation whose order never commits is `OrderId IS NULL` and is
+    released by `ReleaseOrphanedReservationsAsync` after the cutoff; before the cutoff, "remaining" is
+    legitimately one lower. **The test must exercise the new command, not `CleanupStalePendingOrders`**
+    — that job reads `Orders` and cannot see the row (AM-7).
+17. **TC-BENEFIT-SLOTREUSE-0 [AM-5 — respecified, this wording is load-bearing].** Reserve **2 of 2**;
+    release ordinal **0**; assert a third reservation **succeeds and takes ordinal 0**. The draft's
+    wording ("after a release, the next reservation succeeds and takes the freed ordinal") is
+    satisfied by reserve-one → release → reserve, whose live set is empty and whose freed ordinal is
+    already `0` — **it passes over the defect**. The defect requires ≥2 reservations and release of
+    the **lower** one.
 18. **TC-BENEFIT-GATE-0.** `AllowsExpressUpgrade == false`, `ExpressUpgradesPerMonth == 0`, a `PastDue`
-    membership, and a guest booking each waive nothing and write no row.
+    membership, and a guest booking each waive nothing and write no row. **(The `PastDue` leg pins the
+    predicate's side of a live domain contradiction — see AM-16/E-2; do not add it until E-2 is
+    answered, or add it together with the `MembershipStatus.cs:18-19` doc correction.)**
+19. **[NEW — AM-8] TC-BENEFIT-CONSENT-0.** No path persists an `Order.TotalPrice` **greater than** the
+    `command.TotalPrice` the validator approved. Drive the reservation to fail after a waived
+    validation → assert the command **fails with `ExpressWaiverNoLongerAvailable`** and **no `Order`
+    row and no Stripe session** are created.
+20. **[NEW — AM-9] TC-BENEFIT-CLOCK-0.** A booking at the express-window boundary uses **one** captured
+    `nowUtc` across the resolver, the reservation and `RequiresExpressSurcharge`. Grep the express path
+    for `DateTime.UtcNow` — **zero hits below the capture point**. Assert: **no live usage row is ever
+    attached to an order whose persisted price carries no surcharge.**
+21. **[NEW — AM-10] TC-BENEFIT-PERIOD-1.** The quote, the validator, the factory and `GetMyMembership`
+    produce the **same** `PeriodKey` for the same instant — including at 00:30 local on the 1st. This
+    is the test that fails against the draft's order-country anchor.
+22. **[NEW — AM-4] TC-BENEFIT-ATTACH-0 (integration, real PostgreSQL).** A reservation followed by a
+    successful `CreateOrder` commits the `Orders` INSERT **before** the dependent usage `UPDATE` in the
+    same `SaveChangesAsync`, with **no `23503`**. **This test is a precondition of T-0512 being done.**
+23. **[NEW — AM-5/AM-6] TC-BENEFIT-SQL-0 (integration, real PostgreSQL).** The reservation statement
+    composes and behaves: `generate_series` + `NOT EXISTS` + `ORDER BY … LIMIT 1` +
+    `ON CONFLICT DO NOTHING` + `RETURNING … AS "Value"`, with `@tenantId` sent as an explicit
+    `NpgsqlDbType.Text` **and NULL**. **Also a precondition of T-0512 being done** — three of the four
+    concurrency defects this panel found are only visible against a real database, and the statement is
+    *adapted* from the archetype, not copied.
+24. **[NEW — AM-16] Every read of `MembershipBenefitUsages` filters `IsActive` explicitly.** There is
+    **no** global `IsActive` query filter in this codebase (`CleansiaDbContext.ApplyTenantQueryFilters`
+    filters on `TenantId` only, `:201-268`; `grep HasQueryFilter` → the tenant filter alone), so
+    "soft delete" here is a convention every read implements by hand. A remaining-count query without
+    `.Where(u => u.IsActive)` silently counts released rows.
 
 ---
 
 ## The copy — what this ADR constrains, and the sequencing ruling
 
-**Two facts, both load-bearing, and they have different urgencies.**
+> **[AM-15 — REWRITTEN at adjudication. The draft's §Copy described a state of the world that no
+> longer exists.]** The draft's Fact 1 (*"'same-day' is wrong and it is shipping"*, cited at
+> `values/strings.xml:844`, `Localizable.xcstrings:14121`, `cleansia.app en.json:1095`) was **already
+> false at the time the panel ran**: the corrective wave shipped as **T-0513** an hour after the draft
+> was written. A developer dispatched on the draft would have been sent to delete strings that do not
+> exist. The stale citations are removed. What replaces them is below — including a real constraint the
+> draft did not have.
 
-**Fact 1 — "same-day" is wrong and it is shipping.** All five locales on both mobile clients promise
-*"One free same-day booking per month, no surcharge"* (`values/strings.xml:844`,
-`Localizable.xcstrings:14121`, + `values-cs/:832`, `values-sk/:829`, `values-uk/:829`, `values-ru/:829`).
-**Express in this codebase is a 2–4 hour lead window** (`BookingPolicy.cs:18-30`). A 09:00 booking for
-18:00 is same-day and carries **no surcharge for anybody**. Meanwhile the web client advertises a third,
-different product — *"Pay less for last-minute bookings inside the express window"*, an **uncapped
-discount** (`cleansia.app en.json:1095`). Three clients, three promises, none matching the mechanic.
+**Fact 1 — the false strings are GONE, and their absence is PINNED BY TESTS.** At `master`:
 
-**Fact 2 — the owner's answer makes the number wrong too.** *"2 times per month"*, not one. Every
-mobile string says **one**.
+| Surface | State |
+|---|---|
+| Android | **No `membership_perk_express*` key in any of the five locales.** `values/strings.xml:844-847` is a **comment** explaining the deliberate omission — *"Restore this perk only together with the code that waives the surcharge."* (The draft cited that same comment twice: once as a live promise, once, correctly, as a description of a defect.) |
+| iOS | `MembershipPerks.swift:6-9` — *"Express upgrade is deliberately absent… Advertising it would promise something the product does not deliver."* `enum MembershipPerk` has **three** cases (`:10-13`). |
+| Web | `cleansia.app en.json:1090-1095` lists **three** membership benefits (`benefit_discount_*`, `benefit_cancel_*`, `benefit_favorite_*`). `:1095` is `benefit_favorite_body`, not an express claim. |
 
-**The ruling on sequencing — the two errors do not have the same urgency, and they must not be
-batched as if they did:**
+**Fact 2 — two committed regression guards assert that absence, across every locale and every screen.**
 
-> **The corrective half ships immediately and does NOT wait for the implementation. The affirmative
-> half ships only with T-0493.**
+- `src/cleansia_android/customer-app/src/test/java/cz/cleansia/customer/features/membership/MembershipExpressClaimTest.kt`
+  — three tests: no membership screen (`MembershipManagementCard.kt`, `SubscribePlusScreen.kt`,
+  `MembershipSuccessScreen.kt`) renders `membership_perk_express` (`:33-47`); none reads
+  `allowsExpressUpgrade` (`:49-61`); **no `<string name="membership_*">` in `values`, `values-cs`,
+  `values-sk`, `values-uk`, `values-ru` contains any of `express` / `expres` / `експрес` / `экспресс`**
+  (`:63-75`).
+- `src/cleansia_ios/CleansiaCustomer/Tests/MembershipExpressClaimTests.swift` (`:19-57`) — the same
+  three assertions against the string catalog and the three SwiftUI screens, including
+  `testTheL10nAccessorsAreGone`.
 
-- **Corrective (ship now, ahead of T-0512/T-0493):** delete *"same-day"* and delete the web client's
-  uncapped-discount claim. *"Same-day"* is a promise that is **false against the customer** in the case
-  they actually care about: someone who reads it and books at 09:00 for 12:00 — which **is** express —
-  is charged +20% having been told it was free. That is a live misrepresentation on a **paid
-  subscription**, it costs a real customer real money today, and **removing it requires no backend at
-  all** (T-0513 is explicitly dependency-free). Waiting for the mechanism to ship is choosing to keep a
-  false statement live for the length of a build.
-- **Affirmative (ship with T-0493, not before):** *"Two free express bookings each calendar month."*
-  Until T-0493 lands, **nothing waives anything** — a client claiming a waiver that does not exist
-  replaces one misrepresentation with another. T-0513 AC4 already asks for this sequencing statement;
-  this is the architecture's answer to it.
-- **"One" → "two" is the low-urgency half of the affirmative change.** It is false **in the customer's
-  favour**: a member told "one" who receives two is not wronged and will not complain. It is known now
-  and should ride the same T-0513 pass, but **if it slips, it slips harmlessly** — which is exactly why
-  it must not be allowed to hold up the corrective half.
+> **These tests will go RED the day the affirmative copy lands. That is correct, and it is deliberate.**
+> They are a **tripwire**, not an oversight: they exist so the claim cannot come back without the code
+> that makes it true. The ADR's job is not to remove the tripwire — it is to **name the owner and the
+> moment**, which the draft did not do and which nobody currently owns.
+>
+> **OWNER OF RETIRING THEM: T-0493** (the ticket that makes the claim true), **in the same PR as the
+> affirmative copy**, and **not before**. Four artifacts move together, and a PR that moves fewer than
+> four is incomplete:
+> 1. `MembershipExpressClaimTest.kt` — **inverted, not deleted**: assert the perk **is** present in all
+>    five locales and names a lead-time window, and that a screen renders it only when the server says
+>    the plan carries it.
+> 2. `MembershipExpressClaimTests.swift` — the same inversion.
+> 3. The Android comment at `values/strings.xml:844-847` — it is a **correct description of a live
+>    defect** and becomes false in that PR.
+> 4. The iOS doc comment at `MembershipPerks.swift:6-9` — same.
+
+**The sequencing ruling, narrowed to what is still live:**
+
+> **The corrective half is DONE (T-0513). The affirmative half still ships WITH T-0493 and not before —
+> and it ships with the four artifacts above, or it does not ship.**
+
+- **Affirmative (with T-0493):** *"Two free express bookings each calendar month."* Until T-0493 lands
+  **nothing waives anything**, and a client claiming a waiver that does not exist would replace a
+  removed misrepresentation with a new one. The current state — the perk simply **absent** from all
+  three clients' benefit lists — is honest today and becomes an **omission** (a paid perk we do not
+  advertise) only once the code lands. That is the right way round.
+- **There is no longer an urgency argument and none should be re-derived.** T-0513's Context table
+  carried the same stale citations under a *"every file:line is PM-verified"* header; the PM should
+  re-ground it before any further dispatch.
+- **The affirmative copy is additionally gated on E-1** (the trial) — see AM-14. The strings may be
+  written and merged with T-0493; the *seed value* that turns the perk on waits for the owner.
 
 **Constraints this ADR places on T-0513's canonical sentence** (the analyst owns the wording; these are
 the checkable facts it must not contradict):
@@ -686,14 +1372,17 @@ the checkable facts it must not contradict):
 3. It states the cap as **2**, sourced from `MembershipPlan.ExpressUpgradesPerMonth`, and does not
    promise an uncapped discount anywhere (D2.1: unlimited is not expressible).
 4. It does not promise that a cancelled booking returns the credit — D4 says it usually does not.
+5. **[AM-13]** The **cancel confirmation** states *"this uses up one of your free express bookings this
+   month"* whenever the server's `ExpressWaiverForfeitedOnCancel` is true — **including, and
+   especially, when the cancellation fee is 0**, which is exactly when the forfeiture is otherwise
+   invisible (AM-12).
+6. **[AM-16]** It states that **unused free express bookings do not carry over and end with your
+   membership** — the case where a customer most plausibly expects otherwise ("I paid for September, I
+   only used one").
 
-A sentence that satisfies all four, offered as an anchor and not as the decision:
+A sentence that satisfies 1–4, offered as an anchor and not as the decision:
 > *"Two free express bookings each calendar month — we waive the 20% surcharge on cleanings booked
 > 2 to 4 hours ahead."*
-
-**Also:** the Android in-code comment at `values/strings.xml:846-847` (*"No express pill: nothing in
-pricing reads AllowsExpressUpgrade…"*) is a **correct description of a live defect** and must be
-updated in the same wave that makes it false — T-0513 AC5 already holds this.
 
 ---
 
@@ -717,24 +1406,48 @@ reserved-slot ledger"*, prepared here verbatim so acceptance is a paste, not a r
 > - **Shape:** an `Auditable` + `ITenantEntity` ledger row carrying `UserId`, a **`Kind`
 >   discriminator** (int-stored, never reordered), a **stored `PeriodKey`** string, and a 0-based
 >   `SlotOrdinal`. Reference: `MembershipBenefitUsage`; ancestor: `PromoCodeRedemption`.
-> - **Concurrency:** a **filtered partial UNIQUE index** `(TenantId, UserId, Kind, PeriodKey,
->   SlotOrdinal) WHERE IsActive` + a **single-statement** `INSERT … SELECT <ordinal computed in SQL> …
->   HAVING <live count> < @max … ON CONFLICT DO NOTHING RETURNING`. Never `SELECT`-then-`INSERT`. A
->   full slot returns **null**, a result, never an exception at the caller's commit. Send a nullable
->   `TenantId` as an **explicit `NpgsqlDbType.Text`** parameter (`42P08`).
+> - **Concurrency — three layers, all three named:** a non-authoritative app-level read (the resolver's
+>   count — it decides the *quoted* price, never the claim), **one atomic claim statement**, and a
+>   **filtered partial UNIQUE index** as the backstop. The index is
+>   `(TenantId, UserId, Kind, PeriodKey, SlotOrdinal) WHERE IsActive` and, **when it is the sole
+>   arbiter of a concurrent claim, `NULLS NOT DISTINCT`** — a bare tenant-scoped unique index does not
+>   fire in single-tenant mode (`TenantId IS NULL`) and enforces nothing there. Precedent:
+>   `FiscalCounterEntityConfiguration.cs:23-29`, `LiveActivityTokenConfiguration.cs:26-28`. A
+>   tenant-scoped index may stay nulls-**distinct** only when it is a *backstop* behind an
+>   authoritative app-level assert (`UserMembershipEntityConfiguration`).
+> - **The ordinal is the SMALLEST FREE one, not a count and not `MAX+1`**, whenever slots can be
+>   released: `generate_series(0, @max-1)` + `NOT EXISTS` + `ORDER BY g LIMIT 1` +
+>   `ON CONFLICT DO NOTHING` + `RETURNING <col> AS "Value"`. A count derives an occupied ordinal after
+>   a non-maximal release; `MAX+1` never re-uses a hole. A full quota returns **zero rows ⇒ null**, a
+>   result, never an exception at the caller's commit — and no separate `HAVING` guard is needed. Send
+>   a nullable `TenantId` as an **explicit `NpgsqlDbType.Text`** parameter (`42P08`).
 > - **Ordering:** ADR-0023's repeatable-effect test applies — an entitlement grant is money-shaped, so
->   **Mode A**: reserve **before** the benefit changes the price. Never price first and reserve after.
-> - **Period:** a **stored key**, computed once at reservation from the **country's**
->   `CountryConfiguration.TimeZoneId` (UTC fallback, `GetDashboardStats.ResolveTimeZone`) — **never**
->   from the client `X-Time-Zone` header, which is unauthenticated. Never recompute the key for an
->   existing row.
+>   **Mode A**: reserve **before** the benefit changes the price. Note the `PromoCodeRedemption`
+>   ancestor is **reserve-after-persist and fail-soft**; inverting it is a decision that must be argued
+>   (a hard cap is needed when the entitlement requires nothing but a subscription), not inherited.
+> - **Mode A has a price and you must pay it explicitly:** the validator's approved total and the
+>   reservation's outcome can disagree inside one request. **Never persist a price higher than the one
+>   the caller consented to** — fail with a dedicated error and re-quote.
+> - **Out-of-band means out-of-band.** A raw-SQL reservation auto-commits; anything that stamps a
+>   *later-created* row's id onto it must ride the UoW commit, or it fires against a principal row that
+>   does not exist yet (the handler returns **before** `CommitAsync`).
+> - **Period:** a **stored key**, computed once at reservation, by **exactly one factory**, from a
+>   source **every call site can reach** (a preview path usually has no order and no address) — the
+>   platform-default `CountryConfiguration.TimeZoneId`, UTC fallback. **Never** the client
+>   `X-Time-Zone` header, which is unauthenticated. Never recompute the key for an existing row, and
+>   never let two call sites build it by different rules. The key never crosses a DTO boundary.
 > - **Preview vs consume are different calls.** The "does this user get it" question is answered by a
 >   **pure resolver** (the `CancellationPolicyResolver` shape) that every pricing path may call freely;
 >   consuming happens **once**, at persist. A resolver that consumes burns the entitlement on every
->   quote.
+>   quote. **The consumed answer is passed INTO the builder, not resolved by it** — that is what makes
+>   "exactly one consuming call site" true by construction instead of by grep.
 > - **Reversal:** release (soft-delete → the filtered index frees the ordinal) only when the user did
->   not consume the thing the entitlement bought. Whatever the rule is, **the ADR names the exploit it
->   accepts**; "decide later" means "decide in production".
+>   not consume the thing the entitlement bought — and key the release on a signal that means what you
+>   say it means (check every writer of the status you are reading). Whatever the rule is, **the ADR
+>   names the exploit it accepts**, states the bound **that actually holds** (usually the quota, not a
+>   fee), and **discloses the forfeiture to the user before they trigger it**; "decide later" means
+>   "decide in production".
+> - **There is no global `IsActive` query filter in this codebase.** Every read filters it by hand.
 
 Living companion updated in the same change: **`agents/architecture/decisions/membership-benefits.md`**.
 
@@ -742,12 +1455,69 @@ Living companion updated in the same change: **`agents/architecture/decisions/me
 
 ## Challenge
 
-> **⚠️ PROCESS STATE — read this before treating the section below as a deliberation trail.**
-> `agents/process/deliberation.md` requires the author, the challengers, and the lead to be **different
-> instances**. **Only the author has run.** The entries below are **AUTHOR-RAISED** — the attacks I
-> could see against my own draft, pre-answered so a challenger starts past them rather than at them.
-> **They are not independent challenges and they do not satisfy T-0511 AC9.** This ADR stays
-> `proposed` until real challengers and a lead have run (see §Verdict).
+> **PROCESS STATE — the panel is COMPLETE.** Author + **three independent challengers** + lead, all
+> different instances (`agents/process/deliberation.md`). The `CH-*` table below is the author's
+> self-review (kept for the record); the `CH-A*` / `CH-B*` / `CH-C*` tables are the **independent**
+> challenges and are the ones that produced the amendments. Full challenge files:
+> `agents/backlog/adr/challenges/0035-A-alternative.md`, `0035-B-exploit.md`, `0035-C-concurrency.md`.
+
+### Independent challenges — Challenger A (the alternative: A1, A2, D5)
+
+*Bar set: show the race or the history-recompute is not real, or that a table costs more than the
+alternatives. **A could not clear it — the table survives** — but found a better reason for it and two
+missing alternatives.*
+
+| # | Challenge | Ruling |
+|---|---|---|
+| CH-A1 | A1 is killed with the wrong weapon. The decisive fact is that the express decision is **never persisted** (`Order` snapshots four other adjustments and no express field) and `CreatedOn` is a **commit** stamp, so A1 cannot reproduce the past even single-threaded. | **STANDS → AM-1** |
+| CH-A2 | The cheapest real alternative is missing: **two nullable columns on `Order` + a filtered unique index** (A1b). It beats the ledger on every axis the ADR prices. Kill it with `PromoCodeRedemptionRepository.cs:48-53`. | **STANDS → AM-2** |
+| CH-A3 | The `PromoCodeRedemption` archetype is **reserve-after-persist and fail-soft**, not claim-before-act. The ADR gets Mode A for free by mislabelling it, and every objected-to piece of machinery is downstream of the unnamed inversion. Add A13. | **STANDS → AM-3 (+ AM-4)** |
+| CH-A4 | A2's rejection rests on two claims that are false for the steelman; the two facts that kill it (yearly billing interval, churn reset) are absent. | **STANDS → AM-16** |
+| CH-A5 | D5's generality is speculative — none of the other four Plus perks is countable — and "reused unchanged" is false: this is an **order-linked** ledger. | **STANDS → AM-16** |
+| CH-A6 | The handler-dependency bar is checked against the wrong class: `OrderFactory` goes 8 → 10. | **STANDS → AM-9** |
+| CH-A7 | The ledger re-creates a `user → order` link that `Order.AnonymizeCustomerData()` deliberately severs; in-or-out of the GDPR sweep is undecided. | **STANDS (partly) → AM-16 / Consequences** |
+| CH-A8 | §Copy's Fact 1 is refuted at `master`; the guard tests will fail when the affirmative copy lands. | **STANDS → AM-15** |
+| CH-A9 | `UserMembership.cs:46-51` commits the domain to a billing-anchored, once-per-period quota; D2 overrides it silently. | **STANDS → AM-16 / D8** |
+
+### Independent challenges — Challenger B (the reversal D4 and the exploit)
+
+*Bar set: model `FreeCancellationWindowHours` at 24 / 4 / 2 and decide whether the fee schedule bounds
+the farming loop. **"If it does not bound it at 24, D4 falls."** B met the falsification criterion.*
+
+| # | Challenge | Ruling |
+|---|---|---|
+| CH-B1 | The seeded value is **4**, not 24 — the ADR's own `> 4` constraint is already violated, and CH-8's proposed validator would reject the production seed and narrow an advertised perk. | **STANDS → AM-12 (constraint deleted, CH-8 validator rejected)** |
+| CH-B2 | `CancelledBy.Cleaner` and `.System` are **never written**; both sweeps bypass `Order.Cancel`. Two of four release rows are unreachable. | **STANDS → AM-11** |
+| CH-B3 | `hasBeenAccepted` means "payment succeeded" for card orders. Both D4 branches invert. | **STANDS → AM-11** |
+| CH-B4 | The 50% fee is a recorded rate, not collected money — 0 Kč for every cash order. | **STANDS → AM-12** |
+| CH-B5 | CH-4 decided **YES**: the cancel warning is mandatory, must be server-driven, and needs a DTO field. | **STANDS → AM-13** |
+| CH-B6 | The slot picker is client-side and membership-blind; the member learns at the payment step. | **STANDS → AM-16 (D7 render surfaces)** |
+| CH-B7 | Calendar month × the 14-day trial = **4 waivers for 0 Kč**; may be repeatable under `Q-PLUS-01`. | **STANDS → AM-14 / escalation E-1** |
+| CH-B8 | `PastDue`: the ADR freezes one side of a live domain contradiction and calls it "no new rule". | **STANDS (the claim) → AM-16 / escalation E-2** |
+| CH-B9 | Lapse mid-month: unused waivers vanish, unstated in ADR and copy. | **STANDS → AM-16** |
+| CH-B10 | §Copy refuted on all three surfaces; the affirmative half will fail two committed tests. | **STANDS → AM-15** |
+| CH-B11 | `nowUtc` read three times — a member holding credits can be charged by a millisecond. | **STANDS → AM-9** |
+| §1.3 | *"The cancellation-fee schedule does not bound the farming loop at 24, at 4, or at 2 — D4's **defense** falls, D4's **rule** does not."* | **UPHELD in part** — see the Defense; the *bound* is the quota, not the fee. |
+
+### Independent challenges — Challenger C (the seam and the concurrency: D3, D3.2, D6)
+
+*Headline: **four of the five load-bearing mechanisms in D3/D3.2 do not hold as written.** All four
+stand.*
+
+| # | Challenge | Ruling |
+|---|---|---|
+| CH-C1 | The filtered unique index is a **no-op in single-tenant mode**, which is the platform's default — D3's only arbiter does not exist where it runs. | **STANDS → AM-6** |
+| CH-C2 | `COUNT`-of-live gives cardinality, not the smallest free ordinal: after releasing a non-maximal slot, capacity is **permanently** blocked — and the pinning test passes over it. | **STANDS → AM-5** |
+| CH-C3 | `AttachOrderAsync` fires out-of-band against an `Orders` row that does not exist yet → `23503`. | **STANDS → AM-4 (+ escalation E-4)** |
+| CH-C4 | The sweep that bounds the orphan window reads `Orders`, not `MembershipBenefitUsages`. "No new job" is false and the orphan is reclaimed **never**. | **STANDS → AM-7** |
+| CH-C5 | A lost reservation persists a price **higher than the customer consented to**; exhaustion at submit throws `TotalPriceNotMatch`. "Never blocked / no new failure path" is wrong on both counts. | **STANDS → AM-8** |
+| CH-C6 | D6 does not mirror `CancellationPolicyResolver`; the difference is *who calls it*, forcing an unscoped `IOrderPricingCalculator` signature change and a fourth call site (`MaterializeRecurringBookings`). | **STANDS → AM-9** |
+| CH-C7 | The country-anchored `PeriodKey` cannot be computed at 3 of 4 sites — different rules per call site, deterministically wrong for ~2h every month. | **STANDS → AM-10** |
+| CH-C8 | `nowUtc` is not threaded; a slot can be burned on an order carrying no surcharge — the one loss with no release path. | **STANDS → AM-9** |
+| CH-C9 | `Remaining` is defined twice with two meanings, on two client DTOs. | **STANDS → AM-16** |
+| CH-C10 | No global `IsActive` filter; `RETURNING` alias; `GetMyMembership` collaborator count. | **STANDS → AM-16 / §verify 24** |
+
+### The author's own self-review (kept for the record)
 
 | # | Challenge (AUTHOR-RAISED) | Where it bites |
 |---|---|---|
@@ -763,6 +1533,183 @@ Living companion updated in the same change: **`agents/architecture/decisions/me
 | CH-10 | *"Nobody checked whether `MembershipPlan` has live DEV rows, so the `0` default may silently switch off something that is on."* | D2.1 / T-0512 AC6. |
 
 ## Defense
+
+> **Adjudicated by the LEAD (a different instance from the author and from all three challengers).**
+> A challenge stands unless defended or conceded. **REBUT** cites code; **CONCEDE + REVISE** changes
+> the artifact; **ESCALATE** names an owner decision. The author's own self-defense of `CH-1…CH-10` is
+> preserved below the line; where the lead's ruling supersedes it, that is stated.
+
+### Lead's ruling — Challenger A
+
+- **CH-A1 — CONCEDE + REVISE (AM-1).** Verified independently: `Order.cs:179/192/207/215` persist the
+  tier, promo and membership adjustments and there is **no express field**; `OrderFactory.cs:100-102`
+  folds the surcharge into `TotalPrice`; `CleansiaDbContext.cs:71,86` stamps `CreatedOn` at commit.
+  The challenger is right that the draft's ordering invited *"the race is hypothetical, ship the cheap
+  thing"* and forced the author into an argument about deployment topology. **D1 now leads with the
+  persistence fact.** The race is kept and demoted.
+- **CH-A2 — CONCEDE + REVISE (AM-2).** **A1b is added to the Alternatives table.** The challenger is
+  right that the ADR otherwise looks like it compared a table against a bad idea. The killing citation
+  is exact and is a decision the platform already paid for.
+- **CH-A3 — CONCEDE the mislabelling, REBUT the implication, and the implication is the important
+  half.** The archetype **is** reserve-after-persist and fail-soft — `CreateOrder.cs:283→305→315`,
+  `OrderPromoApplier.cs:50-53`, `PromoCodeRedemption.OrderId [Required]`. The header and D3.1 are
+  corrected and **A13 is added**.
+  **But A13 does not collapse the machinery**, and the reason is the sibling challenge: *"post-persist"*
+  in this codebase means "after `orderRepository.Add`", **not** "after the row is in the database"
+  (`UnitOfWorkPipelineBehavior.cs:27-30` commits after the handler returns; `OrderPaymentDispatcher`
+  does not commit — verified). So A13 keeps the orphan class, adds a soft cap, and inherits CH-C3's FK
+  hazard. **The nullable `OrderId` survives; `AttachOrderAsync` as an out-of-band statement does not**
+  (AM-4). The asymmetry the challenger asked for is written down: a promo needs a code an operator
+  issued and carries its own global cap; an express waiver needs nothing but a subscription.
+- **CH-A4 — CONCEDE + REVISE (AM-16).** The withdrawn claims were doing real damage: leaving
+  *"concurrency needs an atomic UPDATE, which works"* in the table while D3 claims the DB-arbiter high
+  ground is exactly the inconsistency a lead should catch. A2's rejection is rewritten on the yearly
+  billing interval, the churn reset, and the `UserMembership`-is-a-Stripe-mirror responsibility
+  argument.
+- **CH-A5 — CONCEDE + REVISE (AM-16).** *"A second metered one is plausible"* is deleted; the
+  discriminator is kept on the honest ground (an int column with one value is nearly free). AC5 is
+  restated as **order-shaped**. `UserMembershipId` stays `[Required]` on present-day support value
+  alone and the billing-anchor justification is dropped.
+- **CH-A6 — CONCEDE, and the fix is bigger than the challenger's (AM-9).** `OrderFactory` at
+  `:22-30` does take eight. Rather than accept 9 or argue that a builder is exempt, the reservation
+  **leaves the factory entirely**: `CreateOrderInput` carries the already-reserved waiver, the factory
+  gains **zero** collaborators, and `CreateOrder.Handler` gains **one**. This also makes §verify #6
+  true by construction and fixes CH-C6's fourth-call-site problem in the same move.
+- **CH-A7 — CONCEDE the omission, RULE the question (Consequences).** `MembershipBenefitUsage` is
+  **out** of `GdprDeletionService`'s sweep, with the reason stated. The challenger's check that FK
+  `Restrict` does not block erasure (the `User` row is anonymized in place) is correct and is why this
+  is a one-sentence ruling rather than a blocker.
+- **CH-A8 / CH-B10 — CONCEDE, §Copy rewritten (AM-15).** See the ruling under Challenger B.
+- **CH-A9 — CONCEDE + REVISE (D8).** `UserMembership.cs:46-51` joins the doc-correction list.
+
+### Lead's ruling — Challenger B
+
+- **§1.3 / CH-B1 / CH-B4 — CONCEDE the defense, UPHOLD the rule (AM-12).** The challenger met the
+  falsification criterion the author set, and the lead accepts it: verified at
+  `BookingPolicy.cs:127-132` that the oops window returns `0m` **after** the acceptance short-circuit,
+  so it fires **only** when acceptance is true — the draft's claim that `!hasBeenAccepted` *"subsumes
+  the oops-window mis-tap"* is backwards. Verified at `CancelOrder.cs:136-145` that money moves on the
+  card-and-paid branch only. Verified the seed at `insert_seed_data.sql:1669`/`:1683`.
+  **But D4's rule survives, on a bound the draft never used: the quota itself.** Because D4 does not
+  release on a customer cancel of an assigned booking, each iteration of the farming loop *spends a
+  credit*, and there are two a month — unconditionally, for cash and card, at every seed value. The
+  fee was decoration; the quota was always the bound. **The `> 4` seeding constraint is deleted and
+  CH-8's validator is REJECTED** — the author recommended making it blocking and the lead declines,
+  because it would reject the shipped seed and narrow the advertised 4-hour free-cancel window to
+  protect an argument now struck.
+- **CH-B2 / CH-B3 — CONCEDE + REVISE (AM-11), and the fix is stronger than the challenger's.**
+  Verified: the only `CancelledBy` writers are `CancelOrder.cs:124` and `AdminCancelOrder.cs:100`;
+  both sweeps append a track without calling `Order.Cancel`. Verified `Confirmed` has **four** writers
+  (`TakeOrder.cs:194`, `HandlePaymentNotification.cs:261`, `ConfirmRecurringOrder.cs:111`,
+  `AdminOverrideOrderStatus.cs:56-64`) and that `TakeOrder` writes its track **conditionally**
+  (`:190-196`) — so a cleaner taking an already-Confirmed order leaves **no status trace at all**.
+  The challenger offered (a) key on assignment or (b) keep the flag and rewrite the prose. **(b) is
+  not available**: the flag is both false-positive and false-negative, so the prose cannot be made
+  true. **Ruling: (a).** `!order.AssignedEmployees.Any()`, already `Include`d at `CancelOrder.cs:62-63`.
+  Expressing the rule on the order's state rather than on `CancelledBy` releases the swept-stale-order
+  case **without modifying either sweep** — which is cheaper than the challenger's proposal to change
+  them.
+- **CH-B5 — CONCEDE + REVISE, and the lead ADOPTS the challenger's decision (AM-13).** Verified that
+  `order.Cancel(...)` executes at `CancelOrder.cs:122-127` and the `FeeRate` response is returned at
+  `:171-176` — after the refund and the loyalty revoke. It is a receipt. **The warning is mandatory,
+  server-driven, and this ADR defines the field** (`ExpressWaiverForfeitedOnCancel`), because a client
+  cannot compute it. This is the one place the ADR was shipping a *silent* charge against a paid
+  subscription, and AM-12 makes it worse than the author knew (the fee is often 0). The author flagged
+  CH-4 for a decision; the decision is **yes**.
+- **CH-B6 — CONCEDE + REVISE (AM-16).** The slot grid is added as a required render surface. The
+  challenger's fix is compliant with D7's own "server-computed, client-rendered" rule and costs no new
+  endpoint.
+- **CH-B7 — ESCALATE (E-1), with a fail-closed holding position (AM-14).** Verified `TrialPeriodDays =
+  14` on both plans, `"trialing" → Active` at `UserMembership.cs:124`, and — decisively — that
+  `UserMembership` carries **no trial marker**, so "no waivers during the trial" costs an additive
+  column. That is why this is escalated **now**, on T-0512's migration wave, rather than after launch.
+  **It does not block the design**: `ExpressUpgradesPerMonth` defaults to `0`, so the perk stays off
+  until the owner answers. The **paying-member** partial-first-month double grant is accepted and
+  named — the owner ruled the calendar boundary and this panel does not re-decide it.
+- **CH-B8 — CONCEDE the claim, ESCALATE the question (E-2).** *"No new rule"* is struck: the ADR is
+  picking a side in a contradiction between `MembershipStatus.cs:18-19` and `UserMembership.cs:84-85`
+  and pinning it with a test. It ships the predicate's answer (consistent with every other benefit)
+  and escalates; **one of the two files changes in T-0512 either way.**
+- **CH-B9 — CONCEDE + REVISE (AM-16).** One sentence in D7, one copy constraint.
+- **CH-B11 — CONCEDE + REVISE (AM-9).** Folded into the single-`nowUtc` ruling. The challenger's minor
+  point about `OrderFactory.cs:152-157` running *after* the price is frozen is moot under AM-10 (the
+  key no longer comes from the order's country at all).
+
+### Lead's ruling — Challenger C
+
+- **CH-C1 — STANDS; CONCEDE + REVISE (AM-6) — and the challenger was half wrong in a way that makes
+  the fix cheaper.** The defect is real: a bare `(TenantId, …)` unique index does not fire with a NULL
+  tenant, and single-tenant mode *is* NULL. **But the option the challenger offered as a one-off is
+  precedented**: `FiscalCounterEntityConfiguration.cs:23-29` already ships
+  `.IsUnique().AreNullsDistinct(false)` on a **tenant-scoped** index, with this ADR's exact reasoning
+  written on it, and `LiveActivityTokenConfiguration.cs:26-28` does the same — both emitted in the
+  committed Initial migration. So the fix is the platform's existing answer, not a novelty, and D3
+  keeps its index-as-backstop shape rather than reintroducing a guard.
+  **The framing is corrected on both sides:** the draft's *"the database is the arbiter; there is no
+  `SELECT`-then-`INSERT` anywhere"* is struck (there *is* a read; it is the non-authoritative fast
+  path, exactly as `PromoCodeService.cs:120-128` documents), and the three layers are named. **New
+  finding for the backlog (E-5):** `UserMembershipEntityConfiguration.cs:100-109` and
+  `LoyaltyTransactionEntityConfiguration.cs:84` assert a false invariant — that this repo does not use
+  `NULLS NOT DISTINCT` — about something it does twice. A confidently-wrong comment is worse than none:
+  it is what sent this challenger looking for a justification the codebase had already made.
+- **CH-C2 — STANDS; CONCEDE + REVISE (AM-5). This is the most important finding of the panel.** The
+  walkthrough is correct and I re-derived it: `COUNT`-of-live is the cardinality of the live set, so
+  after releasing a **non-maximal** ordinal the statement aims at an occupied one and loses to its own
+  index — capacity never returns, while the read path still says "1 left". **D4's release would be a
+  no-op in precisely the cases D4 calls indefensible.** Worse, the author's own pinning test
+  (TC-BENEFIT-SLOTREUSE-0) passes over it. **Ruling: derive the smallest free ordinal** via
+  `generate_series` + `NOT EXISTS` + `ORDER BY … LIMIT 1`, which also makes the `HAVING` guard
+  redundant and therefore deletes it. The test is respecified with the ≥2-reservations / release-the-
+  lower-one shape. The challenger's other two options (drop reuse; retry loop) are rejected — the
+  first makes D4's "release restores capacity" simply false, the second puts a loop on the hot path of
+  a paid booking.
+- **CH-C3 — STANDS; CONCEDE + REVISE (AM-4) + ESCALATE (E-4).** Verified end to end:
+  `OrderFactory.cs:167` only change-tracks; `OrderPaymentDispatcher.cs:30-74` does not commit;
+  `CreateOrder.Handler` returns before `UnitOfWorkPipelineBehavior.cs:27-30` calls `CommitAsync`; the
+  FK is `FK_PromoCodeRedemptions_Orders_OrderId … Restrict` (`Initial.cs:2005-2010`). **The attach must
+  ride the UoW**, which is strictly better than the alternatives: atomic with the order insert, one
+  out-of-band statement instead of two, and CH-2 answered rather than conceded. The challenger's
+  option 2 (move the whole reservation post-commit) is rejected — it is Mode B and reopens the soft
+  cap. **The same hazard in the live promo path is escalated as a separate defect (E-4); this ADR does
+  not bless it.**
+- **CH-C4 — STANDS; CONCEDE + REVISE (AM-7).** Verified `CleanupStalePendingOrders.cs:50-55`: it
+  queries `Orders`, filters `PaymentType == Card`, and calls only order methods. *"No new job"* is
+  false, and the consequence is not a slower reclaim but **no reclaim at all**. The challenger's
+  option (a) — delete the orphan by construction — is not fully available (AM-4 shrinks the window but
+  a failed commit still strands a reservation), so option (b) is taken and fully specified: repository
+  method, partial index, command, cadence.
+- **CH-C5 — STANDS; CONCEDE + REVISE (AM-8).** This is the challenge that most changes the product
+  behaviour. Verified `CreateOrder.cs:159-176`'s exact-equality check and `:226-229`'s three-field
+  response. The silent-upcharge path is a **consent defect on a money path created by this ADR's own
+  Mode-A ordering** — and the draft's TC-BENEFIT-RACE-0 specified it as expected behaviour. Ruling:
+  the invariant *no persisted `TotalPrice` exceeds the approved `command.TotalPrice`*, a dedicated
+  `ExpressWaiverNoLongerAvailable` error, and a re-quote. D7's "never blocked / no new failure path"
+  is narrowed to the case where it is true (exhausted **at quote time**).
+- **CH-C6 — STANDS; CONCEDE + REVISE (AM-9).** All three sub-claims verified, including the fourth
+  call site. The lead adopts the challenger's own recommendation (pass the resolved waiver into the
+  factory) because it satisfies CH-A6 in the same move. The mirror table is retitled: this **resembles**
+  `CancellationPolicyResolver` in body and differs in call-site topology — and "mirrors X exactly" is
+  what makes a reviewer stop checking.
+- **CH-C7 — STANDS; CONCEDE + REVISE (AM-10).** The table of four call sites is correct and decisive.
+  The lead takes the challenger's option (a) — a single platform-default anchor — because it is the
+  only one that keeps the `CountryConfiguration` seam **and** produces one key everywhere. Note this
+  *retires* the author's D2 argument #1/#3 as *reasons for the order's country*; A7 and A8 remain
+  rejected on their own merits, unchanged. The `ResolveTimeZone` accessibility point is folded into
+  T-0512's scope as a real refactor.
+- **CH-C8 — STANDS; CONCEDE + REVISE (AM-9).** Small probability, permanent effect, and — as the
+  challenger says — the **one** loss in this design with no release path at all. Two encodings of the
+  express window is also a duplication `BookingPolicy` exists to prevent. Both halves adopted.
+- **CH-C9 — STANDS; CONCEDE + REVISE (AM-16).** Two definitions of `Remaining` shipping on two DTOs is
+  exactly the kind of ambiguity `deliberation.md` says does not survive. One definition (**before**),
+  and `PeriodKey` does not cross the DTO boundary.
+- **CH-C10 — STANDS (all four); folded.** The missing `IsActive` filter becomes §verify #24 (both
+  Challenger A and C found it independently, which is why it is a rule and not a note); the `RETURNING`
+  alias is folded into AM-5; the `GetMyMembership` collaborator count is answered by AM-9's
+  `cleaningUtc: null` overload rather than by adding a second dependency; and the
+  integration-test-against-real-PostgreSQL point is adopted as a **precondition of T-0512 being done**
+  (§verify #22–23) rather than as an ordinary AC.
+
+### The author's self-defense (preserved; superseded where noted)
 
 - **CH-1 — REBUT, on evidence, not preference.** Defect (1) is not hypothetical: it is the *same* race
   the platform **already shipped, hit, and fixed** for promo codes — `PromoCodeRedemptionRepository.cs:37-46`
@@ -831,68 +1778,141 @@ Living companion updated in the same change: **`agents/architecture/decisions/me
   mode is "the perk stays off", not "a perk turns on by accident". **T-0512 AC6 must confirm the DEV row
   count rather than assume it** — recorded in §What this panel did not examine.
 
+**Lead's supersession notes on the author's self-defense** (read these; several of the entries above
+are no longer the ADR's position):
+
+| Author entry | Status after adjudication |
+|---|---|
+| **CH-1** | **Upheld, with a better argument substituted** (AM-1). The author's fallback to *"Azure DEV is deployed and scales"* is withdrawn — it was an argument about topology, not data. |
+| **CH-2** | **SUPERSEDED.** The author conceded "two out-of-band statements" as a cost. It was not a cost to accept; the second one would have thrown `23503` (CH-C3). AM-4 removes it. **The concession was the wrong move and a lead should have caught it — CH-2 was pointing at a real bug and got answered as a matter of taste.** |
+| **CH-3** | **Upheld — but it was defending a sweep that did not exist** (CH-C4). The compensation-vs-sweep distinction is correct *and* AM-7 now supplies the sweep it assumed. |
+| **CH-4** | **SUPERSEDED → decided YES** (AM-13). The author's rebuttal rested on `CancelOrder.cs:171-176` disclosing the fee "before/with the cancellation". It is returned **after** the mutation. The author flagged this for the challenger round; the challenger decided it and the lead adopts. |
+| **CH-5** | **MOOT.** The order's-country anchor is struck entirely (AM-10), so the cross-border objection no longer has a target. |
+| **CH-6** | **SUPERSEDED.** The author defended `COUNT`-of-live as a *required* deviation. It is a defect (AM-5). The author was right that `MAX+1` cannot restore capacity and wrong about the cure — and the test written to pin the deviation would have passed over it. |
+| **CH-7** | Upheld. `ExpressUpgradesPerMonth` keeps its name. |
+| **CH-8** | **SUPERSEDED → the recommended blocking amendment is REJECTED** (AM-12). The author asked the lead to make the validator blocking; the seeded value is 4 and the validator would break a shipped, advertised perk. The constraint is deleted instead. |
+| **CH-9** | Upheld on count — and the count is now **five** fields across **three** surfaces (AM-13 adds one). |
+| **CH-10** | Upheld and unchanged: the DEV row count is still unqueried; `0` is still fail-closed. AM-14 now leans on that fail-closed default as the holding position for E-1. |
+
 ## Verdict
 
-**NOT REACHED. Status stays `proposed`.**
+**CONSENSUS REACHED. Status: `accepted`, with sixteen binding amendments folded into the decision
+sections above. Zero blocking challenges remain.**
 
-`agents/process/deliberation.md` step 5 requires a **lead** to adjudicate challenges raised by
-**independent challengers**. Only the author has run. Per the ticket's own AC9 and the ADR record
-discipline, this artifact cannot be `accepted` on an author's self-review — that is exactly the
-"individual judgment carried straight into code" failure the panel exists to prevent.
+Author + three independent challengers + lead, all different instances. **Thirty independent
+challenges were raised and every one of them stands** — none was rebutted on evidence. That is an
+unusual result and it is the correct one to record: the *shape* of this decision (a reserved-slot
+ledger row, keyed by a stored period key, claimed before the price is waived, released when the
+customer did not consume the booking) survived every attack, while **most of the mechanisms the draft
+chose to implement that shape did not.** The panel earned its cost here: four of the five load-bearing
+mechanisms in D3/D3.2 would have shipped broken, and two of them (AM-5, AM-8) would have shipped
+behind tests that passed.
 
-**What must happen before `accepted`:**
+### What survived unchanged (the decision)
 
-1. **2–3 challenger instances**, each attacking and each recording what they checked (silence is not
-   assent). Suggested split so they do not collide:
-   - **Challenger A — the alternative.** Attack A1 (derive from `Order`) and A2 (counter column). The
-     bar: show the race or the history-recompute is *not* real, or that its cost is lower than a table.
-   - **Challenger B — the reversal and the exploit.** Attack D4's line. Model a Plus member with
-     `FreeCancellationWindowHours` seeded at 24, at 4, and at 2, and at each value decide whether the
-     fee schedule actually bounds the farming loop. **If it does not bound it at 24, D4 falls.**
-   - **Challenger C — the seam and the concurrency.** Attack D3/D3.2 (the two out-of-band statements,
-     the orphan window, the `COUNT` vs `MAX` deviation) and D6 (whether the resolver really mirrors
-     `CancellationPolicyResolver` or only claims to). Verify by reading
-     `PromoCodeRedemptionRepository.cs` and `CancellationPolicyResolver.cs` side by side.
-2. **The author defends** each challenge in writing (rebut with evidence / concede + revise /
-   escalate).
-3. **A lead adjudicates.** Two points are pre-flagged as candidates for a **blocking amendment** rather
-   than a defence:
-   - **CH-8** — add a validator so `FreeCancellationWindowHours > StandardLeadTimeHours` is enforced,
-     not commented. (Author recommends: **make this blocking**.)
-   - **CH-4** — decide whether the cancel confirmation must warn "this will use up your free express
-     booking" (a T-0514 AC, but it is this ADR's rule that creates the need).
-4. **On acceptance, in the same change:** the `patterns-backend.md` section above is pasted in, the two
-   role cards drop their "proposed" banner, and
-   `agents/architecture/decisions/membership-benefits.md` flips from "tracking a proposed ADR" to
-   "current shape".
+- **A ledger row, not a derived count and not a counter** (D1, D5) — A1, A1b, A2 all rejected, now on
+  better evidence.
+- **Mode A, claim-before-act** (D3.1) — now argued rather than inherited (AM-3), with A13 recorded.
+- **A stored `PeriodKey`** (D2) — the anchor changed, the shape did not.
+- **The quota lives on `MembershipPlan`, fail-closed at `0`, "unlimited" not expressible** (D2.1).
+- **A pure resolver; consumption exactly once at persist** (D6) — the seam's *shape*; its topology was
+  rescoped.
+- **Release iff the customer did not consume the booking; the A5 supply attack rejected** (D4) — the
+  *rule*; its predicate and its stated bound were both replaced.
+- **`ITenantEntity` scoping, and the rejection of `IIdempotencyGuard`/`ProcessedMessage`** (D3.1) —
+  explicitly found sound by Challenger C, *"not convenient"*.
 
-**Not blocking acceptance:** the owner's confirmation of the timezone anchor (D2). Both candidate
-answers use the same stored shape, so the design is stable either way.
+### The amendments, indexed
+
+| # | What changed | From |
+|---|---|---|
+| **AM-1** | D1 rests on "the express decision is never persisted + `CreatedOn` is a commit stamp", not on the race | CH-A1 |
+| **AM-2** | **A1b added** (two nullable columns on `Order`) and killed with `PromoCodeRedemptionRepository.cs:48-53` | CH-A2 |
+| **AM-3** | The archetype is relabelled **reserve-after-persist / fail-soft**; **A13 added**; the hard-cap asymmetry argued | CH-A3 |
+| **AM-4** | **The order-attach rides the UoW** as a tracked update — the draft's out-of-band version would raise `23503`. One out-of-band statement, not two | CH-C3 |
+| **AM-5** | **The ordinal is the SMALLEST FREE one** (`generate_series` + `NOT EXISTS` + `LIMIT 1`); `COUNT`-of-live struck; `HAVING` deleted; SLOTREUSE test respecified | CH-C2 |
+| **AM-6** | The unique index is **`NULLS NOT DISTINCT`** (precedented: `FiscalCounterEntityConfiguration.cs:23-29`); the "database is the sole arbiter" claim struck; three layers named | CH-C1 |
+| **AM-7** | **"No new job" struck.** A real orphan reclaim: repository method + partial index + command on the existing hourly schedule | CH-C4 |
+| **AM-8** | **No persisted price may exceed the approved `command.TotalPrice`**; new `ExpressWaiverNoLongerAvailable`; RACE-0 respecified | CH-C5 |
+| **AM-9** | One `nowUtc`; one window encoding; the waiver is passed **into** `OrderFactory` (0 new collaborators); `IOrderPricingCalculator` signature change scoped; the 4th call site ruled | CH-C6, CH-C8, CH-B11, CH-A6 |
+| **AM-10** | The period key is **order-independent**, built by one `IBenefitPeriodKeyFactory` from the platform-default `CountryConfiguration` | CH-C7 |
+| **AM-11** | D4 releases on **`!order.AssignedEmployees.Any()`**, not `hasBeenAccepted`; `CancelledBy.Cleaner`/`.System` rows struck as unreachable | CH-B2, CH-B3 |
+| **AM-12** | **The bound is the quota, not the 50% fee.** The `FreeCancellationWindowHours > 4` seeding constraint deleted; **CH-8's validator rejected** | CH-B1, CH-B4, §1.3 |
+| **AM-13** | **The cancel confirmation MUST warn.** New server field `ExpressWaiverForfeitedOnCancel` — a third `nswag-regen` surface | CH-B5 (deciding CH-4) |
+| **AM-14** | The trial × calendar-month double grant named; **escalated (E-1)** with the fail-closed `0` default as the holding position | CH-B7 |
+| **AM-15** | **§Copy rewritten against `master`.** The corrective wave already shipped; the two mobile regression guards are named as deliberate tripwires and **T-0493 owns retiring them, with four artifacts moving together** | CH-A8, CH-B10 |
+| **AM-16** | Twelve folded items: `Remaining` defined once; `PeriodKey` off the DTOs; explicit `IsActive` filtering; A2's rejection rewritten; D5's generality narrowed to *order-shaped*; GDPR sweep ruled; `PastDue` claim struck; lapse stated; the slot grid added; `UserMembershipId` re-justified; `UserMembership.cs:46-51` doc fix; `UserMembership` doc/enum contradiction escalated | CH-A4/A5/A7/A9, CH-B6/B8/B9, CH-C9/C10 |
+
+### Preconditions on the consumer tickets (gates, not ADR blockers)
+
+1. **T-0512 is not done until §verify #22 and #23 are green against a real PostgreSQL** — the FK/attach
+   batch ordering, and the reservation statement itself. Three of the four concurrency defects this
+   panel found are only visible against a real database, and the statement is *adapted* from the
+   archetype, not copied. If the batch ordering does not hold, use the ADR-0002 post-commit seam;
+   **do not ship the out-of-band attach.**
+2. **T-0512 must confirm the DEV `MembershipPlan` row count** rather than assume it (CH-10, still open).
+3. **T-0493 owns the four copy artifacts** in one PR (AM-15). A PR that lands the affirmative string
+   without inverting both guard tests and both doc comments is incomplete and will go red in CI.
+
+### Escalations to the owner (the PM carries these into `questions/open.md` — this panel must not edit it)
+
+| # | Question | Blocks | Why now |
+|---|---|---|---|
+| **E-1** | **Does the 14-day free trial grant express waivers, or do waivers begin at the first successful payment?** A signup on the 28th draws **4 waivers for 0 Kč** and may cancel before conversion. Linked to `Q-PLUS-01` (unlimited-trial loop). | Blocks the **seed value**, not the design (`ExpressUpgradesPerMonth` stays `0`). | The platform cannot distinguish trialing from paying — `UserMembership` has no trial marker. "No" costs an additive column, cheap on T-0512's wave and expensive after launch. |
+| **E-2** | **Do Plus benefits continue during Stripe dunning (`PastDue`)?** `MembershipStatus.cs:18-19` says yes; `UserMembership.cs:84-85` says no. The ADR ships "no". | Does not block. | Either way **one of the two files changes in T-0512**; shipping a test that pins the predicate while the enum documents the opposite is worse than either answer. |
+| **E-3** | **Mid-month plan swap** — `UserMembership.ApplyPlanSwap` (`:180-197`) changes the quota while the `PeriodKey` stays. Upgrade 2→4 is intuitive; downgrade 4→2 with 3 consumed is not. | Does not block. | Deliberately not decided here; the first admin plan-swap on a metered plan will force it. |
+| **E-4** | **Defect ticket (not an owner question): the live promo path has the same FK-ordering hazard AM-4 closes.** `OrderPromoApplier.ApplyAsync` (`CreateOrder.cs:315`) inserts a `PromoCodeRedemptions` row under `FK_PromoCodeRedemptions_Orders_OrderId` (`Initial.cs:2005-2010`) **before** the order row is committed; its only tests mock the repository. | Does not block this ADR. | ADR-0035 must not be read as blessing it. |
+| **E-5** | **Catalog/consistency ticket: two entity configs assert a false invariant.** `UserMembershipEntityConfiguration.cs:100-109` and `LoyaltyTransactionEntityConfiguration.cs:84` claim the repo does not use `NULLS NOT DISTINCT`; it does, twice (`FiscalCounterEntityConfiguration.cs:23-29`, `LiveActivityTokenConfiguration.cs:26-28`). | Does not block. | A confidently-wrong comment stops reviewers checking — it is what sent Challenger C hunting for a justification the codebase had already made. Correct both to the *backstop vs. sole-arbiter* rule. |
+| **E-6** | **Known, already-being-ticketed:** the cancellation **fee** keys on `hasBeenAccepted`, which the Stripe webhook writes — so a customer who cancels an order **no cleaner ever took** can be charged 50%. AM-11 deliberately does **not** harmonize the release rule to it. | Does not block. | Recorded so the fee fix does not "align" the release rule back onto the broken flag. |
+
+### Landing checklist (in the same change as acceptance)
+
+1. `agents/knowledge/patterns-backend.md` — paste the (amended) *"Per-user metered entitlements"*
+   section above.
+2. `agents/knowledge/consistency.md` — add the **backstop vs. sole-arbiter** unique-index rule (AM-6)
+   and the **explicit `IsActive` filtering** rule (§verify #24).
+3. `agents/knowledge/roles/membership-benefit-usage.md` and `.../express-waiver-resolver.md` — drop the
+   "proposed" banner; add `IExpressWaiverConsumer` and `IBenefitPeriodKeyFactory` cards (AM-9, AM-10).
+4. `agents/architecture/decisions/membership-benefits.md` — flip from "tracking a proposed ADR" to
+   "current shape", with the amended mechanisms. **Done as part of this adjudication.**
+
+**Not blocking acceptance:** the owner's confirmation of the period-key time zone (D2). Every candidate
+answer uses the same stored shape and the same single key-builder, so the design is stable either way.
 
 ---
 
 ## What this panel did NOT examine (T-0511 AC11 · Gate 0.5 leg 3)
 
-**Every claim in this ADR is a READ of source at `master`. Nothing was run** — no build, no test, no
-query, no migration. Specifically:
+**Every claim in this ADR — author, three challengers and lead — is a READ of source at `master`.
+Nothing was run** — no build, no test, no query, no migration. Specifically:
 
-- **Not run:** `dotnet build`, `dotnet test`, any EF command, any SQL. The reservation SQL sketch in D3
-  is **unverified against PostgreSQL** — in particular the `COUNT(*) FILTER (…)` + `HAVING` +
-  `ON CONFLICT DO NOTHING` + `RETURNING` combination is *adapted* from a statement that is known to work
+- **Not run:** `dotnet build`, `dotnet test`, any EF command, any SQL. **The amended reservation
+  statement (AM-5) is unverified against PostgreSQL**, as was the draft's. The
+  `generate_series` + `NOT EXISTS` + `ORDER BY … LIMIT 1` + `ON CONFLICT DO NOTHING` +
+  `RETURNING … AS "Value"` combination is *adapted* from a statement known to work
   (`PromoCodeRedemptionRepository.cs:60-74`, which uses `MAX(…)+1`), **not the statement that works**.
-  **T-0512 must prove it against a real PostgreSQL** (an integration test, not a unit test) before the
-  entity is considered done. If it does not compose, D3's *guarantee* still holds — the fallback is an
-  advisory-lock or a `SELECT … FOR UPDATE` on a per-(user, period) row — but the statement changes.
-- **Not queried:** whether DEV has live `MembershipPlan` rows (CH-10), and what
-  `FreeCancellationWindowHours` any of them carry (CH-8's constraint). **Both are assumptions.**
+  Likewise **AM-4's assumption that EF orders the `Orders` INSERT before the dependent usage UPDATE
+  inside one `SaveChangesAsync` is reasoned, not observed.** Both are §verify #22/#23 and both are
+  **preconditions of T-0512 being done**. If the statement does not compose, the guarantee still holds
+  — the fallback is an advisory lock or `SELECT … FOR UPDATE` per `(user, period)`. If the batch
+  ordering does not hold, the fallback is the ADR-0002 post-commit seam. **Neither fallback is the
+  draft's out-of-band attach.**
+- **Not queried:** whether DEV has live `MembershipPlan` rows (CH-10). **Still an assumption.** (The
+  *seeded* values are no longer an assumption — `FreeCancellationWindowHours = 4` and
+  `TrialPeriodDays = 14` were verified in `insert_seed_data.sql`.)
 - **Not examined:** the admin membership-plan UI (web) — D2.1 adds a field to a form nobody on this
-  panel opened. The three clients' membership screens beyond the string files. The Stripe webhook
-  reconciliation path (`UpdateFromStripeWebhook`, `ApplyPlanSwap`) — a **mid-month plan swap**
-  (`UserMembership.ApplyPlanSwap`, `:180-197`) changes `MembershipPlanId` and therefore the quota,
-  while the period key stays the same. **This ADR does not decide what happens to already-consumed
-  slots on a mid-month upgrade/downgrade.** That is a real gap and a good target for Challenger A.
+  panel opened. The iOS booking wizard's slot picker (web + Android were verified for AM-16; iOS was
+  not). Whether any cleaner-facing cancel/no-show endpoint exists outside `src/**/*.cs` that could
+  write `CancelledBy.Cleaner` (AM-11 names this as an open gap rather than asserting there is none).
+  The Stripe webhook reconciliation path (`UpdateFromStripeWebhook`, `ApplyPlanSwap`) — a **mid-month
+  plan swap** (`:180-197`) changes `MembershipPlanId` and therefore the quota while the period key
+  stays the same. **This ADR does not decide what happens to already-consumed slots on a mid-month
+  upgrade/downgrade** — escalated as **E-3**, and the one substantive gap all three challengers left
+  unattacked.
 - **Not decided (deliberately, out of scope):** rollover (`Q-PLUS-02(2)` — default "no", and the shape
   makes it structural), an admin view of usage, the other four Plus perks, and `Q-PLUS-03`.
-- **Read but not deeply verified:** the iOS/Android string files were read for the express keys only;
-  the claim "all five locales say *one*" is based on the five `membership_perk_express_desc` values
-  found by grep, not on a locale-by-locale rendering check.
+- **Withdrawn as false:** the draft's *"all five locales say **one**"* claim. Two challengers
+  independently established that **no `membership_perk_express*` key exists in any locale on either
+  mobile client**, and that the absence is pinned by committed tests. §Copy is rewritten (AM-15). The
+  §Copy citations in the draft (`values/strings.xml:844`, `Localizable.xcstrings:14121`,
+  `cleansia.app en.json:1095`) were wrong and are removed.

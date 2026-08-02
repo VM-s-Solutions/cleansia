@@ -840,11 +840,11 @@
     <string name="membership_perk_cancellation_desc">Cancel up to 4 hours before your cleaning, no fees.</string>
     <string name="membership_perk_discount_title" formatted="false">5% member discount</string>
     <string name="membership_perk_discount_desc" formatted="false">Off every cleaning. Combined with your loyalty tier it is capped at 12%.</string>
-    <string name="membership_perk_express_title">Free express upgrade</string>
-    <string name="membership_perk_express_desc">One free same-day booking per month, no surcharge.</string>
 
-    <!-- Perk pills on the active management card. No express pill: nothing in pricing reads
-         AllowsExpressUpgrade, so a member pays the standard express surcharge. -->
+    <!-- No express perk anywhere — not on the subscribe screen, the success screen or the
+         management pills. Nothing in pricing reads AllowsExpressUpgrade, so a member pays the
+         standard express surcharge, and BookingPolicy's express window is a 2-4h lead time rather
+         than "same day". Restore this perk only together with the code that waives the surcharge. -->
     <string name="membership_perk_pill_discount">%1$d%% off</string>
     <string name="membership_perk_pill_cancellation">%1$dh free cancel</string>
     <string name="membership_perk_pill_recurring">Recurring</string>

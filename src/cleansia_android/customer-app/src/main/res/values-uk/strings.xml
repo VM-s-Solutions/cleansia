@@ -825,8 +825,6 @@
     <string name="membership_perk_cancellation_desc">Скасуйте за 4 години до прибирання без комісій.</string>
     <string name="membership_perk_discount_title" formatted="false">5% знижка для учасників</string>
     <string name="membership_perk_discount_desc" formatted="false">На кожне прибирання. У поєднанні з рівнем лояльності обмежена 12%.</string>
-    <string name="membership_perk_express_title">Безкоштовне експрес-оновлення</string>
-    <string name="membership_perk_express_desc">Одне безкоштовне бронювання у той самий день щомісяця, без надбавки.</string>
 
     <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">знижка %1$d%%</string>

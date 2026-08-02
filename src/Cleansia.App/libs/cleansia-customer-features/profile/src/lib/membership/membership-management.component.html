@@ -29,9 +29,6 @@
           @if (m.freeCancellationWindowHours) {
             <li>{{ 'pages.membership.perk_cancel_window' | translate: { hours: m.freeCancellationWindowHours } }}</li>
           }
-          @if (m.allowsExpressUpgrade) {
-            <li>{{ 'pages.membership.perk_express' | translate }}</li>
-          }
         </ul>
         @if (showSwitchCta(); as showSwitch) {
           @let yp = yearlyPlan()!;

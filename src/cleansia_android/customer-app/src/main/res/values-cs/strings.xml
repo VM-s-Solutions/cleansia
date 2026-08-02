@@ -828,8 +828,6 @@
     <string name="membership_perk_cancellation_desc">Zrušte až 4 hodiny před úklidem bez poplatků.</string>
     <string name="membership_perk_discount_title" formatted="false">5% členská sleva</string>
     <string name="membership_perk_discount_desc" formatted="false">Z každého úklidu. V kombinaci s věrnostním programem je omezena na 12%.</string>
-    <string name="membership_perk_express_title">Expresní upgrade zdarma</string>
-    <string name="membership_perk_express_desc">Jedna bezplatná objednávka v den objednání měsíčně, bez příplatku.</string>
 
     <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">sleva %1$d %%</string>

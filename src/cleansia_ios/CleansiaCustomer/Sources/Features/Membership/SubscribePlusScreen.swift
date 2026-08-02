@@ -310,7 +310,6 @@ private struct PerksSection: View {
                 desc: L10n.Membership.perkFavoriteCleanerDesc
             )
             PerkTile(icon: "repeat", title: L10n.Membership.perkRecurringTitle, desc: L10n.Membership.perkRecurringDesc)
-            PerkTile(icon: "bolt", title: L10n.Membership.perkExpressTitle, desc: L10n.Membership.perkExpressDesc)
         }
         .padding(.horizontal, Spacing.ml)
     }

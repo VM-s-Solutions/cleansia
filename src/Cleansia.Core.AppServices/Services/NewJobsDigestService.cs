@@ -207,14 +207,27 @@ public class NewJobsDigestService(
     /// end) means a mid-sweep crash won't re-notify already-handled
     /// cleaners. Uses sweep-start (not now()) so orders that became
     /// available DURING the sweep are picked up by the next run.
+    ///
+    /// Reads tenant-IGNORING for the same reason the candidate query does — the
+    /// timer runs with no tenant context, so a tenant-scoped read resolves no
+    /// tenanted cleaner and their watermark could never advance, re-notifying
+    /// them about the same jobs every sweep. The entity stays change-tracked,
+    /// so the stamp still commits together with the feed + outbox rows.
     /// </summary>
     private async Task StampWatermarkAsync(
         string employeeId,
         DateTimeOffset stamp,
         CancellationToken cancellationToken)
     {
-        var employee = await employeeRepository.GetByIdAsync(employeeId, cancellationToken);
-        if (employee is null) return;
+        var employee = await employeeRepository.GetByIdIgnoringTenantAsync(employeeId, cancellationToken);
+        if (employee is null)
+        {
+            logger.LogWarning(
+                "NewJobsDigest: cleaner {EmployeeId} disappeared between the sweep read and the watermark stamp; watermark not advanced",
+                employeeId);
+            return;
+        }
+
         employee.MarkNewJobsDigestSent(stamp);
         await unitOfWork.CommitAsync(cancellationToken);
     }

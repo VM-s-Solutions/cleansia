@@ -201,6 +201,22 @@ the JWT, so the read finds the caller's own null-stamped rows without widening a
 the refresh-token revoke/rotate reads `RefreshTokenRepository.GetByTokenHashAsync` /
 `GetActiveByUserIdAsync` / `RevokeChainAsync` (T-0236).
 
+**The mirror case: a tenant-ignoring sweep whose WRITE-BACK is tenant-scoped.** A background job
+(timer/Function/webhook) runs with **no** tenant claim, so it deliberately selects across tenants with
+`GetQueryableIgnoringTenant()` — and then loads the row it is about to mutate through a tenant-**scoped**
+`GetByIdAsync`, which narrows to `TenantId == null` and resolves **nothing** for a tenanted row. The
+guard reads `if (x is null) return;`, so the job's *effect* still happens and only its *bookkeeping*
+silently doesn't. **A sweep must be tenant-ignoring on BOTH sides of the loop, not just the selection**
+— audit the write-back of every `GetQueryableIgnoringTenant()` sweep, and the pattern is invisible in
+single-tenant mode, so **the pinning test must seed a non-null `TenantId`** (a fixture wired
+`tenantId: null` proves nothing here). References: `NewJobsDigestService.StampWatermarkAsync` →
+`GetByIdIgnoringTenantAsync`, which left the watermark frozen and re-notified tenanted cleaners on every
+sweep, forever (T-0529); `EmployeeRepository.GetByUserEmailIgnoringTenantAsync` on the token-minting
+paths (T-0361). Both keep the entity **change-tracked** — `IgnoreQueryFilters()` on the tracked set, never
+`ExecuteUpdateAsync`, which would commit outside the caller's unit of work and break the job's atomicity.
+Where the mutation creates **child** rows, prefer the `SetTenantOverride`/clear-per-iteration shape
+(`MaterializeRecurringBookings`) so the children inherit the right tenant.
+
 ## S9 — Migration & DTO-contract safety
 
 - Add **nullable** columns freely. **Non-nullable** columns need a default or a backfill.

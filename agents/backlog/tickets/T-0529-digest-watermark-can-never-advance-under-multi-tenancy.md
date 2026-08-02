@@ -137,6 +137,67 @@ is delegated to the reviewer.
 - 2026-08-02 — draft (created by pm from the challenger round). Passes DoR on merit; **held out of `ready`
   only by the shared-file lane with T-0528** — sequence T-0529 first (it is `S` and touches five lines),
   then T-0528.
+- 2026-08-02 — **implemented (backend)**. Diff is confined to `StampWatermarkAsync` — the sweep body, the
+  status-set constant and the `:49-53` comment were left untouched for T-0530/T-0528.
+  - **Chose the ignore-filter shape, not the `SetTenantOverride` precedent** (the ticket delegates this).
+    Three reasons: (1) the stamp creates no child rows, so the override's stated purpose in
+    `IEmployeeRepository:22-28` ("so child rows inherit the right tenant") does not apply — the feed +
+    outbox rows are created earlier by `NotificationProducer`, which stamps `tenantId` **explicitly**
+    (`NotificationProducer.cs:34,58`), and `CleansiaDbContext.CommitAsync:89` only auto-stamps when
+    `TenantId` is empty, so an override would change nothing it touches; (2) `SetTenantOverride` mutates
+    scoped provider state inside a loop that iterates **many tenants** — `MaterializeRecurringBookings`
+    can do it because it clears per iteration, and adding that lifecycle here is more moving parts than
+    the defect warrants; (3) the read is by primary key on an id the sweep selected seconds earlier, so it
+    cannot widen a result set. **AC3 holds:** `GetQueryableIgnoringTenant()` is
+    `GetDbSet().IgnoreQueryFilters()` — change-**tracked**, no `AsNoTracking`, no `ExecuteUpdateAsync` —
+    so the watermark still rides the same `CommitAsync` as the feed + outbox rows. **AC6 holds:** the new
+    call drops the three `Include`s (`User`, `Address`, `Address.Country`) that `EmployeeRepository`'s
+    `GetByIdAsync` override carries.
+  - **AC4 — warning added.** After the fix a null here means the row vanished between the sweep's read and
+    the stamp; it is logged with the employee id (an internal identifier, not PII — same shape as the
+    existing per-cleaner warning at `:190`). Worth keeping precisely because the silent `return` is what
+    made a permanent re-notification loop invisible.
+  - **AC1/AC2 — new test `src/Cleansia.Tests/Services/NewJobsDigestTenantWatermarkTests.cs`**, a
+    `[Theory]` over `tenantId: null` and `tenantId: "tenant-digest-1"`. Real `CleansiaDbContext` over
+    SQLite, real `EmployeeRepository`, real unit of work (the context itself), seeded through a
+    tenant-carrying context so `CommitAsync` stamps `TenantId` the way a migrated tenanted cleaner looks;
+    the sweep then runs on a **null-tenant** context, which is what the timer
+    (`SendNewJobsDigestTimerHandler`) actually gives it. Asserts the watermark **persisted**, then that a
+    second sweep enqueues nothing. First test in this area that does not wire `tenantId: null`.
+  - **Mutation-proved.** Reverting only the load to `GetByIdAsync` and re-running:
+    `Failed: 1, Passed: 1` — the tenanted case fails on a **null** `LastNewJobsDigestAt` (watermark never
+    advanced), the `null`-tenant case still passes. Restored → `Failed: 0, Passed: 2`. That asymmetry is
+    the evidence for AC2 as well: the same test body is byte-for-byte unaffected in single-tenant mode.
+  - **AC5 walk — every repo call in `NewJobsDigestService`:** `employeeRepository
+    .GetQueryableIgnoringTenant():63` ✓ · `orderRepository.GetQueryableIgnoringTenant():98` ✓ ·
+    **`orderRepository.HasOverlappingOrderAsync():137` ✗ tenant-SCOPED** (`OrderRepository.cs:281`
+    `GetDbSet()`) — **confirmed, not fixed here** · `preferencesRepository
+    .GetQueryableIgnoringTenant():156` ✓ · `employeeRepository.GetByIdIgnoringTenantAsync():216` ✓ (this
+    fix). Transitively, `NotificationProducer` → `UserNotificationRepository
+    .GetUnreadByUserAndEventAsync` is already tenant-ignoring **and documented as such**
+    (`UserNotificationRepository.cs:12-15`), so the digest still collapses onto the cleaner's single
+    unread feed row under a tenant.
+  - **PM: `HasOverlappingOrderAsync` needs its own ticket — it does not have one.** T-0401 (the
+    status-set fix on the same method) is `done` and never touched tenancy; the only other mentions are
+    inside T-0528/T-0529 and `adr/challenges/0036-C-digest.md`. Under a tenant it returns `false` for
+    every cleaner, so the digest would advertise double-booked jobs — and the same method is the booking
+    write gate, so the blast radius is wider than the digest. Please file it against ADR-0028's lane.
+  - **Verification:** `dotnet test src/Cleansia.Tests` → **2466 passed / 4 failed / 2470 total**. All 4
+    failures are in `CancelOrderStandardTierFeeTests` + `CancellationAcceptanceSignalTests` (cancellation
+    fee tiers), which belong to a **concurrent sibling lane** editing `BookingPolicy.cs` / `CancelOrder.cs`
+    in the same working tree — untouched and **not reverted** per `shared-file-lanes.md`. Excluding those
+    two classes: **2457 passed / 0 failed**.
+  - **No MANUAL_STEPs**: no schema change (no ef-migration), no DTO/endpoint shape change (no
+    nswag-regen), no new `BusinessErrorMessage` key.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
+
+**Catalog harvest (backend, 2026-08-02).** Added the mirror of S8's existing "anonymous-write /
+authenticated-read" trap to `agents/knowledge/security-rules.md` §S8: *a tenant-ignoring sweep whose
+write-back is tenant-scoped*. It states the rule (both sides of the loop, not just the selection), why it
+is invisible (the `if (x is null) return;` guard drops only the bookkeeping, never the effect), the
+testing requirement (the fixture must seed a non-null `TenantId`), and the two in-repo references
+(T-0529, T-0361) plus when to prefer `SetTenantOverride` instead (the mutation creates child rows). No
+existing rule was redefined — this extends S8 with the opposite polarity, which the T-0361 precedent did
+not cover and which is why this defect reached `master`.

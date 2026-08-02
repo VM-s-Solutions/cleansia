@@ -36,6 +36,23 @@ struct CreateRecurringInput: Equatable {
     let startsOn: Date
 }
 
+/// `UpdateRecurringBooking` replaces every field it is sent, `EndsOn` included, so an edit carries the
+/// template's existing end date forward rather than letting a nil clear it.
+struct UpdateRecurringInput: Equatable {
+    let templateId: String
+    let frequency: Int
+    let dayOfWeek: Int
+    let timeOfDay: String
+    let rooms: Int
+    let bathrooms: Int
+    let savedAddressId: String
+    let selectedServiceIds: [String]
+    let selectedPackageIds: [String]
+    let paymentType: Int
+    let startsOn: Date
+    let endsOn: Date?
+}
+
 struct RecurringSavedAddress: Equatable, Identifiable {
     let id: String
     let label: String?

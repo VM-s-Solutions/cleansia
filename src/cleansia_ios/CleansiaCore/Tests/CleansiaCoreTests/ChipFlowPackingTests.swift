@@ -1,5 +1,5 @@
 import XCTest
-@testable import CleansiaPartner
+@testable import CleansiaCore
 
 final class ChipFlowPackingTests: XCTestCase {
     private func rows(_ sizes: [CGSize], spacing: CGFloat = 8, maxWidth: CGFloat) -> [ChipFlowPacking.Row] {

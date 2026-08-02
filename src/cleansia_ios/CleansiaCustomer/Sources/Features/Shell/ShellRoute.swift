@@ -7,6 +7,7 @@ enum ShellRoute: Hashable, Codable {
     case membershipSuccess
     case recurringList
     case createRecurring(orderId: String?)
+    case editRecurring(templateId: String)
     case rewardsActivity
     case disputes
     /// Non-optional on purpose: a dispute is always ABOUT an order, and

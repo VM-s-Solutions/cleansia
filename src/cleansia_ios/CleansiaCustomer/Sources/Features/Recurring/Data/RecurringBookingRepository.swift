@@ -39,6 +39,14 @@ final class RecurringBookingRepository: SessionScopedCache {
         return result
     }
 
+    func update(_ input: UpdateRecurringInput) async -> ApiResult<RecurringTemplate> {
+        let result = await client.update(input)
+        if case .success = result {
+            await refreshForce()
+        }
+        return result
+    }
+
     @discardableResult
     func setActive(templateId: String, isActive: Bool) async -> ApiResult<Void> {
         let result = await client.setActive(templateId: templateId, isActive: isActive)

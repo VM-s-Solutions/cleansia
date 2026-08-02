@@ -76,6 +76,7 @@ struct PartnerRootView: View {
                 client: container.registrationClient,
                 authClient: container.authClient,
                 profileClient: container.profileClient,
+                preferences: preferences,
                 snackbar: container.snackbar,
                 geocoding: container.geocodingService,
                 mapProvider: container.mapProvider,

@@ -3,14 +3,14 @@ import CoreGraphics
 /// The greedy first-fit wrap packing behind `ChipFlow`, over plain sizes so
 /// the algorithm is unit-testable without a view tree. An item wider than
 /// `maxWidth` still gets a row of its own (never dropped).
-enum ChipFlowPacking {
-    struct Row: Equatable {
-        var indices: [Int] = []
-        var width: CGFloat = 0
-        var height: CGFloat = 0
+public enum ChipFlowPacking {
+    public struct Row: Equatable {
+        public var indices: [Int] = []
+        public var width: CGFloat = 0
+        public var height: CGFloat = 0
     }
 
-    static func rows(sizes: [CGSize], spacing: CGFloat, maxWidth: CGFloat) -> [Row] {
+    public static func rows(sizes: [CGSize], spacing: CGFloat, maxWidth: CGFloat) -> [Row] {
         var rows: [Row] = []
         var current = Row()
         for (index, size) in sizes.enumerated() {

@@ -13,21 +13,15 @@ struct OrderHeroCard: View {
 
     var body: some View {
         OrderCardSurface {
-            HStack(alignment: .top) {
-                OrderStatusPill(
-                    label: OrderStatusPresentation.label(order.orderStatus),
-                    color: OrderStatusPresentation.color(order.orderStatus)
-                )
-                Spacer()
-                if let code = order.confirmationCode, !code.isBlank {
-                    VStack(alignment: .trailing, spacing: 0) {
-                        Text(L10n.OrderDetail.codeLabel)
-                            .font(CleansiaTypography.labelSmall)
-                            .foregroundColor(CleansiaColors.onSurfaceVariant)
-                        Text(code)
-                            .font(CleansiaTypography.titleMedium)
-                            .foregroundColor(CleansiaColors.onSurface)
-                    }
+            if let code = order.confirmationCode, !code.isBlank {
+                HStack(alignment: .top) {
+                    Text(L10n.OrderDetail.codeLabel)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    Spacer()
+                    Text(code)
+                        .font(CleansiaTypography.titleMedium)
+                        .foregroundColor(CleansiaColors.onSurface)
                 }
             }
             Text(OrdersFormat.dateRange(

@@ -3,28 +3,33 @@ package cz.cleansia.customer.features.orders
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ListAlt
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Cancel
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.ReportProblem
 import androidx.compose.material3.Button
@@ -32,44 +37,55 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.snackbar.SnackbarInsetScope
+import cz.cleansia.core.ui.components.CleansiaErrorState
+import cz.cleansia.core.ui.components.SnapAnchor
+import cz.cleansia.core.ui.components.SnapSheet
+import cz.cleansia.core.ui.components.SnapSheetState
+import cz.cleansia.core.ui.components.rememberSnapSheetState
+import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.orders.OrderCurrencyDetailDto
+import cz.cleansia.customer.core.orders.OrderAddressDto
 import cz.cleansia.customer.core.orders.OrderDetailDto
+import cz.cleansia.customer.core.orders.OrderStatusTrackDto
 import cz.cleansia.customer.core.orders.ReceiptOpenResult
 import cz.cleansia.customer.core.orders.openReceiptPdf
+import cz.cleansia.customer.core.user.CodeDto
 import cz.cleansia.customer.ui.state.ActionState
-import cz.cleansia.core.ui.components.CleansiaErrorState
-import cz.cleansia.core.ui.theme.Poppins
+import cz.cleansia.customer.ui.theme.CleansiaTheme
+import kotlinx.coroutines.launch
 
 /**
- * Order detail screen — shows the real DTO loaded by [OrderDetailViewModel].
+ * Order detail — a full-bleed map of the cleaning address with a three-anchor
+ * [SnapSheet] of the order over it, the same layout the partner app uses for a
+ * job. Dragging the sheet down to [SnapAnchor.MapFocus] hands the screen to the
+ * map; dragging up to [SnapAnchor.Expanded] hands it to the order.
  *
- * Wave 1 surface is read-only: the `onRebook`, `onReportIssue`,
- * `onDownloadReceipt` callbacks are preserved on the signature because the
- * nav host still passes them, but nothing invokes them yet. Wave 2 will
- * wire up the footer actions.
+ * The sheet keeps its action footer pinned at every anchor, so cancelling or
+ * reporting an issue never depends on how far the panel has been dragged.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,7 +128,7 @@ fun OrderDetailScreen(
     val downloadingReceipt = receiptDownloadState is ActionState.Submitting
     val confirmingRecurring = confirmRecurringState is ActionState.Submitting
 
-    // Local sheet visibility — lifted above the Scaffold so the footer button
+    // Local sheet visibility — lifted above the layout so the footer button
     // and the observed success flow can both drive it.
     var showCancelSheet by remember { mutableStateOf(false) }
     var showReviewSheet by remember { mutableStateOf(false) }
@@ -215,13 +231,8 @@ fun OrderDetailScreen(
         }
     }
 
-    val title = when (val s = state) {
-        is OrderDetailUiState.Loaded -> s.order.displayOrderNumber?.let { "#$it" } ?: "—"
-        else -> ""
-    }
-
-    // Figure out whether the cancel footer should be visible. Only the Loaded
-    // branch has an order to pull the status from; the other branches hide it.
+    // Figure out which footer actions apply. Only the Loaded branch has an
+    // order to pull the status from; the other branches hide the footer.
     val loaded = state as? OrderDetailUiState.Loaded
     val status = loaded?.let { orderStatusFromValue(it.order.orderStatus?.value) }
     val isCancellable = status == OrderStatus.New ||
@@ -246,95 +257,57 @@ fun OrderDetailScreen(
     val membership by viewModel.membershipRepository.current.collectAsStateWithLifecycle(initialValue = null)
     val canMakeRecurring = canRebook && membership?.hasMembership == true
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        title,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = Poppins,
-                            fontWeight = FontWeight.SemiBold,
-                        ),
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = stringResource(R.string.common_back),
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
-            )
-        },
-        bottomBar = {
-            // Footer rules:
-            //  - Cancellable + reportable (Confirmed): stack Cancel on top
-            //    and Report issue below.
-            //  - Cancellable only (New / Pending): just Cancel.
-            //  - Reportable only (InProgress): just Report issue.
-            //  - Completed: Book again (primary) on top, Report issue below.
-            //  - Neither (Cancelled, or Loading/Error): no footer.
-            if (isCancellable || canReportIssue || canRebook || canMakeRecurring) {
-                val orderId = (state as? OrderDetailUiState.Loaded)?.order?.id
-                ActionsFooter(
-                    showCancel = isCancellable,
-                    showReportIssue = canReportIssue,
-                    showRebook = canRebook,
-                    showMakeRecurring = canMakeRecurring,
-                    cancelEnabled = !cancelling,
-                    onCancel = { showCancelSheet = true },
-                    onReportIssue = onReportIssue,
-                    onRebook = onRebook,
-                    onMakeRecurring = { orderId?.let(onMakeRecurring) },
-                )
-            }
-        },
-    ) { padding ->
-        Box(
-            Modifier
+    // Lift the snackbar above the sheet's sticky footer so a cancel error
+    // isn't posted underneath the button that caused it.
+    if (isCancellable || canReportIssue || canRebook || canMakeRecurring) {
+        SnackbarInsetScope(140.dp)
+    }
+
+    when (val s = state) {
+        is OrderDetailUiState.Loading -> LoadingState(onBack = onBack)
+        is OrderDetailUiState.Error -> CleansiaErrorState(
+            title = stringResource(R.string.order_detail_error_title),
+            message = stringResource(R.string.order_detail_error_message),
+            backLabel = stringResource(R.string.common_back),
+            // A permanent failure (deleted order, 404) sets canRetry
+            // false; passing a null label is what suppresses the CTA,
+            // so both halves must stay gated on the same flag.
+            retryLabel = if (s.canRetry) stringResource(R.string.order_detail_error_retry) else null,
+            onRetry = if (s.canRetry) viewModel::refresh else null,
+            onBack = onBack,
+            modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
-        ) {
-            when (val s = state) {
-                is OrderDetailUiState.Loading -> LoadingState()
-                is OrderDetailUiState.Error -> CleansiaErrorState(
-                    title = stringResource(R.string.order_detail_error_title),
-                    message = stringResource(R.string.order_detail_error_message),
-                    backLabel = stringResource(R.string.common_back),
-                    // A permanent failure (deleted order, 404) sets canRetry
-                    // false; passing a null label is what suppresses the CTA,
-                    // so both halves must stay gated on the same flag.
-                    retryLabel = if (s.canRetry) stringResource(R.string.order_detail_error_retry) else null,
-                    onRetry = if (s.canRetry) viewModel::refresh else null,
-                    onBack = onBack,
-                )
-                is OrderDetailUiState.Loaded -> {
-                    // Kick off the secondary photos fetch once the main detail is
-                    // resolved. Safe on recomposition — VM guards with its own
-                    // Idle/Error check so this is effectively one-shot.
-                    LaunchedEffect(s.order.id) { viewModel.ensurePhotosLoaded() }
-                    LoadedState(
-                        order = s.order,
-                        onLeaveReview = { showReviewSheet = true },
-                        onDownloadReceipt = { viewModel.downloadReceipt() },
-                        isDownloadingReceipt = downloadingReceipt,
-                        photosState = photosState,
-                        onViewPhotos = onViewPhotos,
-                        onConfirmRecurring = { viewModel.confirmRecurring() },
-                        confirmingRecurring = confirmingRecurring,
-                    )
-                }
-            }
+                .background(MaterialTheme.colorScheme.background),
+        )
+        is OrderDetailUiState.Loaded -> {
+            // Kick off the secondary photos fetch once the main detail is
+            // resolved. Safe on recomposition — VM guards with its own
+            // Idle/Error check so this is effectively one-shot.
+            LaunchedEffect(s.order.id) { viewModel.ensurePhotosLoaded() }
+            OrderDetailMapLayout(
+                order = s.order,
+                photosState = photosState,
+                showCancel = isCancellable,
+                showReportIssue = canReportIssue,
+                showRebook = canRebook,
+                showMakeRecurring = canMakeRecurring,
+                cancelEnabled = !cancelling,
+                confirmingRecurring = confirmingRecurring,
+                isDownloadingReceipt = downloadingReceipt,
+                onBack = onBack,
+                onCancel = { showCancelSheet = true },
+                onReportIssue = onReportIssue,
+                onRebook = onRebook,
+                onMakeRecurring = { s.order.id?.let(onMakeRecurring) },
+                onLeaveReview = { showReviewSheet = true },
+                onDownloadReceipt = { viewModel.downloadReceipt() },
+                onViewPhotos = onViewPhotos,
+                onConfirmRecurring = { viewModel.confirmRecurring() },
+            )
         }
     }
 
-    // Render the sheet on top of the scaffold. Only Loaded state can open it
+    // Render the sheet on top of the layout. Only Loaded state can open it
     // (isCancellable gates the footer button); guarding here keeps the render
     // defensive in case state flips mid-cancel.
     if (showCancelSheet && loaded != null) {
@@ -379,6 +352,312 @@ fun OrderDetailScreen(
     }
 }
 
+/* ── Map + sheet shell ── */
+
+@Composable
+private fun OrderDetailMapLayout(
+    order: OrderDetailDto,
+    photosState: PhotosUiState,
+    showCancel: Boolean,
+    showReportIssue: Boolean,
+    showRebook: Boolean,
+    showMakeRecurring: Boolean,
+    cancelEnabled: Boolean,
+    confirmingRecurring: Boolean,
+    isDownloadingReceipt: Boolean,
+    onBack: () -> Unit,
+    onCancel: () -> Unit,
+    onReportIssue: () -> Unit,
+    onRebook: () -> Unit,
+    onMakeRecurring: () -> Unit,
+    onLeaveReview: () -> Unit,
+    onDownloadReceipt: () -> Unit,
+    onViewPhotos: () -> Unit,
+    onConfirmRecurring: () -> Unit,
+) {
+    val status = orderStatusFromValue(order.orderStatus?.value)
+    val darkTheme = isSystemInDarkTheme()
+    val sheetState = rememberSnapSheetState()
+    val scope = rememberCoroutineScope()
+
+    val showMap = canShowOrderMap(
+        latitude = order.address?.latitude,
+        longitude = order.address?.longitude,
+        status = status,
+    )
+    // Camera padding is held at the resting anchor, not the live sheet
+    // position — see OrderMapBackdrop.
+    val restingCover = LocalConfiguration.current.screenHeightDp.dp * SnapAnchor.Peek.coveredFraction
+
+    SnapSheet(
+        state = sheetState,
+        backdrop = {
+            if (showMap) {
+                OrderMapBackdrop(
+                    latitude = order.address!!.latitude!!,
+                    longitude = order.address!!.longitude!!,
+                    darkTheme = darkTheme,
+                    sheetCoverHeight = restingCover,
+                )
+            } else {
+                OrderMapPlaceholder()
+            }
+        },
+        overlay = {
+            // Controls live in the overlay rather than on the map so the back
+            // button survives the sheet being dragged over the map entirely.
+            Row(
+                modifier = Modifier
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(start = Spacing.M, top = Spacing.S)
+                    .align(Alignment.TopStart),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                MapOverlayButton(
+                    icon = Icons.AutoMirrored.Outlined.ArrowBack,
+                    contentDescription = stringResource(R.string.common_back),
+                    onClick = onBack,
+                )
+                Spacer(Modifier.width(Spacing.XS))
+                MapFocusToggle(sheetState = sheetState, onToggle = { target ->
+                    scope.launch { sheetState.animateTo(target) }
+                })
+            }
+            OrderFloatingMascot(
+                status = status,
+                sheetTopPx = { sheetState.sheetTopPx },
+                modifier = Modifier.align(Alignment.TopEnd),
+            )
+        },
+    ) {
+        OrderDetailSheetContent(
+            order = order,
+            status = status,
+            photosState = photosState,
+            showCancel = showCancel,
+            showReportIssue = showReportIssue,
+            showRebook = showRebook,
+            showMakeRecurring = showMakeRecurring,
+            cancelEnabled = cancelEnabled,
+            confirmingRecurring = confirmingRecurring,
+            isDownloadingReceipt = isDownloadingReceipt,
+            onCancel = onCancel,
+            onReportIssue = onReportIssue,
+            onRebook = onRebook,
+            onMakeRecurring = onMakeRecurring,
+            onLeaveReview = onLeaveReview,
+            onDownloadReceipt = onDownloadReceipt,
+            onViewPhotos = onViewPhotos,
+            onConfirmRecurring = onConfirmRecurring,
+        )
+    }
+}
+
+/** Drops the panel to the map anchor, or brings it back to its resting one. */
+@Composable
+private fun MapFocusToggle(
+    sheetState: SnapSheetState,
+    onToggle: (SnapAnchor) -> Unit,
+) {
+    val atMapFocus = sheetState.targetAnchor == SnapAnchor.MapFocus
+    MapOverlayButton(
+        icon = if (atMapFocus) Icons.AutoMirrored.Outlined.ListAlt else Icons.Outlined.Map,
+        contentDescription = stringResource(
+            if (atMapFocus) R.string.order_detail_show_details else R.string.order_detail_show_map,
+        ),
+        onClick = { onToggle(if (atMapFocus) SnapAnchor.Peek else SnapAnchor.MapFocus) },
+    )
+}
+
+/* ── Sheet content ── */
+
+@Composable
+private fun OrderDetailSheetContent(
+    order: OrderDetailDto,
+    status: OrderStatus?,
+    photosState: PhotosUiState,
+    showCancel: Boolean,
+    showReportIssue: Boolean,
+    showRebook: Boolean,
+    showMakeRecurring: Boolean,
+    cancelEnabled: Boolean,
+    confirmingRecurring: Boolean,
+    isDownloadingReceipt: Boolean,
+    onCancel: () -> Unit,
+    onReportIssue: () -> Unit,
+    onRebook: () -> Unit,
+    onMakeRecurring: () -> Unit,
+    onLeaveReview: () -> Unit,
+    onDownloadReceipt: () -> Unit,
+    onViewPhotos: () -> Unit,
+    onConfirmRecurring: () -> Unit,
+) {
+    // The live hero carries status but no schedule, price or code; the static
+    // one carries all three. OrderMetaStrip fills whichever gap is left.
+    val liveHero = status == OrderStatus.Confirmed ||
+        status == OrderStatus.OnTheWay ||
+        status == OrderStatus.InProgress
+    // Wave 3.3 — Pending recurring-template orders need an explicit customer
+    // confirm step. Show the CTA when both conditions hold; everything else
+    // is a no-op render (already-confirmed orders go through the standard
+    // life-cycle UI).
+    val showConfirmRecurringCta = !order.recurringTemplateId.isNullOrBlank() &&
+        order.paymentStatus?.value == 1
+    val hasFooter = showCancel || showReportIssue || showRebook || showMakeRecurring
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(),
+    ) {
+        SheetGrabber()
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                // weight() is what keeps the footer below on screen: without
+                // it the scroll column takes its content height and pushes the
+                // footer past the bottom edge at every anchor but Expanded.
+                .weight(1f, fill = true)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = Spacing.ML),
+            verticalArrangement = Arrangement.spacedBy(Spacing.S),
+        ) {
+            // Together with the grabber block and the column gap this clears
+            // the half of the mascot that lands on the sheet; without it the
+            // character sits on the hero card's top-right corner.
+            Spacer(Modifier.height(if (status == OrderStatus.Cancelled) Spacing.XS else 32.dp))
+
+            if (liveHero) LiveProgressHero(order) else HeroCard(order)
+
+            OrderMetaStrip(order = order, showFacts = liveHero)
+
+            // Sits right under the hero so it's the first thing the customer
+            // sees after tapping the recurring-scheduled push.
+            if (showConfirmRecurringCta) {
+                ConfirmRecurringButton(
+                    submitting = confirmingRecurring,
+                    onClick = onConfirmRecurring,
+                )
+            }
+
+            order.address?.let { AddressCard(it) }
+
+            CleaningDetailsCard(order)
+
+            if (!order.selectedServices.isNullOrEmpty()) {
+                ServicesCard(order.selectedServices)
+            }
+
+            if (!order.selectedPackages.isNullOrEmpty()) {
+                PackagesCard(order.selectedPackages)
+            }
+
+            val hasInstructions = !order.specialInstructions.isNullOrBlank() ||
+                !order.accessInstructions.isNullOrBlank() ||
+                !order.notes.isNullOrBlank()
+            if (hasInstructions) {
+                InstructionsCard(order)
+            }
+
+            // Photos summary — only renders when we have a Loaded response with a
+            // non-empty photo list. Idle / Loading / Error all suppress the card so
+            // the section doesn't flicker in before we know whether it's worth showing.
+            (photosState as? PhotosUiState.Loaded)?.response?.takeIf { it.photos.isNotEmpty() }
+                ?.let { resp ->
+                    PhotosSection(response = resp, onViewPhotos = onViewPhotos)
+                }
+
+            if (!order.assignedEmployees.isNullOrEmpty()) {
+                AssignedCleanersCard(order.assignedEmployees)
+            }
+
+            PriceBreakdownCard(order)
+
+            if (!order.statusHistory.isNullOrEmpty()) {
+                TimelineCard(order.statusHistory)
+            }
+
+            if (status == OrderStatus.Completed) {
+                ReviewCard(order = order, onLeaveReview = onLeaveReview)
+            }
+
+            val showReceipt = !order.receiptNumber.isNullOrBlank() ||
+                status == OrderStatus.Completed
+            if (showReceipt) {
+                ReceiptCard(
+                    order = order,
+                    onDownload = onDownloadReceipt,
+                    isDownloading = isDownloadingReceipt,
+                )
+            }
+
+            Spacer(Modifier.height(Spacing.XS))
+        }
+
+        if (hasFooter) {
+            ActionsFooter(
+                showCancel = showCancel,
+                showReportIssue = showReportIssue,
+                showRebook = showRebook,
+                showMakeRecurring = showMakeRecurring,
+                cancelEnabled = cancelEnabled,
+                onCancel = onCancel,
+                onReportIssue = onReportIssue,
+                onRebook = onRebook,
+                onMakeRecurring = onMakeRecurring,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SheetGrabber() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, bottom = 8.dp),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(width = 36.dp, height = 4.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(MaterialTheme.colorScheme.outlineVariant),
+        )
+    }
+}
+
+@Composable
+private fun ConfirmRecurringButton(submitting: Boolean, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        enabled = !submitting,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        shape = RoundedCornerShape(14.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+        ),
+    ) {
+        if (submitting) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(22.dp),
+                color = MaterialTheme.colorScheme.onPrimary,
+                strokeWidth = 2.dp,
+            )
+        } else {
+            Text(
+                text = stringResource(R.string.recurring_confirm_cta),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+    }
+}
+
 /* ── Actions footer ── */
 
 /**
@@ -404,6 +683,7 @@ private fun ActionsFooter(
     Surface(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
+        shadowElevation = 8.dp,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
@@ -551,153 +831,27 @@ private fun ActionsFooter(
 /* ── States ── */
 
 @Composable
-private fun LoadingState() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-    }
-}
-
-/* ── Loaded layout ── */
-
-@Composable
-private fun LoadedState(
-    order: OrderDetailDto,
-    onLeaveReview: () -> Unit,
-    onDownloadReceipt: () -> Unit,
-    isDownloadingReceipt: Boolean,
-    photosState: PhotosUiState,
-    onViewPhotos: () -> Unit,
-    onConfirmRecurring: () -> Unit,
-    confirmingRecurring: Boolean,
-) {
-    val currentStatus = orderStatusFromValue(order.orderStatus?.value)
-    // Wave 3.3 — Pending recurring-template orders need an explicit customer
-    // confirm step. Show the CTA when both conditions hold; everything else
-    // is a no-op render (already-confirmed orders go through the standard
-    // life-cycle UI).
-    val showConfirmRecurringCta = !order.recurringTemplateId.isNullOrBlank()
-        && order.paymentStatus?.value == 1 // PaymentStatus.Pending — 0 = Pending was wrong; backend enum is 1-indexed
-
-    Column(
+private fun LoadingState(onBack: () -> Unit) {
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp),
+            .background(MaterialTheme.colorScheme.background),
     ) {
-        Spacer(Modifier.height(8.dp))
-
-        // For active orders, swap the static HeroCard for the LiveProgressHero,
-        // which embeds the mascot, status pill, contextual headline, optional
-        // progress bar, and step indicator. Falls back to the original card for
-        // terminal states (Completed, Cancelled) and the pre-acceptance phase
-        // (New, Pending) — those benefit from the simpler "facts only" layout.
-        if (currentStatus == OrderStatus.Confirmed
-            || currentStatus == OrderStatus.OnTheWay
-            || currentStatus == OrderStatus.InProgress) {
-            LiveProgressHero(order)
-        } else {
-            HeroCard(order)
-        }
-
-        // Confirm CTA sits right under the hero so it's the first thing the
-        // customer sees after tapping the recurring-scheduled push. Hidden
-        // for non-recurring or already-confirmed orders so existing flows
-        // don't grow a redundant button.
-        if (showConfirmRecurringCta) {
-            Spacer(Modifier.height(12.dp))
-            Button(
-                onClick = onConfirmRecurring,
-                enabled = !confirmingRecurring,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-            ) {
-                if (confirmingRecurring) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(22.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp,
-                    )
-                } else {
-                    Text(
-                        text = stringResource(R.string.recurring_confirm_cta),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-            }
-        }
-
-        order.address?.let {
-            Spacer(Modifier.height(12.dp))
-            AddressCard(it)
-        }
-
-        Spacer(Modifier.height(12.dp))
-        CleaningDetailsCard(order)
-
-        if (!order.selectedServices.isNullOrEmpty()) {
-            Spacer(Modifier.height(12.dp))
-            ServicesCard(order.selectedServices)
-        }
-
-        if (!order.selectedPackages.isNullOrEmpty()) {
-            Spacer(Modifier.height(12.dp))
-            PackagesCard(order.selectedPackages)
-        }
-
-        val hasInstructions = !order.specialInstructions.isNullOrBlank() ||
-            !order.accessInstructions.isNullOrBlank() ||
-            !order.notes.isNullOrBlank()
-        if (hasInstructions) {
-            Spacer(Modifier.height(12.dp))
-            InstructionsCard(order)
-        }
-
-        // Photos summary — only renders when we have a Loaded response with a
-        // non-empty photo list. Idle / Loading / Error all suppress the card so
-        // the section doesn't flicker in before we know whether it's worth showing.
-        (photosState as? PhotosUiState.Loaded)?.response?.takeIf { it.photos.isNotEmpty() }
-            ?.let { resp ->
-                Spacer(Modifier.height(12.dp))
-                PhotosSection(response = resp, onViewPhotos = onViewPhotos)
-            }
-
-        if (!order.assignedEmployees.isNullOrEmpty()) {
-            Spacer(Modifier.height(12.dp))
-            AssignedCleanersCard(order.assignedEmployees)
-        }
-
-        if (!order.statusHistory.isNullOrEmpty()) {
-            Spacer(Modifier.height(12.dp))
-            TimelineCard(order.statusHistory)
-        }
-
-        if (currentStatus == OrderStatus.Completed) {
-            Spacer(Modifier.height(12.dp))
-            ReviewCard(order = order, onLeaveReview = onLeaveReview)
-        }
-
-        val showReceipt = !order.receiptNumber.isNullOrBlank() || currentStatus == OrderStatus.Completed
-        if (showReceipt) {
-            Spacer(Modifier.height(12.dp))
-            ReceiptCard(
-                order = order,
-                onDownload = onDownloadReceipt,
-                isDownloading = isDownloadingReceipt,
-            )
-        }
-
-        // Footer actions live in the Scaffold's bottomBar (cancel — Wave 2 Phase 2).
-        // Rebook / report-issue / download-receipt callbacks are preserved on the
-        // screen signature for Wave 2 Phases 3–6. Pad for breathing room above
-        // the bottom bar.
-        Spacer(Modifier.height(48.dp))
+        CircularProgressIndicator(
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.align(Alignment.Center),
+        )
+        // The map layout has no top bar, so a slow fetch would otherwise leave
+        // the user on a bare spinner with only the system gesture to leave on.
+        MapOverlayButton(
+            icon = Icons.AutoMirrored.Outlined.ArrowBack,
+            contentDescription = stringResource(R.string.common_back),
+            onClick = onBack,
+            modifier = Modifier
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(start = Spacing.M, top = Spacing.S)
+                .align(Alignment.TopStart),
+        )
     }
 }
 
@@ -755,3 +909,95 @@ internal fun InfoRow(label: String, value: String) {
         )
     }
 }
+
+/* ── Previews ── */
+
+/**
+ * The sheet content at each anchor height, at the owner's 411dp reference
+ * width. Heights are `SnapAnchor.coveredFraction * 891dp` — a Pixel-class
+ * display — so the map-focus preview shows exactly what survives when the
+ * panel is dragged out of the way.
+ */
+private val previewOrder = OrderDetailDto(
+    id = "order-1",
+    displayOrderNumber = "10427",
+    address = OrderAddressDto(
+        street = "Vinohradská 1511/230",
+        city = "Praha 3",
+        zipCode = "130 00",
+        country = "Česko",
+        latitude = 50.0779,
+        longitude = 14.4680,
+    ),
+    rooms = 3,
+    bathrooms = 1,
+    cleaningDateTime = "2026-08-14T09:00:00Z",
+    paymentType = CodeDto(type = "PaymentType", name = "Card", value = 2),
+    paymentStatus = CodeDto(type = "PaymentStatus", name = "Paid", value = 2),
+    totalPrice = 2150.0,
+    originalSubtotal = 2500.0,
+    appliedDiscountSource = 2,
+    membershipDiscountAmount = 350.0,
+    estimatedTime = 180,
+    orderStatus = CodeDto(type = "OrderStatus", name = "InProgress", value = 4),
+    confirmationCode = "CLS-4417",
+    currency = OrderCurrencyDetailDto(code = "CZK", symbol = "Kč"),
+    statusHistory = listOf(
+        OrderStatusTrackDto(
+            status = CodeDto(type = "OrderStatus", name = "InProgress", value = 4),
+            createdOn = "2026-08-14T09:05:00Z",
+        ),
+    ),
+)
+
+@Composable
+private fun PreviewSheet() {
+    CleansiaTheme {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+            OrderDetailSheetContent(
+                order = previewOrder,
+                status = OrderStatus.InProgress,
+                photosState = PhotosUiState.Idle,
+                showCancel = false,
+                showReportIssue = true,
+                showRebook = false,
+                showMakeRecurring = false,
+                cancelEnabled = true,
+                confirmingRecurring = false,
+                isDownloadingReceipt = false,
+                onCancel = {},
+                onReportIssue = {},
+                onRebook = {},
+                onMakeRecurring = {},
+                onLeaveReview = {},
+                onDownloadReceipt = {},
+                onViewPhotos = {},
+                onConfirmRecurring = {},
+            )
+        }
+    }
+}
+
+@Preview(name = "Map focus · ru", locale = "ru", widthDp = 411, heightDp = 267)
+@Composable
+private fun SheetMapFocusRuPreview() = PreviewSheet()
+
+@Preview(name = "Peek · ru", locale = "ru", widthDp = 411, heightDp = 668)
+@Composable
+private fun SheetPeekRuPreview() = PreviewSheet()
+
+@Preview(name = "Expanded · ru", locale = "ru", widthDp = 411, heightDp = 846)
+@Composable
+private fun SheetExpandedRuPreview() = PreviewSheet()
+
+@Preview(name = "Map focus · uk", locale = "uk", widthDp = 411, heightDp = 267)
+@Composable
+private fun SheetMapFocusUkPreview() = PreviewSheet()
+
+@Preview(name = "Peek · uk", locale = "uk", widthDp = 411, heightDp = 668)
+@Composable
+private fun SheetPeekUkPreview() = PreviewSheet()
+
+@Preview(name = "Expanded · uk", locale = "uk", widthDp = 411, heightDp = 846)
+@Composable
+private fun SheetExpandedUkPreview() = PreviewSheet()

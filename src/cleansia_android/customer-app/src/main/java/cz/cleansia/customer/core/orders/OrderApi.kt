@@ -175,6 +175,7 @@ private fun GenOrderItem.toAppDto(): OrderDetailDto = OrderDetailDto(
     promoDiscountAmount = promoDiscountAmount,
     estimatedTime = estimatedTime ?: 0,
     actualCompletionTime = actualCompletionTime,
+    completedAt = completedAt?.toString(),
     completionNotes = completionNotes,
     orderStatus = orderStatus?.toAppDto(),
     confirmationCode = confirmationCode,
@@ -207,6 +208,8 @@ private fun GenOrderAddress.toAppDto(): OrderAddressDto = OrderAddressDto(
     city = city,
     zipCode = zipCode,
     country = country,
+    latitude = latitude,
+    longitude = longitude,
 )
 
 private fun GenOrderStatusTrackDto.toAppDto(): OrderStatusTrackDto = OrderStatusTrackDto(

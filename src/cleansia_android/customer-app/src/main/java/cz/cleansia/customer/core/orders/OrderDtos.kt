@@ -125,13 +125,21 @@ data class OrderDetailDto(
     val review: OrderReviewDto? = null,
 )
 
-/** Mirrors backend `OrderAddress`. Backend includes `country` (task spec omitted it). */
+/**
+ * Mirrors backend `OrderAddress`. Backend includes `country` (task spec omitted it).
+ *
+ * Latitude/longitude are the geocode captured when the order was placed; they
+ * back the order detail's map. Nullable because orders booked before geocoding
+ * existed, or whose address never resolved, carry neither.
+ */
 @Serializable
 data class OrderAddressDto(
     val street: String? = null,
     val city: String? = null,
     val zipCode: String? = null,
     val country: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
 )
 
 /** Mirrors backend `OrderStatusTrackDto`. */

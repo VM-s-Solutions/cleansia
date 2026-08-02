@@ -293,6 +293,22 @@ raw components one-off; never duplicate a `:core` component.
 > expired signature (403) from a deleted blob (404), so branching on the status is not implementable;
 > the second failure falls through to the placeholder instead of looping.
 
+> **A sheet over a live backdrop — the ONE way (Android `SnapSheet`):** a panel layered over a
+> full-bleed map is **not** a `BottomSheetScaffold`. That scaffold has exactly two resting states —
+> `sheetPeekHeight` and expanded — so `initialValue = PartiallyExpanded, skipHiddenState = true` gives a
+> sheet that **cannot be dragged below its peek**; the partner order detail has shipped a comment
+> promising "drag down for a bigger map glimpse" over a sheet physically unable to do it. Use
+> `cz.cleansia.core.ui.components.SnapSheet` instead: `AnchoredDraggableState` + `DraggableAnchors` over
+> three anchors — `SnapAnchor.MapFocus` 0.30 / `Peek` 0.75 / `Expanded` 0.95 covered — matching the iOS
+> `SnapAnchor` values one for one (ADR-0021), with `backdrop` / sheet / `overlay` slots and a nested-scroll
+> hand-off so a drag up expands before the content scrolls. Three rules it encodes: the sheet is sized
+> **and** placed in one `Modifier.layout` reading the offset in the **layout phase**, so a drag never
+> recomposes the content; anything glued to the moving edge (the mascot) takes the offset as a
+> **`() -> Float`** read inside `offset {}` for the same reason; and the shallowest anchor is floored at
+> `SnapSheetDefaults.MinSheetHeight`, because 30% of a short display cannot hold a sticky action footer
+> and a footer pushed past the bottom edge is worse than a slightly smaller map. Anchors + the top-edge
+> math are a pure function (`snapSheetTopPx`) so `SnapAnchorTest` can pin the numbers iOS also pins.
+
 > **iOS snackbar pill — the ONE way (T-0432):** `SnackbarPill`/`SnackbarPalette` in
 > `Core/Snackbar/GlobalSnackbarHost.swift` render on a **theme-adaptive** `CleansiaColors.surface` pill
 > with `onSurface` text (NOT a fixed pastel fill — that never adapted to dark), a filled circular

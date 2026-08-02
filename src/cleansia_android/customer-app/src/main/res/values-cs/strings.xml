@@ -293,6 +293,13 @@
     <string name="order_detail_services_header">Služby</string>
     <string name="order_detail_packages_header">Balíčky</string>
     <string name="order_detail_cleaner_fallback">Uklízeč Cleansia</string>
+    <string name="order_detail_subtotal">Mezisoučet</string>
+    <string name="order_detail_payment_method">Způsob platby</string>
+    <string name="order_detail_payment_status">Platba</string>
+    <string name="order_detail_completion_notes">Poznámky uklízeče</string>
+    <string name="order_detail_map_unavailable">Mapa není pro tuto objednávku dostupná</string>
+    <string name="order_detail_show_map">Zobrazit mapu</string>
+    <string name="order_detail_show_details">Zobrazit detaily objednávky</string>
 
     <!-- Order cancel (Wave 2 Phase 2) -->
     <string name="order_action_cancel">Zrušit objednávku</string>

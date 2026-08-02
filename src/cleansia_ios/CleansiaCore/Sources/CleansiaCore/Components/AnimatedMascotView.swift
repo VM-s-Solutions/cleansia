@@ -15,7 +15,7 @@ public enum AnimatedMascot: String {
     /// frames, identical per-frame delays, ~8 KB less than the single file); short ones stay whole.
     ///
     /// Segment 0 keeps the bare mascot name so the catalog entry the rest of the app knows still exists.
-    var segmentNames: [String] {
+    public var segmentNames: [String] {
         (0 ..< segmentCount).map { $0 == 0 ? rawValue : "\(rawValue)_\($0)" }
     }
 
@@ -199,20 +199,18 @@ public struct AnimatedMascotView: View {
     private let asset: MascotAsset?
     private let loop: Bool
     private let fallback: Mascot
-    private let bundle: Bundle
 
-    public init(_ mascot: AnimatedMascot, loop: Bool = true, fallback: Mascot, bundle: Bundle = .main) {
-        asset = MascotAssetCache.shared.asset(for: mascot, bundle: bundle)
+    public init(_ mascot: AnimatedMascot, loop: Bool = true, fallback: Mascot) {
+        asset = MascotAssetCache.shared.asset(for: mascot)
         self.loop = loop
         self.fallback = fallback
-        self.bundle = bundle
     }
 
     public var body: some View {
         if let asset {
-            AnimatedImageView(asset: asset, loop: loop, fallback: fallback, bundle: bundle)
+            AnimatedImageView(asset: asset, loop: loop, fallback: fallback)
         } else {
-            Image(fallback.rawValue, bundle: bundle)
+            fallback.image
                 .resizable()
                 .scaledToFit()
         }
@@ -222,8 +220,8 @@ public struct AnimatedMascotView: View {
     /// screen loads (e.g. an in-progress order's ViewModel) so the heavy 125-frame cleaning loop is whole
     /// when its hero renders, rather than still growing. Idempotent; call on the main thread. The public
     /// seam onto the module-internal `MascotAssetCache`.
-    public static func prewarm(_ mascot: AnimatedMascot, bundle: Bundle = .main) {
-        MascotAssetCache.shared.prewarm(mascot, bundle: bundle)
+    public static func prewarm(_ mascot: AnimatedMascot) {
+        MascotAssetCache.shared.prewarm(mascot)
     }
 }
 
@@ -231,7 +229,6 @@ private struct AnimatedImageView: UIViewRepresentable {
     let asset: MascotAsset
     let loop: Bool
     let fallback: Mascot
-    let bundle: Bundle
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -285,7 +282,7 @@ private struct AnimatedImageView: UIViewRepresentable {
             // showing the previous mascot until the new frames land.
             view.prepare(
                 poster: cache.posterFrame(asset)
-                    ?? UIImage(named: representable.fallback.rawValue, in: representable.bundle, with: nil),
+                    ?? UIImage(named: representable.fallback.rawValue, in: MascotAssets.bundle, with: nil),
                 loop: loop
             )
 

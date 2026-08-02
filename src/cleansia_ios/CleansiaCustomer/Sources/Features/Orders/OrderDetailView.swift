@@ -114,7 +114,7 @@ struct OrderDetailView: View {
         SnapSheet(anchor: $snapAnchor) {
             OrderDetailMapBackdrop(order: order, mapProvider: mapProvider)
         } ornament: {
-            OrderDetailMascotPuck(status: order.status)
+            MascotPuck(OrderDetailMascotArt.art(for: order.status))
         } content: {
             VStack(spacing: 0) {
                 OrderDetailContent(

@@ -68,10 +68,10 @@ final class MascotAssetCache {
 
     /// The mascot's segment files in playback order. Stops at the first missing segment rather than
     /// skipping it, so a mis-exported asset plays a shorter loop instead of a jumping one.
-    func asset(for mascot: AnimatedMascot, bundle: Bundle) -> MascotAsset? {
+    func asset(for mascot: AnimatedMascot) -> MascotAsset? {
         var segments: [Data] = []
         for name in mascot.segmentNames {
-            guard let data = segmentData(name: name, bundle: bundle) else { break }
+            guard let data = segmentData(name: name) else { break }
             segments.append(data)
         }
         guard !segments.isEmpty else { return nil }
@@ -90,13 +90,13 @@ final class MascotAssetCache {
     /// so the visible hero gets a whole loop on its first paint instead of one that is still growing, and a
     /// later NSCache purge can't force the decode again. Idempotent; call from the main thread (e.g. an
     /// order's ViewModel `load()` before the in-progress hero appears, or at app launch).
-    func prewarm(_ mascot: AnimatedMascot, bundle: Bundle = .main) {
+    func prewarm(_ mascot: AnimatedMascot) {
         // Check the pin BEFORE touching the catalog: prewarm runs on every order-detail load and at shell
         // entry, and `asset(for:)` materialises every segment's Data (~1.4 MB across 7 reads) synchronously.
         // The key is derivable from the mascot alone, so an already-pinned loop costs no I/O at all.
         let key = frameKey(name: mascot.rawValue, maxPixel: mascot.maxPixel)
         if pinned?.key == key { return }
-        guard let asset = asset(for: mascot, bundle: bundle) else { return }
+        guard let asset = asset(for: mascot) else { return }
         if let hit = cachedAnimation(asset) {
             pinned = (key, hit)
             return
@@ -111,8 +111,8 @@ final class MascotAssetCache {
     /// Decode off the main thread and publish PROGRESSIVELY: `onUpdate` runs on the main thread with a
     /// growing prefix of the animation — the first frames within milliseconds, then a steady chunk at a
     /// time, then the complete loop. A cache hit calls back once, synchronously. Call from the main
-    /// thread. The frame cache is keyed by asset name + size; every call site uses the main bundle,
-    /// where asset names are unique.
+    /// thread. The frame cache is keyed by asset name + size, which is unique across the one bundle
+    /// mascot art ships in.
     func loadAnimation(_ asset: MascotAsset, onUpdate: @escaping (MascotAnimation) -> Void) {
         if let hit = cachedAnimation(asset) {
             onUpdate(hit)
@@ -143,10 +143,10 @@ final class MascotAssetCache {
         return UIImage(cgImage: frame)
     }
 
-    private func segmentData(name: String, bundle: Bundle) -> Data? {
-        let key = "\(name)#\(bundle.bundleIdentifier ?? "main")" as NSString
+    private func segmentData(name: String) -> Data? {
+        let key = name as NSString
         if let cached = dataCache.object(forKey: key) { return cached as Data }
-        guard let data = NSDataAsset(name: name, bundle: bundle)?.data else { return nil }
+        guard let data = NSDataAsset(name: name, bundle: MascotAssets.bundle)?.data else { return nil }
         dataCache.setObject(data as NSData, forKey: key)
         return data
     }

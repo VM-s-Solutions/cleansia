@@ -4,8 +4,9 @@ import UniformTypeIdentifiers
 import XCTest
 @testable import CleansiaCore
 
-/// End-to-end cover for the progressive decode: a synthetic multi-frame image stands in for the
-/// bundled WebP mascots (the data assets live in the app targets, not in this package).
+/// End-to-end cover for the progressive decode over a synthetic multi-frame image, so the chunking
+/// rules can be asserted at sizes the shipped mascots do not have. `MascotBundledAssetTests` runs the
+/// same pipeline over the real bundled WebPs.
 final class MascotDecodePipelineTests: XCTestCase {
     func testFramesArePublishedProgressivelyAndThenComplete() throws {
         let asset = try makeAsset(frameCounts: [12])

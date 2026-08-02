@@ -71,6 +71,10 @@ final class OrderDetailViewModel: ViewModel {
     }
 
     func load() async {
+        // The sheet-edge puck plays the heavy 125-frame cleaning loop once the order is in progress.
+        // Kick its off-main decode BEFORE the fetch so it lands while the request is in flight —
+        // prewarming after the order loads shares a main-thread turn with the puck's first render.
+        AnimatedMascotView.prewarm(.cleaningInProgress)
         await fetch()
     }
 

@@ -9,7 +9,7 @@ final class MascotAssetsTests: XCTestCase {
     func testEveryMascotImagesetExists() {
         for mascot in Mascot.allCases {
             XCTAssertNotNil(
-                UIImage(named: mascot.rawValue, in: appBundle, compatibleWith: nil),
+                UIImage(named: mascot.rawValue, in: MascotAssets.bundle, compatibleWith: nil),
                 "Missing imageset \(mascot.rawValue)"
             )
         }
@@ -18,7 +18,7 @@ final class MascotAssetsTests: XCTestCase {
     func testAnimatedMascotDataAssetsLoadAndAnimate() throws {
         for mascot in [AnimatedMascot.cleaningInProgress, .welcoming] {
             let asset = try XCTUnwrap(
-                NSDataAsset(name: mascot.rawValue, bundle: appBundle),
+                NSDataAsset(name: mascot.rawValue, bundle: MascotAssets.bundle),
                 "Missing data asset \(mascot.rawValue)"
             )
             let source = try XCTUnwrap(CGImageSourceCreateWithData(asset.data as CFData, nil))

@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
-import cz.cleansia.partner.api.model.OrderStatus
 
 /**
  * Vertical status timeline showing each step the order has been through
@@ -60,7 +59,7 @@ fun StatusTimeline(
             history.forEachIndexed { index, entry ->
                 val isLast = index == history.lastIndex
                 TimelineRow(
-                    label = labelForStatusName(entry.status?.name, entry.status?.value),
+                    label = orderStatusLabel(entry.status.toOrderStatus(), entry.status?.name),
                     timestamp = formatOrderDateTime(entry.createdOn),
                     isCurrent = isLast,
                     isLastInList = isLast,
@@ -138,29 +137,4 @@ private fun TimelineDot(isCurrent: Boolean) {
             )
         }
     }
-}
-
-/**
- * Backend ships status names as enum-friendly strings ("New",
- * "Confirmed", "OnTheWay", "InProgress", "Completed", "Cancelled");
- * we use them verbatim with light prettification. Fallback walks the
- * numeric value in case future seed data drops the name.
- */
-internal fun labelForStatusName(name: String?, value: Int?): String {
-    val resolved = name?.takeIf { it.isNotBlank() }
-        ?: when (value) {
-            OrderStatus._0.value -> "New"
-            OrderStatus._1.value -> "Pending"
-            OrderStatus._2.value -> "Confirmed"
-            OrderStatus._3.value -> "OnTheWay"
-            OrderStatus._4.value -> "InProgress"
-            OrderStatus._5.value -> "Completed"
-            else -> "—"
-        }
-    // "OnTheWay" → "On the way", "InProgress" → "In progress" for readability.
-    // The split-out words are lowercased so the label reads as a sentence — the
-    // iOS OrderStatusLabel.prettify parity (both platforms converge on this form).
-    return resolved
-        .replace(Regex("([a-z])([A-Z])")) { m -> "${m.groupValues[1]} ${m.groupValues[2].lowercase()}" }
-        .replaceFirstChar { it.uppercase() }
 }

@@ -225,6 +225,7 @@
     <string name="orders_payment_failed">Zlyhalo</string>
     <string name="orders_payment_refunded">Vrátené</string>
     <string name="orders_payment_disputed">Napadnuté</string>
+    <string name="orders_payment_partially_refunded">Čiastočne vrátené</string>
     <string name="orders_filter_all">Všetko</string>
     <string name="orders_filter_upcoming">Nadchádzajúce</string>
     <string name="orders_filter_completed">Dokončené</string>
@@ -377,7 +378,6 @@
     <string name="profile_row_notifications">Upozornenia</string>
     <string name="profile_row_security">Zabezpečenie</string>
     <string name="profile_row_help">Pomocník a podpora</string>
-    <string name="profile_row_privacy">Súkromie a údaje</string>
     <string name="profile_logout">Odhlásiť sa</string>
     <string name="profile_logout_dialog_title">Odhlásiť sa?</string>
     <string name="profile_logout_dialog_message">Budete odhlásený z tohto zariadenia. Vaše objednávky a odmeny zostanú vo vašom účte — stačí sa znova prihlásiť a budete pokračovať tam, kde ste skončili.</string>

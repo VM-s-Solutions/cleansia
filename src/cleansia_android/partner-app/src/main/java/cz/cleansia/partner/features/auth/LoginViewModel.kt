@@ -1,15 +1,18 @@
 package cz.cleansia.partner.features.auth
 
+import android.content.Context
 import cz.cleansia.core.validation.EmailValidator
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
+import cz.cleansia.partner.R
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.auth.AuthRepository
 import cz.cleansia.partner.data.auth.LoginOutcome
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -39,6 +42,7 @@ class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val errorTranslator: ApiErrorTranslator,
     private val snackbar: SnackbarController,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginFormState())
@@ -64,14 +68,14 @@ class LoginViewModel @Inject constructor(
 
         var hasError = false
         if (state.email.isBlank()) {
-            _uiState.update { it.copy(emailError = "Email is required") }
+            _uiState.update { it.copy(emailError = context.getString(R.string.error_email_required)) }
             hasError = true
         } else if (!EmailValidator.isValid(state.email)) {
-            _uiState.update { it.copy(emailError = "Please enter a valid email") }
+            _uiState.update { it.copy(emailError = context.getString(R.string.error_email_invalid)) }
             hasError = true
         }
         if (state.password.isBlank()) {
-            _uiState.update { it.copy(passwordError = "Password is required") }
+            _uiState.update { it.copy(passwordError = context.getString(R.string.error_password_required)) }
             hasError = true
         }
         if (hasError) return

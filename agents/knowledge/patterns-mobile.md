@@ -407,6 +407,35 @@ device locale and the validator rejects a raw `de-DE`); **replay the whole cache
 `UpdateCurrentUser` still replaces first/last name outright; and stay **silent on failure**, because
 a display-language tap is not a save anyone is waiting on.
 
+**A backend enum reaches the screen as an ordinal → resource id; its `name` is a DEBUG-only
+diagnostic.** Every `Code` on the wire carries both a `value` and a non-localized English `name`
+("OnTheWay", "PartiallyRefunded"). Matching on the `name`, or falling back to it, ships English to
+cs/sk/uk/ru. The one shape (partner `OrderStatusPresentation.kt` / `PaymentPresentation.kt`, customer
+`orderStatusLabelRes` / `paymentStatusLabelRes`, iOS `OrderStatusLabel` / `OrderStatusPresentation`):
+a pure `xLabelRes(ordinal): Int?` covering **every** ordinal the backend defines — count them against
+the enum, the missing one is always the newest (Cancelled, PartiallyRefunded) — and a `@Composable`
+that resolves it, falling through to a placeholder. **Take `isDebug` as a parameter rather than
+reading `BuildConfig.DEBUG`**: unit tests run against the *debug* variant, so a resolver that reads
+`BuildConfig` directly makes the production branch — the one that decides whether English leaks —
+permanently unassertable.
+
+**An untranslated literal is invisible to every check we have**, which is why five shipped at once
+(partner status timeline, login validation, scope line; customer payment status). `R` cannot see prose
+that never became a resource, locale key-parity compares only keys that exist, and this module has no
+`lint` step in CI. So a screen with no test seam gets a **source-text scan scoped to the file** —
+strip comments and `${…}` templates, then fail on any string literal holding three or more
+consecutive letters (separators `·`, `#`, `—` pass; prose never does) — **plus a call-site pin**,
+because a resolver test does not cover the call site (the T-0473 rule): assert the card still calls
+`orderStatusLabel(…)` and does not read `.name` itself. `OrderDetailCardStringsTest` is the model;
+mutation-prove both halves by re-introducing the literal.
+
+**A key-dispatched navigation `when` is not exhaustive, so a test has to be.** Profile rows reach
+`CleansiaNavHost` as a `String` key through a `when (key)` used as a *statement*, which Kotlin never
+requires to be total — a row whose key has no branch compiles, renders, and does nothing when tapped
+(the customer "Privacy" row did exactly that for its whole life). `ProfileRowRoutingTest` closes it
+from the outside: parse the keys the tab can emit and the branches the host declares, then assert set
+equality **both ways**, so a dead row and an orphaned branch each go red.
+
 ## Picking an image, and rendering one that lives behind a SAS (T-0448)
 
 Three rules, each of which was a bug before it was a rule.

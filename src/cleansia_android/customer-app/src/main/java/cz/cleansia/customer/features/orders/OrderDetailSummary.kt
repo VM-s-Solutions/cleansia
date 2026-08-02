@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.orders
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +20,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import cz.cleansia.core.format.formatOrderDateRange
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.orders.OrderDetailDto
 
@@ -157,20 +159,45 @@ internal fun PriceBreakdownCard(order: OrderDetailDto) {
 }
 
 /** Backend `PaymentType`: Cash = 1, Card = 2. */
-@Composable
-private fun paymentMethodLabel(order: OrderDetailDto): String? = when (order.paymentType?.value) {
-    1 -> stringResource(R.string.booking_pay_cash)
-    2 -> stringResource(R.string.booking_pay_card)
-    else -> order.paymentType?.name
+@StringRes
+internal fun paymentMethodLabelRes(value: Int?): Int? = when (value) {
+    1 -> R.string.booking_pay_cash
+    2 -> R.string.booking_pay_card
+    else -> null
 }
 
 /** Backend `PaymentStatus`: Pending = 1 … Disputed = 5, PartiallyRefunded = 6. */
+@StringRes
+internal fun paymentStatusLabelRes(value: Int?): Int? = when (value) {
+    1 -> R.string.orders_payment_pending
+    2 -> R.string.orders_payment_paid
+    3 -> R.string.orders_payment_failed
+    4 -> R.string.orders_payment_refunded
+    5 -> R.string.orders_payment_disputed
+    6 -> R.string.orders_payment_partially_refunded
+    else -> null
+}
+
+/**
+ * An ordinal the backend added after this build shipped. The `Code.name` beside
+ * it is non-localized English, so production drops the row entirely rather than
+ * printing it; a debug build shows the bare ordinal so the gap surfaces to us.
+ * [isDebug] is a parameter, not a read of `BuildConfig`, so the production
+ * branch stays assertable from a debug unit test.
+ */
+internal fun unknownPaymentLabel(value: Int?, isDebug: Boolean): String? =
+    if (isDebug && value != null) "#$value" else null
+
 @Composable
-private fun paymentStatusLabel(order: OrderDetailDto): String? = when (order.paymentStatus?.value) {
-    1 -> stringResource(R.string.orders_payment_pending)
-    2 -> stringResource(R.string.orders_payment_paid)
-    3 -> stringResource(R.string.orders_payment_failed)
-    4 -> stringResource(R.string.orders_payment_refunded)
-    5 -> stringResource(R.string.orders_payment_disputed)
-    else -> order.paymentStatus?.name
+private fun paymentMethodLabel(order: OrderDetailDto): String? {
+    val value = order.paymentType?.value
+    return paymentMethodLabelRes(value)?.let { stringResource(it) }
+        ?: unknownPaymentLabel(value, BuildConfig.DEBUG)
+}
+
+@Composable
+private fun paymentStatusLabel(order: OrderDetailDto): String? {
+    val value = order.paymentStatus?.value
+    return paymentStatusLabelRes(value)?.let { stringResource(it) }
+        ?: unknownPaymentLabel(value, BuildConfig.DEBUG)
 }

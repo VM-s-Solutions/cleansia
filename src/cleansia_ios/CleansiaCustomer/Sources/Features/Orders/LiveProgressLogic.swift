@@ -20,8 +20,8 @@ enum LiveProgressStep: Int, CaseIterable {
 }
 
 enum LiveProgress {
-    /// Active step index for the five-dot indicator, mirroring
-    /// `LiveProgressHero.kt:296-303`. New/Pending → Booked, Confirmed →
+    /// Active step index for the five-dot indicator, mirroring `StepIndicator`
+    /// in `LiveProgressHero.kt`. New/Pending → Booked, Confirmed →
     /// Accepted, OnTheWay → On the way, InProgress → Started, Completed →
     /// Finished; Cancelled (or unknown) → none.
     static func activeStep(for status: OrderStatus?) -> LiveProgressStep? {
@@ -36,14 +36,15 @@ enum LiveProgress {
     }
 
     /// Whether the hero shows the live "in-progress" treatment (mascot +
-    /// progress bar) — only for active statuses (`OrderDetailScreen.kt:638-640`).
+    /// progress bar) — only for active statuses (`liveHero` in
+    /// `OrderDetailScreen.kt`).
     static func usesLiveHero(_ status: OrderStatus?) -> Bool {
         OrderStatusGroup.isActive(status)
     }
 
     /// Progress fraction (0…0.97) since the InProgress entry was recorded vs the
     /// estimated duration. Returns nil when either anchor is missing — never a
-    /// guess (`LiveProgressHero.kt:258-276`).
+    /// guess (`computeInProgressProgress` in `LiveProgressHero.kt`).
     static func inProgressFraction(
         history: [OrderStatusTrackDto]?,
         estimatedMinutes: Int,

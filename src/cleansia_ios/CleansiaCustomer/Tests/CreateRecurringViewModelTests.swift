@@ -194,6 +194,68 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertEqual(vm.formState.dayOfWeek, 0)
     }
 
+    // MARK: - Property size
+
+    /// Price-affecting: a blank create defaults to 2 rooms / 1 bathroom, so a
+    /// form that never reaches these setters books the wrong flat.
+    func testPropertySizeReachesTheSubmittedCommand() async {
+        let (vm, client) = makeVM()
+        fillValid(vm)
+        vm.setRooms(4)
+        vm.setBathrooms(2)
+
+        _ = await vm.submit()
+
+        XCTAssertEqual(client.createInputs.first?.rooms, 4)
+        XCTAssertEqual(client.createInputs.first?.bathrooms, 2)
+    }
+
+    func testPropertySizeNeverGoesNegative() {
+        let (vm, _) = makeVM()
+
+        vm.setRooms(-1)
+        vm.setBathrooms(-3)
+
+        XCTAssertEqual(vm.formState.rooms, 0)
+        XCTAssertEqual(vm.formState.bathrooms, 0)
+    }
+
+    // MARK: - Addresses added from inside the form
+
+    /// The form's address list is a snapshot taken on `load()`. An address added
+    /// through the inline manager is invisible until it is re-read, so the row
+    /// the customer just created would not be there to select.
+    func testReloadAddressesPicksUpOneAddedWhileTheFormWasOpen() async {
+        let addressClient = FakeRecurringSavedAddressClient()
+        let (vm, _) = makeVM(addressClient: addressClient)
+        await vm.load()
+        XCTAssertTrue(vm.savedAddresses.isEmpty)
+
+        addressClient.result = .success([
+            RecurringSavedAddress(id: "addr-new", label: "Flat", street: "Zenklova 6", city: "Praha", isDefault: false)
+        ])
+        await vm.reloadAddresses()
+
+        XCTAssertEqual(vm.savedAddresses.map(\.id), ["addr-new"])
+    }
+
+    /// The customer picked the new address in the manager; a reload that also
+    /// re-ran the "default ?? first" seeding would silently move them off it.
+    func testReloadAddressesLeavesAHandPickedSelectionAlone() async {
+        let addressClient = FakeRecurringSavedAddressClient()
+        addressClient.result = .success([
+            RecurringSavedAddress(id: "addr-default", label: "Home", street: "Main 1", city: "Praha", isDefault: true),
+            RecurringSavedAddress(id: "addr-new", label: "Flat", street: "Zenklova 6", city: "Praha", isDefault: false)
+        ])
+        let (vm, _) = makeVM(addressClient: addressClient)
+        await vm.load()
+        vm.setSavedAddressId("addr-new")
+
+        await vm.reloadAddresses()
+
+        XCTAssertEqual(vm.formState.savedAddressId, "addr-new")
+    }
+
     func testCreateModeStillCreates() async {
         let (vm, client) = makeVM()
         fillValid(vm)

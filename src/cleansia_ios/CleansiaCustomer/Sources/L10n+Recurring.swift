@@ -134,8 +134,8 @@ extension L10n {
             localized("recurring_create_address_default")
         }
 
-        static var createAddressEmpty: String {
-            localized("recurring_create_address_empty")
+        static var createAddressAddNew: String {
+            localized("recurring_create_address_add_new")
         }
 
         static var createServicesLabel: String {

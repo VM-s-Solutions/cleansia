@@ -413,6 +413,10 @@ extension CustomerShellView {
         CreateRecurringScreen(
             sourceOrderId: orderId,
             repository: container.recurringRepository,
+            savedAddressRepository: container.savedAddressRepository,
+            geocoding: container.geocodingService,
+            mapProvider: container.mapProvider,
+            serviceArea: container.serviceArea,
             snackbar: snackbar,
             onCreated: { model.pop() }
         )
@@ -427,6 +431,10 @@ extension CustomerShellView {
                 sourceOrderId: nil,
                 editing: template,
                 repository: container.recurringRepository,
+                savedAddressRepository: container.savedAddressRepository,
+                geocoding: container.geocodingService,
+                mapProvider: container.mapProvider,
+                serviceArea: container.serviceArea,
                 snackbar: snackbar,
                 onCreated: { model.pop() }
             )

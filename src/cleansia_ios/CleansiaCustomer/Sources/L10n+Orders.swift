@@ -165,16 +165,51 @@ extension L10n {
             localized("order_detail_code_label")
         }
 
-        static var discountTier: String {
-            localized("order_detail_discount_tier")
+        static func discountLabel(_ source: OrderDiscountSource) -> String {
+            switch source {
+            case .tier: localized("order_detail_discount_tier")
+            case .membership: localized("order_detail_discount_membership")
+            case .promo: localized("order_detail_discount_promo")
+            }
         }
 
-        static var discountMembership: String {
-            localized("order_detail_discount_membership")
+        static var priceBreakdown: String {
+            localized("order_detail_services")
         }
 
-        static var discountPromo: String {
-            localized("order_detail_discount_promo")
+        static var subtotal: String {
+            localized("order_detail_subtotal")
+        }
+
+        static var total: String {
+            localized("order_detail_total")
+        }
+
+        static var paymentMethod: String {
+            localized("order_detail_payment_method")
+        }
+
+        static var paymentStatus: String {
+            localized("order_detail_payment_status")
+        }
+
+        static func paymentMethodLabel(_ method: OrderPaymentMethod) -> String {
+            switch method {
+            case .cash: localized("booking_pay_cash")
+            case .card: localized("booking_pay_card")
+            case let .named(name): name
+            }
+        }
+
+        static func paymentStatusLabel(_ status: OrderPaymentStatus) -> String {
+            switch status {
+            case .pending: localized("orders_payment_pending")
+            case .paid: localized("orders_payment_paid")
+            case .failed: localized("orders_payment_failed")
+            case .refunded: localized("orders_payment_refunded")
+            case .disputed: localized("orders_payment_disputed")
+            case let .named(name): name
+            }
         }
 
         static var errorTitle: String {

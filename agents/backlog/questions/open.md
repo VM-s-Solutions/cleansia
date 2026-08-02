@@ -47,17 +47,35 @@ each gets a line on the pre-PROD readiness checklist.
 - **Q-PLUS-01** (`pre-prod`, **blocking: yes** — blocks T-0497) — does Stripe enforce a
   once-per-customer trial on the Plus price? The two candidate defects have **opposite fixes** and the
   repo cannot distinguish them. **One dashboard check settles it.**
-- **Q-PAYOUT-01** (`pre-prod`, **blocking: yes** — blocks T-0508, and T-0509 behind it) — what must a
-  CZ/SK supplier invoice legally contain? **Not guessable; needs an accountant.**
-- **Q-PAYOUT-02** (`pre-prod`, **blocking: yes** — blocks T-0508) — is a cleaner an employee or a
-  self-employed supplier (OSVČ/živnostník)? This decides **which document** we are generating.
+- **Q-PAYOUT-01** (`pre-prod`, **blocking: no — ANSWERED FOR CZ 2026-08-02**, still open for **SK**) —
+  the owner supplied **a real Czech ISDOC invoice they issued themselves**, which is exactly the
+  *"one real example your accountant accepts"* the question asked for. **CZ is specified; T-0508 is
+  unblocked.** SK remains unanswered and is carved out by T-0508 AC11.
+- **Q-PAYOUT-02** (`pre-prod`, **blocking: yes** — now blocks **T-0522**, not T-0508) — is a cleaner an
+  employee or a self-employed supplier (OSVČ/živnostník), and **who issues** the document? This decides
+  **which document** we are generating. **Sharpened 2026-08-02 with a PM finding: the platform's
+  current PDF runs in the OPPOSITE direction from the owner's specimen.**
+- **Q-PAYOUT-03** (`pre-prod`, **blocking: yes** — blocks T-0522) — **NEW.** The specimen states *"Nejsme
+  plátci DPH"*. How does the platform know whether a cleaner is VAT-registered, and what does each
+  variant print?
+- **Q-PLUS-02** (`pre-prod`, **blocking: yes** for T-0512/T-0493; **non-blocking** for the T-0511
+  panel) — **NEW.** The express-upgrade quota's three numbers: one per month or unlimited? does an
+  unused month roll over? does the counter reset on the **billing date** or the **calendar month**?
+- **Q-PLUS-03** (`pre-prod`, **blocking: yes** — blocks T-0516) — **NEW.** Favourite cleaner: does it
+  stay **universal**, or become **Plus-only**? The two answers have opposite diffs and one of them is
+  not a backend ticket at all.
+- **Q-IOS-LEGAL-01** (`pre-submission`, **blocking: no**) — **NEW.** Which origin do the shipped apps'
+  Terms/Privacy links point at, and when does real legal text exist there? Owner ruled **DEV URLs for
+  now**; recorded as a **pre-iOS-review gate** (T-0524), not a blocker today.
 - **Q-OBS-01** (`pre-prod`, **blocking: no** — shapes T-0500/T-0501) — DEV, the only live environment,
   has **no error tracking from any source**. Turn Sentry on for dev, add an App Insights exporter, or
   accept the gap with a date?
 
-**Four `blocking: yes` questions are open in this file as of 2026-08-02: Q-PROFILE-01, Q-PLUS-01,
-Q-PAYOUT-01, Q-PAYOUT-02.** The last three are all new (sprint-15 planning) and **two of them —
-Q-PAYOUT-01/02 — are legal questions no agent may answer.**
+**Five `blocking: yes` questions are open in this file as of 2026-08-02: Q-PROFILE-01, Q-PLUS-01,
+Q-PLUS-02, Q-PLUS-03, Q-PAYOUT-02, Q-PAYOUT-03** *(six entries; Q-PAYOUT-01 came off the list when the
+owner supplied a real invoice)*. **The two payout ones remain legal questions no agent may answer.**
+**The three new ones are all narrow and pre-scoped** — two numbers and a yes/no each — because they
+came out of the owner's own answers rather than out of a panel.
 
 Format:
 
@@ -790,24 +808,132 @@ _No open Wave-1 *planning* questions remain._
 - What would help most: the field list, plus **one real example** of an invoice your accountant accepts.
 - Default taken: **none.** T-0508 is `blocked`. Its **AC1 is dispatchable now** and will render the
   current document so this question arrives with a concrete sample attached.
-- Answer: _(owner fills in)_
+- **✅ ANSWERED FOR CZ — 2026-08-02.** The owner supplied **a photograph of a Czech ISDOC invoice they
+  issued themselves**, i.e. precisely the *"one real example"* this question asked for. The specimen is
+  transcribed block-by-block into **T-0508**'s Context and is the specification for **T-0522**:
+  *Dodavatel* (supplier = **the cleaner**) with name / street / postcode+city / country / **IČ** and a
+  **VAT statement** (theirs: *"Nejsme plátci DPH"*); *Kontaktní údaje* (e-mail, telephone);
+  *Odběratel* (customer = **Cleansia**) with **IČ** + **DIČ**; the *Faktura* number top-right plus a
+  **barcode**; *Datum vystavení* and *Datum splatnosti*; a payment block with the **Czech local account
+  number** (`5885638003/5500`), **IBAN**, **SWIFT**, **variabilní symbol** (= the invoice number),
+  **konstantní symbol**, payment method and amount due, plus a **QR Platba +F**; line items as
+  description / quantity / unit / unit price / line total; a late-payment interest notice; and
+  **Celkem k úhradě**.
+- **⚠️ STILL OPEN: SK.** The owner ruled **CZ first**. Nothing here is evidence about Slovak
+  requirements and **T-0508 AC11 forbids reading this CZ answer as a CZ/SK one.** Downgraded to
+  `blocking: no` because no ticket waits on the SK half today.
 
 ### Q-PAYOUT-02 — [blocking: **YES**] Is a cleaner an employee or a self-employed supplier (OSVČ)?
 - Raised by: pm (T-0508)
 - Owner: **owner**
 - Resolve-by: **pre-prod**
-- Date: 2026-08-02
+- Date: 2026-08-02 · **sharpened 2026-08-02 after the owner's specimen arrived**
 - Question: Employee, or self-employed supplier (OSVČ / živnostník)? And if a supplier: does the
   **cleaner** issue the invoice to the platform, or does the platform issue a **self-billing** document
   on their behalf?
 - Why it matters: it decides **which document** is being generated. If employee → this is a **payslip**,
-  with different content and different law, and T-0508 is not an `M` but a different feature. If
+  with different content and different law, and T-0522 is not an `M` but a different feature. If
   supplier → self-billing has its own requirements, including the supplier's prior agreement.
   **Adding fields cannot fix a document of the wrong legal category.**
 - Corroborating signal from the code: the entity is called **`EmployeeInvoice`** — the two competing
   models' names collided into one, which is evidence this was never decided.
-- Default taken: **none.** T-0508 is `blocked` on this and Q-PAYOUT-01 together.
+- 🔴 **NEW GROUNDING — PM-verified first-hand 2026-08-02, and it is the reason this stayed blocking
+  after the specimen arrived:** **the platform's current PDF runs in the OPPOSITE direction from your
+  invoice.** `DefaultInvoiceLayoutBuilder.cs:29-31` puts **CLEANSIA** in the header as the issuer, and
+  `:73-81` puts the **cleaner under "Billed To"**. Your specimen has the **cleaner as *Dodavatel***
+  (supplier) and **Cleansia as *Odběratel*** (customer). **The two parties are the wrong way round.**
+  So this is not "we are missing IČ and a bank block" — it is a document of a different kind.
+- **The question in one line:** *on the document the platform generates, whose name goes in the header
+  as the issuer — yours, or the cleaner's?*
+- Default taken: **none.** **T-0508 is now `ready`** (the specification does not need this answer);
+  **T-0522 (the build) is `blocked` on it.**
 - Answer: _(owner fills in)_
+
+### Q-PAYOUT-03 — [blocking: **YES**] How does the platform know a cleaner's VAT status, and what does each variant print?
+- Raised by: pm (T-0522, from the owner's specimen)
+- Owner: **owner** (with their accountant)
+- Resolve-by: **pre-prod**
+- Date: 2026-08-02
+- Question: Your specimen states **"Nejsme plátci DPH"** (not VAT registered) — the common case for an
+  individual cleaner. A **VAT-registered** supplier prints **DIČ** and VAT lines instead. Two parts:
+  **(a)** how does the platform determine which a given cleaner is? `Employee.VatNumber` exists and is
+  **nullable** — is "null means not registered" sufficient, or must a cleaner positively declare their
+  status (and can it change mid-pay-period)? **(b)** what exactly does each variant print?
+- Why it matters: **a document with an empty VAT field, or one that implies registration where there is
+  none, is wrong in a way that matters.** And today `FileExtensions.cs:48` hardcodes `VatAmount = 0` —
+  correct for a non-payer **by accident**, and wrong the moment one cleaner registers.
+- What would help most: **the same specimen, from a VAT-registered supplier**, if you have one. One
+  more photo settles part (b) completely.
+- Default taken: **none.** T-0522 is `blocked` on this together with Q-PAYOUT-02.
+- Answer: _(owner fills in)_
+
+### Q-PLUS-02 — [blocking: **YES** for the build; **NO** for the design panel] The express quota's three numbers
+- Raised by: pm (T-0511/T-0512/T-0493, from the owner's *"You can upgrade"* answer)
+- Owner: **owner** (product/pricing)
+- Resolve-by: **pre-prod**
+- Date: 2026-08-02
+- Question — three numbers, and they are independent:
+  1. **One per month, or unlimited?** The copy on iOS and Android says *"One free same-day booking per
+     month"*; **the web copy says *"Pay less for last-minute bookings inside the express window"*, which
+     has no cap at all.** Which is the product?
+  2. **Does an unused month roll over?** (Two free next month if you used none this month?)
+  3. **Does the counter reset on the customer's BILLING DATE or on the CALENDAR month?** Billing-date
+     is fairer to a customer who subscribes on the 28th; calendar-month is what the copy implies and is
+     easier to explain.
+- Why it matters: (3) is **not** a display preference — a billing-anchored window and a calendar window
+  are different stored shapes. **T-0511 AC2 requires the design to survive either answer**, so the
+  panel proceeds now; but T-0512 cannot write the column and T-0493 cannot enforce the cap until you
+  pick.
+- ⚠️ **A fourth thing you should see while deciding (1):** *"same-day"* **is not what express means in
+  this codebase.** `BookingPolicy` defines express as a **2–4 hour** lead time. A booking made at 09:00
+  for 18:00 today is same-day and **already carries no surcharge for anybody**. So the perk as worded
+  promises to waive a charge that would never have applied. **T-0513 AC2** asks you to rule: change the
+  word, or change the mechanic.
+- Default taken: **none for (1) and (3).** For (2), T-0511 will propose **no rollover** as its stated
+  default (simplest to explain, no unbounded accrual) — **overridable by your answer.**
+- Answer: _(owner fills in)_
+
+### Q-PLUS-03 — [blocking: **YES**] Favourite cleaner: universal, or Plus-only?
+- Raised by: pm (T-0516, from the owner's *"I'd like to have it working fully"* answer)
+- Owner: **owner** (product/pricing)
+- Resolve-by: **pre-prod**
+- Date: 2026-08-02
+- Question: The feature is **advertised as a Cleansia Plus perk** on all three clients (iOS's own
+  string reads *"**Plus benefit** · choose someone who's cleaned for you before"*), but the server
+  gates it on **one thing only** — that the customer has previously **completed** an order with that
+  cleaner (`CreateOrder.cs:140-154`). **There is no membership check of any kind.** Any customer can
+  use it. Should it stay that way, or become Plus-only?
+- Why it matters: **the two answers have opposite diffs, and one of them is not a backend ticket at
+  all.** *Plus-only* = a server-side membership rule (small) **plus** taking a working feature away
+  from existing non-subscribers who use it today. *Universal* = the perk comes **off** the Plus copy on
+  three clients × five locales, because selling something everyone already has is the
+  misrepresentation.
+- Note: this is **not** the same question as whether the perk works. The owner already answered that —
+  it must. **T-0495** (the dispatch ADR) and **T-0515** (the build) proceed regardless; only the gate
+  waits.
+- Default taken: **none — deliberately.** T-0516 is `blocked`. **The PM will not default this**, because
+  defaulting to "gate it" silently removes a live capability from real users.
+- Answer: _(owner fills in)_
+
+### Q-IOS-LEGAL-01 — [blocking: no — a **pre-submission gate**] Which origin serves Terms and Privacy in the review build?
+- Raised by: pm (T-0524, from the owner's housekeeping answers)
+- Owner: **owner**
+- Resolve-by: **pre-submission**
+- Date: 2026-08-02
+- Question: The owner ruled *"legal text later, DEV URLs for now."* **Which origin ships in the App
+  Review build, and by when does real legal text exist at it?**
+- Grounding, PM-verified 2026-08-02: both mobile apps resolve their consent links from **one** constant
+  — iOS `CleansiaWeb.swift:8-21`, Android `CleansiaWeb.kt:13-20` — both pointing at
+  `https://cleansia.cz/terms` and `/privacy`. The customer web app **defines** those routes
+  (`app.routes.ts:140-147`), **but production has never been deployed** (`status/sprint-15.md`), so in
+  a build today those links go to a host with no app behind it.
+- Why it matters: a reachable privacy policy is a submission requirement, and consent links that 404
+  are also a **GDPR-transparency** problem — which compounds **T-0507** (consent required on web, never
+  persisted, never asked on mobile). **The fix is one line per platform** by design; the *text* is not.
+- Default taken: **the owner's ruling stands — DEV URLs for now, recorded as a gate.** Nothing changes
+  today; T-0524 is filed `blocked` so this surfaces at the pre-submission checkpoint rather than in a
+  rejection.
+- Answer: _(owner fills in — the origin, and the date real text lands)_
 
 ### Q-PLUS-01 — [blocking: **YES**] Does Stripe enforce a once-per-customer trial on the Plus price?
 - Raised by: pm (T-0497, from the Cleansia Plus audit)

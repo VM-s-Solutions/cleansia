@@ -398,3 +398,315 @@ permit *"it did not reproduce"* as a successful close.
 
 **Sprint-14 §2.12 is why.** The PM stamped a relayed claim "PM-verified", was accurate about the file
 and wrong about the repo, and filed a false blocker. Reading an artifact is not verifying a claim.
+
+---
+---
+
+# ADDENDUM — the owner's four product answers (2026-08-02)
+
+**Input:** the owner answered the four open product decisions and four housekeeping items.
+**Output: 14 new tickets `T-0511`…`T-0524`, 4 rewritten (`T-0493`, `T-0495`, `T-0508`, `T-0509`),
+2 closed `done` (`T-0474`, `T-0475`), 5 new owner questions, 1 downgraded.**
+**Baseline: `master` at `dceed4f1`** — **not** the `0e4ede1b` this document was written against.
+
+> ## 🟥 READ THIS FIRST — the backlog above is stale, and by more than a little
+>
+> **PR #189 (`2012b014`, 2026-08-02) merged 236 files / +10,728 lines and updated NOT ONE ticket
+> file.** Its message names *"order detail redesign, Plus enforcement, onboarding, cost and cold
+> start"* — i.e. it shipped work belonging to a large slice of `T-0476`…`T-0510`. **#186, #187 and
+> #188 did the same for T-0479/T-0490, T-0475 and T-0480.** Every `draft`/`blocked` row above must be
+> treated as **unverified** until someone reconciles it against the code.
+>
+> **A full reconciliation of sprint-15 against `dceed4f1` is NOT in this addendum and is the single
+> highest-value backlog job outstanding.** What this pass did instead is narrower and deliberate: it
+> re-verified, first-hand and post-#189, **only** the premises of the four decisions it was asked to
+> ticket. **All four still hold.** The new tickets are not duplicating shipped work.
+>
+> | Re-verified at `dceed4f1` (post-#189) | Result |
+> |---|---|
+> | `MembershipPlan.AllowsExpressUpgrade` read by any pricing code | **still zero readers** |
+> | `Order.PreferredEmployeeId` read by any dispatch code | **still zero readers**; `TakeOrder.cs` never mentions it |
+> | `ValidateIban` | **still `NotEmpty()` + `Length(15,34)`** |
+> | The payout invoice's parties | **still Cleansia-as-issuer / cleaner-as-"Billed To"** |
+> | T-0494 (recurring gate) | **SHIPPED in #189** — `CreateRecurringBooking.cs:84-92` |
+
+---
+
+## A1. Answer 1 — express upgrade: **BUILD IT**
+
+> Owner: *"You can upgrade."*
+
+**This closes T-0493's product question and opens an engineering one.** Reading A (a price benefit) is
+the ruling — but the advertised copy is *"one free same-day booking per month"*, which needs a **usage
+counter that does not exist**. `MembershipPlan.cs:99-104` defers exactly this to a *"future membership
+benefit usage tracker"*. So the perk is **pricing change + usage tracking + a monthly reset rule**, and
+that is an `L` as one ticket. **Split before ready, per the standing rule.**
+
+| Ticket | Size | Status | What it is |
+|---|---|---|---|
+| **T-0511** 📋 | M | **`ready`** | **ARCHITECT PANEL + ADR** — how a metered benefit is counted, consumed, reset and **reversed on cancellation** |
+| **T-0512** | S | `draft` | the entity + ⚠️ `ef-migration` — **separate so a migration is not in the same PR as money math** |
+| **T-0493** ✏️ | M | `draft` | **REWRITTEN** — waive server-side across the **three** call sites; consume one unit |
+| **T-0513** 🆕 | M | `draft` | **the copy says three different things** — see below. **No dependency; dispatchable today** |
+| **T-0514** | M | `draft` | show the waived line + the remaining count. ⚠️ `nswag-regen` |
+
+### 🔴 A finding this pass produced that was on no ticket and in no audit
+
+**The three clients advertise three different express perks, and none of them matches the code.**
+
+| Surface | Promise |
+|---|---|
+| Android `strings.xml:844` + iOS `membership_perk_express_desc` | *"One free same-day booking per month, no surcharge."* → **metered, 1/month** |
+| Web `en.json:1095` | *"Pay less for last-minute bookings inside the express window."* → **unmetered discount, no cap** |
+| `BookingPolicy.cs:18-30` | express = **2–4 h lead time**, +20% → **not "same-day" at all** |
+
+**"Same-day" is the wrong word, and it fails in the customer's favour in a way that will generate
+support tickets.** A booking made at 09:00 for 18:00 today is same-day and **already free of surcharge
+for everyone** — the perk as worded promises to waive a charge that would never have applied. The
+customer who reads it and books at 09:00 for 12:00 (which *is* express) is the one who gets a surprise.
+**T-0513 AC2 puts the ruling to the owner: change the word, or change the mechanic.**
+
+**One correction to this document's own §1.2:** T-0493's row read *"'Express' has 3 meanings spanning
+`S`→new product; AC2 forces a re-file."* The owner picked the `S`-shaped meaning — **and it is still
+not `S`**, because the *quota* is the part nobody costed. That is why it is five tickets and not one.
+
+---
+
+## A2. Answer 2 — favourite cleaner: **MAKE IT WORK**
+
+> Owner: *"It exists, you can select in the app but I think it doesn't work fully. And I'd like to have
+> it working fully."*
+
+**They are right, and it is worse than "doesn't work fully" — it does nothing at all.** All
+PM-verified first-hand:
+
+- **written** (`CreateOrder.cs:140-154` validates it → `OrderFactory.cs:124` → `Order.cs:349`)
+- **read by nothing.** The only other references are `Order.cs:621` (anonymization nulls it) and a
+  comment. **`TakeOrder.cs` — the entire dispatch path — never mentions it.**
+- `Order.cs:217-224` describes *"the matching algorithm boosts this employee's score"*. **There is no
+  matching algorithm.** The same comment also ends *"today the field exists but no UI sets it"* — which
+  is **also** false now; three clients set it. **The comment is stale in both directions.**
+- `MaterializeRecurringBookings.cs:138` hardcodes `PreferredEmployeeId: null` — **the recurring
+  customer, the single strongest case for "the same cleaner every time", is wired to null.**
+
+| Ticket | Size | Status | What it is |
+|---|---|---|---|
+| **T-0495** ✏️📋 | M | **`ready`** | **REWRITTEN → ARCHITECT PANEL + ADR** — how a **pull-model** board honours a preference, **and the fallback** |
+| **T-0515** 🆕 | M | `draft` | the build: dispatch rule + fallback + fix the stale comment |
+| **T-0516** 🆕 | S | 🚫 `blocked` | the **Plus gate** — `Q-PLUS-03` |
+
+**The hard half is the fallback, not the prioritisation.** This is a pull model — cleaners take work
+off a board plus a 30-minute digest push. **A pull model has no assignment step to bias.** Every
+mechanism that actually honours a preference (notify-first, exclusive hold) buys it with **latency**:
+the order sits unclaimed while we wait for one person who may be asleep. **A booking that goes
+unclaimed because we were waiting is a worse outcome than not honouring the preference** — and the
+customer paid for the perk that caused it. T-0495 AC2 is where that gets decided.
+
+**And gating is a genuinely separate question.** iOS's own string says *"**Plus benefit** · choose
+someone who's cleaned for you before"*, while the server checks only that the customer previously
+**completed** an order with that cleaner. **No membership rule of any kind.** → `Q-PLUS-03`.
+
+---
+
+## A3. Answer 3 — bank details: **CZ FIRST, BUILT TO EXTEND**
+
+> Owner: *"Let's start with CZ but in a way that's easy to expand in the future — like Bank Account,
+> Card number, and whatever else is needed to make a payment to the employee."*
+
+**The owner asked for the architect panel explicitly, and it is the right call.**
+
+| Ticket | Size | Status | What it is |
+|---|---|---|---|
+| **T-0517** 📋 | M | **`ready`** | **ARCHITECT PANEL + ADR** — shape, governing country, `CountryConfiguration`, encryption, migration, **"no PAN column"** |
+| **T-0518** | M | `draft` | schema + ⚠️ `ef-migration` + backfill of live DEV rows |
+| **T-0519** | M | `draft` | capture + **real** validation. ⚠️ `nswag-regen` |
+| **T-0520** | M | `draft` | partner web + admin UI |
+| **T-0521** | M | `draft` | partner Android + iOS UI |
+| **T-0509** ✏️ | S | **`ready`** | **REWRITTEN** — the exposure sweep. **No dependency; dispatchable today** |
+
+### What the grounding changed, in both directions
+
+**Better than assumed — the platform is further along than sprint-15 §4 thought:**
+- **`Employee` already has the identity fields.** `RegistrationNumber` (IČO), `VatNumber` (DIČ),
+  `LegalEntityName` (`Employee.cs:15-23`), captured via `UpdateIdentificationInfo.cs` with a **real
+  per-country validator service** (`ITaxIdValidator` → `ValidateRegistrationNumberAsync` /
+  `ValidateVatNumberAsync`). **That is the archetype for a country-aware bank validator — do not invent
+  a new one.**
+- **`CountryConfiguration` already does per-country label/format/required** for registration and VAT
+  numbers (`:43-57`). A bank equivalent is a well-trodden path in this codebase, not a new idea.
+- **`CompanyInfo` already models the richer shape** (`bankName` / `bankAccountNumber` / `iban` /
+  `swift`) and renders it on the receipt.
+
+**Worse than assumed:**
+- 🔴 **The entire server-side validation of a cleaner's bank account is `NotEmpty()` + `Length(15, 34)`**
+  (`ValidationExtensions.cs:122-130`), shared by **all three** write paths (`UpdateBankDetails.cs:36`,
+  `UpdateEmployee.cs:128`, `AdminUpdateEmployee.cs:73`). **No checksum, no country rule.
+  `"totally not an iban!!"` is 21 characters and passes.**
+- 🔴 **The IBAN is NOT "read by nothing"** — the sprint-15 filing of T-0509 was wrong about that, and
+  the correction matters. It has **four** couplings: the **profile-completeness gate** that decides
+  whether a cleaner may take orders (`Employee.cs:283`, `:313` → `"profile.fields.iban"`), the **GDPR
+  export** (`GdprExportDto.cs:41`), an **admin paged LIST DTO** (`EmployeeListItem.cs:52` — every admin
+  list page ships every cleaner's account number), and an audit-log test asserting it never reaches
+  audit JSON. **"Just delete it" was never as free as it looked, and "add columns" will break the gate
+  that lets cleaners work.** → T-0518 AC6/AC7, T-0509.
+
+**Closed and not reopened: card numbers are not a column.** A PAN is a tokenised PSP object. Storing
+one puts this platform in PCI-DSS scope — a business decision orders of magnitude larger than a payout
+field. T-0517 AC10 records it as a constraint with the mechanism named for the day card payouts are
+wanted (a payout-token **reference**, not a number).
+
+---
+
+## A4. Answer 4 — the invoice: **the owner supplied the specification**
+
+> The owner sent a photo of a Czech ISDOC invoice they issued themselves.
+
+**This is the single most valuable thing in the batch.** T-0508's own AC said *"what would help most:
+the field list, plus **one real example** of an invoice your accountant accepts."* **`Q-PAYOUT-01` is
+answered for CZ. T-0508 moves `blocked` → `ready`.**
+
+| Ticket | Size | Status | What it is |
+|---|---|---|---|
+| **T-0508** ✏️ | M | **`ready`** | **REWRITTEN** — map the specimen onto the model, field by field. **Builds nothing** |
+| **T-0522** 🆕 | M | 🚫 `blocked` | rebuild the document. `Q-PAYOUT-02` + `Q-PAYOUT-03`. ⚠️ `ef-migration` |
+| **T-0523** 🆕 | M | `draft` | **QR Platba (SPD)** + the barcode — new dependency, own ticket |
+
+### 🔴 The finding that changes the shape of this work
+
+**The current document runs in the OPPOSITE DIRECTION from the owner's specimen.**
+`DefaultInvoiceLayoutBuilder.cs:29-31` puts **CLEANSIA** in the header as issuer; `:73-81` puts the
+**cleaner under "Billed To"**. The specimen has the **cleaner as *Dodavatel*** and **Cleansia as
+*Odběratel***. **The two parties are the wrong way round.** That is not a missing-fields problem — it
+is a document of a different kind, and **no amount of adding fields repairs it.** It is precisely why
+`Q-PAYOUT-02` (employee vs OSVČ; who issues) stays `blocking: yes` even though the field list is now
+known — and the question is now concrete enough to answer in one line: *whose name is in the header?*
+
+### Two claims in the sprint-15 filing that are WRONG and are corrected on the tickets
+
+1. **"No variable symbol" — false.** `EmployeeInvoice.VariableSymbol` (`:72`),
+   `GenerateVariableSymbol(employeeId, payPeriodId)` (`:331`), rendered at
+   `DefaultInvoiceLayoutBuilder.cs:38-39`. `PaymentReference` defaults to the invoice number (`:126`).
+   **The VS exists and prints.** *(The specimen wants VS **= the invoice number**; whether the existing
+   generator satisfies that is T-0522 AC4.)*
+2. **"No IČ, no VAT" — half false.** The **columns exist and are validated**; they are simply **not on
+   the PDF**. The identity half is a **rendering** job, not a capture job.
+
+**The real gaps, restated accurately:** wrong parties · the wrong party's bank block (the only bank
+details on any of these documents are **Cleansia's own**) · **no due date** anywhere in the model ·
+no konstantní symbol · no payment method · **the line items are a pay breakdown, not invoice lines**
+(no quantity, no unit, no unit price) · no QR · no barcode · `VatAmount = 0` **hardcoded**
+(`FileExtensions.cs:48`) — right for a non-payer *by accident*.
+
+**T-0508 AC6 is the sleeper.** Reshaping `OrderLineItem` from base/extras/expenses into
+description/quantity/unit/unit-price is the largest piece of design in the whole invoice change and the
+one most likely to be waved through as "mapping".
+
+---
+
+## A5. Housekeeping — all four
+
+| Item | Ruling | Action taken |
+|---|---|---|
+| Branches merged | ✅ | noted; `master` is at `dceed4f1` |
+| **xcconfig created, values not entered** | *"mark done, they will fill it before an iOS review"* | **T-0475 → `done`** (merged `1262b8cb` #187; `Config/{Base,Local}.xcconfig` verified on disk, `Local` gitignored at `.gitignore:26`). **The residual is recorded on the ticket and in T-0521 AC1: any iOS ticket that runs `xcodegen generate` must confirm the values are in first** |
+| Clients regenerated | ✅ | **T-0474 → `done`.** The PM checked the *deliverable* (the prescribed step) not just the act: `README.md:84-85`, `:105`, `:54`, `:72` document both legs. **Stated on the ticket: no script was run and no iOS build was made** |
+| Legal text later, **DEV URLs for now** | recorded as a **gate**, not a blocker | **T-0524** filed `blocked` + **`AR-PRIV-5` added to `ios-app-review-checklist.md`** (a gate living only in a blocked ticket is a gate that gets missed) + `Q-IOS-LEGAL-01` `resolve-by: pre-submission`. **PM-verified: both apps link to `cleansia.cz/terms` + `/privacy` and production has never been deployed** |
+
+---
+
+## A6. Dispatch order
+
+### 🟩 Dispatchable **today** — no dependency, no owner answer
+
+| Ticket | Why now |
+|---|---|
+| **T-0511** 📋 · **T-0495** 📋 · **T-0517** 📋 | the three panels. **Panel = step 1**; all three pass DoR |
+| **T-0509** 🔒 | **~1 hour, and its value decays.** A sweep of one column is cheaper than a sweep of five — run it **before** T-0518 widens the field set |
+| **T-0508** | the spec. Its AC1 renders the current document and **makes `Q-PAYOUT-02` concrete**: *"here is what your cleaners receive, and the parties are the wrong way round"* |
+| **T-0513** | reduces a live misrepresentation with **no backend and no dependency** |
+
+### Sequencing
+
+```
+WAVE A   T-0511 · T-0495 · T-0517  (three architect panels, parallel — different domains, no shared files)
+         T-0509 · T-0508 · T-0513  (parallel, independent)
+WAVE B   T-0512 · T-0518        ⚠️ BOTH ef-migration → OWNER GATE, hold everything behind them
+WAVE C   T-0493 · T-0515 · T-0519
+WAVE D   T-0514 · T-0520 · T-0521 · T-0522   ⚠️ nswag-regen → OWNER GATE before the three client tickets
+WAVE E   T-0523
+ANYTIME  T-0516 (on Q-PLUS-03) · T-0522 (on Q-PAYOUT-02 + Q-PAYOUT-03)
+GATE     T-0524 — pre-submission only. Do not dispatch.
+```
+
+### New shared-file lanes this addendum adds
+
+| Lane | Order | Why |
+|---|---|---|
+| `BookingPolicy.cs` + `OrderFactory.cs` + `QuoteOrder.cs` + `OrderPricingCalculator.cs` | **T-0496** (already filed) → **T-0493** | One surcharge, **three** call sites that must not drift — `BookingPolicy.cs:80-85` documents the ONE-ordering rule in the code itself |
+| `ValidationExtensions.cs` + the three employee update commands | **T-0519** vs the onboarding chain **T-0505…T-0510** | **Shared with partner onboarding. Serialize before dispatch** |
+| `Employee.cs` | **T-0518** sole writer | the completeness gate and anonymization both live there |
+| `DefaultInvoiceLayoutBuilder.cs` + `InvoicePdfData.cs` + `FileExtensions.cs` | **T-0522** → **T-0523** | |
+| `Localizable.xcstrings` + `values*/strings.xml` (customer) | append **T-0513** → **T-0514** to the existing sprint-15 lane | |
+| `CreateOrder.cs` | **T-0515** → **T-0516** | the validator, twice |
+
+---
+
+## A7. The owner-decision list — shortest form, ranked by tickets unblocked per minute
+
+| # | What | Blocks | Cost |
+|---|---|---|---|
+| **1** | **`Q-PLUS-02`** — three numbers: 1/month or unlimited? rollover? billing-date or calendar-month? **Plus the "same-day" ruling** | T-0512, T-0493 (**not** the T-0511 panel — it designs for both) | **2 min** |
+| **2** | **`Q-PLUS-03`** — favourite cleaner: universal or Plus-only? | T-0516 | **1 min** |
+| **3** | **`Q-PAYOUT-02`** — *whose name is in the invoice header, yours or the cleaner's?* | **T-0522** | 1 min once T-0508 AC1 shows you the current PDF |
+| **4** | **`Q-PAYOUT-03`** — VAT-registered vs not: how do we know, what prints? **A second photo from a VAT-registered supplier settles half of it** | T-0522 | an accountant note |
+| **5** | Enter the xcconfig values (both app dirs) | every iOS ticket | 2 min |
+| **6** | **`Q-PLUS-01`** (carried) — the Stripe trial check, in test mode | T-0497 | 1 min |
+| **7** | `Q-IOS-LEGAL-01` — which origin ships, and when real legal text exists | **nothing today**; gates submission | at submission |
+| — | *Carried, unchanged:* `Q-PROFILE-01` · `Q-OBS-01` · `Q-AZURE-01` · `Q-PAYOUT-01`-for-**SK** | | |
+
+**Nothing above was defaulted.** Two were deliberately left with no default: `Q-PLUS-03` (defaulting to
+"gate it" silently removes a working capability from real users) and `Q-PAYOUT-02`/`-03` (legal).
+
+---
+
+## A8. What this pass deliberately did NOT do (Gate 0.5 leg 3, on the PM's own work)
+
+- **No specialist agent was dispatched. No code was written.** Every edit is under `agents/`. Nothing
+  committed, staged or pushed; no `git stash`; **`CLAUDE.md` untouched**; `src/cleansia_ios/**/Info.plist`
+  and `**/project.yml` **never opened** (the live Stripe key is in them).
+- **No panel was convened.** Three tickets go out **needing** one (T-0511, T-0495, T-0517) — that is DoR
+  item 2 with the panel as step 1, not a dependency. **All three are `ready` today.**
+- **No build, no test suite, no Gradle task, no iOS build was run.** Every "2295 / 108 / 75" in the new
+  tickets is a **baseline quoted from sprint-15**, not a measurement this pass took.
+- 🔴 **Sprint-15 was NOT reconciled against PR #189.** 236 files shipped without a single ticket update
+  and this pass verified only the four decisions' premises. **Every other row above is unverified.**
+  Named here so it is not lost — **it is the highest-value backlog job outstanding.**
+- **No ticket was written for the web wizard's missing preferred-cleaner picker.** Web customers cannot
+  select one at all (`order-wizard.facade.ts:580` sends `undefined`). **Named on T-0495 as an
+  out-of-scope output, deliberately not ticketed until the ADR says whether the feature survives in a
+  shape worth building a picker for.**
+- **No implementation ticket behind `Q-PAYOUT-01`-for-SK.** CZ first, per the owner.
+
+### What the PM verified first-hand, on `dceed4f1`
+
+`MembershipPlan.cs:85-116` · every `AllowsExpressUpgrade` reference repo-wide (**zero** in pricing) ·
+`BookingPolicy.cs` **in full** · its three call sites `OrderFactory.cs:100-102`, `QuoteOrder.cs:168`,
+`OrderPricingCalculator.cs:65` · `CancellationPolicyResolver.cs` (the archetype) · every
+`PreferredEmployeeId` reference on all four platforms · `TakeOrder.cs` **in full** (**zero**
+references) · `CreateOrder.cs:130-165` · `Order.cs:210-234` + `:605-630` ·
+`MaterializeRecurringBookings.cs:138` · `CreateRecurringBooking.cs:78-95` (**T-0494 shipped**) ·
+`IUserMembershipRepository.cs:21-29` · `Employee.cs:15-35` · `ValidationExtensions.cs:122-130` ·
+all three `ValidateIban()` call sites · `UpdateBankDetails.cs` **in full** ·
+`UpdateIdentificationInfo.cs:60-150` · `CompanyInfo.cs:60-110` · `CountryConfiguration.cs` **in full** ·
+`FileExtensions.cs:28-90` · `InvoicePdfData.cs` **in full** · `DefaultInvoiceLayoutBuilder.cs:20-115` ·
+`DefaultReceiptLayoutBuilder.cs:167-168` · `EmployeeInvoice.cs` (VS/number/payment-reference members) ·
+the express + favourite copy across **all three** clients (Android `strings.xml`, iOS
+`Localizable.xcstrings` decoded from JSON, web `en.json`) · `CleansiaWeb.swift` + `CleansiaWeb.kt` +
+`app.routes.ts:140-147` · `src/cleansia_ios/Config/` + `.gitignore:26` + `README.md:54/72/84-85/105` ·
+`git log` and `git show --stat 2012b014`.
+
+### What is RELAYED and labelled as such
+
+The **owner's** four answers and their four housekeeping statements (relayed, acted on, and the two
+`done` transitions say on the ticket exactly what was and was not corroborated). Everything else in
+this addendum is a first-hand read at `dceed4f1`.

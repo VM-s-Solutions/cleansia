@@ -10,6 +10,65 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## 🟩 ADDENDUM to SPRINT-15 — the owner's **four product answers**: 14 new tickets, `T-0511`…`T-0524`
+>
+> **Baseline: `master` at `dceed4f1`.** Filed 2026-08-02. Full reasoning, the corrections, the dispatch
+> waves and the owner-decision list: **`agents/backlog/status/sprint-15.md` § ADDENDUM** — read that,
+> not this row.
+>
+> ### 🟥 The backlog below is STALE. PR #189 shipped 236 files and updated zero tickets.
+>
+> **`2012b014` (#189)** — *"order detail redesign, Plus enforcement, onboarding, cost and cold start"* —
+> merged **+10,728 lines** across a large slice of `T-0476`…`T-0510` **without touching one ticket
+> file**. **#186 / #187 / #188** did the same for T-0479+T-0490, T-0475 and T-0480. **Treat every
+> `draft`/`blocked` row below as unverified.** This addendum re-verified **only** the four decisions'
+> premises (all four still hold; `AllowsExpressUpgrade`, `PreferredEmployeeId`, `ValidateIban` and the
+> invoice's party direction are all unchanged post-#189). **A full sprint-15 reconciliation against
+> `dceed4f1` is the highest-value backlog job outstanding and is NOT done.**
+>
+> ### The 14 new tickets + 4 rewrites + 2 closed
+>
+> | Owner answer | Ids |
+> |---|---|
+> | **1. Express upgrade — BUILD IT** | **T-0511** 📋 · T-0512 ⚠️ · **T-0493** ✏️ · **T-0513** 🆕 · T-0514 ⚠️ |
+> | **2. Favourite cleaner — MAKE IT WORK** | **T-0495** ✏️📋 · T-0515 · **T-0516** 🚫 |
+> | **3. Bank details — CZ first, extensible** | **T-0517** 📋🔒 · T-0518 ⚠️🔒 · T-0519 ⚠️🔒 · T-0520 🔒 · T-0521 🔒 · **T-0509** ✏️🔒 |
+> | **4. The invoice — owner supplied a real CZ specimen** | **T-0508** ✏️ · **T-0522** 🚫⚠️ · T-0523 |
+> | **Housekeeping** | **T-0475 `done`** (`1262b8cb` #187) · **T-0474 `done`** · **T-0524** 🚫 (pre-review gate) |
+>
+> 📋 needs a panel · ✏️ rewritten after the owner's answer · 🆕 new finding, on no prior ticket ·
+> 🔒 `security_touching` · ⚠️ owner-only manual step · 🚫 `blocked` on an owner answer
+>
+> ### 🔴 THREE ARCHITECT PANELS BEFORE ANY CODE — all three `ready` today
+> **`T-0511`** (how a metered membership benefit is counted, consumed, reset and reversed) ·
+> **`T-0495`** (how a **pull-model** job board honours a preference — **and the fallback**) ·
+> **`T-0517`** (payout-details shape — **the owner asked for this panel explicitly**).
+>
+> ### 🟩 Dispatchable TODAY with no dependency
+> the three panels above · **`T-0509`** (~1h exposure sweep — **run it before T-0518 widens the field
+> set**) · **`T-0508`** (the spec; its AC1 makes `Q-PAYOUT-02` concrete) · **`T-0513`** (the copy).
+>
+> ### 🔴 Corrections this pass made to rows filed above
+> - **T-0509's premise was wrong.** The IBAN is **not** "read by nothing" — it gates the
+>   profile-completeness check that decides whether a cleaner may take orders (`Employee.cs:283`), it is
+>   in the **GDPR export**, and it is on the **admin paged LIST DTO** (`EmployeeListItem.cs:52`).
+> - **T-0508's "no variable symbol" was wrong.** The VS exists and prints
+>   (`EmployeeInvoice.cs:72`/`:331`, layout `:38-39`). **And IČ/DIČ already exist as validated columns**
+>   — the identity gap is *rendering*, not capture.
+> - **The real invoice finding is worse:** the current PDF makes **Cleansia the issuer and the cleaner
+>   the "Billed To"** — **the opposite direction from the owner's specimen.**
+> - **T-0493's "express = `S`" reading was right and still not `S`** — the *quota* is what nobody costed.
+> - **NEW:** the three clients advertise **three different express perks**, and *"same-day"* is not what
+>   `BookingPolicy` implements (2–4 h). → **T-0513**.
+>
+> ### 🔴 Five `blocking: yes` owner questions now open
+> **`Q-PLUS-02`** (the quota's three numbers — 2 min) · **`Q-PLUS-03`** (favourite cleaner: universal or
+> Plus-only — 1 min) · **`Q-PAYOUT-02`** (*whose name is in the invoice header?*) · **`Q-PAYOUT-03`**
+> (VAT-status branch) · **`Q-PLUS-01`** + **`Q-PROFILE-01`** (carried).
+> **`Q-PAYOUT-01` came OFF the list** — the owner supplied a real CZ invoice; only **SK** remains.
+> **`Q-IOS-LEGAL-01`** is a **pre-submission gate** (T-0524 + `AR-PRIV-5` on the review checklist), not
+> a blocker today.
+
 > ## 🚀 SPRINT-15 — the owner's 15-remark batch + 4 investigations: **35 new tickets, `T-0476`…`T-0510`**
 >
 > **Baseline: `master` at `0e4ede1b`.** Filed 2026-08-02. Full plan, PR batches, owner-decision list

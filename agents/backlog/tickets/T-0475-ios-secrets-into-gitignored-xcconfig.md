@@ -1,11 +1,11 @@
 ---
 id: T-0475
 title: iOS — move the Stripe publishable key and DEVELOPMENT_TEAM out of project.yml into a gitignored xcconfig
-status: draft
+status: done
 size: S
 owner: ios
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-02
 depends_on: []
 blocks: [T-0474]
 stories: []
@@ -251,3 +251,15 @@ it (safe now that it holds only `$(...)` placeholders).
   trade-off the AC assumed. AC1/AC2/AC7 proven by a branch round-trip in a scratch worktree: `git
   checkout` restored `project.yml` to its pre-ticket state while `Local.xcconfig` survived byte-intact,
   `xcodegen generate` left it alone, and `git status` stayed empty (`git add -A` cannot stage it).
+- 2026-08-02 — **→ `done` (pm).** **Merged as `1262b8cb` (#187)** *"fix(ios): move the Stripe key and
+  team ID into a gitignored xcconfig [T-0475]"*. **PM-verified on disk:** `src/cleansia_ios/Config/
+  Base.xcconfig` and `Config/Local.xcconfig` both exist, `Local.xcconfig` is gitignored at
+  `src/cleansia_ios/.gitignore:26`, and `src/cleansia_ios/README.md:54` documents that *"a `git pull`,
+  a branch switch and `xcodegen generate` all leave them alone"*. **The reviewer lane's verdict is the
+  implementation record above (evidence: a branch round-trip in a scratch worktree, 21 red→green
+  assertions), not a narration** — see `ticket-lifecycle.md` §hand-gating.
+- 2026-08-02 — **⚠️ RESIDUAL, and it is the owner's, not the ticket's.** The owner reports the xcconfig
+  is **created but their values are not entered**. Per their instruction this closes `done` and the
+  values are filled **before an iOS review**, not now. **Recorded as a pre-iOS-review gate** in
+  `status/sprint-15.md`; **any iOS ticket that runs `xcodegen generate` must confirm the values are in
+  first** — `T-0521` AC1 carries that warning explicitly.

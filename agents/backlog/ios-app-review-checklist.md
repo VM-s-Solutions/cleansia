@@ -43,6 +43,15 @@ floor. Columns: ☐ Partner · ☐ Customer (mark N/A where an item is one-app-o
       capability the app does NOT use.** **Push uses the `aps-environment` entitlement + the runtime
       `UNUserNotificationCenter` request — NOT an Info.plist key** (no `NSUserNotificationsUsageDescription`).
       *(both apps — location/camera/photos per what each app exercises)*
+- [ ] **AR-PRIV-5 — the Terms and Privacy links RESOLVE, and serve real legal text.** Both apps route
+      their consent links through **one** constant — iOS `CleansiaCore/.../Config/CleansiaWeb.swift:8-21`,
+      Android `core/.../config/CleansiaWeb.kt:13-20` — currently `https://cleansia.cz/terms` and
+      `/privacy`. The customer web app **defines** those routes (`app.routes.ts:140-147`) **but
+      production has never been deployed**, so in a build today they point at a host with no app behind
+      it. The **App Store Connect privacy-policy URL must match** what the binary links to.
+      **Owner ruling 2026-08-02: DEV URLs for now, real legal text later** → tracked as **T-0524** /
+      `Q-IOS-LEGAL-01` (`resolve-by: pre-submission`). *(both apps + web)* — *interacts with **T-0507**:
+      a consent checkbox is not consent if the text it points at 404s.*
 
 ## C. Account & login (customer-only — ADR-0016 D2)
 

@@ -1,11 +1,11 @@
 ---
 id: T-0474
 title: iOS — two gitignored generated artifacts go stale on every pull; make regeneration a prescribed post-checkout step
-status: draft
+status: done
 size: S
 owner: ios
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-02
 depends_on: [T-0475]
 blocks: []
 stories: []
@@ -175,6 +175,18 @@ the file a reader is already in when they ask this question.
 - 2026-08-01 — **the second cost instance is not re-filed.** The T-0440 false blocker is already
   retracted at `status/sprint-14.md` §2.12 and on T-0440 itself. It is cited here as **evidence that a
   ticket-level warning is insufficient** — the warning existed, on the ticket, and was read past.
+- 2026-08-02 — **→ `done` (pm), owner-reported and PM-corroborated.** The owner reports *"clients
+  regenerated ✅"*. **The PM did not take that on trust and checked the ticket's actual deliverable —
+  the prescribed step — rather than the one-off act:** `src/cleansia_ios/README.md` now documents both
+  legs (`:105` `scripts/generate-api-clients.sh [partner|customer]`; `:84-85` `xcodegen generate` in
+  **both** app dirs) and `:54` + `:72` document the xcconfig behaviour the dependency existed for.
+  `src/cleansia_ios/scripts/` contains `generate-api-clients.sh`, `refresh-mobile-spec.sh` and
+  `check-local-config.sh`. **`depends_on: [T-0475]` is discharged** — T-0475 merged as `1262b8cb`
+  (#187), so the `xcodegen` leg is now safe to prescribe.
+- 2026-08-02 — **What the PM did NOT verify, stated plainly (Gate 0.5 leg 3):** it did **not** run
+  either script, did **not** build either iOS app, and did **not** open `Info.plist` or `project.yml`
+  (the owner's live Stripe key is in them). This close rests on the owner's report plus the
+  documented mechanism existing on disk — **not on an observed regeneration.**
 
 ## Review
 <!-- reviewer verdict. AC2's answer to "would this have stopped the T-0440 reviewer?" and AC3's tier

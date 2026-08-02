@@ -309,6 +309,23 @@ raw components one-off; never duplicate a `:core` component.
 > and a footer pushed past the bottom edge is worse than a slightly smaller map. Anchors + the top-edge
 > math are a pure function (`snapSheetTopPx`) so `SnapAnchorTest` can pin the numbers iOS also pins.
 
+> **iOS wrapping chip/pill row — the ONE way:** Compose's `FlowRow` maps to the Core **`ChipFlow`**
+> `Layout` (`Core/Components/ChipFlow.swift`) over the pure **`ChipFlowPacking`** greedy first-fit
+> (same file pair, `ChipFlowPackingTests` in Core). It was a partner-only copy inside
+> `OrdersListComponents.swift` until the customer membership perk row needed the same wrap; both apps
+> now consume the one Core type. Reach for it whenever a row of short labels can outgrow its width —
+> which is **every** localized chip row, because a three-chip line that fits in English overflows in
+> cs/sk/uk/ru and an `HStack` truncates rather than wraps.
+
+> **A perk/benefit the backend never enforces must not be rendered.** The membership `allowsExpressUpgrade`
+> flag is seeded, returned by `GetMyMembership` and read by exactly zero lines of pricing code — a Plus
+> member pays the standard express surcharge — so the iOS perk row deliberately omits it while Android
+> still shows an "Express" pill. Before mirroring a benefit chip, grep the field: if its only readers are
+> DTO mappers, it is marketing copy, not a feature, and a second platform doubles the promise. The
+> matching iOS shape is a semantic **`MembershipPerk`** enum resolved by `MembershipPerks.resolve` (the
+> "carry the token, not the resolved string" rule again), so a test can assert the express case does not
+> exist at all rather than hunting a literal in a view.
+
 > **iOS snackbar pill — the ONE way (T-0432):** `SnackbarPill`/`SnackbarPalette` in
 > `Core/Snackbar/GlobalSnackbarHost.swift` render on a **theme-adaptive** `CleansiaColors.surface` pill
 > with `onSurface` text (NOT a fixed pastel fill — that never adapted to dark), a filled circular

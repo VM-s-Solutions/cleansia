@@ -34,6 +34,10 @@ extension L10n {
             localized("recurring_bookings_resume")
         }
 
+        static var edit: String {
+            localized("recurring_bookings_edit")
+        }
+
         static var delete: String {
             localized("recurring_bookings_delete")
         }
@@ -172,6 +176,22 @@ extension L10n {
 
         static var createFailed: String {
             localized("recurring_create_failed")
+        }
+
+        static var editTitle: String {
+            localized("recurring_edit_title")
+        }
+
+        static var editSubmit: String {
+            localized("recurring_edit_submit")
+        }
+
+        static var editSuccess: String {
+            localized("recurring_edit_success")
+        }
+
+        static var editFailed: String {
+            localized("recurring_edit_failed")
         }
 
         static var freqWeeklyLabel: String {

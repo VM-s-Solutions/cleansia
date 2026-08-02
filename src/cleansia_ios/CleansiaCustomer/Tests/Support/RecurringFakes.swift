@@ -9,6 +9,9 @@ final class FakeRecurringBookingClient: RecurringBookingClient, @unchecked Senda
     var createResult: ApiResult<RecurringTemplate> = .success(RecurringFixtures.template())
     private(set) var createInputs: [CreateRecurringInput] = []
 
+    var updateResult: ApiResult<RecurringTemplate> = .success(RecurringFixtures.template())
+    private(set) var updateInputs: [UpdateRecurringInput] = []
+
     var setActiveResult: ApiResult<Void> = .success(())
     private(set) var setActiveCalls: [(id: String, active: Bool)] = []
 
@@ -25,6 +28,11 @@ final class FakeRecurringBookingClient: RecurringBookingClient, @unchecked Senda
     func create(_ input: CreateRecurringInput) async -> ApiResult<RecurringTemplate> {
         createInputs.append(input)
         return createResult
+    }
+
+    func update(_ input: UpdateRecurringInput) async -> ApiResult<RecurringTemplate> {
+        updateInputs.append(input)
+        return updateResult
     }
 
     func setActive(templateId: String, isActive: Bool) async -> ApiResult<Void> {
@@ -52,7 +60,8 @@ enum RecurringFixtures {
     static func template(
         id: String = "tpl-1",
         isActive: Bool = true,
-        frequency: Int = 1
+        frequency: Int = 1,
+        endsOn: Date? = nil
     ) -> RecurringTemplate {
         RecurringTemplate(
             id: id,
@@ -67,7 +76,7 @@ enum RecurringFixtures {
             selectedPackageIds: [],
             paymentType: 1,
             startsOn: Date(timeIntervalSince1970: 1_780_000_000),
-            endsOn: nil,
+            endsOn: endsOn,
             isActive: isActive
         )
     }

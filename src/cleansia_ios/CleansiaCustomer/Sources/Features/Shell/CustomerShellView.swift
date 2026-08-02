@@ -235,6 +235,8 @@ extension CustomerShellView {
             recurringList
         case let .createRecurring(orderId):
             createRecurring(orderId)
+        case let .editRecurring(templateId):
+            editRecurring(templateId)
         case .rewardsActivity:
             RewardsActivityScreen(
                 loyaltyRepository: container.loyaltyRepository,
@@ -402,6 +404,7 @@ extension CustomerShellView {
             membershipRepository: container.membershipRepository,
             snackbar: snackbar,
             onCreateNew: { model.path.append(ShellRoute.createRecurring(orderId: nil)) },
+            onEdit: { model.path.append(ShellRoute.editRecurring(templateId: $0.id)) },
             onSubscribePlus: { model.path.append(ShellRoute.subscribePlus) }
         )
     }
@@ -413,6 +416,23 @@ extension CustomerShellView {
             snackbar: snackbar,
             onCreated: { model.pop() }
         )
+    }
+
+    /// The route carries the id, not the template: a `NavigationPath` entry is `Codable` and outlives the
+    /// list it came from, so the form re-reads the live row from the repository cache on push.
+    @ViewBuilder
+    private func editRecurring(_ templateId: String) -> some View {
+        if let template = container.recurringRepository.templates.first(where: { $0.id == templateId }) {
+            CreateRecurringScreen(
+                sourceOrderId: nil,
+                editing: template,
+                repository: container.recurringRepository,
+                snackbar: snackbar,
+                onCreated: { model.pop() }
+            )
+        } else {
+            recurringList
+        }
     }
 }
 

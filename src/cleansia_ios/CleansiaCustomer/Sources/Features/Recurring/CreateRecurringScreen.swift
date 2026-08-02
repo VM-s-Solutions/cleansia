@@ -7,12 +7,14 @@ struct CreateRecurringScreen: View {
 
     init(
         sourceOrderId: String?,
+        editing: RecurringTemplate? = nil,
         repository: RecurringBookingRepository,
         snackbar: SnackbarController,
         onCreated: @escaping () -> Void
     ) {
         _vm = StateObject(wrappedValue: CreateRecurringViewModel(
             sourceOrderId: sourceOrderId,
+            editing: editing,
             repository: repository,
             catalogClient: LiveCatalogClient(),
             addressClient: LiveRecurringSavedAddressClient(),
@@ -22,10 +24,16 @@ struct CreateRecurringScreen: View {
         self.onCreated = onCreated
     }
 
+    private var title: String {
+        if vm.isEditing { return L10n.Recurring.editTitle }
+        return vm.sourceOrderId == nil ? L10n.Recurring.createTitleBlank : L10n.Recurring.createTitleFromOrder
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.l) {
                 FrequencySection(selected: vm.formState.frequency, onSelect: vm.setFrequency)
+                DayOfWeekSection(selected: vm.formState.dayOfWeek, onSelect: vm.setDayOfWeek)
                 TimeSection(time: vm.formState.timeOfDay, onChange: vm.setTimeOfDay)
                 AddressSection(
                     addresses: vm.savedAddresses,
@@ -40,10 +48,14 @@ struct CreateRecurringScreen: View {
                     onTogglePackage: vm.togglePackage
                 )
                 PaymentSection(selected: vm.formState.paymentType, onSelect: vm.setPaymentType)
-                StartsSection(startsOn: vm.formState.startsOn, onChange: vm.setStartsOn)
+                StartsSection(
+                    startsOn: vm.formState.startsOn,
+                    earliest: vm.earliestStart,
+                    onChange: vm.setStartsOn
+                )
 
                 CleansiaPrimaryButton(
-                    L10n.Recurring.createSubmit,
+                    vm.isEditing ? L10n.Recurring.editSubmit : L10n.Recurring.createSubmit,
                     loading: vm.submitState.isSubmitting,
                     enabled: vm.isValid && !vm.submitState.isSubmitting
                 ) {
@@ -54,9 +66,7 @@ struct CreateRecurringScreen: View {
             .padding(.horizontal, Spacing.ml)
             .padding(.top, Spacing.m)
         }
-        .navigationTitle(vm.sourceOrderId == nil
-            ? L10n.Recurring.createTitleBlank
-            : L10n.Recurring.createTitleFromOrder)
+        .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .background(CleansiaColors.background.ignoresSafeArea())
         .task { await vm.load() }
@@ -94,6 +104,53 @@ private struct FrequencySection: View {
                 }
             }
         }
+    }
+}
+
+private struct DayOfWeekSection: View {
+    @Environment(\.locale) private var locale
+    let selected: Int
+    let onSelect: (Int) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            SectionLabel(text: L10n.Recurring.createDayLabel)
+            ChipFlow(spacing: Spacing.xs) {
+                ForEach(0 ..< 7, id: \.self) { day in
+                    DayChip(
+                        label: RecurringWeekday.shortLabel(day, locale: locale),
+                        selected: day == selected
+                    ) {
+                        onSelect(day)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct DayChip: View {
+    let label: String
+    let selected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            Text(label)
+                .font(CleansiaTypography.labelLarge)
+                .foregroundColor(selected ? CleansiaColors.onPrimary : CleansiaColors.onSurface)
+                .padding(.horizontal, Spacing.m)
+                .padding(.vertical, Spacing.s)
+                .background(selected ? CleansiaColors.primary : CleansiaColors.surface, in: Capsule())
+                .overlay(
+                    Capsule().stroke(
+                        selected ? CleansiaColors.primary : CleansiaColors.outlineVariant,
+                        lineWidth: 1
+                    )
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? [.isSelected] : [])
     }
 }
 
@@ -202,11 +259,12 @@ private struct PaymentSection: View {
 
 private struct StartsSection: View {
     let startsOn: Date?
+    let earliest: Date
     let onChange: (Date) -> Void
 
     private var binding: Binding<Date> {
         Binding(
-            get: { startsOn ?? Date() },
+            get: { startsOn ?? earliest },
             set: onChange
         )
     }
@@ -214,7 +272,7 @@ private struct StartsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             SectionLabel(text: L10n.Recurring.createStartsLabel)
-            DatePicker("", selection: binding, in: Date()..., displayedComponents: .date)
+            DatePicker("", selection: binding, in: earliest..., displayedComponents: .date)
                 .labelsHidden()
                 .frame(maxWidth: .infinity, alignment: .leading)
         }

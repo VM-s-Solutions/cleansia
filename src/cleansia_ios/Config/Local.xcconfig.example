@@ -1,0 +1,18 @@
+// Copy this file to Local.xcconfig in this same directory and fill in your
+// values. Local.xcconfig is gitignored and is the ONLY place these live, so a
+// git pull, a branch switch, or `xcodegen generate` can never wipe them again.
+//
+//   cp src/cleansia_ios/Config/Local.xcconfig.example src/cleansia_ios/Config/Local.xcconfig
+//
+// Both apps read it (CleansiaCustomer and CleansiaPartner), so you fill it in
+// once. Nothing here needs to be re-entered after a pull.
+
+// Stripe PUBLISHABLE key — customer app only. pk_test_... or pk_live_...
+// NEVER a secret key (sk_...); the build fails if one is pasted here.
+// Left empty: card payment is hidden and only cash is offered (fail-closed).
+STRIPE_PUBLISHABLE_KEY =
+
+// Apple Developer Team ID, 10 characters (portal > Membership details).
+// Left empty: simulator builds and tests still work; device and TestFlight
+// builds fail with a named error.
+DEVELOPMENT_TEAM =

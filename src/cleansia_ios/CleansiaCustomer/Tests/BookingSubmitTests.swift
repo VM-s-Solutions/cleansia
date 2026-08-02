@@ -14,7 +14,8 @@ final class BookingSubmitTests: XCTestCase {
         profile: FakeProfileClient = FakeProfileClient(),
         create: FakeOrderCreateClient = FakeOrderCreateClient(),
         country: FakeCountryResolver = FakeCountryResolver(),
-        tokenStore: FakeTokenStore = .signedIn()
+        tokenStore: FakeTokenStore = .signedIn(),
+        cardAvailable: Bool = false
     ) -> BookingViewModel {
         BookingViewModel(
             quoteClient: quote,
@@ -22,6 +23,7 @@ final class BookingSubmitTests: XCTestCase {
             orderCreateClient: create,
             countryResolver: country,
             tokenStore: tokenStore,
+            isCardPaymentAvailable: cardAvailable,
             quoteDebounce: .milliseconds(400),
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
         )

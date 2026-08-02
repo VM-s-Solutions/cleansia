@@ -127,6 +127,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'user.not_existing_email',
   'user.existing_phone_number',
   'user.not_found',
+  // Profile save carries the display-language preference, so the
+  // UpdateCurrentUser language rule is reachable from the customer app.
+  'language.not_supported',
   // Order — booking / cancel / review / lifecycle the customer can hit
   'order.cleaning_date.future',
   'order.cleaning_date.below_lead_time',

@@ -1088,7 +1088,7 @@
       "subscribe_cta": "Подписаться — оплата через Stripe",
       "subscribe_footnote": "Можно отменить в любое время. Преимущества остаются активными до конца оплаченного периода.",
       "benefit_discount_title": "Членская скидка на каждый заказ",
-      "benefit_discount_body": "Фиксированный процент от каждой уборки сверх обычных цен.",
+      "benefit_discount_body": "Фиксированный процент от каждой уборки. В сочетании с уровнем лояльности ограничен 12%.",
       "benefit_cancel_title": "Больше времени на бесплатную отмену",
       "benefit_cancel_body": "Больше времени на изменение планов без штрафа.",
       "benefit_express_title": "Express преимущества",
@@ -1097,7 +1097,7 @@
       "benefit_favorite_body": "Выберите уборщика, с которым уже работали — он будет назначен в первую очередь.",
       "renews_on": "Возобновляется {{date}}",
       "cancelled_until": "Активно до {{date}} — не возобновится",
-      "perk_discount": "{{percent}}% скидка на каждую уборку",
+      "perk_discount": "{{percent}}% скидка для участников",
       "perk_cancel_window": "{{hours}} ч на бесплатную отмену",
       "perk_express": "Express преимущества для срочных заказов",
       "cancel_action": "Отменить членство",
@@ -1122,8 +1122,8 @@
       "hero_trial_price": "0 Kč / первые {{days}} дней",
       "hero_then_price": "затем {{price}} / месяц",
       "hero_then_price_year": "затем {{price}} / год",
-      "social_proof_headline": "Участники экономят ~80 Kč на уборке",
-      "social_proof_sub": "По всем Вашим заказам, в дополнение к другим скидкам",
+      "social_proof_headline": "Как работает скидка для участников",
+      "social_proof_sub": "Plus и ваш уровень лояльности вместе дают максимум 12%. Промокоды не суммируются — применяется большая скидка.",
       "perks_section_title": "Что Вы получаете",
       "cta_start_trial": "Начать бесплатный пробный период",
       "cta_subscribe": "Получить Cleansia Plus",
@@ -1440,6 +1440,9 @@
       "not_existing_email": "Мы не нашли аккаунт с таким адресом.",
       "existing_phone_number": "Этот номер телефона уже используется.",
       "not_found": "Мы не нашли этот аккаунт."
+    },
+    "language": {
+      "not_supported": "Этот язык не поддерживается."
     },
     "order": {
       "cleaning_date": {

@@ -796,8 +796,8 @@
     <string name="membership_hero_trial_price">0 Kč / prvních %1$d dní</string>
     <string name="membership_hero_then_price">poté %1$s / měsíc</string>
     <string name="membership_hero_then_price_year">poté %1$s / rok</string>
-    <string name="membership_social_proof_headline">Členové ušetří ~80 Kč na úklid</string>
-    <string name="membership_social_proof_sub">Napříč všemi vašimi objednávkami, navíc k dalším slevám</string>
+    <string name="membership_social_proof_headline">Jak funguje členská sleva</string>
+    <string name="membership_social_proof_sub" formatted="false">Plus a váš věrnostní program se sčítají maximálně do 12%. Promo kódy se nesčítají — uplatní se vyšší sleva.</string>
     <string name="membership_perks_section_title">Co získáte</string>
     <string name="membership_cta_start_trial">Začít zkušební období zdarma</string>
     <string name="membership_cta_subscribe">Získat Cleansia Plus</string>
@@ -826,8 +826,8 @@
     <string name="membership_perk_recurring_desc">Nastavte jednou — každý druhý čtvrtek v 10:00, automaticky.</string>
     <string name="membership_perk_cancellation_title">Bezplatné zrušení</string>
     <string name="membership_perk_cancellation_desc">Zrušte až 4 hodiny před úklidem bez poplatků.</string>
-    <string name="membership_perk_discount_title" formatted="false">5% sleva na každý úklid</string>
-    <string name="membership_perk_discount_desc">Sleva platí navíc k vašemu věrnostnímu programu.</string>
+    <string name="membership_perk_discount_title" formatted="false">5% členská sleva</string>
+    <string name="membership_perk_discount_desc" formatted="false">Z každého úklidu. V kombinaci s věrnostním programem je omezena na 12%.</string>
     <string name="membership_perk_express_title">Expresní upgrade zdarma</string>
     <string name="membership_perk_express_desc">Jedna bezplatná objednávka v den objednání měsíčně, bez příplatku.</string>
 

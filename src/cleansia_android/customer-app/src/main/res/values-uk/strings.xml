@@ -793,8 +793,8 @@
     <string name="membership_hero_trial_price">0 Kč / перші %1$d днів</string>
     <string name="membership_hero_then_price">потім %1$s / місяць</string>
     <string name="membership_hero_then_price_year">потім %1$s / рік</string>
-    <string name="membership_social_proof_headline">Учасники економлять ~80 Kč на прибиранні</string>
-    <string name="membership_social_proof_sub">На всіх ваших бронюваннях, на додачу до інших знижок</string>
+    <string name="membership_social_proof_headline">Як працює знижка для учасників</string>
+    <string name="membership_social_proof_sub" formatted="false">Plus і ваш рівень лояльності сумарно дають максимум 12%. Промокоди не додаються — застосовується більша знижка.</string>
     <string name="membership_perks_section_title">Що ви отримаєте</string>
     <string name="membership_cta_start_trial">Почати безкоштовний пробний період</string>
     <string name="membership_cta_subscribe">Отримати Cleansia Plus</string>
@@ -823,8 +823,8 @@
     <string name="membership_perk_recurring_desc">Налаштуйте один раз — кожен другий вівторок о 10:00, автоматично.</string>
     <string name="membership_perk_cancellation_title">Безкоштовне скасування</string>
     <string name="membership_perk_cancellation_desc">Скасуйте за 4 години до прибирання без комісій.</string>
-    <string name="membership_perk_discount_title" formatted="false">5% знижка на кожне прибирання</string>
-    <string name="membership_perk_discount_desc">Знижка діє додатково до вашого рівня лояльності.</string>
+    <string name="membership_perk_discount_title" formatted="false">5% знижка для учасників</string>
+    <string name="membership_perk_discount_desc" formatted="false">На кожне прибирання. У поєднанні з рівнем лояльності обмежена 12%.</string>
     <string name="membership_perk_express_title">Безкоштовне експрес-оновлення</string>
     <string name="membership_perk_express_desc">Одне безкоштовне бронювання у той самий день щомісяця, без надбавки.</string>
 

@@ -1088,7 +1088,7 @@
       "subscribe_cta": "Subscribe — checkout via Stripe",
       "subscribe_footnote": "Cancel anytime. Your benefits stay active until the end of the paid period.",
       "benefit_discount_title": "Member discount on every booking",
-      "benefit_discount_body": "A flat percentage off every cleaning, on top of the usual prices.",
+      "benefit_discount_body": "A flat percentage off every cleaning. Combined with your loyalty tier it is capped at 12%.",
       "benefit_cancel_title": "Wider free cancellation window",
       "benefit_cancel_body": "More time to change your plans without paying a fee.",
       "benefit_express_title": "Express upgrade",
@@ -1097,7 +1097,7 @@
       "benefit_favorite_body": "Pick a cleaner you've worked with before — they'll be prioritized when matching.",
       "renews_on": "Renews on {{date}}",
       "cancelled_until": "Active until {{date}} — won't renew",
-      "perk_discount": "{{percent}}% off every cleaning",
+      "perk_discount": "{{percent}}% member discount",
       "perk_cancel_window": "{{hours}}h free cancellation window",
       "perk_express": "Express upgrade benefits",
       "cancel_action": "Cancel membership",
@@ -1122,8 +1122,8 @@
       "hero_trial_price": "0 Kč / first {{days}} days",
       "hero_then_price": "then {{price}} / month",
       "hero_then_price_year": "then {{price}} / year",
-      "social_proof_headline": "Members save ~80 Kč per cleaning",
-      "social_proof_sub": "Across all your bookings, on top of any other discount",
+      "social_proof_headline": "How the member discount works",
+      "social_proof_sub": "Plus and your loyalty tier add up to a combined 12% maximum. Promo codes don't stack — the larger discount applies.",
       "perks_section_title": "What you get",
       "cta_start_trial": "Start free trial",
       "cta_subscribe": "Get Cleansia Plus",
@@ -1440,6 +1440,9 @@
       "not_existing_email": "We couldn't find an account with this email.",
       "existing_phone_number": "This phone number is already in use.",
       "not_found": "We couldn't find that account."
+    },
+    "language": {
+      "not_supported": "That language isn't supported."
     },
     "order": {
       "cleaning_date": {

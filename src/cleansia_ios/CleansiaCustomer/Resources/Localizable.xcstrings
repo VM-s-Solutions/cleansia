@@ -14042,31 +14042,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sleva platí navíc k vašemu věrnostnímu programu."
+            "value" : "Z každého úklidu. V kombinaci s věrnostním programem je omezena na 12%."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Discount applies on top of your loyalty tier."
+            "value" : "Off every cleaning. Combined with your loyalty tier it is capped at 12%."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Скидка действует в дополнение к вашему уровню лояльности."
+            "value" : "На каждую уборку. В сочетании с уровнем лояльности ограничена 12%."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zľava platí navyše k vášmu vernostnému programu."
+            "value" : "Z každého upratovania. V kombinácii s vernostným programom je obmedzená na 12%."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Знижка діє додатково до вашого рівня лояльності."
+            "value" : "На кожне прибирання. У поєднанні з рівнем лояльності обмежена 12%."
           }
         }
       }
@@ -14077,31 +14077,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "5% sleva na každý úklid"
+            "value" : "5% členská sleva"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "5% off every cleaning"
+            "value" : "5% member discount"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "5% скидка на каждую уборку"
+            "value" : "5% скидка для участников"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "5% zľava na každé upratovanie"
+            "value" : "5% členská zľava"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "5% знижка на кожне прибирання"
+            "value" : "5% знижка для учасників"
           }
         }
       }
@@ -14672,31 +14672,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Členové ušetří ~80 Kč na úklid"
+            "value" : "Jak funguje členská sleva"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Members save ~80 Kč per cleaning"
+            "value" : "How the member discount works"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Участники экономят ~80 Kč на уборке"
+            "value" : "Как работает скидка для участников"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Členovia ušetria ~80 Kč na upratovanie"
+            "value" : "Ako funguje členská zľava"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Учасники економлять ~80 Kč на прибиранні"
+            "value" : "Як працює знижка для учасників"
           }
         }
       }
@@ -14707,31 +14707,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Napříč všemi vašimi objednávkami, navíc k dalším slevám"
+            "value" : "Plus a váš věrnostní program se sčítají maximálně do 12%. Promo kódy se nesčítají — uplatní se vyšší sleva."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Across all your bookings, on top of any other discount"
+            "value" : "Plus and your loyalty tier add up to a combined 12% maximum. Promo codes don't stack — the larger discount applies."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "На всех ваших бронированиях, в дополнение к другим скидкам"
+            "value" : "Plus и ваш уровень лояльности вместе дают максимум 12%. Промокоды не суммируются — применяется большая скидка."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Naprieč všetkými vašimi objednávkami, navyše k iným zľavám"
+            "value" : "Plus a váš vernostný program sa spočítajú maximálne do 12%. Promo kódy sa nesčítajú — uplatní sa vyššia zľava."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "На всіх ваших бронюваннях, на додачу до інших знижок"
+            "value" : "Plus і ваш рівень лояльності сумарно дають максимум 12%. Промокоди не додаються — застосовується більша знижка."
           }
         }
       }

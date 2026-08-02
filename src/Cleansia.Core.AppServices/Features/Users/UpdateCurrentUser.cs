@@ -24,7 +24,8 @@ public class UpdateCurrentUser
 
         public Validator(
             IUserRepository userRepository,
-            IUserSessionProvider userSessionProvider)
+            IUserSessionProvider userSessionProvider,
+            ILanguageRepository languageRepository)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _userSessionProvider = userSessionProvider ?? throw new ArgumentNullException(nameof(userSessionProvider));
@@ -61,6 +62,14 @@ public class UpdateCurrentUser
             RuleFor(c => c.Photo)
                 .SetValidator(new ImageFileValidator()!)
                 .When(command => !string.IsNullOrWhiteSpace(command.Photo?.Base64Content));
+
+            // PreferredLanguageCode is an FK onto Languages.Code, so an unsupported value is not a bad
+            // save — it is a constraint violation raised by the UnitOfWork commit AFTER the handler
+            // returns, which the client sees as a 500 it cannot act on.
+            RuleFor(c => c.LanguageCode)
+                .MustAsync(async (code, ct) => await languageRepository.ExistsWithCodeAsync(code!, ct))
+                .WithMessage(BusinessErrorMessage.LanguageNotSupported)
+                .When(c => !string.IsNullOrWhiteSpace(c.LanguageCode));
         }
 
         // No longer an ownership comparison — the subject is server-resolved, so there is nothing for a
@@ -179,12 +188,26 @@ public class UpdateCurrentUser
 
         private static void UpdateUserAndOrders(User user, IReadOnlyList<Order> userOrders, Command command)
         {
-            foreach (var order in userOrders)
+            // Every optional field here means "nothing to say about it", never "delete it" — the same
+            // rule Photo and LanguageCode already follow, and the one UpdateAdminUser adopted for its
+            // birth date. Phone is the one that has to hold: it is copied onto every order that carried
+            // the old number, so a single blank save would erase the contact number the crew calls from
+            // the whole order history, not just the profile row.
+            var hasPhoneNumber = !string.IsNullOrWhiteSpace(command.PhoneNumber);
+
+            if (hasPhoneNumber)
             {
-                order.UpdatePhone(command.PhoneNumber);
+                foreach (var order in userOrders)
+                {
+                    order.UpdatePhone(command.PhoneNumber);
+                }
             }
 
-            user.Update(command.FirstName, command.LastName, command.PhoneNumber, command.BirthDate);
+            user.Update(
+                command.FirstName,
+                command.LastName,
+                hasPhoneNumber ? command.PhoneNumber : user.PhoneNumber,
+                command.BirthDate ?? user.BirthDate);
 
             if (!string.IsNullOrWhiteSpace(command.LanguageCode))
             {

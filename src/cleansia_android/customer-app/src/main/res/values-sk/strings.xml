@@ -793,8 +793,8 @@
     <string name="membership_hero_trial_price">0 Kč / prvých %1$d dní</string>
     <string name="membership_hero_then_price">potom %1$s / mesiac</string>
     <string name="membership_hero_then_price_year">potom %1$s / rok</string>
-    <string name="membership_social_proof_headline">Členovia ušetria ~80 Kč na upratovanie</string>
-    <string name="membership_social_proof_sub">Naprieč všetkými vašimi objednávkami, navyše k iným zľavám</string>
+    <string name="membership_social_proof_headline">Ako funguje členská zľava</string>
+    <string name="membership_social_proof_sub" formatted="false">Plus a váš vernostný program sa spočítajú maximálne do 12%. Promo kódy sa nesčítajú — uplatní sa vyššia zľava.</string>
     <string name="membership_perks_section_title">Čo získate</string>
     <string name="membership_cta_start_trial">Začať skúšobné obdobie zdarma</string>
     <string name="membership_cta_subscribe">Získať Cleansia Plus</string>
@@ -823,8 +823,8 @@
     <string name="membership_perk_recurring_desc">Nastavte raz — každý druhý štvrtok o 10:00, automaticky.</string>
     <string name="membership_perk_cancellation_title">Bezplatné zrušenie</string>
     <string name="membership_perk_cancellation_desc">Zrušte až 4 hodiny pred upratovaním bez poplatkov.</string>
-    <string name="membership_perk_discount_title" formatted="false">5% zľava na každé upratovanie</string>
-    <string name="membership_perk_discount_desc">Zľava platí navyše k vášmu vernostnému programu.</string>
+    <string name="membership_perk_discount_title" formatted="false">5% členská zľava</string>
+    <string name="membership_perk_discount_desc" formatted="false">Z každého upratovania. V kombinácii s vernostným programom je obmedzená na 12%.</string>
     <string name="membership_perk_express_title">Expresný upgrade zdarma</string>
     <string name="membership_perk_express_desc">Jedna bezplatná objednávka v deň objednania mesačne, bez príplatku.</string>
 

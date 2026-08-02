@@ -1088,7 +1088,7 @@
       "subscribe_cta": "Predplatiť — platba cez Stripe",
       "subscribe_footnote": "Môžete kedykoľvek zrušiť. Vaše výhody zostávajú aktívne do konca zaplateného obdobia.",
       "benefit_discount_title": "Členská zľava na každú objednávku",
-      "benefit_discount_body": "Pevné percento z každého upratovania nad rámec bežných cien.",
+      "benefit_discount_body": "Pevné percento z každého upratovania. V kombinácii s vernostným programom je obmedzené na 12%.",
       "benefit_cancel_title": "Dlhšia doba na bezplatné zrušenie",
       "benefit_cancel_body": "Viac času na zmenu plánov bez poplatku.",
       "benefit_express_title": "Express výhody",
@@ -1097,7 +1097,7 @@
       "benefit_favorite_body": "Vyberte upratovača, ktorého už poznáte — bude prednostne priradený.",
       "renews_on": "Obnoví sa {{date}}",
       "cancelled_until": "Aktívne do {{date}} — neobnoví sa",
-      "perk_discount": "{{percent}}% zľava na každé upratovanie",
+      "perk_discount": "{{percent}}% členská zľava",
       "perk_cancel_window": "{{hours}} h na bezplatné zrušenie",
       "perk_express": "Výhody express objednávok",
       "cancel_action": "Zrušiť členstvo",
@@ -1122,8 +1122,8 @@
       "hero_trial_price": "0 Kč / prvých {{days}} dní",
       "hero_then_price": "potom {{price}} / mesiac",
       "hero_then_price_year": "potom {{price}} / rok",
-      "social_proof_headline": "Členovia ušetria ~80 Kč na upratovanie",
-      "social_proof_sub": "Pri všetkých Vašich objednávkach, navyše k ďalším zľavám",
+      "social_proof_headline": "Ako funguje členská zľava",
+      "social_proof_sub": "Plus a váš vernostný program sa spočítajú maximálne do 12%. Promo kódy sa nesčítajú — uplatní sa vyššia zľava.",
       "perks_section_title": "Čo získate",
       "cta_start_trial": "Začať skúšobné obdobie zadarmo",
       "cta_subscribe": "Získať Cleansia Plus",
@@ -1440,6 +1440,9 @@
       "not_existing_email": "Účet s týmto e-mailom sme nenašli.",
       "existing_phone_number": "Toto telefónne číslo sa už používa.",
       "not_found": "Tento účet sme nenašli."
+    },
+    "language": {
+      "not_supported": "Tento jazyk nie je podporovaný."
     },
     "order": {
       "cleaning_date": {

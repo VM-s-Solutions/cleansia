@@ -35,6 +35,19 @@ public sealed class OrderFactory(
     /// per-campaign decision, but the additive tier+Plus combination never
     /// does. Keep in lock-step with <see cref="QuoteOrder"/> and the customer
     /// wizard summary so the displayed price matches what gets persisted.
+    /// <para>
+    /// 12% is an OWNER RULING, not a tuning value: the top loyalty tier is
+    /// already 12%, so stacking the 5% Plus rate on it un-capped would be a
+    /// 17% discount, which the owner judged too much. Raising it is a product
+    /// decision, not a bug fix — it reads like one because a subscriber at the
+    /// top tier gets nothing extra for their money.
+    /// </para>
+    /// <para>
+    /// That consequence is stated in the member-facing copy on web, Android and
+    /// iOS (membership_perk_discount_* / membership_social_proof_*, five locales
+    /// each). Change this number and that copy becomes false. Pinned by
+    /// CombinedDiscountCapTests.
+    /// </para>
     /// </summary>
     public const decimal MaxCombinedDiscountFraction = 0.12m;
 

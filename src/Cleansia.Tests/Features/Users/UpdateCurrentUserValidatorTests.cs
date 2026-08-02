@@ -20,10 +20,12 @@ public class UpdateCurrentUserValidatorTests
 
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
+    private readonly Mock<ILanguageRepository> _languageRepository = new();
 
     private UpdateCurrentUser.Validator CreateValidator() => new(
         _userRepository.Object,
-        _session.Object);
+        _session.Object,
+        _languageRepository.Object);
 
     private User ConfirmedUser()
     {

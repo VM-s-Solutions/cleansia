@@ -808,8 +808,8 @@
     <string name="membership_hero_trial_price">0 Kč / first %1$d days</string>
     <string name="membership_hero_then_price">then %1$s / month</string>
     <string name="membership_hero_then_price_year">then %1$s / year</string>
-    <string name="membership_social_proof_headline">Members save ~80 Kč per cleaning</string>
-    <string name="membership_social_proof_sub">Across all your bookings, on top of any other discount</string>
+    <string name="membership_social_proof_headline">How the member discount works</string>
+    <string name="membership_social_proof_sub" formatted="false">Plus and your loyalty tier add up to a combined 12% maximum. Promo codes don\'t stack — the larger discount applies.</string>
     <string name="membership_perks_section_title">What you get</string>
     <string name="membership_cta_start_trial">Start free trial</string>
     <string name="membership_cta_subscribe">Get Cleansia Plus</string>
@@ -838,8 +838,8 @@
     <string name="membership_perk_recurring_desc">Set it once — every other Tuesday at 10am, automatically.</string>
     <string name="membership_perk_cancellation_title">Free cancellation</string>
     <string name="membership_perk_cancellation_desc">Cancel up to 4 hours before your cleaning, no fees.</string>
-    <string name="membership_perk_discount_title" formatted="false">5% off every cleaning</string>
-    <string name="membership_perk_discount_desc">Discount applies on top of your loyalty tier.</string>
+    <string name="membership_perk_discount_title" formatted="false">5% member discount</string>
+    <string name="membership_perk_discount_desc" formatted="false">Off every cleaning. Combined with your loyalty tier it is capped at 12%.</string>
     <string name="membership_perk_express_title">Free express upgrade</string>
     <string name="membership_perk_express_desc">One free same-day booking per month, no surcharge.</string>
 

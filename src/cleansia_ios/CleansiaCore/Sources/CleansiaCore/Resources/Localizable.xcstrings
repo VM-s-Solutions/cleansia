@@ -1366,111 +1366,6 @@
         }
       }
     },
-    "error.employee_document.not_found" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dokument nenalezen."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Document not found."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Документ не найден."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dokument sa nenašiel."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Документ не знайдено."
-          }
-        }
-      }
-    },
-    "error.employee_document.not_owned" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tento dokument vám nepatří."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You don't own this document."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Этот документ вам не принадлежит."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tento dokument vám nepatrí."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Цей документ вам не належить."
-          }
-        }
-      }
-    },
-    "error.employee_document.unauthorized" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "K tomuto dokumentu nemáte přístup."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You can't access this document."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "У вас нет доступа к этому документу."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "K tomuto dokumentu nemáte prístup."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "У вас немає доступу до цього документа."
-          }
-        }
-      }
-    },
     "error.employee.already_approved" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1747,6 +1642,111 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Перед прийняттям замовлень заповніть свій профіль."
+          }
+        }
+      }
+    },
+    "error.employee_document.not_found" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dokument nenalezen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document not found."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Документ не найден."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dokument sa nenašiel."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Документ не знайдено."
+          }
+        }
+      }
+    },
+    "error.employee_document.not_owned" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento dokument vám nepatří."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You don't own this document."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот документ вам не принадлежит."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento dokument vám nepatrí."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей документ вам не належить."
+          }
+        }
+      }
+    },
+    "error.employee_document.unauthorized" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "K tomuto dokumentu nemáte přístup."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can't access this document."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У вас нет доступа к этому документу."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "K tomuto dokumentu nemáte prístup."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У вас немає доступу до цього документа."
           }
         }
       }
@@ -5455,107 +5455,37 @@
         }
       }
     },
-    "live_activity.eta.elapsed" : {
+    "live_activity.finish" : {
       "extractionState" : "manual",
       "localizations" : {
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "uplynulo"
+            "value" : "Konec"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "elapsed"
+            "value" : "Finish"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "прошло"
+            "value" : "Завершение"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "uplynulo"
+            "value" : "Koniec"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "минуло"
-          }
-        }
-      }
-    },
-    "live_activity.eta.left" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "zbývá"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "left"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "осталось"
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "zostáva"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "залишилось"
-          }
-        }
-      }
-    },
-    "live_activity.eta.remaining" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "zbývá"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "remaining"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "осталось"
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "zostáva"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "залишилось"
+            "value" : "Завершення"
           }
         }
       }
@@ -5805,41 +5735,6 @@
         }
       }
     },
-    "live_activity.status.in_progress.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Úklid probíhá"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cleaning in progress"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Уборка выполняется"
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Upratovanie prebieha"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Прибирання виконується"
-          }
-        }
-      }
-    },
     "live_activity.status.on_the_way.detail" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5875,7 +5770,112 @@
         }
       }
     },
-    "live_activity.status.on_the_way.title" : {
+    "live_activity.step.cleaning" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Úklid"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleaning"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уборка"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upratovanie"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прибирання"
+          }
+        }
+      }
+    },
+    "live_activity.step.confirmed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potvrzeno"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmed"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подтверждено"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potvrdené"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Підтверджено"
+          }
+        }
+      }
+    },
+    "live_activity.step.done" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hotovo"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hotovo"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово"
+          }
+        }
+      }
+    },
+    "live_activity.step.on_the_way" : {
       "extractionState" : "manual",
       "localizations" : {
         "cs" : {
@@ -5906,6 +5906,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "У дорозі"
+          }
+        }
+      }
+    },
+    "live_activity.step_of" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krok %1$d z %2$d"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Step %1$d of %2$d"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Шаг %1$d из %2$d"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krok %1$d z %2$d"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Крок %1$d з %2$d"
           }
         }
       }

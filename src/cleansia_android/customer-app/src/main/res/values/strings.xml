@@ -295,6 +295,13 @@
     <string name="order_detail_services_header">Services</string>
     <string name="order_detail_packages_header">Packages</string>
     <string name="order_detail_cleaner_fallback">Cleansia cleaner</string>
+    <string name="order_detail_subtotal">Subtotal</string>
+    <string name="order_detail_payment_method">Payment method</string>
+    <string name="order_detail_payment_status">Payment</string>
+    <string name="order_detail_completion_notes">Cleaner\'s notes</string>
+    <string name="order_detail_map_unavailable">Map isn\'t available for this order</string>
+    <string name="order_detail_show_map">Show the map</string>
+    <string name="order_detail_show_details">Show order details</string>
 
     <!-- Order cancel (Wave 2 Phase 2) -->
     <string name="order_action_cancel">Cancel order</string>

@@ -292,6 +292,13 @@
     <string name="order_detail_services_header">Послуги</string>
     <string name="order_detail_packages_header">Пакети</string>
     <string name="order_detail_cleaner_fallback">Клінер Cleansia</string>
+    <string name="order_detail_subtotal">Проміжний підсумок</string>
+    <string name="order_detail_payment_method">Спосіб оплати</string>
+    <string name="order_detail_payment_status">Оплата</string>
+    <string name="order_detail_completion_notes">Нотатки клінера</string>
+    <string name="order_detail_map_unavailable">Карта недоступна для цього замовлення</string>
+    <string name="order_detail_show_map">Показати карту</string>
+    <string name="order_detail_show_details">Показати деталі замовлення</string>
 
     <!-- Order cancel -->
     <string name="order_action_cancel">Скасувати замовлення</string>

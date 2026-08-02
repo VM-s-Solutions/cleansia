@@ -292,6 +292,13 @@
     <string name="order_detail_services_header">Služby</string>
     <string name="order_detail_packages_header">Balíčky</string>
     <string name="order_detail_cleaner_fallback">Upratovačka Cleansia</string>
+    <string name="order_detail_subtotal">Medzisúčet</string>
+    <string name="order_detail_payment_method">Spôsob platby</string>
+    <string name="order_detail_payment_status">Platba</string>
+    <string name="order_detail_completion_notes">Poznámky upratovačky</string>
+    <string name="order_detail_map_unavailable">Mapa nie je pre túto objednávku dostupná</string>
+    <string name="order_detail_show_map">Zobraziť mapu</string>
+    <string name="order_detail_show_details">Zobraziť detaily objednávky</string>
 
     <!-- Order cancel -->
     <string name="order_action_cancel">Zrušiť objednávku</string>

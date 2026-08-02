@@ -89,15 +89,23 @@ public static class BookingPolicy
     /// <summary>
     /// Compute the cancellation fee rate (0.0–1.0) for a given cancellation time.
     ///
-    /// Acceptance-aware: if no cleaner has accepted the order yet, cancellation
-    /// is always free regardless of timing. Once accepted, the standard tiered
-    /// policy applies (free 24+ h before, 25% 4–24 h before, 50% under 4 h).
+    /// Acceptance-aware: if no cleaner has been pulled onto the job yet, cancellation
+    /// is always free regardless of timing — there is no cleaner's time to compensate.
+    /// Once accepted, the standard tiered policy applies (free 24+ h before, 25% 4–24 h
+    /// before, 50% under 4 h).
     /// </summary>
     /// <param name="cleaningUtc">Order's scheduled start time.</param>
     /// <param name="bookingCreatedUtc">When the order was created.</param>
     /// <param name="cancelUtc">Current time / proposed cancel time.</param>
     /// <param name="isFirstTimeCustomer">Whether the customer has 0 prior completed orders.</param>
-    /// <param name="hasBeenAccepted">True if a cleaner has accepted the order (i.e. an OrderStatusHistory entry of Confirmed exists).</param>
+    /// <param name="hasBeenAccepted">
+    /// True if a cleaner has actually been pulled onto the job — i.e. the order carries at least one
+    /// ASSIGNMENT row (<c>Order.AssignedEmployees</c>), which is what <c>CancelOrder</c> passes.
+    /// <b>Not</b> an <c>OrderStatusHistory</c> entry of <c>OrderStatus.Confirmed</c>: Confirmed is a
+    /// deliberately overloaded status in this domain (payment settled OR cleaner assigned) written by
+    /// four paths, only one of which involves a cleaner, and it is not even written when a cleaner
+    /// takes an order that was already Confirmed.
+    /// </param>
     /// <param name="freeCancellationHoursOverride">
     /// Absolute free-cancellation threshold in hours that REPLACES
     /// <see cref="FreeCancellationHours"/> when set. The sole caller
@@ -118,7 +126,7 @@ public static class BookingPolicy
         bool hasBeenAccepted,
         int? freeCancellationHoursOverride = null)
     {
-        // No cleaner has taken the order yet — always free.
+        // No cleaner is on the job yet — always free.
         if (!hasBeenAccepted)
         {
             return 0m;

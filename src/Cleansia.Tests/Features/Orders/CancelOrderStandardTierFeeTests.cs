@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using MockQueryable;
 using Moq;
@@ -22,6 +23,12 @@ namespace Cleansia.Tests.Features.Orders;
 /// standard cancellation 12h / 1h before start is charged 0.25 / 0.50 and refunds only the remainder —
 /// the guard against an override-semantics slip that would collapse the free window to 0 and refund
 /// every standard cancellation in full.
+///
+/// T-0525: the fixture used to model "accepted" as an <c>OrderStatus.Confirmed</c> track alone, which
+/// is what the payment webhook writes for EVERY card order — so as written these cases asserted the
+/// defect (a customer billed 25%/50% for a job no cleaner had seen) while intending to assert the tier
+/// ladder. The fixture now carries the real acceptance signal, an assignment row; the tier assertions
+/// are unchanged, which is the point — the ladder itself did not move.
 /// </summary>
 public class CancelOrderStandardTierFeeTests
 {
@@ -92,6 +99,12 @@ public class CancelOrderStandardTierFeeTests
             order.AddOrderStatus(track);
             stamp = stamp.AddMinutes(1);
         }
+
+        var cleanerUser = User.CreateWithPassword("cleaner@cleansia.test", "Passw0rd!", "Clean", "Er");
+        cleanerUser.Id = "emp-std-user";
+        var cleaner = Employee.CreateWithUser(cleanerUser);
+        cleaner.Id = "emp-std";
+        order.AddAssignedEmployee(OrderEmployee.Create(order, cleaner));
 
         _orderRepository
             .Setup(r => r.GetQueryable())

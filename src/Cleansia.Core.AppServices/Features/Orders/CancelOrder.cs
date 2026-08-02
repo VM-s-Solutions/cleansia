@@ -100,8 +100,13 @@ public class CancelOrder
 
             var now = DateTime.UtcNow;
             const bool isFirstTime = false;
-            var hasBeenAccepted = order.OrderStatusHistory
-                .Any(s => s.Status == OrderStatus.Confirmed);
+            // An assignment row, NOT an OrderStatus.Confirmed track. Confirmed is overloaded — the
+            // payment webhook, cash auto-confirm and the admin override all write it with no cleaner
+            // involved — and it is also SILENT in the case that matters most: TakeOrder assigns
+            // unconditionally but appends its Confirmed track only from New/Pending, so a cleaner
+            // taking an already-Confirmed order leaves no new track. The row is the only durable
+            // evidence a cleaner was pulled onto the job, which is what the fee prices.
+            var hasBeenAccepted = order.AssignedEmployees.Count > 0;
             var policy = await cancellationPolicyResolver
                 .ResolveForUserAsync(userId, cancellationToken);
             var feeRate = BookingPolicy.CalculateCancellationFeeRate(

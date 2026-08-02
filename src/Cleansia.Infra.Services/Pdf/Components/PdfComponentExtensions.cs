@@ -7,14 +7,15 @@ namespace Cleansia.Infra.Services.Pdf.Components;
 
 public static class PdfComponentExtensions
 {
-    public static void GradientHeader(this IContainer container, string companyName, string? tagline, Action<IContainer> metaContent)
+    public static void GradientHeader(this IContainer container, string companyName, string? tagline, Action<IContainer> metaContent,
+        float padding = 25, float nameFontSize = CleansiaPdfTheme.FontSizeCompanyName)
     {
-        container.Background(CleansiaPdfTheme.BrandPrimary).Padding(25).Row(row =>
+        container.Background(CleansiaPdfTheme.BrandPrimary).Padding(padding).Row(row =>
         {
             row.RelativeItem(3).Column(col =>
             {
                 col.Item().Text(companyName)
-                    .FontSize(CleansiaPdfTheme.FontSizeCompanyName)
+                    .FontSize(nameFontSize)
                     .Bold()
                     .FontColor(CleansiaPdfTheme.White);
 
@@ -69,6 +70,54 @@ public static class PdfComponentExtensions
                 row.RelativeItem().Element(left);
                 row.ConstantItem(30);
                 row.RelativeItem().Element(right);
+            });
+    }
+
+    public static void BlockTitle(this IContainer container, string title, float fontSize = CleansiaPdfTheme.FontSizeSectionTitle)
+    {
+        container.Column(col =>
+        {
+            col.Item().Text(title.ToUpperInvariant())
+                .FontSize(fontSize)
+                .Bold()
+                .FontColor(CleansiaPdfTheme.TextPrimary);
+            col.Item().PaddingTop(5);
+        });
+    }
+
+    public static void InlineField(this IContainer container, string label, string? value)
+    {
+        container.PaddingBottom(3).Row(row =>
+        {
+            row.ConstantItem(95).Text(label)
+                .FontSize(CleansiaPdfTheme.FontSizeLabel)
+                .FontColor(CleansiaPdfTheme.TextSecondary)
+                .Bold();
+            row.RelativeItem().Text(value ?? "—")
+                .FontSize(CleansiaPdfTheme.FontSizeBody)
+                .FontColor(CleansiaPdfTheme.TextPrimary);
+        });
+    }
+
+    public static void FieldGrid(this IContainer container, IReadOnlyList<Models.InvoiceField> fields, int columns)
+    {
+        container.PaddingTop(10)
+            .Background(CleansiaPdfTheme.LightBlue)
+            .Padding(14)
+            .Column(col =>
+            {
+                for (var start = 0; start < fields.Count; start += columns)
+                {
+                    var row = fields.Skip(start).Take(columns).ToList();
+                    col.Item().Row(r =>
+                    {
+                        foreach (var field in row)
+                            r.RelativeItem().Element(c => c.LabeledField(field.Label, field.Value));
+
+                        for (var pad = row.Count; pad < columns; pad++)
+                            r.RelativeItem();
+                    });
+                }
             });
     }
 
@@ -133,7 +182,7 @@ public static class PdfComponentExtensions
 
     public static void OrderDetailsTable(this IContainer container, string[] headers, uint[] relativeWidths, Action<TableDescriptor> bodyBuilder)
     {
-        container.PaddingTop(10).Border(1).BorderColor(CleansiaPdfTheme.BorderLight).Table(table =>
+        container.PaddingTop(6).Border(1).BorderColor(CleansiaPdfTheme.BorderLight).Table(table =>
         {
             table.ColumnsDefinition(cd =>
             {
@@ -265,7 +314,7 @@ public static class PdfComponentExtensions
             });
     }
 
-    public static void LegalNoticeBox(this IContainer container, string text)
+    public static void LegalNoticeBox(this IContainer container, string text, string title = "Legal notice")
     {
         container.PaddingVertical(CleansiaPdfTheme.SmallPadding)
             .BorderLeft(3)
@@ -274,7 +323,7 @@ public static class PdfComponentExtensions
             .Padding(CleansiaPdfTheme.InnerPadding)
             .Column(col =>
             {
-                col.Item().Text("LEGAL NOTICE")
+                col.Item().Text(title.ToUpperInvariant())
                     .FontSize(CleansiaPdfTheme.FontSizeBody)
                     .Bold()
                     .FontColor(CleansiaPdfTheme.LegalNoticeBorder);

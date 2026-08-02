@@ -45,7 +45,9 @@ public static class PayrollMockFactory
         decimal deductionAmount = 0m,
         string employeeId = EmployeeId,
         string payPeriodId = PayPeriodId,
-        string currencyId = CurrencyId)
+        string currencyId = CurrencyId,
+        DateTime? generatedAt = null,
+        PayPeriod? payPeriod = null)
     {
         var invoice = EmployeeInvoice.Create(
             employeeId: employeeId,
@@ -56,8 +58,22 @@ public static class PayrollMockFactory
             bonusAmount: bonusAmount,
             deductionAmount: deductionAmount);
         invoice.Id = $"inv-{Guid.NewGuid():N}";
+
+        if (generatedAt.HasValue)
+        {
+            SetPrivate(invoice, nameof(EmployeeInvoice.GeneratedAt), generatedAt.Value);
+        }
+
+        if (payPeriod != null)
+        {
+            SetPrivate(invoice, nameof(EmployeeInvoice.PayPeriod), payPeriod);
+        }
+
         return invoice;
     }
+
+    private static void SetPrivate(EmployeeInvoice invoice, string propertyName, object value) =>
+        typeof(EmployeeInvoice).GetProperty(propertyName)!.SetValue(invoice, value);
 
     public static PayPeriod OpenPeriod(DateOnly? startDate = null)
     {

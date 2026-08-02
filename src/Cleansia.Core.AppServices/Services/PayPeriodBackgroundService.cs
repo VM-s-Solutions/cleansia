@@ -201,6 +201,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
                 .GetQueryable()
                 .Include(e => e.User)
                 .Include(e => e.Address)
+                    .ThenInclude(a => a!.Country)
                 .Where(e => e.IsActive)
                 .ToListAsync(cancellationToken);
 

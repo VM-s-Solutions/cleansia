@@ -7,9 +7,9 @@
 #   bundle exec fastlane partner    # build + upload the Partner app
 #   bundle exec fastlane all        # both, in sequence
 #
-# These run on the OWNER'S MAC, on purpose: it already has the working-tree
-# Stripe publishable key + GoogleService-Info.plist (both gitignored) and the
-# Xcode-managed signing identity, so nothing secret ever has to live in CI.
+# These run on the OWNER'S MAC, on purpose: it already has Config/Local.xcconfig
+# + GoogleService-Info.plist (both gitignored) and the Xcode-managed signing
+# identity, so nothing secret ever has to live in CI.
 # Auth + the signing team come entirely from the environment — see
 # fastlane/.env.example. Copy it to fastlane/.env (gitignored) and fill it in.
 
@@ -62,8 +62,9 @@ def ship(key)
   )
 
   # 1. Regenerate the two gitignored, build-required inputs from their source of
-  #    truth: the OpenAPI Swift client packages and the .xcodeproj. This also
-  #    re-bakes the working-tree Stripe key + Info.plist from project.yml.
+  #    truth: the OpenAPI Swift client packages and the .xcodeproj. Safe to run
+  #    at will — the Stripe key and team id live in Config/Local.xcconfig, which
+  #    xcodegen does not write.
   app_dir = File.join(IOS_ROOT, app[:project].split("/").first)
   sh("cd #{IOS_ROOT.shellescape} && ./scripts/generate-api-clients.sh")
   sh("cd #{app_dir.shellescape} && xcodegen generate")

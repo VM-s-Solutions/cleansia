@@ -12,11 +12,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -87,6 +91,8 @@ fun InvoiceDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val downloadState by viewModel.downloadState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     // Hand the downloaded PDF to the system viewer once it's on disk. Uses
     // Intent.ACTION_VIEW with the FileProvider URI per the design decision —
@@ -108,6 +114,7 @@ fun InvoiceDetailScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
+        Spacer(Modifier.height(statusBarTop))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -148,7 +155,7 @@ fun InvoiceDetailScreen(
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = Spacing.M)
-                        .padding(bottom = Spacing.L),
+                        .padding(bottom = Spacing.L + navigationBarBottom),
                     verticalArrangement = Arrangement.spacedBy(Spacing.M),
                 ) {
                     HeroCard(invoice)

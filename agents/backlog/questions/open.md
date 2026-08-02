@@ -44,8 +44,20 @@ each gets a line on the pre-PROD readiness checklist.
   session, so no JWT to decode as Android/iOS do). Every customer-web profile save 400s with
   `user.not_allowed_to_update`. Pre-existing since `29de7b48`; raised by T-0447, which it blocks for
   AC2/AC3 round-trip evidence. Needs a **backend** decision, not a frontend workaround.
+- **Q-PLUS-01** (`pre-prod`, **blocking: yes** — blocks T-0497) — does Stripe enforce a
+  once-per-customer trial on the Plus price? The two candidate defects have **opposite fixes** and the
+  repo cannot distinguish them. **One dashboard check settles it.**
+- **Q-PAYOUT-01** (`pre-prod`, **blocking: yes** — blocks T-0508, and T-0509 behind it) — what must a
+  CZ/SK supplier invoice legally contain? **Not guessable; needs an accountant.**
+- **Q-PAYOUT-02** (`pre-prod`, **blocking: yes** — blocks T-0508) — is a cleaner an employee or a
+  self-employed supplier (OSVČ/živnostník)? This decides **which document** we are generating.
+- **Q-OBS-01** (`pre-prod`, **blocking: no** — shapes T-0500/T-0501) — DEV, the only live environment,
+  has **no error tracking from any source**. Turn Sentry on for dev, add an App Insights exporter, or
+  accept the gap with a date?
 
-**One `blocking: yes` question is open in this file as of 2026-08-01: Q-PROFILE-01.**
+**Four `blocking: yes` questions are open in this file as of 2026-08-02: Q-PROFILE-01, Q-PLUS-01,
+Q-PAYOUT-01, Q-PAYOUT-02.** The last three are all new (sprint-15 planning) and **two of them —
+Q-PAYOUT-01/02 — are legal questions no agent may answer.**
 
 Format:
 
@@ -748,3 +760,137 @@ _No open Wave-1 *planning* questions remain._
   ACs are proven by unit tests. AC2/AC3's **manual round-trip evidence cannot be produced** until
   this is answered.
 - Answer: _(owner/architect fills in — (a), (b) or (c), then a backend ticket)_
+
+---
+
+## Sprint-15 questions (2026-08-02) — see `status/sprint-15.md`
+
+> Filed from the owner's 15-remark batch and the four completed investigations. **Ranked by what they
+> unblock**, which is the order they appear in below. The **nine** Cleansia Plus product questions and
+> the **seven** partner-onboarding decisions are NOT pre-filed here — they are produced by the
+> **T-0491** and **T-0504** panels respectively (each panel's AC requires them to be filed as **one
+> consolidated block**), so filing them now would pre-empt the deliberation that gives them their
+> options and defaults.
+
+### Q-PAYOUT-01 — [blocking: **YES**] What must a CZ/SK supplier invoice legally contain?
+- Raised by: pm (T-0508, from the partner-onboarding investigation)
+- Owner: **owner** (this is an accountant's question, not an engineering one)
+- Resolve-by: **pre-prod**
+- Date: 2026-08-02
+- Question: The document the platform generates for a cleaner carries **no IČO, no VAT/DIČ and no bank
+  details**. What is the legally required field set for a supplier invoice in **CZ** and in **SK** —
+  including the **not-VAT-registered** case, which is the common one for an individual cleaner? Is
+  sequential/gapless numbering required?
+- Why it matters: **a cleaner cannot be paid against the current document.** An accountant cannot book
+  it and a transfer has no reference to key on. The pay-period machinery is built and running and its
+  output is unusable for its one purpose.
+- **Why no agent may answer it:** the plausible list (IČO, DIČ, bank account, variable symbol, issue
+  date, taxable-supply date, sequential numbering, both parties' legal names and addresses) is exactly
+  the kind of plausible-but-unverified list that must not be shipped on a tax document.
+- What would help most: the field list, plus **one real example** of an invoice your accountant accepts.
+- Default taken: **none.** T-0508 is `blocked`. Its **AC1 is dispatchable now** and will render the
+  current document so this question arrives with a concrete sample attached.
+- Answer: _(owner fills in)_
+
+### Q-PAYOUT-02 — [blocking: **YES**] Is a cleaner an employee or a self-employed supplier (OSVČ)?
+- Raised by: pm (T-0508)
+- Owner: **owner**
+- Resolve-by: **pre-prod**
+- Date: 2026-08-02
+- Question: Employee, or self-employed supplier (OSVČ / živnostník)? And if a supplier: does the
+  **cleaner** issue the invoice to the platform, or does the platform issue a **self-billing** document
+  on their behalf?
+- Why it matters: it decides **which document** is being generated. If employee → this is a **payslip**,
+  with different content and different law, and T-0508 is not an `M` but a different feature. If
+  supplier → self-billing has its own requirements, including the supplier's prior agreement.
+  **Adding fields cannot fix a document of the wrong legal category.**
+- Corroborating signal from the code: the entity is called **`EmployeeInvoice`** — the two competing
+  models' names collided into one, which is evidence this was never decided.
+- Default taken: **none.** T-0508 is `blocked` on this and Q-PAYOUT-01 together.
+- Answer: _(owner fills in)_
+
+### Q-PLUS-01 — [blocking: **YES**] Does Stripe enforce a once-per-customer trial on the Plus price?
+- Raised by: pm (T-0497, from the Cleansia Plus audit)
+- Owner: **owner** (only the owner can read the Stripe dashboard)
+- Resolve-by: **pre-prod**
+- Date: 2026-08-02
+- Question: A returning customer is offered the free trial again, unconditionally. Which is live?
+  **(i)** Stripe *does* enforce once-per-customer → we are **advertising a free trial the customer will
+  not get** (a misleading price, and a chargeback generator). **(ii)** Stripe does *not* enforce it →
+  the customer **genuinely gets another free trial every time**: cancel, resubscribe, repeat — an
+  **unlimited free-trial loop.**
+- Why it matters: **the two defects have opposite fixes**, and applying the wrong one makes it worse —
+  the "false price" fix removes an advertisement and leaves the loop open.
+- **The decisive check, and it takes a minute:** in **test mode**, on a customer who has already had a
+  trial, create a second subscription. Does it land in `trialing` or in `active`? *(Secondary: is
+  `trial_period_days` on the price/product or passed by our code, and is Stripe's "limit trial to one
+  per customer" control on?)*
+- Default taken: **none — deliberately.** T-0497 is `blocked`. Its **AC1 (code archaeology: does our
+  code set the trial, or is it a dashboard property?) is carved out as dispatchable today** so the wait
+  is not wasted.
+- Answer: _(owner fills in)_
+
+### Q-OBS-01 — [blocking: no, but it changes what "green on DEV" means] Does DEV get error tracking?
+- Raised by: pm (T-0500, from the Azure cost investigation)
+- Owner: **owner to ratify**; `architect` to author the options
+- Resolve-by: **pre-prod**
+- Date: 2026-08-02
+- **Grounding, PM-verified first-hand at `0e4ede1b` — and it corrects the investigation on one point:**
+  - There is **no Application Insights exporter in any of the five API hosts**. `ApplicationInsights` /
+    `AddAzureMonitor` / `UseAzureMonitor` return **zero hits** across `Cleansia.Config` and every
+    `Cleansia.Web*` project. The connection string is provisioned by Bicep and **read by nothing**.
+  - Sentry is **not "silently disabled"** — the empty-DSN guard at
+    `Cleansia.ServiceDefaults/Extensions.cs:87-90` is deliberate and documented, all ten committed
+    `appsettings*.json` carry `"Dsn": ""`, and `deploy/AZURE-DEV-RUNBOOK.md:239` says outright
+    *"leave EMPTY for dev (Sentry off); real DSN in prod."*
+  - **The conclusion survives the correction and gets worse:** prod has **never been deployed**, so the
+    "prod" that was going to have Sentry does not exist. **DEV — the environment your iPhone runs
+    against and the one you will demo — has no error tracking from either source.**
+- Question: **(a)** populate the `SENTRY_DSN` GitHub secret and turn Sentry on for dev (free tier; the
+  code path already exists — this is a **secret, not a build**); **(b)** add a real App Insights
+  exporter to the five APIs — **but note this increases the bill T-0499 is fixing**; **(c)** accept no
+  error tracking until prod exists, and write that down with a date.
+- **Sub-question only you can answer: is `secrets.SENTRY_DSN` populated in GitHub at all?**
+- ⚠️ **If (a): T-0457 should land first.** It is `ready` and P1: `GET /api/User/GetCurrent` writes every
+  caller's email, name, phone and birth date into Information-level logs on all five hosts. An error
+  tracker that ships log context would carry that to a third party. *(`SendDefaultPii = false` is
+  already set at `Extensions.cs:103` — necessary, not sufficient.)*
+- Default taken: **(c) by inaction, which is the current state.** Recorded so it is a decision rather
+  than a drift.
+- Answer: _(owner fills in)_
+
+### Q-AZURE-01 — [blocking: no — but it gates T-0499 AC1 and AC5] The two cost queries only you can run
+- Raised by: pm (T-0499, from the Azure cost investigation)
+- Owner: **owner** (portal/subscription access)
+- Resolve-by: **post-prod** (the fix does not wait; the *measurement* does)
+- Date: 2026-08-02
+- Not a decision — a **data request**. Two queries, whose output discharges T-0499 AC1 (attribution)
+  and later AC5 (the saving, measured rather than predicted):
+  1. **Cost analysis, grouped by resource then by meter**, for the last full month — to confirm the
+     Application Insights / Log Analytics ingestion line is the €35–42 the investigation attributes to
+     `host.json`, and that Alerts really are **€0.63** and not €50.
+  2. **In the Log Analytics workspace:** ingestion volume by table (`AppDependencies`, `AppRequests`,
+     `AppTraces`) for the same period — to confirm the ~7.3M queue-poll dependency records.
+- **Two findings this would confirm or kill, both worth knowing:** the alert theory is **dead**
+  (€0.63), and **retention cuts save €0** because the workspace is already under the free-tier floor.
+  Do not spend time on retention.
+- Default taken: T-0499 proceeds on the config change regardless — **the five `host.json` values are
+  PM-verified and wrong on their own merits** (a 5s poll against a 60s default; sampling enabled with
+  `Request` excluded from it). The queries size the win; they do not gate the fix.
+- Answer: _(owner runs the queries / pastes the output)_
+
+---
+
+### 🟢 Two DECISION POINTS, not questions — the owner approves a design before code is written
+
+Recorded here so they are visible alongside the questions, but they are **not** blocking entries:
+neither has an answer to give yet, because the artifact being approved does not exist.
+
+- **T-0484** — customer order-detail redesign. Produces **2–3 HTML concepts** at
+  `agents/backlog/attachments/`, each with all six order statuses and a **per-platform S/M/L
+  estimate**. **No implementation ticket exists behind it and none will be written until you pick
+  one.** You are choosing a budget as much as a picture.
+- **T-0488** — Live Activity redesign. Same shape: **2–3 HTML concepts**, all four surfaces (lock
+  screen, island expanded/compact/minimal) at real proportions, each flagged if it needs a field the
+  activity state does not carry today (which would make it a backend + push-payload change under
+  ADR-0025).

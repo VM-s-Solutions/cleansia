@@ -321,6 +321,23 @@ raw components one-off; never duplicate a `:core` component.
 > `cleansia.cz` anywhere in the iOS tree (Swift, string catalog or plist) is a defect, and
 > `ConsentCatalogTests` pins the markup + the no-literal-domain rule across both apps × five locales.
 
+> **A `Row` of fixed-count labels — truncating needs `weight`, not just `maxLines` (T-0479).** Compose
+> measures each **unweighted** `Row` child against whatever its earlier siblings left, so the last slot
+> of a bottom bar gets the remainder — which is nothing, once three Cyrillic labels and a 72dp FAB hole
+> have been paid for. Adding `maxLines = 1` on its own therefore upgrades a visible two-line wrap into
+> an **invisible tab**: the last column is measured to ~0dp and its icon clips with it. The fix is
+> always the pair — `Modifier.weight(1f)` on every slot (equal budgets) **plus** `maxLines = 1` +
+> `overflow = TextOverflow.Ellipsis` + `textAlign = TextAlign.Center` (an ellipsized `Text` fills its
+> whole constraint, so a `Start`-aligned label drifts left of its centred icon). Budget the result
+> against the **narrowest** width × the **longest** locale before calling it done, and remember the
+> slot's own horizontal padding is spent out of that budget: at 320dp the customer pill gives each slot
+> 50dp, where 8dp-per-side padding truncated even English ("Ho…") and 4dp does not. Visual truncation
+> costs nothing in accessibility — Compose hands the semantics tree the string it was given, so TalkBack
+> still reads the whole label — but a Kotlin-side `label.take(n)` would truncate the spoken label too and
+> is never the fix. `BottomNavLabelTruncationTest` (one per app) pins the pair. **iOS does not inherit
+> this**: `.tabItem` is UIKit-rendered and ignores the SwiftUI text modifiers, which is why T-0480 is a
+> separate ticket rather than a port.
+
 ## Navigation — typed routes
 
 `navigation/Routes.kt` defines `@Serializable data object`/`data class` routes; args are constructor
@@ -1174,6 +1191,21 @@ the Parity rule; Gate-SEC):** the customer settings tail over the generated `Cus
   current-password "change password" instead of the reset-code flow; a second settings store or theme/language in the Keychain; a
   rebuilt (not promoted-in-place) Profile hub that drops the disputes/addresses rows. **The GDPR/Devices/prefs SECURITY enforcement is
   Gate-SEC (security charter) — this rule fixes the seams.**
+
+**Owner-local build values — the ONE way (T-0475):** a per-developer value (the Stripe publishable key,
+`DEVELOPMENT_TEAM`) lives ONLY in the gitignored `src/cleansia_ios/Config/Local.xcconfig`, which
+`Config/Base.xcconfig` pulls in with `#include?` last so it wins; both `project.yml` files point every
+configuration at `Base.xcconfig` via `configFiles:`. **Never put such a value in `project.yml` or
+`Info.plist`** — `project.yml` is tracked, so any pull/checkout/reset deletes it, and `Info.plist` is
+xcodegen OUTPUT, so `xcodegen generate` rewrites it. Both wiped the owner's key repeatedly. The committed
+`Base.xcconfig` keeps an **empty default** for each key, so a fresh clone and CI still build and test on the
+simulator with no local file; `Local.xcconfig.example` is the committed template. A missing value is
+reported by name at build time (`scripts/check-local-config.sh`, a pre-build phase on both app targets;
+warning on Debug, **error** on Release, and always an error for a non-`pk_` Stripe key) and stays
+**fail-closed** at runtime. **Deviations a reviewer rejects:** a value typed into `project.yml`
+`settings:`; a second per-app local xcconfig instead of the one shared file; setting the team in Xcode's
+Signing & Capabilities editor (it writes the gitignored, regenerated `.xcodeproj`); a test that asserts
+ambient build config by reading `Bundle.main` instead of injecting the flag.
 
 **Parity deviation (Android is wrong, iOS is right) — auth validation strings:** the Android partner
 `RegisterViewModel.kt:64-84` + `ForgotPasswordViewModel.kt:45-52` set validation errors as **hardcoded English

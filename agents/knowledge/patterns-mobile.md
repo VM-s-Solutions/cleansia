@@ -552,6 +552,24 @@ be a god-enum without de-dup, and `ProfileRoute` is shared with the out-of-shell
 resurrected pill/pager or glass-FAB composite; a customer child route registered anywhere but the ONE
 shell-level `.navigationDestination(for: ShellRoute.self)`.
 
+> **A `.tabItem` label takes no text modifier, and the bar has no overflow behaviour to fall back on
+> (measured, T-0480).** `UITabBarItem` — not SwiftUI — lays the label out, so `.lineLimit`,
+> `.truncationMode`, `.minimumScaleFactor` and `.fixedSize` written inside `.tabItem` are **discarded
+> silently**: on the 16.4 floor all six variants produced byte-identical geometry, and
+> `.truncationMode(.middle)` left `lineBreakMode` on `byTruncatingTail` while `.minimumScaleFactor(0.4)`
+> left `adjustsFontSizeToFitWidth` false. A diff that adds them compiles, reviews clean and changes
+> nothing. **Nor does the Android remedy have an iOS counterpart to port:** the bar is `numberOfLines = 1`
+> and never wraps, but it also never truncates — the label is always sized to its FULL natural width
+> (`sizeThatFits == bounds` even at 143.5pt in a 71pt slot) and simply **draws over its neighbours**. So
+> tab-label overflow on iOS is a **string-length constraint, not a layout one**, and the only place to
+> defend it is the catalog. `ShellTabBarLabelTests` in each app is the fence: it hosts the real `TabView`
+> in a `UIWindow` at the narrowest supported width (**375pt** — iPhone SE 3rd gen / 8 / 13 mini; nothing
+> iOS-16-capable is narrower), then per locale asserts each label's natural width fits its slot and its
+> drawn ink stays within one line height. Two traps it encodes: measure the **rendered `UILabel`**, never
+> the modifier in the source (a source-level assertion passes on a diff that does nothing); and iOS 26
+> keeps a selected-semibold **and** an unselected-medium label per item, so count distinct titles, not
+> label instances, and measure both — the semibold one is wider.
+
 **Partner registration gate — fail-closed (sprint-12 §7.4 Decision 1, reviewer #24, SECURITY):** the gate sits
 **between login and the shell** (the shell is unreachable until complete). The predicate is the **AND** of
 `hasCompletedProfile == true && areDocumentsUploaded == true && contractStatus ∈ {Approved(4), Active(2)}`

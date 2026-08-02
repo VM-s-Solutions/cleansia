@@ -523,6 +523,69 @@ modes in one consumer**, and never hide the mode behind a boolean — the member
 is the greppable evidence of which mode the consumer runs (ADR-0002 verification check #3 logic).
 Role card: `agents/knowledge/roles/idempotency-guard.md`.
 
+## Bounded exclusivity on a pull board — the stored-deadline hold (ADR-0036)
+
+When a rule must give one actor **temporary exclusive access** to a work item on a first-come board
+(Cleansia: a customer's preferred cleaner gets first refusal on their booking):
+
+- **Store an absolute deadline, never a duration.** `<X>UntilUtc`, nullable, set **once** at creation,
+  **never recomputed**. `null` means "no exclusivity, ever", so existing rows and rows outside the rule
+  are unaffected **by construction**, with no backfill. A duration read at query time retroactively
+  re-times every live row when the constant is tuned.
+- **Expiry must have no actor.** `now >= deadline` in a `WHERE` clause. A job/sweep/status-transition
+  expiry has a failure mode — *the item is stuck exclusive* — that a clock comparison does not.
+- **Key the predicate on the DEADLINE, and make an inconsistent pair fail OPEN at BOTH ends.** A
+  predicate keyed on the beneficiary id retroactively switches behaviour on for every historical row.
+  And a deadline **without** a beneficiary must be (a) unwritable — the aggregate owns the pair
+  (`GrantX(beneficiary, untilUtc)` / `ClearX()`, no independent setter) — **and** (b) harmless if a row
+  carries it anyway: the predicate includes `beneficiaryId == null ⇒ open`. **One end is not enough.**
+  *(ADR-0036 CH-V1: the draft had neither, and the anonymizer nulled one column of the pair.)*
+- **Exclusivity is consumed the moment the item has ANY holder** — not when the beneficiary takes it,
+  and never merely by the clock. Check whether your items have **more capacity than one**: a Cleansia
+  order carries `MaxEmployees = RequiredEmployees + 1`, so a hold keyed only on the clock locked the
+  spare seat *after* the perk had already been delivered, to a beneficiary who could not take it either.
+- **Bound the exclusivity as a FRACTION of the item's own fill window, with a ceiling**, and state the
+  resulting invariant **per unit of capacity, not per item**: *≥90% of every **seat's** fill window is
+  always open to everyone.* A fixed duration is arbitrarily aggressive on urgent items and timid on
+  distant ones.
+- **Reuse the constant that already defines "urgent" as the floor — or DERIVE from it.** A multiple of
+  the one constant (`2 * BookingPolicy.StandardLeadTimeHours`) is **not** a second constant: the
+  relationship stays derivational and cannot drift. A second literal is the drift.
+- **Grant the NOTIFICATION on a wider predicate than the exclusivity.** *No signal ⇒ no exclusivity*
+  (latency nobody can act on is pure loss) — but **not** its converse. Where exclusivity is unsafe
+  (too little lead time), the notification alone still keeps the promise, costs one outbox row, and is
+  what lets a **single static string** be true in both outcomes. Check **every** way the signal can
+  fail: the category mute, the device-level kill switch (`Device.NotificationsEnabled`), and **no device
+  row at all**.
+- **Write the rule ONCE, then classify the surfaces by KIND** — queryable visibility · in-memory
+  authorization · write gate · notification freshness — and enumerate them in the ADR. A rule applied to
+  n−1 of n surfaces is a leak; a rule applied *uniformly* to surfaces that answer different questions is
+  a different bug.
+- **Sharing one lambda does NOT make two evaluators agree.** SQL and C# disagree on null equality
+  (`col = @p` with a null parameter is UNKNOWN; `null == null` is `true`), so a queryable form and an
+  in-memory form must be pinned by an **equivalence test against the real provider** — never by a shared
+  expression tree, and never by review. Corollary: **never `.Compile()` on a request path**; a
+  `static readonly` delegate compiled once, or a plain method, is the shape.
+- **Enumerating grep hits is not coverage — check CALL SITES.** A specification factory with all-optional
+  parameters accepts a new one **without breaking a single caller**, which means every caller that
+  forgets it leaks silently and builds green.
+- **The refusal at the write gate must never NAME the exclusivity.** Reuse the most generic refusal the
+  caller could already have received (`OrderNotFound`), and **specify where in the validator chain it
+  goes** — appended after a more specific rule, the caller gets the more specific error, which is the
+  leak. *(The stronger form — "the write's error must always agree with the caller's read" — is NOT the
+  rule: this codebase already violates it.)*
+- **A watermark-based notification sweep must treat the expiry as the item's arrival instant** for
+  non-beneficiaries, **as a bounded window** — `> watermark AND <= sweepStart` — **written
+  disjunctively**, never as `max(a, b) > k`. Two reasons, both load-bearing: an availability instant in
+  the **future** marks the item "new" *before* it is available, inflating the notification's count and
+  walking the watermark past the expiry; and `max(...)` compiles to a per-row `CASE` over correlated
+  aggregates with a cast on a column, where `a > k OR b > k` stays a semi-join. **Pass the sweep's own
+  start instant, never `UtcNow` inside the loop.**
+- **And know the limit you are patching.** A single per-recipient watermark scalar assumes eligibility is
+  monotone in time and derivable from a **global** timestamp on the item. Any **per-recipient,
+  non-monotone** rule breaks that assumption; a fix for one such rule is a point fix, not a class fix,
+  and the ADR must say so rather than claim convergence.
+
 ## Tenancy is APP; region is INFRA — they are orthogonal (ADR-0017)
 
 Two isolation axes meet in this codebase, and they live in **different layers** — keep them there.

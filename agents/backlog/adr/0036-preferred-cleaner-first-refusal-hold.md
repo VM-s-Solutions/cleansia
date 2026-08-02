@@ -1,11 +1,16 @@
-# ADR-0036 — A customer's preferred cleaner gets **first refusal, not priority**: a **lead-time-proportional exclusive hold**, stored as an absolute deadline (`Order.PreferredHoldUntilUtc`) that **expires by clock with no job, no sweep and no state transition**, capped so that **at least 90% of every order's fill window is always open to the whole board**; the hold is **not created at all** when it cannot be acted on (express lead time, ineligible or muted cleaner, non-member); and the perk becomes **Plus-only** at creation while **already-created orders keep what they were granted**
+# ADR-0036 — A customer's preferred cleaner gets **first refusal, not priority**: a **lead-time-proportional exclusive hold on the order's FIRST seat**, stored as an absolute deadline (`Order.PreferredHoldUntilUtc`) that **expires by clock with no job, no sweep and no state transition**, capped so that **at least 90% of every seat's fill window is always open to the whole board**; the hold is **not created at all** when it cannot be acted on (lead time under `2 × StandardLeadTimeHours`, ineligible, unreachable or muted cleaner, non-member) while the **targeted notification is granted on a wider predicate than the hold**; and the perk becomes **Plus-only** at creation while **already-created orders keep what they were granted**
 
-- **Status:** `proposed` — **needs the panel.** Written in `author` mode. Five of the eleven decisions
-  below are real trade-offs with a live loser (D1 mechanism, D3 the window, D4 the targeted push +
-  privacy, D7 reject-vs-ignore on the gate, D8 the recurring asymmetry). Three challengers are named in
-  `## Challenge` with the exact seams to attack (`analyst` → D1/D3/D6 the customer promise;
-  `architect` → D2/D5 the visibility predicate; `backend`/`optimizer` → D4/D5.3 the digest interaction).
-- **Date:** 2026-08-02
+- **Status:** `accepted` — **panel complete, consensus reached 2026-08-02.** Author (`architect`),
+  three independent challengers (`analyst` → the customer promise, `0036-A-promise.md`; `architect` →
+  the visibility seam, `0036-B-visibility.md`; `optimizer` → the digest + query cost,
+  `0036-C-digest.md`), lead adjudication in `## Verdict`. **The shape survived; the enumeration and
+  two safety claims under it did not** and have been amended in place per §Defense. Acceptance carries
+  **three named preconditions on the consumer tickets** and **two owner escalations** (§Verdict) —
+  neither reopens the decision.
+- **Date:** 2026-08-02 (proposed) / 2026-08-02 (accepted, amended by the panel)
+- **Owner decisions carried by this ADR:** `Q-PLUS-03` → **plus-only**; **CH-2 → the hold floor is
+  8 hours**, expressed as `2 * BookingPolicy.StandardLeadTimeHours`. Both are settled and are not
+  reopened by any later reading of this document.
 - **Supersedes:** — . **Composes with ADR-0035** (metered membership benefits — the express waiver;
   D3 below is where the two perks meet on one order) · **adopts ADR-0035 D2.1's placement rule**
   unchanged (*platform-wide numbers live on `BookingPolicy`; per-plan numbers live on `MembershipPlan`*)
@@ -13,17 +18,27 @@
   re-derived later*) · **rides ADR-0002/ADR-0008** for the targeted push (outbox, unchanged) ·
   **rides ADR-0025** for the push display contract (loc-keys, unchanged) · **does not touch** ADR-0001
   (authorization), ADR-0007 (soft delete), ADR-0017 (region seam), or any fiscal path.
-- **Applies to:** `Cleansia.Core.Domain` (one nullable column on `Order`, one shared visibility
-  expression, one nullable column on `RecurringBookingTemplate`) · `Cleansia.Infra.Database`
-  (**two owner-run additive migrations**, no backfill) · `Cleansia.Core.AppServices` (one resolver, one
-  factory wiring, one validator rule, one predicate applied in five places, one notification event) ·
-  **Partner + Partner-Mobile hosts read the new predicate; Customer/Admin hosts are byte-untouched** —
-  no host coupling · **no NSwag-breaking change** (no field leaves or changes shape on any client DTO;
-  one new error key is a string, not a contract change).
-- **Ticket:** T-0495 (this ADR). **Consumers:** T-0515 (the dispatch rule + the `Order.cs:217-224`
-  comment correction), T-0516 (the Plus gate — `Q-PLUS-03` is **answered**, see below), plus **one new
-  ticket this ADR asks the PM to file** (recurring carry-through, D8) and **one the ticket already
-  named** (the web wizard has no picker at all — `order-wizard.facade.ts:580` sends `undefined`).
+- **Applies to:** `Cleansia.Core.Domain` (one nullable column on `Order`, **two aggregate methods that
+  own the hold pair**, one shared visibility rule in two forms, one nullable column on
+  `RecurringBookingTemplate`) · `Cleansia.Infra.Database`
+  (**two owner-run additive migrations**, no backfill, **no index — see D5.5**) ·
+  `Cleansia.Core.AppServices` (one resolver, one
+  factory wiring, one validator rule, one rule applied at **six** surfaces of **four kinds**, one
+  notification event) ·
+  **No host coupling — but stated precisely, because the draft's version was loose (CH-V9 "found
+  sound").** The Partner + Partner-Mobile hosts are the only ones whose *behaviour* changes.
+  `CanBrowseOrderAsync` is also executed by the Admin host (`AdminOrderController.cs:35-37`) and both
+  Customer hosts (`Web.Customer`/`Web.Mobile.Customer` `OrderController.cs:107`), so the code does land
+  in their path — **it cannot change what they see**, because `CanAccessOrderAsync` returns `true` for
+  `Administrator` (`OrderAccessService.cs:37-41`) and for the order's own customer (`:49-52`), and
+  returns `false` for any non-`Employee` role (`:54-57`) *before* the browse branch is reached
+  (`:78-82`). "Byte-untouched" was the wrong claim; **"unreachable for those callers by an existing
+  early return"** is the right one, and it is checkable. · **No NSwag-breaking change** (no field leaves
+  or changes shape on any client DTO; one new error key is a string, not a contract change).
+- **Ticket:** T-0495 (this ADR). **Consumers:** T-0515 (the dispatch rule + the comment corrections),
+  T-0516 (the Plus gate — `Q-PLUS-03` is **answered**), T-0491 (the copy — its **sequencing** and ten
+  constraints are decided here). **Six tickets the panel asks the PM to file**, of which **one (C0, the
+  corrective copy wave) ships FIRST and two are preconditions of T-0515** — enumerated in §Verdict.
 - **Owner input this ADR executes (verbatim, 2026-08-02):** *"It exists, you can select in the app but
   I think it doesn't work fully. And I'd like to have it working fully."* — so *withdraw the claim* is
   off the table; and, on whether the perk stays universal or becomes Plus-only: **"plus-only"**.
@@ -39,9 +54,17 @@
 
 > ## AC1 — the mechanism, in one sentence a test can check
 >
-> **An order carrying a granted hold is invisible and un-takeable to every cleaner except the preferred
-> one until `Order.PreferredHoldUntilUtc`, and from that instant behaves in every respect exactly like
-> an order that never had a preference.**
+> **An order that has no cleaner on it yet and carries a granted hold is invisible and un-takeable to
+> every cleaner except the preferred one, until the earlier of `Order.PreferredHoldUntilUtc` and the
+> moment any cleaner is assigned; from that instant it behaves in every respect exactly like an order
+> that never had a preference.**
+>
+> *(Amended by the panel — CH-V4. The unamended sentence was false for the second seat: every order
+> carries `MaxEmployees = RequiredEmployees + 1` (`Order.cs:519`, called unconditionally at
+> `OrderFactory.cs:148`), so after the preferred cleaner takes seat 1 the original predicate hid the
+> spare seat from the whole board — including from the beneficiary, whom `TakeOrder.cs:79-90` refuses
+> a second seat. **The hold is first refusal on the order's FIRST assignment, not a lease on the
+> order.**)*
 >
 > Corollary, and the reason this is safe: **the hold delays *assignment*, never the *appointment*.**
 > The customer's cleaning time is a field they chose; nothing here moves it.
@@ -62,17 +85,42 @@
 
 ### The two facts that decide the mechanism, and neither is in the ticket
 
-**Fact A — "may this cleaner see/take this order" is already expressed in FIVE independent places.**
-This is the single most important structural finding of this panel, because a sixth condition added to
-four of five places is a leak, and to three of five is a bug:
+**Fact A (AMENDED BY THE PANEL — CH-V2 / CH-V5 / CH-Q10.1) — "may this cleaner see/take this order" is
+answered at SIX places of FOUR kinds, and they already disagree with each other.** The author's original
+table listed five homogeneous "surfaces"; all three challengers broke it, in three different places.
+What replaces it:
 
-| # | Where | Expression |
-|---|---|---|
-| 1 | `GetPagedOrders.cs:91` → `OrderSpecification.RestrictToEmployeeId` (`:134-139`) | the partner board list |
-| 2 | `GetAvailableJobsPreview.cs:50` → `DashboardSpecifications.CreateAvailableOrdersSpec` (`:8-29`) | the mobile "available work" card |
-| 3 | `OrderAccessService.CanBrowseOrderAsync` (`IOrderAccessService.cs:14-19` — *"any employee can view an order that still has open spots"*) | the order **detail** page |
-| 4 | `NewJobsDigestService.cs:98-114` | a **hand-rolled** predicate that does **not** use the specification |
-| 5 | `TakeOrder.Validator.HasAvailableSpotsAsync` (`:63-71`) | the **write** gate |
+| Kind | Surface | Call site | What the hold rule does here |
+|---|---|---|---|
+| **Queryable visibility** | partner board list | `GetPagedOrders.cs:91` → `OrderSpecification` (`RestrictToEmployeeId`, `:134-139`) | a **new independent term** ANDed in (D5) |
+| **Queryable visibility** | mobile "available work" card | `GetAvailableJobsPreview.cs:50` → `DashboardSpecifications.CreateAvailableOrdersSpec` (`:8-29`) | same term — **but the spec must be given the id; it does not have one today** |
+| **Queryable visibility** | **the dashboard count (surface 6, never named in the draft)** | `GetDashboardStats.cs:236` → the **same** `CreateAvailableOrdersSpec` | same term, same fix, free once the signature changes |
+| **In-memory authorization** | order **detail** + order **photos** | `OrderAccessService.CanBrowseOrderAsync` (`:68-86`, `order.HasAvailableSpots` at `:85`), consumed by `GetOrderDetails.cs:45` **and** `GetOrderPhotos.cs:58` | the **in-memory form** of the same rule (D5) |
+| **Write gate** | `TakeOrder` | `TakeOrder.Validator`, the `RuleFor(x => x.OrderId)` chain (`:38-45`) | folded **into the `ExistsAsync` rule's query** (D5.2) — not a new rule |
+| **Notification freshness — NOT a disclosure surface** | the 30-min digest | `NewJobsDigestService.cs:98-122` | **two rules, deliberately**: the shared visibility term as a conjunct **and** D5.3's freshness disjunction. It emits a **count** (`:173`), never an identity — nothing can leak here; but a count that includes an order the cleaner cannot take is a lie. |
+
+**Three corrections the panel forced, each verified by reading:**
+
+1. **`CreateAvailableOrdersSpec` never sets `RestrictToEmployeeId`** (`DashboardSpecifications.cs:8-29`
+   passes `excludeEmployeeId` and omits `restrictToEmployeeId`, which is a defaulted parameter at
+   `OrderSpecification.cs:150`). The draft's *"ANDed alongside `RestrictToEmployeeId`… makes surfaces 1
+   **and** 2 correct at once"* was **false**: it would have fixed one surface, left two leaking, and
+   **passed §verify #2's grep**. A green grep over broken wiring is worse than no grep.
+2. **`ExcludeEmployeeId` carries the caller's own id under the opposite polarity**
+   (`OrderSpecification.cs:129-132` → *"orders I am NOT on"*). The hold term needs the same id with the
+   inverse sense. **It must not reuse that parameter.**
+3. **The set is not homogeneous and has already drifted**: `DashboardSpecifications.cs:24` uses
+   `{Pending, Confirmed}`; `NewJobsDigestService.cs:52-53` uses `{New, Pending, Confirmed}` **under a
+   comment at `:49-50` claiming it mirrors the former**. It does not. The draft's consequence *"the
+   change makes that sprawl more reviewable"* is **withdrawn** (CH-Q10.1): a shared term is being added
+   to surfaces that disagree on term #1. §verify #2 is rewritten from a hit count to a call-site check.
+
+**And the fact that decides the fixtures:** `OrderStatus.Confirmed` is written by **three** paths and
+only one involves a cleaner — `TakeOrder.cs:194` (a cleaner took it), `HandlePaymentNotification.cs:261`
+(the Stripe webhook, **no cleaner**) and `ConfirmRecurringOrder.cs:111` (cash auto-confirm, **no
+cleaner**). **`Confirmed` does not mean "a cleaner has it."** Any reasoning in this ADR or in a test
+fixture that treats it that way is wrong: a cleanerless `Confirmed` order with two open seats is an
+ordinary board row, and it is the row the hold is *for*.
 
 **Fact B — the digest's freshness watermark is timestamp-based, and any suppression silently
 un-notifies an order forever.** `NewJobsDigestService.cs:109-114` selects orders whose *latest*
@@ -82,6 +130,15 @@ for 45 minutes, then at expiry its status-track timestamp is older than every cl
 the order will never appear in any digest again** — it becomes board-only, discoverable solely by
 someone who happens to scroll. That is precisely *"an order sitting unclaimed because we waited for one
 person"*, arriving through a back door that no reasonable implementer would predict. **D5.3 fixes it.**
+
+> **Panel amendment (CH-Q2/Q5/Q10).** Fact B is real and was independently reproduced. But the draft's
+> fix was written as a `max(...)` **value** comparison against an instant in the **future**, which
+> reintroduced the same defect one layer up (see D5.3, rewritten). And the root cause is broader than
+> this ADR: `LastNewJobsDigestAt` is a **single per-cleaner scalar** that assumes "eligible to you" is
+> monotone in time and derivable from a **global** timestamp on the order. Both assumptions fail for any
+> **per-cleaner, non-monotone** eligibility rule. The overlap filter (`:135-143`) is the first such rule;
+> **the hold is the second.** D5.3 is a point fix inside a design with a known structural limit — this
+> ADR **does not** claim to resolve the class, and the overlap variant is filed separately.
 
 ### The trade-off space (the ticket's four mechanisms, priced against Fact A/B)
 
@@ -112,11 +169,31 @@ promise that and nothing more** (§Copy).
 
 ### D2 — The hold is a **stored absolute deadline** on the order, not a duration evaluated at read time
 
-`Order` gains **one nullable column**:
+`Order` gains **one nullable column** and — **panel amendment, CH-V1** — **two aggregate methods that
+own the pair**:
 
 | Field | Type | Notes |
 |---|---|---|
-| `PreferredHoldUntilUtc` | `DateTime?` (UTC) | Set **once**, in `OrderFactory`, at creation. **Never recomputed. Never updated** (except by the future decline action, below). `null` = **no hold, ever** — the default for every existing row and every order without a granted hold. |
+| `PreferredHoldUntilUtc` | `DateTime?` (UTC) | Set **once**, at creation, **through `Order.GrantPreferredHold`**. **No independent setter.** **Never recomputed. Never updated** (except by the future decline action, below). `null` = **no hold, ever** — the default for every existing row and every order without a granted hold. |
+
+```csharp
+// Cleansia.Core.Domain/Orders/Order.cs — the ONLY writer of the pair.
+// Throws on a null/empty beneficiary: a deadline without someone who can act on it
+// is not a state this aggregate can be put into.
+public Order GrantPreferredHold(string preferredEmployeeId, DateTime untilUtc);
+
+/// Drops both halves together. Called by AnonymizeCustomerData() and by any future
+/// path that returns an order to the board (D5.4, CH-V9).
+public Order ClearPreferredHold();
+```
+
+**Why the aggregate owns it, and why this is not ceremony.** The draft left the pair to `OrderFactory`
+and relegated the companion null-out to a parenthetical and a review checklist item. Challenger B then
+reached the stranded state from shipped code: `Order.AnonymizeCustomerData()` (`Order.cs:613-626`) nulls
+`PreferredEmployeeId` at `:621` and touches nothing else, and `Order.Create` independently null-collapses
+the id at `:349` while the deadline would be assigned separately. **Two fields, two writers, one
+invariant, no owner** — which is how the ADR's headline safety property came to be defended by a reviewer
+remembering. It is now defended by the type system.
 
 Four consequences, each of which is a reason:
 
@@ -141,26 +218,47 @@ Four consequences, each of which is a reason:
 
 **`PreferredEmployeeId` and `PreferredHoldUntilUtc` are deliberately two columns with two lifetimes.**
 The first is *what the customer asked for* (a durable fact, already GDPR-handled at `Order.cs:621` — the
-anonymizer must null the deadline too). The second is *what the platform granted* (a policy outcome).
-Collapsing them would make "we stored your preference but could not act on it" inexpressible, which is
-exactly the state D5.1 needs.
+anonymizer now calls `ClearPreferredHold()` so both halves go together). The second is *what the platform
+granted* (a policy outcome). Collapsing them would make "we stored your preference but could not act on
+it" inexpressible, which is exactly the state D5.1 needs. **What must never exist is the reverse pair —
+a deadline with no beneficiary** — and D2's amendment plus D5's null-beneficiary disjunct close it at
+both ends.
 
-### D3 — The window is **proportional to lead time**, with a ceiling, and is **zero inside the express band**
+#### D2.5 — The safety claim, restated so it is true (CH-V1)
+
+The draft claimed *"an order stuck held is not expressible."* **That was false as written.** No branch of
+the drafted predicate covered `PreferredEmployeeId == null && PreferredHoldUntilUtc > now`; every
+disjunct is false, so such a row is invisible on every list, un-browsable on detail and un-takeable by
+anyone for up to 12 hours — **with no actor permitted to clear it**, because D2.1 forbids the sweep that
+would. The claim is replaced by one the code delivers:
+
+> **The stuck-held state has no writer and no reader.** *No writer:* `Order.GrantPreferredHold` is the
+> only path that sets the deadline and it requires a beneficiary. *No reader:* if a row carries the pair
+> inconsistently anyway — a manual `UPDATE`, a bad backfill, a future writer — the visibility rule's
+> `PreferredEmployeeId == null` disjunct treats it as **no hold**. **Fail-open at both ends.** That is
+> what "not expressible" was reaching for and did not deliver.
+
+**A safety property defended by a review checklist is not a safety property.** This is the general rule
+the panel extracted, and it goes in the catalog.
+
+### D3 — The window is **proportional to lead time**, with a ceiling, and is **zero below 8 hours' lead** (owner ruling on CH-2)
 
 > **The governing rule, stated before its numbers:** *the hold may never consume more than a small
 > fixed fraction of the time available to fill the order, and it may never touch an order that is
-> already urgent.*
+> already urgent — where "urgent" is defined as a **derivation of** the platform's one urgency constant,
+> not as a second constant.*
 
 ```csharp
 // BookingPolicy — platform-wide numbers, per ADR-0035 D2.1's placement rule.
-public const decimal PreferredHoldFraction    = 0.10m;  // a tenth of the fill window
-public const int     PreferredHoldCeilingHours = 12;    // and never more than this
+public const decimal PreferredHoldFraction     = 0.10m;  // a tenth of the fill window
+public const int     PreferredHoldCeilingHours = 12;     // and never more than this
 
 /// PURE. Returns TimeSpan.Zero when no hold may be granted for this lead time.
 public static TimeSpan ComputePreferredHold(DateTime cleaningUtc, DateTime nowUtc)
 {
     var leadHours = (cleaningUtc - nowUtc).TotalHours;
-    if (leadHours < StandardLeadTimeHours) return TimeSpan.Zero;      // 4 — the SAME constant
+    // 2 × the SAME constant that defines express. NOT a literal 8, NOT a second constant.
+    if (leadHours < 2 * StandardLeadTimeHours) return TimeSpan.Zero;
     var hours = Math.Min(leadHours * (double)PreferredHoldFraction, PreferredHoldCeilingHours);
     return TimeSpan.FromHours(hours);
 }
@@ -171,31 +269,57 @@ Worked, so a reviewer can check it by arithmetic rather than by reading:
 | Lead time at creation | Hold | Fill window left open to the whole board |
 |---|---|---|
 | < 2 h | *not bookable* (`BookingPolicy.IsBelowMinimumLeadTime`) | — |
-| 2–4 h — **the express band** | **0** | **100%** |
-| 4 h | 24 min | 3 h 36 (90%) |
-| 8 h | 48 min | 7 h 12 (90%) |
+| 2–4 h — **the express band** | **0** (targeted push only, D4) | **100%** |
+| 4–8 h — **the short-lead band** | **0** (targeted push only, D4) | **100%** |
+| 8 h — the shortest hold the formula can produce | **48 min** | 7 h 12 (90%) |
 | 24 h (next day) | 2 h 24 | 21 h 36 (90%) |
 | 72 h (3 days) | 7 h 12 | 64 h 48 (90%) |
+| 120 h (5 days) — where the ceiling starts binding | **12 h** (ceiling) | 108 h (90%) |
 | 168 h (7 days — every recurring occurrence, D8) | **12 h** (ceiling) | 156 h (93%) |
 | 30 days | **12 h** (ceiling) | 99.3% |
 
-**Invariant H, which is this ADR's answer to the ticket's central warning:**
+**The 8-hour floor is the owner's ruling on CH-2 and is settled.** The grounds, recorded so they are not
+re-litigated: **(a)** at a five-hour lead the named cleaner is the *least* likely person on the board to
+be free, precisely *because* the notice is short — the slot is on a day they have already planned — and
+D5.1 deliberately checks neither the weekly cap (`TakeOrder.cs:125-143`) nor the time conflict
+(`:145-161`) at creation, so the short-lead hold is the one most likely to expire unused; **(b)** a
+24-minute hold fails the ADR's own test of what a hold must be worth granting (*"the smallest window that
+always intersects a normal waking period"* — the criterion the draft applied at the ceiling and abandoned
+at the floor); **(c)** the perk's audience is the planner, not the five-hours-from-now booker — D8 argues
+recurring is the strongest case at 168 h. What it costs is the 4–8 h band, which under D4's amendment
+**still gets the notification half of the perk** — so the floor now costs a *reduction* in the perk, not
+its absence.
 
-> **At least 90% of every order's fill window is always open to the entire board.** The hold can never
-> be the reason an order goes unfilled, because the hold is never more than a tenth of the time there
-> was — and if a tenth of the window was the difference, the order was going to fail anyway.
+**Invariant H, RESTATED BY THE PANEL (CH-V4) — the draft's version was false for the second seat:**
+
+> **For every SEAT on every order, at least 90% of that seat's fill window is open to the entire
+> board.** The hold covers the order's **first** seat only and is spent the instant any cleaner is
+> assigned; a seat that opens later — the spare seat every order carries (`Order.cs:519`), or a seat
+> freed by an admin unassign — is never withheld from anyone. The hold can never be the reason an
+> order or a seat goes unfilled, because it is never more than a tenth of the time there was.
+
+*Why the restatement was needed:* the draft bounded the hold as a fraction of **the order's** fill
+window. The preferred cleaner takes seat 1 at minute 3 of a 48-minute hold; `HasAvailableSpots`
+(`Order.cs:116-117`) is still true; the drafted predicate returned **false for everyone else** for the
+remaining 45 minutes, and `TakeOrder.cs:79-90` refuses the beneficiary a second seat. **A seat no one on
+the platform may take** — the stuck-held catastrophe in its second reachable form, consuming 100% of
+that seat's fill window, for a perk that had already been honoured. D5's consumption clause fixes it.
 
 Four things fall out of this shape rather than being bolted on:
 
-- **The express collision with ADR-0035 is resolved by construction, using an existing constant.**
-  `StandardLeadTimeHours` (4) is *already* the boundary between express and standard
-  (`BookingPolicy.cs:18-24, 68-72`). Reusing it as the hold floor means the hold band and the express
-  band **can never drift apart**, because they are the same number. A Plus member who books 3 hours out,
-  uses their ADR-0035 express waiver **and** has a preferred cleaner gets: the waiver (D-0035 D1) and
-  **no hold**. Named as an accepted consequence below.
-- **A minimum hold falls out for free.** The shortest lead time that gets any hold is 4 h, so the
-  shortest hold the formula can produce is **24 minutes** — long enough to be actionable, short enough
-  to be invisible. No extra constant, nothing to tune, nothing to get wrong.
+- **The express collision with ADR-0035 is resolved by construction, using a derivation of an existing
+  constant.** `StandardLeadTimeHours` (4) is *already* the boundary between express and standard
+  (`BookingPolicy.cs:18-24, 68-72`). The floor is `2 ×` it, so there is still **one** number in the
+  codebase, expressed once, and the express/hold relationship stays **derivational, not duplicated** —
+  if express moves to 6 h the hold floor moves to 12 h with no drift. What CH-7 was defending (a second
+  *constant* is the drift) survives intact; only the coincidence of a shared literal is given up. A Plus
+  member who books 3 hours out, uses their ADR-0035 express waiver **and** has a preferred cleaner gets:
+  the waiver (ADR-0035 D1), **no hold**, and **the targeted push** (D4). Named as an accepted
+  consequence below.
+- **A minimum hold falls out for free.** The shortest lead time that gets any hold is 8 h, so the
+  shortest hold the formula can produce is **48 minutes** — long enough to intersect a period in which
+  someone checks their phone, short enough to be invisible, and comfortably longer than the outbox
+  drain the signal rides on (CH-V8b). No extra constant, nothing to tune, nothing to get wrong.
 - **The "leave enough time" clamp is unnecessary.** 90% always remains, at every lead time. A
   fixed-duration window (e.g. "30 minutes, always") would need such a clamp *and* would be 12.5% of a
   4-hour booking and 0.4% of a two-week one — arbitrary at both ends.
@@ -225,16 +349,62 @@ public const string PreferredOffer = "order.preferred_offer";
 - **It bypasses the 30-minute digest cadence and does not touch `LastNewJobsDigestAt`.** Bypassing is
   the point: **the hold length must be set by the customer's tolerance for latency, not by our
   notification cadence.** If the preferred cleaner learned via the digest, the *minimum* useful hold
-  would be 30–60 minutes for every booking including a 4-hour-lead one — i.e. we would be buying
+  would be 30–60 minutes for every booking — i.e. we would be buying
   latency to compensate for our own sweep interval. It must not stamp the watermark either: stamping
-  would suppress the cleaner's next digest of *other* jobs.
+  would suppress the cleaner's next digest of *other* jobs. (CH-Q8 makes this sharper than the draft
+  knew: the watermark's single writer is already fragile; a second writer on the create path would be
+  the wrong kind of clever.)
 - **It reuses `NotificationCategory.NewJobsAvailable`** for the opt-out. A cleaner who muted new-job
   notifications must not receive a push-shaped bypass of that mute.
-- **And therefore: no notification ⇒ no hold.** If the preferred cleaner has muted the category, the
-  hold is **not created**. A hold exists only to give someone a chance to act on a signal; with no
-  signal there is no chance, and the latency is pure loss. (D5.1 folds this into the resolver.)
 - **Duplicate-signal note, accepted:** the preferred cleaner may also see the order counted in their
   next ordinary digest. Harmless; not worth a suppression rule.
+
+#### D4.1 — **PANEL AMENDMENT (CH-P2 / CH-P4 / CH-2): the notification is granted on a WIDER predicate than the hold**
+
+The draft coupled the two: no hold ⇒ no push. That is backwards in one direction and incomplete in the
+other, and it is what left §Copy with no sentence that is true in every case (CH-P2).
+
+> **`Reachable-and-able ⇒ notify. Notify + enough lead ⇒ hold.`** The resolver returns **two**
+> outcomes, and the invariant runs one way only: **`HoldUntilUtc != null ⇒ NotifyPreferred == true`.**
+> *"No signal ⇒ no hold"* survives exactly as stated; what is dropped is its false converse.
+
+| Resolver outcome | Notify? | Hold? |
+|---|---|---|
+| Granted | **yes** | **yes** |
+| `ShortLeadTime` (renamed from `ExpressLeadTime` — it is now the whole 2–8 h band, which is wider than express) | **yes** | no |
+| `CleanerNotApproved` · `CleanerCountryMismatch` · `CleanerNotFound` | no | no |
+| `CleanerMutedNewJobs` · `CleanerUnreachableForPush` | no | no |
+| `NoPreference` · `NoMembership` | no | no |
+
+**Three reasons this earns its one extra branch:**
+
+1. **It makes the owner's 8-hour floor cheap.** Without it, the floor means the 2–8 h band gets *nothing*
+   and a Plus member's short-lead booking silently ignores the perk they paid for. With it, the band
+   gets the weaker half — which is exactly alternative **A2** (notification-only nudge), correctly
+   rejected as the *primary* mechanism and correctly used as the *fallback* where exclusivity is unsafe.
+   One outbox row; no exclusivity; no board cost.
+2. **It shrinks the set of cases in which no honest sentence exists** (CH-P2) to precisely the cases in
+   which the cleaner cannot be told anything at all — where no copy could have been true regardless.
+3. **It puts reachability where it belongs.** The notify half is gated on exactly one question — *can we
+   signal this person* — which is now checked properly (below), and the hold half inherits it.
+
+**Reachability is a real check and the draft was missing two thirds of it (CH-P4).** The draft checked
+`UserNotificationPreferences` only. The platform has **three** ways of not receiving a push, and the
+other two are server-stored, statically knowable facts of exactly the shape the resolver's other checks
+have:
+
+- **`Device.NotificationsEnabled == false`** — `Device.cs:14-20`, verbatim: *"System-level kill switch
+  driven by the OS notification permission. **When false, the push dispatcher skips this row entirely —
+  even if the user's per-category preferences allow the event.**"*
+- **No `Device` row at all** — which is the state of every cleaner who works from the **partner web
+  SPA**; it registers no push devices (challenger's whole-app grep for `registerDevice|deviceToken`:
+  zero files).
+
+⇒ `HoldDeclineReason.CleanerUnreachableForPush = 8`, checked in D5.1, governing both halves.
+**Named consequence, and it is a product fact, not a technicality: until the partner web app registers
+devices, this perk is effectively mobile-cleaner-only.** A customer's favourite who works from the web
+board gets neither push nor hold — correctly, because a hold with no signal is pure latency — but the
+copy must not imply otherwise and the PM should know the perk's reach is bounded by push adoption.
 
 **The privacy ruling (AC4), against `Order.cs:221-222` (*"Not exposed to the cleaner side (avoids
 'they didn't pick me' awkwardness)"*):**
@@ -246,7 +416,7 @@ public const string PreferredOffer = "order.preferred_offer";
   were *not* picked — and **exclusivity is invisible to the excluded by construction**: a board is a
   query result, not a diff. A cleaner who never sees an order cannot know it was withheld.
 - **Telling the chosen cleaner is not awkward — it is the most valuable sentence we have for the
-  supply side** (*"a customer asked for you again"*), and it is the only thing that makes a 24-minute
+  supply side** (*"a customer asked for you again"*), and it is the only thing that makes a 48-minute
   hold get acted on. Suppressing it makes the push indistinguishable from the digest and destroys the
   mechanism's one lever.
 - **It is not a secret we could keep anyway.** A cleaner offered a single job that nobody else appears
@@ -255,27 +425,100 @@ public const string PreferredOffer = "order.preferred_offer";
   partner-facing DTO; no surface ever says "held for someone else"; no cleaner ever learns the identity
   of a preferred cleaner or that they themselves were passed over.
 
-### D5 — Enforcement: **one shared expression**, applied in all five places from Fact A
+### D5 — Enforcement: **one rule, five terms, two forms, six surfaces** (rewritten by the panel)
 
-Because five places already answer "may this cleaner see/take this order", the new condition is written
-**once**, in the Domain, next to the entity:
+Because six places already answer "may this cleaner see/take this order", the new condition is written
+**once**, in the Domain, next to the entity. **Five terms, every one of which a challenger put there:**
 
 ```csharp
-// Cleansia.Core.Domain/Orders/OrderVisibility.cs — the ONE expression.
-/// An order is open to `employeeId` unless a preferred hold is live and belongs to someone else.
-/// Null deadline (every legacy row, every order without a granted hold) => always open.
-public static Expression<Func<Order, bool>> NotHeldFromEmployee(string employeeId, DateTime nowUtc)
+// Cleansia.Core.Domain/Orders/OrderVisibility.cs — the ONE rule.
+//
+// An order is open to `employeeId` unless a preferred hold is live, belongs to
+// someone else, and has not yet been consumed.
+//   1. no deadline            -> open   (every legacy row, every ungranted order)
+//   2. no beneficiary         -> open   (CH-V1: fail OPEN on an inconsistent pair)
+//   3. deadline passed        -> open   (the expiry, with no actor)
+//   4. caller IS the benefic. -> open   (the perk)
+//   5. the order already has a cleaner -> open   (CH-V4: the hold is first refusal
+//                                                 on the FIRST seat, not a lease)
+public static Expression<Func<Order, bool>> NotHeldFrom(string? employeeId, DateTime nowUtc)
     => o => o.PreferredHoldUntilUtc == null
+         || o.PreferredEmployeeId == null
          || o.PreferredHoldUntilUtc <= nowUtc
-         || o.PreferredEmployeeId == employeeId;
+         || o.PreferredEmployeeId == employeeId
+         || o.AssignedEmployees.Any();
+
+/// The SAME five terms, transcribed for a materialized entity. Sole caller:
+/// OrderAccessService.CanBrowseOrderAsync. Pinned to the queryable form by TC-PREF-EQUIV-0.
+public static bool NotHeldFrom(Order order, string? employeeId, DateTime nowUtc);
 ```
 
-Applied at: `OrderSpecification` (a new `NotHeldFromEmployeeId` term, ANDed alongside
-`RestrictToEmployeeId` at `:134-139`, which makes surfaces 1 **and** 2 correct at once),
-`OrderAccessService.CanBrowseOrderAsync` (surface 3), `NewJobsDigestService` (surface 4, plus D5.3),
-and `TakeOrder.Validator` (surface 5). **The client is never the control** — every one of these is
-server-side, and the employee is server-derived from the caller (`GetCallerEmployeeIdAsync`), never a
-client field (S1, the posture `TakeOrder.cs:109-115` already documents).
+**Term 5 is broader than the challenger asked for, deliberately.** CH-V4 proposed
+`o.AssignedEmployees.Any(ae => ae.EmployeeId == o.PreferredEmployeeId)` — "consumed when the beneficiary
+is on the order". `Any()` strictly contains that case **and** covers the one it misses: an **admin**
+assignment during a live hold (`AdminReassignOrder.cs:86,98`) would otherwise leave the spare seats
+locked for a perk that has already been overridden by a human. The rule reads as a sentence — *a hold is
+first refusal on an order's first assignment* — which is exactly what D1 promises, and it fails **open**,
+which is this ADR's whole posture. It is also cheaper: a bare correlated `EXISTS` rather than a
+column-to-column comparison inside one.
+
+**Term 4's null semantics are a trap and both forms must handle it identically.** In SQL,
+`PreferredEmployeeId = @emp` with a null parameter is `UNKNOWN` ⇒ the caller is never the beneficiary
+(challenger C verified the emitted predicate). In C#, `null == null` is **true** ⇒ a caller with no
+employee id *would be* the beneficiary. **A null or empty `employeeId` is never the beneficiary** — the
+in-memory form must guard it explicitly. This is the single highest-value assertion in TC-PREF-EQUIV-0.
+
+#### D5.0 — Why two forms and not one shared lambda (CH-V3, adjudicated)
+
+Challenger B proposed one three-argument `Expression`, partially applied for the queryable form and
+`.Compile()`d once statically for the in-memory form. **Rejected, on three grounds:**
+
+1. **It does not deliver the equivalence it is bought for.** Sharing a tree does not make the two
+   evaluators agree — see term 4 above: the *same* tree gives opposite answers for a null caller id under
+   SQL three-valued logic and under C# equality. The property everyone wants must be tested either way;
+   once it is tested, the machinery buys much less than it costs.
+2. **The premise about the repo's machinery is wrong.** `ExpressionBuilder.Compose`
+   (`ExpressionBuilder.cs:7-13`) rebinds **parameter → parameter** (`ToDictionary(p => p.s, p => p.f)`
+   over `ParameterExpression`s). Partial application needs **parameter → captured value**, which is a
+   *different* visitor that does not exist here. "No new technique" was not accurate.
+3. **The "zero precedent for `.Compile()`" premise is also wrong** — and I checked because it was
+   load-bearing: `LoginValidator.cs:48-50` compiles three selectors in production today, plus ~14 test
+   sites. B's *conclusion* (never `.Compile()` inside a request) is right and is kept; the argument for
+   it was not.
+
+**What is adopted instead:** two members, adjacent in one file, over one documented term list, with the
+in-memory one written as a literal transcription — **and the enforcement moved from review to a test**:
+
+> **TC-PREF-EQUIV-0 (blocking).** Over a fixture table covering
+> `(PreferredHoldUntilUtc ∈ {null, past, future}) × (PreferredEmployeeId ∈ {null, self, other}) ×
+> (order has an assignment? {none, beneficiary, other}) × (callerEmployeeId ∈ {null, self, other})`,
+> assert `db.Orders.Where(NotHeldFrom(caller, now)).Select(o => o.Id)` returns **exactly** the id set of
+> `allRows.Where(o => NotHeldFrom(o, caller, now)).Select(o => o.Id)`. **Against PostgreSQL, not an
+> in-memory provider** — an in-memory provider proves nothing about the translation, which is the only
+> thing under test.
+
+#### D5.0b — Where it is applied, and the wiring the draft got wrong
+
+- **`OrderSpecification`** gains a **new independent property with its own `if` block**
+  (`NotHeldFromEmployeeId` + `NowUtc`) — **not** a term inside the `RestrictToEmployeeId` block
+  (`:134-139`), which `CreateAvailableOrdersSpec` never sets, and **not** a reuse of `ExcludeEmployeeId`,
+  whose polarity is the opposite (`:129-132`).
+- **`DashboardSpecifications.CreateAvailableOrdersSpec` changes signature** and **both** callers pass the
+  id: `GetAvailableJobsPreview.cs:50` **and** `GetDashboardStats.cs:236`.
+  *Cost note, corrected from the challenge:* `OrderSpecification.Create`'s parameters are **all optional**
+  (`:144-150`), so adding two trailing ones compiles at all twelve call sites untouched. That is not a
+  saving — **it is the danger**: a call site that forgets the new argument is a silent leak that builds
+  green. Hence §verify #2 is a call-site check, not a grep count.
+- **`OrderAccessService.CanBrowseOrderAsync`** (`:85`) uses the in-memory form. This covers
+  `GetOrderDetails.cs:45` **and** `GetOrderPhotos.cs:58` in one edit — nobody should "fix" photos
+  separately.
+- **`TakeOrder.Validator`** — folded into the `ExistsAsync` rule's query (D5.2), not a new rule.
+- **`NewJobsDigestService`** — the queryable form as a **conjunct**, plus D5.3's freshness disjunction.
+  See D5.3 for why this surface carries two rules and why that is not a contradiction.
+
+**The client is never the control** — every one of these is server-side, and the employee is
+server-derived from the caller (`GetCallerEmployeeIdAsync`), never a client field (S1, the posture
+`TakeOrder.cs:109-115` already documents).
 
 #### D5.1 — When a hold is granted: `IPreferredCleanerHoldResolver`, a pure read, mirroring `CancellationPolicyResolver` / `IExpressWaiverResolver`
 
@@ -284,16 +527,19 @@ client field (S1, the posture `TakeOrder.cs:109-115` already documents).
 public interface IPreferredCleanerHoldResolver
 {
     /// PURE READ. Never writes. Safe to call from the quote path and from the factory.
-    Task<PreferredCleanerHold> ResolveAsync(
+    Task<PreferredCleanerOutcome> ResolveAsync(
         string? userId, string? preferredEmployeeId,
         DateTime cleaningUtc, DateTime nowUtc, CancellationToken cancellationToken);
 }
 
-/// Granted=false carries WHY, so the decision is loggable and testable rather than a bare null.
-public record PreferredCleanerHold(bool Granted, DateTime? HoldUntilUtc, HoldDeclineReason Reason);
+/// TWO outcomes, not one (D4.1). Reason carries WHY, so the decision is loggable and
+/// testable rather than a bare null. INVARIANT: HoldUntilUtc != null => NotifyPreferred.
+public record PreferredCleanerOutcome(
+    bool NotifyPreferred, DateTime? HoldUntilUtc, HoldDeclineReason Reason);
 
-public enum HoldDeclineReason { None = 0, NoPreference = 1, NoMembership = 2, ExpressLeadTime = 3,
-    CleanerNotApproved = 4, CleanerCountryMismatch = 5, CleanerMutedNewJobs = 6, CleanerNotFound = 7 }
+public enum HoldDeclineReason { None = 0, NoPreference = 1, NoMembership = 2, ShortLeadTime = 3,
+    CleanerNotApproved = 4, CleanerCountryMismatch = 5, CleanerMutedNewJobs = 6, CleanerNotFound = 7,
+    CleanerUnreachableForPush = 8 }
 ```
 
 **Checked at creation (statically knowable) — failure means NO hold, and the order goes straight to the
@@ -302,11 +548,12 @@ open board with zero latency cost:**
 | Condition | Source | Why here |
 |---|---|---|
 | a preference is set | `input.PreferredEmployeeId` | trivially |
-| the customer has an **active** membership | `IUserMembershipRepository.GetActiveForUserNoTrackingAsync` — the **one** live-membership predicate (`UserMembershipRepository.ActiveForUserQuery:20-29`), already used by `CancellationPolicyResolver:32`, `OrderFactory:76`, `QuoteOrder:141`, `CreateRecurringBooking:84-85` | D7; **no second predicate is created** |
-| lead time ≥ 4 h | `BookingPolicy.ComputePreferredHold` | D3 |
-| the cleaner is `ContractStatus.Approved` (or `Active`) and exists | `IEmployeeRepository` | a hold for a cleaner `TakeOrder.cs:53` would reject is pure latency |
+| the customer has an **active** membership | `IUserMembershipRepository.GetActiveForUserNoTrackingAsync` — the **one** live-membership predicate (`UserMembershipRepository.ActiveForUserQuery:20-31`), already used by `CancellationPolicyResolver:32`, `OrderFactory:77`, `QuoteOrder:142`, `CreateRecurringBooking:84-85` (⚠️ the last three call the **tracking** sibling — same predicate, one query method; citation corrected per CH-V-nit) | D7; **no second predicate is created.** `PastDue` is **excluded** — see D7's escalation |
+| lead time ≥ `2 × StandardLeadTimeHours` (8 h) | `BookingPolicy.ComputePreferredHold` | D3 — **hold only.** A shorter lead still notifies (D4.1) |
+| the cleaner is `ContractStatus.Approved` (or `Active`) and exists | `IEmployeeRepository` | a hold for a cleaner `TakeOrder.cs:53` would reject is pure latency — **and so is a push** |
 | the cleaner's `WorkCountryId` == the order's service-address country | `Employee.WorkCountryId`, `Address.CountryId` | **the ticket's "different work country" case.** This is the same country key `NewJobsDigestService.cs:100` and `OrderFactory.cs:152` already use — not a new notion of country |
-| the cleaner has **not muted** `NotificationCategory.NewJobsAvailable` | `IUserNotificationPreferencesRepository` (default-allow when the row is absent, matching `NewJobsDigestService.cs:151-158`) | D4 — no signal, no hold |
+| the cleaner has **not muted** `NotificationCategory.NewJobsAvailable` | `IUserNotificationPreferencesRepository` (default-allow when the row is absent, matching `NewJobsDigestService.cs:155-158`) | D4 — no signal, no hold |
+| **the cleaner is reachable at all** — ≥1 `Device` row with `NotificationsEnabled == true` | `Device.cs:14-20` | **CH-P4.** The mute check alone covers one of three ways not to receive a push; `Device.NotificationsEnabled` is a documented hard kill switch and "no device row" is the partner-web-only cleaner |
 
 **Deliberately NOT checked (dynamic) — the hold is created and simply expires:** the **weekly order
 limit** (`TakeOrder.cs:125-143`) and the **time conflict** (`:145-161`). Both can change in either
@@ -316,40 +563,149 @@ window. **This is the AC6 interaction table**: the hold never *overrides* a `Tak
 preferred cleaner who is over their weekly limit is refused exactly as anyone else would be, and the
 order they were holding opens on schedule.
 
-#### D5.2 — The take-time refusal must **agree with the read surface**, so it cannot leak
+#### D5.2 — The take-time refusal must **not name the exclusivity** — and the placement is part of the decision
 
 A cleaner with a stale board can still `POST` a take on a held order. The refusal returns the **existing
 `BusinessErrorMessage.OrderNotFound`** — **no new error key, no new translation, no leak.**
 
-The rule that makes this principled rather than a fib: **the error a caller gets must agree with what
-that same caller's `GET` would return.** During the hold, surfaces 1–3 already return nothing for this
-cleaner; a `POST` that answered *"held for another cleaner"* would leak precisely the fact D4 said we
-keep. (Contrast `NoAvailableSpots`, which would be false — spots exist.)
+**Placement (CH-V7 / CH-Q9 — this is mechanical and the draft left it to chance).** `TakeOrder.Validator`
+runs `RuleFor(x => x.OrderId).Cascade(Stop).NotEmpty() → ExistsAsync/OrderNotFound →
+HasAvailableSpotsAsync/NoAvailableSpots` (`:38-45`). Appended **after** the spots check, a **full** held
+order returns `NoAvailableSpots` — the wrong error for the one case the rule exists for. And that chain
+never resolves the caller's employee id (only the `RuleFor(x => x)` chain at `:47-60` does).
 
-#### D5.3 — The digest's freshness comparison must use the hold expiry, or held orders are never notified again
+> **The hold predicate is folded INTO the existence rule**, not added as a third one: a repository method
+> `ExistsVisibleToEmployeeAsync(orderId, employeeId, nowUtc)` carrying `OrderVisibility.NotHeldFrom` in
+> its `WHERE`, with the employee id resolved server-side from `IOrderAccessService`, never from the
+> command. The row is already being fetched, the outcome is already `OrderNotFound`, and read/write
+> agreement holds **by construction with zero added round trips** — against a validator that already
+> loads the same order three times (`:42`, `:65-68`, `:150-152`).
 
-**This is Fact B, and it is the defect this mechanism would otherwise create.** In
-`NewJobsDigestService.cs:109-114`, an order's "became available to *this* cleaner" instant becomes:
+*Named consequence:* a non-employee caller (null employee id) now gets `OrderNotFound` on a held order
+rather than `EmployeeNotFound`. That is the better answer — less enumeration — and it is deliberate.
+
+**The general rule the draft wanted is too strong and the codebase already violates it (CH-V7).**
+*"The refusal at the write gate must agree with what the same caller's read returns"* is broken today:
+`HasAvailableSpotsAsync` returns `NoAvailableSpots` for a fully-assigned order that the same caller's
+`GetPagedOrders` does not return at all (`RestrictToEmployeeId` = assigned-to-me OR has-a-spot,
+`:134-139`). Shipping a catalog rule the codebase violates on day one is the "rule that keeps being
+violated" failure mode. **The rule is narrowed to what is defensible and checkable — and it is what
+§verify #4 already tests:**
+
+> **Never introduce an error key that names the exclusivity. Reuse the most generic refusal the caller
+> could already have received.**
+
+This defends `OrderNotFound` for the held case without retroactively condemning a shipped error, and it
+is the form that goes in `patterns-backend.md`. (Whether `NoAvailableSpots` is itself a leak is a
+pre-existing question, filed separately, **not** decided here.)
+
+#### D5.3 — The digest carries TWO rules: the shared visibility term (a conjunct) and a **bounded disjunctive** freshness term. **REWRITTEN BY THE PANEL — the drafted `max(...)` form was wrong in the direction it was meant to fix.**
+
+**Fact B is real and D5.3 is still blocking.** Without a freshness fix, every held order that the
+preferred cleaner declines silently falls out of the notification channel forever and becomes board-only
+— turning a 48-minute optimisation into a permanent loss of reach. But the drafted fix,
 
 ```
-availableToCleanerAt = (cleaner is the preferred one)
-    ? latest OrderStatusTrack.CreatedOn
-    : max(latest OrderStatusTrack.CreatedOn, PreferredHoldUntilUtc)
+availableToCleanerAt = max(latest OrderStatusTrack.CreatedOn, PreferredHoldUntilUtc)   // WRONG
 ```
 
-One expression change. **No new column, no new job, no new state.** Without it, every held order that
-the preferred cleaner declines silently falls out of the notification channel forever and becomes
-board-only — turning a 24-minute optimisation into a permanent loss of reach. This is a **blocking**
-part of the decision, not an optimisation: T-0515 that ships D5 without D5.3 is a regression.
+compares the watermark against an instant that is **in the future**. Every prior input to that test —
+`OrderStatusTrack.CreatedOn` — is always in the past; `PreferredHoldUntilUtc` is the first availability
+instant in this system that is not. The consequence, walked with the ADR's own 24 h example
+(hold = 2 h 24): from creation onward `max(...) > since` is **TRUE**, so the held order is counted in
+`takeable` (`:142`), pushed as *"N new jobs"* (`:173`) to cleaners who **cannot see it** (D5) and
+**cannot take it** (D5.2), and the watermark is stamped forward on every sweep (`:182`) until it has
+walked **past the hold expiry** — at which point the order is genuinely available and permanently stale.
+**Fact B, reproduced by the fix for Fact B**, plus a push count that is a lie for the whole hold window.
+
+**The corrected specification — a *window*, not a lower bound, and written disjunctively:**
+
+```
+-- CONJUNCT 1: visibility. The SHARED rule (D5), same as every other surface.
+(hold IS NULL OR preferredEmployeeId IS NULL OR hold <= @sweepStartedAt
+ OR preferredEmployeeId = @cleaner OR EXISTS(assignment))
+
+-- CONJUNCT 2: freshness. "Has this become new TO THIS CLEANER since their watermark?"
+(EXISTS (h IN OrderStatusHistory : h.CreatedOn > @since)
+ OR (preferredEmployeeId <> @cleaner AND hold > @since AND hold <= @sweepStartedAt))
+```
+
+Four rulings folded in, each of which changes what a reviewer must look for:
+
+1. **Disjunction, never `max(...)` (CH-Q1).** `max(a,b) > k ⟺ a > k OR b > k`. The value form compiles —
+   challenger C rendered the actual Npgsql output — to a per-row `CASE` over **two** correlated
+   `max()` SubPlans plus a per-row `PreferredHoldUntilUtc::timestamptz` **cast on a column**, in a
+   non-sargable position. §verify #6's original wording is what steered an implementer into it. The
+   cast appears only when the two columns are compared *to each other*; comparing each to its own
+   parameter emits none.
+2. **The upper bound `hold <= @sweepStartedAt` is the CORRECTNESS condition (CH-Q2), not an
+   optimisation.** It is what stops a future instant from marking an order "new" before it is available.
+   Omitting it is a hard reject.
+3. **The existing top-N is replaced, not wrapped (CH-Q5).** Today's clause is
+   `EXISTS(SELECT CreatedOn … ORDER BY CreatedOn DESC LIMIT 1 WHERE CreatedOn > @since)` — a top-N
+   subquery materialised per candidate row. Since `latest > k ⟺ max > k ⟺ ∃ > k`, it becomes a plain
+   `EXISTS` semi-join servable from `IX_OrderStatusHistory_OrderId` (the only index on that table),
+   able to stop at the first qualifying row. **Written this way D5.3 makes the digest query cheaper than
+   it is today** — the opposite of what the draft conceded — and it removes a latent requirement for an
+   `(OrderId, CreatedOn DESC)` index that does not exist. The equivalence is recorded here so a later
+   reader does not "restore" the top-N thinking it was load-bearing.
+4. **`nowUtc` is `sweepStartedAt`, the same value the sweep stamps (CH-Q4).** Captured once at
+   `NewJobsDigestService.cs:57`, used at `:164`/`:182`, with the reason already in the comment at
+   `:206-209`. If the predicate used `DateTime.UtcNow` while the watermark stamps `sweepStartedAt`, the
+   two disagree by the sweep's duration; **`now` earlier than the stamp is permanent loss**, and that is
+   not a property to leave to luck. **The digest must never call `UtcNow` inside the loop.**
+
+**Why this surface carries two rules, and why that is not the contradiction it looks like (CH-V5,
+adjudicated against the challenger on the substance and with them on the taxonomy).** Challenger B is
+right that the digest emits a **count** (`:173`) and never an identity (`:120-122` projects
+`{Id, CleaningDateTime, EstimatedTime}` and never leaves the service) — so it is **not a disclosure
+surface** and D4's privacy line cannot be breached here. B concluded the shared visibility rule must
+therefore **not** be applied. **That is wrong, and challenger C's own probe SQL contains both conjuncts.**
+The count is the count of jobs *this cleaner can take* — the query already excludes full orders (`:101`)
+and orders assigned to them (`:102`), and filters overlaps (`:135-143`). A hold is one more "can this
+cleaner take it". Drop the conjunct and the freshness branch fires on the *creation* status track, and
+the cleaner is pushed about an order that is invisible to them: CH-Q2's harm, arriving by the other door.
+
+The two rules answer **two different questions** and compose as a conjunction — *may I take it* (shared,
+never hand-rolled) AND *is it new to me* (local to the digest, and the only place this notion exists).
+Stating them as competing rules over the same columns was the draft's error; stating them as one rule of
+each kind is the fix. **The digest is the one surface that carries two, and that is now written down.**
 
 #### D5.4 — What is **not** built, and why the shape leaves room for it
 
 - **No early release when the preferred cleaner takes a conflicting job.** It needs either a sweep or a
   rescan inside `TakeOrder`, whose failure mode is an order stuck held. Bounded by Invariant H;
   **rejected on cost, recorded so it is not re-litigated.**
-- **No cleaner-side "pass on this" action.** It only ever *improves* latency and it is one write
-  (`PreferredHoldUntilUtc = now`) against a shape that already exists — the natural follow-on ticket,
-  deliberately not in the first wave because it adds a partner-side UI surface.
+- **No cleaner-side "pass on this" action.** It only ever *improves* latency and it is one call
+  (`Order.ClearPreferredHold()`, or a deadline set to `now`) against a shape that already exists — the
+  natural follow-on ticket, deliberately not in the first wave because it adds a partner-side UI surface.
+- **No re-arm rule for an order that returns to the board.** Challenger B's lifecycle attack **failed**
+  and the result is worth recording: there is **no reschedule path** (`Order.CleaningDateTime` is
+  `private set`, assigned only in `Order.Create:337`; no `RescheduleOrder`/`UpdateOrder` command exists),
+  cancel-and-recreate is correct by construction (the new row resolves against its own lead time), and
+  the only un-assign is `AdminReassignOrder.cs:86`, which re-assigns at `:98` inside the same handler.
+  **The draft's "open edge" is not reachable today** and should say so. But it must be *designed*, not
+  merely absent: under D5's term 5, an un-assign back to an empty order with a still-future deadline
+  **re-arms the hold**. Therefore: **any future path that returns an order to the board unassigned must
+  decide the hold explicitly**, and the default answer is `Order.ClearPreferredHold()` — one call, which
+  is the second reason D2's aggregate methods earn their place.
+
+#### D5.5 — `PreferredHoldUntilUtc` gets **no index**, and a partial index on it is a **hard reject** (CH-Q9)
+
+This closes an open question the draft left open, and it reverses the draft's instinct. The predicate's
+**satisfying set is NULL-dominant** — it matches ~100% of rows. A partial index
+`WHERE PreferredHoldUntilUtc IS NOT NULL` indexes exactly the rows the predicate mostly *excludes*: it
+cannot serve this predicate, would have to be BitmapOr'd with a scan for the `IS NULL` branch, and costs
+maintenance on every `INSERT INTO Orders`. Its only conceivable reader is an admin view of live holds,
+which D11 explicitly does not build.
+
+**The term is a residual filter** evaluated after a selective index has narrowed the set:
+`IX_Orders_CurrentStatus_CleaningDateTime` (`OrderEntityConfiguration.cs:111`) still drives the board
+query, with the hold term appended as a flat column test — no cast, no subquery beyond the one correlated
+`EXISTS` that the pre-existing `AssignedEmployees.Count < MaxEmployees` on the line above already pays
+for. Selectivity *improves* over time (`Pending`/`Confirmed` are transient buckets; `Completed` grows
+without bound). **Surfaces 1, 2, 3, 6 and the write gate are free; the entire cost of this ADR lives in
+the digest**, and D5.3's rewrite makes that surface net cheaper than today.
 
 ### D6 — The customer is told **once, at booking, in the future tense** — and never watches a clock we set (AC2)
 
@@ -367,16 +723,49 @@ part of the decision, not an optimisation: T-0515 that ships D5 without D5.3 is 
   the one they asked for, and the existing `order.confirmed` push fires unchanged (`TakeOrder.cs:200`).
 - **What the customer IS told** is one sentence at the moment of choosing — §Copy, owned by T-0491.
 
+#### D6.1 — **PANEL AMENDMENT (CH-P1 / CH-P2): D6's "told once" had no surface, and the platform already makes a contradicting numeric promise**
+
+Two findings the draft did not have, both verified:
+
+1. **The picker destroys its own explanation.** In both customer clients the explanatory line is the
+   `?:` fallback for the selected cleaner's **name** — Android
+   `PreferredCleanerPicker.kt:131-135` (`selected?.fullName ?: …subtitle`), iOS
+   `ConfirmExtrasComponents.swift:71-73` (`selected?.fullName ?? …preferredCleanerSubtitle`). There is no
+   other text in the row. **The sentence D6 rests everything on exists only while the customer has chosen
+   nobody, and is destroyed by the act it explains.** ⇒ **Required, in the same wave as C2:** a
+   **persistent second line that survives selection**, both clients × five locales, budgeted as **C2c**
+   in D10 (the draft budgeted zero customer-client work).
+2. **The platform already promises a number that this ADR contradicts.** Immediately after booking, both
+   clients show *"Cleaner being assigned · **Within 1 hour**"* — Android `values/strings.xml:741-742`
+   plus `values-cs/:731-732`, `values-sk/:728-729`, `values-ru/:728-729`, `values-uk/:728-729`; iOS the
+   same keys — **unconditionally** (`BookingSuccessTimeline.swift:44-46` makes the `assigning` step
+   active whenever no order status has loaded). A 12-hour hold is 12× that promise. The draft's entire
+   latency argument assumed the customer had **no** expectation about time-to-assignment; the platform
+   states one, as a number, in five languages, on the very next screen. **See §Copy for the ruling: the
+   numeric claim is CORRECTIVE work — it is unbacked today (nothing in a pull board enforces an hour) —
+   and it ships ahead of the mechanism, not with it.**
+
+**What the panel did NOT adopt, and why.** Challenger A's alternative fix — resolve the hold at quote
+time and ship a `firstChanceApplies` boolean to the client so the subtitle can be conditional — is
+**rejected for the first wave**. It re-opens D6's core decision (no customer-visible hold state), it adds
+a customer-DTO field this ADR promised not to add, and the answer is not stable: a quote is not a
+booking, and lead time, membership and the cleaner's reachability can all change between the quote and
+the submit, so a "yes" shown at quote time can be a "no" at creation — a *worse* failure than saying
+nothing. **The static sentence is made true instead**, two ways: D4.1 shrinks the decline set to the
+cases where the cleaner cannot be told anything at all, and §Copy constraint 6 requires a sentence that
+is true in **both** outcomes. Recorded as the named follow-on if the static sentence proves insufficient.
+
 #### The AC2 fallback state machine
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> Open : hold NOT granted<br/>(no preference · not Plus · lead &lt; 4h ·<br/>cleaner unapproved/wrong country/muted)
+    [*] --> Open : hold NOT granted<br/>(no preference · not Plus · lead &lt; 8h ·<br/>cleaner unapproved/wrong country/muted/unreachable)
     [*] --> Held : hold granted<br/>(PreferredHoldUntilUtc = created + min(10% lead, 12h))
 
     Held --> Claimed : preferred cleaner calls TakeOrder<br/>(all normal gates still apply)
     Held --> Open : now &ge; PreferredHoldUntilUtc<br/><b>NO ACTOR — the clause simply stops being true</b>
+    Held --> Open : ANY cleaner is assigned<br/><b>the hold is CONSUMED — first seat only (CH-V4)</b>
     Open --> Claimed : ANY eligible cleaner calls TakeOrder
 
     Held --> Cancelled : customer / admin / system cancel
@@ -386,32 +775,38 @@ stateDiagram-v2
     Cancelled --> [*]
 
     note right of Held
-      Visible + takeable ONLY to the preferred cleaner (D5, five surfaces).
+      Held == deadline in the future AND a beneficiary AND no cleaner on the order.
+      Visible + takeable ONLY to the preferred cleaner (D5: 6 surfaces, 4 kinds).
       Others: GET returns nothing, POST returns OrderNotFound (D5.2).
-      Customer sees: nothing different (D6).
-      Digest for others: order becomes "new" at expiry, not at creation (D5.3).
+      Customer sees: nothing different in-flight (D6); told once at booking (D6.1).
+      Digest for others: order becomes "new" in the window (expiry, sweepStart] (D5.3).
+      A deadline with NO beneficiary is NOT this state — it is Open (D2.5 / CH-V1).
     end note
 ```
 
-**The `Held → Open` edge is the whole design.** It has no writer, no message, no job and no row change —
-which is why it cannot fail, cannot be missed, and cannot leave an order stranded.
+**The two `Held → Open` edges are the whole design.** Neither has a writer, a message, a job or a row
+change: one is the clock passing the deadline, the other is a row appearing in `OrderEmployees` for a
+reason that has nothing to do with the hold. **A state you leave without anyone acting cannot strand.**
 
 #### And the decision tree at creation
 
 ```mermaid
 flowchart TD
     A[CreateOrder / MaterializeRecurringBookings] --> B{PreferredEmployeeId set?}
-    B -- no --> Z[No hold · PreferredHoldUntilUtc = null]
-    B -- yes --> C{Active membership?}
+    B -- no --> Z[No hold, no push · PreferredHoldUntilUtc = null]
+    B -- yes --> C{Active membership?<br/>PastDue is NOT active — Q-PLUS-05}
     C -- no --> R[CreateOrder: REJECT the order · D7<br/>Materializer: drop preference, continue · D8]
     C -- yes --> D{Completed order with this cleaner?<br/>CreateOrder.cs:150-154}
     D -- no --> R2[REJECT · PreferredEmployeeNotEligible<br/>existing behaviour, unchanged]
-    D -- yes --> E{lead &ge; 4h?<br/>BookingPolicy.StandardLeadTimeHours}
-    E -- no --> Z2[Store preference · NO hold<br/>express band · ADR-0035 waiver still applies]
-    E -- yes --> F{Cleaner approved · same WorkCountryId ·<br/>NewJobsAvailable not muted?}
-    F -- no --> Z3[Store preference · NO hold]
-    F -- yes --> G[Store preference + deadline<br/>+ targeted push order.preferred_offer]
+    D -- yes --> F{Cleaner exists · Approved ·<br/>same WorkCountryId ·<br/>NewJobsAvailable not muted ·<br/>REACHABLE for push?}
+    F -- no --> Z3[Store preference · NO push · NO hold]
+    F -- yes --> E{lead &ge; 2 x StandardLeadTimeHours?}
+    E -- no --> Z2[Store preference · PUSH · NO hold<br/>D4.1 · ADR-0035 waiver still applies]
+    E -- yes --> G[Store preference + deadline via GrantPreferredHold<br/>+ PUSH order.preferred_offer]
 ```
+
+**Note the order of the two gates, which is the D4.1 amendment:** reachability is tested **before** lead
+time, because it governs both halves; lead time is tested last, because it governs only the hold.
 
 ### D7 — The Plus gate (AC8): server-side, at creation, **reject rather than silently ignore**; nothing already granted is taken back
 
@@ -427,6 +822,13 @@ flowchart TD
 - **Error:** a new `BusinessErrorMessage.PreferredEmployeeMembershipRequired`, mirroring the shipped
   `RecurringTemplateMembershipRequired`. ⚠️ **Five languages × the per-client error namespaces** — the
   prefix differs per client; a key added under one client's `errors.*` does not resolve in another.
+  **Its five translations must name the ACTION, not the rule (CH-P6).** The mirrored string
+  (`en.json:1569` — *"Recurring cleanings are a Cleansia Plus benefit — subscribe to set one up"*) is
+  fine when the customer is *starting* something optional; on a booking they have already filled in it
+  is an upsell at the moment of failure with no statement of what to do next. D7's own justification for
+  rejecting rather than ignoring is *"a human is present and can fix it in one tap"* — **which is only
+  true if the message names the tap.** Constraint for T-0491, e.g. *"Cleansia Plus is needed to request
+  a specific cleaner. Remove the cleaner request to book now."*
 - **Anonymous bookings are untouched.** The `When` already requires a signed-in user
   (`CreateOrder.cs:140-141`); a guest cannot set a preference today and still cannot.
 
@@ -447,6 +849,37 @@ the picker on membership, so the error is nearly unreachable in practice.
 | **A member who lapses — orders already created** | **The hold stands.** Not re-evaluated, not cancelled. | ADR-0009 D2 / ADR-0035 D1's freeze: what was granted at creation is not re-derived later. Practically moot — the hold is over within ≤12 h. |
 | **A member who lapses — new orders** | Gate applies; rejected. | — |
 | **A member who lapses — recurring templates** | The occurrence materializes **without** the preference and **without** a hold; the cleaning still happens. | D8 — the one deliberate asymmetry. |
+| **A `PastDue` member (card failed, Stripe retrying)** | **Rejected, on the one live-membership predicate — and ESCALATED to the owner as `Q-PLUS-05`.** | See below. |
+
+**The `PastDue` hole, and why it is an escalation rather than a ruling (CH-P6).** The platform documents
+a grace window it does not implement: `MembershipStatus.cs:18-19` says verbatim *"PastDue = 2 — Latest
+invoice failed; Stripe is retrying. **Benefits still apply during the grace window.**"* — while
+`UserMembership.IsActive` (`:84-85`) and the one live-membership predicate
+(`UserMembershipRepository.cs:27-29`) both require `Status == Active`. **PastDue is excluded from both.**
+D7 does not merely inherit that: **D7 makes it load-bearing for a hard rejection of an entire booking**,
+for a customer whose card is still being retried and who has been told their benefits continue.
+
+- **Escalated:** *"does a failed card payment revoke Plus perks immediately, or after Stripe's retries?"*
+  is a business decision with revenue and support consequences — the owner's, not an architect's.
+  **`Q-PLUS-05`, for the PM to record.** It is **not** blocking: it changes one `WHERE` clause.
+- **Interim ruling so T-0516 is not blocked:** the gate uses **the one live-membership predicate,
+  unchanged** — `PastDue` is not active. Grounds: inventing a second membership predicate for one perk is
+  precisely the drift D5.1 exists to prevent, and if the owner rules the other way the change lands in
+  **one place**, which is the whole reason there is one predicate. **And in the same wave,
+  `MembershipStatus.cs:18-19`'s comment is corrected** so the enum stops documenting a window that does
+  not exist — a rejection path whose predicate contradicts the platform's own comment is not shippable
+  either way.
+- **`TC-PREF-GATE-3` exists regardless of the answer**, because today the behaviour is decided by an
+  unstated `WHERE` clause and nothing pins it.
+
+**A second, narrower hole in D7's reachability defense (CH-P6, accepted, not blocking).** D7 argues the
+error is "nearly unreachable" because the client gates the picker on membership. `GetMyMembership.cs:35`
+does use the same predicate — but both pickers cache per session (iOS
+`PreferredCleanerViewModel.swift:27-29` loads once per view-model lifetime; Android
+`PreferredCleanerPicker.kt:78-82` refreshes only when the membership state is null, against a singleton
+repo its own comment calls possibly stale). A webhook landing mid-session leaves the picker on screen and
+the submit rejected. Narrow, real, and it is the *whole* of the reachability defense — which is why the
+error message naming the tap (above) is a requirement and not a nicety.
 
 ### D8 — Recurring (AC7): the preference was never modelled on the template; it should be, and the gate degrades there instead of rejecting
 
@@ -475,6 +908,23 @@ window**, the cheapest hold the system can grant.
    react; degrade where nobody can.*
 4. **`CreateRecurringBooking` is already Plus-gated** (`:84-91`), so the *template* gate exists; this
    adds only the per-occurrence re-check.
+5. **PANEL AMENDMENT (CH-P5) — the conversion moment is a named case.** `order_detail_make_recurring`
+   ("Make this recurring") prefills the recurring wizard **from a past Completed order**
+   (`recurring-bookings.facade.ts:167-180`) — by definition an order the customer completed *with a
+   cleaner*, i.e. exactly the customer the perk is for, quite possibly an order carrying
+   `PreferredEmployeeId`. The conversion drops it **silently**, and the platform already owns the
+   disclosure surface for exactly this: `prefill_dropped_items` (*"We removed these from your prefill —
+   they're no longer available: {{items}}"*). ⇒ **C3 must carry the preference through the prefill; until
+   C3 lands, the dropped preference belongs in that existing disclosure**, not nowhere.
+6. **PANEL AMENDMENT (CH-P6) — name the asymmetry this creates, do not let it be discovered later.**
+   `MaterializeRecurringBookings.Handler`'s constructor (`:39-47`) takes **no** membership repository:
+   the sweep checks membership **nowhere** today, so a lapsed member's schedule keeps materializing. D8.3
+   adds a membership re-check **for the preference only** — meaning the *smaller* perk is revoked on
+   lapse while the *larger* one (the Plus-gated schedule itself) is not. That is defensible under *"never
+   drop a cleaning"*, but it is a **new asymmetry this ADR creates**, and it is stated here rather than
+   found later: **materialization itself is deliberately not membership-gated; only the preference is.
+   Whether a lapsed member's schedule should continue is `Q-PLUS-04`, escalated to the owner, not this
+   ADR's to decide.**
 
 **Filed as its own ticket, not folded into T-0515** — it is a second migration, a second client surface
 (three clients' recurring UI) and a different failure posture. Sizing in D10 (C3).
@@ -506,29 +956,43 @@ real. **It is, and the hold makes it more important, not less:**
 
 | # | Candidate | Size | Ticket |
 |---|---|---|---|
-| **C1** | **The Plus gate.** One `MustAsync` in the existing `When` block + one `BusinessErrorMessage` + 5 languages × the per-client namespaces + a client-side picker gate. **No migration, no NSwag change.** | **S** | **T-0516** (unblocked — `Q-PLUS-03` answered) |
-| **C2a** | **The hold, server-side.** `Order.PreferredHoldUntilUtc` (⚠️ **`ef-migration`, owner-only**) + `OrderVisibility.NotHeldFromEmployee` + `BookingPolicy.ComputePreferredHold` + `IPreferredCleanerHoldResolver` + `OrderFactory` wiring + the predicate applied at all five surfaces + **D5.3's digest fix** + the `Order.cs:217-224` comment correction (AC12) + tests. | **M** | **T-0515** |
-| **C2b** | **The targeted push.** `NotificationEventCatalog.PreferredOffer` + `GetCategoryFor` + the producer call + loc-keys on **both** partner clients × 5 languages (ADR-0025). | **S** | **T-0515** (same release — see below) |
-| **C3** | **Recurring carry-through (D8).** `RecurringBookingTemplate.PreferredEmployeeId` (⚠️ **second `ef-migration`, owner-only**) + command/DTO field (⚠️ **`nswag-regen`, owner-only**) + materializer wiring + the degrade rule + three clients' recurring UI. | **S–M** | **NEW — PM to file** |
+| **C0** | **The corrective copy wave — ships FIRST, depends on nothing.** Remove the numeric *"Within 1 hour"* claim (2 clients × 5 locales); remove the **assignment verbs** from `benefit_favorite_body` cs/sk/ru and the priority claim from en/uk; drop *"on every booking"* until C3; stop selling the perk on web surfaces that cannot reach it. **No code.** | **S** | **NEW — PM to file, ahead of C1/C2** |
+| **C1** | **The Plus gate.** One `MustAsync` in the existing `When` block + one `BusinessErrorMessage` + 5 languages × the per-client namespaces + a client-side picker gate + the `MembershipStatus.cs:18-19` comment correction. **No migration, no NSwag change.** | **S** | **T-0516** (unblocked — `Q-PLUS-03` answered) |
+| **C2a** | **The hold, server-side.** `Order.PreferredHoldUntilUtc` (⚠️ **`ef-migration`, owner-only**) + `Order.GrantPreferredHold`/`ClearPreferredHold` + `OrderVisibility.NotHeldFrom` (both forms) + `BookingPolicy.ComputePreferredHold` + `IPreferredCleanerHoldResolver` + `OrderFactory` wiring + the rule applied at **all six** surfaces (incl. `CreateAvailableOrdersSpec`'s signature change and `GetDashboardStats.cs:236`) + **D5.3's rewritten digest clause** + the `NewJobsDigestService.cs:49-50` false-comment fix + the `Order.cs:217-224` comment correction (AC12) + tests incl. **TC-PREF-EQUIV-0 against Postgres**. | **M** | **T-0515** |
+| **C2b** | **The targeted push.** `NotificationEventCatalog.PreferredOffer` + `GetCategoryFor` + the producer call **on the wider notify predicate (D4.1)** + loc-keys on **both** partner clients × 5 languages (ADR-0025). | **S** | **T-0515** (same release — see below) |
+| **C2c** | **The customer-side copy the draft budgeted at zero (CH-P2).** A **persistent** explanatory line on the picker row that survives selection — Android `PreferredCleanerPicker.kt:131-135`, iOS `ConfirmExtrasComponents.swift:71-73` — × 5 locales, plus the picker **title** change (all five locales, both clients). | **S** | **T-0491** (must ship **with** C2) |
+| **C3** | **Recurring carry-through (D8).** `RecurringBookingTemplate.PreferredEmployeeId` (⚠️ **second `ef-migration`, owner-only**) + command/DTO field (⚠️ **`nswag-regen`, owner-only**) + materializer wiring + the degrade rule + the `prefillFromOrder` case + three clients' recurring UI. | **S–M** | **NEW — PM to file** |
 
-**AC9's "any L is split in the ADR": C2 was an L and is split above.** But they are **two tickets, one
-release**: C2a alone creates holds for a signal that arrives *after* the window closes (a 24-minute hold
-against a 30-minute digest — D4). **If only one can ship, ship neither.** The rule that enforces this
-without a process note is already in D5.1: *no notification ⇒ no hold*; with C2b absent there is no
-targeted notification, so C2a must grant no holds, so C2a alone is a no-op by its own logic.
+**AC9's "any L is split in the ADR": C2 was an L and is split above.** C2a/C2b are **two tickets, one
+release**: C2a alone creates holds for a signal that arrives *after* the window closes. **If only one can
+ship, ship neither.** The rule that enforces this without a process note is D4.1's invariant:
+`HoldUntilUtc != null ⇒ NotifyPreferred`; with C2b absent there is no targeted notification, so C2a must
+grant no holds, so C2a alone is a no-op by its own logic. **C2c ships with them** — a mechanism the
+customer is told nothing truthful about is the failure this ADR exists to end.
 
-**Sequencing against the copy:** C1 (the gate) may ship before C2 — a gate with no mechanism behind it
-is *less* wrong than today, because today the copy claims a Plus perk the server does not gate.
+**Sequencing (panel ruling on CH-P7 — this ADR adopts ADR-0035's corrective-ships-first rule rather than
+filing copy under "not blocking"):**
+
+1. **C0 ships first and waits for nothing.** Every statement in it is false **today**, independent of
+   this build. *"Waiting for the mechanism to ship is choosing to keep a false statement live for the
+   length of a build."*
+2. **C1 may ship before C2** — a gate with no mechanism behind it is *less* wrong than today, because
+   today the copy claims a Plus perk the server does not gate.
+3. **C2a + C2b + C2c ship together.**
+4. **C3 whenever; its copy dependency is discharged by C0.**
 
 ### D11 — Scope boundary
 
 - **In scope:** the mechanism, the window, the fallback, the notification, the privacy ruling, the
   eligibility ruling, the Plus-gate specification, the recurring ruling, the naming corrections, and the
   catalog + living-doc updates.
-- **Byte-untouched:** `TakeOrder`'s six existing gates (a new one is *added*; none is modified),
-  `OrderStatus` and the lifecycle, the pay formula, `EmployeePayConfig`, every fiscal path,
-  `ITenantEntity` / the global query filter, `IIdempotencyGuard` / `ProcessedMessage`, the outbox
-  contract, the Customer and Admin API hosts.
+- **Byte-untouched:** `TakeOrder`'s six existing gates (the hold rides *inside* the existing existence
+  rule; none of the six is modified), `OrderStatus` and the lifecycle, the pay formula,
+  `EmployeePayConfig`, every fiscal path, `ITenantEntity` / the global query filter, `IIdempotencyGuard`
+  / `ProcessedMessage`, the outbox contract.
+- **Behaviour-untouched but code-touched:** the Customer and Admin API hosts, which execute
+  `CanBrowseOrderAsync` and cannot reach its browse branch (see §Applies-to). **Do not restate this as
+  "byte-untouched"** — the panel corrected that once.
 - **Not decided here:** the copy's final wording (T-0491 — §Copy constrains it), the web wizard's
   missing picker, an admin view of holds, and a cleaner-side decline action (D5.4).
 
@@ -552,37 +1016,71 @@ is *less* wrong than today, because today the copy claims a Plus perk the server
 | **A12** | **Drop the "completed order with this cleaner" eligibility rule so a new subscriber can use the perk immediately.** | D9. It converts the perk into a **customer-controlled targeting primitive** — a customer could withhold any order from the whole board and hand it to any employee id. It also desynchronises the validator from `GetMyServingCleaners`, which feeds the picker from the same predicate. And the premise is wrong: the perk is *"the cleaner you already trust"*, which does not exist before the first clean. |
 | **A13** | **Make the hold length a per-plan number** (a Pro tier holds longer). | D3. A longer hold is *worse* for fill rate, so it is an upsell that degrades the marketplace as it sells. Per ADR-0035 D2.1's placement rule this is a platform number, not a plan number: it is the same for everyone by design. |
 | **A14** | **Move to an assignment model for preferred orders only** ("if a preference exists, assign directly"). | AC3, and it is not a small change dressed up: the platform has **no acceptance step, no decline flow, no reassignment path and no assigner**. `TakeOrder` is the only way an order acquires a cleaner. A direct assignment would create an order with a cleaner who never agreed to it, whose only escape is `OrderAssignmentCancelled` — i.e. we would build cleaner-side cancellation into the happy path of a perk. |
+| **A15** | **Cap `PreferredHoldCeilingHours` at 1 h so the hold never exceeds the platform's own *"Cleaner being assigned · Within 1 hour"* claim** (challenger A's option 1 for CH-P1). | Rejected. It destroys the perk's best case (recurring, 168 h lead, a 12 h hold that is 7% of the fill window) to preserve a string that is **already unbacked**: nothing on a first-come pull board enforces an hour, nothing measures it, and the timeline step renders unconditionally. **Fixing a policy to match an unmeasured marketing number is the tail wagging the dog** — the number goes, not the mechanism (C0). |
+| **A16** | **Make the post-booking assigning-step subtitle conditional on the hold** — resolve at quote time, ship a `firstChanceApplies` boolean to the client (challenger A's option 3 / CH-P2 ask 1). | Rejected **for wave 1**, recorded as the named follow-on. It re-opens D6's core decision, adds a customer-DTO field this ADR promised not to add, and — decisively — **the answer is not stable**: lead time, membership and the cleaner's reachability can all change between the quote and the submit, so a "yes" at quote time can be a "no" at creation. A conditional promise that flips is worse than a static one that is true in both branches, which D4.1 + §Copy constraint 6 deliver instead. |
+| **A17** | **One shared `Expression<Func<Order,string?,DateTime,bool>>`, partially applied for SQL and `.Compile()`d once for memory** (challenger B's CH-V3 step 2). | Rejected on evidence, D5.0: sharing the tree **does not** make the two evaluators agree (term 4's null semantics diverge between SQL three-valued logic and C# equality), the partial application needs a **parameter → value** visitor that `ExpressionBuilder.Compose` (`:7-13`, parameter → parameter) does not provide, and the "zero `.Compile()` precedent" premise is false (`LoginValidator.cs:48-50`). The equivalence must be **tested** either way; once it is, the machinery earns nothing. |
+| **A18** | **Apply only D5.3's freshness rule at the digest and NOT the shared visibility rule**, on the grounds that a count is not a disclosure surface (challenger B's CH-V5). | Rejected on the substance, adopted on the taxonomy (D5.3). The count premise is right — `:173` emits a count, `:120-122` never leaves the service — but the count is *"jobs you can take"*, and without the visibility conjunct the freshness branch fires on the **creation** status track and pushes the cleaner about an order that is invisible and un-takeable to them. Challenger C's own probe SQL carries both conjuncts. |
 
 ---
 
 ## Consequences
 
 **Cheaper / safer**
-- **The fallback is the absence of a hold, not an event.** No job, no message, no state, no retry — the
-  one failure mode that would matter (an order stuck held) is not expressible.
-- **Invariant H makes the central risk arithmetic rather than judgement.** ≥90% of every fill window is
-  always open to the whole board, at every lead time, forever.
-- **The express collision cannot drift**, because the hold floor *is* `StandardLeadTimeHours` — one
-  number, two uses.
-- **Zero risk to existing data.** Two additive nullable columns, no backfill, and a predicate keyed on
-  the new column, so no historical order changes behaviour.
-- **The visibility rule is written once** and the five existing expressions converge on it — the change
-  makes that sprawl *more* reviewable than it is today.
+- **The fallback is the absence of a hold, not an event.** No job, no message, no state, no retry — and
+  the failure mode that would matter (an order stuck held) has **no writer and no reader**: the aggregate
+  cannot produce it and the predicate fails open if a row carries it anyway (D2.5).
+- **Invariant H makes the central risk arithmetic rather than judgement.** ≥90% of every **seat's** fill
+  window is always open to the whole board, at every lead time, forever.
+- **The express collision cannot drift**, because the hold floor is `2 × StandardLeadTimeHours` — one
+  number, one derivation, no second constant.
+- **Zero risk to existing data.** Two additive nullable columns, **no index**, no backfill, and a
+  predicate keyed on the new column, so no historical order changes behaviour.
+- **The digest gets *cheaper*, not more expensive.** D5.3's disjunctive form replaces a per-candidate-row
+  top-N subquery with an `EXISTS` semi-join servable from the one index that exists on
+  `OrderStatusHistory` (CH-Q5) — and removes a latent requirement for an index that does not.
+- **The short-lead band is not left empty.** D4.1's wider notify predicate means the 2–8 h band gets the
+  notification half of the perk rather than nothing, which is what makes the owner's 8-hour floor cheap.
+- **The visibility rule is written once** and the six existing expressions are made to name the same
+  rule. **The draft's stronger claim — that this makes the sprawl *more reviewable* — is withdrawn**
+  (CH-Q10.1): two of the surfaces already disagree on their **first** term
+  (`{Pending,Confirmed}` vs `{New,Pending,Confirmed}`) under a comment asserting they match. Adding a
+  shared sixth term to a set that disagrees on the first is an improvement in *one* dimension only, and
+  the enforcement is a test (TC-PREF-EQUIV-0) plus a call-site check, never a grep count.
 - **The future changes this shape makes cheap:** a cleaner-side decline is one write; a per-country
   window is a resolver change with no schema change and no effect on live orders.
 - **`Q-PLUS-03` closes** and T-0516 unblocks.
 
 **More expensive (accepted, and named)**
-- **A customer who pays for both perks and books 3 hours out gets the express waiver and NO hold.** The
-  two Plus benefits do not compose on an urgent order. Deliberate: at 2–4 hours' notice the customer's
-  real want is *"someone comes at all"*, and spending any of a two-hour window on exclusivity risks the
-  booking itself. **The copy must therefore not promise the preference applies to express bookings.**
+- **Every booking with under 8 hours' lead gets the notification half of the perk and no hold.** The two
+  Plus benefits do not fully compose on an urgent order: a Plus member booking 3 hours out gets the
+  ADR-0035 express waiver, a targeted push to their favourite, and **no exclusivity**. Deliberate — at
+  short notice the customer's real want is *"someone comes at all"* and the named cleaner is least likely
+  to be free. **The copy must therefore not promise exclusivity on short-lead bookings.**
 - **Up to 12 hours of assignment latency on a far-future booking, invisible to the customer.** Bounded
   by Invariant H; invisible by D6; and *assignment* latency only — the appointment never moves.
-- **A sixth condition on an already-sprawling visibility rule.** Mitigated by one shared expression and
-  §verify #2, but a reviewer must actually check all five call sites.
-- **D5.3 is a non-obvious coupling to the digest's watermark.** Anyone who later changes either the hold
-  or the digest freshness rule must re-read it; §verify #6 and TC-PREF-DIGEST-0 pin it.
+- **The perk is effectively mobile-cleaner-only** until the partner web SPA registers push devices
+  (D4.1): a favourite who works from the web board gets neither push nor hold.
+- **A sixth condition on an already-sprawling visibility rule, applied at six surfaces of four kinds.**
+  Mitigated by one rule, an equivalence test and a call-site check — but a reviewer must actually walk
+  all six, and a call site that omits the new argument **compiles green**.
+- **The digest is the one surface carrying two rules** (shared visibility + local freshness). Anyone who
+  later changes either the hold or the digest freshness rule must re-read D5.3; §verify #6 and
+  TC-PREF-DIGEST-0a/0b pin it. **And the watermark design has a known structural limit** that D5.3 does
+  not resolve — it is a point fix, not a class fix.
+- **The hold term multiplies by the number of cleaners.** `NewJobsDigestService.cs:86` runs the candidate
+  query once per cleaner per sweep, 48 sweeps/day, and every cleaner in the same `WorkCountryId` re-scans
+  the same rows. D5.3's terms are cheap (D5.5: residual filters) and its rewrite is net negative cost —
+  but *"one expression change"* was the wrong framing and is withdrawn. Grouping the sweep by country is
+  a separate optimizer ticket, **not a precondition** of this ADR.
+- **`0.10` and `12h` are `const`s, and a `const` is a release, not a knob.** `BookingPolicy.cs:4-5`
+  exists to keep mobile, web and backend in sync on these numbers. The honest tuning cost (correcting
+  CH-10's mitigation, per CH-V8a): **one backend release, no client change** — because no client reads
+  the hold constants; the hold is computed server-side only. That is cheaper than the other
+  `BookingPolicy` numbers, and it is *not* "tunable without a release".
+- **The targeted push rides the outbox, which is an actor with a latency the hold does not know about**
+  (CH-V8b). If the drain lags past the deadline, the perk did nothing while still costing board latency.
+  Accepted consequence, now bounded: **the minimum hold (48 min at the 8 h floor) must exceed the outbox
+  drain SLO; if the drain's p99 ever approaches it, the floor moves — not the mechanism.**
 - **Two owner-run `ef-migration`s** (C2a, C3) and **one owner-run `nswag-regen`** (C3's template DTO
   field only — C1/C2 add no client contract).
 - **We are taking a capability away from non-members** who can use it today. Accepted on the owner's
@@ -598,30 +1096,59 @@ is *less* wrong than today, because today the copy claims a Plus perk the server
 ## How a reviewer verifies compliance
 
 **Mechanical**
-1. **`Order.PreferredHoldUntilUtc` is written in exactly ONE place.** Grep: one assignment, in
-   `OrderFactory`, from `IPreferredCleanerHoldResolver`'s answer. **No `UPDATE` sets it anywhere**
-   (until the decline action lands, which is a superseding change). `Order.AnonymizeCustomerData()`
-   (`Order.cs:613-626`) nulls it alongside `PreferredEmployeeId`.
-2. **One expression, five call sites.** Grep `NotHeldFromEmployee` — it appears in `OrderSpecification`,
-   `OrderAccessService.CanBrowseOrderAsync`, `NewJobsDigestService`, `TakeOrder.Validator`. Four hits
-   plus the definition; `GetAvailableJobsPreview` inherits via the specification. **Fewer than four call
-   sites is a leak; a hand-rolled copy of the predicate anywhere is a hard reject.**
+1. **`PreferredHoldUntilUtc` has NO independent setter and exactly ONE writer.** Grep: the property is
+   `private set`; the only assignments are inside `Order.GrantPreferredHold` and
+   `Order.ClearPreferredHold`. `OrderFactory` calls `GrantPreferredHold` with the resolver's answer and
+   **never touches either column directly**. **No `UPDATE` sets it anywhere** (until the decline action
+   lands, which is a superseding change). `Order.AnonymizeCustomerData()` (`Order.cs:613-626`) calls
+   `ClearPreferredHold()` — **a bare `PreferredEmployeeId = null` there is a hard reject** (CH-V1).
+2. **One rule, six surfaces — a CALL-SITE check, not a hit count** (CH-V2; the draft's grep would have
+   gone green over broken wiring). Walk them: (a) `OrderSpecification` has a **new independent `if`
+   block** for `NotHeldFromEmployeeId`/`NowUtc` — **inside the `RestrictToEmployeeId` block is a hard
+   reject**, and **reusing `ExcludeEmployeeId` is a hard reject** (opposite polarity); (b) **every**
+   `OrderSpecification.Create` invoked on behalf of an employee passes the new arguments — a call that
+   omits them **compiles green and leaks**; (c) `DashboardSpecifications.CreateAvailableOrdersSpec`
+   takes the id and **both** callers pass it (`GetAvailableJobsPreview.cs:50`,
+   `GetDashboardStats.cs:236`); (d) `OrderAccessService.CanBrowseOrderAsync` uses the in-memory form
+   (covering `GetOrderDetails.cs:45` and `GetOrderPhotos.cs:58`); (e) `TakeOrder` carries it inside the
+   **existence** rule (§verify #4); (f) `NewJobsDigestService` carries it as a **conjunct** alongside
+   D5.3. **A hand-rolled copy of the rule anywhere is a hard reject.**
+2b. **TC-PREF-EQUIV-0 exists and runs against PostgreSQL.** The two forms are pinned by a test, not by
+   review. **An equivalence test against an in-memory provider is worth nothing here** — the translation
+   is the thing under test. Assert specifically that a **null/empty caller employee id is never treated
+   as the beneficiary** in either form.
 3. **The predicate keys on the DEADLINE, never on `PreferredEmployeeId` alone.** Any visibility
    predicate of the form `o.PreferredEmployeeId == x` without a `PreferredHoldUntilUtc` term switches
-   behaviour on for every legacy row. **Hard reject.**
-4. **The take-time refusal agrees with the read surface.** `TakeOrder` returns
-   `BusinessErrorMessage.OrderNotFound` for a held order. Grep for any **new** error key mentioning
-   *hold*, *reserved*, *preferred* on the partner side — there must be none.
+   behaviour on for every legacy row. **Hard reject.** And it carries **all five** terms — a missing
+   `PreferredEmployeeId == null` disjunct (CH-V1) or a missing `AssignedEmployees.Any()` disjunct
+   (CH-V4) is a hard reject: each one reintroduces a stuck-held state.
+4. **The take-time refusal names no exclusivity, and is in the right place.** The hold predicate lives
+   **inside the `ExistsAsync` rule's query** (`TakeOrder.cs:42-43`), not as a rule appended after
+   `HasAvailableSpotsAsync` — appended there, a **full** held order returns `NoAvailableSpots`, which is
+   the disagreement the rule exists to prevent. Grep for any **new** error key mentioning *hold*,
+   *reserved*, *preferred* on the partner side — there must be none. The employee id comes from
+   `IOrderAccessService`, never from the command.
 5. **`PreferredEmployeeId` reaches no partner-facing DTO.** Grep the partner/partner-mobile mappers and
    DTOs — zero hits. (It may reach the *customer's* own order DTO; that is their own data.)
-6. **The digest uses the hold expiry as the availability instant for non-preferred cleaners.** Read
-   `NewJobsDigestService`'s freshness clause: it compares the watermark against
-   `max(latest status-track CreatedOn, PreferredHoldUntilUtc)` for a non-preferred cleaner. **Absent
-   this, held orders are permanently un-notified — this is the single highest-value line in the
-   review.**
-7. **The hold floor is the express constant, not a new number.** Grep `ComputePreferredHold` — it
-   returns `TimeSpan.Zero` on `< BookingPolicy.StandardLeadTimeHours`. A literal `4` here instead of the
-   constant is a finding.
+6. **The digest's freshness clause is a BOUNDED DISJUNCTION — no `CASE`, no `GREATEST`, no scalar
+   `(SELECT max(...))`.** (Rewritten by the panel; the draft's wording is what produced the expensive and
+   *incorrect* plan.) It reads: an `EXISTS` semi-join on `OrderStatusHistory.CreatedOn > @since`
+   **OR** (`PreferredEmployeeId <> @cleaner` AND `PreferredHoldUntilUtc > @since` AND
+   `PreferredHoldUntilUtc <= @sweepStartedAt`).
+   - **A `CASE` or `GREATEST` here is a hard reject** (CH-Q1).
+   - **A missing `<= @sweepStartedAt` upper bound is a hard reject** (CH-Q2) — without it a future
+     instant marks the order "new" from creation, the push count is inflated with orders the cleaner
+     cannot see, and the watermark walks past the expiry.
+   - **The old top-N (`ORDER BY CreatedOn DESC … LIMIT 1`) must be GONE, not wrapped** (CH-Q5);
+     `latest > k ⟺ ∃ > k`.
+   - **`nowUtc` is `sweepStartedAt` (`:57`), the same value stamped at `:182`.** Grep the digest for
+     `UtcNow` — **exactly one hit, at `:57`** (CH-Q4).
+   - **The shared visibility rule is present here too, as a separate conjunct** (D5.3).
+   - **T-0515 attaches the final query's `ToQueryString()` output to the ticket.** This converts an
+     unverifiable instruction into a checkable one, and it is how the panel found the defect.
+7. **The hold floor is a DERIVATION of the express constant, not a new number.** Grep
+   `ComputePreferredHold` — it returns `TimeSpan.Zero` below `2 * BookingPolicy.StandardLeadTimeHours`.
+   **A literal `8` (or a bare `4`) is a finding.**
 8. **The resolver never writes.** Grep `IPreferredCleanerHoldResolver`'s implementation for
    `Add`/`Commit`/`ExecuteSql` — none. It uses
    `IUserMembershipRepository.GetActiveForUserNoTrackingAsync` and creates **no second
@@ -630,6 +1157,13 @@ is *less* wrong than today, because today the copy claims a Plus perk the server
    `MarkNewJobsDigestSent` — zero hits outside `NewJobsDigestService`.
 10. **`GetCategoryFor` maps `PreferredOffer` to `NewJobsAvailable`**, so the existing mute governs it —
     and the resolver checks the same preference before granting a hold.
+10b. **The resolver's reachability check covers all three ways not to get a push** (D4.1): the muted
+    category, `Device.NotificationsEnabled == false`, and **no `Device` row at all**. A resolver that
+    checks only `UserNotificationPreferences` fails D4's own stated rule.
+10c. **No index is added on `PreferredHoldUntilUtc`, and a partial index on it is a hard reject** (D5.5).
+10d. **No `.Compile()` on a request path.** The in-memory form is a plain method or a `static readonly`
+    delegate compiled once; `expression.Compile()` inside a handler, validator or service call is a
+    hard reject (~10–100 µs and an allocation per request).
 11. **The Plus gate is server-side and in the validator.** `CreateOrder.cs`'s existing `When(...)` block
     carries two `MustAsync` rules. A client-only gate is not a gate.
 12. **The materializer degrades, never rejects.** `MaterializeRecurringBookings` never returns a failure
@@ -638,32 +1172,63 @@ is *less* wrong than today, because today the copy claims a Plus perk the server
 13. **`Order.cs:217-224` no longer describes a scoring algorithm** (AC12, §Naming).
 
 **Test contract (red first — `TC-PREF-*`)**
-14. **TC-PREF-HOLD-0.** A held order is absent from `GetPagedOrders`, `GetAvailableJobsPreview` and
-    `CanBrowseOrderAsync` for a non-preferred cleaner, and present for the preferred one. Four
-    assertions, one fixture.
+14. **TC-PREF-HOLD-0.** A held order is absent from `GetPagedOrders`, `GetAvailableJobsPreview`,
+    `GetDashboardStats`'s `AvailableOrdersCount` and `CanBrowseOrderAsync` for a non-preferred cleaner,
+    and present for the preferred one. **Fixture correction (CH-V6): the order must be seeded
+    `Confirmed` with no assignment and an open seat** — a freshly created order is `New`
+    (`OrderFactory.cs:166`) and `CreateAvailableOrdersSpec` filters `{Pending, Confirmed}`
+    (`DashboardSpecifications.cs:24`), so a `New` fixture makes the preview/stats assertions **pass
+    before the fix is written**. Cleanerless `Confirmed` is the ordinary state of a card order after the
+    webhook (`HandlePaymentNotification.cs:261`) and of a cash recurring order
+    (`ConfirmRecurringOrder.cs:111`) — it is the real case, not a contrivance.
 15. **TC-PREF-EXPIRE-0.** The **same** order, same fixture, clock advanced past `PreferredHoldUntilUtc`
     with **no code executed in between**, is visible and takeable by the non-preferred cleaner. This is
     the test that proves the fallback needs no actor.
+15b. **TC-PREF-CONSUMED-0 (CH-V4).** A 2-seat held order whose **preferred** cleaner takes seat 1 at
+    minute 3 of a 48-minute hold is visible and takeable by a second cleaner at **minute 4**, not at
+    minute 49. Repeat with an **admin** assignment instead of the beneficiary's take — same assertion
+    (D5 term 5 is `Any()`, not `Any(ae == preferred)`).
+15c. **TC-PREF-NULLPAIR-0 (CH-V1).** A row with `PreferredHoldUntilUtc` in the future and
+    `PreferredEmployeeId = null` — written directly to the DB, because the aggregate must refuse to
+    produce it — is visible and takeable by **every** eligible cleaner. Plus: `GrantPreferredHold` with a
+    null/empty employee id **throws**, and `AnonymizeCustomerData` leaves **both** columns null.
 16. **TC-PREF-TAKE-0.** A non-preferred cleaner calling `TakeOrder` during the hold gets **exactly** the
-    same error a non-existent order id returns. Assert on the error key, not the outcome.
-17. **TC-PREF-WINDOW-0..3.** Lead times of 3 h → `TimeSpan.Zero`; 4 h → 24 min; 24 h → 2 h 24; 30 days →
-    12 h. Pure-function tests on `BookingPolicy.ComputePreferredHold`. **TC-PREF-WINDOW-H** asserts
-    Invariant H over a range of lead times: `hold <= 0.1 * lead` always.
-18. **TC-PREF-EXPRESS-0.** A Plus member booking inside the express band with a preferred cleaner gets
-    the ADR-0035 waiver **and** `PreferredHoldUntilUtc == null`. The test that pins the collision.
-19. **TC-PREF-DIGEST-0.** An order held for 45 min, not taken; after expiry a non-preferred cleaner whose
-    watermark is newer than the order's status track **still receives it in the next digest**. **Fails
-    against a naive implementation** — this is D5.3's pin.
-20. **TC-PREF-INELIGIBLE-0..3.** No hold when the preferred cleaner is (0) not `Approved`, (1) in a
-    different `WorkCountryId`, (2) muted for `NewJobsAvailable`, (3) missing. In every case the order is
-    created, the preference is stored, and the order is on the open board immediately.
+    same error a non-existent order id returns. Assert on the error key, not the outcome. **And the same
+    assertion for a held order with NO free seats** — the case that returns `NoAvailableSpots` if the
+    rule is placed after the spots check instead of inside the existence rule (CH-V7).
+17. **TC-PREF-WINDOW-0..4.** Lead times of 3 h → `TimeSpan.Zero`; **4 h → `TimeSpan.Zero`**; **8 h →
+    48 min**; 24 h → 2 h 24; 30 days → 12 h. Pure-function tests on `BookingPolicy.ComputePreferredHold`.
+    **TC-PREF-WINDOW-H** asserts Invariant H over a range of lead times: `hold <= 0.1 * lead` always.
+18. **TC-PREF-SHORTLEAD-0..1** (was TC-PREF-EXPRESS-0). (0) A Plus member booking inside the **express**
+    band (2–4 h) with a preferred cleaner gets the ADR-0035 waiver, `PreferredHoldUntilUtc == null`,
+    **and an `order.preferred_offer` push** (D4.1). (1) A member booking at **5 h** lead gets **no**
+    waiver, **no** hold, and the push. Together they pin the express collision **and** the notify/hold
+    split **and** the fact that the two bands are no longer the same band.
+19. **TC-PREF-DIGEST-0a (during) — the blocking pin (CH-Q3).** Hold live; a *second* unrelated order is
+    also new. Assert the digest is sent with `count == 1` (**not 2**) and the **held order is not
+    counted**. *Without 0a, green tests here mean nothing:* the draft's single after-expiry test passes
+    against both the correct and the broken implementation.
+19b. **TC-PREF-DIGEST-0b (after, with an intervening notified sweep).** Same fixture; 0a's sweep has
+    already advanced the watermark to an instant **later than the order's latest status track and
+    earlier than the hold expiry**; advance the clock past `PreferredHoldUntilUtc`; assert the order
+    **is** counted in the next digest. **This is the one that goes red against the naive fix.**
+20. **TC-PREF-INELIGIBLE-0..4.** No hold **and no push** when the preferred cleaner is (0) not
+    `Approved`, (1) in a different `WorkCountryId`, (2) muted for `NewJobsAvailable`, (3) missing,
+    **(4) unreachable — every `Device` row has `NotificationsEnabled == false`, or there is no `Device`
+    row at all (CH-P4)**. In every case the order is created, the preference is stored, and the order is
+    on the open board immediately.
+20b. **TC-PREF-EQUIV-0 (blocking, Postgres).** The queryable and in-memory forms of
+    `OrderVisibility.NotHeldFrom` return **identical id sets** over the full fixture matrix (D5.0),
+    including `callerEmployeeId == null`, where SQL and C# disagree by default.
 21. **TC-PREF-DYNAMIC-0.** A hold **is** granted when the preferred cleaner is at their weekly limit or
     has a time conflict; and their `TakeOrder` is refused by the **existing** gate with the **existing**
     error, and the order opens on schedule (AC6).
-22. **TC-PREF-GATE-0..2.** (0) A non-member setting a preference is **rejected** with
+22. **TC-PREF-GATE-0..3.** (0) A non-member setting a preference is **rejected** with
     `PreferredEmployeeMembershipRequired`. (1) A member setting an *ineligible* preference still gets
     `PreferredEmployeeNotEligible` (unchanged). (2) A member whose membership lapses **after** creation
-    keeps the hold on the already-created order.
+    keeps the hold on the already-created order. **(3) A `PastDue` member setting a preference gets
+    whatever `Q-PLUS-05` rules — and the test exists either way (CH-P6), because today the behaviour is
+    decided by an unstated `WHERE` clause and nothing pins it.**
 23. **TC-PREF-LEGACY-0.** An order row with `PreferredEmployeeId` set and `PreferredHoldUntilUtc = null`
     is visible and takeable by **every** eligible cleaner. The regression that guards D2.2.
 24. **TC-PREF-RECUR-0..1.** (0) A template with a preference materializes occurrences that carry it and
@@ -672,28 +1237,92 @@ is *less* wrong than today, because today the copy claims a Plus perk the server
 
 ---
 
-## The copy — what this ADR constrains (T-0491 owns the wording)
+## The copy — what this ADR constrains (T-0491 owns the wording) · **SEQUENCING IS PART OF THE DECISION**
 
-Three clients currently promise three different things, and **only the web string promises
-prioritisation** (`cleansia.app en.json:1097` — *"they'll be prioritized when matching"*), which was
-false until this ADR. The constraints, as checkable facts the sentence must not contradict:
+**Panel ruling on CH-P7 — this ADR adopts ADR-0035's corrective-ships-first rule.** The draft filed all
+of this under *"not blocking acceptance"*; the panel then catalogued five live false statements, one of
+which **this decision would make false**. ADR-0035's own §Copy ruling applies unchanged:
+
+> **The corrective half ships immediately and does NOT wait for the implementation. The affirmative half
+> ships only with the mechanism.** *"Waiting for the mechanism to ship is choosing to keep a false
+> statement live for the length of a build."*
+
+| # | Statement | Where (verified) | Class |
+|---|---|---|---|
+| 1 | *"he **will be assigned** first / preferentially assigned"* | web **`cs`/`sk`/`ru` `.json:1095`** (`benefit_favorite_body`), rendered by `membership-subscribe.component.html:102-103` — **the checkout page** | **corrective** — contradicts AC3 outright, in three locales, at the point of sale |
+| 2 | *"they'll be prioritized when matching"* | web `en`/`uk` `.json:1095` | **corrective** — false today; nothing reads the field |
+| 3 | *"Request the same cleaner you trust on **every booking**"* | Android + iOS × 5 locales | **corrective** — false for every recurring occurrence until C3 |
+| 4 | *"Cleaner being assigned · **Within 1 hour**"* | Android `values/strings.xml:741-742` + `values-cs/:731-732`, `values-sk/:728-729`, `values-ru/:728-729`, `values-uk/:728-729`; iOS same keys; unconditional per `BookingSuccessTimeline.swift:44-46` | **corrective** — see the ruling below |
+| 5 | a Plus perk sold on a surface with no picker | web `en.json:1084`, `:1094-1095`; `order-wizard.facade.ts:576-580` sends `undefined` | **corrective** — unreachable where it is sold |
+
+**The ruling on row 4, which is the one the panel argued over.** Challenger A read it as *"made false by
+this ADR"* and asked for either a 1-hour ceiling or a conditional subtitle. **Both rejected (A15/A16).
+It is reclassified as CORRECTIVE:** the platform has no mechanism that makes "within 1 hour" true today —
+dispatch is a first-come pull board, nothing enforces or measures an hour, and the timeline step renders
+unconditionally the moment the order is submitted. It is a hope rendered as a number. **A 12-hour hold
+does not make it false; it makes an already-false claim worse.** So the numeric claim comes out — both
+clients × five locales, replaced by a non-numeric phrase — **in C0, ahead of the mechanism, depending on
+nothing.** This is the cheapest of the three options and the only one that is true whether or not the
+hold ever ships.
+
+**Acceptance of this ADR is conditional on C0 being filed as its own ticket with no dependency on
+T-0515/T-0516.** That is the panel's answer to *"this platform just finished removing one
+advertised-but-unimplemented perk; do not author the next one."*
+
+### The constraints (checkable facts the wording must not contradict)
 
 1. It promises **first chance**, never *"the same cleaner every time"* — Android/iOS's
    `membership_perk_favorite_cleaner_desc` (*"Request the same cleaner you trust on every booking"*) is
    the one that must change most.
 2. It **names no duration.** The window is lead-time-dependent (D3); naming a number turns a policy
-   constant into a promise.
+   constant into a promise. **This constraint now also governs row 4 above** — the platform must stop
+   naming a number for assignment latency anywhere.
 3. It states the fallback in the customer's favour and it is **true**: *if they can't take it, we open
-   it to everyone straight away — **your cleaning time never changes***.
-4. It does **not** claim the preference applies to **express** bookings (D3: no hold under 4 hours'
-   lead), and it must not collide with ADR-0035's express-waiver sentence on the same benefits screen.
-5. It is **Plus-only** everywhere — iOS's *"**Plus benefit** ·…"* is already correct; the other two
-   surfaces must match, and the web wizard's string must stop promising a picker the web has
-   (`order-wizard.facade.ts:580` sends `undefined` — **the web has no picker at all**).
+   it to everyone straight away — **your cleaning time never changes***. Stated **up front, at the moment
+   of choosing** — the honest version of not narrating it live.
+4. It does **not** claim exclusivity on **short-lead** bookings (D3: no hold below `2 ×
+   StandardLeadTimeHours`), and it must not collide with ADR-0035's express-waiver sentence on the same
+   benefits screen. *(The 8-hour floor makes this easier, not harder: there is no "express **and** held"
+   edge to explain at all.)*
+5. It is **Plus-only** everywhere. **Corrected scoping (CH-P3.4):** the *"Plus benefit · choose someone
+   who's cleaned for you before"* string is **already correct on BOTH mobile clients** (iOS
+   `Localizable.xcstrings`; Android `values/strings.xml:723`) — it is the **web** that must match. And
+   the draft's constraint 5 was garbled: **the web has NO picker** (`order-wizard.facade.ts:576-580`
+   sends `undefined` unconditionally), so the web string must stop promising a picker **the web does not
+   have**. A copy ticket could not act on the sentence as drafted.
+6. **NEW (CH-P3.1) — no locale of any client may use an assignment verb for this perk** (`přiřazen` /
+   `priradený` / `назначен` / "assigned"). AC3 forbids the outcome, so the copy may not name it.
+   Constraint 1 as drafted ("never *the same cleaner every time*") does not catch these.
+7. **NEW (CH-P3.2) — the control's TITLE is in scope, not just the perk description.** The picker title
+   is a *request* verb in five locales on both clients (`values/strings.xml:722` *"Request your favorite
+   cleaner"*, `values-ru/:709` / `values-uk/:709` likewise; cs/sk say *"choose"*). *"Request X"* means
+   *I am asking for that person*; it does not mean *that person gets 48 minutes' head start*. If D1 says
+   the honest name of the product is **first chance**, the control must say so.
+8. **NEW (CH-P2) — the per-booking sentence must be TRUE IN BOTH OUTCOMES and must NOT name a reason.**
+   The resolver can decline for eight reasons, most decided after the customer taps, and three of them
+   are facts about the cleaner that D4's privacy line forbids showing. A sentence that is true only when
+   the hold is granted is the ADR-0035 failure in miniature. **And it must never say "we'll still note
+   your request"** — the preference is stored and read by nothing outside the hold; that clause would be
+   the same failure again.
+9. **NEW (CH-P5) — until C3 ships, the recurring wizard must say the perk does not cover schedules.**
+   *"Favourite-cleaner requests apply to one-off bookings; schedules go to whichever cleaner is free."*
+   When C3 lands, that line and row 3 change back together.
+10. **Citation fixes** the copy ticket needs: the web string is **`en.json:1095`**, not `:1097` (`:1097`
+    is `cancelled_until`) — the draft inherited the wrong line from T-0495's own description; and the
+    false *"matching algorithm boosts that cleaner's score"* myth lives in **three** files, not one:
+    `Order.cs:217-224` (AC12), `PreferredCleanerPicker.kt:52-54`, and
+    `order-wizard.facade.ts:576-578`. Correct all three in the same wave or the next reader re-learns
+    the myth from the client.
 
-An anchor sentence satisfying all five, offered and **not** the decision:
-> *"Ask for a cleaner you've had before — they get first chance at your booking. If they can't take it,
-> we open it to everyone right away and your cleaning time doesn't change."*
+An anchor sentence satisfying all ten, offered and **not** the decision. Note what it does: it states
+**what the customer asked for** and **what the platform guarantees**, never what the cleaner will do —
+and *"as soon as she can't take it"* is satisfied **immediately** in every decline case, which is what
+makes one static string true in both outcomes (constraint 8):
+> *"You've asked for Anna — we'll give her the first shot at this whenever we can. Either way it goes to
+> every cleaner as soon as she can't take it, so your cleaning time doesn't change."*
+
+*(T-0491 may prefer challenger A's two-variant pair if a `Granted` flag ever reaches the client — A16
+records why it does not in wave 1.)*
 
 ## Naming — the AC12 correction, written here so T-0515 pastes rather than re-decides
 
@@ -713,51 +1342,60 @@ field, which three clients do. Replacement:
 
 /// <summary>
 /// Absolute UTC instant until which ONLY <see cref="PreferredEmployeeId"/> may see and take
-/// this order (ADR-0036 D2). Null = no hold, ever — the value for every order without a
-/// granted hold and for every row created before ADR-0036. Set ONCE at creation, never
-/// recomputed; it expires by clock comparison with no job, no sweep and no state change.
+/// this order — and only while the order has NO cleaner on it yet (ADR-0036 D2/D5). The hold
+/// is first refusal on the FIRST seat, not a lease on the order. Null = no hold, ever — the
+/// value for every order without a granted hold and for every row created before ADR-0036.
+/// Set ONCE, only via <see cref="GrantPreferredHold"/>, which requires a beneficiary: a
+/// deadline without one is not a state this aggregate can be put into, and the visibility
+/// rule treats it as "no hold" if a row ever carries it anyway. Never recomputed; it expires
+/// by clock comparison with no job, no sweep and no state change.
 /// </summary>
 ```
+
+**And the same wave corrects two other false comments the panel found** (AC12 is wider than one file):
+
+- `NewJobsDigestService.cs:49-50` claims the digest's status set *"Mirrors
+  `DashboardSpecifications.CreateAvailableOrdersSpec`"*. **It does not** — `{New, Pending, Confirmed}`
+  vs `{Pending, Confirmed}` (`:52-53` vs `DashboardSpecifications.cs:24`). One line, actively misleading,
+  and it sits three lines above the code this ADR modifies.
+- `MembershipStatus.cs:18-19` documents a `PastDue` grace window that no code implements (D7).
 
 ---
 
 ## Roles affected
 
-Role card written with this ADR (marked proposed until it is accepted):
-- **`agents/knowledge/roles/preferred-cleaner-hold-resolver.md`** — the pure resolver + the shared
-  visibility expression it feeds.
+Role card landed with acceptance — **`agents/knowledge/roles/preferred-cleaner-hold-resolver.md`**. The
+panel widened it from one role to **three collaborating ones**, because CH-V1 showed the missing
+collaborator *was* the bug:
 
-Existing cards touched on acceptance: none. `express-waiver-resolver.md`'s "does NOT know" list stays
-true — the two resolvers share a shape and answer different questions on the same order.
+| | Owns |
+|---|---|
+| `IPreferredCleanerHoldResolver` | **decides** — notify? hold? until when? (a pure read) |
+| **`Order`** (new) | **owns the hold pair.** The only writer; refuses a deadline without a beneficiary |
+| `OrderVisibility` | **answers** "is this order open to this cleaner", in two evaluation forms |
 
-**Catalog edit to land ON ACCEPTANCE (not before — a `proposed` ADR must not become enforceable):**
-`agents/knowledge/patterns-backend.md`, a new section, prepared verbatim so acceptance is a paste:
+**The "does NOT know" line that would have caught CH-V1 in the ADR instead of in code:** *`OrderFactory`
+does not know how to set a deadline without a beneficiary* — and it did, because the pair had no owner.
+Two fields, two writers, one invariant, **no owner** is the smell; the fix is always a collaborator, not
+a checklist item.
 
-> ### Bounded exclusivity on a pull board — the stored-deadline hold (ADR-0036)
-> When a rule must give one actor temporary exclusive access to a work item on a first-come board:
-> - **Store an absolute deadline, never a duration.** `<X>UntilUtc`, nullable, set **once** at creation,
->   **never recomputed**. `null` means "no exclusivity, ever" — so existing rows and rows outside the
->   rule are unaffected **by construction**, with no backfill.
-> - **Key the visibility predicate on the DEADLINE column, never on the beneficiary id alone.** A
->   predicate keyed on the beneficiary retroactively switches behaviour on for every historical row.
-> - **Expiry must have no actor.** `now >= deadline` in a `WHERE` clause. A job/sweep/status-transition
->   expiry has a failure mode — *the item is stuck exclusive* — that a clock comparison does not.
-> - **Bound the exclusivity as a FRACTION of the item's own fill window, with a ceiling**, and state the
->   resulting invariant as a number (Cleansia: *≥90% of every fill window is always open to everyone*).
->   A fixed duration is arbitrarily aggressive on urgent items and timid on distant ones.
-> - **Reuse the constant that already defines "urgent"** as the floor below which no exclusivity is
->   granted (`BookingPolicy.StandardLeadTimeHours`) — one number, two uses, no drift.
-> - **Write the visibility rule ONCE** as a `static Expression<Func<T,bool>>` in the Domain and apply it
->   at **every** surface that answers "may this actor see/take this" — list, preview, detail-access,
->   notification sweep **and** the write gate. Enumerate the surfaces in the ADR; a rule applied to
->   n−1 of n surfaces is a leak.
-> - **The refusal at the write gate must agree with what the same caller's read returns.** If the read
->   returns nothing, the write returns "not found" — a bespoke "reserved for someone else" error leaks
->   exactly what the exclusivity was meant to hide.
-> - **A watermark-based notification sweep must treat the expiry as the item's arrival instant** for
->   non-beneficiaries, or suppressed items fall out of the notification channel permanently.
-> - **No exclusivity without a signal**: if the beneficiary cannot be notified (muted, unreachable),
->   grant no exclusivity — the latency is pure loss.
+Existing cards touched: none. `express-waiver-resolver.md`'s "does NOT know" list stays true — the two
+resolvers share a shape and answer different questions on the same order.
+
+**Catalog edit landed WITH acceptance** in `agents/knowledge/patterns-backend.md` — rewritten by the
+panel, because six of the draft's nine bullets were the versions the challengers broke. The accepted
+text is the section *"Bounded exclusivity on a pull board — the stored-deadline hold (ADR-0036)"*; the
+substantive changes from the draft, so a later reader can see what deliberation bought:
+
+| Draft bullet | What the panel changed it to | Why |
+|---|---|---|
+| *"key on the deadline, never the beneficiary id alone"* | + *"and make a deadline **without** a beneficiary fail OPEN, at both ends — the aggregate refuses to write it, and the predicate ignores it"* | CH-V1: the draft's headline safety claim was false |
+| *"≥90% of every fill window"* | *"of every **SEAT's** fill window; exclusivity is consumed the moment the item has any holder"* | CH-V4: the spare seat was locked after the perk was delivered |
+| *"reuse the constant that defines urgent — one number, two uses"* | *"reuse it or **derive from it**; a multiple of the one constant is not a second constant"* | CH-2/CH-7: the owner's 8 h floor keeps the property |
+| *"write the rule once as a `static Expression`… apply it at every surface"* | + *"**classify the surfaces by kind** (queryable / in-memory / write-gate / notification) and enforce with an **equivalence test against the real provider**. **Sharing one lambda does not make two evaluators agree** — SQL and C# disagree on null equality. Enumerating hits is not coverage; check **call sites**."* | CH-V2/V3/V5: a green grep over broken wiring |
+| *"the refusal at the write gate must agree with the caller's read"* | *"**never introduce an error key that names the exclusivity; reuse the most generic refusal the caller could already have received**"* | CH-V7: the strong form is violated by shipped code (`NoAvailableSpots`) |
+| *"a watermark sweep must treat the expiry as the arrival instant"* | + *"as a **bounded window** (`> watermark AND <= sweepStart`), written **disjunctively**, never as `max(...)`. An availability instant in the **future** marks the item new before it is available."* | CH-Q1/Q2/Q5: the fix reintroduced the bug and inflated the count |
+| *"no exclusivity without a signal"* | + *"and **check every way the signal can fail** (category mute, device kill switch, no device at all). Grant the **notification** on a wider predicate than the exclusivity — the weaker half is free and keeps the promise honest where the strong half is unsafe."* | CH-P4/CH-P2/CH-2 |
 
 Living companion updated in the same change:
 **`agents/architecture/decisions/preferred-cleaner-dispatch.md`**.
@@ -766,12 +1404,43 @@ Living companion updated in the same change:
 
 ## Challenge
 
-> **⚠️ PROCESS STATE — read this before treating the section below as a deliberation trail.**
-> `agents/process/deliberation.md` requires the author, the challengers and the lead to be **different
-> instances**. **Only the author has run.** The entries below are **AUTHOR-RAISED** — the attacks I can
-> see against my own draft, pre-answered so a challenger starts past them rather than at them. **They
-> are not independent challenges.** This ADR stays `proposed` until real challengers and a lead have
-> run (see §Verdict).
+**Round 1 — author-raised (CH-1..CH-10), pre-answered so challengers start past them.
+Round 2 — three independent challengers (CH-P*, CH-V*, CH-Q*), full text in
+`agents/backlog/adr/challenges/0036-{A-promise,B-visibility,C-digest}.md`.**
+
+### Round 2 — the independent challenges, by id
+
+| id | Lane / challenge | Verdict (see §Defense) |
+|---|---|---|
+| **CH-P1** | Both clients promise *"Cleaner being assigned · Within 1 hour"* unconditionally in 5 locales; a 12 h hold is 12× it, and D6 shows the customer nothing. | **CONCEDE** — reclassified as *corrective* (already unbacked) and ruled into **C0, ships first** |
+| **CH-P2** | D6's *"told once at booking"* has **no surface**: both pickers overwrite the explanatory line with the cleaner's name on selection. And no static string is true in all decline cases. | **CONCEDE** — C2c (persistent line) + §Copy constraint 8 + **D4.1** shrinks the decline set. `firstChanceApplies` boolean **rejected** (A16) |
+| **CH-P3** | The control says *"Request"*; **cs/sk/ru web promise ASSIGNMENT** on the checkout page; the ADR read one locale and cited the wrong line. | **CONCEDE** — constraints 6, 7, 10 |
+| **CH-2** | *(author-raised, ruled by challenger A)* raise the hold floor 4 h → 8 h. | **OWNER RULING: 8 h**, as `2 * StandardLeadTimeHours` |
+| **CH-P4** | A hold can be granted to a cleaner the platform knows it cannot reach — `Device.NotificationsEnabled`, and cleaners with no device row at all. D4 says it must not. | **CONCEDE** — `CleanerUnreachableForPush`, D4.1 |
+| **CH-P5** | The perk is sold *"on every booking"*, delivered on **zero** recurring occurrences; and *"Make this recurring"* silently destroys a stated preference. | **CONCEDE on copy** (C0 row 3, constraint 9) + **D8.5**; C3 sequencing accepted |
+| **CH-P6** | `PastDue` is documented as a grace window and implemented as a lapse — and D7 makes that predicate load-bearing for rejecting a whole booking. Plus the error copy upsells at the moment of failure. | **ESCALATE (`Q-PLUS-05`)** with an interim ruling + error-copy constraint |
+| **CH-P7** | The ADR abandons ADR-0035's corrective-ships-first ruling and files every false statement under "not blocking". | **CONCEDE** — §Copy now carries the sequencing ruling; **C0 is a condition of acceptance** |
+| **CH-V1** | The predicate is **fail-CLOSED on a null beneficiary**; reachable from `AnonymizeCustomerData` (`Order.cs:621`). **The headline safety claim is false as written.** | **CONCEDE** — 5th term + `GrantPreferredHold`/`ClearPreferredHold` + **D2.5 restates the claim** |
+| **CH-V2** | `CreateAvailableOrdersSpec` never sets `RestrictToEmployeeId`, so the stated wiring fixes one surface, leaves two leaking — **and §verify #2 passes**. Sixth surface at `GetDashboardStats.cs:236`. | **CONCEDE** — Fact A rebuilt; §verify #2 is a call-site check |
+| **CH-V3** | Three in-memory sites, not two; the proposed *"compiles or mirrors"* is either a new technique or the hand-rolled copy §verify #2 calls a hard reject. | **PARTIAL** — steps 1 & 3 adopted, **step 2 (`.Compile()` of a shared tree) rejected on evidence** (A17) |
+| **CH-V4** | Every order has a spare seat (`Order.cs:519`); after the beneficiary takes seat 1 the hold locks seat 2 from **everyone**, including them. Invariant H does not cover it. | **CONCEDE — the worst consequence in the draft.** 5th term (broader than proposed) + **Invariant H restated per SEAT** |
+| **CH-V5** | Surface 4 emits a **count**, never an identity — it is not a visibility surface; D5 + D5.3 put two rules over the same columns. | **SPLIT** — taxonomy adopted, **substance rejected**: the digest carries both rules (A18) |
+| **CH-V6** | Surfaces 2 and 4 already disagree on the status set under a comment claiming they mirror; TC-PREF-HOLD-0 would go green for the wrong reason. | **CONCEDE** — fixture re-specified, false comment fixed in-ticket, divergence recorded |
+| **CH-V7** | The read/write-agreement rule is violated by `NoAvailableSpots` today; and the hold rule's **placement** in the validator chain decides which error leaks. | **CONCEDE** — rule narrowed (D5.2), placement named |
+| **CH-V8** | *"Tunable"* is false — they are `const`s; *"expiry has no actor"* is true of the deadline, not of the outbox the signal rides. | **CONCEDE** — both stated honestly in Consequences |
+| **CH-V9** | The lifecycle attack (reschedule / cancel-recreate / return-to-board) **fails** — and the reason should be written down. | **ACCEPT the finding** — D5.4 records it, plus the re-arm rule |
+| **CH-Q1** | D5.3 as worded compiles to a per-row `CASE` over two correlated aggregates + a per-row cast — and §verify #6 is what steers an implementer into it. | **CONCEDE** — D5.3 and §verify #6 rewritten to the disjunctive form |
+| **CH-Q2** | **The fix is wrong in the direction it was meant to fix**: `max(...)` compares against a **future** instant, so a held order is "new" from creation, the push count is a lie, and the watermark walks past the expiry. | **CONCEDE — blocking, fixed.** The upper bound is the correctness condition |
+| **CH-Q3** | TC-PREF-DIGEST-0 cannot fail against that defect. | **CONCEDE** — split into 0a (blocking pin) and 0b |
+| **CH-Q4** | The digest's `nowUtc` is unspecified; only `sweepStartedAt` is safe. | **CONCEDE** — specified + §verify grep |
+| **CH-Q5** | The existing top-N should be **replaced**, not wrapped: written correctly D5.3 makes the query **cheaper than today**. | **CONCEDE** — equivalence recorded so nobody restores it |
+| **CH-Q6/Q7** | The sweep is C queries + Σ N_c queries per run; the overlap check scans a cleaner's lifetime history. The ADR adds to the innermost loop without pricing it. | **PARTIAL** — the ×C framing is adopted; the redesign is **filed, not a precondition** |
+| **CH-Q8** | `StampWatermarkAsync` loads **tenant-scoped** inside a tenant-ignoring sweep — under multi-tenancy the watermark can never advance after the push is enqueued. | **ACCEPT as a hard PRECONDITION** of T-0515 (pre-existing; ticketed separately) |
+| **CH-Q9** | No index is needed anywhere; the floated **partial index would be actively wrong**. Say it as a decision. | **CONCEDE** — **D5.5** |
+| **CH-Q10** | Withdraw the unearned "convergence" claim; three code comments assert unmeasured bounds. | **CONCEDE** — claim withdrawn in Consequences |
+| **CH-10 / CH-V10** | The constants are uncalibrated and DEV was not queried. | **PROCEED**, conditional on the honest tuning cost + a **named** measurement ticket before T-0515 starts |
+
+### Round 1 — author-raised
 
 | # | Challenge (AUTHOR-RAISED) | Where it bites |
 |---|---|---|
@@ -787,6 +1456,18 @@ Living companion updated in the same change:
 | CH-10 | *"Nobody measured anything. There is no data on how long orders currently sit unclaimed, so 10% and 12h are invented numbers dressed as a principle."* | D3 / the whole quantitative claim. |
 
 ## Defense
+
+> **Round 1 (CH-1..CH-10) was written by the author.** **Round 2 (CH-P*/CH-V*/CH-Q*) is defended below
+> by the LEAD**, because the challengers' findings arrived with the author's mandate discharged and the
+> protocol's bar — *rebut with evidence at `file:line`, concede and actually change the artifact, or
+> escalate* — applies to whoever answers. **Every CONCEDE below is folded into the decision above; none
+> is an acknowledgement without a change.** Where I ruled **against** a challenger I read the code
+> myself and say which line refutes them; where a challenger refuted the *author*, or me, I say so.
+>
+> Round-1 items superseded by round 2: **CH-2** (ruled 8 h by the owner), **CH-3** (subsumed by
+> CH-V3/V5), **CH-4** (CH-Q10 sharpened it: D5.3 is a point fix in a design with a known structural
+> limit, and the ADR now says so), **CH-9** (unchanged — watch-list), **CH-10** (CH-V8a removed its
+> mitigation; the honest cost is now stated).
 
 - **CH-1 — REBUT, and CONCEDE the escape hatch.** A1 fails the owner's instruction on its face
   (*"working fully"* — a sort order changes no outcome), and it is **unfalsifiable**: no test
@@ -873,81 +1554,322 @@ Living companion updated in the same change:
   panel did not examine, and recommended to the lead as a required condition of acceptance:** T-0515
   ships with the fraction and ceiling in `BookingPolicy` as named constants and the PM files a
   follow-up to look at real fill times once DEV has traffic.
+  *(Lead: CH-V8a refuted the mitigation — `const` means a release. Restated honestly in Consequences.)*
+
+### Round 2 — lead-adjudicated
+
+- **CH-V4 (the second seat) — CONCEDE, and it is the worst consequence in the draft.** Verified line by
+  line: `Order.CalculateRequiredEmployees()` sets `MaxEmployees = RequiredEmployees + 1` at
+  `Order.cs:519`; `OrderFactory.cs:148` calls it on **every** order; `HasAvailableSpots`
+  (`Order.cs:116-117`) stays true after one take; `TakeOrder.cs:79-90` refuses the beneficiary a second
+  seat. So the drafted predicate produced **a seat no one on the platform may take** — the stuck-held
+  catastrophe, in the case where the perk had **already been honoured**, for up to 12 hours. Invariant H
+  did not cover it because H bounded the hold against the *order's* fill window while the second seat's
+  *entire* window was consumed. **Fixed with a 5th term, and I took a broader form than the challenger
+  proposed:** `o.AssignedEmployees.Any()` rather than `Any(ae => ae.EmployeeId == o.PreferredEmployeeId)`.
+  It strictly contains the challenger's case, additionally covers an **admin** assignment during a live
+  hold (`AdminReassignOrder.cs:86,98`) which the narrow form leaves locked, reads as the sentence D1
+  already promises (*first refusal on the first assignment*), and is a cheaper `EXISTS`.
+  **Invariant H is restated per SEAT** (D3), AC1 is rewritten, and TC-PREF-CONSUMED-0 pins both variants.
+- **CH-V1 (fail-closed on a null beneficiary) — CONCEDE, and the headline claim is withdrawn and
+  replaced, not patched.** The challenger is right that *"an order stuck held is not expressible"* was
+  false: no disjunct covered `PreferredEmployeeId == null && PreferredHoldUntilUtc > now`, and
+  `Order.AnonymizeCustomerData()` reaches it (`Order.cs:613-626`, nulling only `:621`), with
+  `Order.Create:349` null-collapsing the id independently. **I am taking both halves of the fix, not
+  one**, because the parent instruction is right that a safety property defended by a review checklist
+  is not a safety property: (a) the predicate gains `|| o.PreferredEmployeeId == null` so the state is
+  **harmless if it ever exists**, and (b) `Order.GrantPreferredHold`/`ClearPreferredHold` own the pair
+  with **no independent setter** so the state **cannot be created**. (a) alone leaves a row that is
+  "held" in the database and "open" to the code — confusing to anyone reading the table; (b) alone does
+  not protect against a manual `UPDATE` or a future writer. **D2.5 states the property in the form the
+  code actually delivers: no writer, no reader, fail-open at both ends.**
+- **CH-Q2 (D5.3 is wrong in the direction it was meant to fix) — CONCEDE, blocking, fixed.** The
+  challenger is exactly right and the defect is worse than a slow query: `PreferredHoldUntilUtc` is the
+  first availability instant in this system that is **in the future** at evaluation time, so
+  `max(track, hold) > since` is true from creation, the held order is counted in `takeable`
+  (`NewJobsDigestService.cs:142`), pushed as a count (`:173`) to cleaners who cannot see it, and the
+  watermark is stamped forward (`:182`) until it has passed the expiry — **Fact B reproduced by the fix
+  for Fact B**, plus a push count that is false for the whole window. **D5.3 now specifies a window
+  (`> since AND <= sweepStartedAt`), written disjunctively**, and **§verify #6 is rewritten** because the
+  draft's wording — *"check it compares against `max(...)`"* — is precisely what would steer an
+  implementer into the expensive **and** incorrect plan. CH-Q1's rendered SQL (a per-row `CASE` over two
+  correlated `max()` SubPlans plus a `::timestamptz` cast on a column) is the evidence, and CH-Q5's
+  equivalence (`latest > k ⟺ ∃ > k`) is folded in so the replacement **deletes** the existing top-N
+  subquery. Net: **the digest query gets cheaper than it is today**, which is the opposite of what the
+  draft conceded at its own §What-we-did-not-examine.
+- **CH-V5 (surface 4 is not a visibility surface) — SPLIT: taxonomy adopted, substance rejected, and I
+  am ruling between two challengers.** B is right on the fact — `NewJobsDigestService.cs:173` emits a
+  **count** and `:120-122` projects three fields that never leave the service, so **nothing can leak
+  there** and D4's privacy line is untouched by a count that is off by one. B is **wrong** to conclude
+  the shared rule must not be applied: the count means *"jobs you can take"* (the query already excludes
+  full orders at `:101` and self-assigned ones at `:102`, and filters overlaps at `:135-143`), and
+  without the visibility conjunct the freshness branch fires on the **creation** status track and pushes
+  a cleaner about an order that is invisible and un-takeable to them — CH-Q2's harm arriving by the other
+  door. **Challenger C's own probe SQL carries both conjuncts**, which settles it. The two rules answer
+  two different questions and compose as a conjunction; the draft's error was calling them competing
+  rules over the same columns. **Fact A is reclassified by kind, and the digest is documented as the one
+  surface that carries two.**
+- **CH-V2 (the wiring does not work) — CONCEDE in full.** Verified: `DashboardSpecifications.cs:8-29`
+  calls `OrderSpecification.Create` with named arguments and **omits `restrictToEmployeeId`** (a
+  defaulted parameter at `OrderSpecification.cs:150`), passing `excludeEmployeeId` instead — whose
+  polarity is the opposite (`:129-132`). And `GetDashboardStats.cs:236` is a sixth surface on the same
+  spec. An implementer following D5 literally would have fixed one surface, left two leaking, **and
+  passed §verify #2**. *One correction to the challenger:* the cost is smaller and the danger larger than
+  stated — `OrderSpecification.Create`'s parameters are **all optional** (`:144-150`), so new trailing
+  ones compile at every call site untouched, including the three test sites. **Nothing breaks; things
+  silently leak.** Hence §verify #2 becomes a call-site check, which is what the challenger asked for.
+- **CH-V3 (the shared expression cannot serve both) — PARTIAL: steps 1 and 3 adopted, step 2 rejected on
+  evidence I gathered myself.** Adopted: (1) the write gate leaves the in-memory set entirely by folding
+  the predicate into the `ExistsAsync` rule's query — which also answers CH-Q9's placement point and
+  costs **zero** extra round trips against a validator that already loads the same order three times
+  (`TakeOrder.cs:42`, `:65-68`, `:150-152`); (3) **TC-PREF-EQUIV-0 against PostgreSQL** replaces review
+  as the enforcement. Rejected: the single `Expression<Func<Order,string?,DateTime,bool>>` partially
+  applied and statically `.Compile()`d. Three reasons, in order of weight: **(i)** it does not deliver
+  what it is bought for — the *same tree* gives opposite answers for a null caller id, because SQL's
+  `= NULL` is UNKNOWN while C#'s `null == null` is true (challenger C verified the emitted predicate),
+  so the equivalence must be tested either way; **(ii)** `ExpressionBuilder.Compose`
+  (`ExpressionBuilder.cs:7-13`) rebinds **parameter → parameter**, so partial application needs a
+  visitor this repo does not have — *"no new technique"* was not accurate; **(iii)** the *"zero
+  `.Compile()` precedent"* premise is **false** — `LoginValidator.cs:48-50` compiles three selectors in
+  production today. The challenger's *conclusion* (never `.Compile()` inside a request) is right, is
+  kept as §verify #10d, and did not need the false premise.
+- **CH-P1 (the "Within 1 hour" promise) — CONCEDE the finding, RECLASSIFY the fix, and it ships first.**
+  Verified in all five locales on Android (`values/strings.xml:741-742`, `values-cs/:731-732`,
+  `values-sk/:728-729`, `values-ru/:728-729`, `values-uk/:728-729`) and on iOS, rendered unconditionally.
+  The challenger frames it as *made false by this ADR*; **it is already false** — dispatch is a
+  first-come pull board, nothing enforces or measures an hour, and the step renders the instant the order
+  is submitted. That reclassification is the whole ruling: it makes the string **corrective** work under
+  ADR-0035's rule, so it ships **now, ahead of the mechanism, depending on nothing** (C0) rather than
+  being sequenced against C2. I rejected the two alternatives on the record (A15: capping the ceiling at
+  1 h destroys the perk's best case to protect an unmeasured marketing number; A16: a conditional
+  subtitle re-opens D6 and can flip between quote and submit). **The parent's instruction stands
+  satisfied: no hold code ships while that string is live.**
+- **CH-P2 (no surface for "told once") — CONCEDE, with a structural fix the challenger did not ask
+  for.** The picker really does destroy its own explanation (`PreferredCleanerPicker.kt:131-135`,
+  `ConfirmExtrasComponents.swift:71-73` — the subtitle is the `?:` fallback for the *name*), and the
+  challenger is right that no static string was true across the decline reasons. Three responses: the
+  persistent line is **required and budgeted** (C2c — the draft budgeted zero customer-client work);
+  §Copy constraint 8 requires a sentence true in **both** outcomes and forbids the *"we'll still note
+  your request"* clause; and **D4.1 changes the mechanism so the copy can be true** — the targeted
+  notification is granted on a wider predicate than the hold, which shrinks the "nothing happened" set to
+  the cases where the cleaner cannot be told anything at all. That amendment does double duty: it is also
+  what makes the owner's 8-hour floor cheap, because the 2–8 h band now gets the notification half of the
+  perk rather than nothing. **`firstChanceApplies` rejected** for wave 1 (A16).
+- **CH-P4 (unreachable beneficiary) — CONCEDE.** `Device.cs:14-20` documents a hard kill switch that the
+  dispatcher honours *"even if the user's per-category preferences allow the event"* — a server-stored,
+  statically knowable fact of exactly the shape D5.1's other checks have, and the draft checked one of
+  three failure modes. Added as `CleanerUnreachableForPush`, governing both halves under D4.1. **And the
+  consequence is named rather than buried: until the partner web SPA registers devices, this perk is
+  effectively mobile-cleaner-only.**
+- **CH-P3 / CH-P5 / CH-P7 (copy) — CONCEDE all three.** I verified the cs/sk/ru assignment verbs at
+  `en.json:1095`'s siblings and their render site (`membership-subscribe.component.html:102-103` — the
+  **checkout** page), and the picker-title verbs. Constraints 6–10 added; the citation corrected
+  (`:1095`, not `:1097` — the draft inherited the error from T-0495's own description); the garbled
+  constraint 5 rewritten; the *"Plus benefit"* scoping corrected (**both** mobile clients are already
+  right — `values/strings.xml:723` — it is the web that must match). §Copy now carries the sequencing
+  ruling and **C0 is a condition of acceptance**.
+- **CH-P6 (`PastDue`) — ESCALATE, with an interim ruling so nothing blocks.** The contradiction is real
+  (`MembershipStatus.cs:18-19` promises benefits during the grace window;
+  `UserMembershipRepository.cs:27-29` and `UserMembership.cs:84-85` both require `Active`), and D7 makes
+  it load-bearing for rejecting a whole booking. **Whether a failed card payment revokes perks
+  immediately is a business decision, not an architect's** → `Q-PLUS-05` for the owner. Interim: the one
+  predicate, unchanged, **and the enum comment corrected in the same wave** — a rejection path whose
+  predicate contradicts the platform's own comment is not shippable in either direction. The error copy
+  must name the tap; `TC-PREF-GATE-3` exists either way. The recurring-materialization asymmetry the
+  challenger surfaced is named in D8.6 and escalated as `Q-PLUS-04`.
+- **CH-V6 / CH-Q10.1 (the set already disagrees) — CONCEDE.** Verified: `{Pending, Confirmed}`
+  (`DashboardSpecifications.cs:24`) vs `{New, Pending, Confirmed}`
+  (`NewJobsDigestService.cs:52-53`) under a comment at `:49-50` asserting they mirror. The draft's
+  consequence *"makes that sprawl more reviewable"* is **withdrawn**, the false comment is fixed in
+  T-0515, and TC-PREF-HOLD-0's fixture is re-specified. **One correction to challenger B**, and it
+  matters for the fixture: B inferred that a held order *"cannot appear on surface 2 until it is taken"*,
+  so the hold's only visible effect there is hiding second seats — *"exactly backwards"*. That inference
+  treats `Confirmed` as "a cleaner has it". It is not: `Confirmed` is written by three paths and only one
+  involves a cleaner (`TakeOrder.cs:194`), the other two being the Stripe webhook
+  (`HandlePaymentNotification.cs:261`) and cash auto-confirm (`ConfirmRecurringOrder.cs:111`). **A
+  cleanerless `Confirmed` order with two open seats is the ordinary board row and is exactly what the
+  hold is for.** B's "exactly backwards" line does not stand; **CH-V4 stands on its own without it.**
+- **CH-V7 — CONCEDE, taking option (b).** The strong rule is violated by shipped code:
+  `HasAvailableSpotsAsync` → `NoAvailableSpots` (`TakeOrder.cs:44-45`, `:63-71`) for a fully-assigned
+  order that `RestrictToEmployeeId` (`OrderSpecification.cs:134-139`) keeps out of the same caller's
+  `GET`. Shipping a catalog rule the codebase breaks on day one is the failure mode my own charter names.
+  **Narrowed to "never name the exclusivity; reuse the most generic refusal"**, which is what §verify #4
+  already tests. The mechanical half — placement before the spots check, caller id supplied explicitly —
+  is now specified in D5.2, because otherwise it *will* be appended.
+- **CH-V8 — CONCEDE both.** (a) `BookingPolicy.cs:4-5` exists to keep clients in sync on these numbers, so
+  a `const` is a release; the honest cost is stated (one backend release, **no** client change, because
+  no client reads the hold constants). (b) The outbox is an actor with its own latency: the accepted
+  consequence is stated and bounded — **the 48-minute minimum hold must exceed the drain SLO, or the
+  floor moves.**
+- **CH-V9 — ACCEPT the finding and go one step further.** The challenger tried to break "computed once at
+  creation" via reschedule/edit/cancel-recreate and could not, and the reasons are worth keeping
+  (`Order.CleaningDateTime` is `private set`, assigned only at `Order.Create:337`; no reschedule command
+  exists; the only un-assign re-assigns in the same handler). Recorded in D5.4 — **plus the rule the
+  challenger's own finding implies**: under term 5, un-assigning back to an empty order with a
+  still-future deadline **re-arms** the hold, so any future return-to-board path must decide it
+  explicitly, and `ClearPreferredHold()` is the one-call answer.
+- **CH-Q6 / CH-Q7 — PARTIAL: framing adopted, redesign filed, NOT a precondition.** The ×C multiplication
+  is real (`NewJobsDigestService.cs:86`) and *"one expression change"* is withdrawn. But requiring a
+  digest redesign as a precondition would hold a customer-facing perk hostage to an **unmeasured**
+  optimisation — the challenger has emitted SQL, not `EXPLAIN` output or row counts, and says so. D5.5
+  establishes the added terms are residual filters and D5.3's rewrite makes the surface net cheaper.
+  **Filed for the PM as an optimizer ticket, with the country-grouping shape recorded.**
+- **CH-Q8 — ACCEPT as a hard PRECONDITION of T-0515, and it is not this ADR's to fix.**
+  `StampWatermarkAsync` (`:211-220`) calls the tenant-scoped `GetByIdAsync` inside a sweep that selects
+  cleaners with `GetQueryableIgnoringTenant()` (`:63`) and sets no tenant override — so for any tenanted
+  cleaner the load returns null, `:217` returns early **after** `NotifyAsync` at `:168` has already
+  enqueued the push, and the watermark can **never** advance. Latent today, guaranteed the moment
+  multi-tenancy is switched on. **D5.3's correctness argument is "the watermark advances past the expiry
+  exactly once"** — it is unimplementable on a watermark that can silently refuse to move. Ticketed
+  separately; **T-0515 must not land before it.**
+- **CH-Q9 — CONCEDE, and the draft's instinct was backwards.** The predicate's satisfying set is
+  NULL-dominant, so a partial index on `PreferredHoldUntilUtc IS NOT NULL` indexes the complement of what
+  the predicate matches and has no reader (D11 does not build the admin hold view). **D5.5 states it as a
+  decision and closes the open question.**
+- **CH-10 / CH-V10 — PROCEED, conditionally.** Both remaining challengers declined to block on the
+  uncalibrated constants and I agree: the shape is right independently of the numbers, wrong numbers
+  cannot corrupt data (additive nullable column; the worst case is latency), and CH-Q10.4 establishes the
+  fraction is a **product** risk, not a performance one. **Conditions:** the tuning cost is stated
+  truthfully (done), and the PM files the measurement ticket **before T-0515 starts**, naming the three
+  queries so the follow-up is executable rather than aspirational — time-to-first-assignment by lead-time
+  bucket; approved+active cleaners per `WorkCountryId`; share of orders never claimed.
 
 ## Verdict
 
-**NOT REACHED. Status stays `proposed`.**
+**CONSENSUS REACHED. Status: `accepted`, as amended above. 2026-08-02.**
 
-`agents/process/deliberation.md` step 5 requires a **lead** to adjudicate challenges raised by
-**independent challengers**. Only the author has run, and per the ticket's own AC11 and the ADR record
-discipline this artifact cannot be `accepted` on an author's self-review.
+Author + three independent challengers + lead adjudication, per `agents/process/deliberation.md`. **Zero
+blocking challenges remain unanswered:** every one is REBUTTED with code at `file:line`, CONCEDED with
+the artifact actually changed, or ESCALATED with an interim ruling that unblocks the work.
 
-**What must happen before `accepted`:**
+### What survived, what did not
 
-1. **2–3 challenger instances**, each attacking and each recording what they checked (silence is not
-   assent). Suggested split so they do not collide:
-   - **Challenger A — `analyst`, the customer promise (the ticket names this one explicitly).** Attack
-     D1, D3 and D6. The bar: show either that a customer would rather be told and wait, or that "first
-     chance" is not a sellable perk at all — and if D6 falls, say what the customer sees instead of
-     "nothing". Also rule on §Copy's anchor sentence against the three shipped strings.
-   - **Challenger B — `architect`, the seam.** Attack Fact A / D5 / D2. Read all five visibility
-     surfaces side by side and decide whether one expression genuinely covers them or whether CH-3's
-     unresolved half blocks. Attack D2's stored-deadline claim by trying to design the decline action
-     and the per-country window against alternative A4.
-   - **Challenger C — `backend`/`optimizer`, the mechanics.** Attack D4/D5.3 and CH-2/CH-10. Verify
-     the digest defect by reading `NewJobsDigestService.cs:90-142` and decide whether D5.3's expression
-     is correct **and** index-servable. Model the 4h-lead worst case with a small cleaner pool.
-2. **The author defends** each challenge in writing (rebut with evidence / concede + revise / escalate).
-3. **A lead adjudicates.** Three points are pre-flagged as candidates for a **blocking amendment**
-   rather than a defence:
-   - **CH-2** — raise the hold floor from `4 h` to `8 h` lead. *(Author: genuinely undecided; it costs
-     the perk almost nothing and removes the whole short-lead risk class, but it breaks the
-     one-number-two-uses property CH-7 defends. **This is the single decision I most want a challenger
-     to make for me.**)*
-   - **CH-3** — whether `CanBrowseOrderAsync`'s in-memory evaluation of the shared rule is acceptable or
-     must be restructured.
-   - **CH-10** — whether `proposed → accepted` may proceed on uncalibrated constants. *(Author
-     recommends: **yes**, conditional on both being named constants and a measurement ticket being
-     filed.)*
-4. **On acceptance, in the same change:** the `patterns-backend.md` section above is pasted in, the role
-   card drops its "proposed" banner, `agents/architecture/decisions/preferred-cleaner-dispatch.md` flips
-   from "tracking a proposed ADR" to "current shape", and the PM records the **`Q-PLUS-03` answer**
-   (*plus-only*) in `questions/open.md`.
+**The shape survived every attack, from three directions.** A stored **absolute deadline**; **no expiry
+actor**; **one rule** for "may this cleaner see/take this order"; **the hold delays assignment, never the
+appointment**. Challenger B attacked the lifecycle (reschedule, cancel-recreate, return-to-board) and
+**failed** — and named what they checked. Challenger A attacked the mechanism from the customer's side
+and could not make board-ordering (A1) work for a **paid** perk, because it is unfalsifiable as a
+promise. Challenger C confirmed Fact B independently and confirmed the predicate is sargable and
+translation-safe. **A5 (sweep-driven expiry) and A4 (read-time duration) stay dead.**
 
-**Not blocking acceptance:** the exact copy (T-0491 owns it) and the web wizard's missing picker
-(separate ticket).
+**Two safety claims under it did not survive, and both were headline claims.**
+1. *"An order stuck held is not expressible"* — **false as written** (CH-V1: fail-CLOSED on a null
+   beneficiary, reachable from `Order.cs:621`). Replaced by a property the code delivers (D2.5).
+2. *"At least 90% of every order's fill window is open to the whole board"* — **false for the second
+   seat** (CH-V4: every order carries a spare seat and the draft locked it *after* the perk was
+   delivered). Restated **per seat**, with the consumption term that makes it true.
+
+**And one fix was wrong in the direction it was meant to fix** (CH-Q2): D5.3's `max(...)` compared
+against a **future** instant. Rewritten disjunctively with an upper bound — which, per CH-Q5, makes the
+digest **cheaper than it is today** instead of the regression the draft conceded.
+
+### Key decisions recorded (the things a later reader must not re-litigate)
+
+| Decision | Ruling |
+|---|---|
+| Hold floor | **8 h**, as `2 * BookingPolicy.StandardLeadTimeHours` — **owner ruling**, settled |
+| The hold's scope | **First refusal on the order's FIRST seat.** Consumed by any assignment |
+| A hold with no beneficiary | **Impossible to write, harmless to read.** Both ends, not one |
+| Notify vs hold | **Notification on a wider predicate than the hold** (D4.1) — this is what makes the 8 h floor cheap and the copy true |
+| The digest | Carries **two** rules: the shared visibility conjunct **and** the local freshness disjunction. Not a contradiction; documented as such |
+| Freshness form | **Bounded disjunction.** `CASE`/`GREATEST`/`max(...)` is a hard reject |
+| Two evaluation forms | **Two members, one term list, one equivalence test against Postgres.** Not one shared lambda (A17) |
+| Index | **None. A partial index is a hard reject** (D5.5) |
+| Write-gate refusal | Inside the **existence** rule; the catalog rule is narrowed to *"never name the exclusivity"* |
+| Copy | **Corrective ships first (C0), independent of the mechanism.** Affirmative ships with C2 |
+
+### Conditions of acceptance — these bind the CONSUMER tickets, not the decision
+
+The PM owns the ticket file; this panel does not edit `backlog/tickets/**` or `questions/open.md`.
+**Three preconditions and two escalations, listed here for the PM to action:**
+
+1. **C0, the corrective copy wave, is filed as its own ticket with NO dependency on T-0515/T-0516 and
+   ships first.** Five live false statements are catalogued in §Copy, one of them (*"Within 1 hour"*) on
+   the screen the customer sees immediately after booking, in five languages, on both clients. This
+   platform has just finished removing one advertised-but-unimplemented perk; **no hold code ships while
+   these are live.** (ADR-0035's corrective-ships-first ruling, adopted here rather than waived.)
+2. **CH-Q8 — `StampWatermarkAsync`'s tenant trap is fixed before T-0515 lands.** Pre-existing, ticketed
+   separately, **not** in this ADR's scope — but D5.3's correctness rests on a watermark that advances,
+   and under multi-tenancy this one silently cannot, *after* the push has been enqueued.
+3. **The measurement ticket is filed before T-0515 starts**, naming its three queries (§Defense,
+   CH-10/CH-V10). A named measurement is worth more than a calibrated guess.
+
+**Escalations to the owner (neither blocks; both have interim rulings that ship):**
+
+- **`Q-PLUS-05` — does a failed card payment (`PastDue`, Stripe retrying) revoke Plus perks
+  immediately, or after the retries?** The platform documents a grace window
+  (`MembershipStatus.cs:18-19`) that no code implements, and D7 makes that predicate load-bearing for
+  **rejecting an entire booking**. Interim: the one live-membership predicate, unchanged (`PastDue` is
+  not active), **plus** correcting the enum comment in the same wave. A reversal changes one `WHERE`
+  clause in one place — which is the whole reason there is one predicate.
+- **`Q-PLUS-04` — should a lapsed member's recurring schedule keep materializing?** Surfaced by CH-P6:
+  the sweep checks membership nowhere today, so D8 creates an asymmetry in which the *smaller* perk is
+  revoked on lapse and the *larger* one is not. Named in D8.6; **not this ADR's to decide.**
+
+**Tickets for the PM to file (not preconditions):** the digest's overlap-filter variant of the watermark
+defect (pre-existing, same root cause as Fact B); the per-cleaner sweep redesign (CH-Q6/Q7, with the
+country-grouping shape recorded); whether surface 2/6's `{Pending, Confirmed}` should include `New`
+(CH-V6 — a product question this ADR deliberately does not answer); the web wizard's missing picker;
+and C3 (recurring carry-through, D8).
+
+### Landed with this acceptance
+
+- `agents/knowledge/patterns-backend.md` — the *"Bounded exclusivity on a pull board"* section, **in the
+  form that survived the panel**, not the drafted form (the diff is tabulated in §Roles affected).
+- `agents/knowledge/roles/preferred-cleaner-hold-resolver.md` — banner dropped, `Order` added as the
+  owner of the hold pair, the notify/hold split, six surfaces, the equivalence test.
+- `agents/architecture/decisions/preferred-cleaner-dispatch.md` — flipped from *"tracking a proposed
+  ADR"* to **current shape**.
+- The PM records the **`Q-PLUS-03` answer** (*plus-only*) plus `Q-PLUS-04`/`Q-PLUS-05` in
+  `questions/open.md`.
+
+**This ADR is now immutable. Any change to a decision above requires a superseding ADR.**
 
 ---
 
 ## What this panel did NOT examine (AC13 · Gate 0.5 leg 3)
 
-**Every claim in this ADR is a READ of source in the working tree, 2026-08-02. Nothing was run** — no
-build, no test, no query, no migration, no client launched.
+**Every claim in this ADR is a READ of source in the working tree, 2026-08-02.** No build, no test, no
+migration, no client launched, and **no database was queried**. **One exception, and it is the reason
+CH-Q1/Q2/Q5 exist:** challenger C built a throwaway harness *outside the repo* that wires the real
+`CleansiaDbContext` to the Npgsql provider against a dead connection string and prints
+`ToQueryString()` — so the SQL quoted in D5.3 and D5.5 is **the provider's actual output**, not a
+reconstruction. What that still does not give anyone is `EXPLAIN` output or row counts; **every
+statement about plan choice remains reasoning about emitted SQL.** This is why CH-Q6/Q7's redesign is
+filed rather than preconditioned.
+
+**Items below that the panel CLOSED are struck through in effect and noted inline.**
 
 - **Not measured, and this is the ADR's weakest evidence (CH-10):** current time-to-claim, the
   distribution of booking lead times, the number of active cleaners per country, and how often orders go
   unclaimed. **`PreferredHoldFraction = 0.10` and `PreferredHoldCeilingHours = 12` are reasoned, not
   calibrated.** DEV is live and could have been queried; it was not.
-- **Not verified as index-servable:** D5's predicate adds an `OR` over a new nullable column to queries
-  that already carry correlated subqueries over `AssignedEmployees` and `OrderStatusHistory`. **No
-  `EXPLAIN` was run.** Whether `PreferredHoldUntilUtc` needs an index (probably not — it is null for the
-  overwhelming majority of rows, which argues for a *partial* index if anything) is unanswered, and
-  D5.3's `max(...)` comparison inside the digest's per-cleaner loop is **the most likely performance
-  regression in this design**.
-- **Not examined:** the three clients' preferred-cleaner UI beyond the strings and the two call sites
-  the ticket cites (`ConfirmStep.swift:77,198`, `ConfirmStep.kt:362-363`, `PreferredCleanerPicker.kt`) —
-  **no client file was opened by this panel**; the partner apps' push-handling code (ADR-0025's loc-key
-  plumbing is assumed, not verified, to accept a new key without client changes beyond strings); the
-  admin order views (does an admin need to see a live hold? **undecided**); and the Stripe/payment path
-  (a `Pending` card order is on the board per `CreateAvailableOrdersSpec:24`, and the interaction of a
-  hold with a payment that never completes was **reasoned about but not traced**).
-- **Not decided (deliberately):** the copy's wording (T-0491), an admin view or override of holds, a
-  cleaner-side decline action (D5.4), whether a *second* preferred cleaner (a fallback list) is ever
-  wanted, and whether the hold should ever apply to an order that returns to the board after a cleaner
-  cancels (**named as an open edge: `OrderAssignmentCancelled` puts an order back on the board with a
-  long-past creation time — this ADR grants no new hold in that case, and did not examine whether it
-  should**).
-- **Read but not deeply verified:** `NewJobsDigestService`'s watermark semantics were read carefully
-  (Fact B / D5.3) but the claim that a suppressed order is *permanently* un-notified rests on
-  `:109-114` plus `StampWatermarkAsync:211-220`, not on an executed test. **TC-PREF-DIGEST-0 must be
-  written red-first to prove the defect exists before the fix is graded.**
+- ~~**Not verified as index-servable**~~ — **CLOSED by CH-Q9 → D5.5.** The emitted SQL shows the hold
+  term as a residual conjunct behind `IX_Orders_CurrentStatus_CleaningDateTime`; **no index, and a
+  partial index is a hard reject.** The draft's worry about `max(...)` in the per-cleaner loop was right
+  about the location and wrong about the cause — and the disjunctive rewrite makes that surface
+  **cheaper than today**. What remains open: no `EXPLAIN`, no row counts, and the sweep's per-cleaner
+  loop (CH-Q6/Q7) is priced by reasoning, not measurement.
+- **Client code: examined by challenger A, not by the author.** All five locales of every string named
+  in §Copy, both pickers, the booking-success timeline and the two membership perk blocks **were
+  opened** — that is where CH-P1/P2/P3/P5 came from. Still **not** examined: the partner apps'
+  push-handling code (ADR-0025's loc-key plumbing is assumed, not verified, to accept a new key without
+  client changes beyond strings); the admin order views (does an admin need to see a live hold?
+  **undecided**); and the Stripe/payment path — though the panel established the fact that matters:
+  **`Confirmed` does not imply a cleaner** (three writers, one of them the webhook at
+  `HandlePaymentNotification.cs:261`), which is what re-specified TC-PREF-HOLD-0's fixture. The
+  interaction of a hold with a payment that never completes was **reasoned about but not traced**.
+- **Not decided (deliberately):** the copy's exact wording (T-0491 — but its **sequencing and ten
+  constraints** are decided here), an admin view or override of holds, a cleaner-side decline action
+  (D5.4), whether a *second* preferred cleaner (a fallback list) is ever wanted, and whether surface 2/6
+  should show `New` orders at all (CH-V6 — a product question, filed).
+- ~~**The return-to-board open edge**~~ — **CLOSED by CH-V9.** It is **not reachable today**
+  (no reschedule path; the only un-assign re-assigns in the same handler), and the rule for any future
+  path that opens one is now written down in D5.4 rather than left to be discovered.
+- **Read but not deeply verified:** the claim that a suppressed order is *permanently* un-notified rests
+  on `NewJobsDigestService.cs:109-114` plus `:211-220`, not on an executed test — **TC-PREF-DIGEST-0a
+  must be written red-first**, and CH-Q3 showed the draft's single after-expiry test could not have
+  detected the defect at all. Related and **confirmed by challenger C by reading**: the same watermark
+  burns *any* order skipped for a time conflict as soon as the cleaner is notified about anything else —
+  which is *"narrow in logic and broad in incidence"*, i.e. close to always, not rare. Filed separately;
+  **this ADR does not claim to fix the class.**

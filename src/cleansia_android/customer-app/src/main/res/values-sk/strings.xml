@@ -858,6 +858,7 @@
     <string name="recurring_bookings_pause">Pozastaviť</string>
     <string name="recurring_bookings_resume">Obnoviť</string>
     <string name="recurring_bookings_delete">Zmazať</string>
+    <string name="recurring_bookings_edit">Upraviť</string>
     <string name="recurring_bookings_delete_dialog_title">Zmazať tento rozvrh?</string>
     <string name="recurring_bookings_delete_dialog_what_stops">Z tohto rozvrhu už nebudú automaticky vznikať žiadne nové upratovania.</string>
     <string name="recurring_bookings_delete_dialog_what_stays">Upratovania už zaradené v kalendári zostávajú potvrdené — ak ich nechcete, zrušte ich jednotlivo v Objednávkach.</string>
@@ -894,6 +895,11 @@
     <string name="recurring_create_submit">Vytvoriť rozvrh</string>
     <string name="recurring_create_success">Opakovaný rozvrh vytvorený.</string>
     <string name="recurring_create_failed">Rozvrh sa nepodarilo vytvoriť. Skúste to znova.</string>
+    <string name="recurring_edit_title">Upraviť opakované upratovanie</string>
+    <string name="recurring_edit_submit">Uložiť zmeny</string>
+    <string name="recurring_edit_success">Rozvrh bol aktualizovaný.</string>
+    <string name="recurring_edit_failed">Rozvrh sa nepodarilo upraviť. Skúste to znova.</string>
+    <string name="recurring_edit_load_failed">Tento rozvrh sa nepodarilo načítať. Vráťte sa späť a skúste to znova.</string>
     <string name="recurring_freq_weekly_label">Každý týždeň</string>
     <string name="recurring_freq_biweekly_label">Každé 2 týždne</string>
     <string name="recurring_freq_monthly_label">Každý mesiac</string>

@@ -613,6 +613,9 @@ fun CleansiaNavHost(
                 onCreateNew = {
                     navController.navigate(Routes.CreateRecurringBooking())
                 },
+                onEdit = { templateId ->
+                    navController.navigate(Routes.CreateRecurringBooking(templateId = templateId))
+                },
             )
         }
         composable<Routes.CreateRecurringBooking>(
@@ -629,10 +632,12 @@ fun CleansiaNavHost(
                     // success) doesn't have RecurringBookings on the back
                     // stack, so popBackStack(RecurringBookings) was a no-op
                     // and the user got stuck on the create screen. Navigate
-                    // forward + pop the create route so back from the list
-                    // doesn't loop into the wizard again.
+                    // forward + pop the form route so back from the list
+                    // doesn't loop into the wizard again; singleTop stops
+                    // Path C (entered FROM the list) stacking a second copy.
                     navController.navigate(Routes.RecurringBookings) {
                         popUpTo<Routes.CreateRecurringBooking> { inclusive = true }
+                        launchSingleTop = true
                     }
                 },
             )

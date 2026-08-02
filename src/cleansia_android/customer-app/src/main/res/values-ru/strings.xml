@@ -858,6 +858,7 @@
     <string name="recurring_bookings_pause">Приостановить</string>
     <string name="recurring_bookings_resume">Возобновить</string>
     <string name="recurring_bookings_delete">Удалить</string>
+    <string name="recurring_bookings_edit">Изменить</string>
     <string name="recurring_bookings_delete_dialog_title">Удалить это расписание?</string>
     <string name="recurring_bookings_delete_dialog_what_stops">Из этого расписания больше не будут автоматически создаваться новые уборки.</string>
     <string name="recurring_bookings_delete_dialog_what_stays">Уборки, уже в календаре, останутся — отмените их по одной в Заказах, если они больше не нужны.</string>
@@ -894,6 +895,11 @@
     <string name="recurring_create_submit">Создать расписание</string>
     <string name="recurring_create_success">Регулярное расписание создано.</string>
     <string name="recurring_create_failed">Не удалось создать расписание. Попробуйте снова.</string>
+    <string name="recurring_edit_title">Изменить регулярную уборку</string>
+    <string name="recurring_edit_submit">Сохранить изменения</string>
+    <string name="recurring_edit_success">Расписание обновлено.</string>
+    <string name="recurring_edit_failed">Не удалось обновить расписание. Попробуйте снова.</string>
+    <string name="recurring_edit_load_failed">Не удалось загрузить это расписание. Вернитесь назад и попробуйте снова.</string>
     <string name="recurring_freq_weekly_label">Каждую неделю</string>
     <string name="recurring_freq_biweekly_label">Каждые 2 недели</string>
     <string name="recurring_freq_monthly_label">Каждый месяц</string>

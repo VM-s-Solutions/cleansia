@@ -73,6 +73,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.features.addresses.AddressManagerSheet
+import cz.cleansia.customer.features.booking.localizedDescription
+import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.ui.state.ActionState
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.datetime.Clock
@@ -110,14 +112,17 @@ fun CreateRecurringScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val submitState by viewModel.submitState.collectAsStateWithLifecycle()
     val submitting = submitState is ActionState.Submitting
+    val isEditing = viewModel.isEditing
 
     var currentStep by remember { mutableIntStateOf(1) }
     var addressSheetOpen by remember { mutableStateOf(false) }
 
     // Default startsOn to "one week from today" once the form mounts so the
     // user doesn't see a blank field. They can edit via the calendar picker.
+    // Skipped when editing: the stored start date arrives asynchronously and a
+    // default written first would win the race and silently reschedule.
     LaunchedEffect(Unit) {
-        if (state.startsOnIso.isBlank()) {
+        if (!isEditing && state.startsOnIso.isBlank()) {
             val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
             val nextWeek = today.plus(7, DateTimeUnit.DAY)
             viewModel.setStartsOn(nextWeek.atStartOfDayIn(TimeZone.currentSystemDefault()).toString())
@@ -143,6 +148,7 @@ fun CreateRecurringScreen(
             WizardTopBar(
                 currentStep = currentStep,
                 isPathB = isPathB,
+                isEditing = isEditing,
                 onBack = {
                     if (currentStep > 1) currentStep-- else onBack()
                 },
@@ -153,6 +159,7 @@ fun CreateRecurringScreen(
                 currentStep = currentStep,
                 canAdvance = canAdvance,
                 submitting = submitting,
+                isEditing = isEditing,
                 onPrevious = { if (currentStep > 1) currentStep-- },
                 onNext = {
                     if (currentStep < TOTAL_STEPS) currentStep++ else viewModel.submit()
@@ -225,7 +232,7 @@ private const val TOTAL_STEPS = 3
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WizardTopBar(currentStep: Int, isPathB: Boolean, onBack: () -> Unit) {
+private fun WizardTopBar(currentStep: Int, isPathB: Boolean, isEditing: Boolean, onBack: () -> Unit) {
     val titleRes = when (currentStep) {
         1 -> R.string.recurring_create_step_when_title
         2 -> R.string.recurring_create_step_what_title
@@ -240,8 +247,11 @@ private fun WizardTopBar(currentStep: Int, isPathB: Boolean, onBack: () -> Unit)
                 )
                 Text(
                     text = stringResource(
-                        if (isPathB) R.string.recurring_create_title_from_order
-                        else R.string.recurring_create_title_blank,
+                        when {
+                            isEditing -> R.string.recurring_edit_title
+                            isPathB -> R.string.recurring_create_title_from_order
+                            else -> R.string.recurring_create_title_blank
+                        },
                     ),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -388,6 +398,7 @@ private fun WizardBottomBar(
     currentStep: Int,
     canAdvance: Boolean,
     submitting: Boolean,
+    isEditing: Boolean,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
 ) {
@@ -421,8 +432,11 @@ private fun WizardBottomBar(
         ) {
             Text(
                 text = stringResource(
-                    if (currentStep < TOTAL_STEPS) R.string.recurring_create_next
-                    else R.string.recurring_create_submit,
+                    when {
+                        currentStep < TOTAL_STEPS -> R.string.recurring_create_next
+                        isEditing -> R.string.recurring_edit_submit
+                        else -> R.string.recurring_create_submit
+                    },
                 ),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             )
@@ -972,16 +986,16 @@ private fun ServicesPackagesPicker(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             packages.forEach { pkg ->
-                val id = pkg.id ?: return@forEach
                 val includedNames = pkg.includedServices
-                    ?.mapNotNull { it.name?.takeIf { n -> n.isNotBlank() } }
+                    ?.map { localizedName(it.translations, it.name) }
+                    ?.filter { it.isNotBlank() }
                     ?.takeIf { it.isNotEmpty() }
                 PackageCard(
-                    title = pkg.name.orEmpty(),
-                    description = pkg.description,
+                    title = localizedName(pkg.translations, pkg.name),
+                    description = localizedDescription(pkg.translations, pkg.description),
                     includedServices = includedNames,
-                    selected = id in selectedPackageIds,
-                    onClick = { onTogglePackage(id) },
+                    selected = pkg.id in selectedPackageIds,
+                    onClick = { onTogglePackage(pkg.id) },
                 )
             }
         }
@@ -993,12 +1007,11 @@ private fun ServicesPackagesPicker(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             services.forEach { svc ->
-                val id = svc.id ?: return@forEach
                 ServiceCard(
-                    title = svc.name.orEmpty(),
-                    description = svc.description,
-                    selected = id in selectedServiceIds,
-                    onClick = { onToggleService(id) },
+                    title = localizedName(svc.translations, svc.name),
+                    description = localizedDescription(svc.translations, svc.description),
+                    selected = svc.id in selectedServiceIds,
+                    onClick = { onToggleService(svc.id) },
                 )
             }
         }

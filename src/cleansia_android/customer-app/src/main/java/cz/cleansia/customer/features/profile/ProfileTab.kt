@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,7 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -134,14 +134,8 @@ fun ProfileTab(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .windowInsetsPadding(WindowInsets.statusBars)
             .verticalScroll(rememberScrollState()),
     ) {
-        // Visual breathing room between the status bar and the hero gradient
-        // so the hero reads as a card on the page rather than abutting the
-        // system bar. Other tabs get this naturally via their headline padding.
-        Spacer(Modifier.height(12.dp))
-
         // 1. Hero + stats card (stats overlap the hero's bottom edge)
         Box {
             ProfileHero(
@@ -253,6 +247,10 @@ fun ProfileTab(
 // spare — so ru ellipsizes below ~376dp by design.
 private const val EditChipMaxWidthFraction = 0.45f
 
+// The gradient runs edge to edge under the status bar and the row starts this far below it, matching
+// iOS's `.padding(.top, 48 + topInset)` on the same hero.
+private val HeroContentTopPadding = 48.dp
+
 @Composable
 private fun ProfileHero(
     firstName: String,
@@ -265,12 +263,18 @@ private fun ProfileHero(
     onAvatarLoadSucceeded: () -> Unit = {},
 ) {
     val initials = "${firstName.firstOrNull() ?: ""}${lastName.firstOrNull() ?: ""}"
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .background(brush = Brush.verticalGradient(BrandGradients.blue().asList()))
-            .padding(start = Spacing.ML, end = Spacing.ML, top = Spacing.M, bottom = Spacing.XXL),
+            .padding(
+                start = Spacing.ML,
+                end = Spacing.ML,
+                top = statusBarTop + HeroContentTopPadding,
+                bottom = Spacing.XXL,
+            ),
     ) {
         // RowScope.weight only divides what is left AFTER unweighted children are measured, so an
         // unbounded chip starves the name column to nothing once the label is long (ru/uk). Capping
@@ -621,13 +625,13 @@ private fun DeleteAccountRow(onClick: () -> Unit) {
     }
 }
 
-@Preview(widthDp = 390, heightDp = 1100)
+@Preview(widthDp = 411, heightDp = 1100)
 @Composable
 private fun ProfileTabPreview() {
     CleansiaTheme { ProfileTab() }
 }
 
-@Preview(widthDp = 390)
+@Preview(widthDp = 411)
 @Composable
 private fun ProfileHeroPreview() {
     CleansiaTheme {

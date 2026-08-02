@@ -8,7 +8,6 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import cz.cleansia.core.ui.theme.CleansiaShapes
@@ -74,12 +73,14 @@ fun CleansiaTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colors.background.toArgb()
-            // Transparent navigation bar so the floating island bottom nav
-            // appears to float over the app background rather than sitting on
-            // a system-drawn surface. Edge-to-edge is already enabled on the
-            // activity; this just keeps the system from painting a coloured
-            // band under the pill.
+            // Both bars stay transparent so the system never paints over the
+            // page: the root Surface already fills the whole window with
+            // `background`, which is what a background-tinted status bar was
+            // reproducing, and the profile hero's gradient runs under the
+            // status bar the way iOS's does. targetSdk 35 ignores these two
+            // setters outright — setting them keeps API 30-34 identical rather
+            // than letting an opaque band clip the hero only on older devices.
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
             window.navigationBarColor = android.graphics.Color.TRANSPARENT
             val insetsController = WindowCompat.getInsetsController(window, view)
             insetsController.isAppearanceLightStatusBars = !darkTheme

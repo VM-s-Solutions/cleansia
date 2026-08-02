@@ -6,6 +6,8 @@ import cz.cleansia.partner.api.model.ContractStatus
 import cz.cleansia.partner.api.model.RegistrationCompletionStatus
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.partner.core.settings.AppSettingsRepository
+import cz.cleansia.partner.core.settings.LanguagePreference
 import cz.cleansia.partner.data.auth.AuthRepository
 import cz.cleansia.partner.data.profile.ProfileRepository
 import cz.cleansia.partner.navigation.NavRoute
@@ -113,10 +115,21 @@ class RegistrationLockViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val authRepository: AuthRepository,
     private val errorTranslator: ApiErrorTranslator,
+    private val appSettingsRepository: AppSettingsRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegistrationLockUiState())
     val uiState: StateFlow<RegistrationLockUiState> = _uiState.asStateFlow()
+
+    /**
+     * The lock screen is the only surface a cleaner sees between signing up and
+     * being approved, so it owns the display-language control for that window.
+     * Persists only — applying it to the running process is the caller's job,
+     * exactly as the intro and the profile picker do it.
+     */
+    fun setLanguage(language: LanguagePreference) {
+        viewModelScope.launch { appSettingsRepository.setLanguage(language) }
+    }
 
     init {
         // Invariant #2: init {} MUST use the cached/stale-checking path,

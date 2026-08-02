@@ -20,11 +20,12 @@ import org.junit.Test
 /**
  * The pre-auth intro's language chooser.
  *
- * It lives here, before signup, and not in the RegistrationLock chain, because
- * `RegisterViewModel` reads the language out of DataStore at the moment it calls
- * `register()` — by the time the lock chain renders, `RegisterEmployee` has
- * already stamped `PreferredLanguageCode` and queued the confirmation email, so
- * a choice made there would arrive too late for the only mail that matters.
+ * This is the only one of the two chooser surfaces that still reaches the
+ * confirmation email: `RegisterViewModel` reads the language out of DataStore
+ * at the moment it calls `register()`, so by the time the RegistrationLock
+ * chain renders its copy, `RegisterEmployee` has already stamped
+ * `PreferredLanguageCode` and queued the mail. The lock screen's chooser is a
+ * display preference only.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class OnboardingViewModelTest {

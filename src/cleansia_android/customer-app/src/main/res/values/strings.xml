@@ -874,6 +874,7 @@
     <string name="recurring_bookings_pause">Pause</string>
     <string name="recurring_bookings_resume">Resume</string>
     <string name="recurring_bookings_delete">Delete</string>
+    <string name="recurring_bookings_edit">Edit</string>
     <string name="recurring_bookings_delete_dialog_title">Delete this schedule?</string>
     <string name="recurring_bookings_delete_dialog_what_stops">No new cleanings will be auto-booked from this schedule.</string>
     <string name="recurring_bookings_delete_dialog_what_stays">Cleanings already on your calendar stay booked — cancel them individually from Orders if you no longer want them.</string>
@@ -910,6 +911,11 @@
     <string name="recurring_create_submit">Create schedule</string>
     <string name="recurring_create_success">Recurring schedule created.</string>
     <string name="recurring_create_failed">Couldn\'t create the schedule. Try again.</string>
+    <string name="recurring_edit_title">Edit recurring cleaning</string>
+    <string name="recurring_edit_submit">Save changes</string>
+    <string name="recurring_edit_success">Recurring schedule updated.</string>
+    <string name="recurring_edit_failed">Couldn\'t update the schedule. Try again.</string>
+    <string name="recurring_edit_load_failed">Couldn\'t load this schedule. Go back and try again.</string>
     <string name="recurring_freq_weekly_label">Every week</string>
     <string name="recurring_freq_biweekly_label">Every 2 weeks</string>
     <string name="recurring_freq_monthly_label">Every month</string>

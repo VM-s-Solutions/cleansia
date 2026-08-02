@@ -1562,7 +1562,8 @@
       "saved_address_not_found": "Pick a saved address for this schedule.",
       "no_services_or_packages": "Choose at least one service or package.",
       "starts_on_in_past": "The start date can't be in the past.",
-      "ends_on_before_start": "The end date must be after the start date."
+      "ends_on_before_start": "The end date must be after the start date.",
+      "membership_required": "Recurring cleanings are a Cleansia Plus benefit — subscribe to set one up."
     },
     "device": {
       "invalid_platform": "This device platform isn't supported.",

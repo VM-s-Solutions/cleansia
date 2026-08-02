@@ -4,19 +4,19 @@
     "applicationInsights": {
       "samplingSettings": {
         "isEnabled": true,
-        "excludedTypes": "Request;Exception"
+        "excludedTypes": "Exception",
+        "maxTelemetryItemsPerSecond": 5
       }
     },
     "logLevel": {
-      "default": "Information",
+      "default": "Warning",
       "Host.Results": "Information",
-      "Function": "Information",
-      "Host.Aggregator": "Trace"
+      "Function": "Information"
     }
   },
   "extensions": {
     "queues": {
-      "maxPollingInterval": "00:00:05",
+      "maxPollingInterval": "00:00:30",
       "visibilityTimeout": "00:00:30",
       "batchSize": 1,
       "maxDequeueCount": 5,

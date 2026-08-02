@@ -12,7 +12,18 @@ namespace Cleansia.Config.Database;
 
 public static class DbContextBindingExtensions
 {
-    public static IServiceCollection AddDbContextBindings(this IServiceCollection services, IConfiguration configuration, IHostEnvironment env)
+    /// <param name="eagerlyReloadNpgsqlTypeCatalog">
+    /// Opt in to the SYNCHRONOUS type-catalog probe below. Only the isolated Functions worker needs it
+    /// (see <see cref="TryEagerlyReloadTypeCatalog"/>); for an API host it is pure cold-start latency —
+    /// a blocking Postgres connect inside ConfigureServices, with Npgsql's 15s default timeout and no
+    /// retry, on a path where <see cref="NpgsqlTypeCatalogInitializer"/> already covers the same need
+    /// without blocking startup.
+    /// </param>
+    public static IServiceCollection AddDbContextBindings(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment env,
+        bool eagerlyReloadNpgsqlTypeCatalog = false)
     {
         services.AddSingleton<IDatabaseConnectionString, DatabaseConnectionString>();
         services.AddSingleton<IRegionConnectionStringResolver, RegionConnectionStringResolver>();
@@ -34,11 +45,18 @@ public static class DbContextBindingExtensions
         // citext/pg_trgm, leaving every citext column to read as the unknown type "-.-"
         // (InvalidCastException) for the life of the process. The hosted-service reload below is not
         // reliable in the isolated Functions worker (its IHostedService start races the first
-        // timer-trigger query), so eagerly seed the catalog HERE, synchronously, before any consumer can
-        // open a connection on this singleton data source. Best-effort: if the DB is unreachable at
-        // build time the catalog has not been cached yet either, and the hosted service / first
-        // connection picks it up post-migration.
-        TryEagerlyReloadTypeCatalog(dataSource);
+        // timer-trigger query), so THAT host eagerly seeds the catalog HERE, synchronously, before any
+        // consumer can open a connection on this singleton data source. Best-effort: if the DB is
+        // unreachable at build time the catalog has not been cached yet either, and the hosted service /
+        // first connection picks it up post-migration.
+        //
+        // Opt-in, because for an API host this is a blocking DB round-trip in ConfigureServices that buys
+        // nothing: an API host has no trigger racing IHostedService start, so NpgsqlTypeCatalogInitializer
+        // (registered two lines below, async + retrying + extension-aware) already covers it.
+        if (eagerlyReloadNpgsqlTypeCatalog)
+        {
+            TryEagerlyReloadTypeCatalog(dataSource);
+        }
 
         services.AddSingleton(dataSource);
         services.AddHostedService<NpgsqlTypeCatalogInitializer>();

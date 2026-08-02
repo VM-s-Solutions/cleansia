@@ -568,8 +568,10 @@ module apiAppServices 'modules/appService.bicep' = [
       appSettings: union(apiBaseSettings, fiscalSettings, host.needsStripe ? union(stripeSettings, { Stripe__WebhookSecret: kvRef(keyVaultUri, host.webhookSecretName) }) : {}, host.browserFacing ? corsOriginsAppSettings : {}, host.audience == 'customer' ? customerWebAuthSettings : {})
       corsAllowedOrigins: host.browserFacing ? browserCorsOrigins : []
       httpsOnly: true
-      // Prod (S1) keeps the hosts warm; dev (B2) keeps the cost posture — an idle host may unload.
-      alwaysOn: env == 'prod'
+      // Always On in EVERY stage. It costs nothing on a plan that is already paid for by the hour,
+      // and without it App Service unloads an idle dev host after ~20 minutes — so the first request
+      // of a demo pays a full cold start (white screen) rather than the deploy pipeline paying it.
+      alwaysOn: true
       stagingSlotEnabled: deploymentSlotsEnabled
       virtualNetworkSubnetId: privateNetworkingEnabled ? privateNetworking!.outputs.appSubnetId : ''
       tags: commonTags
@@ -670,7 +672,9 @@ module ssr 'modules/appService.bicep' = {
     }
     corsAllowedOrigins: []
     httpsOnly: true
-    alwaysOn: env == 'prod'
+    // Always On in every stage — same reasoning as the API hosts above, and it matters most here:
+    // this is the browser-facing site, so an unloaded dev SSR host is the white screen a visitor sees.
+    alwaysOn: true
     stagingSlotEnabled: deploymentSlotsEnabled
     virtualNetworkSubnetId: privateNetworkingEnabled ? privateNetworking!.outputs.appSubnetId : ''
     // The SSR host DOES expose /health: apps/cleansia.app/server.ts registers it on the Express app

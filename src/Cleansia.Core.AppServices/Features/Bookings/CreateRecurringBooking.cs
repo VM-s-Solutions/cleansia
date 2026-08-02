@@ -71,11 +71,25 @@ public class CreateRecurringBooking
     public class Handler(
         IRecurringBookingTemplateRepository templateRepository,
         ISavedAddressRepository savedAddressRepository,
+        IUserMembershipRepository userMembershipRepository,
         IUserSessionProvider userSessionProvider) : ICommandHandler<Command, RecurringBookingTemplateDto>
     {
         public async Task<BusinessResult<RecurringBookingTemplateDto>> Handle(Command command, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
+
+            // Recurring schedules are a paid Cleansia Plus perk, and CanManageRecurringBookings is
+            // held by every signed-in customer — without this the perk is free to anyone who calls
+            // the endpoint directly. The client-side gates are UX, not the control.
+            var membership = await userMembershipRepository
+                .GetActiveForUserNoTrackingAsync(userId, cancellationToken);
+            if (membership is null)
+            {
+                return BusinessResult.Failure<RecurringBookingTemplateDto>(new Error(
+                    nameof(userId),
+                    BusinessErrorMessage.RecurringTemplateMembershipRequired));
+            }
+
             var addresses = await savedAddressRepository.GetByUserAsync(userId, cancellationToken);
             var address = addresses.FirstOrDefault(a => a.Id == command.SavedAddressId);
             if (address?.Address == null)

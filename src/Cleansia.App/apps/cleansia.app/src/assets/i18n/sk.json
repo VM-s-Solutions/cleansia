@@ -1562,7 +1562,8 @@
       "saved_address_not_found": "Vyberte pre tento plán uloženú adresu.",
       "no_services_or_packages": "Vyberte aspoň jednu službu alebo balík.",
       "starts_on_in_past": "Dátum začiatku nemôže byť v minulosti.",
-      "ends_on_before_start": "Dátum ukončenia musí byť po dátume začiatku."
+      "ends_on_before_start": "Dátum ukončenia musí byť po dátume začiatku.",
+      "membership_required": "Opakované upratovania sú výhodou Cleansia Plus — na ich nastavenie si aktivujte predplatné."
     },
     "device": {
       "invalid_platform": "Táto platforma zariadenia nie je podporovaná.",

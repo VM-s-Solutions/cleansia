@@ -25,11 +25,14 @@ public class QuoteOrder
         DateTime? CleaningDate = null) : ICommand<Response>;
 
     /// <summary>
-    /// Quote response. <see cref="TotalPrice"/> is the RAW subtotal (matches
-    /// <c>IOrderPricingCalculator.CalculateAsync</c>) and is what
+    /// Quote response. <see cref="TotalPrice"/> is the undiscounted total INCLUDING any express
+    /// surcharge (exactly <c>IOrderPricingCalculator.CalculateAsync</c>'s TotalPrice) and is what
     /// <c>CreateOrder.PriceMatchesAsync</c> validates against — clients must
     /// submit this value unchanged. <see cref="FinalPriceAfterDiscount"/> is the
-    /// display price after the best-of-three (tier vs membership) discount.
+    /// display price after the best-of-three (tier vs membership) discount, computed the way
+    /// <c>OrderFactory</c> persists it: discount off the pre-surcharge subtotal, surcharge on top.
+    /// <see cref="OriginalSubtotal"/> is that price plus the discount, so it always equals the
+    /// <c>OrderItem.OriginalSubtotal</c> the order detail page will show for the same booking.
     /// Promo isn't included here (entered at checkout, applied at create-time).
     ///
     /// <see cref="ExtrasSubtotal"/>, <see cref="ExpressSurchargeApplied"/>,
@@ -105,7 +108,13 @@ public class QuoteOrder
                 command.CleaningDate,
                 cancellationToken);
 
-            var subtotal = result.TotalPrice;
+            // Two different bases, deliberately. The gross (surcharge included) is what the client
+            // must resubmit — CreateOrder.PriceMatchesAsync compares it against the same calculator
+            // call. The discount is resolved on the RAW pre-surcharge subtotal because that is what
+            // OrderFactory persists; discounting the gross yields the same final charge but a bigger
+            // itemised saving than the receipt (and the lifetime-savings stat) will ever show.
+            var grossSubtotal = result.TotalPrice;
+            var rawSubtotal = grossSubtotal - result.ExpressSurchargeAmount;
             var userId = userSessionProvider.GetUserId();
 
             // Anonymous quote (guest checkout) — no discount preview possible.
@@ -120,7 +129,7 @@ public class QuoteOrder
             if (!string.IsNullOrEmpty(userId))
             {
                 var tierResult = await loyaltyService.ResolveTierDiscountForOrderAsync(
-                    userId, subtotal, cancellationToken);
+                    userId, rawSubtotal, cancellationToken);
                 tierDiscount = tierResult.DiscountAmount > 0m ? tierResult.DiscountAmount : 0m;
                 if (tierResult.TierAtPurchase.HasValue)
                 {
@@ -133,7 +142,7 @@ public class QuoteOrder
                     .GetActiveForUserAsync(userId, cancellationToken);
                 if (activeMembership != null)
                 {
-                    membershipDiscount = subtotal
+                    membershipDiscount = rawSubtotal
                         * (activeMembership.MembershipPlan.DiscountPercentage / 100m);
                 }
             }
@@ -143,7 +152,7 @@ public class QuoteOrder
             // "no promo wins" branch here. CreateOrder.Handler re-runs the
             // same math with promo included at submit time.
             var resolution = OrderFactory.ResolveLoy003Discount(
-                membershipDiscount, tierDiscount, promoDiscount: 0m, rawSubtotal: subtotal);
+                membershipDiscount, tierDiscount, promoDiscount: 0m, rawSubtotal: rawSubtotal);
 
             // Pick the enum that best describes what's actually showing.
             // Combined = both Plus and tier non-zero (after capping).
@@ -156,10 +165,13 @@ public class QuoteOrder
                 _ => AppliedDiscountSource.None,
             };
 
+            var finalPrice = BookingPolicy.ApplyExpressSurcharge(
+                rawSubtotal - resolution.TotalAmount, result.ExpressSurchargeApplied);
+
             return BusinessResult.Success(new Response(
-                TotalPrice: subtotal,
-                FinalPriceAfterDiscount: subtotal - resolution.TotalAmount,
-                OriginalSubtotal: subtotal,
+                TotalPrice: grossSubtotal,
+                FinalPriceAfterDiscount: finalPrice,
+                OriginalSubtotal: finalPrice + resolution.TotalAmount,
                 AppliedDiscountSource: source,
                 TierDiscountAmount: resolution.TierAmount > 0m ? resolution.TierAmount : null,
                 MembershipDiscountAmount: resolution.MembershipAmount > 0m ? resolution.MembershipAmount : null,

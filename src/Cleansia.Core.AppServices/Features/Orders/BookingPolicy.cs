@@ -78,6 +78,15 @@ public static class BookingPolicy
     }
 
     /// <summary>
+    /// Gross up an already-discounted subtotal by the express surcharge. Discount applies to the raw
+    /// subtotal and the surcharge goes on top of the discounted price — the ONE ordering, shared by
+    /// <c>OrderFactory</c> (what gets persisted) and <c>QuoteOrder</c> (what the wizard shows), so the
+    /// quoted saving and the receipted saving cannot drift apart.
+    /// </summary>
+    public static decimal ApplyExpressSurcharge(decimal discountedSubtotal, bool surchargeApplies)
+        => surchargeApplies ? discountedSubtotal * (1 + ExpressSurchargeRate) : discountedSubtotal;
+
+    /// <summary>
     /// Compute the cancellation fee rate (0.0–1.0) for a given cancellation time.
     ///
     /// Acceptance-aware: if no cleaner has accepted the order yet, cancellation

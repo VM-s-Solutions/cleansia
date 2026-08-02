@@ -321,6 +321,23 @@ raw components one-off; never duplicate a `:core` component.
 > `cleansia.cz` anywhere in the iOS tree (Swift, string catalog or plist) is a defect, and
 > `ConsentCatalogTests` pins the markup + the no-literal-domain rule across both apps × five locales.
 
+> **A `Row` of fixed-count labels — truncating needs `weight`, not just `maxLines` (T-0479).** Compose
+> measures each **unweighted** `Row` child against whatever its earlier siblings left, so the last slot
+> of a bottom bar gets the remainder — which is nothing, once three Cyrillic labels and a 72dp FAB hole
+> have been paid for. Adding `maxLines = 1` on its own therefore upgrades a visible two-line wrap into
+> an **invisible tab**: the last column is measured to ~0dp and its icon clips with it. The fix is
+> always the pair — `Modifier.weight(1f)` on every slot (equal budgets) **plus** `maxLines = 1` +
+> `overflow = TextOverflow.Ellipsis` + `textAlign = TextAlign.Center` (an ellipsized `Text` fills its
+> whole constraint, so a `Start`-aligned label drifts left of its centred icon). Budget the result
+> against the **narrowest** width × the **longest** locale before calling it done, and remember the
+> slot's own horizontal padding is spent out of that budget: at 320dp the customer pill gives each slot
+> 50dp, where 8dp-per-side padding truncated even English ("Ho…") and 4dp does not. Visual truncation
+> costs nothing in accessibility — Compose hands the semantics tree the string it was given, so TalkBack
+> still reads the whole label — but a Kotlin-side `label.take(n)` would truncate the spoken label too and
+> is never the fix. `BottomNavLabelTruncationTest` (one per app) pins the pair. **iOS does not inherit
+> this**: `.tabItem` is UIKit-rendered and ignores the SwiftUI text modifiers, which is why T-0480 is a
+> separate ticket rather than a port.
+
 ## Navigation — typed routes
 
 `navigation/Routes.kt` defines `@Serializable data object`/`data class` routes; args are constructor

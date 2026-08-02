@@ -86,8 +86,6 @@ public class UpdateEmployee
             RuleFor(c => c.Phone)
                 .ValidatePhoneNumber();
 
-            RuleFor(c => c.Email).ValidateUserEmail();
-
             RuleFor(c => c.PassportId)
                 .ValidatePassportId();
 
@@ -201,7 +199,6 @@ public class UpdateEmployee
         string? State,
         string NationalityId,
         string Phone,
-        string Email,
         string PassportId,
         EmployeeEntityType EntityType,
         string RegistrationNumber,
@@ -218,12 +215,13 @@ public class UpdateEmployee
 
     public record Response(string EmployeeId);
 
-    internal class Handler(
+    public class Handler(
         IEmployeeRepository employeeRepository,
         IEmployeeDocumentRepository employeeDocumentRepository,
         IUserSessionProvider userSessionProvider,
         IBlobContainerClientFactory clientFactory,
-        IAddressGeocoder addressGeocoder) : ICommandHandler<Command, Response>
+        IAddressGeocoder addressGeocoder,
+        IConsentService consentService) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -236,7 +234,12 @@ public class UpdateEmployee
 
             UpdateEmployeeDetails(employee!, command, address, availability);
 
-            return BusinessResult.Success(new Response(employee!.Id));
+            // The validator only gates on Consent == true; GDPR Art. 7(1) requires us to be able to
+            // DEMONSTRATE the consent, so the grant is persisted on the same unit of work as the
+            // profile it belongs to. Re-saving an already-consented profile is a no-op.
+            await consentService.TryGrantAsync(employee!.UserId, ConsentType.DataProcessing, cancellationToken);
+
+            return BusinessResult.Success(new Response(employee.Id));
         }
 
         private static Address CreateOrUpdateAddress(Employee employee, Command command)

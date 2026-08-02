@@ -89,6 +89,36 @@ $font-heading: 'Poppins', sans-serif;
     }
   }
 
+  &__notice {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+
+    i {
+      color: #b45309;
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+  }
+
+  &__notice-text {
+    font-size: 0.9rem;
+    color: #78350f;
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  &__meta {
+    font-size: 0.85rem;
+    color: var(--cl-text-secondary);
+    margin: 0 0 1.25rem;
+  }
+
   &__section {
     background: var(--surface-card);
     border: 1px solid var(--surface-border);
@@ -148,6 +178,15 @@ $font-heading: 'Poppins', sans-serif;
 
     &__hero-wave svg path {
       fill: var(--surface-ground);
+    }
+
+    &__notice {
+      background: rgba(180, 83, 9, 0.12);
+      border-color: rgba(252, 211, 77, 0.35);
+    }
+
+    &__notice-text {
+      color: #fde68a;
     }
   }
 }

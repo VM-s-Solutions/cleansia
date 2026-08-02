@@ -190,6 +190,23 @@ errors come from `ErrorPipe`; API errors from `SnackbarService.showApiError`.
 `lib.routes.ts` exports a `Route[]`, list + `create` + `:id/edit`, using `data: { mode, title }` read
 in the component via `route.snapshot.data`.
 
+## Customer SSR (`cleansia.app` only) — two traps that both render the wrong page with a 200
+
+`apps/cleansia.app/server.ts` is a hand-written Express host, and the render catch-all is mounted
+**path-lessly** (`app.use((req, res, next) => …)`). A path pattern — `app.use('{*path}', …)` — matches
+the same requests but makes Express strip the matched segment from `req.url`, so the engine renders
+`/` for every deep link and the landing micro-cache serves that home page to every cookie-less GET of
+any URL. It answers 200, and a browser hides it by re-routing during hydration, so only a `curl` of a
+deep link shows it. Guarded by `apps/cleansia.app/src/app/ssr/server-request-path.spec.ts`.
+
+`RenderMode.Prerender` in `app.routes.server.ts` needs the builder's `outputMode` option, which
+`project.json` does not set — without it `prerendered-routes.json` is emitted empty, the engine finds
+no document for the route and returns nothing, and Express answers `Cannot GET /<route>`. Use
+`RenderMode.Server` for any route that must be server-rendered until `outputMode` is deliberately
+adopted. Verify a new server-rendered route by building and curling it, never by opening a browser:
+`npm run build:cleansia-customer && (cd dist/apps/cleansia.app && PORT=4400 node server/server.mjs)`,
+then check the `<title>` and body text of the response.
+
 ## Selector-driven detail (master select → dependent load)
 
 When a screen is "pick X in a `cleansia-select`, load the data for X" (e.g. partner `period-pay`:
@@ -206,6 +223,15 @@ the component, every subscription lives in the facade.
 Keys live in `apps/<app>/src/assets/i18n/{en,cs,sk,uk,ru}.json`, deeply namespaced
 (`pages.company_management.columns.legal_name`). Use `TranslatePipe` in templates,
 `TranslateService.instant` in TS.
+
+### Owner-blankable copy — an empty value hides its own block
+
+For a line only the owner can supply or retire (a publication date, a "pending review" banner), give
+it its own key with `""` as the shipped value and render it under `@if ('page.key' | translate; as
+value)`. ngx-translate only falls back for an **undefined** value, so `""` passes through as falsy and
+the block disappears — the owner turns the line on or off by editing five JSON values, with no code
+change and no boolean flag in the component. Used by `legal-pages` for `last_updated_date` and
+`review_notice`.
 
 ### Error-contract → i18n: the one canonical path is the interceptor `api.*` namespace
 
@@ -288,6 +314,11 @@ Two things that bite in practice: you **cannot** pre-add the field ahead of a re
 undefined` in a literal fails today's excess-property check, `TS2353`), and a lambda-parameter
 default cannot hold the statements — extract a module-level factory (`const createEmptyPhoto =
 (): BlobFileDto => { … }`).
+
+**Removal is the same rule, mirrored.** When the backend *drops* a field, a literal stops compiling
+against the still-stale client (`TS2345`, "property X is missing") — construct-then-assign simply
+omits it and compiles against both the current and the post-regen client. This is what lets a
+contract-narrowing fix land in one change instead of being blocked on the owner's regen.
 
 When a ticket carries `manual_step: nswag-regen`, sweep the call sites into this form **before** the
 owner regenerates; that work needs no regenerated client and unblocks the regen.

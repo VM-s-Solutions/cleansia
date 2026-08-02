@@ -69,6 +69,15 @@ internal fun CleaningDetailsCard(order: OrderDetailDto) {
             },
         )
 
+        val actualMinutes = order.actualCompletionTime ?: 0
+        if (actualMinutes > 0) {
+            Spacer(Modifier.height(6.dp))
+            InfoRow(
+                label = stringResource(R.string.order_detail_actual_time),
+                value = stringResource(R.string.order_detail_duration_minutes, actualMinutes),
+            )
+        }
+
         // Authoritative completion timestamp — only present on terminal
         // Completed orders. Reads order.completedAt directly (backend's
         // dedicated DB column) instead of inferring from statusHistory.
@@ -77,6 +86,21 @@ internal fun CleaningDetailsCard(order: OrderDetailDto) {
             InfoRow(
                 label = stringResource(R.string.order_detail_completed_at),
                 value = cz.cleansia.core.format.formatOrderDateTime(order.completedAt),
+            )
+        }
+
+        order.completionNotes?.takeIf { it.isNotBlank() }?.let { notes ->
+            Spacer(Modifier.height(10.dp))
+            Text(
+                stringResource(R.string.order_detail_completion_notes),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = notes,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
 

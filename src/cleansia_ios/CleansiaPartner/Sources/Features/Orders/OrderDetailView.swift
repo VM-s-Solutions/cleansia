@@ -64,6 +64,8 @@ struct OrderDetailView: View {
     private func loadedShell(_ order: OrderDetail) -> some View {
         SnapSheet(anchor: $snapAnchor) {
             mapBackdrop(order)
+        } ornament: {
+            MascotPuck(OrderDetailMascotArt.art(for: order.status))
         } content: {
             OrderDetailContent(
                 order: order,

@@ -4,11 +4,14 @@ import SwiftUI
 struct PropertyStepper: View {
     let label: String
     let value: Int
+    /// Greys the decrement once the floor is reached, so a tap that cannot move
+    /// the number never looks like one that can (Android's `Stepper`).
+    var minimum: Int?
     let onChange: (Int) -> Void
 
     var body: some View {
         HStack(spacing: 0) {
-            stepButton(systemImage: "minus") { onChange(value - 1) }
+            stepButton(systemImage: "minus", enabled: minimum.map { value > $0 } ?? true) { onChange(value - 1) }
             // Android CompactCounter parity: the counter label keeps its
             // intrinsic width so long locales (RU "1 комнат") never break
             // mid-word — the flexible row label absorbs the squeeze instead.
@@ -18,20 +21,21 @@ struct PropertyStepper: View {
                 .lineLimit(1)
                 .fixedSize()
                 .padding(.horizontal, Spacing.xxs)
-            stepButton(systemImage: "plus") { onChange(value + 1) }
+            stepButton(systemImage: "plus", enabled: true) { onChange(value + 1) }
         }
         .background(CleansiaColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.pill))
     }
 
-    private func stepButton(systemImage: String, action: @escaping () -> Void) -> some View {
+    private func stepButton(systemImage: String, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 12, weight: .bold))
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(enabled ? CleansiaColors.primary : CleansiaColors.onSurfaceVariant.opacity(0.4))
                 .frame(width: 28, height: 28)
         }
         .buttonStyle(.plain)
+        .disabled(!enabled)
     }
 }
 

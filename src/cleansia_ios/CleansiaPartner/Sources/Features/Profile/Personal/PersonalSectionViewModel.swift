@@ -84,13 +84,13 @@ final class PersonalSectionViewModel: ViewModel {
         }
 
         action = .submitting
+        // No email: the command has no field for it. `form.email` is loaded for display only.
         let command = UpdatePersonalInfoCommand(
             employeeId: form.employeeId,
             firstName: form.firstName.trimmed,
             lastName: form.lastName.trimmed,
             birthDate: OpenAPIDateWithoutTime(wrappedDate: form.birthDate),
-            phone: form.phone.trimmedOrNil,
-            email: form.email.trimmedOrNil
+            phone: form.phone.trimmedOrNil
         )
         switch await client.updatePersonalInfo(command) {
         case .success:

@@ -50,6 +50,29 @@ extension CleanOrderAttributes.ContentState {
         )
     }
 
+    /// Everything the card draws, resolved from this content-state. The one place a wire payload becomes a
+    /// presentation, so the widget target holds no mapping of its own.
+    func cardModel(now: Date = Date()) -> LiveActivityCardModel {
+        let card = LiveActivityCard.forStatus(status)
+        return LiveActivityCardModel(
+            card: card,
+            orderNumber: orderNumber,
+            finish: etaWindow.countdownEnd,
+            liveRange: card.showsFinishTime ? liveRange(now: now) : nil
+        )
+    }
+
+    private func liveRange(now: Date) -> ClosedRange<Date>? {
+        guard case let .countdown(range) = LiveActivityEta.presentation(
+            window: etaWindow,
+            terminalLabel: nil,
+            now: now
+        ) else {
+            return nil
+        }
+        return range
+    }
+
     /// The final state an ended activity is left showing. The phase window is cleared because a carried
     /// over one keeps the card timing a clean that is already over — and because the widget's terminal
     /// branch must be reached by the STATUS, not by whatever the last in-service push happened to say.

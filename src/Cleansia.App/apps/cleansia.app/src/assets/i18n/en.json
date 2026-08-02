@@ -174,7 +174,7 @@
       "success": "Account created! Please check your email to confirm.",
       "error": "Registration failed. Please try again.",
       "terms_agreement": "I agree to the terms",
-      "terms_and_conditions": "I agree to the <a href='/gdpr'>Terms of Service and Privacy Policy</a>",
+      "terms_and_conditions": "I agree to the <a href='/terms'>Terms of Service</a> and the <a href='/privacy'>Privacy Policy</a>",
       "validation": {
         "password_lowercase": "At least one lowercase letter",
         "password_uppercase": "At least one uppercase letter",
@@ -1088,7 +1088,7 @@
       "subscribe_cta": "Subscribe — checkout via Stripe",
       "subscribe_footnote": "Cancel anytime. Your benefits stay active until the end of the paid period.",
       "benefit_discount_title": "Member discount on every booking",
-      "benefit_discount_body": "A flat percentage off every cleaning, on top of the usual prices.",
+      "benefit_discount_body": "A flat percentage off every cleaning. Combined with your loyalty tier it is capped at 12%.",
       "benefit_cancel_title": "Wider free cancellation window",
       "benefit_cancel_body": "More time to change your plans without paying a fee.",
       "benefit_express_title": "Express upgrade",
@@ -1097,7 +1097,7 @@
       "benefit_favorite_body": "Pick a cleaner you've worked with before — they'll be prioritized when matching.",
       "renews_on": "Renews on {{date}}",
       "cancelled_until": "Active until {{date}} — won't renew",
-      "perk_discount": "{{percent}}% off every cleaning",
+      "perk_discount": "{{percent}}% member discount",
       "perk_cancel_window": "{{hours}}h free cancellation window",
       "perk_express": "Express upgrade benefits",
       "cancel_action": "Cancel membership",
@@ -1122,8 +1122,8 @@
       "hero_trial_price": "0 Kč / first {{days}} days",
       "hero_then_price": "then {{price}} / month",
       "hero_then_price_year": "then {{price}} / year",
-      "social_proof_headline": "Members save ~80 Kč per cleaning",
-      "social_proof_sub": "Across all your bookings, on top of any other discount",
+      "social_proof_headline": "How the member discount works",
+      "social_proof_sub": "Plus and your loyalty tier add up to a combined 12% maximum. Promo codes don't stack — the larger discount applies.",
       "perks_section_title": "What you get",
       "cta_start_trial": "Start free trial",
       "cta_subscribe": "Get Cleansia Plus",
@@ -1379,8 +1379,10 @@
   },
   "terms_page": {
     "title": "Terms of Service",
-    "last_updated": "Last updated",
+    "last_updated": "Last updated: {{date}}",
+    "last_updated_date": "",
     "intro": "Please read these terms of service carefully before using our services.",
+    "review_notice": "Draft — this wording has not yet been through legal review and is not the final, binding version.",
     "section1_title": "1. Acceptance of Terms",
     "section1_text": "By accessing and using Cleansia's services, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.",
     "section2_title": "2. Services Description",
@@ -1396,8 +1398,10 @@
   },
   "privacy_page": {
     "title": "Privacy Policy",
-    "last_updated": "Last updated",
+    "last_updated": "Last updated: {{date}}",
+    "last_updated_date": "",
     "intro": "Your privacy is important to us. This policy explains how we collect, use, and protect your personal data.",
+    "review_notice": "Draft — this wording has not yet been through legal review and is not the final, binding version.",
     "section1_title": "1. Data We Collect",
     "section1_text": "We collect personal information you provide when placing orders, creating an account, or contacting us. This includes your name, email address, phone number, and address.",
     "section2_title": "2. How We Use Your Data",
@@ -1440,6 +1444,9 @@
       "not_existing_email": "We couldn't find an account with this email.",
       "existing_phone_number": "This phone number is already in use.",
       "not_found": "We couldn't find that account."
+    },
+    "language": {
+      "not_supported": "That language isn't supported."
     },
     "order": {
       "cleaning_date": {
@@ -1562,7 +1569,8 @@
       "saved_address_not_found": "Pick a saved address for this schedule.",
       "no_services_or_packages": "Choose at least one service or package.",
       "starts_on_in_past": "The start date can't be in the past.",
-      "ends_on_before_start": "The end date must be after the start date."
+      "ends_on_before_start": "The end date must be after the start date.",
+      "membership_required": "Recurring cleanings are a Cleansia Plus benefit — subscribe to set one up."
     },
     "device": {
       "invalid_platform": "This device platform isn't supported.",

@@ -227,6 +227,7 @@
     <string name="orders_payment_failed">Failed</string>
     <string name="orders_payment_refunded">Refunded</string>
     <string name="orders_payment_disputed">Disputed</string>
+    <string name="orders_payment_partially_refunded">Partially refunded</string>
     <string name="orders_filter_all">All</string>
     <string name="orders_filter_upcoming">Upcoming</string>
     <string name="orders_filter_completed">Completed</string>
@@ -295,6 +296,13 @@
     <string name="order_detail_services_header">Services</string>
     <string name="order_detail_packages_header">Packages</string>
     <string name="order_detail_cleaner_fallback">Cleansia cleaner</string>
+    <string name="order_detail_subtotal">Subtotal</string>
+    <string name="order_detail_payment_method">Payment method</string>
+    <string name="order_detail_payment_status">Payment</string>
+    <string name="order_detail_completion_notes">Cleaner\'s notes</string>
+    <string name="order_detail_map_unavailable">Map isn\'t available for this order</string>
+    <string name="order_detail_show_map">Show the map</string>
+    <string name="order_detail_show_details">Show order details</string>
 
     <!-- Order cancel (Wave 2 Phase 2) -->
     <string name="order_action_cancel">Cancel order</string>
@@ -376,7 +384,6 @@
     <string name="profile_row_notifications">Notifications</string>
     <string name="profile_row_security">Security</string>
     <string name="profile_row_help">Help &amp; support</string>
-    <string name="profile_row_privacy">Privacy &amp; data</string>
     <string name="profile_logout">Log out</string>
     <string name="profile_logout_dialog_title">Log out?</string>
     <string name="profile_logout_dialog_message">You\'ll be signed out of this device. Your bookings and rewards stay on your account — just sign in again to pick up where you left off.</string>
@@ -801,8 +808,8 @@
     <string name="membership_hero_trial_price">0 Kč / first %1$d days</string>
     <string name="membership_hero_then_price">then %1$s / month</string>
     <string name="membership_hero_then_price_year">then %1$s / year</string>
-    <string name="membership_social_proof_headline">Members save ~80 Kč per cleaning</string>
-    <string name="membership_social_proof_sub">Across all your bookings, on top of any other discount</string>
+    <string name="membership_social_proof_headline">How the member discount works</string>
+    <string name="membership_social_proof_sub" formatted="false">Plus and your loyalty tier add up to a combined 12% maximum. Promo codes don\'t stack — the larger discount applies.</string>
     <string name="membership_perks_section_title">What you get</string>
     <string name="membership_cta_start_trial">Start free trial</string>
     <string name="membership_cta_subscribe">Get Cleansia Plus</string>
@@ -831,10 +838,16 @@
     <string name="membership_perk_recurring_desc">Set it once — every other Tuesday at 10am, automatically.</string>
     <string name="membership_perk_cancellation_title">Free cancellation</string>
     <string name="membership_perk_cancellation_desc">Cancel up to 4 hours before your cleaning, no fees.</string>
-    <string name="membership_perk_discount_title" formatted="false">5% off every cleaning</string>
-    <string name="membership_perk_discount_desc">Discount applies on top of your loyalty tier.</string>
+    <string name="membership_perk_discount_title" formatted="false">5% member discount</string>
+    <string name="membership_perk_discount_desc" formatted="false">Off every cleaning. Combined with your loyalty tier it is capped at 12%.</string>
     <string name="membership_perk_express_title">Free express upgrade</string>
     <string name="membership_perk_express_desc">One free same-day booking per month, no surcharge.</string>
+
+    <!-- Perk pills on the active management card. No express pill: nothing in pricing reads
+         AllowsExpressUpgrade, so a member pays the standard express surcharge. -->
+    <string name="membership_perk_pill_discount">%1$d%% off</string>
+    <string name="membership_perk_pill_cancellation">%1$dh free cancel</string>
+    <string name="membership_perk_pill_recurring">Recurring</string>
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
@@ -874,6 +887,7 @@
     <string name="recurring_bookings_pause">Pause</string>
     <string name="recurring_bookings_resume">Resume</string>
     <string name="recurring_bookings_delete">Delete</string>
+    <string name="recurring_bookings_edit">Edit</string>
     <string name="recurring_bookings_delete_dialog_title">Delete this schedule?</string>
     <string name="recurring_bookings_delete_dialog_what_stops">No new cleanings will be auto-booked from this schedule.</string>
     <string name="recurring_bookings_delete_dialog_what_stays">Cleanings already on your calendar stay booked — cancel them individually from Orders if you no longer want them.</string>
@@ -910,6 +924,11 @@
     <string name="recurring_create_submit">Create schedule</string>
     <string name="recurring_create_success">Recurring schedule created.</string>
     <string name="recurring_create_failed">Couldn\'t create the schedule. Try again.</string>
+    <string name="recurring_edit_title">Edit recurring cleaning</string>
+    <string name="recurring_edit_submit">Save changes</string>
+    <string name="recurring_edit_success">Recurring schedule updated.</string>
+    <string name="recurring_edit_failed">Couldn\'t update the schedule. Try again.</string>
+    <string name="recurring_edit_load_failed">Couldn\'t load this schedule. Go back and try again.</string>
     <string name="recurring_freq_weekly_label">Every week</string>
     <string name="recurring_freq_biweekly_label">Every 2 weeks</string>
     <string name="recurring_freq_monthly_label">Every month</string>

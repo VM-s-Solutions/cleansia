@@ -155,6 +155,10 @@ private struct ActiveCard: View {
         membership.cancelRequested ? MembershipPalette.endingAccent : MembershipPalette.premiumGold
     }
 
+    private var perks: [MembershipPerk] {
+        MembershipPerks.resolve(membership)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
             HStack(alignment: .top, spacing: Spacing.xs) {
@@ -182,6 +186,15 @@ private struct ActiveCard: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 64, height: 64)
+            }
+
+            if !perks.isEmpty {
+                ChipFlow(spacing: Spacing.xs) {
+                    ForEach(perks) { perk in
+                        PerkPill(perk: perk, accent: accent)
+                    }
+                }
+                Divider().background(CleansiaColors.outlineVariant)
             }
 
             if let periodEnd = membership.currentPeriodEnd {
@@ -222,3 +235,63 @@ private struct ActiveCard: View {
         )
     }
 }
+
+private struct PerkPill: View {
+    let perk: MembershipPerk
+    let accent: Color
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: perk.systemImage)
+                .font(.system(size: 12))
+                .foregroundColor(accent)
+            Text(perk.label)
+                .font(CleansiaTypography.labelMedium)
+                .foregroundColor(CleansiaColors.onSurface)
+        }
+        .padding(.horizontal, Spacing.s)
+        .padding(.vertical, 6)
+        .background(accent.opacity(0.10), in: Capsule())
+    }
+}
+
+#if DEBUG
+    struct MembershipActiveCard_Previews: PreviewProvider {
+        static var previews: some View {
+            Group {
+                ActiveCard(
+                    membership: sample(cancelRequested: false),
+                    cancelEnabled: true,
+                    switchSavings: 15,
+                    onCancel: {},
+                    onSwitch: {}
+                )
+                .previewDisplayName("Active")
+                ActiveCard(
+                    membership: sample(cancelRequested: true),
+                    cancelEnabled: false,
+                    switchSavings: nil,
+                    onCancel: {},
+                    onSwitch: {}
+                )
+                .previewDisplayName("Ending")
+            }
+            .padding()
+            .background(CleansiaColors.background)
+        }
+
+        private static func sample(cancelRequested: Bool) -> MyMembership {
+            MyMembership(
+                hasMembership: true,
+                planCode: "plus_monthly",
+                planName: "Cleansia Plus",
+                discountPercentage: 5,
+                freeCancellationWindowHours: 4,
+                allowsExpressUpgrade: true,
+                currentPeriodEnd: Date(timeIntervalSince1970: 1_780_000_000),
+                cancelRequested: cancelRequested,
+                billingInterval: 1
+            )
+        }
+    }
+#endif

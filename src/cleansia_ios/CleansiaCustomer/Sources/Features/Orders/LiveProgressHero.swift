@@ -17,29 +17,17 @@ struct LiveProgressHero: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
-            ZStack(alignment: .topTrailing) {
-                if let mascotOverlay {
-                    mascotOverlay
-                        .frame(width: 140, height: 140)
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text(headline)
+                    .font(CleansiaTypography.titleLarge)
+                    .foregroundColor(CleansiaColors.onSurface)
+                if let subhead {
+                    Text(subhead)
+                        .font(CleansiaTypography.bodyMedium)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    OrderStatusPill(
-                        label: OrderStatusPresentation.label(order.orderStatus),
-                        color: OrderStatusPresentation.color(order.orderStatus)
-                    )
-                    Text(headline)
-                        .font(CleansiaTypography.titleLarge)
-                        .foregroundColor(CleansiaColors.onSurface)
-                    if let subhead {
-                        Text(subhead)
-                            .font(CleansiaTypography.bodyMedium)
-                            .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    }
-                }
-                .padding(.trailing, 148)
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(minHeight: hasMascot ? 140 : 0, alignment: .top)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             if status == ._4 {
                 progressBar
@@ -78,18 +66,6 @@ struct LiveProgressHero: View {
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
             }
-        }
-    }
-
-    private var hasMascot: Bool {
-        status == ._2 || status == ._3 || status == ._4
-    }
-
-    private var mascotOverlay: AnimatedMascotView? {
-        switch status {
-        case ._4: AnimatedMascotView(.cleaningInProgress, fallback: .cleaning)
-        case ._2, ._3: AnimatedMascotView(.welcoming, loop: false, fallback: .waving)
-        default: nil
         }
     }
 

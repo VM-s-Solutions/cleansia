@@ -146,6 +146,18 @@ extension L10n {
             localized("membership_success_cta_back_home")
         }
 
+        static func perkPillDiscount(_ percent: Int) -> String {
+            format("membership_perk_pill_discount", percent)
+        }
+
+        static func perkPillCancellation(_ hours: Int) -> String {
+            format("membership_perk_pill_cancellation", hours)
+        }
+
+        static var perkPillRecurring: String {
+            localized("membership_perk_pill_recurring")
+        }
+
         static var statusActiveBadge: String {
             localized("membership_status_active_badge")
         }

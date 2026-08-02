@@ -235,6 +235,80 @@ final class CleanOrderContentStateWireTests: XCTestCase {
     }
 }
 
+/// The one place a wire payload becomes a card. Everything downstream of it is pinned in
+/// CleansiaCoreTests; this pins the crossing.
+@available(iOS 16.1, *)
+final class CleanOrderCardModelTests: XCTestCase {
+    private let now = Date(timeIntervalSince1970: 1_700_000_000)
+
+    private func state(_ status: String, phaseStart: Date? = nil, phaseEnd: Date? = nil) -> CleanOrderAttributes
+        .ContentState
+    {
+        CleanOrderAttributes.ContentState(
+            v: 1,
+            status: status,
+            orderNumber: "ORD-AB12CD34",
+            scheduledStart: now.addingTimeInterval(-1800),
+            scheduledEnd: now.addingTimeInterval(1800),
+            phaseStart: phaseStart,
+            phaseEnd: phaseEnd
+        )
+    }
+
+    func testEveryStatusCrossesIntoItsCard() {
+        XCTAssertEqual(state("onTheWay").cardModel(now: now).card, .journey(.onTheWay))
+        XCTAssertEqual(state("inProgress").cardModel(now: now).card, .journey(.cleaning))
+        XCTAssertEqual(state("completed").cardModel(now: now).card, .journey(.done))
+        XCTAssertEqual(state("cancelled").cardModel(now: now).card, .cancelled)
+        XCTAssertEqual(state("v2Rescheduled").cardModel(now: now).card, .unknown)
+    }
+
+    func testTheFinishTimeIsTheActualProjectionWhenThereIsOneAndTheBookedEndOtherwise() {
+        let projected = now.addingTimeInterval(2700)
+
+        XCTAssertEqual(state("inProgress", phaseEnd: projected).cardModel(now: now).finish, projected)
+        XCTAssertEqual(state("inProgress").cardModel(now: now).finish, now.addingTimeInterval(1800))
+    }
+
+    func testAnInServiceCardCarriesALiveWindowAnchoredNoLaterThanNow() throws {
+        let range = try XCTUnwrap(state("inProgress").cardModel(now: now).liveRange)
+
+        XCTAssertLessThanOrEqual(range.lowerBound, now)
+        XCTAssertGreaterThan(range.upperBound, now)
+    }
+
+    /// A finished or cancelled clean has nothing to time. The booked window it still carries can easily sit
+    /// in the future (a tomorrow booking cancelled today), so this must be decided by the STATUS — a live
+    /// bar creeping across a dead order's card is the failure this guards.
+    func testATerminalCardCarriesNoLiveWindowEvenWhenItsBookedWindowIsStillAhead() {
+        let tomorrow = now.addingTimeInterval(86400)
+        for status in ["completed", "cancelled"] {
+            let ahead = CleanOrderAttributes.ContentState(
+                v: 1,
+                status: status,
+                orderNumber: "ORD-AB12CD34",
+                scheduledStart: tomorrow,
+                scheduledEnd: tomorrow.addingTimeInterval(7200),
+                phaseStart: nil,
+                phaseEnd: nil
+            )
+
+            XCTAssertNil(ahead.cardModel(now: now).liveRange, "\(status) kept a live window")
+            XCTAssertFalse(ahead.cardModel(now: now).card.showsFinishTime, "\(status) still promises a finish")
+        }
+    }
+
+    func testTheOrderLabelCarriesTheNumberAndFallsBackWhenThereIsNone() {
+        XCTAssertTrue(state("inProgress").cardModel(now: now).orderLabel.contains("ORD-AB12CD34"))
+
+        var anonymous = state("inProgress")
+        anonymous.orderNumber = ""
+
+        XCTAssertFalse(anonymous.cardModel(now: now).orderLabel.isEmpty)
+        XCTAssertFalse(anonymous.cardModel(now: now).orderLabel.contains("#"))
+    }
+}
+
 final class OrderEtaWindowTests: XCTestCase {
     private let booked = Date(timeIntervalSince1970: 1_700_000_000)
 

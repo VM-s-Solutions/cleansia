@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
@@ -47,6 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -63,15 +66,16 @@ import java.util.Locale
  * non-Plus users; the screen itself doesn't double-gate. Templates here
  * spawn concrete Order rows via the backend's daily materializer.
  *
- * Create + edit ship via [CreateRecurringScreen] — entry points are the
- * empty-state CTA, the FAB on the populated list, and "Make this recurring"
- * on a Completed order's detail screen.
+ * Create + edit both ship via [CreateRecurringScreen] — entry points are the
+ * empty-state CTA, the FAB on the populated list, "Make this recurring" on a
+ * Completed order's detail screen, and each card's Edit action.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecurringBookingsScreen(
     onBack: () -> Unit,
     onCreateNew: () -> Unit = {},
+    onEdit: (templateId: String) -> Unit = {},
     viewModel: RecurringBookingsViewModel = hiltViewModel(),
 ) {
     val templates by viewModel.templates.collectAsStateWithLifecycle()
@@ -134,6 +138,7 @@ fun RecurringBookingsScreen(
                             template = template,
                             isMutating = mutating == template.id,
                             onToggleActive = { viewModel.toggleActive(template.id, template.isActive) },
+                            onEdit = { onEdit(template.id) },
                             onDelete = { pendingDeleteId = template.id },
                         )
                     }
@@ -199,7 +204,7 @@ private fun EmptyState(modifier: Modifier = Modifier, onCreateNew: () -> Unit) {
  *   │  Tuesday at 10:00                                                  │
  *   │  📍 Address line                                                   │
  *   │  ─────────────────────────────                                     │
- *   │  ▶ Resume / ⏸ Pause                              🗑 Delete         │
+ *   │  ▶ Resume / ⏸ Pause      ✎ Edit                  🗑 Delete         │
  *   └────────────────────────────────────────────────────────────────────┘
  *
  * The tinted header gives the card a clear "this is a schedule" identity
@@ -210,6 +215,7 @@ private fun TemplateCard(
     template: RecurringBookingTemplateDto,
     isMutating: Boolean,
     onToggleActive: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val freq = RecurrenceFrequency.fromCode(template.frequency)
@@ -312,6 +318,9 @@ private fun TemplateCard(
         )
 
         // ── Action row ──
+        // Equal thirds rather than "two left, one pushed right": the labels are
+        // nouns that roughly double in length in ru/uk, and three intrinsically
+        // sized buttons overflow a 360dp card there.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -327,14 +336,23 @@ private fun TemplateCard(
                 tint = MaterialTheme.colorScheme.onSurface,
                 enabled = !isMutating,
                 onClick = onToggleActive,
+                modifier = Modifier.weight(1f),
             )
-            Spacer(Modifier.weight(1f))
+            CardAction(
+                icon = Icons.Outlined.Edit,
+                label = stringResource(R.string.recurring_bookings_edit),
+                tint = MaterialTheme.colorScheme.onSurface,
+                enabled = !isMutating,
+                onClick = onEdit,
+                modifier = Modifier.weight(1f),
+            )
             CardAction(
                 icon = Icons.Outlined.DeleteOutline,
                 label = stringResource(R.string.recurring_bookings_delete),
                 tint = MaterialTheme.colorScheme.error,
                 enabled = !isMutating,
                 onClick = onDelete,
+                modifier = Modifier.weight(1f),
             )
         }
     }
@@ -347,8 +365,14 @@ private fun CardAction(
     tint: androidx.compose.ui.graphics.Color,
     enabled: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    TextButton(onClick = onClick, enabled = enabled) {
+    TextButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+    ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
@@ -356,7 +380,12 @@ private fun CardAction(
             modifier = Modifier.size(18.dp),
         )
         Spacer(Modifier.width(6.dp))
-        Text(text = label, color = tint)
+        Text(
+            text = label,
+            color = tint,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

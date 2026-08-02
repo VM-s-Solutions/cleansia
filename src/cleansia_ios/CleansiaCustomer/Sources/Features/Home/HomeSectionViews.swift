@@ -138,6 +138,7 @@ struct RecurringSchedulesSection: View {
 }
 
 private struct RecurringScheduleRow: View {
+    @Environment(\.locale) private var locale
     let template: RecurringTemplate
     let onTap: () -> Void
 
@@ -156,9 +157,12 @@ private struct RecurringScheduleRow: View {
                     Text(L10n.Recurring.cadence(template.frequency))
                         .font(CleansiaTypography.labelMedium)
                         .foregroundColor(CleansiaColors.primary)
-                    Text(L10n.Recurring.dayAtTime(RecurringWeekday.label(template.dayOfWeek), template.timeOfDay))
-                        .font(CleansiaFont.nunito(.semibold, size: 14))
-                        .foregroundColor(CleansiaColors.onSurface)
+                    Text(L10n.Recurring.dayAtTime(
+                        RecurringWeekday.label(template.dayOfWeek, locale: locale),
+                        template.timeOfDay
+                    ))
+                    .font(CleansiaFont.nunito(.semibold, size: 14))
+                    .foregroundColor(CleansiaColors.onSurface)
                     if let addressLine = template.addressLine, !addressLine.isBlank {
                         Text(addressLine)
                             .font(CleansiaTypography.bodyMedium)

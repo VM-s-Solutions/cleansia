@@ -30,7 +30,11 @@ var host = new HostBuilder()
         services.ConfigureFunctionsApplicationInsights();
         services.AddHttpContextAccessor();
 
-        services.AddCoreBindings(context.Configuration, context.HostingEnvironment);
+        // eagerlyReloadNpgsqlTypeCatalog: this worker is the one host whose triggers can fire before
+        // IHostedService start completes, so it pays the synchronous type-catalog probe. The five API
+        // hosts leave it off — see DbContextBindingExtensions.
+        services.AddCoreBindings(
+            context.Configuration, context.HostingEnvironment, eagerlyReloadNpgsqlTypeCatalog: true);
 
         // Sentinel binding — MediatR's assembly scan registers the Auth handlers
         // which depend on IHostAudienceProvider; the Functions host never issues

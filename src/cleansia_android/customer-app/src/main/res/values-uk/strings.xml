@@ -225,6 +225,7 @@
     <string name="orders_payment_failed">Не вдалося</string>
     <string name="orders_payment_refunded">Повернуто</string>
     <string name="orders_payment_disputed">Оскаржено</string>
+    <string name="orders_payment_partially_refunded">Частково повернуто</string>
     <string name="orders_filter_all">Усі</string>
     <string name="orders_filter_upcoming">Майбутні</string>
     <string name="orders_filter_completed">Завершені</string>
@@ -292,6 +293,13 @@
     <string name="order_detail_services_header">Послуги</string>
     <string name="order_detail_packages_header">Пакети</string>
     <string name="order_detail_cleaner_fallback">Клінер Cleansia</string>
+    <string name="order_detail_subtotal">Проміжний підсумок</string>
+    <string name="order_detail_payment_method">Спосіб оплати</string>
+    <string name="order_detail_payment_status">Оплата</string>
+    <string name="order_detail_completion_notes">Нотатки клінера</string>
+    <string name="order_detail_map_unavailable">Карта недоступна для цього замовлення</string>
+    <string name="order_detail_show_map">Показати карту</string>
+    <string name="order_detail_show_details">Показати деталі замовлення</string>
 
     <!-- Order cancel -->
     <string name="order_action_cancel">Скасувати замовлення</string>
@@ -370,7 +378,6 @@
     <string name="profile_row_notifications">Сповіщення</string>
     <string name="profile_row_security">Безпека</string>
     <string name="profile_row_help">Довідка та підтримка</string>
-    <string name="profile_row_privacy">Конфіденційність і дані</string>
     <string name="profile_logout">Вийти</string>
     <string name="profile_logout_dialog_title">Вийти?</string>
     <string name="profile_logout_dialog_message">Ви вийдете з цього пристрою. Ваші замовлення та винагороди залишаться на акаунті — увійдіть знову, щоб продовжити з того ж місця.</string>
@@ -786,8 +793,8 @@
     <string name="membership_hero_trial_price">0 Kč / перші %1$d днів</string>
     <string name="membership_hero_then_price">потім %1$s / місяць</string>
     <string name="membership_hero_then_price_year">потім %1$s / рік</string>
-    <string name="membership_social_proof_headline">Учасники економлять ~80 Kč на прибиранні</string>
-    <string name="membership_social_proof_sub">На всіх ваших бронюваннях, на додачу до інших знижок</string>
+    <string name="membership_social_proof_headline">Як працює знижка для учасників</string>
+    <string name="membership_social_proof_sub" formatted="false">Plus і ваш рівень лояльності сумарно дають максимум 12%. Промокоди не додаються — застосовується більша знижка.</string>
     <string name="membership_perks_section_title">Що ви отримаєте</string>
     <string name="membership_cta_start_trial">Почати безкоштовний пробний період</string>
     <string name="membership_cta_subscribe">Отримати Cleansia Plus</string>
@@ -816,10 +823,15 @@
     <string name="membership_perk_recurring_desc">Налаштуйте один раз — кожен другий вівторок о 10:00, автоматично.</string>
     <string name="membership_perk_cancellation_title">Безкоштовне скасування</string>
     <string name="membership_perk_cancellation_desc">Скасуйте за 4 години до прибирання без комісій.</string>
-    <string name="membership_perk_discount_title" formatted="false">5% знижка на кожне прибирання</string>
-    <string name="membership_perk_discount_desc">Знижка діє додатково до вашого рівня лояльності.</string>
+    <string name="membership_perk_discount_title" formatted="false">5% знижка для учасників</string>
+    <string name="membership_perk_discount_desc" formatted="false">На кожне прибирання. У поєднанні з рівнем лояльності обмежена 12%.</string>
     <string name="membership_perk_express_title">Безкоштовне експрес-оновлення</string>
     <string name="membership_perk_express_desc">Одне безкоштовне бронювання у той самий день щомісяця, без надбавки.</string>
+
+    <!-- Perk pills on the active management card. -->
+    <string name="membership_perk_pill_discount">знижка %1$d%%</string>
+    <string name="membership_perk_pill_cancellation">скасування за %1$d год</string>
+    <string name="membership_perk_pill_recurring">Регулярно</string>
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
@@ -858,6 +870,7 @@
     <string name="recurring_bookings_pause">Призупинити</string>
     <string name="recurring_bookings_resume">Відновити</string>
     <string name="recurring_bookings_delete">Видалити</string>
+    <string name="recurring_bookings_edit">Редагувати</string>
     <string name="recurring_bookings_delete_dialog_title">Видалити цей розклад?</string>
     <string name="recurring_bookings_delete_dialog_what_stops">З цього розкладу більше не створюватимуться нові прибирання автоматично.</string>
     <string name="recurring_bookings_delete_dialog_what_stays">Прибирання, які вже у календарі, залишаються — скасуйте їх по одному в Замовленнях, якщо більше не потрібні.</string>
@@ -894,6 +907,11 @@
     <string name="recurring_create_submit">Створити розклад</string>
     <string name="recurring_create_success">Регулярний розклад створено.</string>
     <string name="recurring_create_failed">Не вдалося створити розклад. Спробуйте знову.</string>
+    <string name="recurring_edit_title">Редагувати регулярне прибирання</string>
+    <string name="recurring_edit_submit">Зберегти зміни</string>
+    <string name="recurring_edit_success">Розклад оновлено.</string>
+    <string name="recurring_edit_failed">Не вдалося оновити розклад. Спробуйте знову.</string>
+    <string name="recurring_edit_load_failed">Не вдалося завантажити цей розклад. Поверніться назад і спробуйте знову.</string>
     <string name="recurring_freq_weekly_label">Щотижня</string>
     <string name="recurring_freq_biweekly_label">Кожні 2 тижні</string>
     <string name="recurring_freq_monthly_label">Щомісяця</string>

@@ -30,20 +30,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.settings.AppLocale
-import cz.cleansia.customer.LocalAppSettings
 import cz.cleansia.customer.R
-import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.customer.core.settings.LanguagePreference
 import cz.cleansia.core.ui.theme.Poppins
-import kotlinx.coroutines.launch
 
 private data class LanguageOption(
     val pref: LanguagePreference,
@@ -64,10 +63,9 @@ private val options = listOf(
 @Composable
 fun LanguageScreen(
     onBack: () -> Unit = {},
-    settingsRepository: AppSettingsRepository,
+    viewModel: LanguageViewModel = hiltViewModel(),
 ) {
-    val settings = LocalAppSettings.current
-    val scope = rememberCoroutineScope()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -106,10 +104,8 @@ fun LanguageScreen(
                     option = opt,
                     selected = settings.language == opt.pref,
                     onSelect = {
-                        scope.launch {
-                            settingsRepository.setLanguage(opt.pref)
-                            AppLocale.apply(opt.pref.tag)
-                        }
+                        viewModel.setLanguage(opt.pref)
+                        AppLocale.apply(opt.pref.tag)
                     },
                 )
             }

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject, signal } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   CleansiaAddressAutocompleteComponent,
   CleansiaCalendarComponent,
@@ -22,6 +22,7 @@ import { ProfileFacade } from '../../profile/profile.facade';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     TranslatePipe,
     CalendarModule,
     CleansiaSectionComponent,

@@ -17,7 +17,10 @@ struct CleansiaCustomerApp: App {
         container.installGeneratedClientAuth()
         StripeLaunch.applyPublishableKey()
         _sessionManager = StateObject(wrappedValue: container.sessionManager)
-        _preferences = StateObject(wrappedValue: CustomerPreferencesModel(settings: container.appSettings))
+        _preferences = StateObject(wrappedValue: CustomerPreferencesModel(
+            settings: container.appSettings,
+            languageSync: LiveLanguagePreferenceSync(repository: container.userProfileRepository)
+        ))
         self.container = container
     }
 

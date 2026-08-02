@@ -8,11 +8,13 @@ struct OrderDetailView: View {
     @State private var showReviewSheet = false
     @State private var showPhotos = false
     @State private var receiptURL: ReceiptFile?
+    @State private var snapAnchor: SnapAnchor = .peek
 
     private let routeOrderId: String
     private let client: OrderClient
     private let snackbar: SnackbarController
     private let paymentSheet: PaymentSheetPresenting
+    private let mapProvider: MapProvider
     private let onReportIssue: (String) -> Void
     private let onRebook: (String) -> Void
     private let onMakeRecurring: (String) -> Void
@@ -29,6 +31,7 @@ struct OrderDetailView: View {
         snackbar: SnackbarController,
         eventBus: OrderEventBus,
         paymentSheet: PaymentSheetPresenting,
+        mapProvider: MapProvider,
         hasMembership: Bool,
         onReportIssue: @escaping (String) -> Void,
         onRebook: @escaping (String) -> Void,
@@ -47,6 +50,7 @@ struct OrderDetailView: View {
         self.client = client
         self.snackbar = snackbar
         self.paymentSheet = paymentSheet
+        self.mapProvider = mapProvider
         self.hasMembership = hasMembership
         self.onReportIssue = onReportIssue
         self.onRebook = onRebook
@@ -99,6 +103,19 @@ struct OrderDetailView: View {
         case let .error(error):
             OrderDetailErrorView(error: error) { Task { await vm.retry() } }
         case let .loaded(order):
+            loadedShell(order)
+        }
+    }
+
+    /// The map is always behind, the sheet is always over it, and the mascot rides
+    /// the seam between them — the partner order-detail topology, which is what the
+    /// customer screen is being brought to parity with.
+    private func loadedShell(_ order: OrderItem) -> some View {
+        SnapSheet(anchor: $snapAnchor) {
+            OrderDetailMapBackdrop(order: order, mapProvider: mapProvider)
+        } ornament: {
+            MascotPuck(OrderDetailMascotArt.art(for: order.status))
+        } content: {
             VStack(spacing: 0) {
                 OrderDetailContent(
                     order: order,
@@ -110,27 +127,32 @@ struct OrderDetailView: View {
                 )
                 .task(id: order.id) { await vm.ensurePhotosLoaded() }
 
-                if OrderRecurringConfirm.needsConfirmation(order) {
-                    ConfirmRecurringFooter(submitting: vm.confirmRecurringState.isSubmitting) {
-                        Task { await vm.confirmRecurring() }
-                    }
-                } else if OrderDetailFooterActions.showFooter(order.status, hasMembership: hasMembership) {
-                    OrderDetailActionsFooter(
-                        showRebook: OrderDetailFooterActions.showRebook(order.status),
-                        showMakeRecurring: OrderDetailFooterActions.showMakeRecurring(
-                            order.status,
-                            hasMembership: hasMembership
-                        ),
-                        showCancel: OrderStatusGroup.isCancellable(order.status),
-                        showReportIssue: OrderStatusGroup.isReportable(order.status),
-                        cancelEnabled: !vm.cancelState.isSubmitting,
-                        onRebook: { onRebook(orderId) },
-                        onMakeRecurring: { onMakeRecurring(orderId) },
-                        onCancel: { showCancelSheet = true },
-                        onReportIssue: { onReportIssue(orderId) }
-                    )
-                }
+                footer(order)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func footer(_ order: OrderItem) -> some View {
+        if OrderRecurringConfirm.needsConfirmation(order) {
+            ConfirmRecurringFooter(submitting: vm.confirmRecurringState.isSubmitting) {
+                Task { await vm.confirmRecurring() }
+            }
+        } else if OrderDetailFooterActions.showFooter(order.status, hasMembership: hasMembership) {
+            OrderDetailActionsFooter(
+                showRebook: OrderDetailFooterActions.showRebook(order.status),
+                showMakeRecurring: OrderDetailFooterActions.showMakeRecurring(
+                    order.status,
+                    hasMembership: hasMembership
+                ),
+                showCancel: OrderStatusGroup.isCancellable(order.status),
+                showReportIssue: OrderStatusGroup.isReportable(order.status),
+                cancelEnabled: !vm.cancelState.isSubmitting,
+                onRebook: { onRebook(orderId) },
+                onMakeRecurring: { onMakeRecurring(orderId) },
+                onCancel: { showCancelSheet = true },
+                onReportIssue: { onReportIssue(orderId) }
+            )
         }
     }
 
@@ -226,7 +248,7 @@ private struct ConfirmRecurringFooter: View {
 }
 
 /// Which of the footer's four CTAs a given order offers (`canRebook` /
-/// `canMakeRecurring`, `OrderDetailScreen.kt:243-250`). Pulled out of the view so
+/// `canMakeRecurring` in `OrderDetailScreen.kt`). Pulled out of the view so
 /// the gating is checkable: "Book again on a cancelled order" and "the Plus-only
 /// recurring CTA shown to a free customer" both render perfectly and are both wrong.
 enum OrderDetailFooterActions {
@@ -282,7 +304,7 @@ struct OrderDetailFooterStyle {
     static let reportIssue = Self(icon: "exclamationmark.triangle", tint: CleansiaColors.error)
 }
 
-/// The order-detail footer (`ActionsFooter`, `OrderDetailScreen.kt:393-500`).
+/// The order-detail footer (`ActionsFooter` in `OrderDetailScreen.kt`).
 /// Several actions overlap on one status, so they are stacked in Android's order
 /// rather than each owning its own footer: Book again (primary) on top, then
 /// Make recurring, then Cancel, then Report issue.

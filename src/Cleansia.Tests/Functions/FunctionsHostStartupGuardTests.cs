@@ -54,7 +54,7 @@ public class FunctionsHostStartupGuardTests
         IHostEnvironment env = new ProbeHostEnvironment();
 
         // ── the exact Program.cs composition ──
-        services.AddCoreBindings(configuration, env);
+        services.AddCoreBindings(configuration, env, eagerlyReloadNpgsqlTypeCatalog: true);
         services.AddSingleton<IHostAudienceProvider>(new HostAudienceProvider("cleansia.functions"));
         services.AddScoped<FunctionsHealthCheck>();
         // The SAME shared registration Program.cs calls — NOT a reflection re-registration. This is what

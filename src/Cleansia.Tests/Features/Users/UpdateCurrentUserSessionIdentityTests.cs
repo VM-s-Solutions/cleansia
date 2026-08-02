@@ -29,6 +29,7 @@ public class UpdateCurrentUserSessionIdentityTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IBlobContainerClientFactory> _blobFactory = new();
+    private readonly Mock<ILanguageRepository> _languageRepository = new();
 
     private static User UserWith(string id, string email)
     {
@@ -59,7 +60,7 @@ public class UpdateCurrentUserSessionIdentityTests
     }
 
     private UpdateCurrentUser.Validator CreateValidator() =>
-        new(_userRepository.Object, _session.Object);
+        new(_userRepository.Object, _session.Object, _languageRepository.Object);
 
     private UpdateCurrentUser.Handler CreateHandler() => new(
         _userRepository.Object, _orderRepository.Object, _session.Object, _blobFactory.Object);

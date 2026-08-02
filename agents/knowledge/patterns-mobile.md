@@ -265,6 +265,20 @@ raw components one-off; never duplicate a `:core` component.
 > harness), the sanctioned fallback is a source-text assertion scoped to the one block —
 > `NotificationsScreenTogglesTest` / `OrderDetailFooterTintTest`, not a whole-file `contains`.
 
+> **The same blind spot has two cheaper-to-spot forms, and both shipped.** (1) A **wire field nothing
+> renders**: the customer order detail decoded `tierDiscountAmount`/`membershipDiscountAmount`/
+> `promoDiscountAmount` on every order and drew none of them, so a Plus member on a loyalty tier saw a
+> struck-through subtotal with no account of the difference — a decode test stays green forever because
+> decoding is all it checks. (2) A **VM mutator whose only caller is a test**: iOS
+> `CreateRecurringViewModel.setRooms` had one caller in the whole repo and it was `CreateRecurringViewModelTests`,
+> `setBathrooms` had none, so a blank recurring create silently submitted the 2/1 default — and that one
+> is *price-affecting*. Both are one `grep` each (a DTO field whose only readers are mappers; a
+> `func set…` whose only caller is under `Tests/`), so run them when you port a screen rather than
+> waiting for a resolver test that cannot see either. The fix in both cases is the rule above — hoist
+> the decision into a named value type (`OrderPriceBreakdown` / `OrderHeroFacts`) and pin the **call
+> site** with a scoped source-text assertion (`OrderDetailSummaryBindingTests` /
+> `CreateRecurringBindingTests`), because a resolver test alone would have passed on every one of these.
+
 > **Ink on a theme-INVARIANT surface — the ONE way (T-0451):** a `Color.dynamic` token is right almost
 > everywhere and wrong wherever the surface beneath it refuses to adapt. Both profile-hero avatar discs
 > are a fixed `Color.white` in **both** schemes, so `CleansiaColors.primary` resolved to sky400 on them

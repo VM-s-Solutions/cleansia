@@ -116,17 +116,30 @@ final class CreateRecurringViewModel: ViewModel {
             self.catalog = catalog
         }
         if case let .success(addresses) = await addressResult {
-            savedAddresses = addresses
-            if formState.savedAddressId.isBlank {
-                let preferred = addresses.first(where: \.isDefault) ?? addresses.first
-                if let preferred {
-                    formState.savedAddressId = preferred.id
-                }
-            }
+            apply(addresses)
         }
         if let sourceOrderId {
             await prefill(from: sourceOrderId)
         }
+    }
+
+    /// Re-read the list after the inline address manager closes — an address
+    /// created there is invisible to this form's `load()` snapshot, so the row
+    /// the customer just made would not be there to pick.
+    func reloadAddresses() async {
+        if case let .success(addresses) = await addressClient.getMine() {
+            apply(addresses)
+        }
+    }
+
+    /// Seeding only fills a blank selection, so a hand-picked address survives
+    /// a reload that a newly-added default would otherwise steal.
+    private func apply(_ addresses: [RecurringSavedAddress]) {
+        savedAddresses = addresses
+        guard formState.savedAddressId.isBlank,
+              let preferred = addresses.first(where: \.isDefault) ?? addresses.first
+        else { return }
+        formState.savedAddressId = preferred.id
     }
 
     // MARK: - Mutators

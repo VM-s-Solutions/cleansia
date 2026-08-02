@@ -21,6 +21,7 @@ struct OrderDetailContent: View {
                 VStack(alignment: .leading, spacing: Spacing.s) {
                     if LiveProgress.usesLiveHero(status) {
                         LiveProgressHero(order: order)
+                        OrderHeroFactsStrip(order: order)
                     } else {
                         OrderHeroCard(order: order)
                     }
@@ -48,6 +49,8 @@ struct OrderDetailContent: View {
                     if let employees = order.assignedEmployees, !employees.isEmpty {
                         AssignedCleanersCard(employees: employees)
                     }
+
+                    OrderPriceBreakdownCard(order: order)
 
                     if let history = order.statusHistory, !history.isEmpty {
                         OrderTimelineCard(history: history)

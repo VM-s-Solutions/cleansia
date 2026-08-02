@@ -3,12 +3,23 @@ import SwiftUI
 
 struct CreateRecurringScreen: View {
     @StateObject private var vm: CreateRecurringViewModel
+    @State private var showAddressManager = false
     let onCreated: () -> Void
+
+    private let savedAddressRepository: SavedAddressRepository
+    private let geocoding: GeocodingService
+    private let mapProvider: MapProvider
+    private let serviceArea: ServiceAreaProvider?
+    private let snackbar: SnackbarController
 
     init(
         sourceOrderId: String?,
         editing: RecurringTemplate? = nil,
         repository: RecurringBookingRepository,
+        savedAddressRepository: SavedAddressRepository,
+        geocoding: GeocodingService,
+        mapProvider: MapProvider,
+        serviceArea: ServiceAreaProvider? = nil,
         snackbar: SnackbarController,
         onCreated: @escaping () -> Void
     ) {
@@ -21,6 +32,11 @@ struct CreateRecurringScreen: View {
             orderClient: LiveOrderClient(),
             snackbar: snackbar
         ))
+        self.savedAddressRepository = savedAddressRepository
+        self.geocoding = geocoding
+        self.mapProvider = mapProvider
+        self.serviceArea = serviceArea
+        self.snackbar = snackbar
         self.onCreated = onCreated
     }
 
@@ -38,7 +54,8 @@ struct CreateRecurringScreen: View {
                 AddressSection(
                     addresses: vm.savedAddresses,
                     selectedId: vm.formState.savedAddressId,
-                    onSelect: vm.setSavedAddressId
+                    onSelect: vm.setSavedAddressId,
+                    onAddAddress: { showAddressManager = true }
                 )
                 ServicesSection(
                     catalog: vm.catalog,
@@ -46,6 +63,12 @@ struct CreateRecurringScreen: View {
                     selectedPackageIds: vm.formState.selectedPackageIds,
                     onToggleService: vm.toggleService,
                     onTogglePackage: vm.togglePackage
+                )
+                PropertySizeSection(
+                    rooms: vm.formState.rooms,
+                    bathrooms: vm.formState.bathrooms,
+                    onRoomsChange: vm.setRooms,
+                    onBathroomsChange: vm.setBathrooms
                 )
                 PaymentSection(selected: vm.formState.paymentType, onSelect: vm.setPaymentType)
                 StartsSection(
@@ -70,6 +93,30 @@ struct CreateRecurringScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .background(CleansiaColors.background.ignoresSafeArea())
         .task { await vm.load() }
+        .sheet(
+            isPresented: $showAddressManager,
+            onDismiss: { Task { await vm.reloadAddresses() } },
+            content: { addressManager }
+        )
+    }
+
+    /// The same surface the profile and the shell open, so an address created
+    /// here is saved once, server-side, and every other screen sees it
+    /// (Android's inline `AddressManagerSheet` on the wizard's Where step).
+    private var addressManager: some View {
+        AddressManagerView(
+            repository: savedAddressRepository,
+            geocoding: geocoding,
+            mapProvider: mapProvider,
+            serviceArea: serviceArea,
+            snackbar: snackbar,
+            onBack: { showAddressManager = false },
+            onSelected: { address in
+                vm.setSavedAddressId(address.id)
+                showAddressManager = false
+            }
+        )
+        .snackbarHost(snackbar, bottomInset: Spacing.m)
     }
 }
 
@@ -180,26 +227,68 @@ private struct AddressSection: View {
     let addresses: [RecurringSavedAddress]
     let selectedId: String
     let onSelect: (String) -> Void
+    let onAddAddress: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             SectionLabel(text: L10n.Recurring.createAddressLabel)
-            if addresses.isEmpty {
-                Text(L10n.Recurring.createAddressEmpty)
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-            } else {
-                ForEach(addresses) { address in
-                    SelectableRow(
-                        text: address.displayLine,
-                        badge: address.isDefault ? L10n.Recurring.createAddressDefault : nil,
-                        selected: address.id == selectedId
-                    ) {
-                        onSelect(address.id)
-                    }
+            ForEach(addresses) { address in
+                SelectableRow(
+                    text: address.displayLine,
+                    badge: address.isDefault ? L10n.Recurring.createAddressDefault : nil,
+                    selected: address.id == selectedId
+                ) {
+                    onSelect(address.id)
                 }
             }
+            // Always offered, not just on an empty list: a saved address is
+            // required to submit, so a customer with none had no way forward.
+            AddAddressRow(onTap: onAddAddress)
         }
+    }
+}
+
+private struct AddAddressRow: View {
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: Spacing.s) {
+                Image(systemName: "plus")
+                Text(L10n.Recurring.createAddressAddNew)
+                    .font(CleansiaTypography.bodyLarge)
+                Spacer()
+            }
+            .foregroundColor(CleansiaColors.primary)
+            .padding(Spacing.m)
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.small)
+                    .stroke(CleansiaColors.primary.opacity(0.4), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct PropertySizeSection: View {
+    let rooms: Int
+    let bathrooms: Int
+    let onRoomsChange: (Int) -> Void
+    let onBathroomsChange: (Int) -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: Spacing.s) {
+            counter(label: L10n.Recurring.createRoomsLabel, value: rooms, onChange: onRoomsChange)
+            counter(label: L10n.Recurring.createBathroomsLabel, value: bathrooms, onChange: onBathroomsChange)
+        }
+    }
+
+    private func counter(label: String, value: Int, onChange: @escaping (Int) -> Void) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            SectionLabel(text: label)
+            PropertyStepper(label: "\(value)", value: value, minimum: 0, onChange: onChange)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

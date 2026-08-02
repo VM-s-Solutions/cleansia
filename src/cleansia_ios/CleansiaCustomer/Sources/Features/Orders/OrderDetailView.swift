@@ -248,7 +248,7 @@ private struct ConfirmRecurringFooter: View {
 }
 
 /// Which of the footer's four CTAs a given order offers (`canRebook` /
-/// `canMakeRecurring`, `OrderDetailScreen.kt:243-250`). Pulled out of the view so
+/// `canMakeRecurring` in `OrderDetailScreen.kt`). Pulled out of the view so
 /// the gating is checkable: "Book again on a cancelled order" and "the Plus-only
 /// recurring CTA shown to a free customer" both render perfectly and are both wrong.
 enum OrderDetailFooterActions {
@@ -304,7 +304,7 @@ struct OrderDetailFooterStyle {
     static let reportIssue = Self(icon: "exclamationmark.triangle", tint: CleansiaColors.error)
 }
 
-/// The order-detail footer (`ActionsFooter`, `OrderDetailScreen.kt:393-500`).
+/// The order-detail footer (`ActionsFooter` in `OrderDetailScreen.kt`).
 /// Several actions overlap on one status, so they are stacked in Android's order
 /// rather than each owning its own footer: Book again (primary) on top, then
 /// Make recurring, then Cancel, then Report issue.

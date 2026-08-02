@@ -157,6 +157,32 @@ public class PromoCodeServiceRedeemTests
         _promoCodes.Verify(r => r.DecrementGlobalRedemptionsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    // ADR-0038 §D6 leak 3 — the global increment auto-commits BEFORE the per-user reservation, and the
+    // compensating decrement used to fire only on the null RETURN. A reservation that THROWS (transient
+    // DB error, timeout) therefore burned a global slot permanently: a 100-redemption campaign dies
+    // after 100 failed bookings. The release now runs on any non-success, and the failure still
+    // surfaces — it is compensated, not swallowed (§D8: a logging catch here would be pre-commit).
+    [Fact]
+    public async Task Reservation_Throws_Releases_The_Global_Slot_And_Still_Surfaces_The_Failure()
+    {
+        ArrangeCode(maxPerUser: 1, globalMax: 100);
+        ArrangeNoExistingOrderRow();
+        ArrangeGlobalIncrementSucceeds();
+        var transient = new InvalidOperationException("transient database failure");
+        _redemptions
+            .Setup(r => r.TryReserveRedemptionSlotAsync(
+                UserId, CodeId, It.IsAny<int>(), It.IsAny<string>(), It.IsAny<decimal>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(transient);
+
+        var thrown = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => CreateService().ApplyAsync(Code, UserId, OrderId, 100m, null, CancellationToken.None));
+
+        Assert.Same(transient, thrown);
+        _promoCodes.Verify(
+            r => r.DecrementGlobalRedemptionsAsync(CodeId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     [Fact]
     public async Task AC2_RaceWinner_When_Reservation_Grants_Slot_Succeeds_With_Discount()
     {

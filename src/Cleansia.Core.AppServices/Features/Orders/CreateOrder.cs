@@ -313,7 +313,7 @@ public class CreateOrder
             // promo row gets the order id. Failure logs but doesn't roll back —
             // the customer already paid and the promo just doesn't get tracked.
             await orderPromoApplier.ApplyAsync(
-                command, userId, order, promo, currency!.Id, cancellationToken);
+                command, userId, order, rawSubtotal, currency!.Id, cancellationToken);
 
             return BusinessResult.Success(new Response(
                 Id: order.Id,

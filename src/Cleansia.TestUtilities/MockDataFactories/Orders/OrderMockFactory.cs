@@ -40,6 +40,10 @@ public class OrderMockFactory
         public string? TenantId { get; set; }
 
         public OrderStatus? CurrentStatus { get; set; }
+
+        public decimal? PromoDiscountAmount { get; set; }
+
+        public string? PromoCodeId { get; set; }
     }
 
     public static Order Generate(OrderPartial? mergeFrom = null, Currency? currency = null)
@@ -60,7 +64,9 @@ public class OrderMockFactory
             totalPrice: partial.TotalPrice ?? 1000m,
             currencyId: partial.CurrencyId ?? resolvedCurrency.Id,
             paymentStatus: partial.PaymentStatus ?? PaymentStatus.Paid,
-            userId: partial.UserId ?? Constants.TestUserSession.TestUserId);
+            userId: partial.UserId ?? Constants.TestUserSession.TestUserId,
+            promoDiscountAmount: partial.PromoDiscountAmount,
+            promoCodeId: partial.PromoCodeId);
         order.Created(Constants.TestUserSession.TestUserName, DateTime.UtcNow);
         order.SetCurrency(resolvedCurrency);
 

@@ -10,6 +10,36 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## 🟥 LIVE OUTAGE FIX SHIPPED (ADR-0038 §D3 interim) — and the ticket that retires it, **`T-0532`**
+>
+> Filed 2026-08-03. **Every order placed with a promo code threw `23503` and no order was created**:
+> `CreateOrder.cs:315` → `OrderPromoApplier` → `PromoCodeService.ApplyAsync` → a raw **self-committing**
+> INSERT against `FK_PromoCodeRedemptions_Orders_OrderId`, for an `Orders` row the UnitOfWork pipeline
+> commits **after the handler returns**. ADR-0038 §D3 is `proposed` but **binding on the fix now**; the
+> three parts shipped as one PR by ruling (§D3 + §D5.1 + §D6): the reservation became a **change-tracked**
+> insert that rides the order's own commit; the apply gate moved off `preview.DiscountAmount` onto
+> `order.PromoCodeId`/`PromoDiscountAmount` (the factory may **discard** a previewed promo for a larger
+> membership+tier combination — that defect was unreachable only because everything threw first, and went
+> live the moment the fix landed) and now passes `rawSubtotal` instead of the re-gross, which is provably
+> wrong on express orders; and the compensating `DecrementGlobalRedemptionsAsync` now fires on **any**
+> reservation non-success, not only the `null` return, so a throw no longer permanently burns a global
+> slot. Acceptance evidence is `CreateOrderPromoRedemptionPersistenceTests` against real PostgreSQL —
+> **it must never be edited to accommodate a fix.**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | Panel / gate |
+> |----|-------|------|--------|-----------|--------|-----|-------|
+> | **T-0532** | **Move the promo redemption reservation strictly POST-COMMIT onto `IPostCommitEffects`** — retires the ADR-0038 §D3 interim. The interim trades the single-statement atomic per-user cap for an app-level pre-read, and under a **non-null tenant** a genuine same-user race now surfaces as a `DbUpdateException` that rolls back a paid order instead of a clean `null`. End state restores `TryReserveRedemptionSlotAsync`'s SQL **byte-for-byte** and runs it after the pipeline's commit, on a new scoped seam registered between `PostCommitDispatchBehavior` and `ValidationPipelineBehavior`. **The code carries `INTERIM(ADR-0038 §D3 → T-0532)` and this row is what makes that marker non-orphan (§D4)** | M | **draft** | — | architect, backend | no | 🔴 **AC0 — ADR-0038 is `proposed` with 3 OPEN challenges. Do NOT start until a second instance signs the Verdict**; CH-2 (one post-commit mechanism or two) can delete this ticket's premise |
+>
+> ### ⚠️ Two follow-ups the fix does NOT do — both owner-gated, neither on the outage path
+> 1. **`.AreNullsDistinct(false)`** on `(TenantId, PromoCodeId, UserId, SlotOrdinal)` (ADR-0038 §D5.2) —
+>    ⚠️ **`ef-migration`, owner-only**. `TenantId` is NULL in single-tenant mode and Postgres treats NULLs
+>    as DISTINCT, so the "backstop" unique index **finds no conflict** and the per-user cap has **no**
+>    concurrent arbiter today — same class as **T-0531**. De-duplicate first or index creation fails.
+> 2. **The §D6.4 counter repair** — a `sql-scripts/` script (NOT a migration, NOT a job) reconciling
+>    `PromoCodes.CurrentRedemptionsCount` to the ledger. **Every promo attempt since the bug shipped burnt
+>    a global slot with no row to show for it, so campaigns may be ALREADY DEAD in DEV.** Run it **after**
+>    the fix deploys and during low traffic — before the fix it repairs a state the next booking re-breaks.
+
 > ## 🟥 CHALLENGER-ROUND FALLOUT — **7 live defects that belong to no ADR**, `T-0525`…`T-0531`
 >
 > Filed 2026-08-02 from the challenger round on **ADR-0034 / 0035 / 0036**

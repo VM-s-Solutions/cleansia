@@ -35,10 +35,11 @@ public class PromoCodeRedemption : Auditable, ITenantEntity
     /// with <c>(TenantId, PromoCodeId, UserId)</c> it forms the tenant-scoped unique index
     /// (S8) that hard-caps per-user redemptions: a one-shot code (default
     /// <c>MaxRedemptionsPerUser = 1</c>) only ever has slot <c>0</c>, while an <c>M &gt; 1</c> code
-    /// keeps slots <c>0..M-1</c> valid. The ordinal is DERIVED from the atomic slot reservation
-    /// (<see cref="Cleansia.Core.Domain.Repositories.IPromoCodeRedemptionRepository.TryReserveRedemptionSlotAsync"/>),
-    /// never from a pre-read count — a pre-read ordinal would let two concurrent <c>M &gt; 1</c>
-    /// redemptions collide on the same ordinal and falsely reject the loser.
+    /// keeps slots <c>0..M-1</c> valid. The ordinal is assigned by
+    /// <see cref="Cleansia.Core.Domain.Repositories.IPromoCodeRedemptionRepository.TryReserveRedemptionSlotAsync"/>
+    /// and by nothing else. That reservation is DB-atomic in the end state; under the ADR-0038 §D3
+    /// interim it is an app-level pre-read, so two concurrent <c>M &gt; 1</c> redemptions can collide
+    /// on one ordinal — the residual T-0532 closes.
     /// </summary>
     [Required]
     public int SlotOrdinal { get; private set; }

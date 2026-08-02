@@ -6,8 +6,8 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
 /// Default <see cref="IOrderPromoApplier"/>. Wraps <see cref="IPromoCodeService"/> preview/apply with
-/// the same guard conditions, apply-subtotal math, and best-effort logged-and-swallowed semantics the
-/// handler had inline — extracted verbatim, no behavior change.
+/// the guard conditions, apply subtotal and best-effort logged-and-swallowed semantics that
+/// <see cref="CreateOrder.Handler"/> used to hold inline.
 /// </summary>
 public sealed class OrderPromoApplier(
     IPromoCodeService promoCodeService,
@@ -36,11 +36,15 @@ public sealed class OrderPromoApplier(
         CreateOrder.Command command,
         string userId,
         Order order,
-        OrderPromoPreview preview,
+        decimal rawSubtotal,
         string currencyId,
         CancellationToken cancellationToken)
     {
-        if (preview.DiscountAmount <= 0m
+        // Gate on the ORDER, not the preview: OrderFactory.ResolveLoy003Discount discards a
+        // previewed promo when membership+tier is larger, and a redemption recorded off the preview
+        // burns the customer's one-shot code for a discount they never received (ADR-0038 §D5.1).
+        if (order.PromoCodeId is null
+            || order.PromoDiscountAmount is not > 0m
             || string.IsNullOrEmpty(command.PromoCode)
             || string.IsNullOrEmpty(userId))
         {
@@ -48,14 +52,14 @@ public sealed class OrderPromoApplier(
         }
 
         // Best-effort: failure logs but never rolls back — the customer already
-        // paid and the promo just doesn't get tracked. Apply runs post-persist so
-        // the redemption row gets the order id. Subtotal re-grosses the discount
-        // back onto the persisted total to match the previewed pre-discount base.
+        // paid and the promo just doesn't get tracked. rawSubtotal is the handler's own
+        // pre-discount base; re-grossing order.TotalPrice is wrong on an express order, where the
+        // surcharge is applied AFTER the discount (OrderFactory: ApplyExpressSurcharge(raw - applied)).
         var applyResult = await promoCodeService.ApplyAsync(
             command.PromoCode,
             userId,
             order.Id,
-            order.TotalPrice + preview.DiscountAmount,
+            rawSubtotal,
             currencyId,
             cancellationToken);
         if (!applyResult.Success)

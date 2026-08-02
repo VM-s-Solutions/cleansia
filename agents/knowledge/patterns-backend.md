@@ -586,6 +586,18 @@ the acceptance evidence for the fix.
 **A compensating catch is the opposite of a swallowing catch and stays allowed:** releasing a reserved
 global slot before returning the failure restores an invariant. A catch that hides one does not.
 
+Two things learned writing the live one (`PromoCodeService.ApplyAsync`), because "compensating catch"
+is the name of the rule but not the best shape for it:
+
+- **Reach for `try`/`finally`, not `try`/`catch`.** The requirement is "release on **any**
+  non-success" — the `null` return *and* a throw — which is exactly what a `finally` guarded by
+  `if (result is null)` says. Nothing is caught, so the failure propagates untouched and the
+  reviewer's grep for `catch` on that path stays **empty**, which is the check ADR-0038 asks them to
+  run. A `catch` + rethrow is the same behaviour with a swallow one edit away.
+- **Compensate with a non-cancellable token.** The thing being released already **auto-committed** and
+  outlives an aborted request; passing the caller's token means a client disconnect skips the release
+  and leaks the very slot the compensation exists to return.
+
 ## Bounded exclusivity on a pull board — the stored-deadline hold (ADR-0036)
 
 When a rule must give one actor **temporary exclusive access** to a work item on a first-come board

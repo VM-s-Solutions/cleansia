@@ -146,7 +146,10 @@ function resolveLandingLanguage(acceptLanguage: string | undefined): string {
   return 'en';
 }
 
-app.use('{*path}', (req, res, next) => {
+// Path-LESS on purpose. A wildcard path pattern here matches the same requests
+// but makes Express strip the matched segment from req.url, so every deep link
+// reached the render engine as '/' and was answered with the landing page.
+app.use((req, res, next) => {
   const cacheable = req.path === '/' && req.method === 'GET' && !req.headers.cookie;
   const cacheKey = resolveLandingLanguage(req.headers['accept-language']);
 

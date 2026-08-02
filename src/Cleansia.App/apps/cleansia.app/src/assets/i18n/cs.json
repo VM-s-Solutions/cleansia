@@ -174,7 +174,7 @@
       "success": "Účet vytvořen! Zkontrolujte svůj email pro potvrzení.",
       "error": "Registrace se nezdařila. Zkuste to prosím znovu.",
       "terms_agreement": "Souhlasím s podmínkami",
-      "terms_and_conditions": "Souhlasím s <a href='/gdpr'>obchodními podmínkami a zásadami ochrany osobních údajů</a>",
+      "terms_and_conditions": "Souhlasím s <a href='/terms'>obchodními podmínkami</a> a <a href='/privacy'>zásadami ochrany osobních údajů</a>",
       "validation": {
         "password_lowercase": "Alespoň jedno malé písmeno",
         "password_uppercase": "Alespoň jedno velké písmeno",
@@ -1379,8 +1379,10 @@
   },
   "terms_page": {
     "title": "Obchodní podmínky",
-    "last_updated": "Poslední aktualizace",
+    "last_updated": "Poslední aktualizace: {{date}}",
+    "last_updated_date": "",
     "intro": "Před používáním našich služeb si prosím pečlivě přečtěte tyto obchodní podmínky.",
+    "review_notice": "Návrh — toto znění zatím neprošlo právní kontrolou a není konečnou závaznou verzí.",
     "section1_title": "1. Přijetí podmínek",
     "section1_text": "Přístupem k službám Cleansia a jejich používáním souhlasíte s těmito obchodními podmínkami. Pokud s podmínkami nesouhlasíte, naše služby prosím nepoužívejte.",
     "section2_title": "2. Popis služeb",
@@ -1396,8 +1398,10 @@
   },
   "privacy_page": {
     "title": "Ochrana osobních údajů",
-    "last_updated": "Poslední aktualizace",
+    "last_updated": "Poslední aktualizace: {{date}}",
+    "last_updated_date": "",
     "intro": "Vaše soukromí je pro nás důležité. Tyto zásady vysvětlují, jak shromažďujeme, používáme a chráníme vaše osobní údaje.",
+    "review_notice": "Návrh — toto znění zatím neprošlo právní kontrolou a není konečnou závaznou verzí.",
     "section1_title": "1. Jaké údaje sbíráme",
     "section1_text": "Sbíráme osobní údaje, které nám poskytnete při zadávání objednávek, vytváření účtu nebo kontaktování nás. Jedná se o vaše jméno, emailovou adresu, telefonní číslo a adresu.",
     "section2_title": "2. Jak vaše údaje používáme",

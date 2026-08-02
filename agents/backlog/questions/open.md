@@ -881,6 +881,34 @@ _No open Wave-1 *planning* questions remain._
 
 ---
 
+### Q-LEGAL-01 — [blocking: **YES** for store submission] Who wrote `/terms` and `/privacy`, and is that text binding?
+- Raised by: frontend (legal routes + env-aware origin work)
+- Owner: **owner** (a legal/business call no agent may make)
+- Resolve-by: **pre-prod** — specifically **before either app is submitted to a store**
+- Date: 2026-08-02
+- The pages exist and always did (`libs/cleansia-customer-features/legal-pages`, routed at `/terms`
+  and `/privacy`). What is new is what they *contain*: six sections of prose in five locales with **no
+  recorded author and no review**, making concrete commercial and legal commitments —
+  `terms_page.section4_text` states a cancellation-fee schedule ("free 24+ hours before, 25% fee 4–24
+  hours before, 50% fee under 4 hours"), `section3_text` states prices are VAT-inclusive,
+  `section5_text` states a 24-hour damage-claim window. Those read as binding terms.
+- This ticket therefore did **not** touch a word of the wording. It added a translated draft banner
+  (`terms_page.review_notice` / `privacy_page.review_notice`) that renders above the sections, and an
+  empty `last_updated_date` so no publication date is fabricated.
+- **Two edits, no code change, whichever way you answer:**
+  1. The wording is fine / has been reviewed → set `review_notice` to `""` in all five locales, and set
+     `last_updated_date` to the real date. The banner and the date line disappear/appear on their own.
+  2. The wording is not yours → replace the `section*_text` values with the reviewed text, then do (1).
+- **Do not submit to a store with the banner visible.** A reviewer following the in-app policy link
+  would read "this wording has not yet been through legal review" on the privacy policy itself. The
+  banner is the honest interim state, not a shippable one — it exists so this cannot be shipped by
+  forgetting.
+- Default taken: **banner visible, date absent.** Preferred over deleting the text (not an agent's call)
+  and over rewriting it (would replace unreviewed prose with more unreviewed prose).
+- Answer: _(owner fills in)_
+
+---
+
 ### 🟢 Two DECISION POINTS, not questions — the owner approves a design before code is written
 
 Recorded here so they are visible alongside the questions, but they are **not** blocking entries:

@@ -174,7 +174,7 @@
       "success": "Účet vytvorený! Skontrolujte e-mail a potvrďte registráciu.",
       "error": "Registrácia zlyhala. Skúste to prosím znova.",
       "terms_agreement": "Súhlasím s podmienkami",
-      "terms_and_conditions": "Súhlasím s <a href='/gdpr'>obchodnými podmienkami a zásadami ochrany súkromia</a>",
+      "terms_and_conditions": "Súhlasím s <a href='/terms'>obchodnými podmienkami</a> a <a href='/privacy'>zásadami ochrany súkromia</a>",
       "validation": {
         "password_lowercase": "Aspoň jedno malé písmeno",
         "password_uppercase": "Aspoň jedno veľké písmeno",
@@ -1379,8 +1379,10 @@
   },
   "terms_page": {
     "title": "Obchodné podmienky",
-    "last_updated": "Posledná aktualizácia",
+    "last_updated": "Posledná aktualizácia: {{date}}",
+    "last_updated_date": "",
     "intro": "Pred použitím našich služieb si pozorne prečítajte tieto obchodné podmienky.",
+    "review_notice": "Návrh — toto znenie zatiaľ neprešlo právnou kontrolou a nie je konečnou záväznou verziou.",
     "section1_title": "1. Prijatie podmienok",
     "section1_text": "Prístupom k službám Cleansia a ich používaním súhlasíte s týmito obchodnými podmienkami. Ak s nimi nesúhlasíte, nepoužívajte prosím naše služby.",
     "section2_title": "2. Popis služieb",
@@ -1396,8 +1398,10 @@
   },
   "privacy_page": {
     "title": "Zásady ochrany súkromia",
-    "last_updated": "Posledná aktualizácia",
+    "last_updated": "Posledná aktualizácia: {{date}}",
+    "last_updated_date": "",
     "intro": "Vaše súkromie je pre nás dôležité. Tieto zásady vysvetľujú, ako zhromažďujeme, používame a chránime vaše osobné údaje.",
+    "review_notice": "Návrh — toto znenie zatiaľ neprešlo právnou kontrolou a nie je konečnou záväznou verziou.",
     "section1_title": "1. Údaje, ktoré zhromažďujeme",
     "section1_text": "Zhromažďujeme osobné údaje, ktoré nám poskytnete pri zadávaní objednávok, vytváraní účtu alebo kontaktovaní nás. Patria sem vaše meno, e-mailová adresa, telefónne číslo a adresa.",
     "section2_title": "2. Ako používame vaše údaje",

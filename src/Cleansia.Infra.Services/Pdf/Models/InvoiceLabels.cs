@@ -55,6 +55,14 @@ public record InvoiceLabels
     public string LegalNotice { get; init; } = "Legal notice";
     public string GeneratedOn { get; init; } = "Generated";
 
+    /// <summary>
+    /// The statutory late-payment interest clause every locale states in its own words. Distinct from
+    /// <c>InvoicePdfData.LegalDisclaimer</c>, which is per-country free text an admin edits.
+    /// </summary>
+    public string LatePaymentInterestNotice { get; init; } =
+        "Please note that if payment is not received by the due date stated on this invoice, " +
+        "we may charge statutory interest on the overdue amount.";
+
     public static InvoiceLabels Czech { get; } = new()
     {
         DocumentTitle = "Faktura",
@@ -106,6 +114,10 @@ public record InvoiceLabels
         Vat = "DPH",
 
         LegalNotice = "Právní upozornění",
-        GeneratedOn = "Vystaveno"
+        GeneratedOn = "Vystaveno",
+
+        LatePaymentInterestNotice =
+            "Dovolujeme si Vás upozornit, že v případě nedodržení data splatnosti uvedeného na faktuře " +
+            "Vám můžeme účtovat zákonný úrok z prodlení."
     };
 }

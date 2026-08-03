@@ -75,6 +75,8 @@ public class DefaultInvoiceLayoutBuilder : IInvoiceLayoutBuilder
             col.Item().Element(c => c.SectionTitle(Labels.LineItems));
             col.Item().Element(c => BuildLineItemsTable(c, data));
 
+            col.Item().Element(c => BuildLatePaymentNotice(c, data));
+
             // A total split across a page break is the one block that must never break.
             col.Item().PaddingTop(CleansiaPdfTheme.SmallPadding).ShowEntire().Row(row =>
             {
@@ -213,6 +215,24 @@ public class DefaultInvoiceLayoutBuilder : IInvoiceLayoutBuilder
 
     protected virtual string DescribeLine(InvoiceLineItem line) =>
         $"{Labels.LineDescription} {line.OrderNumber} ({FormatDate(line.PerformedOn)})";
+
+    /// <summary>
+    /// The clause names the invoice's own due date, so an invoice that states none has nothing to be
+    /// late against and the sentence is dropped rather than left standing as an empty threat.
+    /// </summary>
+    protected virtual string? LatePaymentInterestNotice(InvoicePdfData data) =>
+        data.DueDate.HasValue ? Labels.LatePaymentInterestNotice : null;
+
+    protected virtual void BuildLatePaymentNotice(IContainer container, InvoicePdfData data)
+    {
+        var notice = LatePaymentInterestNotice(data);
+        if (string.IsNullOrWhiteSpace(notice)) return;
+
+        container.PaddingTop(CleansiaPdfTheme.SmallPadding).Text(notice)
+            .FontSize(CleansiaPdfTheme.FontSizeSmall)
+            .FontColor(CleansiaPdfTheme.TextSecondary)
+            .Italic();
+    }
 
     protected virtual void BuildSummary(IContainer container, InvoicePdfData data)
     {

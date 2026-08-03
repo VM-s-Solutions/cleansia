@@ -104,6 +104,51 @@ public class PayoutInvoiceLayoutTests
         Assert.DoesNotContain(fields, f => f.Value == "Nejsme plátci DPH");
     }
 
+    // ── the statutory late-payment interest clause ───────────────────
+
+    [Fact]
+    public void Czech_Layout_Carries_The_Statutory_Late_Payment_Interest_Sentence()
+    {
+        Assert.Equal(
+            "Dovolujeme si Vás upozornit, že v případě nedodržení data splatnosti uvedeného na faktuře " +
+            "Vám můžeme účtovat zákonný úrok z prodlení.",
+            Czech.Labels.LatePaymentInterestNotice);
+    }
+
+    [Fact]
+    public void Default_Layout_States_The_Same_Clause_In_English()
+    {
+        var notice = Default.Labels.LatePaymentInterestNotice;
+
+        Assert.Contains("due date", notice);
+        Assert.Contains("statutory", notice);
+        Assert.NotEqual(Czech.Labels.LatePaymentInterestNotice, notice);
+    }
+
+    [Fact]
+    public void Interest_Clause_Is_Shown_Whenever_The_Invoice_States_A_Due_Date()
+    {
+        Assert.Equal(Czech.Labels.LatePaymentInterestNotice, Czech.LatePaymentNotice(Data()));
+        Assert.Equal(Default.Labels.LatePaymentInterestNotice, Default.LatePaymentNotice(Data()));
+    }
+
+    // Nothing can be overdue without a stated splatnost, and the sentence names one — so with no due
+    // date the clause is an unenforceable threat rather than a disclosure.
+    [Fact]
+    public void Interest_Clause_Is_Omitted_When_The_Invoice_States_No_Due_Date()
+    {
+        Assert.Null(Czech.LatePaymentNotice(Data() with { DueDate = null }));
+    }
+
+    // The clause is a fixed statutory notice; LegalDisclaimer is per-country free text an admin edits.
+    // Neither may stand in for the other.
+    [Fact]
+    public void Interest_Clause_Does_Not_Depend_On_The_Country_Configured_Legal_Disclaimer()
+    {
+        Assert.NotNull(Czech.LatePaymentNotice(Data() with { LegalDisclaimer = null }));
+        Assert.NotEqual(Czech.Labels.LatePaymentInterestNotice, Data().LegalDisclaimer);
+    }
+
     // ── end-to-end: the document actually renders ────────────────────
 
     [Fact]
@@ -253,6 +298,7 @@ public class PayoutInvoiceLayoutTests
         public IReadOnlyList<InvoiceField> Supplier(InvoicePdfData data) => SupplierFields(data);
         public IReadOnlyList<InvoiceField> Customer(InvoicePdfData data) => CustomerFields(data);
         public IReadOnlyList<InvoiceField> Payment(InvoicePdfData data) => PaymentFields(data);
+        public string? LatePaymentNotice(InvoicePdfData data) => LatePaymentInterestNotice(data);
     }
 
     private sealed class CzechProbeLayout : CzechInvoiceLayoutBuilder
@@ -261,5 +307,6 @@ public class PayoutInvoiceLayoutTests
         public IReadOnlyList<InvoiceField> Supplier(InvoicePdfData data) => SupplierFields(data);
         public IReadOnlyList<InvoiceField> Customer(InvoicePdfData data) => CustomerFields(data);
         public IReadOnlyList<InvoiceField> Payment(InvoicePdfData data) => PaymentFields(data);
+        public string? LatePaymentNotice(InvoicePdfData data) => LatePaymentInterestNotice(data);
     }
 }

@@ -738,6 +738,29 @@ the selected tag never reaches it without an App Group. That is the opposite of 
 the accepted trade-off until an App Group exists (an entitlement/provisioning change). Do NOT confuse this with
 APNs `loc-key` strings, which must stay in each **app** target's catalog (APNs reads only the main bundle).
 
+**A key in the SHARED Core catalog must be voiced correctly for every persona that can receive it — and if
+two personas need different sentences for one key, the BACKEND emits two keys (ADR-0037, CH-X1).**
+`ApiErrorLocalizer.swift:29-33` resolves `"error." + key` **only** from `CoreL10n.bundle` and never probes the
+app bundle, so **every** `error.*` string is shared by CleansiaPartner and CleansiaCustomer, and neither app
+has (or should get) an override. Cleansia shipped `error.order.no_available_spots` = *"No cleaners are
+available for that slot. Please pick another time."* — a customer's sentence, and the **only** message a
+partner sees when they lose a race for a job. Two rules follow:
+- **Before adding an `error.*` string to Core, ask which commands can emit that key** (`rg <ConstantName>
+  src --type cs` — emitters, not the constant). Write the sentence for **all** of them, or ask the backend to
+  split the key. A sentence that is right for one audience and wrong for another is a defect the localizer
+  cannot fix.
+- **Do NOT "fix" it by teaching `ApiErrorLocalizer` to probe the app bundle first.** That is a second
+  resolution order and a per-app override seam — which then needs its own parity guard, for the exact class of
+  drift the shared catalog exists to prevent. **Audience-awareness belongs in the backend's key choice, not in
+  a shared client localizer** — that is what the per-audience API hosts are for. *(Rejected as A20 in ADR-0037;
+  cite that ADR if you are about to re-propose it.)*
+- **Corollary for the whole error path: a missing key fails differently on each client, and only one of the
+  three is visible.** Android shows the raw key (`ApiErrorTranslator.kt:70`), iOS shows the raw key
+  (`ApiErrorLocalizer.swift:18-20`), **web shows the generic "An error occurred"** and is therefore silent
+  (`http-error.interceptor.ts:14-20`). **Verify translations by grepping the locale files, never by watching a
+  screen** — Cleansia's `order.weekly_limit_reached` was missing from all five partner-web locales for months
+  because a reviewer "checked for the raw key" on a client that never shows one.
+
 **A rule the BACKEND also writes lives in Core as a pure function, pinned by Core tests — never inlined at
 the ActivityKit call site.** The Live Activity card has two writers: the app's `LiveActivityCoordinator` and
 the server's `LiveActivityPayloadFactory`. Any constant they must agree on (the ADR-0029 D2 stale-date

@@ -18,21 +18,36 @@
 
 Be the **one place** that answers *"is this order, in itself, work a cleaner may be offered and may
 take?"* — a predicate over the **order alone**, combining the fulfilment axis (`CurrentStatus`) with
-the money axis (`PaymentType`), in **two evaluation forms that a test proves equal**.
+the money axis, in **two evaluation forms that a test proves equal**.
+
+> **Sharpened by the panel:** the question is **not** *"what money model is this?"* — it is
+> **"can anything take this order away from the cleaner I hand it to?"** That is why the role reads
+> the money **progress**, not only the money **model**.
 
 ```
-Offerable(o) ⟺ o.CurrentStatus == Confirmed
-             ∨ (o.CurrentStatus == New ∧ o.PaymentType == Cash)
+Offerable(o) ⟺ ( o.CurrentStatus == Confirmed
+               ∨ (o.CurrentStatus == New ∧ o.PaymentType == Cash) )
+             ∧ NotRetractable(o)
+
+NotRetractable(o) ⟺ o.PaymentStatus == Paid
+                  ∨ (o.PaymentType == Cash ∧ o.RecurringTemplateId == null)
 ```
 
 | Member | Job |
 |---|---|
-| `OfferableStatuses` = `[New, Confirmed]` | the **coarse** fulfilment floor — the index-served prefilter on `Orders.CurrentStatus`, and the thing the three clients mirror. **Not the rule** — `New` is conditional. |
+| `OfferableStatuses` = `[New, Confirmed]` | the **coarse** fulfilment floor — the index-served prefilter on `Orders.CurrentStatus`, and the thing the clients mirror. **Not the rule** — `New` is conditional. |
 | `IsOfferableSql` : `Expression<Func<Order,bool>>` | queryable form, composed into `OrderSpecification` |
-| `IsOfferable(OrderStatus?, PaymentType)` | in-memory form, for the `TakeOrder` write gate |
+| `IsOfferable(OrderStatus?, PaymentType, PaymentStatus, string? recurringTemplateId)` | in-memory form, for the `TakeOrder` write gate. **Four scalars, all columns on `Order`** — no navigation properties, no I/O, no collaborator. |
 
-**Cash is not an exception — it is the rule with an empty money axis.** A future `PaymentType` answers
-"can this still retract the order?" and drops in without touching a surface.
+**`NotRetractable` is the union of the negations of the two sweeps that actually run**, read off their
+own `WHERE` clauses — `CleanupStalePendingOrders.cs:50-53` (**no `OrderStatus` term**) and
+`AutoCancelStaleRecurringOrders.cs:63-69` (**no `PaymentType` term**). If a third scheduled retractor
+is ever added, **this term is where it must be reflected** — a sweep whose predicate is not negated
+here silently re-creates the defect the panel caught.
+
+**Cash is not an exception — it is the rule with an empty *pre-work* money axis.** A future
+`PaymentType` must be classified on **both** axes (offerable at `New`? retractable by which sweep?) and
+an exhaustiveness test over `Enum.GetValues<PaymentType>()` goes red until it is.
 
 ## Collaborators
 
@@ -67,12 +82,19 @@ Offerable(o) ⟺ o.CurrentStatus == Confirmed
   question. A cleaner must always see their own terminal orders; availability must never floor them.
 - **How to write a status.** It reads `CurrentStatus`; it never appends a track. `TakeOrder.cs:192-194`
   remains the only path from `New` to `Confirmed` on a take.
-- **Payment state.** It reads `PaymentType` (the money *model*), never `PaymentStatus` (the money
-  *progress*). Every order is created `PaymentStatus.Pending` (`OrderFactory.cs:116`) and a cash order
-  never leaves it — so a `PaymentStatus` term would either admit abandoned cards or exclude all cash.
-- **When an abandoned card order dies.** That is `CleanupStalePendingOrders` (15-min timer, 1 h
-  threshold, keyed on `PaymentStatus.Pending && PaymentType == Card`). Availability declines to offer
-  such orders; it does not cancel them.
+- ~~**Payment state.** It reads `PaymentType` (the money *model*), never `PaymentStatus` (the money
+  *progress*)…~~ **STRUCK 2026-08-03 by the ADR-0037 panel (CH-M3, CH-M4).** This bullet was wrong,
+  and it is the textbook case the RDD rule exists to catch: *if a scenario forces a role to know
+  something on its "does NOT know" list, the responsibility is wrong or a collaborator is missing.*
+  Two scenarios did — a recurring cash order awaiting the customer's confirm, and a `Confirmed` card
+  order an admin pushed forward — and **no collaborator was missing**, so the responsibility was
+  wrong. The role reads `PaymentStatus` and `RecurringTemplateId`. *The draft's reasoning ("a
+  `PaymentStatus` term would either admit abandoned cards or exclude all cash") is sound about
+  `PaymentStatus` as a **whole rule** and says nothing about it as a **conjunct** — which is what
+  ships.*
+- **When an abandoned card order dies, or who cancels it.** That is `CleanupStalePendingOrders` /
+  `AutoCancelStaleRecurringOrders`. Availability **negates their predicates** so it never offers a
+  doomed order; it never cancels one, never schedules one, and never reads a clock.
 - **Which tenant.** The global query filter scopes every read that composes it.
 
 ## Invariants a reviewer checks
@@ -95,15 +117,26 @@ Offerable(o) ⟺ o.CurrentStatus == Confirmed
    resolves via `CurrentStatus ?? latest history (CreatedOn desc, Sequence desc)`, matching
    `OrderRepository.cs:285-288`. A bare `CurrentStatus!.Value` on a request path is a finding
    (`OrderMappers.cs:14-17` is one today, reached from `TakeOrder.cs:191`).
-7. **Validator order in `TakeOrder`:** `NotEmpty → ExistsAsync (incl. the ADR-0036 hold) → IsOfferable
-   → HasAvailableSpots`. Placing `IsOfferable` before the hold check leaks `order.not_takeable` for a
-   **held** order and reveals it exists and is live — the exact inference ADR-0036 forbids.
-8. **`order.not_takeable` resolves in all 11 locale files** (web partner ×5, Android partner ×5, iOS
-   `Localizable.xcstrings` ×1 file / 5 languages). `error-contract-parity.spec.ts` covers the
-   **customer** app only (`:27-30`) and will not catch a partner miss.
-9. **The cross-stack parity spec exists** and fails when any one client's Available literal is edited
-   alone. A comment claiming the clients agree is **not** enforcement — that claim is what shipped six
-   different lists.
+7. **`TakeOrder.Validator` is ONE `RuleFor` chain** (`Cascade(CascadeMode.Stop)`), in the order
+   `NotEmpty → ExistsAsync (incl. the ADR-0036 hold) → IsOfferable → HasAvailableSpots → …cleaner
+   rules`. **A second `RuleFor` in that file is a hard reject** — `ClassLevelCascadeMode` defaults to
+   `Continue`, both chains run, and the failures are semicolon-joined into an unresolvable composite.
+   **Enforced by `TC-TAKE-ONE-ERROR`** (exactly one error per refusal scenario, held order included),
+   **not** by reading the code. Placing `IsOfferable` before the hold check, or letting a second chain
+   run beside it, leaks the fact that a **held** order exists and is live — the exact inference
+   ADR-0036 forbids, and it leaks via the *pairing* of keys, not via any one key.
+8. **All three refusal keys resolve, per client namespace** — `order.not_takeable` (new),
+   `order.already_cancelled`, `order.already_completed`. **Grep the files; do not watch the screen** —
+   a missing key on web renders `api.common.error_occurred`, indistinguishable from a 500
+   (`http-error.interceptor.ts:14-20`). Namespaces: **`api.order.*`** web · **`error_order_*`** Android
+   · **`error.order.*`** iOS. (`error-contract-parity.spec.ts` covers the **customer** app only,
+   `:27-30`.)
+9. **The cross-stack parity check exists, RUNS, and covers BUTTON gates.** It is a **plain Node
+   script with its own trigger**, not a Jest spec under `nx affected` (which is not selected on
+   mobile-only diffs and is cache-green when it is). It asserts surfaces **5, 6, 7, 9 and 10** — the
+   query decides what is *listed*, the button decides what is *clickable*, and a check covering only
+   the query tests the wrong half. Acceptance: flip one client literal, push a branch touching only
+   that file, the PR goes red.
 
 ## Watch-list
 

@@ -35,6 +35,14 @@
   parameters they send** — `isUnassigned` → `hasAvailableSpots` **+ `excludeEmployeeId`**. Still **no
   backend change and no NSwag regen** for that: both parameters are already on the endpoint
   (`cleansia_android/openapi/partner-mobile-api.json:1128,1142`).
+- **⚠️ SCOPE GREW AT THE PANEL — re-size T-0530 before ticketing.** Added by the amendments: two more
+  `OrderAvailability` parameters; **three** more surfaces (web row-action button, web detail-page Take
+  button, web filter dropdown); **`TakeOrder.Validator` collapsed to one chain** + `TC-TAKE-ONE-ERROR`;
+  the **web reconcile** on two facades; **three** error keys instead of one (two of them reused) plus a
+  copy re-voice plus a partner-web backfill; the **date-floor constant**; an `AdminOverrideOrderStatus`
+  target guard + seeded test; a `PaymentType` exhaustiveness test; and the parity check re-shaped as a
+  **plain node script with its own CI workflow**. Six further defects are **not** in T-0530 —
+  see §Escalations.
 - **Ticket:** T-0530 (AC1 is this document; AC2/AC3/AC4 are implemented against it).
   Serialization: T-0529 → **T-0530** → T-0528 all edit `NewJobsDigestService.cs`; **T-0515**
   (ADR-0036) edits four of the same surfaces and must land after this rule exists, not beside it.
@@ -60,7 +68,8 @@ T-0530 scoped this as *"one architect, one item"* — reasonable when the ticket
 was three-way and cosmetic. Verification found otherwise, and four of the findings are decision-shaped:
 
 1. **The divergence is eight-way, not three-way** (§D0), and two of the eight are *server-side
-   authorization* surfaces, not display.
+   authorization* surfaces, not display. **[The panel found it is TEN-way — CH-X5. The two the draft
+   missed are the web *buttons*, and one of them contradicts this ADR's ruling. See §D0.]**
 2. **The rule is not expressible as a status set at all** — it is payment-qualified, which no existing
    surface implements and which changes what "canonical set" even means.
 3. **It changes shipped behaviour** (the take gate) and costs a new error key in three clients.
@@ -227,15 +236,17 @@ discriminator; we need to *read the one that exists*.
 ## D1 — The ruling: offerability is a two-axis predicate
 
 > **An order is offerable to a cleaner iff (a) its fulfilment axis is pre-work with a free seat, and
-> (b) its money axis has already reached the state that taking it assumes.**
+> (b) its money axis has already reached the state that taking it assumes — i.e. no scheduled job can
+> still retract it.** *(clause (b) restated by the panel: "the state the take assumes" was the
+> intention; "nothing can retract it" is the testable form.)*
 
-Cleansia stores these on two independent axes and the eight surfaces all failed by consulting only
+Cleansia stores these on two independent axes and all ten surfaces failed by consulting only
 the first:
 
 | Axis | Column | Question it answers |
 |---|---|---|
 | **Fulfilment** | `Order.CurrentStatus` (`OrderStatus`) | how far has the *work* got |
-| **Money** | `Order.PaymentStatus` + `Order.PaymentType` | has the *payment* resolved |
+| **Money** | `Order.PaymentType` (the *model*) + `Order.PaymentStatus` (the *progress*) + `Order.RecurringTemplateId` (which sweep applies) | has the *payment* resolved, **and can anything undo it** |
 
 Instantiated over the enums as they exist (`OrderStatus.cs`, `PaymentType.cs:8-9`):
 
@@ -598,6 +609,11 @@ know which one is authoritative. **Declare it dead.**
 
 **Yes, this changes shipped behaviour, and here is the exact bill** (stating it so the implementer does
 not discover it):
+
+> **⚠️ [SUPERSEDED WITHIN THIS ADR by §D6.1–D6.4.]** The bill below is the draft's and is **wrong in
+> its exemplar, its namespace and its stated failure mode**, and it budgets copy for the rare key and
+> none for the modal one. **Read §D6.3 for the bill you implement.** It is left in place because the
+> panel's corrections are only legible beside what they correct.
 
 - **New constant** in `BusinessErrorMessage.cs`, in the `order.*` block near `:70-80`:
   `public const string OrderNotTakeable = "order.not_takeable";`

@@ -8,10 +8,17 @@
 > `agents/knowledge/roles/preferred-cleaner-hold-resolver.md`.
 >
 > ⚠️ **AMENDED 2026-08-03 by owner instruction.** **[ADR-0039](../../backlog/adr/0039-preferred-cleaner-slot-availability-is-checked-at-the-moment-of-choosing-set-based-and-never-earns-a-hold-when-it-fails.md)**
-> (`proposed`) **partially supersedes ADR-0036 D5.1 / A6**: the preferred cleaner's availability at the
-> booking's own date and time **is** now checked — at the picker and again at creation — and a cleaner
-> known to be busy gets **no hold and no push**. **A6's weekly-cap half stands.** The hold mechanism
-> itself is untouched. See §"Is this cleaner free at this hour?" below.
+> is **`accepted`** (2026-08-03, after a two-lane defense panel: disclosure + query-cost + lead;
+> **sixteen findings, fourteen upheld, eleven amendments folded in**). It **partially supersedes
+> ADR-0036 D5.1 / A6**: the preferred cleaner's availability at the booking's own date and time **is**
+> now checked — at the picker and again at creation — and a cleaner known to be busy gets **no hold and
+> no push**. **A6's weekly-cap half stands.** The hold mechanism itself is untouched. See §"Is this
+> cleaner free at this hour?" below.
+>
+> 🔴 **The one thing to carry away from that panel: the feature has THREE server-side preconditions,
+> and they gate the BACKEND ticket, not the UI one.** A rate limit, a server-side Plus gate on the
+> flag, and an `IsActive` filter on the list. The oracle exists the moment the *server* answers —
+> gating the picker UI would have shipped it anyway. See §"The three preconditions" below.
 >
 > ✅ **BOTH OWNER ESCALATIONS CLOSED 2026-08-03.** **`Q-PLUS-05`** → **`PastDue` keeps NO benefits; cut
 > everything on the first payment failure, no grace window.** D7's interim ruling becomes binding and
@@ -195,27 +202,65 @@ fill window spent on an outcome with probability **zero**.
 | **The weekly cap** | **still not checked, and this is evidence not taste.** `GetEmployeeOrderCountThisWeekAsync:249-252` derives its window from `DateTime.UtcNow.Date` — at creation, for a booking 10 days out, it answers about a week that does not contain the booking |
 | **Order in the resolver** | **last.** It is the only check that costs a range scan; every other gate is an equality on rows already fetched |
 
-**Two verified defects the naive implementation walks into** — this is why it is an ADR and not a ticket:
+**Two verified defects the naive implementation walked into — ✅ BOTH NOW FIXED AND SHIPPED** (they
+landed while the panel was sitting; kept here because the *shape* is the reusable part):
 
-1. **`HasOverlappingOrderAsync` is tenant-SCOPED (`GetDbSet()`, `OrderRepository.cs:281`) while its
-   digest caller is tenant-IGNORING** (`NewJobsDigestService.cs:63,98,137`). Under a tenant every
-   branch of the filter is false ⇒ **every cleaner reports free**. It is also the `TakeOrder` write
-   gate. T-0529's status log asked the PM to file this; **it still has no ticket.**
+1. ✅ **`HasOverlappingOrderAsync` was tenant-SCOPED while its digest caller is tenant-IGNORING**
+   (`NewJobsDigestService.cs:63,98,137`). Under a tenant every branch of the filter is false ⇒ **every
+   cleaner reports free** — on the digest *and* on the `TakeOrder` write gate.
    → *The defect is not "it is tenant-scoped" — it is that **one method serves two callers with
-   opposite tenancy requirements and silently picks one**. Name the two variants (the shipped
-   `EmployeeRepository.GetByIdAsync` / `GetByIdIgnoringTenantAsync` precedent).*
-2. **No lower bound on `CleaningDateTime`** — the only range term is an **upper** one (`:283`), and
-   `CleaningDateTime.AddMinutes(EstimatedTime)` (`:284`) is a per-row computation, not sargable. So each
-   call scans the cleaner's whole assignment history. **×20 per picker render.**
-   → *Floor the scan at `windowStart − BookingPolicy.MaxOrderSpanHours` (24 h) so
-   `IX_Orders_CurrentStatus_CleaningDateTime` serves it. The number is chosen by **failure asymmetry**:
-   too generous = a wider scan of a nearly-empty band; too tight = a missed overlap on the **write
-   gate** = a double-booking. **When in doubt, widen it.** Checkable in one line:
-   `SELECT MAX("EstimatedTime") FROM "Orders"`.*
+   opposite tenancy requirements and silently picks one**.* **Fixed as `HasOverlappingOrderAsync` /
+   `HasOverlappingOrderIgnoringTenantAsync` (`OrderRepository.cs:272-276`)**, both delegating to one
+   private predicate parameterised by the queryable. Pinned by
+   `HasOverlappingOrderTenancyAndScanFloorTests` — **every tenancy case seeds a non-null `TenantId`**,
+   which is the only way these tests prove anything (`security-rules.md:236`).
+2. ✅ **No lower bound on `CleaningDateTime`** — the only range term was an **upper** one, and
+   `CleaningDateTime.AddMinutes(EstimatedTime)` is a per-row computation, not sargable, so each call
+   scanned the cleaner's whole assignment history. **×20 per picker render.**
+   → **Fixed as a scan floor at `OrderRepository.cs:289`.** ⚠️ **Two corrections the panel forced on
+   the ADR's draft, both of which the shipped code already got right:**
+   - **The constant is `Order.MaxOrderSpanHours` in `Cleansia.Core.Domain`, NOT `BookingPolicy`.**
+     `Cleansia.Infra.Database` does not reference `Cleansia.Core.AppServices` — the drafted placement
+     **does not compile**.
+   - **It is 168 h, not 24.** *"24 h exceeds any single-day span by construction"* was false against
+     shipped seed data: the catalog produces **20.25 h from services alone and 58.25 h with packages**.
+     168 gives ~3× headroom over a number an admin can raise tomorrow.
 
-**End state, not a parallel path:** `HasOverlappingOrderAsync` becomes a one-line wrapper over the set
-method, so the floor and the tenancy fix land on the write gate for free and there is never a second
-overlap predicate. `HasOverlappingOrderStatusTests` is the pin that proves it did not change meaning.
+**End state — ⚠️ the convergence direction is INVERTED from the draft, and the shipped shape is
+better.** The draft made the boolean a wrapper over the **set** method (`.Count > 0` over a
+`.Distinct().ToListAsync()`), which would have made `TakeOrder`'s hot path materialize a set to answer
+a boolean. The shipped code shares the **predicate**, not the terminal operation, and keeps
+`.AnyAsync(ct)`. So:
+
+```
+LiveCommitmentsInWindow(IQueryable<Order>, startUtc, endUtc)   ← ONE definition (floor + interval + status)
+   ├─ .Any()        one employee, tenant-scoped     → TakeOrder            ✅ shipped
+   ├─ .Any()        one employee, ignoring          → NewJobsDigestService ✅ shipped
+   └─ .SelectMany() N employees, tenant-scoped      → picker + resolver    ⬅ the only piece left to build
+```
+
+**No `IgnoringTenant` sibling of the set method will be built** — it would have zero callers on the day
+it shipped (the digest is boolean-shaped and already has one), and a tenant-escaping read one
+IntelliSense entry from a customer-facing handler is a cost with no buyer. **Two pin classes** hold the
+predicate through the extraction: `HasOverlappingOrderStatusTests` (11 status cases) and
+`HasOverlappingOrderTenancyAndScanFloorTests` (5 tenancy + 3 floor cases, including the accepted blind
+spot written down as a passing `Assert.False`).
+
+**A second fan-out shape exists and is deliberately NOT built here.** The digest and the recurring
+materializer are **one employee, many windows** — the set method does nothing for either, and both
+loops survive. That is pre-existing, on timers, and belongs to the filed digest redesign; ADR-0039 D3.3
+specifies its shape (one query per cleaner over `[min(starts) − floor, max(ends))`, intersected in
+memory against a **pure interval function in Domain**, status staying in SQL) so the redesign cannot
+invent a fourth predicate.
+
+> ⚠️ **The composition trap with ADR-0037, because it fails OPEN.** Offerability is
+> `STATUS(o) ∧ NotRetractable(o)`. **Do not add `NotRetractable` to the occupancy predicate.** It is an
+> *entry* condition — nothing can be assigned unless it was offerable — so it is redundant on the happy
+> path and actively wrong where it is not: an order whose payment state changed *after* a cleaner took
+> it would stop blocking, double-booking a cleaner who is standing in someone's flat. Retraction is
+> expressed the one correct way, by a sweep moving the order to `Cancelled`, which is terminal and
+> already absent from `SlotBlockingStatuses`. **Occupancy = a commitment already made. Offerability =
+> work still available. One predicate each.**
 
 **The window's duration has exactly one definition.** A nominal window is wrong in both directions (too
 short re-opens the failure; too long greys out a cleaner the customer could have had). `QuoteOrder`
@@ -231,9 +276,139 @@ for you, and only about the one instant you are booking. **No range parameter, e
 different decision with a different privacy analysis.
 
 The response field is a **tri-state**: `true` / `false` / **`null` = not evaluated**. `null` is
-reachable on day one (a client that has not been rebuilt, no slot chosen yet, the check failing) and
-**must render as no marking**. A client that maps it to a `Bool` either greys out everyone or defeats
-the feature.
+reachable on day one and **must render as no marking**. A client that maps it to a `Bool` either greys
+out everyone or defeats the feature.
+
+> ⚠️ **The tri-state dies two layers below the UI, and both clients have the idiom that kills it.**
+> `OrderApi.kt:343-352` (`toAppDto`) drops the whole row on any absent field — three `?: return null`
+> lines running — and `ServingCleanersClient.swift:19-24` does the same via `compactMap`/`guard let`
+> into a **non-optional** struct. Combine that with the two "hide the picker when the list is empty"
+> guards (`PreferredCleanerPicker.kt:94`, `PreferredCleanerViewModel.swift:23-25`) and a transient query
+> failure **deletes the picker** — no error, no log, no support signal. That is not "degrades to
+> today's behaviour"; it is *the feature was never there*.
+>
+> **The contract, binding on the mobile ticket:** the tri-state survives into the **app-layer DTO** as
+> `Boolean?` / `Bool?` — it is not resolved at the mapping boundary — and the pin is an **automated test
+> per client** (payload with the field absent ⇒ non-null row with `isAvailable == null`), not a
+> reviewer's eyeball.
+>
+> **The generalisable rule (catalog gap, filed):** *an optional field added to an existing response row
+> must never be mapped with the row-dropping idiom.* The idiom is right when absence makes the row
+> **meaningless** (an id) and wrong when absence **is an answer** (this field).
+> `generated-client-contract.md` covers the NSwag/TypeScript side of added optionals and has nothing on
+> the hand-written mobile mappers.
+
+**`null` now has THREE producers, and that is the seam holding rather than defensive programming:**
+
+| producer | why |
+|---|---|
+| no slot in the request / the check could not run | the original two — degrade, never a lie |
+| **a non-member** | the Plus gate moved server-side and sits on the **flag**, not the list (see the preconditions below) |
+| **a cleaner-side suppression flag** *(reserved, not built)* | if `Q-AVAIL-04`'s lawful-basis answer allows workers to object. `false` would **leak the opt-out itself**; `true` asserts what the server declined to evaluate; **`null` already means "not evaluated"** |
+
+### The three preconditions (ADR-0039 D12 — they gate the BACKEND ticket)
+
+The draft's safety argument rested on two structural limits. The panel found **one real and one
+imaginary**, and the imaginary one was carrying the whole privacy case.
+
+| Limit | Status |
+|---|---|
+| *You can only ask about cleaners who completed a job for you* | ✅ **real and structural.** `Cancelled` is terminal and not `Completed`; reaching `Completed` needs a cleaner to take and photo-gate-finish the job; and a customer cannot target a specific cleaner because `PreferredEmployeeId` is itself gated on already-completed membership — **circular by construction.** The set accumulates by luck, one paid cleaning at a time. |
+| *You can only ask about one instant* | ❌ **enforced by nothing.** |
+
+**Why the second one was fiction, three ways:**
+
+1. **No rate limit at all.** `MyServingCleaners` carries no `[EnableRateLimiting]` on either customer
+   host, while `CancelOrder` **eleven lines above it in the same controller** (`:171` vs `:182`) carries
+   `[EnableRateLimiting("auth")]` — and `RateLimitPolicies.cs:152-156`'s `GlobalLimiter` returns
+   `GetNoLimiter("authed-global")` for anyone with a `sub`. **84 unthrottled requests = an
+   hour-resolution weekly calendar for 20 named cleaners.** And the grid is a *client* convention:
+   `CleaningDateTimeUtc` is a free `DateTime`, so the real resolution is bounded by the rate limit and
+   nothing else.
+2. **The window end is caller-chosen.** `SelectedServiceIds` + `SelectedPackageIds` pick it, and
+   nothing capped it — **58.25 h reachable from the shipped catalog.** A range parameter under another
+   name, which the ADR's own compliance grep **passed green on**.
+3. **The Plus gate was client-side only.** Mobile view models guard the fetch; the handler injects no
+   membership repository. So the oracle served every customer with ≥1 completed order.
+
+**The three fixes, and they gate the server ticket (A3), never the UI ticket (A4)** — `curl` does not
+need a client:
+
+| # | Fix | Shape |
+|---|---|---|
+| **1** | `[EnableRateLimiting("auth")]` on `MyServingCleaners`, **both** customer hosts | **The existing policy — 30/min per `sub`** (`RateLimitPolicies.cs:47-49`), same as the sibling `CancelOrder`. **No new policy**: `Cleansia.Config` registers them **once for all five hosts**, so a fourth policy is a shared-config change + an ADR-0003 amendment to buy a number we already have. Sharing the `auth` budget with login/cancel is deliberate — probing should cost the prober everything else. **⇒ the mobile ticket owes a debounce**, or the first 429 lands on a customer scrubbing a time control. |
+| **2** | The **Plus gate on the flag, not the list** | Non-member ⇒ `null` on every row, list unchanged. Gating the *list* would change a shipped contract and empty it for non-members, which both clients render as *the picker never existed*. |
+| **3** | An **`IsActive` filter** on the picker's employee **and** its user | S10. Today a departed / GDPR-erased cleaner is returned (soft-delete: `GdprDeletionService.cs:235-241` → `IsActive = false`, the `Completed` order survives) — and, having no live orders, they compute **free**, render unmarked and selectable, and earn the hold. |
+
+**Precondition 3 has a twin that is NOT ADR-0039's and does not wait for it:**
+`HoldDeclineReason.CleanerNotApproved` keys on `ContractStatus`, and `Deactivated(...)` leaves
+`ContractStatus` **untouched**. So under **ADR-0036 alone, today**, a hold + a targeted push can be
+granted to a cleaner who left the platform — 100% of the first seat's fill window on a zero-probability
+outcome, and with `SpareSeatsPerOrder = 0` it is the *only* seat. **The resolver's approval gate must
+read `IsActive`. Added as an AC on T-0515.**
+
+### The span cap — the assumption the floor rests on is now enforced
+
+`Order.MaxOrderSpanHours = 168` documents itself as **"assumed, not enforced"**, and nothing caps
+`EstimatedTime`: no ceiling on a service's estimate (`GreaterThanOrEqualTo(0)`), no cap on the item
+count (`CreateOrder`'s only cardinality rule is a **lower** bound of one), and a service inside a
+selected package is summed **again** if also selected directly.
+
+**Ruling: `BookingPolicy.MaxBookableOrderSpanHours = 24`, enforced at `OrderFactory` — the single
+production writer of `EstimatedTime` — before `CalculateRequiredEmployees` runs**, mirrored in the
+`CreateOrder` / `QuoteOrder` validators, and pinned by a unit test asserting
+`MaxBookableOrderSpanHours <= Order.MaxOrderSpanHours`.
+
+**Two numbers, deliberately, in two layers — conflating them is what produced the compile error:**
+
+| | `Order.MaxOrderSpanHours = 168` | `BookingPolicy.MaxBookableOrderSpanHours = 24` |
+|---|---|---|
+| Kind | **query safety margin** | **product policy** |
+| Layer | `Core.Domain` (the repository can reach it) | `Core.AppServices` (where the write path lives) |
+| Must | dominate every *producible* span | reject what a real appointment never is |
+| If wrong | a missed overlap **on the write gate** = a double booking | a customer's large booking is refused |
+
+**It is also, unavoidably, a crew cap** — `RequiredEmployees = ceil(EstimatedTime / 120)` and
+`SpareSeatsPerOrder = 0`, so 24 h implies a maximum crew of 12. Flagged for the owner, not decided.
+
+**Why it blocks, and the lane matters:** on the **double-booking** lane it does *not* block (168 h with
+3× headroom is real but not urgent). On the **disclosure** lane it **does** — 58.25 h of
+caller-controlled window is a binary-search primitive the day the flag ships. A reader who thinks the
+cap is about double-booking will correctly de-prioritise it and ship the oracle anyway.
+
+### What is measured rather than asserted
+
+**"No new index" is an expectation, not a fact.** The status term sits inside an `OR` with the
+fail-closed NULL fallback, so it is **not** an unconditional index qual, and the only unconditional
+sargable conjunct is a range on `IX_Orders_CurrentStatus_CleaningDateTime`'s **second** key column —
+which a PG16 btree cannot start a scan on. The claim depends on the planner choosing a **`BitmapOr`** of
+two index paths. It probably will (the NULL arm is empty on any database built from the single
+`Initial` migration), but *probably* is not what the ADR said.
+
+- **Obligation:** `EXPLAIN (ANALYZE, BUFFERS)` in `src/Cleansia.IntegrationTests` — the rig exists
+  (`PostgresContainerFixture` + real migrations), which is why ADR-0036's "priced by reasoning" caveat
+  is **not** inheritable here.
+- **Flip condition:** a seq scan or full index scan ⇒ emit the two arms as a `Concat`/`UNION` so both
+  are sargable by construction. **Not** a new index — that pays maintenance on the hottest insert path.
+- **The cheapest fix is escalated, not adopted:** make `Orders.CurrentStatus` **`NOT NULL`**. The
+  column is nullable only for pre-backfill rows and the repo carries **exactly one migration**, so that
+  population is empty by construction. It deletes the disjunct, the correlated subquery and the risk
+  **for every consumer of the column**. Out of the panel's authority (it supersedes an `accepted`
+  ADR-0037 ruling and needs an owner-only migration) and **time-boxed** — near-free while the owner is
+  regenerating `Initial`, a backfill afterwards. **`Q-AVAIL-05`, needs its own ADR.**
+
+### The 127-column elephant, re-sequenced
+
+`GetMyServingCleaners` materializes the **full order graph** for every completed order of the customer
+to produce ≤20 names: **127 columns pulled, 4 used** — including `IBAN`, `PassportId`,
+`RegistrationNumber` and `VatNumber` from `Employees` — with **no `AsNoTracking()`**, and `GroupBy` /
+`Take(20)` running **in memory**.
+
+**The projection ships WITH or BEFORE the flag, not after.** Not because of the cycles: because pulling
+`IBAN` and `PassportId` into a **customer-facing** handler is an over-fetch with a security shape, and
+because the flag ticket is editing this exact query anyway (for the `IsActive` filter and the
+membership gate). Pushing `Take(20)` into SQL also bounds the busy query's input **at the source**
+rather than after materializing everything.
 
 ### The customer
 
@@ -270,9 +445,25 @@ line as the `?:` fallback for the cleaner's **name**, so it is destroyed by the 
 - **what is disclosed, stated rather than argued away:** that a cleaner **who has been in this
   customer's home** is occupied during **the one window this customer chose**. Not who, where, what, or
   any other window. It is the minimum the feature cannot exist without — there is no way to say *"you
-  cannot have Anna at 10:00"* without saying Anna is unavailable at 10:00. Residual probing is bounded
-  by the serving-cleaner set and by the flag naming no reason. **`Q-AVAIL-04`** escalates whether
-  cleaners should be told this is visible.
+  cannot have Anna at 10:00"* without saying Anna is unavailable at 10:00.
+- **the residual is a NUMBER, not an adjective** (the panel struck the word *"determined"*): reachable
+  **set** ≤20 own serving cleaners (structural); reachable **depth** ≤24 h per request (enforced);
+  reachable **rate** 30/min per `sub`, shared with that account's login and cancel. A full week of
+  hour-resolution answers therefore costs ~3 minutes of sustained requests and the account's entire
+  auth budget while it runs. **No mechanism here makes bulk reconstruction impossible** — a rate limit
+  buys slowness, budget-consumption and countability. The owner is accepting that arithmetic.
+- ⚠️ **and after the picker becomes slot-keyed, probing is the ORDINARY interaction.** Both clients
+  fetch once today (`PreferredCleanerPicker.kt:85-92` behind a one-shot latch,
+  `PreferredCleanerViewModel.swift:27-29`), and the "clearing" rule invalidates that premise. Post-fix,
+  every scrub of the date control emits an occupancy answer, from customers attacking nothing. That is
+  accepted — and it is why the **debounce** is not a polish item.
+- **`Q-AVAIL-04`** — ⚠️ **re-scoped by the panel from *notice* to *lawful basis*.** Not "should
+  cleaners be told" but *which basis covers disclosing a worker's occupancy to a third party for that
+  third party's convenience*, balanced against the **quantified** residual above rather than the
+  one-slot story. The platform has a real posture to answer within (`ConsentType` + `UserConsent` with
+  grant/withdraw, `IpAddress`, `UserAgent`; cleaners are `User`s). **Still non-blocking, and now for a
+  reason:** the likely outcome (workers may object) needs a suppression flag, and **`null` is already
+  reserved for it** — so the answer changes text unless it changes nothing.
 
 ### The Plus gate
 
@@ -372,7 +563,12 @@ cleaner's score"* myth lives in **three** files (`Order.cs:217-224`, `PreferredC
 | **Slot conflict at creation** *(ADR-0039)* | **checked — no hold, no push** | not checked, the hold expires (ADR-0036 D5.1/A6) | **settled by owner instruction 2026-08-03; do not reopen** |
 | **Weekly cap at creation** | **still NOT checked** | check it too | nothing — `GetEmployeeOrderCountThisWeekAsync:249-252` keys on `UtcNow.Date`, so it answers about a week that may not contain the booking |
 | **How the picker asks** *(ADR-0039)* | one **set-based** query over the customer's own serving set | N × `HasOverlappingOrderAsync`; a general `GET /employees/{id}/availability` | nothing — the loop is wrong under a tenant and unbounded; the general endpoint is a schedule oracle |
-| **Overlap scan floor** *(ADR-0039)* | `windowStart − MaxOrderSpanHours` (24 h), chosen by failure asymmetry | a persisted end-instant column + index | `MAX(EstimatedTime)` approaching the floor, or the floor in a slow-query report |
+| **Overlap scan floor** *(ADR-0039, amended by panel)* | **`windowStart − Order.MaxOrderSpanHours` (168 h), in `Core.Domain`** | ~~`BookingPolicy.MaxOrderSpanHours` (24 h)~~ — **does not compile** (Infra.Database cannot reference AppServices) and **refuted by seed data** (catalog reaches 58.25 h); a persisted end-instant column + index | `MAX(EstimatedTime)` approaching the floor, or the floor in a slow-query report |
+| **Producible span** *(ADR-0039 D3.4 — new)* | **enforced: `BookingPolicy.MaxBookableOrderSpanHours = 24`, rejected at `OrderFactory`** | assumed, documented, unenforced (what shipped) | nothing — an unenforced safety-asymmetric constant is a comment. Raising the cap requires raising the floor first (`cap <= floor` is a unit test) |
+| **Convergence direction** *(ADR-0039 D3.2, inverted by panel)* | **share the PREDICATE; the boolean keeps `.AnyAsync()`** | the boolean becomes a wrapper over the **set** method (`.Count > 0`) | nothing — the draft's direction cost `TakeOrder`'s hot path a materialized set + hash aggregate to answer a bool |
+| **Plus gate on the picker read** *(ADR-0039 D12.1 — new)* | **server-side, on the FLAG** (non-member ⇒ `null` per row) | client-side only (today); or gate the whole **list** | nothing — client-side is not a gate; gating the list changes a shipped contract and both clients render an empty list as *no picker* |
+| **The picker's rate limit** *(ADR-0039 D12.1 — new)* | **`[EnableRateLimiting("auth")]`** — the existing 30/min per-`sub` policy | none (today); a new narrow named policy | evidence that honest slot-scrubbing hits 30/min **after** the debounce — then the answer is a fourth policy + an ADR-0003 amendment, not a bigger `auth` |
+| **Departed cleaners in the picker** *(ADR-0039 D12.3 — new)* | **filtered out** (`IsActive` on employee **and** user) | left in and marked; left in unmarked (today) | nothing — before the flag a stale row was cosmetic; after it, the absence of a mark **is a claim**, and it is false |
 | **Unavailable treatment** *(ADR-0039)* | shown · greyed · unselectable · one neutral line | hidden; greyed silently; selectable-with-a-warning; name the reason; offer another time | nothing — each alternative either lies, mystifies, or ships a claim we cannot back |
 | **Race lost at submit** *(ADR-0039)* | create the order, store the preference, no hold, tell nobody | reject the booking; push the customer | support evidence that customers believe the preference was honoured → the answer is **copy**, not a push |
 | **`PastDue` (card failed)** | **no benefits, immediately** — owner ruling 2026-08-03 | a grace window through Stripe's retries (what `MembershipStatus.cs` used to document) | **settled; do not reopen.** Support volume from customers who lost benefits before being told is the signal — and the answer is **P-1** (tell them), not a grace window |
@@ -398,16 +594,40 @@ cleaner's score"* myth lives in **three** files (`Order.cs:217-224`, `PreferredC
   partial index, so an admin hold view would need its own decision.)
 - **A fallback list** (second-choice cleaner) — not considered. *(ADR-0039 makes this question sharper,
   not answered: once the picker can say "not available", "then who?" is the customer's next thought.)*
-- **`Q-AVAIL-04` (owner)** — should cleaners be told, in the partner app or the terms, that a past
-  customer can see whether they are free for one specific slot? The disclosure is real, narrow and
-  unavoidable if the feature exists (ADR-0039 D7.4). **Not blocking** — it changes text, not mechanism.
-- **`BookingPolicy.MaxOrderSpanHours = 24` is a scan floor, not an enforced invariant.** Nothing caps
-  `EstimatedTime` today. It is safe because it may only ever be *too generous*, and it is verifiable in
-  one line — but if a booking ever exceeds it, an overlap disappears **on the write gate**. The durable
-  fix is a persisted end-instant column (ADR-0039 A15), filed with its flip condition.
-- **`GetMyServingCleaners` still lists cleaners `TakeOrder` would categorically refuse** (left the
-  platform, wrong work country, not approved). ADR-0039 rules that this is a **filter on the list**, not
-  a flag on the row — a different shape for a fact that never changes with the slot. Filed, not fixed.
+- **`Q-AVAIL-04` (owner)** — ⚠️ **re-scoped: lawful basis, not notice** (see §The customer above).
+  **Not blocking**, and now demonstrably so — `null` is reserved for a suppression flag today, so an
+  opt-out outcome changes text rather than mechanism.
+- 🕐 **`Q-AVAIL-05` (owner) — TIME-BOXED, and the box is open now.** Should `Orders.CurrentStatus`
+  become **`NOT NULL`** while the database is dropped and `Initial` regenerated? The column is nullable
+  only for pre-backfill rows; the repo carries **one** migration, so that population is empty by
+  construction. `NOT NULL` deletes an `OR` disjunct, a correlated `EXISTS`, a planner risk **and** a
+  fail-closed special case for **every** consumer of the column — including
+  `OrderMappers.GetCurrentOrderStatus`'s `CurrentStatus!.Value` and `TakeOrder`'s request-path
+  dereference. **Needs its own ADR** (it supersedes an `accepted` ADR-0037 D3 ruling, which becomes
+  *vacuous* rather than wrong) **and an owner-only migration.** Near-free today; a backfill afterwards.
+- ✅ ~~**`BookingPolicy.MaxOrderSpanHours = 24` is a scan floor, not an enforced invariant.**~~
+  **Both halves resolved.** The constant shipped as **`Order.MaxOrderSpanHours = 168` in
+  `Core.Domain`** (the drafted placement did not compile; 24 was refuted by a catalog reaching 58.25 h),
+  and ADR-0039 D3.4 adds the **enforced** `BookingPolicy.MaxBookableOrderSpanHours = 24` at
+  `OrderFactory`, so the floor's premise is finally true by construction. A15 (a persisted end-instant
+  column) stays recorded as the durable answer with its flip condition unchanged.
+- **`GetMyServingCleaners` still lists cleaners `TakeOrder` would categorically refuse** (wrong work
+  country, not approved). ADR-0039 rules that this is a **filter on the list**, not a flag on the row —
+  a different shape for a fact that never changes with the slot. ⚠️ **The `IsActive` half is no longer
+  "filed, not fixed": it is a PRECONDITION of the flag** (D12.3), because after the flag ships the
+  absence of a mark is an affirmative claim.
+- **The digest's nested N+1 survives** (`NewJobsDigestService.cs:86` × `:135` → `:137`) — every
+  approved/active cleaner platform-wide × their unpaged candidate orders, one round trip each. The set
+  method does nothing for it: that loop is **one employee, many windows** and the set method is **many
+  employees, one window**. Pre-existing, on a timer, owned by the filed digest redesign — whose shape
+  ADR-0039 D3.3 now specifies so it cannot invent a fourth overlap predicate.
+- **Two catalog rules the panel found missing** (filed, not written here): (1) **S5 does not cover
+  read oracles** — it is scoped to *"auth + side-effecting endpoints"*, which is exactly why an
+  unthrottled per-subject read shipped; the rule wanted is *a read whose answer is per-subject and whose
+  repetition reconstructs a dataset is rate-limited like a side-effecting one*. (2) **`patterns-mobile`
+  has no rule on hand-written response mappers** — `generated-client-contract.md` covers the
+  NSwag/TypeScript side of added optionals only, and both customer clients carry the row-dropping idiom
+  that silently kills an added optional.
 
 ## Consumers
 
@@ -424,12 +644,18 @@ cleaner's score"* myth lives in **three** files (`Order.cs:217-224`, `PreferredC
 | *new, PM to file* | the digest sweep redesign (group by `WorkCountryId`; hoist the overlap loop; batch the preferences read) |
 | *new, PM to file* | the web wizard has no preferred-cleaner picker at all — **and it inherits ADR-0039's copy + tri-state constraints when it is built** |
 | *new, PM to file* | should the available-orders board include `New` orders? — **answered by ADR-0037 D1** (`New` **+ Cash** yes, `New` + Card no) |
-| **ADR-0039 — new, PM to file (A0)** | **`HasOverlappingOrderAsync` is tenant-scoped under a tenant-ignoring caller.** T-0529's status log asked for this and it was never filed. `security_touching`, ADR-0028's lane. **File first** — it is live on a shipped push path |
-| **ADR-0039 — new, PM to file (A1)** | the set-based `GetBusyEmployeeIdsInWindowAsync` + both tenancy variants + `BookingPolicy.MaxOrderSpanHours` + `HasOverlappingOrderAsync` reduced to a wrapper. **Absorbs A0 if A0 has not shipped.** Must land with the floor from day one |
-| **ADR-0039 — new, PM to file (A2)** | `OrderDuration.EstimateMinutes` extraction + `OrderFactory` rewire + `TC-AVAIL-WINDOW-0` |
-| **ADR-0039 — new, PM to file (A3)** | `GetMyServingCleaners` gains the slot + the tri-state answer. ⚠️ **`nswag-regen`, owner-only**. Depends on A1 + A2 |
-| **ADR-0039 — new, PM to file (A4)** | the picker UI marking + one string × 5 locales × 2 customer clients. Depends on A3 + the regen |
+| ~~**ADR-0039 (A0)**~~ | ✅ **DONE — shipped before the panel ruled.** `HasOverlappingOrderIgnoringTenantAsync` + the digest switch + non-null-`TenantId` pins. **Do not file.** |
+| **ADR-0039 — new, PM to file (P1)** ⛔ | **precondition of A3** — `[EnableRateLimiting("auth")]` on `MyServingCleaners` (**both** customer hosts) + the **server-side Plus gate on the flag**. `security_touching` |
+| **ADR-0039 — new, PM to file (P2)** ⛔ | **precondition of A3** — `BookingPolicy.MaxBookableOrderSpanHours` + the `OrderFactory` guard (before `CalculateRequiredEmployees`) + both validators + the error key × 5 locales + the `cap <= floor` test |
+| **ADR-0039 — new, PM to file (P3)** ⛔ | **precondition of A3** — the `IsActive` filter on the picker's employee **and** its user. Fold into A6's edit; it is the same `.Select()` |
+| **ADR-0039 — new, PM to file (P4)** | the `*IgnoringTenant*` architecture test (no reference under `Core.AppServices/Features/**`, with an allow-list). ADR-0028's lane, generalises past this feature. **Retires a manual review step.** Not blocking |
+| **ADR-0039 — new, PM to file (A1)** — **S**, was M | extract `LiveCommitmentsInWindow` from the shipped private predicate + add `GetBusyEmployeeIdsInWindowAsync` as a third wrapper. **No ignoring sibling.** ⚠️ **+ AC: `EXPLAIN (ANALYZE, BUFFERS)` in `Cleansia.IntegrationTests`; + AC: overlap cases re-run against real PostgreSQL** (the shipped pins run on SQLite). Both pin classes stay green |
+| **ADR-0039 — new, PM to file (A2)** | `OrderDuration.EstimateMinutes` extraction + `OrderFactory` rewire + `TC-AVAIL-WINDOW-0` + **the picker's SQL `Sum` projection held to the same test** (the draft cited `ExistWithIdsAsync` as precedent — that is a `CountAsync` that materializes nothing) |
+| **ADR-0039 — new, PM to file (A3)** | `GetMyServingCleaners` gains the slot + the tri-state answer. ⚠️ **`nswag-regen`, owner-only**. Depends on A1 + A2 **and on P1 + P2 + P3** |
+| **ADR-0039 — new, PM to file (A4)** — **M**, was S | the picker UI marking + one string × 5 locales × 2 clients — **plus** slot-keyed re-fetch (latch removal, in-flight cancellation, **debounce**), selection-clearing state, and **`OrderApi.kt:343-352` + `ServingCleanersClient.swift:19-24` carrying `Boolean?`/`Bool?` into the app DTO with an automated pin per client**. Depends on A3 + the regen |
+| **ADR-0039 → T-0515 (extra AC)** | **the resolver's approval gate must read `IsActive`, not `ContractStatus` alone.** `Deactivated(...)` leaves `ContractStatus` untouched, so ADR-0036 **as it stands today** can grant a hold + push to a cleaner who left. Does not wait on ADR-0039 |
+| **ADR-0039 — catalog, PM to file ×2** | (1) **S5 amendment** — a per-subject read whose repetition reconstructs a dataset is an oracle and is rate-limited like a side-effecting endpoint. (2) **`patterns-mobile`** — an optional field added to an existing response row must never be mapped with the row-dropping idiom |
 | **ADR-0039 → T-0515** | the resolver's busy check + `HoldDeclineReason.CleanerBusyAtCleaningTime`. **An added AC, not a new ticket** — T-0515 builds the resolver |
 | **ADR-0039 → T-0491** | the unavailable string's constraints, **and** the constraint that C2c's line is unchanged (the marking must not upgrade the promise for the unmarked rows) |
-| *new, PM to file* | `GetMyServingCleaners` materializes full order graphs for ≤20 names (pre-existing; optimizer lane) |
-| *new, PM to file* | `GetMyServingCleaners` should drop cleaners `TakeOrder` would categorically refuse (a **filter**, not a flag) |
+| **ADR-0039 — new, PM to file (A6)** — **re-sequenced** | `GetMyServingCleaners` materializes full order graphs for ≤20 names: **127 columns pulled, 4 used**, tracked, including `IBAN` + `PassportId` into a **customer-facing** handler. `.Select()` + `AsNoTracking()` + `OrderByDescending`/`Take(20)` into SQL. ⚠️ **Ships WITH or BEFORE A3, not after** — the reason is the over-fetch's security shape and the fact that A3 edits this exact query anyway |
+| *new, PM to file* | `GetMyServingCleaners` should drop cleaners `TakeOrder` would categorically refuse (a **filter**, not a flag). ⚠️ **The `IsActive` half is split out as P3 and BLOCKS A3**; the work-country / not-approved half stays here |

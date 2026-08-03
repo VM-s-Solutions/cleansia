@@ -799,17 +799,71 @@ already exists is the wrong tool, and calling it in a loop is the defect, not th
 
 ## A predicate that spans STACKS needs a parity test; a state set needs a writer census (ADR-0037)
 
-> **PROPOSED — not yet law.** ADR-0037 is `proposed` and unchallenged as of 2026-08-02. Do not cite
-> this section as binding until its `## Verdict` declares consensus.
+> **LAW — ADR-0037 `accepted` 2026-08-03** after a defense panel (19 findings, 8 blocking, all
+> resolved). Cite it.
 > **Enforcer / tier (ADR-0032):** (a) *structural* — the duplication is deleted, so there is nothing
-> to drift; (b) **T1-CI** — `available-status-parity.spec.ts` in the frontend job, parsing the
-> canonical C# and asserting the three clients' literals, baseline zero; (c) **T2-advisory** — a
-> `check-consistency.mjs` line rule for availability status literals outside the owning class.
+> to drift; (b) **T1-CI** — a cross-stack parity check parsing the canonical C# and asserting **every**
+> client literal **and button gate**, baseline zero; (c) **T2-advisory** — a `check-consistency.mjs`
+> line rule for availability status literals outside the owning class.
 > Layer (b) is the load-bearing one: it is the only enforcer that spans the four languages.
+> ⚠️ **And it must actually run — see the trigger rule below.** The ADR's draft specified layer (b) as
+> a Jest spec under `nx affected`, which is selected on **none** of the diffs it guards.
 
 Extends the ADR-0036 section above (write the rule once · classify surfaces by kind · call sites not
 grep hits · two evaluation forms + an equivalence test). What that section does not cover, and what
-cost Cleansia **eight** disagreeing definitions of "which orders may a cleaner take":
+cost Cleansia **ten** disagreeing definitions of "which orders may a cleaner take":
+
+- **⭐ If you write down an invariant, write down the thing that goes RED when it stops holding — in
+  the same change.** This is the rule the ADR-0037 panel produced, and three of its four blocking
+  mechanism findings were instances of one failure: **an asserted property with no artifact that fails
+  when the property breaks.** The draft asserted (i) *"rule ordering guarantees a held order never
+  returns the status key"* — FluentValidation ran a second chain and the guarantee never existed;
+  (ii) *"for cash nothing is in flight"* — a live hourly sweep retracted those orders at T−1h;
+  (iii) *"a parity test is the layer that would have caught this drift"* — no workflow ran it on the
+  diffs it guarded. **Each sentence was true-sounding, load-bearing, and unfalsifiable in CI.** That
+  is the same disease as a "mirrors X" comment, one abstraction level up: *prose asserting a property
+  the machine never checks.* The test is not documentation of the invariant — **it is the invariant**;
+  the prose is a pointer to it.
+- **A predicate that names a scheduled job's victims must be the NEGATION of that job's own `WHERE`
+  clause, term for term — never a paraphrase.** Cleansia's offerability rule said "cash can't be
+  retracted"; the recurring sweep keyed on `PaymentStatus == Pending` **with no payment-type term**, so
+  it retracted cash too. And the rule trusted `Confirmed` to imply paid; the card sweep keyed on
+  `PaymentStatus` **with no status term**, so it killed `Confirmed`-but-unpaid orders. **Open the
+  sweep, copy its predicate, negate it.** If a new scheduled retractor is added later, the *first*
+  place to change is the availability rule — record that obligation on the role card, because nothing
+  in the compiler connects a background job to a read filter.
+- **A rule that trusts state A to imply fact B stored in column C is a "mirrors X" comment written in
+  code.** "`Confirmed` means paid" was true of *one* of four writers. Before relying on such an
+  implication, **census the writers of A** the same way you census the writers of an enum member — and
+  if any writer can produce A without B, the rule needs the B term explicitly. Symmetry across the
+  branches of a predicate is not tidiness; an asymmetric predicate is one that was only tested against
+  the happy writer.
+- **An enforcer's TRIGGER is part of the enforcer. A check with no trigger is a comment with a
+  `.spec.ts` extension — and it is worse than a comment, because the decision record now claims
+  coverage that does not exist.** Before citing any CI check as an enforcer, verify four things:
+  *does the workflow fire on the paths the check reads* (Cleansia's frontend CI is scoped to
+  `src/Cleansia.App/**` on push; backend CI **excludes** both mobile trees); *is the step selected*
+  (`nx affected` selects nothing for a C#/Kotlin/Swift-only diff); *can it be served from cache*
+  (Nx inputs cannot reference paths above the workspace root, so cross-stack sources are **not**
+  declared inputs and a stale green is reachable); and *what is the acceptance test* (break the thing
+  on a branch touching only that file and watch the PR go red). **A cross-stack check therefore should
+  not be a Jest spec inside the Nx workspace at all** — make it a plain Node script with its own
+  trigger, so it is uncacheable and unskippable *by construction* rather than by configuration.
+  Precedent that works: the unconditional non-Nx `typecheck:test` step. **If you cannot make it run,
+  label the layer ADVISORY in the ADR.** Under-claiming is fine; over-claiming is not.
+- **Census the BUTTONS, not just the queries.** A parity check over query literals and not over the
+  gates on the action button tests the wrong half: the query decides what is *listed*, the button
+  decides what is *clickable*, and the whole point of a shared rule is that those cannot diverge.
+  Cleansia's web detail page gated Take on `{Pending, Confirmed}` ≡ `{Confirmed}` and so **hid the
+  button for exactly the state the new rule exists to admit**, while the proposed three-file spec would
+  have gone green over it.
+- **One array answering two questions is the same defect as one comment claiming two lists agree.**
+  `AdminOverrideOrderStatus.Lifecycle` served both *"what rank is this status"* and *"what may an admin
+  target"*. Deleting a member to answer the second silently broke the first — `Array.IndexOf` returns
+  `-1`, the forward-only guard `targetRank <= currentRank` passes for **every** target, and the
+  transition becomes **backwards**-legal for exactly the legacy rows the change was about. **Split the
+  arrays**, and never let "the implementer confirms the index semantics before landing" stand in for a
+  seeded test.
 
 - **A "mirrors X" comment is an assertion the compiler never checks, and it is worse than no comment
   — a reviewer reads it and stops looking.** Cleansia shipped *three* of them, all false, two of which
@@ -841,11 +895,14 @@ cost Cleansia **eight** disagreeing definitions of "which orders may a cleaner t
   admin/override writer that could resurrect it**, and keep readers tolerating legacy rows.
   Correct the documentation: if `CLAUDE.md` and the code disagree about a lifecycle, **the code is
   the evidence and the doc is the bug** — but only after a writer census proves which is which.
-- **Ask which AXES the predicate really spans before naming the set.** "Which orders are offerable"
-  looks like a question about `OrderStatus` and is not: it is `OrderStatus` **× the payment model**,
-  because an unsettled card order gets cancelled out from under the cleaner while a cash order is only
-  ever confirmed *by* the take. Every one of the eight surfaces consulted one axis. **A set of literals
-  cannot express a two-axis rule** — which is exactly why eight of them disagreed.
+- **Ask which AXES the predicate really spans before naming the set — and expect to be wrong about how
+  many.** "Which orders are offerable" looks like a question about `OrderStatus` and is not: the ADR
+  found it was `OrderStatus` **× the payment model**, and the *panel* found that was still short — it
+  is `OrderStatus` × payment **model** × payment **progress** × *is this a recurring occurrence*,
+  because those are the columns the two live retraction sweeps read. **A set of literals cannot express
+  a multi-axis rule**, which is why ten surfaces disagreed. *Corollary: when a role's "does NOT know"
+  list blocks a correct answer, the responsibility was drawn wrong — that is the RDD rule working, not
+  an exception to it. Strike the line, record why, and keep the lines that still hold.*
 - **An unexplained literal in a domain formula is a decision nobody made — name it even when the value
   is zero.** `MaxEmployees = RequiredEmployees + 1` cost a second full wage per order against an
   unchanged price and had no recorded rationale anywhere. The fix is not `= RequiredEmployees`; it is

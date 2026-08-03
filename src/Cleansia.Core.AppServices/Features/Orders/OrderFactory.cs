@@ -144,6 +144,19 @@ public sealed class OrderFactory(
 
         var estimatedTime = selectedServices.Sum(s => s.Service!.EstimatedTime) +
                             selectedPackages.Sum(p => p.Package!.IncludedServices.Sum(s => s.Service!.EstimatedTime));
+
+        // Ahead of CalculateRequiredEmployees, so an over-cap span cannot mint a crew on its way out.
+        // CreateOrder.Validator turns this into a business error for the customer; this is the backstop
+        // for callers that never run it (the recurring materializer).
+        if (BookingPolicy.ExceedsMaxBookableSpan(estimatedTime))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(input),
+                estimatedTime,
+                $"Booked estimate exceeds BookingPolicy.MaxBookableOrderSpanHours "
+                + $"({BookingPolicy.MaxBookableOrderSpanMinutes} min).");
+        }
+
         order.UpdateEstimatedTime(estimatedTime);
         order.CalculateRequiredEmployees(BookingPolicy.SpareSeatsPerOrder);
 

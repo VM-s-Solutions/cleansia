@@ -991,6 +991,7 @@
     <string name="error_order_in_progress_cannot_cancel">Це бронювання виконується і не може бути скасоване.</string>
     <string name="error_order_cancellation_window_closed">Період скасування вже закінчився.</string>
     <string name="error_order_empty">Ваше замовлення порожнє. Будь ласка, додайте принаймні одну послугу.</string>
+    <string name="error_order_span_exceeds_maximum">Це замовлення охоплює забагато роботи для одного візиту. Будь ласка, приберіть частину послуг або пакетів чи замовте їх окремо.</string>
     <string name="error_order_selected_package_invalid">Один із вибраних пакетів більше не доступний.</string>
     <string name="error_order_selected_services_invalid">Одна з вибраних послуг більше не доступна.</string>
     <string name="error_order_not_found">Бронювання не знайдено.</string>

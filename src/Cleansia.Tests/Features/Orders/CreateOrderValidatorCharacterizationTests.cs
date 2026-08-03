@@ -1,7 +1,10 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Services;
+using MockQueryable;
 using Moq;
 
 namespace Cleansia.Tests.Features.Orders;
@@ -28,6 +31,14 @@ public class CreateOrderValidatorCharacterizationTests
         _packageRepository
             .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
+        // The span-cap rule reads the catalog's durations; an empty catalog is 0 minutes, which keeps
+        // every case here on the side of the cap it was written for. OrderSpanCapTests owns the bound.
+        _serviceRepository
+            .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
+            .Returns(Array.Empty<Service>().AsQueryable().BuildMock());
+        _packageRepository
+            .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
+            .Returns(Array.Empty<Package>().AsQueryable().BuildMock());
         _currencyRepository
             .Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);

@@ -991,6 +991,7 @@
     <string name="error_order_in_progress_cannot_cancel">Это бронирование выполняется и не может быть отменено.</string>
     <string name="error_order_cancellation_window_closed">Период отмены уже закрыт.</string>
     <string name="error_order_empty">Ваш заказ пуст. Пожалуйста, добавьте хотя бы одну услугу.</string>
+    <string name="error_order_span_exceeds_maximum">Этот заказ включает слишком много работы для одного визита. Пожалуйста, уберите часть услуг или пакетов либо закажите их отдельно.</string>
     <string name="error_order_selected_package_invalid">Один из выбранных пакетов больше не доступен.</string>
     <string name="error_order_selected_services_invalid">Одна из выбранных услуг больше не доступна.</string>
     <string name="error_order_not_found">Бронирование не найдено.</string>

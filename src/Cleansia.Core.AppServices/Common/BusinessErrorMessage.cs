@@ -78,6 +78,7 @@ public static class BusinessErrorMessage
     public const string TotalPriceMustBePositive = "order.total_price.positive";
     public const string TotalPriceNotMatch = "order.total_price.not_match";
     public const string PreferredEmployeeNotEligible = "order.preferred_employee.not_eligible";
+    public const string OrderSpanExceedsMaximum = "order.span_exceeds_maximum";
 
     // Cleansia Plus / membership errors. Surfaced by the subscribe + cancel
     // flows; the customer UI maps each key to a localized snackbar string.

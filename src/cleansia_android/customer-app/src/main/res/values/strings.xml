@@ -1014,6 +1014,7 @@
     <string name="error_order_in_progress_cannot_cancel">This booking is in progress and can\'t be cancelled.</string>
     <string name="error_order_cancellation_window_closed">The cancellation window has closed.</string>
     <string name="error_order_empty">Your order is empty. Please add at least one service.</string>
+    <string name="error_order_span_exceeds_maximum">This booking covers too much work for a single visit. Please remove some services or packages, or book them separately.</string>
     <string name="error_order_selected_package_invalid">One of the selected packages is no longer available.</string>
     <string name="error_order_selected_services_invalid">One of the selected services is no longer available.</string>
     <string name="error_order_not_found">Booking not found.</string>

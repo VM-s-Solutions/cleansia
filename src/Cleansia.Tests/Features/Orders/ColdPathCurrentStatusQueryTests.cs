@@ -89,6 +89,7 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
         await using var ctx = NewContext();
         var handler = new GetMyServingCleaners.Handler(
             new OrderRepository(ctx),
+            Mock.Of<IUserMembershipRepository>(),
             new TestUserSessionProvider(customerId, "cold-customer@cleansia.test"));
 
         var result = await handler.Handle(new GetMyServingCleaners.Query(), CancellationToken.None);

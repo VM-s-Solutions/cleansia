@@ -991,6 +991,7 @@
     <string name="error_order_in_progress_cannot_cancel">Rezervácia prebieha a nie je možné ju zrušiť.</string>
     <string name="error_order_cancellation_window_closed">Lehota na zrušenie už uplynula.</string>
     <string name="error_order_empty">Objednávka je prázdna. Pridajte prosím aspoň jednu službu.</string>
+    <string name="error_order_span_exceeds_maximum">Táto objednávka zahŕňa priveľa práce na jednu návštevu. Odstráňte prosím niektoré služby alebo balíky, prípadne si ich objednajte samostatne.</string>
     <string name="error_order_selected_package_invalid">Jeden z vybraných balíčkov už nie je dostupný.</string>
     <string name="error_order_selected_services_invalid">Jedna z vybraných služieb už nie je dostupná.</string>
     <string name="error_order_not_found">Rezervácia nenájdená.</string>

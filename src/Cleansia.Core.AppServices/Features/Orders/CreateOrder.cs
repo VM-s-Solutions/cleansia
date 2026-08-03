@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -13,6 +14,8 @@ public class CreateOrder
 {
     public class Validator : AbstractValidator<Command>
     {
+        private readonly IPackageRepository _packageRepository;
+        private readonly IServiceRepository _serviceRepository;
         private readonly IOrderPricingCalculator _pricingCalculator;
         private readonly IOrderRepository _orderRepository;
         private readonly IUserSessionProvider _userSessionProvider;
@@ -25,6 +28,8 @@ public class CreateOrder
             IOrderRepository orderRepository,
             IUserSessionProvider userSessionProvider)
         {
+            _packageRepository = packageRepository;
+            _serviceRepository = serviceRepository;
             _pricingCalculator = pricingCalculator;
             _orderRepository = orderRepository;
             _userSessionProvider = userSessionProvider;
@@ -122,6 +127,8 @@ public class CreateOrder
                 .Cascade(CascadeMode.Stop)
                 .Must(OrderMustNotBeEmpty)
                 .WithMessage(BusinessErrorMessage.EmptyOrder)
+                .MustAsync(SpanWithinCapAsync)
+                .WithMessage(BusinessErrorMessage.OrderSpanExceedsMaximum)
                 .MustAsync(PriceMatchesAsync)
                 .WithMessage(BusinessErrorMessage.TotalPriceNotMatch);
 
@@ -155,6 +162,27 @@ public class CreateOrder
 
         private static bool OrderMustNotBeEmpty(Command command) => command.SelectedPackageIds.Any() ||
                                                                     command.SelectedServiceIds.Any();
+
+        /// <summary>
+        /// Mirrors <c>OrderFactory</c>'s span guard so an over-long selection comes back as a business
+        /// error instead of the factory's exception. Same arithmetic as
+        /// <c>OrderFactory.CreateAsync</c> — a plain sum, package-included services counted whether or
+        /// not the same service is also selected directly — computed as two aggregates rather than two
+        /// entity graphs, because all this rule needs is one integer.
+        /// </summary>
+        private async Task<bool> SpanWithinCapAsync(Command command, CancellationToken cancellationToken)
+        {
+            var serviceMinutes = await _serviceRepository
+                .GetByIds(command.SelectedServiceIds)
+                .SumAsync(s => s.EstimatedTime, cancellationToken);
+
+            var packagedServiceMinutes = await _packageRepository
+                .GetByIds(command.SelectedPackageIds)
+                .SelectMany(p => p.IncludedServices)
+                .SumAsync(ps => ps.Service!.EstimatedTime, cancellationToken);
+
+            return !BookingPolicy.ExceedsMaxBookableSpan(serviceMinutes + packagedServiceMinutes);
+        }
 
         private async Task<bool> PriceMatchesAsync(Command command, CancellationToken cancellationToken)
         {

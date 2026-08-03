@@ -75,6 +75,44 @@ public static class BookingPolicy
     /// </summary>
     public const int SpareSeatsPerOrder = 0;
 
+    /// <summary>
+    /// The longest span a single booking may be CREATED with. <b>Enforced, not assumed:</b>
+    /// <c>OrderFactory</c> rejects above it and <c>CreateOrder.Validator</c> mirrors it, which is what
+    /// makes <c>Order.MaxOrderSpanHours</c>' premise — no order is longer than the overlap scan's lower
+    /// bound — true by construction instead of by hope. <c>OrderSpanCapTests</c> pins
+    /// <c>cap &lt;= floor</c>; that ordering is the whole safety argument and neither number moves alone.
+    ///
+    /// <para><b>This is a DISCLOSURE bound, not a double-booking one</b> (ADR-0039 CH-Q2 / CH-D2), and
+    /// the distinction is why it is worth its weight. A double booking would need an order longer than
+    /// the 168 h scan floor — a seven-day appointment nothing produces, real but not live. What IS live
+    /// is that the span is a plain sum over a caller-chosen selection, so before this cap the client
+    /// handed the server any window it liked, from minutes up to 58.25 h (every seeded service plus
+    /// every seeded package's included services on one order). A caller-controlled window that wide,
+    /// pointed at the preferred-cleaner availability answer, is a binary-search primitive for
+    /// reconstructing a cleaner's private schedule. <b>Read this cap as a double-booking guard and you
+    /// will correctly de-prioritise it — and ship the oracle.</b></para>
+    ///
+    /// <para>It is also, unavoidably, a CREW cap: <c>RequiredEmployees = ceil(EstimatedTime / 120)</c>
+    /// and <see cref="SpareSeatsPerOrder"/> is 0, so 24 h implies at most 12 seats. 24 rejects nothing a
+    /// real appointment does — the entire seeded service catalog booked at once is 20.25 h — and rejects
+    /// every selection only a probe or a mis-click produces.</para>
+    /// </summary>
+    public const int MaxBookableOrderSpanHours = 24;
+
+    /// <summary>
+    /// <see cref="MaxBookableOrderSpanHours"/> in the unit <c>Order.EstimatedTime</c> is written in.
+    /// </summary>
+    public const int MaxBookableOrderSpanMinutes = MaxBookableOrderSpanHours * 60;
+
+    /// <summary>
+    /// True if a booked estimate exceeds <see cref="MaxBookableOrderSpanHours"/>. The one comparison,
+    /// shared by the validator and <c>OrderFactory</c> — they derive the estimate differently (an
+    /// aggregate over the catalog vs. a sum over loaded entities) and must not also disagree on where
+    /// the line is.
+    /// </summary>
+    public static bool ExceedsMaxBookableSpan(int estimatedMinutes)
+        => estimatedMinutes > MaxBookableOrderSpanMinutes;
+
     /// <summary>True if the given start time requires express surcharge (2–4h lead).</summary>
     public static bool RequiresExpressSurcharge(DateTime cleaningUtc, DateTime nowUtc)
     {

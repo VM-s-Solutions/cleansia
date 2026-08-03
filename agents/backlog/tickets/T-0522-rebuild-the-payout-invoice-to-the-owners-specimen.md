@@ -56,11 +56,30 @@ repairs.**
       any of these documents is the company's** (`DefaultReceiptLayoutBuilder.cs:167-168`); shipping
       that on a payout invoice tells the cleaner to pay us. Evidence: the rendered block plus the
       source at file:line.
+
+      **[VERIFIED 2026-08-03 — the defect is in the DATA, not the layout.** The layout already renders
+      every one of these fields, and `InvoiceLabels.Czech` already carries every label. The gap is
+      `FileExtensions.CreateSupplierData` (`src/Cleansia.Core.AppServices/Extensions/FileExtensions.cs:93-108`),
+      which sets **only** `Iban` — `BankAccountNumber`, `Swift` and `BankName` are never populated, so a
+      real payout invoice renders `—` for Číslo účtu, SWIFT and Banka. The layout tests fill them by
+      hand, which is exactly why this was invisible. Do not "fix" the layout; fix the mapper. All three
+      are derivable from the IBAN plus a bank-code lookup, so this needs no schema change even before
+      T-0519 lands.]
 - [ ] **AC4 — variabilní symbol, konstantní symbol, payment method, amount due are all present.**
-      **VS already exists and renders** (`EmployeeInvoice.cs:72`, `:331`, layout `:38-39`) — reuse it,
-      and per the specimen **VS equals the invoice number**; state whether the existing
-      `GenerateVariableSymbol(employeeId, payPeriodId)` satisfies that or must change. Evidence: the
-      block plus the VS ruling.
+      **VS already exists and renders** (`EmployeeInvoice.cs:72`, `:331`, layout `:38-39`) — reuse it.
+
+      **[CORRECTED 2026-08-03 by owner ruling — the previous wording said "per the specimen VS equals
+      the invoice number". That is wrong.** The owner ruled explicitly: *"VS can't equal the invoice
+      number. These are 2 different and there is a separate property for it."* The specimen shows them
+      coinciding (both `20240001`) because that issuer chose to; it is not the rule. Keep
+      `GenerateVariableSymbol(employeeId, payPeriodId)` as its own property and do **not** derive VS
+      from the invoice number.]
+
+      **Konstantní symbol is never set anywhere in production** — `ConstantSymbol` appears only as a
+      label definition; no production code assigns `InvoicePdfData.ConstantSymbol`, so the field is
+      silently omitted from every invoice. The specimen carries `0308`. This is Cleansia's payment
+      configuration, not the cleaner's bank detail, so it does not come from T-0519 — decide where it
+      is configured and say so.
 - [ ] **AC5 — issue date AND due date are both present.** **The due date does not exist today** — no
       field on `EmployeeInvoice`, none on `InvoicePdfData`. The rule that computes it comes from T-0508
       AC7. Evidence: the field, the rule, and the rendered dates.

@@ -1,11 +1,11 @@
 ---
 id: T-0523
 title: QR Platba (SPD) payment code and the invoice barcode
-status: draft
+status: rejected
 size: M
 owner: backend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-03
 depends_on: [T-0522]
 blocks: []
 stories: []
@@ -15,6 +15,30 @@ security_touching: false
 manual_steps: []
 sprint: 15
 ---
+
+## Owner ruling — REJECTED 2026-08-03
+
+The owner declined this outright: **"Nope, I don't need a QR code payment."**
+
+Both halves are dropped, not deferred:
+
+- **QR Platba (SPD).** Declined by the owner. It would have required a QR encoder — QuestPDF 2024.12.1
+  has none (verified by reflection over its public API), and hand-rolling Reed-Solomon over GF(256)
+  plus mask-penalty scoring is not defensible. Candidate dependencies were QRCoder (MIT) or ZXing.Net
+  (Apache-2.0). **No dependency was added.**
+- **Code 128 barcode.** Dropped with it. This one needed no package — a width table, a mod-103
+  checksum and filled rectangles, roughly 80 lines against QuestPDF's existing primitives. It was
+  carried only because the owner's specimen shows one. It is decoration on a document the cleaner
+  files, so it goes with the QR rather than surviving alone as scope the owner did not ask for.
+
+**Do not resurrect either from the specimen photograph.** The specimen is the reference for the
+invoice's *content and layout*, and matching it pixel-for-pixel was never the goal. If a payment code
+is ever wanted, note that the fixture's Cleansia IBAN `CZ1101000000001234567890` **fails mod-97** —
+harmless today because it is never printed, and a live defect the moment anything encodes the company
+account into a payment instruction.
+
+The SPAYD payload research and the ISDOC sizing from this investigation are preserved below for
+whoever revisits it.
 
 ## Context
 

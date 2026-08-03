@@ -1097,7 +1097,9 @@
       },
       "payment_gateway_unavailable": "Platobná brána nie je k dispozícii",
       "creation_failed": "Nepodarilo sa vytvoriť objednávku",
-      "time_conflict": "Tento termín sa prekrýva s inou objednávkou vo vašom rozvrhu"
+      "time_conflict": "Tento termín sa prekrýva s inou objednávkou vo vašom rozvrhu",
+      "weekly_limit_reached": "Dosiahli ste týždenný limit zákaziek.",
+      "employee_already_has_order_in_progress": "Už máte inú zákazku v priebehu. Pred začatím novej ju prosím dokončite."
     },
     "user": {
       "email_confirmed": "E-mail je už potvrdený",

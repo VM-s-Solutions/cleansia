@@ -169,7 +169,10 @@ export class OrdersComponent implements AfterViewInit {
 
   private rebuildTableDefinitions(): void {
     const availableDef = getAvailableOrdersTableDefinition(
-      { onTakeOrder: this.takeOrder.bind(this) },
+      {
+        onTakeOrder: this.takeOrder.bind(this),
+        isTakeInFlight: (row) => this.facade.isTakeInFlight(row.id),
+      },
       this.statusTemplate(),
       this.orderStatusTemplate()
     );

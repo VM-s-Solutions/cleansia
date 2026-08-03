@@ -1097,7 +1097,9 @@
       },
       "payment_gateway_unavailable": "Payment gateway is unavailable",
       "creation_failed": "Failed to create order",
-      "time_conflict": "This time conflicts with another booking on your schedule"
+      "time_conflict": "This time conflicts with another booking on your schedule",
+      "weekly_limit_reached": "You've reached your weekly order limit.",
+      "employee_already_has_order_in_progress": "You already have another order in progress. Finish it before starting a new one."
     },
     "user": {
       "email_confirmed": "Email is already confirmed",

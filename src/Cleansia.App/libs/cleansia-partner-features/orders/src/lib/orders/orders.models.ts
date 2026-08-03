@@ -85,6 +85,7 @@ export const PAYMENT_STATUS_FLOW: StatusFlowItem[] = [
 export function getAvailableOrdersTableDefinition(
   defs: {
     onTakeOrder: (row: OrderListItem) => void;
+    isTakeInFlight: (row: OrderListItem) => boolean;
   },
   statusTemplate?: TemplateRef<OrderListItem>,
   orderStatusTemplate?: TemplateRef<OrderListItem>
@@ -174,6 +175,7 @@ export function getAvailableOrdersTableDefinition(
             status === OrderStatus.Confirmed;
           return isTakeable && (row.availableSpots ?? 0) > 0;
         },
+        disabled: (row: OrderListItem) => defs.isTakeInFlight(row),
       },
     ],
   };

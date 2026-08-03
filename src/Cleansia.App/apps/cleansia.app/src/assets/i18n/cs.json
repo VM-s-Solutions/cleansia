@@ -1456,6 +1456,7 @@
       "cancellation_window_closed": "Lhůta pro bezplatné zrušení této objednávky vypršela.",
       "address_exactly_one_required": "Zadejte k objednávce právě jednu adresu.",
       "empty": "Přidejte do objednávky alespoň jednu službu nebo balíček.",
+      "span_exceeds_maximum": "Tato objednávka zahrnuje příliš mnoho práce na jednu návštěvu. Odeberte prosím některé služby nebo balíčky, případně je objednejte zvlášť.",
       "selected_package": {
         "invalid": "Jeden z vybraných balíčků už není dostupný."
       },

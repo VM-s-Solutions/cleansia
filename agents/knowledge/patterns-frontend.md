@@ -276,6 +276,45 @@ rule as `errors.*`; the live customer interceptor uses `api.${code}`. **Follow t
 - **Unknown/unmapped key → generic fallback, never the raw key.** The interceptor never lets a machine
   key reach the snackbar: if `instant('api.<code>')` echoes the key back (no translation), it falls
   back to `api.common.error_occurred`. Pinned by `http-error.interceptor.spec.ts`.
+- **The guard is per app, because the surface is per app.** The interceptor is shared, so the same
+  generic-fallback swallow happens in partner and admin — a partner-only code with no partner
+  translation reads as "An error occurred. Please try again." and the cleaner just retries.
+  `apps/cleansia-partner.app/src/app/i18n/error-contract-parity.spec.ts` is the partner twin
+  (`order.weekly_limit_reached` was missing from all five partner bundles for as long as the code
+  existed, with only the customer guard in place). Derive an app's contract mechanically — the
+  `BusinessErrorMessage.*` constants referenced by the feature classes **that app's host controllers
+  dispatch** — so it can be re-derived rather than remembered. A key that is genuinely not translated
+  yet goes on the spec's short `PENDING_TRANSLATION` list, which is a **ratchet**: the spec fails if a
+  listed key turns out to be translated (delete the line) or is not a real contract key. Admin has no
+  twin yet.
+
+### A refused row action reconciles the list — a toast alone is a bug
+
+When a row action can be **refused because the world moved on** (two cleaners racing for the same
+job), the facade must re-read from the server on the **error branch as well as the success branch**.
+Toast-only leaves the row on screen with a live button, so the next click just repeats the toast; both
+mobile clients already reconcile (`OrdersListViewModel.kt` / `.swift` invalidate + refetch on
+`ApiResult.Error`). The web shape is the C3 pipe with the reload **after** the `if (response)`, not
+inside it, plus an in-flight signal so the second click is a no-op:
+
+```ts
+this.takeInFlightOrderId.set(orderId);
+client.orderClient.takeOrder(new TakeOrderCommand({ orderId }))
+  .pipe(takeUntil(this.destroyed$), catchError(() => of(null)),
+        finalize(() => this.takeInFlightOrderId.set(null)))
+  .subscribe((response) => {
+    if (response) this.snackbarService.showSuccessTranslated('…order_taken_success');
+    this.loadAvailableOrders();   // both branches
+    this.loadMyOrders();
+  });
+```
+
+Reconcile by **re-reading**, not by hiding the row optimistically: the server filter already drops a
+full or already-mine order, while a refusal that is about *you* (`order.weekly_limit_reached`)
+correctly leaves the row in place — which is only usable if that message is translated. Feed the
+in-flight signal to `TableAction.disabled` so the row is visibly unavailable, and on a detail page let
+the re-read own `loading` so the spinner runs unbroken (`[loading]` on `cleansia-button` disables it —
+PrimeNG's `p-button` is `[disabled]="disabled || loading"`).
 
 ### Other (non-canonical) error-resolution paths — do not add new ones
 

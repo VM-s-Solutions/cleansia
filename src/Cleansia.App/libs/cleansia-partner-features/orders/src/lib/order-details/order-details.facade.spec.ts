@@ -6,13 +6,14 @@ import {
   PartnerClient,
   PaymentStatus,
   PaymentType,
+  TakeOrderResponse,
 } from '@cleansia/partner-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Actions } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { DialogService } from 'primeng/dynamicdialog';
-import { EMPTY, of, throwError } from 'rxjs';
+import { EMPTY, Subject, of, throwError } from 'rxjs';
 import { MarkCashCollectedDialogComponent } from '../components/mark-cash-collected-dialog';
 import { OrderDetailsFacade } from './order-details.facade';
 
@@ -48,9 +49,10 @@ function buildOrder(overrides: OrderOverrides = {}): OrderItem {
   });
 }
 
-describe('OrderDetailsFacade — mark cash collected', () => {
+describe('OrderDetailsFacade', () => {
   let orderClient: {
     markCashCollected: jest.Mock;
+    takeOrder: jest.Mock;
     getById: jest.Mock;
   };
   let employeeClient: { getCurrentEmployee: jest.Mock };
@@ -81,6 +83,7 @@ describe('OrderDetailsFacade — mark cash collected', () => {
     TestBed.resetTestingModule();
     orderClient = {
       markCashCollected: jest.fn(),
+      takeOrder: jest.fn(),
       getById: jest.fn().mockReturnValue(of(buildOrder())),
     };
     employeeClient = { getCurrentEmployee: jest.fn().mockReturnValue(of(null)) };
@@ -138,6 +141,56 @@ describe('OrderDetailsFacade — mark cash collected', () => {
       facade.markCashCollected('');
 
       expect(orderClient.markCashCollected).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
+        'global.messages.orders.invalid_request'
+      );
+    });
+  });
+
+  describe('takeOrder', () => {
+    it('confirms and re-reads the order when the take succeeds', () => {
+      const facade = createFacade();
+      orderClient.takeOrder.mockReturnValue(
+        of(TakeOrderResponse.fromJS({ orderId: ORDER_ID, employeeId: EMPLOYEE_ID }))
+      );
+
+      facade.takeOrder(ORDER_ID);
+
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'pages.orders.order_taken_success'
+      );
+      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+    });
+
+    it('re-reads the order when the take is refused, so the button reflects the server', () => {
+      const facade = createFacade();
+      orderClient.takeOrder.mockReturnValue(
+        throwError(() => new Error('order.no_available_spots'))
+      );
+
+      facade.takeOrder(ORDER_ID);
+
+      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(facade.loading()).toBe(false);
+    });
+
+    it('ignores a second click while a take is still in flight', () => {
+      const facade = createFacade();
+      orderClient.takeOrder.mockReturnValue(new Subject<TakeOrderResponse>());
+
+      facade.takeOrder(ORDER_ID);
+      facade.takeOrder(ORDER_ID);
+
+      expect(orderClient.takeOrder).toHaveBeenCalledTimes(1);
+    });
+
+    it('never calls the endpoint without an order id', () => {
+      const facade = createFacade();
+
+      facade.takeOrder('');
+
+      expect(orderClient.takeOrder).not.toHaveBeenCalled();
       expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
         'global.messages.orders.invalid_request'
       );

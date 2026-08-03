@@ -22,7 +22,14 @@ import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { catchError, debounceTime, distinctUntilChanged, of, takeUntil } from 'rxjs';
+import {
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  finalize,
+  of,
+  takeUntil,
+} from 'rxjs';
 import {
   CompleteOrderDialogComponent,
   CompleteOrderDialogData,
@@ -55,6 +62,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
   myTotalRecords = signal<number>(0);
   availableLoading = signal<boolean>(false);
   myLoading = signal<boolean>(false);
+  takeInFlightOrderId = signal<string | null>(null);
 
   // Aggregate signals kept for any consumer that asks "is anything loading"
   // or "what's the combined total" without caring which list. Derived from
@@ -194,6 +202,10 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     );
   }
 
+  isTakeInFlight(orderId: string | undefined): boolean {
+    return !!orderId && this.takeInFlightOrderId() === orderId;
+  }
+
   takeOrder(orderId: string): void {
     const employeeId = this.currentEmployeeId();
 
@@ -204,16 +216,30 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       return;
     }
 
+    if (this.takeInFlightOrderId()) {
+      return;
+    }
+
+    this.takeInFlightOrderId.set(orderId);
+
     this.partnerClient.orderClient
       .takeOrder(new TakeOrderCommand({ orderId }))
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null)),
+        finalize(() => this.takeInFlightOrderId.set(null))
+      )
       .subscribe((response) => {
         if (response) {
           this.snackbarService.showSuccessTranslated(
             'pages.orders.order_taken_success'
           );
-          this.loadAvailableOrders();
-          this.loadMyOrders();
         }
+        // Reconcile on refusal exactly as on success: a refused take usually
+        // means another cleaner filled the last seat, so the row must stop
+        // offering an action the server has already turned down.
+        this.loadAvailableOrders();
+        this.loadMyOrders();
       });
   }
 

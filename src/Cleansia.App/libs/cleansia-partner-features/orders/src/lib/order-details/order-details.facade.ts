@@ -46,6 +46,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly currentEmployeeId = signal<string | null>(null);
+  readonly takeInFlight = signal(false);
 
   loadOrderDetails(orderId: string): void {
     if (!orderId?.trim()) {
@@ -184,22 +185,31 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       return;
     }
 
+    if (this.takeInFlight()) {
+      return;
+    }
+
+    this.takeInFlight.set(true);
     this.loading.set(true);
 
     this.partnerClient.orderClient
       .takeOrder(new TakeOrderCommand({ orderId }))
       .pipe(
         takeUntil(this.destroyed$),
-        tap(() => {
+        catchError(() => of(null)),
+        finalize(() => this.takeInFlight.set(false))
+      )
+      .subscribe((response) => {
+        if (response) {
           this.snackbarService.showSuccessTranslated(
             'pages.orders.order_taken_success'
           );
-          this.loadOrderDetails(orderId);
-        }),
-        catchError(() => of(null)),
-        finalize(() => this.loading.set(false))
-      )
-      .subscribe();
+        }
+        // Re-read on refusal as well as on success so the button reflects the
+        // server instead of staying armed for another click. The re-read owns
+        // `loading` from here, keeping the spinner unbroken.
+        this.loadOrderDetails(orderId);
+      });
   }
 
   reset(): void {

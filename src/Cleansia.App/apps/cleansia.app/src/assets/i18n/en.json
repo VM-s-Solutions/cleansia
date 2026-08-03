@@ -1456,6 +1456,7 @@
       "cancellation_window_closed": "The free cancellation window for this order has closed.",
       "address_exactly_one_required": "Please provide exactly one address for this order.",
       "empty": "Add at least one service or package to your order.",
+      "span_exceeds_maximum": "This booking covers too much work for a single visit. Please remove some services or packages, or book them separately.",
       "selected_package": {
         "invalid": "One of the selected packages is no longer available."
       },

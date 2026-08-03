@@ -1073,7 +1073,8 @@
     <string name="error_order_cancellation_window_closed">Термін скасування вичерпано.</string>
     <string name="error_order_empty">Замовлення порожнє.</string>
     <string name="error_order_already_assigned">Це замовлення щойно взяв інший прибиральник.</string>
-    <string name="error_order_no_available_spots">На цьому замовленні немає вільних місць.</string>
+    <string name="error_order_no_available_spots">Це замовлення вже взяв інший прибиральник.</string>
+    <string name="error_order_not_takeable">Це замовлення більше не доступне.</string>
     <string name="error_order_weekly_limit_reached">Ви досягли тижневого ліміту замовлень.</string>
     <string name="error_order_time_conflict">Це замовлення перетинається з іншим, яке ви вже взяли.</string>
     <string name="error_order_employee_already_assigned">Вас уже призначено на це замовлення.</string>

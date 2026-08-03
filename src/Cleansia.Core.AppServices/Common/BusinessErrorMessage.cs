@@ -68,6 +68,11 @@ public static class BusinessErrorMessage
     public const string InvalidSelectedPackage = "order.selected_package.invalid";
     public const string InvalidSelectedServices = "order.selected_services.invalid";
     public const string OrderNotFound = "order.not_found";
+    // The take gate's residue refusal (ADR-0037 D6.1): everything OrderAvailability declines that
+    // is not one of the two terminal states above. Deliberately opaque — a cleaner is not a party
+    // to the customer's payment, and the same key covers OnTheWay/InProgress, so it may never be
+    // voiced as anything but "this job is no longer available".
+    public const string OrderNotTakeable = "order.not_takeable";
     public const string OrderAlreadyAssigned = "order.already_assigned";
     public const string NoAvailableSpots = "order.no_available_spots";
     public const string WeeklyOrderLimitReached = "order.weekly_limit_reached";

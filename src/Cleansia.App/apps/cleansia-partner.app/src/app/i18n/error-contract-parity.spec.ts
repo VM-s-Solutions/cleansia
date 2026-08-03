@@ -107,6 +107,8 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'common.required',
   // Order lifecycle the cleaner drives: take → on the way → start → cash → complete
   'order.after_photos.required',
+  'order.already_cancelled',
+  'order.already_completed',
   'order.card_payment_already_settled',
   'order.card_payment_in_progress',
   'order.card_payment_unverified',
@@ -120,6 +122,7 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.not_confirmed',
   'order.not_found',
   'order.not_in_progress',
+  'order.not_takeable',
   'order.payment_not_confirmed',
   'order.time_conflict',
   'order.weekly_limit_reached',
@@ -263,13 +266,20 @@ describe('error-contract parity (partner app)', () => {
   });
 
   it('the take-order refusal reasons a racing cleaner hits are all translated', () => {
+    // Every arm of the TakeOrder validator chain, in its order. A missing web key renders
+    // "An error occurred. Please try again." — indistinguishable from a 500 — so a partner-facing
+    // refusal that is not in this list is a cleaner clicking the same dead job forever.
     const takeRefusals = [
+      'order.not_found',
+      'order.already_cancelled',
+      'order.already_completed',
+      'order.not_takeable',
       'order.no_available_spots',
+      'employee.profile_incomplete',
+      'employee.not_approved',
       'order.employee_already_assigned',
       'order.weekly_limit_reached',
       'order.time_conflict',
-      'employee.not_approved',
-      'employee.profile_incomplete',
     ];
     for (const locale of LOCALES) {
       const data = readLocale(locale);

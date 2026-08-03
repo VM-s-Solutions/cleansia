@@ -3505,31 +3505,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pro tento termín nejsou k dispozici žádní uklízeči. Zvolte jiný čas."
+            "value" : "Tuto zakázku už převzal jiný uklízeč."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No cleaners are available for that slot. Please pick another time."
+            "value" : "Another cleaner has already taken this job."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "На этот слот нет доступных клинеров. Выберите другое время."
+            "value" : "Этот заказ уже взял другой клинер."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pre tento termín nie sú k dispozícii žiadne upratovačky. Zvoľte iný čas."
+            "value" : "Túto zákazku už prevzal iný upratovač."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "На цей слот немає доступних клінерів. Виберіть інший час."
+            "value" : "Це замовлення вже взяв інший прибиральник."
           }
         }
       }
@@ -3670,6 +3670,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Це замовлення не в роботі."
+          }
+        }
+      }
+    },
+    "error.order.not_takeable" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tato zakázka již není k dispozici."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This job is no longer available."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот заказ больше не доступен."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Táto zákazka už nie je k dispozícii."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це замовлення більше не доступне."
           }
         }
       }
@@ -3960,31 +3995,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tento čas koliduje s jinou rezervací."
+            "value" : "Tato zakázka se překrývá s jinou, kterou jste již přijali."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This time conflicts with another booking."
+            "value" : "This order conflicts with another you've already taken."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Это время конфликтует с другим бронированием."
+            "value" : "Этот заказ пересекается с другим, который вы уже взяли."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tento čas koliduje s inou rezerváciou."
+            "value" : "Táto zákazka sa prekrýva s inou, ktorú ste už prijali."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Цей час конфліктує з іншим бронюванням."
+            "value" : "Це замовлення перетинається з іншим, яке ви вже взяли."
           }
         }
       }
@@ -4065,31 +4100,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dosáhli jste týdenního limitu rezervací."
+            "value" : "Dosáhli jste týdenního limitu zakázek."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You've reached the weekly booking limit."
+            "value" : "You've reached your weekly order limit."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Вы достигли еженедельного лимита бронирований."
+            "value" : "Вы достигли недельного лимита заказов."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dosiahli ste týždenný limit rezervácií."
+            "value" : "Dosiahli ste týždenný limit zákaziek."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ви досягли тижневого ліміту бронювань."
+            "value" : "Ви досягли тижневого ліміту замовлень."
           }
         }
       }

@@ -109,6 +109,42 @@ surfaces, the surfaces are diffed, not counted.
 - 2026-08-02 — draft (created by pm from the challenger round). Filed as the "small comment ticket" the
   challenge described; **the scoping pass found it is a three-way behavioural divergence, not a two-way
   comment error**, so it carries a ruling. Still `S`.
+- 2026-08-03 — backend slice implemented against **ADR-0037 (`accepted`)**. AC1 is the ADR. AC2 taken on
+  the strong branch (the digest's array and its "Mirrors" comment are **deleted**, not amended). AC3 is a
+  real validator rule, not a comment. AC4 is pinned on one Postgres fixture across the board, the
+  dashboard count and the take gate. AC5 respected — neither `CancelOrderSheet.kt` nor
+  `CancellationFeePreview.swift` is touched. **No migration, no NSwag regen** (the new key rides the
+  existing ProblemDetails channel; no DTO or endpoint shape changed).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
+
+**Backend hand-off note (2026-08-03).**
+
+- **Catalog harvest.** `agents/knowledge/consistency.md`'s order-offerability entry still described
+  ADR-0037 as `proposed` and quoted the **falsified draft predicate** as canonical. Updated in the same
+  change to the accepted rule (both conjuncts) plus the three deviating forms.
+  `patterns-backend.md` already carried the panel's law and needed nothing.
+- **Test-harness defect found and fixed (not in the original scope).** Every `TestMethod` builds a fresh
+  `ServiceCollection`, so `AddDbContextBindings` builds a fresh `NpgsqlDataSource`; the `ServiceProvider`
+  is never disposed and an externally-created singleton instance would not be disposed by the container
+  anyway, so pooled connections stayed open for the whole run. The integration suite had **zero
+  headroom** — adding one test made an unrelated one fail with `53300: sorry, too many clients already`.
+  `BaseIntegrationTest.BuildConfiguration` now appends `Pooling=false`. Same runtime (~59s), and the
+  count no longer grows with the suite.
+- **In scope for ADR-0037 but NOT done here, with reasons:**
+  - **D4.1, the date floor** (`BookingPolicy.OfferableGraceHours`, the dashboard spec applying it, web
+    dropping its own `?? new Date()`). `BookingPolicy.cs` is in another agent's lane this batch.
+  - **Verification step 8's sweep case** (run `CleanupStalePendingOrders` over the fixture and assert the
+    card order leaves the offerable set). `CleanupStalePendingOrders.cs` is another agent's file (T-0528
+    lane); the property itself is pinned statically instead.
+  - **D7 layer 2**, the cross-stack parity script + its repo-root workflow. Not delivered, so per the
+    ADR's own escape hatch **layer 2 is ADVISORY until it is**. Layer 1 (structural) and layer 3 shipped.
+  - **D7 layer 3's `check-consistency.mjs` line rule** for availability status literals.
+  - **Client surfaces 5 / 9 / 10 / 11 and D6.4's web reconcile** — frontend lane.
+  - **iOS partner catalog** — left to the iOS agent (see the two strings requested below).
+- **iOS ask (one file, 5 languages, `CleansiaCore` shared catalog):**
+  - new `error.order.not_takeable` — en: *"This job is no longer available."*
+  - re-voice `error.order.no_available_spots` — en: *"Another cleaner has already taken this job."*
+    (today it reads a **customer's** sentence: *"No cleaners are available for that slot. Please pick
+    another time."* — untrue and unactionable for the cleaner who just lost the race).

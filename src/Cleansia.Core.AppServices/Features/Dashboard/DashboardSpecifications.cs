@@ -1,10 +1,20 @@
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Specifications;
 
 namespace Cleansia.Core.AppServices.Features.Dashboard;
 
 public static class DashboardSpecifications
 {
+    /// <summary>
+    /// The orders a cleaner may take — the dashboard hero count and the preview beneath it.
+    /// Both terms come from <see cref="OrderAvailability"/>: the coarse status set is the
+    /// index-served prefilter (and the fail-closed exclusion of pre-backfill NULL rows), and
+    /// <c>offerableOnly</c> is the rule itself, which no status set can express because it is
+    /// payment-qualified. The set this used to carry was {Pending, Confirmed}, and Pending has no
+    /// writer — so the count was structurally zero for an entire pipeline of untaken cash orders
+    /// while the Available pane beside it listed them.
+    /// </summary>
     public static OrderSpecification CreateAvailableOrdersSpec(string excludeEmployeeId)
     {
         return OrderSpecification.Create(
@@ -21,10 +31,11 @@ public static class DashboardSpecifications
             paymentTypes: null,
             minTotalPrice: null,
             maxTotalPrice: null,
-            orderStatuses: new[] { OrderStatus.Pending, OrderStatus.Confirmed },
+            orderStatuses: OrderAvailability.OfferableStatuses,
             hasAvailableSpots: true,
             isUnassigned: null,
-            excludeEmployeeId: excludeEmployeeId
+            excludeEmployeeId: excludeEmployeeId,
+            offerableOnly: true
         );
     }
 

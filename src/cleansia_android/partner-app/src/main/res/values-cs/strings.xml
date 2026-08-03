@@ -1090,7 +1090,8 @@
     <string name="error_order_cancellation_window_closed">Lhůta pro zrušení vypršela.</string>
     <string name="error_order_empty">Zakázka je prázdná.</string>
     <string name="error_order_already_assigned">Tuto zakázku právě převzal jiný uklízeč.</string>
-    <string name="error_order_no_available_spots">Na této zakázce nejsou volná místa.</string>
+    <string name="error_order_no_available_spots">Tuto zakázku už převzal jiný uklízeč.</string>
+    <string name="error_order_not_takeable">Tato zakázka už není k dispozici.</string>
     <string name="error_order_weekly_limit_reached">Dosáhli jste týdenního limitu zakázek.</string>
     <string name="error_order_time_conflict">Tato zakázka se překrývá s jinou, kterou jste již přijali.</string>
     <string name="error_order_employee_already_assigned">Na tuto zakázku jste již přiřazeni.</string>

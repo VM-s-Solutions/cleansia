@@ -1073,7 +1073,8 @@
     <string name="error_order_cancellation_window_closed">Срок отмены истёк.</string>
     <string name="error_order_empty">Заказ пуст.</string>
     <string name="error_order_already_assigned">Этот заказ только что взял другой клинер.</string>
-    <string name="error_order_no_available_spots">На этом заказе нет свободных мест.</string>
+    <string name="error_order_no_available_spots">Этот заказ уже взял другой клинер.</string>
+    <string name="error_order_not_takeable">Этот заказ больше не доступен.</string>
     <string name="error_order_weekly_limit_reached">Вы достигли недельного лимита заказов.</string>
     <string name="error_order_time_conflict">Этот заказ пересекается с другим, который вы уже взяли.</string>
     <string name="error_order_employee_already_assigned">Вы уже назначены на этот заказ.</string>

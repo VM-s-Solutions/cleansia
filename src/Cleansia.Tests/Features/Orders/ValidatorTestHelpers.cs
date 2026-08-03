@@ -21,7 +21,8 @@ internal static class ValidatorTestHelpers
         OrderStatus currentStatus,
         string assignedEmployeeId,
         PaymentType paymentType = PaymentType.Cash,
-        PaymentStatus paymentStatus = PaymentStatus.Pending)
+        PaymentStatus paymentStatus = PaymentStatus.Pending,
+        int maxEmployees = 1)
     {
         var address = Address.Create("123 Main St", "Prague", "11000", "cz");
         var order = Order.Create(
@@ -39,6 +40,7 @@ internal static class ValidatorTestHelpers
             paymentStatus: paymentStatus);
 
         order.Id = orderId;
+        order.SetMaxEmployees(maxEmployees);
 
         // OrderStatusHistory: append in chronological order. The validator
         // queries by max CreatedOn, so a single entry suffices but we add
@@ -71,7 +73,13 @@ internal static class ValidatorTestHelpers
     /// raised <c>MaxEmployees</c> so it has an open spot. Used by the TakeOrder
     /// gate tests, where the caller must not already be assigned.
     /// </summary>
-    public static Order BuildEmptyOrder(string orderId, OrderStatus currentStatus, int maxEmployees = 2)
+    public static Order BuildEmptyOrder(
+        string orderId,
+        OrderStatus currentStatus,
+        int maxEmployees = 2,
+        PaymentType paymentType = PaymentType.Cash,
+        PaymentStatus paymentStatus = PaymentStatus.Pending,
+        string? recurringTemplateId = null)
     {
         var address = Address.Create("123 Main St", "Prague", "11000", "cz");
         var order = Order.Create(
@@ -83,10 +91,11 @@ internal static class ValidatorTestHelpers
             bathrooms: 1,
             extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
-            paymentType: PaymentType.Cash,
+            paymentType: paymentType,
             totalPrice: 1000m,
             currencyId: "czk",
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: paymentStatus,
+            recurringTemplateId: recurringTemplateId);
 
         order.Id = orderId;
         order.SetMaxEmployees(maxEmployees);

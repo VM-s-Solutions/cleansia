@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Microsoft.EntityFrameworkCore;
@@ -16,8 +17,9 @@ namespace Cleansia.Core.AppServices.Services;
 ///   - <see cref="Domain.Users.Employee.ContractStatus"/> ∈ { Approved, Active }
 ///   - <see cref="Domain.Users.Employee.WorkCountryId"/> matches the order's
 ///     customer-address country
-///   - The order is in the "available" status set (Pending, Confirmed),
-///     has a free spot, and isn't already assigned to this cleaner
+///   - The order satisfies <see cref="Domain.Orders.OrderAvailability"/> — the one
+///     offerability rule every surface reads — has a free spot, and isn't
+///     already assigned to this cleaner
 ///   - The order's status flipped to one of the available states AFTER the
 ///     cleaner's last digest watermark (so old already-notified orders
 ///     don't re-trigger)
@@ -45,13 +47,6 @@ public class NewJobsDigestService(
     IUnitOfWork unitOfWork,
     ILogger<NewJobsDigestService> logger) : INewJobsDigestService
 {
-    /// <summary>
-    /// Status set considered "available" for a cleaner to take. Mirrors
-    /// <c>DashboardSpecifications.CreateAvailableOrdersSpec</c>.
-    /// </summary>
-    private static readonly OrderStatus[] AvailableStatuses =
-        { OrderStatus.New, OrderStatus.Pending, OrderStatus.Confirmed };
-
     public async Task SendDigestsAsync(CancellationToken cancellationToken = default)
     {
         var sweepStartedAt = DateTimeOffset.UtcNow;
@@ -89,29 +84,24 @@ public class NewJobsDigestService(
             {
                 var sinceUtc = (cleaner.LastDigestAt ?? DateTimeOffset.MinValue).UtcDateTime;
 
-                // Available orders in this cleaner's work country that became
+                // Offerable orders in this cleaner's work country that became
                 // available AFTER their last digest. "Became available" is
-                // proxied by the latest OrderStatusTrack's CreatedOn for a
-                // status in AvailableStatuses — i.e. the transition into a
-                // takeable state. This avoids re-notifying about orders that
-                // sat in Pending/Confirmed across many sweeps.
+                // proxied by the latest OrderStatusTrack's CreatedOn — i.e. the
+                // transition into a takeable state. This avoids re-notifying
+                // about orders that sat offerable across many sweeps.
                 var newJobsQuery = orderRepository.GetQueryableIgnoringTenant()
                     .Where(o => o.CustomerAddress != null
                         && o.CustomerAddress.CountryId == cleaner.WorkCountryId
                         && o.AssignedEmployees.Count < o.MaxEmployees
                         && o.AssignedEmployees.All(ae => ae.EmployeeId != cleaner.EmployeeId))
-                    // Current status must be in the available set (the persisted,
-                    // index-served Orders.CurrentStatus column — same migration as the
-                    // available-orders spec; pre-backfill NULL rows are excluded) AND the
-                    // latest status track must be newer than the watermark, which still
-                    // needs the correlated latest-history subquery because the column
-                    // carries no transition timestamp.
-                    .Where(o => o.CurrentStatus != null
-                        && AvailableStatuses.Contains(o.CurrentStatus.Value)
-                        && o.OrderStatusHistory
-                            .OrderByDescending(s => s.CreatedOn)
-                            .Take(1)
-                            .Any(s => s.CreatedOn > sinceUtc));
+                    .Where(OrderAvailability.IsOfferableSql)
+                    // The latest status track must be newer than the watermark, which still
+                    // needs the correlated latest-history subquery because the persisted
+                    // Orders.CurrentStatus column carries no transition timestamp.
+                    .Where(o => o.OrderStatusHistory
+                        .OrderByDescending(s => s.CreatedOn)
+                        .Take(1)
+                        .Any(s => s.CreatedOn > sinceUtc));
 
                 // Pull just enough to make a decision: count + min/max
                 // cleaning times we'd need for the not-busy filter. Pulling

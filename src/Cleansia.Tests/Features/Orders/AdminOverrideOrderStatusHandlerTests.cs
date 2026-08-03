@@ -122,6 +122,55 @@ public class AdminOverrideOrderStatusHandlerTests
         Assert.Equal(BusinessErrorMessage.InvalidOrderStatusTransition, result.Error!.Message);
     }
 
+    /// <summary>
+    /// ADR-0037 D5 — OrderStatus.Pending is dead: nothing writes it, and the state it names
+    /// ("card payment initiated") is tracked on the payment axis instead. It may not become a
+    /// target here, or the override becomes the missing writer the ADR declares must not exist.
+    /// </summary>
+    [Fact]
+    public async Task Admin_Override_To_Pending_Returns_InvalidTransition()
+    {
+        var order = ArrangeOrder(OrderStatus.New);
+
+        var result = await CreateHandler().Handle(
+            new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Pending), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.InvalidOrderStatusTransition, result.Error!.Message);
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+    }
+
+    /// <summary>
+    /// The trap the same ruling sets: dropping Pending from the Lifecycle ARRAY would make
+    /// Array.IndexOf return -1 for a legacy Pending row, which passes <c>targetRank &lt;= currentRank</c>
+    /// for every target — including New at index 0. A dead status must stop being a target without
+    /// stopping being a rank.
+    /// </summary>
+    [Fact]
+    public async Task A_Legacy_Pending_Order_Cannot_Be_Walked_Backwards_To_New()
+    {
+        var order = ArrangeOrder(OrderStatus.New, OrderStatus.Pending);
+
+        var result = await CreateHandler().Handle(
+            new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.New), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.InvalidOrderStatusTransition, result.Error!.Message);
+        Assert.Equal(OrderStatus.Pending, order.CurrentStatus);
+    }
+
+    [Fact]
+    public async Task A_Legacy_Pending_Order_Can_Still_Move_Forward_To_Confirmed()
+    {
+        var order = ArrangeOrder(OrderStatus.New, OrderStatus.Pending);
+
+        var result = await CreateHandler().Handle(
+            new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Confirmed), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+    }
+
     [Fact]
     public async Task Admin_Override_On_Completed_Order_Returns_OrderAlreadyCompleted()
     {

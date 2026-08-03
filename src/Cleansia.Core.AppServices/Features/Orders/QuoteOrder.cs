@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Shared.DTOs.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -58,11 +59,17 @@ public class QuoteOrder
 
     public class Validator : AbstractValidator<Command>
     {
+        private readonly IServiceRepository _serviceRepository;
+        private readonly IPackageRepository _packageRepository;
+
         public Validator(
             IServiceRepository serviceRepository,
             IPackageRepository packageRepository,
             ICurrencyRepository currencyRepository)
         {
+            _serviceRepository = serviceRepository;
+            _packageRepository = packageRepository;
+
             RuleFor(x => x.Rooms)
                 .GreaterThanOrEqualTo(0)
                 .WithMessage(BusinessErrorMessage.MustBePositive);
@@ -85,6 +92,30 @@ public class QuoteOrder
                     .MustAsync(currencyRepository.ExistsAsync)
                     .WithMessage(BusinessErrorMessage.InvalidCurrency);
             });
+
+            RuleFor(x => x)
+                .MustAsync(SpanWithinCapAsync)
+                .WithMessage(BusinessErrorMessage.OrderSpanExceedsMaximum);
+        }
+
+        /// <summary>
+        /// The same bound <c>CreateOrder.Validator</c> draws, drawn one step earlier: without it a
+        /// selection the platform will refuse to book comes back priced, and the customer only learns
+        /// at submit. Same predicate, same key, same arithmetic — an empty selection sums to 0 and
+        /// still quotes, because the wizard quotes before anything is picked.
+        /// </summary>
+        private async Task<bool> SpanWithinCapAsync(Command command, CancellationToken cancellationToken)
+        {
+            var serviceMinutes = await _serviceRepository
+                .GetByIds(command.SelectedServiceIds)
+                .SumAsync(s => s.EstimatedTime, cancellationToken);
+
+            var packagedServiceMinutes = await _packageRepository
+                .GetByIds(command.SelectedPackageIds)
+                .SelectMany(p => p.IncludedServices)
+                .SumAsync(ps => ps.Service!.EstimatedTime, cancellationToken);
+
+            return !BookingPolicy.ExceedsMaxBookableSpan(serviceMinutes + packagedServiceMinutes);
         }
     }
 

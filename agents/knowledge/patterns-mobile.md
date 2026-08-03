@@ -760,6 +760,21 @@ partner sees when they lose a race for a job. Two rules follow:
   (`http-error.interceptor.ts:14-20`). **Verify translations by grepping the locale files, never by watching a
   screen** — Cleansia's `order.weekly_limit_reached` was missing from all five partner-web locales for months
   because a reviewer "checked for the raw key" on a client that never shows one.
+- **"The key exists" is not "the key is voiced for whoever can now receive it", and a copy bill that ticks
+  existence will ship the defect it was written to close.** ADR-0037's bill marked
+  `order.already_cancelled` / `order.already_completed` **Reuse — iOS ✅ already localized** and its take gate
+  then made both newly reachable by a cleaner; both read *"This booking is already…"* in all five locales.
+  So the check when a change widens a key's audience is a **voice** check, not a presence check. The cheap
+  form of it: diff the Core `error.*` values against **`partner-app/src/main/res/values*/strings.xml`**, not
+  against the customer app's — Cleansia's Core `error.order.*` block was seeded from the Android **customer**
+  catalog, so `no_available_spots`, `time_conflict`, `weekly_limit_reached` and `not_found` all matched
+  Android *customer* verbatim while only partner commands could emit the first three. One mis-voiced string
+  is nearly always a seeded block, so sweep the whole surface the first time you find one.
+- **Pin it with a roster the backend grounds, not a spot assertion** (Core `PartnerErrorVoiceTests`): the
+  keys whose every emitter is a partner/admin command, each carrying its emitters, checked in all five
+  locales for (a) resolving to a sentence rather than the raw key and (b) carrying none of the customer
+  catalog's reservation vocabulary (`booking` / `rezervac` / `rezervác` / `бронюв` / `бронирован`). It reads
+  the **compiled** bundle, so it stays green where the on-disk `.xcstrings` suites cannot open the repo.
 
 **A rule the BACKEND also writes lives in Core as a pure function, pinned by Core tests — never inlined at
 the ActivityKit call site.** The Live Activity card has two writers: the app's `LiveActivityCoordinator` and

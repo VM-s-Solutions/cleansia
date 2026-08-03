@@ -1095,7 +1095,8 @@
     <string name="error_order_cancellation_window_closed">The cancellation window has closed.</string>
     <string name="error_order_empty">Order is empty.</string>
     <string name="error_order_already_assigned">This order was just taken by another cleaner.</string>
-    <string name="error_order_no_available_spots">No spots available on this order.</string>
+    <string name="error_order_no_available_spots">Another cleaner has already taken this job.</string>
+    <string name="error_order_not_takeable">This job is no longer available.</string>
     <string name="error_order_weekly_limit_reached">You\'ve reached your weekly order limit.</string>
     <string name="error_order_time_conflict">This order conflicts with another you\'ve already taken.</string>
     <string name="error_order_employee_already_assigned">You\'re already assigned to this order.</string>

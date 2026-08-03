@@ -25,6 +25,12 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
     public bool? IsUnassigned { get; set; }
     public string? ExcludeEmployeeId { get; set; }
 
+    // The full ADR-0037 offerability rule (status axis AND money axis), for the surfaces whose whole
+    // question is "what may a cleaner take" — the dashboard available count and its preview. A plain
+    // status set cannot express it: New is offerable only for cash, and Confirmed only once nothing
+    // scheduled can still retract the order.
+    public bool? OfferableOnly { get; set; }
+
     // Server-pinned scope for a non-admin caller: results are restricted to
     // rows the caller is assigned to OR rows that still have an open spot the
     // caller could take. A non-admin can never read another employee's
@@ -131,11 +137,24 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             specification &= new DirectSpecification<Order>(x => x.AssignedEmployees.All(ae => ae.EmployeeId != ExcludeEmployeeId));
         }
 
+        if (OfferableOnly.HasValue && OfferableOnly.Value)
+        {
+            specification &= new DirectSpecification<Order>(OrderAvailability.IsOfferableSql);
+        }
+
         if (!string.IsNullOrEmpty(RestrictToEmployeeId))
         {
-            specification &= new DirectSpecification<Order>(x =>
-                x.AssignedEmployees.Any(ae => ae.EmployeeId == RestrictToEmployeeId)
-                || x.AssignedEmployees.Count < x.MaxEmployees);
+            // The server's only authoritative floor on what a browsing cleaner may read. The
+            // free-seat disjunct used to be pure seat arithmetic with no status term, so every
+            // Cancelled order that nobody had taken was readable — and takeable — by anyone. The
+            // client status lists are a display refinement on top of this, never the boundary.
+            Specification<Order> assignedToCaller = new DirectSpecification<Order>(x =>
+                x.AssignedEmployees.Any(ae => ae.EmployeeId == RestrictToEmployeeId));
+            Specification<Order> openAndOfferable =
+                new DirectSpecification<Order>(x => x.AssignedEmployees.Count < x.MaxEmployees)
+                & new DirectSpecification<Order>(OrderAvailability.IsOfferableSql);
+
+            specification &= assignedToCaller | openAndOfferable;
         }
 
         return specification.SatisfiedBy();
@@ -147,7 +166,7 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
         DateTime? cleaningDateTo = null, IEnumerable<PaymentStatus>? paymentStatuses = null, IEnumerable<PaymentType>? paymentTypes = null,
         decimal? minTotalPrice = null, decimal? maxTotalPrice = null, IEnumerable<OrderStatus>? orderStatuses = null,
         bool? hasAvailableSpots = null, bool? isUnassigned = null, string? excludeEmployeeId = null,
-        string? userId = null, string? restrictToEmployeeId = null) =>
+        string? userId = null, string? restrictToEmployeeId = null, bool? offerableOnly = null) =>
         new()
         {
             Id = id,
@@ -168,6 +187,7 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             HasAvailableSpots = hasAvailableSpots,
             IsUnassigned = isUnassigned,
             ExcludeEmployeeId = excludeEmployeeId,
-            RestrictToEmployeeId = restrictToEmployeeId
+            RestrictToEmployeeId = restrictToEmployeeId,
+            OfferableOnly = offerableOnly
         };
 }

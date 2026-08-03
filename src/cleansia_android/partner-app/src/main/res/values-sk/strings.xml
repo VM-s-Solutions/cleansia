@@ -1070,7 +1070,8 @@
     <string name="error_order_cancellation_window_closed">Lehota na zrušenie vypršala.</string>
     <string name="error_order_empty">Zákazka je prázdna.</string>
     <string name="error_order_already_assigned">Túto zákazku práve prevzal iný upratovač.</string>
-    <string name="error_order_no_available_spots">Na tejto zákazke nie sú voľné miesta.</string>
+    <string name="error_order_no_available_spots">Túto zákazku už prevzal iný upratovač.</string>
+    <string name="error_order_not_takeable">Táto zákazka už nie je k dispozícii.</string>
     <string name="error_order_weekly_limit_reached">Dosiahli ste týždenný limit zákaziek.</string>
     <string name="error_order_time_conflict">Táto zákazka sa prekrýva s inou, ktorú ste už prijali.</string>
     <string name="error_order_employee_already_assigned">Na túto zákazku ste už priradení.</string>

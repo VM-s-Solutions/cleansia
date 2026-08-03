@@ -35,17 +35,28 @@ public class TakeOrder
             _employeeRepository = employeeRepository;
             _orderAccessService = orderAccessService;
 
-            RuleFor(x => x.OrderId)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(_orderRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.OrderNotFound)
-                .MustAsync(HasAvailableSpotsAsync)
-                .WithMessage(BusinessErrorMessage.NoAvailableSpots);
-
+            // ONE ordered chain, deliberately (ADR-0037 D6). Cascade.Stop is rule-LEVEL and
+            // FluentValidation's class-level default is Continue, so a second chain here would run
+            // regardless of this one's verdict: the caller would get a semicolon-joined composite no
+            // client can resolve, and — because ADR-0036 folds the preferred-cleaner hold into the
+            // existence rule — a HELD order and a MISSING one would answer with different error
+            // counts, making existence inferable from the pairing. Order matters: existence (with
+            // the hold) before offerability, offerability before seats, because a Cancelled order
+            // with a free seat should say the job is gone, not that it is full.
             RuleFor(x => x)
                 .Cascade(CascadeMode.Stop)
+                .Must(command => !string.IsNullOrWhiteSpace(command.OrderId))
+                .WithMessage(BusinessErrorMessage.Required)
+                .MustAsync((command, ct) => _orderRepository.ExistsAsync(command.OrderId, ct))
+                .WithMessage(BusinessErrorMessage.OrderNotFound)
+                .MustAsync(NotCancelledAsync)
+                .WithMessage(BusinessErrorMessage.OrderAlreadyCancelled)
+                .MustAsync(NotCompletedAsync)
+                .WithMessage(BusinessErrorMessage.OrderAlreadyCompleted)
+                .MustAsync(IsOfferableAsync)
+                .WithMessage(BusinessErrorMessage.OrderNotTakeable)
+                .MustAsync(HasAvailableSpotsAsync)
+                .WithMessage(BusinessErrorMessage.NoAvailableSpots)
                 .MustAsync(CallerIsEmployeeAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeNotFound)
                 .MustAsync(HasCompletedProfileAsync)
@@ -60,12 +71,58 @@ public class TakeOrder
                 .WithMessage(BusinessErrorMessage.TimeConflict);
         }
 
-        private async Task<bool> HasAvailableSpotsAsync(string orderId, CancellationToken cancellationToken)
+        private async Task<bool> NotCancelledAsync(Command command, CancellationToken cancellationToken)
+        {
+            var probe = await LoadOfferabilityProbeAsync(command.OrderId, cancellationToken);
+            return probe?.CurrentStatus != OrderStatus.Cancelled;
+        }
+
+        private async Task<bool> NotCompletedAsync(Command command, CancellationToken cancellationToken)
+        {
+            var probe = await LoadOfferabilityProbeAsync(command.OrderId, cancellationToken);
+            return probe?.CurrentStatus != OrderStatus.Completed;
+        }
+
+        private async Task<bool> IsOfferableAsync(Command command, CancellationToken cancellationToken)
+        {
+            var probe = await LoadOfferabilityProbeAsync(command.OrderId, cancellationToken);
+            return probe is not null && OrderAvailability.IsOfferable(
+                probe.CurrentStatus, probe.PaymentType, probe.PaymentStatus, probe.RecurringTemplateId);
+        }
+
+        /// <summary>
+        /// The four columns <see cref="OrderAvailability"/> reads. A NULL <c>CurrentStatus</c> falls
+        /// back to the latest history row (CreatedOn desc, Sequence desc) rather than being excluded:
+        /// the read surfaces fail closed on a pre-backfill row, but the WRITE gate must not, or every
+        /// legacy order would be permanently untakeable (ADR-0037 D3).
+        /// </summary>
+        private Task<OfferabilityProbe?> LoadOfferabilityProbeAsync(string orderId, CancellationToken cancellationToken) =>
+            _orderRepository
+                .GetQueryable()
+                .Where(o => o.Id == orderId)
+                .Select(o => new OfferabilityProbe(
+                    o.CurrentStatus ?? o.OrderStatusHistory
+                        .OrderByDescending(s => s.CreatedOn)
+                        .ThenByDescending(s => s.Sequence)
+                        .Select(s => (OrderStatus?)s.Status)
+                        .FirstOrDefault(),
+                    o.PaymentType,
+                    o.PaymentStatus,
+                    o.RecurringTemplateId))
+                .FirstOrDefaultAsync(cancellationToken)!;
+
+        private sealed record OfferabilityProbe(
+            OrderStatus? CurrentStatus,
+            PaymentType PaymentType,
+            PaymentStatus PaymentStatus,
+            string? RecurringTemplateId);
+
+        private async Task<bool> HasAvailableSpotsAsync(Command command, CancellationToken cancellationToken)
         {
             var order = await _orderRepository
                 .GetQueryable()
                 .Include(o => o.AssignedEmployees)
-                .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+                .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             return order?.HasAvailableSpots ?? false;
         }
@@ -189,7 +246,7 @@ public class TakeOrder
 
             var statusChanged = false;
             var currentStatus = order.GetCurrentOrderStatus();
-            if (currentStatus is OrderStatus.New or OrderStatus.Pending)
+            if (currentStatus is OrderStatus.New)
             {
                 order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
                 statusChanged = true;

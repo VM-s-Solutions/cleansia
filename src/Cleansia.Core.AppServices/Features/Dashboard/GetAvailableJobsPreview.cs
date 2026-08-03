@@ -43,10 +43,7 @@ public class GetAvailableJobsPreview
                     BusinessErrorMessage.EmployeeNotFound));
             }
 
-            // Specification matches the "Available Orders" tab on the mobile
-            // dashboard: Pending or Confirmed, unassigned spots remain, and
-            // not already mine. We sort by TotalPrice DESC so the cleaner
-            // sees the highest-value jobs first.
+            // Sorted by TotalPrice DESC so the cleaner sees the highest-value jobs first.
             var spec = DashboardSpecifications.CreateAvailableOrdersSpec(employeeId);
             var totalCount = await orderRepository.GetCountAsync(spec.SatisfiedBy(), cancellationToken);
             var orders = await orderRepository.GetQueryable()

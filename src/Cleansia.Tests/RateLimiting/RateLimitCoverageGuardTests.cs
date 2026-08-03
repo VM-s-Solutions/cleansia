@@ -163,6 +163,18 @@ public class RateLimitCoverageGuardTests
         Assert.Equal("auth", EffectivePolicyOf(controller.GetMethod(action)!));
     }
 
+    // ADR-0039 D12.1: MyServingCleaners is a READ, so neither the mutating sweep above nor S5 as
+    // written reaches it — and that is exactly why it shipped unthrottled while CancelOrder eleven
+    // lines above it carries a window. Its answer is per-subject and repeating it reconstructs a
+    // named cleaner's work calendar, so it is rate-limited like a side-effecting endpoint.
+    [Theory]
+    [InlineData(typeof(Cleansia.Web.Customer.Controllers.OrderController), "MyServingCleaners")]
+    [InlineData(typeof(Cleansia.Web.Mobile.Customer.Controllers.OrderController), "MyServingCleaners")]
+    public void MyServingCleaners_Carries_The_Auth_Window(Type controller, string action)
+    {
+        Assert.Equal("auth", EffectivePolicyOf(controller.GetMethod(action)!));
+    }
+
     // Catalog lifecycle (partially covered controllers, so not in the full-coverage list):
     // the lifecycle actions themselves must keep their window.
     [Theory]

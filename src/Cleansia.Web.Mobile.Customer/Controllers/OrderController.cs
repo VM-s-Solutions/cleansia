@@ -179,8 +179,12 @@ public class OrderController(IMediator mediator) : CustomerMobileApiController(m
         return HandleResult<CancelOrder.Response>(result);
     }
 
+    // ADR-0039 D12.1 — a read, but a per-subject one whose repetition reconstructs twenty named
+    // cleaners' work calendars. The shared "auth" window (30/min per sub) is the account's budget,
+    // so sweeping this spends the caller's ability to do anything else.
     [HttpGet("MyServingCleaners")]
     [Permission(Policy.CanViewPagedUserOrder)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(IReadOnlyList<GetMyServingCleaners.Response>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

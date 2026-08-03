@@ -44,6 +44,18 @@ public class RuntimeFloodRateLimitTests
             .AllowAnonymous()              // mirrors the controller — anonymous, so NO lockout confound
             .RequireRateLimiting("auth");  // the genuine remediation policy
 
+    // Mirrors Cleansia.Web.{Customer,Mobile.Customer}.Controllers.OrderController.MyServingCleaners:
+    // an authenticated GET carrying the "auth" window (ADR-0039 D12.1).
+    private const string ServingCleanersPath = "/api/Order/MyServingCleaners";
+
+    private static void MapServingCleanersRoute(IEndpointRouteBuilder endpoints) =>
+        endpoints.MapGet(ServingCleanersPath, (HttpContext c) =>
+            {
+                c.Response.StatusCode = StatusCodes.Status200OK;
+                return Task.CompletedTask;
+            })
+            .RequireRateLimiting("auth");
+
     // AC1 + AC2 — "auth" ANONYMOUS class on the remediation target. Flood the anonymous password
     // path from ONE client IP past the window: the over-limit POST is 429 with a positive Retry-After,
     // proving the remediation [EnableRateLimiting("auth")] is live middleware (AC2). A DISTINCT IP's
@@ -98,6 +110,35 @@ public class RuntimeFloodRateLimitTests
         // the per-sub rate limit, not the IP window and not the T-0193 lockout.
         var otherSub = await h.SendAsync("/auth", xffClientIp: sharedIp, sub: "bystander-user");
         Assert.False(otherSub.Is429, "a distinct sub on the same IP must still be served — the rejection is per-sub rate limit, not lockout.");
+    }
+
+    // ADR-0039 D12.1 — the "auth" AUTHENTICATED window on a READ. MyServingCleaners answers
+    // "which of your twenty cleaners is free at this instant" per subject, so repetition is the
+    // attack; the structural pin lives in RateLimitCoverageGuardTests, this proves the window is
+    // live middleware on a GET (the shipped attribute's shape) and that the budget is the account's,
+    // not the endpoint's — a second sub on the same IP is untouched.
+    [Fact]
+    public async Task ServingCleaners_Read_Floods_To_429_On_The_Authenticated_Auth_Window()
+    {
+        await using var h = await RateLimiterHostHarness.StartAsync(
+            RateLimitTestConfig.Valid(authAnon: 10, authAuthenticated: 4),
+            extraEndpoints: MapServingCleanersRoute);
+
+        const string sharedIp = "203.0.113.70";
+        for (var i = 1; i <= 4; i++)
+        {
+            var ok = await h.SendAsync(ServingCleanersPath, xffClientIp: sharedIp, sub: "sweeping-user", method: "GET");
+            Assert.False(ok.Is429, $"MyServingCleaners GET #{i} should be allowed under authAuthenticated=4 (got {ok.StatusCode}).");
+        }
+
+        var rejected = await h.SendAsync(ServingCleanersPath, xffClientIp: sharedIp, sub: "sweeping-user", method: "GET");
+        Assert.True(rejected.Is429,
+            "the 5th MyServingCleaners GET over authAuthenticated=4 must be a runtime 429 — an unthrottled " +
+            "authenticated read of this shape reconstructs twenty cleaners' calendars in under a minute.");
+        Assert.False(string.IsNullOrEmpty(rejected.RetryAfter), "the read's 429 must carry Retry-After (D6).");
+
+        var otherSub = await h.SendAsync(ServingCleanersPath, xffClientIp: sharedIp, sub: "bystander-user", method: "GET");
+        Assert.False(otherSub.Is429, "a distinct sub on the same IP must still be served — the window is per-sub.");
     }
 
     // AC1 — "webhook" per-source-IP class. Flood the genuine webhook route from one source IP past

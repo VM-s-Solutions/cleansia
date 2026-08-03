@@ -1,7 +1,9 @@
 # ADR-0038 — The promo-code redemption reservation runs **strictly after** the `UnitOfWork` commit, on a new in-process **post-commit effect** seam; a change-tracked insert ships **first** as a named interim and is retired by that seam
 
-- **Status:** proposed   <!-- proposed | accepted | superseded | rejected -->
-- **Date:** 2026-08-02
+- **Status:** accepted   <!-- proposed | accepted | superseded | rejected -->
+- **Date:** 2026-08-02 (drafted `proposed` under a live outage; challenged 2026-08-03 —
+  `agents/backlog/adr/challenges/0038-seam.md`, nine findings; **amended and accepted by the panel lead
+  2026-08-03**). Lead amendments are marked **AM-1 … AM-11** inline and indexed in the `## Verdict`.
 - **Supersedes:** —
 - **Superseded by:** —
 - **Backs / extends:** **ADR-0035 §D3.1/AM-3** (the promo archetype is *reserve-after-persist and
@@ -13,28 +15,28 @@
   principle and its logged-and-swallowed posture), **ADR-0009 D2 / `patterns-backend.md` §B8** (the
   price is frozen at purchase and is never re-derived downstream).
 - **Applies to:** backend | database (index option only — see §Migration impact) | cross-cutting (pipeline)
-- **Ticket:** the live-outage fix (PM to number) · **Consumers:** the end-state seam ticket, the
-  index-option ticket (⚠️ `ef-migration`), the counter data-repair script
+- **Ticket:** the live-outage fix, **shipped as `da88b695`** · **Consumers:** **T-0532** (the end-state
+  seam; its AC0 block is discharged by this Verdict), the index-option ticket (⚠️ `ef-migration`), the
+  counter data-repair script, and **FT-38.1 … FT-38.6** (§Follow-up tickets — 38.1/38.2/38.3/38.4 are
+  conditions of this ruling)
 
 > **⚠️ ADR number.** `0037` was taken by the concurrently-running **order-offerability** panel while
 > this ADR was being researched (its files did not exist at the start of this session and did by the
 > end). This ADR is **0038**. Re-check `agents/backlog/adr/` before claiming the next number — this is
 > the second collision near-miss in as many rounds.
 
-> **⚠️ This ADR is `proposed` and the ruling is nonetheless BINDING ON THE FIX NOW.** A total outage is
-> live. The panel protocol (`agents/process/deliberation.md`) requires an author and a *different*
-> lead; that second pass has not happened. What that costs and what it does not:
-> - **§D3 (the interim) is authorized to ship immediately.** It restores service, needs no migration
->   and no seam, and is proven by an existing integration test against real PostgreSQL. Nothing in a
->   challenger pass can make "every promo booking 500s" the better state.
-> - **§D1/§D2 (the end state and its seam) require one challenger pass before this ADR flips to
->   `accepted`.** Three things to attack, named so the pass is cheap: (1) the rejection of the
->   **outbox** route in §D1.3 turns on a *quantitative* claim about the drain window — check the
->   arithmetic; (2) the **five laws** in §D2.2 are what stop the new seam becoming a dumping ground —
->   attack their sufficiency, not their wording; (3) §D5 folds a *second* defect into the outage fix —
->   attack the scope argument.
-> - `agents/knowledge/*` edits landed with this ADR are marked **PROPOSED** and are not law until the
->   `## Verdict` is signed by a second instance.
+> **✅ The challenger pass ran and this ADR is now `accepted`.** The interim (§D3 + §D5.1 + §D6) shipped
+> under the `proposed` banner as commit `da88b695` and **stays shipped** — see AM-4. The three points the
+> banner left OPEN are ruled: **CH-2** the outbox stays rejected, on corrected arithmetic (AM-1);
+> **CH-6** the law-1 tripwire lands **in the seam's own PR**, not before and not after (AM-8);
+> **CH-7** the persisted refusal marker is **refused**, and the detection query is re-keyed onto a column
+> the anonymizer preserves (AM-9). `agents/knowledge/*` edits landed with this ADR lose their
+> **PROPOSED** banners and become law with this Verdict, each carrying an ADR-0032 `Enforced by:` tier.
+>
+> **The one thing acceptance does not buy:** three obligations in `## Follow-up tickets` are *conditions
+> of this ruling*, not optional consequences — **FT-38.1** (single-reservation-per-unit-of-work
+> tripwire, AM-4), **FT-38.2** (the interim-marker gate moves to `Cleansia.Tests`, AM-7) and **FT-38.4**
+> (the two missing invariant tests, AM-6). A reviewer treats an unallocated id as a finding.
 
 ---
 
@@ -138,6 +140,18 @@ order* (§D5.1) — otherwise the interim ships a new customer-harming defect on
 the orphan Stripe session (§D7), which the fix removes in its promo-caused form and which must not be
 "fixed" along the way.
 
+**What the panel changed (2026-08-03).** The ruling above survives intact; four of its supporting claims
+did not. The outbox rejection stands on **~40s vs one request duration**, not 10s vs milliseconds
+(AM-1). The interim does **not** "lose nothing" — it disarms every database-read guard over its own
+write for the rest of the unit of work, in *every* deployment, latent behind a single call site (AM-4/
+AM-5); it is still the right thing to have shipped, because the alternative was a 100% outage and the
+consequence has no reachable caller (A11). The five seam laws now carry ADR-0032 tiers and their
+tripwire lands **inside** the seam's own PR (AM-8). The retirement trigger was a comment, not a gate,
+and is now an xUnit tripwire with a pattern that matches the marker that actually shipped (AM-7). Plus
+three free corrections: the detection query was already blind in production (AM-9), the effect record
+carried the input to a forbidden recompute (AM-2/AM-3), and the compensating release could destroy the
+exception it exists to accompany (AM-10).
+
 ### D1 — The reservation is a **post-commit effect**
 
 **The rule:** *no write that references `Order.Id` under a foreign key may execute before the
@@ -174,14 +188,39 @@ is even naturally idempotent for at-least-once delivery: `PromoCodeService.Apply
 on `GetByOrderIdAsync` (`:90-94`) behind a UNIQUE index on `OrderId` alone
 (`PromoCodeRedemptionEntityConfiguration.cs:72-73`).
 
-**It is rejected because of the drain window.** `OutboxDrainerFunction` runs on `*/10 * * * * *` — a
-10-second timer, plus queue delivery, plus consumer execution. During that window the per-user
-pre-read (`CountForUserAndCodeAsync`, `PromoCodeService.cs:47-53` and `:123-128`) sees **zero prior
-redemptions**. That converts the per-user cap exploit from **concurrent** (fire N simultaneous
-requests — needs tooling) to **serial** (book, wait a second, book again — needs a browser). A
-one-shot code becomes an N-shot code for anyone with 30 seconds. ADR-0035 AM-3 conceded a *soft* cap;
-it did not concede a **serially farmable** one, and widening a money-path window by ~4 orders of
-magnitude is a decision, not an implementation detail.
+**It is rejected because of the drain window** — *AM-1: both numbers in the draft were wrong, in
+opposite directions; the rejection survives on the corrected pair, and the corrected pair is what goes
+in the catalog.*
+
+**The outbox side was understated.** The drainer does not do the work — it *enqueues* it
+(`OutboxDrainerService.cs:62`, `queueClient.SendAsync`). Three legs, not one:
+`OutboxDrainerFunction.cs:14` `[TimerTrigger("*/10 * * * * *")]` (≤10s) **+** the queue listener's
+back-off, which `src/Cleansia.Functions/host.json:19-23` pins at `maxPollingInterval: 00:00:30` with
+`newBatchThreshold: 0`, `batchSize: 1` — i.e. an idle queue, the normal state, has backed off to a 30s
+ceiling — **+** consumer execution. Worst case end-to-end is **~40s**, typical ~15–25s.
+
+**The in-process side was overstated, and this is the half that decides the size of the gap.** The
+window that governs the exploit is not commit→effect; it is **per-user pre-read → redemption row
+durable**, because the gate an attacker beats is the count at `PromoCodeService.cs:47-53` / `:123-128`.
+Post-commit, that row lands at the end of the *same request* — a request that on Web + Card contains a
+Stripe Checkout Session mint (`OrderPaymentDispatcher.cs:43-45`), an external HTTP round trip. So the
+in-process window is **one request duration**, not "milliseconds". Two **overlapping** requests both
+read zero priors under the end state too.
+
+**The gap is therefore ~2 orders of magnitude, not ~4** — and the qualitative line, which is what the
+rejection actually rests on, is unchanged and is the honest way to state it:
+
+| Route | What an attacker needs to double-redeem a one-shot code |
+|---|---|
+| Post-commit, in-process (chosen) | **two overlapping requests** — the second must start before the first finishes |
+| Outbox + consumer (rejected) | **two requests within ~40s** — book, wait, book again; a browser and a stopwatch |
+
+ADR-0035 AM-3 conceded a *soft* cap; it did not concede a **serially farmable** one. Widening a
+money-path race window from "requests must overlap" to "requests within ~40s" is a decision, not an
+implementation detail. *(The challenger traced the exploit's payload and confirmed it yields extra
+**discounts**, not extra ledger rows — the reservation statement still refuses in the consumer and the
+compensating decrement keeps the global counter consistent. That bounds the damage; it does not change
+the ruling, because the discount is the money.)*
 
 Two secondary costs, recorded so the option is not re-proposed on the assumption they are free:
 - **Tenant.** A queue consumer has no JWT, so `tenantProvider.GetCurrentTenantId()` is null and the
@@ -203,8 +242,20 @@ because the residual it closes is a crash in a millisecond window on a discount 
 (`FluentValidationExtensions.cs:34-37`: `AuditFailureCapture → PostCommitDispatch → Validation →
 UnitOfWork → AuditLog → Handler`), so code placed after its `next()` runs **strictly after the commit**
 with the request scope still alive. That gives, at no cost: the ambient tenant, the ambient user
-session (so `CreatedBy` is the real actor), the same `DbContext`, and **millisecond** latency — the
-same window the design has always assumed.
+session (so `CreatedBy` is the real actor), and the same `DbContext`.
+
+**AM-1 (cont.) — state the latency property precisely, because the draft's "millisecond" was two
+different claims wearing one word.** Two separate numbers, both true, neither interchangeable:
+
+- **Latency the effect *adds* to the request: milliseconds.** Two statements against a warm connection
+  in the same scope. This is what §CH-8 answers.
+- **The exposure window the effect *closes*: the FK/orphan window only.** The reservation becomes
+  durable **before the response leaves the pipeline** — which is a genuinely strong property (the
+  customer is never told "booked" before the ledger row exists) and is *stronger* than the outbox on
+  this axis. It is **not** a narrowing of the cap-farming window, which is one request duration on
+  either side of this decision. Anything that claims post-commit "narrows the per-user window to
+  milliseconds" is wrong; §D5.2's index is the only thing in this ADR that makes the concurrent
+  per-user case actually arbitrated.
 
 **Rejected: a fire-and-forget `Task.Run` / `IHostedService` hand-off.** It escapes the request scope
 (disposed `DbContext`), loses the tenant and the actor, is unobservable in tests, and converts a
@@ -237,11 +288,23 @@ public interface IPostCommitEffectExecutor<in TEffect> where TEffect : IPostComm
     Task ExecuteAsync(TEffect effect, CancellationToken cancellationToken);
 }
 
-// The promo instance:
+// The promo instance. AM-2: NO RawSubtotal — see below.
 public sealed record PromoRedemptionEffect(
-    string OrderId, string PromoCodeId, string UserId, decimal AppliedDiscount, decimal RawSubtotal)
+    string OrderId, string PromoCodeId, string UserId, decimal FrozenPromoDiscountAmount)
     : IPostCommitEffect { public string EffectKey => $"promo-redemption:{OrderId}"; }
 ```
+
+**AM-2 — the draft's own sketch handed the executor the input for the recompute §D5.1 forbids.**
+`RawSubtotal` is the *only* argument `ComputeDiscount` (`PromoCodeService.cs:239-252`) needs, so
+carrying it on the intent record makes the forbidden re-derivation a one-liner in the executor — and
+the implementing ticket copies the sketch. It is **dropped**, and `AppliedDiscount` is renamed
+`FrozenPromoDiscountAmount` so the field says where it comes from: `order.PromoDiscountAmount`,
+verbatim (§D5.1, ADR-0009 D2, §B8). *The general form, worth more than the instance:* **an intent
+record must not carry the inputs of a computation whose output it also carries.** If both are present,
+somebody will recompute, and the recompute will be the one that is wrong.
+
+Dropping `RawSubtotal` has a consequence the draft was silent on, and §D5.1 now rules it explicitly —
+see "**AM-3 — what the end-state executor stops re-validating**".
 
 **Registration:** `PostCommitEffectBehavior<,>` is registered **immediately inside**
 `PostCommitDispatchBehavior<,>` (i.e. between it and `ValidationPipelineBehavior`), which makes
@@ -263,7 +326,13 @@ A seam that will take anything becomes a dumping ground and the CQRS/UoW boundar
    *durable-external → outbox; local, idempotent, must-not-join-the-order's-transaction → post-commit effect.*
 2. **It is idempotent on a natural key of persisted state** — here `OrderId`, backed by the UNIQUE
    index on `PromoCodeRedemptions.OrderId` and the `GetByOrderIdAsync` short-circuit. An effect whose
-   second execution does something is not admissible.
+   second execution does something is not admissible. **AM-5 — and the guard must read *durable*
+   state.** A guard that reads the database cannot see a write the same unit of work has only
+   *tracked*; such a guard is disarmed for the remainder of that unit of work and is not a guard. This
+   is the exact mirror of law 3 (a tracked `Add` in an effect is a silent no-op), it is what the
+   interim gets wrong (§D3, AM-4), and law 2 as drafted asserted a backing the interim does **not**
+   have. The end state restores it structurally — post-commit, the reservation's own statement is
+   self-committing, so every subsequent read sees it.
 3. **It owns its own commit.** The pipeline's commit has already happened and will not happen again.
    An effect persists via a self-committing statement (the reservation already is one) or an
    explicitly-committed repository call, and says so in a doc-comment using the existing
@@ -280,10 +349,45 @@ A seam that will take anything becomes a dumping ground and the CQRS/UoW boundar
 **Failing law 1 is the common case and the answer is always the outbox.** Failing law 2 or 3 means the
 work belongs *inside* the handler's unit of work, not after it.
 
-### D3 — The interim: a change-tracked insert, shipping first
+#### D2.3 — What enforces each law (AM-8, required by **ADR-0032 D2** — `accepted`, and binding here)
+
+The draft declared five laws over code other people will write and named **no** enforcer for any of
+them. ADR-0032 D2 makes that a finding on its own. Each law now carries a tier; the catalog entries
+that restate them carry the same tokens inline.
+
+| Law | Enforcer | Tier |
+|---|---|---|
+| **1** — local only, no external effect | `PostCommitEffectSeamTripwireTests` (`Cleansia.Tests`, in CI at `backend-ci.yml:71`), in the shape of `SendPushNotificationSeamTripwireTests.cs:29-54`: walk production `Cleansia.*` project dirs, find types implementing `IPostCommitEffectExecutor<>`, fail on a file that also references `IQueueClient` / `HttpClient` / `Stripe`, **plus the present-assert** (`:52-53`) so the pin cannot hollow out | **`(gate pending: T-0532)` → `T1-CI` the day T-0532 lands** |
+| **3** — owns its own commit (no tracked `Add`) | same test file: an executor whose body calls a repository `Add`/`AddRange` without an explicit commit | same |
+| **5** — named detection query in the doc-comment | same test file: every `IPostCommitEffect` implementation's file carries a `Detection:` line | same |
+| **2** — idempotent on a *durable* natural key (AM-5) | **`quality-gates.md` Gate 4 (Architecture)** + the deviating-form list in `consistency.md` §"Post-commit ordering" | **T3-HUMAN** |
+| **4** — cannot fail the request | **`quality-gates.md` Gate 4** + `consistency.md` (same entry) | **T3-HUMAN** |
+
+**Why laws 1/3/5 are `(gate pending:)` today and not `T1-CI` — and why the challenger's "the tripwire
+lands now or it is a follow-up" dichotomy is a false one.** ADR-0032 D2 makes T1-CI mandatory where the
+rule is mechanically expressible **and** the baseline is zero; both hold. But ADR-0032 **D3's
+anti-vacuity requirement** is equally binding: *"a guard test that walks the tree must **fail** when its
+corpus is empty."* There are zero `IPostCommitEffectExecutor` implementations today, so a law-1
+tripwire written **before** the seam is not merely premature — it is **unwritable** without either
+faking a corpus or shipping a test that passes forever. And "follow-up after the seam" is exactly the
+disposition ADR-0032 forbids for a zero-baseline mechanizable rule. Two of the three options are
+closed, so the third is not a preference: **the tripwire lands in T-0532, the PR that creates its first
+subject.** *(This is a second admissible reason for the `(gate pending:)` token — ADR-0032 defines it
+against a **non-zero baseline**, and here the blocker is an **empty subject population**. Same function:
+specified, ticketed, cannot block yet, promotes on landing. Generalizing the token's definition is
+**FT-38.5**, not a licence for anyone else to reuse the reading unilaterally.)*
+
+**Laws 2 and 4 are not mechanizable and do not get to be silent about it.** "This ADR's own §How a
+reviewer verifies compliance list" is **not** a T3-HUMAN enforcer — it is a per-PR list for *this*
+change, while laws 2 and 4 constrain **every future effect, forever**. ADR-0032 D1 requires a *named
+standing* checklist item; `quality-gates.md` Gate 4 is one, it is already mandatory *"iff a new pattern
+or extension point is touched"*, and this seam is definitionally an extension point.
+
+### D3 — The interim: a change-tracked insert, shipped first (`da88b695`)
 
 **Authorized to ship immediately**, ahead of the seam, because the alternative is leaving a total
-outage live for a day. `TryReserveRedemptionSlotAsync`'s raw self-committing INSERT is replaced (behind
+outage live for a day. **Re-affirmed by the panel 2026-08-03 against a challenge to revert it (A11);
+its justification is narrowed by AM-4 below, its code is not.** `TryReserveRedemptionSlotAsync`'s raw self-committing INSERT is replaced (behind
 the same repository method, via DI only) by a **change-tracked** `PromoCodeRedemption` added to the
 scoped `DbContext`, with the ordinal from a pre-read. EF's dependency-ordered command batch places the
 `Orders` INSERT before the dependent `PromoCodeRedemptions` INSERT inside the single
@@ -295,19 +399,80 @@ It also gets two things right that the raw statement had to hand-roll: `CommitAs
 so the `42P08` untyped-tenant-parameter class of bug (`PromoCodeRedemptionRepository.cs:85-93`) cannot
 recur on this path.
 
-**What it gives up — stated precisely, because the usual framing overstates it:**
+**What it gives up — stated precisely, because the usual framing overstates it** *(and, per **AM-4**,
+because the draft's version of this table was incomplete on the axis that mattered):*
 
 | Property | Today (intended) | Interim, `TenantId` **NULL** (single-tenant — the live deployment) | Interim, `TenantId` non-null |
 |---|---|---|---|
-| Serial re-use of a used code | refused cleanly (`HAVING` → `null`) | refused cleanly (app pre-read, `PromoCodeService.cs:123-128`) | same |
-| **Concurrent** double-redeem | **already broken** — both pass `HAVING`, `ON CONFLICT` finds no conflict (§Context) | **same, unchanged** | index fires → `DbUpdateException` at commit → **the whole order rolls back** (a 500) |
+| Serial re-use of a used code, **across requests** | refused cleanly (`HAVING` → `null`) | refused cleanly (app pre-read, `PromoCodeService.cs:123-128`) | same |
+| **Concurrent** double-redeem, **across requests** | **already broken** — both pass `HAVING`, `ON CONFLICT` finds no conflict (§Context) | **same, unchanged** | index fires → `DbUpdateException` at commit → **the whole order rolls back** (a 500) |
+| **A second reservation inside the SAME unit of work** *(AM-4 — the row the draft omitted)* | refused cleanly: the first row is already durable, so `GetByOrderIdAsync` short-circuits and `ON CONFLICT DO NOTHING` (no target ⇒ every unique constraint) backstops it | **regression, and the bad kind — silent.** Same `OrderId` ⇒ `DbUpdateException` on `IX_PromoCodeRedemptions_OrderId`, a unique index on a **NOT NULL** column (`PromoCodeRedemptionEntityConfiguration.cs:25-27`, `:72-73`) where nulls-distinct cannot save it ⇒ **the paid order rolls back, in single-tenant mode**. Different `OrderId`, same user+code ⇒ both compute ordinal 0, the per-user index *is* nulls-distinct ⇒ **both rows land and the cap is silently over-redeemed** | same, except the second case also throws (the per-user index fires) |
 | Refusal surfaces as | a `null` result | a `null` result | an **exception**, not a result |
 
-So: **in the deployment that is live, the interim loses nothing on the per-user cap** — the property it
-is accused of surrendering is not currently held. In a tenanted deployment it trades a clean refusal
-for a rolled-back order on a genuine race (realistically: a double-click). That is worse than the end
-state and **better than a 100% outage**, and it is bounded — the user retries and the first order is
-already there.
+**AM-4 — the ruling on CH-P2, in full, because this sentence is the one that authorized shipping.**
+
+*The finding is sustained on mechanism, and generalized.* Verified on the tree, not on the ADR's
+description of it: `Add(redemption)` (`PromoCodeRedemptionRepository.cs:56`) resolves to
+`Context.Add(entity)` (`BaseRepository.cs:112-115`) — the change tracker, nothing more. Every guard on
+the interim's path is a **database** read against `Context.Set<T>()` (`BaseRepository.cs:158`):
+`GetByOrderIdAsync` (`:16-20`), `CountForUserAndCodeAsync` (`:10-14`), and the ordinal pre-read
+(`:43-46`). An EF LINQ query does not return `Added` entities. So the general form — larger than the
+`OrderId` instance the challenger filed, and the version that goes in the catalog — is:
+
+> **Converting a self-committing write into a change-tracked write disarms *every* database-read guard
+> over that write for the remainder of the unit of work.** The write becomes invisible to the very
+> checks that were protecting it. This is the exact mirror of §D2.2 law 3, and both are the same
+> confusion — *tracked* vs *durable* — that caused the outage this ADR exists to fix.
+
+*The failure shape is worse than filed.* The challenger named the loud half (the `OrderId` index → a
+rolled-back paid order in NULL-tenant mode, where the ADR claimed only a tenanted deployment could
+produce one). The **silent** half is worse and was in neither the draft nor the challenge: two
+reservations for the same user+code on *different* orders in one unit of work both read ordinal `0`
+from the DB, both stage a row, and the per-user index **is** nulls-distinct — so in the live deployment
+they **both land**, unnoticed, and the per-user cap is over-redeemed with no exception anywhere. A
+regression that throws is a page; this one is a quarterly discovery.
+
+*The claimed consequence is nevertheless unreachable today, and that is why the interim stays shipped.*
+`IOrderPromoApplier.ApplyAsync` has exactly **one** production call site (`CreateOrder.cs:315`) and
+`IPromoCodeService.ApplyAsync` exactly one (`OrderPromoApplier.cs:58`), each executed at most once per
+handler invocation; the only other order-creating path, `MaterializeRecurringBookings.cs:121-141`,
+constructs its `CreateOrderInput` with `PromoDiscountAmount: 0m, PromoCodeId: null` and never reaches
+the applier. Reverting the interim restores a **100% outage**; the finding describes a defect with **no
+reachable caller**. Rolling back a working fix to close an unreachable path is not a trade this panel
+makes.
+
+*What does not survive is the justification.* The headline — *"in the deployment that is live, the
+interim loses nothing"* — is true only of the **cross-request** cases the draft tabulated, and it was
+read (including by this ADR's own Verdict) as a general claim. It is narrowed above. **"Loses nothing"
+is struck; the interim loses one property, in a mode nothing currently exercises.**
+
+*Added condition of acceptance (**FT-38.1**, binding).* The interim's safety currently rests on a
+**call-graph** accident — "nobody calls apply twice" — holding a **safety** property. That is precisely
+the unstated coupling a panel exists to catch, and nothing pins it. Before this ADR's obligations
+close, one of the following lands, and it is deleted with the interim:
+
+- **Preferred — pin the assumption.** An xUnit tripwire in `Cleansia.Tests` (T1-CI via
+  `backend-ci.yml:71`, `SendPushNotificationSeamTripwireTests` shape **with** the present-assert)
+  asserting that `IPromoCodeService.ApplyAsync` / `IOrderPromoApplier.ApplyAsync` each have exactly one
+  production call site. Test-only, zero production risk on a money path under an outage, and it fails
+  on the exact commit that makes the latent defect live.
+- **Acceptable alternative — restore the guard.** Make the interim's reads change-tracker-aware
+  (`Context.Set<PromoCodeRedemption>().Local` first, database second). Blast radius verified small:
+  `GetByOrderIdAsync` has exactly one caller (`PromoCodeService.cs:91`). This is better engineering and
+  is a production change to a money path; whoever takes it owns the test for it.
+
+*And one comment is now false in shipped code.* `PromoCodeService.cs:87-89` states the guard's own
+threat model as *"Protects against double-fire (e.g. handler retry, race between Preview-then-Apply
+paths)"*. Under the interim it protects against the **cross-request** case only. The comment is
+corrected in the same change as FT-38.1 — an overclaiming comment on a money path is an ADR-0032 D3
+coverage failure whether it sits in a catalog or in a `.cs` file.
+
+So: **in the deployment that is live, the interim loses the same-unit-of-work idempotency guard and
+nothing else** — the per-user cap property it is *accused* of surrendering genuinely is not held today
+(§Context). In a tenanted deployment it additionally trades a clean refusal for a rolled-back order on
+a genuine cross-request race (realistically: a double-click). That is worse than the end state and
+**better than a 100% outage**, and it is bounded — the user retries and the first order is already
+there.
 
 **Interim residual that cannot be fixed within the interim's shape:** the global increment still
 auto-commits before the tracked insert, and the commit now happens *outside* the handler, so the
@@ -317,16 +482,47 @@ end state.
 
 ### D4 — The retirement trigger (mechanical, not a promise)
 
-An interim with no named end state becomes permanent. Three bindings, all checkable:
+An interim with no named end state becomes permanent. Three bindings, all checkable — **and AM-7 is the
+ruling that they were not, as drafted.**
+
+**AM-7 — CH-P6 is sustained on all four legs. As specified, §D4.2 was a comment that ages into
+permanence, and this ADR must be held to its own standard** (§How a reviewer verifies compliance #5:
+*"an unfilled marker blocks the PR"*). Verified: `grep INTERIM agents/tools/check-consistency.mjs` →
+**zero hits**, so the check does not exist; `check-consistency` appears in **zero** files under
+`.github/`, so even written it is **T2-ADVISORY** — reviewer-run, never an exit code, i.e. a comment
+with a ticket number in it; the rule's stated pattern `INTERIM(ADR-NNNN → T-xxxx)` does **not** match
+the marker actually shipped at `PromoCodeRedemptionRepository.cs:22`,
+`INTERIM(ADR-0038 §D3 → T-0532)` — a checker built to the spec matches **zero** markers in the tree and
+reports OK, which is ADR-0032 D3's vacuity failure baked into the specification; and the predicate
+"present and **open**" is satisfied by `T-0532`, which `INDEX.md:31` carries at status **draft** behind
+🔴 *"Do NOT start until a second instance signs the Verdict"*. The four legs are fixed below. *(The
+fourth was **circular** — the interim's retirement ticket was blocked on the ADR that authorized the
+interim — and this Verdict dissolves it: signing discharges T-0532's AC0. The rule text is corrected
+anyway, so the circularity cannot recur silently.)*
 
 1. **A marker in code.** The interim carries, on the changed method,
-   `// INTERIM(ADR-0038 §D3 → <ticket-id>): change-tracked insert; delete when IPostCommitEffects lands.`
-   The ticket id is filled in by the PM **before the interim merges** — an unfilled marker is a review
-   block.
-2. **A mechanical anti-orphan check** (`agents/tools/check-consistency.mjs`, per
-   `process/enforcement.md`): *every `INTERIM(ADR-NNNN → T-xxxx)` marker in `src/` must reference a
-   ticket id present and open in `agents/backlog/INDEX.md`*. This generalizes past this ADR — it makes
-   "interim with no named end state" impossible as a class, which is the actual recurring failure mode.
+   `// INTERIM(ADR-NNNN §Dn → T-xxxx): <what this is>; delete when <the end state> lands.`
+   The **`§Dn` segment is part of the canonical form** (it is what makes the marker resolvable to a
+   *clause* rather than to a 600-line document), and the ticket id is filled in by the PM **before the
+   interim merges** — an unfilled marker is a review block.
+2. **A mechanical anti-orphan check — in `Cleansia.Tests`, not in `check-consistency.mjs` (AM-7).**
+   The rule is unchanged in substance and its *home* moves, because the tier is a property of where the
+   check runs (ADR-0032 D1) and `check-consistency.mjs` runs nowhere that can fail a build. The
+   enforcer is an xUnit tripwire — **T1-CI** via `backend-ci.yml:71` — asserting:
+   - every `INTERIM(` occurrence under `src/` matches `INTERIM\(ADR-\d{4}(\s+§D[\d.]+)?\s*→\s*T-\d{4}\)`
+     — **`§Dn` explicit and optional**, so both forms resolve and neither silently misses;
+   - every referenced `T-` id is present in `agents/backlog/INDEX.md` and is **open *and not blocked***
+     — "open" alone goes green while the retirement work is forbidden, which is the state this ADR
+     shipped in;
+   - **anti-vacuity, and the shape here is not the obvious one.** The corpus is *legitimately* empty
+     once the last interim retires, so "assert at least one marker exists" would be a test that must be
+     deleted to stay true. The present-assert goes on the **mechanism**: the walker resolved the `src/`
+     tree and enumerated a non-trivial number of `.cs` files, and the regex matches a known-good
+     fixture string in the test itself. An empty *result* is legal; an empty *scan* is not.
+
+   This generalizes past this ADR — it makes "interim with no named end state" impossible as a class,
+   which is the actual recurring failure mode. Filed as **FT-38.2**; until it lands, the
+   `consistency.md` rule carries `(gate pending: FT-38.2)`.
 3. **The acceptance test for retirement**, so "is it retired?" is not a judgment call. The end-state PR
    deletes the marker and must restore **both** properties:
    - **P1 — refusal is a result, never an exception.** A test asserting that a second redemption of a
@@ -336,6 +532,13 @@ An interim with no named end state becomes permanent. Three bindings, all checka
      P2 fails today and fails under the interim; it passes only with §D5.2's index option. It is the
      honest definition of "the property was restored", not "the property was returned to its previous
      state" — because its previous state was broken.
+   - **P3 — the idempotency guard reads durable state (AM-4/AM-5).** A test calling the apply path
+     **twice for the same order inside one request** and asserting the second call is a clean
+     short-circuit returning the first row's amount, with exactly **one** `PromoCodeRedemptions` row
+     and **no** `DbUpdateException`. P3 passes on the pre-interim code, **fails under the interim**,
+     and passes again in the end state (the reservation self-commits, so the second read sees it).
+     It is the retirement test for the property AM-4 identified as given up, and it is the reason
+     FT-38.1 is a *bridge*, not a substitute: FT-38.1 pins the assumption, P3 removes the need for it.
 
 **The interim does not get to outlive its ticket.** If the end-state ticket is deprioritized, that is
 an owner decision made explicitly, not by drift — the marker plus check (2) keeps it visible.
@@ -372,6 +575,20 @@ preview is an estimate that the factory is free to discard.**
   keeps the recompute with the corrected subtotal, so the two agree except under a mid-request admin
   edit; the end state removes the window.)
 
+**AM-3 — what the end-state executor stops re-validating, ruled here rather than left to the seam
+ticket.** Dropping `RawSubtotal` from the intent record (AM-2) also removes the input to two checks
+`ApplyAsync` re-runs today after the preview already ran them: `MinimumOrderAmount`
+(`PromoCodeService.cs:130-133`) and `CurrencyMismatch` (`:135-141`). The draft was silent on their fate,
+which means the implementing ticket would have decided it by accident. **Ruling: post-commit, the
+executor performs the idempotency check and the two atomic *inventory* claims — the global conditional
+increment and the per-user slot reservation — and nothing else. Every *eligibility* re-validation
+(availability/expiry, minimum order amount, currency match) is a preview-time concern and is not
+repeated.** The reason is not economy, it is that a post-commit refusal is **unactionable**: the
+customer has already been charged the discounted price (§B8 — the price is frozen at purchase), so
+"refuse" post-commit can only produce *discount applied, redemption unrecorded* — the precise outcome
+this whole ADR exists to prevent. Caps are inventory and must still be claimed; eligibility is pricing
+and was decided when the price was frozen.
+
 #### D5.2 — The backstop index becomes `NULLS NOT DISTINCT` (⚠️ needs an EF migration — owner-only)
 
 Per ADR-0035 AM-6's adjudicated rule, a unique index that is the **sole arbiter of a concurrent claim**
@@ -406,26 +623,77 @@ order, so the duplicates are distinguishable and one can be re-ordinal'd rather 
 
 **On leak 3 and the try/catch prohibition — the distinction, stated so this ADR cannot be misread as
 licensing a swallow.** The prohibited catch is the one that **absorbs the failure and lets the caller
-believe the redemption succeeded**. The required catch here **compensates and then surfaces**: release
-the global slot, then return the failure result (post-commit, per §D2.2 law 4, "surface" means log at
-Error with the stable event name + the counter, not rethrow into a committed request). A catch that
+believe the redemption succeeded**. The compensation here **restores an invariant and then lets the
+failure through**: release the global slot, and do not alter what the caller sees. A catch that
 restores an invariant is the opposite of a catch that hides one.
 
-**D6.3 — Detection (required by §D2.2 law 5).** The named reconciliation predicate:
+**AM-10 — the shape is `try`/`finally`, and a `catch` *around the compensation itself* is admissible.
+Ruled here because the draft described code that does not exist and would have misdirected the
+implementer.** Two corrections:
+
+1. **The draft said "the required catch … inside `PromoCodeService.ApplyAsync`". There is no `catch`
+   on that path and there should not be.** The requirement is *release on **any** non-success* — the
+   `null` return **and** a throw — which is exactly `try { reserve } finally { if (redemption is null)
+   release; }` (`PromoCodeService.cs:167-179`). Nothing is caught, the reservation's own failure
+   propagates byte-identical, and the reviewer's grep for `catch` on that path stays **empty** — which
+   is the check §How-a-reviewer #1 asks them to run. A `catch` + rethrow is the same behaviour with a
+   swallow one edit away. §How-a-reviewer #1 is rewritten to this shape.
+2. **`await` inside a `finally` while an exception is in flight can *replace* it — and would, in the
+   exact scenario leak 3 exists for.** `DecrementGlobalRedemptionsAsync` (`PromoCodeRepository.cs:50-64`)
+   runs `ExecuteUpdateAsync` on the **same** `CleansiaDbContext`/connection the reservation just failed
+   on; leak 3's own trigger is *"transient DB error, timeout"*, so the compensation is most likely to
+   fail precisely when it is most needed — and when it does, the operator sees the decrement's exception
+   instead of the `23503`/timeout, **and** the slot leaks anyway. **A `catch` whose scope is the
+   compensation, which never rethrows and never alters the caller's outcome, is admissible and is
+   required here.** It is not a swallow under §D8: it hides nothing from the caller (the original
+   exception survives untouched, which is the whole point), it is post-*nothing* (it neither commits
+   nor un-commits), and its own failure is detectable — it logs at **Error** naming the code, the user,
+   the order and the fact that `CurrentRedemptionsCount` now exceeds the ledger and needs §D6.4.
+   Downgrading that log to Warning is a defect: the slot stays burned until someone reconciles it.
+
+   *This is the one place in this ADR where a `catch` is mandated rather than tolerated, and the rule
+   that makes it safe is the scope: **catch the compensation, never the operation**.*
+
+**D6.3 — Detection (required by §D2.2 law 5).** The named reconciliation predicate — **AM-9, re-keyed:
+the draft's version was already blind in production.**
 
 ```sql
-SELECT o."Id", o."PromoCodeId", o."PromoDiscountAmount", o."CreatedOn"
+-- AM-9: gate on the AMOUNT, not the FK. See below — this is not a stylistic choice.
+SELECT o."Id", o."PromoDiscountAmount", o."PromoCodeId", o."CreatedOn"
 FROM   "Orders" o
-WHERE  o."PromoCodeId" IS NOT NULL
+WHERE  o."PromoDiscountAmount" IS NOT NULL
+  AND  o."PromoDiscountAmount" > 0
   AND  NOT EXISTS (SELECT 1 FROM "PromoCodeRedemptions" r WHERE r."OrderId" = o."Id");
 ```
 
-This is exact **because of §D5.1**: `Order.PromoCodeId` is non-null **iff** a promo actually priced the
-order. It matches two populations — a genuinely refused reservation (cap race loser: a *result*, and a
+The draft gated on `o."PromoCodeId" IS NOT NULL` and called it exact *"because of §D5.1:
+`Order.PromoCodeId` is non-null **iff** a promo actually priced the order."* **That iff is already false
+in production.** `Order.AnonymizeCustomerData()` sets `PromoCodeId = null` (`Order.cs:641`) and leaves
+`PromoDiscountAmount` untouched — and it is called live by `DataRetentionBackgroundService.cs:161` and
+`GdprDeletionService.cs:190`. So over the retention horizon, every order a promo *did* price drops out
+of the predicate: not noise, a **false negative** — the query stays clean and quietly goes blind.
+
+The amended predicate is **anonymization-stable and still exact**: `PromoDiscountAmount` is set to
+`> 0 ? amount : null` at the single site that stamps both (`OrderFactory.cs:94-95`, `Order.cs:364`), the
+three discount sources are mutually exclusive (`Order.cs:220-226`), the anonymizer does not touch it,
+the redemption ledger row survives anonymization untouched, and the join key `OrderId` is never nulled.
+**Gate on the amount *instead of*, not *in addition to*, the FK** — `AND PromoCodeId IS NOT NULL`
+re-introduces exactly the blindness this fixes.
+
+**The generalizable rule, which is worth more than the query:** *a reconciliation predicate must be
+keyed on a column the anonymizer preserves.* The anonymizer's job is to null **foreign keys and
+identifiers** (`UserId`, `PromoCodeId`, `MembershipPlanIdAtPurchase`, `PreferredEmployeeId`,
+`RecurringTemplateId` — `Order.cs:635-648`) while preserving **amounts**, because amounts are financial
+record and identifiers are personal linkage. So the **amount is the durable detection key and the
+source id is not** — which inverts what §Consequences said, and is corrected there too.
+
+It still matches two populations — a genuinely refused reservation (cap race loser: a *result*, and a
 known-soft outcome per ADR-0035 AM-3) and a lost effect (crash in the post-commit window). They are
-distinguished by the Error-level log line, which is why the log is not optional. **This is a report, not
-an auto-repair**: an auto-correcting sweep would race the increment→reserve window and is deliberately
-not built.
+distinguished by the Error-level log line, which is why the log is not optional; the refusal path logs
+the discriminating `PromoCodeError` (`OrderPromoApplier.cs:67-70`), which carries strictly more
+information than a boolean column would (**AM-9**, and the reason no column is added — see §Alternatives
+A10). **This is a report, not an auto-repair**: an auto-correcting sweep would race the increment→reserve
+window and is deliberately not built.
 
 **D6.4 — The one-off data repair (do not skip; the fix alone does not un-burn the slots).** Every promo
 booking attempted since the bug shipped has incremented `CurrentRedemptionsCount` with no row to show
@@ -490,6 +758,16 @@ that makes it checkable — **all three conditions, or the catch is a defect**:
 Condition (2) is the one this outage adds to the catalog, and it is the one a reviewer will otherwise
 not think to check.
 
+**The two carve-outs, so §D8 is not read as "no `catch`, ever" (AM-10):**
+
+- **A `catch` scoped to a *compensation* is outside §D8 entirely.** It does not "log and continue" past
+  a failure — it restores an invariant and lets the caller's failure through unchanged. Its admissibility
+  test is different and simpler: *does the caller's outcome change?* If yes, it is a swallow. If no, it
+  is protecting an in-flight exception from being replaced by a secondary one, which is what §D6/AM-10
+  requires. **Catch the compensation; never the operation.**
+- **Prefer `try`/`finally` for "release on any non-success".** It expresses the requirement exactly, it
+  cannot become a swallow by one edit, and it keeps the reviewer's `catch`-grep on that path empty.
+
 ---
 
 ## Alternatives considered
@@ -499,12 +777,14 @@ not think to check.
 | A1 | **`try`/`catch` around `ApplyAsync`** | **REJECTED — the worst option.** Fails §D8(2): it swallows a *100%* failure rate, so every promo order silently loses its redemption and both caps go unenforced forever, while looking green. Turns a paged outage into an undetected one. |
 | A2 | **`DEFERRABLE INITIALLY DEFERRED` FK** | **REJECTED on correctness.** The reservation auto-commits in its **own** implicit transaction, so deferral is checked at the end of *that* transaction — immediately. It would only help if the statement joined the order's transaction, and if it did, a per-user unique violation would surface at the order's commit and **roll back a paid order** — the exact failure `PromoCodeRedemptionRepository.cs:48-53` exists to avoid. Also needs a migration. |
 | A3 | **Commit the order inside the handler** | **REJECTED.** Violates the UoW invariant (`CLAUDE.md`: never call `CommitAsync` in handlers) and breaks ADR-0002 D1/D5's guarantee that post-commit dispatch follows *the pipeline's* commit. Re-scatters commit timing across call sites. |
-| A4 | **Tracked insert as the permanent end state** | **REJECTED as an end state, ADOPTED as the interim (§D3).** Permanently trades a clean `null` refusal for a `DbUpdateException` that rolls back a paid order in tenanted deployments, and moves the per-user arbiter from the database into an app pre-read. Acceptable for a day, not forever — §D4 binds its removal. |
-| A5 | **Post-commit via the outbox + a Function consumer** | **REJECTED (§D1.1).** Strongest durability, but the 10s drain window converts the per-user cap exploit from concurrent to **serial**. Retained as an additive future leg, which §D2.1's serializable intent record deliberately preserves. |
+| A4 | **Tracked insert as the permanent end state** | **REJECTED as an end state, ADOPTED as the interim (§D3).** Permanently trades a clean `null` refusal for a `DbUpdateException` that rolls back a paid order in tenanted deployments, and moves the per-user arbiter from the database into an app pre-read. **AM-4 adds the reason it could never be the end state even if those were acceptable:** it makes the write invisible to its own guards for the rest of the unit of work, so the idempotency contract (§D2.2 law 2) is *structurally* unavailable to it. Acceptable for a day, not forever — §D4 binds its removal. |
+| A5 | **Post-commit via the outbox + a Function consumer** | **REJECTED (§D1.1), on corrected arithmetic (AM-1).** Strongest durability, but the real window is **~40s** (10s drainer tick + a 30s idle-queue poll ceiling + handler), not 10s, and the in-process baseline is **one request duration**, not milliseconds. ~2 orders of magnitude, not ~4 — and the qualitative line survives intact: the chosen route needs **two overlapping requests**, the outbox needs **two requests within ~40s**. Retained as an additive future leg, which §D2.1's serializable intent record deliberately preserves. |
 | A6 | **Fire-and-forget background task** | **REJECTED (§D1.2).** Escapes the request scope: disposed `DbContext`, lost tenant, lost actor, untestable. |
 | A7 | **Overload `IPendingDispatch` to carry in-process effects** | **REJECTED.** `OutboxPendingDispatch.Drain()` returns `[]` by construction (`:42`) — the durable backing would silently discard every effect. Also conflates two contracts with different durability guarantees (§D2.2 law 1). |
 | A8 | **Raw `Func<>` closures in the post-commit buffer** | **REJECTED.** Untestable, invites arbitrary deferred work with captured state, and forecloses the additive outbox leg. §D2.1 requires typed, serializable intent records. |
 | A9 | **Fix the trigger predicate (§D5.1) in a separate ticket** | **REJECTED (§D5.1).** The defect is unreachable today and goes live the moment the interim lands. Splitting it means shipping a new customer-harming defect caused by our own fix. |
+| A10 | **Persist a *refusal marker* on the order** so §D6.3 stops matching two populations (the CH-7 remedy) | **REJECTED (AM-9), and it costs an owner migration for a negative.** (i) The populations are **already** separable: the refusal path logs the discriminating `PromoCodeError` (`OrderPromoApplier.cs:67-70` — `PerUserLimitReached` / `GlobalLimitReached` / `Expired` / `BelowMinimumOrderAmount` / `CurrencyMismatch`), which is strictly *more* information than a boolean. (ii) The support case it was meant to answer — *"my code didn't work"* — is overwhelmingly answered **before** the ledger, on the order itself (`PromoDiscountAmount IS NULL`); the residual case is a fail-soft the customer **benefited** from. (iii) The marker would be written on the **refusal** path, which post-commit is exactly where a tracked `Add` is a silent no-op (§D2.2 law 3) — so it needs a *second* self-committing statement, in the same window that can lose the redemption: one more thing that can fail, whose job is to record that something failed. **Closes living-doc open question 3.** |
+| A11 | **Revert the §D3 interim on CH-P2** and restore the self-committing `INSERT` until the seam lands | **REJECTED (AM-4).** The regression CH-P2 identifies is real and its consequence has **no reachable caller** (one production call site each for `IOrderPromoApplier.ApplyAsync` and `IPromoCodeService.ApplyAsync`); the state it would restore is a **100% outage** on every promo booking. Trading a live outage for an unreachable defect is not a trade. The finding is discharged by narrowing the ADR's claim (§D3) and by FT-38.1 pinning the assumption the interim silently relies on. |
 
 ---
 
@@ -531,51 +811,89 @@ not think to check.
   first misuse to expect is law 3 (adding a tracked entity in a post-commit effect and expecting it to
   save — a silent no-op).
 - **The per-user cap is, and remains, soft** for the discount itself (ADR-0035 AM-3 adjudicated this).
-  This ADR narrows the window from "the whole request" to "milliseconds", and §D5.2 makes the concurrent
-  case genuinely arbitrated for the first time.
-- **`Order` becomes the single source of truth for applied discounts** (§D5.1) — which is also what
-  makes the §D6.3 detection query exact. Any future discount source must persist its applied amount on
-  the order or it is undetectable.
+  **AM-1: this ADR does *not* narrow the cap-farming window** — that window is one request duration
+  before and after, because it starts at the per-user pre-read, not at the commit. What the move buys
+  is that the ledger row is durable **before the response leaves the pipeline**, and §D5.2 is what makes
+  the concurrent case genuinely arbitrated for the first time. Anyone quoting "milliseconds" for the
+  cap window is quoting the wrong number.
+- **`Order` becomes the single source of truth for applied discounts** (§D5.1). **AM-9 inverts the
+  corollary the draft drew from this:** the durable detection key is the **applied amount**, *not* the
+  source id — `AnonymizeCustomerData` nulls FKs (`PromoCodeId`, `MembershipPlanIdAtPurchase`,
+  `PreferredEmployeeId`, …) and preserves amounts, so a reconciliation predicate keyed on a source id
+  goes blind over the retention horizon. **Any future discount source must persist its applied amount on
+  the order, and any reconciliation over it must be keyed on that amount.**
 - **A known residual remains:** a crash between the commit and the post-commit effect loses one
-  redemption record. Bounded to milliseconds, detected by §D6.3, closed by the additive outbox leg if it
-  is ever observed.
+  redemption record. Bounded to the milliseconds *added* by the effect, detected by §D6.3, closed by the
+  additive outbox leg if it is ever observed.
 - **Interim risk carried for the interim's life:** in tenanted deployments a genuine same-user race
-  rolls back the loser's order with a 500 (§D3).
+  rolls back the loser's order with a 500 (§D3); **and (AM-4) the same-unit-of-work idempotency guard is
+  disarmed in *every* deployment**, latent behind a single call site that FT-38.1 pins and §D4-P3
+  retires.
+- **A new class of bug is now named:** *tracked-write-under-a-DB-read-guard* (AM-5). It is the mirror of
+  §D2.2 law 3 and it will recur — the next time anyone converts a self-committing write into a
+  change-tracked one to fix an ordering problem, every guard over that write goes blind for the rest of
+  the unit of work. It is in `patterns-backend.md` for that reason, not for this instance.
 
 ---
 
 ## How a reviewer verifies compliance
 
-1. **No `try`/`catch` was added around a pre-commit `ApplyAsync`.** Grep `OrderPromoApplier.cs` for
-   `catch` — the only admissible catch is §D6's compensating one, inside `PromoCodeService.ApplyAsync`,
-   which **releases the global slot** before returning/logging. A catch that only logs, pre-commit,
-   fails §D8(1) and (2).
+1. **The compensation is `try`/`finally`, and the only `catch` is *around the compensation*** (AM-10).
+   Grep `OrderPromoApplier.cs` and `PromoCodeService.ApplyAsync` for `catch`: on the reservation path
+   there must be **none** — the release lives in a `finally` guarded by `if (redemption is null)`, with
+   `CancellationToken.None`. The *one* admissible `catch` wraps `DecrementGlobalRedemptionsAsync`
+   itself, logs at **Error** (not Warning) naming the code/user/order and the §D6.4 reconciliation, and
+   **never rethrows** — because rethrowing from a `finally` destroys the in-flight exception. A catch
+   whose scope is the *reservation* rather than the *release* fails §D8(1) and (2). *(The draft's
+   version of this check described a catch that does not exist; it is rewritten, not relaxed.)*
 2. **The integration test passes unchanged.** `CreateOrderPromoRedemptionPersistenceTests` is the
    acceptance evidence (§D8(2)). It must **not** be edited to accommodate the fix; if it needs editing,
-   the fix is wrong.
+   the fix is wrong. **Scope, stated honestly (AM-6):** it is one fact — Mobile channel (no Stripe),
+   non-express date, NULL tenant, `SlotOrdinal == 0`. It discharges §D8(2) and it does **not** discharge
+   checks 3 or 4.
 3. **The trigger predicate reads the order, not the preview.** `CreateOrder.cs` gates on
    `order.PromoCodeId` / `order.PromoDiscountAmount`; `preview.DiscountAmount` must not appear in the
-   apply gate. Test: membership+tier beats promo → order persisted with `PromoDiscountAmount == null`
-   → **zero** `PromoCodeRedemptions` rows.
+   apply gate. **AM-6 — the invariant this rests on lives at `OrderFactory.cs:95** (`appliedPromoCodeId
+   = resolution.PromoAmount > 0m ? input.PromoCodeId : null`) **and nothing asserts it**:
+   `CombinedDiscountCapTests` contains zero occurrences of `PromoCodeId`, and
+   `OrderPromoApplierTests.Apply_OrderPricedByMembershipNotPromo_DoesNotCallService` hand-builds an
+   order with `promoCodeId: null`, so it pins the *applier's* gate, not the factory's output. Required:
+   one fact next to `CombinedDiscountCapTests` asserting **membership+tier beats promo ⇒
+   `order.PromoCodeId is null` and `order.PromoDiscountAmount is null`** (FT-38.4). The refactor that
+   reopens the defect — *"the order should record the code the customer typed"* — is natural and would
+   currently be green.
 4. **The subtotal passed to apply is `rawSubtotal`**, not `order.TotalPrice + preview.DiscountAmount`.
-   Test with an express-window `CleaningDate` — the old expression is provably wrong there.
-5. **Interim only:** the `INTERIM(ADR-0038 §D3 → <ticket-id>)` marker exists, with a **filled, open**
-   ticket id. An unfilled marker blocks the PR.
+   Asserted today only against a **mocked** `IPromoCodeService` (`OrderPromoApplierTests.cs:174-193`,
+   1000 − 100 = 900 × 1.2 = 1080). That is sufficient for the arithmetic and is **not** end-to-end
+   evidence; do not cite it as such (AM-6).
+5. **Interim only:** an `INTERIM(ADR-NNNN §Dn → T-xxxx)` marker exists, with a ticket id that is
+   **filled, present in `INDEX.md`, open, *and not blocked*** (AM-7). An unfilled marker blocks the PR;
+   so does an id whose row carries a 🔴 do-not-start gate.
 6. **End state only:** the marker is **deleted**, `TryReserveRedemptionSlotAsync`'s SQL is
    **byte-identical** to today's (§D1 property 2), and the call site moved to `IPostCommitEffects`.
 7. **End state only:** `PostCommitEffectBehavior` is registered **between** `PostCommitDispatchBehavior`
-   and `ValidationPipelineBehavior` in `FluentValidationExtensions.cs`, and the pipeline-order test
-   asserts it.
+   and `ValidationPipelineBehavior` in `FluentValidationExtensions.cs`, and **the pipeline-order test
+   asserts the FULL ordered sequence, not a prefix** (AM-11). A test that enumerates a prefix, or that
+   asserts only relative order of the behaviors it already knew about, silently tolerates an inserted
+   behavior — the same vacuity class as an empty-corpus tripwire. `FluentValidationExtensions.cs:28-32`
+   already calls a re-swap a blocking finding; that guarantee is only as strong as this assertion.
 8. **Effects are records, not closures** (§D2.1), each with an `EffectKey` and a doc-comment naming its
-   detection query (§D2.2 law 5).
+   detection query (§D2.2 law 5) — and **no intent record carries the inputs of a value it also
+   carries** (AM-2: no `RawSubtotal` next to an applied discount).
 9. **§D5.2:** the reviewer checks the **emitted DDL** for `NULLS NOT DISTINCT`, not the C# builder call.
-10. **Retirement:** P1 and P2 (§D4) both exist as tests; P2 runs against real PostgreSQL with a **NULL**
-    tenant and asserts exactly one row.
+10. **Retirement:** P1, P2 **and P3** (§D4) exist as tests; P2 runs against real PostgreSQL with a
+    **NULL** tenant and asserts exactly one row; P3 asserts a same-request second apply short-circuits
+    with one row and no `DbUpdateException`.
 11. **§D6.4 repair** is a `sql-scripts/` file referenced in the deploy notes, not an EF migration and
     not a background job.
 12. **No new external side effect was moved onto the post-commit effect seam** (§D2.2 law 1). Any
     `IQueueClient` / HTTP / Stripe call inside an effect executor is a violation — it belongs on
-    `IPendingDispatch`.
+    `IPendingDispatch`. From T-0532 this is **T1-CI**, not a reading exercise (§D2.3).
+13. **Every catalog entry this ADR lands carries `**Enforced by:** <named enforcer> — <tier token>`**
+    (ADR-0032 D2), and the named enforcer is **opened and read** against the sentence (ADR-0032 D3). All
+    three of this ADR's catalog edits failed this on first submission; they are fixed with this Verdict.
+14. **Reconciliation predicates are keyed on anonymization-stable columns** (AM-9). A recon query gated
+    on an FK that `Order.AnonymizeCustomerData()` nulls is a finding, not a style note.
 
 ---
 
@@ -591,6 +909,9 @@ not think to check.
   pipeline; it records an effect and returns.
 - **`IPromoCodeRedemptionRepository`** — unchanged in the end state (the statement is preserved
   byte-for-byte); temporarily change-tracked in the interim, behind the same method signature.
+  **Gains, for the interim's life only (AM-4):** it must not be assumed to be readable by its own
+  callers' database queries. Its "does NOT know" list gains **whether it is the only reservation in this
+  unit of work** — under the interim nothing knows that, which is what FT-38.1 pins and §D4-P3 retires.
 - **`IPendingDispatch`** — **unchanged**, and explicitly *not* the carrier for local effects (§D2.2
   law 1 / A7).
 
@@ -598,21 +919,57 @@ not think to check.
 
 ## Challenge
 
-> Compressed self-panel (§ADR banner). These are the attacks a challenger instance should press; each
-> is answered below. The three marked **OPEN** are the ones a second instance must still rule on.
+### Round 1 — the author's compressed self-panel (CH-1 … CH-8)
 
-| # | Challenge |
-|---|---|
-| CH-1 | **The end state creates the very outcome the brief forbids** — "discount applied, redemption unrecorded". A post-commit failure gives exactly that. |
-| CH-2 | **The outbox is the platform's adjudicated post-commit mechanism (ADR-0002 D1) and this ADR invents a second one.** Two mechanisms for "after the commit" is the coupling that costs later. **OPEN.** |
-| CH-3 | **The interim's degradation is understated.** "The DB is the arbiter" becomes an app pre-read; a `DbUpdateException` rolls back a paid order. |
-| CH-4 | **§D5.1 is a second decision in one ADR** — "one decision per ADR. If you're writing two, split." |
-| CH-5 | **§D5.2 needs an owner migration, so the end state cannot actually land**, which makes the interim permanent by default. |
-| CH-6 | **The five laws are aspirational.** Nothing mechanically stops the second effect from being an HTTP call. **OPEN.** |
-| CH-7 | **The §D6.3 detection query cannot distinguish a refusal from a lost effect**, so it is noise, so nobody will read it. **OPEN.** |
-| CH-8 | **Latency:** the post-commit reservation is now inside the request, so `CreateOrder` gets slower on the customer's critical path. |
+> The attacks the author pressed against their own draft. Three were marked **OPEN** for a second
+> instance; all three are now ruled (see round 2 and the `## Verdict`).
+
+| # | Challenge | Round-1 disposition |
+|---|---|---|
+| CH-1 | **The end state creates the very outcome the brief forbids** — "discount applied, redemption unrecorded". A post-commit failure gives exactly that. | REBUT |
+| CH-2 | **The outbox is the platform's adjudicated post-commit mechanism (ADR-0002 D1) and this ADR invents a second one.** Two mechanisms for "after the commit" is coupling that costs later. | REBUT — was **OPEN**; ruled by CH-P1 |
+| CH-3 | **The interim's degradation is understated.** "The DB is the arbiter" becomes an app pre-read; a `DbUpdateException` rolls back a paid order. | CONCEDE in part |
+| CH-4 | **§D5.1 is a second decision in one ADR** — "one decision per ADR. If you're writing two, split." | REBUT |
+| CH-5 | **§D5.2 needs an owner migration, so the end state cannot land**, making the interim permanent by default. | REBUT |
+| CH-6 | **The five laws are aspirational.** Nothing mechanically stops the second effect from being an HTTP call. | CONCEDE in part — was **OPEN**; ruled by CH-P5 |
+| CH-7 | **The §D6.3 detection query cannot distinguish a refusal from a lost effect**, so it is noise, so nobody will read it. | CONCEDE — was **OPEN**; ruled by CH-P7 |
+| CH-8 | **Latency:** the post-commit reservation is now inside the request, so `CreateOrder` gets slower on the customer's critical path. | REBUT |
+
+### Round 2 — the challenger pass (CH-P1 … CH-P9)
+
+> Filed 2026-08-03 as `agents/backlog/adr/challenges/0038-seam.md` (single challenger, seam / interim /
+> trigger-predicate lane). Nine findings, three filed **BLOCKING**. Summarised by id; the full evidence
+> lives in the challenge file, and the lead's independent re-verification is in `## Defense`.
+
+| # | Challenge | Filed as |
+|---|---|---|
+| CH-P1 | **On CH-2 — the drain-window arithmetic is wrong on both sides.** The outbox window is ~40s (drainer tick + a 30s idle-queue poll ceiling), not 10s; the in-process baseline is one request duration, not "milliseconds". The rejection survives but at ~2 orders of magnitude, not ~4 — **and `patterns-backend.md:550` has already published "~10s" as the catalog's general description of outbox latency.** | correction |
+| CH-P2 | **The "the interim loses nothing" justification is false on an axis the ADR did not tabulate.** The change-tracked row is invisible to `GetByOrderIdAsync` / `CountForUserAndCodeAsync` (DB queries), so a second apply in one request collides on `IX_PromoCodeRedemptions_OrderId` — unique on a **NOT NULL** column, where nulls-distinct cannot save it ⇒ a rolled-back paid order **in single-tenant mode**, the failure the ADR says only a tenant produces. | **BLOCKING** |
+| CH-P3 | **The compensating `finally` can *replace* the in-flight exception**, and will in exactly the scenario §D6 leak 3 exists for (the release runs `ExecuteUpdateAsync` on the same failing `DbContext`). Reviewer check #1 and §D6 describe a `catch` that does not exist in the shipped code. | defect in shipped code |
+| CH-P4 | **The trigger gate is correct today and rests on a single ternary (`OrderFactory.cs:95`) that no test pins**; reviewer checks #3 and #4 demand assertions that exist at no level, and the real-PostgreSQL evidence is one narrow fact. | ADR-0032 D3 coverage |
+| CH-P5 | **On CH-6 — ADR-0032 *does* gate this, both its conditions hold, so "follow-up" is not an available disposition**; and **none** of ADR-0038's three catalog edits carries an `Enforced by:` tier. Laws 2/3/5 constrain every future effect with no standing gate. | **BLOCKING** |
+| CH-P6 | **The retirement trigger fails four ways:** the check does not exist; `check-consistency` is in zero workflows so it could not be a gate; the stated pattern `INTERIM(ADR-NNNN → T-xxxx)` **does not match the shipped marker** `INTERIM(ADR-0038 §D3 → T-0532)`, so a checker built to spec matches nothing; and "present and open" is satisfied by a ticket forbidden to start. | **BLOCKING** |
+| CH-P7 | **On CH-7 — refuse the column** (populations already separable from logs; the support case is answered before the ledger; the marker would need its own self-committing write). **But §D6.3's "exact iff" is already false in production:** `AnonymizeCustomerData` nulls `PromoCodeId` and keeps `PromoDiscountAmount`. | free correction |
+| CH-P8 | **§D2.1's own sketch hands the executor `RawSubtotal`** — the exact input for the recompute §D5.1 forbids — and the ADR is silent on what dropping it does to the post-preview `MinimumOrderAmount` / `CurrencyMismatch` re-validation. | design hole |
+| CH-P9 | **The pipeline-order guarantee the seam depends on is pinned by a comment plus a test whose assertion strength is unverified;** reviewer check #7 asks that the test "asserts it", which a prefix-enumerating test satisfies vacuously. | vacuity class |
+
+> **The challenger also named what they checked and found sound** (per `deliberation.md` — silence is
+> not assent): the nulls-distinct finding and its corroboration in
+> `LoyaltyTransactionEntityConfiguration.cs:79-88`; the concurrent-double-redeem row of §D3's table;
+> §D6 leak 1 being real and closed, including the `CancellationToken.None` reasoning; the `finally`
+> covering every exit of the reservation call; A7's *"`IPendingDispatch` cannot carry this"*
+> (`OutboxPendingDispatch.cs:42` returns `[]`); the trigger-predicate gate being correct in both
+> directions; the express re-gross being genuinely wrong; A2's rejection on mechanism; §D7's severity
+> argument; and §D8(2)'s acceptance evidence being real-PostgreSQL. **Those defenses of the draft
+> stand and are not re-opened.**
 
 ## Defense
+
+### Round 1 — the author's defenses of CH-1 … CH-8, preserved as filed
+
+> Kept verbatim so the trail is honest about what was argued *before* the challenger pass. Four of them
+> are amended by round 2; each carries the amendment inline. **Nothing here is deleted** — a defense
+> that turned out to rest on a wrong number is more useful in the record than absent from it.
 
 - **CH-1 — REBUT.** The brief's prohibition is on a `try`/`catch` that swallows a **deterministic**
   failure; §D8(2) is exactly that distinction promoted to a rule. Today the operation fails **100% of
@@ -630,11 +987,15 @@ not think to check.
   because "is one more mechanism worth a 10s window on a *promo* cap?" is a legitimate judgment a
   second instance may weigh differently — and if it rules for the outbox, the interim and §D5.1 are
   unaffected.
+  **[AM-1 — the numbers in this defense are both wrong. The conclusion survives; the arithmetic is
+  corrected in §D1.1 and A5. Do not quote "10s" or "~4 orders of magnitude" from this paragraph.]**
 - **CH-3 — CONCEDE in part + REVISE.** The framing was wrong in *both* directions and §D3 now carries
   the three-column table: in the **live** (NULL-tenant) deployment the interim loses **nothing** on the
   per-user cap, because the property being "given up" is already broken there (§Context, the
   nulls-distinct finding). In tenanted deployments the challenge stands exactly as stated, is named as
   a residual, and is bounded by the retry. §D4-P2 makes restoring it the retirement test.
+  **[AM-4 — "loses nothing" is struck. The table was three-column and needed a fourth row; the interim
+  does give up the same-unit-of-work idempotency guard, in the live deployment. See §D3.]**
 - **CH-4 — REBUT.** The decision is *where the redemption record is written relative to the commit*.
   §D5.1 answers *what input that write reads* — the same write. It is a precondition, not a second
   decision: the defect is unreachable until this ADR's own fix lands, and shipping without it means our
@@ -649,34 +1010,277 @@ not think to check.
   greppable, in the shape of the existing `SendPushNotificationSeamTripwireTests`). Added to §D4's
   enforcement item as a follow-up rather than claimed as done. **Flagged OPEN** for a second instance to
   decide whether the tripwire gates the seam's landing or follows it.
+  **[AM-8 — "follow-up" was not an available disposition under ADR-0032 D2, and "gate first" is not
+  available under ADR-0032 D3. The tripwire lands **in the seam's PR**. Laws 2 and 4 also needed a named
+  standing enforcer, which the draft did not give them. See §D2.3.]**
 - **CH-7 — CONCEDE + REVISE.** §D6.3 now states plainly that it matches two populations and that they
   are separated by the Error-level log line, which is therefore **not optional**; and that it is a
   **report, not an auto-repair**, because an auto-correcting sweep races the increment→reserve window.
   **Flagged OPEN**: a cleaner separation would persist the refusal on the order, which needs a column
   and therefore an owner migration — deliberately not proposed on an outage fix.
+  **[AM-9 — the column is REFUSED outright (A10), and the query the defense was defending was already
+  blind in production. See §D6.3.]**
 - **CH-8 — REBUT.** Two statements (a conditional `UPDATE` and one `INSERT … RETURNING`) against a warm
   connection in the same scope. That is the cost the design has always assumed — today they run
   *earlier* in the same request, not less often. The outbox alternative would remove them from the
   request and cost the §D1.1 window; that trade was made explicitly.
 
+### Round 2 — the lead's disposition of CH-P1 … CH-P9
+
+> **Procedural note, per `deliberation.md` §3–§5.** The author instance did not return for a second
+> round, so there is no author defense of CH-P1…CH-P9. Rather than block the artifact — with an outage
+> fix already in the tree — the lead **re-verified every finding against the code independently** and
+> executed the CONCEDE + REVISE on the author's behalf where the evidence sustained it, and defended the
+> draft where it did not. Every REBUT and every partial overrule below cites what the lead read, not
+> what the ADR or the challenge file said about it. This is adjudication, not a third position: no
+> disposition below adopts an option outside the space the two instances argued.
+
+- **CH-P1 — SUSTAINED as a correction; the rejection it attacks STANDS (AM-1).**
+  Re-verified independently: `OutboxDrainerFunction.cs:14` is `[TimerTrigger("*/10 * * * * *")]`;
+  `OutboxDrainerService.cs:62` is `queueClient.SendAsync` — the drainer **enqueues**, it does not
+  execute; `src/Cleansia.Functions/host.json:19-23` sets `maxPollingInterval: 00:00:30`,
+  `newBatchThreshold: 0`, `batchSize: 1`, so an idle listener — the normal state — has backed off to a
+  30s ceiling. **~40s worst case, not 10s.** On the other side, `CreateOrder.cs:280` reads the per-user
+  count *before* `OrderFactory.CreateAsync` and `OrderPaymentDispatcher.DispatchAsync`, so the window
+  the exploit lives in spans the rest of the request including a Stripe HTTP round trip — **one request
+  duration, not milliseconds**. Both corrections land in §D1.1, §D1.2, A5 and §Consequences.
+  **The rejection survives**, and survives more cleanly than it was argued: the honest statement of the
+  gap is not "4 orders of magnitude" but *"overlapping requests" vs "requests within ~40s"* — the same
+  qualitative jump from *needs concurrency tooling* to *needs a stopwatch*, stated in a form nobody has
+  to re-derive.
+  **The catalog claim is the more important half and is corrected at source.**
+  `patterns-backend.md:550` published *"Durable, at-least-once, ~10s"* as the catalog's general
+  description of **the outbox seam**, not of promo — so it is the number a future author would quote
+  when deciding whether an email, push or fiscal effect is "fast enough". That is a rule that would have
+  made *future* changes wrong, which is the class of error this panel exists to catch. Fixed in the same
+  change, together with the paired "milliseconds" claim on the effect row.
+  *Where the challenger is tightened:* their "two browser tabs half a second apart" understates the
+  chosen route's property. The effect completes **before the response leaves the pipeline**, so the
+  attacker's second request must **overlap** the first, not merely follow it closely.
+
+- **CH-P2 — SUSTAINED IN PART, and generalized; the interim STAYS SHIPPED, under a named condition
+  (AM-4, AM-5). This is the panel's central ruling.**
+  *Mechanism: verified, and broader than filed.* `Add(redemption)`
+  (`PromoCodeRedemptionRepository.cs:56`) is `Context.Add` (`BaseRepository.cs:112-115`); every guard on
+  that path is a DB read against `Context.Set<T>()` (`BaseRepository.cs:158`) — `GetByOrderIdAsync`
+  (`:16-20`), `CountForUserAndCodeAsync` (`:10-14`), the ordinal pre-read (`:43-46`). `OrderId` is
+  `IsRequired()` with a unique index (`PromoCodeRedemptionEntityConfiguration.cs:25-27`, `:72-73`), so
+  nulls-distinct is irrelevant to it. The challenger is right. **They also under-called their own
+  finding:** the same blindness disarms the *ordinal* pre-read, and two reservations for the same
+  user+code on different orders in one unit of work both take ordinal `0` — where the per-user index
+  **is** nulls-distinct, so in the live deployment **both rows land silently** and the cap is
+  over-redeemed with no exception anywhere. A loud regression is a page; that one is a quarterly
+  discovery. Both are now in §D3's fourth row.
+  *Reachability: over-called.* `IOrderPromoApplier.ApplyAsync` has exactly one production call site
+  (`CreateOrder.cs:315`); `IPromoCodeService.ApplyAsync` exactly one (`OrderPromoApplier.cs:58`); the
+  only other order-creating path (`MaterializeRecurringBookings.cs:121-141`) passes
+  `PromoDiscountAmount: 0m, PromoCodeId: null` and never reaches the applier. **The claimed consequence
+  has no caller.** Filed BLOCKING against shipped code, it is a *latent* regression.
+  *Ruling.* The **justification does not survive** — "loses nothing" is struck, the table gains its
+  fourth row, and the headline is narrowed to the cross-request cases it actually covers (a sentence
+  that authorized shipping has to be accurate). The **interim survives** — reverting restores a 100%
+  outage to close an unreachable path (A11). And the **added condition is FT-38.1**: the interim's
+  safety currently rests on a *call-graph accident* holding a *safety property*, which is exactly the
+  unstated coupling a panel exists to catch. Pin it (one-call-site tripwire, T1-CI, test-only) or
+  restore the guard (`.Local`-first reads; blast radius verified at one caller). Plus the false comment
+  at `PromoCodeService.cs:87-89`.
+  *And the end state must not inherit the assumption.* §D2.2 law 2 asserted an idempotency backing the
+  interim does **not** have; it now carries **AM-5** — *a guard that reads the database cannot see a
+  write the same unit of work has only tracked*. That is the reusable rule and it is the mirror of law 3.
+  §D4 gains **P3** as its retirement test.
+
+- **CH-P3 — SUSTAINED; the design question it refused to answer for the implementer is now answered
+  (AM-10).** Not re-litigated in code: a backend agent holds this fix and the panel does not duplicate
+  it. What the panel owed was the *ruling*, because the challenger correctly refused to guess it. Read
+  in the tree: `PromoCodeService.cs:167-179` is `try`/`finally` with `CancellationToken.None`, and a
+  `ReleaseGlobalSlotAsync` helper carrying the catch already exists at `:193-215` but the `finally` still
+  calls the repository directly — i.e. the fix is mid-flight, which is exactly why the ADR must say what
+  "done" is rather than leave it to the diff. **Ruled: a `catch` scoped to the compensation, which never
+  rethrows and never alters the caller's outcome, is admissible and here required** — its absence
+  destroys the in-flight exception in precisely the scenario leak 3 was written for (the release runs
+  `ExecuteUpdateAsync` on the same `DbContext` that just failed). **Catch the compensation; never the
+  operation.** Reviewer check #1 — which described a catch that does not exist and would have sent a
+  reviewer looking for the wrong thing — is rewritten, and §D8 gains the carve-out so it is not misread
+  as "no `catch`, ever".
+
+- **CH-P4 — SUSTAINED (AM-6).** Verified the iff in both directions (`OrderFactory.cs:94-95`;
+  `OrderPromoPreview.None` = `(0m, null)`; `MaterializeRecurringBookings.cs:136-137`), so the shipped
+  gate is right — and the invariant it rests on is a single ternary at `OrderFactory.cs:95` that nothing
+  asserts. Under **ADR-0032 D3** an ADR may not claim coverage its enforcer does not have, and this
+  ADR's checks #3 and #4 claimed assertions that exist at no level. Ruling: **widen the tests, don't
+  narrow the claim** — the invariant is cheap to pin and the refactor that reopens it ("the order should
+  record the code the customer typed") is natural and would be green. One fact next to
+  `CombinedDiscountCapTests`, where the invariant lives (FT-38.4); checks #2/#3/#4 rewritten to state
+  exactly what today's evidence does and does not cover.
+
+- **CH-P5 — SUSTAINED, both parts, with the reasoning replaced (AM-8).** ADR-0032 is `accepted`
+  (2026-08-01) and binds this hunk. Verified: `Cleansia.Tests` runs in CI (`backend-ci.yml:71`);
+  `check-consistency` appears in **zero** files under `.github/`; `SendPushNotificationSeamTripwireTests`
+  is the working idiom, present-assert included (`:52-53`); and **none** of this ADR's three catalog
+  edits carried an `Enforced by:` line. All three now do (§D2.3).
+  *Where the lead reaches the challenger's conclusion by a stronger route:* the challenger argued the
+  tripwire should land in the seam PR because it is *cheap*. The binding reason is that the alternatives
+  are **closed**. ADR-0032 **D3** requires a tree-walking guard to fail on an empty corpus — and there
+  are zero `IPostCommitEffectExecutor` implementations, so a tripwire written before the seam is
+  **unwritable** without faking a corpus or shipping a permanent pass. ADR-0032 **D2** forbids "later"
+  for a mechanizable zero-baseline rule. Two of three options are eliminated; the third is forced.
+  *Where the challenger is partly overruled:* they held `(gate pending:)` **unavailable** because the
+  baseline is zero. The token's *function* is "specified, ticketed, cannot block yet, promotes on
+  landing", and an **empty subject population** produces that state as surely as a non-zero baseline
+  does. Laws 1/3/5 therefore read `(gate pending: T-0532)` today and promote to T1-CI when T-0532 lands
+  — which is a *stronger* label than the draft's silence and a more honest one than a `T1-CI` claim over
+  a test that does not exist. Generalizing the token is **FT-38.5**, not a licence anyone else may take
+  unilaterally.
+  *Their second point is the larger one and is sustained without qualification:* an ADR's own compliance
+  list is **not** a standing gate over future PRs. Laws 2 and 4 now name `quality-gates.md` Gate 4
+  (Architecture) — which is already mandatory when an extension point is touched — plus the
+  deviating-form list in `consistency.md`.
+
+- **CH-P6 — SUSTAINED on all four legs (AM-7). Ruling: as specified, it was a comment that ages into
+  permanence.** Re-verified each: zero `INTERIM` hits in `agents/tools/check-consistency.mjs`; zero
+  `check-consistency` references under `.github/` (so **T2-ADVISORY** at best — a rule that cannot set
+  an exit code is not a retirement *trigger*, it is a note); the shipped marker at
+  `PromoCodeRedemptionRepository.cs:22` is `INTERIM(ADR-0038 §D3 → T-0532)` while the rule's stated
+  pattern omits `§Dn`, so **a checker built from the rule matches zero markers and reports OK** — the
+  ADR-0032 D3 vacuity failure written into the specification before anyone implements it; and
+  `INDEX.md:31` carries T-0532 at **draft** behind a 🔴 do-not-start gate, so "present and open" goes
+  green while the retirement work is forbidden. **This ADR asked reviewers to block a PR on an unfilled
+  marker; it does not get a weaker standard for its own gate.**
+  Fixed: the enforcer moves to an xUnit tripwire in `Cleansia.Tests` (**T1-CI**, FT-38.2); the pattern
+  becomes `INTERIM(ADR-NNNN §Dn → T-xxxx)` with `§Dn` **explicit and optional** in both places; the
+  predicate becomes "open **and not blocked**".
+  *Where the lead improves on the challenger's remedy:* their proposed test pins the *set of files
+  containing `INTERIM(ADR-0038`*, which retires this interim but **abandons the class-level guarantee**
+  that was §D4.2's entire value ("interim with no named end state, impossible as a class"). And a
+  present-assert on the corpus would be wrong here, because the corpus is *legitimately* empty once the
+  last interim retires — a test that must be deleted to stay true. The anti-vacuity assert therefore
+  goes on the **mechanism**: the walker resolved `src/` and enumerated a non-trivial file count, and the
+  regex matches a known-good fixture in the test itself. **An empty result is legal; an empty scan is
+  not.**
+  *The circularity resolves itself:* T-0532's AC0 is *"do not start until a second instance signs the
+  Verdict"* — this is that signature. But the rule text is corrected regardless, so the next interim
+  cannot repeat it.
+
+- **CH-P7 — SUSTAINED, and its answer to CH-7 is ADOPTED (AM-9).** **Refuse the column** (A10): the
+  populations are already separable — `OrderPromoApplier.cs:67-70` logs the discriminating
+  `PromoCodeError`, which carries strictly more information than a boolean; the support case is answered
+  on the order itself before anyone opens the ledger; and the marker would have to be written on the
+  *refusal* path, post-commit, where a tracked `Add` is a silent no-op (law 3) — so it needs a second
+  self-committing statement, in the same window that can lose the redemption, to record that something
+  failed. On an outage fix, for an owner-only migration. **Living-doc open question 3 is closed.**
+  *The free correction is the valuable half and is verified:* `Order.cs:641` nulls `PromoCodeId` inside
+  `AnonymizeCustomerData()` while `PromoDiscountAmount` (`:211`) is untouched, and the anonymizer is
+  called live (`DataRetentionBackgroundService.cs:161`, `GdprDeletionService.cs:190`). So §D6.3's "exact
+  iff" decays into a **false negative** over the retention horizon — the query stays clean and goes
+  blind, which is the worst failure mode a detection query has. The amended predicate gates on
+  `PromoDiscountAmount`, which is stamped at the same single site (`OrderFactory.cs:94-95`,
+  `Order.cs:364`), is mutually exclusive with the other two discount sources (`Order.cs:220-226`),
+  survives anonymization, and joins on an `OrderId` that is never nulled.
+  *Where the challenger is tightened:* they wrote *"instead of (**or in addition to**)"*. **Instead of.**
+  `AND PromoCodeId IS NOT NULL` re-introduces precisely the blindness being fixed. And the general rule
+  is stated so the next author does not repeat it: the anonymizer nulls **identifiers** and preserves
+  **amounts**, so *a reconciliation predicate must be keyed on a column the anonymizer preserves* — which
+  **inverts** the §Consequences line the draft wrote, and that line is corrected too.
+
+- **CH-P8 — SUSTAINED, and the silence it names is filled (AM-2, AM-3).** `RawSubtotal` is dropped from
+  `PromoRedemptionEffect` and `AppliedDiscount` renamed `FrozenPromoDiscountAmount`, because
+  `ComputeDiscount` (`PromoCodeService.cs:239-252`) needs exactly that one argument and the implementing
+  ticket copies the sketch. General form recorded: **an intent record must not carry the inputs of a
+  computation whose output it also carries.**
+  The unanswered half is ruled rather than left to the seam ticket: **post-commit, the executor performs
+  the idempotency check and the two atomic *inventory* claims (global increment, per-user reservation)
+  and nothing else; availability, `MinimumOrderAmount` and `CurrencyMismatch` are preview-time and are
+  not repeated.** Not for economy — because a post-commit refusal is **unactionable**: the customer has
+  already been charged the discounted price (§B8/ADR-0009 D2), so "refuse" there can only manufacture
+  *discount applied, redemption unrecorded*, the outcome this entire ADR exists to prevent. Caps are
+  inventory; eligibility is pricing, and pricing was frozen at purchase.
+
+- **CH-P9 — SUSTAINED (AM-11).** The placement premise is confirmed sound by the challenger and the
+  lead agrees; the finding is about *assertion strength*. Reviewer check #7 said the pipeline-order test
+  "asserts it", which a prefix-enumerating test satisfies while silently tolerating an inserted
+  behavior — the same vacuity class as CH-P5's empty-corpus tripwire and CH-P6's non-matching regex.
+  **Three instances of one failure mode in one ADR is a pattern, not a coincidence**, and it is the
+  reason this Verdict states an anti-vacuity requirement on every guard it mandates. Check #7 now
+  requires the test to assert the **full ordered sequence**, and to fail when a behavior is inserted.
+
 ## Verdict
 
-*Author-only. A second instance must sign this section before the status flips to `accepted`.*
+**Signed by the panel lead (a second instance, distinct from the author), 2026-08-03. Consensus:
+reached, with amendments AM-1 … AM-11. Status: `accepted`. Zero blocking challenges remain.** The three
+points the author left OPEN are ruled; the three findings the challenger filed BLOCKING are resolved by
+amendment plus three named, filed obligations. No escalation to the owner is required.
 
-**Provisionally ruled** (binding on the fix now, per the ADR banner):
+### Disposition of every challenge
 
-1. **Ship §D3 + §D5.1 immediately, in one PR.** Interim tracked insert + order-driven trigger predicate
-   + the §D6 compensating release. No migration. The existing integration test is the acceptance
-   evidence and must not be edited.
-2. **Run §D6.4's counter repair after that deploy.** Without it, campaigns stay dead.
-3. **End state is §D1/§D2**: reservation strictly post-commit, statement unchanged, on `IPostCommitEffects`.
-4. **Retirement is §D4**: marker + anti-orphan consistency check + P1/P2. The interim does not outlive
-   its ticket.
-5. **§D5.2 is `ef-migration` — owner-only**, off the critical path, and is what makes P2 achievable.
-6. **§D7 (orphan Stripe session): not fixed here**, and the two tempting fixes are pre-rejected.
-7. **§D8 enters the catalog** as the fail-soft admissibility rule (marked PROPOSED until this Verdict
-   is signed).
+| # | Disposition | Reason (one line) |
+|---|---|---|
+| **CH-1** | **RESOLVED — author's REBUT stands** | Fail-soft over an operation that succeeds in the normal case is the §D8(2) distinction; the policy itself was adjudicated by ADR-0035 AM-3. |
+| **CH-2** | **RESOLVED — outbox stays REJECTED, on corrected numbers (AM-1)** | ~40s vs one request duration is ~2 orders of magnitude, not ~4 — and *"overlapping requests" vs "requests within ~40s"* is the same qualitative jump the rejection always rested on. The catalog's "~10s" is corrected at source because it was wrong for **every** external effect, not just promo. |
+| **CH-3** | **RESOLVED — superseded by CH-P2** | The three-column table was right about the per-user cap and incomplete about the unit of work; see AM-4. |
+| **CH-4** | **RESOLVED — author's REBUT stands** | §D5.1 is the fix's own precondition, not a second decision: unreachable until this fix lands, customer-harming the moment it does. |
+| **CH-5** | **RESOLVED — author's REBUT stands** | §D5.2 restores a property that does not exist today, so it cannot gate the retirement of an interim that also lacks it. P1/P3 are migration-free. |
+| **CH-6** | **RESOLVED — ruled by CH-P5 (AM-8)** | Neither "gate first" nor "follow up later" was available; the tripwire lands **in T-0532**, and all five laws now carry a tier. |
+| **CH-7** | **RESOLVED — column REFUSED (AM-9, A10)** | Log line > boolean; the support case is answered before the ledger; the marker would need its own self-committing write in the window that can lose the redemption. |
+| **CH-8** | **RESOLVED — author's REBUT stands** | Two statements on a warm connection; the cost moves within the request, it does not appear. |
+| **CH-P1** | **SUSTAINED as a correction; the rejection STANDS** | Both numbers corrected in §D1.1/§D1.2/A5/§Consequences **and in `patterns-backend.md`** — a wrong latency figure in the catalog misprices every future seam choice, which is the more expensive half of this finding. |
+| **CH-P2** | **SUSTAINED IN PART — justification struck, interim STAYS SHIPPED, condition attached** | Mechanism verified and **generalized** (AM-5: every DB-read guard over a tracked write is disarmed for the rest of the unit of work — including a **silent** per-user over-redemption the challenger did not name). Consequence has **no reachable caller** (one call site each), so A11 (revert) is rejected: a 100% outage is not a fix for an unreachable defect. "Loses nothing" is struck; §D3 gains a fourth row; §D4 gains **P3**; **FT-38.1** pins the call-graph accident the interim silently relies on. |
+| **CH-P3** | **SUSTAINED — ruled, not implemented** | A `catch` **scoped to the compensation** is admissible and required (AM-10); reviewer check #1 described code that does not exist and is rewritten. The code fix belongs to the backend agent already holding it; the panel does not duplicate it. |
+| **CH-P4** | **SUSTAINED** | ADR-0032 D3: checks #3/#4 claimed coverage that exists at no level. **Widen the tests** (FT-38.4) rather than narrow the claim — the invariant is one ternary at `OrderFactory.cs:95` and the refactor that reopens it would be green today. |
+| **CH-P5** | **SUSTAINED, both parts; reasoning replaced** | Tripwire lands in the seam's PR **because the alternatives are closed** (D3 forbids the empty-corpus test; D2 forbids the follow-up), not because it is cheap. `(gate pending: T-0532)` is the honest label today — the challenger's "unavailable" is **partly overruled**, since an empty subject population produces the same state as a non-zero baseline. Laws 2/4 gain a **named standing** enforcer; an ADR's own compliance list is not one. |
+| **CH-P6** | **SUSTAINED on all four legs** | As specified it was a comment, not a trigger: no check, no workflow, a pattern that matches **zero** shipped markers, and a predicate satisfied by a blocked ticket. Enforcer moves to `Cleansia.Tests` (**T1-CI**, FT-38.2); `§Dn` becomes explicit and optional; "open" becomes "open **and not blocked**". **Improved on the challenger's remedy:** their file-set assertion abandons the class-level guarantee, and a corpus present-assert would be wrong here — an empty *result* is legal, an empty *scan* is not. |
+| **CH-P7** | **SUSTAINED; its CH-7 answer ADOPTED** | Column refused (A10). The free correction is real and verified (`Order.cs:641`): §D6.3 was already blind in production. **Tightened:** "in addition to" would re-blind it — it is *instead of*. §Consequences' detection-key line is **inverted**: the amount is durable, the source id is not. |
+| **CH-P8** | **SUSTAINED; the silence filled** | `RawSubtotal` dropped, `AppliedDiscount` renamed (AM-2). And the consequence the draft left to chance is ruled (AM-3): post-commit runs the idempotency check and the two **inventory** claims only — a post-commit eligibility refusal is unactionable and can only manufacture the outcome this ADR exists to prevent. |
+| **CH-P9** | **SUSTAINED** | Check #7 must demand the **full ordered sequence**. Three vacuity findings in one ADR (CH-P5 empty corpus, CH-P6 non-matching regex, CH-P9 prefix assertion) is a pattern — every guard this Verdict mandates carries an anti-vacuity clause. |
 
-**Still open for the second instance:** CH-2 (one post-commit mechanism or two), CH-6 (tripwire before
-or after the seam lands), CH-7 (whether the refusal deserves a persisted marker and therefore a
-migration).
+### What is ruled, in order of what a reader needs
+
+1. **The interim (§D3 + §D5.1 + §D6) stays shipped as `da88b695`.** It is not reverted, not re-opened,
+   and not extended. Its justification is narrowed (AM-4): it loses the same-unit-of-work idempotency
+   guard, in **every** deployment, latent behind a single call site.
+2. **FT-38.1 is a condition of this ruling, not a nice-to-have.** Pin the one-call-site assumption
+   (preferred, test-only) **or** restore the guard with `.Local`-first reads; plus correct the now-false
+   comment at `PromoCodeService.cs:87-89`.
+3. **End state is §D1/§D2**: reservation strictly post-commit, statement byte-for-byte unchanged, on
+   `IPostCommitEffects`, with the intent record carrying the **frozen** amount and **not** the subtotal
+   (AM-2/AM-3). The **outbox stays rejected** (AM-1) and stays *additive*.
+4. **Retirement is §D4, and the trigger is a real gate now**: marker (`§Dn` canonical) + a **T1-CI**
+   xUnit anti-orphan tripwire (FT-38.2) + P1/P2/**P3**. "Open" means **open and not blocked**.
+5. **All five seam laws carry a tier (§D2.3).** Laws 1/3/5 → `(gate pending: T-0532)` → T1-CI in the
+   seam's own PR. Laws 2/4 → T3-HUMAN at `quality-gates.md` Gate 4 + `consistency.md`.
+6. **§D6.3 is re-keyed onto `PromoDiscountAmount`** (AM-9) and **no column is added** (A10).
+7. **§D5.2 remains `ef-migration`, owner-only**, off the critical path, and is what makes P2 achievable.
+   **§D6.4's counter repair still must run after the deploy** — the fix does not un-burn spent slots.
+8. **§D7 (orphan Stripe session): not fixed here**; the two tempting fixes stay pre-rejected.
+9. **The `agents/knowledge/*` edits lose their PROPOSED banners and become law**, each carrying an
+   ADR-0032 `Enforced by:` tier. `patterns-backend.md`'s outbox-latency figure is corrected in the same
+   change (AM-1) — it is wrong for every seam consumer, not just this one.
+
+### Escalations to the owner
+
+**None.** Every disagreement resolved on in-repo evidence. Two pre-existing owner-gated items are
+unchanged and are **not** new escalations: §D5.2's index migration (`MANUAL_STEP`) and §D6.4's data
+repair (a `sql-scripts/` run, post-deploy, low traffic).
+
+### Re-check obligation
+
+Per `deliberation.md` §4 the challenger instance may re-check this amended artifact. Round 2's
+amendments are concessions to the challenger's own findings plus four **partial overrules** with their
+evidence stated (CH-P2 reachability, CH-P5 `(gate pending:)` availability, CH-P6 remedy shape, CH-P7
+predicate composition). A new hole in the *amended* text is a new challenge; CH-P1…CH-P9 are settled.
+
+---
+
+## Follow-up tickets — specs, not files
+
+**No ticket files created; ids are PM-allocated** (the ADR-0032 precedent — an invented `T-` id
+collides with live numbering). A reviewer treats an **unallocated** id in a `(gate pending:)` token as a
+finding, per ADR-0032 reviewer check #3.
+
+| # | Title | Layers / size | Binding? | Sequencing |
+|---|---|---|---|---|
+| **FT-38.1** | **Pin "at most one redemption reservation per unit of work", and fix the comment that now overclaims.** AC: an xUnit tripwire in `Cleansia.Tests` (T1-CI, `SendPushNotificationSeamTripwireTests` shape **with** the present-assert) asserting `IPromoCodeService.ApplyAsync` and `IOrderPromoApplier.ApplyAsync` each have exactly **one** production call site; `PromoCodeService.cs:87-89`'s comment narrowed to the cross-request case for the interim's life. *Alternative accepted in place of the tripwire:* make the interim's reads `.Local`-first (`GetByOrderIdAsync` has one caller) — with its own test. Deleted/retired with the interim. | backend, **XS** | **YES — condition of acceptance (AM-4)** | immediately; independent of T-0532 |
+| **FT-38.2** | **Move the interim-marker anti-orphan check to `Cleansia.Tests` (T1-CI) and fix its pattern.** AC: regex `INTERIM\(ADR-\d{4}(\s+§D[\d.]+)?\s*→\s*T-\d{4}\)` (**`§Dn` explicit and optional**); every referenced id present in `INDEX.md`, **open and not blocked**; anti-vacuity on the **mechanism** (walker resolved `src/`, enumerated a non-trivial file count, regex matches an in-test fixture) — an empty *result* is legal, an empty *scan* fails. Replaces the `check-consistency.mjs` item, which sits in no workflow. | tooling/backend, **S** | **YES — condition of acceptance (AM-7)** | before the next interim ships anywhere |
+| **FT-38.3** | **`PostCommitEffectSeamTripwireTests` — laws 1, 3 and 5.** No `IQueueClient`/`HttpClient`/`Stripe` reference in a file declaring an `IPostCommitEffectExecutor<>`; no repository `Add` without an explicit commit inside an executor; every `IPostCommitEffect` file carries a `Detection:` line. Present-assert on the known executor. | backend, **S** | **YES — lands *inside* T-0532's PR (AM-8)** | **not before** (empty corpus ⇒ vacuous) and **not after** (ADR-0032 D2) |
+| **FT-38.4** | **The two invariant tests reviewer checks #3/#4 assumed.** (a) One fact next to `CombinedDiscountCapTests`: membership+tier beats promo ⇒ `order.PromoCodeId is null` **and** `order.PromoDiscountAmount is null` — pinned at `OrderFactory.cs:95`, where the invariant lives. (b) An express-window case for the `rawSubtotal` path so check #4 is not carried by a mock alone. | backend, **XS** | **YES — ADR-0032 D3 (AM-6)** | any time; cheap |
+| **FT-38.5** | **Generalize ADR-0032's `(gate pending: <ticket>)` token to cover an empty subject population**, not only a non-zero baseline — a superseding/clarifying ADR by the catalog-governance owner plus one `enforcement.md` line. ADR-0038 §D2.3 uses the reading and records it as an interpretation; nobody else may take it unilaterally until this lands. | architect, **XS** | no — governance tidy-up | after this ADR; owner of ADR-0032/0033 lane |
+| **FT-38.6** | **Assert the pipeline-order test enumerates the FULL ordered behavior sequence**, not a prefix, and fails when a behavior is inserted (AM-11). Independent of the seam — the ADR-0002 D4 guarantee is only as strong as this assertion today. | backend, **XS** | no — but it is what makes check #7 real | before T-0532, ideally |

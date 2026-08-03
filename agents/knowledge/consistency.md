@@ -295,24 +295,46 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   status literal outside `OrderAvailability`**, and **any set containing `OrderStatus.Pending`**
   (deprecated, no writer). Migration of the remaining call sites is T-0530.
 
-- **Post-commit ordering + fail-soft admissibility (ADR-0038, `proposed` — not binding until its
-  `## Verdict`, except the live-outage fix it authorizes):** two rules from one outage.
+- **Post-commit ordering + fail-soft admissibility (ADR-0038, `accepted` 2026-08-03 — amendments
+  AM-1 … AM-11):** three rules from one outage.
+  **Enforced by:** `quality-gates.md` **Gate 4 (Architecture)** + ADR-0038 reviewer checks #1/#3/#4/#14
+  + the deviating forms below — **T3-HUMAN**. *(The seam's own five laws are separately tiered in
+  `roles/post-commit-effects.md`; laws 1/3/5 are `(gate pending: T-0532)` → T1-CI.)*
   (a) *"Post-persist" in a handler means **tracked**, not durable* — the commit is in
   `UnitOfWorkPipelineBehavior:27-30`, after the handler returns. A self-committing write, or any write
   referencing a not-yet-committed row under an FK, must ride the pipeline's `SaveChangesAsync` or run
   **strictly after** the commit. Deviating form: a raw `SqlQueryRaw`/`ExecuteUpdate` write inside a
-  command handler that references `Order.Id` (or any sibling aggregate id created in the same request).
+  command handler that references `Order.Id` (or any sibling aggregate id created in the same request),
+  **or a self-committing write inside a handler with no sanctioned-exception doc-comment** — the
+  documented exception is `PromoCodeRepository.TryIncrementGlobalRedemptionsAsync`, and it is an
+  exception because it says so, not because it exists.
+  (a2) *A change-tracked write is invisible to every **DB-read** guard over it for the rest of the unit
+  of work* (AM-4/AM-5) — the mirror of seam law 3. Converting a self-committing write to a tracked one
+  disarms its idempotency/uniqueness pre-reads until the commit; the duplicate then surfaces as a
+  `DbUpdateException` that rolls back the whole unit of work, or (nulls-distinct index, NULL tenant)
+  does not surface at all. Deviating form: **a repository method that stages an entity while its
+  caller's idempotency guard is a plain `DbSet` query.** Fix by making the guard `.Local`-first, or by
+  *pinning* single-invocation with a test — a call-graph accident is not a safety property.
   (b) *A `catch` that logs and continues is admissible only over an operation that **normally
   succeeds*** — post-commit, proven happy-path by a **real-PostgreSQL** integration test, and detectable
-  by a named reconciliation predicate. Fail-soft over a deterministic failure converts a loud 500 into
-  silent, permanent data loss. Deviating form: a `try`/`catch` added around a call that is *currently
-  failing*. A **compensating** catch (release a reserved slot, then return the failure) stays allowed —
-  it restores an invariant rather than hiding one. Both rules in `patterns-backend.md`; seam contract in
-  `roles/post-commit-effects.md`.
+  by a named reconciliation predicate **keyed on a column the anonymizer preserves** (AM-9: gate on the
+  applied *amount*, never on an FK `AnonymizeCustomerData` nulls). Fail-soft over a deterministic
+  failure converts a loud 500 into silent, permanent data loss. Deviating form: a `try`/`catch` added
+  around a call that is *currently failing*; and a recon query gated on `PromoCodeId`/
+  `MembershipPlanIdAtPurchase`/`UserId`. Prefer **`try`/`finally`** for "release on any non-success";
+  the one mandated `catch` wraps **the compensation itself**, logs at Error and never rethrows (AM-10)
+  — catch the compensation, never the operation. All three rules in `patterns-backend.md`; seam contract
+  in `roles/post-commit-effects.md`.
 
 These judgment calls are **Architect-owned**; changing one is an ADR, not an ad-hoc reversal.
 
-## Interim implementations must name their end state (ADR-0038 §D4)
+## Interim implementations must name their end state (ADR-0038 §D4, amended AM-7)
+
+> **Enforced by:** `InterimMarkerTripwireTests` in `Cleansia.Tests` (walks `src/`, validates the marker
+> pattern, resolves each id against `agents/backlog/INDEX.md`) — **`(gate pending: FT-38.2)` → T1-CI**
+> via `backend-ci.yml:71` when that ticket lands. *Deliberately **not** a `check-consistency.mjs` rule:
+> that tool appears in **zero** `.github/` workflows, so it can never set an exit code, and a
+> T2-ADVISORY orphan-check on a code comment is — precisely — a comment with a ticket number in it.*
 
 An interim with no named end state is how a stop-gap becomes the architecture. Any deliberately
 temporary implementation shipped ahead of its end state carries, on the changed member:
@@ -321,12 +343,22 @@ temporary implementation shipped ahead of its end state carries, on the changed 
 // INTERIM(ADR-NNNN §Dn → T-xxxx): <what this is>; delete when <the end state> lands.
 ```
 
-- The ticket id must be **filled and open** before the interim merges — an unfilled marker blocks review.
+- The **`§Dn` segment is part of the canonical form** — it resolves the marker to a *clause*, not to a
+  600-line document. The checker's pattern must therefore be
+  `INTERIM\(ADR-\d{4}(\s+§D[\d.]+)?\s*→\s*T-\d{4}\)` — `§Dn` **explicit and optional**. *(AM-7: the
+  first version of this rule stated the pattern without `§Dn` while the template and the only shipped
+  marker both had one, so a checker built to spec would have matched **zero** markers and reported OK.)*
+- The ticket id must be **filled, present in `agents/backlog/INDEX.md`, open, *and not blocked*** before
+  the interim merges — an unfilled marker blocks review, and so does an id whose row carries a 🔴
+  do-not-start gate. *(AM-7: "open" alone goes green while the retirement work is forbidden — which is
+  the exact state ADR-0038's own interim shipped in, blocked on the ADR that authorized it.)*
 - The end-state PR **deletes the marker**; a PR that lands the end state and leaves the marker is
   incomplete.
 - The ADR must state the **acceptance test for retirement** — the property/properties the end state
   restores, as tests, not as prose. ("Restores" is measured against the *intended* property, not the
   previous state, which may itself have been broken.)
-- **Mechanically checkable, and should be checked** (`agents/tools/check-consistency.mjs`, per
-  `process/enforcement.md`): every `INTERIM(ADR-NNNN → T-xxxx)` marker in `src/` must reference a ticket
-  id present and open in `agents/backlog/INDEX.md`. Filed as a small tooling ticket by ADR-0038.
+- **Anti-vacuity, and not the usual shape** (ADR-0032 D3): the corpus is *legitimately* empty once the
+  last interim retires, so "assert at least one marker exists" would be a test that must be deleted to
+  stay true. Assert the **mechanism** instead — the walker resolved `src/` and enumerated a non-trivial
+  file count, and the pattern matches a known-good fixture string inside the test. **An empty result is
+  legal; an empty scan is not.**

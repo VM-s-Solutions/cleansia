@@ -1,12 +1,16 @@
 # Role — `OrderAvailability` (CRC card)
 
-> **PROPOSED — not yet the standard.** Introduced by **ADR-0037**
+> **THE STANDARD.** Introduced by **ADR-0037**
 > (`agents/backlog/adr/0037-order-offerability-is-a-payment-qualified-status-rule-owned-by-the-domain-and-enforced-at-the-take.md`),
-> `proposed` 2026-08-02, **not yet challenged**. Living companion:
-> `agents/architecture/decisions/order-availability.md`. **Composes with — does not replace —
-> `OrderVisibility`** (ADR-0036, `roles/preferred-cleaner-hold-resolver.md`): the two are separate
-> conjuncts on the same surfaces. Read `TakeOrder.cs`, `OrderSpecification.cs:134-139` and
+> **`accepted` 2026-08-03** after a defense panel (19 findings, 8 blocking, all resolved). Living
+> companion: `agents/architecture/decisions/order-availability.md`. **Composes with — does not
+> replace — `OrderVisibility`** (ADR-0036, `roles/preferred-cleaner-hold-resolver.md`): the two are
+> separate conjuncts on the same surfaces. Read `TakeOrder.cs`, `OrderSpecification.cs:134-139` and
 > `NewJobsDigestService.cs:52-53` in full before changing anything here.
+>
+> ⚠️ **The panel changed this card's responsibility.** The role now reads **`PaymentStatus` and
+> `RecurringTemplateId`**, which the draft explicitly listed under *does NOT know*. See §Responsibility
+> and the struck bullet below — the change is the RDD rule working, not an exception to it.
 
 `Cleansia.Core.Domain.Orders.OrderAvailability` — a static domain policy. No state, no I/O, no DI.
 

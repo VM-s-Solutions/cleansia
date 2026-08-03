@@ -525,10 +525,17 @@ Role card: `agents/knowledge/roles/idempotency-guard.md`.
 
 ## "Post-persist" means POST-COMMIT, or the FK will say so (ADR-0038)
 
-> **PROPOSED — not yet law.** ADR-0038 is `proposed` and has one challenger pass outstanding as of
-> 2026-08-02. The **rule** below is binding on the live promo fix; the **seam** (`IPostCommitEffects`)
-> is not yet the standard for new work. Living doc:
-> `agents/architecture/decisions/promo-redemption-ordering.md`.
+> **LAW.** ADR-0038 `accepted` 2026-08-03 (panel lead's `## Verdict`, amendments AM-1 … AM-11). Living
+> doc: `agents/architecture/decisions/promo-redemption-ordering.md`.
+>
+> **Enforced by:** the ordering rule — `quality-gates.md` **Gate 4 (Architecture)** + the deviating-form
+> list in `consistency.md` §"Post-commit ordering + fail-soft admissibility" — **T3-HUMAN**. *(Not
+> mechanizable: "references a row this request has not committed, under an FK" needs the FK graph, not a
+> regex. The **baseline is also non-zero and knowingly so** —
+> `PromoCodeRepository.TryIncrementGlobalRedemptionsAsync` self-commits inside a handler as a documented,
+> sanctioned exception, so the sentence below is scoped to FK-referencing writes and self-committing
+> writes **without** the sanctioned-exception doc-comment.)*
+> The seam's own five laws carry their own tiers — see `roles/post-commit-effects.md`.
 
 The handler's `orderRepository.Add(order)` does **not** write a row. `UnitOfWorkPipelineBehavior:27-30`
 commits **after the handler returns**. So inside a handler, "the order is persisted" is false, and the
@@ -547,8 +554,24 @@ created, on **every** promo booking. ADR-0035 AM-4 predicted the same shape in t
 
 | Need | Seam |
 |---|---|
-| An **external** side effect (queue, email, push, fiscal, HTTP) | **`IPendingDispatch`** → outbox row atomic with the commit, drained by `OutboxDrainerFunction` (ADR-0002 D1, ADR-0008). Durable, at-least-once, ~10s. |
-| A **local, idempotent, same-database** write that must not join the order's transaction | **`IPostCommitEffects`** (ADR-0038) → in-process, same request scope, ambient tenant + actor, milliseconds. At-most-once. |
+| An **external** side effect (queue, email, push, fiscal, HTTP) | **`IPendingDispatch`** → outbox row atomic with the commit, drained by `OutboxDrainerFunction` (ADR-0002 D1, ADR-0008). Durable, at-least-once. **Latency: up to ~40s** — see below. |
+| A **local, idempotent, same-database** write that must not join the order's transaction | **`IPostCommitEffects`** (ADR-0038) → in-process, same request scope, ambient tenant + actor. At-most-once. **Adds milliseconds to the request and completes before the response leaves the pipeline.** |
+
+**Outbox latency — the number, because the wrong one was published here and it misprices every seam
+choice (ADR-0038 AM-1).** It is **not** "~10s". Three legs, not one:
+
+| Leg | Evidence | Cost |
+|---|---|---|
+| Drainer tick | `OutboxDrainerFunction.cs:14` — `[TimerTrigger("*/10 * * * * *")]` | ≤10s |
+| Queue **listener back-off** — the drainer only *enqueues* (`OutboxDrainerService.cs:62`) | `src/Cleansia.Functions/host.json:19-23` — `maxPollingInterval: 00:00:30`, `newBatchThreshold: 0`, `batchSize: 1`; an **idle** queue (the normal state) has backed off to the ceiling | ≤30s |
+| Consumer execution | the handler itself | — |
+
+**Worst case ≈ 40s; typical ~15–25s.** Quote that when deciding whether an email/push/fiscal/receipt
+effect is "fast enough", and quote it when arguing *against* the outbox: the promo reservation is on the
+in-process seam because ~40s makes a per-user cap **serially** farmable (browser + stopwatch) where the
+in-process route requires **overlapping requests**. Conversely, do **not** claim the post-commit effect
+seam narrows a *check-then-act* window to milliseconds — it narrows the FK/orphan window, while the
+guard-to-durable-write window is one request duration either way.
 
 *Durable-external → outbox; local-idempotent-post-commit → effect.* `IPendingDispatch` **cannot** be
 overloaded for the second row: under the durable backing `OutboxPendingDispatch.Drain()` returns `[]`
@@ -558,16 +581,49 @@ its own commit (**a tracked `Add` inside an effect is a silent no-op**), must no
 must carry a named detection query in its doc-comment. Full contract + the five laws:
 `agents/knowledge/roles/post-commit-effects.md`.
 
-**Corollary — the ledger row reads the PERSISTED entity, never the preview.** `OrderFactory`
+**Corollary 1 — the ledger row reads the PERSISTED entity, never the preview.** `OrderFactory`
 may discard a previewed promo when membership+tier is larger (`ResolveLoy003Discount`), so
 `Order.PromoCodeId` / `Order.PromoDiscountAmount` — not the preview — say what actually applied, and a
 redemption/usage row gated on the preview burns a one-shot benefit the customer never received. Record
-the **frozen** persisted amount; never recompute it later (§B8, ADR-0009 D2). This also makes the
-detection query exact: *an order with a discount source stamped and no matching ledger row*.
+the **frozen** persisted amount; never recompute it later (§B8, ADR-0009 D2). Never put the *inputs* of
+that computation on the same record as its *output* — carry `PromoDiscountAmount`, not the subtotal, or
+somebody will recompute (ADR-0038 AM-2).
+
+**Corollary 2 — a change-tracked write is invisible to every DB-read guard over it, for the rest of the
+unit of work (ADR-0038 AM-4/AM-5).** This is the mirror of the seam's law 3 (*a tracked `Add` in a
+post-commit effect is a silent no-op*) and it bites the moment somebody "fixes" an ordering problem by
+converting a self-committing write into a tracked one:
+
+> `Add(entity)` puts a row in the **change tracker**; `GetDbSet().Where(…)` reads the **database**. An
+> EF LINQ query never returns an `Added` entity. So every idempotency check, uniqueness pre-read and
+> "does one already exist?" guard over that write is **disarmed until the pipeline commits** — and the
+> duplicate surfaces at `SaveChangesAsync` as a `DbUpdateException` that **rolls back the whole unit of
+> work**, or, if the unique index is nulls-distinct on a NULL tenant, does not surface at all.
+
+**When you convert a self-committing write to a tracked one, re-read every guard over it.** Either make
+the guards change-tracker-aware (`Context.Set<T>().Local` first, DB second) or *prove and pin* that the
+write happens at most once per unit of work — a call-graph accident holding a safety property is a
+defect waiting for its second call site. **Deviating form:** a repository method that stages an entity
+whose caller's uniqueness/idempotency guard is a plain `DbSet` query.
+
+**Corollary 3 — a reconciliation predicate must be keyed on a column the anonymizer PRESERVES
+(ADR-0038 AM-9).** `Order.AnonymizeCustomerData()` (`Order.cs:635-648`, called live by
+`DataRetentionBackgroundService` and `GdprDeletionService`) nulls **identifiers** — `UserId`,
+`PromoCodeId`, `MembershipPlanIdAtPurchase`, `PreferredEmployeeId`, `RecurringTemplateId` — and
+preserves **amounts**, because amounts are financial record and identifiers are personal linkage. A
+detection query gated on a source **FK** therefore goes silently blind over the retention horizon: a
+false negative, not noise — the report stays clean and stops seeing anything. **Gate on the applied
+amount instead of the id, never in addition to it** (an `AND id IS NOT NULL` re-introduces the
+blindness). So: *an order with a discount **amount** stamped and no matching ledger row.*
 
 ## Fail-soft is admissible only over an operation that normally SUCCEEDS (ADR-0038 §D8)
 
-> **PROPOSED alongside ADR-0038.**
+> **LAW.** ADR-0038 `accepted` 2026-08-03.
+> **Enforced by:** `quality-gates.md` **Gate 4 (Architecture)** + ADR-0038 reviewer check #1 (the
+> `catch`-grep on the reservation path) + the deviating-form list in `consistency.md` §"Post-commit
+> ordering + fail-soft admissibility" — **T3-HUMAN**. *(Condition (2) — "does this operation succeed in
+> the normal case?" — is a judgment about runtime behaviour and is not mechanizable; a regex can find a
+> `catch`, it cannot find a `catch` over something that always fails.)*
 
 A `catch` that logs and continues is admissible only when **all three** hold:
 
@@ -597,6 +653,15 @@ is the name of the rule but not the best shape for it:
 - **Compensate with a non-cancellable token.** The thing being released already **auto-committed** and
   outlives an aborted request; passing the caller's token means a client disconnect skips the release
   and leaks the very slot the compensation exists to return.
+- **Catch the compensation; never the operation (ADR-0038 AM-10).** `await` inside a `finally` while an
+  exception is in flight **replaces** it if the compensation throws — and the compensation usually runs
+  on the same `DbContext`/connection that just failed, so it is most likely to throw in exactly the
+  transient-error case it exists for. Wrap the *release call itself* in a `try`/`catch` that logs at
+  **Error** (naming the entity, the actor and the reconciliation the operator must run) and **never
+  rethrows**, so the original failure reaches the caller untouched. That catch is outside the three
+  conditions above, because it does not let anyone believe the operation succeeded — its test is simply
+  *does the caller's outcome change?* If yes, it is a swallow. **Error, not Warning:** the invariant is
+  still broken until someone reconciles it.
 
 ## Bounded exclusivity on a pull board — the stored-deadline hold (ADR-0036)
 

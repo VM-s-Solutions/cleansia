@@ -726,6 +726,18 @@ When a rule must give one actor **temporary exclusive access** to a work item on
   monotone in time and derivable from a **global** timestamp on the item. Any **per-recipient,
   non-monotone** rule breaks that assumption; a fix for one such rule is a point fix, not a class fix,
   and the ADR must say so rather than claim convergence.
+- **Patch it with a second freshness source keyed on the RECIPIENT-side event, and let that source
+  OVER-approximate (T-0528).** When a per-recipient rule flips *back* to eligible, nothing on the item
+  changes, so the watermark structurally cannot see it — the item is burned the moment the recipient is
+  notified about anything else. The disjunct therefore keys on the event that flipped the rule (Cleansia:
+  one of the cleaner's **own** commitments being cancelled/completed hands the slot back), carries the same
+  `> watermark AND <= sweepStart` bound as every other disjunct so exactly one sweep consumes it, and
+  re-offers the **widest** window that event could have freed rather than the exact set it was blocking.
+  The asymmetry is the whole argument: a redundant candidate costs one more evaluation of the real
+  predicate — which still decides — while a missing candidate is the item lost forever, which is the defect
+  being closed. **Prefer the formulation that duplicates one enum set** (pinnable by a test asserting it is
+  the complement of the owning set, even across an assembly boundary via reflection) **over one that
+  duplicates an arithmetic predicate** (unpinnable without a real-provider equivalence test).
 - **Never grant exclusivity to an actor you already know cannot act (ADR-0039).** A bound like *"the
   exclusivity is at most 10% of the fill window"* prices what you **cannot** know; it is **not** a
   licence to spend what you **can**. If a *statically-checkable-at-grant-time* gate would refuse this

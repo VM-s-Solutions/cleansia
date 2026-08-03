@@ -18,18 +18,29 @@ namespace Cleansia.Core.AppServices.Services;
 ///   - <see cref="Domain.Users.Employee.WorkCountryId"/> matches the order's
 ///     customer-address country
 ///   - The order satisfies <see cref="Domain.Orders.OrderAvailability"/> — the one
-///     offerability rule every surface reads — has a free spot, and isn't
-///     already assigned to this cleaner
-///   - The order's status flipped to one of the available states AFTER the
-///     cleaner's last digest watermark (so old already-notified orders
-///     don't re-trigger)
+///     offerability rule every surface reads — has a free spot, isn't
+///     already assigned to this cleaner, and hasn't started yet
+///   - The order is FRESH to this cleaner (see below)
 ///   - The cleaner has no overlapping live-commitment order at the order's
 ///     cleaning time (see <see cref="IOrderRepository.HasOverlappingOrderIgnoringTenantAsync"/>)
+///
+/// Freshness is TWO sources, disjunctive and upper-bounded at the sweep's own start
+/// instant (ADR-0036 §D5.3), because <see cref="Domain.Users.Employee.LastNewJobsDigestAt"/>
+/// is a single per-cleaner scalar and the overlap filter above is a per-cleaner,
+/// NON-monotone rule — an order can become takeable again long after its own status
+/// stopped changing:
+///   - the order's status moved into an offerable state after the watermark; or
+///   - one of THIS cleaner's commitments was released (cancelled/completed) after the
+///     watermark, and this order sits in the window that release freed. Without the
+///     second source, every candidate dropped for a time conflict was burned the moment
+///     the cleaner was notified about anything else (T-0528).
+/// A cleaner who has never been digested has no watermark and no released window: the
+/// whole open board is new to them, bounded by the not-started-yet floor.
 ///
 /// Throttling: this method IS the rate-limit — the timer's 30-min cadence
 /// caps each cleaner to at most one digest per interval. No per-event
 /// dedup store is needed because cleaners are only notified about orders
-/// newer than their personal watermark.
+/// that are fresh to them personally.
 ///
 /// Opt-out: each candidate's <see cref="UserNotificationPreferences.NewJobsAvailable"/>
 /// gates the enqueue. Cleaners can disable the category and never
@@ -47,9 +58,22 @@ public class NewJobsDigestService(
     IUnitOfWork unitOfWork,
     ILogger<NewJobsDigestService> logger) : INewJobsDigestService
 {
+    /// <summary>
+    /// The statuses that hand a cleaner's slot back. Exactly the complement of the set
+    /// <c>OrderRepository</c>'s overlap predicate treats as slot-blocking — that set is private to the
+    /// repository, so <c>NewJobsDigestSkippedJobRecoveryTests</c> is the artifact that goes red if the
+    /// two ever stop being complements.
+    /// </summary>
+    private static readonly OrderStatus[] SlotReleasingStatuses =
+    [
+        OrderStatus.Completed,
+        OrderStatus.Cancelled,
+    ];
+
     public async Task SendDigestsAsync(CancellationToken cancellationToken = default)
     {
         var sweepStartedAt = DateTimeOffset.UtcNow;
+        var sweepStartedAtUtc = sweepStartedAt.UtcDateTime;
 
         // Pull candidate cleaners: approved/active, have a work country
         // set, have a UserId (some legacy rows don't). Include user so we
@@ -82,32 +106,28 @@ public class NewJobsDigestService(
         {
             try
             {
-                var sinceUtc = (cleaner.LastDigestAt ?? DateTimeOffset.MinValue).UtcDateTime;
+                var sinceUtc = cleaner.LastDigestAt?.UtcDateTime;
 
-                // Offerable orders in this cleaner's work country that became
-                // available AFTER their last digest. "Became available" is
-                // proxied by the latest OrderStatusTrack's CreatedOn — i.e. the
-                // transition into a takeable state. This avoids re-notifying
-                // about orders that sat offerable across many sweeps.
-                var newJobsQuery = orderRepository.GetQueryableIgnoringTenant()
+                var releasedWindow = sinceUtc is null
+                    ? null
+                    : await FindReleasedCommitmentWindowAsync(
+                        cleaner.EmployeeId, sinceUtc.Value, sweepStartedAt, cancellationToken);
+
+                // Offerable, unfilled orders in this cleaner's work country whose cleaning has not
+                // started yet. The floor is what bounds the sweep: without it a cleaner with no
+                // watermark matched every offerable order their country ever recorded, and every
+                // released window re-opened the same tail.
+                var board = orderRepository.GetQueryableIgnoringTenant()
                     .Where(o => o.CustomerAddress != null
                         && o.CustomerAddress.CountryId == cleaner.WorkCountryId
+                        && o.CleaningDateTime >= sweepStartedAtUtc
                         && o.AssignedEmployees.Count < o.MaxEmployees
                         && o.AssignedEmployees.All(ae => ae.EmployeeId != cleaner.EmployeeId))
-                    .Where(OrderAvailability.IsOfferableSql)
-                    // The latest status track must be newer than the watermark, which still
-                    // needs the correlated latest-history subquery because the persisted
-                    // Orders.CurrentStatus column carries no transition timestamp.
-                    .Where(o => o.OrderStatusHistory
-                        .OrderByDescending(s => s.CreatedOn)
-                        .Take(1)
-                        .Any(s => s.CreatedOn > sinceUtc));
+                    .Where(OrderAvailability.IsOfferableSql);
 
-                // Pull just enough to make a decision: count + min/max
-                // cleaning times we'd need for the not-busy filter. Pulling
-                // (id, cleaningDateTime, estimatedTimeMinutes) keeps the
-                // per-cleaner page tiny.
-                var newOrders = await newJobsQuery
+                // Pull just enough to make a decision: count + the cleaning times the not-busy
+                // filter needs. Bounded by the floor above and by the freshness rule.
+                var newOrders = await ApplyFreshness(board, sinceUtc, releasedWindow)
                     .Select(o => new { o.Id, o.CleaningDateTime, o.EstimatedTime })
                     .ToListAsync(cancellationToken);
 
@@ -117,10 +137,9 @@ public class NewJobsDigestService(
                     continue;
                 }
 
-                // Not-busy filter: drop orders that overlap one of the
-                // cleaner's existing live-commitment orders. Per-order check —
-                // expensive in the worst case but bounded by how many new
-                // orders matched the country filter for THIS cleaner.
+                // Not-busy filter: drop orders that overlap one of the cleaner's existing
+                // live-commitment orders. Per-order check — the one predicate every surface asks; a
+                // dropped order is not lost, it comes back through the released-window source above.
                 var takeable = 0;
                 foreach (var o in newOrders)
                 {
@@ -189,6 +208,76 @@ public class NewJobsDigestService(
             totalSkippedNoNewJobs,
             totalSkippedMuted,
             cleaners.Count);
+    }
+
+    /// <summary>
+    /// The freshness rule, as three query shapes rather than one expression carrying dead operands.
+    ///
+    /// <para>The second disjunct is deliberately an OVER-approximation: it re-offers everything in the
+    /// merged window a release freed, not just what that release was blocking. Widening freshness can
+    /// only cost a redundant candidate — <see cref="IOrderRepository.HasOverlappingOrderIgnoringTenantAsync"/>
+    /// still decides takeability — whereas narrowing it loses the job permanently, which is the defect
+    /// this exists to close.</para>
+    ///
+    /// <para>Freshness is `∃ track newer than the watermark`, never `latest track newer than the
+    /// watermark`: the two are equivalent, and the existential form drops the correlated top-N subquery
+    /// the sweep used to run per candidate row (ADR-0036 §D5.3).</para>
+    /// </summary>
+    private static IQueryable<Order> ApplyFreshness(
+        IQueryable<Order> board,
+        DateTime? sinceUtc,
+        (DateTime Start, DateTime End)? releasedWindow)
+    {
+        if (sinceUtc is null)
+        {
+            return board;
+        }
+
+        var since = sinceUtc.Value;
+        if (releasedWindow is null)
+        {
+            return board.Where(o => o.OrderStatusHistory.Any(s => s.CreatedOn > since));
+        }
+
+        var (releasedStart, releasedEnd) = releasedWindow.Value;
+        return board.Where(o => o.OrderStatusHistory.Any(s => s.CreatedOn > since)
+            || (o.CleaningDateTime < releasedEnd
+                && o.CleaningDateTime.AddMinutes(o.EstimatedTime) > releasedStart));
+    }
+
+    /// <summary>
+    /// The span this cleaner's calendar gave back since their last digest, merged into one interval, or
+    /// null if nothing was released. Upper-bounded at the sweep's start so the release is consumed by
+    /// exactly one sweep — the watermark lands on that same instant.
+    ///
+    /// <para>The <see cref="Order.MaxOrderSpanHours"/> floor is the overlap predicate's, for the same
+    /// reason and with the same safety argument: a commitment whose own window closed before the sweep
+    /// started cannot overlap a candidate, since candidates have not started yet.</para>
+    /// </summary>
+    private async Task<(DateTime Start, DateTime End)?> FindReleasedCommitmentWindowAsync(
+        string employeeId,
+        DateTime sinceUtc,
+        DateTimeOffset sweepStartedAt,
+        CancellationToken cancellationToken)
+    {
+        var scanFloor = sweepStartedAt.UtcDateTime.AddHours(-Order.MaxOrderSpanHours);
+
+        var released = await orderRepository.GetQueryableIgnoringTenant()
+            .Where(o => o.AssignedEmployees.Any(ae => ae.EmployeeId == employeeId)
+                && o.CleaningDateTime >= scanFloor
+                && o.OrderStatusHistory.Any(s => SlotReleasingStatuses.Contains(s.Status)
+                    && s.CreatedOn > sinceUtc
+                    && s.CreatedOn <= sweepStartedAt))
+            .Select(o => new { o.CleaningDateTime, o.EstimatedTime })
+            .ToListAsync(cancellationToken);
+
+        if (released.Count == 0)
+        {
+            return null;
+        }
+
+        return (released.Min(r => r.CleaningDateTime),
+                released.Max(r => r.CleaningDateTime.AddMinutes(r.EstimatedTime)));
     }
 
     /// <summary>

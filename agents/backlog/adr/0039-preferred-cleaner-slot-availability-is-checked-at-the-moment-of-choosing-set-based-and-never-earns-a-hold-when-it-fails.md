@@ -680,9 +680,20 @@ ticket. **A5 rides T-0515** because the resolver does not exist yet.
   the partner app, the terms, or both — that a past customer can see, at booking time, whether they are
   free for one specific slot? The disclosure is real, narrow and unavoidable if the feature exists
   (D7.4). It changes text, not the mechanism, so nothing waits on the answer.
-- **Cross-reference `Q-AVAIL-03`** (the seat cap — `RequiredEmployees` vs `RequiredEmployees + 1`),
-  raised by ADR-0037 D9 under the owner's second ruling. Not this ADR's, listed so the two owner
-  questions from one conversation are findable together.
+- **`Q-AVAIL-03` (the seat cap) — ANSWERED 2026-08-03: _"Seats = RequiredEmployees."_** Raised by
+  ADR-0037 D9; the full ruling and its consequences are recorded there. Listed here because it changes
+  a number this ADR reasons about: **there is no longer a spare seat**, so `MaxEmployees` equals the
+  crew the work requires.
+
+  **What that means for this ADR specifically:** the availability check gets *more* load-bearing, not
+  less. With a spare seat, a busy preferred cleaner cost the board a seat it could afford to lose;
+  with seats capped at the requirement, every seat withheld is a seat the order actually needs to be
+  fulfilled. D3's ruling — a busy cleaner earns no hold and no push — was argued on latency alone and
+  is now additionally justified on capacity. Invariant H's per-seat restatement is unaffected in
+  form, and strictly more important in effect.
+
+  It does **not** reopen `Q-AVAIL-01`: a second cleaner may still join a partly-crewed booking. The
+  ruling bounds how many seats exist, not who may fill them.
 
 ---
 

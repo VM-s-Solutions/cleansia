@@ -661,13 +661,31 @@ whole reason the property-not-formula rule is stated before the number is known.
   they are.*)* → **Ruled in §D9**: a partly-staffed order stays offerable; both mobile clients switch
   to `hasAvailableSpots` **+ `excludeEmployeeId`**; the mobile date-floor ticket is absorbed; Invariant
   H becomes true on mobile.
-- **`Q-AVAIL-03` — the seat cap (business, not blocking).** Raised by §D9.3. Should an order carry
-  seats for exactly the crew the work needs (`RequiredEmployees = ceil(EstimatedTime / 120)`), or one
-  spare (`RequiredEmployees + 1`, today's shipped value with no recorded rationale)? Each filled seat
-  beyond the required crew costs **a second full labour payment** — `CalculateOrderPay:140-152` writes
-  one pay row per assigned employee and `CalculateAggregatedPay:30-61` has no crew-size term.
-  **Interim: `MaxEmployees` stands unchanged**, and §D9.4's property-not-formula rule makes the flip a
-  one-line change if the owner rules the other way.
+- **`Q-AVAIL-03` — the seat cap. ANSWERED 2026-08-03 by the owner: _"Seats = RequiredEmployees."_**
+  No spare seat. *(Original question, preserved: should an order carry seats for exactly the crew the
+  work needs (`RequiredEmployees = ceil(EstimatedTime / 120)`), or one spare (`RequiredEmployees + 1`,
+  the then-shipped value with no recorded rationale)? Each filled seat beyond the required crew costs
+  **a second full labour payment** — `CalculateOrderPay:140-152` writes one pay row per assigned
+  employee and `CalculateAggregatedPay:30-61` has no crew-size term, so on the modal single-cleaner
+  booking a filled spare seat doubles labour cost at an unchanged customer price.)*
+
+  **Consequences of the ruling, binding on the implementation:**
+  - `MaxEmployees = RequiredEmployees + BookingPolicy.SpareSeatsPerOrder`, with the constant at **0**.
+    Expressed as a named constant rather than dropping the term, so the record shows a spare seat was
+    considered and deliberately set to zero, and so a future change stays the one-line flip §D9.4's
+    property-not-formula rule was written to preserve.
+  - **`HasAvailableSpots` and `IsFullyAssigned` now denote the same predicate** (`MaxEmployees −
+    assigned > 0` vs `assigned >= RequiredEmployees`). Two independently-maintained expressions of one
+    rule is the precise defect class this sprint has spent its time closing — one must delegate to the
+    other or be deleted. `IsFullyAssigned` (`Order.cs:118`) is read by nothing today.
+  - **`MaxEmployees` is not removed.** It would now always equal `RequiredEmployees`, but it is a wire
+    field on generated clients and dropping it would force an owner-only NSwag regen for no behavioural
+    gain.
+  - The owner's phrase *"based on the calculations of how much work there is"* (the same message that
+    answered `Q-AVAIL-01`) maps exactly onto `RequiredEmployees`, which **is** that calculation. The
+    `+ 1` never was — which is why it is struck rather than tuned.
+  - This does **not** reopen `Q-AVAIL-01`: a second cleaner may still join a partly-crewed booking. It
+    bounds how many seats exist to fill, not who may fill them.
 - **Q-AVAIL-02 — `New` + Card, recorded as decided, flip condition named.** Ruled **not offerable** on
   the evidence above. If the business would rather cleaners pre-claim unpaid card bookings to shorten
   time-to-fill, that is an owner call with a customer-facing consequence (a cleaner assigned to a

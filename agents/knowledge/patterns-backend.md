@@ -617,8 +617,9 @@ When a rule must give one actor **temporary exclusive access** to a work item on
   *(ADR-0036 CH-V1: the draft had neither, and the anonymizer nulled one column of the pair.)*
 - **Exclusivity is consumed the moment the item has ANY holder** — not when the beneficiary takes it,
   and never merely by the clock. Check whether your items have **more capacity than one**: a Cleansia
-  order carries `MaxEmployees = RequiredEmployees + 1`, so a hold keyed only on the clock locked the
-  spare seat *after* the perk had already been delivered, to a beneficiary who could not take it either.
+  order's cap is `RequiredEmployees + BookingPolicy.SpareSeatsPerOrder` (the spare is **0** by owner
+  ruling, but any job over one work unit still carries several seats), so a hold keyed only on the clock
+  locks a seat *after* the perk has already been delivered, to a beneficiary who could not take it either.
 - **Bound the exclusivity as a FRACTION of the item's own fill window, with a ceiling**, and state the
   resulting invariant **per unit of capacity, not per item**: *≥90% of every **seat's** fill window is
   always open to everyone.* A fixed duration is arbitrarily aggressive on urgent items and timid on
@@ -780,6 +781,21 @@ cost Cleansia **eight** disagreeing definitions of "which orders may a cleaner t
   because an unsettled card order gets cancelled out from under the cleaner while a cash order is only
   ever confirmed *by* the take. Every one of the eight surfaces consulted one axis. **A set of literals
   cannot express a two-axis rule** — which is exactly why eight of them disagreed.
+- **An unexplained literal in a domain formula is a decision nobody made — name it even when the value
+  is zero.** `MaxEmployees = RequiredEmployees + 1` cost a second full wage per order against an
+  unchanged price and had no recorded rationale anywhere. The fix is not `= RequiredEmployees`; it is
+  `+ BookingPolicy.SpareSeatsPerOrder` with the number at **0**, so the constant records that the option
+  was considered and priced, and changing it later is one edit instead of an archaeology exercise.
+  **When the policy constant lives in a layer the entity cannot reference** (`BookingPolicy` is
+  `Core.AppServices`; `Order` is `Core.Domain`), **pass it in — do not move the policy down.** That is
+  the shape `Order.Cancel(feeRate, refundAmount, …)` already uses, and it keeps the entity
+  policy-ignorant. Make the parameter **required**, never defaulted: a default is a second copy of the
+  number that drifts silently.
+- **Collapsing a formula collapses its predicates too — go looking for the pair.** Once the cap equalled
+  the requirement, `HasAvailableSpots` (`assigned < MaxEmployees`) and `IsFullyAssigned`
+  (`assigned >= RequiredEmployees`) became one rule with two independent expressions. **Delete the unread
+  one rather than making it delegate**: delegation would silently redefine it for the rows where the two
+  still differ (here, an explicitly raised cap), which is a behaviour change disguised as a cleanup.
 - **Dead code that asserts a safety net is the same defect at class scope.** `StaleOrderCleanupService`
   has an unsatisfiable `WHERE` (it requires the writerless status above) **and no caller** — yet it was
   cited in good faith as the reason a risk was covered. When you retire a mechanism, delete the class;

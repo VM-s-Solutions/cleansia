@@ -119,14 +119,17 @@ Offerable(o) ⟺ o.CurrentStatus == Confirmed
   (`cleansia_android/openapi/partner-mobile-api.json:1128,1142`). And it makes ADR-0036's per-seat
   Invariant H **true on mobile**, where `isUnassigned` had been withholding 100% of every second seat's
   fill window from the whole mobile board, permanently.
-- **The seat CAP is a different question and is open** (`Q-AVAIL-03`, owner). `RequiredEmployees =
-  ceil(EstimatedTime / 120)` (`Order.cs:509-519`) is the work-derived number; `MaxEmployees =
-  RequiredEmployees + 1` adds a seat nothing derives, nothing documents and no production caller sets —
-  and **each filled spare seat costs a second full labour payment** (`CalculateOrderPay:140-152` writes
-  one pay row per assigned employee; `CalculateAggregatedPay:30-61` has no crew-size term). **Ruled
-  regardless of the number: there is ONE seat cap, it is a property of `Order`, every surface reads it,
-  and no surface re-derives it** — which is what makes the flip a one-line change. If the spare seat
-  survives, it becomes `BookingPolicy.SpareSeatsPerOrder`, not a literal `+1`.
+- **The seat CAP is a different question and is ANSWERED** (`Q-AVAIL-03`, owner, 2026-08-03):
+  **seats = `RequiredEmployees`. No spare seat.** `RequiredEmployees = ceil(EstimatedTime / 120)` is the
+  work-derived number and `MaxEmployees = RequiredEmployees + BookingPolicy.SpareSeatsPerOrder` with the
+  spare at **0** — the constant stays so the number is citable and tunable in one edit. The old `+1`
+  cost **a second full labour payment per filled spare seat** (`CalculateOrderPay:140-152` writes one pay
+  row per assigned employee; `CalculateAggregatedPay:30-61` has no crew-size term) against an unchanged
+  customer price. The standing rule is unchanged and is what made the flip cheap: **there is ONE seat
+  cap, it is a property of `Order`, every surface reads it, and no surface re-derives it.** A long job
+  still carries several seats; only the extra one is gone. `Order.IsFullyAssigned` — which denoted the
+  same predicate as `HasAvailableSpots` once the cap equalled the requirement, and was read by nothing —
+  is deleted.
 - **A third conjunct on these surfaces is a design smell.** Availability (ADR-0037) and visibility
   (ADR-0036) already both ride `OrderSpecification`, `CreateAvailableOrdersSpec`,
   `NewJobsDigestService` and `TakeOrder`. A **third** should trigger a look at composing them into one

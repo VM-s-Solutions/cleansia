@@ -64,6 +64,17 @@ public static class BookingPolicy
     /// <summary>Refund + credit issued when cleaner cancels or no-shows.</summary>
     public const decimal NoShowCreditCzk = 500m;
 
+    /// <summary>
+    /// Seats an order carries BEYOND the crew the work needs (<c>Order.RequiredEmployees</c>, derived
+    /// from the booked estimate). Passed to <c>Order.CalculateRequiredEmployees</c>, which is the only
+    /// writer of the seat cap.
+    ///
+    /// Zero, by owner ruling (ADR-0037 D9.4 / ADR-0039): a spare seat is not free. Pay is one row per
+    /// assigned employee with no crew-size term, so every seat filled beyond the requirement is a
+    /// second full wage against an unchanged customer price.
+    /// </summary>
+    public const int SpareSeatsPerOrder = 0;
+
     /// <summary>True if the given start time requires express surcharge (2–4h lead).</summary>
     public static bool RequiresExpressSurcharge(DateTime cleaningUtc, DateTime nowUtc)
     {

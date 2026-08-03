@@ -145,7 +145,7 @@ public sealed class OrderFactory(
         var estimatedTime = selectedServices.Sum(s => s.Service!.EstimatedTime) +
                             selectedPackages.Sum(p => p.Package!.IncludedServices.Sum(s => s.Service!.EstimatedTime));
         order.UpdateEstimatedTime(estimatedTime);
-        order.CalculateRequiredEmployees();
+        order.CalculateRequiredEmployees(BookingPolicy.SpareSeatsPerOrder);
 
         // VAT breakdown — gracefully degrade when there's no company info
         // configured for the country (sets net = total, vat = 0).

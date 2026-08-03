@@ -115,7 +115,6 @@ public class Order : Auditable, ITenantEntity
 
     public int AvailableSpots => MaxEmployees - _assignedEmployees.Count;
     public bool HasAvailableSpots => AvailableSpots > 0;
-    public bool IsFullyAssigned => _assignedEmployees.Count >= RequiredEmployees;
 
     [MaxLength(50)]
     public string ConfirmationCode { get; private set; } = OrderExtensions.GenerateConfirmationCode();
@@ -506,17 +505,20 @@ public class Order : Auditable, ITenantEntity
         return this;
     }
 
-    public Order CalculateRequiredEmployees()
+    /// <summary>
+    /// Derives the crew the booked work needs and the seat cap that follows from it.
+    /// <paramref name="spareSeats"/> is a platform policy number the application layer owns
+    /// (<c>BookingPolicy.SpareSeatsPerOrder</c>) — this entity stays policy-ignorant, the same way
+    /// <see cref="Cancel"/> takes an already-computed fee rate.
+    /// </summary>
+    public Order CalculateRequiredEmployees(int spareSeats)
     {
-        if (EstimatedTime <= 0)
-        {
-            RequiredEmployees = 1;
-            MaxEmployees = 1;
-            return this;
-        }
+        ArgumentOutOfRangeException.ThrowIfNegative(spareSeats);
 
-        RequiredEmployees = (int)Math.Ceiling((double)EstimatedTime / StandardWorkUnitMinutes);
-        MaxEmployees = RequiredEmployees + 1;
+        RequiredEmployees = EstimatedTime <= 0
+            ? 1
+            : (int)Math.Ceiling((double)EstimatedTime / StandardWorkUnitMinutes);
+        MaxEmployees = RequiredEmployees + spareSeats;
 
         return this;
     }

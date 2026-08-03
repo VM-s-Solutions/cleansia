@@ -50,7 +50,9 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
   (`UserMembershipRepository.ActiveForUserQuery:20-31`, reached by both the tracking and no-tracking
   methods). It creates no second predicate; the same predicate already serves
   `CancellationPolicyResolver:32`, `OrderFactory:77`, `QuoteOrder:142`, `CreateRecurringBooking:84-85`.
-  **`PastDue` is excluded** — an owner escalation (`Q-PLUS-05`), not a local choice.
+  **`PastDue` is excluded** — ✅ **settled by owner ruling 2026-08-03 (`Q-PLUS-05`): no benefits, cut on
+  the first payment failure, no grace window.** No longer an escalation, and still not a local choice —
+  this resolver adds **nothing** for that case; the shared predicate answers it.
 - `IEmployeeRepository` — `ContractStatus` and `WorkCountryId` for the preferred cleaner.
 - `IUserNotificationPreferencesRepository` — whether `NotificationCategory.NewJobsAvailable` is muted
   (default-allow when the row is absent, matching `NewJobsDigestService.cs:155-158`).

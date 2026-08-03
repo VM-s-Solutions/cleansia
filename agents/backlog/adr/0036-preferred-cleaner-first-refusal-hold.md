@@ -15,6 +15,13 @@
   Invariant H, the six surfaces, the digest rules and the copy rulings are untouched. *(Pointer only.
   No decision text in the body below has been edited; the amendment is appended, per
   `adr/README.md` §"Accepted ADRs are immutable".)*
+- ⚠️ **TWO ESCALATIONS ANSWERED, 2026-08-03, by owner instruction — see the SECOND dated section at the
+  END of this file.** **`Q-PLUS-05`** (does `PastDue` keep perks during Stripe's retries?) → **NO —
+  cut everything on first payment failure, no grace window**; D7's interim ruling becomes binding and
+  **nothing in D7 changes**. **`Q-PLUS-04`** (should a lapsed member's recurring schedule keep
+  materializing?) → **YES — occurrences keep being generated, at full non-member price, and the
+  customer is notified of the price change**; D8.6's named asymmetry is now a **ruled** asymmetry.
+  *(Pointer only. No decision text in the body below has been edited.)*
 - **Date:** 2026-08-02 (proposed) / 2026-08-02 (accepted, amended by the panel)
 - **Owner decisions carried by this ADR:** `Q-PLUS-03` → **plus-only**; **CH-2 → the hold floor is
   8 hours**, expressed as `2 * BookingPolicy.StandardLeadTimeHours`. Both are settled and are not
@@ -1962,3 +1969,155 @@ worth granting one to*.
   `agents/knowledge/roles/preferred-cleaner-hold-resolver.md` are updated in the same change; the
   role card's *"Does NOT know → `TakeOrder`'s dynamic gates"* entry is now **half wrong** and is
   corrected there rather than here.
+
+---
+
+## Amended by owner instruction — 2026-08-03 (`architect`) · **`Q-PLUS-05` and `Q-PLUS-04` are ANSWERED**
+
+> **Recorded, not rewritten.** Per `agents/backlog/adr/README.md` §"Accepted ADRs are immutable", this
+> is a **dated appended section**, the second on this ADR. **No line of the body above has been
+> edited.** D7's `PastDue` paragraph, its interim ruling, and D8.6's statement of the asymmetry stay
+> exactly as the panel wrote them — the panel escalated correctly, and both interim positions turned
+> out to be the ones the owner chose. **This section converts them from interim to binding and works
+> out what they cost together.**
+
+**The owner's rulings, verbatim, 2026-08-03:**
+
+> 1. *"PastDue keeps NO benefits. Cut everything on first payment failure."* — no grace window.
+>    (Also answers ADR-0035 E-2; the full predicate analysis lives there, in **AM-17**.)
+> 4. *"A lapsed membership does NOT stop a recurring schedule. Occurrences keep being generated, at
+>    full non-member price, and the customer is notified of the price change."*
+
+---
+
+### AM-A — **`Q-PLUS-05` ANSWERED: D7's interim ruling is now the ruling. Not one line of D7 changes.**
+
+D7's interim was: *"the gate uses the one live-membership predicate, unchanged — `PastDue` is not
+active"*, on the ground that a second membership predicate for one perk is the drift D5.1 exists to
+prevent. **The owner ruled the same way, for the whole platform rather than for this gate.**
+
+- The **`PastDue` row of D7's AC8 table** (*"Rejected, on the one live-membership predicate — and
+  ESCALATED"*) reads **"Rejected"** with the escalation discharged.
+- The D7 requirement that ***"in the same wave, `MembershipStatus.cs:18-19`'s comment is corrected"***
+  is **satisfied**: the comment was corrected in this same pass and now states that benefits stop
+  immediately with no grace window, citing this ruling. **T-0516 no longer carries it.**
+- **`TC-PREF-GATE-3` is now a pinning test with a known expected value**, not a test that "exists either
+  way": a `PastDue` member setting a preference is **rejected** with
+  `PreferredEmployeeMembershipRequired`.
+- **D7's error-copy constraint is promoted from strong advice to a requirement.** D7 argued the
+  rejection is defensible because *"a human is present and can fix it in one tap"* — **which is only
+  true if the message names the tap.** Under this ruling the most likely person to hit that error is no
+  longer a non-subscriber who knows they are not a subscriber; it is a **paying customer whose card
+  expired and who has been told nothing** (ADR-0035 AM-17, consequence C-1: `GetMyMembership` returns
+  `HasMembership: false` for them, so the app shows them the *subscribe* upsell). An upsell string at
+  that moment is not merely tone-deaf — it is factually confusing. **T-0491's five translations must
+  name the action, per D7.** Non-negotiable now.
+- **The narrow reachability hole D7 named (cached pickers, `PreferredCleanerViewModel.swift:27-29` /
+  `PreferredCleanerPicker.kt:78-82`) gets wider, not narrower**, under this ruling: a dunning webhook is
+  precisely the kind of mid-session state change those caches miss. Recorded; it does not change the
+  decision, and the answer remains the error copy, not cache invalidation.
+
+**What does NOT change:** D5.1's resolver checks, D4.1's outcome table, the hold mechanism, Invariant H,
+D8's degrade posture, and the `OrderVisibility` rule. `Q-PLUS-05` *"changes one `WHERE` clause"* — and
+the answer is that **it changes none**, which is the whole return on there being one predicate.
+
+---
+
+### AM-B — **`Q-PLUS-04` ANSWERED: a lapsed member's schedule keeps running, at full price, with a notification**
+
+**The ruling settles D8.6's asymmetry in favour of keeping it.** D8.6 named it and refused to decide it:
+*"materialization itself is deliberately not membership-gated; only the preference is."* The owner has
+now ruled that this is correct **and** has added the half the ADR could not: **the customer must be told
+the price changed.**
+
+#### Ruling 1 and ruling 4 must compose. They do — and two thirds of it is free.
+
+The composed scenario the two rulings jointly create: **a `PastDue` member's recurring occurrence is
+generated, priced without the member discount, and the customer is notified.** Verified against the
+materialization path by reading, 2026-08-03:
+
+| Leg | Is it expressible today? | Evidence | Cost |
+|---|---|---|---|
+| **Keep generating** | **YES — already the behaviour.** `MaterializeRecurringBookings.Handler`'s constructor (`:39-47`) takes **no** `IUserMembershipRepository`. The sweep selects on `t.IsActive`, `StartsOn`, `EndsOn` only (`:54-59`). Membership is never consulted. | `MaterializeRecurringBookings.cs:39-59` | **Zero.** The ruling makes an accident into a decision. |
+| **Price at full non-member price** | **YES — already the behaviour, and it composes with ruling 1 by construction.** The sweep calls `orderFactory.CreateAsync` per occurrence (`:141`); `OrderFactory.cs:76-83` re-reads `GetActiveForUserAsync` **per order** and applies `membershipDiscount` only when it returns non-null. A `PastDue` (or `Cancelled`, or `Paused`) member ⇒ null ⇒ `membershipDiscount = 0` ⇒ full price, frozen into `Order.TotalPrice`. | `MaterializeRecurringBookings.cs:141`; `OrderFactory.cs:76-83` | **Zero.** The *same* predicate ruling 1 settles is the one the factory re-evaluates. |
+| **Notify the customer of the price change** | **NO. This does not exist.** | below | **A ticket.** |
+
+> **The two rulings compose without a special case, and the reason is structural:** the discount is
+> resolved **per occurrence, inside the factory**, from the one predicate — not cached on the template,
+> not frozen at template creation. So "PastDue means no benefits" reaches recurring pricing through the
+> ordinary path, with no recurring-specific membership rule anywhere. **Nothing in `MaterializeRecurring
+> Bookings` needs to learn about memberships**, and it must not be given a membership repository for
+> pricing reasons. (ADR-0036 D8.3 gives it one for the **preference** only; that stays scoped to the
+> preference.)
+>
+> One detail worth pinning so it is not "optimized" away: `rawSubtotalResult` is computed **once per
+> template** outside the occurrence loop (`:105-113`), but the **discount** is computed **per occurrence**
+> inside the factory. That split is correct and load-bearing — hoisting the discount alongside the
+> subtotal would freeze a membership state across a whole batch.
+
+#### The notification does NOT exist. Naming it rather than assuming it.
+
+Verified, three ways:
+
+- **`MaterializeRecurringBookings.Handler` takes no `INotificationProducer`** (`:39-47`). Materialization
+  notifies **nobody**, about anything, today.
+- The only recurring-facing push is **`recurring.scheduled`**
+  (`NotificationEventCatalog.cs:24`), produced solely by `SendRecurringOrderReminders.cs:77-87` with
+  args **`orderId` + `orderNumber`** — **no price, no price delta, no membership state**.
+- That producer also fires at **~T-24h** and only for `PaymentStatus.Pending` orders
+  (`:63-70`), whereas materialization runs **7 days ahead** (`HorizonDays = 7`). So even a price argument
+  bolted onto it would reach the customer six days after the price was set — long after they could act.
+
+⇒ **A new notification is required. Filed as a ticket (P-3), not assumed.** It needs: a new event key in
+`NotificationEventCatalog`, a `NotificationCategory` mapping + a `UserNotificationPreferences` toggle (or
+a reasoned reuse of `RecurringScheduled`), registration in `NotificationFeedEventKeys`, the ADR-0025
+loc-key display contract on both mobile clients, and five-locale copy on three clients.
+
+**Two design constraints this ADR pins now, because they are architecture and not copy:**
+
+1. **One notification per PRICE TRANSITION, not per occurrence.** A weekly template whose owner lapses
+   would otherwise emit *"your price went up"* every week, forever — the same class of defect as an
+   un-idempotent sweep. The transition is readable with **no new column**: `Order.MembershipDiscount
+   Amount` (`Order.cs:207`) and `Order.MembershipPlanIdAtPurchase` (`:215`) are persisted per order and
+   `Order.RecurringTemplateId` links them, so "the previous occurrence of this template carried a
+   membership discount and this one does not" is one indexed query per template per sweep. Prefer that
+   over a new stamp on the template; if the query proves too costly, a per-template stamp is the
+   fallback — **the invariant is one-per-transition either way.**
+2. **It must also fire on the way back.** A customer who fixes their card and returns to `Active` should
+   be told the price went **down**, by the same transition rule in the opposite direction. Omitting the
+   good-news half turns a fairness mechanism into a dunning tool.
+
+#### The composed consequence, stated plainly — this is the sharpest form of the trade the owner accepted
+
+Rulings 1 and 4, together with **D8.3** (recurring drops the preference when the membership gate fails)
+and **ADR-0035 AM-17**, mean that when a card expires, the next automatically-generated occurrence of a
+recurring schedule arrives having **silently lost four things at once**: the membership **discount**, the
+**preferred cleaner**, the **hold**, and (once ADR-0035 ships) the **express waiver** — on a booking the
+customer did not initiate, at a price they did not choose, while `GetMyMembership` tells them they have
+**no membership at all** (AM-17 C-1).
+
+**Ruling 4's notification is the only thing standing between that and a chargeback.** That is the
+argument for treating P-3 as a **precondition of turning recurring loose in production**, not a
+follow-up — and it is why P-1 (a surface that says *"your card failed"*) is filed as its sibling.
+
+---
+
+### What is byte-untouched by this amendment
+
+D1, D2, D2.5, D3 (Invariant H), D4, D4.1, D5 and every sub-section, **D7 in full** (this amendment
+converts an interim to binding and changes no text), **D8.1–D8.5**, D9, D10, D11, every alternative's
+disposition, and the 2026-08-03 ADR-0039 partial supersede appended above. **D8.6's asymmetry is
+confirmed, not removed.**
+
+### Consumers of this amendment
+
+- **T-0516** — `TC-PREF-GATE-3` gains a pinned expected value (`PastDue` ⇒ rejected);
+  `−` the `MembershipStatus.cs` comment fix (**already done in this pass**).
+- **T-0491** (copy) — the "name the tap, do not upsell" constraint on
+  `PreferredEmployeeMembershipRequired` × five locales is now a **requirement**.
+- **C3** (recurring preference on the template) — unchanged; D8.3's degrade rule already composes.
+- **New ticket P-3** — the recurring price-change notification (both directions, one per transition).
+- **New tickets P-1 / P-2** — the `PastDue` visibility gap and the double-subscription hole; both are
+  filed off ADR-0035 AM-17 and are listed there.
+- `agents/architecture/decisions/preferred-cleaner-dispatch.md` and
+  `agents/architecture/decisions/membership-benefits.md` updated in the same change.

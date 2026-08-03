@@ -1,17 +1,24 @@
 # Membership benefits — living decision doc
 
 > **Status of this document: ADR-0035 is `accepted` (adjudicated 2026-08-02, with 16 binding
-> amendments).** The panel is complete — author + three independent challengers + lead. **§3 below is
-> the AMENDED shape**, which differs from the ADR's draft in seven mechanisms; several diagrams and
-> tables in earlier revisions of this file described the draft and were wrong. **§1 remains what ships
-> TODAY: nothing is metered yet** — T-0512/T-0493 have not landed. This banner comes off when T-0493
-> ships.
+> amendments) and AMENDED BY OWNER INSTRUCTION 2026-08-03 (AM-17, AM-18, AM-19).** The panel is
+> complete — author + three independent challengers + lead. **§3 below is the AMENDED shape**, which
+> differs from the ADR's draft in seven mechanisms; several diagrams and tables in earlier revisions of
+> this file described the draft and were wrong. **§1 remains what ships TODAY: nothing is metered yet**
+> — T-0512/T-0493 have not landed. This banner comes off when T-0493 ships.
+>
+> **2026-08-03 — three of the six escalations are CLOSED by owner ruling.** **E-1** (the trial),
+> **E-2** (`PastDue`) and **E-3** (the mid-month plan swap) are answered and binding. See **§2** for the
+> rulings and **§5** for what remains. The ADR's §Verdict escalation table is discharged for those
+> three; **E-4, E-5 and E-6 are engineering follow-ups and are still open.**
 
-**ADRs:** `../../backlog/adr/0035-metered-membership-benefit-usage.md` (**accepted**, immutable)
+**ADRs:** `../../backlog/adr/0035-metered-membership-benefit-usage.md` (**accepted**, immutable;
+carries a dated 2026-08-03 owner-instruction amendment at the end)
 **Tickets:** T-0511 (this decision) → T-0512 (schema) → T-0493 (enforcement) → T-0514 (clients);
-T-0513 (copy — **corrective half already shipped**)
+T-0513 (copy — **corrective half already shipped**); **P-1 / P-2 / P-3** to be filed (§5)
 **Open owner questions:** `Q-PLUS-02` (partially answered 2026-08-02), `Q-PLUS-03`, `Q-PLUS-01`
-(the trial loop — now a dependency, see §5), plus escalations **E-1 … E-6** in the ADR's §Verdict.
+(the trial loop — **narrowed but NOT closed** by the 2026-08-03 ruling, see §5), plus escalations
+**E-4 … E-6** in the ADR's §Verdict. **E-1 / E-2 / E-3 are closed.**
 
 ---
 
@@ -34,14 +41,44 @@ Cleansia Plus advertises five perks. **Two are enforced, one is half-built, two 
 `UserMembership.IsActive` (`UserMembership.cs:84-85` — `Status == Active && UtcNow < CurrentPeriodEnd`),
 reached via `GetActiveForUserAsync` (tracked) / `GetActiveForUserNoTrackingAsync` (read-only).
 
-Current consumers: `CancellationPolicyResolver.cs:32`, `GetMyMembership.cs:35`, `OrderFactory.cs:76`,
-`QuoteOrder.cs:141`, `CreateRecurringBooking.cs:84`. **A `PastDue` or `Paused` membership is not
+Current consumers: `CancellationPolicyResolver.cs:33`, `GetMyMembership.cs:35`, `OrderFactory.cs:76-77`,
+`QuoteOrder.cs:142`, `CreateRecurringBooking.cs:84-85`. **A `PastDue` or `Paused` membership is not
 active** — benefits stop, by the predicate, with no per-feature rule.
 
-> ⚠️ **The domain contradicts itself here and it is not settled.** `MembershipStatus.cs:18-19`
-> documents *"Benefits still apply during the grace window"* for `PastDue`; the predicate above makes
-> that unreachable. The platform ships the predicate's behaviour. **Escalated as E-2 (§5)** — do not
-> treat "PastDue gets nothing" as a decided rule until one of the two files changes.
+> ✅ **SETTLED 2026-08-03 by owner ruling (E-2 / `Q-PLUS-05`): `PastDue` keeps NO benefits. Cut
+> everything on the first payment failure. No grace window.** The contradiction is closed **against the
+> enum**: `ActiveForUserQuery` and `UserMembership.IsActive` are unchanged, and
+> `MembershipStatus.cs:18-19`'s comment has been corrected to say benefits stop immediately. **"PastDue
+> gets nothing" is now a decided rule** and may be relied on.
+
+> ⚠️ **"One predicate" is true of the BENEFIT paths and false of the codebase.**
+> `SendMembershipLifecycleNotifications.cs:77` and `:116` write `m.Status == MembershipStatus.Active`
+> **inline** — a second, hand-written expression of the same condition. It is the renewal /
+> cancellation-reminder sweep, not a benefit resolver, and it happens to agree. **Do not add a third.**
+> Its agreement has a consequence: a `PastDue` member is skipped by the reminder sweep too (§5, P-1).
+
+**The four consequences of the `PastDue` ruling, recorded because the owner accepted them knowingly:**
+
+| # | What happens to a `PastDue` member | Where | Disposition |
+|---|---|---|---|
+| C-1 | **The app says they have no membership at all.** `GetMyMembership` uses the same predicate ⇒ `HasMembership: false`, every field null; `Response.Status` can never carry `PastDue` on the wire. They see the *subscribe* upsell. **No surface anywhere says "your card failed".** | `GetMyMembership.cs:35-51` | **P-1** |
+| C-2 | **A booking is hard-rejected** (`PreferredEmployeeMembershipRequired`, ADR-0036 D7) before they know anything is wrong. | ADR-0036 D7 | **Accepted** — the headline trade. Makes D7's "the error must name the tap" a requirement. |
+| C-3 | **The renewal reminder is suppressed** at the moment it is most useful. | `SendMembershipLifecycleNotifications.cs:77` | **P-1** (same missing message) |
+| C-4 | **They can start a SECOND subscription while the first is in dunning.** Both app guards use `GetActiveForUserAsync` (null) and the DB backstop is `HasFilter("\"Status\" = 1")` — neither sees the PastDue row. | `CreateMembershipSubscription.cs:86`; `UserMembershipEntityConfiguration.cs:112-114` | **P-2** — pre-existing in code, **made reachable** by the ruling |
+
+### The trial — a second, per-benefit conjunct (2026-08-03)
+
+**The trial is NOT in the shared predicate and must never be put there.** `"trialing"` maps to `Active`
+(`UserMembership.cs:124`) and the owner ruled the trial **keeps** the discount and the cancellation
+window. Only the **metered** benefit is withheld. So:
+
+```
+ActiveForUserQuery          → "is there a live membership?"      (shared, unchanged)
+  + IExpressWaiverResolver  → "&& !membership.IsInTrial"         (ONE resolver, ONE benefit)
+```
+
+Harmonizing `IsInTrial` into `ActiveForUserQuery` would silently strip the two benefits the owner
+preserved. This is the one sanctioned per-benefit narrowing; a second one needs an ADR.
 
 ### The benefit seam — resolver answers, policy takes the answer
 
@@ -75,8 +112,11 @@ period-capped.
 | 2026-08-02 | Who gets it? | **Plus-only** |
 | — | `Q-PLUS-02(2)` rollover? | **not asked/answered.** ADR-0035's default: **no rollover** — and the stored-period-key shape makes it structural (an unused slot has nowhere to accumulate) |
 | — | **Which time zone is "the 1st"?** | **not asked.** ADR-0035 D2 **as amended** defaults to the **platform-default** `CountryConfiguration.TimeZoneId` (UTC fallback), built by one factory. Non-blocking — every answer uses the same schema and the same key-builder |
-| — | **Does the free trial grant waivers?** (E-1) | **not asked — now escalated.** Holding position: the seeded `ExpressUpgradesPerMonth` stays `0`, so the perk is off until answered |
-| — | `Q-PLUS-03` favourite cleaner: universal or Plus-only? | **open**, deliberately not defaulted |
+| **2026-08-03** | **E-1 — does the free trial grant waivers?** | **NO.** *"No express waivers during the 14-day trial."* The trial **keeps** the discount and the cancellation window; **metered waivers begin when they pay.** ⇒ needs a new field (§3.6) |
+| **2026-08-03** | **E-2 / `Q-PLUS-05` — do benefits continue during `PastDue`?** | **NO.** *"PastDue keeps NO benefits. Cut everything on first payment failure."* **No grace window.** ⇒ predicate unchanged; the enum comment corrected |
+| **2026-08-03** | **E-3 — mid-month plan switch and the counter** | **The counter CARRIES.** *"1 used on monthly, switch to yearly, 1 remaining."* **The quota belongs to the calendar month, not the plan.** ⇒ §3.7 |
+| **2026-08-03** | **`Q-PLUS-04` — does a lapse stop a recurring schedule?** | **NO.** Occurrences keep being generated, at **full non-member price**, and the **customer is notified of the price change.** ⇒ `preferred-cleaner-dispatch.md`; ticket **P-3** |
+| — | `Q-PLUS-03` favourite cleaner: universal or Plus-only? | **ANSWERED 2026-08-02: Plus-only** (ADR-0036 D7) |
 
 ---
 
@@ -154,8 +194,76 @@ attach is no longer out-of-band; and the `null`-after-waived-validation branch i
 
 **Plan column:** `MembershipPlan.ExpressUpgradesPerMonth` (int, default `0` = off), sibling to
 `FreeCancellationWindowHours`. `AllowsExpressUpgrade == false` ⇒ never, regardless. **Unlimited is
-deliberately not expressible** (D2.1). The `0` default is also the **holding position for E-1**: the
-seeded plans stay at `0` until the owner rules on the free trial.
+deliberately not expressible** (D2.1). ~~The `0` default is also the holding position for E-1.~~
+**E-1 is answered (2026-08-03), so the holding position is discharged and the seed value may be set —
+but only in a wave that also ships `UserMembership.TrialEndsAtUtc` (§3.6). Setting the seed without the
+field re-opens the four-waivers-for-0-Kč trial loop AM-14 named.**
+
+### 3.6 The trial marker — `UserMembership.TrialEndsAtUtc` (NEW, owner ruling 2026-08-03)
+
+The ruling *"no express waivers during the trial"* was **not expressible**: `"trialing"` collapses to
+`Active` at `UserMembership.cs:124` and the entity carries no trial marker.
+
+| | |
+|---|---|
+| **Field** | `DateTime? TrialEndsAtUtc` on `UserMembership` — mirrored from Stripe's `trial_end` |
+| **Derived** | `bool IsInTrial => TrialEndsAtUtc != null && DateTime.UtcNow < TrialEndsAtUtc` |
+| **Why an instant, not a `bool`** | a boolean needs a **writer** to flip it on conversion and there is no sweep — it goes stale and grants waivers forever. A stored deadline **expires by clock, no actor**. Same argument as `Order.PreferredHoldUntilUtc` (ADR-0036 D2). |
+| **Additive?** | **yes** — nullable, no backfill, no index. Existing rows read `null` ⇒ not trialing ⇒ **fail-open**, which is safe **only** because the DB is being dropped and `Initial` regenerated. On a live DB this default would be wrong. |
+| **Migration** | ⚠️ **owner-only `ef-migration`. BATCH it into the regenerated `Initial`** — do not stack (see §3.8) |
+| **Fed by** | (1) `SubscriptionResult` (`IStripeClient.cs:208-211`) gains a 4th nullable field → `UserMembership.Create`; (2) `StripeSubscriptionWebhookHandler.ExtractSubscriptionShape` (`:75-101`) gains a 5th tuple element |
+| ⚠️ **The trap** | the `invoice.payment_failed` branch (`:78-89`) returns `default` bounds and the handler **passes existing values through** (`:63-64`). `trial_end` must get the same treatment. Writing `null` there clears the marker for a trialing member whose first invoice failed — **re-enabling waivers for exactly the customer the ruling is about.** |
+| **Enforced in** | `IExpressWaiverResolver` only — **one extra conjunct**, never in the shared predicate (§1) |
+| **Read contract** | during the trial `ExpressUpgradesRemaining = **0**` (they *do* have a membership — `null` would call them a non-member), plus a new `GetMyMembership.Response.TrialEndsAtUtc` so the client says *"your free express bookings start on {date}"*. ⚠️ `nswag-regen` → **T-0514** |
+
+### 3.7 The quota key — calendar month, never the membership row (owner ruling 2026-08-03, E-3)
+
+**What a plan switch actually does, established by reading:** `SwapMembershipPlan.Handler` loads the
+live row (`:39`) and calls `ApplyPlanSwap` (`:78-81`), which **mutates it in place** —
+`UserMembership.Id` and `StripeSubscriptionId` untouched, **no new row**
+(`UserMembership.cs:180-197`). The challenger's "re-subscribing creates a new row" finding is correct
+but describes a **different** path (`UserMembership.Create` at
+`StripeSubscriptionWebhookHandler.cs:174` / `CreateMembershipSubscription.cs:168`, legal because the
+unique index is filtered `WHERE "Status" = 1`).
+
+> **BINDING — the counting key is `(TenantId, UserId, BenefitKind, PeriodKey)` + `IsActive`.**
+> **`UserMembershipId` MUST NOT appear in any `WHERE`, `GROUP BY`, `HAVING` or join on a counting
+> path.** It is written once at reservation and read only by a human. The index and the reservation
+> statement already comply; **the risk is entirely in the read path** — the resolver has the membership
+> row in hand and scoping the count to it looks *more* correct than it is. That is the quiet violation.
+> A reviewer greps for `UserMembershipId`: it may appear **only** in the reservation `INSERT` column
+> list.
+
+**Consequence the owner did not name, and it is the right one:** the same key governs **churn** —
+cancel-and-resubscribe mid-month does **not** grant a fresh quota either. This closes the loop that
+killed the counter-column option in §3.1 ("churn resets the quota").
+
+**Upgrade / downgrade falls out with no new rule.** `Remaining = max(0, currentPlan.ExpressUpgrades
+PerMonth − liveSlotsInPeriodKey)`. Upgrade 2→4 with 2 used ⇒ 2 left. Downgrade 4→2 with 3 used ⇒ 0 left,
+and the 3 granted waivers are **not clawed back** (the ADR-0009 D2 freeze).
+
+> ⚠️ **The ruling REINSTATES a guard AM-5 deleted.** AM-5 struck the `HAVING` guard as redundant
+> because *"a full quota yields zero candidate rows"* — true **only while the quota is invariant across
+> a `PeriodKey`**, which is exactly what a mid-month swap breaks. Downgrade 4→2 with live `{0,1,2}`,
+> then release ordinal 0 ⇒ `generate_series(0,1)` finds ordinal 0 free ⇒ **a 4th waiver is granted on a
+> quota-2 plan**, while the read path says 0 remaining. **Fix:** an independent **cardinality bound**
+> (`live count in period < @maxPerPeriod`) inside the same statement. This is *not* the deleted
+> `HAVING` — the smallest-free-ordinal derivation is untouched. Pinning test: **`TC-BENEFIT-DOWNGRADE-0`**.
+> `Remaining` counts live rows **in the period**, not live rows with ordinal `< quota`, or the two sides
+> disagree from the other direction.
+
+### 3.8 Pending schema wave — batch, do not stack
+
+⚠️ **All owner-only `ef-migration`.** The owner is dropping the DB and regenerating the single `Initial`
+migration; every row below folds into that regeneration.
+
+| Change | Source | Ticket |
+|---|---|---|
+| `MembershipBenefitUsage` + its three indexes | ADR-0035 D3 | T-0512 |
+| `MembershipPlan.ExpressUpgradesPerMonth` (int, default 0) | ADR-0035 D2.1 | T-0512 |
+| **`UserMembership.TrialEndsAtUtc` (`DateTime?`)** | **AM-18 (2026-08-03)** | T-0512 |
+| `Order.PreferredHoldUntilUtc` (`DateTime?`) | ADR-0036 D2 | T-0515 |
+| `RecurringBookingTemplate.PreferredEmployeeId` (`string?`, 26) | ADR-0036 D8 | C3 |
 
 ### 3.3b The orphan, and what reclaims it
 
@@ -286,28 +394,48 @@ Anchor (analyst owns the final wording):
 
 ## 5. Known gaps and escalations (post-adjudication)
 
-**Owner decisions (the PM carries these into `questions/open.md`):**
+**Owner decisions — E-1, E-2 and E-3 are CLOSED (2026-08-03). Recorded here for the trail:**
 
-1. **E-1 — does the 14-day free trial grant express waivers?** Both Plus plans ship
-   `TrialPeriodDays = 14` and `"trialing"` collapses to `Active` (`UserMembership.cs:124`), so a
-   subscriber who signs up on the **28th** can draw **four waivers for 0 Kč** across two `PeriodKey`s
-   and cancel before conversion. Linked to `Q-PLUS-01` (an unlimited-trial loop makes the waiver loop
-   unlimited too). **The platform cannot tell trialing from paying — there is no trial marker on
-   `UserMembership`** — so "waivers begin at first payment" costs an additive column: cheap on
-   T-0512's wave, expensive after launch. **Holding position: the seeded plans stay at
-   `ExpressUpgradesPerMonth = 0`, so the perk does not turn on until this is answered.** The
-   *paying*-member partial-first-month double grant is **accepted** (the owner ruled the calendar
-   boundary).
-2. **E-2 — do Plus benefits continue during Stripe dunning (`PastDue`)?** `MembershipStatus.cs:18-19`
-   says *"Benefits still apply during the grace window"*; `UserMembership.cs:84-85` makes `PastDue`
-   inactive. The design ships the **predicate's** answer (no benefits), consistent with every other
-   perk. **Whichever way it goes, one of those two files changes in T-0512** — and
-   `UserMembership.cs:46-51` must stop saying *"free express upgrade once per period"*.
-3. **E-3 — mid-month plan swap.** `ApplyPlanSwap` (`:180-197`) changes the quota while the `PeriodKey`
-   stays. Upgrade 2 → 4 is intuitive; downgrade 4 → 2 with 3 consumed is not. **Not decided**; the one
-   substantive gap no challenger attacked.
-4. **`Q-PLUS-03`** — favourite-cleaner gate; and the other four perks (T-0491 / T-0492 / T-0494 /
-   T-0495 / T-0498).
+1. ~~**E-1 — does the 14-day free trial grant express waivers?**~~ ✅ **ANSWERED 2026-08-03: NO.**
+   *The original escalation, preserved:* both Plus plans ship `TrialPeriodDays = 14` and `"trialing"`
+   collapses to `Active` (`UserMembership.cs:124`), so a subscriber who signs up on the **28th** could
+   draw **four waivers for 0 Kč** across two `PeriodKey`s and cancel before conversion; and the platform
+   **could not tell trialing from paying**. **Ruling:** the trial keeps the discount and the
+   cancellation window; **metered waivers begin at first payment.** Costs the additive
+   `UserMembership.TrialEndsAtUtc` column (§3.6) — **batched into the `Initial` regeneration** (§3.8).
+   The holding position (`ExpressUpgradesPerMonth = 0`) is discharged, *conditional on the field
+   shipping in the same wave*. The *paying*-member partial-first-month double grant remains **accepted**.
+   ⚠️ **`Q-PLUS-01` is NARROWED, not closed** — this removes the express-waiver leg of the unlimited-trial
+   loop; a repeatable trial still yields repeatable **discount** and **cancellation-window** benefits.
+2. ~~**E-2 — do Plus benefits continue during Stripe dunning (`PastDue`)?**~~ ✅ **ANSWERED 2026-08-03:
+   NO — cut everything on the first payment failure, no grace window.** *The original escalation,
+   preserved:* `MembershipStatus.cs:18-19` said *"Benefits still apply during the grace window"* while
+   `UserMembership.cs:84-85` made `PastDue` inactive. **The contradiction is closed against the enum** —
+   the predicate is unchanged and the comment has been corrected. `UserMembership.cs:46-51` **still**
+   needs its correction (the "grace window" phrase **and** *"free express upgrade once per period"* — the
+   owner ruled **two per calendar month**); that stays on T-0512. See §1 for the four accepted
+   consequences (C-1…C-4) and P-1/P-2 below.
+3. ~~**E-3 — mid-month plan swap.**~~ ✅ **ANSWERED 2026-08-03: the counter carries; the quota belongs to
+   the calendar month, not the plan.** *The original escalation, preserved:* `ApplyPlanSwap` (`:180-197`)
+   changes the quota while the `PeriodKey` stays — upgrade 2→4 intuitive, downgrade 4→2 with 3 consumed
+   not. **Resolved in §3.7**, which also establishes that a swap **mutates the row in place** (no new
+   row) and that the ruling **reinstates a cardinality guard AM-5 deleted**.
+4. **`Q-PLUS-03`** — ✅ **answered 2026-08-02: Plus-only** (ADR-0036 D7). The other four perks
+   (T-0491 / T-0492 / T-0494 / T-0495 / T-0498) are unaffected.
+
+**Tickets this ruling wave creates (for the PM to file — the architect does not edit `tickets/**`):**
+
+- **P-1 — nothing tells a `PastDue` customer their card failed.** `GetMyMembership` returns
+  `HasMembership: false` (so `Response.Status` can never carry `PastDue`), **and** the renewal-reminder
+  sweep skips them (`SendMembershipLifecycleNotifications.cs:77`). A paying subscriber mid-dunning sees
+  the *subscribe* upsell while losing four benefits. Needs a read surface + a message. **Highest-value
+  item in this wave**; it is what makes the accepted trade survivable.
+- **P-2 — a `PastDue` member can start a second subscription.** Both app guards
+  (`CreateMembershipSubscription.cs:86`, `CreateMembershipCheckoutSession.cs:55`) and the DB backstop
+  (`HasFilter("\"Status\" = 1")`) key on `Active`. Two live Stripe subscriptions, one customer.
+  Pre-existing in code; **made reachable** by the ruling.
+- **P-3 — the recurring price-change notification** (owned by `preferred-cleaner-dispatch.md`;
+  `Q-PLUS-04`). Does not exist today. **One per price transition, both directions.**
 
 **Engineering follow-ups filed out of this panel:**
 

@@ -13,6 +13,13 @@
 > known to be busy gets **no hold and no push**. **A6's weekly-cap half stands.** The hold mechanism
 > itself is untouched. See §"Is this cleaner free at this hour?" below.
 >
+> ✅ **BOTH OWNER ESCALATIONS CLOSED 2026-08-03.** **`Q-PLUS-05`** → **`PastDue` keeps NO benefits; cut
+> everything on the first payment failure, no grace window.** D7's interim ruling becomes binding and
+> **not one line of D7 changes.** **`Q-PLUS-04`** → **a lapsed membership does NOT stop a recurring
+> schedule**: occurrences keep being generated, at **full non-member price**, and the **customer is
+> notified of the price change** (that notification **does not exist** — ticket **P-3**). D8.6's named
+> asymmetry is now a **ruled** asymmetry. ADR-0036 carries a second dated amendment (AM-A / AM-B).
+>
 > **Nothing is shipped yet.** "Current shape" means *the decision is made*, not *the code exists* — see
 > §Consumers and the three preconditions.
 >
@@ -277,9 +284,53 @@ line as the `?:` fallback for the cleaner's **name**, so it is destroyed by the 
 - **A member who lapses keeps the hold on orders already created** (ADR-0009 D2 / ADR-0035 D1's freeze).
 - **Recurring degrades instead of rejecting** — *reject where a human can react; degrade where nobody
   can.* A 03:00 sweep must never drop a customer's cleaning because a subscription lapsed.
-- **`PastDue` is excluded from the predicate — and escalated** (`Q-PLUS-05`): the enum documents a grace
-  window (`MembershipStatus.cs:18-19`) that no code implements, and this gate would make it load-bearing
-  for rejecting a whole booking. Interim: one predicate, unchanged, **plus** the comment corrected.
+- ✅ **`PastDue` is excluded from the predicate — SETTLED 2026-08-03 (`Q-PLUS-05`): no benefits, cut on
+  the first payment failure, no grace window.** The interim ruling **is** the ruling; the predicate is
+  unchanged and `MembershipStatus.cs:18-19`'s comment has been corrected. **Consequence that promotes a
+  constraint:** the customer most likely to hit `PreferredEmployeeMembershipRequired` is now a **paying
+  customer whose card expired and who has been told nothing** — `GetMyMembership` returns
+  `HasMembership: false` for them, so the app shows the *subscribe* upsell. **T-0491's five translations
+  must name the action, not sell a subscription.** That is now a requirement, not advice.
+
+### Lapse × recurring — `Q-PLUS-04`, settled 2026-08-03
+
+> **A lapsed (or `PastDue`) membership does NOT stop a recurring schedule.** Occurrences keep being
+> generated, at **full non-member price**, and the customer is **notified of the price change**.
+
+**Two thirds of this is already how the code behaves — verified by reading:**
+
+| Leg | Expressible today? | Evidence | Cost |
+|---|---|---|---|
+| Keep generating | **yes — already true** | `MaterializeRecurringBookings.Handler`'s ctor (`:39-47`) takes **no** membership repository; the sweep selects on `IsActive`/`StartsOn`/`EndsOn` only (`:54-59`) | **zero** |
+| Full non-member price | **yes — already true, and it composes with the `PastDue` ruling by construction** | the sweep calls `orderFactory.CreateAsync` per occurrence (`:141`); `OrderFactory.cs:76-83` re-reads the **one predicate per order** and applies the discount only when non-null ⇒ `PastDue` ⇒ 0 discount ⇒ full price, frozen | **zero** |
+| **Notify of the price change** | **NO — does not exist** | the materializer takes no `INotificationProducer`; `recurring.scheduled` (`NotificationEventCatalog.cs:24`) is produced only by `SendRecurringOrderReminders.cs:77-87` with `orderId` + `orderNumber` — **no price** — and fires at ~T-24h while materialization runs 7 days ahead | **ticket P-3** |
+
+**Why it composes with no special case:** the discount is resolved **per occurrence, inside the
+factory**, from the shared predicate — not cached on the template, not frozen at template creation. So
+`MaterializeRecurringBookings` **must not** acquire a membership repository for pricing reasons;
+ADR-0036 D8.3 gives it one for the **preference** only and that scope is load-bearing.
+⚠️ Related detail: `rawSubtotalResult` is hoisted **once per template** (`:105-113`) while the discount
+is computed **per occurrence**. That split is correct — hoisting the discount too would freeze a
+membership state across a whole batch.
+
+**Two constraints on P-3 that are architecture, not copy:**
+
+1. **One notification per PRICE TRANSITION, not per occurrence** — a weekly template would otherwise
+   emit *"your price went up"* every week forever. Readable with **no new column**:
+   `Order.MembershipDiscountAmount` (`Order.cs:207`) + `Order.RecurringTemplateId` make "the previous
+   occurrence carried a discount and this one does not" one indexed query per template per sweep. A
+   per-template stamp is the fallback; the invariant is one-per-transition either way.
+2. **It must fire on the way back too** — a customer who fixes their card should be told the price went
+   **down**. Omitting the good-news half turns a fairness mechanism into a dunning tool.
+
+> ⚠️ **The composed consequence, stated plainly.** With D8.3 (recurring drops the preference on a failed
+> gate) + the `PastDue` ruling, an expired card means the next **automatically generated** occurrence
+> arrives having silently lost **four** things at once — the discount, the preferred cleaner, the hold,
+> and (once ADR-0035 ships) the express waiver — on a booking the customer did not initiate, while
+> `GetMyMembership` tells them they have no membership at all. **P-3 is the only thing between that and
+> a chargeback**, which is why it is a precondition of running recurring in production, not a
+> follow-up — and why **P-1** (a surface that says *"your card failed"*, filed off ADR-0035 AM-17) is
+> its sibling.
 
 ---
 
@@ -324,12 +375,18 @@ cleaner's score"* myth lives in **three** files (`Order.cs:217-224`, `PreferredC
 | **Overlap scan floor** *(ADR-0039)* | `windowStart − MaxOrderSpanHours` (24 h), chosen by failure asymmetry | a persisted end-instant column + index | `MAX(EstimatedTime)` approaching the floor, or the floor in a slow-query report |
 | **Unavailable treatment** *(ADR-0039)* | shown · greyed · unselectable · one neutral line | hidden; greyed silently; selectable-with-a-warning; name the reason; offer another time | nothing — each alternative either lies, mystifies, or ships a claim we cannot back |
 | **Race lost at submit** *(ADR-0039)* | create the order, store the preference, no hold, tell nobody | reject the booking; push the customer | support evidence that customers believe the preference was honoured → the answer is **copy**, not a push |
+| **`PastDue` (card failed)** | **no benefits, immediately** — owner ruling 2026-08-03 | a grace window through Stripe's retries (what `MembershipStatus.cs` used to document) | **settled; do not reopen.** Support volume from customers who lost benefits before being told is the signal — and the answer is **P-1** (tell them), not a grace window |
+| **Lapse × recurring schedule** | **keep generating, full price, notify** — owner ruling 2026-08-03 | stop materializing on lapse; keep the member price | **settled; do not reopen.** *Never drop a customer's cleaning* is the governing rule |
 
 ## Open / undecided
 
-- **`Q-PLUS-05` (owner)** — does `PastDue` keep perks during Stripe's retries? Interim: no.
-- **`Q-PLUS-04` (owner)** — should a lapsed member's recurring schedule keep materializing? The sweep
-  checks membership nowhere today, so D8 revokes the *smaller* perk while the *larger* one survives.
+- ✅ ~~**`Q-PLUS-05` (owner)** — does `PastDue` keep perks during Stripe's retries?~~ **ANSWERED
+  2026-08-03: NO.** Cut everything on the first payment failure; no grace window. Interim ruling became
+  the ruling; **no `WHERE` clause changed**, which is the return on there being one predicate.
+- ✅ ~~**`Q-PLUS-04` (owner)** — should a lapsed member's recurring schedule keep materializing?~~
+  **ANSWERED 2026-08-03: YES** — at full non-member price, with the customer notified. D8.6's asymmetry
+  (the *smaller* perk revoked on lapse, the *larger* one kept) is **confirmed as the ruled behaviour**.
+  See §"Lapse × recurring" above. Notification = **ticket P-3**.
 - **The constants are uncalibrated**, and **`const` means a release** — not the free knob the draft
   claimed. Honest cost: one backend release, **no** client change. Measurement ticket is a precondition.
 - **No `EXPLAIN`, no row counts.** The emitted SQL is known (a `ToQueryString()` harness); plan choice is

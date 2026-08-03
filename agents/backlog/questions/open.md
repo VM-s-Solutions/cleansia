@@ -83,6 +83,12 @@ owner supplied a real invoice)*. **The two payout ones remain legal questions no
 **The three new ones are all narrow and pre-scoped** — two numbers and a yes/no each — because they
 came out of the owner's own answers rather than out of a panel.
 
+> **UPDATE 2026-08-03 — `Q-PLUS-03` is ANSWERED** (*plus-only*, carried by ADR-0036 D7; the entry below
+> still reads as open and should be moved to `answered.md` by the PM). **`Q-PLUS-01` is NARROWED but
+> still open** — the 2026-08-03 trial ruling removes the express-waiver leg of the unlimited-trial loop;
+> the discount and cancellation-window legs are untouched. **Four further membership rulings landed
+> 2026-08-03 and are recorded below under §"Owner rulings recorded 2026-08-03".**
+
 Format:
 
 ```
@@ -872,6 +878,83 @@ _No open Wave-1 *planning* questions remain._
   more photo settles part (b) completely.
 - Default taken: **none.** T-0522 is `blocked` on this together with Q-PAYOUT-02.
 - Answer: _(owner fills in)_
+
+## Owner rulings recorded 2026-08-03 — **CLOSED ON ARRIVAL** (recorded by `architect`)
+
+> **Why they are in `open.md` and not `answered.md`:** none of these five identifiers was ever carried
+> into this file. `Q-PLUS-04` and `Q-PLUS-05` were escalated by the ADR-0036 panel and never recorded;
+> `E-1`/`E-2`/`E-3` live only in ADR-0035's §Verdict escalation table. The owner has now ruled on all of
+> them, so they are recorded here **as closed** rather than opened-then-closed. **PM: move this whole
+> block to `answered.md` on the next pass; nothing here is awaiting anyone.**
+
+### E-2 / Q-PLUS-05 — Do Plus benefits continue during Stripe dunning (`PastDue`)? — **CLOSED**
+- Raised by: `architect` (ADR-0035 §Verdict E-2; ADR-0036 D7 / CH-P6) · **Answered: 2026-08-03**
+- **Answer (owner): NO. *"PastDue keeps NO benefits. Cut everything on first payment failure."* No grace
+  window.**
+- Was: the domain contradicted itself — `MembershipStatus.cs:18-19` documented *"Benefits still apply
+  during the grace window"*; `UserMembership.IsActive` (`:84-85`) and the one live-membership predicate
+  (`UserMembershipRepository.cs:27-29`) both required `Status == Active`. **No code ever implemented the
+  grace window.** Both ADRs shipped the predicate's behaviour and escalated.
+- **Locked in:** the predicate is **unchanged** (no `WHERE` clause moved — the whole return on there
+  being one). `MembershipStatus.cs:18-19`'s comment **corrected in the same pass**. ADR-0035 **AM-17**,
+  ADR-0036 **AM-A**. `UserMembership.cs:46-51` still needs its correction → **T-0512**.
+- **Consequences the owner accepted knowingly, recorded because three are worse than the headline:**
+  a customer whose card merely expired **(a)** loses the discount immediately, **(b)** can have a booking
+  hard-rejected before they know, **(c)** is told by the app they have **no membership at all**
+  (`GetMyMembership` uses the same predicate, so `Response.Status` can never carry `PastDue`),
+  **(d)** stops receiving the renewal reminder (`SendMembershipLifecycleNotifications.cs:77`), and
+  **(e)** can start a **second** subscription while the first is in dunning (both app guards and the
+  `WHERE "Status" = 1` index backstop miss the row). ⇒ **tickets P-1 and P-2.**
+
+### E-1 — Does the 14-day free trial grant express waivers? — **CLOSED**
+- Raised by: `architect` (ADR-0035 AM-14 / CH-B7) · **Answered: 2026-08-03**
+- **Answer (owner): NO. *"No express waivers during the 14-day trial."* The trial keeps the discount and
+  the cancellation window; metered waivers begin when they pay.**
+- Was: `TrialPeriodDays = 14` on both plans, `"trialing"` collapses to `Active`
+  (`UserMembership.cs:124`), so a subscriber signing up on the 28th could draw **four waivers for 0 Kč**
+  across two `PeriodKey`s and cancel before conversion.
+- **Cost, flagged at escalation and confirmed:** the ruling is **not expressible today** — `UserMembership`
+  has no trial marker. It needs an **additive nullable `TrialEndsAtUtc`** column + `SubscriptionResult`
+  and webhook plumbing. ⚠️ **owner-only `ef-migration`, BATCHED into the regenerated `Initial`** with the
+  other pending schema changes — not stacked. ADR-0035 **AM-18**.
+- ⚠️ **Sequencing constraint:** the seeded `ExpressUpgradesPerMonth` may now be set **only** in a wave
+  that also ships the field. Seed without field = the 0 Kč loop re-opens.
+- **Does NOT close `Q-PLUS-01`** — it removes the express-waiver leg of the unlimited-trial loop only.
+
+### E-3 — Mid-month plan swap and the express quota counter — **CLOSED**
+- Raised by: `architect` (ADR-0035 §Verdict E-3 — the one gap no challenger attacked) · **Answered: 2026-08-03**
+- **Answer (owner): the counter CARRIES.** *"1 used on monthly, switch to yearly, 1 remaining. The quota
+  belongs to the calendar month, not the plan."*
+- **Established while recording it (the ADR had not checked):** a plan switch **mutates the
+  `UserMembership` row in place** — `SwapMembershipPlan.cs:78-81` → `ApplyPlanSwap`
+  (`UserMembership.cs:180-197`); `Id` and `StripeSubscriptionId` untouched, **no new row**. The
+  challenger's "re-subscribing creates a new row" finding was correct but describes a **different** path.
+- **Locked in (ADR-0035 AM-19):** the counting key is **`(TenantId, UserId, BenefitKind, PeriodKey)` +
+  `IsActive`**; **`UserMembershipId` must not appear in any `WHERE`/`GROUP BY`/`HAVING`/join on a
+  counting path.** The index and reservation statement already comply; **the read path is where this gets
+  quietly violated**, because the resolver has the membership row in hand.
+- **Two consequences worked out, neither of which needed a further owner decision:** cancel-and-resubscribe
+  mid-month **also** does not grant a fresh quota (closing a churn loop the design had already priced);
+  and the ruling **reinstates a cardinality guard AM-5 deleted** — a mid-month *downgrade* plus a release
+  can otherwise over-grant while the read path says 0 remaining. Pinning test `TC-BENEFIT-DOWNGRADE-0`.
+
+### Q-PLUS-04 — Should a lapsed member's recurring schedule keep materializing? — **CLOSED**
+- Raised by: `architect` (ADR-0036 D8.6 / CH-P6) · **Answered: 2026-08-03**
+- **Answer (owner): YES. *"A lapsed membership does NOT stop a recurring schedule. Occurrences keep being
+  generated, at full non-member price, and the customer is notified of the price change."***
+- Was: the materializer checks membership **nowhere** (`MaterializeRecurringBookings.cs:39-47`), so
+  ADR-0036 D8.3 would revoke the *smaller* perk (the preference) on lapse while the *larger* one (the
+  Plus-gated schedule) survived. The ADR named the asymmetry and refused to decide it.
+- **Locked in (ADR-0036 AM-B):** the asymmetry is **confirmed as the ruled behaviour**. Two thirds cost
+  **nothing** — the sweep already ignores membership, and `OrderFactory.cs:76-83` already re-resolves the
+  discount **per occurrence** from the one predicate, so ruling 1 and ruling 4 **compose by construction**
+  (a `PastDue` member's occurrence is generated and priced at full price with no recurring-specific rule).
+- ⚠️ **The notification does NOT exist and is a ticket, not an assumption (P-3).** The materializer takes
+  no `INotificationProducer`; `recurring.scheduled` carries `orderId` + `orderNumber` only (no price) and
+  fires at ~T-24h while materialization runs 7 days ahead. Constraints pinned by the ADR: **one
+  notification per price TRANSITION, not per occurrence**, and **it must fire in both directions**.
+
+---
 
 ### Q-PLUS-02 — [blocking: **YES** for the build; **NO** for the design panel] The express quota's three numbers
 - Raised by: pm (T-0511/T-0512/T-0493, from the owner's *"You can upgrade"* answer)

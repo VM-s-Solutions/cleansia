@@ -1916,3 +1916,340 @@ Nothing was run** — no build, no test, no query, no migration. Specifically:
   mobile client**, and that the absence is pinned by committed tests. §Copy is rewritten (AM-15). The
   §Copy citations in the draft (`values/strings.xml:844`, `Localizable.xcstrings:14121`,
   `cleansia.app en.json:1095`) were wrong and are removed.
+
+---
+
+## Amended by owner instruction — 2026-08-03 (`architect`) · **E-1, E-2 and E-3 are ANSWERED and now BINDING**
+
+> **Recorded, not rewritten.** Per `agents/backlog/adr/README.md` §"Accepted ADRs are immutable", this
+> is a **dated appended section**. **No line of the body above has been edited.** The escalations'
+> original text, their holding positions and the reasoning that produced them stay exactly as the panel
+> accepted them — the panel was right to escalate; the owner has now supplied the missing input. Where
+> a holding position is now overridden, this section says so explicitly and says which one.
+>
+> **These are rulings, not proposals.** The three escalation rows in §Verdict are discharged. Nothing
+> in §Verdict's escalation table may be read as still open for E-1/E-2/E-3.
+
+**The owner's rulings, verbatim, 2026-08-03:**
+
+> 1. *"PastDue keeps NO benefits. Cut everything on first payment failure."* — no grace window.
+> 2. *"No express waivers during the 14-day trial."* — the trial keeps the discount and the
+>    cancellation window; metered waivers begin when they pay.
+> 3. *"The express quota counter carries across a mid-month plan switch."* — 1 used on monthly,
+>    switch to yearly, 1 remaining. **The quota belongs to the calendar month, not the plan.**
+
+---
+
+### AM-17 — **E-2 ANSWERED: `PastDue` gets nothing, and the domain contradiction is closed against the enum**
+
+**AM-16's holding position becomes the ruling.** ADR-0035 shipped the *predicate's* answer and escalated
+because the enum documented the opposite. The owner has ruled **for the predicate**:
+
+- **`UserMembershipRepository.ActiveForUserQuery` (`:20-31`) is unchanged.** No `WHERE` clause moves.
+  `Status == MembershipStatus.Active && CurrentPeriodEnd > UtcNow` stands, for every benefit.
+- **`UserMembership.IsActive` (`:84-85`) is unchanged.**
+- **`MembershipStatus.cs:18-19` is the file that changes** — and it has been changed in this same pass
+  (the doc comment now states "benefits STOP immediately, there is no grace window" and cites this
+  ruling). AM-16's *"whichever way it goes, one of those two files changes in T-0512"* is discharged:
+  **it was the enum, and it is already done.** T-0512 no longer carries it.
+- **`UserMembership.cs:46-51` still needs its correction** (it says `CurrentPeriodEnd` is used *"by
+  `IsActive` to gate benefits during the grace window"* — a window that does not exist, and *"free
+  express upgrade once per period"* — the owner ruled **two per calendar month**). That half of AM-16
+  stands and stays on T-0512.
+- **`TC-BENEFIT-GATE-0`'s `PastDue` leg (§verify #18) is now unblocked and MANDATORY.** AM-16 said "do
+  not add it until E-2 is answered". E-2 is answered; add it.
+
+**The predicate is genuinely single — verified by reading, 2026-08-03, and with one honest
+qualification the ADR did not carry.**
+
+`ActiveForUserQuery` is reached by both `GetActiveForUserAsync` (tracked) and
+`GetActiveForUserNoTrackingAsync` (no-tracking); **there is no third method and no second expression on
+any benefit path.** Every benefit resolver goes through it:
+
+| Benefit / surface | Call site | Excludes `PastDue`? |
+|---|---|---|
+| Per-cleaning discount (order) | `OrderFactory.cs:76-77` | **yes** — via the predicate |
+| Per-cleaning discount (quote) | `QuoteOrder.cs:142` | **yes** |
+| Wider free-cancellation window | `CancellationPolicyResolver.cs:33` | **yes** |
+| Recurring-template creation gate | `CreateRecurringBooking.cs:84-85` | **yes** |
+| Membership read surface | `GetMyMembership.cs:35` | **yes** |
+| Express waiver (this ADR, D6) | `IExpressWaiverResolver` → the same method | **yes, by construction** |
+| Preferred-cleaner gate (ADR-0036 D5.1/D7) | the same method | **yes** |
+
+> ⚠️ **The qualification: "single" is true of the BENEFIT paths and false of the codebase.**
+> `SendMembershipLifecycleNotifications.cs:77` and `:116` write `m.Status == MembershipStatus.Active`
+> **inline**, as a second hand-written expression of the same condition. It is not a benefit resolver —
+> it is the renewal / cancellation-reminder sweep — and it happens to **agree** with the predicate on
+> `PastDue`. But agreement by coincidence is not a seam, and under this ruling its agreement has a
+> consequence nobody costed: **a `PastDue` member is also skipped by the renewal-reminder sweep.** See
+> the consequence table below. Recorded as a finding, not fixed here.
+
+#### The consequences of ruling 1, stated honestly — the owner accepted these knowingly
+
+The owner accepted the headline trade: *a customer whose card merely expired loses their discount
+immediately and can have a booking rejected before they know anything is wrong.* Reading the code for
+this amendment surfaced **four** concrete forms of that, three of which are worse than the headline and
+none of which is fixed by this ADR:
+
+| # | What happens to a `PastDue` member | Evidence | Disposition |
+|---|---|---|---|
+| **C-1** | **The app tells them they have no membership at all.** `GetMyMembership.cs:35` uses the same predicate, so it returns `HasMembership: false` and **every** field null. `Response.Status` (`:21`) is therefore structurally incapable of ever carrying `PastDue` on the wire — the field exists and the value is unreachable. A paying subscriber mid-dunning sees the *"subscribe to Cleansia Plus"* upsell. | `GetMyMembership.cs:35-51` | **Ticket (P-1).** This is the single largest gap the ruling opens: there is **no surface anywhere** that says *"your card failed"*. |
+| **C-2** | **A booking is hard-rejected.** ADR-0036 D7 rejects the whole order with `PreferredEmployeeMembershipRequired` when the preference is set and the membership predicate fails. The customer's first signal is a failed checkout. | ADR-0036 D7; `CreateOrder.cs:140-147` | **Accepted** — this is the headline trade, now settled (`Q-PLUS-05`). The D7 constraint that *the error must name the tap* becomes load-bearing, not a nicety. |
+| **C-3** | **They stop getting the renewal reminder too.** `SendMembershipLifecycleNotifications.cs:77` requires `Status == Active`, so the one automated message that would plausibly reach a lapsing customer is suppressed at exactly the moment it is most useful. | `SendMembershipLifecycleNotifications.cs:77,116` | **Ticket (P-1)** — same ticket as C-1; it is the same missing message. |
+| **C-4** | **They can start a SECOND subscription while the first is still in dunning.** `CreateMembershipSubscription.cs:86` / `CreateMembershipCheckoutSession.cs:55` guard on `GetActiveForUserAsync`, which now returns null; and the DB backstop is `HasFilter("\"Status\" = 1")` (`UserMembershipEntityConfiguration.cs:112-114`), which **also** does not see the PastDue row. Neither layer blocks it. Two live Stripe subscriptions, one customer. | `UserMembershipEntityConfiguration.cs:84-114` | **Ticket (P-2).** A genuine new hole opened by making `PastDue` non-active everywhere. Pre-existing in code; **made reachable by this ruling.** |
+
+**None of C-1…C-4 changes the ruling.** They are its price, and they are written down here so nobody
+later "discovers" them and quietly re-adds a grace window in one resolver.
+
+---
+
+### AM-18 — **E-1 ANSWERED: no express waivers during the trial. This costs an additive column.**
+
+**The ruling:** the 14-day trial keeps the **discount** and the **cancellation window**; **metered
+waivers begin at first payment.** AM-14's fail-closed holding position (*"the seeded plans stay at
+`ExpressUpgradesPerMonth = 0` until the owner answers"*) is **discharged** — the seed value may now be
+set, *provided the field below ships with it*. **Setting the seed without the field re-opens the exact
+0 Kč four-waiver loop AM-14 named.** That is the sequencing constraint on T-0512/T-0493.
+
+#### The ruling is NOT expressible today — AM-14's finding is confirmed and is now blocking
+
+`UpdateFromStripeWebhook` maps **`"active" or "trialing" => MembershipStatus.Active`**
+(`UserMembership.cs:124`). The status is flattened at the webhook and `UserMembership` carries **no
+trial marker** of any kind. So "is this member trialing?" has **no answer in the database**, and the
+owner's ruling cannot be enforced with a `WHERE` clause over the shipped schema.
+
+#### The field — specified, not sketched
+
+```csharp
+// Cleansia.Core.Domain/Memberships/UserMembership.cs — ADDITIVE, nullable, no backfill.
+/// <summary>
+/// End of the Stripe free trial, mirrored from the subscription's trial_end.
+/// NULL = this enrolment is not, and never was, in a trial.
+/// Metered benefits (ADR-0035) are withheld while UtcNow < TrialEndsAtUtc; the
+/// discount and the cancellation window are NOT (owner ruling 2026-08-03).
+/// </summary>
+public DateTime? TrialEndsAtUtc { get; private set; }
+
+/// <summary>Computed; do not persist. Expires by clock — no sweep, no job, no state transition.</summary>
+public bool IsInTrial => TrialEndsAtUtc != null && DateTime.UtcNow < TrialEndsAtUtc;
+```
+
+**Why a nullable instant and not a `bool IsTrialing`.** A boolean needs a **writer** to flip it when the
+trial converts, and there is no sweep that would — so it would go stale and grant waivers forever to
+anyone whose conversion webhook was missed. A stored deadline **expires by clock with no actor**: the
+failure mode is "the clock is wrong", not "a row is stuck". This is exactly ADR-0036 D2's argument for
+`PreferredHoldUntilUtc`, applied to the same class of problem, and it is the reason to prefer it.
+
+**Additive — confirmed against the schema, not assumed:**
+
+- Nullable column, **no backfill, no data migration**. Every existing row reads `null` ⇒ `IsInTrial ==
+  false` ⇒ waivers allowed — which is *fail-open*, and is **safe here only because the DB is being
+  dropped and the `Initial` migration regenerated** (see sequencing below) *and* because the perk is
+  still off at `ExpressUpgradesPerMonth = 0`. **On a live database this default would be wrong.** Stated
+  so it is not copied into a post-launch change.
+- **No index.** It is read only alongside a `UserMembership` row already loaded by
+  `ActiveForUserQuery`. It is never a query predicate on its own.
+- **No client contract change is forced** — but one is *wanted*; see the read-path note below.
+
+**The two write paths it must be fed from, and the trap in the second:**
+
+1. **Direct subscription (mobile)** — `SubscriptionResult` (`IStripeClient.cs:208-211`) is a 3-field
+   record with **no trial end**. It gains a fourth, nullable: `DateTime? TrialEndsAtUtc`, populated from
+   the Stripe subscription's `trial_end` in `StripeClient.cs:325` / `:367`, and threaded into
+   `UserMembership.Create` (`CreateMembershipSubscription.cs:168`).
+2. **Webhook** — `StripeSubscriptionWebhookHandler.ExtractSubscriptionShape` (`:75-101`) returns a
+   4-tuple and gains a fifth element from `Subscription.TrialEnd`.
+   > ⚠️ **The trap, and it is the whole reason this is spelled out.** The `invoice.payment_failed`
+   > branch (`:78-89`) returns `default` for the period bounds *on purpose*, and the handler passes the
+   > **existing** values through (`:63-64`). `trial_end` **must** get the same treatment. A naive
+   > implementation writes `null` on a dunning event, which clears the trial marker for a trialing
+   > member whose first invoice failed — **re-enabling waivers for exactly the customer the ruling is
+   > about.** Pass through; never null out.
+
+**Where the ruling is enforced — and why this is a deliberate per-benefit narrowing:**
+
+`IExpressWaiverResolver` (D6) adds **one conjunct**: `&& !membership.IsInTrial`. The **one
+live-membership predicate is NOT touched** — a trialing member *is* active, and must stay active, or
+they lose the discount and the cancellation window the owner explicitly preserved.
+
+> **This is a benefit-specific narrowing layered OVER the shared predicate, and that is correct here.**
+> AM-16 and D5.1 both warn against inventing a second membership predicate. This does not: the shared
+> predicate answers *"is there a live membership"*; the resolver's extra conjunct answers *"has this
+> membership been paid for yet"*. They are different questions, the owner ruled they have different
+> answers for different perks, and the narrowing lives in **one** resolver. **A future reader must not
+> "harmonize" `IsInTrial` into `ActiveForUserQuery`** — that would silently strip the trial's discount
+> and cancellation window, which the owner ruled it keeps.
+
+**The read path needs a third state, and D7's two-state contract cannot express it.** D7 defines
+`ExpressUpgradesRemaining` as `null` = no membership, `0` = exhausted. A trialing member is **neither** —
+they have a membership and nothing is exhausted. Rendering `null` calls them a non-member (they are not);
+rendering `0` says "you used them up" (they have not). **Ruling:** during the trial
+`ExpressUpgradesRemaining` is **`0`** (they *do* have a membership) and `GetMyMembership.Response` gains
+**`DateTime? TrialEndsAtUtc`** so the client can say *"your free express bookings start on {date}"*
+rather than a bare zero. `ExpressUpgradesPerMonth` still returns the plan's number — the quota exists,
+it is not yet drawable. ⚠️ **`nswag-regen` (owner-only)** — this lands in **T-0514**, not T-0512.
+
+**`Q-PLUS-01` is narrowed, NOT closed.** AM-14 tied E-1 to the unlimited-free-trial loop. This ruling
+removes the **express-waiver** leg of that loop; a repeatable trial still yields repeatable **discount**
+and **cancellation-window** benefits for free. `Q-PLUS-01` stays open on its own terms.
+
+---
+
+### AM-19 — **E-3 ANSWERED: the quota is keyed on the CALENDAR MONTH, never on the membership row**
+
+**The ruling:** *"1 used on monthly, switch to yearly, 1 remaining. The quota belongs to the calendar
+month, not the plan."*
+
+#### What a plan switch actually does to the row — established by reading, because the ADR did not
+
+**A plan switch MUTATES the existing row in place. It does NOT create a new one.**
+`SwapMembershipPlan.Handler` loads the live row (`:39`, via `GetActiveForUserAsync`) and calls
+`membership.ApplyPlanSwap(...)` (`:78-81`), which assigns `MembershipPlanId`, `CurrentPeriodStart`,
+`CurrentPeriodEnd` and clears three stamps (`UserMembership.cs:180-197`). **`UserMembership.Id` and
+`StripeSubscriptionId` are untouched.** There is no `UserMembership.Create` on the swap path.
+
+**So the panel's worry was aimed at the right hazard but the wrong operation.** ADR-0035's challenger
+established that **re-subscribing** creates a new row — correctly: the partial unique index is filtered
+`WHERE "Status" = 1` (`UserMembershipEntityConfiguration.cs:92-114`) precisely so
+cancel-then-resubscribe is legal, and `UserMembership.Create` is called on that path
+(`StripeSubscriptionWebhookHandler.cs:174`, `CreateMembershipSubscription.cs:168`). **A plan switch is
+not that path.** A counter keyed on `UserMembershipId` would in fact survive a plan swap today.
+
+#### But the ruling is still the one most likely to be violated — and here is exactly where
+
+**The mechanism as accepted already satisfies the ruling, and the risk is entirely in the read path.**
+
+- **The unique index** is `(TenantId, UserId, BenefitKind, PeriodKey, SlotOrdinal)` (D3) — **no
+  `UserMembershipId`.** ✔
+- **The reservation statement's `NOT EXISTS`** filters on `UserId`, `BenefitKind`, `PeriodKey`,
+  `TenantId`, `IsActive` (D3, AM-5) — **no `UserMembershipId`.** ✔
+- **`UserMembershipId` is a payload column**, `[Required]`, justified by AM-16 on **support value
+  alone** ("which subscription was this against?"). ✔ — and this ruling **confirms** that AM-16 was
+  right to withdraw the "makes a billing-anchored key computable" justification. Under this ruling
+  `UserMembershipId` must **never** appear in a key, a filter, a count or a `GROUP BY`.
+- **The remaining-count read (D7) is where it breaks.** D7 says `max(0, quota − live slots in the
+  current PeriodKey)` and specifies no `WHERE` clause. The resolver **already has the membership row in
+  hand** (it just loaded it for the plan's quota), so scoping the count to `UserMembershipId` is the
+  path of least resistance and reads as more correct than it is. **That is the quiet violation.**
+
+> **BINDING — the quota key, stated so a reviewer can grep it.**
+> Every count, every reservation and every release of a `MembershipBenefitUsage` row filters on
+> **exactly** `(TenantId, UserId, BenefitKind, PeriodKey)` and its `IsActive` flag.
+> **`UserMembershipId` MUST NOT appear in any `WHERE`, `GROUP BY`, `HAVING` or join predicate on a
+> counting path.** It is written once, at reservation, and read only by a human.
+> **§verify gains #24:** grep the repository implementation and the resolver for `UserMembershipId` —
+> it may appear **only** in the `INSERT` column list of the reservation statement. Any other occurrence
+> on a counting path is the E-3 violation.
+
+#### The consequence the ruling forces that the owner did not name — and it is the right one
+
+Because the key is `(UserId, PeriodKey)` and never the membership row, **cancel-and-resubscribe
+mid-month does not grant a fresh quota either.** The owner ruled on a plan *switch*; the same key
+governs *churn*, and it answers the same way: **the quota belongs to the calendar month.**
+
+This is **not** an over-reading — it is the only behaviour the ruled key can produce, and it is
+strictly better: §3.1 of the living doc records that the *counter-column-on-`UserMembership`* option
+died partly because **"churn resets the quota"**. Ruling 3 closes that loop by construction. Recorded
+here so it is a decision, not an accident.
+
+#### ⚠️ The ruling REINSTATES a guard that AM-5 deleted. This is the sharpest consequence of E-3.
+
+E-3's original question was *"upgrade 2→4 is intuitive; downgrade 4→2 with 3 consumed is not."* The
+answer falls out of the key without a further owner decision — **the count is over the period, the
+quota is read from the CURRENT plan at the moment of the read or the claim:**
+
+`Remaining = max(0, currentPlan.ExpressUpgradesPerMonth − liveSlotsInPeriodKey)`
+
+- **Upgrade 2 → 4, two used:** `max(0, 4 − 2) = 2` remaining. The owner's example (`1 used, switch,
+  1 remaining`) is this row with quota 2.
+- **Downgrade 4 → 2, three used:** `max(0, 2 − 3) = 0` remaining, and **the three already-granted
+  waivers are not clawed back** — ADR-0009 D2 / D1's freeze principle, unchanged. No new rule.
+
+**But AM-5's deletion of the `HAVING` guard is now unsafe, and this is a correctness defect, not a
+style point.** AM-5 struck the guard as *redundant* on the ground that *"a full quota yields zero
+candidate rows"*. That is true **only while the quota is invariant across a `PeriodKey`** — which is
+exactly the assumption ruling 3 breaks. Worked, on the downgrade case:
+
+- Quota was 4; live ordinals are `{0, 1, 2}`. Plan swaps down to quota 2.
+- Ordinal 0 is then **released** (a cleaner-less cancellation — D4's normal path). Live = `{1, 2}`.
+- The reservation runs `generate_series(0, @max-1)` = `generate_series(0, 1)` = `{0, 1}`. Ordinal **0 is
+  free** ⇒ one candidate ⇒ **the waiver is GRANTED** — a *fourth* live waiver on a quota-2 plan.
+- Meanwhile the read path truthfully reports `max(0, 2 − 2) = 0` remaining. **Read and claim
+  disagree**, in the over-granting direction, silently.
+
+> **BINDING — the reservation statement gains an independent cardinality bound, inside the same
+> statement (atomicity is not negotiable).** This is **not** the deleted `HAVING` — AM-5 correctly
+> killed *deriving the ordinal from a count*. The smallest-free-ordinal derivation
+> (`generate_series` + `NOT EXISTS` + `ORDER BY g LIMIT 1`) stays **exactly** as AM-5 specifies. What is
+> added is a bound on the **live count in the period**, which is the quantity the quota actually caps:
+>
+> ```sql
+> AND (SELECT COUNT(*) FROM "MembershipBenefitUsages" u2
+>       WHERE u2."UserId"      = @userId
+>         AND u2."BenefitKind" = @kind
+>         AND u2."PeriodKey"   = @periodKey
+>         AND u2."TenantId" IS NOT DISTINCT FROM @tenantId
+>         AND u2."IsActive") < @maxPerPeriod
+> ```
+>
+> With a constant quota this is genuinely redundant and costs one indexed count (index 2 of D3 already
+> exists for it). With a **shrinking** quota it is the only thing standing between the read path and the
+> claim path. **§verify gains #25:** `TC-BENEFIT-DOWNGRADE-0` — quota 4, reserve 3, downgrade the plan
+> to 2, release ordinal 0, attempt a reservation ⇒ **null**, and `Remaining == 0`. Without the bound
+> this test grants a waiver; it is the E-3 analogue of AM-5's `TC-BENEFIT-SLOTREUSE-0` respecification.
+
+**`Remaining` and the claim must count the same set.** `Remaining` counts live rows in the `PeriodKey`
+— **not** live rows whose ordinal is `< quota`. Counting the latter would re-open the same disagreement
+from the other side.
+
+---
+
+### Sequencing — one migration wave, and it is owner-only
+
+**This amendment adds exactly one schema change: `UserMembership.TrialEndsAtUtc` (nullable
+`timestamp`).** ⚠️ **`ef-migration` — owner-only. Claude does not create it, and this amendment does
+not create it.**
+
+**It must be BATCHED, not stacked.** The owner is dropping the database and regenerating the single
+`Initial` migration, so `TrialEndsAtUtc` folds into that regeneration alongside the other pending
+schema changes rather than arriving as its own migration on top:
+
+| Pending schema change | Source |
+|---|---|
+| `MembershipBenefitUsage` table + its **three** indexes | ADR-0035 D3 → T-0512 |
+| `MembershipPlan.ExpressUpgradesPerMonth` (int, default `0`) | ADR-0035 D2.1 → T-0512 |
+| **`UserMembership.TrialEndsAtUtc` (`DateTime?`)** | **this amendment (AM-18)** → T-0512 |
+| `Order.PreferredHoldUntilUtc` (`DateTime?`) | ADR-0036 D2 → T-0515 |
+| `RecurringBookingTemplate.PreferredEmployeeId` (`string?`, 26) | ADR-0036 D8 → C3 |
+
+**The fail-open default on `TrialEndsAtUtc` (null ⇒ not trialing) is only safe because of this
+regeneration.** If the batch is missed and the column lands on a live database, every in-flight trial
+reads as paying.
+
+---
+
+### What is byte-untouched by this amendment
+
+D1, D2, D2.1, D3 (the entity, the index shape, `NULLS NOT DISTINCT`), D3.1, D3.2, D4 (the reversal
+rule), D5, D6's resolver shape, D7's *"no new endpoint"* posture, D8, every alternative's disposition,
+AM-1…AM-16 as written, and §Copy. **The mechanism is unchanged.** This amendment answers three
+questions the mechanism was built to survive either answer to — plus **one correction the third answer
+forces** (the cardinality bound, AM-19), which restores an invariant the mechanism always claimed.
+
+### Consumers of this amendment
+
+- **T-0512** — `+ UserMembership.TrialEndsAtUtc`; `+ SubscriptionResult.TrialEndsAtUtc` and both write
+  paths incl. the payment-failed pass-through; `+` the AM-19 cardinality bound in the reservation
+  statement; `+ TC-BENEFIT-DOWNGRADE-0`; `+` the now-mandatory `PastDue` leg of `TC-BENEFIT-GATE-0`;
+  `−` the `MembershipStatus.cs` comment fix (**already done in this pass**). Its `UserMembership.cs:46-51`
+  doc correction stands.
+- **T-0493** — the resolver's `&& !membership.IsInTrial` conjunct; the `(TenantId, UserId, BenefitKind,
+  PeriodKey)` counting key with `UserMembershipId` forbidden on counting paths (§verify #24).
+- **T-0514** — `GetMyMembership.Response.TrialEndsAtUtc` + the "trial ⇒ `Remaining = 0`" render rule.
+  ⚠️ `nswag-regen`.
+- **T-0513 / copy** — the canonical sentence gains one constraint: **free express bookings start when
+  the trial ends.** Advertising them to a trialing member is the same class of false statement as the
+  *"same-day"* string this ADR already condemned.
+- **Two new tickets (P-1, P-2)** for the `PastDue` consequences C-1/C-3 and C-4 — see the living doc.
+- `agents/architecture/decisions/membership-benefits.md` and
+  `agents/knowledge/roles/express-waiver-resolver.md` updated in the same change.

@@ -25,6 +25,11 @@
   ⚠️ **`nswag-regen` (owner-only)** — the picker DTO changes shape · **no host coupling**: the picker
   is reached from `Web.Customer` and `Web.Mobile.Customer` only; no partner or admin surface changes.
 - **Ticket:** none yet — **§D10 enumerates the tickets the PM should file.** This ADR builds nothing.
+- ⚠️ **Two inherited premises were SETTLED by owner ruling on 2026-08-03, after this draft was written
+  — see §"Premises settled after drafting" before §Challenge.** `Q-PLUS-05` (`PastDue` keeps no
+  benefits) and `Q-PLUS-04` (a lapsed member's recurring schedule keeps running, at full price).
+  **Neither changes a decision in this ADR**; one **weakens a premise D8 leans on** and the panel
+  should review that row rather than inherit it.
 - **Owner input this ADR executes (verbatim, 2026-08-03):**
   > *"there is a need to mark somehow if this cleaner has order assigned to him already or not on this
   > date and time, if yes then mark that this cleaner isn't available for that date and time"*
@@ -694,6 +699,51 @@ ticket. **A5 rides T-0515** because the resolver does not exist yet.
 
   It does **not** reopen `Q-AVAIL-01`: a second cleaner may still join a partly-crewed booking. The
   ruling bounds how many seats exist, not who may fill them.
+
+---
+
+## Premises settled after drafting — owner rulings, 2026-08-03 (`architect`, recorded not decided)
+
+> This ADR is `proposed` and was drafted earlier the same day. Two escalations it **inherits** from
+> ADR-0036 were answered by the owner afterwards. **No decision in this ADR changes**, and this section
+> decides nothing — it exists so the panel reviews the corrected premise instead of the drafted one.
+> The full rulings live in ADR-0035 §"Amended by owner instruction" (AM-17…AM-19) and ADR-0036
+> §"Amended by owner instruction" (AM-A / AM-B).
+
+**Ruling — `Q-PLUS-05`: `PastDue` keeps NO benefits, cut on first payment failure, no grace window.**
+ADR-0036 D7's interim ruling (the one live-membership predicate, unchanged) becomes binding.
+`UserMembershipRepository.ActiveForUserQuery` (`:20-31`) does not change, so **D2's resolver, D5's
+picker and D9's materializer inherit the corrected fact with no edit.**
+
+⚠️ **But it weakens one premise this ADR argues from, and the panel should look at it.**
+**D8's table** justifies *reject* (membership) versus *degrade* (busy) on the ground that the membership
+fact is ***"static — true before the customer opened the app."*** Under this ruling that is **no longer
+reliably true**: a Stripe dunning webhook can flip a customer from `Active` to `PastDue`
+**mid-session**, and ADR-0036 D7 already documents that both pickers cache
+(`PreferredCleanerViewModel.swift:27-29`, `PreferredCleanerPicker.kt:78-82`). So the membership fact can
+now become false *during* checkout — which is the property D8 assigns to the **busy** case.
+
+**The conclusion still stands, on the OTHER column, and the panel should confirm that rather than
+assume it.** D8's decisive criterion is not staleness, it is **agency**: *"can the customer fix it in
+one tap?"* For membership the answer is still **yes** — remove the cleaner request and book — and for
+busy it is still **no**. **Reject-vs-degrade is unchanged; the "static" justification in row 1 is now
+half wrong and should be restated as agency alone.** A challenger who attacks that row is attacking
+something real.
+
+**Ruling — `Q-PLUS-04`: a lapsed member's recurring schedule keeps materializing**, at full non-member
+price, with the customer notified of the price change.
+**D9 is confirmed and needs no edit.** D9 already says the occurrence materializes, the busy check
+lands in the degrade path, and the occurrence is never failed. Two notes for the panel:
+
+- **The pricing half is already true and is not this ADR's to build.** `OrderFactory.cs:76-83` resolves
+  the membership discount **per occurrence** from the one predicate, so a lapsed (or `PastDue`) member's
+  occurrence is priced at full price with no recurring-specific rule. `MaterializeRecurringBookings`
+  must **not** acquire a membership repository for pricing — ADR-0036 D8.3 gives it one for the
+  **preference** only, and that scope is now load-bearing.
+- **The notification half does not exist** (`MaterializeRecurringBookings.Handler` takes no
+  `INotificationProducer`; `recurring.scheduled` carries `orderId` + `orderNumber` only and fires at
+  ~T-24h). It is filed as its own ticket off ADR-0036 AM-B and is **out of scope here** — named so this
+  panel does not assume D9 delivers it.
 
 ---
 

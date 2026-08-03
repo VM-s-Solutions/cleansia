@@ -113,6 +113,26 @@ public class Order : Auditable, ITenantEntity
 
     private const int StandardWorkUnitMinutes = 120;
 
+    /// <summary>
+    /// The longest span a single booking is ASSUMED to occupy. It exists only as a query floor: the
+    /// overlap scan starts at <c>windowStart - MaxOrderSpanHours</c> instead of at the beginning of
+    /// time, because the predicate's lower side is a per-row interval computation and only the upper
+    /// bound is sargable. It may only ever be too generous — too generous costs a wider range scan of a
+    /// near-empty band, too tight makes an overlapping order invisible ON THE BOOKING WRITE GATE, which
+    /// is a double booking.
+    ///
+    /// <para><b>Assumed, not enforced.</b> <see cref="EstimatedTime"/> is an unbounded sum over the
+    /// selected services and packages: nothing caps a service's estimate (the catalog validators only
+    /// require it be non-negative) and nothing caps how many items one order may select. The shipped
+    /// catalog's maximum producible span is 3495 min (58.25 h) — every service plus every package on
+    /// one order — so 7 days holds it with ~3x headroom, but the bound is a policy number, not an
+    /// invariant. Falsify it in one line: <c>SELECT MAX("EstimatedTime") FROM "Orders"</c> must stay
+    /// well under <c>MaxOrderSpanHours * 60</c>. When it stops holding, the durable fix is a validated
+    /// span cap on the order write path or a persisted appointment-end column (ADR-0039 A15) — NOT a
+    /// bigger number here.</para>
+    /// </summary>
+    public const int MaxOrderSpanHours = 168;
+
     public int AvailableSpots => MaxEmployees - _assignedEmployees.Count;
     public bool HasAvailableSpots => AvailableSpots > 0;
 

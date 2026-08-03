@@ -226,12 +226,23 @@ branch is false, the query returns nothing, and the method reports the safe-soun
 conflict, no duplicate, nothing found. The sweep does not fail; it silently agrees with you.*
 **A repository method reachable from BOTH a request path and a background job must not pick its own
 tenancy — name the two variants and let the call site say which world it is in**, per the shipped
-`EmployeeRepository.GetByIdAsync` / `GetByIdIgnoringTenantAsync` pair (`:44-57`). Verified live
-instance: `OrderRepository.HasOverlappingOrderAsync` (`:272-292`, `GetDbSet()`) called from
-`NewJobsDigestService.cs:137` inside a `GetQueryableIgnoringTenant()` sweep — **under a tenant every
-cleaner reports as free and the digest advertises double-booked jobs** — while the *same* method is
-`TakeOrder`'s write gate, where the scoped read is correct (T-0529 AC5's walk found it; ADR-0039 §D6
-specifies the fix). **Reviewer test:** for every repository method, list its callers and ask whether
+`EmployeeRepository.GetByIdAsync` / `GetByIdIgnoringTenantAsync` pair (`:44-57`).
+
+**The worked example — now FIXED, and kept here as the reference pair rather than as an open hole.**
+`OrderRepository.HasOverlappingOrderAsync` used a single `GetDbSet()` body while
+`NewJobsDigestService.cs:137` called it from inside a `GetQueryableIgnoringTenant()` sweep — so under
+a tenant **every cleaner reported as free and the digest would advertise double-booked jobs** — while
+the *same* method is `TakeOrder`'s write gate, where the scoped read is correct. It is now one private
+predicate parameterised by the queryable, with two public wrappers
+(`HasOverlappingOrderAsync` / `HasOverlappingOrderIgnoringTenantAsync`), so the call site names its
+world. Pinned by `HasOverlappingOrderTenancyAndScanFloorTests`, whose tenanted case fails if the
+ignoring wrapper is reverted to `GetDbSet()`.
+
+> **Do not leave a security law asserting a live hole that has been closed.** A reader who checks the
+> citation and finds it fixed learns to distrust the rest of the catalog, which is the same defect
+> class as a comment claiming two lists agree. Re-label to the shipped reference pair and name the pin.
+
+**Reviewer test:** for every repository method, list its callers and ask whether
 they all live in the same tenancy world. If not, one name is wrong. **The pinning test must seed a
 non-null `TenantId`** — same as the mirror case, for the same reason. **And note the direction of the
 lie:** the anonymous-write trap makes a *write* do nothing; this one makes a *guard* say yes.

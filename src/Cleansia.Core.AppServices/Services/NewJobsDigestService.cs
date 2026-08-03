@@ -22,7 +22,7 @@ namespace Cleansia.Core.AppServices.Services;
 ///     cleaner's last digest watermark (so old already-notified orders
 ///     don't re-trigger)
 ///   - The cleaner has no overlapping live-commitment order at the order's
-///     cleaning time (see <see cref="IOrderRepository.HasOverlappingOrderAsync"/>)
+///     cleaning time (see <see cref="IOrderRepository.HasOverlappingOrderIgnoringTenantAsync"/>)
 ///
 /// Throttling: this method IS the rate-limit — the timer's 30-min cadence
 /// caps each cleaner to at most one digest per interval. No per-event
@@ -134,7 +134,7 @@ public class NewJobsDigestService(
                 var takeable = 0;
                 foreach (var o in newOrders)
                 {
-                    var overlaps = await orderRepository.HasOverlappingOrderAsync(
+                    var overlaps = await orderRepository.HasOverlappingOrderIgnoringTenantAsync(
                         cleaner.EmployeeId,
                         o.CleaningDateTime,
                         o.EstimatedTime,

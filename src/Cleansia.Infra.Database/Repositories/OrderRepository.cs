@@ -269,17 +269,32 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         OrderStatus.InProgress,
     ];
 
-    public async Task<bool> HasOverlappingOrderAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct)
+    public Task<bool> HasOverlappingOrderAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct)
+        => HasOverlappingOrderAsync(GetDbSet(), employeeId, cleaningDateTime, estimatedTimeMinutes, ct);
+
+    public Task<bool> HasOverlappingOrderIgnoringTenantAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct)
+        => HasOverlappingOrderAsync(GetQueryableIgnoringTenant(), employeeId, cleaningDateTime, estimatedTimeMinutes, ct);
+
+    private static Task<bool> HasOverlappingOrderAsync(
+        IQueryable<Order> orders, string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct)
     {
         var newStart = cleaningDateTime;
         var newEnd = cleaningDateTime.AddMinutes(estimatedTimeMinutes);
+
+        // The interval term below is computed per row, so `CleaningDateTime < newEnd` is the only
+        // sargable bound and the scan would run back through the cleaner's whole assignment history.
+        // The floor turns it into a range scan over (CurrentStatus, CleaningDateTime); it is safe
+        // exactly while no order spans longer than Order.MaxOrderSpanHours, which that constant
+        // documents.
+        var scanFloor = newStart.AddHours(-Order.MaxOrderSpanHours);
 
         // Unlike the availability filters, a pre-backfill NULL CurrentStatus row cannot be
         // excluded here — that would fail OPEN (an active legacy order stops blocking and the
         // cleaner gets double-booked), so NULL falls back to the authoritative latest-history
         // rule (CreatedOn desc, Sequence desc); non-null rows stay on the indexed column.
-        return await GetDbSet()
+        return orders
             .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId) &&
+                       o.CleaningDateTime >= scanFloor &&
                        o.CleaningDateTime < newEnd &&
                        o.CleaningDateTime.AddMinutes(o.EstimatedTime) > newStart &&
                        ((o.CurrentStatus != null && SlotBlockingStatuses.Contains(o.CurrentStatus.Value)) ||

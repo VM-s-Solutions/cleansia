@@ -76,9 +76,26 @@ public interface IOrderRepository : IRepository<Order, string>
     /// ([CleaningDateTime, +EstimatedTime)) overlaps the given one AND whose current status is a
     /// live commitment (New, Pending, Confirmed, OnTheWay, InProgress). Terminal orders
     /// (Completed, Cancelled) no longer occupy the cleaner's time. Backs the TakeOrder
-    /// time-conflict rule and the new-jobs digest's not-busy filter.
+    /// time-conflict write gate.
+    ///
+    /// <para>TENANT-SCOPED, deliberately: a request path carries a <c>tenant_id</c> claim and the
+    /// cleaner is in the caller's tenant. A caller with NO claim (timer, Function, webhook) must use
+    /// <see cref="HasOverlappingOrderIgnoringTenantAsync"/> — under a tenant the global filter resolves
+    /// <c>TenantId == null</c> against non-null rows, so this method finds nothing and reports the
+    /// cleaner FREE, which is a guard saying yes.</para>
+    ///
+    /// <para>The scan is floored at <c>cleaningDateTime - Order.MaxOrderSpanHours</c>; see that
+    /// constant for what the floor assumes.</para>
     /// </summary>
     Task<bool> HasOverlappingOrderAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct);
+
+    /// <summary>
+    /// Same predicate as <see cref="HasOverlappingOrderAsync"/> with the tenant filter bypassed. For
+    /// background sweeps that run with no tenant context and already select tenant-ignoring — today the
+    /// new-jobs digest's not-busy filter, which would otherwise advertise clashing jobs to every
+    /// tenanted cleaner.
+    /// </summary>
+    Task<bool> HasOverlappingOrderIgnoringTenantAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct);
 
     /// <summary>
     /// True if the given user has previously had a Completed order assigned to

@@ -210,7 +210,7 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
             .Setup(r => r.GetQueryableIgnoringTenant())
             .Returns(() => realOrderRepository.GetQueryableIgnoringTenant());
         orderRepository
-            .Setup(r => r.HasOverlappingOrderAsync(
+            .Setup(r => r.HasOverlappingOrderIgnoringTenantAsync(
                 It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 

@@ -103,11 +103,30 @@ Offerable(o) ⟺ o.CurrentStatus == Confirmed
 
 ## Watch-list
 
-- **The seat dimension is unresolved** (`Q-AVAIL-01`). Web sends `hasAvailableSpots: true`
-  (`orders.facade.ts:147`); Android (`:249`) and iOS (`:79`) send `isUnassigned: true` — so a
-  partly-crewed order is offered on web and not on mobile. If that is ever unified, it belongs beside
-  this predicate as a **second conjunct**, not folded into the status rule, and it interacts with
-  ADR-0036's per-seat Invariant H.
+- ~~**The seat dimension is unresolved** (`Q-AVAIL-01`).~~ **ANSWERED 2026-08-03 by the owner: YES, a
+  partly-staffed job stays offerable** — ADR-0037 **§D9**. It lands exactly where this card predicted:
+  a **second conjunct** beside the status rule, never folded into it. Three things the implementer must
+  carry, or the change ships a new bug:
+  1. Android `OrdersListViewModel.kt:246-251` and iOS `OrdersListLogic.swift:76-85` switch
+     `isUnassigned: true` → `hasAvailableSpots: true`.
+  2. **…and must ALSO send `excludeEmployeeId: <own id>`.** `isUnassigned` excluded your own jobs
+     incidentally; `hasAvailableSpots` does not, and `RestrictToEmployeeId` is *assigned-to-me **OR**
+     has-a-seat* (`OrderSpecification.cs:134-139`) — it deliberately does not exclude. Web already
+     compensates (`orders.facade.ts:148`). **Never one without the other.**
+  3. It **closes the mobile date-floor defect for free** (`GetPagedOrders.cs:58-61` applies the `-2h`
+     default only when `HasAvailableSpots == true`). The separately-filed ticket is **absorbed**.
+  **No backend change, no NSwag regen** — both parameters already exist on the endpoint
+  (`cleansia_android/openapi/partner-mobile-api.json:1128,1142`). And it makes ADR-0036's per-seat
+  Invariant H **true on mobile**, where `isUnassigned` had been withholding 100% of every second seat's
+  fill window from the whole mobile board, permanently.
+- **The seat CAP is a different question and is open** (`Q-AVAIL-03`, owner). `RequiredEmployees =
+  ceil(EstimatedTime / 120)` (`Order.cs:509-519`) is the work-derived number; `MaxEmployees =
+  RequiredEmployees + 1` adds a seat nothing derives, nothing documents and no production caller sets —
+  and **each filled spare seat costs a second full labour payment** (`CalculateOrderPay:140-152` writes
+  one pay row per assigned employee; `CalculateAggregatedPay:30-61` has no crew-size term). **Ruled
+  regardless of the number: there is ONE seat cap, it is a property of `Order`, every surface reads it,
+  and no surface re-derives it** — which is what makes the flip a one-line change. If the spare seat
+  survives, it becomes `BookingPolicy.SpareSeatsPerOrder`, not a literal `+1`.
 - **A third conjunct on these surfaces is a design smell.** Availability (ADR-0037) and visibility
   (ADR-0036) already both ride `OrderSpecification`, `CreateAvailableOrdersSpec`,
   `NewJobsDigestService` and `TakeOrder`. A **third** should trigger a look at composing them into one

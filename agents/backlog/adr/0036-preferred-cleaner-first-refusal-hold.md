@@ -7,6 +7,14 @@
   two safety claims under it did not** and have been amended in place per §Defense. Acceptance carries
   **three named preconditions on the consumer tickets** and **two owner escalations** (§Verdict) —
   neither reopens the decision.
+- ⚠️ **PARTIALLY SUPERSEDED, 2026-08-03, by owner instruction — see the dated section at the END of this
+  file.** **D5.1's "Deliberately NOT checked (dynamic)" paragraph and alternative A6 are superseded in
+  their TIME-CONFLICT half** by
+  [ADR-0039](./0039-preferred-cleaner-slot-availability-is-checked-at-the-moment-of-choosing-set-based-and-never-earns-a-hold-when-it-fails.md).
+  A6's **weekly-cap** half stands. **Nothing else in this ADR is affected** — the hold mechanism,
+  Invariant H, the six surfaces, the digest rules and the copy rulings are untouched. *(Pointer only.
+  No decision text in the body below has been edited; the amendment is appended, per
+  `adr/README.md` §"Accepted ADRs are immutable".)*
 - **Date:** 2026-08-02 (proposed) / 2026-08-02 (accepted, amended by the panel)
 - **Owner decisions carried by this ADR:** `Q-PLUS-03` → **plus-only**; **CH-2 → the hold floor is
   8 hours**, expressed as `2 * BookingPolicy.StandardLeadTimeHours`. Both are settled and are not
@@ -1873,3 +1881,84 @@ filed rather than preconditioned.
   burns *any* order skipped for a time conflict as soon as the cleaner is notified about anything else —
   which is *"narrow in logic and broad in incidence"*, i.e. close to always, not rare. Filed separately;
   **this ADR does not claim to fix the class.**
+
+---
+
+## Amended by owner instruction — 2026-08-03 (`architect`, author mode) · **partial supersede of D5.1 / A6**
+
+> **Recorded, not rewritten.** Per `agents/backlog/adr/README.md` §"Accepted ADRs are immutable", this
+> is a **dated appended section**. **No line of the body above has been edited.** D5.1's original
+> paragraph and A6's original row stay exactly as the panel accepted them — they were right given their
+> premise, and the premise is what the owner changed.
+
+**The owner's words, verbatim, 2026-08-03:**
+
+> *"there is a need to mark somehow if this cleaner has order assigned to him already or not on this
+> date and time, if yes then mark that this cleaner isn't available for that date and time"*
+
+### What is superseded
+
+**D5.1's "Deliberately NOT checked (dynamic)" paragraph and alternative A6 — in their TIME-CONFLICT
+half only.** The preferred cleaner's availability at the booking's own date and time **is** now checked,
+at the moment the customer chooses and again at creation.
+
+- **The new decision lives in [ADR-0039](./0039-preferred-cleaner-slot-availability-is-checked-at-the-moment-of-choosing-set-based-and-never-earns-a-hold-when-it-fails.md)**,
+  which carries the mechanism, the read path, the customer treatment and the race handling. This
+  section exists so a reader of ADR-0036 alone is never misled.
+- **The reasoning that is being overturned is preserved and is worth keeping.** D5.1/A6 priced the cost
+  of a wrong creation-time answer in **latency**, correctly bounded by Invariant H. The owner is pricing
+  a different cost: **a choice offered to a customer that the platform cannot honour.** Invariant H does
+  not bound that, because it bounds what the marketplace loses, not what the customer was told.
+- **The direction A6 actually feared is unchanged and still accepted:** a cleaner who is *free at
+  creation* and *busy by the time they open the app*. That is not knowable at creation and the hold
+  simply expires, exactly as D5.1 says. What ADR-0039 closes is the third case D5.1 did not name —
+  **busy at creation and still busy at the take** — where the hold spends up to 100% of the first
+  seat's fill window on an outcome with probability zero.
+
+### What is NOT superseded — and this half is settled on evidence, not judgement
+
+**A6's WEEKLY-CAP half stands, unchanged.** `GetEmployeeOrderCountThisWeekAsync`
+(`OrderRepository.cs:247-258`) derives its window from **`DateTime.UtcNow.Date`** (`:249-252`), not from
+the order's `CleaningDateTime`. At creation, for a booking more than a week out, it answers about a week
+that **does not contain the booking**. A creation-time cap check is not a wrong answer — it is an answer
+to a different question. Anyone "completing the job" by adding it to the resolver is reintroducing a
+defect. The two halves of A6 differ in the two methods' signatures, which is why one falls and one holds.
+
+### The consequential ruling this forces, decided in ADR-0039 D2
+
+**A cleaner the platform already knows is busy gets no hold — and no targeted push either.** The second
+half is **this ADR's own rule applied**, not a new one: D5.1 says verbatim *"a hold for a cleaner
+`TakeOrder.cs:53` would reject is pure latency — **and so is a push**."* That sentence was written about
+`ContractStatus`; it is true word for word about the time conflict.
+
+Concretely, against the artifacts this ADR specifies:
+
+- `HoldDeclineReason` gains **`CleanerBusyAtCleaningTime = 9`**.
+- Its row in **D4.1's outcome table** is **notify: no · hold: no** — beside `CleanerNotApproved` /
+  `CleanerCountryMismatch`, **not** beside `ShortLeadTime`. *Short lead means we cannot hold; busy means
+  they cannot take.*
+- **D4.1's invariant is untouched:** `HoldUntilUtc != null ⇒ NotifyPreferred == true` (both are false).
+- **D5.1's decision tree** gains one node, between the reachability gate and the lead-time gate — and
+  the busy check runs **last** among the resolver's checks, because it is the only one that costs a
+  range scan.
+
+### What is byte-untouched by the amendment
+
+D1–D4 (including D4.1's wider notify predicate), D5.0, **D5.2–D5.5** (the take-time refusal, the digest's
+two rules, the no-early-release ruling, the no-index ruling), **D6/D6.1** (the customer is told once, no
+countdown, no expiry push), D7 (the Plus gate and its reject-don't-ignore posture), D8 (recurring
+degrades), D9 (the eligibility rule), D10/D11, **Invariant H**, and the `OrderVisibility` five-term rule.
+**The hold mechanism itself is unchanged in every respect** — ADR-0039 changes only *who is judged
+worth granting one to*.
+
+### Consumers of this amendment
+
+- **T-0515** gains one AC (the resolver's busy check + the new decline reason). It is `XS` inside a
+  ticket that is already building the resolver; it is **not** a separate ticket.
+- **T-0491** (copy) gains the constraint set in ADR-0039 D7.2 — and, importantly, the constraint that
+  **C2c's persistent explanatory line is unchanged**: marking some cleaners unavailable must not be
+  allowed to upgrade the promise for the rest (ADR-0039 D7.3).
+- `agents/architecture/decisions/preferred-cleaner-dispatch.md` and
+  `agents/knowledge/roles/preferred-cleaner-hold-resolver.md` are updated in the same change; the
+  role card's *"Does NOT know → `TakeOrder`'s dynamic gates"* entry is now **half wrong** and is
+  corrected there rather than here.

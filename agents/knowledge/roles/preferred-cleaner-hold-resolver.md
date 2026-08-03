@@ -8,6 +8,11 @@
 > same shape, same namespace family, same "returns a record the caller acts on" contract. Read
 > `CancellationPolicyResolver.cs:14-45`, `agents/knowledge/roles/express-waiver-resolver.md` and
 > `TakeOrder.cs` in full first.
+>
+> ⚠️ **AMENDED 2026-08-03 by owner instruction — ADR-0039** (`proposed`) partially supersedes ADR-0036
+> D5.1/A6. **The resolver now checks the cleaner's slot conflict** and a busy cleaner gets **no hold and
+> no push**. The *weekly cap* half of "does NOT know" **stands**. Changes below are marked
+> **[ADR-0039]**.
 
 This card covers **three** collaborating responsibilities that must not be collapsed:
 
@@ -54,6 +59,16 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
   category mute makes D4's own rule false (ADR-0036 CH-P4).
 - `BookingPolicy.ComputePreferredHold(cleaningUtc, nowUtc)` — the pure window function. Floor is
   `2 * StandardLeadTimeHours`; fraction `0.10`; ceiling `12 h`.
+- **[ADR-0039] `IOrderRepository.GetBusyEmployeeIdsInWindowAsync(ids, startUtc, endUtc, ct)`** — the
+  slot-conflict answer. **The picker (`GetMyServingCleaners`) calls the same method with the same
+  window**; if the two ever diverge the feature has already failed. **Never** call
+  `HasOverlappingOrderAsync` in a loop, and **never** pick tenancy for the caller — the scoped variant
+  is correct on every request path (including the materializer, which sets a per-template
+  `SetTenantOverride`); only `NewJobsDigestService` wants the ignoring sibling.
+- **[ADR-0039] `OrderDuration.EstimateMinutes(services, packages)`** — the **one** definition of how
+  long a booking is, shared with `OrderFactory` (which persists it as `Order.EstimatedTime`). The
+  resolver's window is `[cleaningUtc, cleaningUtc + that)`. A nominal window is wrong in both
+  directions; a **client-supplied** duration is an S1 violation.
 - Callers: `OrderFactory` (one call, at creation) and, through it, `CreateOrder` and
   `MaterializeRecurringBookings`. The factory calls `Order.GrantPreferredHold` with the answer — it
   **never** assigns either column itself.
@@ -76,10 +91,19 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
   `WHERE` clause, and consumption is a row appearing in `OrderEmployees`. **If anything ever needs to
   "release" a hold on a schedule, the shape is wrong.** (The two sanctioned writes are a cleaner-side
   *decline* and a future return-to-board path, both of which call `Order.ClearPreferredHold()`.)
-- **`TakeOrder`'s dynamic gates.** The weekly order limit (`TakeOrder.cs:125-143`) and the time conflict
-  (`:145-161`) are **deliberately not consulted** — they change between creation and the moment the
-  cleaner opens the app, so a creation-time answer would be wrong in both directions. A hold never
-  overrides a `TakeOrder` gate.
+- **`TakeOrder`'s WEEKLY ORDER LIMIT** (`TakeOrder.cs:125-143`) — **deliberately not consulted, and this
+  half is settled on evidence.** `GetEmployeeOrderCountThisWeekAsync` (`OrderRepository.cs:247-258`)
+  derives its window from **`DateTime.UtcNow.Date`** (`:249-252`), so at creation, for a booking more
+  than a week out, it answers about a week that **does not contain the booking**. A creation-time cap
+  check is not a wrong answer — it is an answer to a different question. **Adding it is a finding.**
+  A hold never overrides a `TakeOrder` gate.
+- **[ADR-0039] ~~The TIME CONFLICT~~ — this is now KNOWN, and knowing it is the point.** The resolver
+  **does** consult the cleaner's slot conflict at the booking's own date and time, via
+  `IOrderRepository.GetBusyEmployeeIdsInWindowAsync` — **the same call the picker makes, with the same
+  window.** Busy ⇒ `HoldDeclineReason.CleanerBusyAtCleaningTime` ⇒ **no hold AND no push** (D5.1's own
+  rule: *"a hold for a cleaner `TakeOrder.cs:53` would reject is pure latency — and so is a push"*).
+  What the resolver still does **not** know: whether the cleaner will *become* busy after creation.
+  That direction is unknowable and stays bounded by Invariant H, exactly as ADR-0036 D5.1 says.
 - **Whether a preference is *eligible*.** `UserHasCompletedOrderWithEmployeeAsync` lives in
   `CreateOrder.Validator` (`:150-154`) and stays there. This role assumes the preference is already
   legitimate.
@@ -127,6 +151,17 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
     `(SELECT max(...))`, a mandatory `<= sweepStartedAt` upper bound, and `sweepStartedAt` (never
     `UtcNow`) as `nowUtc`.
 12. **No index on `PreferredHoldUntilUtc`, and a partial index on it is a hard reject** (ADR-0036 D5.5).
+13. **[ADR-0039] The busy check runs LAST and costs one set-based query.** A `HasOverlappingOrderAsync`
+    call inside a loop is a hard reject; so is a busy check placed *before* the membership / lead-time
+    gates (it pays a range scan for every non-member). `CleanerBusyAtCleaningTime` ⇒ **`NotifyPreferred
+    == false`** — placing it beside `ShortLeadTime` (notify, no hold) is a finding: *short lead means we
+    cannot hold; busy means they cannot take.*
+14. **[ADR-0039] The emitted SQL carries the scan floor.** `"CleaningDateTime" >= @floor`
+    (`windowStart − BookingPolicy.MaxOrderSpanHours`). Absent ⇒ the query is the old unbounded
+    lifetime scan wearing a new name. **Hard reject.**
+15. **[ADR-0039] The booking is never failed for this.** No answer (query error, no slot) ⇒ **no hold,
+    no push, order created, preference stored**. A `CreateOrder` rejection on a busy preferred cleaner
+    is a hard reject — ADR-0036 D8's rule: *reject where someone can react; degrade where nobody can.*
 
 ## Watch-list
 

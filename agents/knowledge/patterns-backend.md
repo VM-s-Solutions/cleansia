@@ -660,6 +660,76 @@ When a rule must give one actor **temporary exclusive access** to a work item on
   monotone in time and derivable from a **global** timestamp on the item. Any **per-recipient,
   non-monotone** rule breaks that assumption; a fix for one such rule is a point fix, not a class fix,
   and the ADR must say so rather than claim convergence.
+- **Never grant exclusivity to an actor you already know cannot act (ADR-0039).** A bound like *"the
+  exclusivity is at most 10% of the fill window"* prices what you **cannot** know; it is **not** a
+  licence to spend what you **can**. If a *statically-checkable-at-grant-time* gate would refuse this
+  actor the item anyway, the exclusivity is 100% of that unit's fill window spent on a **zero**-
+  probability outcome. **And the same test decides the notification**: a signal about work the recipient
+  is gated out of taking is noise on the one channel the mechanism depends on being worth reading — so
+  *"no signal ⇒ no exclusivity"* has a sibling, ***"cannot act ⇒ neither"***.
+  **The distinction that decides which gates qualify is in the gates' own signatures, not in taste:**
+  a gate parameterised by **the item's** instant (Cleansia: `HasOverlappingOrderAsync(employeeId,
+  cleaningDateTime, …)`) answers the question you are asking and **must** be consulted; a gate
+  parameterised by **`now`** (`GetEmployeeOrderCountThisWeekAsync`, whose window is
+  `DateTime.UtcNow.Date`-derived) answers a *different* question for any future item and **must not**
+  be. Read the signature before you decide a check is "too dynamic".
+- **Never present a choice you cannot honour (ADR-0039).** If a UI lets a customer pick a party the
+  mechanism then silently drops, the defect is the *offer*, not the drop. Mark the unofferable option:
+  **shown · disabled · one neutral line that names no reason and promises no alternative**. Hiding it
+  discloses the same fact (a shorter list is a diff) while manufacturing a mystery; greying it silently
+  is a behaviour change with no text. And **the label must stay true if the predicate later widens** —
+  *"not available for this date and time"* survives; *"already booked"* becomes a lie the first time
+  another cause is folded in.
+- **Marking some options unavailable silently upgrades the promise for the rest.** Greying two of five
+  implies the other three *are yours*. Whatever standing sentence sets the expectation ("first chance,
+  not a guarantee") **must be left unchanged and must keep rendering** — the marking is subtractive
+  only.
+
+## Ask N candidates ONE question, not one candidate N questions (ADR-0039)
+
+> **PROPOSED — not yet law.** ADR-0039 is `proposed` and unchallenged as of 2026-08-03.
+> **Enforcer / tier (ADR-0032):** **T3-review** — the shapes below are read from a diff, not detected
+> by a linter. The one mechanical candidate (a repository call inside a `foreach` over a candidate
+> list) is a `check-consistency.mjs` heuristic if it earns its place.
+
+When a screen asks the same yes/no question about a **list** of entities — *"which of these people are
+free at this hour?"*, *"which of these are over their limit?"* — the singular repository method that
+already exists is the wrong tool, and calling it in a loop is the defect, not the shortcut:
+
+- **The set-based method is the seam, and it takes the set.** `Task<IReadOnlySet<string>>
+  GetBusyEmployeeIdsInWindowAsync(ids, startUtc, endUtc, ct)` — **return the positive subset (the
+  "busy" ones), not the free ones**, so "absent from the result" is the fail-**open** default and an
+  empty/failed answer degrades to today's behaviour rather than to a lie.
+- **Reduce the singular method to a wrapper over the set method.** Two predicates answering one
+  question in one repository is the defect class, not a shape to leave behind — and the wrapper means
+  every later fix (a range bound, a tenancy variant) lands on the **write gate** for free. The existing
+  status-matrix test on the singular method is the pin that proves the predicate did not change meaning
+  while it moved.
+- **The read path and the write path must be the SAME CALL, not "the same rule".** If a picker can say
+  *available* and the command can then say *busy* for a reason of its own, the feature has already
+  failed and no shared documentation prevents it.
+- **An overlap/interval predicate needs a LOWER bound or it scans all of history.** `start < @end AND
+  start + duration > @start` has exactly one sargable term — the **upper** one — because the second is
+  a per-row computation. Floor the scan (`start >= @windowStart − MaxSpan`) so an existing
+  `(status, date)` index serves it as a range scan. **Choose the constant by its failure asymmetry, not
+  by tuning:** too generous costs a wider scan of a nearly-empty band; too tight makes an overlap
+  invisible **on the write gate** — a double-booking. **When in doubt, widen it**, and make it
+  verifiable in one line (`SELECT MAX("Duration") …`) rather than believed. The durable alternative — a
+  persisted end-instant column + index — is the right long-term answer; record it with its flip
+  condition instead of pretending the floor is free.
+- **Derive the interval's length server-side, from ONE definition shared with whatever persists it.** A
+  nominal window is wrong in both directions (too short re-opens the failure you are closing; too long
+  silently denies a valid option), and a **client-supplied** length that decides a server answer is an
+  S1 violation. Extract the computation, give it two callers and one test asserting they agree.
+- **Extend the caller's existing feed rather than adding a general "is X available?" endpoint.** The
+  general endpoint is a **schedule oracle** for any id, over any range. The extension keeps two limits
+  *structural*: you may only ask about entities already in **your** result set, and only about the one
+  instant you are acting on. **A range parameter is not a feature request — it is a different
+  decision.**
+- **A per-row answer that can be "not evaluated" is a TRI-STATE on the wire, and the third state is
+  load-bearing.** `bool?` with `null` = *not evaluated* — reachable on day one from a client that has
+  not been rebuilt. **`null` must render as "no marking".** A client mapping it to a non-optional
+  boolean either flags everything or defeats the feature; pin it with a fixture that sends `null`.
 
 ## A predicate that spans STACKS needs a parity test; a state set needs a writer census (ADR-0037)
 

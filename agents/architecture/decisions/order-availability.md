@@ -6,6 +6,13 @@
 > The ADR is the record; **this page is the evolving companion and is what you read first.**
 > **Nothing here is binding until a lead declares consensus** (`../../process/deliberation.md`).
 >
+> ⚠️ **AMENDED 2026-08-03 by owner instruction — `Q-AVAIL-01` IS ANSWERED: yes, a second cleaner may
+> join a partly-staffed job.** Folded into the ADR as **§D9** (it was still `proposed`, so the ruling
+> goes in the body rather than as a supersede). **The status axis is unchanged**; D9 is the *seat*
+> axis. See §"The seat axis" below. The owner's other ruling from the same conversation — preferred-
+> cleaner slot availability — is
+> **[ADR-0039](../../backlog/adr/0039-preferred-cleaner-slot-availability-is-checked-at-the-moment-of-choosing-set-based-and-never-earns-a-hold-when-it-fails.md)**.
+>
 > Companion pages: [`preferred-cleaner-dispatch.md`](./preferred-cleaner-dispatch.md) (ADR-0036 — the
 > hold predicate this composes with, as a separate conjunct on the same six surfaces),
 > [`push-notifications.md`](./push-notifications.md) (ADR-0025 — the digest's display contract),
@@ -189,6 +196,65 @@ NotEmpty → ExistsAsync (incl. ADR-0036 hold) → IsOfferable → HasAvailableS
 available" is honest and "no spots" is a lie. ADR-0036's narrow catalog rule (*never name **the
 exclusivity***) is not violated — this key names the order's own lifecycle.
 
+### The seat axis — `Q-AVAIL-01` answered (ADR-0037 §D9, owner instruction 2026-08-03)
+
+> *"Yup, there is a possibility that he can based on the calculations of how much work there is"*
+
+**Ruling: an order with an open seat stays offerable, whether or not a cleaner is already on it.** The
+seat term is `AssignedEmployees.Count < <seat cap>`, **never** `Count == 0`. It is a **second
+conjunct**, composing with the status rule and with ADR-0036's visibility rule:
+
+```
+offered(o, cleaner) ⟺ IsOfferable(o)                          -- ADR-0037 D1: is it live work?
+                    ∧ o.AssignedEmployees.Count < seatCap      -- ADR-0037 D9: is there a seat?
+                    ∧ OrderVisibility.NotHeldFrom(o, cleaner)  -- ADR-0036:    open to THIS cleaner?
+```
+
+**Web was right, both mobile clients were wrong.** Android `OrdersListViewModel.kt:246-251` and iOS
+`OrdersListLogic.swift:76-85` send `isUnassigned: true` → `AssignedEmployees.Count == 0`
+(`OrderSpecification.cs:119-122`). **A partly-staffed job has been invisible on both mobile Available
+tabs since they shipped.**
+
+**Three consequences, and two of them would otherwise be found in QA:**
+
+| | |
+|---|---|
+| **A free second fix** | `GetPagedOrders.cs:58-61` applies the `-2h` `cleaningDateFrom` default **only when `HasAvailableSpots == true`**. The moment mobile sends it, the mobile-has-no-date-floor defect closes. **The separately-filed ticket is absorbed — do not work it twice.** |
+| **The clients must ALSO send `excludeEmployeeId`** | `isUnassigned` excluded your own jobs *incidentally*. `hasAvailableSpots` does not, and the server's `RestrictToEmployeeId` floor is *assigned-to-me **OR** has-a-seat* (`OrderSpecification.cs:134-139`) — it deliberately does not exclude. Web already compensates (`orders.facade.ts:148`). Without it the Available tab lists jobs the cleaner is already on, and tapping one hits `TakeOrder.cs:55`. **One change, not two.** |
+| **Invariant H becomes true on mobile** | ADR-0036's Invariant H is *per seat*. `isUnassigned` withheld **100% of every second seat's fill window from the whole mobile board, permanently, on every order** — a larger version of the defect ADR-0036 CH-V4 caught in its own draft. D9 is therefore a **precondition** of Invariant H holding on two of three clients, not merely compatible with it. |
+
+**No backend change, no NSwag regen.** `Filter.HasAvailableSpots` and `Filter.ExcludeEmployeeId` are
+already on the endpoint (`cleansia_android/openapi/partner-mobile-api.json:1128,1142`).
+
+#### The seat *count* — what the owner's qualifier maps onto, and what is escalated
+
+`RequiredEmployees = ceil(EstimatedTime / StandardWorkUnitMinutes /* 120 */)` (`Order.cs:509-519`)
+**is** "the calculation of how much work there is" — `EstimatedTime` is the sum of the booked services'
+estimates (`OrderFactory.cs:145-147`). **`MaxEmployees = RequiredEmployees + 1` is not.** It is a bare
+`+1` with **no comment, no recorded rationale, no production caller of `SetMaxEmployees`** (four test
+files only), beside an unused sibling that names the concept it isn't (`IsFullyAssigned => Count >=
+RequiredEmployees`, `:118` — **read by nothing**).
+
+**And it is not free.** `CalculateOrderPay:140-152` writes **one `OrderEmployeePay` per assigned
+employee**, and `CalculateAggregatedPay:30-61` has **no crew-size term** — `basePay` is the full
+per-order rate for every cleaner on it. **Each seat filled beyond `RequiredEmployees` costs a second
+full labour payment against the same customer price**; on the modal booking (`EstimatedTime ≤ 120`)
+that is a potential doubling of labour cost for work that needs one person.
+
+**Ruled here (architecture):**
+
+1. **One seat cap, a property of `Order`, read by every surface. No surface re-derives it.** Today
+   that is `MaxEmployees` (`OrderSpecification.cs:126,138`, `Order.AvailableSpots:116`,
+   `NewJobsDigestService.cs:101`, `Order.AddAssignedEmployee:482-491` — they already all read it).
+2. **If a spare seat is wanted, it is a NAMED policy number:**
+   `MaxEmployees = RequiredEmployees + BookingPolicy.SpareSeatsPerOrder` — visible, citable, tunable in
+   one place, the same treatment ADR-0036 D3 gave the hold constants. **Worth doing whichever number
+   wins.**
+
+**Escalated — `Q-AVAIL-03` (business, not blocking):** exactly-the-crew (`RequiredEmployees`) or
+one-spare (`RequiredEmployees + 1`, today)? **Interim: unchanged.** Because of ruling (1), flipping it
+later is a one-line change in `Order.CalculateRequiredEmployees`.
+
 ### Enforcement — three layers, none of them a comment
 
 1. **Structural.** Surfaces #1/#2/#4 stop holding literals. A set that exists once cannot disagree
@@ -222,14 +288,16 @@ Plus T-0530 AC4's two tests on one fixture, and `TC-AVAIL-EQUIV` for the two eva
 
 ## Open / undecided
 
-- **Q-AVAIL-01 (owner)** — **the seat dimension.** Web sends `hasAvailableSpots: true`
-  (`orders.facade.ts:147`); Android (`:249`) and iOS (`:79`) send `isUnassigned: true`. A 2-cleaner job
-  with 1 cleaner on it **is** offered on web and **is not** on mobile. Product question; interacts with
-  ADR-0036's per-seat Invariant H. This ADR rules the **status** axis only.
+- ~~**Q-AVAIL-01 (owner)** — the seat dimension.~~ **ANSWERED 2026-08-03: YES.** Ruled in ADR-0037 §D9
+  → see §"The seat axis" above. Both mobile clients switch to `hasAvailableSpots` **+
+  `excludeEmployeeId`**; Invariant H becomes true on mobile.
+- **`Q-AVAIL-03` (owner, NEW, not blocking)** — the seat **cap**: exactly the crew the work needs
+  (`RequiredEmployees`) or one spare (`RequiredEmployees + 1`, today, with no recorded rationale)? Each
+  filled spare seat costs **a second full labour payment**. Interim: unchanged; the flip is one line.
 - **Q-AVAIL-02 (owner)** — `New` + Card, ruled not-offerable with the flip condition named above.
-- **The mobile Available tab has no date floor.** `GetPagedOrders.cs:58-61` applies the `-2h` default
-  only when `HasAvailableSpots == true`; mobile sends `isUnassigned` instead, so it lists past-dated
-  jobs. Same root cause, different predicate. Filed.
+- ~~**The mobile Available tab has no date floor.**~~ **ABSORBED by §D9** — the `-2h` default
+  (`GetPagedOrders.cs:58-61`) fires only when `HasAvailableSpots == true`, so the client switch closes
+  it. **Close the filed ticket as absorbed; do not work it twice.**
 - **`dashboard.facade.ts:93-97`** — web "my upcoming" is `{Pending, Confirmed, InProgress}`: dead
   `Pending`, and **`OnTheWay` missing**, so a job vanishes from the web dashboard the moment the
   cleaner taps "On my way". Mobile uses `{Confirmed, OnTheWay, InProgress}`. The *my-orders* question.
@@ -250,6 +318,8 @@ Plus T-0530 AC4's two tests on one fixture, and `TC-AVAIL-EQUIV` for the two eva
 | **T-0515** (ADR-0036) | the hold conjunct on four of the same surfaces — **after** this rule exists |
 | *new, PM to file* | delete `StaleOrderCleanupService` + interface |
 | *new, PM to file* | `CLAUDE.md` + `docs/architecture/*` lifecycle correction (`Pending`) |
-| *new, PM to file* | the mobile Available date floor |
+| ~~*new, PM to file*~~ | ~~the mobile Available date floor~~ — **absorbed by D9; close it** |
 | *new, PM to file* | `dashboard.facade.ts` my-upcoming set (dead `Pending`, missing `OnTheWay`) |
-| *owner* | Q-AVAIL-01 (seat dimension), Q-AVAIL-02 (card pre-claim, recorded as decided) |
+| **new, PM to file (D9)** | **the mobile seat switch** — Android `OrdersListViewModel.kt:246-251` + `OrdersRepository.kt:50-57,205-222` and iOS `OrdersListLogic.swift:76-85` + `PartnerOrderClient.swift:83-101`: `isUnassigned: true` → `hasAvailableSpots: true` **+ `excludeEmployeeId: <own id>`**. **No backend change, no NSwag regen.** One ticket per client or one shared — but **never `hasAvailableSpots` without `excludeEmployeeId`** |
+| *new, PM to file (D9.4)* | name the spare seat — `MaxEmployees = RequiredEmployees + BookingPolicy.SpareSeatsPerOrder` (worth doing whichever number `Q-AVAIL-03` returns) |
+| *owner* | ~~Q-AVAIL-01~~ **answered → D9** · Q-AVAIL-02 (card pre-claim, recorded as decided) · **`Q-AVAIL-03` (the seat cap — NEW)** |

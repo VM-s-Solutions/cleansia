@@ -217,6 +217,25 @@ paths (T-0361). Both keep the entity **change-tracked** — `IgnoreQueryFilters(
 Where the mutation creates **child** rows, prefer the `SetTenantOverride`/clear-per-iteration shape
 (`MaterializeRecurringBookings`) so the children inherit the right tenant.
 
+**The third form: ONE repository method serving TWO callers with OPPOSITE tenancy requirements.** The
+two cases above are about a *caller* getting its tenancy wrong. This one is about a *method* deciding
+tenancy on its callers' behalf — and then being reused. A method written for a request path
+(`GetDbSet()`, correct: the caller has a `tenant_id` claim) is later called from a timer/Function that
+has **no** claim; under a tenant the filter resolves `TenantId == null` against non-null rows, **every
+branch is false, the query returns nothing, and the method reports the safe-sounding answer** — *no
+conflict, no duplicate, nothing found. The sweep does not fail; it silently agrees with you.*
+**A repository method reachable from BOTH a request path and a background job must not pick its own
+tenancy — name the two variants and let the call site say which world it is in**, per the shipped
+`EmployeeRepository.GetByIdAsync` / `GetByIdIgnoringTenantAsync` pair (`:44-57`). Verified live
+instance: `OrderRepository.HasOverlappingOrderAsync` (`:272-292`, `GetDbSet()`) called from
+`NewJobsDigestService.cs:137` inside a `GetQueryableIgnoringTenant()` sweep — **under a tenant every
+cleaner reports as free and the digest advertises double-booked jobs** — while the *same* method is
+`TakeOrder`'s write gate, where the scoped read is correct (T-0529 AC5's walk found it; ADR-0039 §D6
+specifies the fix). **Reviewer test:** for every repository method, list its callers and ask whether
+they all live in the same tenancy world. If not, one name is wrong. **The pinning test must seed a
+non-null `TenantId`** — same as the mirror case, for the same reason. **And note the direction of the
+lie:** the anonymous-write trap makes a *write* do nothing; this one makes a *guard* say yes.
+
 ## S9 — Migration & DTO-contract safety
 
 - Add **nullable** columns freely. **Non-nullable** columns need a default or a backfill.

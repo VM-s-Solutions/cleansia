@@ -84,9 +84,10 @@ public sealed class PromoCodeService(
             throw new ArgumentException("OrderId is required to apply a promo code.", nameof(orderId));
         }
 
-        // Idempotency — if this order already has a redemption row, return
-        // it as-is. Protects against double-fire (e.g. handler retry, race
-        // between Preview-then-Apply paths).
+        // Idempotency — return this order's existing redemption row as-is. It only sees a COMMITTED
+        // row: under the interim's change-tracked insert (ADR-0038 §D3) a second call in the same
+        // unit of work would miss the staged row and collide on the unique OrderId index at commit.
+        // Nothing calls ApplyAsync twice per request today — CreateOrder is its only caller.
         var existing = await redemptionRepository.GetByOrderIdAsync(orderId, cancellationToken);
         if (existing != null)
         {
@@ -162,8 +163,8 @@ public sealed class PromoCodeService(
         // The finally releases the global slot on ANY non-success — the null return AND a throw.
         // The increment above auto-commits, so a reservation that throws (transient DB error,
         // timeout) would otherwise burn a global slot permanently: a 100-redemption campaign dies
-        // after 100 failed bookings. This compensates and lets the failure surface; it does not
-        // catch, so nothing is hidden from the caller (ADR-0038 §D6, §D8).
+        // after 100 failed bookings. The reservation's own failure always propagates unchanged
+        // (ADR-0038 §D6, §D8).
         PromoCodeRedemption? redemption = null;
         try
         {
@@ -174,9 +175,7 @@ public sealed class PromoCodeService(
         {
             if (redemption == null)
             {
-                // Not the caller's token: the increment is already durable and outlives an aborted
-                // request, so a cancelled token must not skip the release.
-                await promoCodeRepository.DecrementGlobalRedemptionsAsync(promoCode.Id, CancellationToken.None);
+                await ReleaseGlobalSlotAsync(promoCode, userId, orderId);
             }
         }
 
@@ -190,6 +189,30 @@ public sealed class PromoCodeService(
             promoCode.Code, userId, orderId, discount, redemption.SlotOrdinal);
 
         return new PromoCodeApplyResult(true, discount, promoCode.Id, null);
+    }
+
+    private async Task ReleaseGlobalSlotAsync(PromoCode promoCode, string userId, string orderId)
+    {
+        try
+        {
+            // Not the caller's token: the increment is already durable and outlives an aborted
+            // request, so a cancelled token must not skip the release.
+            await promoCodeRepository.DecrementGlobalRedemptionsAsync(promoCode.Id, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            // An exception escaping here would REPLACE the reservation's in the finally above — and
+            // both failing is one transient error on one DbContext, exactly the case this
+            // compensation exists for. Catching the release alone restores the invariant without
+            // hiding the caller's failure (ADR-0038 §D6). The slot stays burned until someone
+            // reconciles it, so this is Error, not Warning.
+            logger.LogError(
+                ex,
+                "Promo global-slot release failed for code {Code} ({PromoCodeId}), user {UserId}, order {OrderId}. " +
+                "CurrentRedemptionsCount is now one higher than the redemption ledger and must be reconciled " +
+                "by hand (ADR-0038 §D6.4).",
+                promoCode.Code, promoCode.Id, userId, orderId);
+        }
     }
 
     private static PromoCodeError? ValidateAvailability(PromoCode promoCode, DateTimeOffset now)

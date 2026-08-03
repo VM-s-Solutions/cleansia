@@ -2,7 +2,7 @@ using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Cleansia.Tests.Features.PromoCodes;
@@ -37,9 +37,10 @@ public class PromoCodeServiceRedeemTests
 
     private readonly Mock<IPromoCodeRepository> _promoCodes = new();
     private readonly Mock<IPromoCodeRedemptionRepository> _redemptions = new();
+    private readonly List<(LogLevel Level, string Message, Exception? Exception)> _logEntries = [];
 
     private PromoCodeService CreateService() =>
-        new(_promoCodes.Object, _redemptions.Object, NullLogger<PromoCodeService>.Instance);
+        new(_promoCodes.Object, _redemptions.Object, new CapturingLogger<PromoCodeService>(_logEntries));
 
     private PromoCode ArrangeCode(int maxPerUser = 1, int? globalMax = null, int globalCount = 0)
     {
@@ -183,6 +184,88 @@ public class PromoCodeServiceRedeemTests
             r => r.DecrementGlobalRedemptionsAsync(CodeId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    // ADR-0038 §D6 — the compensation must never REPLACE the failure it compensates. When the
+    // reservation throws AND the release throws (one transient error on one DbContext — the very
+    // scenario the release exists for), a bare `await` in the finally surfaces the DECREMENT's
+    // exception and the caller never learns why the reservation failed. The release is caught, so
+    // the reservation's exception propagates unchanged and the burned slot is logged for reconciliation.
+    [Fact]
+    public async Task Reservation_And_Release_Both_Throw_Surfaces_The_Reservations_Exception_And_Logs_The_Release()
+    {
+        ArrangeCode(maxPerUser: 1, globalMax: 100);
+        ArrangeNoExistingOrderRow();
+        ArrangeGlobalIncrementSucceeds();
+        var reservationFailure = new InvalidOperationException("transient database failure");
+        var releaseFailure = new InvalidOperationException("the same connection is still broken");
+        _redemptions
+            .Setup(r => r.TryReserveRedemptionSlotAsync(
+                UserId, CodeId, It.IsAny<int>(), It.IsAny<string>(), It.IsAny<decimal>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(reservationFailure);
+        _promoCodes
+            .Setup(r => r.DecrementGlobalRedemptionsAsync(CodeId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(releaseFailure);
+
+        var thrown = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => CreateService().ApplyAsync(Code, UserId, OrderId, 100m, null, CancellationToken.None));
+
+        Assert.Same(reservationFailure, thrown);
+        _promoCodes.Verify(
+            r => r.DecrementGlobalRedemptionsAsync(CodeId, It.IsAny<CancellationToken>()), Times.Once);
+
+        var logged = Assert.Single(_logEntries, e => e.Level == LogLevel.Error);
+        Assert.Same(releaseFailure, logged.Exception);
+        Assert.Contains(CodeId, logged.Message);
+        Assert.Contains(UserId, logged.Message);
+        Assert.Contains(OrderId, logged.Message);
+    }
+
+    // Same compensation, the null-return path: a release failure must not turn a clean
+    // PerUserLimitReached into a 500 that rolls the (not-yet-committed) order back.
+    [Fact]
+    public async Task Release_Throwing_On_The_Null_Return_Still_Yields_PerUserLimitReached()
+    {
+        ArrangeCode(maxPerUser: 1, globalMax: 100);
+        ArrangeNoExistingOrderRow();
+        ArrangeGlobalIncrementSucceeds();
+        _redemptions
+            .Setup(r => r.TryReserveRedemptionSlotAsync(
+                UserId, CodeId, It.IsAny<int>(), It.IsAny<string>(), It.IsAny<decimal>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PromoCodeRedemption?)null);
+        _promoCodes
+            .Setup(r => r.DecrementGlobalRedemptionsAsync(CodeId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("transient database failure"));
+
+        var result = await CreateService().ApplyAsync(Code, UserId, OrderId, 100m, null, CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(PromoCodeError.PerUserLimitReached, result.Error);
+        Assert.Single(_logEntries, e => e.Level == LogLevel.Error);
+    }
+
+    // The release compensates an increment that has ALREADY auto-committed, so an aborted request
+    // must not skip it — CancellationToken.None, never the caller's token.
+    [Fact]
+    public async Task Release_Uses_A_Non_Cancellable_Token()
+    {
+        ArrangeCode(maxPerUser: 1, globalMax: 100);
+        ArrangeNoExistingOrderRow();
+        ArrangeGlobalIncrementSucceeds();
+        _redemptions
+            .Setup(r => r.TryReserveRedemptionSlotAsync(
+                UserId, CodeId, It.IsAny<int>(), It.IsAny<string>(), It.IsAny<decimal>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PromoCodeRedemption?)null);
+        using var aborted = new CancellationTokenSource();
+        await aborted.CancelAsync();
+
+        await CreateService().ApplyAsync(Code, UserId, OrderId, 100m, null, aborted.Token);
+
+        _promoCodes.Verify(
+            r => r.DecrementGlobalRedemptionsAsync(CodeId, CancellationToken.None), Times.Once);
+    }
+
     [Fact]
     public async Task AC2_RaceWinner_When_Reservation_Grants_Slot_Succeeds_With_Discount()
     {
@@ -293,5 +376,14 @@ public class PromoCodeServiceRedeemTests
         _redemptions.Verify(r => r.TryReserveRedemptionSlotAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(),
             It.IsAny<decimal>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    private sealed class CapturingLogger<T>(List<(LogLevel Level, string Message, Exception? Exception)> entries)
+        : ILogger<T>
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            => entries.Add((logLevel, formatter(state, exception), exception));
     }
 }

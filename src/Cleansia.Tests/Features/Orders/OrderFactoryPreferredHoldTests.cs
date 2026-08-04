@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
@@ -31,9 +32,20 @@ public class OrderFactoryPreferredHoldTests
     private readonly Mock<IVatCalculator> _vatCalculator = new();
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
     private readonly Mock<IUserMembershipRepository> _userMembershipRepository = new();
+    private readonly Mock<INotificationProducer> _notificationProducer = new();
+    private readonly List<ProducedPush> _pushes = [];
 
     public OrderFactoryPreferredHoldTests()
     {
+        _notificationProducer
+            .Setup(p => p.NotifyAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Callback<string, string, Dictionary<string, string>, string?, string?, CancellationToken>(
+                (userId, eventKey, args, tenantId, subject, _) =>
+                    _pushes.Add(new ProducedPush(userId, eventKey, args, tenantId, subject)))
+            .Returns(Task.CompletedTask);
+
         _serviceRepository
             .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
             .Returns(Array.Empty<Service>().AsQueryable().BuildMock());
@@ -91,6 +103,65 @@ public class OrderFactoryPreferredHoldTests
             Times.Once);
     }
 
+    /// <summary>
+    /// A hold with no signal is pure board latency, so the two ship together or not at all — ADR-0036
+    /// D10's "if only one can ship, ship neither", made checkable. The addressee rides on the resolver's
+    /// answer, so a granted hold cannot be produced without one.
+    /// </summary>
+    [Fact]
+    public async Task A_Granted_Hold_Sends_The_Targeted_Offer_To_The_Cleaner()
+    {
+        var order = await CreateAsync(NoPreferredCleanerHold.Grants(Now.AddHours(2)));
+
+        var push = Assert.Single(_pushes);
+        Assert.Equal(NoPreferredCleanerHold.RecipientUserId, push.UserId);
+        Assert.Equal(NotificationEventCatalog.PreferredOffer, push.EventKey);
+        Assert.Equal(order.Id, push.Args["orderId"]);
+        Assert.Equal(order.DisplayOrderNumber, push.Args["orderNumber"]);
+        Assert.Equal(order.Id, push.Subject);
+    }
+
+    /// <summary>
+    /// The one-way invariant, from the other side: a decline means the cleaner cannot act on the offer,
+    /// so telling them about it is noise on the channel the mechanism depends on being worth reading.
+    /// </summary>
+    [Fact]
+    public async Task A_Declined_Outcome_Sends_Nothing()
+    {
+        await CreateAsync(NoPreferredCleanerHold.Resolver);
+
+        Assert.Empty(_pushes);
+    }
+
+    /// <summary>
+    /// The 2-to-8-hour band: too little lead time to withhold a seat, enough to be told. This is what
+    /// makes the 8-hour floor a reduction of the perk rather than its absence.
+    /// </summary>
+    [Fact]
+    public async Task A_Short_Lead_Booking_Sends_The_Offer_With_No_Hold()
+    {
+        var resolver = new Mock<IPreferredCleanerHoldResolver>();
+        resolver
+            .Setup(r => r.ResolveAsync(
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PreferredCleanerOutcome.NotifyOnly(
+                HoldDeclineReason.ShortLeadTime,
+                new PreferredCleanerRecipient(NoPreferredCleanerHold.RecipientUserId, null)));
+
+        var order = await CreateAsync(resolver.Object);
+
+        Assert.Null(order.PreferredHoldUntilUtc);
+        Assert.Equal(NotificationEventCatalog.PreferredOffer, Assert.Single(_pushes).EventKey);
+    }
+
+    private sealed record ProducedPush(
+        string UserId,
+        string EventKey,
+        Dictionary<string, string> Args,
+        string? TenantId,
+        string? Subject);
+
     private async Task<Cleansia.Core.Domain.Orders.Order> CreateAsync(IPreferredCleanerHoldResolver resolver) =>
         await NewFactory(resolver).CreateAsync(Input(), CancellationToken.None);
 
@@ -104,7 +175,8 @@ public class OrderFactoryPreferredHoldTests
             _vatCalculator.Object,
             _loyaltyService.Object,
             _userMembershipRepository.Object,
-            resolver);
+            resolver,
+            _notificationProducer.Object);
 
     private static CreateOrderInput Input() =>
         new(

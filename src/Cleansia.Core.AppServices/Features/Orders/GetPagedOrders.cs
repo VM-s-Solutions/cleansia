@@ -88,7 +88,9 @@ public class GetPagedOrders
                 request.Filter?.HasAvailableSpots,
                 request.Filter?.IsUnassigned,
                 request.Filter?.ExcludeEmployeeId,
-                restrictToEmployeeId: isAdmin ? null : callerEmployeeId);
+                restrictToEmployeeId: isAdmin ? null : callerEmployeeId,
+                notHeldFromEmployeeId: isAdmin ? null : callerEmployeeId,
+                nowUtc: isAdmin ? null : DateTime.UtcNow);
 
             var filter = specification.SatisfiedBy();
 

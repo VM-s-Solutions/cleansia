@@ -38,6 +38,14 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
     // EmployeeId filter. Null = no restriction (admin / unscoped).
     public string? RestrictToEmployeeId { get; set; }
 
+    // The ADR-0036 preferred-cleaner hold, as its OWN conjunct rather than a term inside
+    // RestrictToEmployeeId (which CreateAvailableOrdersSpec never sets) and never as a reuse of
+    // ExcludeEmployeeId (whose polarity is the opposite: "orders I am NOT on"). NowUtc is the switch —
+    // set it and the rule applies, as of that instant, from NotHeldFromEmployeeId's point of view. A
+    // null caller under a live hold is nobody's beneficiary, so an unidentified reader is held out.
+    public string? NotHeldFromEmployeeId { get; set; }
+    public DateTime? NowUtc { get; set; }
+
     public Expression<Func<Order, bool>> SatisfiedBy()
     {
         Specification<Order> specification = new TrueSpecification<Order>();
@@ -156,6 +164,12 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             specification &= assignedToCaller | openAndOfferable;
         }
 
+        if (NowUtc.HasValue)
+        {
+            specification &= new DirectSpecification<Order>(
+                OrderVisibility.NotHeldFrom(NotHeldFromEmployeeId, NowUtc.Value));
+        }
+
         return specification.SatisfiedBy();
     }
 
@@ -165,7 +179,8 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
         DateTime? cleaningDateTo = null, IEnumerable<PaymentStatus>? paymentStatuses = null, IEnumerable<PaymentType>? paymentTypes = null,
         decimal? minTotalPrice = null, decimal? maxTotalPrice = null, IEnumerable<OrderStatus>? orderStatuses = null,
         bool? hasAvailableSpots = null, bool? isUnassigned = null, string? excludeEmployeeId = null,
-        string? userId = null, string? restrictToEmployeeId = null, bool? offerableOnly = null) =>
+        string? userId = null, string? restrictToEmployeeId = null, bool? offerableOnly = null,
+        string? notHeldFromEmployeeId = null, DateTime? nowUtc = null) =>
         new()
         {
             Id = id,
@@ -187,6 +202,8 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             IsUnassigned = isUnassigned,
             ExcludeEmployeeId = excludeEmployeeId,
             RestrictToEmployeeId = restrictToEmployeeId,
-            OfferableOnly = offerableOnly
+            OfferableOnly = offerableOnly,
+            NotHeldFromEmployeeId = notHeldFromEmployeeId,
+            NowUtc = nowUtc
         };
 }

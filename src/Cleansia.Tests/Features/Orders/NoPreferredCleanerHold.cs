@@ -10,6 +10,8 @@ namespace Cleansia.Tests.Features.Orders;
 /// </summary>
 internal static class NoPreferredCleanerHold
 {
+    public const string RecipientUserId = "user-preferred-cleaner";
+
     public static IPreferredCleanerHoldResolver Resolver => Grants(null);
 
     public static IPreferredCleanerHoldResolver Grants(DateTime? holdUntilUtc)
@@ -26,7 +28,8 @@ internal static class NoPreferredCleanerHold
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(holdUntilUtc is null
                 ? PreferredCleanerOutcome.Declined(HoldDeclineReason.NoPreference)
-                : PreferredCleanerOutcome.Granted(holdUntilUtc.Value));
+                : PreferredCleanerOutcome.Granted(
+                    holdUntilUtc.Value, new PreferredCleanerRecipient(RecipientUserId, null)));
         return resolver.Object;
     }
 }

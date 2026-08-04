@@ -20,20 +20,31 @@ namespace Cleansia.Core.AppServices.Services;
 ///   - The order satisfies <see cref="Domain.Orders.OrderAvailability"/> — the one
 ///     offerability rule every surface reads — has a free spot, isn't
 ///     already assigned to this cleaner, and hasn't started yet
+///   - The order is not withheld from this cleaner by an ADR-0036 preferred-cleaner hold
+///     (<see cref="Domain.Orders.OrderVisibility"/>). This surface carries TWO rules and
+///     that is deliberate: "may I take it" is the shared one, "is it new to me" is the
+///     local one below. The digest emits a count and never an identity, so nothing can
+///     leak here — but a count including an order the cleaner can neither see nor take
+///     is a lie.
 ///   - The order is FRESH to this cleaner (see below)
 ///   - The cleaner has no overlapping live-commitment order at the order's
 ///     cleaning time (see <see cref="IOrderRepository.HasOverlappingOrderIgnoringTenantAsync"/>)
 ///
-/// Freshness is TWO sources, disjunctive and upper-bounded at the sweep's own start
+/// Freshness is THREE sources, disjunctive and upper-bounded at the sweep's own start
 /// instant (ADR-0036 §D5.3), because <see cref="Domain.Users.Employee.LastNewJobsDigestAt"/>
-/// is a single per-cleaner scalar and the overlap filter above is a per-cleaner,
-/// NON-monotone rule — an order can become takeable again long after its own status
+/// is a single per-cleaner scalar and two of the filters above are per-cleaner,
+/// NON-monotone rules — an order can become takeable again long after its own status
 /// stopped changing:
 ///   - the order's status moved into an offerable state after the watermark; or
 ///   - one of THIS cleaner's commitments was released (cancelled/completed) after the
 ///     watermark, and this order sits in the window that release freed. Without the
 ///     second source, every candidate dropped for a time conflict was burned the moment
-///     the cleaner was notified about anything else (T-0528).
+///     the cleaner was notified about anything else (T-0528); or
+///   - a preferred-cleaner hold on the order EXPIRED after the watermark. A held order's
+///     only status track is written at creation, so without the third source its whole
+///     history is already older than every other cleaner's watermark by the time it
+///     opens, and it leaves the notification channel permanently — board-only, findable
+///     solely by someone who happens to scroll.
 /// A cleaner who has never been digested has no watermark and no released window: the
 /// whole open board is new to them, bounded by the not-started-yet floor.
 ///
@@ -123,11 +134,13 @@ public class NewJobsDigestService(
                         && o.CleaningDateTime >= sweepStartedAtUtc
                         && o.AssignedEmployees.Count < o.MaxEmployees
                         && o.AssignedEmployees.All(ae => ae.EmployeeId != cleaner.EmployeeId))
-                    .Where(OrderAvailability.IsOfferableSql);
+                    .Where(OrderAvailability.IsOfferableSql)
+                    .Where(OrderVisibility.NotHeldFrom(cleaner.EmployeeId, sweepStartedAtUtc));
 
                 // Pull just enough to make a decision: count + the cleaning times the not-busy
                 // filter needs. Bounded by the floor above and by the freshness rule.
-                var newOrders = await ApplyFreshness(board, sinceUtc, releasedWindow)
+                var newOrders = await ApplyFreshness(
+                        board, sinceUtc, releasedWindow, cleaner.EmployeeId, sweepStartedAtUtc)
                     .Select(o => new { o.Id, o.CleaningDateTime, o.EstimatedTime })
                     .ToListAsync(cancellationToken);
 
@@ -222,11 +235,20 @@ public class NewJobsDigestService(
     /// <para>Freshness is `∃ track newer than the watermark`, never `latest track newer than the
     /// watermark`: the two are equivalent, and the existential form drops the correlated top-N subquery
     /// the sweep used to run per candidate row (ADR-0036 §D5.3).</para>
+    ///
+    /// <para>The hold-expiry disjunct is a bounded WINDOW, `> watermark AND &lt;= sweepStart`, never a
+    /// lower bound and never `max(track, hold) > watermark`. The upper bound is the correctness
+    /// condition, not an optimisation: <c>PreferredHoldUntilUtc</c> is the first availability instant in
+    /// this system that is in the FUTURE, so without it a live hold marks the order "new" from creation
+    /// — inflating the count with orders the cleaner cannot see and walking the watermark past the
+    /// expiry, which reproduces the very defect the disjunct exists to fix.</para>
     /// </summary>
     private static IQueryable<Order> ApplyFreshness(
         IQueryable<Order> board,
         DateTime? sinceUtc,
-        (DateTime Start, DateTime End)? releasedWindow)
+        (DateTime Start, DateTime End)? releasedWindow,
+        string employeeId,
+        DateTime sweepStartedAtUtc)
     {
         if (sinceUtc is null)
         {
@@ -236,13 +258,21 @@ public class NewJobsDigestService(
         var since = sinceUtc.Value;
         if (releasedWindow is null)
         {
-            return board.Where(o => o.OrderStatusHistory.Any(s => s.CreatedOn > since));
+            return board.Where(o => o.OrderStatusHistory.Any(s => s.CreatedOn > since)
+                || (o.PreferredEmployeeId != null
+                    && o.PreferredEmployeeId != employeeId
+                    && o.PreferredHoldUntilUtc > since
+                    && o.PreferredHoldUntilUtc <= sweepStartedAtUtc));
         }
 
         var (releasedStart, releasedEnd) = releasedWindow.Value;
         return board.Where(o => o.OrderStatusHistory.Any(s => s.CreatedOn > since)
             || (o.CleaningDateTime < releasedEnd
-                && o.CleaningDateTime.AddMinutes(o.EstimatedTime) > releasedStart));
+                && o.CleaningDateTime.AddMinutes(o.EstimatedTime) > releasedStart)
+            || (o.PreferredEmployeeId != null
+                && o.PreferredEmployeeId != employeeId
+                && o.PreferredHoldUntilUtc > since
+                && o.PreferredHoldUntilUtc <= sweepStartedAtUtc));
     }
 
     /// <summary>

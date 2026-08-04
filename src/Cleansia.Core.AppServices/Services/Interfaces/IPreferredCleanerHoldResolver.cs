@@ -40,16 +40,30 @@ public interface IPreferredCleanerHoldResolver
 /// <para><see cref="Reason"/> carries WHY, so the decision is loggable and testable rather than a bare
 /// null.</para>
 /// </summary>
-public record PreferredCleanerOutcome(bool NotifyPreferred, DateTime? HoldUntilUtc, HoldDeclineReason Reason)
+public record PreferredCleanerOutcome(
+    bool NotifyPreferred,
+    DateTime? HoldUntilUtc,
+    HoldDeclineReason Reason,
+    PreferredCleanerRecipient? Recipient = null)
 {
     public static PreferredCleanerOutcome Declined(HoldDeclineReason reason) => new(false, null, reason);
 
     /// <summary>The weaker half of the perk: a signal we can act on, in a window we cannot hold.</summary>
-    public static PreferredCleanerOutcome NotifyOnly(HoldDeclineReason reason) => new(true, null, reason);
+    public static PreferredCleanerOutcome NotifyOnly(HoldDeclineReason reason, PreferredCleanerRecipient recipient) =>
+        new(true, null, reason, recipient);
 
-    public static PreferredCleanerOutcome Granted(DateTime holdUntilUtc) =>
-        new(true, holdUntilUtc, HoldDeclineReason.None);
+    public static PreferredCleanerOutcome Granted(DateTime holdUntilUtc, PreferredCleanerRecipient recipient) =>
+        new(true, holdUntilUtc, HoldDeclineReason.None, recipient);
 }
+
+/// <summary>
+/// Who the targeted push is addressed to, resolved here because the resolver has already loaded the
+/// cleaner and because a hold whose beneficiary cannot be signalled is pure board latency. Both factory
+/// methods that set <c>NotifyPreferred</c> require one, so the D4.1 invariant is carried by the type
+/// rather than by remembering. <c>TenantId</c> is the RECIPIENT's, not the order's — it scopes the
+/// downstream dispatch consumer, exactly as the digest's per-cleaner queue message does.
+/// </summary>
+public record PreferredCleanerRecipient(string UserId, string? TenantId);
 
 public enum HoldDeclineReason
 {

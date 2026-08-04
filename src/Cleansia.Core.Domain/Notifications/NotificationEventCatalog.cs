@@ -30,6 +30,26 @@ public static class NotificationEventCatalog
     public const string NewJobsAvailable = "order.new_available";
 
     /// <summary>
+    /// Partner-targeted: a customer this cleaner has worked for before asked for them by name on a new
+    /// booking (ADR-0036 D4). One order, not a count — args: <c>orderNumber</c> (loc) + <c>orderId</c>
+    /// (deep link). It bypasses the 30-minute digest cadence and does NOT stamp the digest watermark:
+    /// the hold's length has to be set by the customer's tolerance for latency, not by our sweep
+    /// interval, and a second writer on the watermark would suppress the cleaner's next digest of OTHER
+    /// jobs. Mutable under <see cref="NotificationCategory.NewJobsAvailable"/> — a cleaner who silenced
+    /// new-job notifications must not receive a push-shaped bypass of that mute.
+    ///
+    /// <para>This is the only place the platform tells a cleaner they were chosen. No surface ever says
+    /// an order is held for SOMEONE ELSE, and no cleaner ever learns they were passed over.</para>
+    ///
+    /// <para>Deliberately absent from <c>FcmMessageFactory.ApnsDisplayMap</c> and from
+    /// <see cref="NotificationFeedEventKeys.Partner"/> until the partner clients ship its copy — both
+    /// registries are server-side declarations that client text exists, and neither iOS bundle nor the
+    /// Android template catalog carries this key yet. Listed early, iOS renders the raw loc-key on the
+    /// lock screen and the feed's unread badge counts a row the app drops unrendered.</para>
+    /// </summary>
+    public const string PreferredOffer = "order.preferred_offer";
+
+    /// <summary>
     /// Partner-targeted: a job the cleaner ACCEPTED was cancelled (by the customer or an admin).
     /// A dedicated key, NOT the customer <c>order.cancelled</c>, so the audience feed keysets stay
     /// disjoint. Args: <c>orderNumber</c> (loc) + <c>orderId</c> (deep link). Non-mutable
@@ -60,6 +80,7 @@ public static class NotificationEventCatalog
         DisputeReply => NotificationCategory.DisputeReply,
         RecurringScheduled => NotificationCategory.RecurringScheduled,
         NewJobsAvailable => NotificationCategory.NewJobsAvailable,
+        PreferredOffer => NotificationCategory.NewJobsAvailable,
         _ => null,
     };
 }

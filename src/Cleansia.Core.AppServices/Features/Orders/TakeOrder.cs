@@ -47,7 +47,7 @@ public class TakeOrder
                 .Cascade(CascadeMode.Stop)
                 .Must(command => !string.IsNullOrWhiteSpace(command.OrderId))
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync((command, ct) => _orderRepository.ExistsAsync(command.OrderId, ct))
+                .MustAsync(ExistsAndIsOpenToCallerAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotFound)
                 .MustAsync(NotCancelledAsync)
                 .WithMessage(BusinessErrorMessage.OrderAlreadyCancelled)
@@ -69,6 +69,25 @@ public class TakeOrder
                 .WithMessage(BusinessErrorMessage.WeeklyOrderLimitReached)
                 .MustAsync(NotHaveTimeConflictAsync)
                 .WithMessage(BusinessErrorMessage.TimeConflict);
+        }
+
+        /// <summary>
+        /// Existence AND the ADR-0036 preferred-cleaner hold, in ONE query answering with ONE error:
+        /// a held order has to be indistinguishable from a missing one, or the exclusivity — and with
+        /// it the fact that some other cleaner was named — is inferable from the refusal. Appended as
+        /// its own rule after the seat check instead, a FULL held order would answer
+        /// <see cref="BusinessErrorMessage.NoAvailableSpots"/>, which is the disagreement this
+        /// placement exists to prevent. The employee is server-derived from the caller, never a
+        /// command field; a caller with no employee id is nobody's beneficiary and is held out.
+        /// </summary>
+        private async Task<bool> ExistsAndIsOpenToCallerAsync(Command command, CancellationToken cancellationToken)
+        {
+            var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+
+            return await _orderRepository
+                .GetQueryable()
+                .Where(OrderVisibility.NotHeldFrom(employeeId, DateTime.UtcNow))
+                .AnyAsync(o => o.Id == command.OrderId, cancellationToken);
         }
 
         private async Task<bool> NotCancelledAsync(Command command, CancellationToken cancellationToken)

@@ -234,12 +234,13 @@ public class Order : Auditable, ITenantEntity
     public string? MembershipPlanIdAtPurchase { get; private set; }
 
     /// <summary>
-    /// Customer-requested cleaner. The matching algorithm boosts this employee's
-    /// score so they're more likely to be offered the order, but it's not a
-    /// guarantee — if they decline or are busy, the order falls back to normal
-    /// matching. Not exposed to the cleaner side (avoids "they didn't pick me"
-    /// awkwardness). Future Cleansia Plus perk; today the field exists but no
-    /// UI sets it.
+    /// Customer-requested cleaner — what the customer ASKED for. Whether the platform could act on it
+    /// is <see cref="PreferredHoldUntilUtc"/>, a separate column with a separate lifetime, so that
+    /// "we stored your preference and could not act on it" stays expressible. There is no matching
+    /// algorithm and no score: dispatch is first-come-first-served off a pull board, and the only thing
+    /// this field buys is a bounded head start on the order's first seat (ADR-0036).
+    /// Nulled by <see cref="AnonymizeCustomerData"/>. Never exposed on a partner-facing DTO — the
+    /// chosen cleaner is told they were chosen, and nobody is ever told they were passed over.
     /// </summary>
     [MaxLength(26)]
     public string? PreferredEmployeeId { get; private set; }

@@ -75,7 +75,7 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
                 var orderRepository = provider.GetRequiredService<IOrderRepository>();
                 var counted = await orderRepository
                     .GetQueryable()
-                    .Where(DashboardSpecifications.CreateAvailableOrdersSpec(EmployeeId).SatisfiedBy())
+                    .Where(DashboardSpecifications.CreateAvailableOrdersSpec(EmployeeId, DateTime.UtcNow).SatisfiedBy())
                     .Select(o => o.Id)
                     .ToListAsync();
 

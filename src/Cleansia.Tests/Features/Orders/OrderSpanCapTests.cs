@@ -261,7 +261,8 @@ public class OrderSpanCapTests
             _vatCalculator.Object,
             _loyaltyService.Object,
             _userMembershipRepository.Object,
-            NoPreferredCleanerHold.Resolver);
+            NoPreferredCleanerHold.Resolver,
+            Mock.Of<INotificationProducer>());
 
     private CreateOrder.Validator CreateValidator() =>
         new(

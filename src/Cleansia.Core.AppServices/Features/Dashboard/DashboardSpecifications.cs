@@ -14,8 +14,13 @@ public static class DashboardSpecifications
     /// payment-qualified. The set this used to carry was {Pending, Confirmed}, and Pending has no
     /// writer — so the count was structurally zero for an entire pipeline of untaken cash orders
     /// while the Available pane beside it listed them.
+    ///
+    /// <para><paramref name="employeeId"/> is the caller, and it is spent under TWO opposite
+    /// polarities: <c>excludeEmployeeId</c> drops the orders they are already on, and
+    /// <c>notHeldFromEmployeeId</c> keeps the ones held FOR them (ADR-0036 D5). Both parameters take
+    /// the same id and mean opposite things, which is why neither may be folded into the other.</para>
     /// </summary>
-    public static OrderSpecification CreateAvailableOrdersSpec(string excludeEmployeeId)
+    public static OrderSpecification CreateAvailableOrdersSpec(string employeeId, DateTime nowUtc)
     {
         return OrderSpecification.Create(
             id: null,
@@ -34,8 +39,10 @@ public static class DashboardSpecifications
             orderStatuses: OrderAvailability.OfferableStatuses,
             hasAvailableSpots: true,
             isUnassigned: null,
-            excludeEmployeeId: excludeEmployeeId,
-            offerableOnly: true
+            excludeEmployeeId: employeeId,
+            offerableOnly: true,
+            notHeldFromEmployeeId: employeeId,
+            nowUtc: nowUtc
         );
     }
 

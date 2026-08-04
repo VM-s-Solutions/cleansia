@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Loyalty;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +29,8 @@ public sealed class OrderFactory(
     IVatCalculator vatCalculator,
     ILoyaltyService loyaltyService,
     IUserMembershipRepository userMembershipRepository,
-    IPreferredCleanerHoldResolver preferredCleanerHoldResolver) : IOrderFactory
+    IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
+    INotificationProducer notificationProducer) : IOrderFactory
 {
     /// <summary>
     /// LOY-003 — Hard cap on combined (Plus + tier) discount, applied as a
@@ -180,6 +182,24 @@ public sealed class OrderFactory(
         if (preferredCleaner.HoldUntilUtc is { } holdUntilUtc)
         {
             order.GrantPreferredHold(input.PreferredEmployeeId!, holdUntilUtc);
+        }
+
+        // The notify predicate is WIDER than the hold's (ADR-0036 D4.1): a booking with too little lead
+        // time to withhold a seat still earns the targeted offer. The signal rides the outbox and the
+        // shortest hold the policy can grant is 48 minutes, so it lands inside the window it announces.
+        if (preferredCleaner.Recipient is { } recipient)
+        {
+            await notificationProducer.NotifyAsync(
+                recipient.UserId,
+                NotificationEventCatalog.PreferredOffer,
+                new Dictionary<string, string>
+                {
+                    ["orderId"] = order.Id,
+                    ["orderNumber"] = order.DisplayOrderNumber,
+                },
+                recipient.TenantId,
+                order.Id,
+                cancellationToken);
         }
 
         // VAT breakdown — gracefully degrade when there's no company info

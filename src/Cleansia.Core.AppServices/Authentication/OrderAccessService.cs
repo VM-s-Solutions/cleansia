@@ -81,8 +81,14 @@ public class OrderAccessService : IOrderAccessService
             return false;
         }
 
+        // The in-memory form of the ADR-0036 hold, and this one branch is both browse surfaces at
+        // once — order detail and order photos. Reached only after CanAccessOrderAsync has already
+        // returned true for an administrator and for the order's own customer, so the rule cannot
+        // change what a non-cleaner sees.
         var employeeId = await GetCallerEmployeeIdAsync(cancellationToken);
-        return !string.IsNullOrEmpty(employeeId) && order.HasAvailableSpots;
+        return !string.IsNullOrEmpty(employeeId)
+            && order.HasAvailableSpots
+            && OrderVisibility.NotHeldFrom(order, employeeId, DateTime.UtcNow);
     }
 
     private async Task<string?> ResolveCallerEmployeeIdAsync()

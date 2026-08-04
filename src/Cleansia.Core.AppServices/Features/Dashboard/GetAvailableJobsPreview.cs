@@ -44,7 +44,7 @@ public class GetAvailableJobsPreview
             }
 
             // Sorted by TotalPrice DESC so the cleaner sees the highest-value jobs first.
-            var spec = DashboardSpecifications.CreateAvailableOrdersSpec(employeeId);
+            var spec = DashboardSpecifications.CreateAvailableOrdersSpec(employeeId, DateTime.UtcNow);
             var totalCount = await orderRepository.GetCountAsync(spec.SatisfiedBy(), cancellationToken);
             var orders = await orderRepository.GetQueryable()
                 .Where(spec.SatisfiedBy())

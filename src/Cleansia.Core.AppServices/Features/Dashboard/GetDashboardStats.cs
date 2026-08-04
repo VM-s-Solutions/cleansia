@@ -231,9 +231,9 @@ public class GetDashboardStats
             );
         }
 
-        private async Task<int> GetAvailableOrdersCountAsync(string excludeEmployeeId, CancellationToken cancellationToken)
+        private async Task<int> GetAvailableOrdersCountAsync(string employeeId, CancellationToken cancellationToken)
         {
-            var specification = DashboardSpecifications.CreateAvailableOrdersSpec(excludeEmployeeId);
+            var specification = DashboardSpecifications.CreateAvailableOrdersSpec(employeeId, DateTime.UtcNow);
             return await orderRepository.GetCountAsync(specification.SatisfiedBy(), cancellationToken);
         }
 

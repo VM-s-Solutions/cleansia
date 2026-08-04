@@ -49,7 +49,8 @@ public class OrderSpecialInstructionsTests
             _vatCalculator.Object,
             _loyaltyService.Object,
             _userMembershipRepository.Object,
-            NoPreferredCleanerHold.Resolver);
+            NoPreferredCleanerHold.Resolver,
+            Mock.Of<INotificationProducer>());
 
     /// <summary>
     /// Anonymous (no user id) keeps the factory off the loyalty/membership

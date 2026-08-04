@@ -89,13 +89,15 @@ public sealed class PreferredCleanerHoldResolver(
             return PreferredCleanerOutcome.Declined(HoldDeclineReason.CleanerBusyAtCleaningTime);
         }
 
+        var recipient = new PreferredCleanerRecipient(cleaner.UserId, cleaner.TenantId);
+
         var hold = BookingPolicy.ComputePreferredHold(cleaningUtc, nowUtc);
         if (hold <= TimeSpan.Zero)
         {
-            return PreferredCleanerOutcome.NotifyOnly(HoldDeclineReason.ShortLeadTime);
+            return PreferredCleanerOutcome.NotifyOnly(HoldDeclineReason.ShortLeadTime, recipient);
         }
 
-        return PreferredCleanerOutcome.Granted(nowUtc.Add(hold));
+        return PreferredCleanerOutcome.Granted(nowUtc.Add(hold), recipient);
     }
 
     private async Task<bool> IsBusyAtCleaningTimeAsync(

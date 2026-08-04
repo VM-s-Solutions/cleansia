@@ -145,7 +145,11 @@ public class MaterializeRecurringBookings
                         ReservedExpressWaiver: null,
                         PromoDiscountAmount: 0m,
                         PromoCodeId: null,
-                        PreferredEmployeeId: null,
+                        // Unfiltered on purpose: this sweep has no user session, and the factory's
+                        // resolver re-runs every gate per occurrence — so a lapsed membership costs the
+                        // hold and the push, never the cleaning. Reject where someone can react;
+                        // degrade where nobody can.
+                        PreferredEmployeeId: template.PreferredEmployeeId,
                         RecurringTemplateId: template.Id);
 
                     await orderFactory.CreateAsync(input, cancellationToken);

@@ -367,7 +367,7 @@ public sealed class UserMembershipActiveUniqueIndexTests : IDisposable
         {
             var old = await ctx.Set<UserMembership>().FirstAsync(m => m.StripeSubscriptionId == "sub_old");
             // "canceled" → MembershipStatus.Cancelled, which falls outside WHERE Status = Active.
-            old.UpdateFromStripeWebhook("canceled", old.CurrentPeriodStart, old.CurrentPeriodEnd);
+            old.UpdateFromStripeWebhook("canceled", old.CurrentPeriodStart, old.CurrentPeriodEnd, trialEndsAtUtc: null);
             await ctx.CommitAsync(CancellationToken.None);
         }
 

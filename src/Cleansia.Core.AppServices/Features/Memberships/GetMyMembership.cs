@@ -37,7 +37,15 @@ public class GetMyMembership
         /// End of the Stripe free trial. Non-null and in the future means metered benefits have not
         /// started yet, so the client can say when they do instead of rendering a bare zero.
         /// </summary>
-        DateTime? TrialEndsAtUtc = null);
+        DateTime? TrialEndsAtUtc = null,
+        /// <summary>
+        /// False once this customer has had their one free trial (owner ruling 2026-08-03), on any past
+        /// enrolment. The server refuses the second trial either way; this is what stops a subscribe
+        /// screen from advertising one it will not receive. Plan-independent — combine with the plan's
+        /// own <c>TrialPeriodDays</c>. Defaults true so a client built before this field renders exactly
+        /// as it does today.
+        /// </summary>
+        bool TrialEligible = true);
 
     public class Handler(
         IUserMembershipRepository userMembershipRepository,
@@ -48,6 +56,7 @@ public class GetMyMembership
         public async Task<BusinessResult<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
+            var trialEligible = !await userMembershipRepository.HasEverStartedTrialAsync(userId, cancellationToken);
             var membership = await userMembershipRepository.GetActiveForUserNoTrackingAsync(userId, cancellationToken);
             if (membership == null)
             {
@@ -63,7 +72,8 @@ public class GetMyMembership
                     CurrentPeriodEnd: null,
                     CancelRequested: false,
                     BillingInterval: null,
-                    MonthlyEquivalentPriceCzk: null));
+                    MonthlyEquivalentPriceCzk: null,
+                    TrialEligible: trialEligible));
             }
 
             // One collaborator, not two: the resolver is the ONE place the remaining count and the period
@@ -89,7 +99,8 @@ public class GetMyMembership
                 // pricing path ignores, and rendering it beside a zero remaining reads as "exhausted".
                 ExpressUpgradesPerMonth: waiver.Quota,
                 ExpressUpgradesRemaining: waiver.RemainingBeforeThisBooking,
-                TrialEndsAtUtc: membership.TrialEndsAtUtc));
+                TrialEndsAtUtc: membership.TrialEndsAtUtc,
+                TrialEligible: trialEligible));
         }
     }
 }

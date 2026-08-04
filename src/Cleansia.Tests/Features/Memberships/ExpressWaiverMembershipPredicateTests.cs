@@ -83,7 +83,7 @@ public sealed class ExpressWaiverMembershipPredicateTests : IDisposable
             // Through the REAL writer, so the test pins production wiring rather than a field poke:
             // "past_due" is what Stripe sends when the first invoice fails.
             membership.UpdateFromStripeWebhook(
-                "past_due", DateTime.UtcNow.AddDays(-10), DateTime.UtcNow.AddDays(20));
+                "past_due", DateTime.UtcNow.AddDays(-10), DateTime.UtcNow.AddDays(20), trialEndsAtUtc: null);
         }
         ctx.Add(membership);
 

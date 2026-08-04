@@ -325,7 +325,8 @@ public class StripeClient : IStripeClient
         return new SubscriptionResult(
             SubscriptionId: subscription.Id,
             CurrentPeriodStart: periodStart,
-            CurrentPeriodEnd: periodEnd);
+            CurrentPeriodEnd: periodEnd,
+            TrialEnd: subscription.TrialEnd);
     }
 
     public async Task<SubscriptionResult> SwapSubscriptionPriceAsync(
@@ -367,7 +368,8 @@ public class StripeClient : IStripeClient
         return new SubscriptionResult(
             SubscriptionId: swapped.Id,
             CurrentPeriodStart: periodStart,
-            CurrentPeriodEnd: periodEnd);
+            CurrentPeriodEnd: periodEnd,
+            TrialEnd: swapped.TrialEnd);
     }
 
     public async Task CancelSubscriptionAtPeriodEndAsync(

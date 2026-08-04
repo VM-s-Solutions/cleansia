@@ -208,7 +208,13 @@ public record SetupIntentResult(string Id, string ClientSecret);
 public record SubscriptionResult(
     string SubscriptionId,
     DateTime CurrentPeriodStart,
-    DateTime CurrentPeriodEnd);
+    DateTime CurrentPeriodEnd,
+    /// <summary>
+    /// Stripe's <c>trial_end</c>, mirrored onto <c>UserMembership.TrialEndsAtUtc</c>. Null = Stripe
+    /// granted no trial on this subscription. It is what the once-per-customer trial rule reads back
+    /// on the NEXT subscribe, so it is the answer Stripe gave, never the number we asked for.
+    /// </summary>
+    DateTime? TrialEnd = null);
 
 /// <summary>
 /// Result of <see cref="IStripeClient.CreatePaymentIntentAsync"/>. The

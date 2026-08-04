@@ -30,6 +30,14 @@ public class UserMembershipRepository(CleansiaDbContext context)
             .OrderByDescending(m => m.CurrentPeriodEnd);
     }
 
+    public Task<bool> HasEverStartedTrialAsync(string userId, CancellationToken cancellationToken)
+    {
+        // Every status, including soft-deleted rows: the question is historical. Seeks the
+        // (UserId, Status) index on its leading column.
+        return GetDbSet()
+            .AnyAsync(m => m.UserId == userId && m.TrialEndsAtUtc != null, cancellationToken);
+    }
+
     public Task<UserMembership?> GetByStripeSubscriptionIdAsync(string stripeSubscriptionId, CancellationToken cancellationToken)
     {
         // Cross-tenant by design: webhook lookup. Caller (HandleSubscriptionEvent)

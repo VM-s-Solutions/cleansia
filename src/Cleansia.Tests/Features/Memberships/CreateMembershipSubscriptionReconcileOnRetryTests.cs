@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
@@ -76,6 +77,7 @@ public class CreateMembershipSubscriptionReconcileOnRetryTests
             _planRepository.Object,
             _session.Object,
             _stripe.Object,
+            new MembershipTrialResolver(_membershipRepository.Object),
             NullLogger<CreateMembershipSubscription.Handler>.Instance);
 
     private static CreateMembershipSubscription.Command ConfirmedCommand() =>

@@ -247,6 +247,8 @@ public static class ServiceExtensions
         // handler): two different keys inside one request would count one month and write the other.
         services.AddScoped<IBenefitPeriodKeyFactory, BenefitPeriodKeyFactory>();
         services.AddScoped<IExpressWaiverResolver, ExpressWaiverResolver>();
+        // The one place the once-per-customer trial rule is decided, for both subscribe surfaces.
+        services.AddScoped<IMembershipTrialResolver, MembershipTrialResolver>();
         services.AddScoped<IExpressWaiverConsumer, ExpressWaiverConsumer>();
         services.AddScoped<IOrderAccessService, OrderAccessService>();
         services.AddScoped<IAddressGeocoder, AddressGeocoder>();

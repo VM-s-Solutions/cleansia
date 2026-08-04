@@ -185,6 +185,21 @@ inputs bound by `formControlName`. Submit calls a facade `create`/`update` that 
 `Create*Command`/`Update*Command` (generated) and navigates via a route enum on success. Field-level
 errors come from `ErrorPipe`; API errors from `SnackbarService.showApiError`.
 
+**Live input normalization lives in the facade, on `valueChanges`** — `control.setValue(normalized,
+{ emitEvent: false })`, the `promo-code-form` uppercase idiom, extended by the partner bank-details
+form (digits-only account fields, uppercase IBAN/SWIFT). Two things to know before you write one:
+
+- Keep the rule **presentational** (strip separators, uppercase). A checksum or a length cap here is a
+  second copy of a server rule, and where the server gates money a client that disagrees is the bug
+  (ADR-0034 D4 — the ADR's own draft had the CZ mod-11 direction backwards and would have rejected 91%
+  of real accounts).
+- `cleansia-text-input` renders through `[value]="innerValue"`, and a property binding only touches the
+  DOM when the expression differs from **what Angular last wrote**, not from what the element holds. So
+  a normalizer that *rejects the character just typed* produces a model and a screen that disagree.
+  `writeValue` therefore pushes the value onto the native input when they differ, the way
+  `DefaultValueAccessor` does; pinned by `cleansia-text-input.component.spec.ts`. Don't reintroduce a
+  binding-only write, and remember the trap if you add the same normalization to another CVA.
+
 ## Routing
 
 `lib.routes.ts` exports a `Route[]`, list + `create` + `:id/edit`, using `data: { mode, title }` read
@@ -296,6 +311,26 @@ rule as `errors.*`; the live customer interceptor uses `api.${code}`. **Follow t
   five-locale key-set parity and non-emptiness over **both** namespaces, and holds a contract list
   bounded to the surface derived so far rather than pretending to cover all 31 admin controllers.
   Extend that list when you derive another admin surface.
+
+### "This optional resource does not exist yet" arrives as a failure — normalize it once, at the client lib
+
+Some reads answer **400 with a business code** for the ordinary first-visit case
+(`Employee/GetMyPayoutDetails` → `payout.not_found` for a cleaner who has never saved payout details,
+ADR-0034 D8.2). Left alone that is two bugs at once: the facade cannot tell "nothing saved yet" from
+"the network is broken", and the shared interceptor toasts a red error on a screen that should simply
+open empty. Both halves are fixed **once**, never per component — this is the same normalization the
+mobile repositories do at their data boundary (`ProfileRepositoryImpl.getPayoutDetails`,
+`PartnerProfileClient.getMyPayoutDetails`):
+
+1. **A hand-written service in the app's own `libs/core/<app>-services/src/lib/services/`** wraps the
+   generated call and maps that one code to `of(null)`, rethrowing everything else
+   (`PartnerPayoutDetailsService.getMine`). It reads the code through the shared
+   `extractApiErrorCode` — never a hand-rolled body walk. Facades then branch on `null` vs. the
+   `catchError(() => of(null))` arm of the C3 pipe, so **empty and error stay distinct states**.
+2. **The code is listed in `ABSENT_RESOURCE_ERROR_CODES`** (`libs/core/services/.../api-error.ts`) and
+   `HttpErrorInterceptorFn` stays silent for it **on a GET only** — the same reason it is already
+   silent on a 404. On a mutation the identical code is a genuine refusal and still toasts. Keep the
+   set tiny: a code belongs there only when *every* reader renders it as an empty state.
 
 ### A refused row action reconciles the list — a toast alone is a bug
 

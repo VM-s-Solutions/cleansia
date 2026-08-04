@@ -440,6 +440,32 @@ Two generalizable rules, and the second is the one that keeps such a guard hones
   them from here would make the server own a client naming transform — the map would stop being a
   declaration and become a convention for somebody else's tree. Android keeps its own template test.
 
+### A fixture that supplies an input production never produces makes the test green and the feature dead
+
+The sibling of the rule above, and the more common one: the guard is real and the assertion is right,
+but the *arrangement* hands it a value no caller can hand it. Nothing fails, so nothing is looked at.
+T-0522 hit it twice on one document:
+
+- The payout-invoice layout test **filled the supplier's bank fields by hand**, so it proved the layout
+  renders them while the mapper set only `Iban` — every real invoice printed `—` for account number,
+  SWIFT and bank.
+- The layout-selection test asked the factory for **`"CZ"`**. Production passes `Country.IsoCode`, which
+  is **alpha-3 `"CZE"`**, so the Czech layout was never selected and every Czech invoice rendered in
+  English — under a green test named `Factory_Selects_The_Czech_Layout_For_Cz`.
+
+**The check:** for each arranged value, name the production code that produces it. If the answer is "the
+test does", the test is pinning the *layout*, not the *feature* — so either build the fixture through
+the real mapper/loader, or add one test that does and let the hand-built ones stay unit-scoped. When a
+mapper feeds a renderer, at least one test must run the **whole** mapper→render path, and **render and
+look** at the artifact: a field-model assertion and a rendered document are different claims, and only
+the second catches an English legal box on a Czech invoice or `objednávka N/A` where an `.Include` was
+missed.
+
+**Corollary — a new required parameter beats a defaulted one on exactly this seam.** The fix threaded
+`EmployeePayoutDetails?` into `CreatePdfData` as a **required** parameter, so the two call sites had to
+be updated and a future third is a compile error. A defaulted parameter would have re-armed the original
+defect: a call site that silently omits it and three blank fields on a document nobody re-reads.
+
 ## Reading a blob back to a client — what T-0446 did, and an OPEN question for the architect
 
 **Descriptive, not prescriptive.** There are three live shapes for turning a stored blob name into a
@@ -764,6 +790,25 @@ counter and never a derived count.
 - **An out-of-band claim has an orphan class, and the sweep that reclaims it is NOT the sweep you
   already have.** A job that reads the *order* table structurally cannot see a claim whose order never
   committed. Repository method + partial index + a second command on an existing schedule.
+- **A ONCE-EVER entitlement (quota 1, no period) is the same rule with the enrolment row removed from
+  the key — and that removal is the whole feature.** Re-subscribing creates a NEW `UserMembership`, so
+  anything read off *the current row* resets on exactly the event the rule exists to catch. Read the
+  user's row **history** instead: any row, **any status, including soft-deleted** (a deactivated row
+  still consumed the thing — the deliberate S10 exception), carrying the marker. That needs **no new
+  column**: the fact is already recorded on the row that granted it, and a mirror column on `User`
+  would be a second source of truth with its own writer to forget. Reference:
+  `IUserMembershipRepository.HasEverStartedTrialAsync` + `IMembershipTrialResolver` (one trial per
+  customer, owner ruling 2026-08-03).
+  Two traps that come with it: **(a) the marker must be the PROVIDER's answer, not the number we asked
+  for** — mirror Stripe's `trial_end` off the created subscription, never `plan.TrialPeriodDays`, or a
+  provider that silently declined leaves a marker for a benefit nobody received; **(b) a marker that a
+  webhook can NULL is not a marker** — coalesce (`X = incoming ?? X`) **in the entity**, not in the one
+  handler that happens to call it today, so a dunning event carrying a different object type cannot
+  erase it (ADR-0035 AM-18).
+  And **enforcing silently converts a loop defect into a false-price defect**: once the server refuses
+  the second trial, every surface still advertising one is lying. Ship the per-user eligibility flag on
+  the authenticated read in the same change (`GetMyMembership.TrialEligible`), defaulted to today's
+  behaviour so an un-regenerated client is unaffected.
 
 ## Bounded exclusivity on a pull board — the stored-deadline hold (ADR-0036)
 

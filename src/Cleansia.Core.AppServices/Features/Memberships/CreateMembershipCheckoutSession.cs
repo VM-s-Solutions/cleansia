@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
@@ -33,6 +34,7 @@ public class CreateMembershipCheckoutSession
         IMembershipPlanRepository membershipPlanRepository,
         IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
+        IMembershipTrialResolver membershipTrialResolver,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -87,6 +89,7 @@ public class CreateMembershipCheckoutSession
             // a new Session URL instead of replaying the (potentially expired)
             // original.
             var attemptId = Guid.NewGuid().ToString("N");
+            var trial = await membershipTrialResolver.ResolveForUserAsync(user.Id, plan, cancellationToken);
             string url;
             try
             {
@@ -95,7 +98,7 @@ public class CreateMembershipCheckoutSession
                     stripePriceId: plan.StripePriceId,
                     userId: user.Id,
                     membershipPlanCode: plan.Code,
-                    trialPeriodDays: plan.TrialPeriodDays,
+                    trialPeriodDays: trial.Days,
                     successUrl: command.SuccessUrl,
                     cancelUrl: command.CancelUrl,
                     idempotencyAttemptId: attemptId,

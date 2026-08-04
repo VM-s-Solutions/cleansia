@@ -24,6 +24,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     private readonly ILogger<PayPeriodBackgroundService> _logger;
     private readonly ICurrencyRepository _currencyRepository;
     private readonly IEmployeeInvoiceRepository _employeeInvoiceRepository;
+    private readonly IEmployeePayoutDetailsRepository _employeePayoutDetailsRepository;
     private readonly IOrderEmployeePayRepository _orderEmployeePayRepository;
     private readonly ICompanyInfoRepository _companyInfoRepository;
     private readonly ILanguageRepository _languageRepository;
@@ -41,6 +42,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         ILogger<PayPeriodBackgroundService> logger,
         ICurrencyRepository currencyRepository,
         IEmployeeInvoiceRepository employeeInvoiceRepository,
+        IEmployeePayoutDetailsRepository employeePayoutDetailsRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
         ICompanyInfoRepository companyInfoRepository,
         ILanguageRepository languageRepository,
@@ -57,6 +59,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         _logger = logger;
         _currencyRepository = currencyRepository;
         _employeeInvoiceRepository = employeeInvoiceRepository;
+        _employeePayoutDetailsRepository = employeePayoutDetailsRepository;
         _orderEmployeePayRepository = orderEmployeePayRepository;
         _companyInfoRepository = companyInfoRepository;
         _languageRepository = languageRepository;
@@ -406,7 +409,10 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
                     dateFormat = countryConfig.DateFormat;
             }
 
-            var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo, dateFormat);
+            var payoutDetails = await _employeePayoutDetailsRepository
+                .GetByEmployeeIdAsync(invoice.EmployeeId, cancellationToken);
+
+            var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo, payoutDetails, dateFormat);
 
             var countryCode = employee.Address?.Country?.IsoCode;
             var pdfBytes = _pdfService.GenerateInvoicePdf(pdfData, countryContext, countryCode);
@@ -436,7 +442,8 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             VatRate = config.VatRate,
             DigitalSignatureRequired = config.DigitalSignatureRequired,
             EInvoiceFormat = config.EInvoiceFormat,
-            LegalDisclaimerTemplate = config.LegalDisclaimerTemplate
+            LegalDisclaimerTemplate = config.LegalDisclaimerTemplate,
+            ConstantSymbol = config.ConstantSymbol
         };
     }
 

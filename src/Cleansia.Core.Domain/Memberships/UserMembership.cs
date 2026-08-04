@@ -95,10 +95,10 @@ public class UserMembership : Auditable, ITenantEntity
     /// conversion and no sweep exists, so it would go stale and grant waivers forever to anyone whose
     /// conversion webhook was missed. A deadline expires by clock with no actor.</para>
     ///
-    /// <para>The dunning trap: the <c>invoice.payment_failed</c> webhook branch returns default period
-    /// bounds on purpose and the handler passes the existing values through. <c>trial_end</c> must get the
-    /// same treatment — writing null there clears the marker for a trialing member whose first invoice
-    /// failed, re-enabling waivers for exactly the customer the ruling is about.</para>
+    /// <para>Read across ALL of a user's rows it is also the once-per-customer trial marker (owner ruling
+    /// 2026-08-03) — see <c>IUserMembershipRepository.HasEverStartedTrialAsync</c>. That is why it is
+    /// never cleared once set: <see cref="UpdateFromStripeWebhook"/> coalesces rather than assigns, so the
+    /// <c>invoice.payment_failed</c> branch (an Invoice, carrying no <c>trial_end</c>) cannot erase it.</para>
     /// </summary>
     public DateTime? TrialEndsAtUtc { get; private set; }
 
@@ -149,7 +149,8 @@ public class UserMembership : Auditable, ITenantEntity
     public UserMembership UpdateFromStripeWebhook(
         string stripeStatus,
         DateTime currentPeriodStart,
-        DateTime currentPeriodEnd)
+        DateTime currentPeriodEnd,
+        DateTime? trialEndsAtUtc)
     {
         Status = stripeStatus switch
         {
@@ -168,6 +169,12 @@ public class UserMembership : Auditable, ITenantEntity
         }
         CurrentPeriodStart = currentPeriodStart;
         CurrentPeriodEnd = currentPeriodEnd;
+        // Null means the event said nothing about the trial — invoice.payment_failed carries an Invoice,
+        // which has no trial_end at all. Assigning it would clear the marker on a dunning event, handing
+        // the customer both their withheld benefits and a second free trial (ADR-0035 AM-18). Stripe
+        // keeps trial_end populated after a trial converts, so a genuine "no trial" subscription is the
+        // only one that stays null here.
+        TrialEndsAtUtc = trialEndsAtUtc ?? TrialEndsAtUtc;
         return this;
     }
 

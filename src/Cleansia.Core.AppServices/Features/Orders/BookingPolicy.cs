@@ -1,3 +1,5 @@
+using Cleansia.Core.AppServices.Shared.DTOs.Enums;
+
 namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
@@ -225,27 +227,54 @@ public static class BookingPolicy
         bool isFirstTimeCustomer,
         bool hasBeenAccepted,
         int? freeCancellationHoursOverride = null)
+        => CancellationFeeRateFor(ClassifyCancellation(
+            cleaningUtc,
+            bookingCreatedUtc,
+            cancelUtc,
+            isFirstTimeCustomer,
+            hasBeenAccepted,
+            freeCancellationHoursOverride));
+
+    /// <summary>
+    /// The cancellation schedule itself — the ONE evaluation of which arm applies, shared by the fee
+    /// the customer is charged and the tier the preview discloses. <see cref="CalculateCancellationFeeRate"/>
+    /// is a wrapper over this, so the number and the reason cannot come from two ladders that drift.
+    /// </summary>
+    /// <inheritdoc cref="CalculateCancellationFeeRate" path="/param"/>
+    public static CancellationFeeTier ClassifyCancellation(
+        DateTime cleaningUtc,
+        DateTime bookingCreatedUtc,
+        DateTime cancelUtc,
+        bool isFirstTimeCustomer,
+        bool hasBeenAccepted,
+        int? freeCancellationHoursOverride = null)
     {
-        // No cleaner is on the job yet — always free.
         if (!hasBeenAccepted)
         {
-            return 0m;
+            return CancellationFeeTier.FreeNotAccepted;
         }
 
-        // "Oops window" — free cancellation shortly after booking.
         var oopsMinutes = isFirstTimeCustomer ? OopsWindowMinutesFirstTime : OopsWindowMinutesStandard;
         if ((cancelUtc - bookingCreatedUtc).TotalMinutes <= oopsMinutes)
         {
-            return 0m;
+            return CancellationFeeTier.FreeOopsWindow;
         }
 
         var freeWindow = freeCancellationHoursOverride ?? FreeCancellationHours;
         var hoursBeforeStart = (cleaningUtc - cancelUtc).TotalHours;
         return hoursBeforeStart switch
         {
-            var h when h >= freeWindow => 0m,
-            >= PartialCancellationHours => PartialCancellationFeeRate,
-            _ => LastMinuteCancellationFeeRate,
+            var h when h >= freeWindow => CancellationFeeTier.FreeOutsideWindow,
+            >= PartialCancellationHours => CancellationFeeTier.Partial,
+            _ => CancellationFeeTier.LastMinute,
         };
     }
+
+    /// <summary>What a given tier costs, as a fraction of the order total. The only place a tier is priced.</summary>
+    public static decimal CancellationFeeRateFor(CancellationFeeTier tier) => tier switch
+    {
+        CancellationFeeTier.Partial => PartialCancellationFeeRate,
+        CancellationFeeTier.LastMinute => LastMinuteCancellationFeeRate,
+        _ => 0m,
+    };
 }

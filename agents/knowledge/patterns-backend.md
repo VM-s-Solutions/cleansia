@@ -998,6 +998,39 @@ already exists is the wrong tool, and calling it in a loop is the defect, not th
   not been rebuilt. **`null` must render as "no marking".** A client mapping it to a non-optional
   boolean either flags everything or defeats the feature; pin it with a fixture that sends `null`.
 
+## A QUOTED price and a CHARGED price come from one FUNCTION, not one rule (T-0526)
+
+The disclosure-surface sibling of ADR-0039's *"the read path and the write path must be the SAME
+CALL"*. A surface that answers **before** the customer commits — a cancellation-fee preview, a quote,
+an estimate — is only worth shipping if it cannot disagree with the commit: a customer told one number
+and charged another is worse than no disclosure at all. Three things make that structural rather than a
+promise:
+
+- **Extract the whole computation, not the formula.** `CancellationAssessor.Assess(order, policy, nowUtc)`
+  owns the entity↔policy binding — which order fields feed the schedule, what *"a cleaner is on the job"*
+  means, how the money rounds — while `BookingPolicy` keeps the schedule and stays entity-ignorant.
+  Sharing only the schedule leaves the **predicate** duplicated, which is where the disagreement actually
+  lives: `hasBeenAccepted` (an assignment row, not a status) was the T-0525 defect, and a preview
+  re-deriving it re-ships that defect on a second surface.
+- **The client-facing LABEL must come from the same evaluation as the number.** A client renders a tier
+  instead of rebuilding the ladder, so the classifier returns the tier and the rate function becomes a
+  one-line wrapper over it (`CalculateCancellationFeeRate` → `ClassifyCancellation` →
+  `CancellationFeeRateFor`). Deriving the discriminator *beside* the rate is a second copy of the ladder
+  wearing a different type. Keep the old function and its boundary tests — green, unchanged, they are the
+  pin that the ladder did not change meaning while it moved (the "reduce the singular method to a
+  wrapper" shape, ADR-0039).
+- **Split a total into a RESIDUAL, never two roundings.** `FeeAmount = TotalPrice − RefundAmount`.
+  Rounding both legs of the same half-cent independently (`100.01 × 0.50` → `50.01` **twice**) makes the
+  two numbers on the customer's screen sum to a cent more than the total they paid.
+
+**The test that earns it is an agreement test, and it must be mutation-proved.** Drive **both**
+production handlers over **one** fixture in the customer's own order — quote, then commit — and assert
+equality to the cent **and** equality to a hand-derived number; an equality-only assertion passes on a
+build where both sides return zero and agree with themselves. Then make the preview compute its own rate
+and watch it go red (`CancellationFeePreviewAgreementTests`: 9 of 10 cases fail under an independent
+ladder). Cover the tier boundaries, the per-member window, and the no-actor case, because those are the
+three inputs no client can evaluate and therefore the three it will get wrong.
+
 ## A predicate that spans STACKS needs a parity test; a state set needs a writer census (ADR-0037)
 
 > **LAW — ADR-0037 `accepted` 2026-08-03** after a defense panel (19 findings, 8 blocking, all

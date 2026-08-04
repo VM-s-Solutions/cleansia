@@ -166,6 +166,24 @@ public class OrderController(IMediator mediator) : CustomerMobileApiController(m
         return HandleResult<ReportOrderIssue.Response>(result);
     }
 
+    /// <summary>
+    /// What cancelling this order right now would cost, from the same policy the cancel charges — so
+    /// the cancel sheet quotes a number instead of guessing one. A pure read: calling it changes
+    /// nothing and consumes nothing.
+    /// </summary>
+    [HttpGet("CancellationPreview")]
+    [Permission(Policy.CanCancelOrder)]
+    [ProducesResponseType(typeof(GetCancellationFeePreview.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CancellationPreview(
+        [FromQuery] GetCancellationFeePreview.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<GetCancellationFeePreview.Response>(result);
+    }
+
     [HttpPost("Cancel")]
     [Permission(Policy.CanCancelOrder)]
     [EnableRateLimiting("auth")]

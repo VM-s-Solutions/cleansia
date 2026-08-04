@@ -122,6 +122,9 @@ was not guessing. Recorded here so nobody "fixes" it.
 handler shape; `CancelOrder` for the inputs.
 
 ## Status log
+- 2026-08-04 — **backend implemented, test-first.** Red→green→refactor recorded below; unit **2944 / 0
+  failed**, integration **132 / 0**, host **120 / 0**. See `## Review` for the locked contract, the two
+  owner-only manual steps and the one AC read in a stronger form than written.
 - 2026-08-02 — draft (created by pm from the challenger round; blocked on T-0525 by design, and on the
   architect's AC1 contract lock for DoR item 7).
 - 2026-08-04 — **draft → ready** (PM sprint-15 reconciliation). Its only dependency, **T-0525, is `done`**
@@ -137,4 +140,102 @@ handler shape; `CancelOrder` for the inputs.
   real money.
 
 ## Review
+
+### The locked contract (AC1) — T-0527 may start against this
+
+**Route, both customer hosts, identical:**
+`GET /api/Order/CancellationPreview?orderId={id}` · `[Permission(Policy.CanCancelOrder)]` ·
+`Cleansia.Web.Customer` and `Cleansia.Web.Mobile.Customer`. No rate-limit window, matching `GetById` on
+the same controllers (a read of the caller's own order, not an auth or side-effecting route).
+
+**`GetCancellationFeePreview.Response`** — every field non-nullable:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `OrderId` | `string` | echo |
+| `Tier` | `CancellationFeeTier` (int enum) | why the fee is what it is — the field that lets a client delete its `when` ladder |
+| `FeeRate` | `decimal` | `0` / `0.25` / `0.50` |
+| `FeeAmount` | `decimal` | the charge; **always** `TotalPrice − RefundAmount` |
+| `RefundAmount` | `decimal` | rounded once, 2 dp, away-from-zero |
+| `TotalPrice` | `decimal` | the order total the two split |
+| `CurrencyCode` | `string` | e.g. `"CZK"` |
+| `ExpressWaiverForfeitedOnCancel` | `bool` | ADR-0035 AM-13 |
+
+**`CancellationFeeTier`** (`Shared/DTOs/Enums`, `[SwaggerEnumAsInt]`, values frozen):
+`FreeNotAccepted = 0` · `FreeOopsWindow = 1` · `FreeOutsideWindow = 2` · `Partial = 3` · `LastMinute = 4`.
+An **int** on the wire, not the snake_case string the ticket sketched — every enum in this codebase
+serializes as an integer (`TolerantEnumConverterFactory`) and a string here would be the only exception
+NSwag/OpenAPI-Generator had to special-case.
+
+**Failures** — no new `BusinessErrorMessage` keys, so **no i18n work**: `order.not_found` (missing **and**
+cross-customer, byte-identical bodies), `order.already_cancelled`, `order.already_completed`,
+`order.in_progress_cannot_cancel`, `common.required`.
+
+### ⚠️ Owner-only manual steps (AC9) — created BY this ticket, T-0527 is held until both are confirmed
+
+- `manual_step: nswag-regen` — **customer client only** (`npm run generate-customer-client`). New:
+  `GetCancellationFeePreview.Response` (`CancellationPreview` operation) + the `CancellationFeeTier`
+  enum. Nothing existing changed shape.
+- `manual_step: mobile-spec-redump` — re-dump the customer OpenAPI for **Android and iOS**; same two new
+  types. No spec change on the partner or admin surface.
+- **No `ef-migration`.** No schema change: the preview reads columns that already exist.
+
+### AC3, satisfied in a stronger form than written
+
+AC3 asks that `CalculateCancellationFeeRate` end with exactly two callers. It ends with **zero
+production callers and one production evaluation** — which is the property AC3 is protecting, one
+notch tighter. The schedule is evaluated in exactly one place, `BookingPolicy.ClassifyCancellation`;
+`CalculateCancellationFeeRate` is now a one-line wrapper over it, deliberately kept because its 13
+existing boundary cases (`CancellationFeeRateBoundaryTests` + `BookingPolicyTests`) are the pin proving
+the ladder did not change meaning while it moved — all green, unedited. Both the preview and
+`CancelOrder` reach it through one shared `CancellationAssessor.Assess(order, policy, nowUtc)`, which the
+ticket's own implementation notes name as the way AC3 is met by construction. **Flagging it because it
+reads as an AC deviation on a literal grep.**
+
+### Notes for the reviewer
+
+- **The acceptance predicate is shared, not mirrored.** `CancellationAssessor` owns
+  `order.AssignedEmployees.Count > 0`, so the fee, the express-waiver release on cancel and the waiver
+  **disclosure** on the preview all read one expression. The preview passes `assessment.HasBeenAccepted`
+  into `WouldForfeitOnCustomerCancelAsync` rather than recomputing it (pinned).
+- **`isFirstTimeCustomer` is still hard-coded `false`**, unchanged and deliberately out of scope — but it
+  moved from a local in `CancelOrder` to a shared `const` in the assessor, so quote and charge cannot
+  land on opposite sides of the wider first-time oops window. Deriving it for real is a separate ticket.
+- **AC7 (no leak of the other party):** the preview includes `AssignedEmployees` **without**
+  `.ThenInclude(ae => ae.Employee)` and exposes no count, no identity and no timestamp. `FreeNotAccepted`
+  reveals the one unavoidable bit — the reason the customer's own booking is free.
+- **`AssignedEmployees` carries no `IsActive` term** in either path. Pre-existing (`CancelOrder` never had
+  one) and unchanged by design: the predicate is now shared, so the two surfaces agree whatever the
+  answer. Nothing in the domain ever removes or deactivates an `OrderEmployee` row today. Worth a
+  follow-up look, not a same-ticket change — moving it would move the fee.
+- **AC5 purity is asserted three ways:** it is an `IQuery` (never reaches the UoW commit), the read is
+  `AsNoTracking`, and both a unit test and a host test assert nothing moved — no status track, no
+  `CancelledAt`, and `IssueRefund` / `RevokeForCancelledOrder` / `ReleaseForOrder` / the two producers
+  never called.
+
+### Tests (all new unless noted)
+
+| Suite | Covers |
+|---|---|
+| `CancellationFeeTierTests` (unit) | the tier at every boundary the rate suite already pins, the tier→rate table, the Plus-vs-standard window |
+| `CancellationFeePreviewAgreementTests` (unit) | **AC2** — both handlers, one fixture, quote-then-commit, to the cent **and** to a hand-derived number; tier boundaries, oops window, no-cleaner, Plus vs standard, the half-cent rounding boundary; plus AC5 purity and repeat-read stability |
+| `GetCancellationFeePreviewHandlerTests` (unit) | **AC6** ownership (cross-customer ≡ missing), the three uncancellable states, the waiver disclosure incl. the zero-fee case, fee+refund = total |
+| `CancellationPreviewEndpointParityTests` (unit) | **AC8** — both hosts, same route template, same policy as their own `CancelOrder` |
+| `CancellationFeePreviewRouteTests` (host) | the real route on `Web.Customer`: owner gets a quote, another customer gets a byte-identical `order.not_found`, anonymous rejected, quoting twice moves nothing |
+| `CancellationFeeRateBoundaryTests`, `BookingPolicyTests`, `CancellationAcceptanceSignalTests`, `CancelOrderStandardTierFeeTests` (existing) | unedited and green — the pin that the ladder and the cancel path did not change behaviour |
+
+**Mutation proof of the agreement test:** replacing `CancellationAssessor.Assess` in the preview handler
+with an independent ladder (the clients' wrong 24h / 50% / 100% one) turns
+`CancellationFeePreviewAgreementTests` **9 failed / 1 passed**; reverted, **10 passed**. The one survivor
+is `Preview_Can_Be_Called_Repeatedly_Without_Changing_Its_Answer`, which is about idempotence of the read
+rather than which ladder it uses — correct that it is insensitive.
+
+### Harvested back into the catalog
+
+`agents/knowledge/patterns-backend.md` gains **"A QUOTED price and a CHARGED price come from one
+FUNCTION, not one rule (T-0526)"** beside the ADR-0039 same-call rule: extract the whole computation
+(the predicate is where disagreement lives, not the formula), the client-facing label must come from the
+same evaluation as the number, split a total into a residual rather than two roundings, and the
+agreement test must be mutation-proved. Additive; redefines nothing, so no architect call.
+
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

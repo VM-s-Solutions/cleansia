@@ -78,52 +78,19 @@ public class CancelOrder
                     BusinessErrorMessage.OrderNotFound));
             }
 
-            var latestStatus = order.CurrentStatus;
-
-            if (latestStatus == OrderStatus.Cancelled)
+            if (CancellationAssessor.BlockedReason(order) is { } blockedReason)
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(command.OrderId),
-                    BusinessErrorMessage.OrderAlreadyCancelled));
-            }
-            if (latestStatus == OrderStatus.Completed)
-            {
-                return BusinessResult.Failure<Response>(new Error(
-                    nameof(command.OrderId),
-                    BusinessErrorMessage.OrderAlreadyCompleted));
-            }
-            if (latestStatus == OrderStatus.InProgress)
-            {
-                return BusinessResult.Failure<Response>(new Error(
-                    nameof(command.OrderId),
-                    BusinessErrorMessage.OrderInProgressCannotCancel));
+                    blockedReason));
             }
 
             var now = DateTime.UtcNow;
-            const bool isFirstTime = false;
-            // An assignment row, NOT an OrderStatus.Confirmed track. Confirmed is overloaded — the
-            // payment webhook, cash auto-confirm and the admin override all write it with no cleaner
-            // involved — and it is also SILENT in the case that matters most: TakeOrder assigns
-            // unconditionally but appends its Confirmed track only from New/Pending, so a cleaner
-            // taking an already-Confirmed order leaves no new track. The row is the only durable
-            // evidence a cleaner was pulled onto the job, which is what the fee prices.
-            var hasBeenAccepted = order.AssignedEmployees.Count > 0;
             var policy = await cancellationPolicyResolver
                 .ResolveForUserAsync(userId, cancellationToken);
-            var feeRate = BookingPolicy.CalculateCancellationFeeRate(
-                order.CleaningDateTime,
-                order.CreatedOn.UtcDateTime,
-                now,
-                isFirstTime,
-                hasBeenAccepted,
-                freeCancellationHoursOverride: policy.FreeCancellationHours);
-
-            // Round to the currency's 2 dp at the source (away-from-zero): the
-            // Refund row persists numeric(18,2) (rounds) while Stripe truncates
-            // (long)(amount*100), so an unrounded value can make the ledger and
-            // Stripe diverge by a cent and skew the Refunded/PartiallyRefunded
-            // comparison. Rounding once here makes every downstream reader agree.
-            var refundAmount = Math.Round(order.TotalPrice * (1m - feeRate), 2, MidpointRounding.AwayFromZero);
+            var assessment = CancellationAssessor.Assess(order, policy, now);
+            var feeRate = assessment.FeeRate;
+            var refundAmount = assessment.RefundAmount;
 
             order.Cancel(
                 cancelledAtUtc: now,
@@ -173,7 +140,7 @@ public class CancelOrder
             // Deliberately keyed on the order's own state, not on CancelledBy: both system sweeps append
             // a status track without calling Order.Cancel, so their orders release here with no change to
             // either sweep.
-            if (!hasBeenAccepted)
+            if (!assessment.HasBeenAccepted)
             {
                 await expressWaiverConsumer.ReleaseForOrderAsync(order.Id, cancellationToken);
             }

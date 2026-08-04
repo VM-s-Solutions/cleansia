@@ -26736,6 +26736,74 @@
           }
         }
       }
+    },
+    "push.order.preferred_offer.title" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zákazník si vás vyžádal"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A customer asked for you"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клиент попросил именно вас"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zákazník si vás vyžiadal"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клієнт попросив саме вас"
+          }
+        }
+      }
+    },
+    "push.order.preferred_offer.body" : {
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zakázka %1$@ — vyžádal si vás někdo, komu jste už uklízeli. Otevřete ji a vezměte si ji."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Order %1$@ — someone you've cleaned for before requested you. Open it to take the job."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заказ %1$@ — вас попросил кто-то, у кого вы уже убирали. Откройте, чтобы взять заказ."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zákazka %1$@ — vyžiadal si vás niekto, komu ste už upratovali. Otvorte ju a prevezmite ju."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Замовлення %1$@ — вас попросив хтось, у кого ви вже прибирали. Відкрийте, щоб узяти замовлення."
+          }
+        }
+      }
     }
   },
   "version" : "1.1"

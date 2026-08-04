@@ -9,6 +9,7 @@ final class FakePartnerProfileClient: PartnerProfileClient {
     var servicedCountriesResult: ApiResult<[CountryListItem]> = .success([])
     var allCountriesResult: ApiResult<[CountryListItem]> = .success([])
     var documentsResult: ApiResult<[GetMyDocumentsMyDocumentDto]> = .success([])
+    var payoutResult: ApiResult<MyPayoutDetails?> = .success(nil)
 
     var personalUpdateResult: ApiResult<Void> = .success(())
     var addressUpdateResult: ApiResult<Void> = .success(())
@@ -50,6 +51,10 @@ final class FakePartnerProfileClient: PartnerProfileClient {
     func updateIdentificationInfo(_ command: UpdateIdentificationInfoCommand) async -> ApiResult<Void> {
         identificationCommand = command
         return identificationUpdateResult
+    }
+
+    func getMyPayoutDetails() async -> ApiResult<MyPayoutDetails?> {
+        payoutResult
     }
 
     func updateBankDetails(_ command: UpdateBankDetailsCommand) async -> ApiResult<Void> {

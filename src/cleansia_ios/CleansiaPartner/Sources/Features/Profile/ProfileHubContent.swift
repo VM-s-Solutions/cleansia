@@ -71,7 +71,7 @@ struct ProfileHubContent: View {
             ProfileHubRowItem(
                 icon: "building.columns",
                 title: L10n.Profile.bankDetails,
-                summary: employee.iban.nonBlankOrNil ?? L10n.Profile.noData,
+                summary: data.payoutSummary.nonBlankOrNil ?? L10n.Profile.noData,
                 route: .bank(onboarding: false)
             ),
             ProfileHubRowItem(
@@ -337,10 +337,10 @@ private extension String? {
                         lastName: "Nováková",
                         street: "Vinohradská 12",
                         city: "Praha",
-                        zipCode: "120 00",
-                        iban: "CZ6508000000192000145399"
+                        zipCode: "120 00"
                     ),
-                    contractStatus: .approved
+                    contractStatus: .approved,
+                    payoutSummary: "19-2000145399/0800"
                 ),
                 languageSummary: "Čeština",
                 themeSummary: "Follow system",

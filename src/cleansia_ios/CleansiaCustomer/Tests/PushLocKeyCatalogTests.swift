@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 
 /// Pins the ADR-0025 day-one catalog gate: every build that registers FCM
-/// tokens must carry all 12 displayable events' loc-keys in every platform
+/// tokens must carry all 13 displayable events' loc-keys in every platform
 /// language, or APNs renders the raw `push.*` key on the lock screen.
 final class PushLocKeyCatalogTests: XCTestCase {
     private let appBundle = Bundle(identifier: "cz.cleansia.customer") ?? .main
@@ -19,7 +19,8 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "loyalty.tier_upgrade",
         "membership.expiring_soon",
         "membership.cancellation_effective",
-        "order.new_available"
+        "order.new_available",
+        "order.preferred_offer"
     ]
     private let orderNumberArgEvents: Set<String> = [
         "order.confirmed",
@@ -29,7 +30,8 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.cancelled",
         "order.refunded",
         "recurring.scheduled",
-        "order.new_available"
+        "order.new_available",
+        "order.preferred_offer"
     ]
 
     func testEveryPushLocKeyShipsInEveryLanguageTable() throws {

@@ -9864,40 +9864,6 @@
         }
       }
     },
-    "profile_error_iban_required": {
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IBAN je povinný"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IBAN is required"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IBAN обязателен"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IBAN je povinný"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IBAN обов'язковий"
-          }
-        }
-      }
-    },
     "profile_error_last_name_required": {
       "localizations": {
         "cs": {
@@ -16409,6 +16375,516 @@
           "stringUnit": {
             "state": "translated",
             "value": "Увімкнути"
+          }
+        }
+      }
+    },
+    "bank_country": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Země banky"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bank country"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Страна банка"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Krajina banky"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Країна банку"
+          }
+        }
+      }
+    },
+    "bank_account_prefix": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Předčíslí"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account prefix"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Префикс счёта"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Predčíslie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Префікс рахунку"
+          }
+        }
+      }
+    },
+    "bank_account_prefix_helper": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nepovinné — krátké číslo před pomlčkou, pokud ho váš účet má."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optional — the short number before the dash, if your account has one."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Необязательно — короткое число перед дефисом, если у вашего счёта оно есть."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nepovinné — krátke číslo pred pomlčkou, ak ho váš účet má."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Необов'язково — коротке число перед дефісом, якщо ваш рахунок його має."
+          }
+        }
+      }
+    },
+    "account_number": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Číslo účtu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account Number"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Номер счета"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Číslo účtu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Номер рахунку"
+          }
+        }
+      }
+    },
+    "bank_account_number_helper": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Část před lomítkem, například 5885638003."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The part before the slash, e.g. 5885638003."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Часть перед косой чертой, например 5885638003."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Časť pred lomkou, napríklad 5885638003."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Частина перед скісною рискою, наприклад 5885638003."
+          }
+        }
+      }
+    },
+    "bank_code": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kód banky"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bank code"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код банка"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kód banky"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код банку"
+          }
+        }
+      }
+    },
+    "bank_code_helper": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čtyři číslice za lomítkem, například 5500."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The four digits after the slash, e.g. 5500."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Четыре цифры после косой черты, например 5500."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Štyri číslice za lomkou, napríklad 5500."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чотири цифри після скісної риски, наприклад 5500."
+          }
+        }
+      }
+    },
+    "iban_helper": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "U českého nebo slovenského účtu ho můžete nechat prázdný — dopočítáme ho z čísel výše."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can leave this empty for a Czech or Slovak account — we work it out from the numbers above."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для чешского или словацкого счёта можно оставить пустым — мы вычислим его из чисел выше."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pri českom alebo slovenskom účte ho môžete nechať prázdny — dopočítame ho z čísel vyššie."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для чеського або словацького рахунку можете залишити порожнім — ми обчислимо його з чисел вище."
+          }
+        }
+      }
+    },
+    "swift_code": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SWIFT kód"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SWIFT Code"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SWIFT код"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SWIFT kód"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SWIFT код"
+          }
+        }
+      }
+    },
+    "swift_code_helper": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potřebujeme ho jen tehdy, když je vaše banka v jiné zemi, než ve které pracujete."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only needed when your bank is in a different country than the one you work in."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нужен только тогда, когда ваш банк в другой стране, чем та, где вы работаете."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potrebujeme ho len vtedy, keď je vaša banka v inej krajine, než v ktorej pracujete."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Потрібен лише тоді, коли ваш банк в іншій країні, ніж та, де ви працюєте."
+          }
+        }
+      }
+    },
+    "bank_name": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Název banky"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bank Name"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Название банка"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Názov banky"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Назва банку"
+          }
+        }
+      }
+    },
+    "bank_account_holder": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Majitel účtu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account holder"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Владелец счёта"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Majiteľ účtu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Власник рахунку"
+          }
+        }
+      }
+    },
+    "bank_account_holder_helper": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nepovinné — jméno, které má banka u účtu, pokud se liší od vašeho."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optional — the name your bank has on the account, if it differs from yours."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Необязательно — имя, которое банк указал для счёта, если оно отличается от вашего."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nepovinné — meno, ktoré má banka pri účte, ak sa líši od vášho."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Необов'язково — ім'я, яке банк має на рахунку, якщо воно відрізняється від вашого."
+          }
+        }
+      }
+    },
+    "push.order.preferred_offer.title": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazník si vás vyžádal"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A customer asked for you"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клиент попросил именно вас"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazník si vás vyžiadal"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клієнт попросив саме вас"
+          }
+        }
+      }
+    },
+    "push.order.preferred_offer.body": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka %1$@ — vyžádal si vás někdo, komu jste už uklízeli. Otevřete ji a vezměte si ji."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Order %1$@ — someone you've cleaned for before requested you. Open it to take the job."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ %1$@ — вас попросил кто-то, у кого вы уже убирали. Откройте, чтобы взять заказ."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazka %1$@ — vyžiadal si vás niekto, komu ste už upratovali. Otvorte ju a prevezmite ju."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення %1$@ — вас попросив хтось, у кого ви вже прибирали. Відкрийте, щоб узяти замовлення."
           }
         }
       }

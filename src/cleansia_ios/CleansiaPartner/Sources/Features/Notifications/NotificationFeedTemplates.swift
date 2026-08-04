@@ -6,6 +6,7 @@ import Foundation
 enum PartnerFeedEventKeys {
     static let all: Set<String> = [
         "order.new_available",
+        "order.preferred_offer",
         "order.assignment_cancelled",
         "payroll.invoice_paid"
     ]
@@ -49,7 +50,7 @@ enum NotificationFeedTemplates {
         switch eventKey {
         case "order.new_available":
             String(format: L10n.localized("push.\(eventKey).body"), args["count"] ?? "")
-        case "order.assignment_cancelled":
+        case "order.assignment_cancelled", "order.preferred_offer":
             String(format: L10n.localized("push.\(eventKey).body"), args["orderNumber"] ?? "")
         default:
             L10n.localized("push.\(eventKey).body")

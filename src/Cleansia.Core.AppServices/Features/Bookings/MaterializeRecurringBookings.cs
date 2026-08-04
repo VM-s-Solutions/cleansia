@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -44,6 +45,7 @@ public class MaterializeRecurringBookings
         IOrderPricingCalculator pricingCalculator,
         IOrderFactory orderFactory,
         ITenantProvider tenantProvider,
+        IUnitOfWork unitOfWork,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -156,6 +158,12 @@ public class MaterializeRecurringBookings
                     template.MarkMaterializedFor(occurrence);
                     ordersCreated++;
                 }
+
+                // The commit is what makes the override above mean anything: the order, its status
+                // track and the preferred-cleaner notification are stamped from the ambient tenant AT
+                // COMMIT TIME, so deferring to the pipeline's single commit would stamp every
+                // template's children with whichever tenant was processed last.
+                await unitOfWork.CommitAsync(cancellationToken);
             }
 
             return BusinessResult.Success(new Response(ordersCreated, activeTemplates.Count));

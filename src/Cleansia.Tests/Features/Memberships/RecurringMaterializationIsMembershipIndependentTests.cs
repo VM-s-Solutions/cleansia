@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Tests.Features.Orders;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
@@ -42,6 +43,7 @@ public class RecurringMaterializationIsMembershipIndependentTests
     private readonly Mock<IOrderPricingCalculator> _pricingCalculator = new();
     private readonly Mock<IOrderFactory> _orderFactory = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
+    private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
     public RecurringMaterializationIsMembershipIndependentTests()
     {
@@ -109,6 +111,7 @@ public class RecurringMaterializationIsMembershipIndependentTests
             _pricingCalculator.Object,
             _orderFactory.Object,
             _tenantProvider.Object,
+            _unitOfWork.Object,
             NullLogger<MaterializeRecurringBookings.Handler>.Instance);
 
     [Fact]

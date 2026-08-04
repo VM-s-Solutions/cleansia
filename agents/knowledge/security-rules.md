@@ -215,7 +215,16 @@ sweep, forever (T-0529); `EmployeeRepository.GetByUserEmailIgnoringTenantAsync` 
 paths (T-0361). Both keep the entity **change-tracked** — `IgnoreQueryFilters()` on the tracked set, never
 `ExecuteUpdateAsync`, which would commit outside the caller's unit of work and break the job's atomicity.
 Where the mutation creates **child** rows, prefer the `SetTenantOverride`/clear-per-iteration shape
-(`MaterializeRecurringBookings`) so the children inherit the right tenant.
+(`CleanupStalePendingOrders`, `MaterializeRecurringBookings`) so the children inherit the right tenant —
+**and commit inside the same iteration, or the override is decorative.** `CommitAsync` stamps
+`TenantId` on every `Added` `ITenantEntity` from the tenant that is ambient **at commit time**
+(`CleansiaDbContext.CommitAsync`), not at `Add` time, so a sweep that sets an override per iteration and
+then rides the pipeline's single deferred commit stamps **every** child row of **every** iteration with
+the **last** one's tenant. Both sweeps shipped that way and both were repaired the same way: the
+`unitOfWork.CommitAsync(ct)` at the foot of the loop body is what gives the override meaning. The pinning
+test must seed **non-null and DIFFERENT** `TenantId`s on at least two iterations — one tenant, or a null
+one, passes over the bug — and must assert on the CHILD rows, since the parent already carries its own
+tenant from the row it was read from.
 
 **The third form: ONE repository method serving TWO callers with OPPOSITE tenancy requirements.** The
 two cases above are about a *caller* getting its tenancy wrong. This one is about a *method* deciding

@@ -46,8 +46,23 @@ public static class BusinessErrorMessage
     // Order
     public const string CleaningDateInFuture = "order.cleaning_date.future";
     public const string CleaningDateBelowLeadTime = "order.cleaning_date.below_lead_time";
+    // Customer + admin: CancelOrder, AdminCancelOrder, AdminOverrideOrderStatus. NOT the take gate —
+    // see TakeOrderAlreadyCancelled below.
     public const string OrderAlreadyCancelled = "order.already_cancelled";
     public const string OrderAlreadyCompleted = "order.already_completed";
+
+    /// <summary>
+    /// The take gate's two terminal-state refusals, split off the customer keys above (ADR-0037 CH-X1:
+    /// <em>if two personas need different sentences for one key, the backend emits two keys</em>).
+    /// ADR-0037's gate made the customer keys newly reachable by a cleaner, and iOS resolves every
+    /// <c>error.*</c> string from the one shared CleansiaCore catalog — so a cleaner tapping a dead job
+    /// read the customer's sentence ("This booking is already cancelled"), in a register and with a
+    /// noun that are wrong for them. Sole intended emitter: <c>TakeOrder</c>; the <c>order.take.*</c>
+    /// segment is what keeps that true, since only a cleaner takes.
+    /// </summary>
+    public const string TakeOrderAlreadyCancelled = "order.take.already_cancelled";
+    public const string TakeOrderAlreadyCompleted = "order.take.already_completed";
+
     public const string OrderInProgressCannotCancel = "order.in_progress_cannot_cancel";
     public const string InvalidOrderStatusTransition = "order.invalid_status_transition";
     public const string CancellationWindowClosed = "order.cancellation_window_closed";

@@ -415,6 +415,31 @@ Feed reads/marks are always scoped to the calling mobile host's audience keyset 
 controller overwrites the `Audience` field server-side (S1-style enrichment); never trust it from
 the client.
 
+### When a server table DECLARES that client copy exists, the guard belongs on the server
+
+`FcmMessageFactory.ApnsDisplayMap` is not a lookup — it is an assertion that
+`push.<event_key>.title|body` already ships in both iOS app catalogs. Registering a key whose strings
+are missing puts the raw string `push.order.preferred_offer.title` on a cleaner's lock screen, and a
+client-side test **cannot** stop that: a backend author adding a map row never runs the iOS test
+targets. So the guard is `ApnsDisplayMapIosCatalogSyncTests` in `Cleansia.Tests` — it walks up to the
+`.sln` (`StartupSeedScriptSyncTests`' cross-tree idiom), parses both
+`cleansia_ios/Cleansia{Partner,Customer}/Resources/Localizable.xcstrings`, and asserts per key ×5
+locales: present, non-empty, `state == "translated"`, the **body's highest positional slot equals the
+mapped loc-arg count**, and the **title carries no specifier at all** (the factory sends `LocArgs` but
+never `title-loc-args`, so a specifier there renders verbatim). Every failure names the resolved path,
+so an iOS folder rename reads as a rename rather than a mystery.
+
+Two generalizable rules, and the second is the one that keeps such a guard honest:
+
+- **Assert against the artifact, never against a hand-typed mirror of it.** The Swift-side
+  `PushLocKeyCatalogTests` assert the right property off a 13-entry array against a 15-row server map —
+  two registered events were covered by neither app, under a doc-comment reading "all 13 displayable
+  events". A count in prose and a literal list both go stale silently; iterate the live map.
+- **Do not widen a cross-tree guard past where the server owns the name.** This deliberately stops at
+  iOS. Android's templates are `notification_preferred_offer_title`, not the event key, so asserting
+  them from here would make the server own a client naming transform — the map would stop being a
+  declaration and become a convention for somebody else's tree. Android keeps its own template test.
+
 ## Reading a blob back to a client — what T-0446 did, and an OPEN question for the architect
 
 **Descriptive, not prescriptive.** There are three live shapes for turning a stored blob name into a
@@ -1016,9 +1041,10 @@ cost Cleansia **ten** disagreeing definitions of "which orders may a cleaner tak
   one rather than making it delegate**: delegation would silently redefine it for the rows where the two
   still differ (here, an explicitly raised cap), which is a behaviour change disguised as a cleanup.
 - **Dead code that asserts a safety net is the same defect at class scope.** `StaleOrderCleanupService`
-  has an unsatisfiable `WHERE` (it requires the writerless status above) **and no caller** — yet it was
+  had an unsatisfiable `WHERE` (it required the writerless status above) **and no caller** — yet it was
   cited in good faith as the reason a risk was covered. When you retire a mechanism, delete the class;
-  a resident class is read as a live guarantee.
+  a resident class is read as a live guarantee. It is deleted; the sweep that actually runs is
+  `CleanupStalePendingOrders`.
 
 ## Moving a gate onto a new column: the term you delete is the outage (ADR-0034 D7)
 

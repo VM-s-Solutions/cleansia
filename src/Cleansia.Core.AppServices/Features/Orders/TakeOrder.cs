@@ -251,8 +251,19 @@ public class TakeOrder
 
             var employee = await employeeRepository.GetByIdAsync(employeeId!, cancellationToken);
 
-            var orderEmployee = OrderEmployee.Create(order!, employee!);
-            order!.AddAssignedEmployee(orderEmployee);
+            // The validator's seat check and this load are two unlocked reads, so the loser of two
+            // cleaners tapping the same single-seat job can arrive here with the seat already gone.
+            // AddAssignedEmployee THROWS on that, which reaches the cleaner as a 500 instead of "this
+            // job has been taken" — the refusal has to be a result. Seats have no spare since
+            // BookingPolicy.SpareSeatsPerOrder went to 0, so the window is hit routinely.
+            if (!order!.HasAvailableSpots)
+            {
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(command.OrderId), BusinessErrorMessage.NoAvailableSpots));
+            }
+
+            var orderEmployee = OrderEmployee.Create(order, employee!);
+            order.AddAssignedEmployee(orderEmployee);
 
             var statusChanged = false;
             var currentStatus = order.GetCurrentOrderStatus();

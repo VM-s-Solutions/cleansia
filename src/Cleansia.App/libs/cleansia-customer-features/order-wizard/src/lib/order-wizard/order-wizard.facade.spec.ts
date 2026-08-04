@@ -22,6 +22,7 @@ import { OrderPromoFacade } from './order-promo.facade';
 import { OrderSavedAddressFacade } from './order-saved-address.facade';
 import { OrderServiceAreaFacade } from './order-service-area.facade';
 import { OrderWizardFacade } from './order-wizard.facade';
+import { createAddressDto } from './order-wizard.models';
 
 describe('OrderWizardFacade', () => {
   let facade: OrderWizardFacade;
@@ -222,7 +223,7 @@ describe('OrderWizardFacade', () => {
 
     function setAddress(partial: Partial<{ city: string; countryId: string }>): void {
       facade.updateFormData({
-        address: new AddressDto({
+        address: createAddressDto({
           street: 'Main 1',
           city: partial.city ?? 'Prague',
           zipCode: '11000',
@@ -238,7 +239,7 @@ describe('OrderWizardFacade', () => {
 
     it('stays idle when city or country is missing', () => {
       facade.updateFormData({
-        address: new AddressDto({ street: '', city: '', zipCode: '', countryId: 'cz', state: '' }),
+        address: createAddressDto({ street: '', city: '', zipCode: '', countryId: 'cz', state: '' }),
       });
 
       expect(facade.cityServiced()).toBe('idle');
@@ -328,7 +329,7 @@ describe('OrderWizardFacade', () => {
         longitude: 14.42,
       });
       facade.updateFormData({
-        address: new AddressDto({
+        address: createAddressDto({
           street: 'Wenceslas Square',
           city: 'Prague',
           zipCode: '11000',
@@ -369,7 +370,7 @@ describe('OrderWizardFacade', () => {
     it('step 1 rejects a custom address without coordinates', () => {
       facade.goToStep(1);
       facade.updateFormData({
-        address: new AddressDto({
+        address: createAddressDto({
           street: 'Wenceslas Square',
           city: 'Prague',
           zipCode: '11000',
@@ -505,7 +506,7 @@ describe('OrderWizardFacade', () => {
       facade.selectSavedAddress('addr-1');
 
       facade.updateAddressFromForm(
-        new AddressDto({ street: 'New St 9', city: 'Plzen', zipCode: '30100', countryId: 'cz', state: '' }),
+        createAddressDto({ street: 'New St 9', city: 'Plzen', zipCode: '30100', countryId: 'cz', state: '' }),
       );
 
       expect(facade.selectedSavedAddressId()).toBeNull();
@@ -533,7 +534,7 @@ describe('OrderWizardFacade', () => {
 
     it('saveCurrentAddressAsSaved returns false without coordinates and skips the store', async () => {
       facade.updateAddressFromForm(
-        new AddressDto({ street: 'New St 9', city: 'Plzen', zipCode: '30100', countryId: 'cz', state: '' }),
+        createAddressDto({ street: 'New St 9', city: 'Plzen', zipCode: '30100', countryId: 'cz', state: '' }),
       );
 
       const saved = await facade.saveCurrentAddressAsSaved('Home');

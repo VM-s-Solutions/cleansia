@@ -54,7 +54,8 @@ export class ConsentSyncService {
   private grantConsent(consentType: ConsentType): void {
     // IP + user-agent are populated server-side from the request now
     // (legal-audit integrity) — client no longer sends them.
-    const command = new GrantConsentCommand({ consentType });
+    const command = new GrantConsentCommand();
+    command.consentType = consentType;
 
     this.customerClient.gdprClient.consentsPost(command).subscribe({
       error: () => { /* silently ignore — consent is saved locally regardless */ },
@@ -62,9 +63,8 @@ export class ConsentSyncService {
   }
 
   private withdrawConsent(consentType: ConsentType): void {
-    const command = new WithdrawConsentCommand({
-      consentType,
-    });
+    const command = new WithdrawConsentCommand();
+    command.consentType = consentType;
 
     this.customerClient.consentsClient.withdraw(command).subscribe({
       error: () => { /* silently ignore */ },

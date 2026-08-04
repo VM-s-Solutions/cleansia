@@ -41,14 +41,21 @@ export class CustomerAuthService {
   private readonly _isLoggedIn = signal<boolean>(this.hasValidSession());
   readonly isLoggedIn: Signal<boolean> = computed(() => this._isLoggedIn());
 
+  private currentLanguage(): string {
+    return this.translate.currentLang || this.translate.getDefaultLang();
+  }
+
   login(
     email: string,
     password: string,
     rememberMe = false
   ): Observable<JwtTokenResponse> {
-    return this.customerClient.authClient.login(
-      new LoginCommand({ email, password, rememberMe })
-    );
+    const command = new LoginCommand();
+    command.email = email;
+    command.password = password;
+    command.rememberMe = rememberMe;
+
+    return this.customerClient.authClient.login(command);
   }
 
   register(
@@ -58,38 +65,39 @@ export class CustomerAuthService {
     lastName: string,
     referralCode?: string
   ): Observable<boolean> {
-    return this.customerClient.authClient.register(
-      new RegisterCommand({
-        email,
-        password,
-        firstName,
-        lastName,
-        language: this.translate.currentLang || this.translate.getDefaultLang(),
-        referralCode: referralCode?.trim() ? referralCode.trim().toUpperCase() : undefined,
+    const command = new RegisterCommand();
+    command.email = email;
+    command.password = password;
+    command.firstName = firstName;
+    command.lastName = lastName;
+    command.language = this.currentLanguage();
+    command.referralCode = referralCode?.trim()
+      ? referralCode.trim().toUpperCase()
+      : undefined;
+
+    return this.customerClient.authClient.register(command);
+  }
+
+  confirmUserEmail(code: string, email: string): Observable<JwtTokenResponse> {
+    const command = new ConfirmUserEmailCommand();
+    command.code = code;
+    command.email = email;
+
+    return this.customerClient.authClient.confirmUserEmail(command).pipe(
+      map((authResult: JwtTokenResponse) => {
+        this.setSession(authResult);
+        return authResult;
       })
     );
   }
 
-  confirmUserEmail(code: string, email: string): Observable<JwtTokenResponse> {
-    return this.customerClient.authClient
-      .confirmUserEmail(new ConfirmUserEmailCommand({ code, email }))
-      .pipe(
-        map((authResult: JwtTokenResponse) => {
-          this.setSession(authResult);
-          return authResult;
-        })
-      );
-  }
-
   resendEmailConfirmation(email: string): Observable<boolean> {
+    const command = new ResendConfirmationEmailCommand();
+    command.email = email;
+    command.language = this.currentLanguage();
+
     return this.customerClient.authClient
-      .resendConfirmationEmail(
-        new ResendConfirmationEmailCommand({
-          email,
-          language:
-            this.translate.currentLang || this.translate.getDefaultLang(),
-        })
-      )
+      .resendConfirmationEmail(command)
       .pipe(map(() => true));
   }
 
@@ -100,16 +108,19 @@ export class CustomerAuthService {
     firstName: string,
     lastName: string
   ): Observable<JwtTokenResponse> {
-    return this.customerClient.authClient
-      .googleAuth(
-        new GoogleAuthCommand({ token, googleId, email, firstName, lastName })
-      )
-      .pipe(
-        map((authResult: JwtTokenResponse) => {
-          this.setSession(authResult);
-          return authResult;
-        })
-      );
+    const command = new GoogleAuthCommand();
+    command.token = token;
+    command.googleId = googleId;
+    command.email = email;
+    command.firstName = firstName;
+    command.lastName = lastName;
+
+    return this.customerClient.authClient.googleAuth(command).pipe(
+      map((authResult: JwtTokenResponse) => {
+        this.setSession(authResult);
+        return authResult;
+      })
+    );
   }
 
   /**
@@ -122,27 +133,27 @@ export class CustomerAuthService {
     firstName?: string,
     lastName?: string
   ): Observable<JwtTokenResponse> {
-    return this.customerClient.authClient
-      .appleAuth(
-        new AppleAuthCommand({ identityToken, rawNonce, firstName, lastName })
-      )
-      .pipe(
-        map((authResult: JwtTokenResponse) => {
-          this.setSession(authResult);
-          return authResult;
-        })
-      );
+    const command = new AppleAuthCommand();
+    command.identityToken = identityToken;
+    command.rawNonce = rawNonce;
+    command.firstName = firstName;
+    command.lastName = lastName;
+
+    return this.customerClient.authClient.appleAuth(command).pipe(
+      map((authResult: JwtTokenResponse) => {
+        this.setSession(authResult);
+        return authResult;
+      })
+    );
   }
 
   forgotPassword(email: string): Observable<boolean> {
+    const command = new RequestPasswordChangeCommand();
+    command.email = email;
+    command.language = this.currentLanguage();
+
     return this.customerClient.userClient
-      .requestPasswordChange(
-        new RequestPasswordChangeCommand({
-          email,
-          language:
-            this.translate.currentLang || this.translate.getDefaultLang(),
-        })
-      )
+      .requestPasswordChange(command)
       .pipe(map(() => true));
   }
 
@@ -151,8 +162,11 @@ export class CustomerAuthService {
     // there. We still POST so the server can revoke it; best-effort: if the
     // call fails (offline, etc.) we wipe local state anyway because user
     // intent is clear.
+    const command = new LogoutCommand();
+    command.token = '';
+
     const serverCall = this.customerClient.authClient
-      .logout(new LogoutCommand({ token: '' }))
+      .logout(command)
       .pipe(catchError(() => of(false)));
 
     return serverCall.pipe(
@@ -174,12 +188,13 @@ export class CustomerAuthService {
    * through to full logout.
    */
   refreshSession(): Observable<boolean> {
-    return this.customerClient.authClient
-      .refreshToken(new RefreshTokenCommand({ token: '' }))
-      .pipe(
-        tap((authResult) => this.setSession(authResult)),
-        map(() => true)
-      );
+    const command = new RefreshTokenCommand();
+    command.token = '';
+
+    return this.customerClient.authClient.refreshToken(command).pipe(
+      tap((authResult) => this.setSession(authResult)),
+      map(() => true)
+    );
   }
 
   /**

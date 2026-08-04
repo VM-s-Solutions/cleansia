@@ -102,8 +102,6 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
       Validators.min(0),
     ]),
     allowsExpressUpgrade: this.fb.nonNullable.control<boolean>(false),
-    // No input renders this yet; it is carried so saving a plan round-trips its
-    // express-waiver quota instead of resetting it to "no waiver".
     expressUpgradesPerMonth: this.fb.nonNullable.control<number>(0, [
       Validators.required,
       Validators.min(0),

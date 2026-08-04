@@ -46,7 +46,8 @@ Cleansia is a multi-tenant cleaning services platform deployed on Azure. The sys
 | ORM | Entity Framework Core | 10 |
 | Database | PostgreSQL | 16 |
 | Frontend | Angular (Nx monorepo) | 19 |
-| Mobile | Kotlin / Jetpack Compose | Latest |
+| Android | Kotlin / Jetpack Compose | Latest |
+| iOS | Swift / SwiftUI (iOS 16 floor) | XcodeGen + SPM |
 | Background Jobs | Azure Functions (Docker) | v4 |
 | PDF Generation | QuestPDF | Native .NET |
 | Email | SendGrid | Dynamic Templates |
@@ -57,14 +58,22 @@ Cleansia is a multi-tenant cleaning services platform deployed on Azure. The sys
 
 ## Backend APIs
 
-The backend consists of 4 separate API projects, each serving a different audience:
+The backend consists of **5** separate API projects, each serving a different audience. Ports are
+pinned in `Cleansia.AppHost/Program.cs`:
 
 | API | Project | Port | Audience |
 |-----|---------|------|----------|
-| Partner API | `Cleansia.Web` | 5000 | Employees / Partners |
+| Partner API | `Cleansia.Web.Partner` | 5000 | Employees / Partners (web) |
 | Admin API | `Cleansia.Web.Admin` | 5001 | Back-office administrators |
-| Mobile API | `Cleansia.Web.Mobile` | 5002 | Android/iOS apps |
-| Customer API | `Cleansia.Web.Customer` | 5003 | Public customers |
+| Partner Mobile API | `Cleansia.Web.Mobile.Partner` | 5002 | Partner Android + iOS |
+| Customer API | `Cleansia.Web.Customer` | 5003 | Public customers (web, SSR) |
+| Customer Mobile API | `Cleansia.Web.Mobile.Customer` | 5004 | Customer Android + iOS |
+
+::: warning The single `Cleansia.Web.Mobile` host is gone
+It was split into two hosts. Web hosts use HttpOnly cookies with CSRF; the two mobile hosts use
+body-token JWT with no cookies, because native clients cannot read an HttpOnly cookie. The customer
+mobile host issues tokens with the same `JwtAudiences.Customer` audience as the customer web host.
+:::
 
 All APIs share:
 - `Cleansia.Core.Domain` — Domain entities, enums, repositories

@@ -3,7 +3,7 @@
 Cleansia supports two payment methods: **card** (via Stripe Checkout) and **cash**. Payment is initiated during order creation and confirmed either immediately (cash) or asynchronously via Stripe webhooks (card).
 
 ::: info Source Files
-- Payment controllers: `src/Cleansia.Web/Controllers/PaymentController.cs`, `src/Cleansia.Web.Customer/Controllers/PaymentController.cs`
+- Payment controllers: `src/Cleansia.Web.Partner/Controllers/PaymentController.cs`, `src/Cleansia.Web.Customer/Controllers/PaymentController.cs`, `src/Cleansia.Web.Mobile.Customer/Controllers/PaymentController.cs`
 - Stripe client: `src/Cleansia.Infra.Clients/Stripe/StripeClient.cs`
 - Stripe config: `src/Cleansia.Infra.Common/Configuration/StripeConfig.cs`
 - Order creation handler: `src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs`
@@ -121,11 +121,22 @@ var options = new SessionCreateOptions
 
 ## Payment Statuses
 
-| Status | Description |
-|--------|-------------|
-| `Pending` | Order created, awaiting payment (card) |
-| `Paid` | Payment confirmed (card webhook or cash) |
-| `Failed` | Stripe session expired or payment failed |
+`PaymentStatus` is an axis of its own — it does **not** mirror `OrderStatus`. In particular, "card
+payment initiated, waiting for the webhook" is `PaymentStatus.Pending` while `OrderStatus` is still
+`New`; `OrderStatus.Pending` is dead and has no writer (ADR-0037 D5). See
+[Orders → Order Lifecycle](/api/orders#order-lifecycle).
+
+| Status | Value | Description |
+|--------|-------|-------------|
+| `Pending` | `1` | Order created, awaiting payment. **Every order starts here, cash included** — cash is not marked `Paid` at creation |
+| `Paid` | `2` | Card webhook settled, or a recurring cash occurrence was confirmed. The same write appends `OrderStatus.Confirmed` |
+| `Failed` | `3` | Payment failed, or `CleanupStalePendingOrders` gave up on an abandoned checkout |
+| `Refunded` | `4` | Full refund issued |
+| `Disputed` | `5` | Chargeback opened (`charge.dispute.*`) |
+| `PartiallyRefunded` | `6` | Partial refund issued |
+
+A cash order therefore stays `New` + `Pending` until a cleaner takes it — and it is still offerable,
+because the offerability rule admits `New` + `Cash` explicitly.
 
 ## Stripe Configuration
 

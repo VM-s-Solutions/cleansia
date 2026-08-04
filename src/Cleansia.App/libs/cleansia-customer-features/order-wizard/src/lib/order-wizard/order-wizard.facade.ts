@@ -270,12 +270,9 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         // the same silent-default bug if we auto-picked here, just with a
         // different country.
         if (countries.length === 1 && !this.formData().address.countryId) {
-          this.updateFormData({
-            address: new AddressDto({
-              ...this.formData().address,
-              countryId: countries[0].id ?? '',
-            }),
-          });
+          const address = new AddressDto(this.formData().address);
+          address.countryId = countries[0].id ?? '';
+          this.updateFormData({ address });
         }
       },
     });
@@ -547,47 +544,41 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       promoState.kind === 'valid' && trimmedPromo
         ? trimmedPromo.toUpperCase()
         : undefined;
+    const command = new CreateOrderCommand();
+    command.customerName =
+      `${data.customerFirstName} ${data.customerLastName}`.trim();
+    command.customerEmail = data.customerEmail;
+    command.customerPhone = data.customerPhone;
     // Backend validator is XOR: send savedAddressId OR customerAddress, never both.
-    const command = new CreateOrderCommand({
-      customerName: `${data.customerFirstName} ${data.customerLastName}`.trim(),
-      customerEmail: data.customerEmail,
-      customerPhone: data.customerPhone,
-      customerAddress: savedId ? undefined : new CustomerAddress(data.address),
-      savedAddressId: savedId ?? undefined,
-      selectedServiceIds: data.selectedServiceIds,
-      selectedPackageIds: data.selectedPackageIds,
-      rooms: data.rooms,
-      bathrooms: data.bathrooms,
-      extras: data.extras,
-      cleaningDate: cleaningDate,
-      paymentType: data.paymentType,
-      currencyId: quoted.currencyId,
-      // Send the server-quoted total unchanged — it already includes any
-      // express surcharge for the quoted slot. `CreateOrder.PriceMatchesAsync`
-      // validates against the same calculator result (`result.TotalPrice ==
-      // command.TotalPrice`), exact decimal match, so any client-side price
-      // math here would be rejected.
-      totalPrice: quoted.totalPrice,
-      language: this.translate.currentLang || this.translate.getDefaultLang(),
-      promoCode: promoCodeToSend,
-      // Referral is a signup-only benefit now — the checkout wizard never
-      // populates it. Backend still accepts the field for other callers.
-      referralCode: undefined,
-      // Future Cleansia Plus perk — customer-requested cleaner. Web wizard
-      // doesn't surface this picker yet (waiting on the Plus rollout); send
-      // undefined so the backend skips the matching boost. The field is
-      // `required` in the NSwag-generated interface but accepts undefined.
-      preferredEmployeeId: undefined,
-      // The wizard has collected this since the field shipped and the summary
-      // step renders it back to the customer, but it was never put on the
-      // command — so every note typed on web was discarded at submit while the
-      // customer watched it in the review panel. Empty becomes undefined rather
-      // than '': the backend treats null and empty alike, and undefined keeps
-      // the property out of the JSON entirely, matching every other optional
-      // here. Trimmed because a whitespace-only note is not a note.
-      specialInstructions: data.specialInstructions.trim() || undefined,
-      accessInstructions: data.entryInstructions.trim() || undefined,
-    });
+    command.customerAddress = savedId
+      ? undefined
+      : new CustomerAddress(data.address);
+    command.savedAddressId = savedId ?? undefined;
+    command.selectedServiceIds = data.selectedServiceIds;
+    command.selectedPackageIds = data.selectedPackageIds;
+    command.rooms = data.rooms;
+    command.bathrooms = data.bathrooms;
+    command.extras = data.extras;
+    command.cleaningDate = cleaningDate;
+    command.paymentType = data.paymentType;
+    command.currencyId = quoted.currencyId;
+    // Send the server-quoted total unchanged — it already includes any
+    // express surcharge for the quoted slot. `CreateOrder.PriceMatchesAsync`
+    // validates against the same calculator result (`result.TotalPrice ==
+    // command.TotalPrice`), exact decimal match, so any client-side price
+    // math here would be rejected.
+    command.totalPrice = quoted.totalPrice;
+    command.language =
+      this.translate.currentLang || this.translate.getDefaultLang();
+    command.promoCode = promoCodeToSend;
+    // Empty becomes undefined rather than '': the backend treats null and empty
+    // alike, and undefined keeps the property out of the JSON entirely. Trimmed
+    // because a whitespace-only note is not a note.
+    command.specialInstructions = data.specialInstructions.trim() || undefined;
+    command.accessInstructions = data.entryInstructions.trim() || undefined;
+    // Deliberately unset: `referralCode` is a signup-only benefit the checkout
+    // wizard never populates, and `preferredEmployeeId` waits on the Plus
+    // rollout to surface a cleaner picker. Both stay off the JSON.
 
     if (data.paymentType === PaymentType.Card) {
       this.customerClient.paymentClient

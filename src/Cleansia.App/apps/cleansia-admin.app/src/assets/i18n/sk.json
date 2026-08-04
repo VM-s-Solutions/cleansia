@@ -1958,7 +1958,9 @@
           "discount": "Zľava (%)",
           "trial_days": "Skúšobné obdobie (dni)",
           "free_cancel_window": "Lehota na bezplatné storno (hodiny)",
-          "express_upgrade": "Umožňuje expresný upgrade"
+          "express_upgrade": "Umožňuje expresný upgrade",
+          "express_upgrades_per_month": "Zahrnuté expresné upgrady za mesiac",
+          "express_upgrades_per_month_help": "Koľko expresných rezervácií dostane člen každý mesiac bez expresného príplatku. Nula znamená žiadne."
         },
         "validation": {
           "code_invalid": "2–50 znakov: písmená, číslice alebo podčiarkovníky.",
@@ -1966,7 +1968,8 @@
           "stripe_price_id_required": "Stripe Price id je povinné.",
           "discount_range": "Zľava musí byť medzi 0 a 100.",
           "trial_negative": "Počet skúšobných dní musí byť nula alebo vyšší.",
-          "window_negative": "Lehota musí byť nula alebo vyššia."
+          "window_negative": "Lehota musí byť nula alebo vyššia.",
+          "express_upgrades_negative": "Počet zahrnutých expresných upgradov musí byť nula alebo vyšší."
         },
         "submit_create": "Vytvoriť plán",
         "submit_update": "Uložiť zmeny",

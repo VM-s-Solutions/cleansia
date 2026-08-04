@@ -27,17 +27,26 @@ Each order row shows the **cleaning time** alongside the date for quick scheduli
 
 Shows orders that have available spots and are not already assigned to the current partner.
 
-::: tip v4 Update
-The Available Orders tab will soon show only `New` and `Pending` status orders. `Confirmed` orders are excluded because they already have a cleaner assigned.
-:::
-
 ```typescript
+// OrdersFacade.loadAvailableOrders — the client's display refinement, not the boundary
 const filter = new OrderFilter({
-  orderStatuses: [OrderStatus.New, OrderStatus.Pending],
+  orderStatuses: [OrderStatus.New, OrderStatus.Pending, OrderStatus.Confirmed],
   hasAvailableSpots: true,
   excludeEmployeeId: employeeId,
+  cleaningDateFrom: new Date(),
 });
 ```
+
+::: danger The client filter is not the security boundary
+The server pins a non-admin caller's scope with `OrderSpecification.RestrictToEmployeeId`: results are
+restricted to rows the caller is assigned to **or** rows that are both open and
+[offerable](/api/orders#offerability-which-orders-a-cleaner-may-be-offered-and-may-take) (ADR-0037),
+minus anything under a live preferred-cleaner hold for someone else (ADR-0036). The status list above
+is a display refinement on top of that floor and can never widen it.
+
+`OrderStatus.Pending` in that list is inert — nothing writes it. `Confirmed` is in the list because a
+`Confirmed` order can still have a free seat; it does **not** mean nobody is assigned.
+:::
 
 ### My Orders
 
@@ -68,16 +77,18 @@ The order detail page (`/orders/:id`) shows comprehensive order information thro
 
 ## Order Lifecycle: Take / Start / Complete
 
-The partner order flow mirrors the Android app:
+The partner order flow mirrors the Android and iOS apps:
 
 ```
-Available (Pending/Confirmed)
+Offerable (New+Cash, or Confirmed+settled)
   → Take Order
-    → Confirmed (assigned to partner)
-      → Start Order
-        → InProgress (work begins, timer starts)
-          → Complete Order
-            → Completed (work finished)
+    → assignment row added; New becomes Confirmed
+      → Notify On The Way
+        → OnTheWay
+          → Start Order
+            → InProgress (work begins, timer starts)
+              → Complete Order
+                → Completed (work finished)
 ```
 
 ### Take Order
@@ -85,13 +96,25 @@ Available (Pending/Confirmed)
 - Called via `OrderDetailsFacade.takeOrder(orderId, employeeId)` or `OrdersFacade.takeOrder(orderId)`
 - A **Take Order** button is available on the order detail page for available orders
 - Sends `TakeOrderCommand` to the API
-- On success, the order transitions from `New`/`Pending` to `Confirmed` and is assigned to the partner
+- On success the partner is added to `AssignedEmployees`. A `New` order also gets a `Confirmed` status
+  track and the customer is notified; an order that was **already** `Confirmed` (a settled card
+  booking) gets **no** status track at all — only the assignment row changes
 - The order moves from the "Available Orders" table to the "My Orders" table
 - The order list is refreshed
 
 #### Take Order Validations
 
-Before an order can be taken, the following validations are enforced:
+The backend runs one ordered `Cascade.Stop` chain and returns exactly one error — the first that
+fails. The full ordered table lives in the
+[API reference](/api/orders#takeorder-validations); the partner-visible highlights:
+
+**Offerability** (ADR-0037) — the order must be `Confirmed`, or `New` for cash, *and* nothing
+scheduled may still be able to retract it. A `New` card order awaiting its Stripe webhook is not
+takeable → `order.not_takeable`.
+
+**Preferred-cleaner hold** (ADR-0036) — if the customer named a cleaner and the hold has not expired,
+the order's first seat is theirs. Everyone else sees `order.not_found`, identical to a genuinely
+missing order.
 
 **Weekly order limit** (based on partner rating):
 
@@ -101,9 +124,18 @@ Before an order can be taken, the following validations are enforced:
 | 3.6 -- 4.5 | 6 orders/week |
 | 4.6+ | 10 orders/week |
 
-**Time conflict detection:** The system checks for scheduling overlaps with the partner's existing orders. If the new order's cleaning time conflicts with an already-taken order, the take request is rejected.
+**Time conflict detection:** the server checks for overlaps against the partner's live commitments
+(`New`, `Pending`, `Confirmed`, `OnTheWay`, `InProgress` — terminal orders free the slot).
 
-**Profile and document checks:** The partner must have a complete profile and approved documents to take orders.
+**Profile and approval checks:** the partner needs an address on file (`employee.profile_incomplete`)
+and `ContractStatus == Approved` (`employee.not_approved`). A rejected, still-pending or terminated
+cleaner is turned away. Document upload alone is not the gate.
+
+### Seats
+
+`RequiredEmployees = ceil(estimatedTime / 120)` and `MaxEmployees = RequiredEmployees + 0` —
+**there is no spare seat** (`BookingPolicy.SpareSeatsPerOrder = 0`). A job needing a crew of two shows
+two seats and no more, so a partner will never find an extra slot on a job that does not need them.
 
 ### Start Order
 
@@ -121,8 +153,11 @@ Completion is handled directly from the order detail page (aligned with the Andr
 - No manual time entry is required; the elapsed time is computed automatically
 
 ```typescript
-// Elapsed time calculation (auto-computed on completion)
-const inProgressEntry = order.statusHistory?.find(h => h.status.value === 3);
+// Elapsed time calculation (auto-computed on completion) — order-details.facade.ts
+// Compare against the OrderStatus enum, never a magic number: InProgress is 4, not 3.
+const inProgressEntry = order.statusHistory?.find(
+  (h) => h.status.value === OrderStatus.InProgress
+);
 let actualMinutes = 0;
 if (inProgressEntry) {
   const start = new Date(inProgressEntry.createdOn);

@@ -67,14 +67,13 @@ export class OrderPromoFacade extends UnsubscribeControlDirective {
     // (post-express-surcharge), so a bare-subtotal validation could fail a
     // min-order threshold that would otherwise pass on the real charge.
     const subtotal = this.deps?.displayedTotalPrice() ?? 0;
+    const command = new ValidatePromoCodeCommand();
+    command.code = normalized;
+    command.orderSubtotal = subtotal;
+
     return new Promise<PromoCodeUiState>((resolve) => {
       this.customerClient.promoCodeClient
-        .validate(
-          new ValidatePromoCodeCommand({
-            code: normalized,
-            orderSubtotal: subtotal,
-          }),
-        )
+        .validate(command)
         .pipe(
           takeUntil(this.destroyed$),
           catchError(() => of(null)),

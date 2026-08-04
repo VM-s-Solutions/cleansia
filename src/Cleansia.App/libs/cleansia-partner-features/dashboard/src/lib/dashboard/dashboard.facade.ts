@@ -91,8 +91,8 @@ export class DashboardFacade extends UnsubscribeControlDirective {
       employeeId,
       cleaningDateFrom: new Date(),
       orderStatuses: [
-        OrderStatus.Pending,
         OrderStatus.Confirmed,
+        OrderStatus.OnTheWay,
         OrderStatus.InProgress,
       ],
     });

@@ -76,44 +76,35 @@ export class OrderEffects {
   completeOrder$ = createEffect(() =>
     this.actions$.pipe(
       ofType(OrderActions.completeOrder),
-      mergeMap(
-        ({
-          orderId,
-          actualCompletionTimeMinutes,
-          completionNotes,
-        }) =>
-          this.partnerClient.orderClient
-            .completeOrder(
-              new CompleteOrderCommand({
-                orderId,
-                actualCompletionTimeMinutes,
-                completionNotes,
-              })
+      mergeMap(({ orderId, actualCompletionTimeMinutes, completionNotes }) => {
+        const command = new CompleteOrderCommand();
+        command.orderId = orderId;
+        command.actualCompletionTimeMinutes = actualCompletionTimeMinutes;
+        command.completionNotes = completionNotes;
+
+        return this.partnerClient.orderClient.completeOrder(command).pipe(
+          withLatestFrom(
+            this.store.select(
+              selectCodeByTypeAndValue(
+                CodeTypes.ORDER_STATUS,
+                OrderStatus.Completed
+              )
             )
-            .pipe(
-              withLatestFrom(
-                this.store.select(
-                  selectCodeByTypeAndValue(
-                    CodeTypes.ORDER_STATUS,
-                    OrderStatus.Completed
-                  )
-                )
-              ),
-              map(([response, completedStatusCode]) => {
-                this.snackbarService.showSuccess(
-                  this.translate.instant('pages.orders.complete_order.success')
-                );
-                return OrderActions.completeOrderSuccess({
-                  orderId: response.orderId!,
-                  orderStatus: completedStatusCode?.name || 'Completed',
-                });
-              }),
-              catchError((error) => {
-                // Use showApiError to extract and translate the actual API error message
-                return of(OrderActions.completeOrderFailure({ error }));
-              })
-            )
-      )
+          ),
+          map(([response, completedStatusCode]) => {
+            this.snackbarService.showSuccess(
+              this.translate.instant('pages.orders.complete_order.success')
+            );
+            return OrderActions.completeOrderSuccess({
+              orderId: response.orderId!,
+              orderStatus: completedStatusCode?.name || 'Completed',
+            });
+          }),
+          catchError((error) =>
+            of(OrderActions.completeOrderFailure({ error }))
+          )
+        );
+      })
     )
   );
 

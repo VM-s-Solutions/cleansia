@@ -150,15 +150,17 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
   }
 
   private toQuoteCommand(inputs: QuoteInputs): QuoteOrderCommand {
-    return new QuoteOrderCommand({
-      selectedServiceIds: inputs.selectedServiceIds,
-      selectedPackageIds: inputs.selectedPackageIds,
-      rooms: inputs.rooms,
-      bathrooms: inputs.bathrooms,
-      currencyId: inputs.currencyId ?? undefined,
-      selectedExtraSlugs: inputs.selectedExtraSlugs,
-      cleaningDate: inputs.cleaningDate ? new Date(inputs.cleaningDate) : undefined,
-    });
+    const command = new QuoteOrderCommand();
+    command.selectedServiceIds = inputs.selectedServiceIds;
+    command.selectedPackageIds = inputs.selectedPackageIds;
+    command.rooms = inputs.rooms;
+    command.bathrooms = inputs.bathrooms;
+    command.currencyId = inputs.currencyId ?? undefined;
+    command.selectedExtraSlugs = inputs.selectedExtraSlugs;
+    command.cleaningDate = inputs.cleaningDate
+      ? new Date(inputs.cleaningDate)
+      : undefined;
+    return command;
   }
 
   /**

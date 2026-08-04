@@ -55,6 +55,29 @@ export interface OrderWizardFormData {
   promoCode: string;
 }
 
+/**
+ * Construct-then-assign (ADR-0031): an `AddressDto` object literal is
+ * required-key checked, so every one of them breaks at the next NSwag regen.
+ * Every wizard surface that builds an address goes through here, blanks and all.
+ */
+export function createAddressDto(
+  fields: {
+    street?: string;
+    city?: string;
+    zipCode?: string;
+    countryId?: string;
+    state?: string;
+  } = {}
+): AddressDto {
+  const address = new AddressDto();
+  address.street = fields.street ?? '';
+  address.city = fields.city ?? '';
+  address.zipCode = fields.zipCode ?? '';
+  address.countryId = fields.countryId ?? '';
+  address.state = fields.state ?? '';
+  return address;
+}
+
 export const ORDER_WIZARD_INITIAL_DATA: OrderWizardFormData = {
   selectedServiceIds: [],
   selectedPackageIds: [],
@@ -64,7 +87,7 @@ export const ORDER_WIZARD_INITIAL_DATA: OrderWizardFormData = {
   customerLastName: '',
   customerEmail: '',
   customerPhone: '',
-  address: new AddressDto({ street: '', city: '', zipCode: '', countryId: '', state: '' }),
+  address: createAddressDto(),
   addressLatitude: null,
   addressLongitude: null,
   cleaningDate: null,

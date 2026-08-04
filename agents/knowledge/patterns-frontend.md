@@ -382,6 +382,27 @@ undefined` in a literal fails today's excess-property check, `TS2353`), and a la
 default cannot hold the statements — extract a module-level factory (`const createEmptyPhoto =
 (): BlobFileDto => { … }`).
 
+The same factory is the answer when **one DTO shape is built at several call sites** (the booking
+wizard built `AddressDto` in five places, all coalescing blanks to `''`). Export one
+`createXxxDto(fields = {}): XxxDto` beside the feature's models, take an **all-optional plain
+object** rather than the generated `IXxxDto`, and assign inside. A regen that adds a member leaves
+it compiling and unset; a regen that removes one breaks in **one** place instead of five. Specs
+build the DTO through the same factory — `.spec.ts` files are excluded from every app's
+`tsconfig.app.json`, so `npm run typecheck` never sees a literal in a test (ADR-0031 residue #5) and
+a regen reddens the Jest run instead.
+
+**Enforced by:** `no-restricted-syntax` (selector
+`NewExpression[callee.name=/(Command|Request|Dto|Query)$/][arguments.0.type='ObjectExpression']`) in
+`src/Cleansia.App/eslint.generated-dto.config.mjs` — **T2-ADVISORY**, because `frontend-ci.yml` runs
+lint with `continue-on-error: true`; promotes to `T1-CI` with the rest of the lint baseline. It is an
+**opt-in ratchet, and the opt-in list is the progress bar**: a scope may only be added once its own
+count is zero, and it is added by spreading `generatedDtoLiteralRules()` into that lib's own
+`eslint.config.mjs` (flat-config `files` globs resolve against the loaded config's directory, so a
+per-lib config passes no argument) or, for a lib with no local config, by adding a workspace-relative
+glob to the call in `src/Cleansia.App/eslint.config.mjs`. Cleared so far: all of `libs/core`,
+`libs/data-access`, and `libs/cleansia-customer-features/order-wizard`. **Never delete a scope from
+that list to make a new literal compile** — convert the call site instead.
+
 **Removal is the same rule, mirrored.** When the backend *drops* a field, a literal stops compiling
 against the still-stale client (`TS2345`, "property X is missing") — construct-then-assign simply
 omits it and compiles against both the current and the post-regen client. This is what lets a

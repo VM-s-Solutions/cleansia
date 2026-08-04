@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { AddSavedAddressCommand, AddressDto } from '@cleansia/customer-services';
 import { SavedAddressStore } from '@cleansia/customer-stores';
-import { OrderWizardFormData } from './order-wizard.models';
+import { createAddressDto, OrderWizardFormData } from './order-wizard.models';
 
 /** Dependencies the saved-address collaborator reads from the orchestrating wizard facade. */
 interface SavedAddressConnection {
@@ -41,13 +41,7 @@ export class OrderSavedAddressFacade extends UnsubscribeControlDirective {
     if (!addr) return;
     this.selectedSavedAddressId.set(addressId);
     this.deps?.patchFormData({
-      address: new AddressDto({
-        street: addr.street ?? '',
-        city: addr.city ?? '',
-        zipCode: addr.zipCode ?? '',
-        countryId: addr.countryId ?? '',
-        state: addr.state ?? '',
-      }),
+      address: createAddressDto(addr),
       addressLatitude: addr.latitude ?? null,
       addressLongitude: addr.longitude ?? null,
     });
@@ -76,7 +70,7 @@ export class OrderSavedAddressFacade extends UnsubscribeControlDirective {
     this.selectedSavedAddressId.set(null);
     const current = this.deps?.currentFormData().address;
     this.deps?.patchFormData({
-      address: new AddressDto({
+      address: createAddressDto({
         street: suggestion.street || current?.street || '',
         city: suggestion.city || current?.city || '',
         zipCode: suggestion.zipCode || current?.zipCode || '',
@@ -99,16 +93,15 @@ export class OrderSavedAddressFacade extends UnsubscribeControlDirective {
     if (lat === undefined || lng === undefined || lat === null || lng === null) {
       return false;
     }
-    const command = new AddSavedAddressCommand({
-      label,
-      street: addr.street ?? '',
-      city: addr.city ?? '',
-      zipCode: addr.zipCode ?? '',
-      countryId: addr.countryId ?? undefined,
-      setAsDefault: false,
-      latitude: lat,
-      longitude: lng,
-    });
+    const command = new AddSavedAddressCommand();
+    command.label = label;
+    command.street = addr.street ?? '';
+    command.city = addr.city ?? '';
+    command.zipCode = addr.zipCode ?? '';
+    command.countryId = addr.countryId ?? undefined;
+    command.setAsDefault = false;
+    command.latitude = lat;
+    command.longitude = lng;
     const result = await this.savedAddressStore.add(command);
     if (result?.id) {
       this.selectedSavedAddressId.set(result.id);

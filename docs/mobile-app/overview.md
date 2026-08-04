@@ -1,5 +1,22 @@
 # Mobile App Overview
 
+::: danger This section is behind the code
+It documents a **single-module** Android app at `src/cleansia_android/app/`. That module no longer
+exists. Mobile is now **four apps across two platforms**:
+
+| Platform | Apps | Layout |
+|---|---|---|
+| Android | `cz.cleansia.partner`, `cz.cleansia.customer` | Multi-module: `:core` (theme, components, auth/network, snackbar) + `:partner-app` + `:customer-app` |
+| iOS | `cz.cleansia.partner`, `cz.cleansia.customer` | `CleansiaCore` SPM package + `CleansiaPartner` / `CleansiaCustomer` XcodeGen targets — see `src/cleansia_ios/README.md` |
+
+They talk to **two** mobile hosts, not one: `Cleansia.Web.Mobile.Partner` (`:5002`) and
+`Cleansia.Web.Mobile.Customer` (`:5004`).
+
+Treat the package paths and the project-structure tree below as historical. The tech-stack table,
+build variants and feature descriptions are still broadly accurate for the partner Android app.
+Rewriting this section is tracked work, not a fact to infer from what is written here.
+:::
+
 The Cleansia Partner mobile app is a native Android application built with Kotlin and Jetpack Compose. It serves as the primary tool for cleaning employees to manage orders, track time, document work with photos, and view invoices.
 
 ## Tech Stack
@@ -20,10 +37,11 @@ The Cleansia Partner mobile app is a native Android application built with Kotli
 | Navigation | Compose Navigation |
 | Security | EncryptedSharedPreferences, Biometric |
 
-::: info Source Files
-- Build config: `src/cleansia_android/app/build.gradle.kts`
-- Manifest: `src/cleansia_android/app/src/main/AndroidManifest.xml`
-- App entry: `src/cleansia_android/app/src/main/java/cz/cleansia/partner/CleansiaApp.kt`
+::: info Source Files (current paths)
+- Build config: `src/cleansia_android/partner-app/build.gradle.kts` (and `customer-app/`, `core/`)
+- Manifest: `src/cleansia_android/partner-app/src/main/AndroidManifest.xml`
+- App entry: `src/cleansia_android/partner-app/src/main/java/cz/cleansia/partner/CleansiaPartnerApp.kt`
+- Single activity: `.../cz/cleansia/partner/MainActivity.kt`
 :::
 
 ## Project Structure
@@ -66,7 +84,7 @@ src/cleansia_android/app/src/main/java/cz/cleansia/partner/
 
 | Type | Minified | API Base URL | App Name |
 |------|----------|-------------|----------|
-| `debug` | No | `http://10.0.2.2:5002/api` | Cleansia Dev |
+| `debug` | No | `http://10.0.2.2:5002/` — the **Partner Mobile** host (the customer app uses `:5004`); overridable with `-PAPI_BASE_URL=` | Cleansia Dev |
 | `staging` | Yes | `https://staging-api.cleansia.cz/api` | Cleansia Staging |
 | `release` | Yes + shrink | `https://api.cleansia.cz/api` | Cleansia Partner |
 

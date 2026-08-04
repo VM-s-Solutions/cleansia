@@ -135,34 +135,60 @@ public class Employee : AuditableEntity, ITenantEntity
 
 ### Order (Aggregate Root)
 
-The `Order` entity is the central aggregate with multiple child collections:
+The `Order` entity is the central aggregate with multiple child collections. Abridged, but with the
+columns that carry rules:
 
 ```csharp
-public class Order : AuditableEntity, ITenantEntity
+public class Order : Auditable, ITenantEntity
 {
-    public Guid Id { get; set; }
-    public Guid CustomerId { get; set; }
-    public Guid? EmployeeId { get; set; }
-    public Guid ServiceId { get; set; }
-    public Guid AddressId { get; set; }
-    public OrderStatus Status { get; set; }
-    public DateOnly Date { get; set; }
-    public TimeOnly Time { get; set; }
-    public decimal TotalPrice { get; set; }
-    public Guid CurrencyId { get; set; }
-    public Guid TenantId { get; set; }
+    // --- state, two axes (ADR-0037) -------------------------------------------------
+    // NON-NULLABLE (ADR-0040). A persisted denormalization of the latest OrderStatusHistory
+    // row, written ONLY by AddOrderStatus. There is no history fallback: dropping the
+    // `!= null` conjunct is what lets Postgres seek the leading column of
+    // IX_Orders_CurrentStatus_CleaningDateTime.
+    public OrderStatus CurrentStatus { get; private set; }
+    public PaymentType PaymentType { get; private set; }      // Cash = 1, Card = 2
+    public PaymentStatus PaymentStatus { get; private set; }  // Pending = 1, Paid = 2, …
+    public string? RecurringTemplateId { get; private set; }
+
+    // --- crew ------------------------------------------------------------------------
+    public int RequiredEmployees { get; private set; }   // ceil(EstimatedTime / 120)
+    public int MaxEmployees { get; private set; }        // RequiredEmployees + 0 spare seats
+    public int EstimatedTime { get; private set; }       // minutes; capped at 24 h at write time
+
+    // --- preferred-cleaner first refusal (ADR-0036) ----------------------------------
+    // A pair with one meaning. GrantPreferredHold refuses a deadline with no beneficiary,
+    // and OrderVisibility reads a half-written pair as "no hold" — a hold nobody may act on
+    // is a hold no actor is permitted to clear.
+    public string? PreferredEmployeeId { get; private set; }
+    public DateTime? PreferredHoldUntilUtc { get; private set; }
+
+    public DateTime CleaningDateTime { get; private set; }
+    public decimal TotalPrice { get; private set; }
+    public string CurrencyId { get; private set; }
+    public string? TenantId { get; private set; }        // null = single-tenant mode
 
     // Child collections
-    public ICollection<OrderService> Services { get; set; }
-    public ICollection<OrderPackage> Packages { get; set; }
-    public ICollection<OrderExtra> Extras { get; set; }
-    public ICollection<OrderPhoto> Photos { get; set; }
-    public ICollection<OrderNote> Notes { get; set; }
-    public ICollection<OrderIssue> Issues { get; set; }
-    public ICollection<OrderReview> Reviews { get; set; }
-    public ICollection<OrderStatusHistory> StatusHistory { get; set; }
+    public IReadOnlyCollection<OrderService> SelectedServices { get; }
+    public IReadOnlyCollection<OrderPackage> SelectedPackages { get; }
+    public IReadOnlyCollection<OrderEmployee> AssignedEmployees { get; }  // many-to-many
+    public IReadOnlyCollection<OrderPhoto> Photos { get; }
+    public IReadOnlyCollection<OrderNote> OrderNotes { get; }
+    public IReadOnlyCollection<OrderIssue> OrderIssues { get; }
+    public IReadOnlyCollection<OrderReview> Reviews { get; }
+    public IReadOnlyCollection<OrderStatusTrack> OrderStatusHistory { get; }
 }
 ```
+
+::: warning An order does not have "an employee"
+Assignment is a many-to-many through `OrderEmployee`, bounded by `MaxEmployees`. There is no
+`EmployeeId` column on `Orders`, and `PreferredEmployeeId` is a *customer request*, not an
+assignment. To ask "has a cleaner taken this job", count `AssignedEmployees` — never read
+`CurrentStatus == Confirmed`, which four paths write and only one of them involves a cleaner.
+:::
+
+The identifier type across the schema is a 26-character **ULID string**, not `Guid` — the sketches on
+this page use `Guid` for brevity where the id type is not the point.
 
 ### Service and Pricing
 
@@ -200,8 +226,20 @@ This allows flexible pricing where a "Basic Clean" might cost 500 CZK base + 100
 | `Package` | Bundled services at a discount |
 | `PayPeriod` | Employee payment tracking periods |
 | `EmployeeDocument` | Uploaded employee documents (contracts, IDs) |
+| `EmployeePayoutDetails` | ADR-0034 — the cleaner's bank destination. **Its own table**, one row per cleaner, `(TenantId, EmployeeId)` unique with `NULLS NOT DISTINCT`. Never `Include`d on a list query |
+| `EmployeePayConfig` | Pay rates per service/package; nullable `EmployeeId` = per-employee override, with a filtered unique index on `(EmployeeId, ServiceId, PackageId) WHERE "EmployeeId" IS NOT NULL` |
+| `MembershipPlan` / `UserMembership` | Cleansia Plus plans and enrolments |
+| `MembershipBenefitUsage` | ADR-0035 — the metered-benefit ledger, keyed `(TenantId, UserId, BenefitKind, PeriodKey)` with a filtered `NULLS NOT DISTINCT` unique index that is the sole arbiter of the reservation race |
 | `OrderReceipt` | Generated receipt per order, including fiscal-registration state |
 | `FiscalCounter` | Per-issuer gapless fiscal sequence counter (see below) |
+
+::: danger `TenantId` is nullable — a unique index containing it enforces nothing today
+Postgres treats NULLs as DISTINCT, so `(TenantId, …)` unique indexes admit unlimited duplicates while
+`TenantId` is null, which is production. Nine indexes are in that position. Any design that needs a
+concurrent arbiter must declare `.AreNullsDistinct(false)` (as `FiscalCounter`, `LiveActivityToken`,
+`MembershipBenefitUsage`, `PromoCodeRedemption` and `EmployeePayoutDetails` do) or carry a second
+guard. Adding it to an existing index is an owner-only migration and fails on pre-existing duplicates.
+:::
 
 ## Fiscal Sequence Allocation
 
@@ -247,18 +285,22 @@ User ─────────┬──── Customer (1:0..1)
               ├──── Employee (1:0..1)
               └──── Admin (1:0..1)
 
-Employee ─────┬──── Order (1:N)
-              ├──── EmployeeDocument (1:N)
-              └──── PayPeriod (1:N)
-
-Order ────────┬──── OrderService (1:N)
+Employee ─────┬──── OrderEmployee (1:N) ────┐   # assignment join, bounded by Order.MaxEmployees
+              ├──── EmployeeDocument (1:N)  │
+              ├──── EmployeePayoutDetails (1:0..1)
+              ├──── EmployeePayConfig (1:N, override rows)
+              └──── PayPeriod (1:N)         │
+                                            │
+Order ────────┬──── OrderEmployee (1:N) ────┘
+              ├──── OrderService (1:N)
               ├──── OrderPackage (1:N)
               ├──── OrderExtra (1:N)
               ├──── OrderPhoto (1:N)
               ├──── OrderNote (1:N)
               ├──── OrderIssue (1:N)
               ├──── OrderReview (1:N)
-              └──── OrderStatusHistory (1:N)
+              ├──── OrderStatusTrack (1:N)     # the audit trail; Order.CurrentStatus denormalizes it
+              └──── MembershipBenefitUsage (1:0..1)
 
 Service ──────┬──── Package (1:N)
               └──── Currency (N:1)
@@ -320,7 +362,7 @@ Production uses the EF Core migrations bundle, built and executed in the CI/CD p
     dotnet tool restore
     dotnet ef migrations bundle \
       --project src/Cleansia.Infra.Database \
-      --startup-project src/Cleansia.Web \
+      --startup-project src/Cleansia.Web.Partner \
       --output efbundle \
       --self-contained
 
@@ -337,11 +379,18 @@ Production uses the EF Core migrations bundle, built and executed in the CI/CD p
 ### Creating a New Migration
 
 ```bash
-# From the solution root
+# From the repo root. Cleansia.Web.Partner is the startup host for design-time EF.
 dotnet ef migrations add <MigrationName> \
   --project src/Cleansia.Infra.Database \
-  --startup-project src/Cleansia.Web
+  --startup-project src/Cleansia.Web.Partner
 ```
+
+::: warning Owner-only, and pre-prod there is exactly ONE migration
+The committed history is a single `Initial` migration. While the platform is pre-production, schema
+changes are folded back into it rather than stacked on top, so the shipped set stays one file. Only
+the owner runs `dotnet ef migrations add` / `database update`; agents flag
+`manual_step: ef-migration` instead.
+:::
 
 ## Database Configuration
 

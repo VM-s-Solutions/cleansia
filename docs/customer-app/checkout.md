@@ -84,18 +84,29 @@ Shown when the user cancels the Stripe payment. Provides a link back to the home
 
 ## Payment Status Tracking
 
-Orders have a `PaymentStatus` enum tracked throughout their lifecycle:
+Orders have a `PaymentStatus` enum tracked throughout their lifecycle, **independently of
+`OrderStatus`**. This is the axis that carries "checkout opened, not paid yet" — the order's
+`OrderStatus` stays `New` the whole time.
 
-| Status | Description |
-|---|---|
-| `Pending` | Payment not yet received |
-| `Paid` | Payment confirmed |
-| `Failed` | Payment attempt failed |
-| `Refunded` | Payment was refunded |
-| `Disputed` | Payment is under dispute |
+| Status | Value | Description |
+|---|---|---|
+| `Pending` | `1` | Payment not yet received |
+| `Paid` | `2` | Payment confirmed — the webhook also writes `OrderStatus.Confirmed` |
+| `Failed` | `3` | Payment attempt failed, or the stale-order sweep gave up on it |
+| `Refunded` | `4` | Payment was refunded |
+| `Disputed` | `5` | Payment is under dispute |
+| `PartiallyRefunded` | `6` | Part of the payment was refunded |
 
-::: warning
-The cancel page does not automatically retry or void the order. If a user cancels at Stripe, the order remains in `Pending` payment status until it expires or is manually handled.
+::: warning An abandoned checkout is swept, not left forever
+The cancel page does not retry or void the order. The order stays at `OrderStatus.New` with
+`PaymentStatus.Pending` and is **not offerable to any cleaner**. `CleanupStalePendingOrders` — an
+Azure Function on a 15-minute timer — then cancels every non-recurring card order that has been
+`PaymentStatus.Pending` for more than an hour: it sets `PaymentStatus.Failed`, appends
+`OrderStatus.Cancelled`, and notifies the customer. Stripe's own PaymentIntent expiry (~24 h) is much
+later, and the webhook for a subsequently-cancelled intent no-ops via the idempotency check.
+
+Recurring occurrences are deliberately excluded — "Pending for over an hour" is their normal state
+until the customer confirms. `AutoCancelStaleRecurringOrders` (hourly) retracts those at T-1 h.
 :::
 
 ## Components

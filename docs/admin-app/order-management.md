@@ -30,12 +30,19 @@ The order list displays all orders across the platform with:
 ### Filtering
 
 Admins can filter orders by:
-- Order status (Pending, Confirmed, InProgress, Completed, Cancelled)
+- Order status
 - Payment status
 - Date range
 - Customer name/email
 - Assigned employee
 - Service type
+
+::: warning The status dropdown does not cover the whole enum
+`OrderManagementFacade.orderStatusOptions` offers **Pending, Confirmed, InProgress, Completed,
+Cancelled**. `Pending` is dead so that option matches nothing, and `New` and `OnTheWay` have no
+option at all — the orders sitting in those states (every card order awaiting its webhook, every
+untaken cash order, every cleaner en route) are reachable only by clearing the status filter.
+:::
 
 ### Sorting & Pagination
 
@@ -119,18 +126,50 @@ Unlike the partner view, the admin photo component is read-only -- admins cannot
 
 | Status | Value | Description |
 |---|---|---|
-| `Pending` | 0 | Order created, awaiting partner assignment |
-| `Confirmed` | 1 | Partner assigned, awaiting start |
-| `InProgress` | 3 | Partner has started the cleaning |
-| `Completed` | 4 | Cleaning finished |
-| `Cancelled` | 5 | Order was cancelled |
+| `New` | 0 | Order created. Every order starts here, cash and card alike |
+| `Pending` | 1 | **Dead — nothing writes it** (ADR-0037 D5). Legacy rows may still hold it |
+| `Confirmed` | 2 | Cleaner took it, OR the Stripe webhook settled a card payment, OR a recurring cash occurrence was confirmed, OR an admin overrode the status |
+| `OnTheWay` | 3 | Cleaner is en route |
+| `InProgress` | 4 | Cleaner has started the cleaning |
+| `Completed` | 5 | Cleaning finished |
+| `Cancelled` | 6 | Order was cancelled |
+
+::: warning `Confirmed` does not mean a partner is assigned
+Four paths write it and only one involves a cleaner. To tell whether a cleaner is actually on the job,
+read the assignment rows, not the status. See
+[the API reference](/api/orders#order-lifecycle) for the full two-axis model.
+:::
 
 ## Payment Statuses
 
-| Status | Description |
+Order state is **two axes** — this one carries "where is the money", including the *card payment
+initiated, waiting for the webhook* state that `OrderStatus.Pending` never tracked.
+
+| Status | Value | Description |
+|---|---|---|
+| `Pending` | 1 | Payment not yet received |
+| `Paid` | 2 | Payment confirmed |
+| `Failed` | 3 | Payment attempt failed |
+| `Refunded` | 4 | Payment was refunded |
+| `Disputed` | 5 | Payment is under dispute |
+| `PartiallyRefunded` | 6 | Part of the payment was refunded |
+
+| Payment type | Value |
 |---|---|
-| `Pending` | Payment not yet received |
-| `Paid` | Payment confirmed |
-| `Failed` | Payment attempt failed |
-| `Refunded` | Payment was refunded |
-| `Disputed` | Payment is under dispute |
+| `Cash` | 1 |
+| `Card` | 2 |
+
+## Order Status Override
+
+`AdminOverrideOrderStatus` moves an order **strictly forward** along
+`New → Confirmed → OnTheWay → InProgress → Completed`. Same-state, backward and off-lifecycle targets
+are refused (`order.invalid_status_transition`), as is any move out of a terminal state
+(`order.already_completed` / `order.already_cancelled`). Cancellation is not available here — it is
+`AdminCancelOrder`, which carries the refund seam.
+
+`OrderStatus.Pending` is refused as a target: it is dead, and this generic writer is the only way a
+new `Pending` row could appear. It stays in the handler's rank array so legacy rows holding it can
+still be ranked and moved forward.
+
+Every override is audited (`order.status.override`, marked sensitive) and, for targets that map to a
+Live Activity event, pushes a state-card update.

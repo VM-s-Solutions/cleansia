@@ -245,17 +245,52 @@ registerLocaleData(localeRu);
 
 ## HTTP Interceptors
 
-Each app configures its own interceptor chain:
+Each app composes the shared chain with its own:
 
 ```typescript
 provideHttpClient(
   withFetch(),
   withInterceptors([
-    ...COMMON_INTERCEPTORS_FN,      // Shared (e.g., language header)
-    ...CUSTOMER_INTERCEPTORS_FN,    // App-specific (e.g., JWT auth)
+    ...COMMON_INTERCEPTORS_FN,      // libs/core/services — shared by ALL THREE apps
+    ...CUSTOMER_INTERCEPTORS_FN,    // libs/core/customer-services — auth, error, loading
   ])
 )
 ```
+
+| Chain | Members | Source |
+|---|---|---|
+| `COMMON_INTERCEPTORS_FN` | `ContentDispositionInterceptorFn`, `HttpErrorInterceptorFn`, `RetryAfterInterceptorFn` | `libs/core/services/src/lib/interceptors/index.ts` |
+| `PARTNER_INTERCEPTORS_FN` | `AuthInterceptorFn`, `PartnerErrorInterceptorFn`, `LoadingInterceptorFn` | `libs/core/partner-services/…` |
+| `ADMIN_INTERCEPTORS_FN` | `AuthInterceptorFn`, `AdminErrorInterceptorFn`, `LoadingInterceptorFn` | `libs/core/admin-services/…` |
+| `CUSTOMER_INTERCEPTORS_FN` | `CustomerAuthInterceptorFn`, `CustomerErrorInterceptorFn`, `CustomerLoadingInterceptorFn` | `libs/core/customer-services/…` |
+
+Ordering inside `COMMON_INTERCEPTORS_FN` is deliberate: `RetryAfterInterceptorFn` sits **after**
+`HttpErrorInterceptorFn` so a `429` is retried once with back-off before any error snackbar fires.
+
+### Backend error keys resolve under `api.*`
+
+`HttpErrorInterceptorFn` fires for every non-404/403 error response, takes the first value out of the
+ProblemDetails `errors` bag, and resolves it as `` `api.${dotValue}` ``:
+
+```typescript
+const candidateKey = `api.${String(errorKey)}`;
+const message = translate.instant(candidateKey);
+// ngx-translate echoes the key back when it has no translation — never let a raw
+// machine key reach the snackbar; fall back to the generic message.
+return message === candidateKey ? translate.instant('api.common.error_occurred') : message;
+```
+
+So every `BusinessErrorMessage` value (`order.not_takeable`, `employee.not_approved`, …) needs a
+translation at `api.<same.dotted.key>` in all five locale files of every app that can reach the
+endpoint. A key placed anywhere else silently renders *"An error occurred. Please try again."*
+
+The **admin** app additionally carries a legacy `errors.*` block, read by per-feature
+`XXX_ERROR_KEY_MAP` resolvers (orders, disputes, refunds, referrals, pay-periods, invoices, packages,
+services, membership plans, admin users, profile). It is live — do not delete it — but new work uses
+`api.*` everywhere. Partner and customer locales carry `api` only.
+
+Both namespaces are pinned by `apps/<app>/src/app/i18n/error-contract-parity.spec.ts`, which parses
+`BusinessErrorMessage.cs` directly and asserts locale-set equality.
 
 ## Testing
 

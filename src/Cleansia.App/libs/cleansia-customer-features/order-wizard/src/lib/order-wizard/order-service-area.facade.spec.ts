@@ -1,6 +1,7 @@
 import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { AddressDto, CustomerClient } from '@cleansia/customer-services';
+import { createAddressDto } from './order-wizard.models';
 import { of, throwError } from 'rxjs';
 import { OrderServiceAreaFacade } from './order-service-area.facade';
 
@@ -10,7 +11,7 @@ describe('OrderServiceAreaFacade', () => {
   let address: AddressDto;
 
   function makeAddress(partial: Partial<{ city: string; countryId: string }> = {}): AddressDto {
-    return new AddressDto({
+    return createAddressDto({
       street: 'Main 1',
       city: partial.city ?? 'Prague',
       zipCode: '11000',

@@ -1958,7 +1958,9 @@
           "discount": "Discount (%)",
           "trial_days": "Trial period (days)",
           "free_cancel_window": "Free-cancellation window (hours)",
-          "express_upgrade": "Allows express upgrade"
+          "express_upgrade": "Allows express upgrade",
+          "express_upgrades_per_month": "Included express upgrades per month",
+          "express_upgrades_per_month_help": "How many express bookings a member gets each month without the express surcharge. Zero means none."
         },
         "validation": {
           "code_invalid": "2–50 characters: letters, numbers or underscores.",
@@ -1966,7 +1968,8 @@
           "stripe_price_id_required": "Stripe Price id is required.",
           "discount_range": "Discount must be between 0 and 100.",
           "trial_negative": "Trial days must be zero or more.",
-          "window_negative": "Window must be zero or more."
+          "window_negative": "Window must be zero or more.",
+          "express_upgrades_negative": "Included express upgrades must be zero or more."
         },
         "submit_create": "Create plan",
         "submit_update": "Save changes",

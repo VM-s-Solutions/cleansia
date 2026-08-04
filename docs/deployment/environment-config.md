@@ -228,7 +228,7 @@ Azure uses `__` (double underscore) as the hierarchy separator in environment va
 ### 1. Initialize User Secrets
 
 ```bash
-cd src/Cleansia.Web
+cd src/Cleansia.Web.Partner
 dotnet user-secrets init
 ```
 
@@ -259,26 +259,49 @@ docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=yourpassword postgres:16
 cd src
 dotnet ef database update \
   --project Cleansia.Infra.Database/Cleansia.Infra.Database.csproj \
-  --startup-project Cleansia.Web/Cleansia.Web.Partner.csproj
+  --startup-project Cleansia.Web.Partner/Cleansia.Web.Partner.csproj
 ```
+
+::: warning Migrations are owner-run
+Claude never runs `dotnet ef migrations add` / `database update` — it flags
+`manual_step: ef-migration` instead. Running the Aspire AppHost applies migrations automatically via
+`Cleansia.MigrationService`, so this step is only for a standalone single-API run.
+:::
 
 ### 5. Start the API
 
 ```bash
-cd src/Cleansia.Web
-dotnet run
+cd src
+dotnet run --project Cleansia.Web.Partner
 ```
 
-The Partner API starts at `http://localhost:5002` by default.
+The Partner API starts at `http://localhost:5000` (HTTP) / `https://localhost:8000`.
+
+| Host | Port |
+|---|---|
+| `Cleansia.Web.Partner` | 5000 |
+| `Cleansia.Web.Admin` | 5001 |
+| `Cleansia.Web.Mobile.Partner` | 5002 |
+| `Cleansia.Web.Customer` | 5003 |
+| `Cleansia.Web.Mobile.Customer` | 5004 |
+
+Or start everything at once — Postgres, the migrator, all five APIs and the Functions host:
+
+```bash
+cd src
+dotnet run --project Cleansia.AppHost
+```
 
 ::: tip Stripe Webhooks Locally
-Use the Stripe CLI to forward webhooks to your local server:
+Use the Stripe CLI to forward webhooks to the host that owns the endpoint you are exercising:
 ```bash
-stripe listen --forward-to http://localhost:5002/api/Payment/webhook
+stripe listen --forward-to http://localhost:5000/api/Payment/webhook   # Partner API
 ```
 The CLI will print a webhook signing secret (`whsec_...`) to use as `Stripe:WebhookSecret`.
 :::
 
 ### 6. Android App
 
-For the Android app connecting to a local backend, the debug build type uses `http://10.0.2.2:5002/api` which maps to the host machine's `localhost` from the Android emulator.
+For the Android app connecting to a local backend, the debug build type uses
+`http://10.0.2.2:5002/api` — `10.0.2.2` maps to the host machine's `localhost` from the Android
+emulator, and `5002` is the **Partner Mobile API**. The customer Android app targets `5004`.

@@ -22,6 +22,7 @@ import { OrderServiceAreaFacade } from './order-service-area.facade';
 import {
   RebookParams,
   TimeOption,
+  createAddressDto,
   filterTimeOptionsForToday,
   formatPrice,
   generateTimeOptions,
@@ -370,13 +371,7 @@ export class OrderWizardComponent implements OnInit {
     this.labelError.set(null);
     this.facade.selectedSavedAddressId.set(null);
     this.facade.updateFormData({
-      address: new AddressDto({
-        street: '',
-        city: '',
-        zipCode: '',
-        countryId: '',
-        state: '',
-      }),
+      address: createAddressDto(),
       addressLatitude: null,
       addressLongitude: null,
     });

@@ -82,9 +82,8 @@ export class SavedAddressStore {
 
   async setDefault(savedAddressId: string): Promise<boolean> {
     try {
-      const command = new SetDefaultSavedAddressCommand({
-        savedAddressId,
-      });
+      const command = new SetDefaultSavedAddressCommand();
+      command.savedAddressId = savedAddressId;
       await firstValueFrom(
         this.customerClient.savedAddressClient.setDefault(command)
       );

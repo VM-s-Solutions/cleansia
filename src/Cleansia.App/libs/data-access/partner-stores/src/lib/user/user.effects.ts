@@ -94,21 +94,20 @@ export class UserEffects {
           phoneNumber,
           birthDate,
           photo = createEmptyPhoto(),
-        }) =>
-          this.partnerClient.userClient
-            .updateCurrentUser(
-              new UpdateCurrentUserCommand({
-                id,
-                firstName,
-                lastName,
-                phoneNumber,
-                birthDate,
-                photo,
-                languageCode:
-                  this.translate.currentLang || this.translate.getDefaultLang(),
-                removePhoto: false,
-              })
-            )
+        }) => {
+          const command = new UpdateCurrentUserCommand();
+          command.id = id;
+          command.firstName = firstName;
+          command.lastName = lastName;
+          command.phoneNumber = phoneNumber;
+          command.birthDate = birthDate;
+          command.photo = photo;
+          command.languageCode =
+            this.translate.currentLang || this.translate.getDefaultLang();
+          command.removePhoto = false;
+
+          return this.partnerClient.userClient
+            .updateCurrentUser(command)
             .pipe(
               map(({ id }) => {
                 this.snackbarService.showSuccess(
@@ -121,7 +120,8 @@ export class UserEffects {
               catchError((error) =>
                 of(UserActions.updateUserCurrentFailure({ error }))
               )
-            )
+            );
+        }
       )
     )
   );

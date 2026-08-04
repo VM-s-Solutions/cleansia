@@ -41,7 +41,27 @@ The detail page provides comprehensive information about a partner and tools for
 | Profile Completion | Whether all required fields are filled |
 | Availability | Weekly availability schedule with edit capability |
 | Pay Configuration | Per-employee rate overrides with bulk grade apply |
+| Payout Details | **Masked** bank destination, with an audited reveal action |
 | Documents | Uploaded documents with review workflow |
+
+### Payout Details — masked by default, reveal is audited
+
+ADR-0034. The bank destination is an `EmployeePayoutDetails` record of its own, never a column on the
+employee and never on `EmployeeDto`. Two endpoints, two DTOs:
+
+| Endpoint | Returns | Notes |
+|---|---|---|
+| `GET /api/AdminEmployee/{employeeId}/payout-details` | `MaskedPayoutDetails` | Policy `CanViewEmployeePayoutDetails`. The record has **no unmasked field at all** — a client cannot render what it was never sent, so widening it is a schema change a reviewer sees |
+| `POST /api/AdminEmployee/{employeeId}/payout-details/reveal` | `RevealedPayoutDetails` | Policy `CanRevealEmployeePayoutDetails`, **rate-limited under the `auth` policy**. A command, not a query — that is what puts it through the audit engine, the compensating control for plaintext storage. It stamps `LastRevealedAt` / `RevealCount`, both shown on the masked view. The rate limit matters: masking only bounds exposure if the number of reveals does, and the same policy that lists employee ids reaches this route |
+
+The record is never `Include`d on the employee grid or any paged query.
+
+### Pay Configuration
+
+Per-employee rate overrides are live. An `EmployeePayConfig` row with a non-null `EmployeeId`
+overrides the platform-wide row for the same service or package; `CalculateOrderPay` picks the
+employee-specific config when one exists and falls back to the global one otherwise. The bulk apply
+seeds a whole grade at once (junior 0.5×, medior 0.75×, senior 1.0×).
 
 ### Inline Profile Editing
 

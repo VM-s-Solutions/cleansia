@@ -1,6 +1,15 @@
 # API Integration
 
-The Cleansia Partner Android app communicates with the Mobile API (`Cleansia.Web.Mobile`) using Retrofit with OkHttp, secured by JWT bearer tokens stored in EncryptedSharedPreferences.
+The Cleansia Partner Android app communicates with the **Partner** Mobile API
+(`Cleansia.Web.Mobile.Partner`, `:5002`) using Retrofit with OkHttp, secured by JWT bearer tokens
+stored in EncryptedSharedPreferences. The customer Android app talks to
+`Cleansia.Web.Mobile.Customer` (`:5004`); both iOS apps consume the same two hosts. The single
+`Cleansia.Web.Mobile` host this page used to name no longer exists.
+
+Mobile hosts use **body-token JWT with no cookies** — native clients cannot read the HttpOnly cookies
+the web hosts use. The out-of-band header contract (`X-Device-Id`, `X-Device-Label`, `X-Time-Zone`,
+the no-`Bearer`-on-anon allow-list, single-use refresh + theft detection) is documented in
+`src/cleansia_ios/docs/header-parity-contract.md` and is identical for Android.
 
 ::: info Source Files
 - Network layer: `src/cleansia_android/.../core/network/`
@@ -23,11 +32,13 @@ implementation(libs.okhttp.logging)
 
 The API base URL is set per build type via `BuildConfig`:
 
-| Build Type | Base URL |
+| Build Type | Base URL (partner app) |
 |------------|----------|
-| `debug` | `http://10.0.2.2:5002/api` |
+| `debug` | `http://10.0.2.2:5002/` — `10.0.2.2` is the emulator's route to the host's `localhost`. Override with `./gradlew :partner-app:installDebug -PAPI_BASE_URL=…` |
 | `staging` | `https://staging-api.cleansia.cz/api` |
 | `release` | `https://api.cleansia.cz/api` |
+
+The customer app's debug default is `http://10.0.2.2:5004/`, with the same `-PAPI_BASE_URL` override.
 
 The API service interface and generated models come from the OpenAPI Generator (see [Overview - OpenAPI Code Generation](/mobile-app/overview#openapi-code-generation)). The `GeneratedApiAdapter` bridges generated code with the app's own API service layer.
 

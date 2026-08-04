@@ -893,7 +893,7 @@ INSERT INTO public."CountryConfigurations" (
   "TaxIdLabel", "TaxIdFormat",
   "RegistrationNumberLabel", "RegistrationNumberFormat", "RegistrationNumberRequired",
   "VatNumberLabel", "VatNumberFormat", "VatNumberRequired",
-  "DefaultPaymentGateway"
+  "DefaultPaymentGateway", "PayoutScheme"
 )
 VALUES
   -- Czech Republic — IČO (company ID) mandatory, DIČ (VAT ID) optional
@@ -903,7 +903,7 @@ VALUES
    0.21, 0.15, 'IČO', '^\d{8}$',
    'IČO', '^\d{8}$', true,
    'DIČ', '^CZ\d{8,10}$', false,
-   'Stripe'),
+   'Stripe', 1),
 
   -- Slovakia — IČO mandatory, IČ DPH (VAT) optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -912,7 +912,7 @@ VALUES
    0.20, 0.10, 'IČO', '^\d{8}$',
    'IČO', '^\d{8}$', true,
    'IČ DPH', '^SK\d{10}$', false,
-   'Stripe'),
+   'Stripe', 1),
 
   -- Poland — NIP mandatory, EU VAT optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -921,7 +921,7 @@ VALUES
    0.23, 0.08, 'NIP', '^\d{10}$',
    'NIP', '^\d{10}$', true,
    'VAT UE', '^PL\d{10}$', false,
-   'Stripe'),
+   'Stripe', NULL),
 
   -- Germany — Steuernummer mandatory, USt-IdNr optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -930,7 +930,7 @@ VALUES
    0.19, 0.07, 'Steuernummer', '^\d{10,13}$',
    'Steuernummer', '^\d{10,13}$', true,
    'USt-IdNr', '^DE\d{9}$', false,
-   'Stripe'),
+   'Stripe', NULL),
 
   -- Austria — Firmenbuchnummer mandatory, UID (VAT) optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -939,7 +939,7 @@ VALUES
    0.20, 0.10, 'UID-Nummer', '^ATU\d{8}$',
    'Firmenbuchnummer', '^[A-Z]?\d{1,6}[a-z]?$', true,
    'UID-Nummer', '^ATU\d{8}$', false,
-   'Stripe'),
+   'Stripe', NULL),
 
   -- United Kingdom — UTR mandatory, VAT number optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -948,7 +948,7 @@ VALUES
    0.20, 0.05, 'UTR', '^\d{10}$',
    'UTR', '^\d{10}$', true,
    'VAT Number', '^GB\d{9}$', false,
-   'Stripe'),
+   'Stripe', NULL),
 
   -- France — SIRET mandatory, TVA intracommunautaire optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -957,7 +957,7 @@ VALUES
    0.20, 0.055, 'SIRET', '^\d{14}$',
    'SIRET', '^\d{14}$', true,
    'TVA', '^FR[A-Z0-9]{2}\d{9}$', false,
-   'Stripe'),
+   'Stripe', NULL),
 
   -- Italy — Codice Fiscale mandatory, Partita IVA optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -966,7 +966,7 @@ VALUES
    0.22, 0.10, 'Codice Fiscale', '^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$',
    'Codice Fiscale', '^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$', true,
    'Partita IVA', '^IT\d{11}$', false,
-   'Stripe'),
+   'Stripe', NULL),
 
   -- Spain — NIF mandatory, NIF-IVA optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -975,7 +975,7 @@ VALUES
    0.21, 0.10, 'NIF', '^[A-Z]\d{7}[A-Z0-9]$',
    'NIF', '^[A-Z]\d{7}[A-Z0-9]$', true,
    'NIF-IVA', '^ES[A-Z0-9]\d{7}[A-Z0-9]$', false,
-   'Stripe'),
+   'Stripe', NULL),
 
   -- United States — EIN mandatory, no separate VAT
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -984,7 +984,7 @@ VALUES
    0.00, NULL, 'EIN', '^\d{2}-\d{7}$',
    'EIN', '^\d{2}-\d{7}$', true,
    NULL, NULL, false,
-   'Stripe');
+   'Stripe', NULL);
 
 -- ============================================================
 -- FEATURE FLAGS

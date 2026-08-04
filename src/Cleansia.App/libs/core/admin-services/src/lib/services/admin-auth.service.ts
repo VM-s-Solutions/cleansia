@@ -38,15 +38,21 @@ export class AdminAuthService {
     password: string,
     rememberMe = false
   ): Observable<JwtTokenResponse> {
-    return this.adminClient.adminAuthClient.login(
-      new AdminLoginCommand({ email, password, rememberMe })
-    );
+    const command = new AdminLoginCommand();
+    command.email = email;
+    command.password = password;
+    command.rememberMe = rememberMe;
+
+    return this.adminClient.adminAuthClient.login(command);
   }
 
   logout(): Observable<boolean> {
     // Refresh token is in the HttpOnly cookie — server reads from cookie.
+    const command = new LogoutCommand();
+    command.token = '';
+
     const serverCall = this.adminClient.adminAuthClient
-      .logout(new LogoutCommand({ token: '' }))
+      .logout(command)
       .pipe(catchError(() => of(false)));
 
     return serverCall.pipe(
@@ -59,12 +65,13 @@ export class AdminAuthService {
   }
 
   refreshSession(): Observable<boolean> {
-    return this.adminClient.adminAuthClient
-      .refreshToken(new RefreshTokenCommand({ token: '' }))
-      .pipe(
-        tap((authResult) => this.setSession(authResult)),
-        map(() => true)
-      );
+    const command = new RefreshTokenCommand();
+    command.token = '';
+
+    return this.adminClient.adminAuthClient.refreshToken(command).pipe(
+      tap((authResult) => this.setSession(authResult)),
+      map(() => true)
+    );
   }
 
   isLoggedIn(): boolean {

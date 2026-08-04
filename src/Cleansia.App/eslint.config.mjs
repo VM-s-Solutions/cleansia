@@ -1,4 +1,5 @@
 import nx from '@nx/eslint-plugin';
+import { generatedDtoLiteralRules } from './eslint.generated-dto.config.mjs';
 
 export default [
   ...nx.configs['flat/base'],
@@ -7,6 +8,11 @@ export default [
   {
     ignores: ['**/dist'],
   },
+  ...generatedDtoLiteralRules([
+    'libs/core/customer-services/**/*.ts',
+    'libs/data-access/**/*.ts',
+    'libs/cleansia-customer-features/order-wizard/**/*.ts',
+  ]),
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
     rules: {

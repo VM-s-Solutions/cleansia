@@ -63,7 +63,9 @@ Displays earnings over time within the selected date range. Uses Chart.js line/b
 
 **Component:** `CleansiaOrderDistributionChartComponent`
 
-Shows the breakdown of orders by status (Pending, Confirmed, InProgress, Completed, Cancelled) as a pie/doughnut chart.
+Shows the breakdown of orders by status as a pie/doughnut chart. Note that the buckets it renders
+(Pending, Confirmed, InProgress, Completed, Cancelled) do not cover the whole `OrderStatus` enum —
+`New` and `OnTheWay` have no slice, and `Pending` has no writer.
 
 **Data source:** `selectOrderAnalytics` NgRx selector
 
@@ -99,17 +101,23 @@ On initialization, the dashboard:
 
 1. Fetches the current employee profile via `partnerClient.employeeClient.getCurrentEmployee()`
 2. Loads dashboard stats via `loadDashboardStats` NgRx action
-3. Loads upcoming orders (next 5 orders with status Pending/Confirmed/InProgress, sorted by cleaning date ascending)
+3. Loads upcoming orders (next 5, sorted by cleaning date ascending)
 4. Loads all analytics data via `refreshAllAnalytics` action
 
 ```typescript
-// Upcoming orders filter
+// Upcoming orders filter — DashboardFacade.loadDashboardData
 const upcomingOrdersFilter = new OrderFilter({
   employeeId,
   cleaningDateFrom: new Date(),
   orderStatuses: [OrderStatus.Pending, OrderStatus.Confirmed, OrderStatus.InProgress],
 });
 ```
+
+::: warning This filter has a hole
+`OrderStatus.Pending` is dead — nothing writes it (ADR-0037 D5) — and `OrderStatus.OnTheWay` is
+missing, so a job the partner has already set off for drops out of "upcoming". Only `Confirmed` and
+`InProgress` contribute in practice.
+:::
 
 ## Loading States
 

@@ -39,14 +39,21 @@ export class PartnerAuthService {
     })
   );
 
+  private currentLanguage(): string {
+    return this.translate.currentLang || this.translate.getDefaultLang();
+  }
+
   login(
     email: string,
     password: string,
     rememberMe = false
   ): Observable<JwtTokenResponse> {
-    return this.partnerClient.authClient.login(
-      new PartnerLoginCommand({ email, password, rememberMe })
-    );
+    const command = new PartnerLoginCommand();
+    command.email = email;
+    command.password = password;
+    command.rememberMe = rememberMe;
+
+    return this.partnerClient.authClient.login(command);
   }
 
   register(
@@ -56,16 +63,15 @@ export class PartnerAuthService {
     lastName: string,
     referralCode?: string
   ): Observable<boolean> {
-    return this.partnerClient.authClient.register(
-      new RegisterCommand({
-        email,
-        password,
-        firstName,
-        lastName,
-        language: this.translate.currentLang || this.translate.getDefaultLang(),
-        referralCode,
-      })
-    );
+    const command = new RegisterCommand();
+    command.email = email;
+    command.password = password;
+    command.firstName = firstName;
+    command.lastName = lastName;
+    command.language = this.currentLanguage();
+    command.referralCode = referralCode;
+
+    return this.partnerClient.authClient.register(command);
   }
 
   registerEmployee(
@@ -74,37 +80,36 @@ export class PartnerAuthService {
     firstName: string,
     lastName: string
   ): Observable<boolean> {
-    return this.partnerClient.authClient.registerEmployee(
-      new RegisterEmployeeCommand({
-        email,
-        password,
-        firstName,
-        lastName,
-        language: this.translate.currentLang || this.translate.getDefaultLang(),
+    const command = new RegisterEmployeeCommand();
+    command.email = email;
+    command.password = password;
+    command.firstName = firstName;
+    command.lastName = lastName;
+    command.language = this.currentLanguage();
+
+    return this.partnerClient.authClient.registerEmployee(command);
+  }
+
+  confirmUserEmail(code: string, email: string): Observable<JwtTokenResponse> {
+    const command = new ConfirmUserEmailCommand();
+    command.code = code;
+    command.email = email;
+
+    return this.partnerClient.authClient.confirmUserEmail(command).pipe(
+      map((authResult: JwtTokenResponse) => {
+        this.setSession(authResult);
+        return authResult;
       })
     );
   }
 
-  confirmUserEmail(code: string, email: string): Observable<JwtTokenResponse> {
-    return this.partnerClient.authClient
-      .confirmUserEmail(new ConfirmUserEmailCommand({ code, email }))
-      .pipe(
-        map((authResult: JwtTokenResponse) => {
-          this.setSession(authResult);
-          return authResult;
-        })
-      );
-  }
-
   resendEmailConfirmation(email: string): Observable<boolean> {
+    const command = new ResendConfirmationEmailCommand();
+    command.email = email;
+    command.language = this.currentLanguage();
+
     return this.partnerClient.authClient
-      .resendConfirmationEmail(
-        new ResendConfirmationEmailCommand({
-          email,
-          language:
-            this.translate.currentLang || this.translate.getDefaultLang(),
-        })
-      )
+      .resendConfirmationEmail(command)
       .pipe(map(() => true));
   }
 
@@ -115,22 +120,28 @@ export class PartnerAuthService {
     firstName: string,
     lastName: string
   ): Observable<JwtTokenResponse> {
-    return this.partnerClient.authClient
-      .googleAuth(
-        new GoogleAuthCommand({ token, googleId, email, firstName, lastName })
-      )
-      .pipe(
-        map((authResult: JwtTokenResponse) => {
-          this.setSession(authResult);
-          return authResult;
-        })
-      );
+    const command = new GoogleAuthCommand();
+    command.token = token;
+    command.googleId = googleId;
+    command.email = email;
+    command.firstName = firstName;
+    command.lastName = lastName;
+
+    return this.partnerClient.authClient.googleAuth(command).pipe(
+      map((authResult: JwtTokenResponse) => {
+        this.setSession(authResult);
+        return authResult;
+      })
+    );
   }
 
   logout(): Observable<boolean> {
     // Refresh token is in the HttpOnly cookie — server reads from cookie.
+    const command = new LogoutCommand();
+    command.token = '';
+
     const serverCall = this.partnerClient.authClient
-      .logout(new LogoutCommand({ token: '' }))
+      .logout(command)
       .pipe(catchError(() => of(false)));
 
     return serverCall.pipe(
@@ -146,12 +157,13 @@ export class PartnerAuthService {
     // Backend partner controller enriches the command with the host audience
     // and required profile, so we send placeholders here that satisfy the
     // generated TS contract. The refresh token itself is in the cookie.
-    return this.partnerClient.authClient
-      .refreshToken(new RefreshTokenCommand({ token: '' }))
-      .pipe(
-        tap((authResult) => this.setSession(authResult)),
-        map(() => true)
-      );
+    const command = new RefreshTokenCommand();
+    command.token = '';
+
+    return this.partnerClient.authClient.refreshToken(command).pipe(
+      tap((authResult) => this.setSession(authResult)),
+      map(() => true)
+    );
   }
 
   isLoggedIn(): boolean {

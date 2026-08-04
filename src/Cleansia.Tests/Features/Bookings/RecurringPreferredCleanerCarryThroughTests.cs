@@ -89,7 +89,7 @@ public class RecurringPreferredCleanerCarryThroughTests
         GivenTemplate(PreferredEmployeeId);
 
         var result = await CreateHandler().Handle(
-            new MaterializeRecurringBookings.Command(), CancellationToken.None);
+            SweepCommand(), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.NotEmpty(_inputs);
@@ -102,7 +102,7 @@ public class RecurringPreferredCleanerCarryThroughTests
         GivenTemplate(preferredEmployeeId: null);
 
         var result = await CreateHandler().Handle(
-            new MaterializeRecurringBookings.Command(), CancellationToken.None);
+            SweepCommand(), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.NotEmpty(_inputs);
@@ -120,7 +120,7 @@ public class RecurringPreferredCleanerCarryThroughTests
         GivenTemplate(await TemplateFromTheCreateCommandAsync(PreferredEmployeeId));
 
         var result = await CreateHandler().Handle(
-            new MaterializeRecurringBookings.Command(), CancellationToken.None);
+            SweepCommand(), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.NotEmpty(_inputs);
@@ -215,7 +215,13 @@ public class RecurringPreferredCleanerCarryThroughTests
             .GetSetMethod(nonPublic: true)!
             .Invoke(target, [value]);
 
-    private MaterializeRecurringBookings.Handler CreateHandler() =>
+    /// <summary>
+    /// The pass-through lives in the PER-TEMPLATE atom, which is where the sweep now does all of its work
+    /// — <c>MaterializeRecurringBookings</c> itself only selects ids and dispatches one of these per
+    /// template in its own DI scope. Driving the atom directly is the same code path with the scope
+    /// plumbing left to the tests that are actually about isolation.
+    /// </summary>
+    private MaterializeRecurringBookingTemplate.Handler CreateHandler() =>
         new(
             _templateRepository.Object,
             _savedAddressRepository.Object,
@@ -225,5 +231,8 @@ public class RecurringPreferredCleanerCarryThroughTests
             _orderFactory.Object,
             _tenantProvider.Object,
             _unitOfWork.Object,
-            NullLogger<MaterializeRecurringBookings.Handler>.Instance);
+            NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance);
+
+    private static MaterializeRecurringBookingTemplate.Command SweepCommand() =>
+        new(TemplateId, DateTime.UtcNow, HorizonDays: 7);
 }

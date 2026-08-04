@@ -26,34 +26,42 @@ using Moq;
 namespace Cleansia.Tests.Features.Bookings;
 
 /// <summary>
-/// S8 — a cross-tenant sweep that creates CHILD rows must commit inside the same iteration that set the
-/// tenant override. <c>CleansiaDbContext.CommitAsync</c> stamps <c>TenantId</c> on every <c>Added</c>
-/// <see cref="ITenantEntity"/> from the tenant that is ambient AT COMMIT TIME, so the materializer's
-/// per-template <c>SetTenantOverride</c>/<c>ClearTenantOverride</c> was decorative while the only commit
-/// was the pipeline's deferred one: every order and status track in the batch was stamped with the LAST
-/// template's tenant, and tenant A's customer got an order that only tenant B can see.
+/// One permanently-bad template must not starve every template ordered after it. Before the per-template
+/// scope split, a throw anywhere in the sweep propagated out of the loop: the templates it had not
+/// reached yet were skipped on that tick — and on every later tick too, because a deterministically-bad
+/// template sorts the same way every time. A customer's recurring schedule could therefore stop
+/// generating forever because of an unrelated customer's broken row.
 ///
-/// <para>The bug is invisible in single-tenant mode (every stamp is null and null is right), which is
-/// exactly why it shipped — so this suite seeds two templates with two DIFFERENT non-null tenants plus a
-/// legacy null-tenant one, and runs the real repositories, the real <see cref="OrderFactory"/> and a real
-/// <see cref="CleansiaDbContext"/> over SQLite, because the stamp lives in the context's commit and not
-/// in anything a mock can return.</para>
+/// <para><b>Why the fix had to be a DI scope and not a <c>try/catch</c>.</b> This suite is the executable
+/// argument. The naive catch-and-continue reaches for
+/// <c>CleansiaDbContext.Rollback()</c>, which sets every tracked entry to <c>Unchanged</c> — and
+/// <c>Added -> Unchanged</c> is NOT <c>Detached</c>. The failed template's half-built order would stop
+/// being an insert and STAY in the shared change tracker as a phantom EXISTING row, which the next
+/// template's commit then drags along. <see cref="No_Half_Built_Order_From_The_Failed_Template_Is_Persisted"/>
+/// is the assertion that catches that: it fails for the <c>Rollback()</c> implementation and passes for
+/// the scope-per-template one, because there the wreckage is disposed with its scope and no later commit
+/// can ever observe it.</para>
+///
+/// <para>The failing template is broken by a factory decorator that throws AFTER the real
+/// <see cref="OrderFactory"/> has added the order and its status track to the scope's tracker — the exact
+/// mid-write state the shared-context version mishandles. Anything that threw before the write would
+/// prove nothing.</para>
 /// </summary>
-public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposable
+public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
 {
-    private const string TenantA = "tenant-a";
-    private const string TenantB = "tenant-b";
+    private const string GoodBefore = "tmpl-good-before";
+    private const string Bad = "tmpl-bad";
+    private const string GoodAfter = "tmpl-good-after";
 
     private readonly SqliteConnection _connection;
     private readonly MutableTenantProvider _tenantProvider = new();
 
-    public MaterializeRecurringBookingsTenantStampingTests()
+    public RecurringSweepPerTemplateIsolationTests()
     {
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
 
-        // The sweep's tenancy is the subject, not referential integrity — seeding bare template/address
-        // rows without their full country/user graph keeps the fixture to the columns under test.
+        // The sweep's failure isolation is the subject, not referential integrity.
         using var pragma = _connection.CreateCommand();
         pragma.CommandText = "PRAGMA foreign_keys = OFF;";
         pragma.ExecuteNonQuery();
@@ -61,84 +69,114 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
 
     public void Dispose() => _connection.Dispose();
 
+    /// <summary>
+    /// The template seeded BEFORE the bad one and the one seeded AFTER it both materialize. The "after"
+    /// case is the starvation regression proper; the "before" case pins that the fix did not trade one
+    /// failure mode for another by, say, discarding work already done.
+    /// </summary>
+    [Fact]
+    public async Task A_Failing_Template_Does_Not_Starve_The_Templates_Around_It()
+    {
+        await SeedAsync(GoodBefore, Bad, GoodAfter);
+
+        var response = await RunSweepAsync();
+
+        Assert.Equal(2, response.TemplatesProcessed);
+        Assert.Equal(1, response.TemplatesFailed);
+        Assert.True(response.OrdersCreated > 0);
+
+        Assert.NotEmpty(await OrdersForAsync(GoodBefore));
+        Assert.NotEmpty(await OrdersForAsync(GoodAfter));
+    }
+
+    /// <summary>
+    /// The half-built order the failing template left in its change tracker must never reach the database
+    /// — not on its own commit (there isn't one) and not smuggled into a LATER template's commit, which is
+    /// exactly what <c>Rollback()</c>-based catch-and-continue would do.
+    /// </summary>
+    [Fact]
+    public async Task No_Half_Built_Order_From_The_Failed_Template_Is_Persisted()
+    {
+        await SeedAsync(GoodBefore, Bad, GoodAfter);
+
+        var response = await RunSweepAsync();
+
+        // Guards this test against passing vacuously: the decorator throws only AFTER the real factory has
+        // returned an order, so a recorded failure proves the half-built row really existed in the tracker.
+        Assert.Equal(1, response.TemplatesFailed);
+
+        Assert.Empty(await OrdersForAsync(Bad));
+
+        // And nothing anonymous leaked either: every persisted order belongs to one of the two good
+        // templates, so no orphaned row rode along on someone else's transaction.
+        await using var ctx = NewContext();
+        var all = await ctx.Orders.IgnoreQueryFilters().ToListAsync();
+        Assert.All(all, o => Assert.Contains(o.RecurringTemplateId, new[] { GoodBefore, GoodAfter }));
+    }
+
+    /// <summary>
+    /// The failed template keeps its previous marker, so the next tick recomputes the same occurrences and
+    /// retries it rather than skipping them forever. The successful ones advance — that is what makes the
+    /// replay a no-op for them.
+    /// </summary>
+    [Fact]
+    public async Task The_Failed_Template_Keeps_Its_Marker_And_The_Others_Advance()
+    {
+        await SeedAsync(GoodBefore, Bad, GoodAfter);
+
+        await RunSweepAsync();
+
+        Assert.Null(await MarkerOfAsync(Bad));
+        Assert.NotNull(await MarkerOfAsync(GoodBefore));
+        Assert.NotNull(await MarkerOfAsync(GoodAfter));
+    }
+
+    /// <summary>
+    /// Re-running the sweep is a no-op for the templates that already succeeded (their marker moved past
+    /// the horizon) and another attempt for the one that failed — the idempotency contract, still per
+    /// template after the split.
+    /// </summary>
+    [Fact]
+    public async Task A_Second_Tick_Replays_The_Successful_Templates_As_No_Ops()
+    {
+        await SeedAsync(GoodBefore, Bad, GoodAfter);
+
+        var first = await RunSweepAsync();
+        var countAfterFirst = (await OrdersForAsync(GoodBefore)).Count + (await OrdersForAsync(GoodAfter)).Count;
+
+        var second = await RunSweepAsync();
+        var countAfterSecond = (await OrdersForAsync(GoodBefore)).Count + (await OrdersForAsync(GoodAfter)).Count;
+
+        Assert.Equal(countAfterFirst, countAfterSecond);
+        Assert.Equal(0, second.OrdersCreated);
+
+        // The bad template is retried on every tick — it is never silently dropped from the sweep.
+        Assert.Equal(1, first.TemplatesFailed);
+        Assert.Equal(1, second.TemplatesFailed);
+    }
+
     private CleansiaDbContext NewContext() =>
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
             _tenantProvider);
 
-    [Fact]
-    public async Task Each_Templates_Orders_Are_Stamped_With_Their_Own_Tenant()
-    {
-        await SeedAsync(
-            Template("tmpl-a", "user-a", "saved-a", TenantA),
-            Template("tmpl-b", "user-b", "saved-b", TenantB));
-
-        var response = await RunSweepAsync();
-
-        Assert.True(response.OrdersCreated > 0);
-        Assert.Equal(TenantA, await OrderTenantOfAsync("tmpl-a"));
-        Assert.Equal(TenantB, await OrderTenantOfAsync("tmpl-b"));
-    }
-
-    [Fact]
-    public async Task Each_Templates_Status_Tracks_Are_Stamped_With_Their_Own_Tenant()
-    {
-        await SeedAsync(
-            Template("tmpl-a", "user-a", "saved-a", TenantA),
-            Template("tmpl-b", "user-b", "saved-b", TenantB));
-
-        await RunSweepAsync();
-
-        Assert.Equal(TenantA, await StatusTrackTenantOfAsync("tmpl-a"));
-        Assert.Equal(TenantB, await StatusTrackTenantOfAsync("tmpl-b"));
-    }
-
-    /// <summary>
-    /// A legacy null-tenant template processed after a tenanted one must not inherit the override the
-    /// previous iteration set — the mirror of the clear-before-set half of the shape.
-    /// </summary>
-    [Fact]
-    public async Task A_Legacy_Null_Tenant_Template_Following_A_Tenanted_One_Stays_Null()
-    {
-        await SeedAsync(
-            Template("tmpl-a", "user-a", "saved-a", TenantA),
-            Template("tmpl-legacy", "user-legacy", "saved-legacy", tenantId: null));
-
-        await RunSweepAsync();
-
-        Assert.Equal(TenantA, await OrderTenantOfAsync("tmpl-a"));
-        Assert.Null(await OrderTenantOfAsync("tmpl-legacy"));
-    }
-
-    private async Task<string?> OrderTenantOfAsync(string templateId)
+    private async Task<List<Order>> OrdersForAsync(string templateId)
     {
         await using var ctx = NewContext();
-        var orders = await ctx.Orders
+        return await ctx.Orders
             .IgnoreQueryFilters()
             .Where(o => o.RecurringTemplateId == templateId)
             .ToListAsync();
-
-        Assert.NotEmpty(orders);
-        return Assert.Single(orders.Select(o => o.TenantId).Distinct());
     }
 
-    private async Task<string?> StatusTrackTenantOfAsync(string templateId)
+    private async Task<DateTime?> MarkerOfAsync(string templateId)
     {
         await using var ctx = NewContext();
-        var orderIds = await ctx.Orders
+        var template = await ctx.Set<RecurringBookingTemplate>()
             .IgnoreQueryFilters()
-            .Where(o => o.RecurringTemplateId == templateId)
-            .Select(o => o.Id)
-            .ToListAsync();
-
-        var tracks = await ctx.Set<OrderStatusTrack>()
-            .IgnoreQueryFilters()
-            .Where(t => orderIds.Contains(t.OrderId))
-            .ToListAsync();
-
-        Assert.NotEmpty(tracks);
-        return Assert.Single(tracks.Select(t => t.TenantId).Distinct());
+            .FirstAsync(t => t.Id == templateId);
+        return template.LastMaterializedFor;
     }
 
     private async Task<MaterializeRecurringBookings.Response> RunSweepAsync()
@@ -159,17 +197,6 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
         return result.Value!;
     }
 
-    /// <summary>
-    /// A REAL container, because the thing under test IS the DI scope: each template's order and status
-    /// track have to be stamped from a tenant override and a <see cref="CleansiaDbContext"/> that belong
-    /// to that template alone. Hand-wiring one context for the whole sweep — which is what this fixture
-    /// used to do — would hand every template the same change tracker and could not tell the per-scope
-    /// stamp apart from a shared-context one that happens to commit often enough.
-    ///
-    /// <para>Everything is scoped except the pricing stub, so <c>CreateScope()</c> is what produces the
-    /// per-template context; the shared SQLite connection is what lets those separate contexts still see
-    /// one database.</para>
-    /// </summary>
     private ServiceProvider BuildProvider()
     {
         var session = new TestUserSessionProvider("system", "system@cleansia.test");
@@ -192,12 +219,10 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
         services.AddScoped<ICurrencyRepository>(
             sp => new CurrencyRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddSingleton(PricingCalculator());
-        services.AddScoped(sp => RealOrderFactory(sp.GetRequiredService<CleansiaDbContext>()));
+        services.AddScoped<IOrderFactory>(sp =>
+            new ThrowsForTemplate(RealOrderFactory(sp.GetRequiredService<CleansiaDbContext>()), Bad));
         services.AddScoped<MaterializeRecurringBookingTemplate.Handler>();
 
-        // Only the one command the sweep sends. Registering the real MediatR would drag the whole
-        // AppServices handler graph — and every dependency it needs at startup — into a fixture about
-        // tenant stamping.
         services.AddScoped<IMediator>(sp =>
         {
             var mediator = new Mock<IMediator>();
@@ -210,6 +235,24 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
         });
 
         return services.BuildServiceProvider();
+    }
+
+    /// <summary>
+    /// Throws AFTER the real factory has written the order + status track into the scope's change tracker.
+    /// A decorator that threw first would leave nothing to leak and would let the shared-context version
+    /// pass.
+    /// </summary>
+    private sealed class ThrowsForTemplate(IOrderFactory inner, string badTemplateId) : IOrderFactory
+    {
+        public async Task<Order> CreateAsync(CreateOrderInput input, CancellationToken cancellationToken)
+        {
+            var order = await inner.CreateAsync(input, cancellationToken);
+            if (input.RecurringTemplateId == badTemplateId)
+            {
+                throw new InvalidOperationException($"Template {badTemplateId} is permanently broken");
+            }
+            return order;
+        }
     }
 
     private static IOrderFactory RealOrderFactory(CleansiaDbContext context)
@@ -258,15 +301,8 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
         return calculator.Object;
     }
 
-    private static TemplateFixture Template(string templateId, string userId, string savedAddressId, string? tenantId)
-        => new(templateId, userId, savedAddressId, tenantId);
-
-    private sealed record TemplateFixture(string TemplateId, string UserId, string SavedAddressId, string? TenantId);
-
-    private async Task SeedAsync(params TemplateFixture[] fixtures)
+    private async Task SeedAsync(params string[] templateIds)
     {
-        // Seeding runs with NO ambient tenant and stamps each row explicitly, so the fixture cannot
-        // borrow the very mechanism under test.
         _tenantProvider.ClearTenantOverride();
 
         await using var ctx = NewContext();
@@ -277,38 +313,37 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
         currency.SetAsDefault(true);
         ctx.Set<Currency>().Add(currency);
 
-        foreach (var fixture in fixtures)
+        foreach (var templateId in templateIds)
         {
+            var userId = $"user-{templateId}";
+            var savedAddressId = $"saved-{templateId}";
+
             var user = User.CreateWithPassword(
-                $"{fixture.UserId}@cleansia.test", "Password1!", "Rita", "Recurring", UserProfile.Customer);
-            user.Id = fixture.UserId;
-            user.TenantId = fixture.TenantId;
+                $"{userId}@cleansia.test", "Password1!", "Rita", "Recurring", UserProfile.Customer);
+            user.Id = userId;
             ctx.Set<User>().Add(user);
 
             var address = Address.Create("123 Main St", "Prague", "11000", "country-cz");
-            address.Id = $"address-{fixture.TemplateId}";
-            address.TenantId = fixture.TenantId;
+            address.Id = $"address-{templateId}";
             ctx.Set<Address>().Add(address);
 
-            var saved = SavedAddress.Create(fixture.UserId, address.Id, "Home", isDefault: true);
-            saved.Id = fixture.SavedAddressId;
-            saved.TenantId = fixture.TenantId;
+            var saved = SavedAddress.Create(userId, address.Id, "Home", isDefault: true);
+            saved.Id = savedAddressId;
             ctx.Set<SavedAddress>().Add(saved);
 
             var template = RecurringBookingTemplate.Create(
-                userId: fixture.UserId,
+                userId: userId,
                 frequency: RecurrenceFrequency.Weekly,
                 dayOfWeek: DateTime.UtcNow.AddDays(2).DayOfWeek,
                 timeOfDay: new TimeOnly(10, 0),
                 rooms: 2,
                 bathrooms: 1,
-                savedAddressId: fixture.SavedAddressId,
+                savedAddressId: savedAddressId,
                 selectedServiceIds: [CreateOrderTestData.ServiceId],
                 selectedPackageIds: [],
                 paymentType: PaymentType.Cash,
                 startsOn: DateTime.UtcNow.AddDays(-7));
-            template.Id = fixture.TemplateId;
-            template.TenantId = fixture.TenantId;
+            template.Id = templateId;
             ctx.Set<RecurringBookingTemplate>().Add(template);
         }
 

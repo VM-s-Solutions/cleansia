@@ -102,7 +102,12 @@ public class RecurringMaterializationIsMembershipIndependentTests
             .Returns(new[] { template }.AsQueryable().BuildMock());
     }
 
-    private MaterializeRecurringBookings.Handler CreateHandler() =>
+    /// <summary>
+    /// Both properties live in the PER-TEMPLATE atom, which is where the sweep does all of its work —
+    /// <c>MaterializeRecurringBookings</c> itself only selects ids and dispatches one of these per
+    /// template in its own DI scope.
+    /// </summary>
+    private MaterializeRecurringBookingTemplate.Handler CreateHandler() =>
         new(
             _templateRepository.Object,
             _savedAddressRepository.Object,
@@ -112,7 +117,7 @@ public class RecurringMaterializationIsMembershipIndependentTests
             _orderFactory.Object,
             _tenantProvider.Object,
             _unitOfWork.Object,
-            NullLogger<MaterializeRecurringBookings.Handler>.Instance);
+            NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance);
 
     [Fact]
     public async Task OccurrencesGenerateWithNoMembershipLookupAndNoWaiver()
@@ -129,7 +134,8 @@ public class RecurringMaterializationIsMembershipIndependentTests
             }));
 
         var result = await CreateHandler().Handle(
-            new MaterializeRecurringBookings.Command(), CancellationToken.None);
+            new MaterializeRecurringBookingTemplate.Command(TemplateId, DateTime.UtcNow, HorizonDays: 7),
+            CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.NotEmpty(inputs);

@@ -20,10 +20,15 @@ public class MaterializeRecurringBookingsHandler(
         var result = await mediator.Send(new MaterializeRecurringBookings.Command(HorizonDays: 7), ct);
         if (result.IsSuccess && result.Value != null)
         {
+            // TemplatesFailed is the signal that one template is permanently stuck: the sweep now isolates
+            // each template in its own scope and carries on past a failure, so a bad row no longer shows up
+            // as a failed invocation — it shows up here, as a non-zero count that stays non-zero.
             logger.LogInformation(
-                "MaterializeRecurringBookings completed; processed {Templates} templates, created {Orders} orders",
+                "MaterializeRecurringBookings completed; processed {Templates} templates, created {Orders} orders, "
+                + "{FailedTemplates} templates failed and will be retried next tick",
                 result.Value.TemplatesProcessed,
-                result.Value.OrdersCreated);
+                result.Value.OrdersCreated,
+                result.Value.TemplatesFailed);
         }
         else
         {

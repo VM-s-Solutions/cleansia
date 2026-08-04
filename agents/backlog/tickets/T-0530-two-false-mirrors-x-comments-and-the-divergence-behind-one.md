@@ -1,15 +1,15 @@
 ---
 id: T-0530
 title: Two false "mirrors X" comments — and the three-way status divergence behind one of them
-status: draft
+status: done
 size: S
-owner: pm
+owner: backend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: []
 blocks: []
 stories: []
-adrs: []
+adrs: [0037]
 layers: [architect, backend]
 security_touching: false
 manual_steps: []
@@ -115,6 +115,20 @@ surfaces, the surfaces are diffed, not counted.
   dashboard count and the take gate. AC5 respected — neither `CancelOrderSheet.kt` nor
   `CancellationFeePreview.swift` is touched. **No migration, no NSwag regen** (the new key rides the
   existing ProblemDetails channel; no DTO or endpoint shape changed).
+- 2026-08-04 — **done** (PM sprint-15 reconciliation). AC1's architect ruling became **ADR-0037**
+  (`343c7b8a`, accepted `182a5660`-era verdict in the file), and the implementation shipped in `37756936`
+  *"feat(orders): one offerability rule, read by every surface, enforced at the take"*. **Verified at
+  HEAD:** `src/Cleansia.Core.Domain/Orders/OrderAvailability.cs` exists with the two evaluation forms
+  (`IsOfferableSql` / `IsOfferable`) and the coarse `OfferableStatuses` prefilter; the false *"Mirrors
+  `DashboardSpecifications.CreateAvailableOrdersSpec`"* comment is gone from the digest because the
+  literals it mirrored are gone; `TakeOrder` now has a status gate. The divergence really was three-way —
+  `TakeOrder.Validator` had no status rule at all — and closing it also closed the one-error-per-refusal
+  information leak. **The second false comment (`CancelOrderSheet.kt:74-79`) is NOT closed here** — it is
+  T-0527 AC11's, per this ticket's own scoping, and T-0527 has not started.
+- 2026-08-04 — **layer 2 of ADR-0037's enforcement, deferred at `37756936` as ADVISORY, has since shipped**
+  (`01b21746` wrote the parity script, `e4dd27f5` committed the workflow that triggers it —
+  `.github/workflows/offerability-parity.yml`). Recorded here so the ADR's escape hatch is not left
+  looking open.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
@@ -148,3 +162,13 @@ surfaces, the surfaces are diffed, not counted.
   - re-voice `error.order.no_available_spots` — en: *"Another cleaner has already taken this job."*
     (today it reads a **customer's** sentence: *"No cleaners are available for that slot. Please pick
     another time."* — untrue and unactionable for the cleaner who just lost the race).
+
+**MANUAL-GATE (PM reconciliation, 2026-08-04).** Read at HEAD:
+`src/Cleansia.Core.Domain/Orders/OrderAvailability.cs` in full, `OrderSpecification.cs:120-135`,
+`OrderRepository.cs:255-330`, `.github/workflows/offerability-parity.yml` (exists and is committed —
+`e4dd27f5` corrected the earlier record that reported the gate enforced while its trigger was untracked).
+Commit `37756936` records four mutations plus a negative control (dropping the offerability conjunct fails
+2 of 3 integration tests while the pre-existing scope suite stays green) and 2588 unit / 117 integration,
+0 failed. **Residual, recorded not swept under:** `37756936` also fixed an out-of-scope harness defect
+(connection-pool exhaustion, `53300`). **No `manual_steps`.**
+

@@ -1,15 +1,15 @@
 ---
 id: T-0513
 title: The three clients advertise three different express perks, and none matches the mechanic
-status: draft
+status: done
 size: M
 owner: analyst
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: []
 blocks: [T-0514]
 stories: []
-adrs: []
+adrs: [0035]
 layers: [analyst, frontend, android, ios]
 security_touching: false
 manual_steps: []
@@ -102,5 +102,26 @@ and T-0491's copy inventory if that panel has run.
   express window the code implements**. Filed independently of T-0493 because it needs no backend and
   it reduces a live misrepresentation on its own. **No dependency deliberately** — AC4 owns the
   sequencing question rather than a `depends_on` hiding it.
+- 2026-08-04 — **done** (PM sprint-15 reconciliation). Shipped in `0c665c08` *"fix(i18n): stop advertising a
+  free express upgrade that nobody gets"*, merged at `0da90eeb`. **Verified at HEAD** by walking every
+  `*.json` under `apps/*/src/assets/i18n/` and both mobile catalogs for `express|expres|експрес|экспресс`:
+  the only survivors are the **mechanic's own** labels (`pages.order.slot_express`,
+  `pages.order.express_surcharge_label`), the new refusal key
+  (`api.membership.express_waiver.no_longer_available`) and the **admin** quota-configuration fields. No
+  client advertises an express perk. Android's catalog carries an explicit comment at
+  `customer-app/.../values/strings.xml:844` — *"No express perk anywhere"* — so the deletion is
+  self-documenting.
+- 2026-08-04 — **the consequence this ticket named has now come due.** `0c665c08` deliberately left the
+  AFFIRMATIVE copy to T-0493 (*"Nobody is harmed by being told they get less than they do"*), and Plus has
+  advertised **four perks instead of five** ever since. T-0493's mechanism shipped in `3092abc1` **with no
+  copy AC**, so the affirmative sentence is now owed and belongs to nobody → filed as **T-0544**.
 
 ## Review
+
+**MANUAL-GATE (PM reconciliation, 2026-08-04).** Method: a scripted walk of all 15 web i18n bundles
+plus `values*/strings.xml` and both `Localizable.xcstrings`, matching VALUES not key names across five
+locales — the same check the ticket's three guard tests make, run independently. Commit `0c665c08` records
+3 web production builds green, web Jest 12/12, iOS 16/16 on an iOS 26.3 simulator, Android 17/17, and all
+three guards mutation-proven. Seven render sites were found, not the four this ticket listed. **No
+`manual_steps`.**
+

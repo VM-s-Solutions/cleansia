@@ -1,15 +1,15 @@
 ---
 id: T-0512
 title: Membership benefit usage — entity, configuration and migration
-status: draft
+status: done
 size: S
 owner: db
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: [T-0511]
 blocks: [T-0493]
 stories: []
-adrs: []
+adrs: [0035]
 layers: [db]
 security_touching: false
 manual_steps: [ef-migration]
@@ -75,5 +75,26 @@ migration.
   of T-0493 so the **owner-only migration** is not bundled with a money-path change. `depends_on:
   [T-0511]` — this ticket writes what the ADR decides and designs nothing itself. **An empty diff is a
   legitimate close** if T-0511 AC10 rules that the count is derivable from `Order` rows.
+- 2026-08-04 — **done** (PM sprint-15 reconciliation). Shipped in `7e1cf7f5` *"feat(db): all six pending
+  schema changes, folded into one regenerated Initial"*. **Verified at HEAD:** `MembershipBenefitUsage`
+  appears 20 times in `src/Cleansia.Infra.Database/Migrations/20260723182623_Initial.cs`, alongside
+  `UserMembership.TrialEndsAtUtc` (ADR-0035 AM-18, the owner's trial ruling). The filtered partial unique
+  slot index carries `WHERE "IsActive" = TRUE` and the emitted DDL carries `NULLS NOT DISTINCT`. There is
+  still exactly **one** migration in the repo — the owner authorised regenerating `Initial` rather than
+  stacking four.
+- 2026-08-04 — ⚠️ **`manual_steps: [ef-migration]` is DISCHARGED-BUT-NOT-APPLIED.** The migration exists
+  and the timestamp was preserved, so `20260723182623_Initial` is **already in `__EFMigrationsHistory`** on
+  any migrated environment. `MigrationService/Program.cs:31` reads `GetPendingMigrationsAsync()` and `:39`
+  calls `MigrateAsync()` — pending only — so the in-place column additions are **skipped silently** and the
+  service exits 0. **This schema is not real on DEV until the owner drops the database.** See the owner
+  list in `status/sprint-15.md § ADDENDUM C`.
 
 ## Review
+
+**MANUAL-GATE (PM reconciliation, 2026-08-04).** Read at HEAD: `20260723182623_Initial.cs` (grep counts
+per entity), `MigrationService/Program.cs:25-45`. Commit `7e1cf7f5` records integration 117/117 (was 60
+passing / 57 failing on the old Initial, every failure a missing column) and unit 2594/2594. **Both test
+fixtures build fresh schemas, so those numbers prove nothing about a deployed database** — ADR-0040's
+challenger (`44d1b64d` CH-W3) established that explicitly. **`manual_steps` OPEN for the owner: the
+database drop.**
+

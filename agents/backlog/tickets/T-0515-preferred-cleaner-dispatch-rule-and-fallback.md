@@ -1,7 +1,7 @@
 ---
 id: T-0515
 title: Make the preferred cleaner actually win the order — dispatch rule plus fallback
-status: draft
+status: done
 size: M
 owner: backend
 created: 2026-08-02
@@ -9,7 +9,7 @@ updated: 2026-08-04
 depends_on: [T-0495]
 blocks: []
 stories: []
-adrs: [ADR-0036, ADR-0039]
+adrs: [0036, 0039]
 layers: [backend]
 security_touching: false
 manual_steps: [nswag-regen]
@@ -101,6 +101,34 @@ batch. Check before dispatch.
   `Cleansia.IntegrationTests` 117 → **130**, `Cleansia.HostTests` → **88**, all green. **The six
   visibility surfaces are NOT wired** — `TakeOrder.cs` and `NewJobsDigestService.cs` were held by other
   agents in this batch, and half a visibility rule is worse than none. See `## Review`.
+- 2026-08-04 — **done** (PM sprint-15 reconciliation). Landed across four commits, and the sequencing is
+  the point: `3092abc1` built the hold resolver but **wired NONE of the six visibility surfaces** and said
+  so (*"a granted hold is enforced by nothing — inert, failing open"*); `22eeaec4` enforced it at **all
+  six** server-side surfaces; `b9cb6d0f` (Android) and `532d98f5` (iOS) landed the partner-client copy;
+  `eb37fdab` then registered the display map and the feed keyset. **Verified at HEAD:**
+  `Order.PreferredHoldUntilUtc` with `GrantPreferredHold`/`ClearPreferredHold` as the only writers,
+  `Core.Domain/Orders/OrderVisibility.cs`, `Services/PreferredCleanerHoldResolver.cs`,
+  `NotificationEventCatalog.cs:44` (`order.preferred_offer`) mapped to `NewJobsAvailable` at `:77`, and
+  `NotificationFeedEventKeys.cs:50`. Agreement is pinned by
+  `IntegrationTests/Features/Orders/PreferredHoldSurfaceAgreementTests.cs` walking a 7-row fixture, one row
+  per term, comparing board, dashboard, browse gate and take gate PER ORDER.
+- 2026-08-04 — **ADR-0036 D10's release gate ("C2a and C2b ship together; if only one can ship, ship
+  neither") is now SATISFIED, and it was verified rather than trusted.** Before registering anything,
+  `eb37fdab`'s agent read both iOS main-bundle catalogs: both loc-keys present in all five languages, every
+  unit state `translated`, positional `%1$@` throughout, 30 push keys = 15 events × {title, body} exactly
+  matching the display map's new size. `22eeaec4` had earlier **removed** a display-map entry a previous
+  agent added, because shipping it would have put the literal string `push.order.preferred_offer.title` on
+  a cleaner's lock screen — the tripwire working as designed.
+- 2026-08-04 — **AC8 satisfied:** the false scoring comment is gone. `Order.cs:236-244` now states
+  explicitly *"There is no matching algorithm and no score"*.
+- 2026-08-04 — **residual, flagged not silently chosen (ADR-0036 D8.3 is two-thirds implemented).** The
+  resolver re-runs every gate per occurrence, so a lapsed member gets no hold and no push; materializing
+  with a **null preference** would need a second resolver call in a sweep with no user session, and doing it
+  in the factory would silently drop stored preferences on the normal create path too. **The preference
+  stays stored.** Behaviour is correct; the cosmetic leg is deliberately not built. No new ticket — this is
+  ADR-0036's lane.
+- 2026-08-04 — **`manual_steps: [nswag-regen]` DISCHARGED** (`37440bbc`, and the
+  `isAvailableForRequestedSlot` leg at `53f887b6`/`97f7dcd3`).
 
 ## Review
 
@@ -144,3 +172,12 @@ falsified by mutation and is corrected in the same change. EF Core's null semant
 `Col == @p` to `Col IS NULL` for a captured null, so the queryable form matches C# on exactly the case
 the ADR feared; what the test actually catches is a term edited on one side only. The rule survives, its
 justification did not.
+
+**MANUAL-GATE (PM reconciliation, 2026-08-04).** Read at HEAD: `Order.cs:236-255`, `OrderVisibility.cs`,
+`PreferredCleanerHoldResolver.cs`, `NotificationEventCatalog.cs:40-80`, `NotificationFeedEventKeys.cs:45-55`,
+`OrderFactory.cs:190-200`, and both surface-agreement integration tests. `22eeaec4` records **eight
+mutations, each applied, run and reverted** — the subtle one is #7, passing a null beneficiary while keeping
+the clock, which makes the BENEFICIARY'S OWN held order vanish from their board — plus 2798 unit / 132
+integration / 88 host, 0 failed, re-run independently. `eb37fdab` re-confirms the same counts after the
+registrations. **`manual_steps` discharged.**
+

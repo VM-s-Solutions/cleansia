@@ -1,15 +1,15 @@
 ---
 id: T-0493
 title: Plus express upgrade — waive the surcharge server-side and consume one quota unit
-status: draft
+status: done
 size: M
 owner: backend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: [T-0511, T-0512]
 blocks: [T-0514]
 stories: []
-adrs: []
+adrs: [0035]
 layers: [backend]
 security_touching: false
 manual_steps: []
@@ -126,5 +126,31 @@ classes.
   benefit the domain defers at `MembershipPlan.cs:100-104`, not a product decision. **Deliberately
   still `M`** — the counter, the schema and the clients are separate tickets precisely so this one
   does not become an `L`.
+- 2026-08-04 — **done** (PM sprint-15 reconciliation). Shipped in `3092abc1`. **Verified at HEAD:**
+  `Services/Interfaces/IExpressWaiverResolver.cs` defines the `ExpressWaiver` record and `CreateOrder.cs:320`
+  takes an `IExpressWaiverConsumer` — the waiver decision is made once and consumed, per AC1/AC2. All four
+  owner rulings are enforced rather than assumed: PastDue is pinned through the REAL membership predicate
+  over SQLite driven by the REAL Stripe webhook writer with an Active control; trial is one conjunct in the
+  RESOLVER, deliberately not folded into the shared predicate; the plan-switch ruling is enforced
+  **structurally** (`UserMembershipId` appears in exactly one place, the INSERT column list — zero
+  occurrences in any WHERE/GROUP BY/HAVING/join, verified by grep because the panel named it as the ruling
+  most likely to be quietly violated); lapsed-vs-recurring was VERIFIED, not built, and pinned.
+- 2026-08-04 — **a defect the implementing agent introduced and then found in self-review, worth keeping in
+  the record:** its first ordering keyed the consent guard on a second resolve rather than on the
+  calculator's answer, so if the quota emptied between the two reads the factory re-applied +20% to an
+  already-waived subtotal and persisted **~20% above the price the customer consented to** — the exact
+  defect AM-8 exists to forbid, recreated one layer up. Fixed, with mutation 3 as its pin.
+- 2026-08-04 — **AC10 satisfied and the field is on the wire:** `expressSurchargeWaivedByMembership` and
+  `expressUpgradesRemaining` are present in the regenerated customer client (`37440bbc`). **No client
+  renders them yet** → that is T-0514, now `ready`.
 
 ## Review
+
+**MANUAL-GATE (PM reconciliation, 2026-08-04).** Read at HEAD: `IExpressWaiverResolver.cs`,
+`CreateOrder.cs:310-330`, `OrderItem.cs:91`, and the generated customer client fields. `3092abc1` records
+2788 unit / 130 integration / 88 host green with AM-5 and AM-19 both mutation-proved with their exact
+failure modes (COUNT-of-live blocks capacity permanently; deleting the cardinality bound grants a FOURTH
+waiver on a downgraded quota-2 plan while the read path truthfully reports zero remaining). **`manual_steps`
+discharged (`37440bbc`).** **Scope note: this ticket has no copy AC** — the affirmative Plus perk sentence
+that `0c665c08` deferred to it is therefore unowned and is filed as **T-0544**.
+

@@ -1,15 +1,15 @@
 ---
 id: T-0511
 title: ADR — how a metered membership benefit is counted, consumed, reset and reversed
-status: ready
+status: done
 size: M
 owner: architect
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: []
 blocks: [T-0512, T-0493]
 stories: []
-adrs: []
+adrs: [0035]
 layers: [architect]
 security_touching: false
 manual_steps: []
@@ -128,5 +128,18 @@ lands first owns it; the ADR names where it lives so the second one reuses it.
   than `draft`: it passes DoR, has no unmet dependency, and the panel is step 1.** The three quota
   *values* the owner still owes are `Q-PLUS-02` and are deliberately **not** a dependency — AC2
   requires the design to survive either answer.
+- 2026-08-04 — **done** (PM sprint-15 reconciliation). The deliverable is **ADR-0035**
+  (`agents/backlog/adr/0035-metered-membership-benefit-usage.md`), drafted `e052684f`, challenged in
+  `eee24957`, **accepted `15d80faa`** with 16 binding amendments. **Verified at HEAD:** the ADR header
+  reads `- **Status:** accepted`. Four of D3's five mechanisms did not survive the panel — AM-5 replaced
+  COUNT-of-live with `generate_series + NOT EXISTS + ORDER BY LIMIT 1` because the original yielded
+  cardinality, not the smallest free ordinal, and never restored capacity. The owner's four membership
+  rulings (PastDue, trial, plan swap, lapsed recurring) were folded in at `eefa6293` as AM-17/18/19.
 
 ## Review
+
+**MANUAL-GATE (PM reconciliation, 2026-08-04).** Read the ADR header at HEAD; consensus reached with
+three challengers and 30 independent challenges. Two rulings went AGAINST the author's own
+recommendations, which is the evidence that the panel was adversarial rather than confirmatory. **No
+`manual_steps` on this ticket.**
+

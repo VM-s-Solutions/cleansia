@@ -1,15 +1,15 @@
 ---
 id: T-0521
 title: Payout details UI — partner Android and partner iOS
-status: draft
+status: done
 size: M
 owner: android
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: [T-0519]
 blocks: []
 stories: []
-adrs: []
+adrs: [0034]
 layers: [android, ios]
 security_touching: true
 manual_steps: [nswag-regen]
@@ -83,5 +83,36 @@ profile/onboarding screens on both platforms.
   sprint-15 used for T-0489); **two instances run it in parallel, each with its own reviewer.** Held on
   `nswag-regen` **and** on the iOS toolchain step — AC1 carries the `xcodegen` warning explicitly
   because seven sprint-15 iOS tickets opened with an instruction that used to wipe the owner's key.
+- 2026-08-04 — **done** (PM sprint-15 reconciliation). Android shipped in `d0c08e24`, iOS in `532d98f5`,
+  and `9c13b2c7` closed the iOS error-state parity gap the port surfaced. **Verified at HEAD:** Android
+  `partner-app/.../features/profile/BankSectionViewModel.kt` + `BankSectionScreen.kt`; iOS
+  `CleansiaPartner/Sources/Features/Profile/Bank/BankSectionView.swift` + `BankSectionViewModel.swift`,
+  with `CleansiaPartnerApi/Models/MyPayoutDetails.swift` and `PayoutDetailsStatus.swift` generated.
+- 2026-08-04 — **one contract fact shaped both clients and is worth keeping:** `GetMyPayoutDetails`
+  returns **HTTP 400 with `payout.not_found`** for a cleaner who has never saved details, so the normal
+  first-time case arrives as a **failure on the wire**. Both repositories normalize that once to
+  `Success(null)`, which keeps *"no details yet"* and *"the network is broken"* distinguishable at every
+  layer above. iOS proves it by feeding a real `ProblemDetails` body through the actual error parser rather
+  than a hand-built stub.
+- 2026-08-04 — **four judgement calls, stated in both lanes rather than buried:** no client-side checksum
+  (ADR-0034 D4.1 records that the mod-11 weight DIRECTION was wrong in the draft and rejected ~91% of real
+  Czech accounts — a second copy that disagrees with the server gates a cleaner's income), no client length
+  caps, no client-side scheme branching (`PayoutScheme` is not on the mobile contract), and the legacy
+  profile-completeness key left untouched so onboarding is unchanged.
+- 2026-08-04 — 🚩 **live copy defect raised by `9c13b2c7` and NOT fixed, because it needs all three clients
+  at once:** the completeness key still renders as **"IBAN"** in all five locales, so a cleaner is told
+  "IBAN" is missing, taps through, and lands on a form whose IBAN helper says they may leave it empty.
+  ADR-0034 freezes the **wire key**, not its translation. → carried by **T-0520**, which is the ticket that
+  touches the third client.
 
 ## Review
+
+**MANUAL-GATE (PM reconciliation, 2026-08-04).** Read at HEAD: the four Android/iOS bank files and the
+generated payout models on both platforms. `d0c08e24` records 219 partner tests / 0 failures (the suite was
+**unrunnable** before — `:partner-app:compileDebugKotlin` had been RED since `37440bbc`), core 151,
+customer 412, exit codes checked explicitly. `532d98f5` records swiftformat 0/706, swiftlint 0 violations
+across 541 files, all three schemes build. **Reported honestly and NOT counted as passing tests:** the iOS
+suite cannot execute in the sandboxed repo path (every failing line carries *"Operation not permitted"*,
+checked by grep); assertions that could not run were replicated in Python and reported **as replicated**.
+**`manual_steps` discharged (`37440bbc`).**
+

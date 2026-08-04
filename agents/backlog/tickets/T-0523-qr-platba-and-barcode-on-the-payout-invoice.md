@@ -1,11 +1,11 @@
 ---
 id: T-0523
 title: QR Platba (SPD) payment code and the invoice barcode
-status: rejected
+status: retired
 size: M
 owner: backend
 created: 2026-08-02
-updated: 2026-08-03
+updated: 2026-08-04
 depends_on: [T-0522]
 blocks: []
 stories: []
@@ -112,5 +112,13 @@ adding dependencies.
   delay a legally-correct document. **AC2 is deliberately unforgiving:** a rendered QR nobody scanned
   is not evidence, and the failure mode (a code that looks right and pays the wrong account) is the
   worst one on this whole chain.
+- 2026-08-04 — **`rejected` → `retired`** (PM sprint-15 reconciliation). No change of substance: the owner
+  rejected the work on 2026-08-03 (*"Nope, I don't need a QR code payment"*, recorded in `579eff8f`).
+  `rejected` is not a state in `agents/process/ticket-lifecycle.md`; `retired` is the terminal state for
+  *"the WORK is no longer wanted"*, which is exactly this. Renamed so the index and the lifecycle agree and
+  no agent has to guess what `rejected` means.
+- 2026-08-04 — the barcode half went with it and that was a judgement, not an oversight: it needed no
+  package (~80 lines against QuestPDF's primitives) but was carried only because the specimen shows one,
+  and it is decoration on a document the cleaner files. **No dependency was added** — nothing waits on this.
 
 ## Review

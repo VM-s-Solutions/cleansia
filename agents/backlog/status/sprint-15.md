@@ -843,3 +843,197 @@ locales + its render site · all nine `TenantId` unique indexes · `UserMembersh
 · `FiscalCounterEntityConfiguration.cs:26-29` · `LiveActivityTokenConfiguration.cs:28` ·
 `Initial.cs:2649-2653` and `:2680-2685` · the web customer feature libs (no cancel action) ·
 `agents/backlog/tickets/` for dedup (T-0211, T-0242 `done`, T-0511) and `agents/backlog/audits/`.
+
+---
+
+# ADDENDUM C — the sprint-15 reconciliation (2026-08-04)
+
+## Why this exists
+
+The sprint moved faster than the backlog, and the backlog stopped being true. `master..HEAD` is **56
+commits**; the INDEX and the ticket files described a repository that no longer existed. That is not a
+cosmetic problem: **agents read the backlog as ground truth**, so a stale row does not sit inertly — it
+routes work at a file that has already changed, or holds a ticket for a blocker that cleared two days
+ago. The previous docs sweep found `CLAUDE.md` was wrong in **seven separate ways** for exactly this
+reason, and a wrong line there loads into every agent's context.
+
+**Method, stated so it can be audited.** Every state below was established from `git log master..HEAD`
+first, and then **re-verified against the tree at HEAD**. Nothing was closed on a commit message alone —
+a ticket closed on report is the same defect class as a ticket left open on report. Where verification
+produced a different answer from the brief, the verification won and the difference is written down.
+
+## What the verification changed about the brief I was given
+
+Three things, all in the direction of *less* owner work, and each one is the reason to verify rather than
+transcribe:
+
+1. **The NSwag regens are not pending — they are done.** Three surfaces were owed (`3092abc1`). The
+   owner regenerated **all three web clients and both mobile OpenAPI documents** in `37440bbc`, with the
+   `isAvailableForRequestedSlot` leg at `53f887b6`. Verified field-by-field at HEAD:
+   `updateBankDetails` / `getMyPayoutDetails` in the partner client, 40 `PayoutDetails` hits in the admin
+   client, `expressSurchargeWaivedByMembership` + `expressUpgradesRemaining` +
+   `expressWaiverForfeitedOnCancel` in the customer client, and all **three** `MyServingCleaners` query
+   parameters in both the customer client and `customer-mobile-api.json`. **So the payout UI ticket
+   (T-0520) is not blocked — it is `ready`, and it is a live regression.**
+2. **T-0532 is not blocked on its own panel.** ADR-0038 was **accepted** in `f7828fb8` with zero blocking
+   challenges, and CH-2 — the challenge flagged as able to delete the ticket's premise — was ruled and
+   did not. AC0 is cleared; the ticket is `ready`, carrying one new binding condition (the one-call-site
+   tripwire must land inside its own PR, because ADR-0032 D3 makes it *unwritable* before the seam
+   exists and D2 forbids "later").
+3. **`.AreNullsDistinct(false)` on the promo per-user index came off the owner list.** It was folded into
+   the regenerated `Initial` (`7e1cf7f5`); the committed migration now carries `NULLS NOT DISTINCT` five
+   times.
+
+And one in the other direction: **a defect nobody had recorded.** `077b7e8a` — the last backend commit on
+the branch — added `order.take.already_cancelled` and `order.take.already_completed`, correctly splitting
+the take gate's refusals off the customer keys. **Android has both in all five locales; partner web and
+iOS have neither.** Both sprint i18n sweeps (`8ff9dfb4` web, `befbb7af` Android) had already run by then.
+So a cleaner on web or iOS who taps a job that was just cancelled reads *"An error occurred. Please try
+again"*, and tries again. → **T-0543**.
+
+## Closed: 15 tickets
+
+`T-0525` · `T-0528` · `T-0529` · `T-0530` · `T-0513` · `T-0517` · `T-0511` · `T-0495` · `T-0512` ·
+`T-0518` · `T-0519` · `T-0521` · `T-0493` · `T-0515` · `T-0516`. Each carries, in its own status log, the
+commit that shipped it and the file-and-line that was read at HEAD to confirm it, plus a **MANUAL-GATE
+(PM reconciliation)** block in `## Review` — because for most of these the in-workflow reviewer lane left
+no verdict in the ticket file, and `ticket-lifecycle.md` requires that a hand-gated ticket say so rather
+than pass for one whose gate ran. `T-0523` moved `rejected` → **`retired`**: same meaning, but `rejected`
+is not a state in the lifecycle and `retired` is.
+
+The one worth reading twice is **T-0519**. The payout validation was **unreachable in its own home
+market** until `077b7e8a`: `CountryConfiguration.PayoutScheme` had no writer anywhere, so it was null for
+every country and scheme selection fell through to IBAN self-description — **a Czech cleaner entering
+prefix, account number and bank code with no IBAN was rejected with "country not supported", for their
+own country**, and every stored home-market record was `SepaIban` with the domestic account number
+persisted null. The unit suite could not see it because those tests set the scheme *by reflection,
+precisely because nothing else can.*
+
+## Re-opened or unblocked: 5 tickets
+
+**`T-0520` (`ready`) is the one to move first, and it is a live regression rather than a feature gap.**
+`c968cbf9` was right to delete partner web's `iban` form control — it was `Validators.required` against a
+field the DTO no longer carries, so `onSubmit`'s `if (!formGroup.valid) return` meant **every cleaner
+would have been permanently unable to save their profile, with only a "fill required fields" toast, on a
+green build.** But it left partner web with **no bank capture at all**, while Android and iOS both have
+the section. It also inherits the copy defect `9c13b2c7` raised and correctly declined to fix alone: the
+completeness key still renders as **"IBAN"** in all five locales, so a cleaner is told "IBAN" is missing
+and lands on a form whose IBAN helper says they may leave it empty. ADR-0034 freezes the **wire key**, not
+its translation.
+
+Then **`T-0514`** (a Plus member's express surcharge is being waived today and **no client says so** —
+zero consumers of the two fields), **`T-0526`** (the last thing between the corrected server fee rule and
+two mobile clients that still show 50% where the backend charges 25%), **`T-0531`** (verified *not* done —
+the rule is absent from `multi-tenancy-and-region.md` at HEAD), and **`T-0532`**.
+
+**`T-0509`** stays `ready` but was **re-aimed** — its headline target moved out from under it.
+**`T-0522`** stays `blocked`, but it was **partly shipped and its row said nothing**: `8ca77412` inverted
+the invoice parties (a wrong legal *category*, not a field gap) and `946200c1` added the late-payment
+interest clause.
+
+## The seven ADRs, now recorded in the INDEX
+
+**0034 · 0035 · 0036 · 0037 · 0038 · 0039 accepted; 0040 proposed and challenged.** Every ticket that
+depends on one now cites it in its `adrs:` frontmatter — that was missing across the board and is the
+reason a reader could not tell, from a ticket, which decision governed it.
+
+**ADR-0040 deserves a sentence of its own.** Its code has already shipped (`7e1cf7f5`) while the ADR is
+still `proposed`, deliberately: the change was time-boxed to the `Initial` regeneration window. The
+challenger hunted for a reachable production path that persists a status-less `Order` and **did not find
+one** — the write-time guarantee stands. But it raised CH-W3, which is the single most operationally
+important finding of the sprint, and it is in the owner list below.
+
+## 12 findings filed that existed only in commit messages
+
+`T-0533` (a live cross-app client import) · `T-0534` (the module-boundary guard is mostly off) ·
+`T-0535` (97 generated-DTO object literals) · `T-0536` (the 25-project lint baseline) · `T-0537` (a
+library invisible to Nx) · `T-0538` (four Web SDK hosts still armed) · `T-0539` (the recurring
+materializer, and the `Rollback()` trap) · `T-0540` (two `Contains` shapes, unpinned) · `T-0541`
+(`docs/mobile-app/**`) · `T-0542` (no changelog) · `T-0543` (the missing take-refusal keys) · `T-0545`
+(the promo counter-repair script). Plus **`T-0544`** — a gap *created* by closing T-0493.
+
+Two are worth calling out because the finding is more valuable than the fix:
+
+- **T-0539 records a trap, not just a defect.** `MaterializeRecurringBookings` has no per-template
+  `try`/`catch`, and the obvious fix is unsafe: `CleansiaDbContext.Rollback()` sets every tracked entry
+  to `Unchanged`, and **`Added` → `Unchanged` is not `Detached`** — the half-built order stops being an
+  insert and **stays in the tracker as a phantom existing row** for every later iteration. Anyone
+  implementing catch-and-continue through `Rollback()` would ship the half-built-order bug believing they
+  had detached it. The durable answer is one DI scope per template. That sentence is now in a ticket
+  rather than in a commit message, which is the only place the next implementer will look.
+- **T-0536 is filed as `L` and is explicitly forbidden from running.** It measures the baseline and
+  splits itself. It is also the "lint-cleanup ticket" that `frontend-ci.yml:71` has promised in a comment
+  since the day lint was made `continue-on-error`, and that never existed.
+
+**T-0537's sweep is done, not deferred.** The commit recommended checking for other libraries in the same
+Nx-invisible state; the PM ran it — 64 lib roots, **zero** others. The dashboard lib was the only one, so
+the ticket narrowed from "find them" to "make the state unreachable", which is `S` rather than `M`.
+
+### One methodological point that changed three of these tickets
+
+Every finding was established against **HEAD (committed)** and then re-checked against the **working
+tree** — and for three of them the two disagree, because a web lane is live in this tree right now. The
+T-0533 import is already removed; `eslint.base.config.mjs` no longer holds the allow-everything
+constraint (the real `scope:`/`type:` rules now sit in an **untracked**
+`eslint.module-boundaries.config.mjs`, with tags spread across the lib graph); and the web and iOS-core
+halves of T-0543 are already written. **So those three are filed `in_progress`, not `ready`** — filing
+them `ready` would have sent a second instance into files another agent is holding, which is the
+collision `shared-file-lanes.md` exists to prevent.
+
+The general rule this produced, and it is worth keeping: **a citation is only true against the tree state
+you name.** *"Verified"* without *"at HEAD"* or *"in the working tree"* is the same shape of claim as the
+false "mirrors X" comments this sprint spent itself deleting.
+
+## What this pass deliberately did NOT do
+
+- **Did not touch git.** No add, commit, branch, stash or checkout. (The repo-global stash hazard across
+  worktrees makes that rule load-bearing, not ceremonial.)
+- **Did not write outside `agents/backlog/**`.** Not `agents/knowledge/**`, not `agents/backlog/adr/**`
+  (other lanes are live in both), not production code, not tests, not `CLAUDE.md`, not `docs/`.
+- **Did not open** `.env`, `.p8`, `Info.plist`, `project.yml` or anything under `src/cleansia_ios/Config/`.
+- **Did not reconcile `T-0476`…`T-0492` / `T-0494` / `T-0496`…`T-0508` / `T-0510`** — the PR #189
+  population. Those rows remain unverified and the INDEX now says so explicitly. Implying coverage this
+  pass does not have would reproduce the defect it was called to fix.
+- **Did not re-litigate any ADR.** Where a challenge changed what a ticket should do, the ticket records
+  it; the decision documents belong to their panels.
+- **Did not move `Q-PLUS-02` / `Q-PLUS-03` to `answered.md`.** They are answered and the INDEX now says
+  so, but `questions/open.md` is a shared file with its own update note pending; moving entries there
+  while three lanes are live risks a collision for no urgency.
+
+## 🔴 OWNER — the complete list, and it is short
+
+**One item blocks real work:**
+
+1. **Drop the DEV database.** The six schema changes from six accepted ADRs were folded into a
+   **regenerated** `Initial` with its **timestamp preserved**, so `20260723182623_Initial` is already in
+   `__EFMigrationsHistory` on any environment that has been migrated. `MigrationService/Program.cs:31`
+   reads `GetPendingMigrationsAsync()` and `:39` calls `MigrateAsync()` — **pending only** — so the new
+   columns are **skipped silently**, and the service prints "up to date" and exits **0**. Both test
+   fixtures build **fresh** schemas, so 2807 unit / 132 integration green **proves nothing about a
+   deployed database.** ADR-0040's CH-P3 makes this operational rather than academic: on a drifted schema
+   the overlap check **fails open and permits a double booking**, and because neither the overlap
+   predicate nor the busy-set query materialises an `Order`, **nothing raises an error — it would be
+   silent.** One query tells you which world DEV is in:
+   `SELECT count(*) FROM "Orders" WHERE "CurrentStatus" IS NULL;`
+
+**Four items need a decision only you can make. None of them blocks anything except what is named:**
+
+2. **`Q-PAYOUT-02` — is a cleaner an employee or a self-employed supplier (OSVČ), and who issues the
+   document?** This decides *which document* we generate. Legal. Blocks **T-0522** and nothing else.
+3. **`Q-PAYOUT-03` — how does the platform know whether a cleaner is VAT-registered, and what does each
+   variant print?** Your specimen states *"Nejsme plátci DPH"*. Legal. Blocks **T-0522** with the above.
+4. **`Q-PLUS-01` — does Stripe enforce a once-per-customer trial on the Plus price?** One dashboard
+   check. The two candidate defects have **opposite fixes**, so the repo cannot distinguish them. Blocks
+   **T-0497**. Narrowed but not closed by your trial ruling.
+5. **`Q-PROFILE-01` — `UpdateCurrentUser` requires a client-supplied `Id` the customer web app cannot
+   obtain**, so every customer-web profile save 400s. This needs a backend *decision* from you, not a
+   frontend workaround. Blocks **T-0447**.
+
+**One item is a run, not a decision, and it is not urgent yet:** the promo counter-repair script
+(**T-0545**) must be **run by you**, after the fix is deployed and during low traffic. An agent writes it
+first. If the database drop happens before the run, the corrupt DEV state goes with it and the run
+becomes unnecessary — **so tell us which comes first rather than letting us assume.**
+
+**Explicitly NOT on your list, though earlier documents said otherwise:** the NSwag regens (done,
+`37440bbc`), the `.AreNullsDistinct(false)` migration (folded into `Initial`), and the
+`mobile-spec-redump` markers on T-0526/T-0527 — those are *created by* future work, not owed by you today.

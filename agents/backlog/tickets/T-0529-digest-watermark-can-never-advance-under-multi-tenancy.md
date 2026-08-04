@@ -1,11 +1,11 @@
 ---
 id: T-0529
 title: Digest watermark can never advance under multi-tenancy (tenant-scoped read in a tenant-ignoring sweep)
-status: draft
+status: done
 size: S
-owner: pm
+owner: backend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: []
 blocks: []
 stories: []
@@ -189,6 +189,13 @@ is delegated to the reviewer.
     two classes: **2457 passed / 0 failed**.
   - **No MANUAL_STEPs**: no schema change (no ef-migration), no DTO/endpoint shape change (no
     nswag-regen), no new `BusinessErrorMessage` key.
+- 2026-08-04 — **done** (PM sprint-15 reconciliation). Shipped in `28763fe6` *"fix(digest): T-0529 — the
+  new-jobs watermark can never advance under a tenant"*. **Verified at HEAD:**
+  `NewJobsDigestService.StampWatermarkAsync` (now `:326-341`) loads through
+  `employeeRepository.GetByIdIgnoringTenantAsync(...)` and the null branch logs a warning naming the
+  employee id (AC4). The method's own doc comment states the tenancy reason, so the next reader does not
+  have to re-derive it. AC5's walk was completed and its finding was FILED and then FIXED —
+  `HasOverlappingOrderAsync` got its tenancy fix in `003b5379`.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
@@ -201,3 +208,11 @@ testing requirement (the fixture must seed a non-null `TenantId`), and the two i
 (T-0529, T-0361) plus when to prefer `SetTenantOverride` instead (the mutation creates child rows). No
 existing rule was redefined — this extends S8 with the opposite polarity, which the T-0361 precedent did
 not cover and which is why this defect reached `master`.
+
+**MANUAL-GATE (PM reconciliation, 2026-08-04).** Read at HEAD:
+`NewJobsDigestService.cs:313-345` and the surrounding sweep. Commit `28763fe6` records the mutation proof
+(reverting only the load fails the tenanted case on a null `LastNewJobsDigestAt` while the null-tenant case
+still passes — that asymmetry is the evidence for AC1 and AC2 at once) and 2457 passed / 0 failed excluding
+a concurrent sibling lane. AC3 holds by construction: `GetQueryableIgnoringTenant()` is
+`GetDbSet().IgnoreQueryFilters()`, still change-tracked, no `ExecuteUpdateAsync`. **No `manual_steps`.**
+

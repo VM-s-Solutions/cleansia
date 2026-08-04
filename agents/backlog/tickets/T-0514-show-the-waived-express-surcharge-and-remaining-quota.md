@@ -1,15 +1,15 @@
 ---
 id: T-0514
 title: Show the waived express surcharge and the remaining monthly quota in the booking flow
-status: draft
+status: ready
 size: M
 owner: frontend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: [T-0493, T-0513]
 blocks: []
 stories: []
-adrs: []
+adrs: [0035]
 layers: [frontend, android, ios]
 security_touching: false
 manual_steps: [nswag-regen]
@@ -87,5 +87,16 @@ web is independent.
   one and the canonical wording from the other. **`manual_steps: nswag-regen` carried here rather than
   on T-0493**, because this is the ticket that consumes the regenerated client; per
   `process/routing.md` rule 6 the PM holds it until the owner confirms.
+- 2026-08-04 — **draft → ready** (PM sprint-15 reconciliation). **Both dependencies are now `done`**
+  (T-0493 mechanism, T-0513 corrective copy) and **`manual_steps: [nswag-regen]` is DISCHARGED** — the owner
+  regenerated in `37440bbc`. **Verified at HEAD:** `expressSurchargeWaivedByMembership` and
+  `expressUpgradesRemaining` exist in `libs/core/customer-services/.../customer-client.ts` (`:11803-11804`,
+  `:9293`), and `expressWaiverForfeitedOnCancel` on the order DTO (`:10538`). The mobile spec
+  `src/cleansia_android/openapi/customer-mobile-api.json` carries them too.
+- 2026-08-04 — 🚩 **the gap is now live and one-sided.** A Plus member's express surcharge **is being
+  waived server-side today** and **no client says so**: a grep for those three field names across
+  `src/Cleansia.App/{apps,libs}` (excluding generated clients), `cleansia_android/*/src/main` and
+  `src/cleansia_ios` returns **zero** consumers. So the member sees a lower price with no explanation, and
+  has no way to learn a quota exists or how much of it is left. This ticket is what closes that.
 
 ## Review

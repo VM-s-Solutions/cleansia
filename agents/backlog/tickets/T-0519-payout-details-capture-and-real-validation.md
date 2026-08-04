@@ -1,15 +1,15 @@
 ---
 id: T-0519
 title: Partner payout details — capture, real validation and the API contract
-status: draft
+status: done
 size: M
 owner: backend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: [T-0518]
 blocks: [T-0520, T-0521, T-0522]
 stories: []
-adrs: []
+adrs: [0034]
 layers: [backend]
 security_touching: true
 manual_steps: [nswag-regen]
@@ -112,6 +112,27 @@ before dispatch.**
   write paths. Once T-0522 puts these digits on a payout document a human keys a transfer from, that is
   not a cosmetic gap. AC8/AC9/AC10 exist because the field already has three couplings (logs, GDPR
   export, an admin **list** DTO) that a naive "add columns" change would break or widen.
+- 2026-08-04 — **done** (PM sprint-15 reconciliation). Shipped in `3092abc1` *"feat: the three features the
+  owner decided on"* and completed by `077b7e8a`. **Verified at HEAD:** `PayoutDetailsValidator.cs`,
+  `IPayoutDetailsValidator.cs`, `PayoutDetailsStatus.cs`, `PayoutDetailsMappers.cs`,
+  `Features/Employees/GetMyPayoutDetails.cs`, `GetEmployeePayoutDetails.cs`,
+  `RevealEmployeePayoutDetails.cs` and `DTOs/PayoutDetailsDtos.cs` all exist. GDPR erasure is id-keyed and
+  pinned (`IntegrationTests/Features/Gdpr/PayoutDetailsErasureTests.cs`). The CZ mod-11 is left-to-right
+  and mutation-proved — flipping it turns 24 tests red, including one asserting the owner's own account
+  FAILS under the rejected reading.
+- 2026-08-04 — 🚨 **the validation was UNREACHABLE IN ITS OWN HOME MARKET until `077b7e8a`, and that is the
+  most important thing on this ticket.** `CountryConfiguration.PayoutScheme` had **no writer anywhere** —
+  the entity has no write surface at all — so it was null for every country and scheme selection fell
+  through to IBAN self-description. A Czech cleaner entering prefix + account number + bank code and no
+  IBAN was **rejected with "country not supported", for their own country**, and every stored home-market
+  record was `SepaIban` with the domestic account number persisted null. The unit suite could not see it
+  because those tests set the scheme **by reflection, precisely because nothing else can**. Fixed as a
+  **seed value** where the enum's own doc says it belongs: CZE and SVK get `CzskDomesticWithIban`; the
+  other eight countries stay null rather than guessing at markets nobody has decided.
+- 2026-08-04 — **`manual_steps: [nswag-regen]` is DISCHARGED.** The owner regenerated all three web clients
+  and re-dumped both mobile OpenAPI documents in `37440bbc`. Verified at HEAD: `updateBankDetails` and
+  `getMyPayoutDetails` are present in `libs/core/partner-services/.../partner-client.ts`, the admin client
+  carries the payout DTOs, and `iban` is gone from `EmployeeItem`/`UpdateEmployeeCommand`.
 
 ## Review
 
@@ -195,3 +216,11 @@ failed**. `Cleansia.HostTests` **87 passed / 0 failed** (+1 new = 88 with the de
 - **`GetEmployeePayoutDetails` needs `IOrderAccessService`** for the caller-employee-id arm, which is an
   order-shaped seam doing identity work. It is the only in-repo way to resolve the caller's employee id
   (`DownloadInvoice` uses the same). Worth a rename or a dedicated seam.
+
+**MANUAL-GATE (PM reconciliation, 2026-08-04).** Read at HEAD: the validator, the three query/command
+features, the mappers, the erasure test, and the generated clients. Commits `3092abc1` (2788 unit / 130
+integration / 88 host, green) and `077b7e8a` (2807 / 132 / 88, 0 failed) carry the evidence. **Honest gap
+carried forward from `3092abc1` and NOT papered over: the primary ČNB decree could not be read**; the
+mod-11 evidence is two independently-sourced real accounts plus a cross-check through a different standard.
+That is recorded, not resolved. **`manual_steps` discharged (`37440bbc`).**
+

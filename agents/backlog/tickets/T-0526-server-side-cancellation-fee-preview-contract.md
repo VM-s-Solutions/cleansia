@@ -1,11 +1,11 @@
 ---
 id: T-0526
 title: Server-side cancellation-fee preview — contract and backend
-status: draft
+status: ready
 size: M
-owner: pm
+owner: architect
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: [T-0525]
 blocks: [T-0527]
 stories: []
@@ -124,6 +124,17 @@ handler shape; `CancelOrder` for the inputs.
 ## Status log
 - 2026-08-02 — draft (created by pm from the challenger round; blocked on T-0525 by design, and on the
   architect's AC1 contract lock for DoR item 7).
+- 2026-08-04 — **draft → ready** (PM sprint-15 reconciliation). Its only dependency, **T-0525, is `done`**
+  (`8f447258`). The premise is unchanged at HEAD and re-verified: `CalculateCancellationFeeRate` still has
+  exactly one production caller, and `CancelOrder.cs` returns `FeeRate` **after** the cancel, the refund and
+  the loyalty revoke — that is a receipt, not a disclosure.
+- 2026-08-04 — ⚠️ **`manual_steps: [nswag-regen, mobile-spec-redump]` are FUTURE, not pending.** They are
+  created **by** this ticket's contract change; nothing is waiting on the owner today. Do not confuse them
+  with the discharged sprint-15 regens.
+- 2026-08-04 — **sequencing note:** this ticket is now the sole thing standing between the shipped
+  server-side fee rule and **T-0527**, where Android and iOS still show 50% where the backend charges 25%
+  and 100%/"no refund available" where it charges 50%. Every day this sits, both mobile clients lie about
+  real money.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

@@ -1,15 +1,15 @@
 ---
 id: T-0528
 title: New-jobs digest permanently drops a job the cleaner was busy for
-status: draft
+status: done
 size: M
-owner: pm
+owner: backend
 created: 2026-08-02
-updated: 2026-08-03
+updated: 2026-08-04
 depends_on: []
 blocks: []
 stories: []
-adrs: []
+adrs: [0036]
 layers: [architect, backend]
 security_touching: false
 manual_steps: []
@@ -138,6 +138,13 @@ is the house example of a per-iteration tenant-aware loop).
   The three that pin existing-correct behaviour (AC3/AC4/AC5) were green before and after. **Green:**
   `Cleansia.Tests` 2594 passed / 0 failed (baseline 2588), `Cleansia.IntegrationTests` 117 passed / 0 failed.
   **No migration.** Lane: `NewJobsDigestService.cs` + its tests only.
+- 2026-08-04 — **done** (PM sprint-15 reconciliation). Shipped in `efee2853` *"fix(digest): a job you were
+  busy for is offered again when the conflict clears"*. **Verified at HEAD:** the second freshness source
+  exists — `FindReleasedCommitmentWindowAsync` (`NewJobsDigestService.cs:287-311`) returns a released
+  window bounded above by the sweep start (`:293` uses `Order.MaxOrderSpanHours` as the scan floor), and
+  `:249-275` composes it disjunctively with the watermark term. The correlated top-N subquery is gone, as
+  ADR-0036 §D5.3 predicted. The class doc at `:39-48` states the structural limit (one scalar cannot express
+  a per-cleaner non-monotone rule) rather than hiding it.
 
 ## Review
 
@@ -239,3 +246,11 @@ duplicate-one-enum-set-over-one-arithmetic-predicate preference.
 decision form so it can be lifted into `agents/architecture/decisions/` verbatim. ADR-0036 §D5.3 already
 predicts it ("*This is a point fix, not a class fix, and the overlap variant is filed separately*") — this
 is that variant, and it does not contradict D5.3; it shares its shape.
+
+**MANUAL-GATE (PM reconciliation, 2026-08-04).** Read at HEAD:
+`NewJobsDigestService.cs:39-53`, `:86-205`, `:240-311`. Commit `efee2853` records a red-first mutation proof
+against unmodified `master` (3 of 6 failed, the key one reporting the second sweep sends NOTHING) plus two
+isolating mutations on the finished code, and 2594 unit / 117 integration, 0 failed. The one duplication it
+introduces — the released-status set as the exact complement of the repository's private blocking set — is
+pinned by a reflection test that fails naming both lists. **No `manual_steps`.**
+

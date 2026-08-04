@@ -1,11 +1,11 @@
 ---
 id: T-0525
 title: Cancellation fee charges the customer for a cleaner who never took the job
-status: draft
+status: done
 size: S
-owner: pm
+owner: backend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: []
 blocks: [T-0526, T-0527]
 stories: []
@@ -165,6 +165,21 @@ means a cleaner was pulled onto the job, which is what the fee is pricing.
 - 2026-08-02 — draft (created by pm; filed out of the ADR-0034/0035/0036 challenger round as a defect
   belonging to no ADR). **Not `ready`:** DoR item 7 needs the AC1 architect ruling first. The ruling is a
   one-item panel and is dispatchable today with no dependency.
+- 2026-08-04 — **done** (PM sprint-15 reconciliation). Shipped in `8f447258` *"fix(orders): T-0525 — stop
+  charging cancellation fees for a cleaner who never took the job"*. **Verified at HEAD, not taken on
+  report:** `CancelOrder.cs:110` now reads `var hasBeenAccepted = order.AssignedEmployees.Count > 0;` —
+  the assignment row, not a `Confirmed` history entry — and the same predicate is mirrored on the read
+  path at `GetOrderDetails.cs:116`. `BookingPolicy.cs:201/:226/:230` still takes `hasBeenAccepted` but its
+  doc comment no longer claims the signal is a status track. AC evidence is in the commit: ten cases built
+  by running the REAL writers (signature-verified Stripe `checkout.session.completed`, the cash branch,
+  the admin override), natural red 6/10 before the fix, explicit revert reproducing the same six.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
+
+**MANUAL-GATE (PM reconciliation, 2026-08-04).** The in-workflow reviewer lane for this ticket
+predates the reconciliation and left no verdict in this file, so the PM hand-gated it. Read at HEAD:
+`CancelOrder.cs:100-180`, `BookingPolicy.cs:195-235`, `GetOrderDetails.cs:110-120`. Commit `8f447258`
+records `dotnet test` 2470 passed / 0 failed, re-run independently, and a two-way mutation proof.
+Covers AC1–AC3 (the predicate, the tier ladder, the pinned regression fixture). **No `manual_steps`.**
+

@@ -1,15 +1,15 @@
 ---
 id: T-0518
 title: Partner payout details — schema, entity configuration and migration (CZ first)
-status: draft
+status: done
 size: M
 owner: db
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: [T-0517]
 blocks: [T-0519]
 stories: []
-adrs: []
+adrs: [0034]
 layers: [db]
 security_touching: true
 manual_steps: [ef-migration]
@@ -88,5 +88,27 @@ orders (`Employee.cs:283`) and by the **GDPR export** (`GdprExportDto.cs:41`), a
   the profile-completeness gate at `Employee.cs:283`/`:313`, the GDPR export, and an audit test that
   asserts it never appears in audit JSON. Changing its shape without those is a cleaner locked out of
   the job board.
+- 2026-08-04 — **done** (PM sprint-15 reconciliation). Shipped in `7e1cf7f5`. **Verified at HEAD:**
+  `EmployeePayoutDetails` appears 13 times in `20260723182623_Initial.cs` and `Employee.HasPayoutDetails`
+  once — the latter is the panel's own fix for *"a missing `.Include` 403s every cleaner"* (ADR-0034 §D7).
+  The entity, its configuration and its repository all exist:
+  `Core.Domain/Users/EmployeePayoutDetails.cs`, `Infra.Database/EntityConfigurations/
+  EmployeePayoutDetailsEntityConfiguration.cs`, `Infra.Database/Repositories/
+  EmployeePayoutDetailsRepository.cs`. `LegacyRawValue` was struck because the database is being dropped —
+  the agent said so rather than building a population that will not exist.
+- 2026-08-04 — **two judgement calls it flagged rather than made silently, both correct and both still
+  open by design:** it did **not** flip `IsProfileComplete()` onto `HasPayoutDetails` (no writer existed at
+  the time, so flipping it would have made every cleaner permanently incomplete — the exact failure
+  ADR-0034 D7 exists to prevent), and it did **not** add the 4th `UpdateBenefits` parameter for the express
+  quota. The first was subsequently satisfied by T-0519's write path.
+- 2026-08-04 — ⚠️ same `ef-migration` caveat as T-0512: **the regenerated `Initial` will not apply to an
+  already-migrated database.** Owner action required.
 
 ## Review
+
+**MANUAL-GATE (PM reconciliation, 2026-08-04).** Read at HEAD: the migration, the entity, the entity
+configuration and the repository. Commit `7e1cf7f5` records a new model-metadata test pinning
+`.AreNullsDistinct(false)` on all four sole-arbiter indexes **using an unset index as a CONTROL proving the
+assertion can fail** — without that control the option is one invisible builder call no SQLite test could
+catch. **`manual_steps` OPEN for the owner: the database drop.**
+

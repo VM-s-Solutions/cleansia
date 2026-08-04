@@ -5,11 +5,11 @@ status: ready
 size: S
 owner: security
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: []
 blocks: []
 stories: []
-adrs: []
+adrs: [0034]
 layers: [backend]
 security_touching: true
 manual_steps: []
@@ -105,5 +105,21 @@ field set, because a sweep of one column is cheaper than a sweep of five.
   **GDPR export**; and it is on the **admin paged list DTO** (`EmployeeListItem.cs:52`), which ships
   every cleaner's account number to every admin list page. `depends_on` cleared — the sweep never
   needed the invoice ruling.
+- 2026-08-04 — **PM sprint-15 reconciliation — the premise MOVED and the ticket must be re-aimed before it
+  runs.** This ticket was written to sweep the exposure of `Employee.Iban`. That field no longer exists on
+  the surfaces it named: the payout work (`3092abc1`, `7e1cf7f5`) moved bank details to their own entity
+  (`EmployeePayoutDetails`), and the owner's regen (`37440bbc`) **removed `iban` from `EmployeeItem` and
+  `UpdateEmployeeCommand`**. Verified at HEAD: `Features/Employees/DTOs/EmployeeListItem.cs` no longer
+  carries `Iban`, so the admin **paged list DTO** exposure — the headline finding — is closed as a
+  side-effect.
+- 2026-08-04 — **the sweep itself was never run and is still worth running, against the NEW target.** Two
+  of the three legs are untouched by the move: logs, and the GDPR export (which now has its own
+  `GdprExportPayoutDetailsDto`). ADR-0034 decided **plaintext deliberately** — *encrypting a column we
+  print, email and GDPR-export is theatre* — and wrote down four reversal triggers; this sweep is what
+  checks those triggers have not fired. Add the new single-resource read paths
+  (`GetMyPayoutDetails`, `GetEmployeePayoutDetails`, `RevealEmployeePayoutDetails`) to the scope, and note
+  that `RevealEmployeePayoutDetails` was deliberately built as a **Command** so it rides audit, rate limit
+  and the coverage guard.
+- 2026-08-04 — **stays `ready`, size unchanged (`S`).** The re-aim is a scope correction, not new work.
 
 ## Review

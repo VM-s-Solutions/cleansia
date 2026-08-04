@@ -1,11 +1,11 @@
 ---
 id: T-0532
 title: Move the promo-code redemption reservation strictly post-commit onto IPostCommitEffects (retires the ADR-0038 §D3 interim)
-status: draft
+status: ready
 size: M
-owner: pm
+owner: architect
 created: 2026-08-03
-updated: 2026-08-03
+updated: 2026-08-04
 depends_on: []
 blocks: []
 stories: []
@@ -156,6 +156,26 @@ Both sections are marked **PROPOSED** and flip to law with the ADR.
   is `proposed` with three OPEN challenges, one of which (CH-2) can delete this ticket's premise.
   The interim it retires is live and named in code at
   `src/Cleansia.Infra.Database/Repositories/PromoCodeRedemptionRepository.cs:22`.
+- 2026-08-04 — **draft → ready** (PM sprint-15 reconciliation). 🔓 **AC0 IS CLEARED.** AC0 read *"Do not
+  build the seam against a `proposed` ADR"* — **ADR-0038 was accepted in `f7828fb8`** with *"zero blocking
+  challenges remain"*, and CH-2 (one post-commit mechanism or two), the challenge flagged as able to delete
+  this ticket's premise, was **ruled and did not**: the outbox rejection SURVIVES, with both its numbers
+  corrected (the real worst case is ~40s — drainer plus a 30s idle queue poll — not 10s, and the in-process
+  baseline is one request duration, not milliseconds). The rejection survives more cleanly than it was
+  argued: two OVERLAPPING requests versus two requests within ~40s.
+- 2026-08-04 — **the accepted ADR adds a condition this ticket must carry.** CH-P2 was SUSTAINED IN PART:
+  the interim now rests on a **call-graph accident holding a safety property** (`ApplyAsync` has exactly one
+  caller, called once). That must be pinned by a one-call-site tripwire **or** restored properly — an
+  accident nobody has written down is not a guarantee. Per CH-6 the tripwire lands **inside this ticket's
+  PR**, and the binding reason is a rule, not cost: ADR-0032 D3 requires a tree-walking guard to fail on an
+  empty corpus, so with zero executors the tripwire is **unwritable** before the seam exists, while D2
+  forbids "later". Two of three options are closed by rule.
+- 2026-08-04 — **verified at HEAD that this row is still non-orphan (ADR-0038 §D4):**
+  `Infra.Database/Repositories/PromoCodeRedemptionRepository.cs:22` carries
+  `// INTERIM(ADR-0038 §D3 → T-0532)`.
+- 2026-08-04 — **`.AreNullsDistinct(false)` on the promo per-user index is NO LONGER a separate owner
+  item** — it was folded into the regenerated `Initial` at `7e1cf7f5` and lands with the database drop. The
+  §D6.4 counter repair is still owed and is filed separately as **T-0545**.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

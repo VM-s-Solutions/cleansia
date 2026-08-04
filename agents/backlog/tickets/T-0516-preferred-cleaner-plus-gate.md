@@ -1,15 +1,15 @@
 ---
 id: T-0516
 title: Preferred cleaner is advertised as a Plus perk but any customer can use it — decide and gate
-status: blocked
+status: done
 size: S
 owner: backend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: [T-0495]
 blocks: []
 stories: []
-adrs: []
+adrs: [0036, 0039]
 layers: [backend]
 security_touching: true
 manual_steps: []
@@ -106,5 +106,31 @@ predicate if it has landed, and the three copy strings quoted in the Context.
   diffs and one of them is not a backend ticket at all. **PM-verified:** `CreateOrder.cs:140-154`
   contains the completed-order eligibility rule and **no membership rule of any kind**, while all three
   clients label the feature a Plus benefit.
+- 2026-08-04 — **done** (PM sprint-15 reconciliation). `Q-PLUS-03` was answered by the owner
+  (*favourite cleaner is Plus-only*, `2caa5f82`, carried by ADR-0036 D7), which unblocked this ticket; the
+  gate shipped in `b6f1c2a2` *"fix(security): rate-limit, Plus-gate and active-filter the favourite-cleaner
+  feed"*. **Verified at HEAD:** `GetMyServingCleaners.cs:45-46` —
+  `ResolveSlotAvailability(bool hasActiveMembership, bool? evaluatedAvailability) => hasActiveMembership ?
+  evaluatedAvailability : null;` — the gate lands **on the flag, not the list**, and the handler reads the
+  membership at `:90`. `OrderController.cs:187` carries `[EnableRateLimiting("auth")]`.
+- 2026-08-04 — **the ruling that made this a SERVER ticket is worth preserving:** ADR-0039 ruled that the
+  three disclosure gaps block the server ticket, **not the picker UI** — the exploit is `curl`, and what a
+  client renders is irrelevant. Gating the UI ticket was the natural call and would have shipped the oracle
+  behind a greyed row. Gating the LIST (rather than the flag) would have changed a shipped contract and
+  emptied it, which both clients render as *"no picker at all"*.
+- 2026-08-04 — **two further gaps closed in the same change, both beyond this ticket's original scope:** a
+  departed cleaner was still offered and would compute as FREE once the flag shipped (both
+  `Employee.IsActive` and `User.IsActive` are now checked, because `Deactivated()` on one leaves the other
+  untouched), and the query pulled **127 columns to use 4, tracked, including IBAN and PassportId into a
+  customer-facing handler** — now four columns, `AsNoTracking`, with `Take(20)` bounding at the source.
 
 ## Review
+
+**MANUAL-GATE (PM reconciliation, 2026-08-04).** Read at HEAD: `GetMyServingCleaners.cs:1-95` and
+`Web.Customer/Controllers/OrderController.cs:180-196`. `b6f1c2a2` records every gate mutation-proved with
+negative controls holding — removing `User.IsActive` fails **only** the user-deactivated case (exactly the
+gap an Employee-only check would miss), restoring the old projection fails 5 including the IBAN/PassportId
+guard, and the 429 proof floods the real limiter middleware showing a second subject on the same IP still
+served, proving the window is per-subject. **`manual_steps` discharged** — the response's nullable bool
+regen landed at `53f887b6` and the mobile re-dump at `37440bbc`.
+

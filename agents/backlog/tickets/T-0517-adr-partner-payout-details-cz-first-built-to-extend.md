@@ -1,15 +1,15 @@
 ---
 id: T-0517
 title: ADR — partner payout details, CZ first and built to extend (shape, country rule, encryption, migration)
-status: ready
+status: done
 size: M
 owner: architect
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: []
 blocks: [T-0518]
 stories: []
-adrs: []
+adrs: [0034]
 layers: [architect, db, backend]
 security_touching: true
 manual_steps: []
@@ -160,5 +160,20 @@ signal that makes AC3 load-bearing.
   label/format/required machinery plus an `ITaxIdValidator` to copy; **worse**, because the IBAN's only
   validation is `Length(15, 34)` — a 20-character sentence is a valid IBAN to this platform today.
   `ready`: passes DoR, no unmet dependency, panel is step 1.
+- 2026-08-04 — **done** (PM sprint-15 reconciliation). The deliverable is **ADR-0034**
+  (`agents/backlog/adr/0034-partner-payout-details-shape.md`), drafted `b855d758`, challenged by two lanes
+  in `eee24957`, **accepted `7fc2935e`** with 8 blocking findings folded in. **Verified at HEAD:** the ADR
+  file's header reads `- **Status:** \`accepted\` — **2026-08-02, by panel verdict.**` The panel changed the
+  design rather than ratifying it: D1's first stated reason is struck, the completeness gate reads a
+  column (`Employee.HasPayoutDetails`) instead of a hand-written include list, erasure became an id-keyed
+  set-based write, and the CZ mod-11 **direction** defect was corrected in the ADR text before any
+  implementer could copy it.
 
 ## Review
+
+**MANUAL-GATE (PM reconciliation, 2026-08-04).** Read the ADR header at HEAD and confirmed the
+`accepted` status line plus the named challenger lanes. This is a deliberation ticket: consensus IS the
+acceptance criterion, and `agents/process/deliberation.md` is satisfied (author + 2 challengers + lead
+verdict). Downstream implementation is tracked separately (T-0518/T-0519/T-0520/T-0521). **No
+`manual_steps` on this ticket.**
+

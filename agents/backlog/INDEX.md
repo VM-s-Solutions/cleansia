@@ -10,6 +10,124 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## ✅ SPRINT-15 RECONCILIATION — 2026-08-04. **This block is authoritative for every row it names.**
+>
+> The sprint moved faster than the backlog. `master..HEAD` is **56 commits** with detailed messages, and
+> the rows below them described a repository that no longer existed — the same failure the docs sweep
+> found in `CLAUDE.md`, which was wrong in **seven** separate ways for the same reason. **Every state
+> below was established from the git history and then re-verified against the tree at HEAD**, not taken
+> from a ticket and not taken on anyone's say-so. Where a claim could not be verified it is marked as
+> such. Full narrative: **`agents/backlog/status/sprint-15.md § ADDENDUM C`**.
+>
+> ### 15 tickets CLOSED — verified against the tree, one by one
+>
+> | ID | What shipped | Commit(s) | Verified at HEAD |
+> |----|----|----|----|
+> | **T-0525** | Cancellation fee no longer charges for a cleaner who never took the job | `8f447258` | `CancelOrder.cs:110` — `order.AssignedEmployees.Count > 0` |
+> | **T-0528** | The digest re-offers a job you were busy for once the conflict clears | `efee2853` | `FindReleasedCommitmentWindowAsync` + the disjunctive freshness term |
+> | **T-0529** | The digest watermark can advance under a tenant | `28763fe6` | `StampWatermarkAsync` → `GetByIdIgnoringTenantAsync`, null branch logs |
+> | **T-0530** | One offerability rule, read by every surface, enforced at the take | `37756936` (+ADR-0037) | `Core.Domain/Orders/OrderAvailability.cs`; parity gate workflow committed |
+> | **T-0513** | The false express promise removed from all three clients | `0c665c08` | scripted walk of 15 web bundles + both mobile catalogs — no perk copy anywhere |
+> | **T-0517 · T-0511 · T-0495** | The three architect panels → **ADR-0034 · ADR-0035 · ADR-0036/0039** | `7fc2935e` · `15d80faa` · `cfcadce5`+`182a5660` | all four ADR headers read `accepted` |
+> | **T-0518 · T-0512** | The payout + benefit-usage schema, folded into ONE regenerated `Initial` | `7e1cf7f5` | all six changes present in `20260723182623_Initial.cs`; still exactly one migration |
+> | **T-0519** | Payout capture, real validation, masked reads, id-keyed erasure | `3092abc1`+`077b7e8a` | the validator, three features, the erasure test |
+> | **T-0521** | Partner bank section on Android **and** iOS | `d0c08e24`·`532d98f5`·`9c13b2c7` | both `BankSectionViewModel`s + generated payout models |
+> | **T-0493** | The express waiver: resolved, metered, consumed, all four owner rulings enforced | `3092abc1` | `IExpressWaiverResolver`, `CreateOrder.cs:320` |
+> | **T-0515** | The preferred-cleaner hold enforced at **all six** surfaces + the push that ADR-0036 D10 gates it on | `3092abc1`→`22eeaec4`→`b9cb6d0f`/`532d98f5`→`eb37fdab` | `PreferredHoldSurfaceAgreementTests`, 30 push keys = 15 events × 2 |
+> | **T-0516** | Favourite-cleaner feed rate-limited, Plus-gated **on the flag**, active-filtered | `b6f1c2a2` | `GetMyServingCleaners.cs:45`, `[EnableRateLimiting("auth")]` |
+>
+> **T-0523** moved `rejected` → **`retired`** — the owner rejected the work (`579eff8f`); `rejected` is not
+> a state in `ticket-lifecycle.md` and `retired` is.
+>
+> ### 5 tickets RE-OPENED or UNBLOCKED — the work is real and nothing is stopping it
+>
+> | ID | Status | Why |
+> |----|----|----|
+> | **T-0520** | `draft` → **`ready`** | 🚨 **This is a live regression, not a feature gap.** `c968cbf9` correctly deleted partner web's `iban` control (it was `Validators.required` on a field the DTO no longer carries — **every cleaner would have been permanently unable to save their profile**, on a green build). It left partner web with **no bank capture at all**, while Android and iOS both have it. The regen it waited on **landed** (`37440bbc`). |
+> | **T-0514** | `draft` → **`ready`** | Both deps `done`, regen landed. A Plus member's express surcharge **is being waived today and no client says so** — zero consumers of `expressSurchargeWaivedByMembership` / `expressUpgradesRemaining` across web, Android and iOS. |
+> | **T-0526** | `draft` → **`ready`** | T-0525 is `done`. It is now the only thing between the corrected server rule and **T-0527**, where both mobile clients still show 50% where the backend charges 25%. |
+> | **T-0531** | `draft` → **`ready`** | Verified **not** done — the rule is absent from `multi-tenancy-and-region.md` at HEAD. |
+> | **T-0532** | `draft` → **`ready`** | 🔓 **AC0 cleared** — ADR-0038 accepted (`f7828fb8`), CH-2 ruled and did not delete the premise. |
+>
+> **T-0509** stays `ready` but was **re-aimed**: its target moved. `Employee.Iban` is gone from
+> `EmployeeItem`, `UpdateEmployeeCommand` and `EmployeeListItem`, so the admin-paged-list exposure — its
+> headline — is closed as a side-effect. The logs and GDPR-export legs are untouched and the sweep should
+> now cover `EmployeePayoutDetails` and the three new read paths.
+> **T-0522** stays `blocked` but is **partly shipped and the row said nothing**: `8ca77412` inverted the
+> invoice parties (a wrong legal category, not a field gap) and `946200c1` added the late-payment interest
+> clause. It is blocked **only** on `Q-PAYOUT-02` / `Q-PAYOUT-03`, which are legal and owner-only.
+>
+> ### 📗 The seven ADRs this sprint produced — six `accepted`, one `proposed`
+>
+> | ADR | Subject | Status | Tickets citing it |
+> |----|----|----|----|
+> | **0034** | Payout details as a scheme-discriminated record | `accepted` `7fc2935e` | T-0517 T-0518 T-0519 T-0520 T-0521 T-0522 T-0509 |
+> | **0035** | Metered membership benefits (express waiver) | `accepted` `15d80faa` | T-0511 T-0512 T-0513 T-0514 T-0493 T-0531 T-0544 |
+> | **0036** | Preferred cleaner gets **first refusal**, not priority | `accepted` `cfcadce5` | T-0495 T-0515 T-0516 T-0528 |
+> | **0037** | Offerability is a **payment-qualified status rule**, enforced at the take | `accepted` | T-0530 T-0540 T-0543 |
+> | **0038** | The promo redemption reservation runs **after** the UoW commit | `accepted` `f7828fb8` | T-0532 T-0545 |
+> | **0039** | Cleaner availability is checked **when choosing**; a busy cleaner never earns a hold | `accepted` `182a5660` | T-0495 T-0515 T-0516 T-0540 |
+> | **0040** | `Order.CurrentStatus` is **non-nullable** | 🟡 **`proposed`**, challenged `44d1b64d` — **no blocker**, two findings that change how it deploys | T-0540 |
+>
+> ⚠️ **ADR-0040 is `proposed`, and its code has already shipped** (`7e1cf7f5`), by design: the change was
+> time-boxed to the `Initial` regeneration window. Its challenger found **no** reachable production path
+> that persists a status-less `Order` — the write-time guarantee stands — but raised **CH-W3**, which is
+> the single most operationally important line in this sprint: **the regenerated migration will NEVER
+> APPLY to an already-migrated database.** See the owner block below.
+>
+> ### 12 findings filed that existed only in commit messages — `T-0533`…`T-0545`
+>
+> | ID | Finding | Owner | Status |
+> |----|----|----|----|
+> | **T-0533** | A live cross-app client import — the customer auth service imports four types from `@cleansia/partner-services`. Generated types from **two different OpenAPI documents**: the day they diverge, customer login/register/refresh compile against a shape their own server does not send | frontend | **`in_progress`** (a lane is on it; the ticket gives the diff a home and the reviewer ACs) |
+> | **T-0534** | **The module-boundary guard is mostly OFF.** `eslint.base.config.mjs:18-23` sets `'*' → ['*']`, and **44 libs** spread it — so only libs *without* a local config are governed. The catalog claims general enforcement; it has none | frontend | **`in_progress`** |
+> | **T-0535** | **97 generated-DTO object literals remain** (131 → 97 after `libs/core` and `libs/data-access` were cleared to zero). ADR-0031 predicted monotonic growth and has been right twice. The ratchet built this sprint is correctly labelled **T2-ADVISORY** because lint runs `continue-on-error` | frontend | `ready` |
+> | **T-0536** | **The lint baseline is 25 failing projects** — mostly circular dependencies and escape sequences. This is the "lint-cleanup ticket" `frontend-ci.yml:71` has promised in a comment and that never existed | pm | 🔴 **`draft` — it is an `L` and MUST be split.** It measures and splits; it does not run |
+> | **T-0537** | A library was **invisible to Nx entirely** — no `project.json`, so outside test, lint AND the boundary guard at once. **PM ran the recommended sweep: 64 lib roots, 0 others.** Remaining work is a guard, not a cleanup | frontend | `ready` |
+> | **T-0538** | **Four Web SDK hosts** still carry the recursive content glob behind the build-output nesting; only the EF startup project was fixed | backend | `ready` |
+> | **T-0539** | `MaterializeRecurringBookings` has no per-template isolation — **and the naive fix is unsafe**: `Rollback()` sets tracked entries to `Unchanged`, and **Added → Unchanged is NOT Detached**, so a half-built order survives as a phantom row. The durable answer is one DI scope per template | architect | `ready` |
+> | **T-0540** | Two status `Contains` sites close over **different shapes** (a runtime `IEnumerable` vs a `static readonly` array) and may not emit the same SQL. Both carry comments asserting an index-seek nothing verifies | db | `ready` |
+> | **T-0541** | `docs/mobile-app/**` is **structurally behind** — a single-module Android layout that no longer exists, and **zero** iOS. Its own banner calls the rewrite "tracked work"; it was not tracked | docs | `ready` |
+> | **T-0542** | **There is no changelog**, though `documentation.md`, `quality-gates.md`, `routing.md` and the docs charter all say the docs agent owns one. **Gate 7 has been passing on a step nobody could perform** | docs | `ready` |
+> | **T-0543** | 🆕 **PM-found, in no commit message.** `077b7e8a` added `order.take.already_cancelled` / `_completed`. **At HEAD, Android has both in all five locales and partner web and iOS have neither** — a cleaner tapping a dead job reads the generic error on two of three clients | frontend | **`in_progress`** — the working tree already carries the web + iOS-core halves, uncommitted. iOS **partner** coverage and the parity-guard blind spot are still open |
+> | **T-0545** | The ADR-0038 §D6.4 counter-repair script does not exist. **Every promo attempt during the outage burnt a global slot with no row behind it, so campaigns may already be dead on DEV.** Named as owed in three commits and never ticketed | backend | `ready` (owner **runs** it) |
+>
+> Plus **T-0544** — closing T-0493 *created* a gap: `0c665c08` deferred the affirmative express copy to
+> T-0493, whose thirteen ACs are all mechanism and none of them copy. So **Plus advertises four perks
+> instead of five** while the waiver quietly works. `ready`.
+>
+> ⚠️ **Tree-state discipline — read this before dispatching T-0533 / T-0534 / T-0543.** Every finding
+> above was established against **HEAD (committed)**. A web lane is **live in this working tree** and has
+> already landed, **uncommitted**, the T-0533 import removal, real `scope:`/`type:` constraints in a new
+> untracked `eslint.module-boundaries.config.mjs` with tags across the lib graph (T-0534), and the web +
+> iOS-core halves of T-0543. **All three are therefore `in_progress`, not `ready`** — filing them `ready`
+> would have invited a second instance into files that are already being edited. **A citation is only
+> true against the tree state you name**, and this is the one place in this reconciliation where HEAD and
+> the working tree disagree. Every other finding here is identical in both.
+>
+> ### 🔴 OWNER-ONLY — one item genuinely blocks work, and one item is now CLEARED
+>
+> 1. 🚨 **DROP THE DEV DATABASE.** The six schema changes were folded into a **regenerated** `Initial`
+>    with its **timestamp preserved** (`7e1cf7f5`), so `20260723182623_Initial` is **already in
+>    `__EFMigrationsHistory`** on any migrated environment. `MigrationService/Program.cs:31` reads
+>    `GetPendingMigrationsAsync()` and `:39` calls `MigrateAsync()` — **pending only** — so the new
+>    columns are **skipped silently** and the service prints "up to date" and exits **0**. Both test
+>    fixtures build **fresh** schemas, so 2807 unit / 132 integration green **proves nothing about a
+>    deployed database**. ADR-0040 CH-P3 makes it worse than cosmetic: on a drifted schema the overlap
+>    check **fails OPEN and permits a double booking**, and nothing raises an error — **it would be
+>    silent.** One query settles the state: `SELECT count(*) FROM "Orders" WHERE "CurrentStatus" IS NULL`.
+> 2. ✅ **The NSwag regens are DONE — this is a correction to the record.** Three surfaces were owed
+>    (`3092abc1`) and the owner regenerated **all three web clients plus both mobile OpenAPI documents** in
+>    `37440bbc`, with the `isAvailableForRequestedSlot` leg at `53f887b6`. **PM-verified at HEAD:**
+>    `updateBankDetails`/`getMyPayoutDetails` in the partner client, the payout DTOs in the admin client,
+>    the express-waiver fields and all **three** `MyServingCleaners` query parameters in the customer
+>    client, and the same three parameters in `customer-mobile-api.json`. **T-0520 is therefore NOT
+>    blocked on a regen.** Every remaining `nswag-regen` / `mobile-spec-redump` in the backlog (T-0526,
+>    T-0527) is **created by** future work, not pending today.
+>
+> **`.AreNullsDistinct(false)` on the promo per-user index is also off the owner list** — it was folded
+> into the regenerated `Initial` (5 occurrences in the committed migration) and lands with the drop.
+
 > ## 🟥 LIVE OUTAGE FIX SHIPPED (ADR-0038 §D3 interim) — and the ticket that retires it, **`T-0532`**
 >
 > Filed 2026-08-03. **Every order placed with a promo code threw `23503` and no order was created**:
@@ -28,17 +146,23 @@ One row per ticket. Source of truth for "what's the team doing right now".
 >
 > | ID | Title | Size | Status | depends_on | Layers | sec | Panel / gate |
 > |----|-------|------|--------|-----------|--------|-----|-------|
-> | **T-0532** | **Move the promo redemption reservation strictly POST-COMMIT onto `IPostCommitEffects`** — retires the ADR-0038 §D3 interim. The interim trades the single-statement atomic per-user cap for an app-level pre-read, and under a **non-null tenant** a genuine same-user race now surfaces as a `DbUpdateException` that rolls back a paid order instead of a clean `null`. End state restores `TryReserveRedemptionSlotAsync`'s SQL **byte-for-byte** and runs it after the pipeline's commit, on a new scoped seam registered between `PostCommitDispatchBehavior` and `ValidationPipelineBehavior`. **The code carries `INTERIM(ADR-0038 §D3 → T-0532)` and this row is what makes that marker non-orphan (§D4)** | M | **draft** | — | architect, backend | no | 🔴 **AC0 — ADR-0038 is `proposed` with 3 OPEN challenges. Do NOT start until a second instance signs the Verdict**; CH-2 (one post-commit mechanism or two) can delete this ticket's premise |
+> | **T-0532** | **Move the promo redemption reservation strictly POST-COMMIT onto `IPostCommitEffects`** — retires the ADR-0038 §D3 interim. The interim trades the single-statement atomic per-user cap for an app-level pre-read, and under a **non-null tenant** a genuine same-user race now surfaces as a `DbUpdateException` that rolls back a paid order instead of a clean `null`. End state restores `TryReserveRedemptionSlotAsync`'s SQL **byte-for-byte** and runs it after the pipeline's commit, on a new scoped seam registered between `PostCommitDispatchBehavior` and `ValidationPipelineBehavior`. **The code carries `INTERIM(ADR-0038 §D3 → T-0532)` and this row is what makes that marker non-orphan (§D4)** | M | **`ready`** | — | architect, backend | no | 🔓 **AC0 CLEARED — ADR-0038 was accepted in `f7828fb8`, zero blocking challenges.** CH-2 was ruled and did NOT delete the premise. Carries a new binding condition: the one-call-site tripwire lands **inside this PR** (CH-6 + ADR-0032 D3) |
 >
-> ### ⚠️ Two follow-ups the fix does NOT do — both owner-gated, neither on the outage path
-> 1. **`.AreNullsDistinct(false)`** on `(TenantId, PromoCodeId, UserId, SlotOrdinal)` (ADR-0038 §D5.2) —
->    ⚠️ **`ef-migration`, owner-only**. `TenantId` is NULL in single-tenant mode and Postgres treats NULLs
->    as DISTINCT, so the "backstop" unique index **finds no conflict** and the per-user cap has **no**
->    concurrent arbiter today — same class as **T-0531**. De-duplicate first or index creation fails.
-> 2. **The §D6.4 counter repair** — a `sql-scripts/` script (NOT a migration, NOT a job) reconciling
+> ### ⚠️ Two follow-ups the fix does NOT do — **both resolved by the 2026-08-04 reconciliation**
+> 1. ✅ **`.AreNullsDistinct(false)`** on `(TenantId, PromoCodeId, UserId, SlotOrdinal)` (ADR-0038 §D5.2)
+>    — **DONE, and it is no longer an owner item.** It was folded into the regenerated `Initial` at
+>    `7e1cf7f5` (the committed migration now carries `NULLS NOT DISTINCT` **5×**) and it lands with the
+>    database drop. The de-duplication this row warned about evaporates for the same reason: the database
+>    is being dropped, so there is no population to de-duplicate. The *constraint* it reasons from is
+>    still real and still unwritten — that is **T-0531**, now `ready`.
+> 2. 📋 **The §D6.4 counter repair** — a `sql-scripts/` script (NOT a migration, NOT a job) reconciling
 >    `PromoCodes.CurrentRedemptionsCount` to the ledger. **Every promo attempt since the bug shipped burnt
 >    a global slot with no row to show for it, so campaigns may be ALREADY DEAD in DEV.** Run it **after**
 >    the fix deploys and during low traffic — before the fix it repairs a state the next booking re-breaks.
+>    **Named as owed in three commits and never ticketed → now `T-0545` (`ready`).** An agent writes it;
+>    the owner runs it. ⚠️ Its `CH-7` trap: `AnonymizeCustomerData` nulls `PromoCodeId` while keeping
+>    `PromoDiscountAmount`, so the reconciliation must key on the **amount instead of** the id — "in
+>    addition" re-blinds it.
 
 > ## 🟥 CHALLENGER-ROUND FALLOUT — **7 live defects that belong to no ADR**, `T-0525`…`T-0531`
 >
@@ -50,13 +174,13 @@ One row per ticket. Source of truth for "what's the team doing right now".
 >
 > | ID | Title | Size | Status | depends_on | Layers | sec | Panel / gate |
 > |----|-------|------|--------|-----------|--------|-----|-------|
-> | **T-0525** | 🚨 **Cancellation fee charges the customer for a cleaner who never took the job — real money, shipping now.** `BookingPolicy.cs:121-125` short-circuits to free with *"No cleaner has taken the order yet"*, on a `hasBeenAccepted` computed at `CancelOrder.cs:103-104` as *"an `OrderStatusHistory` entry of `Confirmed` exists"*. **`Confirmed` has four writers and one involves a cleaner** — `TakeOrder.cs:194` (real), `HandlePaymentNotification.cs:261` (the Stripe webhook), `ConfirmRecurringOrder.cs:111` (cash auto-confirm), `AdminOverrideOrderStatus.cs:56-64` (generic lifecycle writer). So **every card order is "accepted" seconds after payment** and the free arm never fires. Card + 20 min later + cleaning tomorrow → **25% charged, 75% refunded, refund actually issued** (`CancelOrder.cs:137-145`); inside 4 h it is **50%**. The web already promises the correct rule (`en.json:807-808` *"Before a cleaner accepts — Free"*). **PM recommends the assignment-row predicate** (`order.AssignedEmployees.Count > 0`) over a status-model change — already `Include`d at `CancelOrder.cs:62-63`, and strictly more correct: `TakeOrder.cs:188` adds the assignment **unconditionally** while the `Confirmed` track at `:194` is written **only** from `New`/`Pending`, so a cleaner taking an already-webhook-Confirmed order writes **no track at all** | S | **draft** | — | architect, backend | **yes** | **architect — 1-item ruling, dispatchable today.** ADR-free **by design**; must not wait on 0035/0036 |
-> | **T-0526** | **Server-side cancellation-fee preview — contract + backend.** `CalculateCancellationFeeRate` has **exactly one** production caller and `CancelOrder.cs:171-176` returns `FeeRate` **after** the cancel, the refund and the loyalty revoke. That is a receipt, not a disclosure. No client can be made right locally: the Plus window is per-member (**seeded 4**, not 24), acceptance is a history fact, the oops window is server-side | M | **draft** | **T-0525** | architect, backend | **yes** | architect **contract lock** = step 1 · ⚠️ `nswag-regen` + `mobile-spec-redump` |
-> | **T-0527** | **Android AND iOS cancel sheets lie about the fee.** `CancelOrderSheet.kt:344-404` shows **50%** where the backend charges **25%**, and **100% / "no refund available"** where it charges **50%**; hardcodes a 24 h window a Plus member does not have. 🚨 **iOS is the same defect and the challenge did not name it** — `CancellationFeePreview.swift` mirrors the Kotlin faithfully (its own comment says so), consumed at `CancelOrderSheet.swift:220`. 🚨 **A committed iOS suite pins the wrong ladder** — `OrderStatusLogicTests.swift:175-225` goes red on the fix and is **in scope**. **Web is CORRECT and out of scope** (no cancel action at all; its wizard policy block already reads 25%/50% with a Plus-aware tier) | M | **draft** | T-0525, **T-0526** | android, ios | no | ⚠️ held until the owner confirms `mobile-spec-redump` |
-> | **T-0528** | **The new-jobs digest permanently drops a job the cleaner was busy for.** `NewJobsDigestService.cs:135-143` filters overlaps per order; if ≥1 order is notifiable, `:182` stamps the watermark past **all** candidates, so the skipped ones can never satisfy `s.CreatedOn > sinceUtc` again — **the conflict clearing does not bring them back**. The `takeable == 0` no-stamp branch (`:145-149`) is correct but is a **deferral, not a mitigation**. **Narrow in logic, broad in incidence:** it fires whenever the cleaner was free for even one job. 🚨 The muted branch at `:158-166` stamps **deliberately** for a different reason and a naive fix will delete it | M | **draft** | — | architect, backend | no | **architect** — the watermark is a single scalar and cannot express a per-cleaner non-monotone rule; 3 options, one is an `L` |
-> | **T-0529** | **The digest watermark can never advance under multi-tenancy** *(latent now, fatal later)*. `StampWatermarkAsync` (`:216`) loads via `EmployeeRepository.GetByIdAsync` — **tenant-scoped** — inside a sweep that deliberately uses `GetQueryableIgnoringTenant` (`:63`) with no override. Non-null `TenantId` → null → `:217` returns **silently**, *after* the push at `:168` was enqueued → the same cleaner re-notified every 30 min forever. **One-line fix already in the class:** `GetByIdIgnoringTenantAsync` (`EmployeeRepository.cs:53-57`) — still change-tracked, so the `:179-181` atomicity holds; **do not** use `ExecuteUpdateAsync`. Existing coverage cannot see it (`ColdPathCurrentStatusQueryTests.cs:53` wires `tenantId: null`). AC5 walks for siblings — **`HasOverlappingOrderAsync` (`OrderRepository.cs:281`) is the known second one; file it, don't fix it here.** Cross-ref **ADR-0028** | S | **draft** | — | backend | **yes** (tenancy scoping) | none — **no-decision**, an existing method substituted |
-> | **T-0530** | **Two false "mirrors X" comments — and a three-way divergence behind one.** `NewJobsDigestService.cs:48-53` claims its status set *"Mirrors `DashboardSpecifications.CreateAvailableOrdersSpec`"*; it does not (`{New, Pending, Confirmed}` vs `{Pending, Confirmed}` at `DashboardSpecifications.cs:24`). 🚨 **Scoping found it is three-way, not two-way:** `TakeOrder`'s validator (`:38-60`) has **no status rule at all**, so a `New` order is **pushed**, **absent from the board**, and **takeable**. The second false comment (`CancelOrderSheet.kt:74-79`, *"BookingPolicy tiers … 50% 4–24h / 100% <4h"*) is owned by **T-0527 AC11** — shared-file lane | S | **draft** | — | architect, backend | no | **architect — 1-item ruling:** *is a `New` order offerable to a cleaner?* |
-> | **T-0531** | 📝 **KNOWN-CONSTRAINT NOTE, not a fix.** `TenantId` is nullable and Postgres treats NULLs as DISTINCT, so **9** unique indexes that include `TenantId` enforce nothing in single-tenant mode. `UserMembershipEntityConfiguration.cs:100-109` documents the tradeoff deliberately and names the compensating guards — **that decision is sound and is not reopened.** The rule being recorded: **no design may treat such an index as its sole arbiter** — ADR-0035 D3 tried to, which is how this surfaced. **AC5: nothing is fixed, no migration, no index change** | S | **draft** | — | architect, docs | no | none — writes `agents/architecture/decisions/multi-tenancy-and-region.md`. **NOT an ADR edit** |
+> | **T-0525** | 🚨 **Cancellation fee charges the customer for a cleaner who never took the job — real money, shipping now.** `BookingPolicy.cs:121-125` short-circuits to free with *"No cleaner has taken the order yet"*, on a `hasBeenAccepted` computed at `CancelOrder.cs:103-104` as *"an `OrderStatusHistory` entry of `Confirmed` exists"*. **`Confirmed` has four writers and one involves a cleaner** — `TakeOrder.cs:194` (real), `HandlePaymentNotification.cs:261` (the Stripe webhook), `ConfirmRecurringOrder.cs:111` (cash auto-confirm), `AdminOverrideOrderStatus.cs:56-64` (generic lifecycle writer). So **every card order is "accepted" seconds after payment** and the free arm never fires. Card + 20 min later + cleaning tomorrow → **25% charged, 75% refunded, refund actually issued** (`CancelOrder.cs:137-145`); inside 4 h it is **50%**. The web already promises the correct rule (`en.json:807-808` *"Before a cleaner accepts — Free"*). **PM recommends the assignment-row predicate** (`order.AssignedEmployees.Count > 0`) over a status-model change — already `Include`d at `CancelOrder.cs:62-63`, and strictly more correct: `TakeOrder.cs:188` adds the assignment **unconditionally** while the `Confirmed` track at `:194` is written **only** from `New`/`Pending`, so a cleaner taking an already-webhook-Confirmed order writes **no track at all** | S | **`done`** | — | architect, backend | **yes** | ✅ shipped `8f447258` — the signal is now `order.AssignedEmployees.Count > 0` |
+> | **T-0526** | **Server-side cancellation-fee preview — contract + backend.** `CalculateCancellationFeeRate` has **exactly one** production caller and `CancelOrder.cs:171-176` returns `FeeRate` **after** the cancel, the refund and the loyalty revoke. That is a receipt, not a disclosure. No client can be made right locally: the Plus window is per-member (**seeded 4**, not 24), acceptance is a history fact, the oops window is server-side | M | **`ready`** | **T-0525** | architect, backend | **yes** | 🟩 **unblocked — T-0525 is `done`.** architect contract lock = step 1. Its `nswag-regen` + `mobile-spec-redump` are FUTURE (created BY this ticket), not pending on the owner |
+> | **T-0527** | **Android AND iOS cancel sheets lie about the fee.** `CancelOrderSheet.kt:344-404` shows **50%** where the backend charges **25%**, and **100% / "no refund available"** where it charges **50%**; hardcodes a 24 h window a Plus member does not have. 🚨 **iOS is the same defect and the challenge did not name it** — `CancellationFeePreview.swift` mirrors the Kotlin faithfully (its own comment says so), consumed at `CancelOrderSheet.swift:220`. 🚨 **A committed iOS suite pins the wrong ladder** — `OrderStatusLogicTests.swift:175-225` goes red on the fix and is **in scope**. **Web is CORRECT and out of scope** (no cancel action at all; its wizard policy block already reads 25%/50% with a Plus-aware tier) | M | **`draft`** | T-0525, **T-0526** | android, ios | no | ⏳ waits on T-0526 only. **The owner is NOT blocking it** — `mobile-spec-redump` is created by T-0526. Also carries T-0530's surviving half (the `CancelOrderSheet.kt` false comment, AC11) |
+> | **T-0528** | **The new-jobs digest permanently drops a job the cleaner was busy for.** `NewJobsDigestService.cs:135-143` filters overlaps per order; if ≥1 order is notifiable, `:182` stamps the watermark past **all** candidates, so the skipped ones can never satisfy `s.CreatedOn > sinceUtc` again — **the conflict clearing does not bring them back**. The `takeable == 0` no-stamp branch (`:145-149`) is correct but is a **deferral, not a mitigation**. **Narrow in logic, broad in incidence:** it fires whenever the cleaner was free for even one job. 🚨 The muted branch at `:158-166` stamps **deliberately** for a different reason and a naive fix will delete it | M | **`done`** | — | architect, backend | no | ✅ shipped `efee2853` — a second, upper-bounded freshness source; the correlated top-N subquery was DELETED |
+> | **T-0529** | **The digest watermark can never advance under multi-tenancy** *(latent now, fatal later)*. `StampWatermarkAsync` (`:216`) loads via `EmployeeRepository.GetByIdAsync` — **tenant-scoped** — inside a sweep that deliberately uses `GetQueryableIgnoringTenant` (`:63`) with no override. Non-null `TenantId` → null → `:217` returns **silently**, *after* the push at `:168` was enqueued → the same cleaner re-notified every 30 min forever. **One-line fix already in the class:** `GetByIdIgnoringTenantAsync` (`EmployeeRepository.cs:53-57`) — still change-tracked, so the `:179-181` atomicity holds; **do not** use `ExecuteUpdateAsync`. Existing coverage cannot see it (`ColdPathCurrentStatusQueryTests.cs:53` wires `tenantId: null`). AC5 walks for siblings — **`HasOverlappingOrderAsync` (`OrderRepository.cs:281`) is the known second one; file it, don't fix it here.** Cross-ref **ADR-0028** | S | **`done`** | — | backend | **yes** (tenancy scoping) | ✅ shipped `28763fe6` — `GetByIdIgnoringTenantAsync` + the warning log. Its AC5 walk found `HasOverlappingOrderAsync`, which was then fixed in `003b5379` |
+> | **T-0530** | **Two false "mirrors X" comments — and a three-way divergence behind one.** `NewJobsDigestService.cs:48-53` claims its status set *"Mirrors `DashboardSpecifications.CreateAvailableOrdersSpec`"*; it does not (`{New, Pending, Confirmed}` vs `{Pending, Confirmed}` at `DashboardSpecifications.cs:24`). 🚨 **Scoping found it is three-way, not two-way:** `TakeOrder`'s validator (`:38-60`) has **no status rule at all**, so a `New` order is **pushed**, **absent from the board**, and **takeable**. The second false comment (`CancelOrderSheet.kt:74-79`, *"BookingPolicy tiers … 50% 4–24h / 100% <4h"*) is owned by **T-0527 AC11** — shared-file lane | S | **`done`** | — | architect, backend | no | ✅ ruling = **ADR-0037**, shipped `37756936` (`Core.Domain/Orders/OrderAvailability.cs`). Layer-2 parity gate followed in `01b21746`+`e4dd27f5`. **AC11 (the Kotlin comment) moved to T-0527** |
+> | **T-0531** | 📝 **KNOWN-CONSTRAINT NOTE, not a fix.** `TenantId` is nullable and Postgres treats NULLs as DISTINCT, so **9** unique indexes that include `TenantId` enforce nothing in single-tenant mode. `UserMembershipEntityConfiguration.cs:100-109` documents the tradeoff deliberately and names the compensating guards — **that decision is sound and is not reopened.** The rule being recorded: **no design may treat such an index as its sole arbiter** — ADR-0035 D3 tried to, which is how this surfaced. **AC5: nothing is fixed, no migration, no index change** | S | **`ready`** | — | architect, docs | no | 🟩 dispatchable. **Verified NOT done** — `multi-tenancy-and-region.md` has no such rule at HEAD. `NULLS NOT DISTINCT` now ships **5×** in the committed `Initial`, so the two "one-off" comments are also wrong |
 >
 > ### 🔴 Two corrections this filing makes to the challengers' own evidence — both matter to panels running RIGHT NOW
 >
@@ -75,14 +199,19 @@ One row per ticket. Source of truth for "what's the team doing right now".
 >    `LiveActivityTokenConfiguration.cs:28` → `Initial.cs:2680-2685`. **ADR-0035 CH-C1's option 1 is
 >    precedented, not novel** — the "we'd be introducing a one-off" argument is unavailable to either side.
 >
-> ### ⚠️ Shared-file lane — three tickets edit `NewJobsDigestService.cs`. Serialize, do not fan out.
-> **`T-0529` (5 lines) → `T-0530` (a constant + a comment) → `T-0528` (the mechanism).** Never two
-> instances in that file at once.
+> ### ✅ CLOSED-OUT 2026-08-04 — the shared-file lane worked exactly as planned
+> **`T-0529` → `T-0530` → `T-0528`** all edited `NewJobsDigestService.cs` in that order, serialized, and
+> **all three are `done`.** The lane note is kept because it is the record of a sequencing call that paid
+> off: three concurrent instances in that file would have collided on the freshness expression, which
+> `efee2853` rewrote wholesale after `28763fe6` had already changed the stamp beneath it.
 >
-> ### 🟩 Dispatchable TODAY with no dependency
-> **`T-0525`'s ruling** (money, 1 item — this is the one to move first) · **`T-0529`** (passes DoR on
-> merit; held only by the lane above) · **`T-0530`'s ruling** · **`T-0531`** · **`T-0528`'s ruling**.
-> `T-0526` waits on T-0525; `T-0527` waits on T-0526 **and** on the owner's `mobile-spec-redump`.
+> ### 🟩 What is actually dispatchable from this block today (2026-08-04)
+> **`T-0531`** (`ready` — the rule is still unwritten; verified absent from
+> `multi-tenancy-and-region.md` at HEAD) · **`T-0526`** (`ready` — T-0525 is `done`).
+> **`T-0527`** waits on T-0526 **only**. ⚠️ The old line here said it also waited on *"the owner's
+> `mobile-spec-redump`"* — **that was wrong then and is wrong now**: the redump is **created by** T-0526's
+> contract change, not owed by the owner. Nothing in this block is owner-blocked.
+> **T-0525 · T-0528 · T-0529 · T-0530 are `done`** — see the reconciliation block at the top of this file.
 >
 > ### 🔵 Two owner questions filed (`questions/open.md`) — both `blocking: no`, both `pre-prod`
 > **`Q-PROMISE-01`** — both mobile clients tell every customer *"Cleaner being assigned · Within 1 hour"*,
@@ -106,30 +235,51 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > file**. **#186 / #187 / #188** did the same for T-0479+T-0490, T-0475 and T-0480. **Treat every
 > `draft`/`blocked` row below as unverified.** This addendum re-verified **only** the four decisions'
 > premises (all four still hold; `AllowsExpressUpgrade`, `PreferredEmployeeId`, `ValidateIban` and the
-> invoice's party direction are all unchanged post-#189). **A full sprint-15 reconciliation against
-> `dceed4f1` is the highest-value backlog job outstanding and is NOT done.**
+> invoice's party direction are all unchanged post-#189).
 >
-> ### The 14 new tickets + 4 rewrites + 2 closed
+> **✅ UPDATE 2026-08-04 — the reconciliation this row called for has RUN, and it covered `T-0493`,
+> `T-0495`, `T-0509` and `T-0511`…`T-0532`.** Every state was re-established from `git log master..HEAD`
+> and then verified against the tree; the table below now carries it. **It did NOT cover `T-0476`…`T-0492`
+> / `T-0494` / `T-0496`…`T-0508` / `T-0510`** — the #189 population. **Those rows are still unverified and
+> must still be ground-truthed in code before dispatch.** Saying which rows were checked, and which were
+> not, is the point: a reconciliation that implies more coverage than it has is the same defect it exists
+> to fix.
 >
-> | Owner answer | Ids |
+> ### The 14 new tickets + 4 rewrites + 2 closed — **status column reconciled 2026-08-04**
+>
+> | Owner answer | Ids (✅ = `done`, verified against the tree) |
 > |---|---|
-> | **1. Express upgrade — BUILD IT** | **T-0511** 📋 · T-0512 ⚠️ · **T-0493** ✏️ · **T-0513** 🆕 · T-0514 ⚠️ |
-> | **2. Favourite cleaner — MAKE IT WORK** | **T-0495** ✏️📋 · T-0515 · **T-0516** 🚫 |
-> | **3. Bank details — CZ first, extensible** | **T-0517** 📋🔒 · T-0518 ⚠️🔒 · T-0519 ⚠️🔒 · T-0520 🔒 · T-0521 🔒 · **T-0509** ✏️🔒 |
-> | **4. The invoice — owner supplied a real CZ specimen** | **T-0508** ✏️ · **T-0522** 🚫⚠️ · T-0523 |
-> | **Housekeeping** | **T-0475 `done`** (`1262b8cb` #187) · **T-0474 `done`** · **T-0524** 🚫 (pre-review gate) |
+> | **1. Express upgrade — BUILD IT** | ✅ **T-0511** · ✅ T-0512 · ✅ **T-0493** · ✅ **T-0513** · **T-0514 `ready`** · 🆕 **T-0544 `ready`** (the affirmative copy nobody owned) |
+> | **2. Favourite cleaner — MAKE IT WORK** | ✅ **T-0495** · ✅ T-0515 · ✅ **T-0516** (`Q-PLUS-03` answered: **Plus-only**) |
+> | **3. Bank details — CZ first, extensible** | ✅ **T-0517** · ✅ T-0518 · ✅ T-0519 · 🚨 **T-0520 `ready`** — *no bank capture on partner web at all* · ✅ T-0521 · **T-0509 `ready`** (re-aimed) |
+> | **4. The invoice — owner supplied a real CZ specimen** | **T-0508 `ready`** · **T-0522 `blocked`** 🚫 *(partly shipped — parties inverted `8ca77412`, interest clause `946200c1`; blocked only on Q-PAYOUT-02/03)* · ~~T-0523~~ **`retired`** (owner rejected) |
+> | **Housekeeping** | ✅ **T-0475** (`1262b8cb` #187) · ✅ **T-0474** · **T-0524** 🚫 (pre-review gate) |
 >
-> 📋 needs a panel · ✏️ rewritten after the owner's answer · 🆕 new finding, on no prior ticket ·
-> 🔒 `security_touching` · ⚠️ owner-only manual step · 🚫 `blocked` on an owner answer
+> ✅ `done` · 📋 needs a panel · ✏️ rewritten after the owner's answer · 🆕 new finding, on no prior
+> ticket · 🔒 `security_touching` · ⚠️ owner-only manual step · 🚫 `blocked` on an owner answer
 >
-> ### 🔴 THREE ARCHITECT PANELS BEFORE ANY CODE — all three `ready` today
-> **`T-0511`** (how a metered membership benefit is counted, consumed, reset and reversed) ·
-> **`T-0495`** (how a **pull-model** job board honours a preference — **and the fallback**) ·
-> **`T-0517`** (payout-details shape — **the owner asked for this panel explicitly**).
+> ⚠️ **The ⚠️ (owner-only manual step) markers on T-0512/T-0518/T-0519/T-0514 are DISCHARGED.** The
+> `nswag-regen`s landed in `37440bbc`; the `ef-migration` was folded into the regenerated `Initial`
+> (`7e1cf7f5`) and its **only** remaining owner action is **dropping the database** — see the
+> reconciliation block at the top of this file.
 >
-> ### 🟩 Dispatchable TODAY with no dependency
-> the three panels above · **`T-0509`** (~1h exposure sweep — **run it before T-0518 widens the field
-> set**) · **`T-0508`** (the spec; its AC1 makes `Q-PAYOUT-02` concrete) · **`T-0513`** (the copy).
+> ### ✅ THE THREE ARCHITECT PANELS ALL RAN AND ALL REACHED CONSENSUS (closed 2026-08-04)
+> **`T-0511` → ADR-0035** (`accepted`, 16 binding amendments; **four of D3's five mechanisms did not
+> survive**) · **`T-0495` → ADR-0036** (`accepted`, 24 challenges, zero blocking left; the ADR's own
+> headline safety claim was **falsified** and fixed by construction) **+ ADR-0039** (`accepted`, which
+> supersedes ADR-0036 D5.1's time-conflict half) · **`T-0517` → ADR-0034** (`accepted`, 8 blocking
+> findings folded in; **the CZ mod-11 direction was corrected in the ADR text before an implementer could
+> copy it** — implemented literally it rejected ~91% of real Czech accounts, including the owner's own).
+> **All three tickets are `done`.** Two more ADRs followed from the work itself — **0037** (offerability)
+> and **0038** (the promo outage) — plus **0040**, `proposed`.
+>
+> ### 🟩 Dispatchable TODAY from this block (2026-08-04)
+> **`T-0509`** (`ready`, but **re-aimed** — its headline target, the IBAN on the admin paged list, is
+> already gone; the logs and GDPR-export legs remain and `EmployeePayoutDetails` is the new target) ·
+> **`T-0508`** (`ready`, the spec; its AC1 makes `Q-PAYOUT-02` concrete) · **`T-0514`** and **`T-0520`**
+> (both newly `ready` — see the reconciliation block; **T-0520 is a live regression**, not a feature gap).
+> **`T-0513` · `T-0511` · `T-0495` · `T-0517` · `T-0518` · `T-0519` · `T-0521` · `T-0512` · `T-0493` ·
+> `T-0515` · `T-0516` are `done`.** **`T-0523` is `retired`** (owner rejected the work).
 >
 > ### 🔴 Corrections this pass made to rows filed above
 > - **T-0509's premise was wrong.** The IBAN is **not** "read by nothing" — it gates the
@@ -144,10 +294,21 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > - **NEW:** the three clients advertise **three different express perks**, and *"same-day"* is not what
 >   `BookingPolicy` implements (2–4 h). → **T-0513**.
 >
-> ### 🔴 Five `blocking: yes` owner questions now open
-> **`Q-PLUS-02`** (the quota's three numbers — 2 min) · **`Q-PLUS-03`** (favourite cleaner: universal or
-> Plus-only — 1 min) · **`Q-PAYOUT-02`** (*whose name is in the invoice header?*) · **`Q-PAYOUT-03`**
-> (VAT-status branch) · **`Q-PLUS-01`** + **`Q-PROFILE-01`** (carried).
+> ### 🔴 `blocking: yes` owner questions — **reconciled 2026-08-04, three of five are ANSWERED**
+> **ANSWERED and no longer blocking:** **`Q-PLUS-02`** (the quota — the owner chose **two per calendar
+> month, Plus-only**, plus the four follow-on rulings on PastDue / trial / plan swap / lapsed recurring,
+> all folded into ADR-0035 at `eefa6293`) · **`Q-PLUS-03`** (favourite cleaner is **Plus-only**, carried
+> by ADR-0036 D7; **T-0516 shipped on it**) · **`Q-AVAIL-03`** (**seats = `RequiredEmployees`**, the spare
+> seat is gone — `06159998`, shipped `305ec194`). ⚠️ **`questions/open.md` still lists Q-PLUS-02 and
+> Q-PLUS-03 as open** and its own 2026-08-03 update note says the PM should move them to `answered.md`.
+> That is backlog hygiene, not an owner action.
+> **STILL OPEN and genuinely owner-only:** **`Q-PAYOUT-02`** (*is a cleaner an employee or a
+> self-employed supplier, and who issues the document?*) · **`Q-PAYOUT-03`** (*how does the platform know
+> whether a cleaner is VAT-registered, and what does each variant print?*) — **both legal, both block
+> T-0522 and nothing else** · **`Q-PROFILE-01`** (a backend decision, not a frontend workaround; blocks
+> T-0447) · **`Q-PLUS-01`** (**narrowed** by the 2026-08-03 trial ruling — the express-waiver leg of the
+> unlimited-trial loop is closed; the discount and cancellation-window legs are not. **One Stripe
+> dashboard check settles it**).
 > **`Q-PAYOUT-01` came OFF the list** — the owner supplied a real CZ invoice; only **SK** remains.
 > **`Q-IOS-LEGAL-01`** is a **pre-submission gate** (T-0524 + `AR-PRIV-5` on the review checklist), not
 > a blocker today.
@@ -2287,9 +2448,38 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Done
 
-| ID | Title | Sprint | Merged |
-|----|-------|--------|--------|
-| _(none yet)_ | | | |
+> ⚠️ **This table said `_(none yet)_` from sprint 0 until 2026-08-04, while several hundred tickets
+> reached `done`.** It was never maintained, and a table that is empty by neglect reads exactly like a
+> table that is empty by fact. Rather than backfill fifteen sprints from memory — which would produce
+> the same class of unverified claim this reconciliation exists to remove — it now carries a **pointer**
+> plus the sprint whose closures were actually verified against the tree.
+>
+> **The authoritative per-ticket record is the `status:` field in
+> `agents/backlog/tickets/T-NNNN-*.md`.** Each `done` ticket's status log names the commit that shipped
+> it. For anything merged in the PR **#149–#170** window, see the staleness notice above — the owner
+> declined a backfill and those tickets are not represented here at all.
+
+### Sprint 15 — closed 2026-08-04 by the reconciliation, each verified against the tree
+
+| ID | Title | Shipped in |
+|----|-------|-----------|
+| T-0525 | Cancellation fee no longer charges for a cleaner who never took the job | `8f447258` |
+| T-0528 | The digest re-offers a job you were busy for once the conflict clears | `efee2853` |
+| T-0529 | The digest watermark can advance under a tenant | `28763fe6` |
+| T-0530 | One offerability rule, read by every surface, enforced at the take | `37756936` |
+| T-0513 | The false express promise removed from all three clients | `0c665c08` |
+| T-0517 | ADR-0034 — payout details as a scheme-discriminated record | `7fc2935e` |
+| T-0511 | ADR-0035 — metered membership benefits | `15d80faa` |
+| T-0495 | ADR-0036 + ADR-0039 — preferred cleaner, first refusal, availability-aware | `cfcadce5` · `182a5660` |
+| T-0512 | Membership benefit usage — entity, config, migration | `7e1cf7f5` |
+| T-0518 | Payout details — schema, entity config, migration | `7e1cf7f5` |
+| T-0519 | Payout details — capture, real validation, masked reads | `3092abc1` · `077b7e8a` |
+| T-0521 | Payout details UI — partner Android and partner iOS | `d0c08e24` · `532d98f5` · `9c13b2c7` |
+| T-0493 | Express waiver — resolved, metered, consumed server-side | `3092abc1` |
+| T-0515 | The preferred-cleaner hold, enforced at all six surfaces + its push | `22eeaec4` · `eb37fdab` |
+| T-0516 | Favourite-cleaner feed — rate limit, Plus gate, active filter | `b6f1c2a2` |
+
+**Retired:** T-0523 (QR Platba + barcode) — the owner rejected the work, `579eff8f`.
 
 ---
 

@@ -1,15 +1,15 @@
 ---
 id: T-0520
 title: Payout details UI — partner web and admin
-status: draft
+status: ready
 size: M
 owner: frontend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: [T-0519]
 blocks: []
 stories: []
-adrs: []
+adrs: [0034]
 layers: [frontend]
 security_touching: true
 manual_steps: [nswag-regen]
@@ -81,5 +81,28 @@ on per-client error namespaces.
   Angular leg so T-0519 stays a backend `M`. **Held on `nswag-regen`** per `process/routing.md` rule 6.
   **The out-of-scope note about T-0510 is deliberate:** partner onboarding has two implementations and
   this ticket must not silently pick one.
+- 2026-08-04 — **draft → ready** (PM sprint-15 reconciliation). **T-0519 is `done` and
+  `manual_steps: [nswag-regen]` is DISCHARGED** (`37440bbc`): `updateBankDetails` and `getMyPayoutDetails`
+  are in `libs/core/partner-services/.../partner-client.ts`, and the admin client carries the payout DTOs
+  (40 hits on `PayoutDetails`). **Nothing blocks this ticket.**
+- 2026-08-04 — 🚨 **this is now a LIVE REGRESSION on partner web, not a feature gap.** `c968cbf9` correctly
+  removed the `iban` form control — it was `Validators.required` against a field `EmployeeItem` no longer
+  carries, so `onSubmit`'s `if (!formGroup.valid) return` meant **every cleaner would have been permanently
+  unable to save their profile**, with only a "fill required fields" toast, on a green build. That fix was
+  right. But it left partner web with **no bank-details capture at all**: verified at HEAD, the only `iban`
+  references under `apps/cleansia-partner.app/src` and `libs/cleansia-partner-features` are the parity
+  spec's expected-key list and `profile.models.spec.ts:31-32`, which now **asserts the control's absence**.
+  Android and iOS both have the section (T-0521 `done`); web is the one client a cleaner cannot use.
+- 2026-08-04 — **AC added by the PM (carried from `9c13b2c7`, which raised it and correctly declined to fix
+  it unilaterally):** the profile-completeness key still renders as **"IBAN"** in all five locales on every
+  client, so a cleaner is told "IBAN" is missing, taps through, and lands on a form whose IBAN helper says
+  they may leave it empty. **ADR-0034 freezes the WIRE KEY, not the translation** — changing "IBAN" to
+  "Bank details" in the catalogs needs no server coordination, but it does need **all three clients in one
+  PR**. This ticket is the one that touches the third client, so it owns the change; Android and iOS
+  catalogs move with it.
+- 2026-08-04 — **admin scope, bounded honestly:** the 13 payout error keys shipped in admin voice
+  (`8ff9dfb4`) but **admin can only receive 1 of the 13 today** — there is no admin payout write endpoint,
+  so the 12 validation keys are unreachable until an admin bank-details editor lands. Do not assert them as
+  admin contract.
 
 ## Review

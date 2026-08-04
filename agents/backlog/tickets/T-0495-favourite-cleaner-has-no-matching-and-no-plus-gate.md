@@ -1,15 +1,15 @@
 ---
 id: T-0495
 title: ADR — how a pull-model job board honours a customer's preferred cleaner (and falls back)
-status: ready
+status: done
 size: M
 owner: architect
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: []
 blocks: [T-0515, T-0516]
 stories: []
-adrs: []
+adrs: [0036, 0039]
 layers: [analyst, architect]
 security_touching: false
 manual_steps: []
@@ -144,5 +144,21 @@ sell. Author, challengers and lead are **different instances** per `deliberation
   most likely to want it. **`depends_on: [T-0491]` removed** — the owner answered the question that
   dependency existed for; T-0491 remains the owner of the copy table and AC1's sentence should be
   handed to it rather than decided twice. `ready`: passes DoR, no unmet dependency, panel is step 1.
+- 2026-08-04 — **done** (PM sprint-15 reconciliation). The deliverable is **ADR-0036**
+  (`0036-preferred-cleaner-first-refusal-hold.md`), drafted `2caa5f82`, challenged in `eee24957`,
+  **accepted `cfcadce5`** ("panel complete, consensus reached 2026-08-02"). The owner's later availability
+  instruction produced **ADR-0039** (`be7fece8`, **accepted `182a5660`**), which supersedes ADR-0036
+  §D5.1's time-conflict half. **Verified at HEAD:** both ADR headers read `accepted`. The panel killed the
+  ADR's own headline safety claim (CH-V1: *"an order stuck held is not expressible"* was false — a null
+  beneficiary with a live deadline made an order invisible and un-takeable to everyone for up to 12h), and
+  the fix is delivered by construction (`GrantPreferredHold`/`ClearPreferredHold` with no independent
+  setter), not by a review checklist.
 
 ## Review
+
+**MANUAL-GATE (PM reconciliation, 2026-08-04).** Read both ADR headers at HEAD. Confirmed in code that
+the construction-level guarantee the panel demanded actually exists: `PreferredHoldUntilUtc` appears in
+`Order.cs` with the paired grant/clear mutators as its only writers, and the property's doc comment
+(`Order.cs:236-251`) records that there is **no matching algorithm and no score** — which also discharges
+T-0515 AC8. **No `manual_steps` on this ticket.**
+

@@ -3,9 +3,9 @@ id: T-0527
 title: Android and iOS cancel sheets lie about the fee — consume the server preview
 status: draft
 size: M
-owner: pm
+owner: android
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: [T-0525, T-0526]
 blocks: []
 stories: []
@@ -139,6 +139,20 @@ renders state; test-first (viewmodel test → screen).
 ## Status log
 - 2026-08-02 — draft (created by pm from the challenger round; the iOS half added by the PM after checking
   parity — the challenge named Android only. Web checked and deliberately excluded.)
+- 2026-08-04 — **PM sprint-15 reconciliation — not started; the premise is unchanged and the harm is
+  ongoing.** Its two dependencies now differ: **T-0525 is `done`** (the server no longer charges for a
+  cleaner who never took the job) and **T-0526 is now `ready`**. So the *server* is right and both mobile
+  clients are wrong — Android shows **50%** where the backend charges **25%**, and **100% / "no refund
+  available"** where it charges **50%**, and iOS mirrors the Kotlin faithfully. Fixing T-0525 without this
+  ticket has WIDENED the divergence, not narrowed it.
+- 2026-08-04 — **carried from T-0530, which is now `done`:** the second false "mirrors X" comment
+  (`CancelOrderSheet.kt:74-79`, *"BookingPolicy tiers … 50% 4–24h / 100% <4h"*) is **this ticket's AC11**
+  and is the only part of T-0530's original scope still open. It is a shared-file lane — do not fan out.
+- 2026-08-04 — ⚠️ **`manual_steps: [mobile-spec-redump]` is FUTURE, not pending.** It is created by
+  T-0526's contract change. Nothing is waiting on the owner for this ticket today.
+- 2026-08-04 — **the committed iOS suite that pins the WRONG ladder is still in scope**
+  (`OrderStatusLogicTests.swift:175-225`). It goes red on the fix. It must be corrected, never deleted or
+  weakened to accommodate one.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

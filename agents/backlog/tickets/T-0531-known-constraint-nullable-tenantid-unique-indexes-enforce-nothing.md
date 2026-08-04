@@ -1,15 +1,15 @@
 ---
 id: T-0531
 title: Known constraint — a unique index containing nullable TenantId enforces nothing in single-tenant mode
-status: draft
+status: ready
 size: S
-owner: pm
+owner: architect
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: []
 blocks: []
 stories: []
-adrs: [0028]
+adrs: [0028, 0035]
 layers: [architect, docs]
 security_touching: false
 manual_steps: []
@@ -142,6 +142,15 @@ ADR. `agents/knowledge/security-rules.md` S8 is the rule this constraint qualifi
 - 2026-08-02 — draft (created by pm from the challenger round, as a **known-constraint note**, per the
   owner's instruction that this be recorded rather than fixed). The two corrections were found by the PM
   while verifying the challengers' counts and are the reason this is worth a ticket rather than a comment.
+- 2026-08-04 — **draft → ready** (PM sprint-15 reconciliation). It passes DoR on merit and has no
+  dependency; it was never dispatched. **Verified at HEAD that the deliverable does NOT exist:**
+  `agents/architecture/decisions/multi-tenancy-and-region.md` is 89 lines and contains no occurrence of
+  "unique index", "NULLS", "DISTINCT" or "T-0531". The rule this ticket records is still unwritten.
+- 2026-08-04 — **the constraint became MORE load-bearing this sprint, not less.** The regenerated `Initial`
+  (`7e1cf7f5`) now ships `.AreNullsDistinct(false)` on four sole-arbiter indexes, and `44d1b64d`/`f7828fb8`
+  both reason from the nullable-`TenantId` fact. Two entity-config comments still call `NULLS NOT DISTINCT`
+  "a one-off" when it already ships **five** times in the committed migration — correcting those comments
+  is in this ticket's lane. **AC5 stands: nothing is fixed, no migration, no index change.**
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

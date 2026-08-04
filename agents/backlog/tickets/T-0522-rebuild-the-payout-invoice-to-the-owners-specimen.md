@@ -5,11 +5,11 @@ status: blocked
 size: M
 owner: backend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: [T-0508, T-0519]
 blocks: [T-0523]
 stories: []
-adrs: []
+adrs: [0034]
 layers: [db, backend]
 security_touching: false
 manual_steps: [ef-migration]
@@ -148,5 +148,40 @@ and the owner's specimen annotation from T-0508 AC1.
   against the sprint-15 filing:** the variable symbol **is** present and rendered, and IČ/DIČ **already
   exist** as validated columns — so the gap is narrower than "no IČ, no VAT, no bank details, no
   variable symbol" and sharper: wrong parties, wrong bank, no due date, wrong line-item shape.
+- 2026-08-04 — **PM sprint-15 reconciliation — this ticket is PARTLY SHIPPED and the row said nothing.**
+  Two of its four gaps landed while it sat `blocked`:
+  - `8ca77412` *"fix(invoice): the cleaner is the supplier, Cleansia is the customer"* — the parties were
+    **inverted**, which is a wrong legal category, not a missing field. Now matches the owner's specimen:
+    IČ, the VAT statement, contact details, both dates, the payment block, per-job line items and the
+    total. Mutation-proved — swapping the two blocks back fails four tests by name — and verified by
+    **rendering the PDFs**, not only by asserting on the field model.
+  - `946200c1` — the **late-payment interest clause**, Czech text verbatim from the owner's reference.
+    One piece of real logic: the clause is DROPPED when `DueDate` is null, because the sentence names *"the
+    due date stated on this invoice"* and with no splatnost printed it becomes an unenforceable threat.
+- 2026-08-04 — **two defects were found while inverting the parties, neither on any ticket, both fixed:**
+  the country VAT flag was about to be charged **to cleaners** (the PDF service added `SubTotal × VatRate`
+  to ANY invoice whenever the country required VAT — the customer-order regime, entangled with payouts; now
+  gated on whether the SUPPLIER is a VAT payer, fenced in both directions), and the **Czech layout could
+  never have been selected in the auto-close path** (the pay-period service loaded employees without
+  including the address's country, so the ISO code was always null and the factory always fell back to the
+  English default — one missing `ThenInclude`).
+- 2026-08-04 — **AC3 was sending the implementer to the wrong place and is corrected** (already recorded in
+  `579eff8f`, restated here so the ticket body and the index agree): the defect is in the **data**, not the
+  layout. The layout already renders account number, SWIFT and bank name and the Czech labels exist;
+  `FileExtensions.CreateSupplierData:93-108` sets only `Iban`, so a real payout invoice prints "—" for all
+  three. **The layout tests fill them by hand, which is exactly why it was invisible.** All three derive
+  from the IBAN plus a bank-code lookup — no schema change, and it does not have to wait for T-0519.
+- 2026-08-04 — **AC4 corrected against an owner ruling this ticket contradicted:** *"VS can't equal the
+  invoice number. These are 2 different and there is a separate property for it."* The specimen shows them
+  coinciding because that issuer chose to; it is not the rule.
+- 2026-08-04 — **STILL BLOCKED, and only on the owner.** `Q-PAYOUT-02` (is a cleaner an employee or a
+  self-employed supplier, and who issues the document) and `Q-PAYOUT-03` (how does the platform know
+  whether a cleaner is VAT-registered, and what does each variant print) are both `blocking: yes` in
+  `questions/open.md` and both are **legal questions no agent may answer**. Everything else on this ticket
+  is dispatchable the moment they are.
+- 2026-08-04 — **`manual_steps: [ef-migration]` re-assessed: NOT NEEDED as currently scoped.** The due date
+  is derived from the immutable issue date rather than stored (`8ca77412`), and the three empty bank fields
+  derive from the IBAN. Kept on the frontmatter only until Q-PAYOUT-03's answer is known, since a VAT-payer
+  flag would be a column.
 
 ## Review

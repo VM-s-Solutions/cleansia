@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Fiscal.Abstractions;
 
@@ -69,6 +70,16 @@ public class CountryConfiguration : Auditable
     /// so the receipt is held until the fiscal authority issues the signature.
     /// </summary>
     public FiscalEnforcementMode FiscalEnforcementMode { get; private set; } = FiscalEnforcementMode.None;
+
+    /// <summary>
+    /// ADR-0034 D3 — which payout-identifier scheme banks in this country use. Null ⇒ the country is
+    /// not open for payouts and only a self-describing (mod-97-valid) IBAN can be accepted.
+    /// <para>Exactly one column, modelled on <see cref="FiscalEnforcementMode"/>. Deliberately not a
+    /// <c>Label</c>/<c>Format</c>/<c>Required</c> triple like the tax-id fields: those describe one
+    /// scalar whose variation is its name and regex, while a bank account is a structure whose field
+    /// count changes per country — and no client reads the existing triples anyway.</para>
+    /// </summary>
+    public PayoutScheme? PayoutScheme { get; private set; }
 
     /// <summary>
     /// Per-country Stripe refund-fee rate as a percent (e.g. 1.4 means 1.4%). Null when no figure is

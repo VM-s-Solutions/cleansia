@@ -76,6 +76,30 @@ public class UserMembership : Auditable, ITenantEntity
     public DateTime? CancellationReminderSentAt { get; private set; }
 
     /// <summary>
+    /// End of the Stripe free trial, mirrored from the subscription's <c>trial_end</c>.
+    /// NULL = this enrolment is not, and never was, in a trial.
+    ///
+    /// <para>Metered benefits (ADR-0035) are withheld while <c>UtcNow &lt; TrialEndsAtUtc</c>; the
+    /// discount and the free-cancellation window are NOT (owner ruling 2026-08-03). Stripe flattens
+    /// <c>"active"</c> and <c>"trialing"</c> onto <see cref="MembershipStatus.Active"/> in
+    /// <see cref="UpdateFromStripeWebhook"/>, so without this column "is this member trialing?" has no
+    /// answer in the database.</para>
+    ///
+    /// <para>A stored instant rather than a bool, deliberately: a bool needs a writer to flip it on
+    /// conversion and no sweep exists, so it would go stale and grant waivers forever to anyone whose
+    /// conversion webhook was missed. A deadline expires by clock with no actor.</para>
+    ///
+    /// <para>The dunning trap: the <c>invoice.payment_failed</c> webhook branch returns default period
+    /// bounds on purpose and the handler passes the existing values through. <c>trial_end</c> must get the
+    /// same treatment — writing null there clears the marker for a trialing member whose first invoice
+    /// failed, re-enabling waivers for exactly the customer the ruling is about.</para>
+    /// </summary>
+    public DateTime? TrialEndsAtUtc { get; private set; }
+
+    /// <summary>Computed; do not persist. Expires by clock — no sweep, no job, no state transition.</summary>
+    public bool IsInTrial => TrialEndsAtUtc != null && DateTime.UtcNow < TrialEndsAtUtc;
+
+    /// <summary>
     /// True when the membership is currently providing benefits — Active status
     /// AND we're still inside the paid period. Computed; do not persist. Used
     /// by the pricing pipeline + cancellation policy resolver to decide whether
@@ -97,7 +121,8 @@ public class UserMembership : Auditable, ITenantEntity
         string membershipPlanId,
         string stripeSubscriptionId,
         DateTime currentPeriodStart,
-        DateTime currentPeriodEnd)
+        DateTime currentPeriodEnd,
+        DateTime? trialEndsAtUtc = null)
         => new()
         {
             UserId = userId,
@@ -106,6 +131,7 @@ public class UserMembership : Auditable, ITenantEntity
             Status = MembershipStatus.Active,
             CurrentPeriodStart = currentPeriodStart,
             CurrentPeriodEnd = currentPeriodEnd,
+            TrialEndsAtUtc = trialEndsAtUtc,
         };
 
     /// <summary>

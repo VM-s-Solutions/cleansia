@@ -245,6 +245,24 @@ public class Order : Auditable, ITenantEntity
     public string? PreferredEmployeeId { get; private set; }
 
     /// <summary>
+    /// ADR-0036 — until this instant the order is offered to <see cref="PreferredEmployeeId"/> alone.
+    /// An absolute deadline, never a duration: set once at creation through
+    /// <see cref="GrantPreferredHold"/>, never recomputed, so tuning the policy cannot re-time orders
+    /// that already exist, and expiry is <c>now &gt;= deadline</c> in a WHERE clause with no sweep, no
+    /// timer and no status transition. The failure mode of a job-driven expiry is <i>an order stuck
+    /// held</i>; the failure mode of a clock comparison is that the clock is wrong.
+    ///
+    /// <para><c>null</c> = no hold, ever — which is what makes every row without one unaffected by
+    /// construction, with no backfill.</para>
+    ///
+    /// <para>Predicates key on the DEADLINE, never on <see cref="PreferredEmployeeId"/>: keying on the
+    /// beneficiary would switch behaviour on retroactively for every order that ever carried a
+    /// preference. And the reverse pair — a deadline with nobody able to act on it — is closed at both
+    /// ends: unwritable here, and treated as no hold by the visibility rule's null-beneficiary disjunct.</para>
+    /// </summary>
+    public DateTime? PreferredHoldUntilUtc { get; private set; }
+
+    /// <summary>
     /// FK back to the <see cref="Bookings.RecurringBookingTemplate"/> that spawned
     /// this order. Null for one-off orders. Set by the materializer; lets the
     /// confirm-recurring flow find the originating template for things like
@@ -273,20 +291,20 @@ public class Order : Auditable, ITenantEntity
     private ICollection<OrderStatusTrack> _orderStatusHistory = [];
     public IReadOnlyCollection<OrderStatusTrack> OrderStatusHistory => _orderStatusHistory.ToList().AsReadOnly();
 
-    // Persisted denormalization of the latest OrderStatusHistory row, maintained in AddOrderStatus
-    // (the single append seam). OrderStatusHistory stays the authoritative audit trail.
-    private OrderStatus? _currentStatus;
-
-    // The ONE way to read current status in memory. CreatedOn is the primary (human-meaningful) sort;
-    // Sequence is the deterministic tiebreaker for same-tick transitions the ULID Id can't provide
-    // (Ulid.NewUlid() is not monotonic within a millisecond). Falls back to deriving from the loaded
-    // history for rows written before the CurrentStatus column was backfilled.
-    public OrderStatus? CurrentStatus =>
-        _currentStatus
-        ?? _orderStatusHistory
-            .OrderByDescending(s => s.CreatedOn)
-            .ThenByDescending(s => s.Sequence)
-            .FirstOrDefault()?.Status;
+    /// <summary>
+    /// Persisted denormalization of the latest <see cref="OrderStatusHistory"/> row, written ONLY by
+    /// <see cref="AddOrderStatus"/> (the single append seam); the history stays the authoritative audit
+    /// trail. CreatedOn is the primary (human-meaningful) sort and Sequence the deterministic tiebreaker
+    /// for same-tick transitions the ULID id cannot provide.
+    ///
+    /// <para><b>Non-nullable, and there is no history fallback.</b> A brand-new aggregate is
+    /// <see cref="OrderStatus.New"/> — which is what it is — and the single production creation path
+    /// appends the <c>New</c> track before the row is staged, so no persisted order can lack a status.
+    /// Making the column NOT NULL is what lets every filter drop the <c>!= null</c> conjunct that was
+    /// pushing the status term inside an OR and stopping PostgreSQL from using the leading column of
+    /// IX_Orders_CurrentStatus_CleaningDateTime.</para>
+    /// </summary>
+    public OrderStatus CurrentStatus { get; private set; }
 
     private ICollection<OrderEmployee> _assignedEmployees = [];
     public IReadOnlyCollection<OrderEmployee> AssignedEmployees => _assignedEmployees.ToList().AsReadOnly();
@@ -396,6 +414,33 @@ public class Order : Auditable, ITenantEntity
         return this;
     }
 
+    /// <summary>
+    /// ADR-0036 — the ONLY writer of the (<see cref="PreferredEmployeeId"/>,
+    /// <see cref="PreferredHoldUntilUtc"/>) pair. Writing both together is what makes a deadline with no
+    /// beneficiary — an order nobody may take and no actor may release — unreachable: a safety property
+    /// defended by a reviewer remembering to null the companion field is not a safety property.
+    /// </summary>
+    public Order GrantPreferredHold(string preferredEmployeeId, DateTime untilUtc)
+    {
+        if (string.IsNullOrWhiteSpace(preferredEmployeeId))
+        {
+            throw new ArgumentException(
+                "A preferred hold requires a beneficiary who can act on it.", nameof(preferredEmployeeId));
+        }
+
+        PreferredEmployeeId = preferredEmployeeId;
+        PreferredHoldUntilUtc = untilUtc;
+        return this;
+    }
+
+    /// <summary>Drops both halves together — anonymization, and any future path that returns the order to the board.</summary>
+    public Order ClearPreferredHold()
+    {
+        PreferredEmployeeId = null;
+        PreferredHoldUntilUtc = null;
+        return this;
+    }
+
     public Order AddOrderStatus(OrderStatusTrack orderStatusTrack)
     {
         orderStatusTrack.AssignSequence(
@@ -404,7 +449,7 @@ public class Order : Auditable, ITenantEntity
         // Recompute (rather than blindly take the appended status) so the persisted value is by
         // construction the same rule as the audit trail — a track appended with a backdated
         // CreatedOn (seeds, tests) correctly does NOT become current.
-        _currentStatus = _orderStatusHistory
+        CurrentStatus = _orderStatusHistory
             .OrderByDescending(s => s.CreatedOn)
             .ThenByDescending(s => s.Sequence)
             .First().Status;
@@ -640,7 +685,7 @@ public class Order : Auditable, ITenantEntity
         UserId = null;
         PromoCodeId = null;
         MembershipPlanIdAtPurchase = null;
-        PreferredEmployeeId = null;
+        ClearPreferredHold();
         RecurringTemplateId = null;
         Notes = null;
         SpecialInstructions = null;

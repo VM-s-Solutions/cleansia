@@ -90,29 +90,20 @@ public class TakeOrder
                 probe.CurrentStatus, probe.PaymentType, probe.PaymentStatus, probe.RecurringTemplateId);
         }
 
-        /// <summary>
-        /// The four columns <see cref="OrderAvailability"/> reads. A NULL <c>CurrentStatus</c> falls
-        /// back to the latest history row (CreatedOn desc, Sequence desc) rather than being excluded:
-        /// the read surfaces fail closed on a pre-backfill row, but the WRITE gate must not, or every
-        /// legacy order would be permanently untakeable (ADR-0037 D3).
-        /// </summary>
+        /// <summary>The four columns <see cref="OrderAvailability"/> reads.</summary>
         private Task<OfferabilityProbe?> LoadOfferabilityProbeAsync(string orderId, CancellationToken cancellationToken) =>
             _orderRepository
                 .GetQueryable()
                 .Where(o => o.Id == orderId)
                 .Select(o => new OfferabilityProbe(
-                    o.CurrentStatus ?? o.OrderStatusHistory
-                        .OrderByDescending(s => s.CreatedOn)
-                        .ThenByDescending(s => s.Sequence)
-                        .Select(s => (OrderStatus?)s.Status)
-                        .FirstOrDefault(),
+                    o.CurrentStatus,
                     o.PaymentType,
                     o.PaymentStatus,
                     o.RecurringTemplateId))
                 .FirstOrDefaultAsync(cancellationToken)!;
 
         private sealed record OfferabilityProbe(
-            OrderStatus? CurrentStatus,
+            OrderStatus CurrentStatus,
             PaymentType PaymentType,
             PaymentStatus PaymentStatus,
             string? RecurringTemplateId);

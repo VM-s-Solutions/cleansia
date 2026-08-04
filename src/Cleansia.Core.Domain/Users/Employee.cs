@@ -23,6 +23,40 @@ public class Employee : Auditable, ITenantEntity
 
     public string? IBAN { get; private set; }
 
+    /// <summary>
+    /// ADR-0034 D1.1 — the profile-completeness gate's payout term, as a scalar on the employee row
+    /// rather than a test of <see cref="PayoutDetails"/>. There is no lazy loading in this repository and
+    /// <c>GetByUserEmailAsync</c>'s include list is hand-written, so a gate reading the navigation would
+    /// return 403 for every cleaner the moment the navigation was not loaded. A column is materialized by
+    /// every loader that loads an <see cref="Employee"/> at all.
+    ///
+    /// <para>Invariant: <c>HasPayoutDetails == (an EmployeePayoutDetails row exists for this employee)</c>.
+    /// It carries <i>presence</i>, never validity (D7) — real validation applies to writes and to payout
+    /// issuance, and never retroactively invalidates a profile.</para>
+    /// </summary>
+    public bool HasPayoutDetails { get; private set; }
+
+    /// <summary>
+    /// The payout destination (ADR-0034). <b>Never <c>Include</c>d on a paged or list query</b> — the
+    /// gate does not need it (see <see cref="HasPayoutDetails"/>), and materializing the unmasked record
+    /// on the admin grid is the exposure D8's read contract exists to prevent.
+    /// </summary>
+    public EmployeePayoutDetails? PayoutDetails { get; private set; }
+
+    /// <summary>Flips the gate scalar alongside the one payout write path that creates or replaces the record.</summary>
+    public Employee MarkPayoutDetailsProvided()
+    {
+        HasPayoutDetails = true;
+        return this;
+    }
+
+    /// <summary>Clears the gate scalar alongside the id-keyed delete of the payout record (erasure, D1.1.2).</summary>
+    public Employee ClearPayoutDetails()
+    {
+        HasPayoutDetails = false;
+        return this;
+    }
+
     public decimal AverageRating { get; private set; }
 
     public int ComplaintsCount { get; private set; }
@@ -263,6 +297,10 @@ public class Employee : Auditable, ITenantEntity
         PassportId = AnonymizationMarker.Value;
         EmergencyContactName = null;
         EmergencyContactPhone = null;
+        // The child payout record is deleted by GdprDeletionService with an id-keyed write, because a
+        // navigation-walking clear here would be a silent no-op whenever the caller did not Include it
+        // (ADR-0034 D1.1.2). This only drops the gate scalar, which lives on the row already loaded.
+        HasPayoutDetails = false;
         return this;
     }
 

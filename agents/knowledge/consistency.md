@@ -338,6 +338,24 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   — catch the compensation, never the operation. All three rules in `patterns-backend.md`; seam contract
   in `roles/post-commit-effects.md`.
 
+- **Tenant-scoped unique indexes: `NULLS NOT DISTINCT` is decided by the index's JOB, not by a
+  majority (ADR-0035 AM-6, ADR-0034 D1.3, ADR-0038 §D5.2 — all `accepted`).** Single-tenant mode *is*
+  `TenantId == null` and PostgreSQL treats NULLs in a UNIQUE index as distinct, so on the platform's
+  default deployment a tenant-scoped unique index either fires or it does not, and which one is not a
+  style question:
+  - **Sole arbiter of a concurrent claim ⇒ `.AreNullsDistinct(false)` is mandatory.** No read can
+    arbitrate a race, so the index is the only thing between two simultaneous claims and it has to
+    actually fire. Live instances: `FiscalCounters`, `MembershipBenefitUsages`,
+    `PromoCodeRedemptions`, `EmployeePayoutDetails`, `LiveActivityTokens`.
+  - **Backstop behind an authoritative app-level assert ⇒ nulls-distinct is fine.** The invariant is a
+    state you can read and assert on before writing. Live instances: `UserMemberships` (at most one
+    active row per user), `LoyaltyTransactions` (the serial-replay fast-path read).
+
+  The **reviewer checks the emitted DDL, not the C# builder call.** Deviating form: a comment declining
+  the option on consistency grounds — `AreNullsDistinct(false)` has shipped in the committed `Initial`
+  migration since day one, so "we don't do that here" is a false invariant, and a confidently-wrong
+  comment is worse than none because it stops the next reviewer checking.
+
 These judgment calls are **Architect-owned**; changing one is an ADR, not an ad-hoc reversal.
 
 ## Interim implementations must name their end state (ADR-0038 §D4, amended AM-7)

@@ -116,23 +116,6 @@ public class TakeOrderOfferabilityGateTests
         Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
     }
 
-    /// <summary>
-    /// A NULL <c>CurrentStatus</c> column must NOT fail closed at the write gate the way the read
-    /// surfaces do — that would make every pre-backfill order permanently untakeable. The gate
-    /// resolves the status from the latest history row instead (ADR-0037 D3).
-    /// </summary>
-    [Fact]
-    public async Task A_Null_Status_Column_Resolves_From_History_Instead_Of_Failing_Closed()
-    {
-        var order = ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.New, maxEmployees: 2);
-        ClearPersistedCurrentStatus(order);
-        Arrange(order);
-
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
-
-        Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
-    }
-
     // ── TC-TAKE-ONE-ERROR: every refusal returns exactly one error ──
 
     /// <summary>
@@ -236,16 +219,6 @@ public class TakeOrderOfferabilityGateTests
         var failure = Assert.Single(result.Errors);
         Assert.Equal(expectedMessage, failure.ErrorMessage);
     }
-
-    /// <summary>
-    /// Drops the persisted denormalization so <c>Order.CurrentStatus</c> has to fall back to the
-    /// history. The column is written only at the <c>AddOrderStatus</c> seam and has no setter, so
-    /// a pre-backfill row cannot be built any other way.
-    /// </summary>
-    private static void ClearPersistedCurrentStatus(Order order) =>
-        typeof(Order)
-            .GetField("_currentStatus", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
-            .SetValue(order, null);
 
     private void Arrange(
         Order order,

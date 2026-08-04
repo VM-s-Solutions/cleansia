@@ -44,6 +44,17 @@ public class RecurringBookingTemplate : Auditable, ITenantEntity
 
     public PaymentType PaymentType { get; private set; }
 
+    /// <summary>
+    /// ADR-0036 D8 — the customer's preferred cleaner for every occurrence this template spawns. A
+    /// recurring customer is precisely the customer who wants the same cleaner, and until this existed
+    /// the materializer had no field to pass. Plain id, no FK, mirroring <c>Order.PreferredEmployeeId</c>.
+    /// <para>The materializer re-resolves eligibility per occurrence and DEGRADES on failure — it spawns
+    /// the order with no preference rather than dropping a customer's cleaning. Reject where someone can
+    /// react; degrade where nobody can.</para>
+    /// </summary>
+    [MaxLength(26)]
+    public string? PreferredEmployeeId { get; private set; }
+
     /// <summary>First date the template starts spawning orders (UTC).</summary>
     public DateTime StartsOn { get; private set; }
 

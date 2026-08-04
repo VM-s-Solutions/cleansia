@@ -13,7 +13,7 @@ public static class OrderMappers
 {
     public static OrderStatus GetCurrentOrderStatus(this Order order)
     {
-        return order.CurrentStatus!.Value;
+        return order.CurrentStatus;
     }
 
     /// <summary>
@@ -51,13 +51,7 @@ public static class OrderMappers
             o.MembershipDiscountAmount,
             o.PromoDiscountAmount,
             o.EstimatedTime,
-            // Persisted current status; a pre-backfill NULL column falls back to the
-            // authoritative latest-history subquery (same rule: CreatedOn desc, Sequence desc).
-            o.CurrentStatus ?? o.OrderStatusHistory
-                .OrderByDescending(s => s.CreatedOn)
-                .ThenByDescending(s => s.Sequence)
-                .Select(s => (OrderStatus?)s.Status)
-                .FirstOrDefault(),
+            o.CurrentStatus,
             o.ConfirmationCode,
             o.CurrencyId,
             new OrderListCurrencyRow(
@@ -122,7 +116,7 @@ public static class OrderMappers
             MembershipDiscountAmount: row.MembershipDiscountAmount,
             PromoDiscountAmount: row.PromoDiscountAmount,
             EstimatedTime: row.EstimatedTime,
-            OrderStatus: row.OrderStatus!.Value.MapToCode(),
+            OrderStatus: row.OrderStatus.MapToCode(),
             ConfirmationCode: row.ConfirmationCode,
             SelectedPackages: row.SelectedPackages.Select(p => new PackageListItem(
                 Id: p.Id,

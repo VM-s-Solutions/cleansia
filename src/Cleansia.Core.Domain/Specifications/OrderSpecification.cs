@@ -115,11 +115,10 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
         if (OrderStatuses is not null && OrderStatuses.Any())
         {
             // Reads the persisted Order.CurrentStatus column (denormalized from OrderStatusHistory at
-            // the AddOrderStatus seam) instead of a per-row latest-history subquery, so the status
-            // filter is index-served. Rows with a NULL column (pre-backfill) are excluded — the
-            // deploy runbook re-runs the idempotent backfill after rollout to close that window.
-            specification &= new DirectSpecification<Order>(x =>
-                x.CurrentStatus != null && OrderStatuses.Contains(x.CurrentStatus.Value));
+            // the AddOrderStatus seam) instead of a per-row latest-history subquery. The column is NOT
+            // NULL, so this is a bare IN — no null conjunct pushing the term inside an OR, which is what
+            // lets the planner seek on the leading column of IX_Orders_CurrentStatus_CleaningDateTime.
+            specification &= new DirectSpecification<Order>(x => OrderStatuses.Contains(x.CurrentStatus));
         }
 
         if (IsUnassigned.HasValue && IsUnassigned.Value)

@@ -5,9 +5,9 @@ namespace Cleansia.Tests.Configuration;
 /// <c>&lt;solutionDir&gt;/Cleansia.Infra.Scripts/SeedData/insert_seed_data.sql</c>
 /// (<c>CleansiaStartupBase.SeedDevelopmentData</c>), while the canonical, hand-maintained seed
 /// lives at the repo root as <c>sql-scripts/insert_seed_data.sql</c>. The startup copy silently
-/// drifted once (it predated the NOT NULL <c>OrderStatusHistory.Sequence</c> column, the
-/// ServiceCities variants, and the <c>Orders.CurrentStatus</c> backfill — so a fresh dev boot
-/// failed to seed at all). This pin fails the build the moment the two files diverge again.
+/// drifted once (it predated the NOT NULL <c>OrderStatusHistory.Sequence</c> column and the
+/// ServiceCities variants, so a fresh dev boot failed to seed at all). This pin fails the build the
+/// moment the two files diverge again.
 /// </summary>
 public class StartupSeedScriptSyncTests
 {

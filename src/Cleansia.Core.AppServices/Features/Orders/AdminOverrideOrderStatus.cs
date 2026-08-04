@@ -107,7 +107,7 @@ public class AdminOverrideOrderStatus
                     BusinessErrorMessage.InvalidOrderStatusTransition));
             }
 
-            var currentRank = Array.IndexOf(Lifecycle, currentStatus ?? OrderStatus.New);
+            var currentRank = Array.IndexOf(Lifecycle, currentStatus);
             var targetRank = Array.IndexOf(Lifecycle, command.TargetStatus);
 
             // A legal override is a strict forward move along the lifecycle. Same-state, backward,

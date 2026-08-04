@@ -28,7 +28,7 @@ public sealed record OrderListRow(
     decimal? MembershipDiscountAmount,
     decimal? PromoDiscountAmount,
     int EstimatedTime,
-    OrderStatus? OrderStatus,
+    OrderStatus OrderStatus,
     string ConfirmationCode,
     string CurrencyId,
     OrderListCurrencyRow Currency,

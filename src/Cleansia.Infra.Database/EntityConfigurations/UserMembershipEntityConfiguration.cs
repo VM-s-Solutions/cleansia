@@ -38,6 +38,10 @@ public class UserMembershipEntityConfiguration : AuditableEntityConfiguration<Us
         builder.Property(m => m.RenewalReminderSentAt);
         builder.Property(m => m.CancellationReminderSentAt);
 
+        // No index: read only alongside a row already loaded by the active-membership query, never a
+        // predicate on its own.
+        builder.Property(m => m.TrialEndsAtUtc);
+
         // FK to User. Restrict delete: Stripe subscription must be cancelled
         // before the user can be deleted, otherwise we'd lose the audit trail.
         builder.HasOne(m => m.User)
@@ -103,10 +107,14 @@ public class UserMembershipEntityConfiguration : AuditableEntityConfiguration<Us
         // are NOT rejected by this index (single-tenant mode); there the
         // app-level GetActiveForUserAsync assert + the StripeSubscriptionId
         // unique index are the guards, and the index hardens multi-tenant mode.
-        // This is the SAME tradeoff every other tenant-scoped unique index in
-        // this repo makes (LoyaltyTransaction (TenantId, IdempotencyKey),
-        // PromoCode/ReferralCode (TenantId, Code)); we stay consistent rather
-        // than introduce a one-off NULLS NOT DISTINCT.
+        //
+        // This index is deliberately left NULLS DISTINCT because it is a BACKSTOP
+        // behind an authoritative app-level assert — "at most one active row" is a
+        // state you can read and assert on. An index that is the SOLE ARBITER of a
+        // concurrent claim (FiscalCounters, MembershipBenefitUsages,
+        // PromoCodeRedemptions) must be NULLS NOT DISTINCT instead, because no read
+        // can arbitrate a race. AreNullsDistinct(false) is a shipped construct on
+        // this database, not a one-off to be avoided.
         //
         // Owner-only ef-migration emits this as a partial unique index.
         builder.HasIndex(m => new { m.TenantId, m.UserId })

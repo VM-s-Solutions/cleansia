@@ -190,18 +190,11 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
             },
             assert: (CleansiaDbContext _, (List<string> Sql, List<string> Memory, int RowCount) result) =>
             {
-                Assert.Equal(Cases.Length + 1, result.RowCount);
+                Assert.Equal(Cases.Length, result.RowCount);
                 Assert.Equal(result.Sql.OrderBy(id => id), result.Memory.OrderBy(id => id));
                 Assert.Equal(
                     Cases.Where(c => c.Offerable).Select(c => c.OrderId).OrderBy(id => id),
                     result.Sql.OrderBy(id => id));
-
-                // The NULL-column row is in the fixture and in neither set: a read surface fails
-                // CLOSED on a pre-backfill row. The take gate deliberately does not — it resolves the
-                // status from history first — and that asymmetry is pinned in the unit suite, because
-                // it is the one place the two forms are MEANT to disagree.
-                Assert.DoesNotContain("order-null-status", result.Sql);
-                Assert.DoesNotContain("order-null-status", result.Memory);
 
                 return Task.CompletedTask;
             });
@@ -285,16 +278,7 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
             slot++;
         }
 
-        // A pre-backfill row: real history, NULL persisted column. Written through the entity first
-        // so the history exists, then the denormalization is knocked out below.
-        context.Add(CreateOrder(
-            new OfferabilityCase("order-null-status", OrderStatus.New, PaymentType.Cash, PaymentStatus.Pending, null, false),
-            DateTime.UtcNow.AddDays(30)));
-
         await context.CommitAsync(CancellationToken.None);
-
-        await context.Database.ExecuteSqlRawAsync(
-            """UPDATE "Orders" SET "CurrentStatus" = NULL WHERE "Id" = 'order-null-status'""");
     }
 
     private static Order CreateOrder(OfferabilityCase scenario, DateTime cleaningDateTime)

@@ -26,9 +26,7 @@ namespace Cleansia.Tests.Features.Orders;
 /// <c>Orders.CurrentStatus</c> column — the same migration the hot paths took. These tests run
 /// each consumer against a real <see cref="CleansiaDbContext"/> over SQLite with rows seeded
 /// through the <see cref="Order.AddOrderStatus"/> seam, so they pin both the SQL translation of
-/// the migrated predicates and their equivalence with the history-derived rule. The GDPR export
-/// is a projection (not a filter), so it additionally pins the pre-backfill NULL-column fallback
-/// to the authoritative history subquery.
+/// the migrated predicates and their equivalence with the history-derived rule.
 /// </summary>
 public sealed class ColdPathCurrentStatusQueryTests : IDisposable
 {
@@ -245,11 +243,8 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
         Assert.Equal("1", notified.Value.Args["count"]);
     }
 
-    // ── GDPR export: a projection, so a pre-backfill NULL column must still export the true
-    //    status via the history fallback. ──
-
     [Fact]
-    public async Task GdprExport_Order_Status_Matches_History_Including_The_Null_Column_Fallback()
+    public async Task GdprExport_Order_Status_Matches_The_History_Derived_Rule()
     {
         await EnsureSchemaAsync();
         const string userId = "user-cold-gdpr";
@@ -265,17 +260,11 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
             AppendTracks(current, OrderStatus.New, OrderStatus.Confirmed, OrderStatus.InProgress, OrderStatus.Completed);
             seed.Add(current);
 
-            var legacy = NewOrder("cold-gdpr-legacy", userId);
-            AppendTracks(legacy, OrderStatus.New, OrderStatus.Confirmed);
-            seed.Add(legacy);
+            var inFlight = NewOrder("cold-gdpr-inflight", userId);
+            AppendTracks(inFlight, OrderStatus.New, OrderStatus.Confirmed);
+            seed.Add(inFlight);
 
             await seed.CommitAsync(CancellationToken.None);
-        }
-
-        await using (var nullCtx = NewContext())
-        {
-            await nullCtx.Database.ExecuteSqlRawAsync(
-                "UPDATE \"Orders\" SET \"CurrentStatus\" = NULL WHERE \"Id\" = {0}", "cold-gdpr-legacy");
         }
 
         await using var ctx = NewContext();
@@ -295,7 +284,7 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
 
         Assert.Equal(2, export.Orders.Count);
         Assert.Equal(OrderStatus.Completed, export.Orders.Single(o => o.Id == "cold-gdpr-current").Status);
-        Assert.Equal(OrderStatus.Confirmed, export.Orders.Single(o => o.Id == "cold-gdpr-legacy").Status);
+        Assert.Equal(OrderStatus.Confirmed, export.Orders.Single(o => o.Id == "cold-gdpr-inflight").Status);
     }
 
     private static Order NewOrder(string orderId, string? userId, string countryId = "cz")

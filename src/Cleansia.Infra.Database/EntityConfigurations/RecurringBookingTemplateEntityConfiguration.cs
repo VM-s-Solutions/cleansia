@@ -33,6 +33,10 @@ public class RecurringBookingTemplateEntityConfiguration : AuditableEntityConfig
         builder.Property(t => t.Rooms);
         builder.Property(t => t.Bathrooms);
         builder.Property(t => t.PaymentType).IsRequired();
+
+        // Plain id, no FK — mirrors Order.PreferredEmployeeId: a hard FK would break if the employee
+        // row is removed, and the materializer treats it as a hint it may drop.
+        builder.Property(t => t.PreferredEmployeeId).HasMaxLength(26);
         builder.Property(t => t.StartsOn).IsRequired();
         builder.Property(t => t.EndsOn);
         builder.Property(t => t.IsActive).IsRequired();

@@ -36,6 +36,11 @@ public class MembershipPlanEntityConfiguration : AuditableEntityConfiguration<Me
         builder.Property(p => p.AllowsExpressUpgrade)
             .IsRequired();
 
+        // Fail-closed default: a plan whose quota nobody has set grants nothing.
+        builder.Property(p => p.ExpressUpgradesPerMonth)
+            .IsRequired()
+            .HasDefaultValue(0);
+
         builder.Property(p => p.BillingInterval)
             .IsRequired()
             .HasConversion<int>();

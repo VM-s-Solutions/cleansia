@@ -30,6 +30,10 @@ public class EmployeeEntityConfiguration : AuditableEntityConfiguration<Employee
         builder.Property(e => e.IBAN)
             .HasMaxLength(50);
 
+        builder.Property(e => e.HasPayoutDetails)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.Property(e => e.EmergencyContactName)
             .HasMaxLength(100);
 

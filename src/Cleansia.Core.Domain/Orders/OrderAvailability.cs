@@ -41,10 +41,9 @@ public static class OrderAvailability
         [OrderStatus.New, OrderStatus.Confirmed];
 
     /// <summary>
-    /// Queryable form, composed into <c>OrderSpecification</c> and the digest sweep. Total over a
-    /// NULL <c>CurrentStatus</c>: an equality against a NULL column is UNKNOWN, so a pre-backfill
-    /// row is excluded — read surfaces fail CLOSED, which is the conservative direction for a
-    /// visibility floor. The write gate deliberately does not (see <see cref="IsOfferable"/>).
+    /// Queryable form, composed into <c>OrderSpecification</c> and the digest sweep. <c>CurrentStatus</c>
+    /// is NOT NULL, so this is a plain equality on an indexed column and the SQL and C# forms below can
+    /// no longer disagree on null semantics for the status term.
     /// </summary>
     public static Expression<Func<Order, bool>> IsOfferableSql { get; } = order =>
         (order.CurrentStatus == OrderStatus.Confirmed
@@ -52,17 +51,9 @@ public static class OrderAvailability
         && (order.PaymentStatus == PaymentStatus.Paid
             || (order.PaymentType == PaymentType.Cash && order.RecurringTemplateId == null));
 
-    /// <summary>
-    /// In-memory form — the <c>TakeOrder</c> write gate. Same rule, C# semantics.
-    ///
-    /// <para><paramref name="currentStatus"/> must already be RESOLVED by the caller (the column
-    /// when non-null, else the latest history row by CreatedOn desc / Sequence desc). The write
-    /// gate must not fail closed on a NULL column the way the read surfaces do, or every legacy
-    /// order becomes permanently untakeable. A status that is null after resolution means the order
-    /// has no status track at all, and that is not offerable.</para>
-    /// </summary>
+    /// <summary>In-memory form — the <c>TakeOrder</c> write gate. Same rule, C# semantics.</summary>
     public static bool IsOfferable(
-        OrderStatus? currentStatus,
+        OrderStatus currentStatus,
         PaymentType paymentType,
         PaymentStatus paymentStatus,
         string? recurringTemplateId) =>

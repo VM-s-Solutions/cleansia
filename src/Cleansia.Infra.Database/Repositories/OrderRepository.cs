@@ -84,9 +84,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
 
         // Realized savings come only from orders the customer actually stands to
         // benefit from: not Cancelled, and not (fully or partially) Refunded —
-        // a refund gives the money back, so nothing was saved. `CurrentStatus !=
-        // Cancelled` keeps EF's C# null semantics (an IS NULL arm), so a fresh
-        // null-status order still counts.
+        // a refund gives the money back, so nothing was saved.
         var realizedOrders = userOrders.Where(o =>
             o.CurrentStatus != OrderStatus.Cancelled
             && o.PaymentStatus != PaymentStatus.Refunded
@@ -288,21 +286,12 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // documents.
         var scanFloor = newStart.AddHours(-Order.MaxOrderSpanHours);
 
-        // Unlike the availability filters, a pre-backfill NULL CurrentStatus row cannot be
-        // excluded here — that would fail OPEN (an active legacy order stops blocking and the
-        // cleaner gets double-booked), so NULL falls back to the authoritative latest-history
-        // rule (CreatedOn desc, Sequence desc); non-null rows stay on the indexed column.
         return orders
             .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId) &&
                        o.CleaningDateTime >= scanFloor &&
                        o.CleaningDateTime < newEnd &&
                        o.CleaningDateTime.AddMinutes(o.EstimatedTime) > newStart &&
-                       ((o.CurrentStatus != null && SlotBlockingStatuses.Contains(o.CurrentStatus.Value)) ||
-                        (o.CurrentStatus == null && o.OrderStatusHistory
-                            .OrderByDescending(s => s.CreatedOn)
-                            .ThenByDescending(s => s.Sequence)
-                            .Take(1)
-                            .Any(s => SlotBlockingStatuses.Contains(s.Status)))))
+                       SlotBlockingStatuses.Contains(o.CurrentStatus))
             .AnyAsync(ct);
     }
 

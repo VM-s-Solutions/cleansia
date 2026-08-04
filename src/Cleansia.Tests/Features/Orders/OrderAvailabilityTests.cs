@@ -53,13 +53,6 @@ public class OrderAvailabilityTests
     }
 
     [Fact]
-    public void IsOfferable_Is_Total_Over_A_Null_Status()
-    {
-        Assert.False(OrderAvailability.IsOfferable(null, PaymentType.Cash, PaymentStatus.Paid, null));
-        Assert.False(OrderAvailability.IsOfferable(null, PaymentType.Card, PaymentStatus.Paid, null));
-    }
-
-    [Fact]
     public void The_Coarse_Client_Floor_Is_The_Statuses_The_Rule_Can_Ever_Admit()
     {
         Assert.Equal(

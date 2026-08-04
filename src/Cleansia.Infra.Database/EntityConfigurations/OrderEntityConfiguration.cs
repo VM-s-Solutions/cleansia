@@ -96,19 +96,24 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
         builder.HasIndex(o => new { o.PaymentType, o.CreatedOn });
 
         // Persisted current status, denormalized from OrderStatusHistory in Order.AddOrderStatus
-        // (the single append seam). Nullable: rows written before the backfill read as "unknown" and
-        // the entity falls back to deriving from the loaded history. Field access mode — the public
-        // property is get-only with the history fallback, so EF must read/write the backing field.
+        // (the single append seam). NOT NULL: every creation path appends the New track before the row
+        // is staged, so a status-less order is not constructible, and the column carrying no NULLs is
+        // what keeps the status term a plain equality/IN instead of an OR.
         builder.Property(o => o.CurrentStatus)
-            .HasField("_currentStatus")
-            .UsePropertyAccessMode(PropertyAccessMode.Field)
-            .IsRequired(false);
+            .IsRequired();
 
         // (CurrentStatus, CleaningDateTime): the leftmost prefix serves the status-set predicates
         // migrated off the per-row latest-history subquery (partner available/active dashboard
         // counts, admin/partner status filters), and the second column serves the spec's most common
         // combined shape — status set + cleaning-date window — without a second index.
         builder.HasIndex(o => new { o.CurrentStatus, o.CleaningDateTime });
+
+        // ADR-0036 — the preferred-cleaner hold deadline. Deliberately NOT indexed: the predicate's
+        // satisfying set is NULL-dominant (it matches almost every row), so a partial index on the
+        // non-null rows indexes exactly what the predicate excludes and could not serve it. The term is
+        // a residual filter after IX_Orders_CurrentStatus_CleaningDateTime has narrowed the set.
+        builder.Property(o => o.PreferredHoldUntilUtc)
+            .IsRequired(false);
 
         // Dispute webhook lookup: charge.dispute.* events resolve the order by payment intent
         // (GetByStripePaymentIntentIdIgnoringTenantAsync) on an anonymous hot path.

@@ -164,6 +164,16 @@ class OrderRepository @Inject constructor(
 }
 ```
 
+> **"Nothing recorded yet" is a repository concern, not a screen state.** Several single-resource
+> GETs answer **HTTP 400 with a business key** rather than an empty body when the record does not exist
+> yet — `Employee/GetMyPayoutDetails` → `payout.not_found` is the live one. Left raw, every caller
+> either shows a first-time cleaner an error screen or, worse, silently treats *every* failure as
+> "empty" and offers to overwrite a destination it simply could not read. Normalize it **once, at the
+> repository**: return `ApiResult<T?>` where `Success(null)` means absent and a genuine failure stays
+> `Error` (partner `ProfileRepository.getPayoutDetails`). The ViewModels then split cleanly — absent
+> renders an empty form, `Error` renders the error state — and the one place that knows the key is
+> covered by a repo test feeding the real ProblemDetails body.
+
 `networkCall` re-throws `CancellationException` (structured concurrency) and returns `null` on any
 other throwable. API services are provided per feature via a Hilt `@Module @InstallIn(SingletonComponent::class) object`
 using `@AuthRetrofit` (main) vs `@NoAuthRetrofit` (refresh-only) qualifiers.

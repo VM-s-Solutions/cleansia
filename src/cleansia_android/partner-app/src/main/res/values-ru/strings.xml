@@ -485,6 +485,17 @@
     <string name="account_number">Номер счета</string>
     <string name="iban">IBAN</string>
     <string name="swift_code">SWIFT код</string>
+    <!-- Payout destination -->
+    <string name="bank_country">Страна банка</string>
+    <string name="bank_account_prefix">Префикс счёта</string>
+    <string name="bank_account_prefix_helper">Необязательно — короткое число перед дефисом, если у вашего счёта оно есть.</string>
+    <string name="bank_account_number_helper">Часть перед косой чертой, например 5885638003.</string>
+    <string name="bank_code">Код банка</string>
+    <string name="bank_code_helper">Четыре цифры после косой черты, например 5500.</string>
+    <string name="iban_helper">Для чешского или словацкого счёта можно оставить пустым — мы вычислим его из чисел выше.</string>
+    <string name="swift_code_helper">Нужен только тогда, когда ваш банк в другой стране, чем та, где вы работаете.</string>
+    <string name="bank_account_holder">Владелец счёта</string>
+    <string name="bank_account_holder_helper">Необязательно — имя, которое банк указал для счёта, если оно отличается от вашего.</string>
 
     <!-- Emergency Contact -->
     <string name="emergency_contact">Экстренный контакт</string>
@@ -583,7 +594,6 @@
 
     <!-- Profile section validation -->
     <string name="error_profile_not_loaded">Профиль ещё не загружен</string>
-    <string name="error_iban_required">IBAN обязателен</string>
     <string name="error_name_required">Имя контакта обязательно</string>
     <string name="error_phone_required">Телефон контакта обязателен</string>
     <string name="error_pick_nationality">Выберите гражданство</string>

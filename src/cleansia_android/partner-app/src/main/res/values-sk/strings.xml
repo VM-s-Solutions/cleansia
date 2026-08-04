@@ -485,6 +485,17 @@
     <string name="account_number">Číslo účtu</string>
     <string name="iban">IBAN</string>
     <string name="swift_code">SWIFT kód</string>
+    <!-- Payout destination -->
+    <string name="bank_country">Krajina banky</string>
+    <string name="bank_account_prefix">Predčíslie</string>
+    <string name="bank_account_prefix_helper">Nepovinné — krátke číslo pred pomlčkou, ak ho váš účet má.</string>
+    <string name="bank_account_number_helper">Časť pred lomkou, napríklad 5885638003.</string>
+    <string name="bank_code">Kód banky</string>
+    <string name="bank_code_helper">Štyri číslice za lomkou, napríklad 5500.</string>
+    <string name="iban_helper">Pri českom alebo slovenskom účte ho môžete nechať prázdny — dopočítame ho z čísel vyššie.</string>
+    <string name="swift_code_helper">Potrebujeme ho len vtedy, keď je vaša banka v inej krajine, než v ktorej pracujete.</string>
+    <string name="bank_account_holder">Majiteľ účtu</string>
+    <string name="bank_account_holder_helper">Nepovinné — meno, ktoré má banka pri účte, ak sa líši od vášho.</string>
 
     <!-- Emergency Contact -->
     <string name="emergency_contact">Núdzový kontakt</string>
@@ -583,7 +594,6 @@
 
     <!-- Profile section validation -->
     <string name="error_profile_not_loaded">Profil sa ešte nenačítal</string>
-    <string name="error_iban_required">IBAN je povinný</string>
     <string name="error_name_required">Meno kontaktu je povinné</string>
     <string name="error_phone_required">Telefón kontaktu je povinný</string>
     <string name="error_pick_nationality">Vyberte svoju národnosť</string>

@@ -163,8 +163,7 @@ fun ProfileScreen(
                         ProfileSectionRow(
                             icon = Icons.Outlined.AccountBalance,
                             title = stringResource(R.string.bank_details),
-                            summary = employee.iban?.takeIf { it.isNotBlank() }
-                                ?: stringResource(R.string.no_data),
+                            summary = s.payoutSummary ?: stringResource(R.string.no_data),
                             onClick = onNavigateToBank,
                         )
                         RowDivider()

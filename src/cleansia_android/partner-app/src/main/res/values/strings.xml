@@ -485,6 +485,17 @@
     <string name="account_number">Account Number</string>
     <string name="iban">IBAN</string>
     <string name="swift_code">SWIFT Code</string>
+    <!-- Payout destination -->
+    <string name="bank_country">Bank country</string>
+    <string name="bank_account_prefix">Account prefix</string>
+    <string name="bank_account_prefix_helper">Optional — the short number before the dash, if your account has one.</string>
+    <string name="bank_account_number_helper">The part before the slash, e.g. 5885638003.</string>
+    <string name="bank_code">Bank code</string>
+    <string name="bank_code_helper">The four digits after the slash, e.g. 5500.</string>
+    <string name="iban_helper">You can leave this empty for a Czech or Slovak account — we work it out from the numbers above.</string>
+    <string name="swift_code_helper">Only needed when your bank is in a different country than the one you work in.</string>
+    <string name="bank_account_holder">Account holder</string>
+    <string name="bank_account_holder_helper">Optional — the name your bank has on the account, if it differs from yours.</string>
 
     <!-- Emergency Contact -->
     <string name="emergency_contact">Emergency Contact</string>
@@ -583,7 +594,6 @@
 
     <!-- Profile section validation -->
     <string name="error_profile_not_loaded">Profile not loaded yet</string>
-    <string name="error_iban_required">IBAN is required</string>
     <string name="error_name_required">Contact name is required</string>
     <string name="error_phone_required">Contact phone is required</string>
     <string name="error_pick_nationality">Pick your nationality</string>

@@ -1,9 +1,13 @@
 # Generated API clients — the drift contract (living decision notes)
 
-> Companion to the **immutable** `agents/backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md`
-> (ADR-0031, accepted 2026-07-30). The ADR is the frozen decision with its defended alternatives; this
-> file is the *evolving* design notes, trade-off space, and current shape. Update this when the design
-> evolves; supersede the ADR for a real decision change.
+> Companion to the **immutable** ADRs on this topic:
+> `agents/backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md` (**ADR-0031**, accepted
+> 2026-07-30 — *call sites* vs a regen) and
+> `agents/backlog/adr/0041-shared-wire-enums-are-generated-from-the-nswag-output-at-regen-time.md`
+> (**ADR-0041**, `proposed` 2026-08-04 — the *shared enum declaration*, answering `Q-ENUM-01`). The ADRs
+> are the frozen decisions with their defended alternatives; this file is the *evolving* design notes,
+> trade-off space, and current shape. Update this when the design evolves; supersede an ADR for a real
+> decision change.
 > Cross-links: `agents/process/quality-gates.md` §"After an NSwag regen…" (the binding rule),
 > `CLAUDE.md` §"NSwag Client Generation" + §"Manual Steps (owner does these)", ADR-0019 (the **iOS**
 > generated client, a different pipeline governed separately).
@@ -11,8 +15,11 @@
 ## Scope
 
 The **web** generated clients only — the three NSwag-generated TypeScript clients under
-`src/Cleansia.App/libs/core/*/src/lib/client/`. The Android/iOS generated clients come from the separate
-owner-only `mobile-spec-regen` and are **not** covered by anything on this page (ADR-0031 residue #4).
+`src/Cleansia.App/libs/core/*/src/lib/client/`, **and the shared wire-enum artifact derived from them**
+(ADR-0041). The Android/iOS generated clients come from the separate owner-only `mobile-spec-regen` and
+are **not** covered by anything on this page (ADR-0031 residue #4; restated as ADR-0041 residue 3, which
+adds the consequence that the same 12 enums exist a third and fourth time on mobile with nothing
+comparing them to the web ones).
 
 ---
 
@@ -30,11 +37,23 @@ owner-only `mobile-spec-regen` and are **not** covered by anything on this page 
 (`quality-gates.md` §"Owner-only steps"); agents flag it as a `manual_steps` entry and block dependent
 work until the owner confirms.
 
-> ⚠️ **Stale duplicate (ADR-0031 residue #5, open).** `libs/core/services/src/lib/client/admin-client.ts`
-> is written by **no** `nswag-*.json`, exported by no barrel, imported by nothing, and typechecked by
-> neither the regen guard nor the three production builds — yet `CLAUDE.md`'s repo map still advertises
-> `core/services/` as "NSwag-generated API clients". An agent following the map imports a file no regen
-> updates. Follow-up ticket + an owner-gated `CLAUDE.md` map correction.
+> 🔴 **Stale duplicate — RECLASSIFIED 2026-08-04 (ADR-0041 §1.1): not dead code, a WRONG WIRE CONTRACT.**
+> `libs/core/services/src/lib/client/admin-client.ts` is written by **no** `nswag-*.json`, exported by no
+> barrel, imported by nothing, and typechecked by neither the regen guard nor the three production
+> builds — yet `CLAUDE.md`'s repo map still advertises `core/services/` as "NSwag-generated API clients".
+> ADR-0031 recorded it as hygiene (residue #5a). It is worse than that: its `OrderStatus` is
+> `Pending=1 Confirmed=2 InProgress=3 Completed=4 Cancelled=5` — **a pre-renumber fossil**. The live
+> contract is `New=0 Pending=1 Confirmed=2 OnTheWay=3 InProgress=4 Completed=5 Cancelled=6`, so **every
+> integer from 3 up means something else**: `3` renders "In progress" for a cleaner merely *on the way*,
+> `4` renders "Completed" for a job *in progress*. Its `PaymentStatus` is missing `PartiallyRefunded=6`.
+> The sprint's parity spec does **not** cover it (`order-status-enum-parity.spec.ts:12-16` lists the
+> three live clients). **Deleted by T-0547**, not by a someday-ticket; the `CLAUDE.md` map correction
+> stays an owner-gated `MANUAL_STEP`.
+>
+> **The general lesson, worth more than the instance:** *"written by no `nswag-*.json` `output` key"* is
+> the only sound definition of "not a generated client". Any tool that reasons about the client set must
+> derive it from those keys (ADR-0041 D1.1), or this file re-appears as a fourth "client" to whoever is
+> globbing.
 
 ### The emission rule that makes a backend field a compile break
 
@@ -96,6 +115,115 @@ therefore the build's compilation unit **by construction**:
   commit; *the guard's tsconfig is the build's tsconfig* does not. Anything outside the guard is outside
   the three builds too. (The T-0439 `tsc --listFiles` enumeration that found exactly two such files is
   evidence *for* the identity, not a substitute for it.)
+
+---
+
+## The second surface: shared **wire enums** (ADR-0041, `proposed` 2026-08-04 — answers `Q-ENUM-01`)
+
+ADR-0031 guards *call sites* against a regen. Nothing guarded *two generated clients against each
+other*, or the hand-written copy a `scope:shared` lib was forced to keep. That is this section.
+
+### Why a shared copy has to exist at all
+
+`patterns-frontend.md` §"Module boundaries": a `scope:shared` lib may not import any `scope:<app>`
+client. Three shared pipes (`order-status-severity`, `order-status-icon`, `payment-status-severity`)
+need `OrderStatus`/`PaymentStatus`. So the symbol must exist somewhere shared code can read — and the
+first answer was to **type it by hand** in `libs/shared/models`. The owner ruled that out (2026-08-04):
+*"better to use the one that is generated from nswag… consider using backend enums on frontend instead
+of generating your own."*
+
+### Current shape (as ADR-0041 decides it)
+
+```
+Cleansia.Core.Domain.Enums.OrderStatus        ← the source of truth (C#, [SwaggerEnumAsInt])
+        │  three hosts' /swagger/v1/swagger.json
+        ▼
+  nswag-{partner,admin,customer}.json  ──▶  three per-host clients   (KEPT — they are three contracts)
+        │
+        │  tools/generate-wire-enums.mjs   ← reads the files named by each config's `output` key,
+        │                                    keeps the enums ALL clients declare, FAILS the regen
+        ▼                                    if any of them disagree
+  libs/shared/models/src/lib/models/wire-enums.generated.ts   ← the ONE shared declaration, machine-written
+        │
+        ▼
+  npm run typecheck   (ADR-0031 D1)
+```
+
+Ordering is load-bearing: **NSwag → formatter → wire-enum generator → typecheck.** The generator must see
+the freshly formatted clients; the typecheck must see the freshly written shared file. The owner's
+commands are unchanged (`generate-{partner,admin,customer}-client`, `generate-clients`).
+
+### The four facts that decided it
+
+1. **Five declarations, not four** — the three clients, the hand-written mirror, **and the stale
+   `libs/core/services/.../admin-client.ts` above, which had already drifted through a renumbering.** The
+   defect class is not hypothetical; it shipped and sat unseen.
+2. **It is a class: 12 enums, ×3 clients = 36 generated declarations** — `AppliedDiscountSource`,
+   `ConsentType`, `ContractStatus`, `EmployeeEntityType`, `EmployeeInvoiceStatus`, `OrderStatus`,
+   `PaymentStatus`, `PaymentType`, `PayoutDetailsStatus`, `PayoutScheme`, `PhotoType`, `SortDirection`
+   (partner declares 15 enums, customer 19, admin 27; the intersection is those 12). And there was
+   already a **third** hand-mirror nobody had counted: `SortDirection` in
+   `sort-types.models.ts:16-19`, with **no** parity spec.
+3. **The shared enum is a constant table, not a type.** TS numeric enums are *nominal*, so
+   `@cleansia/models`'s `OrderStatus` is not assignable to `customer-client`'s. The pipes compile only
+   because their parameter admits `number` (`order-status-icon.pipe.ts:13`), which is exactly what the 14
+   template call sites feed them under `strictTemplates`. **So no compiler anywhere checks the
+   integers** — which is why the check must be *generation*, not comparison.
+4. **The parity spec cannot run in CI on a regen-only commit.** It reads the clients **off disk** (an
+   import would be the scope break), so the Nx project graph has no `models → *-services` edge and
+   `models` declares no `implicitDependencies`. `frontend-ci.yml`'s blocking test step is
+   `nx affected -t test`. A regen touches only `libs/core/*-services/**` ⇒ `models` is not affected ⇒
+   **the spec does not execute.** The three unconditional builds are green because a wrong integer is not
+   a type error. *This is ADR-0031 D1's argument, re-derived on a second surface.*
+
+### What the clients do NOT do, and why (the deliberate part)
+
+**The three clients keep emitting their own copies.** `Q-ENUM-01` asked whether they should stop; the
+answer is no. Five API hosts are **deployed and regenerated independently**, so three clients from three
+specs is a faithful rendering of three contracts. One shared symbol imported by all three would let a
+client regenerated against a host that is a commit behind **claim** the current contract — the
+divergence would become structurally unobservable. **Collapsing the copies does not remove the drift; it
+removes the evidence of it**, which is the only reason the stale fossil above is legible at all. Two
+supporting grounds: the `excludedTypeNames`/`extensionCode` path is unverified NSwag behaviour inside a
+command **no agent can run**, and it would make `partner-client.ts` non-self-contained (the derived
+artifact becoming an input to the artifact it derives from).
+
+**Conceded plainly:** this leaves four declarations, down from five. The count is not the metric.
+*Provenance* (none typed by a human) and *gating* (disagreement is unshippable) are.
+
+### Invariants this adds
+
+11. **No wire enum in `libs/shared/models` is hand-written.** If a client emits it, the generator writes
+    it. Grep the lib for `export enum` and cross-check each name against the three clients — a match is a
+    violation.
+12. **Every NSwag entry point ends in the wire-enum generator AND the typecheck, in that order**
+    (invariant 2 with a second clause).
+13. **The client set is derived from the `nswag-*.json` `output` keys** — never from a glob, never from a
+    hardcoded list. A config whose output file is missing is a hard failure. *(ADR-0031 M2's property,
+    applied to a second tool; it is also what makes "is this a generated client?" mechanically decidable.)*
+14. **Anti-vacuity.** Zero clients read, zero enums found, or an empty intersection ⇒ exit 1. A generator
+    that writes an empty file and exits 0 is a non-run, not a pass (ADR-0032 D3).
+
+### Known gaps on this surface (accepted, named)
+
+| # | Gap | Bound |
+|---|---|---|
+| E1 | The pipes keep `\| number` in their signatures — nominal enums make assignability impossible across declarations | inherent to TS; it is *why* invariant 12 is load-bearing. Do not "fix" the widening without reading ADR-0041 §1.3 |
+| E2 | A client regenerated **outside** the wrapper still skips the generator | ADR-0031 M1's residue, inherited; `wire-enums.generated.spec.ts` is the committed-state backstop |
+| E3 | An enum only *some* hosts expose is not emitted; if a host stops exposing one that shared code uses, it silently leaves the file | the shared consumer then **fails to compile during the owner's regen**, by name — the correct loud failure. The generator *prints* the non-intersecting names so nobody hand-types a mirror |
+| E4 | Mobile clients declare the same 12 enums a third and fourth time; **nothing compares them to the web ones** | ADR-0019 / `mobile-spec-regen`; its own ADR if ever wanted, not a widening of this generator |
+
+### Rollout state (ADR-0041)
+
+| Step | Where | State (2026-08-04) |
+|---|---|---|
+| ADR (the placement decision + rejected options) | ADR-0041 | **`proposed`** — challenger round is **T-0546** |
+| `tools/generate-wire-enums.mjs` + its `os.tmpdir()` fixture suite | `src/Cleansia.App/tools/` | **T-0547**, blocked on the ADR |
+| `wire-enums.generated.ts` committed; `order-status.models.ts` deleted; three pipes re-pointed | `libs/shared/models`, `libs/shared/pipes` | T-0547 — **needs no regen** (derived from the already-committed clients) |
+| `SortDirection` folded in (`sort-types.models.ts` imports, does **not** re-export) | `libs/shared/models` | T-0547 |
+| Stale `libs/core/services/.../admin-client.ts` deleted | `libs/core/services` | T-0547 (closes ADR-0031 residue #5a) |
+| `patterns-frontend.md` §"Module boundaries" replacement paragraph | `agents/knowledge/` | **bound to ADR-0041 `accepted`**; literal text in ADR-0041 §7 |
+| `CLAUDE.md` repo-map correction | `CLAUDE.md` | **owner `MANUAL_STEP`** — the ticket proposes, the owner edits |
 
 ---
 
@@ -179,12 +307,18 @@ But the rejection is **bounded**, for two recorded reasons:
     State the guarantee at its true width. The chain is
     `npx nswag run <config> && bash <x>-client-formatter.sh && npm run typecheck`, and it can report
     success over a bad client in **two independent ways**:
-    - **Verified (2026-07-30):** none of `admin-`/`customer-`/`partner-client-formatter.sh` sets `set -e`,
-      and each ends in `echo "Renaming completed successfully."` (`:18`) — so **every formatter exits 0
-      even if its `sed` failed**. The `&&` chain cannot see a formatter failure on any of the three
-      clients, and the success message is printed unconditionally.
-    - **Unverified:** what `npx nswag run` returns on a partial or failed generation. Agents cannot run it
-      (owner-only), so this is an open unknown, not a claim.
+    - ~~**Verified (2026-07-30):** none of `admin-`/`customer-`/`partner-client-formatter.sh` sets
+      `set -e`…~~ **CORRECTED 2026-08-04 (architect, re-verified at HEAD): this half is now FIXED and the
+      text above was stale.** All three formatters carry `set -euo pipefail` at `:4` **plus** an explicit
+      `[ -f "$file" ] || { …; exit 1; }` output-exists check at `:7`, each with a comment naming T-0439.
+      So a failed `sed` or a missing output **does** break the `&&` chain today. *The cheap fix this
+      invariant proposed has landed; do not re-file it.*
+    - **Still unverified:** what `npx nswag run` returns on a partial or failed generation. Agents cannot
+      run it (owner-only), so this remains an open unknown, not a claim. The next owner regen can observe
+      it for free alongside the ADR-0031 Option-D experiment.
+    - **Unchanged and still true:** a green regen chain proves *the tree compiles*, not *the client
+      regenerated correctly*. The typecheck, the three builds **and** the ADR-0041 wire-enum generator all
+      only see what is on disk.
 
     What the typecheck *does* prove is exact and still worth having: whatever client file is on disk now
     compiles against every app compilation unit. What it cannot prove is that the file on disk is the
@@ -209,8 +343,9 @@ But the rejection is **bounded**, for two recorded reasons:
 | 2 | Guard covers TS + templates, not bundling/budgets/SSR/styles | exact for this defect class; the three builds remain the authority |
 | 3 | `strictTemplates` can be flipped off silently in an app's `tsconfig.json` | weakens the guard **and** the production build together → a `check-consistency.mjs` rule (ADR-0031 M3) |
 | 4 | Android/iOS generated clients are a parallel, separately-governed drift surface | `mobile-spec-regen` + ADR-0019; deliberately out of scope |
-| 4b | **The regen chain can report success over a bad client** — formatters always exit 0 (no `set -e`, trailing `echo`); `nswag run`'s failure exit code is unverified | invariant 10; `set -euo pipefail` is the cheap fix, and the T-0446 regen can observe the `nswag` half for free |
-| 5 | **Code no gate can see** — (a) the stale duplicate `libs/core/services/src/lib/client/admin-client.ts` + a `CLAUDE.md` map that points at it; (b) app-unreachable lib files (e.g. `libs/cleansia-admin-features/template-management/.../email-template-form.facade.ts`) | follow-up ticket (a dead-export sweep, not a wider guard — widening the guard to compile unreachable files would break the structural identity above); `CLAUDE.md` edits are owner-gated |
+| 4b | **The regen chain can report success over a bad client.** ~~formatters always exit 0~~ **half-CLOSED 2026-08-04:** all three formatters now carry `set -euo pipefail` + an output-exists check, so a failed `sed`/missing output breaks the chain. `nswag run`'s failure exit code **remains unverified** | invariant 10; the `nswag` half rides free on the next owner regen |
+| 5 | **Code no gate can see** — (a) the stale duplicate `libs/core/services/src/lib/client/admin-client.ts` + a `CLAUDE.md` map that points at it — **RECLASSIFIED 2026-08-04: not dead code, a drifted wire contract (renumbered `OrderStatus`), see the box above**; (b) app-unreachable lib files (e.g. `libs/cleansia-admin-features/template-management/.../email-template-form.facade.ts`) | (a) **deleted by T-0547** under ADR-0041 D5 — it is no longer a someday-item, because ADR-0041's "the clients agree" claim is false comfort while it exists. (b) still a dead-export sweep, not a wider guard. `CLAUDE.md` edits stay owner-gated |
+| 6 | **A wire enum a `scope:shared` lib needs has no importable home**, so a copy must exist there | ADR-0041: the copy is **generated** by `tools/generate-wire-enums.mjs` inside the regen, never hand-written. See §"The second surface" and gaps E1–E4 |
 
 ## Rollout state
 

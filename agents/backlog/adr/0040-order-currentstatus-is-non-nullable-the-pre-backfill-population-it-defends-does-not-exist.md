@@ -1,0 +1,300 @@
+# ADR-0040 — `Order.CurrentStatus` is **non-nullable**: the pre-backfill population the `?` defends against has never existed, the `?` is not passive (it costs an `OR` on the leading index column at every read surface), and the window in which removing it is free closes when the `Initial` migration is regenerated
+
+- **Status:** `proposed` — 2026-08-04, author mode. **Two challenger lanes requested** (§Challenge).
+  Implementation is proceeding **in parallel** because the change is time-boxed to the `Initial`
+  regeneration; §Stop conditions lists what would make me halt it.
+- **Date:** 2026-08-04
+- **Supersedes:** **ADR-0037 §D3 — the NULL-`CurrentStatus` ruling only** (three fragments, itemised
+  in §1). ADR-0037 stays `accepted`; everything else in it, including the rest of D3, is untouched.
+  This is a **partial** supersede — per `adr/README.md` the parent gets a dated pointer, not a rewrite.
+- **Answers:** `Q-AVAIL-05` (raised in `agents/architecture/decisions/preferred-cleaner-dispatch.md:600-607`
+  by ADR-0039's cost lane; never filed in `questions/open.md`). ADR-0039 itself is untouched.
+- **Applies to:** `Cleansia.Core.Domain` (`Order`, `OrderAvailability`, `OrderSpecification`) ·
+  `Cleansia.Core.AppServices` (six `?? latest-history` fallbacks) · `Cleansia.Infra.Database`
+  (`OrderEntityConfiguration`, the `Initial` migration) · **no client change, no NSwag regen**
+  (§4.3) · **no new migration** — folded into the owner's `Initial` regeneration (§6) ·
+  no change to tenancy, the pay formula, or the fiscal modes.
+
+> **One decision:** whether `Orders.CurrentStatus` may be `NULL`. The answer is **no**, because the
+> only population that could produce a `NULL` — rows written before the column existed — cannot exist
+> in a repository with one migration and a database about to be dropped. Everything else here is a
+> corollary of deleting a branch that was never reachable.
+
+---
+
+## 1 — Exactly what is superseded, and what survives
+
+ADR-0037 §D3 rules four things. **One is superseded; three stand.**
+
+| §D3 fragment | Disposition |
+|---|---|
+| `IsOfferableSql`'s contract *"Total over NULL CurrentStatus"* (ADR-0037:366, shipped at `OrderAvailability.cs:43-48`) | **SUPERSEDED** — vacuous. There is no NULL to be total over. |
+| *"**NULL `CurrentStatus` — ruled explicitly…**"* — reads fail closed on NULL, the write gate must **not**, and resolves via the latest history row instead (ADR-0037:411-418, shipped at `TakeOrder.cs:93-112`) | **SUPERSEDED** — the asymmetry it rules has no instances. Both halves collapse to "read the column". |
+| The `[CORRECTED by CH-M10]` qualification of that paragraph (ADR-0037:419-428) | **SUPERSEDED with it** — it corrected the *evidence* for a ruling that is now vacuous. |
+| `IsOfferable(OrderStatus? currentStatus, …)` — the `?` on the first parameter (ADR-0037:374-378) | **SUPERSEDED** — becomes `OrderStatus`. The other three parameters and the money axis are **unchanged**. |
+| `TC-AVAIL-EQUIV` must carry *"a recurring order with a NULL `CurrentStatus`"* (ADR-0037:430-435) | **SUPERSEDED** — that row is unconstructible. **The rest of `TC-AVAIL-EQUIV` stands**, including the row per money term. |
+| **Two evaluation forms, not one shared expression** (ADR-0037:402-409) | **STANDS.** Only its *NULL-hazard justification* dies. SQL and C# still disagree elsewhere, `.Compile()` on a request path is still banned (ADR-0036 precedent), and the equivalence test still pins them. **Do not read this ADR as licence to unify the two forms.** |
+| Location (`Cleansia.Core.Domain.Orders`), the three-member shape, `OfferableStatuses` as the coarse floor, the money-axis parameters, the struck "does NOT know: PaymentStatus" line, the `PaymentType` exhaustiveness test | **STAND, untouched.** |
+
+**ADR-0037's ruling is not wrong — it is answered.** D3 asked "what should a reader do with a NULL
+status?" and gave the right answer for a world where NULLs exist. This ADR removes the world.
+
+---
+
+## 2 — The write-time guarantee (the load-bearing verification)
+
+The fallback is safe to delete **only** if `CurrentStatus` is populated on every path that can produce
+a persisted `Order`. Verified, not assumed:
+
+**W1 — `Order.Create` does not write a status track.** `Order.cs:306-372` is a pure object
+initializer. On its own it leaves the column unset. *This is the hazard, and it is why W2 matters.*
+
+**W2 — exactly one production path constructs an `Order`, and it writes the track before the row can
+be persisted.** `Order.Create` has **one** non-test caller: `OrderFactory.cs:104`. `orderRepository.Add`
+has **one** non-test caller: `OrderFactory.cs:180` — the line *after*
+`order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order))` at `OrderFactory.cs:179`.
+There is no `CommitAsync` between them (handlers never commit — the UnitOfWork pipeline does), so no
+`Order` can be attached to the context without a status. Every other `Order.Create` / `Orders.Add`
+call site in the repo is in `Cleansia.Tests`, `Cleansia.IntegrationTests`, `Cleansia.HostTests` or
+`Cleansia.TestUtilities`.
+
+**W3 — both order-creating features go through that factory.** `CreateOrder.cs:311` and
+`MaterializeRecurringBookings.cs:141`, via the DI-registered `IOrderFactory`
+(`ServiceExtensions.cs:227`). The recurring materializer — the path most likely to have its own
+constructor — does not.
+
+**W4 — the column is written at exactly one seam and is never cleared.** `_currentStatus` is assigned
+in one place, `Order.AddOrderStatus` (`Order.cs:407-410`), which recomputes from the full history and
+takes `.First()` — never null once one track exists. Verified by search: `_currentStatus` appears in
+production code only at `Order.cs:278,285,407` and as the `HasField` string at
+`OrderEntityConfiguration.cs:103`. There is no setter. **No `ExecuteUpdate` in `src/` targets
+`Orders`** — the only bulk-shaped `Orders` mutator, `DataRetentionBackgroundService.CleanOrderCustomerPiiAsync`
+(`:136-171`), is entity-tracked and calls `Order.AnonymizeCustomerData` (`Order.cs:680`), which
+touches PII and never the status. And **no SQL path inserts an `Orders` row** —
+`sql-scripts/insert_seed_data.sql` and its startup twin contain no `Orders` insert and no
+`CurrentStatus` reference at all.
+
+**W5 — the conditional transitions the brief flagged are conditional *status changes*, not conditional
+*column writes*.** This is the distinction that makes the guarantee hold:
+
+| Path | Behaviour | Column after |
+|---|---|---|
+| `TakeOrder.cs:249-253` — `if (currentStatus is OrderStatus.New)` | when false, **no transition happens at all** | keeps its prior non-null value |
+| Cash checkout — `OrderPaymentDispatcher` Cash branch writes no status track | no transition | keeps `New` from `OrderFactory.cs:179` |
+| Stripe webhook — `HandlePaymentNotification.cs:261` (`Confirmed`) / `:304` (`Cancelled`) | transitions **through the seam** | recomputed by `AddOrderStatus` |
+| Every other writer (`ConfirmRecurringOrder`, `StartOrder`, `NotifyOnTheWay`, `CompleteOrder`, the four cancel paths, `AdminOverrideOrderStatus.cs:126`) | through the seam | recomputed |
+
+The invariant needed is *"non-null from creation onwards"*, not *"every command writes a status"*. No
+path clears it, so no path can produce a null. **Conclusion: the guarantee holds. Proceed.**
+
+**W6 — the mitigation the nullable relies on does not exist.** `OrderSpecification.cs:119-120` excuses
+its own fail-closed exclusion with *"the deploy runbook re-runs the idempotent backfill after
+rollout"*. `sql-scripts/` carries `backfill-order-completed-at.sql` and
+`backfill-employee-work-country.sql` and **no current-status backfill**; no `.sql` file in the repo
+mentions `CurrentStatus`. The nullable is defended by a script nobody wrote, for rows nobody created.
+
+---
+
+## 3 — The domain shape: a plain mapped property, private setter, one writer
+
+**Ruling.** `public OrderStatus CurrentStatus { get; private set; }` — a plain mapped property.
+`AddOrderStatus` assigns it; nothing else can.
+
+**Why not keep the computed property with a private backing field.** With the fallback deleted the
+getter computes nothing: `=> _currentStatus` is indirection with a `HasField("_currentStatus")`
+magic string behind it (`OrderEntityConfiguration.cs:103`) — a stringly-typed entity↔config coupling
+that breaks silently on rename, paid for a computation that no longer happens. The three EF lines
+(`HasField` / `UsePropertyAccessMode(Field)` / `IsRequired(false)`) all go; a non-nullable enum with a
+private setter is required by convention and EF binds its compiler-generated backing field. **The
+index line `OrderEntityConfiguration.cs:111` is unchanged and stays.**
+
+**What must NOT change: the recompute inside `AddOrderStatus` (`Order.cs:404-410`).** It is not a
+fallback — it is the *definition* of the column ("the latest history row by `CreatedOn` desc,
+`Sequence` desc"), and it is why a **backdated** track (seeds, tests) correctly does not become
+current. Replacing it with `_currentStatus = orderStatusTrack.Status` would be a silent semantic
+change. Keep it verbatim; only its assignment target changes.
+
+**The one residual, named.** `OrderStatus.New = 0`, so an in-memory `Order` that has been `Create`d
+but not yet given a track now reads `New` instead of `null`. That window is ~75 lines inside
+`OrderFactory` (:104→:179) and is unreachable by any consumer; today the same window produces an
+**NRE** at `OrderMappers.cs:16` (`CurrentStatus!.Value`), so the change trades a crash for a benign
+default. **Moving the `New` track into `Order.Create` would close the window properly and is
+deliberately NOT ruled here** — it would double-write a track at ~60 test call sites that already call
+`Create` then `AddOrderStatus(New)`, and renumber `Sequence`. That is a separate decision; file it,
+don't smuggle it.
+
+**`_orderStatusHistory`-derived reads elsewhere — four categories, three fates:**
+
+1. **The getter fallback** (`Order.cs:284-289`) — **deleted**.
+2. **The `AddOrderStatus` recompute** (`Order.cs:407-410`) — **kept** (above).
+3. **The six query-side `?? latest-history` fallbacks** — **deleted**; see §4. Each one is a
+   **compile error** after the type change (`??` on a non-nullable left operand; `.Value` on a
+   non-`Nullable<T>`), so the compiler enumerates the call sites — this migration is not
+   review-enforced.
+4. **Genuine audit-trail reads** — `OrderStatusHistory` as history (`OrderStatusHistoryMappers`, the
+   status-history DTOs, `Include(o => o.OrderStatusHistory)` where the *trail* is the payload) —
+   **untouched**. `OrderStatusHistory` remains the authoritative audit trail; this ADR only removes
+   its use as a *substitute for the column*.
+
+   ⚠️ **One trap for the implementer.** `DataRetentionBackgroundService.cs:149` filters on
+   `o.OrderStatusHistory.Any(h => h.Status == OrderStatus.Completed)`. That is category 4, **not**
+   category 3: it asks *"was this order ever completed"*, which a `CurrentStatus == Completed`
+   rewrite would silently narrow to *"is it completed now"* — a different set, and it governs PII
+   erasure. **Leave it alone.** The test for the category is the question, not the shape: a
+   `?? latest-history` is a substitute for the column; an `Any(...)` over the trail is a question
+   only the trail can answer.
+
+---
+
+## 4 — Consequence per reader of the column
+
+### 4.1 The two sargability sites (the reason ADR-0039's cost lane raised this)
+
+| Site | Today | Becomes |
+|---|---|---|
+| `OrderSpecification.cs:121-122` | `x.CurrentStatus != null && OrderStatuses.Contains(x.CurrentStatus.Value)` | `OrderStatuses.Contains(x.CurrentStatus)` — and the comment at `:117-120`, including the non-existent backfill promise (W6), goes with it |
+| `OrderRepository.cs:291-306` (`HasOverlappingOrderAsync`) | `(CurrentStatus != null && SlotBlockingStatuses.Contains(…)) \|\| (CurrentStatus == null && OrderStatusHistory…Take(1)…)` | `SlotBlockingStatuses.Contains(o.CurrentStatus)` — **the correlated subquery disappears entirely** |
+
+### 4.2 Every other consumer
+
+| Site | Today | Becomes | Note |
+|---|---|---|---|
+| `OrderMappers.cs:16` `GetCurrentOrderStatus` | `order.CurrentStatus!.Value` | `order.CurrentStatus` | latent NRE deleted. The extension is now a pure alias with ~8 call sites — **keep it** (a rename is churn with no design value); inlining is an optional consistency ticket, not this change |
+| `OrderMappers.cs:54-60` (list projection) | `?? latest-history subquery` | `o.CurrentStatus` | `OrderListRow.OrderStatus` (`OrderListRow.cs:31`) drops its `?`; `:125` `row.OrderStatus!.Value.MapToCode()` → `row.OrderStatus.MapToCode()` |
+| `TakeOrder.cs:99-118` | probe resolves `?? latest-history` | `o.CurrentStatus`; `OfferabilityProbe.CurrentStatus` drops its `?` | the ADR-0037 D3 asymmetry this implements is what §1 supersedes |
+| `TakeOrder.cs:77,83` `probe?.CurrentStatus != …` | — | **unchanged, still compiles** | `?.` on the *probe* keeps the lift; not-found still passes to the existence rule |
+| `GdprExportService.cs:46-48` | `?? latest-history subquery` | `o.CurrentStatus` | export value identical |
+| `AdminOverrideOrderStatus.cs:110` | `Array.IndexOf(Lifecycle, currentStatus ?? OrderStatus.New)` | `Array.IndexOf(Lifecycle, currentStatus)` | the `?? New` default was for NULL rows; the `currentRank < 0` guard at `:118` **stays** — it now guards only the "member added to `OrderStatus`, forgotten in `Lifecycle`" case, which is exactly what ADR-0037 D5 wrote it for. `StatusSnapshot.Status`'s `?` (`:27`) becomes vestigial; tighten or leave, no behaviour |
+| `OrderRepository.cs:85-93` (realized savings) | `o.CurrentStatus != OrderStatus.Cancelled` | **code unchanged, comment must go** | the comment at `:87-89` explicitly relies on EF emitting an `IS NULL` arm *"so a fresh null-status order still counts"*. That arm disappears. Result identical (no NULLs), **claim false** — a comment asserting a mechanism that no longer exists is the defect class ADR-0037 exists to close |
+| `RegisterLiveActivityToken.cs:76`, `SendLiveActivityUpdateHandler.cs:112`, `MarkCashCollected.cs:80` | `order?.CurrentStatus …` | **unchanged** | the `?` is on the *order*, not the status |
+| `StartOrder.cs:107`, `GetMyServingCleaners.cs:50`, `OrderRepository.cs:318` | `o.CurrentStatus == <status>` | **unchanged** | already unconditional equality; they gain the same index shape for free |
+| `OrderAvailability.cs:49-53` `IsOfferableSql` | unchanged expression, doc comment's NULL-totality paragraph deleted | | |
+| `OrderAvailability.cs:64-72` `IsOfferable` | `OrderStatus? currentStatus` | `OrderStatus currentStatus`; the "must already be RESOLVED by the caller" paragraph deleted | |
+
+### 4.3 The wire is unaffected — **no NSwag regen, no client work**
+
+Every response path already exposes a **non-nullable** `Code` (`OrderMappers.cs:125`, `:195`, `:253`
+all dereference before `MapToCode()`). The OpenAPI shape does not change. Web, Android and iOS are
+untouched by this ADR.
+
+### 4.4 Tests that must be **deleted, not fixed**
+
+The NULL-column cases are unconstructible after the change — the raw `UPDATE … SET "CurrentStatus" =
+NULL` will fail the NOT NULL constraint, and the reflection case loses its field:
+
+`OrderOfferabilityAgreementTests.cs:288-297` · `HasOverlappingOrderStatusTests.cs:107,214-215` ·
+`OrderCurrentStatusPersistenceTests.cs:210-214` · `ColdPathCurrentStatusQueryTests.cs:248,277-278` ·
+`OrderListProjectionEquivalenceTests.cs:29,146-147` ·
+**`TakeOrderOfferabilityGateTests.cs:121,242-247`** — this one reflects on the literal field name
+`"_currentStatus"`; with an auto-property the field becomes `<CurrentStatus>k__BackingField`, so it
+fails **at runtime, not at compile time**. It is the one deletion the compiler will not find for you.
+
+Deleting a test that pins a now-impossible state is correct. Deleting one that pins a *reachable*
+state is not — if any of the above turns out to construct its NULL through a path §2 did not find,
+**that is a W-series counter-example and it blocks this ADR** (§Stop conditions).
+
+---
+
+## 5 — What is claimed about the query plan, and what is **not**
+
+**Claimed (structural, certain):** after the change the status term is
+`"CurrentStatus" = ANY(@p)` — an **unconditional conjunct on the leading key column** of
+`IX_Orders_CurrentStatus_CleaningDateTime` (`OrderEntityConfiguration.cs:111`;
+`Initial.cs:2909-2912`). Today it sits inside an `OR` with a NULL arm, so it is not an index qual at
+all and the only unconditional sargable term is a range on the **second** key column, which a PG16
+btree cannot start a scan on (index skip scan landed in PG18). The change therefore removes a
+**structural obstacle**: the plan stops depending on the planner decomposing an `OR` into a `BitmapOr`.
+
+**Not claimed:** that any query gets faster, or that the planner will choose that index. Selectivity
+may still favour a seq scan on a small table; a wide status set may not be selective. **ADR-0039's
+`EXPLAIN (ANALYZE, BUFFERS)` obligation (`preferred-cleaner-dispatch.md:388-390`) survives this ADR
+and is not discharged by it.** ADR-0039's cost lane reasoned rather than measured and said so; this
+ADR inherits that honesty rather than quietly upgrading a shape argument into a performance claim.
+
+---
+
+## 6 — Cost, window, and the owner step
+
+**Owner-only, and already scheduled.** The column becomes `NOT NULL` by **regenerating the single
+`Initial` migration** (`20260723182623_Initial.cs:1042` — `nullable: true`), not by adding a
+migration. The owner is dropping the database and regenerating; this rides that step. **Claude does
+not run `dotnet ef`.** MANUAL_STEP: `ef-migration (Initial regeneration)`.
+
+**The window is the whole argument for doing it now.** Inside it: one column-type edit + deletions.
+Outside it: a backfill script, an idempotency story, an `ALTER TABLE … SET NOT NULL` on a live table,
+and a deploy-ordering question — for a population that will still be empty.
+
+### Stop conditions (halt the parallel implementation if any of these is true)
+
+1. **The `Initial` regeneration is not happening.** Then this is a data migration, not a free change,
+   and it should be re-decided on its own merits.
+2. **Any database that is NOT being dropped holds a NULL row.** Azure DEV is live. One owner-run
+   query settles it: `SELECT count(*) FROM "Orders" WHERE "CurrentStatus" IS NULL;` — a non-zero
+   answer means backfill first, and it also **falsifies §2**, which is the more serious signal.
+3. **A production `Order` creation path exists that §2 missed** — anything reaching `Orders.Add`,
+   `Order.Create` or raw SQL outside `OrderFactory`. A non-null column a path cannot populate is
+   worse than the nullable it replaces.
+
+---
+
+## 7 — Alternatives
+
+| Option | Why not |
+|---|---|
+| **A — Keep the nullable; emit the two arms as a `Concat`/`UNION`** (ADR-0039 cost lane, option 2) | Restores sargability at *one* call site while the fallback, the `!.Value` NRE and the fail-closed special case survive at **eleven others**. More code, narrower fix, permanent. |
+| **B — Keep the nullable; add a partial/filtered index** | Pays index maintenance on the hottest insert path to serve rows that do not exist. Rejected in ADR-0039 for the same reason. |
+| **C — Keep the nullable; delete only the fallbacks, leave the column nullable** | The worst of both: the DB still admits a state the code no longer handles. The constraint is the point. |
+| **D — Non-nullable column, keep the computed property + backing field** | Keeps a `HasField` magic string and an indirection for a computation that no longer exists (§3). |
+| **E — Do nothing until it hurts** | The window closes at the regeneration; after it the same change costs a backfill and a live `ALTER`. Doing nothing is a decision to pay more later for the same outcome. |
+
+---
+
+## 8 — How a reviewer verifies compliance
+
+1. `rg -n "CurrentStatus\s*\?\?|CurrentStatus!\.|CurrentStatus\s*!=\s*null|CurrentStatus\s*==\s*null" src/` → **zero hits** (test projects included).
+2. `rg -n "_currentStatus" src/` → **zero hits** (the backing field and the `HasField` string are gone).
+3. `Order.CurrentStatus` is `OrderStatus` with a `private set`, and `AddOrderStatus` is its only
+   assignment — and `Order.cs`'s recompute still orders by `CreatedOn desc, Sequence desc` (§3).
+4. `20260723182623_Initial.cs` declares `CurrentStatus` with `nullable: false`, and
+   `IX_Orders_CurrentStatus_CleaningDateTime` is unchanged.
+5. `OrderAvailability.IsOfferable`'s first parameter is non-nullable; `TC-AVAIL-EQUIV` has no
+   NULL-status row and still has its per-money-term rows.
+6. The six tests in §4.4 are **deleted**, not adapted — in particular
+   `TakeOrderOfferabilityGateTests`' reflection case.
+7. `OrderRepository.cs:87-89`'s "keeps EF's C# null semantics (an IS NULL arm)" comment is gone.
+8. **New rule for the catalog** (`consistency.md`): *a production `Order` is created only via
+   `IOrderFactory`.* Mechanically checkable — `Order.Create(` outside
+   `OrderFactory.cs` and the four test projects is a violation. Recommend a small
+   `check-consistency.mjs` ticket; until it lands, item 8 is a reviewer's grep.
+
+---
+
+## Challenge
+
+*Two lanes requested. A challenger that finds nothing says so explicitly and names what it checked.*
+
+- **Lane A — `write-guarantee`.** Attack §2. The ADR stands or falls on "no path can persist an
+  `Order` without a status". Look for what a `Order.Create` / `orderRepository.Add` search cannot
+  see: EF materialization of a partially-loaded graph; any `AsNoTracking` + re-attach; a
+  `DbContext.Attach`/`Update` on a detached `Order`; test-only helpers promoted to production;
+  a future/in-flight feature branch adding an order-creating path (the `db` agent is editing entities
+  **right now**); whether `OrderFactory` can throw between `:104` and `:179` in a way that leaves a
+  tracked entity (`ExceedsMaxBookableSpan` throws at `:151` — before `Add`, but check the pipeline);
+  and whether `default(OrderStatus) == New` can be *observed* anywhere outside the factory body.
+  **A single reachable counter-example blocks this ADR** and the recommendation flips.
+- **Lane B — `query-plan`.** Attack §5. ADR-0039's cost lane reasoned rather than measured and said
+  so; this ADR repeats the shape argument without measuring. Is "leading key column ⇒ start key"
+  actually the binding constraint for the queries that matter, or is the real cost elsewhere (the
+  `AssignedEmployees` semi-join, the date band, row counts too small to matter)? Does the
+  `Contains` → `= ANY(@p)` translation hold for **EF Core 10 + Npgsql** as claimed, or does it emit
+  something else? Is §5's disclaimer honest enough, or does the ADR still let a reader bank a
+  performance win it did not prove? Also: does deleting the correlated subquery at
+  `OrderRepository.cs:291-306` change **results** for any row, not just the plan?
+
+## Defense
+
+*(pending — author responds after the lanes report)*
+
+## Verdict
+
+*(pending — lead adjudicates; ADR stays `proposed` until then)*

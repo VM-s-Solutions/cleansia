@@ -396,6 +396,12 @@ two index paths. It probably will (the NULL arm is empty on any database built f
   **for every consumer of the column**. Out of the panel's authority (it supersedes an `accepted`
   ADR-0037 ruling and needs an owner-only migration) and **time-boxed** — near-free while the owner is
   regenerating `Initial`, a backfill afterwards. **`Q-AVAIL-05`, needs its own ADR.**
+  > **✅ ADOPTED, 2026-08-04 — it got its ADR:
+  > [ADR-0040](../../backlog/adr/0040-order-currentstatus-is-non-nullable-the-pre-backfill-population-it-defends-does-not-exist.md)**
+  > (`proposed`). **This does not close the `EXPLAIN` obligation two bullets up** — ADR-0040 claims the
+  > status term becomes an unconditional qual on the leading index column (a *shape* claim), not a
+  > measured plan. The flip condition above (`Concat`/`UNION`) becomes moot only if ADR-0040 is
+  > accepted; keep it until then.
 
 ### The 127-column elephant, re-sequenced
 
@@ -597,14 +603,18 @@ cleaner's score"* myth lives in **three** files (`Order.cs:217-224`, `PreferredC
 - **`Q-AVAIL-04` (owner)** — ⚠️ **re-scoped: lawful basis, not notice** (see §The customer above).
   **Not blocking**, and now demonstrably so — `null` is reserved for a suppression flag today, so an
   opt-out outcome changes text rather than mechanism.
-- 🕐 **`Q-AVAIL-05` (owner) — TIME-BOXED, and the box is open now.** Should `Orders.CurrentStatus`
-  become **`NOT NULL`** while the database is dropped and `Initial` regenerated? The column is nullable
-  only for pre-backfill rows; the repo carries **one** migration, so that population is empty by
-  construction. `NOT NULL` deletes an `OR` disjunct, a correlated `EXISTS`, a planner risk **and** a
-  fail-closed special case for **every** consumer of the column — including
-  `OrderMappers.GetCurrentOrderStatus`'s `CurrentStatus!.Value` and `TakeOrder`'s request-path
-  dereference. **Needs its own ADR** (it supersedes an `accepted` ADR-0037 D3 ruling, which becomes
-  *vacuous* rather than wrong) **and an owner-only migration.** Near-free today; a backfill afterwards.
+- 🕐 **`Q-AVAIL-05` — ROUTED, 2026-08-04: it has its ADR.**
+  **[ADR-0040](../../backlog/adr/0040-order-currentstatus-is-non-nullable-the-pre-backfill-population-it-defends-does-not-exist.md)**
+  (`proposed`) rules `Orders.CurrentStatus` **`NOT NULL`**, partially superseding ADR-0037 §D3's
+  NULL ruling (which becomes *vacuous* rather than wrong). The write-time guarantee is verified there,
+  not assumed: one production creation path (`OrderFactory.cs:104` → `:179` `AddOrderStatus(New)` →
+  `:180` `Add`), one column writer, nothing clears it, no SQL path inserts an `Orders` row. **The
+  owner decision that remains is only the one already scheduled** — the `Initial` regeneration; no
+  separate authorization is needed, and no new `questions/open.md` entry was filed. **Two challenger
+  lanes are open** (`write-guarantee`, `query-plan`); implementation runs in parallel because the
+  window closes at the regeneration. **What this does NOT discharge:** the `EXPLAIN (ANALYZE,
+  BUFFERS)` obligation above. ADR-0040 claims a *shape* change (the status term becomes an
+  unconditional qual on the leading index column), **not** a measured plan improvement.
 - ✅ ~~**`BookingPolicy.MaxOrderSpanHours = 24` is a scan floor, not an enforced invariant.**~~
   **Both halves resolved.** The constant shipped as **`Order.MaxOrderSpanHours = 168` in
   `Core.Domain`** (the drafted placement did not compile; 24 was refuted by a catalog reaching 58.25 h),

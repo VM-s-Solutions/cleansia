@@ -204,13 +204,38 @@ under-powered shape is what produced six disagreeing lists:
 
 **Two forms, pinned by `TC-AVAIL-EQUIV` against real PostgreSQL — not one shared expression.** This
 follows ADR-0036's ruling verbatim (`preferred-cleaner-dispatch.md:107-109`): SQL and C# disagree on
-null semantics and `.Compile()` on a request path is banned. Our predicate has the same `NULL` hazard.
+null semantics and `.Compile()` on a request path is banned. ~~Our predicate has the same `NULL`
+hazard.~~ **The two-forms ruling STANDS; only its NULL-hazard justification is retired — see the box
+below. Do not read ADR-0040 as licence to unify the two forms.**
 
-**NULL `CurrentStatus`:** reads fail closed (`OrderSpecification.cs:115-116`); the **take must not**,
-or every legacy order becomes permanently untakeable. It resolves the way `HasOverlappingOrderAsync`
-already does (`OrderRepository.cs:285-288`) — column when non-null, else latest history by
-`(CreatedOn desc, Sequence desc)`. This also removes a latent NRE: `OrderMappers.cs:14-17` is
-`CurrentStatus!.Value` and `TakeOrder.cs:191` dereferences it on the request path.
+**~~NULL `CurrentStatus`~~ — ⚠️ BEING SUPERSEDED BY [ADR-0040](../../backlog/adr/0040-order-currentstatus-is-non-nullable-the-pre-backfill-population-it-defends-does-not-exist.md)
+(`proposed`, 2026-08-04).** The ruling below is ADR-0037 §D3 as accepted, kept readable because the
+implementation still carries it today:
+
+> reads fail closed (`OrderSpecification.cs:115-116`); the **take must not**, or every legacy order
+> becomes permanently untakeable. It resolves the way `HasOverlappingOrderAsync` already does
+> (`OrderRepository.cs:285-288`) — column when non-null, else latest history by
+> `(CreatedOn desc, Sequence desc)`. This also removes a latent NRE: `OrderMappers.cs:14-17` is
+> `CurrentStatus!.Value` and `TakeOrder.cs:191` dereferences it on the request path.
+
+**Why it is going.** The population it defends — rows written before the column was backfilled — has
+never existed: the repo carries **one** migration (`20260723182623_Initial`) and the owner is dropping
+the database and regenerating it. Verified write-time guarantee: `Order.Create` writes no track, but
+its **only** production caller is `OrderFactory.cs:104`, and the **only** production
+`orderRepository.Add` is `OrderFactory.cs:180` — the line after `AddOrderStatus(New)` at `:179`, with
+no commit between. `AddOrderStatus` (`Order.cs:407-410`) is the single writer and never clears. The
+conditional `Confirmed` write at `TakeOrder.cs:249` and the cash path's silence are conditional
+*transitions*, not conditional *column writes*. Nothing in `sql-scripts/` inserts an `Orders` row, and
+the "idempotent backfill" `OrderSpecification.cs:119-120` promises **does not exist as an artifact**.
+
+**What changes when ADR-0040 is accepted:** the column is `NOT NULL`, the getter fallback and the six
+`?? latest-history` fallbacks are deleted (each is a compile error, so the compiler drives the
+migration), `IsOfferable`'s first parameter loses its `?`, `TC-AVAIL-EQUIV`'s NULL row becomes
+unconstructible, and `OrderSpecification.cs:121-122`'s `OR`-wrapped status term becomes an
+unconditional qual on the leading column of `IX_Orders_CurrentStatus_CleaningDateTime`. **No wire
+change, no NSwag regen** — every response path already dereferences before `MapToCode()`.
+The `AddOrderStatus` **recompute** (`Order.cs:404-410`) stays verbatim: it is the definition of the
+column, not a fallback, and it is why a backdated track does not become current.
 
 ### What each surface becomes
 

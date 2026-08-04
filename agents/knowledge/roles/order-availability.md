@@ -117,6 +117,12 @@ an exhaustiveness test over `Enum.GetValues<PaymentType>()` goes red until it is
    resolves via `CurrentStatus ?? latest history (CreatedOn desc, Sequence desc)`, matching
    `OrderRepository.cs:285-288`. A bare `CurrentStatus!.Value` on a request path is a finding
    (`OrderMappers.cs:14-17` is one today, reached from `TakeOrder.cs:191`).
+   > ⚠️ **PENDING SUPERSESSION —
+   > [ADR-0040](../../backlog/adr/0040-order-currentstatus-is-non-nullable-the-pre-backfill-population-it-defends-does-not-exist.md)
+   > (`proposed`, 2026-08-04) makes the column `NOT NULL`.** Do **not** raise this item as a review
+   > finding against work that deletes the fallback. On acceptance, item 6 becomes: *`CurrentStatus`
+   > is non-nullable; a `??`, a `!.Value` or a `!= null` on it is the finding.* Until then, both the
+   > old rule and its removal are defensible — check which ADR the ticket cites.
 7. **`TakeOrder.Validator` is ONE `RuleFor` chain** (`Cascade(CascadeMode.Stop)`), in the order
    `NotEmpty → ExistsAsync (incl. the ADR-0036 hold) → IsOfferable → HasAvailableSpots → …cleaner
    rules`. **A second `RuleFor` in that file is a hard reject** — `ClassLevelCascadeMode` defaults to

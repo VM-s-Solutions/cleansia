@@ -1155,6 +1155,21 @@
     <string name="error_validation_must_be_positive">Musí být kladné číslo.</string>
     <string name="error_validation_invalid_availability_format">Neplatný formát dostupnosti.</string>
 
+    <!-- Payout / bank details -->
+    <string name="error_payout_not_found">Zatím jste nezadali své bankovní údaje. Doplňte je, abychom vám mohli poslat výplatu.</string>
+    <string name="error_validation_payout_country_not_supported">Do banky v této zemi zatím výplaty posílat neumíme. Zkontrolujte zvolenou zemi banky, nebo se ozvěte podpoře a pomůžeme vám.</string>
+    <string name="error_validation_payout_scheme_not_supported">Na tento typ účtu zatím výplaty posílat neumíme. Ozvěte se podpoře a pomůžeme vám to vyřešit.</string>
+    <string name="error_validation_payout_looks_like_card">Tohle vypadá jako číslo platební karty. Zadejte místo něj číslo bankovního účtu — najdete ho na výpisu nebo v bankovní aplikaci.</string>
+    <string name="error_validation_payout_account_number_required">Zadejte číslo účtu — do této banky posíláme peníze podle čísla účtu a kódu banky, samotný IBAN nestačí.</string>
+    <string name="error_validation_payout_invalid_account_number">Toto číslo účtu se nám nepodařilo ověřit — skoro vždy jde o překlep. Zkontrolujte číslice podle výpisu z účtu.</string>
+    <string name="error_validation_payout_invalid_account_prefix">Předčíslí se nám nepodařilo ověřit — je to krátké číslo před pomlčkou v čísle účtu. Zkontrolujte číslice, nebo ho nechte prázdné, pokud váš účet předčíslí nemá.</string>
+    <string name="error_validation_payout_invalid_bank_code">Zadejte čtyřmístný kód banky — je to číslo za lomítkem v čísle účtu.</string>
+    <string name="error_validation_payout_invalid_iban">Tento IBAN není platný. Porovnejte ho s výpisem z účtu — obvykle jde o jeden špatný znak.</string>
+    <string name="error_validation_payout_iban_country_mismatch">Tento IBAN patří do jiné země, než jakou jste u banky zvolili. Upravte jedno z toho, ať se shodují.</string>
+    <string name="error_validation_payout_iban_mismatch">Tento IBAN neodpovídá zadanému číslu účtu a kódu banky. Opravte to, co je špatně, nebo IBAN nechte prázdný a doplníme ho za vás.</string>
+    <string name="error_validation_payout_swift_required">Vaše banka je v jiné zemi, než ve které pracujete, takže potřebujeme i SWIFT/BIC. Najdete ho na výpisu z účtu.</string>
+    <string name="error_validation_payout_invalid_swift">Tento SWIFT/BIC patří do jiné země než vaše banka. Zkontrolujte ho podle výpisu z účtu.</string>
+
     <string name="error_email_sending_failed">E-mail se nepodařilo odeslat. Zkuste to později.</string>
     <string name="error_email_invalid_format">Zadejte prosím platný e-mail.</string>
     <string name="error_email_invalid_email">Zadejte prosím platný e-mail.</string>

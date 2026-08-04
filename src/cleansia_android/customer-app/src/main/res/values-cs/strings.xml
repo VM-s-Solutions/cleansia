@@ -1226,6 +1226,7 @@
     <string name="error_language_not_found">Jazyk nenalezen</string>
     <string name="error_language_not_supported">Tento jazyk není podporován.</string>
     <string name="error_membership_already_active">Již máte aktivní členství.</string>
+    <string name="error_membership_express_waiver_no_longer_available">Vaše expresní objednávky zahrnuté v členství jsou pro tento měsíc právě vyčerpané, takže se na tuto objednávku bezplatné expresní vyřízení už nevztahuje. Objednat ji můžete i tak, za standardní expresní cenu.</string>
     <string name="error_membership_not_found">Členství nenalezeno.</string>
     <string name="error_membership_plan_not_found">Plán členství nebyl nalezen.</string>
     <string name="error_membership_swap_same_plan">Tento plán již máte.</string>

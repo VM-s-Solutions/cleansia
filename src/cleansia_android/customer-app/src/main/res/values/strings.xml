@@ -1254,6 +1254,7 @@
     <string name="error_language_not_found">Language not found</string>
     <string name="error_language_not_supported">This language isn\'t supported.</string>
     <string name="error_membership_already_active">You already have an active membership.</string>
+    <string name="error_membership_express_waiver_no_longer_available">Your included express bookings for this month have just been used up, so this booking no longer gets the free express upgrade. You can still book it at the standard express price.</string>
     <string name="error_membership_not_found">Membership not found.</string>
     <string name="error_membership_plan_not_found">Membership plan not found.</string>
     <string name="error_membership_swap_same_plan">You\'re already on this plan.</string>

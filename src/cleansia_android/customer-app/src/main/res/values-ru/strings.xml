@@ -1223,6 +1223,7 @@
     <string name="error_language_not_found">Язык не найден</string>
     <string name="error_language_not_supported">Этот язык не поддерживается.</string>
     <string name="error_membership_already_active">У вас уже есть активное членство.</string>
+    <string name="error_membership_express_waiver_no_longer_available">Ваши экспресс-заказы, включённые в членство, на этот месяц только что исчерпаны, поэтому бесплатное экспресс-оформление к этому заказу больше не применяется. Вы всё равно можете оформить его по стандартной экспресс-цене.</string>
     <string name="error_membership_not_found">Членство не найдено.</string>
     <string name="error_membership_plan_not_found">План членства не найден.</string>
     <string name="error_membership_swap_same_plan">У вас уже есть этот план.</string>

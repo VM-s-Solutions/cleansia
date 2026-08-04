@@ -1138,6 +1138,21 @@
     <string name="error_validation_must_be_positive">Має бути додатне число.</string>
     <string name="error_validation_invalid_availability_format">Неправильний формат доступності.</string>
 
+    <!-- Payout / bank details -->
+    <string name="error_payout_not_found">Ви ще не додали свої банківські реквізити. Додайте їх, щоб ми могли надіслати вам виплату.</string>
+    <string name="error_validation_payout_country_not_supported">Ми поки не надсилаємо виплати в банки цієї країни. Перевірте обрану країну банку або зверніться до підтримки — ми допоможемо.</string>
+    <string name="error_validation_payout_scheme_not_supported">Ми поки не надсилаємо виплати на такий тип рахунку. Зверніться до підтримки — ми допоможемо це вирішити.</string>
+    <string name="error_validation_payout_looks_like_card">Це схоже на номер платіжної картки. Введіть натомість номер банківського рахунку — його вказано у виписці або в банківському застосунку.</string>
+    <string name="error_validation_payout_account_number_required">Введіть номер рахунку — до цього банку ми надсилаємо гроші за номером рахунку та кодом банку, самого лише IBAN недостатньо.</string>
+    <string name="error_validation_payout_invalid_account_number">Не вдалося перевірити цей номер рахунку — майже завжди це друкарська помилка. Звірте цифри з випискою.</string>
+    <string name="error_validation_payout_invalid_account_prefix">Не вдалося перевірити префікс — це коротке число перед дефісом у номері рахунку. Перевірте цифри або залиште поле порожнім, якщо ваш рахунок не має префікса.</string>
+    <string name="error_validation_payout_invalid_bank_code">Введіть чотиризначний код банку — це число після скісної риски в номері рахунку.</string>
+    <string name="error_validation_payout_invalid_iban">Цей IBAN недійсний. Звірте його з випискою — зазвичай це один неправильний символ.</string>
+    <string name="error_validation_payout_iban_country_mismatch">Цей IBAN належить іншій країні, ніж та, яку ви обрали для банку. Змініть одне з них, щоб вони збігалися.</string>
+    <string name="error_validation_payout_iban_mismatch">Цей IBAN не збігається з введеними номером рахунку та кодом банку. Виправте те, що неправильне, або залиште IBAN порожнім — ми заповнимо його за вас.</string>
+    <string name="error_validation_payout_swift_required">Ваш банк в іншій країні, ніж та, де ви працюєте, тому нам потрібен ще й SWIFT/BIC. Його вказано у виписці.</string>
+    <string name="error_validation_payout_invalid_swift">Цей SWIFT/BIC належить іншій країні, ніж ваш банк. Звірте його з випискою.</string>
+
     <string name="error_email_sending_failed">Не вдалося надіслати е-пошту. Спробуйте пізніше.</string>
     <string name="error_email_invalid_format">Введіть, будь ласка, дійсну е-пошту.</string>
     <string name="error_email_invalid_email">Введіть, будь ласка, дійсну е-пошту.</string>

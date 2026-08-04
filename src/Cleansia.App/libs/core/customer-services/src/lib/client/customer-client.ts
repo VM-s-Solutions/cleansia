@@ -3170,6 +3170,11 @@ export interface IOrderClient {
      */
     reportIssue(body?: ReportOrderIssueCommand | undefined): Observable<ReportOrderIssueResponse>;
     /**
+     * @param orderId (optional) 
+     * @return OK
+     */
+    cancellationPreview(orderId?: string | undefined): Observable<GetCancellationFeePreviewResponse>;
+    /**
      * @param body (optional) 
      * @return OK
      */
@@ -4228,6 +4233,83 @@ export class OrderClient implements IOrderClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = ReportOrderIssueResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param orderId (optional) 
+     * @return OK
+     */
+    cancellationPreview(orderId?: string | undefined): Observable<GetCancellationFeePreviewResponse> {
+        let url = this.baseUrl + "/api/Order/CancellationPreview?";
+        if (orderId === null)
+            throw new globalThis.Error("The parameter 'orderId' cannot be null.");
+        else if (orderId !== undefined)
+            url += "OrderId=" + encodeURIComponent("" + orderId) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCancellationPreview(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processCancellationPreview(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<GetCancellationFeePreviewResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<GetCancellationFeePreviewResponse>;
+        }));
+    }
+
+    protected processCancellationPreview(response: HttpResponseBase): Observable<GetCancellationFeePreviewResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = GetCancellationFeePreviewResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -6610,6 +6692,14 @@ export interface ICancelOrderResponse {
     refundInitiated: boolean;
 }
 
+export enum CancellationFeeTier {
+    FreeNotAccepted = 0,
+    FreeOopsWindow = 1,
+    FreeOutsideWindow = 2,
+    Partial = 3,
+    LastMinute = 4,
+}
+
 export class CategoryDto implements ICategoryDto {
     id!: string | undefined;
     slug!: string | undefined;
@@ -8860,6 +8950,70 @@ export interface IGdprExportProfileDto {
     birthDate: Date | undefined;
     preferredLanguageCode: string | undefined;
     createdOn: Date;
+}
+
+export class GetCancellationFeePreviewResponse implements IGetCancellationFeePreviewResponse {
+    orderId!: string | undefined;
+    tier!: CancellationFeeTier;
+    feeRate!: number;
+    feeAmount!: number;
+    refundAmount!: number;
+    totalPrice!: number;
+    currencyCode!: string | undefined;
+    expressWaiverForfeitedOnCancel!: boolean;
+
+    constructor(data?: IGetCancellationFeePreviewResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.tier = Data["tier"];
+            this.feeRate = Data["feeRate"];
+            this.feeAmount = Data["feeAmount"];
+            this.refundAmount = Data["refundAmount"];
+            this.totalPrice = Data["totalPrice"];
+            this.currencyCode = Data["currencyCode"];
+            this.expressWaiverForfeitedOnCancel = Data["expressWaiverForfeitedOnCancel"];
+        }
+    }
+
+    static fromJS(data: any): GetCancellationFeePreviewResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetCancellationFeePreviewResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["tier"] = this.tier;
+        data["feeRate"] = this.feeRate;
+        data["feeAmount"] = this.feeAmount;
+        data["refundAmount"] = this.refundAmount;
+        data["totalPrice"] = this.totalPrice;
+        data["currencyCode"] = this.currencyCode;
+        data["expressWaiverForfeitedOnCancel"] = this.expressWaiverForfeitedOnCancel;
+        return data;
+    }
+}
+
+export interface IGetCancellationFeePreviewResponse {
+    orderId: string | undefined;
+    tier: CancellationFeeTier;
+    feeRate: number;
+    feeAmount: number;
+    refundAmount: number;
+    totalPrice: number;
+    currencyCode: string | undefined;
+    expressWaiverForfeitedOnCancel: boolean;
 }
 
 export class GetCurrentUserQuery implements IGetCurrentUserQuery {

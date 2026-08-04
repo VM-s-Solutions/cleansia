@@ -40,12 +40,6 @@ public static class NotificationEventCatalog
     ///
     /// <para>This is the only place the platform tells a cleaner they were chosen. No surface ever says
     /// an order is held for SOMEONE ELSE, and no cleaner ever learns they were passed over.</para>
-    ///
-    /// <para>Deliberately absent from <c>FcmMessageFactory.ApnsDisplayMap</c> and from
-    /// <see cref="NotificationFeedEventKeys.Partner"/> until the partner clients ship its copy — both
-    /// registries are server-side declarations that client text exists, and neither iOS bundle nor the
-    /// Android template catalog carries this key yet. Listed early, iOS renders the raw loc-key on the
-    /// lock screen and the feed's unread badge counts a row the app drops unrendered.</para>
     /// </summary>
     public const string PreferredOffer = "order.preferred_offer";
 

@@ -58,11 +58,12 @@ public class NotificationFeedEventKeysTests
     }
 
     [Fact]
-    public void Partner_Keyset_Is_The_New_Jobs_Digest_Plus_Assignment_Cancelled_And_Invoice_Paid()
+    public void Partner_Keyset_Is_Exactly_The_Partner_Targeted_Events()
     {
         Assert.Equal(
             [
                 NotificationEventCatalog.NewJobsAvailable,
+                NotificationEventCatalog.PreferredOffer,
                 NotificationEventCatalog.OrderAssignmentCancelled,
                 NotificationEventCatalog.InvoicePaid,
             ],

@@ -103,6 +103,9 @@ partner-onboarding chain (T-0505…T-0510). **Check `process/shared-file-lanes.m
 before dispatch.**
 
 ## Status log
+- 2026-08-04 — **implemented (backend).** Validator + capture + read contract + reveal command + the
+  completeness-gate flip + the id-keyed erasure. `manual_step: nswag-regen` is **required before T-0520 /
+  T-0521 start** (breaking DTO change, see Review). No migration: T-0518's schema was already in place.
 - 2026-08-02 — **draft (created by pm from the owner's 2026-08-02 bank-details answer).** **The
   finding that sizes this ticket, PM-verified:** the entire server-side validation of a cleaner's bank
   account is `NotEmpty() + Length(15,34)` at `ValidationExtensions.cs:122-130`, shared by all three
@@ -111,3 +114,84 @@ before dispatch.**
   export, an admin **list** DTO) that a naive "add columns" change would break or widen.
 
 ## Review
+
+### What landed (2026-08-04, backend)
+
+**Validation (ADR-0034 D4/D4.1/D5.2)** — `Core.Domain/Payouts/`: `CzskAccountNumber` (mod-11, weights
+applied **left-to-right** over the zero-padded ten-digit field), `IbanCalculator` (ISO 7064 mod-97 +
+the ISO 13616 registry-length table + the CZ/SK composition), `CardNumberHeuristic` (Luhn, D9a),
+`SwiftBic` (ISO 9362). `Core.Domain/Internationalization/CountryIsoCode` reconciles the catalog's
+alpha-3 seed values with the alpha-2 an IBAN prefix and a BIC use. `IPayoutDetailsValidator` mirrors
+`ITaxIdValidator`'s seam and **inverts its failure mode**: unknown country + non-IBAN value ⇒ reject.
+The result carries the canonical stored form, so validation and canonicalization are one call and no
+two callers can derive different IBANs.
+
+**The direction is mutation-proved.** Flipping the loop to right-to-left was run against the suite:
+24 tests go red, including `Reversing_The_Weight_Direction_Rejects_The_Reference_Specimen`, which
+re-implements the rejected reading and asserts the owner's specimen fails under it. The owner's
+`5885638003/5500` composes to `CZ3155000000005885638003` — the value the four payout-invoice fixtures
+already pin; `PayoutInvoiceLayoutTests` / `PayoutInvoicePdfDataTests` stay green.
+
+**Write path** — `UpdateBankDetails` gains the full field set (AC1) and is now the **single** writer of
+`EmployeePayoutDetails` (create-or-update keyed on the employee) and the only place
+`Employee.HasPayoutDetails` is raised. `UpdateEmployee` / `AdminUpdateEmployee` **stop carrying a bare
+`Iban`** rather than validating a second, divergent copy (ADR Consequences); `Employee.UpdateEmployeeDetails`
+loses its `iban` parameter. The derived IBAN is mirrored onto the legacy `Employee.IBAN` column so the
+payout invoice's supplier block keeps printing the current account until **T-0522** moves that read onto
+the payout row.
+
+**The gate flip (the deploy-day item).** `IsProfileComplete()` now reads
+`HasPayoutDetails || !string.IsNullOrEmpty(IBAN)` — a scalar pair on the row, no navigation. The legacy
+term is load-bearing and **not** cosmetic: there is no backfill, so reading the flag alone would mark
+every existing cleaner incomplete and 403 them off the whole partner surface.
+`Cleansia.HostTests/Tests/PayoutGateDeployDayTests` seeds exactly that row shape and takes an order
+through the host, loaded by `EmployeeRepository.GetByUserEmailAsync`'s real include list.
+
+**Erasure** — `GdprDeletionService` calls `IEmployeePayoutDetailsRepository.RemoveForEmployeeAsync`
+(id-keyed, tracked so it rides the caller's unit of work rather than committing on its own connection).
+`Cleansia.IntegrationTests/Features/Gdpr/PayoutDetailsErasureTests` proves it against real Postgres
+through the deletion service's own query shape.
+
+**Read contract** — three routes, three DTOs: self (full), admin (masked, no unmasked member exists on
+the DTO), admin reveal (**`Command`**, audited by the existing engine, `[EnableRateLimiting("auth")]`,
+and `AdminEmployeeController` is now in `RateLimitCoverageGuardTests.MoneyAndSideEffectControllers`).
+`Iban` is gone from `EmployeeItem` and `AdminEmployeeDetail`. `PayoutDtoSurfaceTests` freezes the DTO
+family and forbids `.Include(… PayoutDetails)` anywhere in `Core.AppServices`.
+
+**AC8** — the payout write, both payout reads and the GDPR export are added to `IsSensitivePath` on all
+five hosts and pinned by `RequestLogPayoutPathSuppressionTests`. Field-name redaction cannot cover this:
+none of `accountNumber` / `iban` / `swift` / `holderName` is a redaction token, and a holder name is free
+text. The only payout log line is a duplicate-destination warning carrying employee ids and no value.
+
+### AC7 — new keys, and the per-client i18n namespaces the frontend/L10n owner must add
+
+`BusinessErrorMessage`: `validation.payout.country_not_supported`, `.scheme_not_supported`,
+`.account_number_required`, `.invalid_account_number`, `.invalid_account_prefix`, `.invalid_bank_code`,
+`.invalid_iban`, `.iban_country_mismatch`, `.iban_mismatch`, `.invalid_swift`, `.swift_required`,
+`.looks_like_card`, plus `payout.not_found`. Each needs its five locales **per client namespace** (the
+prefix differs per client — see the project memory note on error-key namespaces), on partner web,
+partner mobile (Android + iOS) and admin.
+
+### Manual steps
+
+- `manual_step: nswag-regen` — **breaking**, blocks T-0520/T-0521: `EmployeeItem` and
+  `AdminEmployeeDetail` lose `Iban`; `UpdateEmployee.Command` and `AdminUpdateEmployee.Command` lose
+  `Iban`; `UpdateBankDetails.Command` gains eight optional fields; `GdprExportDto` gains
+  `payoutDetails`; three new endpoints (`Employee/GetMyPayoutDetails`,
+  `AdminEmployee/{id}/payout-details`, `AdminEmployee/{id}/payout-details/reveal`).
+- **No** `ef-migration` — T-0518's schema was already in the tree and untouched.
+
+### Verification
+
+`Cleansia.Tests` **2780 passed / 2 failed / 2782** — both failures are `CleanupStalePendingOrdersHandler`
+NREs from a concurrently-edited Functions file, not payout. `Cleansia.IntegrationTests` **123 passed / 0
+failed**. `Cleansia.HostTests` **87 passed / 0 failed** (+1 new = 88 with the deploy-day test).
+
+### Notes for the architect
+
+- **`CountryConfiguration.PayoutScheme` has no writer.** Seeding it is a SQL/seed-data job today and
+  there is no admin surface; tests set it by reflection rather than adding an uncalled domain mutator.
+  Whoever owns country configuration should decide whether the admin gets a setter.
+- **`GetEmployeePayoutDetails` needs `IOrderAccessService`** for the caller-employee-id arm, which is an
+  order-shaped seam doing identity work. It is the only in-repo way to resolve the caller's employee id
+  (`DownloadInvoice` uses the same). Worth a rename or a dedicated seam.

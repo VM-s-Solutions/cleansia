@@ -98,6 +98,33 @@ public interface IOrderRepository : IRepository<Order, string>
     Task<bool> HasOverlappingOrderIgnoringTenantAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct);
 
     /// <summary>
+    /// ADR-0039 D3 — which of <paramref name="employeeIds"/> hold a live-commitment assignment
+    /// overlapping <c>[windowStartUtc, windowEndUtc)</c>. Same window filter as
+    /// <see cref="HasOverlappingOrderAsync"/>, in the shape a LIST of candidates needs.
+    ///
+    /// <para>Returns the BUSY subset, never the free one, so absence is the fail-OPEN default: a
+    /// cleaner missing from the answer is treated as available, which is today's behaviour.</para>
+    ///
+    /// <para>ONE query for the whole set. Calling <see cref="HasOverlappingOrderAsync"/> in a loop over
+    /// a candidate list on a request path is a hard reject — it is N unbounded scans per render, and it
+    /// is what this method exists to replace.</para>
+    ///
+    /// <para>The preferred-cleaner picker and the hold resolver both call THIS method with the SAME
+    /// window. Not the same rule — the same method: if the picker could say available and the resolver
+    /// then say busy for a reason of its own, the feature has already failed.</para>
+    ///
+    /// <para>TENANT-SCOPED, deliberately, and there is no ignoring sibling: every caller is a request
+    /// path with a claim (the recurring materializer runs under its own per-template tenant override).
+    /// A background sweep asking about ONE cleaner already has
+    /// <see cref="HasOverlappingOrderIgnoringTenantAsync"/>.</para>
+    /// </summary>
+    Task<IReadOnlySet<string>> GetBusyEmployeeIdsInWindowAsync(
+        IReadOnlyCollection<string> employeeIds,
+        DateTime windowStartUtc,
+        DateTime windowEndUtc,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// True if the given user has previously had a Completed order assigned to
     /// the given employee. Used to validate <c>PreferredEmployeeId</c> on new
     /// bookings — customers can only request cleaners they've already worked

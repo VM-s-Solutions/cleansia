@@ -48,7 +48,8 @@ public class AdminCancelOrder
         IRefundService refundService,
         ILoyaltyService loyaltyService,
         INotificationProducer notificationProducer,
-        ILiveActivityProducer liveActivityProducer
+        ILiveActivityProducer liveActivityProducer,
+        IExpressWaiverConsumer expressWaiverConsumer
     ) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -138,6 +139,11 @@ public class AdminCancelOrder
                         cancellationToken);
                 }
             }
+
+            // Unconditionally, even with a cleaner assigned: an admin cancellation is OUR action, not the
+            // customer's, so charging the member's monthly perk for it would be unfair with information
+            // already in hand.
+            await expressWaiverConsumer.ReleaseForOrderAsync(order.Id, cancellationToken);
 
             // Every cleaner who accepted this job is told it's off (partner-targeted event; skips
             // legacy assignments with no linked User) — mirrors the customer CancelOrder path.

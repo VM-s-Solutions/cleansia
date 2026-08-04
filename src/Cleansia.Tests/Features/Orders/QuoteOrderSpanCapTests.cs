@@ -53,6 +53,8 @@ public class QuoteOrderSpanCapTests
                 It.IsAny<int>(),
                 It.IsAny<string?>(),
                 It.IsAny<DateTime?>(),
+                It.IsAny<string?>(),
+                It.IsAny<DateTime>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateOrderTestData.MatchingPricing());
 

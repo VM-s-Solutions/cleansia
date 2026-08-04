@@ -16,6 +16,7 @@ using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
+using Cleansia.Tests.Common;
 using Moq;
 using Stripe;
 using Dispute = Cleansia.Core.Domain.Disputes.Dispute;
@@ -53,6 +54,7 @@ public class CancellationAcceptanceSignalTests
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
     private readonly Mock<INotificationProducer> _producer = new();
     private readonly Mock<ILiveActivityProducer> _liveActivityProducer = new();
+    private readonly Mock<IExpressWaiverConsumer> _expressWaiverConsumer = ExpressWaiverMocks.NoConsumer();
 
     private readonly Mock<IStripeConfig> _stripeConfig = new();
     private readonly Mock<IDisputeRepository> _disputeRepository = new();
@@ -100,7 +102,8 @@ public class CancellationAcceptanceSignalTests
             _loyaltyService.Object,
             new CancellationPolicyResolver(_membershipRepository.Object),
             _producer.Object,
-            _liveActivityProducer.Object);
+            _liveActivityProducer.Object,
+            _expressWaiverConsumer.Object);
 
     private HandlePaymentNotification.Handler CreateWebhookHandler() =>
         new(

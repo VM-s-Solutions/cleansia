@@ -6,6 +6,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -27,6 +28,7 @@ public class AdminEmployeeController(IMediator mediator) : ApiController(mediato
 
     [HttpPost("{employeeId}/approve")]
     [Permission(Policy.CanApproveEmployee)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(ApproveEmployee.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -40,6 +42,7 @@ public class AdminEmployeeController(IMediator mediator) : ApiController(mediato
 
     [HttpPost("{employeeId}/reject")]
     [Permission(Policy.CanRejectEmployee)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(RejectEmployee.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -64,8 +67,37 @@ public class AdminEmployeeController(IMediator mediator) : ApiController(mediato
         return HandleResult<AdminEmployeeDetail>(result);
     }
 
+    [HttpGet("{employeeId}/payout-details")]
+    [Permission(Policy.CanViewEmployeePayoutDetails)]
+    [ProducesResponseType(typeof(MaskedPayoutDetails), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetEmployeePayoutDetails(string employeeId, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new GetEmployeePayoutDetails.Query(employeeId), cancellationToken);
+        return HandleResult<MaskedPayoutDetails>(result);
+    }
+
+    // Masking only bounds exposure if the number of reveals does: an audited but unbounded reveal
+    // records bulk exfiltration instead of stopping it, since the same policy that lists employee ids
+    // grants this route.
+    [HttpPost("{employeeId}/payout-details/reveal")]
+    [Permission(Policy.CanRevealEmployeePayoutDetails)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(RevealedPayoutDetails), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> RevealEmployeePayoutDetails(string employeeId, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new RevealEmployeePayoutDetails.Command(employeeId), cancellationToken);
+        return HandleResult<RevealedPayoutDetails>(result);
+    }
+
     [HttpPut("{employeeId}/update-availability")]
     [Permission(Policy.CanAdminUpdateEmployee)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(AdminUpdateEmployeeAvailability.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -79,6 +111,7 @@ public class AdminEmployeeController(IMediator mediator) : ApiController(mediato
 
     [HttpPut("{employeeId}/update")]
     [Permission(Policy.CanAdminUpdateEmployee)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(AdminUpdateEmployee.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

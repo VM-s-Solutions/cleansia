@@ -110,6 +110,12 @@ public class MaterializeRecurringBookings
                     template.Bathrooms,
                     defaultCurrency.Id,
                     cleaningDateUtc: null,
+                    // A lapsed membership must not stop a schedule, and a live one must not have this
+                    // background job spend the member's monthly express waivers on occurrences they never
+                    // asked to be express. Both fall out of pricing the occurrence as a guest: null user,
+                    // null cleaning date, no waiver resolved, full price.
+                    userId: null,
+                    nowUtc: now,
                     cancellationToken);
 
                 var customerName = string.Join(" ",
@@ -133,6 +139,10 @@ public class MaterializeRecurringBookings
                         SelectedServiceIds: template.SelectedServiceIds,
                         SelectedPackageIds: template.SelectedPackageIds,
                         RawSubtotal: rawSubtotalResult.TotalPrice,
+                        NowUtc: now,
+                        // Explicitly null, not omitted: a recurring occurrence never draws an express
+                        // waiver as a RULE, not as an accident of the template shape carrying no time.
+                        ReservedExpressWaiver: null,
                         PromoDiscountAmount: 0m,
                         PromoCodeId: null,
                         PreferredEmployeeId: null,

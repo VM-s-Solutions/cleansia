@@ -87,8 +87,11 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
         await using var ctx = NewContext();
         var handler = new GetMyServingCleaners.Handler(
             new OrderRepository(ctx),
+            new ServiceRepository(ctx),
+            new PackageRepository(ctx),
             Mock.Of<IUserMembershipRepository>(),
-            new TestUserSessionProvider(customerId, "cold-customer@cleansia.test"));
+            new TestUserSessionProvider(customerId, "cold-customer@cleansia.test"),
+            NullLogger<GetMyServingCleaners.Handler>.Instance);
 
         var result = await handler.Handle(new GetMyServingCleaners.Query(), CancellationToken.None);
 
@@ -278,6 +281,7 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
             new OrderRepository(ctx),
             Mock.Of<IEmployeeDocumentRepository>(),
             Mock.Of<IEmployeeInvoiceRepository>(),
+            Mock.Of<IEmployeePayoutDetailsRepository>(),
             consentRepository.Object);
 
         var export = await service.BuildAsync(userId, exportedBy: "admin-cold", CancellationToken.None);

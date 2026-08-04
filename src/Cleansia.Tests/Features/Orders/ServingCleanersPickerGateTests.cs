@@ -12,6 +12,7 @@ using Cleansia.TestUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Cleansia.Tests.Features.Orders;
@@ -212,8 +213,11 @@ public sealed class ServingCleanersPickerGateTests : IDisposable
     private GetMyServingCleaners.Handler NewHandler(CleansiaDbContext ctx) =>
         new(
             new OrderRepository(ctx),
+            new ServiceRepository(ctx),
+            new PackageRepository(ctx),
             _membershipRepository.Object,
-            new TestUserSessionProvider(CustomerId, "picker-customer@cleansia.test"));
+            new TestUserSessionProvider(CustomerId, "picker-customer@cleansia.test"),
+            NullLogger<GetMyServingCleaners.Handler>.Instance);
 
     private async Task<Cleansia.Infra.Common.Validations.BusinessResult<IReadOnlyList<GetMyServingCleaners.Response>>>
         HandleAsync(ICollection<string>? sqlSink = null)

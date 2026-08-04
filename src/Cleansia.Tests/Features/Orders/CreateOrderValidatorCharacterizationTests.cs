@@ -51,6 +51,8 @@ public class CreateOrderValidatorCharacterizationTests
                 It.IsAny<int>(),
                 It.IsAny<string?>(),
                 It.IsAny<DateTime?>(),
+                It.IsAny<string?>(),
+                It.IsAny<DateTime>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateOrderTestData.MatchingPricing());
     }
@@ -133,6 +135,8 @@ public class CreateOrderValidatorCharacterizationTests
                 It.IsAny<int>(),
                 It.IsAny<string?>(),
                 It.IsAny<DateTime?>(),
+                It.IsAny<string?>(),
+                It.IsAny<DateTime>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateOrderTestData.MatchingPricing(totalPrice: 1500m));
 
@@ -160,6 +164,8 @@ public class CreateOrderValidatorCharacterizationTests
             It.IsAny<int>(),
             command.CurrencyId,
             command.CleaningDate,
+            It.IsAny<string?>(),
+            It.IsAny<DateTime>(),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 

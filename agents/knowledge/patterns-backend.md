@@ -663,6 +663,83 @@ is the name of the rule but not the best shape for it:
   *does the caller's outcome change?* If yes, it is a swallow. **Error, not Warning:** the invariant is
   still broken until someone reconciles it.
 
+## Per-user metered entitlements — the reserved-slot ledger (ADR-0035)
+
+> **LAW.** ADR-0035 `accepted` 2026-08-02 (16 binding amendments), amended by owner ruling 2026-08-03
+> (AM-17/18/19). Reference implementation: `MembershipBenefitUsage` +
+> `MembershipBenefitUsageRepository.TryReserveSlotAsync` + `IExpressWaiverResolver` /
+> `IExpressWaiverConsumer` / `IBenefitPeriodKeyFactory`.
+> **Enforcer / tier (ADR-0032):** **T3-review** — the ordinal derivation and the cardinality bound are
+> read from a diff, and both are *mutation-proved* by their own real-PostgreSQL tests
+> (`MembershipBenefitReservationTests`) rather than by a linter.
+
+A cap on how many times **one user** may receive **one benefit** in **one period** is a row, never a
+counter and never a derived count.
+
+- **Shape:** an `Auditable` + `ITenantEntity` ledger row carrying `UserId`, a **`Kind` discriminator**
+  (int-stored, never reordered), a **stored `PeriodKey`** string, and a 0-based `SlotOrdinal`.
+- **Concurrency — three layers, all three named:** a non-authoritative app-level read (the resolver's
+  count — it decides the *quoted* price, never the claim), **one atomic claim statement**, and a
+  **filtered partial UNIQUE index** as the backstop. Sole arbiter of a concurrent claim ⇒
+  `NULLS NOT DISTINCT` (see `consistency.md`).
+- **The ordinal is the SMALLEST FREE one, not a count and not `MAX+1`**, whenever slots can be released:
+  `generate_series(0, @max-1)` + `NOT EXISTS` + `ORDER BY g LIMIT 1` + `ON CONFLICT DO NOTHING` +
+  `RETURNING <col> AS "Value"`. A count derives an *occupied* ordinal after a non-maximal release —
+  the claim then loses to its own index forever while the read path still says "1 left"; `MAX+1` never
+  re-uses a hole at all. Send a nullable `TenantId` as an **explicit `NpgsqlDbType.Text`** parameter
+  (`42P08` fires only in single-tenant mode and survives a tenanted test run).
+- **⚠️ Add an INDEPENDENT cardinality bound in the SAME statement — the smallest-free-ordinal
+  derivation does not imply the cap.** "A full quota yields no candidate ordinal" holds only while the
+  quota is **invariant across the period**. The moment the quota can be edited or swapped mid-period
+  (an admin plan edit, a mid-month downgrade), `generate_series` finds a hole below the *new* smaller
+  max and over-grants, while the read path truthfully reports 0 remaining: read and claim disagree
+  silently, in the over-granting direction. `AND (SELECT COUNT(*) … WHERE <quota key> AND IsActive) <
+  @max`. It is redundant under a constant quota and costs one indexed count; that is the price of not
+  having to prove the quota never moves.
+- **0 rows ⇒ `null` ⇒ no slot — a RESULT, never an exception** at the caller's commit.
+- **Ordering:** ADR-0023's repeatable-effect test applies — an entitlement grant is money-shaped, so
+  **Mode A**: reserve **before** the benefit changes the price. Note the `PromoCodeRedemption` ancestor
+  is **reserve-after-persist and fail-soft**; inverting it is a decision that must be **argued** (a hard
+  cap is needed when the entitlement requires nothing but a subscription, and is farmable by every
+  subscriber with concurrent requests alone), never inherited.
+- **Mode A has a price and you must pay it explicitly:** the validator's approved total and the
+  reservation's outcome can disagree inside one request. **Never persist a price higher than the one the
+  caller consented to** — fail with a **dedicated** error and re-quote. Reusing the generic
+  "price changed" code is a silent downgrade: every client renders it as a re-quote, so the one sentence
+  that explains the state never runs.
+- **Out-of-band means out-of-band.** A raw-SQL reservation auto-commits; anything that stamps a
+  *later-created* row's id onto it must ride the UoW commit, or it fires against a principal row that
+  does not exist yet (the handler returns **before** `CommitAsync`). A self-committing reservation is a
+  **declared** exception and carries the doc-comment saying so.
+- **Period:** a **stored key**, computed once at reservation, by **exactly one factory**, from a source
+  **every call site can reach** (a preview path usually has no order and no address) — the
+  platform-default `CountryConfiguration.TimeZoneId`, UTC fallback, never throwing. **Never** the client
+  `X-Time-Zone` header, which is unauthenticated and lets a member pick their own month boundary. Never
+  recompute the key for an existing row; the key crosses no DTO boundary.
+- **Preview vs consume are different calls.** The "does this user get it" question is answered by a
+  **pure resolver** (the `CancellationPolicyResolver` shape) that every pricing path may call freely;
+  consuming happens **once**, at persist. A resolver that consumes burns the entitlement on every quote.
+  **The consumed answer is passed INTO the builder, not resolved by it** — that is what makes "exactly
+  one consuming call site" true by construction instead of by grep.
+- **One clock reading, threaded.** Where the entitlement's eligibility is time-windowed, two
+  `DateTime.UtcNow` reads inside one request can put the resolver and the policy on opposite sides of
+  the boundary — a live slot attached to an item that was never charged, which no release rule covers
+  and no orphan sweep sees.
+- **The counting key is the quota key and nothing else.** Whatever "which subscription/enrolment was
+  this against" column the row carries is a **payload** for humans: it may appear in the `INSERT` column
+  list and nowhere else. In a `WHERE`/`GROUP BY`/`HAVING`/join it silently makes the quota reset on
+  churn and not carry across a plan switch — and it reads as *more* correct than the right key, which is
+  what makes it the likely violation.
+- **Reversal:** release (soft-delete → the filtered index frees the ordinal) only when the user did not
+  consume the thing the entitlement bought — and key the release on a signal that means what you say it
+  means (**census every writer** of the status you are reading). Whatever the rule is, **name the
+  exploit you accept**, state the bound **that actually holds** (usually the quota itself, not a fee),
+  and **disclose the forfeiture to the user before they trigger it** — especially in the cases where it
+  is otherwise invisible.
+- **An out-of-band claim has an orphan class, and the sweep that reclaims it is NOT the sweep you
+  already have.** A job that reads the *order* table structurally cannot see a claim whose order never
+  committed. Repository method + partial index + a second command on an existing schedule.
+
 ## Bounded exclusivity on a pull board — the stored-deadline hold (ADR-0036)
 
 When a rule must give one actor **temporary exclusive access** to a work item on a first-come board
@@ -702,11 +779,19 @@ When a rule must give one actor **temporary exclusive access** to a work item on
   authorization · write gate · notification freshness — and enumerate them in the ADR. A rule applied to
   n−1 of n surfaces is a leak; a rule applied *uniformly* to surfaces that answer different questions is
   a different bug.
-- **Sharing one lambda does NOT make two evaluators agree.** SQL and C# disagree on null equality
-  (`col = @p` with a null parameter is UNKNOWN; `null == null` is `true`), so a queryable form and an
-  in-memory form must be pinned by an **equivalence test against the real provider** — never by a shared
-  expression tree, and never by review. Corollary: **never `.Compile()` on a request path**; a
-  `static readonly` delegate compiled once, or a plain method, is the shape.
+- **Sharing one lambda does NOT make two evaluators agree**, so a queryable form and an in-memory form
+  must be pinned by an **equivalence test against the real provider** — never by a shared expression
+  tree, and never by review. Corollary: **never `.Compile()` on a request path**; a `static readonly`
+  delegate compiled once, or a plain method, is the shape.
+  **The reason usually given for this rule is wrong for EF, and the rule survives anyway — know which is
+  which.** *Raw* SQL and C# do disagree on null equality (`col = @p` with a null parameter is UNKNOWN;
+  `null == null` is `true`), but **EF Core's null semantics rewrite `x.Col == @p` to `Col IS NULL` when
+  the captured value is null**, so an EF-translated predicate matches C# on exactly that case. Measured,
+  not assumed: mutating `OrderVisibility`'s null-beneficiary disjunct out of the **queryable form only**
+  left the `caller == null` row of TC-PREF-EQUIV-0 **green** and turned both non-null callers red. **What
+  the equivalence test actually catches is a term edited on ONE side** — which is the failure that
+  happens, because the two forms are two pieces of text. Keep the in-memory null guard regardless: it
+  costs nothing and it is the brace to the null-beneficiary term's belt.
 - **Enumerating grep hits is not coverage — check CALL SITES.** A specification factory with all-optional
   parameters accepts a new one **without breaking a single caller**, which means every caller that
   forgets it leaks silently and builds green.
@@ -934,6 +1019,50 @@ cost Cleansia **ten** disagreeing definitions of "which orders may a cleaner tak
   has an unsatisfiable `WHERE` (it requires the writerless status above) **and no caller** — yet it was
   cited in good faith as the reason a risk was covered. When you retire a mechanism, delete the class;
   a resident class is read as a live guarantee.
+
+## Moving a gate onto a new column: the term you delete is the outage (ADR-0034 D7)
+
+When a denormalized flag replaces an old column inside a gate — a profile-completeness check, an
+eligibility predicate, anything that decides whether a user may act — **the flag is `false` for every
+existing row on the morning of the release unless a backfill ran.** Swapping
+`!string.IsNullOrEmpty(LegacyColumn)` for `NewFlag` therefore does not preserve behaviour "by
+construction"; it preserves behaviour only if something wrote the flag for the rows that already exist.
+
+- **Ship the writer first, then the gate, and keep the old term as a disjunct** —
+  `NewFlag || <the old condition>` — with a comment naming the outage it prevents and the condition
+  under which the term retires. The disjunct is not defensive clutter; it is the whole migration.
+- **Both terms must be scalars on the row the gate already loads.** A term that reads a navigation is
+  load-order-dependent in a repository with no lazy loading (this one), so a hand-written `.Include`
+  list silently becomes the gate.
+- **Pin it with a host/route test that seeds the pre-release row shape** (flag false, legacy value
+  present, no child row) **and drives a real gated endpoint.** A unit test on a hand-built aggregate
+  passes over exactly this bug, because the bug is what the loader materialized.
+  Reference: `Employee.HasPayoutDestination()` + `Cleansia.HostTests/Tests/PayoutGateDeployDayTests`.
+
+**Sibling rule for the same wave — erasure and other must-never-miss operations do not move onto the
+navigation either.** Keep them id-keyed on the repository (`RemoveForEmployeeAsync(employeeId)`) so they
+are correct regardless of what the caller loaded, and **load-and-remove rather than `ExecuteDelete`** when
+they run inside a caller's unit of work — `ExecuteDelete` commits on its own connection and would delete
+even when the surrounding erasure rolls back. Prove it with an integration test that goes through the
+real service's query shape, not a hand-populated navigation.
+
+## Validate and canonicalize in ONE call, and return the stored form
+
+A validator that answers only `bool` forces the handler to re-derive the value it is about to store, and
+two derivations are two definitions. Return the canonical record from the validation call
+(`PayoutValidationResult(IsValid, ErrorKey, Canonical)`, mirroring `TaxIdValidationResult` and widening
+it) — the FluentValidation rule uses the key, the handler uses the canonical form, and there is exactly
+one place the derived value comes from.
+
+Two corollaries this shape makes cheap:
+- **Compare the DERIVED value, never the typed parts,** for equality, uniqueness and fraud checks. Parts
+  that canonicalize to the same identifier are the same thing; comparing parts silently under-reports.
+- **A dynamic error key needs `RuleFor(c => c).CustomAsync(...)` + `context.AddFailure(new
+  ValidationFailure(prop, key) { ErrorCode = prop })`**, not `.WithMessage(<constant>)`. `CreateProblemDetails`
+  drops failures whose `ErrorCode` is null, so an un-coded failure reaches the client as a bare `detail`
+  and every client falls back to a generic message. `UpdateIdentificationInfo` collapses its service's key
+  to one constant — fine for one outcome, wrong when the caller must tell "bad checksum" from "that is a
+  card number".
 
 ## Tenancy is APP; region is INFRA — they are orthogonal (ADR-0017)
 

@@ -49,7 +49,6 @@ public record AdminEmployeeDetail(
     string? RegistrationNumber,
     string? VatNumber,
     string? LegalEntityName,
-    string? Iban,
     string? EmergencyContactName,
     string? EmergencyContactPhone,
     string ContractStatus,

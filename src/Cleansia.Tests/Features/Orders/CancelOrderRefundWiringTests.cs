@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
 using MockQueryable;
+using Cleansia.Tests.Common;
 using Moq;
 
 namespace Cleansia.Tests.Features.Orders;
@@ -37,6 +38,7 @@ public class CancelOrderRefundWiringTests
     private readonly Mock<ICancellationPolicyResolver> _policyResolver = new();
     private readonly Mock<INotificationProducer> _producer = new();
     private readonly Mock<ILiveActivityProducer> _liveActivityProducer = new();
+    private readonly Mock<IExpressWaiverConsumer> _expressWaiverConsumer = ExpressWaiverMocks.NoConsumer();
 
     public CancelOrderRefundWiringTests()
     {
@@ -63,7 +65,8 @@ public class CancelOrderRefundWiringTests
             _loyaltyService.Object,
             _policyResolver.Object,
             _producer.Object,
-            _liveActivityProducer.Object);
+            _liveActivityProducer.Object,
+            _expressWaiverConsumer.Object);
 
     private void Arrange(Order order) =>
         _orderRepository

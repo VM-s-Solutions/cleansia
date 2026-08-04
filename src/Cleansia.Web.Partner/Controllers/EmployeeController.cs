@@ -50,6 +50,28 @@ public class EmployeeController(IMediator mediator) : ApiController(mediator)
         return HandleResult<UpdateEmployee.Response>(result);
     }
 
+    [HttpPut("UpdateBankDetails")]
+    [Permission(Policy.CanUpdateCurrentEmployee)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(UpdateBankDetails.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateBankDetails([FromBody] UpdateBankDetails.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<UpdateBankDetails.Response>(result);
+    }
+
+    [HttpGet("GetMyPayoutDetails")]
+    [Permission(Policy.CanViewEmployeePayoutDetails)]
+    [ProducesResponseType(typeof(MyPayoutDetails), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetMyPayoutDetails([FromQuery] GetMyPayoutDetails.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<MyPayoutDetails>(result);
+    }
+
     [HttpPost("SaveMyDocuments")]
     [Permission(Policy.CanUploadEmployeeDocument)]
     [EnableRateLimiting("auth")]

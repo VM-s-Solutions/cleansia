@@ -26,7 +26,13 @@ public class CreateMembershipPlan
         decimal DiscountPercentage,
         int FreeCancellationWindowHours,
         int TrialPeriodDays,
-        bool AllowsExpressUpgrade) : ICommand<Response>;
+        bool AllowsExpressUpgrade,
+        /// <summary>
+        /// Free express upgrades granted per calendar month. Ignored when
+        /// <see cref="AllowsExpressUpgrade"/> is false; 0 means no waiver (fail-closed), never
+        /// "unlimited" — a sentinel there is how a seeding mistake becomes an unbounded discount.
+        /// </summary>
+        int ExpressUpgradesPerMonth = 0) : ICommand<Response>;
 
     public record Response(string MembershipPlanId);
 
@@ -97,7 +103,8 @@ public class CreateMembershipPlan
                 freeCancellationWindowHours: command.FreeCancellationWindowHours,
                 allowsExpressUpgrade: command.AllowsExpressUpgrade,
                 billingInterval: command.BillingInterval,
-                trialPeriodDays: command.TrialPeriodDays);
+                trialPeriodDays: command.TrialPeriodDays,
+                expressUpgradesPerMonth: command.ExpressUpgradesPerMonth);
 
             membershipPlanRepository.Add(plan);
 

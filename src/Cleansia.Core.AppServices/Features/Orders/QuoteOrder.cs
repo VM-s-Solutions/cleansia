@@ -55,7 +55,20 @@ public class QuoteOrder
         decimal ExtrasSubtotal,
         bool ExpressSurchargeApplied,
         decimal ExpressSurchargeAmount,
-        decimal ExchangeRate);
+        decimal ExchangeRate,
+        /// <summary>
+        /// The slot IS express and the surcharge was nevertheless not charged, because the member has a
+        /// free express upgrade left. Without this field <c>ExpressSurchargeApplied: false</c> is
+        /// ambiguous between "waived" and "not an express slot at all", and the wizard cannot show the
+        /// waiver in place of the surcharge.
+        /// </summary>
+        bool ExpressSurchargeWaivedByMembership = false,
+        /// <summary>
+        /// Free express upgrades left this calendar month BEFORE this booking — server-computed, never
+        /// client-counted (a client that counts its own orders disagrees with the server the first time a
+        /// cancellation releases a slot). Null when the caller has no membership.
+        /// </summary>
+        int? ExpressUpgradesRemaining = null);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -129,6 +142,7 @@ public class QuoteOrder
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            var nowUtc = DateTime.UtcNow;
             var result = await pricingCalculator.CalculateAsync(
                 command.SelectedServiceIds,
                 command.SelectedPackageIds,
@@ -137,6 +151,8 @@ public class QuoteOrder
                 command.Bathrooms,
                 command.CurrencyId,
                 command.CleaningDate,
+                userSessionProvider.GetUserId(),
+                nowUtc,
                 cancellationToken);
 
             // Two different bases, deliberately. The gross (surcharge included) is what the client
@@ -214,7 +230,9 @@ public class QuoteOrder
                 ExtrasSubtotal: result.ExtrasSubtotal,
                 ExpressSurchargeApplied: result.ExpressSurchargeApplied,
                 ExpressSurchargeAmount: result.ExpressSurchargeAmount,
-                ExchangeRate: result.ExchangeRate));
+                ExchangeRate: result.ExchangeRate,
+                ExpressSurchargeWaivedByMembership: result.ExpressSurchargeWaivedByMembership,
+                ExpressUpgradesRemaining: result.ExpressUpgradesRemaining));
         }
     }
 }

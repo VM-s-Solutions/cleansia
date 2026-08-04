@@ -188,9 +188,10 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
     [ProducesResponseType(typeof(IReadOnlyList<GetMyServingCleaners.Response>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> MyServingCleaners(CancellationToken cancellationToken)
+    public async Task<IActionResult> MyServingCleaners(
+        [FromQuery] GetMyServingCleaners.Query query, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(new GetMyServingCleaners.Query(), cancellationToken);
+        var result = await Mediator.Send(query, cancellationToken);
         return HandleResult<IReadOnlyList<GetMyServingCleaners.Response>>(result);
     }
 }

@@ -70,7 +70,6 @@ public class AdminUpdateEmployee
                 .MaximumLength(200).WithMessage(BusinessErrorMessage.MaxLengthExceeded)
                 .When(c => !string.IsNullOrWhiteSpace(c.LegalEntityName));
 
-            RuleFor(c => c.Iban).ValidateIban().When(c => !string.IsNullOrWhiteSpace(c.Iban));
             RuleFor(c => c.PassportId).ValidatePassportId().When(c => !string.IsNullOrWhiteSpace(c.PassportId));
         }
     }
@@ -92,13 +91,12 @@ public class AdminUpdateEmployee
         string? RegistrationNumber,
         string? VatNumber,
         string? LegalEntityName,
-        string? Iban,
         string? EmergencyName,
         string? EmergencyPhone) : ICommand<Response>;
 
     public record Response(string EmployeeId);
 
-    // Ids only (ADR-0012 D4.1) — the edited fields ARE the subject's PII (name/phone/address/IBAN/
+    // Ids only (ADR-0012 D4.1) — the edited fields ARE the subject's PII (name/phone/address/
     // passport), which the audit log must never copy. The row records that this admin edited this
     // user's profile, keyed on the USER id the employee drill-in filters on.
     public record ProfileEditSnapshot(string UserId, string EmployeeId);
@@ -155,7 +153,6 @@ public class AdminUpdateEmployee
                 command.LegalEntityName ?? employee.LegalEntityName,
                 command.NationalityId ?? employee.NationalityId ?? "",
                 command.PassportId ?? employee.PassportId ?? "",
-                command.Iban ?? employee.IBAN ?? "",
                 address,
                 employee.Availability.ToDictionary(
                     kvp => kvp.Key,

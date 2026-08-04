@@ -72,7 +72,6 @@ public class UpdateEmployeeValidatorTests
         RegistrationNumber: "12345678",
         VatNumber: null,
         LegalEntityName: null,
-        Iban: "CZ6508000000192000145399",
         EmergencyName: null,
         EmergencyPhone: null,
         Consent: true);

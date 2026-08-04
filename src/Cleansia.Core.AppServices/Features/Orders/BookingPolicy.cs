@@ -113,9 +113,26 @@ public static class BookingPolicy
     public static bool ExceedsMaxBookableSpan(int estimatedMinutes)
         => estimatedMinutes > MaxBookableOrderSpanMinutes;
 
-    /// <summary>True if the given start time requires express surcharge (2–4h lead).</summary>
-    public static bool RequiresExpressSurcharge(DateTime cleaningUtc, DateTime nowUtc)
+    /// <summary>
+    /// True if the given start time requires express surcharge (2–4h lead).
+    /// </summary>
+    /// <param name="waiverApplies">
+    /// A membership benefit has already been RESOLVED and RESERVED for this booking, so the surcharge is
+    /// waived. A parameter rather than an <c>&amp;&amp;</c> at each call site, for the same reason
+    /// <see cref="CalculateCancellationFeeRate"/>'s <c>freeCancellationHoursOverride</c> is one: the
+    /// parameter makes every caller answer the question and makes an omission greppable. Default
+    /// <see langword="false"/> = "no benefit" — the same default direction as the cancellation override.
+    /// <para>A <see langword="bool"/>, never the waiver record: this class gets the ANSWER, never the
+    /// reason, and learns nothing about memberships.</para>
+    /// </param>
+    public static bool RequiresExpressSurcharge(
+        DateTime cleaningUtc, DateTime nowUtc, bool waiverApplies = false)
     {
+        if (waiverApplies)
+        {
+            return false;
+        }
+
         var leadHours = (cleaningUtc - nowUtc).TotalHours;
         return leadHours >= ExpressLeadTimeHours && leadHours < StandardLeadTimeHours;
     }
@@ -124,6 +141,40 @@ public static class BookingPolicy
     public static bool IsBelowMinimumLeadTime(DateTime cleaningUtc, DateTime nowUtc)
     {
         return (cleaningUtc - nowUtc).TotalHours < ExpressLeadTimeHours;
+    }
+
+    /// <summary>
+    /// ADR-0036 D3 — the share of an order's fill window a preferred cleaner's first refusal may
+    /// consume, and the absolute ceiling on it. Together they deliver Invariant H: at least 90% of
+    /// every SEAT's fill window is open to the entire board, at every lead time.
+    ///
+    /// <para>The ceiling is 12 h because that is the smallest window that always intersects a normal
+    /// waking period whatever the creation time — a 22:00 → 10:00 hold still covers 07:00–10:00 — which
+    /// is the actual thing a hold has to be worth granting. Both numbers are reasoned defaults, not
+    /// measurements, and they are <c>const</c>: changing them is a backend release (no client reads
+    /// them) and it does not re-time orders that already carry a granted deadline.</para>
+    /// </summary>
+    public const decimal PreferredHoldFraction = 0.10m;
+    public const int PreferredHoldCeilingHours = 12;
+
+    /// <summary>
+    /// ADR-0036 D3 — how long the customer's preferred cleaner gets first refusal on the order's first
+    /// seat. <see cref="TimeSpan.Zero"/> means no hold may be granted for this lead time; the targeted
+    /// notification is granted on a wider predicate and survives that (D4.1).
+    ///
+    /// <para>The floor is <c>2 * <see cref="StandardLeadTimeHours"/></c> — a DERIVATION of the one
+    /// urgency constant, never a second one. At a five-hour lead the named cleaner is the least likely
+    /// person on the board to be free, precisely because the notice is short.</para>
+    /// </summary>
+    public static TimeSpan ComputePreferredHold(DateTime cleaningUtc, DateTime nowUtc)
+    {
+        var leadHours = (cleaningUtc - nowUtc).TotalHours;
+        if (leadHours < 2 * StandardLeadTimeHours)
+        {
+            return TimeSpan.Zero;
+        }
+
+        return TimeSpan.FromHours(Math.Min(leadHours * (double)PreferredHoldFraction, PreferredHoldCeilingHours));
     }
 
     /// <summary>

@@ -27,7 +27,8 @@ public sealed class OrderFactory(
     ICountryConfigurationRepository countryConfigurationRepository,
     IVatCalculator vatCalculator,
     ILoyaltyService loyaltyService,
-    IUserMembershipRepository userMembershipRepository) : IOrderFactory
+    IUserMembershipRepository userMembershipRepository,
+    IPreferredCleanerHoldResolver preferredCleanerHoldResolver) : IOrderFactory
 {
     /// <summary>
     /// LOY-003 — Hard cap on combined (Plus + tier) discount, applied as a
@@ -99,7 +100,10 @@ public sealed class OrderFactory(
 
         var finalTotalPrice = BookingPolicy.ApplyExpressSurcharge(
             input.RawSubtotal - appliedAmount,
-            BookingPolicy.RequiresExpressSurcharge(input.CleaningDate, DateTime.UtcNow));
+            BookingPolicy.RequiresExpressSurcharge(
+                input.CleaningDate,
+                input.NowUtc,
+                waiverApplies: input.ReservedExpressWaiver != null));
 
         var order = Order.Create(
             input.CustomerName,
@@ -142,8 +146,9 @@ public sealed class OrderFactory(
         order.AddSelectedServices(selectedServices);
         order.AddSelectedPackages(selectedPackages);
 
-        var estimatedTime = selectedServices.Sum(s => s.Service!.EstimatedTime) +
-                            selectedPackages.Sum(p => p.Package!.IncludedServices.Sum(s => s.Service!.EstimatedTime));
+        var estimatedTime = OrderDuration.EstimateMinutes(
+            selectedServices.Select(s => s.Service!),
+            selectedPackages.Select(p => p.Package!));
 
         // Ahead of CalculateRequiredEmployees, so an over-cap span cannot mint a crew on its way out.
         // CreateOrder.Validator turns this into a business error for the customer; this is the backstop
@@ -159,6 +164,23 @@ public sealed class OrderFactory(
 
         order.UpdateEstimatedTime(estimatedTime);
         order.CalculateRequiredEmployees(BookingPolicy.SpareSeatsPerOrder);
+
+        // The factory never assigns either hold column itself — it hands the resolver's answer to the
+        // aggregate, which owns the (beneficiary, deadline) pair. A declined hold is not a failure:
+        // the preference is still stored, and the order goes straight to the open board.
+        var preferredCleaner = await preferredCleanerHoldResolver.ResolveAsync(
+            input.UserId,
+            input.PreferredEmployeeId,
+            input.Address.CountryId,
+            input.CleaningDate,
+            estimatedTime,
+            input.NowUtc,
+            cancellationToken);
+
+        if (preferredCleaner.HoldUntilUtc is { } holdUntilUtc)
+        {
+            order.GrantPreferredHold(input.PreferredEmployeeId!, holdUntilUtc);
+        }
 
         // VAT breakdown — gracefully degrade when there's no company info
         // configured for the country (sets net = total, vat = 0).

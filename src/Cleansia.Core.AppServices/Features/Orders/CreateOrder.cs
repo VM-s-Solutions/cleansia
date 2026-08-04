@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -123,12 +124,19 @@ public class CreateOrder
                 .MustAsync(packageRepository.ExistWithIdsAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedPackage);
 
+            // The two price rules are ORDERED and share one calculator run. The waiver rule goes first
+            // because Cascade.Stop means only the first failure is reported, and a member who lost their
+            // free upgrade between the quote and here must get the dedicated code — TotalPriceNotMatch is
+            // rendered by every client as a generic "the price changed", which is exactly the sentence
+            // that cannot explain this.
             RuleFor(x => x)
                 .Cascade(CascadeMode.Stop)
                 .Must(OrderMustNotBeEmpty)
                 .WithMessage(BusinessErrorMessage.EmptyOrder)
                 .MustAsync(SpanWithinCapAsync)
                 .WithMessage(BusinessErrorMessage.OrderSpanExceedsMaximum)
+                .MustAsync(ExpressWaiverStillAvailableAsync)
+                .WithMessage(BusinessErrorMessage.ExpressWaiverNoLongerAvailable)
                 .MustAsync(PriceMatchesAsync)
                 .WithMessage(BusinessErrorMessage.TotalPriceNotMatch);
 
@@ -199,7 +207,21 @@ public class CreateOrder
             return !BookingPolicy.ExceedsMaxBookableSpan(serviceMinutes + packagedServiceMinutes);
         }
 
-        private async Task<bool> PriceMatchesAsync(Command command, CancellationToken cancellationToken)
+        private const string PriceMatchesKey = "createOrder.priceMatches";
+
+        /// <summary>
+        /// Runs the ONE waiver-aware pricing recompute for this validation and classifies the outcome.
+        /// Fails only when the submitted total is exactly the server's total minus the express surcharge
+        /// — i.e. the client was quoted a waived price and the quota has since been exhausted, which is
+        /// the single pricing input in this system that can change between two runs of a fixed command.
+        /// Any other mismatch is left to <see cref="PriceMatchesAsync"/>, which reads the result this
+        /// method cached rather than pricing the order a second time.
+        /// </summary>
+        private async Task<bool> ExpressWaiverStillAvailableAsync(
+            Command command,
+            Command _,
+            ValidationContext<Command> context,
+            CancellationToken cancellationToken)
         {
             // Pass CleaningDate so the calculator folds the express surcharge
             // in itself — replaces the legacy two-branch "either raw or
@@ -213,10 +235,25 @@ public class CreateOrder
                 command.Bathrooms,
                 command.CurrencyId,
                 command.CleaningDate,
+                _userSessionProvider.GetUserId(),
+                DateTime.UtcNow,
                 cancellationToken);
 
-            return result.TotalPrice == command.TotalPrice;
+            var priceMatches = result.TotalPrice == command.TotalPrice;
+            context.RootContextData[PriceMatchesKey] = priceMatches;
+
+            return priceMatches
+                || !result.ExpressSurchargeApplied
+                || command.TotalPrice != result.TotalPrice - result.ExpressSurchargeAmount;
         }
+
+        private static Task<bool> PriceMatchesAsync(
+            Command command,
+            Command _,
+            ValidationContext<Command> context,
+            CancellationToken cancellationToken)
+            => Task.FromResult(
+                context.RootContextData.TryGetValue(PriceMatchesKey, out var matches) && matches is true);
 
         /// <summary>
         /// Filter the slug-keyed Extras map down to slugs the client
@@ -279,11 +316,18 @@ public class CreateOrder
         IOrderAddressResolver orderAddressResolver,
         IOrderPromoApplier orderPromoApplier,
         IOrderLateReferralAcceptor orderLateReferralAcceptor,
-        IOrderPaymentDispatcher orderPaymentDispatcher) : ICommandHandler<Command, Response>
+        IOrderPaymentDispatcher orderPaymentDispatcher,
+        IExpressWaiverConsumer expressWaiverConsumer) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId() ?? string.Empty;
+
+            // ONE clock reading, threaded through the resolver, the reservation and every express-window
+            // evaluation below. Reading DateTime.UtcNow again further down would let the resolver see "in
+            // window" and the factory see "out of window", producing a live slot attached to an order
+            // whose price carries no surcharge — the one loss here with no release rule and no sweep.
+            var nowUtc = DateTime.UtcNow;
 
             await orderLateReferralAcceptor.AcceptIfPresentAsync(
                 command.ReferralCode, userId, cancellationToken);
@@ -314,8 +358,40 @@ public class CreateOrder
                 command.Bathrooms,
                 command.CurrencyId,
                 command.CleaningDate,
+                userId,
+                nowUtc,
                 cancellationToken);
             var rawSubtotal = calc.TotalPrice - calc.ExpressSurchargeAmount;
+
+            // Mode A — the slot is claimed BEFORE the waived price is frozen, never after. An express
+            // waiver requires nothing but an active subscription, so a soft cap is farmable by every
+            // subscriber with concurrent requests alone; the promo path's reserve-after-persist ordering
+            // is safe there only because a promo needs a code an operator issued.
+            //
+            // The trigger is the CALCULATOR's answer, not a second resolve's. rawSubtotal above was
+            // derived from the calculator's price, so the factory's waiver decision must equal the
+            // calculator's or the price it freezes is not the one anybody agreed to — and the two can
+            // genuinely differ, in both directions, if a concurrent booking or release moves the quota
+            // between the two reads.
+            MembershipBenefitUsage? reservation = null;
+            if (calc.ExpressSurchargeWaivedByMembership)
+            {
+                var waiver = await expressWaiverConsumer.ResolveAsync(
+                    userId, command.CleaningDate, nowUtc, cancellationToken);
+                reservation = await expressWaiverConsumer.TryReserveAsync(
+                    waiver, nowUtc, cancellationToken);
+
+                if (reservation == null)
+                {
+                    // The validator approved a WAIVED total and the slot is gone. Pricing the order at
+                    // waived + 20% here would charge 20% more than the customer consented to, with no
+                    // error and no field in the three-field response to notice it by; honoring the waived
+                    // price without a committed slot is the soft cap this design rejects. Re-quote.
+                    return BusinessResult.Failure<Response>(new Error(
+                        nameof(command.TotalPrice),
+                        BusinessErrorMessage.ExpressWaiverNoLongerAvailable));
+                }
+            }
 
             // Promo preview lives outside the factory because it's a one-off
             // input (not a stored snapshot like tier/membership) and needs to
@@ -338,12 +414,23 @@ public class CreateOrder
                 SelectedServiceIds: command.SelectedServiceIds,
                 SelectedPackageIds: command.SelectedPackageIds,
                 RawSubtotal: rawSubtotal,
+                NowUtc: nowUtc,
+                ReservedExpressWaiver: reservation,
                 PromoDiscountAmount: promo.DiscountAmount,
                 PromoCodeId: promo.PromoCodeId,
                 PreferredEmployeeId: command.PreferredEmployeeId,
                 RecurringTemplateId: null,
                 SpecialInstructions: command.SpecialInstructions,
                 AccessInstructions: command.AccessInstructions), cancellationToken);
+
+            if (reservation != null)
+            {
+                // A change-tracked update, so EF's dependency-ordered batch puts the Orders INSERT ahead
+                // of it inside the one SaveChangesAsync. Out-of-band here would fire against an Orders
+                // row that does not exist until the pipeline commits, after this handler returns — 23503,
+                // on a booking whose Stripe session has already been minted.
+                await expressWaiverConsumer.AttachOrderAsync(reservation, order.Id, cancellationToken);
+            }
 
             var dispatch = await orderPaymentDispatcher.DispatchAsync(
                 order, command.Language, cancellationToken);

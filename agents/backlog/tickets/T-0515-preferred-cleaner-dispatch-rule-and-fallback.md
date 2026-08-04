@@ -5,14 +5,14 @@ status: draft
 size: M
 owner: backend
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-04
 depends_on: [T-0495]
 blocks: []
 stories: []
-adrs: []
+adrs: [ADR-0036, ADR-0039]
 layers: [backend]
 security_touching: false
-manual_steps: []
+manual_steps: [nswag-regen]
 sprint: 15
 ---
 
@@ -96,5 +96,51 @@ batch. Check before dispatch.
   destination and the panel ticket itself stays diff-free. **AC3 is the one to read twice:** this
   touches the job board, which is how every cleaner is paid, so the no-preference path is the
   regression that matters more than the feature.
+- 2026-08-04 — **backend: hold resolver + slot answer built (ADR-0036 D2/D3/D4.1/D5 + ADR-0039
+  A1/A2/A3/A5).** Test-first on all pure logic. Baselines held: `Cleansia.Tests` 2594 → **2782**,
+  `Cleansia.IntegrationTests` 117 → **130**, `Cleansia.HostTests` → **88**, all green. **The six
+  visibility surfaces are NOT wired** — `TakeOrder.cs` and `NewJobsDigestService.cs` were held by other
+  agents in this batch, and half a visibility rule is worse than none. See `## Review`.
 
 ## Review
+
+### Built (ADR-0036 + ADR-0039)
+
+| Piece | Where |
+|---|---|
+| The hold window (pure) | `BookingPolicy.ComputePreferredHold` + `PreferredHoldFraction` / `PreferredHoldCeilingHours` |
+| The visibility rule, both forms | `Cleansia.Core.Domain/Orders/OrderVisibility.cs` — **built and tested, wired NOWHERE yet** |
+| The resolver | `IPreferredCleanerHoldResolver` / `PreferredCleanerHoldResolver` (+ `PreferredCleanerOutcome`, `HoldDeclineReason`) |
+| The grant | `OrderFactory` — resolves once, hands the answer to `Order.GrantPreferredHold`, writes neither column itself |
+| The set-based busy query | `IOrderRepository.GetBusyEmployeeIdsInWindowAsync` over the extracted `LiveCommitmentsInWindow` filter |
+| The picker's answer | `GetMyServingCleaners` — three optional request fields, the tri-state, the same repo call with the same window |
+| The one duration definition | `Cleansia.Core.Domain/Orders/OrderDuration.cs`, shared with `OrderFactory`; the picker sums the same rows in SQL |
+
+### NOT built, and why — this ticket is NOT done
+
+1. **The six visibility surfaces are unwired.** `OrderSpecification`, `DashboardSpecifications` (both
+   callers), `OrderAccessService.CanBrowseOrderAsync`, `TakeOrder.Validator`'s existence rule and the
+   digest conjunct all still ignore `OrderVisibility`. Two of those files were held by other agents in
+   this batch. **Consequence today: a granted hold is stored and enforced by nothing** — the perk is
+   inert, and it fails OPEN, which is this ADR's posture. Wiring three of six would be worse: the board
+   would hide an order the write gate still accepts.
+2. **The targeted push (D4) is not emitted.** `PreferredCleanerOutcome.NotifyPreferred` is computed and
+   tested; nothing consumes it. Needs `NotificationEventCatalog.PreferredOffer`, its category mapping
+   and 5-locale copy — a cross-cutting notification change, not a hold change.
+3. **`MaterializeRecurringBookings` still passes `PreferredEmployeeId: null`** (AC7). The factory path
+   is ready for it; the template has no field to carry it (ADR-0036 D8).
+4. **`Order.cs:217-224`'s comment (AC8) is not corrected** — it describes a scoring algorithm that does
+   not exist. Left with the enforcement work it belongs to.
+
+### Manual steps
+- ⚠️ **`nswag-regen` (owner-only).** `GetMyServingCleaners.Query` gains three optional query-string
+  fields (`CleaningDateTimeUtc`, `SelectedServiceIds`, `SelectedPackageIds`). The **response** is
+  unchanged — `IsAvailableForRequestedSlot` was already on the wire; only the request shape moved.
+- **No migration.** Nothing schema-touching; `Order.PreferredHoldUntilUtc` already exists.
+
+### Catalog harvest
+`patterns-backend.md` §"Bounded exclusivity" — the *reason* given for the two-form equivalence test was
+falsified by mutation and is corrected in the same change. EF Core's null semantics rewrite
+`Col == @p` to `Col IS NULL` for a captured null, so the queryable form matches C# on exactly the case
+the ADR feared; what the test actually catches is a term edited on one side only. The rule survives, its
+justification did not.

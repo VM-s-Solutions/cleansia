@@ -49,6 +49,10 @@ public class TimerSweepFailureBranchTests
         _mediator
             .Setup(m => m.Send(It.IsAny<CleanupStalePendingOrders.Command>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Fail<CleanupStalePendingOrders.Response>());
+        _mediator
+            .Setup(m => m.Send(
+                It.IsAny<ReleaseOrphanedBenefitReservations.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Fail<ReleaseOrphanedBenefitReservations.Response>());
 
         var handler = new CleanupStalePendingOrdersHandler(
             _mediator.Object, NullLogger<CleanupStalePendingOrdersHandler>.Instance);

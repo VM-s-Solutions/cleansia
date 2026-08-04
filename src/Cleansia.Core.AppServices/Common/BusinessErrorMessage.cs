@@ -94,6 +94,17 @@ public static class BusinessErrorMessage
     public const string MembershipStripeCustomerRequired = "membership.stripe_customer_required";
     public const string MembershipSwapSamePlan = "membership.swap_same_plan";
 
+    /// <summary>
+    /// ADR-0035 AM-8 — the member's free express upgrade was still available when the price was quoted
+    /// and is not available now. Distinct from <see cref="TotalPriceNotMatch"/> on purpose: every client
+    /// maps that one to a generic "the price changed" string, so the state that needs its own sentence
+    /// ("you've used both free express bookings this month") would never be rendered.
+    /// <para>It also guards the consent invariant: no path may persist an <c>Order.TotalPrice</c> greater
+    /// than the <c>command.TotalPrice</c> the validator approved. When the slot is lost after a waived
+    /// validation, the customer re-quotes; they are never silently charged 20% more.</para>
+    /// </summary>
+    public const string ExpressWaiverNoLongerAvailable = "membership.express_waiver.no_longer_available";
+
     // Membership plans — admin back-office CRUD
     public const string MembershipPlanCodeAlreadyExists = "membership.plan.code_already_exists";
     public const string MembershipPlanDiscountOutOfRange = "membership.plan.discount_out_of_range";
@@ -264,6 +275,21 @@ public static class BusinessErrorMessage
     public const string InvalidTaxId = "validation.invalid_tax_id";
     public const string InvalidIban = "validation.invalid_iban";
     public const string InvalidZipCode = "validation.invalid_zip_code";
+
+    // Payout details (ADR-0034 D4) — every key the payout validator can return, plus the feature's own.
+    public const string PayoutCountryNotSupported = "validation.payout.country_not_supported";
+    public const string PayoutSchemeNotSupported = "validation.payout.scheme_not_supported";
+    public const string PayoutAccountNumberRequired = "validation.payout.account_number_required";
+    public const string PayoutInvalidAccountNumber = "validation.payout.invalid_account_number";
+    public const string PayoutInvalidAccountPrefix = "validation.payout.invalid_account_prefix";
+    public const string PayoutInvalidBankCode = "validation.payout.invalid_bank_code";
+    public const string PayoutInvalidIban = "validation.payout.invalid_iban";
+    public const string PayoutIbanCountryMismatch = "validation.payout.iban_country_mismatch";
+    public const string PayoutIbanMismatch = "validation.payout.iban_mismatch";
+    public const string PayoutInvalidSwift = "validation.payout.invalid_swift";
+    public const string PayoutSwiftRequired = "validation.payout.swift_required";
+    public const string PayoutLooksLikeCard = "validation.payout.looks_like_card";
+    public const string PayoutDetailsNotFound = "payout.not_found";
 
     // Service
     public const string ServiceNotFound = "service.not_found";

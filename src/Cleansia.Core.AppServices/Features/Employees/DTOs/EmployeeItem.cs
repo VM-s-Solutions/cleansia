@@ -24,7 +24,6 @@ public record EmployeeItem(
     string? RegistrationNumber,
     string? VatNumber,
     string? LegalEntityName,
-    string? Iban,
     string? EmergencyContactName,
     string? EmergencyContactPhone,
     BlobFileDto? ProfilePhoto,

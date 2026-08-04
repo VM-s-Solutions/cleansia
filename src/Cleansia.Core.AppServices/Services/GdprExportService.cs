@@ -10,6 +10,7 @@ public class GdprExportService(
     IOrderRepository orderRepository,
     IEmployeeDocumentRepository employeeDocumentRepository,
     IEmployeeInvoiceRepository employeeInvoiceRepository,
+    IEmployeePayoutDetailsRepository employeePayoutDetailsRepository,
     IUserConsentRepository userConsentRepository) : IGdprExportService
 {
     public async Task<GdprExportDto> BuildAsync(
@@ -38,6 +39,18 @@ public class GdprExportService(
                 emp.IBAN, emp.PassportId, emp.NationalityId,
                 emp.EmergencyContactName, emp.EmergencyContactPhone,
                 emp.PreferredCurrencyCode, emp.AverageRating, emp.ContractStatus, emp.CreatedOn);
+
+        GdprExportPayoutDetailsDto? payoutDetails = null;
+        if (user.Employee is not null)
+        {
+            var payout = await employeePayoutDetailsRepository.GetByEmployeeIdAsync(user.Employee.Id, cancellationToken);
+            if (payout is not null)
+                payoutDetails = new GdprExportPayoutDetailsDto(
+                    payout.Scheme, payout.Status, payout.BankCountryId,
+                    payout.AccountPrefix, payout.AccountNumber, payout.BankCode, payout.Iban,
+                    payout.Swift, payout.BankName, payout.HolderName,
+                    payout.ConfirmedAt, payout.LastRevealedAt, payout.RevealCount);
+        }
 
         var orders = await orderRepository.GetFiltered(o => o.UserId == userId)
             .AsNoTracking()
@@ -73,7 +86,7 @@ public class GdprExportService(
             DateTimeOffset.UtcNow, exportedBy, "JSON");
 
         return new GdprExportDto(
-            profile, address, employee, orders,
+            profile, address, employee, payoutDetails, orders,
             documents, invoices, consentDtos, metadata);
     }
 }

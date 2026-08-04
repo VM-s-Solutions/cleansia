@@ -37,7 +37,8 @@ public class GetOrderDetails
         IUserSessionProvider userSessionProvider,
         IEmployeePayConfigRepository payConfigRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
-        IOrderPhotoRepository orderPhotoRepository) : IQueryHandler<Query, OrderItem>
+        IOrderPhotoRepository orderPhotoRepository,
+        IExpressWaiverConsumer expressWaiverConsumer) : IQueryHandler<Query, OrderItem>
     {
         public async Task<BusinessResult<OrderItem>> Handle(Query query, CancellationToken cancellationToken)
         {
@@ -107,11 +108,20 @@ public class GetOrderDetails
                 }
             }
 
+            // Customer-only: a cleaner must never see a customer's entitlements. Null for every other
+            // caller, which the clients render as "no marking".
+            var isCustomerCaller = orderAccessService.IsCustomerCaller();
+            bool? expressWaiverForfeitedOnCancel = isCustomerCaller
+                ? await expressWaiverConsumer.WouldForfeitOnCustomerCancelAsync(
+                    order.Id, order.AssignedEmployees.Count > 0, cancellationToken)
+                : null;
+
             return BusinessResult.Success(order.MapToDetail(
                 estimatedCleanerPay,
                 isAssignedToCurrentUser,
                 hasAfterPhotos,
-                orderAccessService.IsCustomerCaller()));
+                isCustomerCaller,
+                expressWaiverForfeitedOnCancel));
         }
     }
 }

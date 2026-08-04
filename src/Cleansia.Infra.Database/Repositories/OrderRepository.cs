@@ -276,23 +276,57 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
     private static Task<bool> HasOverlappingOrderAsync(
         IQueryable<Order> orders, string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct)
     {
-        var newStart = cleaningDateTime;
-        var newEnd = cleaningDateTime.AddMinutes(estimatedTimeMinutes);
+        return LiveCommitmentsInWindow(orders, cleaningDateTime, cleaningDateTime.AddMinutes(estimatedTimeMinutes))
+            .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId))
+            .AnyAsync(ct);
+    }
 
-        // The interval term below is computed per row, so `CleaningDateTime < newEnd` is the only
+    public async Task<IReadOnlySet<string>> GetBusyEmployeeIdsInWindowAsync(
+        IReadOnlyCollection<string> employeeIds,
+        DateTime windowStartUtc,
+        DateTime windowEndUtc,
+        CancellationToken cancellationToken)
+    {
+        if (employeeIds.Count == 0)
+        {
+            return new HashSet<string>(StringComparer.Ordinal);
+        }
+
+        // Driven from Orders rather than from OrderEmployees: the two selective terms (status band +
+        // date band) then sit together on IX_Orders_CurrentStatus_CleaningDateTime and the semi-join
+        // runs on IX_OrderEmployees_OrderId. Driving from the employee index would prune the date band
+        // only AFTER the join, walking each candidate's whole assignment history.
+        var busy = await LiveCommitmentsInWindow(GetDbSet(), windowStartUtc, windowEndUtc)
+            .SelectMany(o => o.AssignedEmployees)
+            .Where(ae => employeeIds.Contains(ae.EmployeeId))
+            .Select(ae => ae.EmployeeId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        return busy.ToHashSet(StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// The ONE definition of "occupied in this window" — the scan floor, the interval overlap and the
+    /// live-commitment status set. Returns a queryable and terminates nothing, so the boolean form keeps
+    /// its early exit and the set form gets its fan-out over the same predicate. Two overlap predicates
+    /// in one repository is the defect class this shape exists to prevent.
+    /// </summary>
+    private static IQueryable<Order> LiveCommitmentsInWindow(
+        IQueryable<Order> orders, DateTime windowStartUtc, DateTime windowEndUtc)
+    {
+        // The interval term below is computed per row, so `CleaningDateTime < windowEnd` is the only
         // sargable bound and the scan would run back through the cleaner's whole assignment history.
         // The floor turns it into a range scan over (CurrentStatus, CleaningDateTime); it is safe
         // exactly while no order spans longer than Order.MaxOrderSpanHours, which that constant
         // documents.
-        var scanFloor = newStart.AddHours(-Order.MaxOrderSpanHours);
+        var scanFloor = windowStartUtc.AddHours(-Order.MaxOrderSpanHours);
 
-        return orders
-            .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId) &&
-                       o.CleaningDateTime >= scanFloor &&
-                       o.CleaningDateTime < newEnd &&
-                       o.CleaningDateTime.AddMinutes(o.EstimatedTime) > newStart &&
-                       SlotBlockingStatuses.Contains(o.CurrentStatus))
-            .AnyAsync(ct);
+        return orders.Where(o =>
+            o.CleaningDateTime >= scanFloor &&
+            o.CleaningDateTime < windowEndUtc &&
+            o.CleaningDateTime.AddMinutes(o.EstimatedTime) > windowStartUtc &&
+            SlotBlockingStatuses.Contains(o.CurrentStatus));
     }
 
     public async Task<bool> UserHasCompletedOrderWithEmployeeAsync(string userId, string employeeId, CancellationToken ct)

@@ -75,6 +75,8 @@ public class OrderSpanCapTests
                 It.IsAny<int>(),
                 It.IsAny<string?>(),
                 It.IsAny<DateTime?>(),
+                It.IsAny<string?>(),
+                It.IsAny<DateTime>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateOrderTestData.MatchingPricing());
 
@@ -258,7 +260,8 @@ public class OrderSpanCapTests
             _countryConfigurationRepository.Object,
             _vatCalculator.Object,
             _loyaltyService.Object,
-            _userMembershipRepository.Object);
+            _userMembershipRepository.Object,
+            NoPreferredCleanerHold.Resolver);
 
     private CreateOrder.Validator CreateValidator() =>
         new(
@@ -285,5 +288,7 @@ public class OrderSpanCapTests
             Currency: Currency.Create("CZK", "Kč", "Czech Koruna", 1m),
             SelectedServiceIds: [ServiceId],
             SelectedPackageIds: [PackageId],
-            RawSubtotal: 1500m);
+            RawSubtotal: 1500m,
+            NowUtc: DateTime.UtcNow,
+            ReservedExpressWaiver: null);
 }

@@ -44,9 +44,15 @@ public class UserMembership : Auditable, ITenantEntity
     public DateTime CurrentPeriodStart { get; private set; }
 
     /// <summary>
-    /// End of the current Stripe billing period. Used by benefit usage
-    /// tracking ("free express upgrade once per period") and by
-    /// <see cref="IsActive"/> to gate benefits during the grace window.
+    /// End of the current Stripe billing period, and the second half of
+    /// <see cref="IsActive"/>: benefits stop the moment it passes.
+    ///
+    /// <para>It does <b>not</b> bound the express-waiver quota. That quota is two per CALENDAR month
+    /// (owner ruling), counted on <c>(TenantId, UserId, BenefitKind, PeriodKey)</c> — deliberately not on
+    /// this row, so it carries across a mid-month plan switch and does not reset on re-subscribe.</para>
+    ///
+    /// <para>There is no grace window. <c>PastDue</c> is not <see cref="MembershipStatus.Active"/>, so
+    /// every benefit stops on the first payment failure (owner ruling 2026-08-03).</para>
     /// </summary>
     public DateTime CurrentPeriodEnd { get; private set; }
 

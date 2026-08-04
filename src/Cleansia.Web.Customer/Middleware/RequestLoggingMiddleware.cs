@@ -225,7 +225,17 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
                // and pulls the trailing per-photo note in. Two route shapes — the four hosts'
                // /api/Order/GetPhotos and the admin /api/AdminOrder/photos/{orderId}.
                pathValue.Contains("/getphotos") ||
-               pathValue.Contains("/photos/");
+               pathValue.Contains("/photos/") ||
+               // A cleaner's payout destination: account number, derived IBAN, BIC, and the beneficiary
+               // name as their BANK knows it. None of those field names is in the redaction token list,
+               // and a holder name is free text no denylist can reach — so both the write and the two
+               // reads are suppressed wholesale rather than field-redacted (ADR-0034 D6/S6).
+               pathValue.Contains("/updatebankdetails") ||
+               pathValue.Contains("/getmypayoutdetails") ||
+               pathValue.Contains("payout-details") ||
+               // The subject-access export is the whole person in one body, and it now carries the payout
+               // block too.
+               pathValue.Contains("/gdpr");
     }
 
     private static bool ShouldSkipLogging(PathString path)

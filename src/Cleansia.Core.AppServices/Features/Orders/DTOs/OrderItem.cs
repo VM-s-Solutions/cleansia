@@ -74,5 +74,19 @@ public record OrderItem(
     /// round-tripping to the server's <c>AfterPhotosRequired</c>
     /// validator. The validator stays on as a safety net.
     /// </summary>
-    bool HasAfterPhotos
+    bool HasAfterPhotos,
+    /// <summary>
+    /// ADR-0035 AM-13 — cancelling this order right now would use up one of the customer's free express
+    /// bookings for the month. Server-computed: the client cannot derive it (no waiver field reaches it,
+    /// and the release rule reads server-side assignment state).
+    ///
+    /// <para>The cancel confirmation MUST say so when this is true, and <b>especially</b> when the
+    /// cancellation fee is 0 — inside the 15-minute oops window and on every cash order the fee is zero
+    /// and the forfeiture is otherwise completely invisible. A silent forfeiture against a paid
+    /// subscription is the one thing this design refused to ship.</para>
+    ///
+    /// <para>Nullable + defaulted so it is additive on the wire: a client built before this field simply
+    /// omits it and behaves exactly as before.</para>
+    /// </summary>
+    bool? ExpressWaiverForfeitedOnCancel = null
 );

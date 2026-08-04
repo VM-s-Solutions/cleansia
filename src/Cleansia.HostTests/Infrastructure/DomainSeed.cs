@@ -87,6 +87,20 @@ public static class DomainSeed
         return employee;
     }
 
+    /// <summary>
+    /// An APPROVED cleaner exactly as a row looks on the morning of the ADR-0034 release: the legacy
+    /// <c>Employee.IBAN</c> is set, <c>HasPayoutDetails</c> is false and no <c>EmployeePayoutDetails</c>
+    /// row exists, because there is no backfill. If the profile gate ever reads the flag alone, every one
+    /// of these cleaners 403s off the whole partner surface.
+    /// </summary>
+    public static Employee LegacyPayoutApprovedEmployee(User user, string? tenantId = null)
+    {
+        var employee = BuildCompleteEmployee(user, tenantId);
+        employee.ClearPayoutDetails();
+        employee.Approve(approvedByUserId: "admin-seed");
+        return employee;
+    }
+
     private static Employee BuildCompleteEmployee(User user, string? tenantId)
     {
         var address = Address.Create("Test St 1", "Prague", "11000", CountryId);
@@ -98,11 +112,14 @@ public static class DomainSeed
             legalEntityName: null,
             nationalityId: CountryId,
             passportId: "P1234567",
-            iban: "CZ6508000000192000145399",
             address: address,
             availability: new Dictionary<string, List<Cleansia.Core.Domain.Users.TimeRange>>(),
             emergencyContactName: "ICE",
             emergencyContactPhone: "+420777000000");
+        // The profile gate's payout term is a scalar on this row (ADR-0034 D1.1) — the legacy IBAN
+        // column keeps the pre-payout-record cleaners complete, and the flag is what the write path sets.
+        employee.UpdateBankDetails("CZ6508000000192000145399");
+        employee.MarkPayoutDetailsProvided();
         if (tenantId is not null)
         {
             employee.TenantId = tenantId;

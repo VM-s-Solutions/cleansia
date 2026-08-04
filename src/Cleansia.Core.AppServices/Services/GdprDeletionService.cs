@@ -16,6 +16,7 @@ public class GdprDeletionService(
     IOrderRepository orderRepository,
     IEmployeeDocumentRepository employeeDocumentRepository,
     IEmployeeInvoiceRepository employeeInvoiceRepository,
+    IEmployeePayoutDetailsRepository employeePayoutDetailsRepository,
     IUserMembershipRepository userMembershipRepository,
     IOrderPhotoRepository orderPhotoRepository,
     IDeviceRepository deviceRepository,
@@ -231,6 +232,12 @@ public class GdprDeletionService(
                 .GetByEmployeeIdAsync(user.Employee.Id, ct);
             foreach (var pay in employeeOwnedPays)
                 pay.Anonymize();
+
+            // Id-keyed, not a navigation walk: this aggregate is loaded with only Employee → Address, and
+            // there is no lazy loading, so a clear reaching through Employee.PayoutDetails would be a
+            // silent no-op and the bank account, SWIFT and holder name would survive the erasure while
+            // the request returned success (ADR-0034 D1.1.2). Anonymize() only drops the gate scalar.
+            await employeePayoutDetailsRepository.RemoveForEmployeeAsync(user.Employee.Id, ct);
 
             user.Employee.Anonymize();
             user.Employee.Address?.Anonymize();

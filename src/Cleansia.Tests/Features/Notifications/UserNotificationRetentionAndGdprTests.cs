@@ -178,6 +178,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
                 new OrderRepository(ctx),
                 new EmployeeDocumentRepository(ctx),
                 new EmployeeInvoiceRepository(ctx),
+                new EmployeePayoutDetailsRepository(ctx),
                 new UserMembershipRepository(ctx),
                 new OrderPhotoRepository(ctx),
                 new DeviceRepository(ctx, session),

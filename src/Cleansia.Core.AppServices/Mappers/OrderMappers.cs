@@ -218,7 +218,8 @@ public static class OrderMappers
         decimal? estimatedCleanerPay = null,
         bool isAssignedToCurrentUser = false,
         bool hasAfterPhotos = false,
-        bool isCustomerCaller = false)
+        bool isCustomerCaller = false,
+        bool? expressWaiverForfeitedOnCancel = null)
     {
         var (source, applied) = ResolveAppliedDiscount(order);
         return new OrderItem(
@@ -263,7 +264,8 @@ public static class OrderMappers
             Review: order.Reviews.FirstOrDefault()?.MapToDto(),
             EstimatedCleanerPay: estimatedCleanerPay,
             IsAssignedToCurrentUser: isAssignedToCurrentUser,
-            HasAfterPhotos: hasAfterPhotos
+            HasAfterPhotos: hasAfterPhotos,
+            ExpressWaiverForfeitedOnCancel: expressWaiverForfeitedOnCancel
         );
     }
 

@@ -44,6 +44,7 @@ public sealed class EmployeeUserAuditCoverageTests
     [InlineData(typeof(RejectEmployee.Command), "employee.reject")]
     [InlineData(typeof(AdminUpdateEmployee.Command), "employee.update")]
     [InlineData(typeof(AdminUpdateEmployeeAvailability.Command), "employee.availability.update")]
+    [InlineData(typeof(RevealEmployeePayoutDetails.Command), "employee.payout_details.reveal")]
     public void Employee_Admin_Commands_Carry_The_Frozen_User_Typed_Label(Type commandType, string expectedLabel)
     {
         var descriptor = AuditActionDescriptor.For(commandType);
@@ -168,7 +169,6 @@ public sealed class EmployeeUserAuditCoverageTests
                 RegistrationNumber: null,
                 VatNumber: null,
                 LegalEntityName: null,
-                Iban: null,
                 EmergencyName: null,
                 EmergencyPhone: null),
             CancellationToken.None);
@@ -276,11 +276,11 @@ public sealed class EmployeeUserAuditCoverageTests
             legalEntityName: null,
             nationalityId: "country-cz",
             passportId: SubjectPassport,
-            iban: SubjectIban,
             address: Address.Create("Wenceslas Square 1", "Prague", "11000", "country-cz"),
             availability: new Dictionary<string, List<TimeRange>>(),
             emergencyContactName: null,
             emergencyContactPhone: null);
+        employee.UpdateBankDetails(SubjectIban);
 
         return employee;
     }

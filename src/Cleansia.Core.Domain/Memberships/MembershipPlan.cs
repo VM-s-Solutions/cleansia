@@ -140,7 +140,8 @@ public class MembershipPlan : Auditable
         int freeCancellationWindowHours,
         bool allowsExpressUpgrade,
         BillingInterval billingInterval = BillingInterval.Monthly,
-        int trialPeriodDays = 0)
+        int trialPeriodDays = 0,
+        int expressUpgradesPerMonth = 0)
         => new()
         {
             Code = code.ToUpperInvariant(),
@@ -152,6 +153,7 @@ public class MembershipPlan : Auditable
             AllowsExpressUpgrade = allowsExpressUpgrade,
             BillingInterval = billingInterval,
             TrialPeriodDays = trialPeriodDays,
+            ExpressUpgradesPerMonth = expressUpgradesPerMonth,
         };
 
     public MembershipPlan UpdateName(string name)
@@ -176,11 +178,13 @@ public class MembershipPlan : Auditable
     public MembershipPlan UpdateBenefits(
         decimal discountPercentage,
         int freeCancellationWindowHours,
-        bool allowsExpressUpgrade)
+        bool allowsExpressUpgrade,
+        int expressUpgradesPerMonth)
     {
         DiscountPercentage = discountPercentage;
         FreeCancellationWindowHours = freeCancellationWindowHours;
         AllowsExpressUpgrade = allowsExpressUpgrade;
+        ExpressUpgradesPerMonth = expressUpgradesPerMonth;
         return this;
     }
 

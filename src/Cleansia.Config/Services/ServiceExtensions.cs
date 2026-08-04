@@ -221,6 +221,7 @@ public static class ServiceExtensions
         services.AddScoped<IOutboxDrainerService, OutboxDrainerService>();
         services.AddScoped<IAppConfigurationProvider, AppConfigurationProvider>();
         services.AddScoped<ITaxIdValidator, TaxIdValidator>();
+        services.AddScoped<IPayoutDetailsValidator, PayoutDetailsValidator>();
         services.AddScoped<IVatCalculator, VatCalculator>();
         services.AddScoped<ICurrencyResolutionService, CurrencyResolutionService>();
         services.AddScoped<IOrderPricingCalculator, OrderPricingCalculator>();
@@ -240,6 +241,13 @@ public static class ServiceExtensions
         services.AddScoped<IReferralService, ReferralService>();
         services.AddScoped<IStripeSubscriptionWebhookHandler, StripeSubscriptionWebhookHandler>();
         services.AddScoped<ICancellationPolicyResolver, CancellationPolicyResolver>();
+        services.AddScoped<IPreferredCleanerHoldResolver, PreferredCleanerHoldResolver>();
+        // ADR-0035 — the express-waiver seam. The period-key factory is SCOPED because it caches the
+        // resolved platform zone for the request, and CreateOrder builds the key twice (validator and
+        // handler): two different keys inside one request would count one month and write the other.
+        services.AddScoped<IBenefitPeriodKeyFactory, BenefitPeriodKeyFactory>();
+        services.AddScoped<IExpressWaiverResolver, ExpressWaiverResolver>();
+        services.AddScoped<IExpressWaiverConsumer, ExpressWaiverConsumer>();
         services.AddScoped<IOrderAccessService, OrderAccessService>();
         services.AddScoped<IAddressGeocoder, AddressGeocoder>();
         services.AddScoped<IGdprDeletionService, GdprDeletionService>();

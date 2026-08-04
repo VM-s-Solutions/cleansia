@@ -6,6 +6,7 @@ public record GdprExportDto(
     GdprExportProfileDto Profile,
     GdprExportAddressDto? Address,
     GdprExportEmployeeDto? Employee,
+    GdprExportPayoutDetailsDto? PayoutDetails,
     List<GdprExportOrderDto> Orders,
     List<GdprExportDocumentDto> Documents,
     List<GdprExportInvoiceDto> Invoices,
@@ -47,6 +48,27 @@ public record GdprExportEmployeeDto(
     decimal AverageRating,
     ContractStatus ContractStatus,
     DateTimeOffset CreatedOn
+);
+
+/// <summary>
+/// ADR-0034 — the payout destination is the subject's own data and a subject-access export that silently
+/// dropped it would be a compliance regression introduced by a feature. This DTO and the payout read
+/// contract are the only places a payout identifier is allowed to appear.
+/// </summary>
+public record GdprExportPayoutDetailsDto(
+    PayoutScheme? Scheme,
+    PayoutDetailsStatus Status,
+    string? BankCountryId,
+    string? AccountPrefix,
+    string? AccountNumber,
+    string? BankCode,
+    string? Iban,
+    string? Swift,
+    string? BankName,
+    string? HolderName,
+    DateTime? ConfirmedAt,
+    DateTime? LastRevealedAt,
+    int RevealCount
 );
 
 public record GdprExportOrderDto(

@@ -69,6 +69,10 @@ public static class PolicyBuilder
         [Policy.CanApproveEmployee] = PhysicalPolicy.AdminOnly,
         [Policy.CanRejectEmployee] = PhysicalPolicy.AdminOnly,
         [Policy.CanAdminUpdateEmployee] = PhysicalPolicy.AdminOnly,
+        // Masked by default for admins, own-record for a cleaner ([OWN-DATA], handler-scoped);
+        // the unmasked value is a separate, audited, rate-limited admin command (ADR-0034 D8).
+        [Policy.CanViewEmployeePayoutDetails] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanRevealEmployeePayoutDetails] = PhysicalPolicy.AdminOnly,
 
         // Employee Documents
         [Policy.CanViewEmployeeDocuments] = PhysicalPolicy.EmployeeOrAdmin,

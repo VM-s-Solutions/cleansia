@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.AppServices.Features.Orders;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -30,6 +31,25 @@ public class CleanupStalePendingOrdersHandler(
             logger.LogError(
                 "CleanupStalePendingOrders failed: {Error}",
                 result.Error?.Message ?? "unknown");
+        }
+
+        // ADR-0035 AM-7 — a SECOND command on this existing schedule, not a second schedule. Membership
+        // benefit orphans live in MembershipBenefitUsages and are invisible to the sweep above, which
+        // reads Orders; an orphan is precisely a reservation whose order never committed. Sent
+        // separately so a failure in one sweep does not suppress the other.
+        var orphans = await mediator.Send(
+            new ReleaseOrphanedBenefitReservations.Command(OlderThanHours: 1), ct);
+        if (orphans.IsSuccess && orphans.Value != null)
+        {
+            logger.LogInformation(
+                "ReleaseOrphanedBenefitReservations completed; released {Count} reservations",
+                orphans.Value.ReleasedCount);
+        }
+        else
+        {
+            logger.LogError(
+                "ReleaseOrphanedBenefitReservations failed: {Error}",
+                orphans.Error?.Message ?? "unknown");
         }
     }
 }

@@ -154,7 +154,6 @@ public class Employee : Auditable, ITenantEntity
         string? legalEntityName,
         string nationalityId,
         string passportId,
-        string iban,
         Address address,
         Dictionary<string, List<TimeRange>> availability,
         string? emergencyContactName,
@@ -167,7 +166,6 @@ public class Employee : Auditable, ITenantEntity
         LegalEntityName = entityType == EmployeeEntityType.LegalEntity ? legalEntityName : null;
         NationalityId = nationalityId;
         PassportId = passportId;
-        IBAN = iban;
         Address = address;
         EmergencyContactName = emergencyContactName;
         EmergencyContactPhone = emergencyContactPhone;
@@ -206,6 +204,11 @@ public class Employee : Auditable, ITenantEntity
         return this;
     }
 
+    /// <summary>
+    /// The legacy payout column. Written only by the payout write path, which mirrors the derived IBAN
+    /// here so the invoice's supplier block keeps printing the current account until T-0522 moves that
+    /// read onto <see cref="PayoutDetails"/>. <see cref="EmployeePayoutDetails"/> is the source of truth.
+    /// </summary>
     public Employee UpdateBankDetails(string iban)
     {
         IBAN = iban;
@@ -304,6 +307,19 @@ public class Employee : Auditable, ITenantEntity
         return this;
     }
 
+    /// <summary>
+    /// The profile gate's payout term: PRESENCE of a payout destination, never its validity (ADR-0034 D7).
+    ///
+    /// <para>It reads two scalars on this row and no navigation, so it is materialized by every loader and
+    /// cannot depend on a hand-written include list. <see cref="IBAN"/> is the second term because the
+    /// launch and DEV databases carry cleaners whose destination predates
+    /// <see cref="EmployeePayoutDetails"/> and there is no backfill: reading only
+    /// <see cref="HasPayoutDetails"/> would mark every one of them incomplete on deploy day and 403 them
+    /// off the whole partner surface, which is the outage D7 exists to prevent. The term retires when the
+    /// legacy column does.</para>
+    /// </summary>
+    private bool HasPayoutDestination() => HasPayoutDetails || !string.IsNullOrEmpty(IBAN);
+
     public bool IsProfileComplete()
     {
         var hasBasicInfo = User?.FirstName != null &&
@@ -318,7 +334,7 @@ public class Employee : Auditable, ITenantEntity
                         Address?.ZipCode != null &&
                         Address?.CountryId != null;
 
-        var hasEmployeeInfo = !string.IsNullOrEmpty(IBAN) &&
+        var hasEmployeeInfo = HasPayoutDestination() &&
                              !string.IsNullOrEmpty(PassportId) &&
                              !string.IsNullOrEmpty(NationalityId) &&
                              !string.IsNullOrEmpty(RegistrationNumber);
@@ -348,7 +364,10 @@ public class Employee : Auditable, ITenantEntity
         if (string.IsNullOrEmpty(RegistrationNumber)) missingFields.Add("profile.fields.registrationNumber");
         if (EntityType == EmployeeEntityType.LegalEntity && string.IsNullOrEmpty(LegalEntityName))
             missingFields.Add("profile.fields.legalEntityName");
-        if (string.IsNullOrEmpty(IBAN)) missingFields.Add("profile.fields.iban");
+        // The key still says "iban" because five shipped clients translate it, two of them app-store
+        // gated; renaming it to "payoutDetails" would show a raw key on every un-updated device. Rename
+        // on a coordinated mobile release (ADR-0034 D7).
+        if (!HasPayoutDestination()) missingFields.Add("profile.fields.iban");
         if (string.IsNullOrEmpty(PassportId)) missingFields.Add("profile.fields.passportId");
         if (string.IsNullOrEmpty(NationalityId)) missingFields.Add("profile.fields.nationality");
 

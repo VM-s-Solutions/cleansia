@@ -1,5 +1,7 @@
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Tests.Common;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
@@ -29,6 +31,7 @@ public class OrderPricingCalculatorExchangeRateTests
     private readonly Mock<IPackageRepository> _packageRepository = new();
     private readonly Mock<IExtraRepository> _extraRepository = new();
     private readonly Mock<ICurrencyRepository> _currencyRepository = new();
+    private readonly Mock<IExpressWaiverResolver> _expressWaiverResolver = ExpressWaiverMocks.NoWaiver();
 
     private OrderPricingCalculator CreateCalculator(decimal exchangeRate)
     {
@@ -52,7 +55,8 @@ public class OrderPricingCalculatorExchangeRateTests
             _serviceRepository.Object,
             _packageRepository.Object,
             _extraRepository.Object,
-            _currencyRepository.Object);
+            _currencyRepository.Object,
+            _expressWaiverResolver.Object);
     }
 
     private Task<Cleansia.Core.AppServices.Services.Interfaces.OrderPricingResult> PriceExpressSlotAsync(
@@ -60,6 +64,8 @@ public class OrderPricingCalculatorExchangeRateTests
         => CreateCalculator(exchangeRate).CalculateAsync(
             [ServiceId], [], [], rooms: 0, bathrooms: 0, currencyId: CurrencyId,
             cleaningDateUtc: DateTime.UtcNow.AddHours(3),
+            userId: null,
+            nowUtc: DateTime.UtcNow,
             CancellationToken.None);
 
     [Fact]
@@ -107,6 +113,8 @@ public class OrderPricingCalculatorExchangeRateTests
         var result = await CreateCalculator(ExchangeRate).CalculateAsync(
             [ServiceId], [], [], rooms: 0, bathrooms: 0, currencyId: CurrencyId,
             cleaningDateUtc: DateTime.UtcNow.AddDays(3),
+            userId: null,
+            nowUtc: DateTime.UtcNow,
             CancellationToken.None);
 
         Assert.False(result.ExpressSurchargeApplied);

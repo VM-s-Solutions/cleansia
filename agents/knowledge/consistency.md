@@ -70,6 +70,12 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   call: the codebase currently hard-deletes widely via `repo.Remove`; soft-delete is the long-term-correct
   default for a platform that needs audit trails and GDPR-traceable deletion. New deletes use
   `Deactivate`; existing hard-deletes are reviewed case-by-case — tracked as a violation.)*
+  **There is NO global `IsActive` query filter in this codebase** (`ApplyTenantQueryFilters` filters on
+  `TenantId` alone; `grep HasQueryFilter` finds only the tenant filter), so "soft delete" is a convention
+  every read implements by hand. **Every read of a soft-deletable entity filters `IsActive` explicitly**
+  — a remaining-count or capacity query without `.Where(x => x.IsActive)` silently counts released rows
+  (ADR-0035 §verify #24). Deviating form: a `CountAsync`/`AnyAsync` over an entity whose ordinals or
+  slots are released by deactivation, with no `IsActive` term.
 - **B7.** Handlers call **rich domain methods** (`order.Cancel(...)`, `entity.Update(...)`,
   `repo.Deactivate(...)`) — never set entity properties directly from the handler.
 - **B8.** **Side-effecting commands are idempotent** (S7) and wrap each external call (Stripe/email/queue)
@@ -355,6 +361,18 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   the option on consistency grounds — `AreNullsDistinct(false)` has shipped in the committed `Initial`
   migration since day one, so "we don't do that here" is a false invariant, and a confidently-wrong
   comment is worse than none because it stops the next reviewer checking.
+
+- **Moving a gate onto a new denormalized column keeps the old term until a backfill retires it
+  (ADR-0034 D7, `accepted`).** A flag defaulting to `false` is `false` for every existing row on release
+  morning, so `!string.IsNullOrEmpty(LegacyColumn)` → `NewFlag` is a behaviour change for the whole
+  table, not a refactor. Ship the writer first, then the gate as `NewFlag || <old condition>`, with a
+  comment naming the outage and the retirement condition. **Both terms must be scalars on the row the
+  gate already loads** — a navigation term is decided by a hand-written `.Include` list, and the same
+  applies to erasure, which stays an id-keyed repository call (load-and-remove, not `ExecuteDelete`, so
+  it rides the caller's unit of work). Deviating form: a gate flip whose only test builds the aggregate
+  by hand; the pin is a host/route test seeding the pre-release row shape
+  (`PayoutGateDeployDayTests`) plus a real-PostgreSQL erasure test through the owning service's own
+  query shape (`PayoutDetailsErasureTests`). Full rule in `patterns-backend.md`.
 
 These judgment calls are **Architect-owned**; changing one is an ADR, not an ad-hoc reversal.
 

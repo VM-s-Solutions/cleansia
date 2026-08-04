@@ -124,9 +124,6 @@ public class UpdateEmployee
                 .WithMessage(BusinessErrorMessage.MaxLengthExceeded)
                 .When(c => c.EntityType == EmployeeEntityType.LegalEntity);
 
-            RuleFor(c => c.Iban)
-                .ValidateIban();
-
             RuleFor(c => c.EmergencyName)
                 .ValidateEmergencyName()
                 .When(c => !string.IsNullOrWhiteSpace(c.EmergencyName));
@@ -204,7 +201,6 @@ public class UpdateEmployee
         string RegistrationNumber,
         string? VatNumber,
         string? LegalEntityName,
-        string Iban,
         string? EmergencyName,
         string? EmergencyPhone,
         bool Consent,
@@ -333,7 +329,6 @@ public class UpdateEmployee
                 command.LegalEntityName,
                 command.NationalityId,
                 command.PassportId,
-                command.Iban,
                 address,
                 availability,
                 command.EmergencyName,

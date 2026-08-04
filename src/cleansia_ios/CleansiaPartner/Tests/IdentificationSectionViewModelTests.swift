@@ -41,6 +41,61 @@ final class IdentificationSectionViewModelTests: XCTestCase {
         XCTAssertEqual(vm.countryOptions.first?.label, "Czechia")
     }
 
+    func testLoadFailureSetsErrorAndSnackbars() async {
+        client.employeeResult = .failure(ApiError(httpStatus: 500))
+        let vm = makeVM()
+        await vm.load()
+
+        guard case .error = vm.state else { return XCTFail("a failed read must not open an empty form") }
+        XCTAssertNotNil(snackbar.current)
+    }
+
+    /// A countries failure is survivable — the employee read is not; only the second one is fatal.
+    func testACountriesFailureStillLoadsTheForm() async {
+        client.allCountriesResult = .failure(ApiError(httpStatus: 500))
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", nationalityId: "cz", passportId: "P123"))
+        let vm = makeVM()
+        await vm.load()
+
+        guard case .loaded = vm.state else { return XCTFail("a countries failure is not fatal") }
+        XCTAssertTrue(vm.countryOptions.isEmpty)
+        XCTAssertEqual(vm.form.passportId, "P123")
+    }
+
+    /// The employee id survives a failed reload, so nothing else stops the command from going out
+    /// carrying whatever the form happens to hold — over a profile we could not read.
+    func testAFailedReloadRefusesToSaveTheStaleForm() async {
+        client.employeeResult = .success(EmployeeItem(
+            id: "emp-1",
+            countryId: "cz",
+            nationalityId: "cz",
+            passportId: "P123",
+            entityType: ._1,
+            registrationNumber: "12345678"
+        ))
+        let vm = makeVM()
+        await vm.load()
+
+        client.employeeResult = .failure(ApiError(httpStatus: 500))
+        await vm.load()
+        await vm.save()
+
+        XCTAssertNil(client.identificationCommand)
+        XCTAssertEqual(vm.action, .idle)
+    }
+
+    func testRetryingAFailedLoadRecoversTheForm() async {
+        client.employeeResult = .failure(ApiError(httpStatus: 500))
+        let vm = makeVM()
+        await vm.load()
+
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", passportId: "P123"))
+        await vm.load()
+
+        guard case .loaded = vm.state else { return XCTFail("retry left the section in the error state") }
+        XCTAssertEqual(vm.form.passportId, "P123")
+    }
+
     func testSwitchingToNaturalClearsLegalEntityName() async {
         client.employeeResult = .success(EmployeeItem(id: "emp-1", entityType: ._2, legalEntityName: "Acme"))
         let vm = makeVM()

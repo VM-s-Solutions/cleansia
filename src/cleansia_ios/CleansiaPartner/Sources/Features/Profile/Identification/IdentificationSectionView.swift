@@ -21,10 +21,17 @@ struct IdentificationSectionView: View {
         self.onSaved = onSaved
     }
 
+    private var isError: Bool {
+        if case .error = vm.state { return true }
+        return false
+    }
+
     var body: some View {
         SectionScaffold(
             title: L10n.Profile.identification,
             isLoading: vm.state.isLoading,
+            isError: isError,
+            onRetry: { Task { await vm.load() } },
             header: {
                 if onboarding {
                     OnboardingChainHeader(currentSection: .identification, state: chainVM.state)

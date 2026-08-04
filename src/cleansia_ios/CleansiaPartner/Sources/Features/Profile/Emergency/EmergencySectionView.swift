@@ -14,10 +14,17 @@ struct EmergencySectionView: View {
         self.onSaved = onSaved
     }
 
+    private var isError: Bool {
+        if case .error = vm.state { return true }
+        return false
+    }
+
     var body: some View {
         SectionScaffold(
             title: L10n.Profile.emergencyContact,
             isLoading: vm.state.isLoading,
+            isError: isError,
+            onRetry: { Task { await vm.load() } },
             form: {
                 CleansiaTextField(
                     value: $vm.name,

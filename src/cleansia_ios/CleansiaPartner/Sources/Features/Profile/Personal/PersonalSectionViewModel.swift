@@ -59,7 +59,7 @@ final class PersonalSectionViewModel: ViewModel {
     }
 
     func save() async {
-        guard !action.isSubmitting else { return }
+        guard case .loaded = state, !action.isSubmitting else { return }
         form.firstNameError = nil
         form.lastNameError = nil
         form.birthDateError = nil

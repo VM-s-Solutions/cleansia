@@ -2,8 +2,17 @@ import Foundation
 import XCTest
 
 /// Pins the ADR-0025 day-one catalog gate: every build that registers FCM
-/// tokens must carry all 13 displayable events' loc-keys in every platform
+/// tokens must carry every displayable event's loc-keys in every platform
 /// language, or APNs renders the raw `push.*` key on the lock screen.
+///
+/// `events` mirrors `FcmMessageFactory.ApnsDisplayMap` and no count is stated
+/// anywhere — a number in a doc comment goes stale silently, and this array
+/// already did. The list itself is pinned server-side by
+/// `ApnsDisplayMapIosCatalogSyncTests`, which reads this catalog off disk and
+/// so fails on the backend PR that registers an event without shipping copy.
+///
+/// The partner-audience events are here too: a push is addressed to a USER's
+/// device tokens, so a cleaner who also has this app installed receives them.
 final class PushLocKeyCatalogTests: XCTestCase {
     private let appBundle = Bundle(identifier: "cz.cleansia.customer") ?? .main
     private let languages = ["en", "cs", "sk", "uk", "ru"]
@@ -20,7 +29,9 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "membership.expiring_soon",
         "membership.cancellation_effective",
         "order.new_available",
-        "order.preferred_offer"
+        "order.preferred_offer",
+        "order.assignment_cancelled",
+        "payroll.invoice_paid"
     ]
     private let orderNumberArgEvents: Set<String> = [
         "order.confirmed",
@@ -31,7 +42,8 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.refunded",
         "recurring.scheduled",
         "order.new_available",
-        "order.preferred_offer"
+        "order.preferred_offer",
+        "order.assignment_cancelled"
     ]
 
     func testEveryPushLocKeyShipsInEveryLanguageTable() throws {

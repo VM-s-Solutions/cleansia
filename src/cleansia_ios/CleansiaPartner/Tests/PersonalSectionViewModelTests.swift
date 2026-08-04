@@ -53,6 +53,38 @@ final class PersonalSectionViewModelTests: XCTestCase {
         XCTAssertNotNil(snackbar.current)
     }
 
+    /// The employee id survives a failed reload, so nothing else stops the command from going out
+    /// carrying whatever the form happens to hold — over a profile we could not read.
+    func testAFailedReloadRefusesToSaveTheStaleForm() async {
+        client.employeeResult = .success(EmployeeItem(
+            id: "emp-1",
+            firstName: "Jana",
+            lastName: "Nováková",
+            birthDate: someBirthDate
+        ))
+        let vm = makeVM()
+        await vm.load()
+
+        client.employeeResult = .failure(ApiError(httpStatus: 500))
+        await vm.load()
+        await vm.save()
+
+        XCTAssertNil(client.personalCommand)
+        XCTAssertEqual(vm.action, .idle)
+    }
+
+    func testRetryingAFailedLoadRecoversTheForm() async {
+        client.employeeResult = .failure(ApiError(httpStatus: 500))
+        let vm = makeVM()
+        await vm.load()
+
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", firstName: "Jana", lastName: "Nováková"))
+        await vm.load()
+
+        guard case .loaded = vm.state else { return XCTFail("retry left the section in the error state") }
+        XCTAssertEqual(vm.form.firstName, "Jana")
+    }
+
     func testSaveSuccessEmitsSavedEffect() async {
         client.employeeResult = .success(EmployeeItem(
             id: "emp-1",

@@ -181,6 +181,15 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   guard that only mutates when `is Loaded`; the **save** is a separate `StateFlow<ActionState>` + a
   `SharedFlow<Unit>(replay=0)` `saved` effect the screen collects to fire `onSaved()` (mirrors
   `DevicesViewModel`). Validation/error literals localized via injected `@ApplicationContext Context`.
+  **E1a — an `Error` case no screen branches on is a flag-bag with extra steps (T-0353 on Android, the
+  same gap on iOS).** Four iOS partner section views set `.error` in the VM and then rendered the empty
+  form anyway: a cleaner whose read failed saw a blank profile, could type into it, and could save over
+  it. Two obligations travel with the case, and a VM suite asserting `state == .error` proves neither:
+  the screen passes it to its scaffold (`isError` + `onRetry` re-running the whole load), **and** the
+  `save()` refuses a non-`Loaded` state — the id survives a failed *reload*, so a stale form otherwise
+  goes out over a profile we could not read. Pin the screen half at its call site (the source-scoped
+  binding test of `patterns-mobile.md`'s "a resolver test does not cover the call site"); pin the save
+  half with a load-succeeds-then-reload-fails test, which is the only ordering that goes red.
 - **E2.** **One-shot actions use the shared `sealed ActionState` (Idle/Submitting/Error)** + a
   `SharedFlow(replay=0)` for the success effect — **not** loose `_submitting: Boolean` + `_error: String?`
   StateFlows. ✗ customer `CreateDisputeViewModel`, `MembershipViewModel`, `ProfileViewModel` use loose

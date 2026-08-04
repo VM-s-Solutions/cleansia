@@ -819,6 +819,13 @@
       </cleansia-section>
       } }
 
+      @if (employee.id) {
+      <cleansia-employee-payout-section
+        *cleansiaPermission="Policy.CanViewEmployeePayoutDetails"
+        [employeeId]="employee.id"
+      />
+      }
+
       <cleansia-employee-documents-section
         [facade]="docsFacade"
         [employeeId]="employee?.id"

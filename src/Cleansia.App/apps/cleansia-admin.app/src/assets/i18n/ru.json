@@ -486,7 +486,42 @@
       "grade_quick_fill": "Быстрое заполнение",
       "grade_junior": "Junior",
       "grade_medior": "Medior",
-      "grade_senior": "Senior"
+      "grade_senior": "Senior",
+      "payout_details": {
+        "title": "Платёжные реквизиты",
+        "none": "У этого сотрудника нет сохранённых платёжных реквизитов.",
+        "load_error": "Не удалось загрузить платёжные реквизиты.",
+        "retry": "Попробовать снова",
+        "masked_account": "Счёт",
+        "bank_name": "Банк",
+        "bank_country": "Страна банка",
+        "scheme": "Тип выплаты",
+        "status": "Статус",
+        "confirmed_at": "Последняя проверка",
+        "last_revealed_at": "Последний показ",
+        "never_revealed": "Никогда не показывались",
+        "reveal_count": "Количество показов",
+        "reveal": "Показать полные реквизиты",
+        "hide": "Скрыть полные реквизиты",
+        "reveal_recorded_notice": "Показ полных реквизитов счёта записывается на вашу учётную запись администратора вместе со временем. Показывайте их только тогда, когда это нужно для проведения платежа.",
+        "account_prefix": "Префикс счёта",
+        "account_number": "Номер счёта",
+        "bank_code": "Код банка",
+        "iban": "IBAN",
+        "swift": "SWIFT/BIC",
+        "holder_name": "Владелец счёта",
+        "schemes": {
+          "czsk_domestic_with_iban": "Чешский/словацкий внутренний счёт",
+          "sepa_iban": "SEPA (IBAN)",
+          "provider_payout_token": "Счёт платёжного провайдера",
+          "unknown": "Неизвестный тип"
+        },
+        "statuses": {
+          "provided": "Указаны",
+          "needs_reconfirmation": "Требует подтверждения",
+          "unknown": "Неизвестно"
+        }
+      }
     },
     "order_management": {
       "title": "Управление заказами",

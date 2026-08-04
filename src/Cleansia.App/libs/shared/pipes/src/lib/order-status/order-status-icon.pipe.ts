@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { OrderStatus } from '@cleansia/partner-services';
+import { OrderStatus } from '@cleansia/models';
 
 /**
  * Maps an `OrderStatus` to a PrimeIcon class. Used in timelines + status

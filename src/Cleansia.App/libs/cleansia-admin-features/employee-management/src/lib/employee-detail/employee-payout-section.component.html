@@ -1,0 +1,70 @@
+<cleansia-section
+  [title]="'pages.employee_detail.payout_details.title' | translate"
+>
+  @if (facade.loading()) {
+  <cleansia-loader />
+  } @else if (facade.loadFailed()) {
+  <p class="no-data">
+    {{ 'pages.employee_detail.payout_details.load_error' | translate }}
+  </p>
+  <div class="payout-details__actions">
+    <cleansia-button
+      [label]="'pages.employee_detail.payout_details.retry' | translate"
+      icon="pi pi-refresh"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="onRetry()"
+    />
+  </div>
+  } @else if (facade.isEmpty()) {
+  <p class="no-data">
+    {{ 'pages.employee_detail.payout_details.none' | translate }}
+  </p>
+  } @else {
+  <div class="info-grid">
+    @for (row of facade.maskedRows(); track row.id) {
+    <div class="info-item">
+      <span class="label">{{ row.label }}:</span>
+      <span class="value">{{ row.value }}</span>
+    </div>
+    }
+  </div>
+
+  <p class="payout-details__notice">
+    <i class="pi pi-info-circle"></i>
+    {{
+      'pages.employee_detail.payout_details.reveal_recorded_notice' | translate
+    }}
+  </p>
+
+  @if (facade.isRevealed()) {
+  <div class="info-grid payout-details__revealed">
+    @for (row of facade.revealedRows(); track row.id) {
+    <div class="info-item">
+      <span class="label">{{ row.label }}:</span>
+      <span class="value">{{ row.value }}</span>
+    </div>
+    }
+  </div>
+  <div class="payout-details__actions">
+    <cleansia-button
+      [label]="'pages.employee_detail.payout_details.hide' | translate"
+      icon="pi pi-eye-slash"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="facade.hide()"
+    />
+  </div>
+  } @else {
+  <div class="payout-details__actions">
+    <cleansia-button
+      *cleansiaPermission="Policy.CanRevealEmployeePayoutDetails"
+      [label]="'pages.employee_detail.payout_details.reveal' | translate"
+      icon="pi pi-eye"
+      severity="warn"
+      [loading]="facade.revealing()"
+      (onClick)="onReveal()"
+    />
+  </div>
+  } }
+</cleansia-section>

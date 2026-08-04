@@ -486,7 +486,42 @@
       "grade_quick_fill": "Швидке заповнення",
       "grade_junior": "Junior",
       "grade_medior": "Medior",
-      "grade_senior": "Senior"
+      "grade_senior": "Senior",
+      "payout_details": {
+        "title": "Платіжні реквізити",
+        "none": "У цього працівника немає збережених платіжних реквізитів.",
+        "load_error": "Не вдалося завантажити платіжні реквізити.",
+        "retry": "Спробувати ще раз",
+        "masked_account": "Рахунок",
+        "bank_name": "Банк",
+        "bank_country": "Країна банку",
+        "scheme": "Тип виплати",
+        "status": "Статус",
+        "confirmed_at": "Востаннє перевірено",
+        "last_revealed_at": "Востаннє показано",
+        "never_revealed": "Ніколи не показувалося",
+        "reveal_count": "Кількість показів",
+        "reveal": "Показати повні реквізити",
+        "hide": "Приховати повні реквізити",
+        "reveal_recorded_notice": "Показ повних реквізитів рахунку записується на ваш адміністраторський обліковий запис разом із часом. Показуйте їх лише тоді, коли це потрібно для здійснення платежу.",
+        "account_prefix": "Префікс рахунку",
+        "account_number": "Номер рахунку",
+        "bank_code": "Код банку",
+        "iban": "IBAN",
+        "swift": "SWIFT/BIC",
+        "holder_name": "Власник рахунку",
+        "schemes": {
+          "czsk_domestic_with_iban": "Чеський/словацький внутрішній рахунок",
+          "sepa_iban": "SEPA (IBAN)",
+          "provider_payout_token": "Рахунок платіжного провайдера",
+          "unknown": "Невідомий тип"
+        },
+        "statuses": {
+          "provided": "Надано",
+          "needs_reconfirmation": "Потребує підтвердження",
+          "unknown": "Невідомо"
+        }
+      }
     },
     "order_management": {
       "title": "Управління замовленнями",

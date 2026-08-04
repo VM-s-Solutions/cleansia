@@ -47,6 +47,8 @@ export const Policy = {
   CanApproveEmployee: 'CanApproveEmployee',
   CanRejectEmployee: 'CanRejectEmployee',
   CanAdminUpdateEmployee: 'CanAdminUpdateEmployee',
+  CanViewEmployeePayoutDetails: 'CanViewEmployeePayoutDetails',
+  CanRevealEmployeePayoutDetails: 'CanRevealEmployeePayoutDetails',
 
   // Employee Documents
   CanViewEmployeeDocuments: 'CanViewEmployeeDocuments',
@@ -228,6 +230,8 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanApproveEmployee: PhysicalPolicy.AdminOnly,
   CanRejectEmployee: PhysicalPolicy.AdminOnly,
   CanAdminUpdateEmployee: PhysicalPolicy.AdminOnly,
+  CanViewEmployeePayoutDetails: PhysicalPolicy.EmployeeOrAdmin,
+  CanRevealEmployeePayoutDetails: PhysicalPolicy.AdminOnly,
 
   CanViewEmployeeDocuments: PhysicalPolicy.EmployeeOrAdmin,
   CanUploadEmployeeDocument: PhysicalPolicy.EmployeeOrAdmin,

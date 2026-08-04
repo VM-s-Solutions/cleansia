@@ -236,19 +236,18 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
 
     this.submitting.set(true);
     try {
-      const command = new CreateRecurringBookingCommand({
-        frequency: d.frequency as unknown as number,
-        dayOfWeek: d.dayOfWeek,
-        timeOfDay: d.timeOfDay,
-        rooms: d.rooms,
-        bathrooms: d.bathrooms,
-        savedAddressId: d.savedAddressId,
-        selectedServiceIds: d.selectedServiceIds,
-        selectedPackageIds: d.selectedPackageIds,
-        paymentType: d.paymentType,
-        startsOn: d.startsOn,
-        endsOn: undefined,
-      });
+      const command = new CreateRecurringBookingCommand();
+      command.frequency = d.frequency as unknown as number;
+      command.dayOfWeek = d.dayOfWeek;
+      command.timeOfDay = d.timeOfDay;
+      command.rooms = d.rooms;
+      command.bathrooms = d.bathrooms;
+      command.savedAddressId = d.savedAddressId;
+      command.selectedServiceIds = d.selectedServiceIds;
+      command.selectedPackageIds = d.selectedPackageIds;
+      command.paymentType = d.paymentType;
+      command.startsOn = d.startsOn;
+      command.endsOn = undefined;
       const created = await firstValueFrom(this.client.create(command).pipe(takeUntil(this.destroyed$)));
       // Optimistic in-place insert so the list shows the new template
       // immediately when the user lands back on it (avoids a flash of

@@ -1194,6 +1194,34 @@ _No open Wave-1 *planning* questions remain._
 
 ---
 
+### Q-ENUM-01 — [blocking: no — the scope break is already fixed] Three generated clients each emit their own `OrderStatus`/`PaymentStatus`. Which declaration is canonical, and should the per-app copies stop being emitted?
+
+- Raised by: frontend (the `libs/shared/pipes` scope-break fix)
+- Owner: **architect** (it changes NSwag configuration and generated output, which is owner-run)
+- Resolve-by: backlog
+- Date: 2026-08-04
+- Question: `OrderStatus` and `PaymentStatus` are declared **four** times in the web tree — once in each
+  of `admin-client.ts`, `partner-client.ts`, `customer-client.ts` (generated per host spec), and now once
+  in `@cleansia/models` (hand-written, because a `scope:shared` lib may not import an app-scoped client).
+  All four are byte-identical today and all four mirror `Cleansia.Core.Domain.Enums.*`. Should the
+  generated clients stop emitting their own copy — via NSwag configuration or a post-generation
+  re-export — so there is one declaration per workspace instead of one per host?
+- Why it matters: the shared copy is the one a **cross-app** pipe reads, and it is the one that cannot be
+  regenerated. Today nothing forces the four to agree; a host whose spec drifts (a value renumbered, a
+  member added) regenerates one client and leaves the other three — and the shared one — describing a
+  different wire contract, silently. That is the same class of defect ADR-0031 exists for, one level up:
+  ADR-0031 guards *call sites* against a regen, nothing guards *two generated clients* against each other.
+- Default taken: **the shared declaration is a mirror, and drift is made loud rather than impossible.**
+  `libs/shared/models/src/lib/models/order-status-enum-parity.spec.ts` reads all three generated clients
+  **off disk** (an import would be the very scope break being fixed) and fails if any member or integer
+  differs from the shared copy. So a regen that changes the contract goes red in `nx test models` instead
+  of shipping. This is a detector, not a fix: it tells you the four disagree, it does not stop the
+  disagreement. Collapsing to one declaration is the Architect's call and is a change to owner-run
+  generation, so it was not taken here.
+- Answer: _(architect fills in)_
+
+---
+
 ### 🟢 Two DECISION POINTS, not questions — the owner approves a design before code is written
 
 Recorded here so they are visible alongside the questions, but they are **not** blocking entries:

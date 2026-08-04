@@ -1,5 +1,6 @@
 export * from './filter.models';
 export * from './jwt-token.models';
+export * from './order-status.models';
 export * from './page.models';
 export * from './sort-types.models';
 export * from './sort.models';

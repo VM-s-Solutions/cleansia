@@ -486,7 +486,42 @@
       "grade_quick_fill": "Quick fill",
       "grade_junior": "Junior",
       "grade_medior": "Medior",
-      "grade_senior": "Senior"
+      "grade_senior": "Senior",
+      "payout_details": {
+        "title": "Payout Details",
+        "none": "No payout details on file for this employee.",
+        "load_error": "Could not load payout details.",
+        "retry": "Try again",
+        "masked_account": "Account",
+        "bank_name": "Bank",
+        "bank_country": "Bank Country",
+        "scheme": "Payout Scheme",
+        "status": "Status",
+        "confirmed_at": "Last Verified",
+        "last_revealed_at": "Last Revealed",
+        "never_revealed": "Never revealed",
+        "reveal_count": "Times Revealed",
+        "reveal": "Reveal full details",
+        "hide": "Hide full details",
+        "reveal_recorded_notice": "Revealing the full account details is recorded against your admin account, together with the time. Reveal only when you need them to make a payment.",
+        "account_prefix": "Account Prefix",
+        "account_number": "Account Number",
+        "bank_code": "Bank Code",
+        "iban": "IBAN",
+        "swift": "SWIFT/BIC",
+        "holder_name": "Account Holder",
+        "schemes": {
+          "czsk_domestic_with_iban": "Czech/Slovak domestic account",
+          "sepa_iban": "SEPA (IBAN)",
+          "provider_payout_token": "Payment provider account",
+          "unknown": "Unknown scheme"
+        },
+        "statuses": {
+          "provided": "Provided",
+          "needs_reconfirmation": "Needs reconfirmation",
+          "unknown": "Unknown"
+        }
+      }
     },
     "order_management": {
       "title": "Order Management",

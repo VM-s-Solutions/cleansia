@@ -486,7 +486,42 @@
       "grade_quick_fill": "Rychlé vyplnění",
       "grade_junior": "Junior",
       "grade_medior": "Medior",
-      "grade_senior": "Senior"
+      "grade_senior": "Senior",
+      "payout_details": {
+        "title": "Platební údaje",
+        "none": "U tohoto zaměstnance nejsou uloženy žádné platební údaje.",
+        "load_error": "Platební údaje se nepodařilo načíst.",
+        "retry": "Zkusit znovu",
+        "masked_account": "Účet",
+        "bank_name": "Banka",
+        "bank_country": "Země banky",
+        "scheme": "Typ platby",
+        "status": "Stav",
+        "confirmed_at": "Naposledy ověřeno",
+        "last_revealed_at": "Naposledy zobrazeno",
+        "never_revealed": "Nikdy nezobrazeno",
+        "reveal_count": "Počet zobrazení",
+        "reveal": "Zobrazit úplné údaje",
+        "hide": "Skrýt úplné údaje",
+        "reveal_recorded_notice": "Zobrazení úplných údajů o účtu se zaznamenává k vašemu administrátorskému účtu včetně času. Zobrazujte je jen tehdy, když je potřebujete k provedení platby.",
+        "account_prefix": "Předčíslí účtu",
+        "account_number": "Číslo účtu",
+        "bank_code": "Kód banky",
+        "iban": "IBAN",
+        "swift": "SWIFT/BIC",
+        "holder_name": "Majitel účtu",
+        "schemes": {
+          "czsk_domestic_with_iban": "Český/slovenský tuzemský účet",
+          "sepa_iban": "SEPA (IBAN)",
+          "provider_payout_token": "Účet u platebního poskytovatele",
+          "unknown": "Neznámý typ"
+        },
+        "statuses": {
+          "provided": "Zadáno",
+          "needs_reconfirmation": "Vyžaduje potvrzení",
+          "unknown": "Neznámý"
+        }
+      }
     },
     "order_management": {
       "title": "Správa objednávek",

@@ -324,13 +324,22 @@ mobile repositories do at their data boundary (`ProfileRepositoryImpl.getPayoutD
 
 1. **A hand-written service in the app's own `libs/core/<app>-services/src/lib/services/`** wraps the
    generated call and maps that one code to `of(null)`, rethrowing everything else
-   (`PartnerPayoutDetailsService.getMine`). It reads the code through the shared
+   (`PartnerPayoutDetailsService.getMine`; the admin twin over the masked read is
+   `AdminPayoutDetailsService.getForEmployee`). It reads the code through the shared
    `extractApiErrorCode` — never a hand-rolled body walk. Facades then branch on `null` vs. the
    `catchError(() => of(null))` arm of the C3 pipe, so **empty and error stay distinct states**.
 2. **The code is listed in `ABSENT_RESOURCE_ERROR_CODES`** (`libs/core/services/.../api-error.ts`) and
    `HttpErrorInterceptorFn` stays silent for it **on a GET only** — the same reason it is already
    silent on a 404. On a mutation the identical code is a genuine refusal and still toasts. Keep the
    set tiny: a code belongs there only when *every* reader renders it as an empty state.
+
+**One code is normalized once per app, not once per platform.** The set and the interceptor are shared,
+but the wrapping service is per client lib, so the second app to read the same optional resource writes
+its own two-line wrapper — and gets the silence for free. `payout.not_found` now has two readers
+(partner self-read, admin masked read) and neither toasts on GET; the admin **reveal** is a POST and
+still does. **Three distinct states, not two**: a facade over such a read needs a `loaded` latch as well
+as `loading`/`loadFailed`, because "`maskedDetails() === null`" is equally true before the first response
+— `isEmpty` that omits the latch renders the empty state during the initial load.
 
 ### A refused row action reconciles the list — a toast alone is a bug
 
@@ -506,12 +515,27 @@ it across 28 untagged projects — the 3 apps and 25 of the 26 admin feature lib
 missing tags rather than violating anything, and all now tagged. So: **when you add a lib or an app,
 tag it (`scope` + `type`) in its `project.json`**, or its very first import fails lint.
 
-Two shapes of report the rule folds together, worth knowing before you read a red run: a **circular
-dependency** is reported instead of the scope violation on the same import, so `libs/shared/pipes`'
-three `order-status/*.pipe.ts` files importing `@cleansia/partner-services` (a real `scope:shared →
-scope:partner` break) currently read as *"Circular dependency between pipes and partner-services"*.
-Fixing the cycle would reveal the scope error underneath; both want the same fix — the partner enum
-those pipes need belongs in a shared lib.
+Two shapes of report the rule folds together, worth knowing before you read a red run: **when an import
+is both a cycle and a scope break, only the cycle is printed.** `libs/shared/pipes`' three
+`order-status/*.pipe.ts` files imported `@cleansia/partner-services` — a real `scope:shared →
+scope:partner` break — and read as *"Circular dependency between pipes and partner-services"* for as long
+as they existed. Verified by probe: the same `scope:shared → scope:partner` import placed in a lib the
+partner chain does **not** reach (`assets`) prints *"A project tagged with `scope:shared` can only depend
+on libs tagged with `scope:shared`"* immediately. So a scope break can hide behind a cycle indefinitely,
+and **the scope-violation count staying at zero after you fix a cycle is the expected outcome, not
+evidence there was nothing underneath** — one fix retires both.
+
+**The fix, and the general rule: a wire enum a shared lib needs is declared in `@cleansia/models`, and
+pinned to every generated client by an off-disk parity spec.** Shared code may not import any
+`*-services` client, so the enum has to be re-declared — which makes it a **fourth** copy of something
+three clients already generate, and nothing makes the four agree. Declare it in
+`libs/shared/models/src/lib/models/` and guard it with a spec that **reads the three generated clients
+off disk and parses them** (`order-status-enum-parity.spec.ts`) — an import would be the very break you
+are fixing, so the file-reading idiom of the i18n and brand-asset guards is the only available one. A
+regen that renumbers a member then fails `nx test models` instead of silently giving shared code a
+different contract from the app it renders in. Which of the four declarations should be **canonical** —
+i.e. whether the clients should stop emitting their own — is an Architect call on owner-run generation:
+`Q-ENUM-01`.
 
 The `*-services` index barrels
 (`libs/core/<app>-services/src/index.ts`) are **hand-maintained** (not generated — NSwag only emits

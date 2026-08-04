@@ -7219,6 +7219,10 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "preferredEmployeeId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8207,6 +8211,9 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "trialEligible": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -9868,6 +9875,10 @@
           },
           "isActive": {
             "type": "boolean"
+          },
+          "preferredEmployeeId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

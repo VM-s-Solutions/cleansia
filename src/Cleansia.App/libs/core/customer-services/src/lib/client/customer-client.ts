@@ -7541,6 +7541,7 @@ export class CreateRecurringBookingCommand implements ICreateRecurringBookingCom
     paymentType!: number;
     startsOn!: Date;
     endsOn!: Date | undefined;
+    preferredEmployeeId!: string | undefined;
 
     constructor(data?: ICreateRecurringBookingCommand) {
         if (data) {
@@ -7572,6 +7573,7 @@ export class CreateRecurringBookingCommand implements ICreateRecurringBookingCom
             this.paymentType = Data["paymentType"];
             this.startsOn = Data["startsOn"] ? new Date(Data["startsOn"].toString()) : undefined as any;
             this.endsOn = Data["endsOn"] ? new Date(Data["endsOn"].toString()) : undefined as any;
+            this.preferredEmployeeId = Data["preferredEmployeeId"];
         }
     }
 
@@ -7603,6 +7605,7 @@ export class CreateRecurringBookingCommand implements ICreateRecurringBookingCom
         data["paymentType"] = this.paymentType;
         data["startsOn"] = this.startsOn ? this.startsOn.toISOString() : undefined as any;
         data["endsOn"] = this.endsOn ? this.endsOn.toISOString() : undefined as any;
+        data["preferredEmployeeId"] = this.preferredEmployeeId;
         return data;
     }
 }
@@ -7619,6 +7622,7 @@ export interface ICreateRecurringBookingCommand {
     paymentType: number;
     startsOn: Date;
     endsOn: Date | undefined;
+    preferredEmployeeId: string | undefined;
 }
 
 export class CurrencyDetailDto implements ICurrencyDetailDto {
@@ -9292,6 +9296,7 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
     expressUpgradesPerMonth!: number | undefined;
     expressUpgradesRemaining!: number | undefined;
     trialEndsAtUtc!: Date | undefined;
+    trialEligible!: boolean;
 
     constructor(data?: IGetMyMembershipResponse) {
         if (data) {
@@ -9319,6 +9324,7 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
             this.expressUpgradesPerMonth = Data["expressUpgradesPerMonth"];
             this.expressUpgradesRemaining = Data["expressUpgradesRemaining"];
             this.trialEndsAtUtc = Data["trialEndsAtUtc"] ? new Date(Data["trialEndsAtUtc"].toString()) : undefined as any;
+            this.trialEligible = Data["trialEligible"];
         }
     }
 
@@ -9346,6 +9352,7 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
         data["expressUpgradesPerMonth"] = this.expressUpgradesPerMonth;
         data["expressUpgradesRemaining"] = this.expressUpgradesRemaining;
         data["trialEndsAtUtc"] = this.trialEndsAtUtc ? this.trialEndsAtUtc.toISOString() : undefined as any;
+        data["trialEligible"] = this.trialEligible;
         return data;
     }
 }
@@ -9366,6 +9373,7 @@ export interface IGetMyMembershipResponse {
     expressUpgradesPerMonth: number | undefined;
     expressUpgradesRemaining: number | undefined;
     trialEndsAtUtc: Date | undefined;
+    trialEligible: boolean;
 }
 
 export class GetMyReferralResponse implements IGetMyReferralResponse {
@@ -11900,6 +11908,7 @@ export class RecurringBookingTemplateDto implements IRecurringBookingTemplateDto
     endsOn!: Date | undefined;
     lastMaterializedFor!: Date | undefined;
     isActive!: boolean;
+    preferredEmployeeId!: string | undefined;
 
     constructor(data?: IRecurringBookingTemplateDto) {
         if (data) {
@@ -11935,6 +11944,7 @@ export class RecurringBookingTemplateDto implements IRecurringBookingTemplateDto
             this.endsOn = Data["endsOn"] ? new Date(Data["endsOn"].toString()) : undefined as any;
             this.lastMaterializedFor = Data["lastMaterializedFor"] ? new Date(Data["lastMaterializedFor"].toString()) : undefined as any;
             this.isActive = Data["isActive"];
+            this.preferredEmployeeId = Data["preferredEmployeeId"];
         }
     }
 
@@ -11970,6 +11980,7 @@ export class RecurringBookingTemplateDto implements IRecurringBookingTemplateDto
         data["endsOn"] = this.endsOn ? this.endsOn.toISOString() : undefined as any;
         data["lastMaterializedFor"] = this.lastMaterializedFor ? this.lastMaterializedFor.toISOString() : undefined as any;
         data["isActive"] = this.isActive;
+        data["preferredEmployeeId"] = this.preferredEmployeeId;
         return data;
     }
 }
@@ -11990,6 +12001,7 @@ export interface IRecurringBookingTemplateDto {
     endsOn: Date | undefined;
     lastMaterializedFor: Date | undefined;
     isActive: boolean;
+    preferredEmployeeId: string | undefined;
 }
 
 export enum ReferralStatus {

@@ -36,14 +36,8 @@ public class UpdateBankDetails
             _payoutDetailsValidator = payoutDetailsValidator ?? throw new ArgumentNullException(nameof(payoutDetailsValidator));
 
             RuleFor(c => c)
-                .MustAsync(AllowedToUpdateEmployee)
+                .MustAsync(CallerIsAnEmployee)
                 .WithMessage(BusinessErrorMessage.NotAllowedToUpdateEmployee);
-
-            RuleFor(c => c.EmployeeId)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(employeeRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.NotFound);
 
             RuleFor(c => c.BankName)
                 .MaximumLength(100)
@@ -58,7 +52,7 @@ public class UpdateBankDetails
 
         private async Task ValidatePayoutDetails(Command command, ValidationContext<Command> context, CancellationToken cancellationToken)
         {
-            var employee = await _employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
+            var employee = await ResolveCallerAsync(cancellationToken);
             if (employee is null)
             {
                 return;
@@ -78,12 +72,14 @@ public class UpdateBankDetails
             });
         }
 
-        private async Task<bool> AllowedToUpdateEmployee(Command command, CancellationToken cancellationToken)
-        {
-            var currentUserEmail = _userSessionProvider.GetUserEmail();
-            var employee = await _employeeRepository.GetByUserEmailAsync(currentUserEmail ?? string.Empty, cancellationToken);
-            return employee?.Id == command.EmployeeId;
-        }
+        // Not an ownership comparison — the subject is server-resolved, so there is nothing for a client
+        // to get wrong. What survives is the precondition the handler dereferences.
+        private async Task<bool> CallerIsAnEmployee(Command command, CancellationToken cancellationToken) =>
+            await ResolveCallerAsync(cancellationToken) is not null;
+
+        private Task<Employee?> ResolveCallerAsync(CancellationToken cancellationToken) =>
+            _employeeRepository.GetByUserEmailAsync(
+                _userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
     }
 
     /// <param name="Iban">
@@ -91,7 +87,10 @@ public class UpdateBankDetails
     /// server derives it from the parts and rejects a supplied value that disagrees (ADR-0034 D5.2).
     /// </param>
     public record Command(
-        string EmployeeId,
+        // [OWN-DATA] (S1): inert. The record written is always the JWT caller's; this stays on the wire
+        // only so the shipped clients keep serializing unchanged. Nullable is load-bearing — a
+        // non-nullable reference member makes MVC reject an ABSENT id before MediatR is reached.
+        string? EmployeeId,
         string? Iban,
         string? BankCountryId = null,
         string? AccountPrefix = null,
@@ -105,13 +104,21 @@ public class UpdateBankDetails
 
     public class Handler(
         IEmployeeRepository employeeRepository,
+        IUserSessionProvider userSessionProvider,
         IEmployeePayoutDetailsRepository payoutDetailsRepository,
         IPayoutDetailsValidator payoutDetailsValidator,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var employee = (await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken))!;
+            var employee = await employeeRepository.GetByUserEmailAsync(
+                userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
+
+            if (employee is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(BusinessErrorMessage.EmployeeNotFound), BusinessErrorMessage.EmployeeNotFound));
+            }
 
             var validation = await payoutDetailsValidator.ValidateAsync(
                 ToInput(command, employee.WorkCountryId), cancellationToken);

@@ -37,14 +37,8 @@ public class UpdateEmployee
             _taxIdValidator = taxIdValidator ?? throw new ArgumentNullException(nameof(taxIdValidator));
 
             RuleFor(c => c)
-                .MustAsync(AllowedToUpdateEmployee)
+                .MustAsync(CallerIsAnEmployee)
                 .WithMessage(BusinessErrorMessage.NotAllowedToUpdateEmployee);
-
-            RuleFor(c => c.EmployeeId)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(employeeRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.NotFound);
 
             RuleFor(c => c.FirstName).ValidateFirstName();
             RuleFor(c => c.LastName).ValidateLastName();
@@ -175,17 +169,21 @@ public class UpdateEmployee
             return true;
         }
 
-        private async Task<bool> AllowedToUpdateEmployee(Command command, CancellationToken cancellationToken)
+        // Not an ownership comparison — the subject is server-resolved, so there is nothing for a client
+        // to get wrong. What survives is the precondition the handler dereferences.
+        private async Task<bool> CallerIsAnEmployee(Command command, CancellationToken cancellationToken)
         {
-            var currentUserEmail = _userSessionProvider.GetUserEmail();
-            var employee = await _employeeRepository.GetByUserEmailAsync(currentUserEmail ?? string.Empty, cancellationToken);
-            return employee?.Id == command.EmployeeId;
+            var employee = await _employeeRepository.GetByUserEmailAsync(
+                _userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
+            return employee is not null;
         }
-
     }
 
     public record Command(
-        string EmployeeId,
+        // [OWN-DATA] (S1): inert. The record written is always the JWT caller's; this stays on the wire
+        // only so the shipped clients keep serializing unchanged. Nullable is load-bearing — a
+        // non-nullable reference member makes MVC reject an ABSENT id before MediatR is reached.
+        string? EmployeeId,
         string FirstName,
         string LastName,
         DateOnly BirthDate,
@@ -221,19 +219,27 @@ public class UpdateEmployee
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
-            var address = CreateOrUpdateAddress(employee!, command);
+            var employee = await employeeRepository.GetByUserEmailAsync(
+                userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
+
+            if (employee is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(BusinessErrorMessage.EmployeeNotFound), BusinessErrorMessage.EmployeeNotFound));
+            }
+
+            var address = CreateOrUpdateAddress(employee, command);
             await addressGeocoder.PopulateCoordinatesAsync(address, cancellationToken);
 
-            await UploadDocuments(employee!, command, cancellationToken);
+            await UploadDocuments(employee, command, cancellationToken);
             var availability = ConvertAvailability(command.Availability);
 
-            UpdateEmployeeDetails(employee!, command, address, availability);
+            UpdateEmployeeDetails(employee, command, address, availability);
 
             // The validator only gates on Consent == true; GDPR Art. 7(1) requires us to be able to
             // DEMONSTRATE the consent, so the grant is persisted on the same unit of work as the
             // profile it belongs to. Re-saving an already-consented profile is a no-op.
-            await consentService.TryGrantAsync(employee!.UserId, ConsentType.DataProcessing, cancellationToken);
+            await consentService.TryGrantAsync(employee.UserId, ConsentType.DataProcessing, cancellationToken);
 
             return BusinessResult.Success(new Response(employee.Id));
         }

@@ -63,8 +63,9 @@ public class UpdateBankDetailsTests
     private UpdateBankDetails.Validator CreateValidator() =>
         new(_employees.Object, _session.Object, PayoutValidator());
 
-    private UpdateBankDetails.Handler CreateHandler() =>
-        new(_employees.Object, _payoutDetails.Object, PayoutValidator(), NullLogger<UpdateBankDetails.Handler>.Instance);
+    private UpdateBankDetails.Handler CreateHandler() => new(
+        _employees.Object, _session.Object, _payoutDetails.Object, PayoutValidator(),
+        NullLogger<UpdateBankDetails.Handler>.Instance);
 
     private static UpdateBankDetails.Command Valid() => new(
         EmployeeId: EmployeeId,
@@ -107,16 +108,53 @@ public class UpdateBankDetailsTests
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.PayoutLooksLikeCard);
     }
 
+    /// <summary>
+    /// The payout destination is written for the JWT caller, whatever id the body names (S1,
+    /// [OWN-DATA]). The rule this replaces compared the session employee to the CLIENT-supplied id, so
+    /// it only ever passed for a caller that already knew the answer — it refused nobody an attacker
+    /// could not impersonate, and refused every client that cannot supply the id at all.
+    /// </summary>
     [Fact]
-    public async Task Another_Cleaners_Employee_Id_Is_Refused()
+    public async Task Another_Cleaners_Employee_Id_Is_Ignored_Rather_Than_Refused()
     {
         var command = Valid() with { EmployeeId = "emp-2" };
         _employees.Setup(r => r.ExistsAsync("emp-2", It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        var result = await CreateValidator().ValidateAsync(command);
+        var validation = await CreateValidator().ValidateAsync(command);
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
 
-        Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.NotAllowedToUpdateEmployee);
+        Assert.True(validation.IsValid);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(EmployeeId, result.Value.EmployeeId);
+        _employees.Verify(r => r.GetByIdAsync("emp-2", It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task A_Command_With_No_Employee_Id_At_All_Writes_The_Callers_Record()
+    {
+        var command = Valid() with { EmployeeId = null };
+
+        var validation = await CreateValidator().ValidateAsync(command);
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(validation.IsValid);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(EmployeeId, result.Value.EmployeeId);
+    }
+
+    [Fact]
+    public async Task A_Caller_With_No_Employee_Record_Is_Refused()
+    {
+        _employees
+            .Setup(r => r.GetByUserEmailAsync(UserEmail, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Employee?)null);
+
+        var validation = await CreateValidator().ValidateAsync(Valid());
+        var result = await CreateHandler().Handle(Valid(), CancellationToken.None);
+
+        Assert.Contains(validation.Errors, e => e.ErrorMessage == BusinessErrorMessage.NotAllowedToUpdateEmployee);
+        Assert.False(result.IsSuccess);
+        Assert.Equal(BusinessErrorMessage.EmployeeNotFound, result.Error!.Message);
     }
 
     [Fact]

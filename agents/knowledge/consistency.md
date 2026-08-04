@@ -58,9 +58,14 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   **not** otherwise load the entity. When the handler *does* load the entity to operate on it (every
   Update/Delete that mutates a fetched row), the **fetch-and-guard lives in the handler** —
   `var x = await repo.GetByIdAsync(...); if (x is null) return Failure(...)` is the canonical guard,
-  **not** redundant. Do **not** put ownership/session checks in the validator (✗ `UpdateEmployee`,
-  `UpdateCurrentUser`, `UpdateSavedAddress`, `DeleteSavedAddress` all check ownership in the validator
-  — ownership belongs in the handler, S3).
+  **not** redundant. Do **not** put ownership/session checks in the validator (✗ `UpdateSavedAddress`,
+  `DeleteSavedAddress` still check ownership in the validator — ownership belongs in the handler, S3).
+  **A SELF-write has no ownership check at all**: it resolves the subject from `IUserSessionProvider`
+  in **both** arms (the validator's precondition and the handler's fetch) and leaves the wire id inert
+  — `UpdateCurrentUser` and the seven `Features/Employees/Update*` commands are the reference shape.
+  Comparing the session-resolved subject to a *client-supplied* id is not authorization (S1); the wire
+  field must then be **`string?`**, or MVC's implicit-required rejects an absent id before MediatR and
+  only a host test can see it.
 - **B5.** **Failure construction is `BusinessResult.Failure<Response>(new Error(nameof(command.Field), BusinessErrorMessage.X))`** —
   the first `Error` arg is **`nameof` of the offending field**, never `nameof(Command)`/`nameof(request)`
   (✗ `CreateMembershipSubscription`).

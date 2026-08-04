@@ -170,6 +170,21 @@ public class CreateOrder
         /// not the same service is also selected directly — computed as two aggregates rather than two
         /// entity graphs, because all this rule needs is one integer.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>The double-count is INTENDED, ruled by the owner on 2026-08-04:</b> <i>"there is a need to
+        /// charge them separately. So if a user selects 1 package and 1 service that is included in the
+        /// package then they're charged separately."</i> Selecting a package and a service inside it buys
+        /// that service <b>twice</b> — so it is performed twice, priced twice, and takes twice as long.
+        /// The sum is therefore correct, not a leak, and <b>must not be "fixed" with a Distinct</b>.
+        /// </para>
+        /// <para>
+        /// This also settles the two consequences that made it look like a bug: crew size
+        /// (<c>RequiredEmployees = ceil(minutes / 120)</c>) scales with the doubled work because the work
+        /// really is doubled; and pricing charging a flat <c>Package.Price</c> plus the service's own
+        /// <c>BasePrice + PerRoomPrice × rooms</c> is two charges for two deliveries, which is the ruling.
+        /// </para>
+        /// </remarks>
         private async Task<bool> SpanWithinCapAsync(Command command, CancellationToken cancellationToken)
         {
             var serviceMinutes = await _serviceRepository

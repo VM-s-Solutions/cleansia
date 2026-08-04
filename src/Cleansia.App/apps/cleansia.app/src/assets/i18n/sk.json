@@ -1558,7 +1558,10 @@
       "not_found": "Vaše členstvo sme nenašli.",
       "not_owned_by_user": "Toto členstvo nemôžete spravovať.",
       "stripe_customer_required": "Nepodarilo sa nám spojiť s platobnou bránou — skúste to prosím znova.",
-      "swap_same_plan": "Na tomto pláne už ste."
+      "swap_same_plan": "Na tomto pláne už ste.",
+      "express_waiver": {
+        "no_longer_available": "Vaše bezplatné expresné vylepšenie už pre túto objednávku nie je k dispozícii — expresné objednávky zahrnuté v tomto mesiaci boli práve vyčerpané. Objednať môžete aj za bežnú expresnú cenu."
+      }
     },
     "recurring_booking": {
       "not_found": "Táto opakovaná objednávka už neexistuje.",

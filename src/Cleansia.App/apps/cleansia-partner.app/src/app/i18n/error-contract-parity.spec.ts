@@ -160,6 +160,22 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   // GDPR consents
   'gdpr.consent_already_granted',
   'gdpr.consent_not_found',
+  // Payout destination — UpdateBankDetails runs the whole PayoutDetailsValidator
+  // chain, so every arm of it is reachable from the cleaner's bank-details form;
+  // GetMyPayoutDetails returns payout.not_found.
+  'payout.not_found',
+  'validation.payout.account_number_required',
+  'validation.payout.country_not_supported',
+  'validation.payout.iban_country_mismatch',
+  'validation.payout.iban_mismatch',
+  'validation.payout.invalid_account_number',
+  'validation.payout.invalid_account_prefix',
+  'validation.payout.invalid_bank_code',
+  'validation.payout.invalid_iban',
+  'validation.payout.invalid_swift',
+  'validation.payout.looks_like_card',
+  'validation.payout.scheme_not_supported',
+  'validation.payout.swift_required',
   // Payroll — invoices, pay periods, pay calculation
   'payroll.employee_not_assigned',
   'payroll.invoice.not_found',
@@ -193,11 +209,7 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
 // reason, so the list may only ever shrink: translate the key in all five
 // locales and delete its line. A key that is BOTH listed here and translated
 // fails the ratchet below.
-const PENDING_TRANSLATION: readonly string[] = [
-  'country.not_serviced',
-  'gdpr.consent_already_granted',
-  'gdpr.consent_not_found',
-];
+const PENDING_TRANSLATION: readonly string[] = [];
 
 const TRANSLATED_CONTRACT_KEYS = PARTNER_SURFACE_ERROR_KEYS.filter(
   (key) => !PENDING_TRANSLATION.includes(key)

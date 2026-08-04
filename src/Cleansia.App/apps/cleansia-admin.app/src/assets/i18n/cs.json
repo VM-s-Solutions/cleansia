@@ -2601,6 +2601,9 @@
       "maximum_pay_negative": "Maximální mzda nemůže být záporná",
       "maximum_less_than_minimum": "Maximální mzda nemůže být nižší než minimální mzda"
     },
+    "payout": {
+      "not_found": "Tento zaměstnanec nemá uložené platební údaje"
+    },
     "file": {
       "content_type_doesnt_match": "Typ obsahu souboru neodpovídá",
       "invalid_file_type": "Neplatný typ souboru",
@@ -2660,7 +2663,21 @@
       "page_must_be_positive": "Stránka musí být větší než 0",
       "page_size_must_be_positive": "Velikost stránky musí být větší než 0",
       "page_size_exceeded": "Velikost stránky nesmí překročit 100",
-      "invalid_contract_status": "Neplatná hodnota stavu smlouvy"
+      "invalid_contract_status": "Neplatná hodnota stavu smlouvy",
+      "payout": {
+        "account_number_required": "Zadejte číslo účtu",
+        "country_not_supported": "Výplaty do banky v této zemi zatím nejsou podporovány",
+        "iban_country_mismatch": "IBAN je z jiné země než banka. Zkontrolujte IBAN, nebo změňte zemi banky tak, aby souhlasily.",
+        "iban_mismatch": "IBAN neodpovídá číslu účtu a kódu banky. Zkontrolujte všechny tři údaje, nebo IBAN vymažte a odvodí se z nich.",
+        "invalid_account_number": "Číslo účtu se nepodařilo ověřit — téměř vždy jde o překlep v číslici. Zkontrolujte ho podle bankovních údajů zaměstnance.",
+        "invalid_account_prefix": "Předčíslí účtu se nepodařilo ověřit — je to část před pomlčkou v čísle účtu. Zkontrolujte číslice, nebo pole vymažte, pokud účet předčíslí nemá.",
+        "invalid_bank_code": "Zadejte čtyřmístný kód banky",
+        "invalid_iban": "Toto není platný IBAN",
+        "invalid_swift": "SWIFT/BIC nepatří do země banky",
+        "looks_like_card": "Vypadá to jako číslo platební karty. Zadejte místo toho číslo bankovního účtu.",
+        "scheme_not_supported": "Výplaty na tento typ účtu zatím nejsou podporovány",
+        "swift_required": "Banka je v jiné zemi, než ve které zaměstnanec pracuje, proto je nutný také SWIFT/BIC kód banky."
+      }
     },
     "service": {
       "not_found": "Služba nenalezena",

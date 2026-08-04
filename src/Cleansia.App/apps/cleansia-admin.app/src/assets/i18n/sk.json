@@ -2601,6 +2601,9 @@
       "maximum_pay_negative": "Maximálna odmena nesmie byť záporná",
       "maximum_less_than_minimum": "Maximálna odmena nesmie byť nižšia ako minimálna odmena"
     },
+    "payout": {
+      "not_found": "Tento zamestnanec nemá uložené platobné údaje"
+    },
     "file": {
       "content_type_doesnt_match": "Typ obsahu súboru sa nezhoduje",
       "invalid_file_type": "Neplatný typ súboru",
@@ -2660,7 +2663,21 @@
       "page_must_be_positive": "Stránka musí byť väčšia ako 0",
       "page_size_must_be_positive": "Veľkosť stránky musí byť väčšia ako 0",
       "page_size_exceeded": "Veľkosť stránky nesmie prekročiť 100",
-      "invalid_contract_status": "Neplatná hodnota stavu zmluvy"
+      "invalid_contract_status": "Neplatná hodnota stavu zmluvy",
+      "payout": {
+        "account_number_required": "Zadajte číslo účtu",
+        "country_not_supported": "Výplaty do banky v tejto krajine zatiaľ nie sú podporované",
+        "iban_country_mismatch": "IBAN je z inej krajiny než banka. Skontrolujte IBAN alebo zmeňte krajinu banky tak, aby súhlasili.",
+        "iban_mismatch": "IBAN nezodpovedá číslu účtu a kódu banky. Skontrolujte všetky tri údaje, alebo IBAN vymažte a odvodí sa z nich.",
+        "invalid_account_number": "Číslo účtu sa nepodarilo overiť — takmer vždy ide o preklep v číslici. Skontrolujte ho podľa bankových údajov zamestnanca.",
+        "invalid_account_prefix": "Predčíslie účtu sa nepodarilo overiť — je to časť pred pomlčkou v čísle účtu. Skontrolujte číslice alebo pole vymažte, ak účet predčíslie nemá.",
+        "invalid_bank_code": "Zadajte štvormiestny kód banky",
+        "invalid_iban": "Toto nie je platný IBAN",
+        "invalid_swift": "SWIFT/BIC nepatrí do krajiny banky",
+        "looks_like_card": "Vyzerá to ako číslo platobnej karty. Zadajte namiesto toho číslo bankového účtu.",
+        "scheme_not_supported": "Výplaty na tento typ účtu zatiaľ nie sú podporované",
+        "swift_required": "Banka je v inej krajine, než v ktorej zamestnanec pracuje, preto je potrebný aj SWIFT/BIC kód banky."
+      }
     },
     "service": {
       "not_found": "Služba nebola nájdená",

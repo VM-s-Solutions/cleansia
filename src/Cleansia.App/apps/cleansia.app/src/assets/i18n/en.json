@@ -1558,7 +1558,10 @@
       "not_found": "We couldn't find your membership.",
       "not_owned_by_user": "You can't manage this membership.",
       "stripe_customer_required": "We couldn't reach the payment provider — please try again.",
-      "swap_same_plan": "You're already on this plan."
+      "swap_same_plan": "You're already on this plan.",
+      "express_waiver": {
+        "no_longer_available": "Your free express upgrade is no longer available for this booking — this month's included express bookings have just been used up. You can still book at the standard express price."
+      }
     },
     "recurring_booking": {
       "not_found": "That recurring booking no longer exists.",

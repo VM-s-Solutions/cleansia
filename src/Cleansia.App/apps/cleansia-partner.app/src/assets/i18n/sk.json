@@ -1037,6 +1037,20 @@
       "page_size_must_be_positive": "Veľkosť stránky musí byť väčšia ako 0",
       "page_size_exceeded": "Veľkosť stránky nesmie prekročiť 100",
       "invalid_contract_status": "Neplatná hodnota stavu zmluvy",
+      "payout": {
+        "account_number_required": "Zadajte číslo svojho účtu",
+        "country_not_supported": "Do banky v tejto krajine zatiaľ nevieme vyplácať",
+        "iban_country_mismatch": "Váš IBAN je z inej krajiny než vaša banka. Skontrolujte IBAN alebo zmeňte krajinu banky tak, aby súhlasili.",
+        "iban_mismatch": "Váš IBAN nezodpovedá číslu účtu a kódu banky. Skontrolujte všetky tri údaje, alebo IBAN nechajte prázdny a doplníme ho za vás.",
+        "invalid_account_number": "Toto číslo účtu sa nám nepodarilo overiť — takmer vždy ide o preklep v číslici. Porovnajte ho prosím s výpisom z účtu.",
+        "invalid_account_prefix": "Toto predčíslie účtu sa nám nepodarilo overiť — je to časť pred pomlčkou v čísle účtu. Skontrolujte prosím číslice, alebo pole nechajte prázdne, ak predčíslie nemáte.",
+        "invalid_bank_code": "Zadajte štvormiestny kód banky",
+        "invalid_iban": "Toto nie je platný IBAN. Opíšte ho prosím z výpisu z účtu alebo z bankovej aplikácie.",
+        "invalid_swift": "Tento SWIFT/BIC nepatrí do krajiny vašej banky. Opíšte ho prosím z výpisu z účtu alebo z bankovej aplikácie.",
+        "looks_like_card": "Vyzerá to ako číslo platobnej karty. Zadajte prosím číslo svojho bankového účtu — nájdete ho na výpise z účtu alebo v bankovej aplikácii.",
+        "scheme_not_supported": "Na tento typ účtu zatiaľ nevieme vyplácať",
+        "swift_required": "Vaša banka je v inej krajine, než v ktorej pracujete, preto potrebujeme aj SWIFT/BIC kód vašej banky."
+      },
       "file": {
         "max_size": "Súbor \"{{fileName}}\" prekračuje maximálnu veľkosť {{maxSize}} MB",
         "invalid_type": "Súbor \"{{fileName}}\" má nepovolený typ. Povolené: {{acceptedTypes}}"
@@ -1177,6 +1191,9 @@
       "maximum_pay_negative": "Maximálna mzda nemôže byť záporná",
       "maximum_less_than_minimum": "Maximálna mzda nemôže byť nižšia ako minimálna mzda"
     },
+    "payout": {
+      "not_found": "Zatiaľ ste nezadali svoje platobné údaje"
+    },
     "file": {
       "content_type_doesnt_match": "Typ súboru nezodpovedá obsahu",
       "invalid_file_type": "Neplatný typ súboru. Nahrajte prosím platné dokumenty.",
@@ -1200,7 +1217,12 @@
       "not_existing_id": "Krajina s týmto ID neexistuje",
       "not_found": "Krajina nenájdená",
       "iso_code_already_exists": "Krajina s týmto ISO kódom už existuje",
-      "in_use": "Krajinu nie je možné vymazať, pretože sa aktuálne používa"
+      "in_use": "Krajinu nie je možné vymazať, pretože sa aktuálne používa",
+      "not_serviced": "V tejto krajine zatiaľ nepôsobíme"
+    },
+    "gdpr": {
+      "consent_not_found": "Toto nastavenie súhlasu sme nenašli",
+      "consent_already_granted": "Tento súhlas ste už udelili"
     },
     "company": {
       "not_found": "Informácie o spoločnosti nenájdené",

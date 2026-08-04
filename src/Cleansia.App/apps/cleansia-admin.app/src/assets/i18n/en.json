@@ -2601,6 +2601,9 @@
       "maximum_pay_negative": "Maximum pay cannot be negative",
       "maximum_less_than_minimum": "Maximum pay cannot be less than minimum pay"
     },
+    "payout": {
+      "not_found": "This employee has no payout details on file"
+    },
     "file": {
       "content_type_doesnt_match": "File content type doesn't match",
       "invalid_file_type": "Invalid file type",
@@ -2660,7 +2663,21 @@
       "page_must_be_positive": "Page must be greater than 0",
       "page_size_must_be_positive": "Page size must be greater than 0",
       "page_size_exceeded": "Page size cannot exceed 100",
-      "invalid_contract_status": "Invalid contract status value"
+      "invalid_contract_status": "Invalid contract status value",
+      "payout": {
+        "account_number_required": "Enter the account number",
+        "country_not_supported": "Payouts to a bank in this country are not supported yet",
+        "iban_country_mismatch": "The IBAN is from a different country than the bank. Check the IBAN, or change the bank country so the two match.",
+        "iban_mismatch": "The IBAN does not match the account number and bank code. Check all three, or clear the IBAN and it will be derived from them.",
+        "invalid_account_number": "The account number could not be verified — almost always a mistyped digit. Check it against the employee's bank details.",
+        "invalid_account_prefix": "The account prefix could not be verified — it is the part before the dash in the account number. Check the digits, or clear the field if the account has none.",
+        "invalid_bank_code": "Enter a 4-digit bank code",
+        "invalid_iban": "This is not a valid IBAN",
+        "invalid_swift": "The SWIFT/BIC does not belong to the bank's country",
+        "looks_like_card": "That looks like a payment card number. Enter the bank account number instead.",
+        "scheme_not_supported": "Payouts to this kind of account are not supported yet",
+        "swift_required": "The bank is in a different country than the employee's work country, so the bank's SWIFT/BIC code is also required."
+      }
     },
     "service": {
       "not_found": "Service not found",

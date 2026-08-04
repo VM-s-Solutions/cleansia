@@ -212,6 +212,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'membership.not_owned_by_user',
   'membership.stripe_customer_required',
   'membership.swap_same_plan',
+  // The CreateOrder waiver rule runs BEFORE the price rule and has its own code
+  // precisely so this never renders as the generic "the price changed".
+  'membership.express_waiver.no_longer_available',
   // Recurring booking — create / manage
   'recurring_booking.not_found',
   'recurring_booking.not_owned_by_user',

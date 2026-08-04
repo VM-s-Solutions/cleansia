@@ -1037,6 +1037,20 @@
       "page_size_must_be_positive": "Page size must be greater than 0",
       "page_size_exceeded": "Page size cannot exceed 100",
       "invalid_contract_status": "Invalid contract status value",
+      "payout": {
+        "account_number_required": "Enter your account number",
+        "country_not_supported": "We cannot pay out to a bank in this country yet",
+        "iban_country_mismatch": "Your IBAN is from a different country than your bank. Check the IBAN, or change the bank country so the two match.",
+        "iban_mismatch": "Your IBAN does not match your account number and bank code. Check all three, or leave the IBAN empty and we will fill it in for you.",
+        "invalid_account_number": "We could not verify this account number — it is almost always a mistyped digit. Please compare it with your bank statement.",
+        "invalid_account_prefix": "We could not verify this account prefix — it is the part before the dash in your account number. Please check the digits, or leave it empty if your account has none.",
+        "invalid_bank_code": "Enter your 4-digit bank code",
+        "invalid_iban": "This is not a valid IBAN. Copy it from your bank statement or your banking app.",
+        "invalid_swift": "This SWIFT/BIC does not belong to your bank's country. Copy it from your bank statement or your banking app.",
+        "looks_like_card": "That looks like a payment card number. Enter your bank account number instead — you will find it on your bank statement or in your banking app.",
+        "scheme_not_supported": "We cannot pay out to this kind of account yet",
+        "swift_required": "Your bank is in a different country than the one you work in, so we also need your bank's SWIFT/BIC code."
+      },
       "file": {
         "max_size": "File \"{{fileName}}\" exceeds maximum size of {{maxSize}}MB",
         "invalid_type": "File \"{{fileName}}\" type is not allowed. Accepted: {{acceptedTypes}}"
@@ -1177,6 +1191,9 @@
       "maximum_pay_negative": "Maximum pay cannot be negative",
       "maximum_less_than_minimum": "Maximum pay cannot be less than minimum pay"
     },
+    "payout": {
+      "not_found": "You have not added your payout details yet"
+    },
     "file": {
       "content_type_doesnt_match": "File type does not match content",
       "invalid_file_type": "Invalid file type. Please upload valid document files.",
@@ -1200,7 +1217,12 @@
       "not_existing_id": "Country with this ID does not exist",
       "not_found": "Country not found",
       "iso_code_already_exists": "A country with this ISO code already exists",
-      "in_use": "Cannot delete country because it is currently in use"
+      "in_use": "Cannot delete country because it is currently in use",
+      "not_serviced": "We do not operate in this country yet"
+    },
+    "gdpr": {
+      "consent_not_found": "We could not find that consent setting",
+      "consent_already_granted": "You have already granted this consent"
     },
     "company": {
       "not_found": "Company information not found",

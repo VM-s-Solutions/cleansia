@@ -285,8 +285,17 @@ rule as `errors.*`; the live customer interceptor uses `api.${code}`. **Follow t
   `BusinessErrorMessage.*` constants referenced by the feature classes **that app's host controllers
   dispatch** — so it can be re-derived rather than remembered. A key that is genuinely not translated
   yet goes on the spec's short `PENDING_TRANSLATION` list, which is a **ratchet**: the spec fails if a
-  listed key turns out to be translated (delete the line) or is not a real contract key. Admin has no
-  twin yet.
+  listed key turns out to be translated (delete the line) or is not a real contract key.
+- **Admin ships two error namespaces and only one of them is canonical — write `api.*`.** Its bundle
+  carries a legacy `errors.*` block (~169 keys) that mirrors `api.*`, read by the per-feature
+  `XXX_ERROR_KEY_MAP` resolvers a few admin features still carry (orders, disputes, refunds,
+  referrals). Admin also registers `COMMON_INTERCEPTORS_FN`, so the shared interceptor fires on every
+  admin error and resolves `api.${code}` — a new key written only under `errors.*` is therefore
+  invisible unless you also hand-write a resolver, which is the thing you are not supposed to add.
+  `apps/cleansia-admin.app/src/app/i18n/error-contract-parity.spec.ts` is the admin twin; it guards
+  five-locale key-set parity and non-emptiness over **both** namespaces, and holds a contract list
+  bounded to the surface derived so far rather than pretending to cover all 31 admin controllers.
+  Extend that list when you derive another admin surface.
 
 ### A refused row action reconciles the list — a toast alone is a bug
 

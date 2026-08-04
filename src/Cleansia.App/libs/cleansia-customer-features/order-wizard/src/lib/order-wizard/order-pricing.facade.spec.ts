@@ -24,6 +24,15 @@ describe('OrderPricingFacade', () => {
     expressSurchargeAmount: 200,
     currencyId: 'czk',
   };
+  // Plus member with a waiver left: the slot IS express and the surcharge is nevertheless zero.
+  const waivedExpressQuoteResponse = {
+    totalPrice: 1000,
+    expressSurchargeApplied: false,
+    expressSurchargeAmount: 0,
+    expressSurchargeWaivedByMembership: true,
+    expressUpgradesRemaining: 2,
+    currencyId: 'czk',
+  };
 
   function pickExpressSlot(): void {
     const slot = new Date(Date.now() + 3 * 60 * 60 * 1000);
@@ -115,6 +124,27 @@ describe('OrderPricingFacade', () => {
 
       expect(facade.expressSurcharge()).toBe(200);
       expect(facade.displayedTotalPrice()).toBe(1100);
+    });
+
+    it('reports the waiver and charges nothing for a waived express quote', async () => {
+      orderClient.quote.mockReturnValue(of(waivedExpressQuoteResponse));
+      formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));
+      pickExpressSlot();
+      await facade.refreshQuoteNow();
+
+      expect(facade.expressSurchargeWaived()).toBe(true);
+      expect(facade.expressSurchargeApplied()).toBe(false);
+      expect(facade.expressSurcharge()).toBe(0);
+      expect(facade.displayedTotalPrice()).toBe(1000);
+    });
+
+    it('keeps the waiver flag false when the surcharge was actually charged', async () => {
+      orderClient.quote.mockReturnValue(of(expressQuoteResponse));
+      formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));
+      pickExpressSlot();
+      await facade.refreshQuoteNow();
+
+      expect(facade.expressSurchargeWaived()).toBe(false);
     });
 
     it('shows the bare discounted total and no surcharge for a standard quote', async () => {

@@ -15,6 +15,7 @@ import { SelectModule } from 'primeng/select';
 import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
 import { OrderWizardFacade } from './order-wizard.facade';
+import { OrderMembershipFacade } from './order-membership.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
 import { OrderPromoFacade } from './order-promo.facade';
 import { OrderSavedAddressFacade } from './order-saved-address.facade';
@@ -52,6 +53,7 @@ import { WizardSummaryStepComponent } from './components/wizard-summary-step.com
   ],
   templateUrl: './order-wizard.component.html',
   providers: [
+    OrderMembershipFacade,
     OrderPricingFacade,
     OrderPromoFacade,
     OrderSavedAddressFacade,
@@ -111,6 +113,11 @@ export class OrderWizardComponent implements OnInit {
 
   timeOptions = computed(() =>
     filterTimeOptionsForToday(this.allTimeOptions, this.facade.formData().cleaningDate)
+  );
+
+  /** The express-waiver note only belongs under a grid that actually offers an express slot. */
+  hasExpressSlot = computed(() =>
+    this.timeOptions().some((opt) => opt.availability === 'express')
   );
 
   selectedServices = computed(() => {

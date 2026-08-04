@@ -17,6 +17,7 @@ import { GuestOrderService } from '@cleansia-customer/orders';
 import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
+import { OrderMembershipFacade } from './order-membership.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
 import { OrderPromoFacade } from './order-promo.facade';
 import { OrderSavedAddressFacade } from './order-saved-address.facade';
@@ -34,6 +35,7 @@ describe('OrderWizardFacade', () => {
   let extraClient: { getOverview: jest.Mock };
   let userClient: { getCurrent: jest.Mock };
   let apiClient: { serviceCity: jest.Mock };
+  let membershipClient: { getMine: jest.Mock };
   let authService: { isLoggedIn: jest.Mock };
   let snackbar: { showError: jest.Mock };
   let router: { navigate: jest.Mock };
@@ -79,6 +81,7 @@ describe('OrderWizardFacade', () => {
     extraClient = { getOverview: jest.fn().mockReturnValue(of([])) };
     userClient = { getCurrent: jest.fn().mockReturnValue(of({})) };
     apiClient = { serviceCity: jest.fn().mockReturnValue(of([])) };
+    membershipClient = { getMine: jest.fn().mockReturnValue(of({ hasMembership: false })) };
     authService = { isLoggedIn: jest.fn().mockReturnValue(false) };
     snackbar = { showError: jest.fn() };
     router = { navigate: jest.fn() };
@@ -93,6 +96,7 @@ describe('OrderWizardFacade', () => {
 
     TestBed.configureTestingModule({
       providers: [
+        OrderMembershipFacade,
         OrderPricingFacade,
         OrderPromoFacade,
         OrderSavedAddressFacade,
@@ -110,6 +114,7 @@ describe('OrderWizardFacade', () => {
             extraClient,
             userClient,
             apiClient,
+            membershipClient,
           },
         },
         { provide: CustomerAuthService, useValue: authService },

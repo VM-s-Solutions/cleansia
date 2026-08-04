@@ -267,6 +267,30 @@ Reference: `apps/cleansia.app/src/app/i18n/membership-express-claim.spec.ts`, mi
 equivalents (`MembershipExpressClaimTest.kt`, `MembershipExpressClaimTests.swift`). Mutation-check it
 by re-adding the string before you call it done.
 
+### …and when the mechanism ships, INVERT that spec — a scan that permits any wording is not a guard
+
+The claim comes back the day the code makes it true, and the absence spec goes red. That is the
+tripwire working, and the fix is **not** to delete it: point the same file at the claim's *content*.
+Three properties survive the inversion, and each is a real defect the old copy shipped:
+
+1. **The false sentence stays banned, by regex, in every locale** (the express perk's was
+   *"same-day"*, which describes a window the code does not implement). A locale-by-locale ban is
+   the only form that catches a translator putting it back in one file.
+2. **A per-plan configurable number stays out of the copy.** Assert it by **shape, not by value**:
+   erase `{{placeholders}}` and the constants the copy legitimately names (the rate `20 %`, the
+   window `2…4`), then require **no digit to remain**. A bare allow-list of "the digits 2, 4 and 20
+   are fine" reads as a quota check and is not one — it happily passes *"2 free express bookings a
+   month"*, which is exactly the hardcoded quota you are guarding.
+3. **The claim is gated on a server field on every screen that renders it**, and any count in it is
+   the server's, rendered verbatim — assert both by reading the `.html` (`allowsExpressUpgrade`,
+   `expressSurchargeWaived()`, `count: facade.expressUpgradesRemaining()`), plus a negative
+   assertion that no template does arithmetic on the count.
+
+Keep the five-locale key-set parity assertion from the absence version; add a non-empty check on
+each new key, so "the perk is advertised again" is pinned rather than assumed. Mutation-prove the
+inverted spec with one mutation per property — the copy going false, the number going hard, the gate
+going away — not just by deleting a key.
+
 ### Error-contract → i18n: the one canonical path is the interceptor `api.*` namespace
 
 The single canonical mechanism for surfacing a backend `BusinessErrorMessage` to the user is the

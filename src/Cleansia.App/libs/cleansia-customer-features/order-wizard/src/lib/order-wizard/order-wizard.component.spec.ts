@@ -69,6 +69,11 @@ class FakeOrderWizardFacade {
   effectivePromoDiscount = signal(0);
   expressSurcharge = signal(0);
   expressSurchargeApplied = signal(false);
+  expressSurchargeWaived = signal(false);
+  expressUpgradesRemaining = signal(0);
+  expressWaiverAvailable = signal(false);
+  expressWaiverExhausted = signal(false);
+  expressWaiverPendingTrial = signal(false);
   appliedDiscountKind = signal<'none' | 'membership' | 'tier' | 'combined' | 'promo'>('none');
   promoCode = signal('');
 

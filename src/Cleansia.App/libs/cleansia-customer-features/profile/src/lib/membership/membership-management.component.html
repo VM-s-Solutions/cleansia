@@ -29,6 +29,13 @@
           @if (m.freeCancellationWindowHours) {
             <li>{{ 'pages.membership.perk_cancel_window' | translate: { hours: m.freeCancellationWindowHours } }}</li>
           }
+          @if (expressWaiverAvailable()) {
+            <li>{{ 'pages.membership.perk_express' | translate: { count: expressUpgradesRemaining() } }}</li>
+          } @else if (expressWaiverExhausted()) {
+            <li>{{ 'pages.membership.perk_express_used' | translate }}</li>
+          } @else if (expressWaiverPendingTrial()) {
+            <li>{{ 'pages.membership.perk_express_trial' | translate }}</li>
+          }
         </ul>
         @if (showSwitchCta(); as showSwitch) {
           @let yp = yearlyPlan()!;

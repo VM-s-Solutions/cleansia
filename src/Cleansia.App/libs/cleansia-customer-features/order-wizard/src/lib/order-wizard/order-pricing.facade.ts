@@ -85,6 +85,15 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
     () => this.quote()?.expressSurchargeApplied ?? false,
   );
 
+  /**
+   * The slot IS express and the surcharge was nevertheless not charged, because a membership
+   * waiver covered it. `expressSurchargeApplied === false` alone cannot say this — it is equally
+   * true for a slot that is not express at all.
+   */
+  readonly expressSurchargeWaived = computed(
+    () => this.quote()?.expressSurchargeWaivedByMembership ?? false,
+  );
+
   /** Express surcharge line item, rendered verbatim from the server quote. */
   readonly expressSurcharge = computed(() => this.quote()?.expressSurchargeAmount ?? 0);
 

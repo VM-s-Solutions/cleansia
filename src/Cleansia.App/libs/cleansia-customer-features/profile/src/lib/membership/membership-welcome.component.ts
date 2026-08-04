@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CleansiaButtonComponent } from '@cleansia/components';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
+import { MembershipFacade } from './membership.facade';
 
 /**
  * Post-purchase celebration page — replaces the silent
@@ -21,11 +22,23 @@ import { TranslatePipe } from '@ngx-translate/core';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterLink, TranslatePipe, CleansiaButtonComponent],
+  providers: [MembershipFacade],
   templateUrl: './membership-welcome.component.html',
 })
-export class MembershipWelcomeComponent {
+export class MembershipWelcomeComponent implements OnInit {
+  private readonly facade = inject(MembershipFacade);
   private readonly router = inject(Router);
   protected readonly routes = CleansiaCustomerRoute;
+
+  /**
+   * The express perk is the one benefit on this list the plan may not carry, so it is the one
+   * that has to come from the server rather than from the template.
+   */
+  protected readonly expressWaiverAdvertised = this.facade.expressWaiverAdvertised;
+
+  ngOnInit(): void {
+    this.facade.refresh();
+  }
 
   goToSetupRecurring(): void {
     this.router.navigate([CleansiaCustomerRoute.MEMBERSHIP, 'recurring', 'create']);

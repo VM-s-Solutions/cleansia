@@ -1,9 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, Input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, Input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CustomerClient, PaymentType } from '@cleansia/customer-services';
+import { PaymentType } from '@cleansia/customer-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { catchError, of } from 'rxjs';
 import { InputTextModule } from 'primeng/inputtext';
 import {
   CleansiaCodeInputDialogComponent,
@@ -34,36 +33,11 @@ const PROMO_ERROR_KEYS: Record<string, string> = {
   imports: [CommonModule, FormsModule, InputTextModule, TranslatePipe, CleansiaCodeInputDialogComponent],
   templateUrl: './wizard-summary-step.component.html',
 })
-export class WizardSummaryStepComponent implements OnInit {
+export class WizardSummaryStepComponent {
   @Input({ required: true }) facade!: OrderWizardFacade;
   private readonly translate = inject(TranslateService);
-  // Always go through CustomerClient — direct injection of MembershipClient
-  // hits NSwag's empty-string default baseUrl and bypasses CUSTOMER_API_BASE_URL.
-  private readonly customerClient = inject(CustomerClient);
   protected readonly PaymentType = PaymentType;
   protected readonly formatPriceFn = formatPrice;
-
-  /**
-   * Hours in the user's free-cancellation window when they hold an active
-   * Plus membership. Null when not Plus or not yet loaded — template falls
-   * back to the standard 24h tier-1 copy. One-shot fetch on init; the
-   * cancellation card is render-once and doesn't need live updates.
-   */
-  protected readonly plusFreeHours = signal<number | null>(null);
-
-  ngOnInit(): void {
-    // Anonymous users can't hold a Plus membership — skip the call to avoid a
-    // noisy 401 on the booking wizard before sign-in.
-    if (!this.facade.isAuthenticated()) return;
-    this.customerClient.membershipClient
-      .getMine()
-      .pipe(catchError(() => of(null)))
-      .subscribe((response) => {
-        if (response?.hasMembership && response.freeCancellationWindowHours) {
-          this.plusFreeHours.set(response.freeCancellationWindowHours);
-        }
-      });
-  }
 
   // ─── Dialog visibility ──────────────────────────────────────
   //

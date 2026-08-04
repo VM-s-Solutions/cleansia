@@ -29,6 +29,7 @@ import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { OrderMembershipFacade } from './order-membership.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
 import { OrderPromoFacade } from './order-promo.facade';
 import { OrderSavedAddressFacade } from './order-saved-address.facade';
@@ -54,6 +55,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   private readonly promo = inject(OrderPromoFacade);
   private readonly serviceArea = inject(OrderServiceAreaFacade);
   private readonly savedAddress = inject(OrderSavedAddressFacade);
+  private readonly membership = inject(OrderMembershipFacade);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   isAuthenticated = signal(false);
@@ -145,8 +147,19 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly totalPrice = this.pricing.totalPrice;
   readonly preSurchargeSubtotal = this.pricing.preSurchargeSubtotal;
   readonly expressSurchargeApplied = this.pricing.expressSurchargeApplied;
+  readonly expressSurchargeWaived = this.pricing.expressSurchargeWaived;
   readonly expressSurcharge = this.pricing.expressSurcharge;
   readonly displayedTotalPrice = this.pricing.displayedTotalPrice;
+
+  // ─── Membership (free-cancellation window + express waiver) ─────
+  //
+  // One /Membership/Mine read for the whole wizard, owned by OrderMembershipFacade and
+  // re-exposed here so the slot grid and the summary step both read the wizard facade.
+  readonly plusFreeCancellationHours = this.membership.freeCancellationWindowHours;
+  readonly expressUpgradesRemaining = this.membership.expressUpgradesRemaining;
+  readonly expressWaiverAvailable = this.membership.expressWaiverAvailable;
+  readonly expressWaiverExhausted = this.membership.expressWaiverExhausted;
+  readonly expressWaiverPendingTrial = this.membership.expressWaiverPendingTrial;
 
   // ─── Service-area (city-serviced) check ─────────────────────────
   //
@@ -284,6 +297,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
 
     const loggedIn = this.authService.isLoggedIn();
     this.isAuthenticated.set(loggedIn);
+    this.membership.load(loggedIn);
 
     if (loggedIn) {
       if (!this.savedAddressStore.loaded()) {

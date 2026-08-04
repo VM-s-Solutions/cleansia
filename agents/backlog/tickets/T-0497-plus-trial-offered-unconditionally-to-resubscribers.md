@@ -1,7 +1,7 @@
 ---
 id: T-0497
 title: The Plus trial is offered unconditionally to resubscribers — a false price, or an unlimited free-trial loop
-status: blocked
+status: done
 size: S
 owner: pm
 created: 2026-08-02
@@ -15,6 +15,33 @@ security_touching: false
 manual_steps: []
 sprint: 15
 ---
+
+## RESOLVED 2026-08-04 — the owner answered, and AC3's path shipped
+
+The owner ruled: **"it has to be 1 trial period per customer."** AC0's Stripe question is
+**sidestepped rather than answered**, deliberately: a resubscriber either returns with a fresh trial
+or does not, and the two cases need opposite code — so the platform enforces the rule itself, which
+is correct either way and removes a dependency on a dashboard setting invisible from the code.
+
+That is **AC3's path** (`IMembershipTrialResolver` / `MembershipTrialResolver`, consulted before the
+Stripe call on *both* subscribe routes — mobile's confirmed subscribe and the web's hosted Checkout
+reach Stripe by different paths, and a gate on one is not a gate).
+
+**AC1 was re-established in the code and found something the ticket did not know:** `TrialEndsAtUtc`
+had **no production writer at all**, so the gate would have read `false` for everyone forever. The
+writer shipped first, and it records **the provider's answer**, never the plan's configured days —
+asking Stripe for 30 days and recording 30 days would stamp a marker for a benefit a declining
+Stripe never granted.
+
+**AC2 shipped too, not instead:** enforcing silently converts the loop defect into a *false-price*
+defect, because the subscribe screen would keep promising a trial the server now refuses.
+`GetMyMembership.Response.TrialEligible` closes that, defaulted `true` so an older client renders
+exactly as today.
+
+AC4 verified — the four named idempotency suites are green and unedited. AC5: mutation-proved by
+reverting the resolver to the plan's configured days, which fails both subscribe-route tests.
+
+Shipped in `62c5681c`.
 
 ## Context
 

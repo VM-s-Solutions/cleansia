@@ -1,7 +1,7 @@
 ---
 id: T-0449
 title: iOS — avatar upload, render and removal on the customer profile
-status: blocked
+status: ready
 size: M
 owner: ios
 created: 2026-07-30

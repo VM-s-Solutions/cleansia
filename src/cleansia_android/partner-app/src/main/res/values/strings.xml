@@ -1239,6 +1239,8 @@
     <string name="notification_order_assignment_cancelled_body">A job you accepted was cancelled: #%1$s. Tap for details.</string>
     <string name="notification_payroll_invoice_paid_title">You\'ve been paid</string>
     <string name="notification_payroll_invoice_paid_body">Your invoice for the latest pay period has been paid. Tap to view.</string>
+    <string name="notification_preferred_offer_title">A customer asked for you</string>
+    <string name="notification_preferred_offer_body">Order %1$s — someone you\'ve cleaned for before requested you. Open it to take the job.</string>
     <!-- ── Your devices ── -->
     <string name="devices_title">Your devices</string>
     <string name="profile_devices_summary">Manage signed-in devices</string>

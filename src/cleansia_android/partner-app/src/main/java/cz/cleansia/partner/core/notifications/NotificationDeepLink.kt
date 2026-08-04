@@ -63,6 +63,9 @@ object NotificationDeepLink {
         "order.on_the_way",
         "dispute.reply",
         "order.assignment_cancelled",
+        // The targeted offer ships orderId alongside orderNumber precisely so the tap lands on the
+        // job the cleaner was asked for — its copy tells them to open it and take it.
+        "order.preferred_offer",
         -> orderId?.takeIf { it.isNotBlank() }?.let { NavRoute.OrderDetail(orderId = it) }
         // Payroll payout — open the paid invoice; fall back to the Earnings
         // summary when the payload carries no invoiceId. Both are root

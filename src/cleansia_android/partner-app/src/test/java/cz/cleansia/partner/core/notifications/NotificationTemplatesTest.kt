@@ -41,6 +41,20 @@ class NotificationTemplatesTest {
         assertEquals(NotificationChannels.CHANNEL_ORDER_UPDATES, template?.channelId)
     }
 
+    /**
+     * The targeted offer rides the new-jobs channel because the server treats it as
+     * `NotificationCategory.NewJobsAvailable` (the resolver declines outright for a cleaner who
+     * muted new jobs). A channel of its own would be a system-level toggle that mute cannot reach.
+     */
+    @Test
+    fun `templateFor maps the preferred offer to the new-jobs channel`() {
+        val template = NotificationTemplates.templateFor("order.preferred_offer")
+
+        assertEquals(R.string.notification_preferred_offer_title, template?.titleRes)
+        assertEquals(R.string.notification_preferred_offer_body, template?.bodyRes)
+        assertEquals(NotificationChannels.CHANNEL_NEW_JOBS, template?.channelId)
+    }
+
     @Test
     fun `templateFor returns null for an unknown key - drop parity`() {
         assertNull(NotificationTemplates.templateFor("promo.new_sitewide"))
@@ -96,6 +110,31 @@ class NotificationTemplatesTest {
         )
 
         assertEquals("1 new job available near you.", body)
+    }
+
+    @Test
+    fun `formatBody substitutes the orderNumber for the preferred offer`() {
+        val context = mockk<Context>()
+        every {
+            context.getString(R.string.notification_preferred_offer_body, "A-1042")
+        } returns "Order A-1042 — someone you've cleaned for before requested you."
+
+        val body = NotificationTemplates.formatBody(
+            context,
+            "order.preferred_offer",
+            R.string.notification_preferred_offer_body,
+            mapOf("orderId" to "ord-7", "orderNumber" to "A-1042"),
+        )
+
+        assertEquals("Order A-1042 — someone you've cleaned for before requested you.", body)
+    }
+
+    @Test
+    fun `deep link resolves the preferred offer to the order detail`() {
+        assertEquals(
+            NavRoute.OrderDetail(orderId = "ord-7"),
+            NotificationDeepLink.resolve("order.preferred_offer", "ord-7", null),
+        )
     }
 
     @Test

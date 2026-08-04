@@ -1207,6 +1207,8 @@
     <string name="notification_order_assignment_cancelled_body">Заказ, который вы приняли, отменён: #%1$s. Нажмите, чтобы посмотреть детали.</string>
     <string name="notification_payroll_invoice_paid_title">Вам выплачено</string>
     <string name="notification_payroll_invoice_paid_body">Ваш счёт за последний расчётный период оплачен. Нажмите, чтобы посмотреть.</string>
+    <string name="notification_preferred_offer_title">Клиент попросил именно вас</string>
+    <string name="notification_preferred_offer_body">Заказ %1$s — вас попросил кто-то, у кого вы уже убирали. Откройте, чтобы взять заказ.</string>
     <!-- ── Ваши устройства ── -->
     <string name="devices_title">Ваши устройства</string>
     <string name="profile_devices_summary">Управление устройствами, на которых выполнен вход</string>

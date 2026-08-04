@@ -1204,6 +1204,8 @@
     <string name="notification_order_assignment_cancelled_body">Zákazka, ktorú ste prijali, bola zrušená: #%1$s. Ťuknutím zobrazíte detaily.</string>
     <string name="notification_payroll_invoice_paid_title">Boli ste vyplatení</string>
     <string name="notification_payroll_invoice_paid_body">Vaša faktúra za posledné výplatné obdobie bola uhradená. Ťuknutím zobrazíte.</string>
+    <string name="notification_preferred_offer_title">Zákazník si vás vyžiadal</string>
+    <string name="notification_preferred_offer_body">Zákazka %1$s — vyžiadal si vás niekto, komu ste už upratovali. Otvorte ju a prevezmite ju.</string>
     <!-- ── Vaše zariadenia ── -->
     <string name="devices_title">Vaše zariadenia</string>
     <string name="profile_devices_summary">Správa prihlásených zariadení</string>

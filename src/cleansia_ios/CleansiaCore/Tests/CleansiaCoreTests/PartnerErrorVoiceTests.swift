@@ -29,7 +29,23 @@ final class PartnerErrorVoiceTests: XCTestCase {
         PartnerOnlyKey("order.after_photos.required", emitters: "CompleteOrder"),
         PartnerOnlyKey("order.completion_notes.too_long", emitters: "CompleteOrder"),
         PartnerOnlyKey("employee.profile_incomplete", emitters: "TakeOrder, CompleteOrder, ApproveEmployee"),
-        PartnerOnlyKey("employee.not_approved", emitters: "TakeOrder, StartOrder, CompleteOrder, MarkCashCollected")
+        PartnerOnlyKey("employee.not_approved", emitters: "TakeOrder, StartOrder, CompleteOrder, MarkCashCollected"),
+        PartnerOnlyKey(
+            "payout.not_found",
+            emitters: "GetMyPayoutDetails, GetEmployeePayoutDetails, RevealEmployeePayoutDetails"
+        ),
+        PartnerOnlyKey("validation.payout.account_number_required", emitters: "UpdateBankDetails"),
+        PartnerOnlyKey("validation.payout.country_not_supported", emitters: "UpdateBankDetails"),
+        PartnerOnlyKey("validation.payout.iban_country_mismatch", emitters: "UpdateBankDetails"),
+        PartnerOnlyKey("validation.payout.iban_mismatch", emitters: "UpdateBankDetails"),
+        PartnerOnlyKey("validation.payout.invalid_account_number", emitters: "UpdateBankDetails"),
+        PartnerOnlyKey("validation.payout.invalid_account_prefix", emitters: "UpdateBankDetails"),
+        PartnerOnlyKey("validation.payout.invalid_bank_code", emitters: "UpdateBankDetails"),
+        PartnerOnlyKey("validation.payout.invalid_iban", emitters: "UpdateBankDetails"),
+        PartnerOnlyKey("validation.payout.invalid_swift", emitters: "UpdateBankDetails"),
+        PartnerOnlyKey("validation.payout.looks_like_card", emitters: "UpdateBankDetails"),
+        PartnerOnlyKey("validation.payout.scheme_not_supported", emitters: "UpdateBankDetails"),
+        PartnerOnlyKey("validation.payout.swift_required", emitters: "UpdateBankDetails")
     ]
 
     /// The words the customer catalog uses for an appointment the reader booked. A cleaner did not book
@@ -40,6 +56,24 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "sk": ["rezervác", "rezervac"],
         "uk": ["бронюв"],
         "ru": ["бронирован"]
+    ]
+
+    /// What a cleaner is told to type when the field rejects what they typed.
+    private static let bankAccountVocabulary = [
+        "en": "account number",
+        "cs": "účtu",
+        "sk": "účtu",
+        "uk": "рахунк",
+        "ru": "счёт"
+    ]
+
+    /// The escape hatch the mismatch copy has to name: an empty IBAN, derived from the parts.
+    private static let emptyIbanVocabulary = [
+        "en": "clear the iban",
+        "cs": "prázdný",
+        "sk": "prázdny",
+        "uk": "порожнім",
+        "ru": "пустым"
     ]
 
     /// The take refusal a cleaner actually meets: a seat race they lost. Pinned because every client ships
@@ -97,6 +131,35 @@ final class PartnerErrorVoiceTests: XCTestCase {
             let error = ApiError(code: key, message: "raw server text", httpStatus: 400)
             XCTAssertEqual(localizer.message(for: error), expected)
         }
+    }
+
+    /// The card-number refusal exists to redirect, not just to reject: a cleaner who typed their payment
+    /// card into the bank-account field retypes the same digits unless the copy names the real input.
+    func testTheCardNumberRefusalNamesWhatToEnterInstead() {
+        var vague: [String] = []
+        for locale in Self.locales {
+            let resolved = resolve("validation.payout.looks_like_card", locale: locale).lowercased()
+            let expected = Self.bankAccountVocabulary[locale] ?? ""
+            if !resolved.contains(expected) {
+                vague.append("\(locale) · never names the account (\"\(expected)\"): \"\(resolved)\"")
+            }
+        }
+        assertNoViolations(vague, "card-number refusals that don't name what to enter instead")
+    }
+
+    /// The IBAN/parts mismatch is the one payout refusal with a way out that is not "retype it": leaving
+    /// the IBAN empty derives it from the account number and bank code. Copy that only rejects strands a
+    /// cleaner who cannot tell which of the three fields the server disagreed with.
+    func testTheIbanMismatchRefusalOffersTheEmptyIbanFallback() {
+        var silent: [String] = []
+        for locale in Self.locales {
+            let resolved = resolve("validation.payout.iban_mismatch", locale: locale).lowercased()
+            let expected = Self.emptyIbanVocabulary[locale] ?? ""
+            if !resolved.contains(expected) {
+                silent.append("\(locale) · never offers the empty IBAN (\"\(expected)\"): \"\(resolved)\"")
+            }
+        }
+        assertNoViolations(silent, "IBAN mismatch refusals that don't name the fix")
     }
 
     private func resolve(_ key: String, locale: String) -> String {

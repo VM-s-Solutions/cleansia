@@ -12,7 +12,6 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { ToastModule } from 'primeng/toast';
 import {
   ProfilePersonalInfoComponent,
-  ProfileBankDetailsComponent,
   ProfileEmergencyContactComponent,
   ProfileAvailabilityComponent,
   ProfileDocumentsComponent,
@@ -32,7 +31,6 @@ import { ProfileDocumentsFacade } from './profile-documents.facade';
     CleansiaFormSkeletonComponent,
     CleansiaCheckboxComponent,
     ProfilePersonalInfoComponent,
-    ProfileBankDetailsComponent,
     ProfileEmergencyContactComponent,
     ProfileAvailabilityComponent,
     ProfileDocumentsComponent,

@@ -390,6 +390,26 @@ contract-narrowing fix land in one change instead of being blocked on the owner'
 When a ticket carries `manual_step: nswag-regen`, sweep the call sites into this form **before** the
 owner regenerates; that work needs no regenerated client and unblocks the regen.
 
+**Deleting the assignment is only half a field removal — follow the value to its form control.** The
+compiler names the read (`employee.iban`) and the write (`command.iban = …`) and nothing else, so a
+"green build" is not the finish line. A dropped field usually also has a `FormControl` with
+`Validators.required`, and once the server stops sending the value that control can never be
+satisfied: the form is permanently `invalid`, `onSubmit`'s `if (!formGroup.valid) return` fires every
+time, and the user is silently locked out of saving anything on that page. Nothing type-checks that.
+So for each removed field, delete in this order — the mapper read, the command write, **the form
+control and its validators**, the input that binds `formControlName`, and any read-only display of the
+same value. If that leaves a section component with no controls, delete the component too: an
+`@Input`-fed section still bound to `formControlName="<gone>"` throws *"Cannot find control with
+name"* the moment anything renders it. Leave the i18n keys — the follow-up feature reuses them.
+
+**Mirrored on the add side: a required field the regen added must round-trip, not default.** The
+generated command is a whole-resource PUT, so an update path that omits the new member sends its
+type default and **overwrites** the stored value (`expressUpgradesPerMonth` → `0` wipes a plan's
+express-waiver quota through `UpdateBenefits`). Assigning the field is what unbreaks the build;
+carrying the loaded detail's value through the form is what stops the fix from being a data-loss bug.
+When the visible input needs copy you cannot add in that lane, still add the control and populate it
+from the detail — an unrendered round-tripping control is honest, a defaulted one is destructive.
+
 ## Module boundaries — the per-app client is the only client a feature may import
 
 Each app owns its **own generated client lib**: `@cleansia/customer-services`

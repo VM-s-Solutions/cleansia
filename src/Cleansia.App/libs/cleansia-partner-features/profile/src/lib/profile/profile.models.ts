@@ -36,7 +36,6 @@ export interface ProfileFormData {
   registrationNumber?: string;
   vatNumber?: string;
   legalEntityName?: string;
-  iban?: string;
   emergencyName?: string;
   emergencyPhone?: string;
   availability?: Record<string, TimeRange[]>;
@@ -111,12 +110,6 @@ export class ProfileFormFactory {
       ]),
       vatNumber: new FormControl(undefined, [Validators.maxLength(50)]),
       legalEntityName: new FormControl(undefined, [Validators.maxLength(200)]),
-      iban: new FormControl(undefined, [
-        Validators.required,
-        Validators.minLength(15),
-        Validators.maxLength(34),
-        CustomValidators.iban(),
-      ]),
       emergencyName: new FormControl(undefined, [Validators.maxLength(100)]),
       emergencyPhone: new FormControl(undefined, [
         CustomValidators.phoneNumber(),
@@ -155,7 +148,6 @@ export class ProfileFormFactory {
       registrationNumber: employee.registrationNumber || undefined,
       vatNumber: employee.vatNumber || undefined,
       legalEntityName: employee.legalEntityName || undefined,
-      iban: employee.iban || undefined,
       emergencyName: employee.emergencyContactName || undefined,
       emergencyPhone: employee.emergencyContactPhone || undefined,
       availability: (employee as any).availability || {},
@@ -216,9 +208,6 @@ export class ProfileFormFactory {
           )
         : undefined;
 
-    // Construct-then-assign, not an object literal: the generated client still declares the removed
-    // `email` as required, so a literal would not compile until the owner regenerates. This shape
-    // compiles against both the current and the post-regen client.
     const command = new UpdateEmployeeCommand();
     command.employeeId = formData.employeeId;
     command.firstName = formData.firstName;
@@ -239,7 +228,6 @@ export class ProfileFormFactory {
       formData.entityType === EmployeeEntityType.LegalEntity
         ? formData.legalEntityName
         : undefined;
-    command.iban = formData.iban;
     command.emergencyName = formData.emergencyName;
     command.emergencyPhone = formData.emergencyPhone;
     command.documents = documents;

@@ -268,29 +268,33 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
 
     this.savingEmployee.set(true);
 
-    const command = new AdminUpdateEmployeeCommand({
-      employeeId,
-      firstName: data['firstName'] ?? employee.firstName,
-      lastName: data['lastName'] ?? employee.lastName,
-      phone: data['phoneNumber'] ?? data['phone'] ?? employee.phoneNumber,
-      birthDate: data['birthDate'] ?? employee.birthDate,
-      street: data['street'] ?? employee.street,
-      city: data['city'] ?? employee.city,
-      zipCode: data['zipCode'] ?? employee.zipCode,
-      countryId: data['countryId'] ?? employee.countryId,
-      state: data['state'] ?? employee.state,
-      nationalityId: data['nationalityId'] ?? employee.nationalityId,
-      passportId: data['passportId'] ?? employee.passportId,
-      entityType: data['entityType'] ?? employee.entityType,
-      registrationNumber: data['registrationNumber'] ?? employee.registrationNumber,
-      vatNumber: data['vatNumber'] ?? employee.vatNumber,
-      legalEntityName: data['legalEntityName'] ?? employee.legalEntityName,
-      iban: data['iban'] ?? employee.iban,
-      emergencyName:
-        data['emergencyContactName'] ?? data['emergencyName'] ?? employee.emergencyContactName,
-      emergencyPhone:
-        data['emergencyContactPhone'] ?? data['emergencyPhone'] ?? employee.emergencyContactPhone,
-    });
+    const command = new AdminUpdateEmployeeCommand();
+    command.employeeId = employeeId;
+    command.firstName = data['firstName'] ?? employee.firstName;
+    command.lastName = data['lastName'] ?? employee.lastName;
+    command.phone = data['phoneNumber'] ?? data['phone'] ?? employee.phoneNumber;
+    command.birthDate = data['birthDate'] ?? employee.birthDate;
+    command.street = data['street'] ?? employee.street;
+    command.city = data['city'] ?? employee.city;
+    command.zipCode = data['zipCode'] ?? employee.zipCode;
+    command.countryId = data['countryId'] ?? employee.countryId;
+    command.state = data['state'] ?? employee.state;
+    command.nationalityId = data['nationalityId'] ?? employee.nationalityId;
+    command.passportId = data['passportId'] ?? employee.passportId;
+    command.entityType = data['entityType'] ?? employee.entityType;
+    command.registrationNumber =
+      data['registrationNumber'] ?? employee.registrationNumber;
+    command.vatNumber = data['vatNumber'] ?? employee.vatNumber;
+    command.legalEntityName =
+      data['legalEntityName'] ?? employee.legalEntityName;
+    command.emergencyName =
+      data['emergencyContactName'] ??
+      data['emergencyName'] ??
+      employee.emergencyContactName;
+    command.emergencyPhone =
+      data['emergencyContactPhone'] ??
+      data['emergencyPhone'] ??
+      employee.emergencyContactPhone;
 
     this.adminClient.adminEmployeeClient
       .update(employeeId, command)

@@ -775,6 +775,16 @@ partner sees when they lose a race for a job. Two rules follow:
   locales for (a) resolving to a sentence rather than the raw key and (b) carrying none of the customer
   catalog's reservation vocabulary (`booking` / `rezervac` / `rezervác` / `бронюв` / `бронирован`). It reads
   the **compiled** bundle, so it stays green where the on-disk `.xcstrings` suites cannot open the repo.
+  Its mirror for the other audience is Core **`CustomerErrorVoiceTests`** (same roster shape, for keys only a
+  booking command can emit) — a key reachable by exactly one persona gets a roster entry on that persona's
+  side, whichever it is.
+- **Source the sentence from the matching audience's Android catalog, verbatim per locale — do not author it
+  on iOS.** A partner-only key's five values are ported from `partner-app/src/main/res/values*/strings.xml`,
+  a customer-only key's from `customer-app/…`; iOS is the third client to render the same refusal, and a
+  better sentence written here is a divergence, not an improvement. Copy that encodes a backend rule
+  (the account-number mod-11 checksum reads "almost always a typo", not "invalid"; the IBAN mismatch names
+  the empty-IBAN fallback that derives it from the parts) is a **pin**, not prose — one small
+  `contains`-per-locale assertion beside the roster, so a re-word on one client cannot land silently.
 
 **A rule the BACKEND also writes lives in Core as a pure function, pinned by Core tests — never inlined at
 the ActivityKit call site.** The Live Activity card has two writers: the app's `LiveActivityCoordinator` and

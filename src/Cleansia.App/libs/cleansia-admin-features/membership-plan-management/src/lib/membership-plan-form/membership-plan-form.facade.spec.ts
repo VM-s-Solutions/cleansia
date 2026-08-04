@@ -33,6 +33,7 @@ describe('MembershipPlanFormFacade', () => {
     trialPeriodDays: 14,
     freeCancellationWindowHours: 24,
     allowsExpressUpgrade: true,
+    expressUpgradesPerMonth: 3,
     isActive: true,
   });
 
@@ -46,6 +47,7 @@ describe('MembershipPlanFormFacade', () => {
     freeCancellationWindowHours: 24,
     trialPeriodDays: 14,
     allowsExpressUpgrade: true,
+    expressUpgradesPerMonth: 2,
   };
 
   beforeEach(() => {
@@ -105,6 +107,7 @@ describe('MembershipPlanFormFacade', () => {
     expect(command.monthlyPriceCzk).toBe(159);
     expect(command.stripePriceId).toBe('price_456');
     expect(command.discountPercentage).toBe(15);
+    expect(command.expressUpgradesPerMonth).toBe(2);
     expect(snackbar.showSuccess).toHaveBeenCalledWith(
       'pages.membership_plans.form.success.created'
     );
@@ -159,6 +162,7 @@ describe('MembershipPlanFormFacade', () => {
       freeCancellationWindowHours: 48,
       trialPeriodDays: 7,
       allowsExpressUpgrade: false,
+      expressUpgradesPerMonth: 5,
     });
 
     expect(membershipClient.update).toHaveBeenCalledTimes(1);
@@ -174,6 +178,27 @@ describe('MembershipPlanFormFacade', () => {
     expect(router.navigate).toHaveBeenCalledWith([
       '/membership-plan-management',
     ]);
+  });
+
+  it('sends the express-waiver quota it was given rather than defaulting it away', () => {
+    membershipClient.update.mockReturnValue(
+      of(UpdateMembershipPlanResponse.fromJS({ membershipPlanId: 'plan-1' }))
+    );
+
+    facade.update('plan-1', {
+      name: 'Cleansia Plus',
+      monthlyPriceCzk: 199,
+      stripePriceId: 'price_123',
+      discountPercentage: 10,
+      freeCancellationWindowHours: 24,
+      trialPeriodDays: 14,
+      allowsExpressUpgrade: true,
+      expressUpgradesPerMonth: 3,
+    });
+
+    const [, command] = membershipClient.update.mock.calls[0];
+    expect(command.expressUpgradesPerMonth).toBe(3);
+    expect(command.toJSON()['expressUpgradesPerMonth']).toBe(3);
   });
 
   it('does not start a second save while one is in flight', () => {

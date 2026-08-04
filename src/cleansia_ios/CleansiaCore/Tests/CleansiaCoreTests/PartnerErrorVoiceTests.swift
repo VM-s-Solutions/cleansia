@@ -11,6 +11,8 @@ final class PartnerErrorVoiceTests: XCTestCase {
     /// Keys whose every backend emitter is a partner or admin command — no customer-facing command can
     /// produce them, so the shared catalog owes them a cleaner's sentence.
     private static let partnerOnly = [
+        PartnerOnlyKey("order.take.already_cancelled", emitters: "TakeOrder"),
+        PartnerOnlyKey("order.take.already_completed", emitters: "TakeOrder"),
         PartnerOnlyKey("order.no_available_spots", emitters: "TakeOrder, AdminReassignOrder"),
         PartnerOnlyKey("order.not_takeable", emitters: "TakeOrder"),
         PartnerOnlyKey("order.weekly_limit_reached", emitters: "TakeOrder"),
@@ -76,9 +78,11 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "ru": "пустым"
     ]
 
-    /// The take refusal a cleaner actually meets: a seat race they lost. Pinned because every client ships
-    /// this sentence and a silent re-word on one of them is the divergence this suite exists to stop.
+    /// The take refusals a cleaner actually meets. Pinned because every client ships these sentences and a
+    /// silent re-word on one of them is the divergence this suite exists to stop.
     private static let boundTakeRefusals = [
+        "order.take.already_cancelled": "This order is already cancelled.",
+        "order.take.already_completed": "This order is already completed.",
         "order.no_available_spots": "Another cleaner has already taken this job.",
         "order.not_takeable": "This job is no longer available.",
         "order.weekly_limit_reached": "You've reached your weekly order limit.",

@@ -4,7 +4,7 @@
   "sourceRoot": "libs/cleansia-admin-features/loyalty-referrals/src",
   "prefix": "cleansia",
   "projectType": "library",
-  "tags": [],
+  "tags": ["scope:admin", "type:feature"],
   "targets": {
     "test": {
       "executor": "@nx/jest:jest",

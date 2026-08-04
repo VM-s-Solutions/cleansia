@@ -25,4 +25,5 @@ public record RecurringBookingTemplateDto(
     DateTime StartsOn,
     DateTime? EndsOn,
     DateTime? LastMaterializedFor,
-    bool IsActive);
+    bool IsActive,
+    string? PreferredEmployeeId = null);

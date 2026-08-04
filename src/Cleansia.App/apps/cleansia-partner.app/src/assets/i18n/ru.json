@@ -1088,8 +1088,10 @@
       "already_assigned": "Заказ уже назначен",
       "no_available_spots": "Этот заказ уже взял другой клинер.",
       "not_takeable": "Этот заказ больше не доступен.",
-      "already_cancelled": "Этот заказ уже отменён.",
-      "already_completed": "Этот заказ уже выполнен.",
+      "take": {
+        "already_cancelled": "Этот заказ уже отменён.",
+        "already_completed": "Этот заказ уже выполнен."
+      },
       "employee_already_assigned": "Сотрудник уже назначен на этот заказ",
       "employee_not_assigned": "Сотрудник не назначен на этот заказ",
       "max_employees_exceeded": "Превышено максимальное количество сотрудников",

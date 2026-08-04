@@ -1,5 +1,6 @@
 import nx from '@nx/eslint-plugin';
 import { generatedDtoLiteralRules } from './eslint.generated-dto.config.mjs';
+import { moduleBoundariesRules } from './eslint.module-boundaries.config.mjs';
 
 export default [
   ...nx.configs['flat/base'],
@@ -13,52 +14,7 @@ export default [
     'libs/data-access/**/*.ts',
     'libs/cleansia-customer-features/order-wizard/**/*.ts',
   ]),
-  {
-    files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
-    rules: {
-      '@nx/enforce-module-boundaries': [
-        'error',
-        {
-          enforceBuildableLibDependency: true,
-          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
-          depConstraints: [
-            {
-              sourceTag: 'scope:shared',
-              onlyDependOnLibsWithTags: ['scope:shared'],
-            },
-            {
-              sourceTag: 'scope:cleansia',
-              onlyDependOnLibsWithTags: ['scope:shared', 'scope:cleansia'],
-            },
-            {
-              sourceTag: 'scope:customer',
-              onlyDependOnLibsWithTags: ['scope:customer', 'scope:shared'],
-            },
-            {
-              sourceTag: 'scope:partner',
-              onlyDependOnLibsWithTags: ['scope:partner', 'scope:shared'],
-            },
-            {
-              sourceTag: 'scope:admin',
-              onlyDependOnLibsWithTags: ['scope:admin', 'scope:shared'],
-            },
-            {
-              sourceTag: 'type:feature',
-              onlyDependOnLibsWithTags: ['type:feature', 'type:ui', 'type:data', 'type:util'],
-            },
-            {
-              sourceTag: 'type:data',
-              onlyDependOnLibsWithTags: ['type:data', 'type:util'],
-            },
-            {
-              sourceTag: 'type:ui',
-              onlyDependOnLibsWithTags: ['type:ui', 'type:util'],
-            },
-          ],
-        },
-      ],
-    },
-  },
+  ...moduleBoundariesRules(),
   {
     files: [
       '**/*.ts',

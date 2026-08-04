@@ -1047,7 +1047,7 @@
     <string name="profile_fields_country">Země</string>
     <string name="profile_fields_registrationNumber">IČO</string>
     <string name="profile_fields_legalEntityName">Název právnické osoby</string>
-    <string name="profile_fields_iban">IBAN</string>
+    <string name="profile_fields_iban">Bankovní údaje</string>
     <string name="profile_fields_passportId">Občanský průkaz / pas</string>
     <string name="profile_fields_nationality">Státní příslušnost</string>
 
@@ -1094,8 +1094,8 @@
     <string name="error_employee_document_not_owned">Tento dokument vám nepatří.</string>
 
     <string name="error_order_not_found">Zakázka nenalezena.</string>
-    <string name="error_order_already_cancelled">Tato zakázka je již zrušena.</string>
-    <string name="error_order_already_completed">Tato zakázka je již dokončena.</string>
+    <string name="error_order_take_already_cancelled">Tato zakázka je již zrušena.</string>
+    <string name="error_order_take_already_completed">Tato zakázka je již dokončena.</string>
     <string name="error_order_in_progress_cannot_cancel">Tato zakázka probíhá a nelze ji zrušit.</string>
     <string name="error_order_cancellation_window_closed">Lhůta pro zrušení vypršela.</string>
     <string name="error_order_empty">Zakázka je prázdná.</string>

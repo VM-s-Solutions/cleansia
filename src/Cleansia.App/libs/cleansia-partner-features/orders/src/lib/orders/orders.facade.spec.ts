@@ -1,5 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { PartnerClient, TakeOrderResponse } from '@cleansia/partner-services';
+import {
+  OrderStatus,
+  PartnerClient,
+  TakeOrderResponse,
+} from '@cleansia/partner-services';
 import * as OrderActions from '@cleansia/partner-stores';
 import { SnackbarService } from '@cleansia/services';
 import { Actions } from '@ngrx/effects';
@@ -145,5 +149,35 @@ describe('OrdersFacade — take order', () => {
     expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
       'pages.orders.employee_not_found'
     );
+  });
+
+  describe('available list query', () => {
+    function availableStatuses(): number[] {
+      const call = dispatch.mock.calls.find(
+        ([action]) =>
+          action.type === OrderActions.loadOrderPaged.type &&
+          action.listKey === 'available'
+      );
+      return call?.[0].filter.orderStatuses as number[];
+    }
+
+    it('asks only for the statuses the server can still offer', () => {
+      const facade = createFacade();
+
+      facade.loadAvailableOrders();
+
+      expect(availableStatuses()).toEqual([
+        OrderStatus.New,
+        OrderStatus.Confirmed,
+      ]);
+    });
+
+    it('does not ask for the dead Pending status', () => {
+      const facade = createFacade();
+
+      facade.loadAvailableOrders();
+
+      expect(availableStatuses()).not.toContain(OrderStatus.Pending);
+    });
   });
 });

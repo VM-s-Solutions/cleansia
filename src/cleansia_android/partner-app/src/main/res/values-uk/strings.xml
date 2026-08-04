@@ -1030,7 +1030,7 @@
     <string name="profile_fields_country">Країна</string>
     <string name="profile_fields_registrationNumber">Реєстраційний номер</string>
     <string name="profile_fields_legalEntityName">Назва юридичної особи</string>
-    <string name="profile_fields_iban">IBAN</string>
+    <string name="profile_fields_iban">Банківські реквізити</string>
     <string name="profile_fields_passportId">Паспорт / посвідчення</string>
     <string name="profile_fields_nationality">Громадянство</string>
 
@@ -1077,8 +1077,8 @@
     <string name="error_employee_document_not_owned">Цей документ вам не належить.</string>
 
     <string name="error_order_not_found">Замовлення не знайдено.</string>
-    <string name="error_order_already_cancelled">Це замовлення вже скасовано.</string>
-    <string name="error_order_already_completed">Це замовлення вже виконано.</string>
+    <string name="error_order_take_already_cancelled">Це замовлення вже скасовано.</string>
+    <string name="error_order_take_already_completed">Це замовлення вже виконано.</string>
     <string name="error_order_in_progress_cannot_cancel">Замовлення виконується, його не можна скасувати.</string>
     <string name="error_order_cancellation_window_closed">Термін скасування вичерпано.</string>
     <string name="error_order_empty">Замовлення порожнє.</string>

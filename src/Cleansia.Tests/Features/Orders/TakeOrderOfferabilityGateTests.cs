@@ -17,9 +17,10 @@ namespace Cleansia.Tests.Features.Orders;
 /// that still had a free seat, burning one of their 3/6/10 weekly slots on a dead order that does
 /// not even block their calendar.
 ///
-/// <para>The refusal is a taxonomy, not one key: the two terminal states reuse the keys the same
-/// family already emits (<c>AdminOverrideOrderStatus</c>), and everything else the money axis
-/// refuses gets one opaque residue key that names no part of the customer's payment.</para>
+/// <para>The refusal is a taxonomy, not one key: the two terminal states carry the take gate's own
+/// <c>order.take.*</c> keys — a cleaner and a customer need different sentences for the same fact, and
+/// iOS resolves every <c>error.*</c> string from one shared catalog — and everything else the money
+/// axis refuses gets one opaque residue key that names no part of the customer's payment.</para>
 ///
 /// <para><b>TC-TAKE-ONE-ERROR</b> is the second half and it is structural, not cosmetic. The
 /// validator used to carry two <c>RuleFor</c> chains and <c>Cascade.Stop</c> is rule-level, so both
@@ -58,7 +59,7 @@ public class TakeOrderOfferabilityGateTests
 
         var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
 
-        AssertSingleError(result, BusinessErrorMessage.OrderAlreadyCancelled);
+        AssertSingleError(result, BusinessErrorMessage.TakeOrderAlreadyCancelled);
     }
 
     [Fact]
@@ -68,7 +69,7 @@ public class TakeOrderOfferabilityGateTests
 
         var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
 
-        AssertSingleError(result, BusinessErrorMessage.OrderAlreadyCompleted);
+        AssertSingleError(result, BusinessErrorMessage.TakeOrderAlreadyCompleted);
     }
 
     [Theory]
@@ -168,7 +169,7 @@ public class TakeOrderOfferabilityGateTests
 
         var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
 
-        AssertSingleError(result, BusinessErrorMessage.OrderAlreadyCancelled);
+        AssertSingleError(result, BusinessErrorMessage.TakeOrderAlreadyCancelled);
     }
 
     [Fact]

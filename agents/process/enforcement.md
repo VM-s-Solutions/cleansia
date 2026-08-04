@@ -14,7 +14,7 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 | Formatting/style (C#) | `/.editorconfig` (root) | file-scoped namespaces, braces, unused usings, nullability warnings | **added — surfaces as warnings** |
 | Formatting/style (TS) | `src/Cleansia.App/.editorconfig` + ESLint (`eslint.config.mjs`) | TS formatting + lint | **present** |
 | Project-specific rules | `agents/tools/check-consistency.mjs` | the A/B/C/D/E rules in `knowledge/consistency.md` no linter knows | **added — run by Reviewer** (in **no** CI workflow yet — verified: zero hits under `.github/`) |
-| Cross-stack offerability parity (ADR-0037 D7 layer 2) | `agents/tools/check-available-status-parity.mjs` (CI: `offerability-parity.yml`) | the canonical C# `OrderAvailability.OfferableStatuses` vs all 8 partner-client status literals — **query literals AND take-button gates** — across TS, Kotlin **and Swift** | **live in CI — T1-CI** (its own repo-root workflow; 4 ticketed web divergences baselined, see below) |
+| Cross-stack offerability parity (ADR-0037 D7 layer 2) | `agents/tools/check-available-status-parity.mjs` (CI: `offerability-parity.yml`) | the canonical C# `OrderAvailability.OfferableStatuses` vs all 8 partner-client status literals — **query literals AND take-button gates** — across TS, Kotlin **and Swift** | **live in CI — T1-CI** (its own repo-root workflow; baseline now empty — all 8 surfaces gated strictly) |
 | iOS (Swift) | `swiftformat --lint` + `swiftlint lint --strict` (pinned 0.60.1 / 0.65.0) + 3 XCTest schemes (CI: `ios-ci.yml`) | formatting, lint, and whatever the guard tests assert. **`check-consistency.mjs` covers NO Swift** — its walker globs `.cs`/`.ts`/`.kt` only | **live in CI** (lint + tests); **no project-specific rules yet** — `.swiftlint.yml` has no `custom_rules:`, and its `included:` omits `CleansiaCustomer/LiveActivity/` + both apps' `Tests/` |
 
 ## The consistency checker — `agents/tools/check-consistency.mjs`
@@ -108,12 +108,12 @@ Three properties make it a real T1-CI gate rather than the "test with no trigger
   **canonical C#** floor and asserts the mobile clients go red, which is what proves the check parses
   the domain rule instead of carrying its own copy of the answer.
 
-**The baseline is four ticketed entries, and it self-invalidates.** ADR-0037 D4 rows 5/9/10/11 (the
-partner-web half of T-0530) have not landed, so `--baseline` records those four surfaces by their
-**exact** current sets. An entry matches only that exact set: a baselined surface that drifts further
-**or that gets fixed** both turn CI red — so the entry must be deleted in the same change that closes
-the gap, and the list can never widen by accident. The summary line always prints the count; the tool
-never prints a bare `OK`.
+**The baseline is empty, and that is what "it self-invalidates" bought.** It held four entries —
+ADR-0037 D4 rows 5/9/10/11, the partner-web half of T-0530 — each pinning a surface by its **exact**
+divergent set. An entry matches only that exact set, so a baselined surface that drifts further **or
+that gets fixed** both turn CI red; the four were therefore deleted in the same change that fixed the
+four surfaces, which is the only exit an entry has. All eight surfaces are now gated strictly. The
+summary line always prints the count; the tool never prints a bare `OK`.
 
 ## How the gate works (Reviewer + PM)
 

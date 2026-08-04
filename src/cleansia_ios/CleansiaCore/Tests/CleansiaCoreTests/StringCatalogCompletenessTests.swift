@@ -38,7 +38,6 @@ final class StringCatalogCompletenessTests: XCTestCase {
         Exception("Partner", "devices_platform_web", "platform name"),
         Exception("Partner", "duration_hours_minutes", "\"h\"/\"m\" are the same abbreviations in cs/sk"),
         Exception("Partner", "duration_minutes_only", "\"m\" is the same abbreviation in cs/sk"),
-        Exception("Partner", "profile_fields_iban", "IBAN is an international standard"),
         Exception("Partner", "profile_iban", "IBAN is an international standard")
     ]
 

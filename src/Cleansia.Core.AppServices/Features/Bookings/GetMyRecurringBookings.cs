@@ -50,7 +50,8 @@ public class GetMyRecurringBookings
                     StartsOn: t.StartsOn,
                     EndsOn: t.EndsOn,
                     LastMaterializedFor: t.LastMaterializedFor,
-                    IsActive: t.IsActive);
+                    IsActive: t.IsActive,
+                    PreferredEmployeeId: t.PreferredEmployeeId);
             }).ToList();
 
             return BusinessResult.Success<IReadOnlyList<RecurringBookingTemplateDto>>(dtos);

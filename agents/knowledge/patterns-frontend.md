@@ -442,20 +442,43 @@ a removed partner endpoint) can break/skew customer flows. **A customer feature 
 `@cleansia/customer-services`; partner only partner; admin only admin.** The shared `@cleansia/services`
 (`libs/core/services`, `scope:shared`) is app-agnostic and fine for everyone.
 
-This is enforced by `@nx/enforce-module-boundaries` (`eslint.config.mjs`) on a **scope tag** scheme
-(each `project.json` carries a `scope:*` and a `type:*` tag):
+This is enforced by `@nx/enforce-module-boundaries` on a **scope tag** scheme (each `project.json`
+carries a `scope:*` and a `type:*` tag; the apps carry `scope:<app>` + `type:app`):
 
 | Tag | Applied to |
 |---|---|
-| `scope:customer` / `scope:partner` / `scope:admin` | each app's feature libs, its `*-services` client lib, its `*-stores` data lib |
+| `scope:customer` / `scope:partner` / `scope:admin` | each app itself, its feature libs, its `*-services` client lib, its `*-stores` data lib |
 | `scope:shared` | cross-app libs (`components`, `directives`, `pipes`, `services`, `models`, `utils`, `assets`) |
-| `type:feature` / `type:ui` / `type:data` / `type:util` | feature / shared-UI / NgRx-store / client-or-helper libs |
+| `type:feature` / `type:ui` / `type:data` / `type:util` / `type:app` | feature / shared-UI / NgRx-store / client-or-helper lib / application |
 
 The constraints read: `scope:customer → [scope:customer, scope:shared]` (and the same for partner/admin),
 plus the orthogonal `type:*` rules. A cross-app client import is therefore a **lint error**
 ("A project tagged with `scope:customer` can only depend on libs tagged with `scope:customer`,
-`scope:shared`"), caught by `nx lint` in CI. When you add a lib, tag it (`scope` + `type`) in its
-`project.json` or it falls outside the guard. The `*-services` index barrels
+`scope:shared`"), caught by `nx lint` in CI.
+
+**The table lives in exactly one file — `src/Cleansia.App/eslint.module-boundaries.config.mjs` —
+because it has to be spread from two.** The root `eslint.config.mjs` lints only the projects that have
+**no** local `eslint.config.mjs`; every other project spreads `eslint.base.config.mjs`. Those two
+carried separate copies and the base one had decayed to `sourceTag: '*' →
+onlyDependOnLibsWithTags: ['*']`, i.e. allow everything — so for months the guard was **off** for the
+50 projects that have a local config and on only for the handful that do not. That is why one
+customer-lib violation was visible while an identical one inside a feature lib was not. Both configs
+now spread `moduleBoundariesRules()`; do not re-inline the table in either.
+
+**An untagged project is now an error, not a silent pass** ("A project without tags matching at least
+one constraint cannot depend on any libraries"). Turning the real table on surfaced 515 instances of
+it across 28 untagged projects — the 3 apps and 25 of the 26 admin feature libs — all of which were
+missing tags rather than violating anything, and all now tagged. So: **when you add a lib or an app,
+tag it (`scope` + `type`) in its `project.json`**, or its very first import fails lint.
+
+Two shapes of report the rule folds together, worth knowing before you read a red run: a **circular
+dependency** is reported instead of the scope violation on the same import, so `libs/shared/pipes`'
+three `order-status/*.pipe.ts` files importing `@cleansia/partner-services` (a real `scope:shared →
+scope:partner` break) currently read as *"Circular dependency between pipes and partner-services"*.
+Fixing the cycle would reveal the scope error underneath; both want the same fix — the partner enum
+those pipes need belongs in a shared lib.
+
+The `*-services` index barrels
 (`libs/core/<app>-services/src/index.ts`) are **hand-maintained** (not generated — NSwag only emits
 `client/<app>-client.ts`); re-exporting an already-generated DTO through the barrel is normal frontend
 work, **not** a `nswag-regen` step.

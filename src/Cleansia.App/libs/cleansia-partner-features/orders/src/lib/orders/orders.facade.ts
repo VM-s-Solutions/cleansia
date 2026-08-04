@@ -149,7 +149,6 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       employeeId: undefined,
       orderStatuses: additionalFilters?.orderStatuses || [
         OrderStatus.New,
-        OrderStatus.Pending,
         OrderStatus.Confirmed,
       ],
       hasAvailableSpots: true,

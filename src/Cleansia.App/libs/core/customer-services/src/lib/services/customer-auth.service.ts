@@ -2,20 +2,18 @@ import { Injectable, PLATFORM_ID, Signal, computed, inject, signal } from '@angu
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { SavedAddressStore } from '@cleansia/customer-stores';
-import {
-  GoogleAuthCommand,
-  JwtTokenResponse,
-  RequestPasswordChangeCommand,
-  ResendConfirmationEmailCommand,
-} from '@cleansia/partner-services';
 import { AUTH_COOKIE_KEYS, CleansiaCustomerRoute } from '@cleansia/services';
 import {
   AppleAuthCommand,
   ConfirmUserEmailCommand,
+  GoogleAuthCommand,
+  JwtTokenResponse,
   LoginCommand,
   LogoutCommand,
   RefreshTokenCommand,
   RegisterCommand,
+  RequestPasswordChangeCommand,
+  ResendConfirmationEmailCommand,
 } from '../client/customer-client';
 import { setLocalStorageValueByKey } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';

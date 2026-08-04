@@ -1032,7 +1032,7 @@
     <string name="profile_fields_country">Country</string>
     <string name="profile_fields_registrationNumber">Registration number (IČO)</string>
     <string name="profile_fields_legalEntityName">Legal entity name</string>
-    <string name="profile_fields_iban">IBAN</string>
+    <string name="profile_fields_iban">Bank details</string>
     <string name="profile_fields_passportId">Passport / ID</string>
     <string name="profile_fields_nationality">Nationality</string>
 
@@ -1099,8 +1099,8 @@
 
     <!-- Order — lifecycle + assignment -->
     <string name="error_order_not_found">Order not found.</string>
-    <string name="error_order_already_cancelled">This order is already cancelled.</string>
-    <string name="error_order_already_completed">This order is already completed.</string>
+    <string name="error_order_take_already_cancelled">This order is already cancelled.</string>
+    <string name="error_order_take_already_completed">This order is already completed.</string>
     <string name="error_order_in_progress_cannot_cancel">This order is in progress and can\'t be cancelled.</string>
     <string name="error_order_cancellation_window_closed">The cancellation window has closed.</string>
     <string name="error_order_empty">Order is empty.</string>

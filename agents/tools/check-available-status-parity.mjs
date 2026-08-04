@@ -64,32 +64,12 @@ const REPO = rootArg
 // so a baselined gap can only be closed deliberately, and the entry must be deleted in the same
 // change that closes it. Nothing here is ever printed as "OK": the summary always states the count.
 //
-// Today's four entries are ADR-0037 D4 rows 5, 9, 10 and 11 — the partner-web half of T-0530, which
-// has not landed. The three mobile clients were already correct (D4 rows 6 and 7, "RIGHT/Unchanged")
-// and are NOT baselined: they are gated strictly from this commit on.
+// It is EMPTY, and that is the finished state. Its four original entries were ADR-0037 D4 rows 5, 9,
+// 10 and 11 — the partner-web half of T-0530 — and they were deleted in the change that fixed those
+// four surfaces, which is the only way an exact-match entry can ever be retired. All eight surfaces
+// are now gated strictly.
 // ─────────────────────────────────────────────────────────────────────────────
-const BASELINE = {
-    "web.query.available": {
-        statuses: [0, 1, 2],
-        ticket: "T-0530",
-        why: "ADR-0037 D4 row 5 — carries dead Pending; becomes [New, Confirmed]",
-    },
-    "web.button.row-action": {
-        statuses: [0, 1, 2],
-        ticket: "T-0530",
-        why: "ADR-0037 D4 row 9 — carries dead Pending; becomes [New, Confirmed]",
-    },
-    "web.button.detail": {
-        statuses: [1, 2],
-        ticket: "T-0530",
-        why: "ADR-0037 D4 row 10 — {Pending,Confirmed} == {Confirmed}; HIDES Take for New+Cash",
-    },
-    "web.filter.vocabulary": {
-        statuses: [1, 2, 3, 4, 5, 6],
-        ticket: "T-0530",
-        why: "ADR-0037 D4 row 11 — offers dead Pending, omits New",
-    },
-};
+const BASELINE = {};
 
 // ── plumbing ────────────────────────────────────────────────────────────────
 const findings = []; // hard: sets the exit code

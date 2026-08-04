@@ -4,6 +4,6 @@
   "sourceRoot": "libs/cleansia-admin-features/loyalty-tier-configs/src",
   "prefix": "cleansia",
   "projectType": "library",
-  "tags": [],
+  "tags": ["scope:admin", "type:feature"],
   "targets": {}
 }

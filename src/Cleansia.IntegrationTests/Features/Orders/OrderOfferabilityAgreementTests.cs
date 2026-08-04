@@ -108,10 +108,10 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
                     Assert.Equal(scenario.Offerable, takeable);
                 }
 
-                // The two terminal states reuse the keys the same family already emits; everything
+                // The two terminal states carry the take gate's own persona-specific keys; everything
                 // else the money axis refuses gets the one opaque residue key.
-                Assert.Equal(BusinessErrorMessage.OrderAlreadyCancelled, verdicts.Take["order-cancelled-seat"]);
-                Assert.Equal(BusinessErrorMessage.OrderAlreadyCompleted, verdicts.Take["order-completed-seat"]);
+                Assert.Equal(BusinessErrorMessage.TakeOrderAlreadyCancelled, verdicts.Take["order-cancelled-seat"]);
+                Assert.Equal(BusinessErrorMessage.TakeOrderAlreadyCompleted, verdicts.Take["order-completed-seat"]);
                 Assert.Equal(BusinessErrorMessage.OrderNotTakeable, verdicts.Take["order-new-card"]);
                 Assert.Equal(BusinessErrorMessage.OrderNotTakeable, verdicts.Take["order-new-cash-recur"]);
                 Assert.Equal(BusinessErrorMessage.OrderNotTakeable, verdicts.Take["order-conf-card-pend"]);

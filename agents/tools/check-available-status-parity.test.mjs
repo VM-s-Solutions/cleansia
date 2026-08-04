@@ -57,15 +57,32 @@ function patch(root, file, from, to) {
     writeFileSync(p, src.replace(from, to));
 }
 
-const run = (root) =>
-    spawnSync(process.execPath, [TOOL, `--root=${root}`, "--baseline"], { encoding: "utf8" });
+const run = (root, tool = TOOL) =>
+    spawnSync(process.execPath, [tool, `--root=${root}`, "--baseline"], { encoding: "utf8" });
+
+const BASELINE_DECL = /const BASELINE = \{[\s\S]*?\n?\};/;
+
+/**
+ * The shipped BASELINE is empty (T-0530 landed), so the baseline MACHINERY has no live subject to
+ * exercise. Rather than delete its scenarios — the next agent to add an entry needs the exact-match
+ * ratchet to still work — they run against a copy of the checker with an injected BASELINE.
+ */
+function toolWithBaseline(root, baseline) {
+    const src = readFileSync(TOOL, "utf8");
+    if (!BASELINE_DECL.test(src)) {
+        throw new Error("BASELINE declaration not found in the checker — this self-test is stale");
+    }
+    const dst = join(root, "checker-with-baseline.mjs");
+    writeFileSync(dst, src.replace(BASELINE_DECL, `const BASELINE = ${JSON.stringify(baseline)};`));
+    return dst;
+}
 
 let failed = 0;
-function scenario(name, { mutate, expectExit, expectText }) {
+function scenario(name, { mutate, tool, expectExit, expectText }) {
     const root = freshRoot();
     try {
         if (mutate) mutate(root);
-        const r = run(root);
+        const r = run(root, tool ? tool(root) : TOOL);
         const out = `${r.stdout}${r.stderr}`;
         const okExit = r.status === expectExit;
         const okText = !expectText || expectText.every((t) => out.includes(t));
@@ -90,11 +107,10 @@ function scenario(name, { mutate, expectExit, expectText }) {
 
 console.log("check-available-status-parity self-test (ADR-0037 D7 ruling 5):");
 
-// 0 — the baseline is honest about TODAY's tree: no NEW divergence, and the four ticketed ones are
-//     reported, not hidden.
-scenario("unmutated tree is clean under --baseline, and prints the known divergences", {
+// 0 — every surface agrees with the canonical floor and nothing is baselined away.
+scenario("unmutated tree is clean with an EMPTY baseline, all eight surfaces read", {
     expectExit: 0,
-    expectText: ["4 known divergence(s)", "8/8 surfaces read"],
+    expectText: ["8/8 surfaces read", "0 violation(s)", "0 known divergence(s)"],
 });
 
 // 1..3 — the ADR's literal acceptance test on each client stack that is NOT baselined.
@@ -160,17 +176,55 @@ scenario("a renamed surface is P0 (stale extractor), NOT a pass", {
     expectText: ["P0", "[web.button.detail]", "NOT a pass"],
 });
 
-// 5 — the baseline self-invalidates when the gap it records is CLOSED, so it cannot outlive T-0530.
-scenario("fixing a baselined surface goes RED until its BASELINE entry is deleted", {
+// 5 — the web surfaces are gated strictly now that T-0530 has landed. This is the defect the ADR
+//     calls the worst of the four: the detail page hiding Take for the whole New + Cash pipeline.
+scenario("web detail take-BUTTON gate stops offering New -> RED", {
+    mutate: (r) =>
+        patch(
+            r,
+            "src/Cleansia.App/libs/cleansia-partner-features/orders/src/lib/order-details/order-details.helpers.ts",
+            "orderStatusValue === OrderStatus.New || orderStatusValue === OrderStatus.Confirmed",
+            "orderStatusValue === OrderStatus.Confirmed",
+        ),
+    expectExit: 1,
+    expectText: ["[web.button.detail]", "MISSING", "New(0)"],
+});
+
+// 6..8 — the baseline machinery, exercised against an INJECTED baseline because the shipped one is
+//     empty. A baselined gap must be reported and survivable; a baseline that no longer describes
+//     reality — in either direction — must be RED, so an entry cannot outlive its ticket.
+scenario("an exactly-baselined divergence is reported, not hidden, and does not fail the build", {
     mutate: (r) =>
         patch(
             r,
             "src/Cleansia.App/libs/cleansia-partner-features/orders/src/lib/orders/orders.facade.ts",
-            "        OrderStatus.New,\n        OrderStatus.Pending,\n        OrderStatus.Confirmed,",
             "        OrderStatus.New,\n        OrderStatus.Confirmed,",
+            "        OrderStatus.New,\n        OrderStatus.Pending,\n        OrderStatus.Confirmed,",
         ),
+    tool: (r) =>
+        toolWithBaseline(r, {
+            "web.query.available": { statuses: [0, 1, 2], ticket: "T-TEST", why: "fixture" },
+        }),
+    expectExit: 0,
+    expectText: ["KNOWN divergences", "[web.query.available]", "1 known divergence(s)"],
+});
+
+scenario("a baselined surface that drifts to a DIFFERENT set goes RED", {
+    tool: (r) =>
+        toolWithBaseline(r, {
+            "web.query.available": { statuses: [0, 1, 2], ticket: "T-TEST", why: "fixture" },
+        }),
     expectExit: 1,
     expectText: ["BASELINE STALE", "[web.query.available]"],
+});
+
+scenario("a baselined surface that AGREES with the floor goes RED until its entry is deleted", {
+    tool: (r) =>
+        toolWithBaseline(r, {
+            "web.query.available": { statuses: [0, 2], ticket: "T-TEST", why: "fixture" },
+        }),
+    expectExit: 1,
+    expectText: ["BASELINE STALE", "now AGREES with the floor"],
 });
 
 // 6 — THE test that proves the canonical C# is the source of truth. Widen the domain floor and the

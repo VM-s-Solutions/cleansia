@@ -72,10 +72,9 @@ jobs:
       - name: Parity guard self-test
         run: node agents/tools/check-available-status-parity.test.mjs
 
-      # The gate. --baseline honours the FOUR enumerated, ticketed partner-web divergences that
-      # ADR-0037 D4 rows 5/9/10/11 assign to T-0530 and that have not landed yet; every other surface
-      # (both mobile clients, both their button gates) is gated strictly. The baseline is exact-match,
-      # so a baselined surface that drifts FURTHER *or* that gets FIXED both turn this step red — it
-      # cannot outlive the ticket, and it can never widen silently.
+      # The gate. All eight surfaces are gated strictly: the four partner-web divergences of ADR-0037
+      # D4 rows 5/9/10/11 landed with T-0530 and their BASELINE entries were deleted in the same
+      # change, which is the only way an exact-match entry can retire. --baseline stays on the command
+      # so a future ticketed gap has the ratchet already wired; with an empty baseline it is a no-op.
       - name: Offerability parity (canonical C# vs web / Android / iOS)
         run: node agents/tools/check-available-status-parity.mjs --baseline

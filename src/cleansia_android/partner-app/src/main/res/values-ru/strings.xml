@@ -1030,7 +1030,7 @@
     <string name="profile_fields_country">Страна</string>
     <string name="profile_fields_registrationNumber">Регистрационный номер</string>
     <string name="profile_fields_legalEntityName">Название юридического лица</string>
-    <string name="profile_fields_iban">IBAN</string>
+    <string name="profile_fields_iban">Банковские реквизиты</string>
     <string name="profile_fields_passportId">Паспорт / удостоверение</string>
     <string name="profile_fields_nationality">Гражданство</string>
 
@@ -1077,8 +1077,8 @@
     <string name="error_employee_document_not_owned">Этот документ вам не принадлежит.</string>
 
     <string name="error_order_not_found">Заказ не найден.</string>
-    <string name="error_order_already_cancelled">Этот заказ уже отменён.</string>
-    <string name="error_order_already_completed">Этот заказ уже выполнен.</string>
+    <string name="error_order_take_already_cancelled">Этот заказ уже отменён.</string>
+    <string name="error_order_take_already_completed">Этот заказ уже выполнен.</string>
     <string name="error_order_in_progress_cannot_cancel">Заказ выполняется, его нельзя отменить.</string>
     <string name="error_order_cancellation_window_closed">Срок отмены истёк.</string>
     <string name="error_order_empty">Заказ пуст.</string>

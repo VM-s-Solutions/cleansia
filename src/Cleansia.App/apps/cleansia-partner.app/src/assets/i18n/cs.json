@@ -1088,8 +1088,10 @@
       "already_assigned": "Objednávka je již přiřazena",
       "no_available_spots": "Tuto zakázku už převzal jiný uklízeč.",
       "not_takeable": "Tato zakázka už není k dispozici.",
-      "already_cancelled": "Tato zakázka je již zrušena.",
-      "already_completed": "Tato zakázka je již dokončena.",
+      "take": {
+        "already_cancelled": "Tato zakázka je již zrušena.",
+        "already_completed": "Tato zakázka je již dokončena."
+      },
       "employee_already_assigned": "Zaměstnanec je již přiřazen k této objednávce",
       "employee_not_assigned": "Zaměstnanec není přiřazen k této objednávce",
       "max_employees_exceeded": "Překročen maximální počet zaměstnanců",

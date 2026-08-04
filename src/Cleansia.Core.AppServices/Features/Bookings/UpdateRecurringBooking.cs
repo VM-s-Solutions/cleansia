@@ -145,7 +145,8 @@ public class UpdateRecurringBooking
                 StartsOn: existing.StartsOn,
                 EndsOn: existing.EndsOn,
                 LastMaterializedFor: existing.LastMaterializedFor,
-                IsActive: existing.IsActive));
+                IsActive: existing.IsActive,
+                PreferredEmployeeId: existing.PreferredEmployeeId));
         }
     }
 }

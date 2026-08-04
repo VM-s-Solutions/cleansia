@@ -9,9 +9,18 @@ import XCTest
 final class CustomerErrorVoiceTests: XCTestCase {
     private static let locales = ["en", "cs", "sk", "uk", "ru"]
 
-    /// Keys whose every backend emitter is a customer booking command.
+    /// Keys whose every backend emitter is a customer booking command, or an admin one no mobile client
+    /// renders — either way the booking voice is the only voice they are read in.
     private static let customerOnly = [
         CustomerOnlyKey("membership.express_waiver.no_longer_available", emitters: "CreateOrder"),
+        CustomerOnlyKey(
+            "order.already_cancelled",
+            emitters: "CancelOrder, AdminCancelOrder, AdminOverrideOrderStatus"
+        ),
+        CustomerOnlyKey(
+            "order.already_completed",
+            emitters: "CancelOrder, AdminCancelOrder, AdminOverrideOrderStatus"
+        ),
         CustomerOnlyKey("order.span_exceeds_maximum", emitters: "CreateOrder, QuoteOrder"),
         CustomerOnlyKey("order.empty", emitters: "CreateOrder"),
         CustomerOnlyKey("order.address_exactly_one_required", emitters: "CreateOrder"),

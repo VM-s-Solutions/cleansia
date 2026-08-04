@@ -107,8 +107,6 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'common.required',
   // Order lifecycle the cleaner drives: take → on the way → start → cash → complete
   'order.after_photos.required',
-  'order.already_cancelled',
-  'order.already_completed',
   'order.card_payment_already_settled',
   'order.card_payment_in_progress',
   'order.card_payment_unverified',
@@ -124,6 +122,10 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.not_in_progress',
   'order.not_takeable',
   'order.payment_not_confirmed',
+  // The take gate has its own terminal-state keys: the flat order.already_* pair stays with the
+  // customer and admin cancel paths, which no partner controller dispatches.
+  'order.take.already_cancelled',
+  'order.take.already_completed',
   'order.time_conflict',
   'order.weekly_limit_reached',
   // Employee profile + documents
@@ -283,8 +285,8 @@ describe('error-contract parity (partner app)', () => {
     // refusal that is not in this list is a cleaner clicking the same dead job forever.
     const takeRefusals = [
       'order.not_found',
-      'order.already_cancelled',
-      'order.already_completed',
+      'order.take.already_cancelled',
+      'order.take.already_completed',
       'order.not_takeable',
       'order.no_available_spots',
       'employee.profile_incomplete',

@@ -10243,31 +10243,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "IBAN"
+            "value": "Bankovní údaje"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "IBAN"
+            "value": "Bank details"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "IBAN"
+            "value": "Банковские реквизиты"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "IBAN"
+            "value": "Bankové údaje"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "IBAN"
+            "value": "Банківські реквізити"
           }
         }
       }

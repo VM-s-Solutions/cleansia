@@ -1824,6 +1824,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<string>("ConstantSymbol")
+                        .HasMaxLength(4)
+                        .HasColumnType("character varying(4)");
+
                     b.Property<string>("CountryId")
                         .IsRequired()
                         .HasColumnType("character varying(26)");

@@ -17,6 +17,8 @@ public class DefaultInvoiceLayoutBuilder : IInvoiceLayoutBuilder
 {
     public virtual string CountryCode => "default";
 
+    public virtual IReadOnlyCollection<string> CountryCodes => [CountryCode];
+
     protected virtual InvoiceLabels Labels { get; } = new();
 
     protected virtual CultureInfo NumberCulture => CultureInfo.InvariantCulture;

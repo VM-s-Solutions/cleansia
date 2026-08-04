@@ -154,14 +154,25 @@ public class PayoutInvoiceLayoutTests
     [Fact]
     public void Factory_Selects_The_Czech_Layout_For_Cz_And_The_Default_Otherwise()
     {
-        var factory = new LayoutBuilderFactory(
-            [new DefaultReceiptLayoutBuilder()],
-            [new DefaultInvoiceLayoutBuilder(), new CzechInvoiceLayoutBuilder()]);
+        var factory = Factory();
 
         Assert.IsType<CzechInvoiceLayoutBuilder>(factory.GetInvoiceBuilder("CZ"));
         Assert.IsType<CzechInvoiceLayoutBuilder>(factory.GetInvoiceBuilder("cz"));
         Assert.IsType<DefaultInvoiceLayoutBuilder>(factory.GetInvoiceBuilder("PL"));
         Assert.IsType<DefaultInvoiceLayoutBuilder>(factory.GetInvoiceBuilder(null));
+    }
+
+    // The invoice path passes Country.IsoCode, which is alpha-3 ("CZE") — the fixture above passes
+    // alpha-2, an input production never produces. A layout that answers only to "CZ" is therefore
+    // never selected, and every Czech invoice renders in English while the test stays green.
+    [Fact]
+    public void Factory_Selects_The_Czech_Layout_For_The_Stored_Alpha3_Iso_Code()
+    {
+        var factory = Factory();
+
+        Assert.IsType<CzechInvoiceLayoutBuilder>(factory.GetInvoiceBuilder("CZE"));
+        Assert.IsType<CzechInvoiceLayoutBuilder>(factory.GetInvoiceBuilder("cze"));
+        Assert.IsType<DefaultInvoiceLayoutBuilder>(factory.GetInvoiceBuilder("POL"));
     }
 
     [Theory]
@@ -209,11 +220,11 @@ public class PayoutInvoiceLayoutTests
 
     // ── arrangement ──────────────────────────────────────────────────
 
-    private static QuestPdfService PdfService() => new(
-        new LayoutBuilderFactory(
-            [new DefaultReceiptLayoutBuilder()],
-            [new DefaultInvoiceLayoutBuilder(), new CzechInvoiceLayoutBuilder()]),
-        NullLogger<QuestPdfService>.Instance);
+    private static LayoutBuilderFactory Factory() => new(
+        [new DefaultReceiptLayoutBuilder()],
+        [new DefaultInvoiceLayoutBuilder(), new CzechInvoiceLayoutBuilder()]);
+
+    private static QuestPdfService PdfService() => new(Factory(), NullLogger<QuestPdfService>.Instance);
 
     private static InvoiceSupplierData Supplier() => new()
     {

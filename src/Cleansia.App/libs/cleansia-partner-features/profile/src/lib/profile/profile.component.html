@@ -25,6 +25,9 @@
     <!-- Availability Section -->
     <cleansia-profile-availability [facade]="facade" />
 
+    <!-- Bank Details Section — its own endpoint, so its own form and save -->
+    <cleansia-partner-profile-bank [facade]="facade.bankFacade" />
+
     <!-- Consent Section -->
     <div class="cleansia-profile__consent">
       <cleansia-checkbox

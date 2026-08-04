@@ -881,6 +881,14 @@ VALUES
    '{"NIF": "required"}',
    'Factura emitida de acuerdo con la ley española. Condiciones de pago: 14 días desde la fecha de emisión.');
 
+-- Konstantní symbol — the PAYER's payment-type code on a Czech bank transfer (0308 = non-cash payment
+-- for goods and services), which is why it is configured here and not on a cleaner's bank record.
+-- Countries whose payment system has no such code stay NULL and the field is omitted from the invoice.
+-- SK is deliberately left NULL: T-0508 AC11 scopes the invoice work to CZ, and printing a guessed
+-- symbol is worse than printing none.
+UPDATE public."CountryInvoiceConfigs" SET "ConstantSymbol" = '0308'
+WHERE "CountryId" = (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1);
+
 -- ============================================================
 -- COUNTRY CONFIGURATIONS
 -- ============================================================

@@ -66,21 +66,26 @@ public class QuestPdfService : IPdfService
     }
 
     /// <summary>
-    /// The country's VAT setting governs what the platform charges its CUSTOMERS. It does not make a
-    /// cleaner a VAT payer, so it may only add VAT to a payout invoice whose supplier is registered.
+    /// The backstop for data built without a country context — the payout mapper already applies
+    /// <see cref="CountryInvoiceContext.VatFor"/>, so this only fires for a caller that did not.
     /// </summary>
     public static InvoicePdfData ApplyCountryLogic(InvoicePdfData data, CountryInvoiceContext? context)
     {
-        if (context?.VatRequired == true && data.Supplier.IsVatPayer && data.VatAmount == 0)
+        if (context is null || data.VatAmount != 0)
         {
-            var vatAmount = data.SubTotal * context.VatRate;
-            return data with
-            {
-                VatAmount = vatAmount,
-                TotalAmount = data.SubTotal + data.BonusAmount - data.DeductionAmount + vatAmount
-            };
+            return data;
         }
 
-        return data;
+        var vatAmount = context.VatFor(data.SubTotal, data.Supplier.IsVatPayer);
+        if (vatAmount == 0)
+        {
+            return data;
+        }
+
+        return data with
+        {
+            VatAmount = vatAmount,
+            TotalAmount = data.SubTotal + data.BonusAmount - data.DeductionAmount + vatAmount
+        };
     }
 }

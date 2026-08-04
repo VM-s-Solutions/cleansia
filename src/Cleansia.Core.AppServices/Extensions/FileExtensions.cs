@@ -27,23 +27,27 @@ public static class FileExtensions
 
     public static InvoicePdfData CreatePdfData(this EmployeeInvoice invoice, Employee employee, Currency? currency,
         IReadOnlyList<OrderEmployeePay> orderPays, CountryInvoiceContext? countryContext, CompanyInfo companyInfo,
-        string dateFormat = "dd.MM.yyyy")
+        EmployeePayoutDetails? payoutDetails, string dateFormat = "dd.MM.yyyy")
     {
+        var supplier = employee.CreateSupplierData(payoutDetails);
+        var vatAmount = countryContext?.VatFor(invoice.SubTotal, supplier.IsVatPayer) ?? 0m;
+
         return new InvoicePdfData
         {
             InvoiceNumber = invoice.InvoiceNumber,
             VariableSymbol = invoice.VariableSymbol,
+            ConstantSymbol = countryContext?.ConstantSymbol,
             PaymentReference = invoice.PaymentReference ?? invoice.VariableSymbol,
             GeneratedAt = invoice.GeneratedAt,
             DueDate = invoice.CalculateDueDate(Constants.PayoutInvoice.PaymentTermsDays),
-            Supplier = employee.CreateSupplierData(),
+            Supplier = supplier,
             PayPeriodStart = invoice.PayPeriod!.StartDate.ToString(dateFormat),
             PayPeriodEnd = invoice.PayPeriod.EndDate.ToString(dateFormat),
             SubTotal = invoice.SubTotal,
             BonusAmount = invoice.BonusAmount,
             DeductionAmount = invoice.DeductionAmount,
-            VatAmount = 0,
-            TotalAmount = invoice.TotalAmount,
+            VatAmount = vatAmount,
+            TotalAmount = invoice.TotalAmount + vatAmount,
             CurrencyCode = currency?.Code ?? Constants.Currency.Czk,
             CurrencySymbol = currency?.Symbol ?? "Kč",
             LineItems = orderPays.Select(op => new InvoiceLineItem
@@ -84,10 +88,10 @@ public static class FileExtensions
     private static decimal LineAmount(OrderEmployeePay pay) =>
         pay.TotalPay - pay.BonusPay + pay.DeductionPay;
 
-    private static InvoiceSupplierData CreateSupplierData(this Employee employee)
+    private static InvoiceSupplierData CreateSupplierData(this Employee employee, EmployeePayoutDetails? payoutDetails)
     {
-        // No dedicated "is a VAT payer" flag exists on Employee, unlike CompanyInfo.IsVatPayer. The
-        // presence of a validated DIČ is the only signal the model carries today.
+        // A registered cleaner is rare rather than impossible, so the document expresses both variants
+        // and the presence of a validated DIČ is what selects between them.
         var vatNumber = string.IsNullOrWhiteSpace(employee.VatNumber) ? null : employee.VatNumber;
 
         return new InvoiceSupplierData
@@ -104,7 +108,39 @@ public static class FileExtensions
             IsVatPayer = vatNumber != null,
             Email = employee.User?.Email,
             Phone = employee.User?.PhoneNumber,
-            Iban = employee.IBAN
+            BankName = payoutDetails?.BankName,
+            BankAccountNumber = FormatLocalAccountNumber(payoutDetails),
+            // Cleaners who provided an account before EmployeePayoutDetails existed were never
+            // backfilled (ADR-0034 D7), so the legacy column is still their only destination.
+            Iban = payoutDetails?.Iban ?? employee.IBAN,
+            Swift = payoutDetails?.Swift
         };
+    }
+
+    /// <summary>
+    /// The Czech local form, <c>[prefix-]number/bankCode</c>. ADR-0034 D5.1 stores the parts zero-padded
+    /// so that <c>123456</c> and <c>0000123456</c> canonicalize to one account; the padding is storage,
+    /// never how the number is written, and an all-zero prefix is not written at all.
+    /// </summary>
+    private static string? FormatLocalAccountNumber(EmployeePayoutDetails? payoutDetails)
+    {
+        if (payoutDetails is null ||
+            string.IsNullOrWhiteSpace(payoutDetails.AccountNumber) ||
+            string.IsNullOrWhiteSpace(payoutDetails.BankCode))
+        {
+            return null;
+        }
+
+        var number = payoutDetails.AccountNumber.TrimStart('0');
+        if (number.Length == 0)
+        {
+            number = "0";
+        }
+
+        var prefix = payoutDetails.AccountPrefix?.TrimStart('0');
+
+        return string.IsNullOrEmpty(prefix)
+            ? $"{number}/{payoutDetails.BankCode}"
+            : $"{prefix}-{number}/{payoutDetails.BankCode}";
     }
 }

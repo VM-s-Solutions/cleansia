@@ -115,4 +115,47 @@ describe('HttpErrorInterceptorFn (EP-1/AC4 error-key resolution + fallback)', ()
 
     expect(showError).not.toHaveBeenCalled();
   });
+
+  describe('an absent optional resource on a read', () => {
+    const READ_URL = '/api/Employee/GetMyPayoutDetails';
+
+    it('is silent — the caller renders the empty state instead', () => {
+      const { http, httpMock } = setup();
+      http.get(READ_URL).subscribe({ error: () => undefined });
+      httpMock
+        .expectOne(READ_URL)
+        .flush(
+          { errors: { PayoutDetailsNotFound: 'payout.not_found' } },
+          { status: 400, statusText: 'Bad Request' }
+        );
+
+      expect(showError).not.toHaveBeenCalled();
+    });
+
+    it('still surfaces on a mutation, where the same code is a refusal', () => {
+      const { http, httpMock } = setup();
+      http.post(READ_URL, {}).subscribe({ error: () => undefined });
+      httpMock
+        .expectOne(READ_URL)
+        .flush(
+          { errors: { PayoutDetailsNotFound: 'payout.not_found' } },
+          { status: 400, statusText: 'Bad Request' }
+        );
+
+      expect(showError).toHaveBeenCalledWith(FALLBACK_MESSAGE);
+    });
+
+    it('does not silence a different code on the same read', () => {
+      const { http, httpMock } = setup();
+      http.get(READ_URL).subscribe({ error: () => undefined });
+      httpMock
+        .expectOne(READ_URL)
+        .flush(
+          { errors: { EmployeeNotFound: 'employee.not_found' } },
+          { status: 400, statusText: 'Bad Request' }
+        );
+
+      expect(showError).toHaveBeenCalledWith(FALLBACK_MESSAGE);
+    });
+  });
 });

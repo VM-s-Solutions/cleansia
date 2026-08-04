@@ -73,10 +73,75 @@ public class PayoutInvoicePdfDataTests
     [Fact]
     public void Payment_Block_Carries_The_Cleaners_Bank_Account_Not_The_Companys()
     {
-        var data = Map();
+        var data = Map(payoutDetails: PayoutDetails());
 
         Assert.Equal("CZ3155000000005885638003", data.Supplier.Iban);
         Assert.NotEqual(data.Company!.Iban, data.Supplier.Iban);
+    }
+
+    // The three fields the layout has always rendered and the mapper never filled. The layout tests
+    // supply them by hand, so a real invoice printed "—" for all three while every test stayed green.
+    [Fact]
+    public void Payment_Block_Carries_The_Local_Account_Number_Swift_And_Bank_Name_Too()
+    {
+        var data = Map(payoutDetails: PayoutDetails());
+
+        Assert.Equal("5885638003/5500", data.Supplier.BankAccountNumber);
+        Assert.Equal("RZBCCZPP", data.Supplier.Swift);
+        Assert.Equal("Raiffeisenbank", data.Supplier.BankName);
+    }
+
+    // ADR-0034 D5.1 stores the parts zero-padded to canonicalize them; the local form is written
+    // without that padding, and a prefix that is all zeros is not written at all.
+    [Fact]
+    public void Local_Account_Number_Drops_The_Canonical_Padding_And_Prints_A_Real_Prefix()
+    {
+        var padded = Map(payoutDetails: PayoutDetails(prefix: "000000", number: "0000123456"));
+        var prefixed = Map(payoutDetails: PayoutDetails(prefix: "000019", number: "2000145399"));
+
+        Assert.Equal("123456/5500", padded.Supplier.BankAccountNumber);
+        Assert.Equal("19-2000145399/5500", prefixed.Supplier.BankAccountNumber);
+    }
+
+    // ADR-0034 D7: payout details captured before EmployeePayoutDetails existed were never backfilled,
+    // so the legacy column is still the only destination some cleaners have.
+    [Fact]
+    public void A_Cleaner_With_No_Payout_Record_Still_Prints_The_Legacy_Iban_And_No_Local_Number()
+    {
+        var data = Map();
+
+        Assert.Equal("CZ3155000000005885638003", data.Supplier.Iban);
+        Assert.Null(data.Supplier.BankAccountNumber);
+        Assert.Null(data.Supplier.Swift);
+        Assert.Null(data.Supplier.BankName);
+    }
+
+    // ── the two symbols: one per invoice, one per country ─────────────
+
+    [Fact]
+    public void Constant_Symbol_Comes_From_The_Country_Invoice_Configuration()
+    {
+        var data = Map(countryContext: CzechContext(constantSymbol: "0308"));
+
+        Assert.Equal("0308", data.ConstantSymbol);
+    }
+
+    [Fact]
+    public void Constant_Symbol_Is_Absent_When_The_Country_Configures_None()
+    {
+        Assert.Null(Map(countryContext: CzechContext()).ConstantSymbol);
+        Assert.Null(Map().ConstantSymbol);
+    }
+
+    [Fact]
+    public void Variable_Symbol_Is_Not_Derived_From_The_Invoice_Number()
+    {
+        var invoice = Invoice();
+        invoice.SetVariableSymbol(EmployeeInvoice.GenerateVariableSymbol("emp-1", "period-1"));
+
+        var data = Map(invoice: invoice);
+
+        Assert.NotEqual(data.InvoiceNumber, data.VariableSymbol);
     }
 
     // The specimen's variabilní symbol equals its invoice number because the owner's invoice numbers
@@ -177,24 +242,87 @@ public class PayoutInvoicePdfDataTests
         Assert.Equal("CZ12345678", data.Supplier.VatNumber);
     }
 
+    // The country's VAT setting is the CUSTOMER-order regime. A zero here has to follow from the
+    // supplier being unregistered, not from a literal that happens to agree with it.
+    [Fact]
+    public void Vat_Stays_Zero_For_An_Unregistered_Cleaner_Even_Where_The_Country_Requires_Vat()
+    {
+        var invoice = Invoice(subTotal: 1000m);
+
+        var data = Map(invoice: invoice, countryContext: CzechContext());
+
+        Assert.Equal(0m, data.VatAmount);
+        Assert.Equal(invoice.TotalAmount, data.TotalAmount);
+    }
+
+    [Fact]
+    public void Vat_Follows_The_Countrys_Rate_When_The_Cleaner_Is_Registered()
+    {
+        var employee = Cleaner();
+        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", "CZ12345678", null);
+        var invoice = Invoice(subTotal: 1000m);
+
+        var data = Map(employee, invoice, countryContext: CzechContext());
+
+        Assert.Equal(210m, data.VatAmount);
+        Assert.Equal(invoice.TotalAmount + 210m, data.TotalAmount);
+    }
+
+    [Fact]
+    public void A_Registered_Cleaner_In_A_Country_That_Requires_No_Vat_Is_Charged_None()
+    {
+        var employee = Cleaner();
+        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", "CZ12345678", null);
+
+        var data = Map(employee, Invoice(subTotal: 1000m), countryContext: new CountryInvoiceContext { VatRequired = false, VatRate = 0.21m });
+
+        Assert.Equal(0m, data.VatAmount);
+    }
+
     // ── arrangement ──────────────────────────────────────────────────
 
     private static InvoicePdfData Map(
         Employee? employee = null,
         EmployeeInvoice? invoice = null,
         IReadOnlyList<OrderEmployeePay>? orderPays = null,
-        CountryInvoiceContext? countryContext = null)
+        CountryInvoiceContext? countryContext = null,
+        EmployeePayoutDetails? payoutDetails = null)
     {
         return (invoice ?? Invoice()).CreatePdfData(
             employee ?? Cleaner(),
             CurrencyMockFactory.Generate(),
             orderPays ?? [PayrollMockFactory.OrderPay(basePay: 100m)],
             countryContext,
-            Company());
+            Company(),
+            payoutDetails);
     }
 
-    private static EmployeeInvoice Invoice(DateTime? generatedAt = null) =>
+    private static CountryInvoiceContext CzechContext(string? constantSymbol = null) => new()
+    {
+        VatRequired = true,
+        VatRate = 0.21m,
+        ConstantSymbol = constantSymbol
+    };
+
+    private static EmployeePayoutDetails PayoutDetails(
+        string? prefix = null,
+        string number = "5885638003",
+        string bankCode = "5500") =>
+        EmployeePayoutDetails.Create(
+            employeeId: PayrollMockFactory.EmployeeId,
+            scheme: PayoutScheme.CzskDomesticWithIban,
+            bankCountryId: "cz",
+            status: PayoutDetailsStatus.Provided,
+            accountPrefix: prefix,
+            accountNumber: number,
+            bankCode: bankCode,
+            iban: "CZ3155000000005885638003",
+            swift: "RZBCCZPP",
+            bankName: "Raiffeisenbank");
+
+    private static EmployeeInvoice Invoice(DateTime? generatedAt = null, decimal subTotal = 100m) =>
         PayrollMockFactory.Invoice(
+            subTotal: subTotal,
             generatedAt: generatedAt,
             payPeriod: PayrollMockFactory.OpenPeriod());
 

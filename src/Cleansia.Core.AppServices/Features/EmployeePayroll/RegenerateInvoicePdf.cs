@@ -49,6 +49,7 @@ public class RegenerateInvoicePdf
         ICompanyInfoRepository companyInfoRepository,
         IBlobContainerClientFactory clientFactory,
         IEmployeeInvoiceRepository employeeInvoiceRepository,
+        IEmployeePayoutDetailsRepository employeePayoutDetailsRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
         ICountryInvoiceConfigRepository countryInvoiceConfigRepository,
         ICountryConfigurationRepository countryConfigurationRepository)
@@ -88,7 +89,10 @@ public class RegenerateInvoicePdf
                     dateFormat = countryConfig.DateFormat;
             }
 
-            var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo, dateFormat);
+            var payoutDetails = await employeePayoutDetailsRepository
+                .GetByEmployeeIdAsync(invoice.EmployeeId, cancellationToken);
+
+            var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo, payoutDetails, dateFormat);
 
             var countryCode = employee.Address?.Country?.IsoCode;
             var pdfBytes = pdfService.GenerateInvoicePdf(pdfData, countryContext, countryCode);
@@ -117,7 +121,8 @@ public class RegenerateInvoicePdf
                 VatRate = config.VatRate,
                 DigitalSignatureRequired = config.DigitalSignatureRequired,
                 EInvoiceFormat = config.EInvoiceFormat,
-                LegalDisclaimerTemplate = config.LegalDisclaimerTemplate
+                LegalDisclaimerTemplate = config.LegalDisclaimerTemplate,
+                ConstantSymbol = config.ConstantSymbol
             };
         }
 

@@ -1,3 +1,14 @@
+/**
+ * Business codes that report an *optional* resource the caller has simply not
+ * created yet. On a read they are an empty state the caller renders, not a
+ * failure — the same reason the shared error interceptor is silent on a 404.
+ * On a mutation the identical code is a refusal and still surfaces.
+ */
+export const ABSENT_RESOURCE_ERROR_CODES: ReadonlySet<string> = new Set([
+  // A cleaner who has never saved a payout destination (ADR-0034 D8.2).
+  'payout.not_found',
+]);
+
 export interface ApiErrorResult {
   detail?: string;
   title?: string;

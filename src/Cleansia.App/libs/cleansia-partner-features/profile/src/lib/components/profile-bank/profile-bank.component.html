@@ -1,0 +1,114 @@
+<cleansia-section [title]="'pages.profile.bank_details' | translate">
+  @if (facade.loading()) {
+    <cleansia-form-skeleton />
+  } @else if (facade.loadFailed()) {
+    <div class="cleansia-profile__load-error">
+      <p class="cleansia-profile__load-error-message">
+        {{ 'global.messages.profile.bank_details_load_error' | translate }}
+      </p>
+      <cleansia-button
+        [buttonType]="'button'"
+        [title]="'global.actions.retry' | translate"
+        [icon]="'pi pi-refresh'"
+        (clickFn)="facade.retry()"
+      />
+    </div>
+  } @else {
+    <div class="cleansia-profile__fields" [formGroup]="facade.formGroup">
+      <div class="cleansia-profile__field">
+        <cleansia-select
+          [options]="facade.countries()"
+          [label]="'pages.profile.bank_country' | translate"
+          [floatVariant]="'on'"
+          [filter]="true"
+          [showClear]="false"
+          formControlName="bankCountryId"
+        />
+      </div>
+      <div class="cleansia-profile__field">
+        <cleansia-text-input
+          [label]="'pages.profile.bank_account_prefix' | translate"
+          [floatVariant]="'on'"
+          formControlName="accountPrefix"
+          dataType="text"
+        />
+        <small class="cleansia-profile__field-hint">
+          {{ 'pages.profile.bank_account_prefix_hint' | translate }}
+        </small>
+      </div>
+      <div class="cleansia-profile__field">
+        <cleansia-text-input
+          [label]="'pages.profile.bank_account_number' | translate"
+          [floatVariant]="'on'"
+          formControlName="accountNumber"
+          dataType="text"
+        />
+        <small class="cleansia-profile__field-hint">
+          {{ 'pages.profile.bank_account_number_hint' | translate }}
+        </small>
+      </div>
+      <div class="cleansia-profile__field">
+        <cleansia-text-input
+          [label]="'pages.profile.bank_code' | translate"
+          [floatVariant]="'on'"
+          formControlName="bankCode"
+          dataType="text"
+        />
+        <small class="cleansia-profile__field-hint">
+          {{ 'pages.profile.bank_code_hint' | translate }}
+        </small>
+      </div>
+      <div class="cleansia-profile__field">
+        <cleansia-text-input
+          [label]="'pages.profile.iban' | translate"
+          [floatVariant]="'on'"
+          formControlName="iban"
+          dataType="text"
+        />
+        <small class="cleansia-profile__field-hint">
+          {{ 'pages.profile.iban_hint' | translate }}
+        </small>
+      </div>
+      <div class="cleansia-profile__field">
+        <cleansia-text-input
+          [label]="'pages.profile.swift_code' | translate"
+          [floatVariant]="'on'"
+          formControlName="swift"
+          dataType="text"
+        />
+        <small class="cleansia-profile__field-hint">
+          {{ 'pages.profile.swift_code_hint' | translate }}
+        </small>
+      </div>
+      <div class="cleansia-profile__field">
+        <cleansia-text-input
+          [label]="'pages.profile.bank_name' | translate"
+          [floatVariant]="'on'"
+          formControlName="bankName"
+          dataType="text"
+        />
+      </div>
+      <div class="cleansia-profile__field">
+        <cleansia-text-input
+          [label]="'pages.profile.bank_account_holder' | translate"
+          [floatVariant]="'on'"
+          formControlName="holderName"
+          dataType="text"
+        />
+        <small class="cleansia-profile__field-hint">
+          {{ 'pages.profile.bank_account_holder_hint' | translate }}
+        </small>
+      </div>
+    </div>
+    <div class="cleansia-profile__actions">
+      <cleansia-button
+        [buttonType]="'button'"
+        [style]="'raised-button'"
+        [title]="'global.actions.save' | translate"
+        [disabled]="!facade.canSubmit()"
+        [loading]="facade.saving()"
+        (clickFn)="facade.onSubmit()"
+      />
+    </div>
+  }
+</cleansia-section>

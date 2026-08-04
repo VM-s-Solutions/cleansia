@@ -7,7 +7,7 @@ import { inject } from '@angular/core';
 import { getObjectValues, parseBlobToJson } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, throwError } from 'rxjs';
-import { SnackbarService } from '../services';
+import { ABSENT_RESOURCE_ERROR_CODES, SnackbarService } from '../services';
 
 const GENERIC_ERROR_KEY = 'api.common.error_occurred';
 
@@ -17,6 +17,10 @@ function resolveApiError(translate: TranslateService, errorKey: unknown): string
   // ngx-translate echoes the key back when it has no translation — never let a
   // raw machine key reach the snackbar; fall back to the generic message.
   return message === candidateKey ? translate.instant(GENERIC_ERROR_KEY) : message;
+}
+
+function isAbsentResourceRead(method: string, errorKey: unknown): boolean {
+  return method === 'GET' && ABSENT_RESOURCE_ERROR_CODES.has(String(errorKey));
 }
 
 export const HttpErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
@@ -36,6 +40,9 @@ export const HttpErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
                 const errorKey = parserErrorResponse.errors
                   ? getObjectValues(parserErrorResponse.errors)[0]
                   : 'common.error_occurred';
+                if (isAbsentResourceRead(req.method, errorKey)) {
+                  return;
+                }
                 snackbarService.showError(resolveApiError(translate, errorKey));
               })
               .catch(() => {
@@ -45,7 +52,9 @@ export const HttpErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
             const errorKey = error.error?.errors
               ? getObjectValues(error.error.errors)[0]
               : 'common.error_occurred';
-            snackbarService.showError(resolveApiError(translate, errorKey));
+            if (!isAbsentResourceRead(req.method, errorKey)) {
+              snackbarService.showError(resolveApiError(translate, errorKey));
+            }
           }
         }
       }

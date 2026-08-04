@@ -7,6 +7,8 @@ public class CzechInvoiceLayoutBuilder : DefaultInvoiceLayoutBuilder
 {
     public override string CountryCode => "CZ";
 
+    public override IReadOnlyCollection<string> CountryCodes => ["CZ", "CZE"];
+
     protected override InvoiceLabels Labels { get; } = InvoiceLabels.Czech;
 
     protected override CultureInfo NumberCulture { get; } = CultureInfo.GetCultureInfo("cs-CZ");

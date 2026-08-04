@@ -15,7 +15,7 @@
       "registration_number": "IČO",
       "vat_number": "IČ DPH",
       "legal_entity_name": "Názov firmy",
-      "iban": "IBAN",
+      "iban": "Bankové údaje",
       "passport_id": "Číslo pasu",
       "nationality": "Národnosť",
       "documents": "Dokumenty"
@@ -158,7 +158,20 @@
       "review_notes": "Poznámky k preskúmaniu",
       "drop_files_here": "Presuňte súbory sem",
       "or_click_to_browse": "alebo kliknite pre výber",
-      "select_document_type_error": "Pred nahraním vyberte typ dokumentu pre každý súbor."
+      "select_document_type_error": "Pred nahraním vyberte typ dokumentu pre každý súbor.",
+      "bank_country": "Krajina banky",
+      "bank_account_prefix": "Predčíslie",
+      "bank_account_prefix_hint": "Nepovinné — krátke číslo pred pomlčkou, ak ho váš účet má.",
+      "bank_account_number": "Číslo účtu",
+      "bank_account_number_hint": "Časť pred lomkou, napríklad 5885638003.",
+      "bank_code": "Kód banky",
+      "bank_code_hint": "Štyri číslice za lomkou, napríklad 5500.",
+      "iban_hint": "Pri českom alebo slovenskom účte ho môžete nechať prázdny — dopočítame ho z čísel vyššie.",
+      "swift_code": "SWIFT kód",
+      "swift_code_hint": "Potrebujeme ho len vtedy, keď je vaša banka v inej krajine, než v ktorej pracujete.",
+      "bank_name": "Názov banky",
+      "bank_account_holder": "Majiteľ účtu",
+      "bank_account_holder_hint": "Nepovinné — meno, ktoré má banka pri účte, ak sa líši od vášho."
     },
     "dashboard": {
       "title": "Prehľad",
@@ -815,7 +828,10 @@
         "files_required": "Nahratie dokumentov je povinné.",
         "file_removed": "Súbor bol úspešne odstránený",
         "load_error": "Nepodarilo sa načítať informácie profilu. Skúste to prosím znova.",
-        "file_transformation_error": "Nepodarilo sa spracovať nahraté súbory. Skúste to prosím znova."
+        "file_transformation_error": "Nepodarilo sa spracovať nahraté súbory. Skúste to prosím znova.",
+        "bank_details_saved": "Bankové údaje boli uložené",
+        "bank_details_load_error": "Vaše bankové údaje sa nepodarilo načítať. Skúste to prosím znova.",
+        "not_loaded": "Profil sa ešte nenačítal"
       },
       "documents": {
         "load_error": "Nepodarilo sa načítať dokumenty. Skúste to prosím znova.",

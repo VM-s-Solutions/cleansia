@@ -28,6 +28,15 @@ public class CountryInvoiceConfig : BaseEntity
     [MaxLength(500)]
     public string? LegalDisclaimerTemplate { get; private set; }
 
+    /// <summary>
+    /// The konstantní symbol this country's payment system expects on an invoice of this kind — CZ uses
+    /// <c>0308</c> for non-cash payments for goods and services. It is the PAYER's configuration, so it
+    /// belongs to the platform's per-country invoice settings and never to a cleaner's bank record; a
+    /// country whose payment system has no such code leaves it null and the field is omitted.
+    /// </summary>
+    [MaxLength(4)]
+    public string? ConstantSymbol { get; private set; }
+
     public static CountryInvoiceConfig Create(
         string countryId,
         bool vatRequired,
@@ -35,7 +44,8 @@ public class CountryInvoiceConfig : BaseEntity
         bool digitalSignatureRequired = false,
         string? eInvoiceFormat = null,
         string? additionalFieldsJson = null,
-        string? legalDisclaimerTemplate = null)
+        string? legalDisclaimerTemplate = null,
+        string? constantSymbol = null)
     {
         return new CountryInvoiceConfig
         {
@@ -45,7 +55,8 @@ public class CountryInvoiceConfig : BaseEntity
             DigitalSignatureRequired = digitalSignatureRequired,
             EInvoiceFormat = eInvoiceFormat,
             AdditionalFieldsJson = additionalFieldsJson,
-            LegalDisclaimerTemplate = legalDisclaimerTemplate
+            LegalDisclaimerTemplate = legalDisclaimerTemplate,
+            ConstantSymbol = constantSymbol
         };
     }
 
@@ -77,6 +88,12 @@ public class CountryInvoiceConfig : BaseEntity
     public CountryInvoiceConfig UpdateAdditionalFields(string? fieldsJson)
     {
         AdditionalFieldsJson = fieldsJson;
+        return this;
+    }
+
+    public CountryInvoiceConfig UpdateConstantSymbol(string? constantSymbol)
+    {
+        ConstantSymbol = constantSymbol;
         return this;
     }
 }

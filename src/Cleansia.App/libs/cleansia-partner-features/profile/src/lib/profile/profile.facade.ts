@@ -27,6 +27,7 @@ import {
   tap,
 } from 'rxjs';
 import { ProfileFormData, ProfileFormFactory } from './profile.models';
+import { ProfileBankFacade } from './profile-bank.facade';
 import { ProfileDocumentsFacade } from './profile-documents.facade';
 
 @Injectable()
@@ -40,6 +41,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   private readonly store = inject(Store);
 
   readonly documentsFacade = inject(ProfileDocumentsFacade);
+  readonly bankFacade = inject(ProfileBankFacade);
 
   readonly formGroup: FormGroup =
     ProfileFormFactory.createEmployeeProfileForm();

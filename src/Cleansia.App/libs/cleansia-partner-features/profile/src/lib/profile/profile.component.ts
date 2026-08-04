@@ -14,9 +14,11 @@ import {
   ProfilePersonalInfoComponent,
   ProfileEmergencyContactComponent,
   ProfileAvailabilityComponent,
+  ProfileBankComponent,
   ProfileDocumentsComponent,
 } from '../components';
 import { ProfileFacade } from './profile.facade';
+import { ProfileBankFacade } from './profile-bank.facade';
 import { ProfileDocumentsFacade } from './profile-documents.facade';
 
 @Component({
@@ -33,10 +35,11 @@ import { ProfileDocumentsFacade } from './profile-documents.facade';
     ProfilePersonalInfoComponent,
     ProfileEmergencyContactComponent,
     ProfileAvailabilityComponent,
+    ProfileBankComponent,
     ProfileDocumentsComponent,
   ],
   templateUrl: './profile.component.html',
-  providers: [ProfileDocumentsFacade, ProfileFacade],
+  providers: [ProfileBankFacade, ProfileDocumentsFacade, ProfileFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfileComponent implements OnInit {

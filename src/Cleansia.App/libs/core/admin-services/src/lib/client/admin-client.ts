@@ -3621,6 +3621,10 @@ export interface IAdminEmployeeClient {
      */
     details(employeeId: string): Observable<AdminEmployeeDetail>;
     /**
+     * @return OK
+     */
+    payoutDetails(employeeId: string): Observable<MaskedPayoutDetails>;
+    /**
      * @param body (optional) 
      * @return OK
      */
@@ -3993,6 +3997,81 @@ export class AdminEmployeeClient implements IAdminEmployeeClient {
     }
 
     /**
+     * @return OK
+     */
+    payoutDetails(employeeId: string): Observable<MaskedPayoutDetails> {
+        let url = this.baseUrl + "/api/AdminEmployee/{employeeId}/payout-details";
+        if (employeeId === undefined || employeeId === null)
+            throw new globalThis.Error("The parameter 'employeeId' must be defined.");
+        url = url.replace("{employeeId}", encodeURIComponent("" + employeeId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processPayoutDetails(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processPayoutDetails(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<MaskedPayoutDetails>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<MaskedPayoutDetails>;
+        }));
+    }
+
+    protected processPayoutDetails(response: HttpResponseBase): Observable<MaskedPayoutDetails> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = MaskedPayoutDetails.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
      * @param body (optional) 
      * @return OK
      */
@@ -4121,6 +4200,102 @@ export class AdminEmployeeClient implements IAdminEmployeeClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = AdminUpdateEmployeeResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
+export interface IPayoutDetailsClient {
+    /**
+     * @return OK
+     */
+    reveal(employeeId: string): Observable<RevealedPayoutDetails>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class PayoutDetailsClient implements IPayoutDetailsClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return OK
+     */
+    reveal(employeeId: string): Observable<RevealedPayoutDetails> {
+        let url = this.baseUrl + "/api/AdminEmployee/{employeeId}/payout-details/reveal";
+        if (employeeId === undefined || employeeId === null)
+            throw new globalThis.Error("The parameter 'employeeId' must be defined.");
+        url = url.replace("{employeeId}", encodeURIComponent("" + employeeId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processReveal(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processReveal(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<RevealedPayoutDetails>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<RevealedPayoutDetails>;
+        }));
+    }
+
+    protected processReveal(response: HttpResponseBase): Observable<RevealedPayoutDetails> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = RevealedPayoutDetails.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -14139,7 +14314,6 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
     registrationNumber!: string | undefined;
     vatNumber!: string | undefined;
     legalEntityName!: string | undefined;
-    iban!: string | undefined;
     emergencyContactName!: string | undefined;
     emergencyContactPhone!: string | undefined;
     contractStatus!: string | undefined;
@@ -14187,7 +14361,6 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
             this.registrationNumber = Data["registrationNumber"];
             this.vatNumber = Data["vatNumber"];
             this.legalEntityName = Data["legalEntityName"];
-            this.iban = Data["iban"];
             this.emergencyContactName = Data["emergencyContactName"];
             this.emergencyContactPhone = Data["emergencyContactPhone"];
             this.contractStatus = Data["contractStatus"];
@@ -14245,7 +14418,6 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
         data["registrationNumber"] = this.registrationNumber;
         data["vatNumber"] = this.vatNumber;
         data["legalEntityName"] = this.legalEntityName;
-        data["iban"] = this.iban;
         data["emergencyContactName"] = this.emergencyContactName;
         data["emergencyContactPhone"] = this.emergencyContactPhone;
         data["contractStatus"] = this.contractStatus;
@@ -14296,7 +14468,6 @@ export interface IAdminEmployeeDetail {
     registrationNumber: string | undefined;
     vatNumber: string | undefined;
     legalEntityName: string | undefined;
-    iban: string | undefined;
     emergencyContactName: string | undefined;
     emergencyContactPhone: string | undefined;
     contractStatus: string | undefined;
@@ -15060,7 +15231,6 @@ export class AdminUpdateEmployeeCommand implements IAdminUpdateEmployeeCommand {
     registrationNumber!: string | undefined;
     vatNumber!: string | undefined;
     legalEntityName!: string | undefined;
-    iban!: string | undefined;
     emergencyName!: string | undefined;
     emergencyPhone!: string | undefined;
 
@@ -15091,7 +15261,6 @@ export class AdminUpdateEmployeeCommand implements IAdminUpdateEmployeeCommand {
             this.registrationNumber = Data["registrationNumber"];
             this.vatNumber = Data["vatNumber"];
             this.legalEntityName = Data["legalEntityName"];
-            this.iban = Data["iban"];
             this.emergencyName = Data["emergencyName"];
             this.emergencyPhone = Data["emergencyPhone"];
         }
@@ -15122,7 +15291,6 @@ export class AdminUpdateEmployeeCommand implements IAdminUpdateEmployeeCommand {
         data["registrationNumber"] = this.registrationNumber;
         data["vatNumber"] = this.vatNumber;
         data["legalEntityName"] = this.legalEntityName;
-        data["iban"] = this.iban;
         data["emergencyName"] = this.emergencyName;
         data["emergencyPhone"] = this.emergencyPhone;
         return data;
@@ -15146,7 +15314,6 @@ export interface IAdminUpdateEmployeeCommand {
     registrationNumber: string | undefined;
     vatNumber: string | undefined;
     legalEntityName: string | undefined;
-    iban: string | undefined;
     emergencyName: string | undefined;
     emergencyPhone: string | undefined;
 }
@@ -17045,6 +17212,7 @@ export class CreateMembershipPlanCommand implements ICreateMembershipPlanCommand
     freeCancellationWindowHours!: number;
     trialPeriodDays!: number;
     allowsExpressUpgrade!: boolean;
+    expressUpgradesPerMonth!: number;
 
     constructor(data?: ICreateMembershipPlanCommand) {
         if (data) {
@@ -17066,6 +17234,7 @@ export class CreateMembershipPlanCommand implements ICreateMembershipPlanCommand
             this.freeCancellationWindowHours = Data["freeCancellationWindowHours"];
             this.trialPeriodDays = Data["trialPeriodDays"];
             this.allowsExpressUpgrade = Data["allowsExpressUpgrade"];
+            this.expressUpgradesPerMonth = Data["expressUpgradesPerMonth"];
         }
     }
 
@@ -17087,6 +17256,7 @@ export class CreateMembershipPlanCommand implements ICreateMembershipPlanCommand
         data["freeCancellationWindowHours"] = this.freeCancellationWindowHours;
         data["trialPeriodDays"] = this.trialPeriodDays;
         data["allowsExpressUpgrade"] = this.allowsExpressUpgrade;
+        data["expressUpgradesPerMonth"] = this.expressUpgradesPerMonth;
         return data;
     }
 }
@@ -17101,6 +17271,7 @@ export interface ICreateMembershipPlanCommand {
     freeCancellationWindowHours: number;
     trialPeriodDays: number;
     allowsExpressUpgrade: boolean;
+    expressUpgradesPerMonth: number;
 }
 
 export class CreateMembershipPlanResponse implements ICreateMembershipPlanResponse {
@@ -20406,6 +20577,7 @@ export class GdprExportDto implements IGdprExportDto {
     profile!: GdprExportProfileDto;
     address!: GdprExportAddressDto;
     employee!: GdprExportEmployeeDto;
+    payoutDetails!: GdprExportPayoutDetailsDto;
     orders!: GdprExportOrderDto[] | undefined;
     documents!: GdprExportDocumentDto[] | undefined;
     invoices!: GdprExportInvoiceDto[] | undefined;
@@ -20426,6 +20598,7 @@ export class GdprExportDto implements IGdprExportDto {
             this.profile = Data["profile"] ? GdprExportProfileDto.fromJS(Data["profile"]) : undefined as any;
             this.address = Data["address"] ? GdprExportAddressDto.fromJS(Data["address"]) : undefined as any;
             this.employee = Data["employee"] ? GdprExportEmployeeDto.fromJS(Data["employee"]) : undefined as any;
+            this.payoutDetails = Data["payoutDetails"] ? GdprExportPayoutDetailsDto.fromJS(Data["payoutDetails"]) : undefined as any;
             if (Array.isArray(Data["orders"])) {
                 this.orders = [] as any;
                 for (let item of Data["orders"])
@@ -20462,6 +20635,7 @@ export class GdprExportDto implements IGdprExportDto {
         data["profile"] = this.profile ? this.profile.toJSON() : undefined as any;
         data["address"] = this.address ? this.address.toJSON() : undefined as any;
         data["employee"] = this.employee ? this.employee.toJSON() : undefined as any;
+        data["payoutDetails"] = this.payoutDetails ? this.payoutDetails.toJSON() : undefined as any;
         if (Array.isArray(this.orders)) {
             data["orders"] = [];
             for (let item of this.orders)
@@ -20491,6 +20665,7 @@ export interface IGdprExportDto {
     profile: GdprExportProfileDto;
     address: GdprExportAddressDto;
     employee: GdprExportEmployeeDto;
+    payoutDetails: GdprExportPayoutDetailsDto;
     orders: GdprExportOrderDto[] | undefined;
     documents: GdprExportDocumentDto[] | undefined;
     invoices: GdprExportInvoiceDto[] | undefined;
@@ -20744,6 +20919,90 @@ export interface IGdprExportOrderDto {
     totalPrice: number;
     cleaningDateTime: Date;
     createdOn: Date;
+}
+
+export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {
+    scheme!: PayoutScheme;
+    status!: PayoutDetailsStatus;
+    bankCountryId!: string | undefined;
+    accountPrefix!: string | undefined;
+    accountNumber!: string | undefined;
+    bankCode!: string | undefined;
+    iban!: string | undefined;
+    swift!: string | undefined;
+    bankName!: string | undefined;
+    holderName!: string | undefined;
+    confirmedAt!: Date | undefined;
+    lastRevealedAt!: Date | undefined;
+    revealCount!: number;
+
+    constructor(data?: IGdprExportPayoutDetailsDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.scheme = Data["scheme"];
+            this.status = Data["status"];
+            this.bankCountryId = Data["bankCountryId"];
+            this.accountPrefix = Data["accountPrefix"];
+            this.accountNumber = Data["accountNumber"];
+            this.bankCode = Data["bankCode"];
+            this.iban = Data["iban"];
+            this.swift = Data["swift"];
+            this.bankName = Data["bankName"];
+            this.holderName = Data["holderName"];
+            this.confirmedAt = Data["confirmedAt"] ? new Date(Data["confirmedAt"].toString()) : undefined as any;
+            this.lastRevealedAt = Data["lastRevealedAt"] ? new Date(Data["lastRevealedAt"].toString()) : undefined as any;
+            this.revealCount = Data["revealCount"];
+        }
+    }
+
+    static fromJS(data: any): GdprExportPayoutDetailsDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportPayoutDetailsDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["scheme"] = this.scheme;
+        data["status"] = this.status;
+        data["bankCountryId"] = this.bankCountryId;
+        data["accountPrefix"] = this.accountPrefix;
+        data["accountNumber"] = this.accountNumber;
+        data["bankCode"] = this.bankCode;
+        data["iban"] = this.iban;
+        data["swift"] = this.swift;
+        data["bankName"] = this.bankName;
+        data["holderName"] = this.holderName;
+        data["confirmedAt"] = this.confirmedAt ? this.confirmedAt.toISOString() : undefined as any;
+        data["lastRevealedAt"] = this.lastRevealedAt ? this.lastRevealedAt.toISOString() : undefined as any;
+        data["revealCount"] = this.revealCount;
+        return data;
+    }
+}
+
+export interface IGdprExportPayoutDetailsDto {
+    scheme: PayoutScheme;
+    status: PayoutDetailsStatus;
+    bankCountryId: string | undefined;
+    accountPrefix: string | undefined;
+    accountNumber: string | undefined;
+    bankCode: string | undefined;
+    iban: string | undefined;
+    swift: string | undefined;
+    bankName: string | undefined;
+    holderName: string | undefined;
+    confirmedAt: Date | undefined;
+    lastRevealedAt: Date | undefined;
+    revealCount: number;
 }
 
 export class GdprExportProfileDto implements IGdprExportProfileDto {
@@ -22082,6 +22341,74 @@ export interface IMarkPayPeriodPaidResponse {
     payPeriodId: string | undefined;
 }
 
+export class MaskedPayoutDetails implements IMaskedPayoutDetails {
+    employeeId!: string | undefined;
+    scheme!: PayoutScheme;
+    status!: PayoutDetailsStatus;
+    bankCountryId!: string | undefined;
+    maskedAccount!: string | undefined;
+    bankName!: string | undefined;
+    confirmedAt!: Date | undefined;
+    lastRevealedAt!: Date | undefined;
+    revealCount!: number;
+
+    constructor(data?: IMaskedPayoutDetails) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.employeeId = Data["employeeId"];
+            this.scheme = Data["scheme"];
+            this.status = Data["status"];
+            this.bankCountryId = Data["bankCountryId"];
+            this.maskedAccount = Data["maskedAccount"];
+            this.bankName = Data["bankName"];
+            this.confirmedAt = Data["confirmedAt"] ? new Date(Data["confirmedAt"].toString()) : undefined as any;
+            this.lastRevealedAt = Data["lastRevealedAt"] ? new Date(Data["lastRevealedAt"].toString()) : undefined as any;
+            this.revealCount = Data["revealCount"];
+        }
+    }
+
+    static fromJS(data: any): MaskedPayoutDetails {
+        data = typeof data === 'object' ? data : {};
+        let result = new MaskedPayoutDetails();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["employeeId"] = this.employeeId;
+        data["scheme"] = this.scheme;
+        data["status"] = this.status;
+        data["bankCountryId"] = this.bankCountryId;
+        data["maskedAccount"] = this.maskedAccount;
+        data["bankName"] = this.bankName;
+        data["confirmedAt"] = this.confirmedAt ? this.confirmedAt.toISOString() : undefined as any;
+        data["lastRevealedAt"] = this.lastRevealedAt ? this.lastRevealedAt.toISOString() : undefined as any;
+        data["revealCount"] = this.revealCount;
+        return data;
+    }
+}
+
+export interface IMaskedPayoutDetails {
+    employeeId: string | undefined;
+    scheme: PayoutScheme;
+    status: PayoutDetailsStatus;
+    bankCountryId: string | undefined;
+    maskedAccount: string | undefined;
+    bankName: string | undefined;
+    confirmedAt: Date | undefined;
+    lastRevealedAt: Date | undefined;
+    revealCount: number;
+}
+
 export class MembershipPlanDetailDto implements IMembershipPlanDetailDto {
     id!: string | undefined;
     code!: string | undefined;
@@ -22094,6 +22421,7 @@ export class MembershipPlanDetailDto implements IMembershipPlanDetailDto {
     trialPeriodDays!: number;
     freeCancellationWindowHours!: number;
     allowsExpressUpgrade!: boolean;
+    expressUpgradesPerMonth!: number;
     isActive!: boolean;
     createdOn!: Date;
     updatedOn!: Date | undefined;
@@ -22120,6 +22448,7 @@ export class MembershipPlanDetailDto implements IMembershipPlanDetailDto {
             this.trialPeriodDays = Data["trialPeriodDays"];
             this.freeCancellationWindowHours = Data["freeCancellationWindowHours"];
             this.allowsExpressUpgrade = Data["allowsExpressUpgrade"];
+            this.expressUpgradesPerMonth = Data["expressUpgradesPerMonth"];
             this.isActive = Data["isActive"];
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
             this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
@@ -22146,6 +22475,7 @@ export class MembershipPlanDetailDto implements IMembershipPlanDetailDto {
         data["trialPeriodDays"] = this.trialPeriodDays;
         data["freeCancellationWindowHours"] = this.freeCancellationWindowHours;
         data["allowsExpressUpgrade"] = this.allowsExpressUpgrade;
+        data["expressUpgradesPerMonth"] = this.expressUpgradesPerMonth;
         data["isActive"] = this.isActive;
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
         data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
@@ -22165,6 +22495,7 @@ export interface IMembershipPlanDetailDto {
     trialPeriodDays: number;
     freeCancellationWindowHours: number;
     allowsExpressUpgrade: boolean;
+    expressUpgradesPerMonth: number;
     isActive: boolean;
     createdOn: Date;
     updatedOn: Date | undefined;
@@ -22181,6 +22512,7 @@ export class MembershipPlanListItem implements IMembershipPlanListItem {
     trialPeriodDays!: number;
     freeCancellationWindowHours!: number;
     allowsExpressUpgrade!: boolean;
+    expressUpgradesPerMonth!: number;
     isActive!: boolean;
     createdOn!: Date;
 
@@ -22205,6 +22537,7 @@ export class MembershipPlanListItem implements IMembershipPlanListItem {
             this.trialPeriodDays = Data["trialPeriodDays"];
             this.freeCancellationWindowHours = Data["freeCancellationWindowHours"];
             this.allowsExpressUpgrade = Data["allowsExpressUpgrade"];
+            this.expressUpgradesPerMonth = Data["expressUpgradesPerMonth"];
             this.isActive = Data["isActive"];
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
         }
@@ -22229,6 +22562,7 @@ export class MembershipPlanListItem implements IMembershipPlanListItem {
         data["trialPeriodDays"] = this.trialPeriodDays;
         data["freeCancellationWindowHours"] = this.freeCancellationWindowHours;
         data["allowsExpressUpgrade"] = this.allowsExpressUpgrade;
+        data["expressUpgradesPerMonth"] = this.expressUpgradesPerMonth;
         data["isActive"] = this.isActive;
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
         return data;
@@ -22246,6 +22580,7 @@ export interface IMembershipPlanListItem {
     trialPeriodDays: number;
     freeCancellationWindowHours: number;
     allowsExpressUpgrade: boolean;
+    expressUpgradesPerMonth: number;
     isActive: boolean;
     createdOn: Date;
 }
@@ -22629,6 +22964,7 @@ export class OrderItem implements IOrderItem {
     estimatedCleanerPay!: number | undefined;
     isAssignedToCurrentUser!: boolean;
     hasAfterPhotos!: boolean;
+    expressWaiverForfeitedOnCancel!: boolean | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -22713,6 +23049,7 @@ export class OrderItem implements IOrderItem {
             this.estimatedCleanerPay = Data["estimatedCleanerPay"];
             this.isAssignedToCurrentUser = Data["isAssignedToCurrentUser"];
             this.hasAfterPhotos = Data["hasAfterPhotos"];
+            this.expressWaiverForfeitedOnCancel = Data["expressWaiverForfeitedOnCancel"];
         }
     }
 
@@ -22797,6 +23134,7 @@ export class OrderItem implements IOrderItem {
         data["estimatedCleanerPay"] = this.estimatedCleanerPay;
         data["isAssignedToCurrentUser"] = this.isAssignedToCurrentUser;
         data["hasAfterPhotos"] = this.hasAfterPhotos;
+        data["expressWaiverForfeitedOnCancel"] = this.expressWaiverForfeitedOnCancel;
         return data;
     }
 }
@@ -22844,6 +23182,7 @@ export interface IOrderItem {
     estimatedCleanerPay: number | undefined;
     isAssignedToCurrentUser: boolean;
     hasAfterPhotos: boolean;
+    expressWaiverForfeitedOnCancel: boolean | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -24676,6 +25015,17 @@ export enum PaymentType {
     Card = 2,
 }
 
+export enum PayoutDetailsStatus {
+    Provided = 1,
+    NeedsReconfirmation = 2,
+}
+
+export enum PayoutScheme {
+    CzskDomesticWithIban = 1,
+    SepaIban = 2,
+    ProviderPayoutToken = 3,
+}
+
 export class PayrollByStatus implements IPayrollByStatus {
     statusCode!: string | undefined;
     statusName!: string | undefined;
@@ -25774,6 +26124,74 @@ export interface IResolveDisputeCommand {
     disputeId: string | undefined;
     refundAmount: number | undefined;
     resolutionNotes: string | undefined;
+}
+
+export class RevealedPayoutDetails implements IRevealedPayoutDetails {
+    employeeId!: string | undefined;
+    scheme!: PayoutScheme;
+    accountPrefix!: string | undefined;
+    accountNumber!: string | undefined;
+    bankCode!: string | undefined;
+    iban!: string | undefined;
+    swift!: string | undefined;
+    bankName!: string | undefined;
+    holderName!: string | undefined;
+
+    constructor(data?: IRevealedPayoutDetails) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.employeeId = Data["employeeId"];
+            this.scheme = Data["scheme"];
+            this.accountPrefix = Data["accountPrefix"];
+            this.accountNumber = Data["accountNumber"];
+            this.bankCode = Data["bankCode"];
+            this.iban = Data["iban"];
+            this.swift = Data["swift"];
+            this.bankName = Data["bankName"];
+            this.holderName = Data["holderName"];
+        }
+    }
+
+    static fromJS(data: any): RevealedPayoutDetails {
+        data = typeof data === 'object' ? data : {};
+        let result = new RevealedPayoutDetails();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["employeeId"] = this.employeeId;
+        data["scheme"] = this.scheme;
+        data["accountPrefix"] = this.accountPrefix;
+        data["accountNumber"] = this.accountNumber;
+        data["bankCode"] = this.bankCode;
+        data["iban"] = this.iban;
+        data["swift"] = this.swift;
+        data["bankName"] = this.bankName;
+        data["holderName"] = this.holderName;
+        return data;
+    }
+}
+
+export interface IRevealedPayoutDetails {
+    employeeId: string | undefined;
+    scheme: PayoutScheme;
+    accountPrefix: string | undefined;
+    accountNumber: string | undefined;
+    bankCode: string | undefined;
+    iban: string | undefined;
+    swift: string | undefined;
+    bankName: string | undefined;
+    holderName: string | undefined;
 }
 
 export class RevenueByPackage implements IRevenueByPackage {
@@ -27754,6 +28172,7 @@ export class UpdateMembershipPlanCommand implements IUpdateMembershipPlanCommand
     freeCancellationWindowHours!: number;
     trialPeriodDays!: number;
     allowsExpressUpgrade!: boolean;
+    expressUpgradesPerMonth!: number;
 
     constructor(data?: IUpdateMembershipPlanCommand) {
         if (data) {
@@ -27774,6 +28193,7 @@ export class UpdateMembershipPlanCommand implements IUpdateMembershipPlanCommand
             this.freeCancellationWindowHours = Data["freeCancellationWindowHours"];
             this.trialPeriodDays = Data["trialPeriodDays"];
             this.allowsExpressUpgrade = Data["allowsExpressUpgrade"];
+            this.expressUpgradesPerMonth = Data["expressUpgradesPerMonth"];
         }
     }
 
@@ -27794,6 +28214,7 @@ export class UpdateMembershipPlanCommand implements IUpdateMembershipPlanCommand
         data["freeCancellationWindowHours"] = this.freeCancellationWindowHours;
         data["trialPeriodDays"] = this.trialPeriodDays;
         data["allowsExpressUpgrade"] = this.allowsExpressUpgrade;
+        data["expressUpgradesPerMonth"] = this.expressUpgradesPerMonth;
         return data;
     }
 }
@@ -27807,6 +28228,7 @@ export interface IUpdateMembershipPlanCommand {
     freeCancellationWindowHours: number;
     trialPeriodDays: number;
     allowsExpressUpgrade: boolean;
+    expressUpgradesPerMonth: number;
 }
 
 export class UpdateMembershipPlanResponse implements IUpdateMembershipPlanResponse {

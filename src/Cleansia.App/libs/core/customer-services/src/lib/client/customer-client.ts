@@ -3175,9 +3175,12 @@ export interface IOrderClient {
      */
     cancel(body?: CancelOrderCommand | undefined): Observable<CancelOrderResponse>;
     /**
+     * @param cleaningDateTimeUtc (optional) 
+     * @param selectedServiceIds (optional) 
+     * @param selectedPackageIds (optional) 
      * @return OK
      */
-    myServingCleaners(): Observable<GetMyServingCleanersResponse[]>;
+    myServingCleaners(cleaningDateTimeUtc?: Date | undefined, selectedServiceIds?: string[] | undefined, selectedPackageIds?: string[] | undefined): Observable<GetMyServingCleanersResponse[]>;
 }
 
 @Injectable({
@@ -4334,10 +4337,25 @@ export class OrderClient implements IOrderClient {
     }
 
     /**
+     * @param cleaningDateTimeUtc (optional) 
+     * @param selectedServiceIds (optional) 
+     * @param selectedPackageIds (optional) 
      * @return OK
      */
-    myServingCleaners(): Observable<GetMyServingCleanersResponse[]> {
-        let url = this.baseUrl + "/api/Order/MyServingCleaners";
+    myServingCleaners(cleaningDateTimeUtc?: Date | undefined, selectedServiceIds?: string[] | undefined, selectedPackageIds?: string[] | undefined): Observable<GetMyServingCleanersResponse[]> {
+        let url = this.baseUrl + "/api/Order/MyServingCleaners?";
+        if (cleaningDateTimeUtc === null)
+            throw new globalThis.Error("The parameter 'cleaningDateTimeUtc' cannot be null.");
+        else if (cleaningDateTimeUtc !== undefined)
+            url += "CleaningDateTimeUtc=" + encodeURIComponent(cleaningDateTimeUtc ? "" + cleaningDateTimeUtc.toISOString() : "") + "&";
+        if (selectedServiceIds === null)
+            throw new globalThis.Error("The parameter 'selectedServiceIds' cannot be null.");
+        else if (selectedServiceIds !== undefined)
+            selectedServiceIds && selectedServiceIds.forEach(item => { url += "SelectedServiceIds=" + encodeURIComponent("" + item) + "&"; });
+        if (selectedPackageIds === null)
+            throw new globalThis.Error("The parameter 'selectedPackageIds' cannot be null.");
+        else if (selectedPackageIds !== undefined)
+            selectedPackageIds && selectedPackageIds.forEach(item => { url += "SelectedPackageIds=" + encodeURIComponent("" + item) + "&"; });
         url = url.replace(/[?&]$/, "");
 
         let options : any = {
@@ -8348,6 +8366,7 @@ export class GdprExportDto implements IGdprExportDto {
     profile!: GdprExportProfileDto;
     address!: GdprExportAddressDto;
     employee!: GdprExportEmployeeDto;
+    payoutDetails!: GdprExportPayoutDetailsDto;
     orders!: GdprExportOrderDto[] | undefined;
     documents!: GdprExportDocumentDto[] | undefined;
     invoices!: GdprExportInvoiceDto[] | undefined;
@@ -8368,6 +8387,7 @@ export class GdprExportDto implements IGdprExportDto {
             this.profile = Data["profile"] ? GdprExportProfileDto.fromJS(Data["profile"]) : undefined as any;
             this.address = Data["address"] ? GdprExportAddressDto.fromJS(Data["address"]) : undefined as any;
             this.employee = Data["employee"] ? GdprExportEmployeeDto.fromJS(Data["employee"]) : undefined as any;
+            this.payoutDetails = Data["payoutDetails"] ? GdprExportPayoutDetailsDto.fromJS(Data["payoutDetails"]) : undefined as any;
             if (Array.isArray(Data["orders"])) {
                 this.orders = [] as any;
                 for (let item of Data["orders"])
@@ -8404,6 +8424,7 @@ export class GdprExportDto implements IGdprExportDto {
         data["profile"] = this.profile ? this.profile.toJSON() : undefined as any;
         data["address"] = this.address ? this.address.toJSON() : undefined as any;
         data["employee"] = this.employee ? this.employee.toJSON() : undefined as any;
+        data["payoutDetails"] = this.payoutDetails ? this.payoutDetails.toJSON() : undefined as any;
         if (Array.isArray(this.orders)) {
             data["orders"] = [];
             for (let item of this.orders)
@@ -8433,6 +8454,7 @@ export interface IGdprExportDto {
     profile: GdprExportProfileDto;
     address: GdprExportAddressDto;
     employee: GdprExportEmployeeDto;
+    payoutDetails: GdprExportPayoutDetailsDto;
     orders: GdprExportOrderDto[] | undefined;
     documents: GdprExportDocumentDto[] | undefined;
     invoices: GdprExportInvoiceDto[] | undefined;
@@ -8686,6 +8708,90 @@ export interface IGdprExportOrderDto {
     totalPrice: number;
     cleaningDateTime: Date;
     createdOn: Date;
+}
+
+export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {
+    scheme!: PayoutScheme;
+    status!: PayoutDetailsStatus;
+    bankCountryId!: string | undefined;
+    accountPrefix!: string | undefined;
+    accountNumber!: string | undefined;
+    bankCode!: string | undefined;
+    iban!: string | undefined;
+    swift!: string | undefined;
+    bankName!: string | undefined;
+    holderName!: string | undefined;
+    confirmedAt!: Date | undefined;
+    lastRevealedAt!: Date | undefined;
+    revealCount!: number;
+
+    constructor(data?: IGdprExportPayoutDetailsDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.scheme = Data["scheme"];
+            this.status = Data["status"];
+            this.bankCountryId = Data["bankCountryId"];
+            this.accountPrefix = Data["accountPrefix"];
+            this.accountNumber = Data["accountNumber"];
+            this.bankCode = Data["bankCode"];
+            this.iban = Data["iban"];
+            this.swift = Data["swift"];
+            this.bankName = Data["bankName"];
+            this.holderName = Data["holderName"];
+            this.confirmedAt = Data["confirmedAt"] ? new Date(Data["confirmedAt"].toString()) : undefined as any;
+            this.lastRevealedAt = Data["lastRevealedAt"] ? new Date(Data["lastRevealedAt"].toString()) : undefined as any;
+            this.revealCount = Data["revealCount"];
+        }
+    }
+
+    static fromJS(data: any): GdprExportPayoutDetailsDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportPayoutDetailsDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["scheme"] = this.scheme;
+        data["status"] = this.status;
+        data["bankCountryId"] = this.bankCountryId;
+        data["accountPrefix"] = this.accountPrefix;
+        data["accountNumber"] = this.accountNumber;
+        data["bankCode"] = this.bankCode;
+        data["iban"] = this.iban;
+        data["swift"] = this.swift;
+        data["bankName"] = this.bankName;
+        data["holderName"] = this.holderName;
+        data["confirmedAt"] = this.confirmedAt ? this.confirmedAt.toISOString() : undefined as any;
+        data["lastRevealedAt"] = this.lastRevealedAt ? this.lastRevealedAt.toISOString() : undefined as any;
+        data["revealCount"] = this.revealCount;
+        return data;
+    }
+}
+
+export interface IGdprExportPayoutDetailsDto {
+    scheme: PayoutScheme;
+    status: PayoutDetailsStatus;
+    bankCountryId: string | undefined;
+    accountPrefix: string | undefined;
+    accountNumber: string | undefined;
+    bankCode: string | undefined;
+    iban: string | undefined;
+    swift: string | undefined;
+    bankName: string | undefined;
+    holderName: string | undefined;
+    confirmedAt: Date | undefined;
+    lastRevealedAt: Date | undefined;
+    revealCount: number;
 }
 
 export class GdprExportProfileDto implements IGdprExportProfileDto {
@@ -9183,6 +9289,9 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
     cancelRequested!: boolean;
     billingInterval!: number | undefined;
     monthlyEquivalentPriceCzk!: number | undefined;
+    expressUpgradesPerMonth!: number | undefined;
+    expressUpgradesRemaining!: number | undefined;
+    trialEndsAtUtc!: Date | undefined;
 
     constructor(data?: IGetMyMembershipResponse) {
         if (data) {
@@ -9207,6 +9316,9 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
             this.cancelRequested = Data["cancelRequested"];
             this.billingInterval = Data["billingInterval"];
             this.monthlyEquivalentPriceCzk = Data["monthlyEquivalentPriceCzk"];
+            this.expressUpgradesPerMonth = Data["expressUpgradesPerMonth"];
+            this.expressUpgradesRemaining = Data["expressUpgradesRemaining"];
+            this.trialEndsAtUtc = Data["trialEndsAtUtc"] ? new Date(Data["trialEndsAtUtc"].toString()) : undefined as any;
         }
     }
 
@@ -9231,6 +9343,9 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
         data["cancelRequested"] = this.cancelRequested;
         data["billingInterval"] = this.billingInterval;
         data["monthlyEquivalentPriceCzk"] = this.monthlyEquivalentPriceCzk;
+        data["expressUpgradesPerMonth"] = this.expressUpgradesPerMonth;
+        data["expressUpgradesRemaining"] = this.expressUpgradesRemaining;
+        data["trialEndsAtUtc"] = this.trialEndsAtUtc ? this.trialEndsAtUtc.toISOString() : undefined as any;
         return data;
     }
 }
@@ -9248,6 +9363,9 @@ export interface IGetMyMembershipResponse {
     cancelRequested: boolean;
     billingInterval: number | undefined;
     monthlyEquivalentPriceCzk: number | undefined;
+    expressUpgradesPerMonth: number | undefined;
+    expressUpgradesRemaining: number | undefined;
+    trialEndsAtUtc: Date | undefined;
 }
 
 export class GetMyReferralResponse implements IGetMyReferralResponse {
@@ -10417,6 +10535,7 @@ export class OrderItem implements IOrderItem {
     estimatedCleanerPay!: number | undefined;
     isAssignedToCurrentUser!: boolean;
     hasAfterPhotos!: boolean;
+    expressWaiverForfeitedOnCancel!: boolean | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -10501,6 +10620,7 @@ export class OrderItem implements IOrderItem {
             this.estimatedCleanerPay = Data["estimatedCleanerPay"];
             this.isAssignedToCurrentUser = Data["isAssignedToCurrentUser"];
             this.hasAfterPhotos = Data["hasAfterPhotos"];
+            this.expressWaiverForfeitedOnCancel = Data["expressWaiverForfeitedOnCancel"];
         }
     }
 
@@ -10585,6 +10705,7 @@ export class OrderItem implements IOrderItem {
         data["estimatedCleanerPay"] = this.estimatedCleanerPay;
         data["isAssignedToCurrentUser"] = this.isAssignedToCurrentUser;
         data["hasAfterPhotos"] = this.hasAfterPhotos;
+        data["expressWaiverForfeitedOnCancel"] = this.expressWaiverForfeitedOnCancel;
         return data;
     }
 }
@@ -10632,6 +10753,7 @@ export interface IOrderItem {
     estimatedCleanerPay: number | undefined;
     isAssignedToCurrentUser: boolean;
     hasAfterPhotos: boolean;
+    expressWaiverForfeitedOnCancel: boolean | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -11498,6 +11620,17 @@ export enum PaymentType {
     Card = 2,
 }
 
+export enum PayoutDetailsStatus {
+    Provided = 1,
+    NeedsReconfirmation = 2,
+}
+
+export enum PayoutScheme {
+    CzskDomesticWithIban = 1,
+    SepaIban = 2,
+    ProviderPayoutToken = 3,
+}
+
 export enum PhotoType {
     Before = 1,
     After = 2,
@@ -11667,6 +11800,8 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
     expressSurchargeApplied!: boolean;
     expressSurchargeAmount!: number;
     exchangeRate!: number;
+    expressSurchargeWaivedByMembership!: boolean;
+    expressUpgradesRemaining!: number | undefined;
 
     constructor(data?: IQuoteOrderResponse) {
         if (data) {
@@ -11694,6 +11829,8 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
             this.expressSurchargeApplied = Data["expressSurchargeApplied"];
             this.expressSurchargeAmount = Data["expressSurchargeAmount"];
             this.exchangeRate = Data["exchangeRate"];
+            this.expressSurchargeWaivedByMembership = Data["expressSurchargeWaivedByMembership"];
+            this.expressUpgradesRemaining = Data["expressUpgradesRemaining"];
         }
     }
 
@@ -11721,6 +11858,8 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
         data["expressSurchargeApplied"] = this.expressSurchargeApplied;
         data["expressSurchargeAmount"] = this.expressSurchargeAmount;
         data["exchangeRate"] = this.exchangeRate;
+        data["expressSurchargeWaivedByMembership"] = this.expressSurchargeWaivedByMembership;
+        data["expressUpgradesRemaining"] = this.expressUpgradesRemaining;
         return data;
     }
 }
@@ -11741,6 +11880,8 @@ export interface IQuoteOrderResponse {
     expressSurchargeApplied: boolean;
     expressSurchargeAmount: number;
     exchangeRate: number;
+    expressSurchargeWaivedByMembership: boolean;
+    expressUpgradesRemaining: number | undefined;
 }
 
 export class RecurringBookingTemplateDto implements IRecurringBookingTemplateDto {

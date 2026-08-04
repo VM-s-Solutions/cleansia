@@ -1617,6 +1617,16 @@ export interface IEmployeeClient {
      * @param body (optional) 
      * @return OK
      */
+    updateBankDetails(body?: UpdateBankDetailsCommand | undefined): Observable<UpdateBankDetailsResponse>;
+    /**
+     * @param query (optional) 
+     * @return OK
+     */
+    getMyPayoutDetails(query?: GetMyPayoutDetailsQuery | undefined): Observable<MyPayoutDetails>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
     saveMyDocuments(body?: SaveMyDocumentsCommand | undefined): Observable<SaveMyDocumentsResponse>;
     /**
      * @param query (optional) 
@@ -1828,6 +1838,139 @@ export class EmployeeClient implements IEmployeeClient {
             let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
             return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    updateBankDetails(body?: UpdateBankDetailsCommand | undefined): Observable<UpdateBankDetailsResponse> {
+        let url = this.baseUrl + "/api/Employee/UpdateBankDetails";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processUpdateBankDetails(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processUpdateBankDetails(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<UpdateBankDetailsResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<UpdateBankDetailsResponse>;
+        }));
+    }
+
+    protected processUpdateBankDetails(response: HttpResponseBase): Observable<UpdateBankDetailsResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = UpdateBankDetailsResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param query (optional) 
+     * @return OK
+     */
+    getMyPayoutDetails(query?: GetMyPayoutDetailsQuery | undefined): Observable<MyPayoutDetails> {
+        let url = this.baseUrl + "/api/Employee/GetMyPayoutDetails?";
+        if (query === null)
+            throw new globalThis.Error("The parameter 'query' cannot be null.");
+        else if (query !== undefined)
+            url += "query=" + encodeURIComponent("" + query) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetMyPayoutDetails(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetMyPayoutDetails(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<MyPayoutDetails>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<MyPayoutDetails>;
+        }));
+    }
+
+    protected processGetMyPayoutDetails(response: HttpResponseBase): Observable<MyPayoutDetails> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = MyPayoutDetails.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -7752,7 +7895,6 @@ export class EmployeeItem implements IEmployeeItem {
     registrationNumber!: string | undefined;
     vatNumber!: string | undefined;
     legalEntityName!: string | undefined;
-    iban!: string | undefined;
     emergencyContactName!: string | undefined;
     emergencyContactPhone!: string | undefined;
     profilePhoto!: BlobFileDto;
@@ -7788,7 +7930,6 @@ export class EmployeeItem implements IEmployeeItem {
             this.registrationNumber = Data["registrationNumber"];
             this.vatNumber = Data["vatNumber"];
             this.legalEntityName = Data["legalEntityName"];
-            this.iban = Data["iban"];
             this.emergencyContactName = Data["emergencyContactName"];
             this.emergencyContactPhone = Data["emergencyContactPhone"];
             this.profilePhoto = Data["profilePhoto"] ? BlobFileDto.fromJS(Data["profilePhoto"]) : undefined as any;
@@ -7830,7 +7971,6 @@ export class EmployeeItem implements IEmployeeItem {
         data["registrationNumber"] = this.registrationNumber;
         data["vatNumber"] = this.vatNumber;
         data["legalEntityName"] = this.legalEntityName;
-        data["iban"] = this.iban;
         data["emergencyContactName"] = this.emergencyContactName;
         data["emergencyContactPhone"] = this.emergencyContactPhone;
         data["profilePhoto"] = this.profilePhoto ? this.profilePhoto.toJSON() : undefined as any;
@@ -7865,7 +8005,6 @@ export interface IEmployeeItem {
     registrationNumber: string | undefined;
     vatNumber: string | undefined;
     legalEntityName: string | undefined;
-    iban: string | undefined;
     emergencyContactName: string | undefined;
     emergencyContactPhone: string | undefined;
     profilePhoto: BlobFileDto;
@@ -8130,6 +8269,7 @@ export class GdprExportDto implements IGdprExportDto {
     profile!: GdprExportProfileDto;
     address!: GdprExportAddressDto;
     employee!: GdprExportEmployeeDto;
+    payoutDetails!: GdprExportPayoutDetailsDto;
     orders!: GdprExportOrderDto[] | undefined;
     documents!: GdprExportDocumentDto[] | undefined;
     invoices!: GdprExportInvoiceDto[] | undefined;
@@ -8150,6 +8290,7 @@ export class GdprExportDto implements IGdprExportDto {
             this.profile = Data["profile"] ? GdprExportProfileDto.fromJS(Data["profile"]) : undefined as any;
             this.address = Data["address"] ? GdprExportAddressDto.fromJS(Data["address"]) : undefined as any;
             this.employee = Data["employee"] ? GdprExportEmployeeDto.fromJS(Data["employee"]) : undefined as any;
+            this.payoutDetails = Data["payoutDetails"] ? GdprExportPayoutDetailsDto.fromJS(Data["payoutDetails"]) : undefined as any;
             if (Array.isArray(Data["orders"])) {
                 this.orders = [] as any;
                 for (let item of Data["orders"])
@@ -8186,6 +8327,7 @@ export class GdprExportDto implements IGdprExportDto {
         data["profile"] = this.profile ? this.profile.toJSON() : undefined as any;
         data["address"] = this.address ? this.address.toJSON() : undefined as any;
         data["employee"] = this.employee ? this.employee.toJSON() : undefined as any;
+        data["payoutDetails"] = this.payoutDetails ? this.payoutDetails.toJSON() : undefined as any;
         if (Array.isArray(this.orders)) {
             data["orders"] = [];
             for (let item of this.orders)
@@ -8215,6 +8357,7 @@ export interface IGdprExportDto {
     profile: GdprExportProfileDto;
     address: GdprExportAddressDto;
     employee: GdprExportEmployeeDto;
+    payoutDetails: GdprExportPayoutDetailsDto;
     orders: GdprExportOrderDto[] | undefined;
     documents: GdprExportDocumentDto[] | undefined;
     invoices: GdprExportInvoiceDto[] | undefined;
@@ -8468,6 +8611,90 @@ export interface IGdprExportOrderDto {
     totalPrice: number;
     cleaningDateTime: Date;
     createdOn: Date;
+}
+
+export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {
+    scheme!: PayoutScheme;
+    status!: PayoutDetailsStatus;
+    bankCountryId!: string | undefined;
+    accountPrefix!: string | undefined;
+    accountNumber!: string | undefined;
+    bankCode!: string | undefined;
+    iban!: string | undefined;
+    swift!: string | undefined;
+    bankName!: string | undefined;
+    holderName!: string | undefined;
+    confirmedAt!: Date | undefined;
+    lastRevealedAt!: Date | undefined;
+    revealCount!: number;
+
+    constructor(data?: IGdprExportPayoutDetailsDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.scheme = Data["scheme"];
+            this.status = Data["status"];
+            this.bankCountryId = Data["bankCountryId"];
+            this.accountPrefix = Data["accountPrefix"];
+            this.accountNumber = Data["accountNumber"];
+            this.bankCode = Data["bankCode"];
+            this.iban = Data["iban"];
+            this.swift = Data["swift"];
+            this.bankName = Data["bankName"];
+            this.holderName = Data["holderName"];
+            this.confirmedAt = Data["confirmedAt"] ? new Date(Data["confirmedAt"].toString()) : undefined as any;
+            this.lastRevealedAt = Data["lastRevealedAt"] ? new Date(Data["lastRevealedAt"].toString()) : undefined as any;
+            this.revealCount = Data["revealCount"];
+        }
+    }
+
+    static fromJS(data: any): GdprExportPayoutDetailsDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportPayoutDetailsDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["scheme"] = this.scheme;
+        data["status"] = this.status;
+        data["bankCountryId"] = this.bankCountryId;
+        data["accountPrefix"] = this.accountPrefix;
+        data["accountNumber"] = this.accountNumber;
+        data["bankCode"] = this.bankCode;
+        data["iban"] = this.iban;
+        data["swift"] = this.swift;
+        data["bankName"] = this.bankName;
+        data["holderName"] = this.holderName;
+        data["confirmedAt"] = this.confirmedAt ? this.confirmedAt.toISOString() : undefined as any;
+        data["lastRevealedAt"] = this.lastRevealedAt ? this.lastRevealedAt.toISOString() : undefined as any;
+        data["revealCount"] = this.revealCount;
+        return data;
+    }
+}
+
+export interface IGdprExportPayoutDetailsDto {
+    scheme: PayoutScheme;
+    status: PayoutDetailsStatus;
+    bankCountryId: string | undefined;
+    accountPrefix: string | undefined;
+    accountNumber: string | undefined;
+    bankCode: string | undefined;
+    iban: string | undefined;
+    swift: string | undefined;
+    bankName: string | undefined;
+    holderName: string | undefined;
+    confirmedAt: Date | undefined;
+    lastRevealedAt: Date | undefined;
+    revealCount: number;
 }
 
 export class GdprExportProfileDto implements IGdprExportProfileDto {
@@ -8742,6 +8969,36 @@ export class GetMyDocumentsResponse implements IGetMyDocumentsResponse {
 
 export interface IGetMyDocumentsResponse {
     documents: GetMyDocumentsMyDocumentDto[] | undefined;
+}
+
+export class GetMyPayoutDetailsQuery implements IGetMyPayoutDetailsQuery {
+
+    constructor(data?: IGetMyPayoutDetailsQuery) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+    }
+
+    static fromJS(data: any): GetMyPayoutDetailsQuery {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetMyPayoutDetailsQuery();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        return data;
+    }
+}
+
+export interface IGetMyPayoutDetailsQuery {
 }
 
 export class GetOrderPhotosOrderPhotoDto implements IGetOrderPhotosOrderPhotoDto {
@@ -9340,6 +9597,82 @@ export interface IMonthlyEarning {
     monthName: string | undefined;
 }
 
+export class MyPayoutDetails implements IMyPayoutDetails {
+    scheme!: PayoutScheme;
+    status!: PayoutDetailsStatus;
+    bankCountryId!: string | undefined;
+    accountPrefix!: string | undefined;
+    accountNumber!: string | undefined;
+    bankCode!: string | undefined;
+    iban!: string | undefined;
+    swift!: string | undefined;
+    bankName!: string | undefined;
+    holderName!: string | undefined;
+    confirmedAt!: Date | undefined;
+
+    constructor(data?: IMyPayoutDetails) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.scheme = Data["scheme"];
+            this.status = Data["status"];
+            this.bankCountryId = Data["bankCountryId"];
+            this.accountPrefix = Data["accountPrefix"];
+            this.accountNumber = Data["accountNumber"];
+            this.bankCode = Data["bankCode"];
+            this.iban = Data["iban"];
+            this.swift = Data["swift"];
+            this.bankName = Data["bankName"];
+            this.holderName = Data["holderName"];
+            this.confirmedAt = Data["confirmedAt"] ? new Date(Data["confirmedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): MyPayoutDetails {
+        data = typeof data === 'object' ? data : {};
+        let result = new MyPayoutDetails();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["scheme"] = this.scheme;
+        data["status"] = this.status;
+        data["bankCountryId"] = this.bankCountryId;
+        data["accountPrefix"] = this.accountPrefix;
+        data["accountNumber"] = this.accountNumber;
+        data["bankCode"] = this.bankCode;
+        data["iban"] = this.iban;
+        data["swift"] = this.swift;
+        data["bankName"] = this.bankName;
+        data["holderName"] = this.holderName;
+        data["confirmedAt"] = this.confirmedAt ? this.confirmedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IMyPayoutDetails {
+    scheme: PayoutScheme;
+    status: PayoutDetailsStatus;
+    bankCountryId: string | undefined;
+    accountPrefix: string | undefined;
+    accountNumber: string | undefined;
+    bankCode: string | undefined;
+    iban: string | undefined;
+    swift: string | undefined;
+    bankName: string | undefined;
+    holderName: string | undefined;
+    confirmedAt: Date | undefined;
+}
+
 export class MyProfileDto implements IMyProfileDto {
     email!: string | undefined;
     firstName!: string | undefined;
@@ -9843,6 +10176,7 @@ export class OrderItem implements IOrderItem {
     estimatedCleanerPay!: number | undefined;
     isAssignedToCurrentUser!: boolean;
     hasAfterPhotos!: boolean;
+    expressWaiverForfeitedOnCancel!: boolean | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -9927,6 +10261,7 @@ export class OrderItem implements IOrderItem {
             this.estimatedCleanerPay = Data["estimatedCleanerPay"];
             this.isAssignedToCurrentUser = Data["isAssignedToCurrentUser"];
             this.hasAfterPhotos = Data["hasAfterPhotos"];
+            this.expressWaiverForfeitedOnCancel = Data["expressWaiverForfeitedOnCancel"];
         }
     }
 
@@ -10011,6 +10346,7 @@ export class OrderItem implements IOrderItem {
         data["estimatedCleanerPay"] = this.estimatedCleanerPay;
         data["isAssignedToCurrentUser"] = this.isAssignedToCurrentUser;
         data["hasAfterPhotos"] = this.hasAfterPhotos;
+        data["expressWaiverForfeitedOnCancel"] = this.expressWaiverForfeitedOnCancel;
         return data;
     }
 }
@@ -10058,6 +10394,7 @@ export interface IOrderItem {
     estimatedCleanerPay: number | undefined;
     isAssignedToCurrentUser: boolean;
     hasAfterPhotos: boolean;
+    expressWaiverForfeitedOnCancel: boolean | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -11100,6 +11437,17 @@ export enum PaymentStatus {
 export enum PaymentType {
     Cash = 1,
     Card = 2,
+}
+
+export enum PayoutDetailsStatus {
+    Provided = 1,
+    NeedsReconfirmation = 2,
+}
+
+export enum PayoutScheme {
+    CzskDomesticWithIban = 1,
+    SepaIban = 2,
+    ProviderPayoutToken = 3,
 }
 
 export class PeriodPaySummaryDto implements IPeriodPaySummaryDto {
@@ -12800,6 +13148,110 @@ export interface ITranslation {
     description: string | undefined;
 }
 
+export class UpdateBankDetailsCommand implements IUpdateBankDetailsCommand {
+    employeeId!: string | undefined;
+    iban!: string | undefined;
+    bankCountryId!: string | undefined;
+    accountPrefix!: string | undefined;
+    accountNumber!: string | undefined;
+    bankCode!: string | undefined;
+    swift!: string | undefined;
+    bankName!: string | undefined;
+    holderName!: string | undefined;
+
+    constructor(data?: IUpdateBankDetailsCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.employeeId = Data["employeeId"];
+            this.iban = Data["iban"];
+            this.bankCountryId = Data["bankCountryId"];
+            this.accountPrefix = Data["accountPrefix"];
+            this.accountNumber = Data["accountNumber"];
+            this.bankCode = Data["bankCode"];
+            this.swift = Data["swift"];
+            this.bankName = Data["bankName"];
+            this.holderName = Data["holderName"];
+        }
+    }
+
+    static fromJS(data: any): UpdateBankDetailsCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateBankDetailsCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["employeeId"] = this.employeeId;
+        data["iban"] = this.iban;
+        data["bankCountryId"] = this.bankCountryId;
+        data["accountPrefix"] = this.accountPrefix;
+        data["accountNumber"] = this.accountNumber;
+        data["bankCode"] = this.bankCode;
+        data["swift"] = this.swift;
+        data["bankName"] = this.bankName;
+        data["holderName"] = this.holderName;
+        return data;
+    }
+}
+
+export interface IUpdateBankDetailsCommand {
+    employeeId: string | undefined;
+    iban: string | undefined;
+    bankCountryId: string | undefined;
+    accountPrefix: string | undefined;
+    accountNumber: string | undefined;
+    bankCode: string | undefined;
+    swift: string | undefined;
+    bankName: string | undefined;
+    holderName: string | undefined;
+}
+
+export class UpdateBankDetailsResponse implements IUpdateBankDetailsResponse {
+    employeeId!: string | undefined;
+
+    constructor(data?: IUpdateBankDetailsResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.employeeId = Data["employeeId"];
+        }
+    }
+
+    static fromJS(data: any): UpdateBankDetailsResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateBankDetailsResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["employeeId"] = this.employeeId;
+        return data;
+    }
+}
+
+export interface IUpdateBankDetailsResponse {
+    employeeId: string | undefined;
+}
+
 export class UpdateCurrentUserCommand implements IUpdateCurrentUserCommand {
     id!: string | undefined;
     firstName!: string | undefined;
@@ -12917,7 +13369,6 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
     registrationNumber!: string | undefined;
     vatNumber!: string | undefined;
     legalEntityName!: string | undefined;
-    iban!: string | undefined;
     emergencyName!: string | undefined;
     emergencyPhone!: string | undefined;
     consent!: boolean;
@@ -12951,7 +13402,6 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
             this.registrationNumber = Data["registrationNumber"];
             this.vatNumber = Data["vatNumber"];
             this.legalEntityName = Data["legalEntityName"];
-            this.iban = Data["iban"];
             this.emergencyName = Data["emergencyName"];
             this.emergencyPhone = Data["emergencyPhone"];
             this.consent = Data["consent"];
@@ -12995,7 +13445,6 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
         data["registrationNumber"] = this.registrationNumber;
         data["vatNumber"] = this.vatNumber;
         data["legalEntityName"] = this.legalEntityName;
-        data["iban"] = this.iban;
         data["emergencyName"] = this.emergencyName;
         data["emergencyPhone"] = this.emergencyPhone;
         data["consent"] = this.consent;
@@ -13032,7 +13481,6 @@ export interface IUpdateEmployeeCommand {
     registrationNumber: string | undefined;
     vatNumber: string | undefined;
     legalEntityName: string | undefined;
-    iban: string | undefined;
     emergencyName: string | undefined;
     emergencyPhone: string | undefined;
     consent: boolean;

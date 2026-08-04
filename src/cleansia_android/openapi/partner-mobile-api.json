@@ -2487,6 +2487,85 @@
         }
       }
     },
+    "/api/Employee/GetMyPayoutDetails": {
+      "get": {
+        "tags": [
+          "Employee"
+        ],
+        "operationId": "Employee_GetMyPayoutDetails",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/GetMyPayoutDetails_Query"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyPayoutDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyPayoutDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyPayoutDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Employee/UpdateEmergencyContact": {
       "put": {
         "tags": [
@@ -7213,10 +7292,6 @@
             "type": "string",
             "nullable": true
           },
-          "iban": {
-            "type": "string",
-            "nullable": true
-          },
           "emergencyContactName": {
             "type": "string",
             "nullable": true
@@ -7332,6 +7407,9 @@
           },
           "employee": {
             "$ref": "#/components/schemas/GdprExportEmployeeDto"
+          },
+          "payoutDetails": {
+            "$ref": "#/components/schemas/GdprExportPayoutDetailsDto"
           },
           "orders": {
             "type": "array",
@@ -7507,6 +7585,64 @@
         },
         "additionalProperties": false
       },
+      "GdprExportPayoutDetailsDto": {
+        "type": "object",
+        "properties": {
+          "scheme": {
+            "$ref": "#/components/schemas/PayoutScheme"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PayoutDetailsStatus"
+          },
+          "bankCountryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountPrefix": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "iban": {
+            "type": "string",
+            "nullable": true
+          },
+          "swift": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankName": {
+            "type": "string",
+            "nullable": true
+          },
+          "holderName": {
+            "type": "string",
+            "nullable": true
+          },
+          "confirmedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastRevealedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "revealCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "GdprExportProfileDto": {
         "type": "object",
         "properties": {
@@ -7617,6 +7753,10 @@
             "nullable": true
           }
         },
+        "additionalProperties": false
+      },
+      "GetMyPayoutDetails_Query": {
+        "type": "object",
         "additionalProperties": false
       },
       "GetOrderPhotos_OrderPhotoDto": {
@@ -7915,6 +8055,55 @@
           },
           "monthName": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MyPayoutDetails": {
+        "type": "object",
+        "properties": {
+          "scheme": {
+            "$ref": "#/components/schemas/PayoutScheme"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PayoutDetailsStatus"
+          },
+          "bankCountryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountPrefix": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "iban": {
+            "type": "string",
+            "nullable": true
+          },
+          "swift": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankName": {
+            "type": "string",
+            "nullable": true
+          },
+          "holderName": {
+            "type": "string",
+            "nullable": true
+          },
+          "confirmedAt": {
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           }
         },
@@ -8378,6 +8567,10 @@
           },
           "hasAfterPhotos": {
             "type": "boolean"
+          },
+          "expressWaiverForfeitedOnCancel": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8851,6 +9044,32 @@
         "x-enumNames": [
           "Cash",
           "Card"
+        ]
+      },
+      "PayoutDetailsStatus": {
+        "enum": [
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "Provided",
+          "NeedsReconfirmation"
+        ]
+      },
+      "PayoutScheme": {
+        "enum": [
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "CzskDomesticWithIban",
+          "SepaIban",
+          "ProviderPayoutToken"
         ]
       },
       "PeriodPaySummaryDto": {
@@ -9761,6 +9980,34 @@
           "iban": {
             "type": "string",
             "nullable": true
+          },
+          "bankCountryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountPrefix": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "swift": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankName": {
+            "type": "string",
+            "nullable": true
+          },
+          "holderName": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9913,10 +10160,6 @@
             "nullable": true
           },
           "legalEntityName": {
-            "type": "string",
-            "nullable": true
-          },
-          "iban": {
             "type": "string",
             "nullable": true
           },

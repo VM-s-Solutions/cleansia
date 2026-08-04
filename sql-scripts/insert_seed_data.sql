@@ -808,78 +808,71 @@ VALUES
 -- ============================================================
 -- COUNTRY INVOICE CONFIGS
 -- ============================================================
+-- "LegalDisclaimerTemplate" is deliberately absent from this INSERT: every row starts with NO legal
+-- notice and LegalDisclaimerReviewStatus = 0 (NotReviewed), so the invoice prints the platform's
+-- generic English fallback. Only the UPDATE at the bottom of this section fills one in.
 INSERT INTO public."CountryInvoiceConfigs" (
   "Id", "IsActive", "CountryId", "VatRequired", "VatRate",
   "DigitalSignatureRequired", "EInvoiceFormat",
-  "AdditionalFieldsJson", "LegalDisclaimerTemplate"
+  "AdditionalFieldsJson"
 )
 VALUES
   -- Czech Republic - VAT 21%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
-   true, 0.21, false, 'PDF', NULL,
-   'This invoice is issued in accordance with Czech law. Payment terms: 14 days from issue date.'),
+   true, 0.21, false, 'PDF', NULL),
 
   -- Germany - VAT 19%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'DEU' LIMIT 1),
    true, 0.19, false, 'PDF',
-   '{"TaxNumber": "required", "UStIdNr": "optional"}',
-   'Rechnung gemäß deutschem Steuerrecht. Zahlungsbedingungen: 14 Tage ab Rechnungsdatum.'),
+   '{"TaxNumber": "required", "UStIdNr": "optional"}'),
 
   -- Austria - VAT 20%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'AUT' LIMIT 1),
-   true, 0.20, false, 'PDF', NULL,
-   'Rechnung gemäß österreichischem Steuerrecht. Zahlungsbedingungen: 14 Tage ab Rechnungsdatum.'),
+   true, 0.20, false, 'PDF', NULL),
 
   -- Poland - VAT 23%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'POL' LIMIT 1),
    true, 0.23, false, 'PDF',
-   '{"NIP": "required"}',
-   'Faktura wystawiona zgodnie z polskim prawem podatkowym. Termin płatności: 14 dni od daty wystawienia.'),
+   '{"NIP": "required"}'),
 
   -- Slovakia - VAT 20%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'SVK' LIMIT 1),
-   true, 0.20, false, 'PDF', NULL,
-   'Faktúra vystavená v súlade so slovenským právom. Splatnosť: 14 dní odo dňa vystavenia.'),
+   true, 0.20, false, 'PDF', NULL),
 
   -- United States - No VAT
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'USA' LIMIT 1),
    false, 0.00, false, 'PDF',
-   '{"EIN": "optional", "StateTaxId": "optional"}',
-   'Invoice issued in accordance with US law. Payment terms: 14 days from invoice date.'),
+   '{"EIN": "optional", "StateTaxId": "optional"}'),
 
   -- United Kingdom - VAT 20%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'GBR' LIMIT 1),
    true, 0.20, false, 'PDF',
-   '{"VATNumber": "required"}',
-   'Invoice issued in accordance with UK law. Payment terms: 14 days from invoice date.'),
+   '{"VATNumber": "required"}'),
 
   -- France - VAT 20%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'FRA' LIMIT 1),
    true, 0.20, false, 'PDF',
-   '{"SIRET": "required"}',
-   'Facture émise conformément à la loi française. Conditions de paiement: 14 jours à compter de la date d''émission.'),
+   '{"SIRET": "required"}'),
 
   -- Italy - VAT 22%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'ITA' LIMIT 1),
    true, 0.22, false, 'PDF+XML',
-   '{"CodiceFiscale": "required", "PartitaIVA": "required"}',
-   'Fattura emessa in conformità alla legge italiana. Condizioni di pagamento: 14 giorni dalla data di emissione.'),
+   '{"CodiceFiscale": "required", "PartitaIVA": "required"}'),
 
   -- Spain - VAT 21%
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'ESP' LIMIT 1),
    true, 0.21, false, 'PDF',
-   '{"NIF": "required"}',
-   'Factura emitida de acuerdo con la ley española. Condiciones de pago: 14 días desde la fecha de emisión.');
+   '{"NIF": "required"}');
 
 -- Konstantní symbol — the PAYER's payment-type code on a Czech bank transfer (0308 = non-cash payment
 -- for goods and services), which is why it is configured here and not on a cleaner's bank record.
@@ -887,6 +880,22 @@ VALUES
 -- SK is deliberately left NULL: T-0508 AC11 scopes the invoice work to CZ, and printing a guessed
 -- symbol is worse than printing none.
 UPDATE public."CountryInvoiceConfigs" SET "ConstantSymbol" = '0308'
+WHERE "CountryId" = (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1);
+
+-- The ONE legal notice this platform is entitled to print. The sentence is verbatim from the real
+-- Czech invoice the owner issues, so its provenance is the business itself (LegalDisclaimerReviewStatus
+-- = 1, BusinessSupplied) — not a lawyer, which is why it is 1 and not 2 (CounselReviewed).
+--
+-- Every other country is left NotReviewed ON PURPOSE. The rows that used to sit here asserted things
+-- about German, Austrian, Polish, Slovak, US, UK, French, Italian and Spanish law that nobody with
+-- standing ever checked, and one asserted Czech law in English under a Czech heading. A notice
+-- reviewed for one jurisdiction is not a notice for another and a translation of it is not the same
+-- artifact, so these stay empty until the owner's lawyer supplies each one, and the invoice prints the
+-- generic English fallback in the meantime.
+UPDATE public."CountryInvoiceConfigs" SET
+  "LegalDisclaimerTemplate" = 'Dovolujeme si Vás upozornit, že v případě nedodržení data splatnosti uvedeného na faktuře Vám můžeme účtovat zákonný úrok z prodlení.',
+  "LegalDisclaimerLanguageCode" = 'cs',
+  "LegalDisclaimerReviewStatus" = 1
 WHERE "CountryId" = (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1);
 
 -- ============================================================

@@ -443,6 +443,8 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             DigitalSignatureRequired = config.DigitalSignatureRequired,
             EInvoiceFormat = config.EInvoiceFormat,
             LegalDisclaimerTemplate = config.LegalDisclaimerTemplate,
+            LegalDisclaimerLanguageCode = config.LegalDisclaimerLanguageCode,
+            LegalDisclaimerReviewStatus = config.LegalDisclaimerReviewStatus,
             ConstantSymbol = config.ConstantSymbol
         };
     }

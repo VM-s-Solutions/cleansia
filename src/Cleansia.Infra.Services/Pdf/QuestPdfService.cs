@@ -67,7 +67,8 @@ public class QuestPdfService : IPdfService
 
     /// <summary>
     /// The backstop for data built without a country context — the payout mapper already applies
-    /// <see cref="CountryInvoiceContext.VatFor"/>, so this only fires for a caller that did not.
+    /// <see cref="CountryInvoiceContext.VatWithinGross"/>, so this only fires for a caller that did not.
+    /// The total is left alone: VAT is carved out of a gross payout, never added to it.
     /// </summary>
     public static InvoicePdfData ApplyCountryLogic(InvoicePdfData data, CountryInvoiceContext? context)
     {
@@ -76,16 +77,12 @@ public class QuestPdfService : IPdfService
             return data;
         }
 
-        var vatAmount = context.VatFor(data.SubTotal, data.Supplier.IsVatPayer);
+        var vatAmount = context.VatWithinGross(data.TotalAmount, data.Supplier.IsVatPayer);
         if (vatAmount == 0)
         {
             return data;
         }
 
-        return data with
-        {
-            VatAmount = vatAmount,
-            TotalAmount = data.SubTotal + data.BonusAmount - data.DeductionAmount + vatAmount
-        };
+        return data with { VatAmount = vatAmount };
     }
 }

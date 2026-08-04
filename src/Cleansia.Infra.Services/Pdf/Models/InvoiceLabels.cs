@@ -50,16 +50,20 @@ public record InvoiceLabels
     public string SubTotal { get; init; } = "Subtotal";
     public string Bonus { get; init; } = "Bonus";
     public string Deduction { get; init; } = "Deduction";
+    public string VatBase { get; init; } = "Taxable amount";
     public string Vat { get; init; } = "VAT";
 
     public string LegalNotice { get; init; } = "Legal notice";
     public string GeneratedOn { get; init; } = "Generated";
 
     /// <summary>
-    /// The statutory late-payment interest clause every locale states in its own words. Distinct from
-    /// <c>InvoicePdfData.LegalDisclaimer</c>, which is per-country free text an admin edits.
+    /// What the legal-notice box says for a jurisdiction whose notice nobody has reviewed. It is a
+    /// constant and not a label on purpose: a label set could translate it, and a generic fallback
+    /// rendered in the reader's own language is indistinguishable from a notice written for their
+    /// jurisdiction — which is the one thing this design exists to keep apart. A reviewed local-language
+    /// notice is a <c>CountryInvoiceConfig</c> row, never an override here.
     /// </summary>
-    public string LatePaymentInterestNotice { get; init; } =
+    public const string UnreviewedJurisdictionNotice =
         "Please note that if payment is not received by the due date stated on this invoice, " +
         "we may charge statutory interest on the overdue amount.";
 
@@ -111,13 +115,10 @@ public record InvoiceLabels
         SubTotal = "Mezisoučet",
         Bonus = "Bonus",
         Deduction = "Srážka",
+        VatBase = "Základ daně",
         Vat = "DPH",
 
         LegalNotice = "Právní upozornění",
-        GeneratedOn = "Vystaveno",
-
-        LatePaymentInterestNotice =
-            "Dovolujeme si Vás upozornit, že v případě nedodržení data splatnosti uvedeného na faktuře " +
-            "Vám můžeme účtovat zákonný úrok z prodlení."
+        GeneratedOn = "Vystaveno"
     };
 }

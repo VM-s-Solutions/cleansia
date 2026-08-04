@@ -77,15 +77,14 @@ public class DefaultInvoiceLayoutBuilder : IInvoiceLayoutBuilder
             col.Item().Element(c => c.SectionTitle(Labels.LineItems));
             col.Item().Element(c => BuildLineItemsTable(c, data));
 
-            col.Item().Element(c => BuildLatePaymentNotice(c, data));
-
             // A total split across a page break is the one block that must never break.
             col.Item().PaddingTop(CleansiaPdfTheme.SmallPadding).ShowEntire().Row(row =>
             {
                 row.RelativeItem().PaddingRight(20).Element(c =>
                 {
-                    if (!string.IsNullOrWhiteSpace(data.LegalDisclaimer))
-                        c.AlignBottom().LegalNoticeBox(data.LegalDisclaimer, Labels.LegalNotice);
+                    var notice = LegalNoticeText(data);
+                    if (!string.IsNullOrWhiteSpace(notice))
+                        c.AlignBottom().LegalNoticeBox(notice, Labels.LegalNotice);
                 });
 
                 row.ConstantItem(280).Element(c => BuildSummary(c, data));
@@ -219,24 +218,17 @@ public class DefaultInvoiceLayoutBuilder : IInvoiceLayoutBuilder
         $"{Labels.LineDescription} {line.OrderNumber} ({FormatDate(line.PerformedOn)})";
 
     /// <summary>
-    /// The clause names the invoice's own due date, so an invoice that states none has nothing to be
-    /// late against and the sentence is dropped rather than left standing as an empty threat.
+    /// The document's one legal notice: the jurisdiction's own reviewed text where it has one, otherwise
+    /// <see cref="InvoiceLabels.UnreviewedJurisdictionNotice"/> — which stays English on every layout,
+    /// because a fallback in the reader's language reads exactly like a notice written for their country.
+    /// <para>The fallback names the invoice's own due date, so an invoice that states none drops it
+    /// rather than leaving a threat nothing can be measured against. A jurisdiction's own notice is
+    /// printed as supplied and is not second-guessed that way.</para>
     /// </summary>
-    protected virtual string? LatePaymentInterestNotice(InvoicePdfData data) =>
-        data.DueDate.HasValue ? Labels.LatePaymentInterestNotice : null;
+    protected virtual string? LegalNoticeText(InvoicePdfData data) =>
+        data.LegalDisclaimer ?? (data.DueDate.HasValue ? InvoiceLabels.UnreviewedJurisdictionNotice : null);
 
-    protected virtual void BuildLatePaymentNotice(IContainer container, InvoicePdfData data)
-    {
-        var notice = LatePaymentInterestNotice(data);
-        if (string.IsNullOrWhiteSpace(notice)) return;
-
-        container.PaddingTop(CleansiaPdfTheme.SmallPadding).Text(notice)
-            .FontSize(CleansiaPdfTheme.FontSizeSmall)
-            .FontColor(CleansiaPdfTheme.TextSecondary)
-            .Italic();
-    }
-
-    protected virtual void BuildSummary(IContainer container, InvoicePdfData data)
+    protected virtual IReadOnlyList<(string Label, string Value, bool IsBold)> SummaryLines(InvoicePdfData data)
     {
         var lines = new List<(string Label, string Value, bool IsBold)>
         {
@@ -249,14 +241,24 @@ public class DefaultInvoiceLayoutBuilder : IInvoiceLayoutBuilder
         if (data.DeductionAmount != 0)
             lines.Add((Labels.Deduction, $"-{FormatMoney(data.DeductionAmount, data)}", false));
 
+        // The pay is gross, so VAT is carved OUT of the amount due rather than added on top: the two
+        // lines below decompose the bold total that follows them, they do not accumulate towards it.
         if (data.VatAmount != 0)
+        {
+            lines.Add((Labels.VatBase, FormatMoney(data.TotalAmount - data.VatAmount, data), false));
             lines.Add((Labels.Vat, FormatMoney(data.VatAmount, data), false));
+        }
 
         lines.Add((Labels.AmountDue, FormatMoney(data.TotalAmount, data), true));
 
+        return lines;
+    }
+
+    protected virtual void BuildSummary(IContainer container, InvoicePdfData data)
+    {
         container.Column(col =>
         {
-            col.Item().SummaryBox(lines);
+            col.Item().SummaryBox(SummaryLines(data));
 
             if (!data.Supplier.IsVatPayer)
             {

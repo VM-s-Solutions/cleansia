@@ -217,7 +217,158 @@ and the owner's specimen annotation from T-0508 AC1.
   the only live DB is DEV and is being dropped, so the conservative behaviour holds under every ruling
   T-0508 could reach. Recorded in `## Review`, not silently ticked.
 
+- 2026-08-04 — **two owner rulings landed and are built (backend).** (1) *"Can we make it
+  multi-language… for czech it's a must have to have cz, for Poland pl and etc. And english can function
+  everywhere"* → the legal notice is now per-jurisdiction with a **review-status gate**, English is the
+  fallback for unreviewed jurisdictions and is a `const` no label set can translate, and the **nine
+  agent-authored country disclaimers are deleted from the seed**. (2) *"The pay is gross. The cleaner
+  pays everything on his own, we don't pay taxes for him"* → VAT for a registered supplier is now
+  **decomposed out of** the stored total, so **AC7's printed-equals-stored identity holds exactly in
+  both variants** and the open money-path question in `## Review` below is **closed**.
+  **`manual_steps: ef-migration` gains two columns** — see the schema delta.
+
 ## Review
+
+### The two owner rulings (backend, 2026-08-04)
+
+#### Ruling 1 — the legal notice is per-jurisdiction, and "reviewed" is a column
+
+**The distinction built in, not discovered later:** *English is the fallback for a jurisdiction nobody
+has reviewed. It is not a translation of the Czech one.* A notice a lawyer cleared for Czech law,
+rendered in English, is a different legal artifact and must never wear the same authority — the owner
+priced exactly this (*"requires check from lawyer for every language"*), so the model expresses it.
+
+**Shape — three columns on `CountryInvoiceConfig`, reusing the seam the ticket named** (config →
+`CountryInvoiceContext` → mapper), not a parallel one and not a new table:
+
+| | |
+|---|---|
+| `LegalDisclaimerTemplate` (existing) | the jurisdiction's notice, **in the language it was reviewed in** |
+| `LegalDisclaimerLanguageCode` **(new)** | what language that is — the multi-language half of the owner's ask |
+| `LegalDisclaimerReviewStatus` **(new)** | `NotReviewed` (0) / `BusinessSupplied` (1) / `CounselReviewed` (2) |
+
+**The status is the gate, not a caption.** `CountryInvoiceContext.ReviewedLegalNotice` withholds any
+text at `NotReviewed`, so a paragraph asserting a country's law that nobody checked is inert in the row
+instead of printed under a `PRÁVNÍ UPOZORNĚNÍ` heading. It is a **column and not an inference from the
+text** for the reason the brief names: two countries can hold the same sentence and mean different
+things by it — one written for that jurisdiction, one a copy of the fallback — and the schema must not
+flatten them. Three states rather than a bool because the owner's stated cost *is* "has counsel seen
+this?", and CZ is `BusinessSupplied`, not `CounselReviewed`: seeding 2 would claim a review that has
+not happened.
+
+**Country or the document's language? The notice follows the COUNTRY; the heading follows the
+document.** The artifact's authority is bound to its reviewed wording, so translating it for
+readability destroys the property that made it worth printing. `T-0506`'s tension is therefore
+*knowingly accepted for this one block* — a Czech reader of an English-layout invoice still sees a
+`Legal notice` heading and knows what the box is, and the fix for a Ukrainian cleaner is a **second
+reviewed notice for CZ in `uk`**, never a machine translation of the first. Cardinality is pinned at
+one per jurisdiction (ADR-0034 D1's principle: generalize the varying axis, pin the one that does not);
+lifting it is one additive migration.
+
+**The fallback is a `const`, not a label — the type system enforces the rule.**
+`InvoiceLabels.UnreviewedJurisdictionNotice` is `public const string` on the base type, so a label set
+**cannot** translate it. If it could, a future Polish layout's Polish fallback would read exactly like
+a notice written for Poland, which is the one confusion this whole design exists to prevent. Wording is
+**unchanged** from the English clause it replaces — nothing was authored.
+
+**The duplicate this exposed, and why the layout changed.** AC8 says the notice renders from
+`LegalDisclaimerTemplate → data.LegalDisclaimer` and *"carry the text the specimen uses"*. The earlier
+pass instead put the owner's Czech sentence in the **label set** (`LatePaymentInterestNotice`) and left
+the config slot holding English boilerplate — so seeding the specimen's sentence where AC8 says it goes
+would have printed **the same sentence twice**. They are one thing wearing two hats: the italic clause
+is folded into the single legal-notice box, whose content is the jurisdiction's reviewed notice or the
+fallback. The "drop it when `DueDate` is null" rule survives **scoped to the fallback** (it names the
+due date); a jurisdiction's own notice is printed as supplied and not second-guessed. `CalculateDueDate`
+is non-nullable, so that corner is unreachable in production and is pinned by test rather than relied on.
+
+**No legal text was authored.** The one seeded string is the owner's own Czech sentence, verbatim from
+the invoice they issue.
+
+#### ⚠️ Jurisdictions that need the owner's lawyer — the exact list
+
+The seed previously asserted, in nine countries' own languages, that an invoice was issued "in
+accordance with" that country's law. **Every one of those was written by an agent and cleared by
+nobody.** All are now `NotReviewed` with no text, and print the generic English fallback:
+
+**DE · AT · PL · SK · US · GB · FR · IT · ES** — nine jurisdictions, each needing counsel before its
+row is filled. **SK matters first** (T-0508 AC11 names it as the next market). **CZ is filled but sits
+at `BusinessSupplied`** — the wording is the owner's own, which is real provenance and is not a lawyer's
+opinion; flipping it to `CounselReviewed` is a one-line `UPDATE` when that happens.
+
+#### Ruling 2 — the pay is GROSS, so the invoice decomposes instead of adding
+
+`CountryInvoiceContext.VatFor` → **`VatWithinGross(grossTotal, supplierIsVatPayer)`**, still the single
+place the rule lives, renamed so the gross semantics are unmissable at both call sites:
+base = `round(total ÷ (1 + rate), 2)`, VAT = `total − base`, **printed total = `EmployeeInvoice.TotalAmount`
+unchanged**. One rounding, applied to the base, so `base + VAT == total` **exactly** on every amount.
+
+**AC7's identity now holds exactly in BOTH variants** instead of becoming "stored + VAT" for one, and it
+is asserted for both (`Printed_Total_Equals_The_Stored_Total_For_A_Vat_Payer_And_A_Non_Payer_Alike`).
+The summary renders `Základ daně` + `DPH` as a recap **of** the bold total rather than as addends
+toward it. `QuestPdfService.ApplyCountryLogic` no longer rewrites the total at all. The non-payer case —
+today's only live one — is unchanged: no decomposition, VAT zero, total unchanged.
+
+**Arithmetic checked against the rate source** (`CountryInvoiceConfigs.VatRate`, CZ `0.21`): grossing
+the printed base back up at the configured rate returns the printed total, pinned as a `[Theory]` over
+1000 / 1350 / 1633.50 / 12345.67. **One honest edge, pinned rather than hidden:** below a few cents no
+two-decimal base grosses back up exactly (0.03 → base 0.02, VAT 0.01); `base + VAT == total` still holds,
+which is the identity the document needs.
+
+**The open question this closes.** The ⚠️ recorded in the previous pass — *"for a VAT-registered
+supplier the printed total is `TotalAmount + VAT`… does the platform pay net or gross?"* — is now
+answered by the owner and implemented. Nothing in the money path is left guessing.
+
+### Verification — 2026-08-04, second pass
+
+| | |
+|---|---|
+| `Cleansia.Tests` | **2870 passed, 0 failed** (baseline **2846**; +24 mine) |
+| `Cleansia.IntegrationTests` | **132 passed, 0 failed** |
+| `Cleansia.HostTests` | **88 passed, 0 failed** |
+
+**The red leg was RUN, not asserted.** Both rules were reverted in place (`VatWithinGross` → `gross ×
+rate`, `TotalAmount` → `stored + VAT`, `ReviewedLegalNotice` → return the raw template) and the affected
+tests re-run: **11 failures, by name and by value** — `173,55`→`210,00` (four amounts through the
+gross round trip), printed total `1000`→`1210,00` (the exact defect the ruling closes), and
+`null`→`"This invoice is issued in accordance with Czech law…"` at both the context and the mapper.
+Restored; green again.
+
+**The PDFs were RENDERED AND OPENED, not only asserted on the field model** — three variants through
+the real mapper + the real `QuestPdfService`, rasterized and inspected:
+- **reviewed jurisdiction, non-VAT (the live case, `CZE`)** — `PRÁVNÍ UPOZORNĚNÍ` now carries the Czech
+  sentence; the English paragraph is gone; the previously duplicated italic clause is gone; `Celkem k
+  úhradě 1 000,00 Kč`.
+- **unreviewed jurisdiction (`POL`, default layout)** — `LEGAL NOTICE` carries the English fallback. The
+  box is populated, so an unreviewed country renders something honest rather than nothing.
+- **reviewed jurisdiction, VAT-registered** — `DIČ CZ12345678` replaces the DPH statement; the recap
+  reads `Mezisoučet 1 000,00 / Základ daně 826,45 / DPH 173,55 / Celkem k úhradě 1 000,00` — 826,45 +
+  173,55 = 1 000,00 exactly, and the printed total equals the stored one.
+
+Looking is what confirmed the thing no assertion states: the notice box is now the document's **only**
+legal block. The render harness was temporary and is deleted.
+
+### The schema delta — TWO more columns, FLAGGED, not run
+
+```
+ALTER TABLE public."CountryInvoiceConfigs" ADD COLUMN "LegalDisclaimerLanguageCode" varchar(5) NULL;
+ALTER TABLE public."CountryInvoiceConfigs" ADD COLUMN "LegalDisclaimerReviewStatus" integer NOT NULL DEFAULT 0;
+```
+
+- Both declared by the domain (`[MaxLength(5)]`; the enum maps to `integer` by EF's default). **No
+  `EntityConfiguration` line added — that is the DB Master's call**, and neither column needs one to be
+  correct.
+- **⚠️ SAME RISK AS THE `ConstantSymbol` PASS, and it is real:** `Cleansia.Core.Domain` declares both
+  properties **now**, so until `Initial` is regenerated every query against `CountryInvoiceConfigs`
+  fails with `column c."LegalDisclaimerLanguageCode" does not exist` — **which takes the whole invoice
+  PDF path down.** These two must ride the **same** drop-and-reseed pass as `ConstantSymbol`; there is
+  no partial state that works.
+- Default `0` = `NotReviewed`, which is the correct migration-day behaviour by construction: any text
+  that survives is withheld and the fallback prints.
+- **Seed carries the data and both copies are byte-identical** (`StartupSeedScriptSyncTests`):
+  `LegalDisclaimerTemplate` is **removed from the `INSERT` column list entirely** (every country starts
+  with no notice), and one trailing `UPDATE … WHERE IsoCode = 'CZE'` sets the Czech text, `'cs'`, and
+  status `1`. Pinned by the new `CountryInvoiceLegalNoticeSeedTests`: exactly one jurisdiction seeds a
+  notice, it is CZE, it is Czech, it is `BusinessSupplied`, and it is **not** the fallback string.
 
 ### What landed (backend, 2026-08-04) — the four remaining gaps, plus one the seam hid
 
@@ -264,12 +415,11 @@ the platform charges its CUSTOMERS and cannot make a cleaner a VAT payer*. The m
 arithmetic, so the two cannot drift. For the owner's ruled case the result is still `0`, but by
 derivation: flip `IsVatPayer` and 283,50 Kč appears without touching either file.
 
-**⚠️ The one thing on this ticket that needs an owner ruling before a cleaner ever registers: for a
-VAT-registered supplier the printed total is `EmployeeInvoice.TotalAmount + VAT`, so AC7's
-printed-equals-stored identity holds exactly for the non-payer and becomes "stored + VAT" for a payer.**
-That is arithmetic the document must show, but it means the *money path* has an open question — does
-the platform pay net or net+VAT, and does the stored `TotalAmount` become the net or the gross? Not
-guessable, not on this ticket, and it costs nothing while the owner's ruling holds. Filed below.
+**~~⚠️ The one thing on this ticket that needs an owner ruling before a cleaner ever registers: for a
+VAT-registered supplier the printed total is `EmployeeInvoice.TotalAmount + VAT`…~~ ANSWERED and
+CLOSED, 2026-08-04:** *"The pay is gross. The cleaner pays everything on his own, we don't pay taxes
+for him"* → the stored total is the gross, the invoice **decomposes** it, and the printed total equals
+the stored one in both variants. See "Ruling 2" above.
 
 **The gap the seam hid — the Czech layout still could not be selected in production.** The
 2026-08-04 log records one leg of this (a missing `ThenInclude` left the ISO code null). The other leg
@@ -316,6 +466,11 @@ exactly the pre-change document, which is the right degradation and not a regres
 
 ### AC10 — the schema delta. **YES, one column is needed. It is FLAGGED, not run.**
 
+> **Superseded in count, not in kind, by the 2026-08-04 second pass: it is now THREE columns.** The
+> two legal-notice columns are listed under "The schema delta — TWO more columns" above; everything
+> this section says about the failure mode applies to all three, and all three must land in the same
+> drop-and-reseed pass.
+
 ```
 ALTER TABLE public."CountryInvoiceConfigs" ADD COLUMN "ConstantSymbol" varchar(4) NULL;
 ```
@@ -351,12 +506,10 @@ backfill, not a retrofit of this one.**
    AGREEMENT to being self-billed.** Raised with the owner separately; it belongs in the B2B contract
    clause, not in a consent flow, and **no consent flow was built and nothing blocks on it**. Recorded
    here so the dependency is a known open item rather than an assumption the document makes silently.
-2. **The CZ `LegalDisclaimerTemplate` is seeded in ENGLISH** — the `PRÁVNÍ UPOZORNĚNÍ` box on a Czech
-   invoice reads *"This invoice is issued in accordance with Czech law. Payment terms: 14 days from
-   issue date."* Visible in the render. **Not fixed here on purpose:** AC8 states that content is the
-   owner's and not an agent's, and that sentence is itself a legal assertion. It is admin-editable
-   per-country free text; the owner should supply the Czech wording (or delete it — the statutory
-   late-payment clause beside it is separate and already Czech).
+2. ~~**The CZ `LegalDisclaimerTemplate` is seeded in ENGLISH**~~ — **FIXED 2026-08-04 under the owner's
+   multi-language ruling.** The English paragraph is gone, CZ carries the owner's own Czech sentence,
+   and the other nine countries' agent-authored assertions are deleted rather than translated. See
+   "Ruling 1" above for the shape and for the list of jurisdictions needing counsel.
 3. **For T-0509:** the payout PDF blob now carries the local account number, SWIFT and bank name in
    addition to the IBAN. ADR-0034 D6 already notes that generated PDFs retain the plaintext account
    after an erasure and routes blob retention to T-0509; this widens what is in the blob, it does not
@@ -365,6 +518,12 @@ backfill, not a retrofit of this one.**
    never produces"): the two defects on this ticket — bank fields hand-filled in the layout test, and a
    layout selector fed `"CZ"` when production sends `"CZE"` — are one failure mode wearing two hats, and
    it is worth a named rule.
+   **Second harvest, 2026-08-04** (same file, "A statutory string is DATA WITH PROVENANCE, never a
+   label"): a legal notice is not a caption, so *who checked it* is part of its meaning and belongs in a
+   column that **gates the render**; and its fallback must be a `const` the label sets cannot translate,
+   or a translated fallback becomes indistinguishable from a reviewed local notice. Includes the
+   duplicate-detection rule — a legal string living in both a label set and a config row is one thing
+   wearing two hats; fold them rather than de-duplicating at render.
 5. **Not done, deliberately:** `CountryInvoiceConfig` has no admin write path at all (its four
    `Update*` methods have zero callers), so `UpdateConstantSymbol` is consistent with its siblings but
    is dead until someone builds that screen. Named rather than built.

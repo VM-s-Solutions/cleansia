@@ -255,8 +255,10 @@ public class PayoutInvoicePdfDataTests
         Assert.Equal(invoice.TotalAmount, data.TotalAmount);
     }
 
+    // The pay is gross — the cleaner receives the stored total and settles their own taxes — so a
+    // registered supplier's VAT comes OUT of that total. Adding it would pay them more than was owed.
     [Fact]
-    public void Vat_Follows_The_Countrys_Rate_When_The_Cleaner_Is_Registered()
+    public void Vat_Is_Carved_Out_Of_The_Stored_Total_When_The_Cleaner_Is_Registered()
     {
         var employee = Cleaner();
         employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", "CZ12345678", null);
@@ -264,8 +266,23 @@ public class PayoutInvoicePdfDataTests
 
         var data = Map(employee, invoice, countryContext: CzechContext());
 
-        Assert.Equal(210m, data.VatAmount);
-        Assert.Equal(invoice.TotalAmount + 210m, data.TotalAmount);
+        Assert.Equal(173.55m, data.VatAmount);
+        Assert.Equal(826.45m, data.TotalAmount - data.VatAmount);
+    }
+
+    // AC7's identity, and the reason gross is the better answer: it now holds EXACTLY in both variants
+    // instead of becoming "stored + VAT" for one of them.
+    [Fact]
+    public void Printed_Total_Equals_The_Stored_Total_For_A_Vat_Payer_And_A_Non_Payer_Alike()
+    {
+        var registered = Cleaner();
+        registered.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", "CZ12345678", null);
+
+        var nonPayerInvoice = Invoice(subTotal: 1000m);
+        var payerInvoice = Invoice(subTotal: 1000m);
+
+        Assert.Equal(nonPayerInvoice.TotalAmount, Map(Cleaner(), nonPayerInvoice, countryContext: CzechContext()).TotalAmount);
+        Assert.Equal(payerInvoice.TotalAmount, Map(registered, payerInvoice, countryContext: CzechContext()).TotalAmount);
     }
 
     [Fact]
@@ -277,6 +294,35 @@ public class PayoutInvoicePdfDataTests
         var data = Map(employee, Invoice(subTotal: 1000m), countryContext: new CountryInvoiceContext { VatRequired = false, VatRate = 0.21m });
 
         Assert.Equal(0m, data.VatAmount);
+    }
+
+    // ── whose legal notice reaches the document ──────────────────────
+
+    [Fact]
+    public void The_Jurisdictions_Reviewed_Notice_Is_What_Reaches_The_Document()
+    {
+        var context = CzechContext() with
+        {
+            LegalDisclaimerTemplate = "Zákonný text.",
+            LegalDisclaimerLanguageCode = "cs",
+            LegalDisclaimerReviewStatus = LegalNoticeReviewStatus.BusinessSupplied
+        };
+
+        Assert.Equal("Zákonný text.", Map(countryContext: context).LegalDisclaimer);
+    }
+
+    // The mapper must not hand unreviewed text to the layout: the layout's own fallback is what an
+    // unreviewed jurisdiction gets, and it can only choose it if the mapper sends nothing.
+    [Fact]
+    public void An_Unreviewed_Jurisdictions_Text_Does_Not_Reach_The_Document()
+    {
+        var context = CzechContext() with
+        {
+            LegalDisclaimerTemplate = "This invoice is issued in accordance with Czech law.",
+            LegalDisclaimerReviewStatus = LegalNoticeReviewStatus.NotReviewed
+        };
+
+        Assert.Null(Map(countryContext: context).LegalDisclaimer);
     }
 
     // ── arrangement ──────────────────────────────────────────────────

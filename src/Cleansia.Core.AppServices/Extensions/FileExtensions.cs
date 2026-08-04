@@ -30,7 +30,7 @@ public static class FileExtensions
         EmployeePayoutDetails? payoutDetails, string dateFormat = "dd.MM.yyyy")
     {
         var supplier = employee.CreateSupplierData(payoutDetails);
-        var vatAmount = countryContext?.VatFor(invoice.SubTotal, supplier.IsVatPayer) ?? 0m;
+        var vatAmount = countryContext?.VatWithinGross(invoice.TotalAmount, supplier.IsVatPayer) ?? 0m;
 
         return new InvoicePdfData
         {
@@ -47,7 +47,7 @@ public static class FileExtensions
             BonusAmount = invoice.BonusAmount,
             DeductionAmount = invoice.DeductionAmount,
             VatAmount = vatAmount,
-            TotalAmount = invoice.TotalAmount + vatAmount,
+            TotalAmount = invoice.TotalAmount,
             CurrencyCode = currency?.Code ?? Constants.Currency.Czk,
             CurrencySymbol = currency?.Symbol ?? "Kč",
             LineItems = orderPays.Select(op => new InvoiceLineItem
@@ -58,7 +58,7 @@ public static class FileExtensions
                 UnitPrice = LineAmount(op),
                 LineTotal = LineAmount(op)
             }).ToList(),
-            LegalDisclaimer = countryContext?.LegalDisclaimerTemplate,
+            LegalDisclaimer = countryContext?.ReviewedLegalNotice,
             Company = new CompanyInfoData
             {
                 LegalName = companyInfo.LegalName,

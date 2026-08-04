@@ -553,6 +553,8 @@ namespace Cleansia.Infra.Database.Migrations
                     EInvoiceFormat = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     AdditionalFieldsJson = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
                     LegalDisclaimerTemplate = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    LegalDisclaimerLanguageCode = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: true),
+                    LegalDisclaimerReviewStatus = table.Column<int>(type: "integer", nullable: false),
                     ConstantSymbol = table.Column<string>(type: "character varying(4)", maxLength: 4, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false)
                 },

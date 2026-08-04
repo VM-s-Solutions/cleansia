@@ -466,6 +466,40 @@ missed.
 be updated and a future third is a compile error. A defaulted parameter would have re-armed the original
 defect: a call site that silently omits it and three blank fields on a document nobody re-reads.
 
+### A statutory string is DATA WITH PROVENANCE, never a label — and its fallback must not be translatable
+
+A caption (`Datum splatnosti`, `Mezisoučet`) is a label: it belongs in the per-language label set, and
+translating it is always right. A **statutory or legal notice is not** — it is a claim about a specific
+jurisdiction's law, and *who checked it* is part of its meaning. Two rules follow, both learned on
+T-0522's `LegalDisclaimerTemplate` (one string per country, the Czech row seeded in English):
+
+- **Store the assurance beside the text, and make it the gate.** `CountryInvoiceConfig` carries the
+  notice, its `LegalDisclaimerLanguageCode`, and a `LegalNoticeReviewStatus`
+  (`NotReviewed` / `BusinessSupplied` / `CounselReviewed`). Two countries can hold the *same sentence*
+  and mean different things by it — one written for that jurisdiction, one a copy of the generic
+  fallback nobody looked at — so the assurance cannot be inferred from the text and is a column.
+  **Below `BusinessSupplied` the text does not print at all**, which makes the flag load-bearing rather
+  than documentation and turns the nine agent-authored "in accordance with <country> law" rows inert on
+  the day the migration lands, instead of leaving them asserting law under a reviewed-looking heading.
+- **The fallback is a `const`, not an overridable label.** English is the notice for a jurisdiction
+  *nobody has reviewed*, not a translation of a reviewed one. If a label set could translate it, the
+  Polish layout's Polish fallback would read exactly like a notice written for Poland — the one
+  confusion the design exists to prevent. So `InvoiceLabels.UnreviewedJurisdictionNotice` is a
+  `public const string` on the base type: **the type system, not a convention, stops the translation.**
+  A reviewed local-language notice is a config row; it is never a labels override.
+
+The corollary that decides the "country or reader's language?" question: **the notice follows the
+jurisdiction and is printed in the language it was reviewed in, while the *heading* follows the
+document.** A reader who cannot read the notice can still see what the box is; a reader handed a
+machine translation of it cannot see that its authority evaporated. (T-0506 knowingly accepts that the
+same document is emailed in a language the cleaner may not read — for this one block that is the
+correct trade, and the fix is a *second reviewed notice*, not a translation of the first.)
+
+**Watch for the duplicate this replaces.** The same sentence had also been added as a per-label-set
+`LatePaymentInterestNotice`, so seeding the jurisdiction's real notice would have printed it twice.
+When a legal string exists in both a label set and a config row, they are one thing wearing two hats —
+fold them, do not de-duplicate at render.
+
 ## Reading a blob back to a client — what T-0446 did, and an OPEN question for the architect
 
 **Descriptive, not prescriptive.** There are three live shapes for turning a stored blob name into a

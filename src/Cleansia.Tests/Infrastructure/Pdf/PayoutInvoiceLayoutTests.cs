@@ -1,3 +1,4 @@
+using System.Globalization;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Layouts;
 using Cleansia.Infra.Services.Pdf.Models;
@@ -104,50 +105,85 @@ public class PayoutInvoiceLayoutTests
         Assert.DoesNotContain(fields, f => f.Value == "Nejsme plátci DPH");
     }
 
-    // ── the statutory late-payment interest clause ───────────────────
+    // ── the legal notice: whose text, and in whose language ──────────
 
     [Fact]
-    public void Czech_Layout_Carries_The_Statutory_Late_Payment_Interest_Sentence()
+    public void A_Reviewed_Jurisdiction_Prints_Its_Own_Notice_Verbatim()
     {
-        Assert.Equal(
-            "Dovolujeme si Vás upozornit, že v případě nedodržení data splatnosti uvedeného na faktuře " +
-            "Vám můžeme účtovat zákonný úrok z prodlení.",
-            Czech.Labels.LatePaymentInterestNotice);
+        Assert.Equal(CzechReviewedNotice, Czech.LegalNoticeText(Data()));
     }
 
     [Fact]
-    public void Default_Layout_States_The_Same_Clause_In_English()
+    public void A_Jurisdiction_With_No_Reviewed_Notice_Falls_Back_Rather_Than_Printing_Nothing()
     {
-        var notice = Default.Labels.LatePaymentInterestNotice;
+        Assert.Equal(InvoiceLabels.UnreviewedJurisdictionNotice, Default.LegalNoticeText(Data() with { LegalDisclaimer = null }));
+    }
 
-        Assert.Contains("due date", notice);
-        Assert.Contains("statutory", notice);
-        Assert.NotEqual(Czech.Labels.LatePaymentInterestNotice, notice);
+    // The owner's rule: English functions everywhere as the notice for a jurisdiction nobody has
+    // reviewed. Translating it per layout would make "we never checked this country" read exactly like
+    // "a lawyer wrote this for your country", which is the one confusion the model exists to prevent.
+    [Fact]
+    public void The_Fallback_Is_The_Same_English_Sentence_On_Every_Layout()
+    {
+        var unreviewed = Data() with { LegalDisclaimer = null };
+
+        Assert.Equal(Default.LegalNoticeText(unreviewed), Czech.LegalNoticeText(unreviewed));
+        Assert.Contains("due date", Czech.LegalNoticeText(unreviewed)!);
+    }
+
+    // The heading still follows the document, so a Czech reader can tell what the box is even when its
+    // contents are the English fallback.
+    [Fact]
+    public void The_Notice_Heading_Follows_The_Documents_Language_Even_Where_The_Text_Does_Not()
+    {
+        Assert.Equal("Právní upozornění", Czech.Labels.LegalNotice);
+        Assert.Equal("Legal notice", Default.Labels.LegalNotice);
+    }
+
+    // Nothing can be overdue without a stated splatnost, and the fallback names one — so with no due
+    // date it is an unenforceable threat rather than a disclosure.
+    [Fact]
+    public void The_Fallback_Is_Omitted_When_The_Invoice_States_No_Due_Date()
+    {
+        Assert.Null(Czech.LegalNoticeText(Data() with { LegalDisclaimer = null, DueDate = null }));
     }
 
     [Fact]
-    public void Interest_Clause_Is_Shown_Whenever_The_Invoice_States_A_Due_Date()
+    public void A_Jurisdictions_Own_Notice_Is_Printed_As_Supplied_And_Not_Second_Guessed()
     {
-        Assert.Equal(Czech.Labels.LatePaymentInterestNotice, Czech.LatePaymentNotice(Data()));
-        Assert.Equal(Default.Labels.LatePaymentInterestNotice, Default.LatePaymentNotice(Data()));
+        Assert.Equal(CzechReviewedNotice, Czech.LegalNoticeText(Data() with { DueDate = null }));
     }
 
-    // Nothing can be overdue without a stated splatnost, and the sentence names one — so with no due
-    // date the clause is an unenforceable threat rather than a disclosure.
+    // ── the summary decomposes a gross total, it does not add to it ──
+
     [Fact]
-    public void Interest_Clause_Is_Omitted_When_The_Invoice_States_No_Due_Date()
+    public void Summary_Of_A_Non_Vat_Payer_Ends_At_The_Stored_Total_With_No_Vat_Line()
     {
-        Assert.Null(Czech.LatePaymentNotice(Data() with { DueDate = null }));
+        var lines = Czech.Summary(Data());
+
+        Assert.DoesNotContain(lines, l => l.Label == Czech.Labels.Vat);
+        Assert.DoesNotContain(lines, l => l.Label == Czech.Labels.VatBase);
+        Assert.Equal(("Celkem k úhradě", Czk(1000m), true), lines[^1]);
     }
 
-    // The clause is a fixed statutory notice; LegalDisclaimer is per-country free text an admin edits.
-    // Neither may stand in for the other.
     [Fact]
-    public void Interest_Clause_Does_Not_Depend_On_The_Country_Configured_Legal_Disclaimer()
+    public void Summary_Of_A_Vat_Payer_Shows_The_Base_And_The_Vat_Adding_Up_To_The_Unchanged_Total()
     {
-        Assert.NotNull(Czech.LatePaymentNotice(Data() with { LegalDisclaimer = null }));
-        Assert.NotEqual(Czech.Labels.LatePaymentInterestNotice, Data().LegalDisclaimer);
+        var data = Data() with
+        {
+            Supplier = Supplier() with { IsVatPayer = true, VatNumber = "CZ12345678" },
+            VatAmount = 173.55m
+        };
+
+        var lines = Czech.Summary(data);
+
+        Assert.Contains(lines, l => l.Label == Czech.Labels.VatBase && l.Value == Czk(826.45m));
+        Assert.Contains(lines, l => l.Label == Czech.Labels.Vat && l.Value == Czk(173.55m));
+        Assert.Equal(("Celkem k úhradě", Czk(1000m), true), lines[^1]);
     }
+
+    private static string Czk(decimal amount) =>
+        $"{amount.ToString("N2", CultureInfo.GetCultureInfo("cs-CZ"))} Kč";
 
     // ── end-to-end: the document actually renders ────────────────────
 
@@ -188,7 +224,7 @@ public class PayoutInvoiceLayoutTests
     [Fact]
     public void Invoice_Renders_For_A_Vat_Registered_Supplier_Too()
     {
-        var data = Data() with { Supplier = Supplier() with { IsVatPayer = true, VatNumber = "CZ12345678" }, VatAmount = 210m };
+        var data = Data() with { Supplier = Supplier() with { IsVatPayer = true, VatNumber = "CZ12345678" }, VatAmount = 173.55m };
 
         Assert.NotEmpty(PdfService().GenerateInvoicePdf(data, null, "CZ"));
     }
@@ -207,18 +243,24 @@ public class PayoutInvoiceLayoutTests
     }
 
     [Fact]
-    public void Country_Vat_Is_Applied_To_A_Supplier_Who_Is_Vat_Registered()
+    public void Country_Vat_Is_Carved_Out_Of_The_Total_For_A_Supplier_Who_Is_Vat_Registered()
     {
         var data = Data() with { Supplier = Supplier() with { IsVatPayer = true, VatNumber = "CZ12345678" } };
         var context = new CountryInvoiceContext { VatRequired = true, VatRate = 0.21m };
 
         var enriched = QuestPdfService.ApplyCountryLogic(data, context);
 
-        Assert.Equal(210m, enriched.VatAmount);
-        Assert.Equal(1210m, enriched.TotalAmount);
+        Assert.Equal(173.55m, enriched.VatAmount);
+        Assert.Equal(data.TotalAmount, enriched.TotalAmount);
     }
 
     // ── arrangement ──────────────────────────────────────────────────
+
+    // Verbatim from the owner's own Czech invoice, which is the whole reason it may be printed as CZ's
+    // jurisdiction notice at all. It is seeded, not hardcoded — this is only the fixture's copy.
+    private const string CzechReviewedNotice =
+        "Dovolujeme si Vás upozornit, že v případě nedodržení data splatnosti uvedeného na faktuře " +
+        "Vám můžeme účtovat zákonný úrok z prodlení.";
 
     private static LayoutBuilderFactory Factory() => new(
         [new DefaultReceiptLayoutBuilder()],
@@ -281,7 +323,7 @@ public class PayoutInvoiceLayoutTests
                 LineTotal = 400m
             }
         ],
-        LegalDisclaimer = "V případě prodlení s úhradou bude účtován zákonný úrok z prodlení.",
+        LegalDisclaimer = CzechReviewedNotice,
         Company = new CompanyInfoData
         {
             LegalName = "Cleansia s.r.o.",
@@ -309,7 +351,8 @@ public class PayoutInvoiceLayoutTests
         public IReadOnlyList<InvoiceField> Supplier(InvoicePdfData data) => SupplierFields(data);
         public IReadOnlyList<InvoiceField> Customer(InvoicePdfData data) => CustomerFields(data);
         public IReadOnlyList<InvoiceField> Payment(InvoicePdfData data) => PaymentFields(data);
-        public string? LatePaymentNotice(InvoicePdfData data) => LatePaymentInterestNotice(data);
+        public string? LegalNoticeText(InvoicePdfData data) => base.LegalNoticeText(data);
+        public IReadOnlyList<(string Label, string Value, bool IsBold)> Summary(InvoicePdfData data) => SummaryLines(data);
     }
 
     private sealed class CzechProbeLayout : CzechInvoiceLayoutBuilder
@@ -318,6 +361,7 @@ public class PayoutInvoiceLayoutTests
         public IReadOnlyList<InvoiceField> Supplier(InvoicePdfData data) => SupplierFields(data);
         public IReadOnlyList<InvoiceField> Customer(InvoicePdfData data) => CustomerFields(data);
         public IReadOnlyList<InvoiceField> Payment(InvoicePdfData data) => PaymentFields(data);
-        public string? LatePaymentNotice(InvoicePdfData data) => LatePaymentInterestNotice(data);
+        public string? LegalNoticeText(InvoicePdfData data) => base.LegalNoticeText(data);
+        public IReadOnlyList<(string Label, string Value, bool IsBold)> Summary(InvoicePdfData data) => SummaryLines(data);
     }
 }

@@ -1845,6 +1845,13 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("LegalDisclaimerLanguageCode")
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)");
+
+                    b.Property<int>("LegalDisclaimerReviewStatus")
+                        .HasColumnType("integer");
+
                     b.Property<string>("LegalDisclaimerTemplate")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");

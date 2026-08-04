@@ -8176,6 +8176,10 @@
           "lastServedOn": {
             "type": "string",
             "format": "date-time"
+          },
+          "isAvailableForRequestedSlot": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false

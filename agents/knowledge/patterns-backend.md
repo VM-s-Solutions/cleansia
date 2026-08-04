@@ -558,6 +558,28 @@ Two things that are **not** open — one a security invariant, one a durability/
      `*Key*`, `*Password*`, values shaped `sk_`/`ek_`/`seti_`/`pi_`) over the same wire walk — a
      follow-up ticket, not done here. **Adding a credential-shaped field to a DTO today is caught by
      nothing; add the token by hand.**
+- **What a reader RECEIVES is pinned on the read token, never on the upload** *(T-0464)*. Nothing on the
+  write path sets `BlobHttpHeaders`: `IBlobContainerClient.UploadAsync` routes its `Metadata` into
+  `SetMetadataAsync`, i.e. `x-ms-meta-*`, which the storage service never serves from. Five constants
+  named `MetadataName.ContentType`/`.CacheControl`/… advertised otherwise and are **deleted** — three
+  pipelines computed a correct content type and handed it to a sink that discards it, so every stored
+  blob is `application/octet-stream` and browsers have been sniffing it for years. Set it instead on
+  `GenerateSasUri(blobName, expiry, ServedContentType)` → `rsct`/`rscc`, which **fixes blobs already
+  written** (the override is a property of the token, not the blob) and needs no backfill.
+  Two rules on that seam, and the second is the one with teeth:
+  - **`Cache-Control` is `private, max-age=3600`, set on the mint and taking no parameter.** These blobs
+    are reachable only by signature, so a shared cache holding one outlives the token that authorised it.
+    `Metadata.CacheMetadata` hardcoded `"public, max-age=31536000"` and the **avatar used it** — inert
+    only because of the decoy, so the obvious "wire the constants up" fix activates
+    `Cache-Control: public` on a private image. A call site cannot forget what it never passes.
+  - **The served type is a closed value type (`ServedContentType`), never a string.** Every recorded
+    content type is ultimately something a client said — `SaveOrderPhotos` reads it straight off the
+    caller's `data:` URI with no allowlist — so promoting a stored string onto a served header is
+    **stored XSS on a storage host shared by every tenant**. `image/svg+xml` is excluded alongside
+    `text/html` (SVG is XML that runs `<script>` with the serving origin); unknown input resolves to
+    `Opaque` rather than throwing, so a malformed record loses a capability instead of a photo. Note the
+    inversion worth remembering: **the bug was preventing the vulnerability, and the natural fix
+    introduces it.**
 - **Mint a new blob name on every upload** *(cache correctness, not S1–S10)* — `UpdateCurrentUser`,
   `SaveOrderPhotos`, `UploadOrderPhoto` and `UploadDisputeEvidence` all do. That keeps the name
   content-addressed, which is what lets a client cache the image on the name; reuse makes a replaced

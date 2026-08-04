@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Cleansia.Config.Abstractions;
@@ -57,7 +58,8 @@ internal static class RequestLoggingHarness
         string path,
         string responseJson,
         string? requestJson = null,
-        string method = "GET")
+        string method = "GET",
+        string? authenticatedUserId = null)
     {
         var factory = new CapturingLoggerFactory();
         var loggerType = typeof(Logger<>).MakeGenericType(middlewareType);
@@ -73,6 +75,12 @@ internal static class RequestLoggingHarness
         var middleware = Activator.CreateInstance(middlewareType, next, logger)!;
 
         var context = new DefaultHttpContext();
+        if (authenticatedUserId is not null)
+        {
+            context.User = new ClaimsPrincipal(
+                new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, authenticatedUserId)], "test"));
+        }
+
         context.Request.Method = method;
         context.Request.Path = path;
         context.Request.Body = requestJson is null

@@ -122,4 +122,77 @@ field set, because a sweep of one column is cheaper than a sweep of five.
   and the coverage guard.
 - 2026-08-04 — **stays `ready`, size unchanged (`S`).** The re-aim is a scope correction, not new work.
 
+- 2026-08-04 — **swept (backend). Most of it was already satisfied — and the one leg that was not is the
+  biggest single PII surface on the platform.**
+
+  **AC1 — request/response logs, CHECKED. One real hole, now closed.**
+  `IsSensitivePath` covered `/updatebankdetails`, `/getmypayoutdetails`, `payout-details`
+  (which catches both the masked read and `/reveal`) and `/gdpr` on all five hosts. But the admin export
+  is routed `/api/v{version}/AdminGdpr/export/{userId}`, and `pathValue.Contains("/gdpr")` **never
+  matched it** — there is no slash before "gdpr" inside "AdminGdpr". Identical shape to the `/auth/`
+  vs `/api/AdminAuth/…` miss T-0446 found. That route returns another user's entire `GdprExportDto`:
+  profile PII, `GdprExportEmployeeDto.IBAN`, and the full `GdprExportPayoutDetailsDto`
+  (account number, prefix, bank code, IBAN, SWIFT, holder name). Verified by simulation before the fix:
+
+  ```
+  /api/v1/Gdpr/export             -> ['/gdpr']
+  /api/v1/AdminGdpr/export/user-1 -> []
+  ```
+
+  Fixed by matching the **trailing** slash — `pathValue.Contains("gdpr/")` — which covers both routes and
+  any future `*Gdpr` controller, on all five hosts.
+
+  **The interaction with T-0457 is the part worth flagging.** T-0457 adds contact-identity redaction,
+  which frees window in the export body. Had the two landed separately, redacting the profile block on an
+  **unsuppressed** admin export would have pulled the payout block *further into* the 500-byte window.
+  They were done together for that reason.
+
+  **A second finding the guard produced:** Cleansia's own `CompanyInfoDetailDto.{Iban,BankAccountNumber,
+  Swift}` and the create/update commands behind them. Not a cleaner's payout destination and not
+  confidential (it prints on every customer receipt), but suppressed anyway via `/admincompany/` — the
+  alternative was an exception entry reading "this bank account is fine to log", which is the sentence
+  that gets copied onto the next one.
+
+  **AC2 — cross-noted** on T-0457 (implemented jointly; the `gdpr/` fix is recorded in both) and on
+  T-0470 (see its status log: the payout family is now covered by a derived guard, so it is out of that
+  ticket's residue).
+
+  **AC3 — nothing to rule on. Confirmed closed at HEAD:** `Features/Employees/DTOs/EmployeeListItem.cs`
+  and `UpdateEmployee.Command` carry no `Iban` (grep clean). The admin paged-list exposure the ticket was
+  written around no longer exists.
+
+  **AC4 — GDPR export confirmed correct.** `GdprExportService:43-53` reads the real
+  `EmployeePayoutDetails` row through `IEmployeePayoutDetailsRepository.GetByEmployeeIdAsync` and exports
+  every column including `LastRevealedAt`/`RevealCount`. It is a subject-access right, not a leak; the
+  route is now suppressed on **both** the self and admin paths.
+
+  **AC5 — the audit guard is generalised, plus an inventory of the other sinks.**
+  `EmployeeUserAuditCoverageTests:301` asserted one IBAN against the handlers somebody thought to drive.
+  New `src/Cleansia.Tests/Features/Auditing/AuditSnapshotSensitiveMemberGuardTests.cs` walks the whole
+  `*Snapshot` family (13 types) and fails on any payout identifier or contact-identity member —
+  `AuditContext.RecordChange` takes `object` and serializes it whole, so the discipline has to live on the
+  types. The rest of the inventory, all **runs**:
+  - **Logs** — `grep -rn "Iban\|AccountNumber\|HolderName\|Swift" | grep -i "log\|_logger\|Exception("`
+    returns nothing. `UpdateBankDetails`' duplicate-destination warning logs `{EmployeeId}` only.
+  - **Audit rows** — `AuditEntryFactory` never serializes the request; `BeforeJson`/`AfterJson` come only
+    from a handler's `RecordChange`. `RevealEmployeePayoutDetails` pushes an ids-only `RevealSnapshot`;
+    `UpdateBankDetails` pushes nothing. `AuditResourceResolver` reads `*Id` string properties only.
+  - **Outbox / queue / email** — no message type in `Cleansia.Core.Queue.Abstractions` or
+    `Cleansia.Functions` mentions a payout field.
+  - **Validation echo** — `ValidationPipelineBehavior` maps to `new Error(ErrorCode, ErrorMessage)` and
+    every payout rule uses a `BusinessErrorMessage` dot-key. `grep -rn "PropertyValue"` (FluentValidation's
+    value placeholder) returns **nothing** repo-wide, so no failure path echoes the value back.
+  - **Documents** — the payout invoice PDF prints it, which is ADR-0034's intended consumer.
+
+  **What replaces the hand-written route list.** `RequestLogPayoutPathSuppressionTests` gained
+  `EveryRouteCarryingAPayoutIdentifier_IsSuppressedOnEveryHost`, derived from the wire surface: a new
+  route returning a payout identifier joins the rule by existing. That is what found the AdminGdpr hole;
+  the `[InlineData]` list — written when payout shipped — could not have, and it is kept only for
+  legibility. ADR-0034 D6's plaintext trade holds only while the value stays out of every other sink, and
+  a log is a sink with different retention, different access control, and — once `Q-OBS-01` ships Sentry
+  log context — a different company.
+
+  **AC8 — `Cleansia.Tests` 3017/3017, `Cleansia.IntegrationTests` 132/132, `Cleansia.HostTests` 120/120**,
+  all local. Not an empty diff after all.
+
 ## Review

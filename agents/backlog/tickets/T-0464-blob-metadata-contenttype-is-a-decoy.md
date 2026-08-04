@@ -174,5 +174,93 @@ avoidable.
   security condition already on record from the T-0446 gate. That is the single most likely way this
   ticket ships a regression.
 
+- 2026-08-04 — **implemented (backend), Option B — and the ticket's framing understates the finding in
+  one direction and overstates it in another. Both matter.**
+
+  **What is stored / what is served / what a browser does — established before touching anything.**
+  Stored: `client.UploadAsync(content, ct)` with no `BlobHttpHeaders`, so Azure records
+  `application/octet-stream`; the computed type goes to `x-ms-meta-ContentType`, which is never served
+  from. Served: `application/octet-stream` on every order photo, dispute-evidence file and avatar.
+  Browser: `application/octet-stream` is **not** in the MIME-sniffing standard's sniffable set, so a
+  navigation downloads rather than parses — while `<img>` sniffs regardless, which is why DEV photos
+  render. The four `File(bytes, ContentType, fileName)` download endpoints set
+  `Content-Disposition: attachment`, so they do not render either.
+
+  **So: NOT stored XSS today — and the reason is the bug.** `application/octet-stream` is what has been
+  preventing it.
+
+  **The severity is in the fix, not in the defect.** `SaveOrderPhotos.DetermineContentType` reads the
+  content type **straight off the client's own `data:` URI prefix**, with no allowlist anywhere on that
+  path (its siblings `UploadOrderPhoto` and `UploadDisputeEvidence` both have one), and stores it on the
+  row. Promoting that stored string onto a served `Content-Type` — which is exactly what AC2/AC3 ask for
+  — hands the attacker the header: `data:image/svg+xml` or `data:text/html` served from a storage host
+  shared by every tenant **is** stored XSS. The naive version of this ticket ships the vulnerability the
+  ticket exists to tidy up.
+
+  **Therefore the served type is a closed value type, not a validated string.** New
+  `Cleansia.Core.Blobs.Abstractions/ServedContentType.cs`: private constructor, no implicit conversion,
+  two factories (`ForRecordedType`, `ForFileName`), a six-entry servable map, and **`Opaque` for
+  everything else** — so an unrecognised record loses a capability rather than a photo. `image/svg+xml`
+  is excluded deliberately and beside `text/html`: SVG is XML that runs `<script>` with the serving
+  origin, so an "images are safe" allowlist that includes it is the same vulnerability with extra steps.
+  `SaveOrderPhotos` also canonicalizes on the way in, so the DB column stops accumulating attacker MIME
+  — defence in depth, not the control.
+
+  **AC2 — the five constants are DELETED**, not renamed and not commented (the next developer reads the
+  name). `Metadata` keeps its doc-comment saying plainly that it is `x-ms-meta-*` and affects nothing
+  about how a blob is served, pointing at the SAS overload instead. `Metadata.CacheMetadata` is gone with
+  them, which is what disarms the trap.
+
+  **AC5 — the trap.** `Cache-Control` is set **on the mint and takes no parameter**:
+  `"private, max-age=3600"` for every SAS from every call site, including the avatar's (which uses the
+  opaque overload). A call site cannot forget what it never passes, and `"public, max-age=31536000"` no
+  longer exists anywhere. Order photos and dispute evidence get the same policy for the same reason —
+  they are behind SAS too, and the 1-year `public` string was written for a world where they were assumed
+  public.
+
+  **AC4 — blast radius.** `ProfilePhotoSasGrantScopeTests` passes **unmodified** (verified). The override
+  is added to the shared `BlobSasBuilder` **before** the credential branch, so it applies to the
+  managed-identity path as well without that dead branch being edited — stated explicitly per the
+  implementation note. `SasResponseHeaderOverrideTests.TheGrantIsStillReadOnOneBlob` re-asserts `sr=b` /
+  `sp=r` on the container the override was added for, so "we added response headers" and "we widened the
+  grant" cannot be confused.
+
+  **The seam signature.** Kept the 2-arg overload (so AC4's test compiles unchanged) and added the 3-arg
+  one. Unlike the defaulted-parameter case in `patterns-backend.md`, forgetting the new overload degrades
+  to `application/octet-stream` — the behaviour that shipped for years — so the omission **fails closed**.
+
 ## Review
 <!-- reviewer + security verdicts here; AC6 must name the mutation-proving test -->
+
+**AC1 — executed fetch, including a blob stored BEFORE the change.** Real Azurite
+(`mcr.microsoft.com/azure-storage/azurite`, blob endpoint on :10009). Blob written the old way, no
+`BlobHttpHeaders`, then fetched three ways through the production client:
+
+```
+UNSIGNED  : 403 content-type=application/xml            (container is private — so `public` caching would be wrong)
+OPAQUE SAS: 200 content-type=application/octet-stream cache-control=max-age=3600, private
+TYPED  SAS: 200 content-type=image/jpeg               cache-control=max-age=3600, private
+```
+
+Same already-stored blob, two tokens: that is the property distinguishing B from A, demonstrated rather
+than asserted, and it is why no backfill is needed. The probe was a throwaway; the committed pin is on
+the token (below), which needs no storage account.
+
+**AC6 — the mutation-proving test, named.**
+`SasResponseHeaderOverrideTests.MintedToken_PinsTheServedContentType`. Removing
+`ContentType = servedAs.Value` from `BlobContainerClient.GenerateSasUri` turns that suite **red 3 of 7**
+(also `ChangingTheServedType_ChangesTheSignature` and `OpaqueOverload_StillSaysPrivate`). Restored
+byte-exact, sha256 verified. `ServedContentTypeTests` (26 cases) pins the closed set itself, including
+`text/html`/`image/svg+xml`/`application/javascript` → opaque, and that no public constructor or
+conversion lets a caller name its own type. `SaveOrderPhotosContentTypeTests` pins the write side.
+
+**AC7 — `dotnet build` clean; `Cleansia.Tests` 3017/3017, `Cleansia.IntegrationTests` 132/132,
+`Cleansia.HostTests` 120/120.** All three ran locally; nothing deferred.
+
+**Left for someone else, deliberately:** the **avatar has no recorded content type and no extension**
+(the blob name is a bare GUID), so it takes the opaque overload — it gets AC5's `private` cache but not a
+typed `Content-Type`. Recording one needs a column, i.e. a migration, which this ticket is not allowed to
+add. It renders today by `<img>` sniffing exactly as before, so this is a gap in AC1's coverage rather
+than a regression. Worth a follow-up ticket. Also noted: `MetadataExtensions.CreateDocumentMetadata`
+still writes a literal `"ContentType"` custom-metadata key — harmless and genuinely custom, but the same
+confusion in miniature.

@@ -121,10 +121,7 @@ public class SaveOrderPhotos
                 var blobName = $"{DateTime.UtcNow.Year}/{command.OrderId}/{uniqueFileName}";
 
                 using var stream = new MemoryStream(Convert.FromBase64String(base64Data));
-                var metadata = Metadata.CreateBuilder()
-                    .WithMetadata(MetadataName.ContentType, contentType)
-                    .Build();
-                await blobClient.UploadAsync(blobName, stream, metadata, cancellationToken);
+                await blobClient.UploadAsync(blobName, stream, cancellationToken: cancellationToken);
 
                 var blobUrl = blobClient.GetBlobUri(blobName).ToString();
 
@@ -151,23 +148,26 @@ public class SaveOrderPhotos
             return BusinessResult.Success(new Response(Photos: savedPhotos));
         }
 
+        /// <summary>
+        /// The client's own <c>data:</c> URI prefix is a hint, never the answer: it is an arbitrary
+        /// caller string, and this value is stored on the row and later pinned onto the served
+        /// <c>Content-Type</c>. Resolving it through <see cref="ServedContentType"/> means the worst a
+        /// caller can achieve is the opaque default, so a <c>data:image/svg+xml</c> or
+        /// <c>data:text/html</c> upload cannot put its own type on a header.
+        /// </summary>
         private static string DetermineContentType(string fileName, string? base64Content)
         {
             if (!string.IsNullOrEmpty(base64Content) && base64Content.StartsWith("data:"))
             {
-                var contentType = base64Content.Split(';')[0].Replace("data:", "");
-                if (!string.IsNullOrEmpty(contentType))
-                    return contentType;
+                var declared = ServedContentType.ForRecordedType(base64Content.Split(';')[0].Replace("data:", ""));
+                if (declared != ServedContentType.Opaque)
+                {
+                    return declared.Value;
+                }
             }
 
-            var extension = Path.GetExtension(fileName).ToLowerInvariant();
-            return extension switch
-            {
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png" => "image/png",
-                ".webp" => "image/webp",
-                _ => "image/jpeg"
-            };
+            var byExtension = ServedContentType.ForFileName(fileName);
+            return byExtension == ServedContentType.Opaque ? "image/jpeg" : byExtension.Value;
         }
     }
 }

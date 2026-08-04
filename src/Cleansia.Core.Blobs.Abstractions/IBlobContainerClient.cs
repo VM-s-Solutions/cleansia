@@ -19,12 +19,27 @@ public interface IBlobContainerClient
     Uri GetBlobUri(string blobName);
 
     /// <summary>
-    /// Generate a SAS URI for the given blob with read-only access
+    /// Generate a SAS URI for the given blob with read-only access, served opaquely
+    /// (<c>application/octet-stream</c>).
     /// </summary>
     /// <param name="blobName">Name of blob</param>
     /// <param name="expiry">How long the SAS token should be valid</param>
     /// <returns>A URI with a SAS token appended</returns>
     Uri GenerateSasUri(string blobName, TimeSpan expiry);
+
+    /// <summary>
+    /// Generate a read-only SAS URI that also pins the <c>Content-Type</c> the storage service returns.
+    ///
+    /// <para>Nothing sets real blob HTTP headers on the write path, so every stored blob is
+    /// <c>application/octet-stream</c> regardless of what the uploader computed. Overriding on the READ
+    /// token fixes the blobs already written as well as the next one, with no backfill.</para>
+    ///
+    /// <para>The parameter is a <see cref="ServedContentType"/> and not a string on purpose: the value
+    /// that would otherwise flow here is a client-supplied MIME string, and putting one on a served
+    /// header is stored XSS. Forgetting this overload degrades to the opaque overload — the behaviour
+    /// that shipped for years — so the omission fails closed.</para>
+    /// </summary>
+    Uri GenerateSasUri(string blobName, TimeSpan expiry, ServedContentType servedAs);
 
     /// <summary>
     /// Copy contents blob to another blob

@@ -98,10 +98,7 @@ public class UploadDisputeEvidence
 
             var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.DisputeEvidence);
             using var stream = new MemoryStream(command.FileData);
-            var metadata = Metadata.CreateBuilder()
-                .WithMetadata(MetadataName.ContentType, command.ContentType)
-                .Build();
-            await blobClient.UploadAsync(blobName, stream, metadata, cancellationToken);
+            await blobClient.UploadAsync(blobName, stream, cancellationToken: cancellationToken);
 
             dispute.AddEvidence(command.FileName, blobName, userId);
 
@@ -113,7 +110,12 @@ public class UploadDisputeEvidence
             string? blobUrl = null;
             try
             {
-                blobUrl = blobClient.GenerateSasUri(blobName, TimeSpan.FromHours(1)).ToString();
+                blobUrl = blobClient
+                    .GenerateSasUri(
+                        blobName,
+                        TimeSpan.FromHours(1),
+                        ServedContentType.ForRecordedType(command.ContentType))
+                    .ToString();
             }
             catch (Exception ex)
             {

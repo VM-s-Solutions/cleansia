@@ -174,5 +174,32 @@ value here, not a hypothetical.
   the token list. This ticket buys the **next** one, which is exactly the argument that put T-0439 and
   T-0454 behind the waves they guard.
 
+- 2026-08-04 — **cross-note from T-0457 + T-0509. Three things changed under this ticket; none of them
+  close it, and one of them makes it cheaper.**
+  1. **The archetype moved and grew.** The wire walk this ticket was told to copy —
+     `RoutesWithTheirWireTypes()` / `FlattenedMembers()` / `UnwrapCollection()` / `IsAppServicesDto()` /
+     `HostAssemblies()` / `ReadRedactionTokens()` — is now extracted into
+     `src/Cleansia.Tests/Logging/WireSurface.cs` and shared by three guards. **Do not fork it; call it.**
+     Two sibling guards to mirror for structure and exception discipline:
+     `RequestLogPiiSurfaceGuardTests` (name-shaped, one exception entry) and
+     `RequestLogPayoutPathSuppressionTests.EveryRouteCarryingAPayoutIdentifier_IsSuppressedOnEveryHost`
+     (route-shaped, zero exceptions).
+  2. **`ReadRedactionTokens()` no longer means "the token list".** There are now TWO regexes on each host
+     — `SensitiveFieldRegex` (credentials/payloads, literal names, unbounded values) and
+     `ContactIdentityFieldRegex` (PII, shaped). `ReadRedactionTokens()` returns only the first;
+     `WireSurface.IsRedacted(name)` answers "would the middleware redact this?" across both, and treats a
+     token as a **regex fragment** rather than a literal, since the PII family is shaped. **This ticket
+     wants `IsRedacted`, not `ReadRedactionTokens`** — comparing by equality would report a shaped-covered
+     member as unprotected.
+  3. **AC4's honest mutation still works exactly as written** (`ephemeralKey` is still a literal token in
+     `SensitiveFieldRegex`), and the five middleware copies are still byte-identical from
+     `RedactSensitiveFields` down — verified by sha256 during T-0457.
+
+  **The residue is unchanged and is still real.** T-0509 swept the payout family, so `Iban` /
+  `AccountNumber` / `HolderName` / `Swift` are covered by a *derived route guard* rather than by a name
+  list — they are no longer an example of this ticket's gap. **A credential whose field name was never in
+  the token list is still caught by nothing.** T-0457's PII guard does not overlap it: that one detects
+  members whose name says what they hold, and the whole point here is a name that does not.
+
 ## Review
 <!-- reviewer + security verdicts here; AC4 must name the mutation-proving test -->

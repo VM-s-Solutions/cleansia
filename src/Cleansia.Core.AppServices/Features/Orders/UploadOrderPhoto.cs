@@ -98,10 +98,7 @@ public class UploadOrderPhoto
 
             var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos);
             using var stream = new MemoryStream(command.FileData);
-            var metadata = Metadata.CreateBuilder()
-                .WithMetadata(MetadataName.ContentType, command.ContentType)
-                .Build();
-            await blobClient.UploadAsync(blobName, stream, metadata, cancellationToken);
+            await blobClient.UploadAsync(blobName, stream, cancellationToken: cancellationToken);
 
             var blobUrl = blobClient.GetBlobUri(blobName).ToString();
 

@@ -68,7 +68,7 @@ public class GetOrderPhotos
             var photoDtos = photos.Select(p => new OrderPhotoDto(
                 Id: p.Id,
                 PhotoType: p.PhotoType,
-                BlobUrl: GenerateSasUrl(blobClient, p.BlobUrl),
+                BlobUrl: GenerateSasUrl(blobClient, p.BlobUrl, ServedContentType.ForRecordedType(p.ContentType)),
                 FileName: p.FileName,
                 OriginalFileName: p.OriginalFileName,
                 FileSizeBytes: p.FileSizeBytes,
@@ -101,7 +101,7 @@ public class GetOrderPhotos
                 AfterPhotoCount: afterCount));
         }
 
-        private static string GenerateSasUrl(IBlobContainerClient blobClient, string blobUrl)
+        private static string GenerateSasUrl(IBlobContainerClient blobClient, string blobUrl, ServedContentType servedAs)
         {
             // We need to recover the blob name (the path WITHIN the
             // container) from the stored absolute URL so we can hand
@@ -123,7 +123,7 @@ public class GetOrderPhotos
             var blobName = containerIndex >= 0 && containerIndex + 1 < pathSegments.Length
                 ? string.Join("/", pathSegments.Skip(containerIndex + 1))
                 : string.Join("/", pathSegments.Skip(1)); // legacy fallback
-            return blobClient.GenerateSasUri(blobName, TimeSpan.FromHours(1)).ToString();
+            return blobClient.GenerateSasUri(blobName, TimeSpan.FromHours(1), servedAs).ToString();
         }
     }
 }

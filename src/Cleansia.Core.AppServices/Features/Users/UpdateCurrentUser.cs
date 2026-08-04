@@ -183,7 +183,7 @@ public class UpdateCurrentUser
         private static async Task UploadPhotoAsync(IBlobContainerClient client, string fileName, string base64Content, CancellationToken cancellationToken)
         {
             await using var stream = new MemoryStream(Convert.FromBase64String(base64Content.ExtractBase64Data()));
-            await client.UploadAsync(fileName, stream, Metadata.CacheMetadata, cancellationToken);
+            await client.UploadAsync(fileName, stream, cancellationToken: cancellationToken);
         }
 
         private static void UpdateUserAndOrders(User user, IReadOnlyList<Order> userOrders, Command command)

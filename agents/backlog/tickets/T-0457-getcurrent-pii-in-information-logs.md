@@ -149,5 +149,74 @@ posed as AC1 and belongs to the implementer + reviewer, not to a panel.
      `ReviewNotes` crosses out of the pre-change window, so "pre-existing" was a typical-case claim,
      not a universal one.
 
+- 2026-08-04 — **implemented (backend). AC1 answered (b)+, with the reasoning below; the headline is that
+  the premise of "one endpoint" is wrong by two orders of magnitude.**
+
+  **The mechanism, established first.** Not a structured log call and not a serialized DTO: it is
+  `RequestLoggingMiddleware.SafeBody`, one copy per host, which slices every request and response body
+  into Information. It is generic over every route, so **every endpoint returning PII has the same
+  exposure** and fixing one route is theatre. Measured, not asserted: a wire-DTO walk over the five hosts
+  found **152 PII-shaped members on 80+ routes** — the caller's profile, every admin user/employee list
+  and detail, every order's customer contact block, the referral lists, the whole subject-access export.
+  `GET /api/User/GetCurrent` is 5 of those 152.
+
+  **AC1 — option (b), field-name redaction, but SHAPED rather than enumerated.** New
+  `ContactIdentityFieldRegex` on all five hosts: `[A-Za-z]*email | [A-Za-z]*phone[A-Za-z]* |
+  [A-Za-z]*firstName | [A-Za-z]*lastName | fullName | birthDate`. Quote-anchored on both sides, so a
+  name must match whole — which catches `customerEmail`/`actorEmail`/`recipientEmail` while leaving
+  `emailTemplateId` (an id) alone, and is why `*email` takes no suffix while `*phone*` does. Path
+  suppression was rejected as the primary tool for the reason the ticket names: it is a denylist the next
+  endpoint misses — demonstrated twice here, `/auth/` missing `/api/AdminAuth/…` (T-0446's find) and
+  `/gdpr` missing `/api/v1/AdminGdpr/export/{userId}` (found here, see T-0509).
+
+  **What makes it fail closed** — the part the AC did not ask for and the fix is worthless without.
+  `src/Cleansia.Tests/Logging/RequestLogPiiSurfaceGuardTests.cs` walks every wire DTO reachable from a
+  controller action on the five hosts, reads the token list **out of the live compiled regex** (so guard
+  and middleware cannot drift), and fails naming the DTO, member and routes when a PII-shaped member is
+  neither redacted, nor on a route suppressed on all five hosts, nor on a reasoned exception list. That
+  list has **one** entry (`EmailTemplateId`, an id).
+
+  **A second regex, not a wider one.** Merging contact identity into `SensitiveFieldRegex` made
+  `RedactionUnmaskedFreeTextGuardTests` flag essentially every string member of every DTO. The model
+  there is "a token collapse frees window", which is true of an unbounded value (base64/SAS/JWT) and
+  false of a bounded one — redacting a short name *lengthens* the body. Two named regexes keep that
+  guard's calibration honest; `RedactSensitiveFields` runs both passes.
+
+  **Inherited debt: all seven `AcceptedPreExisting` entries deleted, and the list is now empty.**
+  `CreateAdminUser.Command.{FirstName,LastName,PhoneNumber}` are redacted by the new pass;
+  `GetMyDocuments.{MyDocumentDto,Response}.{Description,ReviewNotes}` are free text no denylist reaches,
+  so `/getmydocuments` joined `IsSensitivePath` beside the `/savemydocuments` write side that was already
+  there.
+
+  **Also suppressed while in the method (both found by the guards, not by hand):** `gdpr/` replacing
+  `/gdpr` (see T-0509) and `/admincompany/` (Cleansia's own account number/IBAN/BIC — not confidential,
+  it prints on every receipt, but suppressed rather than excepted, because the alternative is a guard
+  entry reading "this bank account is fine to log").
+
+  **Out-of-scope sightings, for the PM to file:** the free-text surface a name-shaped heuristic cannot
+  reach (`Notes`, `Description`, `Reason`, `ApprovalNotes`, `MissingFields`, `LegalEntityName`, address
+  lines) is untouched by this ticket and is only covered where a route is suppressed. That is the
+  `/audit` sweep the ticket anticipated.
+
 ## Review
 <!-- reviewer + security verdicts here; AC3 must name the assertion that flips -->
+
+**AC3 — the assertion that flips, and it was run both ways.**
+`RequestLogProfilePiiRedactionTests.ProfileResponse_ContactIdentity_NeverReachesTheLog`, the
+`Assert.DoesNotContain(value, message)` inside `Assert.All`. Fixtures are real `MyProfileDto`s built
+through the production mapper with a real SAS, at three name lengths (short / typical Czech / long
+Ukrainian), 700–1000 bytes; each case asserts non-vacuity first (body exceeds the 500-byte window AND
+the last PII value closes inside it) so truncation cannot be what removes the values.
+
+- **Before the fix** (run first, red): `Failed: 10, Passed: 5`, message
+  `String: ···"5 | Body: {"email":"jk@x.cz","firstName":"··· Found: "jk@x.cz"` — on all five hosts.
+- **After the fix**: green.
+- **Mutation-proven after the fact** by deleting the `ContactIdentityFieldRegex().Replace(...)` line from
+  `RedactSensitiveFields` on all five hosts: `Failed: 10, Passed: 111` in the Logging suite, identical
+  message. Restored **byte-exact**, sha256 verified on all five files.
+
+**AC4** — `ProfileResponse_StillCarriesTheCallerUserId` asserts `User: {userId}` is still in the message
+(the harness gained an optional authenticated-principal parameter for this).
+
+**AC5** — `Cleansia.Tests` **3017 passed / 0 failed** (baseline 2945). `Cleansia.IntegrationTests`
+**132/132**, `Cleansia.HostTests` **120/120**, both run locally. `dotnet build` clean.

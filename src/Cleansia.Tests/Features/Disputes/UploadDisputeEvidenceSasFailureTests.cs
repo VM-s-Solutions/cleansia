@@ -50,7 +50,8 @@ public class UploadDisputeEvidenceSasFailureTests
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _blobClient
-            .Setup(c => c.GenerateSasUri(It.IsAny<string>(), It.IsAny<TimeSpan>()))
+            .Setup(c => c.GenerateSasUri(
+                It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<ServedContentType>()))
             .Throws(new InvalidOperationException("SAS unavailable"));
 
         return new UploadDisputeEvidence.Handler(

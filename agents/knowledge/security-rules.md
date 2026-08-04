@@ -139,6 +139,36 @@ No email, phone, name, address, payment/Stripe detail, JWT, refresh token, or co
 logs at Information level or higher. Log `userId`, not `user.Email`. `LogDebug` is acceptable for
 PII during local investigation only.
 
+**The dominant sink is not a `logger.Log*` call — it is `RequestLoggingMiddleware.SafeBody`**, which
+slices request and response bodies into Information on all five hosts. It is generic over every route,
+so **an S6 leak is almost never one endpoint**: when T-0457 was filed against `GET /api/User/GetCurrent`
+("the largest S6 exposure in the codebase"), the mechanical sweep found **152 PII-shaped members across
+80+ routes**, of which that route was five. Adding a path to `IsSensitivePath` fixes the URL you looked
+at and leaves the class open — which is exactly how `/auth/` missed `/api/AdminAuth/…` and then
+`/gdpr` missed `/api/v1/AdminGdpr/export/{userId}` (a whole subject-access dump, payout block included).
+
+Three tools, and picking the wrong one is the usual mistake:
+
+| The value | Tool |
+|---|---|
+| A named field whose name says what it holds (`*email`, `*phone*`, `*firstName`, `birthDate`) | `ContactIdentityFieldRegex` — matched by **shape**, not enumerated, so the next `contactEmail` is covered without anyone remembering |
+| A named credential (`clientSecret`, `ephemeralKey`, `blobUrl`) | `SensitiveFieldRegex` — literal names; **values are unbounded**, so collapsing one frees window and can unmask what follows |
+| Free text no name can reach (`Notes`, `Description`, `ReviewNotes`, `HolderName`) | `IsSensitivePath` — wholesale route suppression |
+
+Keep the two regexes **separate**. They redact identically but they do not free window identically, and
+merging them makes `RedactionUnmaskedFreeTextGuardTests` report every string member of every DTO as
+unmasked — a guard that has stopped saying anything.
+
+**What makes a denylist admissible at all is the guard, not the list.** `RequestLogPiiSurfaceGuardTests`
+and `RequestLogPayoutPathSuppressionTests` walk every wire DTO reachable from a controller action on the
+five hosts (shared walk: `WireSurface`), read the token list **out of the live compiled regex** so the two
+cannot drift, and redden CI naming the DTO, the member and the routes. A new PII- or payout-shaped member
+that is neither redacted, nor on a suppressed route, nor excepted **in writing** fails the build. A
+redaction list without that is the same defect class as a comment asserting an invariant.
+
+**Still open, and nothing detects it:** a *credential* whose field name was never in the token list
+(T-0470). The PII half is closed; do not read this table as covering it.
+
 ## S7 — Idempotency on side-effecting commands
 
 Any command that creates a Stripe charge/subscription, sends an email, grants loyalty points,

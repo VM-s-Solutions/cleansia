@@ -9362,6 +9362,7 @@ export class GetMyServingCleanersResponse implements IGetMyServingCleanersRespon
     employeeId!: string | undefined;
     fullName!: string | undefined;
     lastServedOn!: Date;
+    isAvailableForRequestedSlot!: boolean | undefined;
 
     constructor(data?: IGetMyServingCleanersResponse) {
         if (data) {
@@ -9377,6 +9378,7 @@ export class GetMyServingCleanersResponse implements IGetMyServingCleanersRespon
             this.employeeId = Data["employeeId"];
             this.fullName = Data["fullName"];
             this.lastServedOn = Data["lastServedOn"] ? new Date(Data["lastServedOn"].toString()) : undefined as any;
+            this.isAvailableForRequestedSlot = Data["isAvailableForRequestedSlot"];
         }
     }
 
@@ -9392,6 +9394,7 @@ export class GetMyServingCleanersResponse implements IGetMyServingCleanersRespon
         data["employeeId"] = this.employeeId;
         data["fullName"] = this.fullName;
         data["lastServedOn"] = this.lastServedOn ? this.lastServedOn.toISOString() : undefined as any;
+        data["isAvailableForRequestedSlot"] = this.isAvailableForRequestedSlot;
         return data;
     }
 }
@@ -9400,6 +9403,7 @@ export interface IGetMyServingCleanersResponse {
     employeeId: string | undefined;
     fullName: string | undefined;
     lastServedOn: Date;
+    isAvailableForRequestedSlot: boolean | undefined;
 }
 
 export class GetOrderPhotosOrderPhotoDto implements IGetOrderPhotosOrderPhotoDto {

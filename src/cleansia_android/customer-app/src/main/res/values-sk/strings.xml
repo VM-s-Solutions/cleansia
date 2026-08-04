@@ -304,11 +304,18 @@
     <!-- Order cancel -->
     <string name="order_action_cancel">Zrušiť objednávku</string>
     <string name="order_cancel_title">Zrušiť toto upratovanie?</string>
-    <string name="order_cancel_fee_free">Zrušenie zdarma — získate plnú náhradu.</string>
-    <string name="order_cancel_fee_oops">Zrušenie zdarma — objednávku ste vytvorili pred menej než 15 minútami.</string>
-    <string name="order_cancel_fee_50">Poplatok za zrušenie 50 %%. Odhadovaná náhrada: %1$s.</string>
-    <string name="order_cancel_fee_100">Poplatok za zrušenie 100 %%. Tak blízko k upratovaniu už náhrada nie je možná.</string>
-    <string name="order_cancel_fee_estimate_note">Odhad — konečná suma sa potvrdí po odoslaní.</string>
+    <string name="order_cancel_fee_not_accepted">Zrušenie zdarma — túto rezerváciu zatiaľ neprevzal žiadny upratovač.</string>
+    <string name="order_cancel_fee_oops">Zrušenie zdarma — objednali ste pred malou chvíľou.</string>
+    <string name="order_cancel_fee_outside_window">Zrušenie zdarma — rušíte s dostatočným predstihom.</string>
+    <string name="order_cancel_fee_partial">Na tejto zákazke už pracuje upratovač, takže je zrušenie spoplatnené.</string>
+    <string name="order_cancel_fee_last_minute">Toto je zrušenie na poslednú chvíľu, poplatok je preto vyšší.</string>
+    <string name="order_cancel_fee_none">Žiadny poplatok za zrušenie.</string>
+    <string name="order_cancel_fee_split">Poplatok za zrušenie %1$s — vrátime vám %2$s.</string>
+    <string name="order_cancel_fee_checking">Zisťujeme, koľko stojí zrušenie tejto rezervácie…</string>
+    <string name="order_cancel_fee_unavailable">Poplatok za zrušenie sa teraz nepodarilo zistiť. Zrušiť môžete aj tak — sumu potvrdíme pri zrušení.</string>
+    <string name="order_cancel_fee_retry">Skúsiť znova</string>
+    <string name="order_cancel_fee_recheck_note">Toto je cena v tejto chvíli — pri potvrdení ju overíme znova.</string>
+    <string name="order_cancel_express_waiver_forfeit">Zrušením tiež vyčerpáte jednu z expresných objednávok zahrnutých vo vašom členstve na tento mesiac.</string>
     <string name="order_cancel_fee_neutral">Naozaj chcete túto rezerváciu zrušiť?</string>
     <string name="order_cancel_reason_label">Dôvod (nepovinný)</string>
     <string name="order_cancel_reason_placeholder">Povedzte nám, čo sa zmenilo…</string>

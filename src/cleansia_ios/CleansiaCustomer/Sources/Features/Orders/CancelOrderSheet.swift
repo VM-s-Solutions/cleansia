@@ -1,5 +1,4 @@
 import CleansiaCore
-import CleansiaCustomerApi
 import SwiftUI
 
 private enum CancelReasonOption: CaseIterable {
@@ -33,11 +32,30 @@ private enum CancelReasonOption: CaseIterable {
     }
 }
 
+/// Whether the destructive button is live. Hoisted out of the sheet because it is one `.disabled(...)`
+/// argument no check can see: it holds both halves of a rule that pull opposite ways — a customer must
+/// not commit to a cancellation before the card has said what it costs, and a fee-preview outage must
+/// never be able to strand them on a booking they want gone.
+enum CancelOrderConfirmGate {
+    static func canConfirm(
+        hasReason: Bool,
+        needsNotes: Bool,
+        notes: String,
+        quoteIsLoading: Bool,
+        isSubmitting: Bool
+    ) -> Bool {
+        guard hasReason, !quoteIsLoading, !isSubmitting else { return false }
+        return !needsNotes || notes.trimmingCharacters(in: .whitespaces).count >= 3
+    }
+}
+
 struct CancelOrderSheet: View {
-    let order: OrderItem
+    let quote: UiState<CancellationQuote>
+    let currencyCode: String?
     let isSubmitting: Bool
     let errorMessage: String?
     let onReasonChanged: () -> Void
+    let onRetryQuote: () -> Void
     let onConfirm: (String?) -> Void
     let onDismiss: () -> Void
 
@@ -47,8 +65,13 @@ struct CancelOrderSheet: View {
     private let maxReasonLength = 2000
 
     private var canSubmit: Bool {
-        guard let selectedReason else { return false }
-        return selectedReason != .other || notes.trimmingCharacters(in: .whitespaces).count >= 3
+        CancelOrderConfirmGate.canConfirm(
+            hasReason: selectedReason != nil,
+            needsNotes: selectedReason == .other,
+            notes: notes,
+            quoteIsLoading: quote.isLoading,
+            isSubmitting: isSubmitting
+        )
     }
 
     var body: some View {
@@ -58,7 +81,11 @@ struct CancelOrderSheet: View {
                     .font(CleansiaTypography.headlineSmall)
                     .foregroundColor(CleansiaColors.onSurface)
 
-                FeePreviewCard(order: order)
+                CancellationFeeCard(
+                    model: CancellationFeeCardModel(quote),
+                    currencyCode: currencyCode,
+                    onRetry: onRetryQuote
+                )
 
                 Text(L10n.OrderCancel.reasonPickerLabel)
                     .font(CleansiaTypography.titleMedium)
@@ -97,10 +124,10 @@ struct CancelOrderSheet: View {
                     }
                     .frame(maxWidth: .infinity, minHeight: 48)
                     .foregroundColor(CleansiaColors.onError)
-                    .background(CleansiaColors.error.opacity(canSubmit && !isSubmitting ? 1 : 0.4))
+                    .background(CleansiaColors.error.opacity(canSubmit ? 1 : 0.4))
                     .clipShape(Capsule())
                 }
-                .disabled(!canSubmit || isSubmitting)
+                .disabled(!canSubmit)
             }
             .padding(Spacing.l)
         }
@@ -111,7 +138,7 @@ struct CancelOrderSheet: View {
     }
 
     private func submit() {
-        guard canSubmit, !isSubmitting, let selectedReason else { return }
+        guard canSubmit, let selectedReason else { return }
         var payload = selectedReason.code
         let trimmed = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty { payload += ": \(trimmed)" }
@@ -212,78 +239,4 @@ private struct NotesField: View {
                 }
         }
     }
-}
-
-private struct FeePreviewCard: View {
-    let order: OrderItem
-
-    private var tier: CancellationFeeTier {
-        CancellationFeePreview.tier(
-            cleaningAt: order.cleaningDateTime,
-            createdAt: order.createdOn,
-            totalPrice: order.totalPrice ?? 0,
-            now: Date()
-        )
-    }
-
-    private var presentation: FeePresentation {
-        switch tier {
-        case .oops:
-            FeePresentation(color: CleansiaColors.primary, symbol: "checkmark.circle", title: L10n.OrderCancel.feeOops)
-        case .free:
-            FeePresentation(color: CleansiaColors.primary, symbol: "checkmark.circle", title: L10n.OrderCancel.feeFree)
-        case let .half(refund):
-            FeePresentation(
-                color: CleansiaColors.warningStar,
-                symbol: "exclamationmark.triangle",
-                title: halfFeeTitle(refund: refund)
-            )
-        case .full:
-            FeePresentation(
-                color: CleansiaColors.error,
-                symbol: "exclamationmark.triangle",
-                title: L10n.OrderCancel.fee100
-            )
-        case .neutral:
-            FeePresentation(
-                color: CleansiaColors.onSurfaceVariant,
-                symbol: "exclamationmark.triangle",
-                title: L10n.OrderCancel.feeNeutral
-            )
-        }
-    }
-
-    private func halfFeeTitle(refund: Double) -> String {
-        L10n.OrderCancel.fee50(OrdersFormat.price(refund, currencyCode: order.currency?.code))
-    }
-
-    var body: some View {
-        HStack(alignment: .top, spacing: Spacing.s) {
-            Image(systemName: presentation.symbol)
-                .font(.system(size: 20))
-                .foregroundColor(presentation.color)
-            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                Text(presentation.title)
-                    .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.onSurface)
-                Text(L10n.OrderCancel.feeEstimateNote)
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-            }
-            Spacer()
-        }
-        .padding(Spacing.s)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(presentation.color.opacity(0.10), in: RoundedRectangle(cornerRadius: CornerRadius.medium))
-        .overlay(
-            RoundedRectangle(cornerRadius: CornerRadius.medium)
-                .stroke(presentation.color.opacity(0.35), lineWidth: 1)
-        )
-    }
-}
-
-private struct FeePresentation {
-    let color: Color
-    let symbol: String
-    let title: String
 }

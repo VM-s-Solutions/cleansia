@@ -9,6 +9,7 @@ import cz.cleansia.customer.api.model.ConfirmRecurringOrderCommand as GenConfirm
 import cz.cleansia.customer.api.model.ConfirmRecurringOrderResponse as GenConfirmRecurringOrderResponse
 import cz.cleansia.customer.api.model.CurrencyDetailDto as GenCurrencyDetailDto
 import cz.cleansia.customer.api.model.CurrencyListItem as GenCurrencyListItem
+import cz.cleansia.customer.api.model.GetCancellationFeePreviewResponse as GenGetCancellationFeePreviewResponse
 import cz.cleansia.customer.api.model.GetMyServingCleanersResponse as GenGetMyServingCleanersResponse
 import cz.cleansia.customer.api.model.GetOrderPhotosOrderPhotoDto as GenOrderPhotoDto
 import cz.cleansia.customer.api.model.GetOrderPhotosResponse as GenGetOrderPhotosResponse
@@ -39,6 +40,7 @@ import retrofit2.Response
  *  - `GET  /api/Order/GetMyOrders`     → paged wrapper `PagedData<OrderListItem>`
  *  - `GET  /api/Order/GetById?OrderId=…` → `OrderItem`
  *  - `POST /api/Order/Cancel`          → `CancelOrder.Response`
+ *  - `GET  /api/Order/CancellationPreview?OrderId=…` → `GetCancellationFeePreview.Response`
  *  - `POST /api/Order/ConfirmRecurring` → `ConfirmRecurringOrder.Response`
  *  - `POST /api/Order/SubmitReview`    → `OrderReviewDto`
  *  - `GET  /api/Order/DownloadReceipt?OrderId=…` → raw PDF bytes (streamed)
@@ -62,6 +64,11 @@ class OrderApi(
         val raw = orderApi.orderCancelOrder(
             cancelOrderCommand = GenCancelOrderCommand(orderId = body.orderId, reason = body.reason),
         )
+        return raw.mapBody { it?.toAppDto() }
+    }
+
+    suspend fun getCancellationPreview(id: String): Response<CancellationFeePreviewDto> {
+        val raw = orderApi.orderCancellationPreview(orderId = id)
         return raw.mapBody { it?.toAppDto() }
     }
 
@@ -309,6 +316,25 @@ private fun GenCancelOrderResponse.toAppDto(): CancelOrderResponse = CancelOrder
     totalPrice = totalPrice ?: 0.0,
     refundInitiated = refundInitiated ?: false,
 )
+
+/**
+ * Null when the tier is absent — every other field on the generated response is
+ * nullable too, so a defaulted tier would quote whatever ordinal 0 happens to
+ * mean (a free cancellation) on the strength of a field the server never sent.
+ */
+private fun GenGetCancellationFeePreviewResponse.toAppDto(): CancellationFeePreviewDto? {
+    val tierValue = tier?.`value` ?: return null
+    return CancellationFeePreviewDto(
+        orderId = orderId,
+        tier = tierValue,
+        feeRate = feeRate ?: 0.0,
+        feeAmount = feeAmount ?: 0.0,
+        refundAmount = refundAmount ?: 0.0,
+        totalPrice = totalPrice ?: 0.0,
+        currencyCode = currencyCode,
+        expressWaiverForfeitedOnCancel = expressWaiverForfeitedOnCancel ?: false,
+    )
+}
 
 private fun GenConfirmRecurringOrderResponse.toAppDto(): ConfirmRecurringOrderResponse = ConfirmRecurringOrderResponse(
     orderId = orderId,

@@ -12,6 +12,25 @@ enum class OrderStatus { New, Pending, Confirmed, OnTheWay, InProgress, Complete
 
 enum class PaymentStatus { Pending, Paid, Failed, Refunded, Disputed }
 
+/**
+ * Mirrors backend `CancellationFeeTier` integer values:
+ *   FreeNotAccepted=0, FreeOopsWindow=1, FreeOutsideWindow=2, Partial=3, LastMinute=4.
+ *
+ * Why the fee is what it is, decided server-side. Two of the arms cost nothing
+ * and still read differently to a customer: nobody has taken the job yet versus
+ * you are cancelling in good time.
+ */
+enum class CancellationFeeTier { FreeNotAccepted, FreeOopsWindow, FreeOutsideWindow, Partial, LastMinute }
+
+fun cancellationFeeTierFromValue(value: Int?): CancellationFeeTier? = when (value) {
+    0 -> CancellationFeeTier.FreeNotAccepted
+    1 -> CancellationFeeTier.FreeOopsWindow
+    2 -> CancellationFeeTier.FreeOutsideWindow
+    3 -> CancellationFeeTier.Partial
+    4 -> CancellationFeeTier.LastMinute
+    else -> null
+}
+
 fun orderStatusFromValue(value: Int?): OrderStatus? = when (value) {
     0 -> OrderStatus.New
     1 -> OrderStatus.Pending

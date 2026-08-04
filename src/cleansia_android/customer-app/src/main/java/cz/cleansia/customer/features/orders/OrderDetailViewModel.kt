@@ -10,6 +10,7 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.customer.core.notifications.OrderEventBus
 import cz.cleansia.customer.core.orders.CancelOrderResponse
+import cz.cleansia.customer.core.orders.CancellationFeePreviewDto
 import cz.cleansia.customer.core.orders.ConfirmRecurringOrderResponse
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.core.orders.OrderPhotosResponse
@@ -62,6 +63,18 @@ sealed interface PhotosUiState {
     data object Loading : PhotosUiState
     data class Loaded(val response: OrderPhotosResponse) : PhotosUiState
     data object Error : PhotosUiState
+}
+
+/**
+ * The server's answer to "what does cancelling cost right now", fetched each
+ * time the cancel sheet opens. There is deliberately no Idle case: the sheet
+ * asks on open, so anything before an answer is a spinner, and there is no
+ * client-side estimate to fall back to.
+ */
+sealed interface CancellationPreviewUiState {
+    data object Loading : CancellationPreviewUiState
+    data object Error : CancellationPreviewUiState
+    data class Loaded(val preview: CancellationFeePreviewDto) : CancellationPreviewUiState
 }
 
 /**
@@ -118,6 +131,38 @@ class OrderDetailViewModel @Inject constructor(
      */
     private val _cancelResult = MutableSharedFlow<CancelOrderResponse>(extraBufferCapacity = 1)
     val cancelResult: SharedFlow<CancelOrderResponse> = _cancelResult.asSharedFlow()
+
+    private val _cancellationPreview =
+        MutableStateFlow<CancellationPreviewUiState>(CancellationPreviewUiState.Loading)
+    val cancellationPreview: StateFlow<CancellationPreviewUiState> = _cancellationPreview.asStateFlow()
+
+    private var cancellationPreviewJob: Job? = null
+
+    /**
+     * Ask what cancelling costs. Called every time the sheet opens: the answer
+     * is computed against the server clock at that instant, so a quote from an
+     * earlier open can have crossed a tier boundary while the sheet sat closed.
+     *
+     * The in-flight fetch is cancelled rather than raced, so a slow first answer
+     * can never overwrite a fresher one. Failure is deliberately silent on the
+     * snackbar — the fee card is already saying it, and the cancel button stays
+     * live either way.
+     */
+    fun loadCancellationPreview() {
+        val id = orderId
+        if (id.isNullOrBlank()) {
+            _cancellationPreview.value = CancellationPreviewUiState.Error
+            return
+        }
+        cancellationPreviewJob?.cancel()
+        _cancellationPreview.value = CancellationPreviewUiState.Loading
+        cancellationPreviewJob = viewModelScope.launch {
+            val preview = orderRepository.getCancellationPreview(id).getOrNull()
+            _cancellationPreview.value = preview
+                ?.let { CancellationPreviewUiState.Loaded(it) }
+                ?: CancellationPreviewUiState.Error
+        }
+    }
 
     /** Wave 4 — collapsed `_submittingReview: Boolean` + `_reviewError: String?` into [ActionState]. */
     private val _reviewState = MutableStateFlow<ActionState>(ActionState.Idle)

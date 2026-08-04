@@ -29,6 +29,9 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
         .success(RecurringConfirmation(clientSecret: nil, stripeCustomerId: nil, ephemeralKey: nil))
     private(set) var confirmRecurringCallCount = 0
 
+    var cancellationQuoteResults: [ApiResult<CancellationQuote>] = []
+    private(set) var cancellationQuoteCallCount = 0
+
     func getMyOrders(offset: Int, limit: Int) async -> ApiResult<OrdersPage> {
         pageRequests.append((offset, limit))
         if let pageError { return .failure(pageError) }
@@ -72,6 +75,13 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
         confirmRecurringCallCount += 1
         return confirmRecurringResult
     }
+
+    func cancellationQuote(orderId _: String) async -> ApiResult<CancellationQuote> {
+        defer { cancellationQuoteCallCount += 1 }
+        let index = min(cancellationQuoteCallCount, cancellationQuoteResults.count - 1)
+        guard index >= 0 else { return .failure(ApiError(httpStatus: 500)) }
+        return cancellationQuoteResults[index]
+    }
 }
 
 enum OrderFixtures {
@@ -86,6 +96,21 @@ enum OrderFixtures {
         OrderItem(
             id: id,
             orderStatus: Code(type: "OrderStatus", name: nil, value: statusValue)
+        )
+    }
+
+    static func quote(
+        tier: CancellationTier,
+        fee: Double = 0,
+        refund: Double = 1000,
+        forfeitsExpressWaiver: Bool = false
+    ) -> CancellationQuote {
+        CancellationQuote(
+            tier: tier,
+            feeAmount: fee,
+            refundAmount: refund,
+            currencyCode: "CZK",
+            forfeitsExpressWaiver: forfeitsExpressWaiver
         )
     }
 

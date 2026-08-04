@@ -312,11 +312,33 @@ data class ConfirmRecurringOrderResponse(
 @Serializable
 data class CancelOrderResponse(
     val orderId: String? = null,
-    /** 0.0 / 0.5 / 1.0 per BookingPolicy's cancellation tiers. */
     val feeRate: Double = 0.0,
     val refundAmount: Double = 0.0,
     val totalPrice: Double = 0.0,
     val refundInitiated: Boolean = false,
+)
+
+/**
+ * Mirrors backend `GetCancellationFeePreview.Response` — what cancelling this
+ * order would cost, asked before the customer commits.
+ *
+ * [tier] is the wire ordinal of `CancellationFeeTier` and is the only thing
+ * that decides what the sheet says; `null` means the server sent a tier this
+ * build has no copy for, which the sheet renders as "we could not check"
+ * rather than as any particular outcome. The two facts behind the number — the
+ * caller's own free-cancellation window and whether a cleaner has been pulled
+ * onto the job — exist only server-side.
+ */
+@Serializable
+data class CancellationFeePreviewDto(
+    val orderId: String? = null,
+    val tier: Int? = null,
+    val feeRate: Double = 0.0,
+    val feeAmount: Double = 0.0,
+    val refundAmount: Double = 0.0,
+    val totalPrice: Double = 0.0,
+    val currencyCode: String? = null,
+    val expressWaiverForfeitedOnCancel: Boolean = false,
 )
 
 /**

@@ -307,11 +307,19 @@
     <!-- Order cancel (Wave 2 Phase 2) -->
     <string name="order_action_cancel">Cancel order</string>
     <string name="order_cancel_title">Cancel this cleaning?</string>
-    <string name="order_cancel_fee_free">Free cancellation — you\'ll get a full refund.</string>
-    <string name="order_cancel_fee_oops">Free cancellation — you booked less than 15 minutes ago.</string>
-    <string name="order_cancel_fee_50">50%% cancellation fee. Estimated refund: %1$s.</string>
-    <string name="order_cancel_fee_100">100%% cancellation fee. No refund is available this close to the cleaning.</string>
-    <string name="order_cancel_fee_estimate_note">Estimated — final amount confirmed after you submit.</string>
+    <!-- Fee card. One sentence per server tier; the money comes from the server too. -->
+    <string name="order_cancel_fee_not_accepted">Free cancellation — no cleaner has taken this booking yet.</string>
+    <string name="order_cancel_fee_oops">Free cancellation — you booked this only moments ago.</string>
+    <string name="order_cancel_fee_outside_window">Free cancellation — you\'re cancelling far enough ahead.</string>
+    <string name="order_cancel_fee_partial">A cleaner is already on this job, so cancelling now has a fee.</string>
+    <string name="order_cancel_fee_last_minute">This is a last-minute cancellation, so the fee is higher.</string>
+    <string name="order_cancel_fee_none">No cancellation fee.</string>
+    <string name="order_cancel_fee_split">Cancellation fee %1$s — you\'ll be refunded %2$s.</string>
+    <string name="order_cancel_fee_checking">Checking what cancelling this booking costs…</string>
+    <string name="order_cancel_fee_unavailable">We couldn\'t check the cancellation fee just now. You can still cancel — the amount is confirmed when you do.</string>
+    <string name="order_cancel_fee_retry">Try again</string>
+    <string name="order_cancel_fee_recheck_note">This is the cost right now — we check again the moment you confirm.</string>
+    <string name="order_cancel_express_waiver_forfeit">Cancelling also uses up one of your included express bookings for this month.</string>
     <string name="order_cancel_fee_neutral">Are you sure you want to cancel this booking?</string>
     <!-- Legacy free-text label (kept for backward-compat — no longer rendered). -->
     <string name="order_cancel_reason_label">Reason (optional)</string>

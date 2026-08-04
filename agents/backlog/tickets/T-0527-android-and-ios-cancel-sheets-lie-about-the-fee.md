@@ -106,6 +106,15 @@ than no test*, and a developer who hits it blind will "fix" the test rather than
 
 ## Out of scope
 
+> **[CORRECTED 2026-08-04 — the express-waiver line below is STALE, and both platforms
+> deliberately went past it.]** This section deferred `ExpressWaiverForfeitedOnCancel` to the Plus
+> lane. That was right when written and is wrong now: the field is on **T-0526's locked contract**,
+> which shipped, and ADR-0035 AM-13 rules the warning is *required* — cancelling burns one of a
+> member's included express bookings for the month and nothing else tells them. Shipping without it
+> would have meant a second pass over the same ten locale files. Both agents flagged the deviation
+> rather than taking it silently, and it is ratified here. **Do not read it as a scope break.**
+
+
 - **The web.** The customer web app has no cancel action (`guest-order-detail.component.ts`: *"no actions
   (no cancel, no review…)"*), and its wizard's static policy block
   (`order-wizard.component.html:564-581`, `wizard-summary-step.component.html:240-264` →
@@ -137,6 +146,14 @@ iOS `CancelOrderSheet.swift`, `Localizable.xcstrings`, `OrderStatusLogicTests.sw
 renders state; test-first (viewmodel test → screen).
 
 ## Status log
+- 2026-08-04 — **ANDROID HALF IMPLEMENTED, test-first** (`src/cleansia_android/customer-app` only; iOS untouched — parallel lane).
+  Red→green→mutation recorded in `## Review`. Customer suite **447 tests / 0 failed** (51 classes, from the 412 baseline —
+  +35: 5 new classes ×32 plus 3 in `OrderRepositoryTest`), read from the JUnit XML under
+  `customer-app/build/test-results/testDebugUnitTest/`. AC1–AC7 + AC9 + AC11 met; **AC2/AC8 are the iOS agent's**;
+  **AC10 (parity QA) is open** — the surface the iOS port must reproduce is written out below.
+  Scope taken beyond the ticket: **`expressWaiverForfeitedOnCancel` IS surfaced** (ADR-0035 AM-13), which this ticket's
+  "Out of scope" list deferred to the Plus lane. It is on the T-0526 contract already, the sheet is the only place the ADR says
+  it may be disclosed, and shipping the sheet without it would need a second pass over the same five locale files.
 - 2026-08-02 — draft (created by pm from the challenger round; the iOS half added by the PM after checking
   parity — the challenge named Android only. Web checked and deliberately excluded.)
 - 2026-08-04 — **PM sprint-15 reconciliation — not started; the premise is unchanged and the harm is
@@ -155,4 +172,119 @@ renders state; test-first (viewmodel test → screen).
   weakened to accommodate one.
 
 ## Review
+
+### Android — what shipped
+
+**The ladder is gone.** `CancelOrderSheet.kt`'s `FeePreviewBlock` no longer takes an `OrderDetailDto`, no longer reads a clock
+(`Clock`/`Instant`/`parseInstantOrNull` deleted) and holds no threshold or rate. It takes a
+`CancellationPreviewUiState` and renders it. There is **no fallback ladder** — a fallback that disagrees is the bug.
+
+**The chain, server → pixel:**
+- `OrderApi.getCancellationPreview(id)` wraps the generated `orderCancellationPreview(orderId=)`. The mapper returns **null when
+  `tier` is absent** rather than defaulting: every generated field is nullable, and ordinal 0 is `FreeNotAccepted`, so a `?: 0`
+  would quote a free cancellation off a field the server never sent.
+- `CancellationFeeTier` is registered in `IntEnumSerializers.kt` — the generated enum carries `@SerialName("3")` string names, so
+  without the `IntValueEnumSerializer` entry the whole response fails to decode at runtime (the MembershipStatus class of bug).
+- `OrderRepository.getCancellationPreview` → `ApiResult<CancellationFeePreviewDto>` (E5), no cache: a quote is only true for the
+  instant it was computed.
+- `OrderDetailViewModel.cancellationPreview: StateFlow<CancellationPreviewUiState>` (sealed Loading/Error/Loaded, E1) +
+  `loadCancellationPreview()`, which **cancels the in-flight job and resets to Loading** so a slow first answer can never overwrite
+  a fresher one. The screen calls it from a `LaunchedEffect` inside the `if (showCancelSheet)` block — i.e. **every open**.
+- `cancellationFeeCallout(preview)` (pure, `features/orders/CancellationFeeCallout.kt`) maps **tier → title + amount line + args +
+  severity**. It reads no `feeRate` and no clock; a tier it does not know returns `null`.
+
+**Decisions the ticket asked me to make and record:**
+- **While loading** the sheet OPENS (the reason picker is usable) and the fee card is a spinner + *"Checking what cancelling this
+  booking costs…"*. **Confirm is disabled** until the quote resolves. Refusing to open the sheet was the alternative; opening it
+  lets the customer do the slow part (picking a reason) while the round-trip runs.
+- **On failure** the card degrades to the existing neutral copy plus *"We couldn't check the cancellation fee just now. You can
+  still cancel — the amount is confirmed when you do."* with a **Try again** link, and **confirm is re-enabled** (AC9). The gate is
+  the pure `cancelConfirmEnabled(...)` so "a preview outage never blocks a cancellation" is a test, not a comment.
+- **No snackbar for a failed preview.** The card is already saying it over the sheet; a snackbar would say it twice. This is a
+  deliberate, commented exception to the VM-surfaces-errors rule (E3) and is pinned by a test.
+- **AC7 — the estimate note is replaced, not kept and not dropped.** `order_cancel_fee_estimate_note` (*"Estimated — final amount
+  confirmed after you submit"*) is deleted; the card carries `order_cancel_fee_recheck_note` = *"This is the cost right now — we
+  check again the moment you confirm."* **The reason is real and is clock drift across a tier boundary**: the quote is computed at
+  the server's `DateTime.UtcNow`, and a customer who sits on the sheet can cross the 4h line before `CancelOrder` recomputes. The
+  new wording says *when* it can change instead of implying the number is a guess.
+- **AC4/AC5 — the copy states money, not rates.** `order_cancel_fee_50` / `_100` / `_free` / `_estimate_note` are **deleted in all
+  five locales**. The charged tiers render `order_cancel_fee_split` = *"Cancellation fee %1$s — you'll be refunded %2$s"* from the
+  server's `feeAmount`/`refundAmount`, so the *"No refund is available"* claim is gone and no percentage survives anywhere.
+  `order_cancel_fee_oops` also lost its *"less than 15 minutes"* — the oops window is a server constant too.
+- **AC6 — a Plus member's own window.** Nothing client-side decides this any more: `FreeOutsideWindow` at 6h before the cleaning
+  renders *"Free cancellation — you're cancelling far enough ahead."* because the server said `tier=2`. This is now impossible to
+  get wrong locally, which is the point.
+- **AC11 — the false doc comment is gone.** `CancelOrderSheet.kt:74-79` now states where the number comes from and why the client
+  cannot compute it. The stale *"0.0 / 0.5 / 1.0 per BookingPolicy's cancellation tiers"* comment on `CancelOrderResponse.feeRate`
+  (same defect family, same file lane) was deleted rather than corrected — the rate is the server's, and a comment enumerating it
+  is what rotted last time.
+- **`expressWaiverForfeitedOnCancel` (ADR-0035 AM-13)** renders as an amber info row under the fee card, on **every** tier
+  including the free ones — which is the whole reason the field exists. Copy: *"Cancelling also uses up one of your included
+  express bookings for this month."* — **no number**, matching the register of the existing
+  `error_membership_express_waiver_no_longer_available`; the quota is per-plan configurable and a literal "two" would be a promise
+  the plan can break. A test asserts the string carries no digit in any locale.
+
+### Tests (all new unless noted)
+
+| Suite | Covers |
+|---|---|
+| `CancellationFeeCalloutTest` (8) | every tier → its own sentence; free tiers carry no money; charged tiers carry `[feeAmount, refundAmount]` **in that order**; a `feeRate` that CONTRADICTS the tier does not move the copy; unknown/absent tier → `null`; the express warning rides every tier |
+| `CancelConfirmGateTest` (6) | AC9 — a failed preview still lets the customer cancel; only a quote in flight holds the button; the pre-existing reason/"Other" rules (previously untested) |
+| `OrderDetailCancelPreviewTest` (7) | Loading→Loaded/Error; fetch only on ask; **reopen re-asks and returns to Loading first**; failed preview does not snackbar; failed preview does not block `cancel()`; missing nav arg never calls the server |
+| `OrderApiTest` (4) | the adapter's generated→app mapping incl. `expressWaiverForfeitedOnCancel`; the `OrderId` query param; **tier-less response → null body**; every generated tier ordinal survives |
+| `CancelSheetStringsTest` (7) | all 12 keys × 5 locales present, non-blank, not English; the four retired keys gone from all five; **no `%%` in any `order_cancel_fee*` value**; the split line's `%1$s`/`%2$s` order; the express warning has no digits; the sheet still renders the warning (call-site pin) |
+| `OrderRepositoryTest` (+3, existing file) | success / HTTP-error-without-snackbar / unmappable body → `Error` |
+
+### Mutation proof (each applied, run, reverted)
+
+| Mutation | Result |
+|---|---|
+| Swap the Partial and LastMinute titles | `CancellationFeeCalloutTest > every tier gets its own sentence` **FAILED** |
+| Re-derive the tier from `feeRate` (the original defect's shape) | **2 FAILED** incl. `rate disagreeing with the tier does not move the copy` |
+| Delete the `expressWaiverForfeitedOnCancel = …` mapper line | `OrderApiTest > the preview carries every field the sheet renders` **FAILED** |
+| Drop the `= Loading` reset in `loadCancellationPreview()` | `OrderDetailCancelPreviewTest > reopening the sheet re-asks…` **FAILED** |
+| Gate confirm on `is Loaded` instead of `!is Loading` (block on outage) | `CancelConfirmGateTest > a failed preview still lets the customer cancel` **FAILED** |
+| Re-add `order_cancel_fee_50` with `50%%` | `CancelSheetStringsTest` **2 FAILED** (retired-key + no-rate) |
+| Remove the express-waiver row from the sheet | `CancelSheetStringsTest > the sheet actually renders the express-waiver warning` **FAILED** |
+
+Reverted, full suite green: **447 / 0 failed**.
+
+### Parity surface for the iOS port (AC10)
+
+| Concern | Android behaviour to reproduce 1:1 |
+|---|---|
+| Fetch | `GET /api/Order/CancellationPreview?OrderId=` on **every sheet open**; previous in-flight call cancelled, state reset to Loading |
+| State | sealed Loading / Error / Loaded — **no Idle**, no cached quote, no client estimate |
+| Tier → copy | 0 `FreeNotAccepted` · 1 `FreeOopsWindow` · 2 `FreeOutsideWindow` → free sentence + *"No cancellation fee."*; 3 `Partial` · 4 `LastMinute` → own sentence + *"Cancellation fee {feeAmount} — you'll be refunded {refundAmount}"* |
+| Severity | Free → primary/check glyph · Partial → amber/warning · LastMinute → error/warning |
+| Unknown tier | render the unavailable card — never a default |
+| Loading | sheet opens, card is a spinner + "Checking…", **confirm disabled** |
+| Failure | neutral title + "couldn't check" subtitle + Try again, **confirm ENABLED** |
+| Express waiver | flag true → warning row on every tier, number-free copy |
+| Note | "cost right now, re-checked on confirm" caption on the loaded card only |
+| Untouched | the reason chips, the 2000-char cap, the submit/dismiss/effect wiring |
+
+Android string keys the iOS `.xcstrings` should mirror (remember `%1$s` → `%1$@`): `order_cancel_fee_not_accepted`,
+`_oops`, `_outside_window`, `_partial`, `_last_minute`, `_none`, `_split`, `_checking`, `_unavailable`, `_retry`,
+`_recheck_note`, `order_cancel_express_waiver_forfeit`. Retired: `order_cancel_fee_free`, `_50`, `_100`, `_estimate_note`.
+
+### Harvested back into the catalog
+
+`agents/knowledge/patterns-mobile.md` gains **"A price the SERVER charges is never estimated on the client (T-0527)"** in the
+Strings & states section (preview endpoint + tier discriminator + pure resolver + no fallback; unknown discriminator ≠ default
+ordinal; re-ask per open; an outage never blocks the action it prices; rates/windows in copy are the ladder smuggled into
+`strings.xml`). The stale iOS-port line that described the deleted client ladder as the way (§customer Home/Orders/OrderDetail)
+is corrected in the same change. Additive — redefines nothing, so no architect call.
+
+### Notes for the reviewer / open
+
+- **The customer app has no `androidTest` source set**, so the composable itself is unverified by machine — QA owns AC1's
+  screenshot and AC10. The two decisions that would be invisible to a unit test (the render of the express warning, the confirm
+  gate) are pinned by a call-site source assertion and by hoisting the gate into a pure function respectively.
+- **`isFirstTimeCustomer` is still hardcoded `false` server-side** (T-0526's note), so the oops window is 15 min for everyone.
+  The Android copy no longer names a number, so that stays a server-only concern if it is ever derived for real.
+- `:customer-app:spotlessCheck` is **red at HEAD** on files this ticket does not touch (`ui/components/MascotAnimation.kt`,
+  `build.gradle.kts`). Not run as a CI gate (`android-ci.yml` runs compile + `testDebugUnitTest`); left alone rather than
+  `spotlessApply`-ing another lane's files.
+
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

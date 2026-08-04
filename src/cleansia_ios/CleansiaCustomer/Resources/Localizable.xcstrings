@@ -17011,142 +17011,107 @@
         }
       }
     },
-    "order_cancel_fee_50" : {
-      "extractionState" : "stale",
+    "order_cancel_express_waiver_forfeit" : {
+      "extractionState" : "manual",
       "localizations" : {
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Poplatek za zrušení 50 %%. Odhadovaná náhrada: %@."
+            "value" : "Zrušením také vyčerpáte jednu z expresních objednávek zahrnutých ve vašem členství pro tento měsíc."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "50%% cancellation fee. Estimated refund: %@."
+            "value" : "Cancelling also uses up one of your included express bookings for this month."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Комиссия за отмену 50 %%. Ориентировочный возврат: %@."
+            "value" : "Отмена также израсходует один из экспресс-заказов, включённых в ваше членство в этом месяце."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Poplatok za zrušenie 50 %%. Odhadovaná náhrada: %@."
+            "value" : "Zrušením tiež vyčerpáte jednu z expresných objednávok zahrnutých vo vašom členstve na tento mesiac."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Комісія за скасування 50 %%. Орієнтовне повернення: %@."
+            "value" : "Скасування також витратить одне з експрес-замовлень, включених у ваше членство цього місяця."
           }
         }
       }
     },
-    "order_cancel_fee_100" : {
-      "extractionState" : "stale",
+    "order_cancel_fee_checking" : {
+      "extractionState" : "manual",
       "localizations" : {
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Poplatek za zrušení 100 %%. Tak blízko k úklidu již není náhrada možná."
+            "value" : "Zjišťujeme, kolik zrušení této rezervace stojí…"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "100%% cancellation fee. No refund is available this close to the cleaning."
+            "value" : "Checking what cancelling this booking costs…"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Комиссия за отмену 100 %%. Возврат невозможен так близко к уборке."
+            "value" : "Проверяем, сколько стоит отмена этого бронирования…"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Poplatok za zrušenie 100 %%. Tak blízko k upratovaniu už náhrada nie je možná."
+            "value" : "Zisťujeme, koľko stojí zrušenie tejto rezervácie…"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Комісія за скасування 100 %%. Так близько до прибирання повернення неможливе."
+            "value" : "Перевіряємо, скільки коштує скасування цього бронювання…"
           }
         }
       }
     },
-    "order_cancel_fee_estimate_note" : {
-      "extractionState" : "stale",
+    "order_cancel_fee_last_minute" : {
+      "extractionState" : "manual",
       "localizations" : {
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odhad — konečná částka se potvrdí po odeslání."
+            "value" : "Toto je zrušení na poslední chvíli, poplatek je proto vyšší."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Estimated — final amount confirmed after you submit."
+            "value" : "This is a last-minute cancellation, so the fee is higher."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ориентировочно — окончательная сумма подтвердится после отправки."
+            "value" : "Это отмена в последнюю минуту, поэтому комиссия выше."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odhad — konečná suma sa potvrdí po odoslaní."
+            "value" : "Toto je zrušenie na poslednú chvíľu, poplatok je preto vyšší."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Орієнтовно — точна сума підтвердиться після відправки."
-          }
-        }
-      }
-    },
-    "order_cancel_fee_free" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zrušení zdarma — získáte plnou náhradu."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Free cancellation — you'll get a full refund."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Бесплатная отмена — вы получите полный возврат."
-          }
-        },
-        "sk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zrušenie zdarma — získate plnú náhradu."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Безкоштовне скасування — ви отримаєте повне повернення."
+            "value" : "Це скасування в останню хвилину, тому комісія вища."
           }
         }
       }
@@ -17186,37 +17151,317 @@
         }
       }
     },
+    "order_cancel_fee_none" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Žádný poplatek za zrušení."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No cancellation fee."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Комиссии за отмену нет."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Žiadny poplatok za zrušenie."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Комісії за скасування немає."
+          }
+        }
+      }
+    },
+    "order_cancel_fee_not_accepted" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zrušení zdarma — tuto rezervaci zatím nepřevzal žádný uklízeč."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free cancellation — no cleaner has taken this booking yet."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесплатная отмена — это бронирование ещё никто из клинеров не взял."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zrušenie zdarma — túto rezerváciu zatiaľ neprevzal žiadny upratovač."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Безкоштовне скасування — це бронювання ще ніхто з клінерів не взяв."
+          }
+        }
+      }
+    },
     "order_cancel_fee_oops" : {
       "extractionState" : "stale",
       "localizations" : {
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zrušení zdarma — objednávku jste vytvořili před méně než 15 minutami."
+            "value" : "Zrušení zdarma — objednali jste před malou chvílí."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Free cancellation — you booked less than 15 minutes ago."
+            "value" : "Free cancellation — you booked this only moments ago."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Бесплатная отмена — вы забронировали менее 15 минут назад."
+            "value" : "Бесплатная отмена — вы забронировали только что."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zrušenie zdarma — objednávku ste vytvorili pred menej než 15 minútami."
+            "value" : "Zrušenie zdarma — objednali ste pred malou chvíľou."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Безкоштовне скасування — ви забронювали менше 15 хвилин тому."
+            "value" : "Безкоштовне скасування — ви забронювали щойно."
+          }
+        }
+      }
+    },
+    "order_cancel_fee_outside_window" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zrušení zdarma — rušíte s dostatečným předstihem."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free cancellation — you're cancelling far enough ahead."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесплатная отмена — вы отменяете заранее."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zrušenie zdarma — rušíte s dostatočným predstihom."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Безкоштовне скасування — ви скасовуєте завчасно."
+          }
+        }
+      }
+    },
+    "order_cancel_fee_partial" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na této zakázce už pracuje uklízeč, takže je zrušení zpoplatněné."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A cleaner is already on this job, so cancelling now has a fee."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клинер уже работает над этим заказом, поэтому за отмену будет комиссия."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na tejto zákazke už pracuje upratovač, takže je zrušenie spoplatnené."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клінер уже працює над цим замовленням, тож за скасування буде комісія."
+          }
+        }
+      }
+    },
+    "order_cancel_fee_recheck_note" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto je cena v tuto chvíli — při potvrzení ji ověříme znovu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is the cost right now — we check again the moment you confirm."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это стоимость на данный момент — мы проверим её ещё раз при подтверждении."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto je cena v tejto chvíli — pri potvrdení ju overíme znova."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це вартість на цю мить — ми перевіримо її ще раз, щойно ви підтвердите."
+          }
+        }
+      }
+    },
+    "order_cancel_fee_retry" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zkusit znovu"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try again"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попробовать снова"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skúsiť znova"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спробувати ще раз"
+          }
+        }
+      }
+    },
+    "order_cancel_fee_split" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poplatek za zrušení %1$@ — vrátíme vám %2$@."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancellation fee %1$@ — you'll be refunded %2$@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Комиссия за отмену %1$@ — вам вернём %2$@."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poplatok za zrušenie %1$@ — vrátime vám %2$@."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Комісія за скасування %1$@ — вам повернемо %2$@."
+          }
+        }
+      }
+    },
+    "order_cancel_fee_unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poplatek za zrušení se teď nepodařilo zjistit. Zrušit můžete i tak — částku potvrdíme při zrušení."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't check the cancellation fee just now. You can still cancel — the amount is confirmed when you do."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сейчас не удалось проверить комиссию за отмену. Отменить всё равно можно — сумму подтвердим при отмене."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poplatok za zrušenie sa teraz nepodarilo zistiť. Zrušiť môžete aj tak — sumu potvrdíme pri zrušení."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зараз не вдалося перевірити комісію за скасування. Ви все одно можете скасувати — суму підтвердимо під час скасування."
           }
         }
       }

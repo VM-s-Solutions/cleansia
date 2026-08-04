@@ -22,6 +22,7 @@ final class OrderDetailViewModel: ViewModel {
     @Published private(set) var state: UiState<OrderItem> = .loading
     @Published private(set) var photos: PhotosUiState = .idle
     @Published private(set) var cancelState: ActionState = .idle
+    @Published private(set) var cancellationQuote: UiState<CancellationQuote> = .loading
     @Published private(set) var reviewState: ActionState = .idle
     @Published private(set) var receiptState: ActionState = .idle
     @Published private(set) var confirmRecurringState: ActionState = .idle
@@ -42,6 +43,7 @@ final class OrderDetailViewModel: ViewModel {
 
     private var pollTask: Task<Void, Never>?
     private var eventCancellable: AnyCancellable?
+    private var quoteInFlight = false
 
     init(
         orderId: String,
@@ -208,6 +210,29 @@ final class OrderDetailViewModel: ViewModel {
 
     func dismissCancelError() {
         if case .error = cancelState { cancelState = .idle }
+    }
+
+    /// What cancelling costs, asked of the server every time the sheet opens: the tier turns on the
+    /// clock, on this customer's own free-cancellation window and on whether a cleaner has taken the
+    /// job, so the answer is only good for the moment it was asked. A failure resolves to `.error`
+    /// rather than lingering on `.loading` — the sheet degrades to its neutral prompt and the
+    /// cancellation stays available, and it is deliberately not snackbarred over a sheet the customer
+    /// opened to do something else.
+    func loadCancellationQuote() async {
+        guard !quoteInFlight else { return }
+        guard !orderId.isBlank else {
+            cancellationQuote = .error(ApiError(code: "missing_order_id"))
+            return
+        }
+        quoteInFlight = true
+        defer { quoteInFlight = false }
+        cancellationQuote = .loading
+        switch await client.cancellationQuote(orderId: orderId) {
+        case let .success(quote):
+            cancellationQuote = .loaded(quote)
+        case let .failure(error):
+            cancellationQuote = .error(error)
+        }
     }
 
     // MARK: - Review

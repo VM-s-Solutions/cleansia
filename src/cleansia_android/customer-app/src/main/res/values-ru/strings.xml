@@ -304,11 +304,18 @@
     <!-- Order cancel -->
     <string name="order_action_cancel">Отменить заказ</string>
     <string name="order_cancel_title">Отменить эту уборку?</string>
-    <string name="order_cancel_fee_free">Бесплатная отмена — вы получите полный возврат.</string>
-    <string name="order_cancel_fee_oops">Бесплатная отмена — вы забронировали менее 15 минут назад.</string>
-    <string name="order_cancel_fee_50">Комиссия за отмену 50 %%. Ориентировочный возврат: %1$s.</string>
-    <string name="order_cancel_fee_100">Комиссия за отмену 100 %%. Возврат невозможен так близко к уборке.</string>
-    <string name="order_cancel_fee_estimate_note">Ориентировочно — окончательная сумма подтвердится после отправки.</string>
+    <string name="order_cancel_fee_not_accepted">Бесплатная отмена — это бронирование ещё никто из клинеров не взял.</string>
+    <string name="order_cancel_fee_oops">Бесплатная отмена — вы забронировали только что.</string>
+    <string name="order_cancel_fee_outside_window">Бесплатная отмена — вы отменяете заранее.</string>
+    <string name="order_cancel_fee_partial">Клинер уже работает над этим заказом, поэтому за отмену будет комиссия.</string>
+    <string name="order_cancel_fee_last_minute">Это отмена в последнюю минуту, поэтому комиссия выше.</string>
+    <string name="order_cancel_fee_none">Комиссии за отмену нет.</string>
+    <string name="order_cancel_fee_split">Комиссия за отмену %1$s — вам вернём %2$s.</string>
+    <string name="order_cancel_fee_checking">Проверяем, сколько стоит отмена этого бронирования…</string>
+    <string name="order_cancel_fee_unavailable">Сейчас не удалось проверить комиссию за отмену. Отменить всё равно можно — сумму подтвердим при отмене.</string>
+    <string name="order_cancel_fee_retry">Попробовать снова</string>
+    <string name="order_cancel_fee_recheck_note">Это стоимость на данный момент — мы проверим её ещё раз при подтверждении.</string>
+    <string name="order_cancel_express_waiver_forfeit">Отмена также израсходует один из экспресс-заказов, включённых в ваше членство в этом месяце.</string>
     <string name="order_cancel_fee_neutral">Вы уверены, что хотите отменить это бронирование?</string>
     <string name="order_cancel_reason_label">Причина (необязательно)</string>
     <string name="order_cancel_reason_placeholder">Расскажите, что изменилось…</string>

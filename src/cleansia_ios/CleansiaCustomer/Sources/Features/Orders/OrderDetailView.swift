@@ -156,24 +156,24 @@ struct OrderDetailView: View {
         }
     }
 
-    @ViewBuilder
     private var cancelSheet: some View {
-        if let order = vm.state.loadedValue {
-            CancelOrderSheet(
-                order: order,
-                isSubmitting: vm.cancelState.isSubmitting,
-                errorMessage: vm.cancelState.errorMessage,
-                onReasonChanged: vm.dismissCancelError,
-                onConfirm: { reason in Task { await vm.cancel(reason: reason) } },
-                onDismiss: {
-                    if !vm.cancelState.isSubmitting {
-                        showCancelSheet = false
-                        vm.dismissCancelError()
-                    }
+        CancelOrderSheet(
+            quote: vm.cancellationQuote,
+            currencyCode: vm.cancellationQuote.loadedValue?.currencyCode ?? vm.state.loadedValue?.currency?.code,
+            isSubmitting: vm.cancelState.isSubmitting,
+            errorMessage: vm.cancelState.errorMessage,
+            onReasonChanged: vm.dismissCancelError,
+            onRetryQuote: { Task { await vm.loadCancellationQuote() } },
+            onConfirm: { reason in Task { await vm.cancel(reason: reason) } },
+            onDismiss: {
+                if !vm.cancelState.isSubmitting {
+                    showCancelSheet = false
+                    vm.dismissCancelError()
                 }
-            )
-            .snackbarHost(snackbar, bottomInset: SnackbarController.defaultBottomInset)
-        }
+            }
+        )
+        .task { await vm.loadCancellationQuote() }
+        .snackbarHost(snackbar, bottomInset: SnackbarController.defaultBottomInset)
     }
 
     @ViewBuilder

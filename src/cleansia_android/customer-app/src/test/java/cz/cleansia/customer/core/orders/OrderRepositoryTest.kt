@@ -255,6 +255,44 @@ class OrderRepositoryTest {
         verify(exactly = 0) { snackbar.showError(any<String>()) }
     }
 
+    // ── getCancellationPreview() ──
+
+    @Test
+    fun cancellationPreview_givenSuccess_returnsBody() = runTest {
+        val preview = CancellationFeePreviewDto(
+            orderId = "o-1",
+            tier = 3,
+            feeRate = 0.25,
+            feeAmount = 250.0,
+            refundAmount = 750.0,
+            totalPrice = 1000.0,
+            currencyCode = "CZK",
+        )
+        coEvery { api.getCancellationPreview("o-1") } returns Response.success(preview)
+
+        assertEquals(preview, newRepo().getCancellationPreview("o-1").getOrNull())
+    }
+
+    @Test
+    fun cancellationPreview_givenHttpError_returnsErrorWithoutASnackbar() = runTest {
+        val errBody = "{}".toResponseBody("application/json".toMediaType())
+        coEvery { api.getCancellationPreview("o-x") } returns Response.error(400, errBody)
+
+        val result = newRepo().getCancellationPreview("o-x")
+
+        assertTrue((result as ApiResult.Error).error is ApiError.BadRequest)
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
+    fun cancellationPreview_givenUnmappableBody_returnsError() = runTest {
+        // The adapter answers null when the server sends a tier this build does
+        // not know. A quote we cannot read is not a free cancellation.
+        coEvery { api.getCancellationPreview("o-1") } returns Response.success(null)
+
+        assertTrue(newRepo().getCancellationPreview("o-1") is ApiResult.Error)
+    }
+
     // ── submitReview() ──
 
     @Test

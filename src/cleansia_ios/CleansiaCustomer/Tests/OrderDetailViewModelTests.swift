@@ -121,6 +121,66 @@ final class OrderDetailViewModelTests: XCTestCase {
         XCTAssertEqual(vm.cancelState, .idle)
     }
 
+    // MARK: Cancellation quote
+
+    func testTheQuoteIsTheServersAnswer() async {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(OrderFixtures.detail(statusValue: 2))]
+        client.cancellationQuoteResults = [.success(OrderFixtures.quote(tier: .partial, fee: 250, refund: 750))]
+        let vm = makeVM(client: client)
+        await vm.load()
+
+        await vm.loadCancellationQuote()
+
+        XCTAssertEqual(vm.cancellationQuote.loadedValue?.tier, .partial)
+        XCTAssertEqual(vm.cancellationQuote.loadedValue?.feeAmount, 250)
+        XCTAssertEqual(client.cancellationQuoteCallCount, 1)
+    }
+
+    /// A preview outage must never block a cancellation: the state resolves to `.error`, which the sheet
+    /// renders as the neutral prompt with the confirm button live — it must not sit on `.loading`.
+    func testAFailedQuoteResolvesRatherThanHangingOnLoading() async {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(OrderFixtures.detail(statusValue: 2))]
+        client.cancellationQuoteResults = [.failure(ApiError(httpStatus: 503))]
+        let vm = makeVM(client: client)
+        await vm.load()
+
+        await vm.loadCancellationQuote()
+
+        XCTAssertFalse(vm.cancellationQuote.isLoading)
+        XCTAssertNil(vm.cancellationQuote.loadedValue)
+    }
+
+    /// The tier depends on the clock, so a sheet re-opened later re-asks rather than showing the answer to
+    /// a question asked at a different time.
+    func testReopeningTheSheetReasksTheServer() async {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(OrderFixtures.detail(statusValue: 2))]
+        client.cancellationQuoteResults = [
+            .success(OrderFixtures.quote(tier: .freeOutsideWindow)),
+            .success(OrderFixtures.quote(tier: .partial, fee: 250, refund: 750))
+        ]
+        let vm = makeVM(client: client)
+        await vm.load()
+
+        await vm.loadCancellationQuote()
+        await vm.loadCancellationQuote()
+
+        XCTAssertEqual(client.cancellationQuoteCallCount, 2)
+        XCTAssertEqual(vm.cancellationQuote.loadedValue?.tier, .partial)
+    }
+
+    func testABlankOrderIdNeverAsksAndStillResolves() async {
+        let client = FakeOrderClient()
+        let vm = makeVM(orderId: "", client: client)
+
+        await vm.loadCancellationQuote()
+
+        XCTAssertEqual(client.cancellationQuoteCallCount, 0)
+        XCTAssertFalse(vm.cancellationQuote.isLoading)
+    }
+
     // MARK: Review
 
     func testReviewSuccessEmitsEffectAndRefetches() async {

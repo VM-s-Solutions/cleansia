@@ -370,6 +370,32 @@ raw components one-off; never duplicate a `:core` component.
 > "carry the token, not the resolved string" rule again), so a test can assert the express case does not
 > exist at all rather than hunting a literal in a view.
 
+> **A number the server computes has no client-side twin, and the REASON travels with it (T-0527).** Both
+> cancel sheets rebuilt the fee schedule locally and both were wrong — 50% where the backend charges 25%,
+> "no refund is available" where it refunds half — because two of the three inputs (the caller's own
+> free-cancellation window, whether a cleaner has taken the job) are server-side facts no customer DTO
+> carries. There is no correct client-side version of such a number, so **there is no fallback**: a
+> confident wrong number is worse than a spinner. The shape both platforms now use: the endpoint returns a
+> **tier discriminator** alongside the amounts, and the client resolves it into ONE value type carrying
+> **string keys + raw amounts** (Android `CancellationFeeCallout`, iOS the identical struct) — keys not
+> sentences so the tier→copy map is assertable without a bundle, raw amounts so the view still owns the
+> currency. Three rules it encodes: (1) **render the discriminator, never re-derive it from the rate** —
+> `FreeNotAccepted` (nobody took the job) and `FreeOutsideWindow` (you are early) are both zero and are
+> different sentences; (2) a failed quote degrades to a **non-numeric** prompt with a **retry**, and the
+> destructive action is gated **only on "in flight"**, never on "failed" — a pricing outage must never
+> strand a customer on a booking they want gone (hoist that gate: iOS `CancelOrderConfirmGate` / Android
+> `cancelConfirmEnabled`, because it is one `.disabled(...)` argument nothing else can see); (3) when the
+> number stops being a guess, **re-examine the "estimated" disclaimer** rather than keeping it by reflex —
+> here it became "this is the cost right now, we check again the moment you confirm", which is the one
+> honest residual (the tier turns on the clock).
+>
+> **And when both platforms ship the same feature in one sprint, diff the COPY, not just the behaviour.**
+> These two sheets independently produced two different string sets for the same five server tiers — same
+> ladder, different sentences — which is a parity break a green suite on each side cannot see. The second
+> platform to land reads the first's `values*/strings.xml` (or `Localizable.xcstrings`) and takes the keys
+> and the translations verbatim; a five-locale test that every tier resolves to a **distinct, non-key**
+> string is the cheap net under it.
+
 > **iOS snackbar pill — the ONE way (T-0432):** `SnackbarPill`/`SnackbarPalette` in
 > `Core/Snackbar/GlobalSnackbarHost.swift` render on a **theme-adaptive** `CleansiaColors.surface` pill
 > with `onSurface` text (NOT a fixed pastel fill — that never adapted to dark), a filled circular
@@ -436,6 +462,23 @@ were bugs the shape prevents: the labels were English literals (`"$pct% off"`) b
 `buildList` asks you for a resource id, and one `add(...)` sat outside every condition with no backing
 field. A resolver lets the test say "this case is not in the list" instead of grepping a view for a
 literal, and it makes the gating condition — not the rendering — the thing under test.
+
+**A price the SERVER charges is never estimated on the client (T-0527).** Both apps' cancel sheets computed the cancellation fee
+locally and disagreed with the backend in both charged tiers — **50% shown where 25% was taken**, *"no refund is available"* shown
+where half was refunded — because two of the three inputs (the caller's own free-cancellation window, whether a cleaner has been
+assigned) exist only server-side. The shape: a `GET` preview endpoint whose response carries a **tier discriminator** beside the
+money, a pure resolver `tier → (titleRes, amountRes, args, severity)` (customer `CancellationFeeCallout.kt`), and **no fallback
+ladder** — a fallback that disagrees IS the defect, and a confidently wrong number is worse than a spinner. Three rules travel with
+it. (1) An **unknown or absent discriminator renders "we could not check"**, never a defaulted ordinal: ordinal 0 is usually the
+free/best arm, so `tier?.value ?: 0` quotes a discount the server will not honour — default it at the API adapter and no test
+downstream can see it. (2) **Re-ask on every open**, and cancel the in-flight call rather than racing it; the quote is only true for
+the instant it was computed, so replaying the last one is the same class of lie. (3) A preview outage must **never block the action
+it prices** — only a quote *in flight* holds the confirm button, and that gate is a pure function (`cancelConfirmEnabled`) so the
+guarantee is assertable rather than buried in a composable. A server flag disclosing a cost the customer cannot otherwise see
+(`expressWaiverForfeitedOnCancel`, ADR-0035 AM-13) rides the same card and is pinned at the **call site** — it exists precisely
+because the forfeiture is invisible in the cases where the fee is zero. Finally, copy that spells a rate (*"50% fee"*) or a window
+(*"15 minutes"*) re-encodes the ladder in `strings.xml` where `R` cannot see it: state the server's amounts, and pin the absence
+with a locale-parity test that fails on a re-introduced `%%`.
 
 **A local preference the server also stores needs a sync seam, not just a DataStore write.**
 `AppSettingsRepository.setLanguage` wrote DataStore only, so `User.PreferredLanguageCode` — the sole
@@ -1272,9 +1315,9 @@ Gate-DP):** the customer read cluster (Home + paged Orders + OrderDetail with ca
   `QuickLookPreview`** with `deleteOnDismiss` (the §7.10 D1 seam, reused — SECURITY E4). A **5-min active-order poller** (Confirmed/
   OnTheWay/InProgress only; self-cancels on terminal) + refresh-on-`.task` + an **`OrderEventBus`** seam cover refresh.
   **Customer push registration is NOT built (that was partner T-0311); the poller + on-appear + the bus seam cover refresh until
-  customer push lands — flag it, do not build push here.** Cancel is a modal `.sheet` previewing the fee/refund via a pure TDD'd
-  `CancellationFeePreview` (oops≤15m/free≥24h/half 4–24h/full<4h, the `CancelOrderSheet.kt` tiers; server recomputes
-  authoritatively). **No camera/photo Info.plist keys** — the customer only *views* photos (`AsyncImage` + a fullscreen pager); capture
+  customer push lands — flag it, do not build push here.** Cancel is a modal `.sheet` rendering the **server's** quote
+  (`GET /api/Order/CancellationPreview`) — the client-side tier ladder both platforms shipped is deleted, see the fee-preview rule
+  above (T-0527). **No camera/photo Info.plist keys** — the customer only *views* photos (`AsyncImage` + a fullscreen pager); capture
   is partner-only (§7.10).
 - **The T-0313 success→OrderDetail fold:** `BookingSuccessView` gains a "View order" CTA (next to "Go home") that threads the new
   `orderId` (already on `BookingSubmitOutcome.success`) up through `BookingSheetView.onViewOrder` → the shell jumps to the Orders tab

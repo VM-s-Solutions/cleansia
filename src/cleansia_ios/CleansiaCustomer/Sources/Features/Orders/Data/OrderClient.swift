@@ -28,6 +28,7 @@ protocol OrderClient: Sendable {
     func downloadReceipt(orderId: String) async -> ApiResult<URL>
     func getPhotos(orderId: String) async -> ApiResult<GetOrderPhotosResponse>
     func confirmRecurring(orderId: String) async -> ApiResult<RecurringConfirmation>
+    func cancellationQuote(orderId: String) async -> ApiResult<CancellationQuote>
 }
 
 struct LiveOrderClient: OrderClient {
@@ -83,6 +84,18 @@ struct LiveOrderClient: OrderClient {
                 stripeCustomerId: $0.stripeCustomerId,
                 ephemeralKey: $0.ephemeralKey
             )
+        }
+    }
+
+    func cancellationQuote(orderId: String) async -> ApiResult<CancellationQuote> {
+        let result = await apiResult(mapError: ApiError.fromGenerated) {
+            try await CustomerOrderAPI.orderCancellationPreview(orderId: orderId)
+        }
+        return result.flatMap { response in
+            guard let quote = CancellationQuote(response) else {
+                return .failure(ApiError(code: "order.cancellation_preview_unreadable"))
+            }
+            return .success(quote)
         }
     }
 }

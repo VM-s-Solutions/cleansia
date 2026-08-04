@@ -58,28 +58,28 @@ extension L10n {
             localized("order_cancel_notes_extra_placeholder")
         }
 
+        static var feeChecking: String {
+            localized("order_cancel_fee_checking")
+        }
+
         static var feeNeutral: String {
             localized("order_cancel_fee_neutral")
         }
 
-        static var feeEstimateNote: String {
-            localized("order_cancel_fee_estimate_note")
+        static var feeUnavailable: String {
+            localized("order_cancel_fee_unavailable")
         }
 
-        static var feeOops: String {
-            localized("order_cancel_fee_oops")
+        static var feeRetry: String {
+            localized("order_cancel_fee_retry")
         }
 
-        static var feeFree: String {
-            localized("order_cancel_fee_free")
+        static var feeRecheckNote: String {
+            localized("order_cancel_fee_recheck_note")
         }
 
-        static func fee50(_ refund: String) -> String {
-            format("order_cancel_fee_50", refund)
-        }
-
-        static var fee100: String {
-            localized("order_cancel_fee_100")
+        static var expressWaiverForfeit: String {
+            localized("order_cancel_express_waiver_forfeit")
         }
 
         static var retryHint: String {

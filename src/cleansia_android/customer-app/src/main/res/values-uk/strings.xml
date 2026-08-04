@@ -304,11 +304,18 @@
     <!-- Order cancel -->
     <string name="order_action_cancel">Скасувати замовлення</string>
     <string name="order_cancel_title">Скасувати це прибирання?</string>
-    <string name="order_cancel_fee_free">Безкоштовне скасування — ви отримаєте повне повернення.</string>
-    <string name="order_cancel_fee_oops">Безкоштовне скасування — ви забронювали менше 15 хвилин тому.</string>
-    <string name="order_cancel_fee_50">Комісія за скасування 50 %%. Орієнтовне повернення: %1$s.</string>
-    <string name="order_cancel_fee_100">Комісія за скасування 100 %%. Так близько до прибирання повернення неможливе.</string>
-    <string name="order_cancel_fee_estimate_note">Орієнтовно — точна сума підтвердиться після відправки.</string>
+    <string name="order_cancel_fee_not_accepted">Безкоштовне скасування — це бронювання ще ніхто з клінерів не взяв.</string>
+    <string name="order_cancel_fee_oops">Безкоштовне скасування — ви забронювали щойно.</string>
+    <string name="order_cancel_fee_outside_window">Безкоштовне скасування — ви скасовуєте завчасно.</string>
+    <string name="order_cancel_fee_partial">Клінер уже працює над цим замовленням, тож за скасування буде комісія.</string>
+    <string name="order_cancel_fee_last_minute">Це скасування в останню хвилину, тому комісія вища.</string>
+    <string name="order_cancel_fee_none">Комісії за скасування немає.</string>
+    <string name="order_cancel_fee_split">Комісія за скасування %1$s — вам повернемо %2$s.</string>
+    <string name="order_cancel_fee_checking">Перевіряємо, скільки коштує скасування цього бронювання…</string>
+    <string name="order_cancel_fee_unavailable">Зараз не вдалося перевірити комісію за скасування. Ви все одно можете скасувати — суму підтвердимо під час скасування.</string>
+    <string name="order_cancel_fee_retry">Спробувати ще раз</string>
+    <string name="order_cancel_fee_recheck_note">Це вартість на цю мить — ми перевіримо її ще раз, щойно ви підтвердите.</string>
+    <string name="order_cancel_express_waiver_forfeit">Скасування також витратить одне з експрес-замовлень, включених у ваше членство цього місяця.</string>
     <string name="order_cancel_fee_neutral">Ви впевнені, що хочете скасувати це бронювання?</string>
     <string name="order_cancel_reason_label">Причина (необов’язково)</string>
     <string name="order_cancel_reason_placeholder">Розкажіть, що змінилося…</string>

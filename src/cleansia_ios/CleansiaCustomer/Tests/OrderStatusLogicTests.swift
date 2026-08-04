@@ -1,3 +1,4 @@
+import CleansiaCore
 import CleansiaCustomerApi
 import XCTest
 @testable import CleansiaCustomer
@@ -172,53 +173,264 @@ final class LiveProgressLogicTests: XCTestCase {
     }
 }
 
-final class CancellationFeePreviewTests: XCTestCase {
-    private let base = Date(timeIntervalSince1970: 1_000_000)
-
-    func testOopsWindowWithinFifteenMinutesOfBooking() {
-        let tier = CancellationFeePreview.tier(
-            cleaningAt: base.addingTimeInterval(2 * 3600),
-            createdAt: base.addingTimeInterval(-10 * 60),
-            totalPrice: 1000,
-            now: base
-        )
-        XCTAssertEqual(tier, .oops)
+/// The cancellation schedule is the server's and only the server's. What stood here (T-0527) pinned a
+/// client-side ladder that charged **50%** where the backend charges 25% and told the customer *"no
+/// refund is available"* where it refunds half — a green suite holding a money defect in place. The two
+/// facts that decide the tier, the caller's own free-cancellation window (a Plus plan's is seeded at 4
+/// hours where the standard is 24) and whether a cleaner has actually taken the job, reach no client, so
+/// nothing below may reintroduce a threshold or a rate: the inputs are the tier and the amounts the
+/// preview endpoint returns.
+final class CancellationQuoteTests: XCTestCase {
+    func testEachWireTierMapsToItsOwnMeaning() {
+        XCTAssertEqual(CancellationTier(wire: ._0), .freeNotAccepted)
+        XCTAssertEqual(CancellationTier(wire: ._1), .freeOopsWindow)
+        XCTAssertEqual(CancellationTier(wire: ._2), .freeOutsideWindow)
+        XCTAssertEqual(CancellationTier(wire: ._3), .partial)
+        XCTAssertEqual(CancellationTier(wire: ._4), .lastMinute)
     }
 
-    func testFreeWhenAtLeast24HoursOut() {
-        let tier = CancellationFeePreview.tier(
-            cleaningAt: base.addingTimeInterval(30 * 3600),
-            createdAt: base.addingTimeInterval(-2 * 3600),
-            totalPrice: 1000,
-            now: base
-        )
-        XCTAssertEqual(tier, .free)
+    /// Every field on a generated model is optional, so a body whose tier failed to decode arrives as a
+    /// well-formed response with a nil tier. There is no tier to fall back to — an unreadable quote is a
+    /// failed quote, never a guessed one.
+    func testAResponseWithoutATierIsNotAQuote() {
+        XCTAssertNil(CancellationQuote(GetCancellationFeePreviewResponse(
+            feeAmount: 250,
+            refundAmount: 750,
+            currencyCode: "CZK"
+        )))
     }
 
-    func testHalfFeeBetweenFourAndTwentyFourHours() {
-        let tier = CancellationFeePreview.tier(
-            cleaningAt: base.addingTimeInterval(10 * 3600),
-            createdAt: base.addingTimeInterval(-2 * 3600),
+    func testTheServersAmountsAndWaiverFlagSurviveTheMapping() {
+        let quote = CancellationQuote(GetCancellationFeePreviewResponse(
+            orderId: "o1",
+            tier: ._3,
+            feeRate: 0.25,
+            feeAmount: 250,
+            refundAmount: 750,
             totalPrice: 1000,
-            now: base
-        )
-        XCTAssertEqual(tier, .half(refund: 500))
+            currencyCode: "CZK",
+            expressWaiverForfeitedOnCancel: true
+        ))
+
+        XCTAssertEqual(quote?.tier, .partial)
+        XCTAssertEqual(quote?.feeAmount, 250)
+        XCTAssertEqual(quote?.refundAmount, 750)
+        XCTAssertEqual(quote?.currencyCode, "CZK")
+        XCTAssertEqual(quote?.forfeitsExpressWaiver, true)
+    }
+}
+
+/// The card's whole content resolved from the quote state, hoisted out of the view so the sentence and
+/// the severity are assertable: both are bare arguments inside the sheet and invisible to every check
+/// available without a snapshot harness. Mirrors Android's `cancellationFeeCallout`.
+final class CancellationFeeCardModelTests: XCTestCase {
+    func testTheCardSaysNothingNumericWhileTheQuoteIsInFlight() {
+        XCTAssertEqual(CancellationFeeCardModel(.loading), .checking)
     }
 
-    func testFullFeeUnderFourHours() {
-        let tier = CancellationFeePreview.tier(
-            cleaningAt: base.addingTimeInterval(2 * 3600),
-            createdAt: base.addingTimeInterval(-2 * 3600),
-            totalPrice: 1000,
-            now: base
-        )
-        XCTAssertEqual(tier, .full)
+    /// A fee-preview outage degrades to the neutral prompt — never to a computed number, and never to a
+    /// blocked cancellation.
+    func testAFailedQuoteDegradesToTheNeutralPrompt() {
+        XCTAssertEqual(CancellationFeeCardModel(.error(ApiError(httpStatus: 500))), .unavailable)
     }
 
-    func testNeutralWhenTimestampsMissing() {
-        XCTAssertEqual(
-            CancellationFeePreview.tier(cleaningAt: nil, createdAt: base, totalPrice: 1000, now: base),
-            .neutral
+    /// All three are zero-fee and none is the same sentence: `FreeNotAccepted` means no cleaner has taken
+    /// the job, `FreeOopsWindow` means you just booked, `FreeOutsideWindow` means you are early.
+    /// Re-deriving meaning from the rate collapses them into one.
+    func testTheThreeZeroFeeTiersAreThreeDifferentSentences() {
+        let callouts = [
+            Self.callout(.freeNotAccepted),
+            Self.callout(.freeOopsWindow),
+            Self.callout(.freeOutsideWindow)
+        ]
+
+        XCTAssertEqual(callouts.map(\.titleKey), [
+            "order_cancel_fee_not_accepted",
+            "order_cancel_fee_oops",
+            "order_cancel_fee_outside_window"
+        ])
+        XCTAssertEqual(callouts.map(\.severity), [.free, .free, .free])
+        XCTAssertEqual(callouts.map(\.amountKey), Array(repeating: "order_cancel_fee_none", count: 3))
+        XCTAssertEqual(callouts.flatMap(\.amounts), [])
+    }
+
+    func testAChargedTierCarriesTheServersFeeAndItsRefundInThatOrder() {
+        let partial = Self.callout(.partial, fee: 250, refund: 750)
+        let lastMinute = Self.callout(.lastMinute, fee: 500, refund: 500)
+
+        XCTAssertEqual(partial.titleKey, "order_cancel_fee_partial")
+        XCTAssertEqual(partial.amountKey, "order_cancel_fee_split")
+        XCTAssertEqual(partial.amounts, [250, 750])
+        XCTAssertEqual(partial.severity, .fee)
+        XCTAssertEqual(lastMinute.titleKey, "order_cancel_fee_last_minute")
+        XCTAssertEqual(lastMinute.amounts, [500, 500])
+        XCTAssertEqual(lastMinute.severity, .lastMinute)
+    }
+
+    /// AM-13: the forfeiture is disclosed off the server's flag alone, and it matters most exactly where
+    /// the fee is zero — inside the oops window and on every cash order — because that is where it is
+    /// otherwise invisible.
+    func testTheExpressWaiverWarningRidesTheServerFlagEvenOnAFreeTier() {
+        XCTAssertTrue(Self.callout(.freeOopsWindow, forfeitsExpressWaiver: true).warnsExpressWaiverForfeited)
+        XCTAssertFalse(Self.callout(.lastMinute).warnsExpressWaiverForfeited)
+    }
+
+    private static func callout(
+        _ tier: CancellationTier,
+        fee: Double = 0,
+        refund: Double = 1000,
+        forfeitsExpressWaiver: Bool = false
+    ) -> CancellationFeeCallout {
+        let quote = CancellationQuote(
+            tier: tier,
+            feeAmount: fee,
+            refundAmount: refund,
+            currencyCode: "CZK",
+            forfeitsExpressWaiver: forfeitsExpressWaiver
         )
+        guard case let .quoted(callout) = CancellationFeeCardModel(.loaded(quote)) else {
+            return CancellationFeeCallout(
+                titleKey: "",
+                amountKey: "",
+                amounts: [],
+                severity: .free,
+                warnsExpressWaiverForfeited: false
+            )
+        }
+        return callout
+    }
+}
+
+final class CancelOrderConfirmGateTests: XCTestCase {
+    func testConfirmWaitsForTheQuoteToResolve() {
+        XCTAssertFalse(CancelOrderConfirmGate.canConfirm(
+            hasReason: true,
+            needsNotes: false,
+            notes: "",
+            quoteIsLoading: true,
+            isSubmitting: false
+        ))
+    }
+
+    /// A fee-preview outage renders the neutral prompt and leaves the button live — a customer who wants
+    /// a booking gone is never held hostage by a quote we could not fetch.
+    func testAFailedQuoteStillLetsTheCancellationThrough() {
+        XCTAssertTrue(CancelOrderConfirmGate.canConfirm(
+            hasReason: true,
+            needsNotes: false,
+            notes: "",
+            quoteIsLoading: false,
+            isSubmitting: false
+        ))
+    }
+
+    func testAReasonIsStillRequiredAndOtherStillNeedsWords() {
+        XCTAssertFalse(CancelOrderConfirmGate.canConfirm(
+            hasReason: false,
+            needsNotes: false,
+            notes: "",
+            quoteIsLoading: false,
+            isSubmitting: false
+        ))
+        XCTAssertFalse(CancelOrderConfirmGate.canConfirm(
+            hasReason: true,
+            needsNotes: true,
+            notes: "  x ",
+            quoteIsLoading: false,
+            isSubmitting: false
+        ))
+        XCTAssertTrue(CancelOrderConfirmGate.canConfirm(
+            hasReason: true,
+            needsNotes: true,
+            notes: "moved out",
+            quoteIsLoading: false,
+            isSubmitting: false
+        ))
+    }
+
+    func testASubmitInFlightHoldsTheButton() {
+        XCTAssertFalse(CancelOrderConfirmGate.canConfirm(
+            hasReason: true,
+            needsNotes: false,
+            notes: "",
+            quoteIsLoading: false,
+            isSubmitting: true
+        ))
+    }
+}
+
+/// Every tier the server can answer with has to reach a real sentence in all five shipped locales, and no
+/// two tiers may share one — a fallback that silently reuses another tier's copy reads as finished.
+final class CancellationFeeCopyTests: XCTestCase {
+    private static let languages = ["en", "cs", "sk", "uk", "ru"]
+
+    private static let keys = [
+        "order_cancel_fee_checking",
+        "order_cancel_fee_neutral",
+        "order_cancel_fee_unavailable",
+        "order_cancel_fee_retry",
+        "order_cancel_fee_recheck_note",
+        "order_cancel_fee_not_accepted",
+        "order_cancel_fee_oops",
+        "order_cancel_fee_outside_window",
+        "order_cancel_fee_partial",
+        "order_cancel_fee_last_minute",
+        "order_cancel_fee_none",
+        "order_cancel_express_waiver_forfeit"
+    ]
+
+    private var restoreBundle: Bundle?
+
+    override func setUp() {
+        super.setUp()
+        restoreBundle = L10n.bundle
+    }
+
+    override func tearDown() {
+        L10n.bundle = restoreBundle ?? .main
+        super.tearDown()
+    }
+
+    func testEverySentenceIsDistinctAndTranslatedInEveryLocale() throws {
+        for language in Self.languages {
+            L10n.bundle = try localeBundle(language)
+            let texts = Self.keys.map { L10n.localized($0) }
+            for (key, text) in zip(Self.keys, texts) {
+                XCTAssertFalse(text.isBlank, "\(key) is empty in \(language)")
+                XCTAssertNotEqual(text, key, "\(key) is unlocalized in \(language)")
+            }
+            XCTAssertEqual(Set(texts).count, texts.count, "two cancel-sheet strings collide in \(language)")
+        }
+    }
+
+    /// The money line is the same sentence for both charged tiers, and it must place the fee first and the
+    /// refund second in every locale — a swapped pair reads as a plausible number and is a lie about money.
+    func testTheSplitLineStatesTheFeeThenTheRefund() throws {
+        for language in Self.languages {
+            L10n.bundle = try localeBundle(language)
+            let text = L10n.format("order_cancel_fee_split", arguments: ["250 Kč", "750 Kč"])
+            let fee = try XCTUnwrap(text.range(of: "250 Kč"), "the fee is missing in \(language): \(text)")
+            let refund = try XCTUnwrap(text.range(of: "750 Kč"), "the refund is missing in \(language): \(text)")
+            XCTAssertTrue(fee.lowerBound < refund.lowerBound, "fee and refund are swapped in \(language)")
+        }
+    }
+
+    func testTheForfeitedExpressBookingIsWarnedAboutWithoutNamingTheQuota() throws {
+        for language in Self.languages {
+            L10n.bundle = try localeBundle(language)
+            let warning = L10n.OrderCancel.expressWaiverForfeit
+            XCTAssertFalse(warning.isBlank, "the express-waiver warning is empty in \(language)")
+            XCTAssertNil(
+                warning.rangeOfCharacter(from: .decimalDigits),
+                "the warning spells a quota out in \(language) — it is per-plan configurable: \(warning)"
+            )
+        }
+    }
+
+    private func localeBundle(_ tag: String) throws -> Bundle {
+        let hosts = [Bundle.main, Bundle(for: Self.self)]
+        let path = hosts.lazy.compactMap { $0.path(forResource: tag, ofType: "lproj") }.first
+        let resolved = try XCTUnwrap(path, "no \(tag).lproj in the built bundle")
+        return try XCTUnwrap(Bundle(path: resolved), "\(tag).lproj at \(resolved) is not a bundle")
     }
 }

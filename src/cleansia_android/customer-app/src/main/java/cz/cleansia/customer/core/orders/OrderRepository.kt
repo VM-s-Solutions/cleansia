@@ -139,6 +139,20 @@ class OrderRepository @Inject constructor(
     }
 
     /**
+     * What cancelling this order would cost, asked before the customer commits.
+     * A pure read: opening and closing the sheet spends nothing. The answer is
+     * only true for the instant it was computed, so callers re-ask rather than
+     * cache it.
+     */
+    suspend fun getCancellationPreview(orderId: String): ApiResult<CancellationFeePreviewDto> {
+        val resp = networkCall { api.getCancellationPreview(orderId) } ?: return networkError()
+        if (!resp.isSuccessful) {
+            return httpError(resp.errorBody(), resp.code())
+        }
+        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+    }
+
+    /**
      * Wave 3.3 — confirm a Pending recurring-template order. Cash response
      * means the order's already Confirmed + Paid backend-side; the caller
      * should refetch + show success. Card response carries the Stripe

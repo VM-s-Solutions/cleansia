@@ -115,6 +115,7 @@ fun OrderDetailScreen(
     // sealed variant; sheets receive those derived bits via their existing
     // params, keeping their composables unchanged.
     val cancelState by viewModel.cancelState.collectAsStateWithLifecycle()
+    val cancellationPreview by viewModel.cancellationPreview.collectAsStateWithLifecycle()
     val reviewState by viewModel.reviewState.collectAsStateWithLifecycle()
     val receiptDownloadState by viewModel.receiptDownloadState.collectAsStateWithLifecycle()
     val photosState by viewModel.photos.collectAsStateWithLifecycle()
@@ -311,8 +312,12 @@ fun OrderDetailScreen(
     // (isCancellable gates the footer button); guarding here keeps the render
     // defensive in case state flips mid-cancel.
     if (showCancelSheet && loaded != null) {
+        // Re-ask on every open: the quote is computed against the server clock
+        // at that instant, and a tier boundary moves while the sheet is closed.
+        LaunchedEffect(Unit) { viewModel.loadCancellationPreview() }
         CancelOrderSheet(
-            order = loaded.order,
+            previewState = cancellationPreview,
+            onRetryPreview = viewModel::loadCancellationPreview,
             isSubmitting = cancelling,
             errorMessage = cancelError,
             onDismiss = {

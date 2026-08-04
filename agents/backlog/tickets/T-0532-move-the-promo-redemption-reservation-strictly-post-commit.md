@@ -52,9 +52,11 @@ this ticket is rewritten, while the interim and the §D5.1 predicate fix stand e
 
 ## Acceptance criteria
 
-- [ ] **AC0 — the ADR is `accepted` first.** Given ADR-0038's `## Verdict` is author-only today, When
-      this ticket starts, Then a second instance has signed it and CH-2 is resolved. **Do not build
-      the seam against a `proposed` ADR.**
+- [x] **AC0 — the ADR is `accepted` first.** ~~Given ADR-0038's `## Verdict` is author-only today…~~
+      **DISCHARGED — re-verified by the architect at HEAD 2026-08-04:** ADR-0038 `:3` reads
+      `**Status:** accepted`, its `## Verdict` records *"zero blocking challenges remain"* with
+      amendments AM-1…AM-11, and CH-2 — the challenge flagged as able to delete this ticket's
+      premise — was ruled and **did not**. This AC is closed; do not re-open it.
 - [ ] **AC1 — the statement is restored byte-for-byte.** Given `TryReserveRedemptionSlotAsync`, When
       the end state lands, Then its SQL is identical to the pre-interim raw INSERT (`INSERT … SELECT
       COALESCE(MAX("SlotOrdinal")+1,0) … HAVING … ON CONFLICT DO NOTHING RETURNING`), including the
@@ -75,10 +77,16 @@ this ticket is rewritten, while the interim and the §D5.1 predicate fix stand e
       this is the binding retirement test.
 - [ ] **AC5 — P2: the database is the arbiter under concurrency** (§D4). Given two concurrent
       redemptions of a one-shot code by the same user **with a NULL tenant**, When both run against
-      real PostgreSQL, Then exactly **one** `PromoCodeRedemptions` row exists. **This fails today,
-      fails under the interim, and passes only once the owner's `.AreNullsDistinct(false)` migration
-      lands (§D5.2).** Write the test; if the migration has not run, mark it explicitly and do not
-      weaken it into passing.
+      real PostgreSQL, Then exactly **one** `PromoCodeRedemptions` row exists.
+      ⚠️ **AMENDED 2026-08-04 (architect) — its precondition is now MET, so the escape hatch is
+      withdrawn.** The AC used to read *"passes only once the owner's `.AreNullsDistinct(false)`
+      migration lands… if the migration has not run, mark it explicitly and do not weaken it."*
+      **It has landed.** Verified at HEAD: `PromoCodeRedemptionEntityConfiguration.cs:71` carries
+      `.AreNullsDistinct(false)` and it is emitted in the committed `Initial`
+      (`Migrations/20260723182623_Initial.Designer.cs:2322`, same in `CleansiaDbContextModelSnapshot.cs:2319`).
+      **So AC5 must PASS, not be marked pending.** A test that is skipped, or that asserts two rows, is
+      an AC5 failure. *(Four other tenant-scoped sole-arbiter indexes ship the same construct:
+      `FiscalCounters`, `MembershipBenefitUsages`, `EmployeePayoutDetails`, `LiveActivityTokens`.)*
 - [ ] **AC6 — the effect is a serializable intent record, not a closure** (§D2.1). Given
       `PromoRedemptionEffect`, When it is written, Then it is a `record` carrying `OrderId`,
       `PromoCodeId`, `UserId`, `AppliedDiscount`, `RawSubtotal` with an `EffectKey` of
@@ -101,10 +109,24 @@ this ticket is rewritten, while the interim and the §D5.1 predicate fix stand e
       reserved, Then `TryIncrementGlobalRedemptionsAsync` fires only for an order that **committed**,
       closing §D6 leak 2 (the interim's named residual: a promo order whose commit fails still burns
       a global slot today).
-- [ ] **AC11 — the anti-orphan check exists** (§D4 binding 2). Given `agents/tools/check-consistency.mjs`,
-      When it runs, Then every `INTERIM(ADR-NNNN … → T-xxxx)` marker in `src/` must reference a ticket
-      id present and **open** in `agents/backlog/INDEX.md`. Generalizes past this ADR — it makes
-      "interim with no named end state" impossible as a class.
+- [ ] **AC11 — the anti-orphan check exists** (§D4 binding 2). Every `INTERIM(ADR-NNNN … → T-xxxx)`
+      marker in `src/` must reference a ticket id present and **open** in `agents/backlog/INDEX.md`.
+      Generalizes past this ADR — it makes "interim with no named end state" impossible as a class.
+      ⚠️ **AMENDED 2026-08-04 (architect) — the enforcer moves, because two governance artifacts named
+      two different homes and NEITHER exists.** This AC named `agents/tools/check-consistency.mjs`;
+      `agents/knowledge/consistency.md` §"Interim implementations must name their end state" declares
+      **`InterimMarkerTripwireTests` in `Cleansia.Tests`**. Grepped at HEAD: `InterimMarker` appears in
+      **seven files, all of them documentation** — there is no such test and no such rule. The catalog is
+      currently asserting an enforcer that does not exist, which is exactly the ADR-0032 D3 defect
+      ("a declared law needs a named, real gate").
+      **Ruling — build the one the catalog names: `InterimMarkerTripwireTests` in `Cleansia.Tests`.**
+      Two reasons, neither of them preference: (1) the marker lives in C# source and the law governs C#
+      interims, so the guard belongs beside them; (2) `Cleansia.Tests` runs in `backend-ci.yml` = **T1-CI**,
+      whereas `check-consistency.mjs` is in **zero** workflows = T2-ADVISORY — a law about an interim that
+      can outlive its end state deserves the blocking tier. **Anti-vacuity is mandatory** (ADR-0032 D3,
+      and ADR-0038's own §D4 check #7): the test must **fail on an empty corpus** — zero markers found in
+      `src/` is a non-run, not a pass — and must fail if `INDEX.md` cannot be located. No change to
+      `consistency.md` is needed; this AC now agrees with it.
 - [ ] **AC12 — no external side effect rides the seam** (law 1). Given every
       `IPostCommitEffectExecutor` implementation, When it is walked, Then none references
       `IQueueClient`, `HttpClient` or Stripe — those belong on `IPendingDispatch`. CH-6 is OPEN on
@@ -113,11 +135,13 @@ this ticket is rewritten, while the interim and the §D5.1 predicate fix stand e
 
 ## Out of scope
 
-- **`.AreNullsDistinct(false)` on `(TenantId, PromoCodeId, UserId, SlotOrdinal)`** — ADR-0038 §D5.2.
-  ⚠️ `ef-migration`, **owner-only**, and explicitly **off the outage path**. It is what makes AC5
-  achievable; it does not gate AC4. Pre-migration: de-duplicate any existing
-  `(NULL, code, user, ordinal)` rows or index creation fails (the `OrderId` unique index guarantees
-  at most one row per order, so duplicates are distinguishable and one can be re-ordinal'd).
+- ~~**`.AreNullsDistinct(false)` on `(TenantId, PromoCodeId, UserId, SlotOrdinal)`** — ADR-0038 §D5.2.
+  ⚠️ `ef-migration`, **owner-only**…~~ **STALE — CLOSED 2026-08-04 (architect, verified at HEAD).** It
+  was folded into the regenerated `Initial` (`7e1cf7f5`) and ships with the database drop:
+  `PromoCodeRedemptionEntityConfiguration.cs:71` + `20260723182623_Initial.Designer.cs:2322`. There is
+  no owner item here and no de-duplication step (the database is dropped, so there are no pre-existing
+  `(NULL, code, user, ordinal)` rows to reconcile). **The consequence is on AC5, which is now required
+  to pass rather than allowed to be marked pending.**
 - **The §D6.4 counter repair** — a `sql-scripts/` data-repair script reconciling
   `PromoCodes.CurrentRedemptionsCount` to the ledger. Run **after** the interim deploys and during
   low traffic. Not a migration, not a background job. Every promo attempt since the bug shipped burnt
@@ -176,6 +200,22 @@ Both sections are marked **PROPOSED** and flip to law with the ADR.
 - 2026-08-04 — **`.AreNullsDistinct(false)` on the promo per-user index is NO LONGER a separate owner
   item** — it was folded into the regenerated `Initial` at `7e1cf7f5` and lands with the database drop. The
   §D6.4 counter repair is still owed and is filed separately as **T-0545**.
+- 2026-08-04 — **ARCHITECT DISPOSITION: the ticket STANDS, `ready`, unblocked, and is now three AC
+  sharper.** Verified against the tree rather than the ticket text:
+  1. **The interim is still live** — `Infra.Database/Repositories/PromoCodeRedemptionRepository.cs:22`
+     still carries `// INTERIM(ADR-0038 §D3 → T-0532)`. Nothing has retired it. The ticket is **not**
+     already-resolved.
+  2. **AC0 is discharged** — ADR-0038 `:3` is `accepted`, CH-2 ruled and the outbox rejection survived.
+     Marked `[x]` above so no future reconcile re-derives it.
+  3. **AC5's precondition is MET**, so its "mark it pending" escape hatch is **withdrawn** — the index
+     ships `AreNullsDistinct(false)` in the committed `Initial`. AC5 must now pass.
+  4. **AC11's enforcer was pointing at a file that does not implement it, while the catalog pointed at a
+     test that does not exist.** `InterimMarkerTripwireTests` occurs in **seven files, all documentation**.
+     Ruled onto the catalog's home (`Cleansia.Tests`, T1-CI) with a mandatory anti-vacuity clause.
+     **This is the one genuinely new finding in this pass:** `consistency.md` currently declares an
+     enforcer that has never been built — a live ADR-0032 D3 gap on a rule written eight days ago.
+  **Retirement conditions: PENDING, not met.** Nothing about the interim has been retired; what changed
+  is that every precondition to retiring it is now satisfied, so the work is unblocked in full.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

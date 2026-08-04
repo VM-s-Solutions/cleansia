@@ -1218,7 +1218,35 @@ _No open Wave-1 *planning* questions remain._
   of shipping. This is a detector, not a fix: it tells you the four disagree, it does not stop the
   disagreement. Collapsing to one declaration is the Architect's call and is a change to owner-run
   generation, so it was not taken here.
-- Answer: _(architect fills in)_
+- **ANSWERED 2026-08-04 — owner ruling + architect design, recorded in `ADR-0042`**
+  (`adr/0041-shared-wire-enums-are-generated-from-the-nswag-output-at-regen-time.md`, `proposed`;
+  living doc `architecture/decisions/generated-client-contract.md` §"The second surface"). **PM: move
+  this entry to `answered.md`.**
+  - **Owner, verbatim:** *"I think that there is a need to refactor and better to use the one that is
+    generated from nswag. Also consider using backend enums on frontend instead of generating your own."*
+    ⇒ the hand-written mirror **goes**; the shared declaration must come out of the NSwag pipeline and be
+    traceable to `Cleansia.Core.Domain.Enums` with no human retyping. That half is **settled**.
+  - **The architect's HOW (ADR-0042, open to one challenger round on the mechanism only):** a generator
+    `src/Cleansia.App/tools/generate-wire-enums.mjs` runs **inside** every `npm run generate-*-client`,
+    between the formatter and the ADR-0031 typecheck. It derives the client set from each
+    `nswag-*.json`'s `output` key (never a glob), keeps the enums **all** clients declare, **fails the
+    owner's regen** if any disagree, and writes one `wire-enums.generated.ts` in `libs/shared/models`.
+    `order-status.models.ts` is deleted; the `SortDirection` hand-mirror in `sort-types.models.ts` is
+    folded in; the parity spec is re-based as a committed-state backstop. **The owner's commands do not
+    change.**
+  - **The per-app copies KEEP being emitted, deliberately** (the sub-question asked). Five hosts are
+    regenerated independently; three clients from three specs is three contracts. One shared symbol
+    imported by all three would let a client generated against a stale host *claim* the current
+    contract — it removes the evidence of drift, not the drift. NSwag's config is **not** changed.
+  - **Three facts the question did not have, and they change its framing:** (1) there are **five**
+    declarations, not four — `libs/core/services/src/lib/client/admin-client.ts` is a fifth, and it has
+    **already drifted through a renumbering** (`InProgress=3` where the live contract says `OnTheWay=3`);
+    the parity spec does not cover it. (2) It is a **class**: **12** enums are declared by all three
+    clients (36 declarations), and `SortDirection` was already a third hand-mirror with no spec at all.
+    (3) The parity spec **cannot run in CI on a regen-only commit** — it reads the clients off disk, so
+    `models` is not Nx-affected by a client change and `nx affected -t test` skips it.
+- Answer: **the shared declaration is GENERATED from the NSwag output at regen time; the hand-written
+  copy is deleted; the three per-host clients keep theirs. ADR-0042.**
 
 ---
 

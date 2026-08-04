@@ -163,6 +163,24 @@ is not limited to these, but must address them:
   next reviewer/developer disagreement about an inline harvest has nothing to appeal to. The lead
   already declined to close it itself; leaving it `proposed` indefinitely converts that good judgement
   into an open question nobody owns.
+- 2026-08-04 — **ARCHITECT DISPOSITION: STANDS UNCHANGED, `ready`, still `S`, nothing shipped against
+  it.** Verified against the tree, not the ticket text:
+  1. **ADR-0033 is still `proposed`** — its `:3` reads `- **Status:** proposed`, and its `## Challenge`
+     is still the lead's three nominated lines of attack with no challenger text under them.
+  2. **The round has not run.** `agents/backlog/adr/challenges/` holds **14** files — 0034 ×2, 0035 ×3,
+     0036 ×3, 0037 ×2, 0038, 0039 ×2, 0040 — and **none for 0033**. Every other ADR in that range got a
+     real challenger pass; this is the one that did not.
+  3. **The Implementation-notes correction is still owed and is still accurate.** ADR-0032's and
+     ADR-0033's "Number note" both still claim *"0031 exists only in T-0439's worktree… a reader on
+     `master` sees a gap at 0031"*. `agents/backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md`
+     **is** on disk, so both notes are false. Fold ADR-0033's into this round's verdict; ADR-0032's stays
+     a separate PM-filed finding (it is `accepted`, so it needs a signed erratum, not an inline edit).
+  4. **Its cost of deferral just went up.** `ADR-0042` (the wire-enum decision, filed today) carries a
+     bound `patterns-frontend.md` edit that **replaces a named canonical form** — i.e. exactly a test-2
+     *narrowing*, routed to the Architect. That routing is correct under the floor as written *and* under
+     the floor's most likely amendment, so ADR-0042 is **not** blocked on this. But it is the second
+     catalog edit this sprint routed by an unratified rule, and the next one may not be so clear-cut.
+  **No AC changes. No rescope. This ticket was correct when written and is still exactly what it says.**
 
 ## Review
 <!-- challenger + lead write the verdict into ADR-0033; the PM records the outcome here -->

@@ -2,7 +2,7 @@
 id: T-0531
 title: Known constraint — a unique index containing nullable TenantId enforces nothing in single-tenant mode
 status: ready
-size: S
+size: XS
 owner: architect
 created: 2026-08-02
 updated: 2026-08-04
@@ -87,36 +87,66 @@ Three legitimate shapes, for the record: (a) index + an app-level guard, and say
 (b) `.AreNullsDistinct(false)`, precedented twice; (c) drop `TenantId` from the key where a globally-unique
 FK already pins the tenant transitively.
 
-## Acceptance criteria
+## ⚠️ RESCOPED 2026-08-04 (architect) — four of the five AC are already satisfied elsewhere
 
-- [ ] **AC1 — the constraint is recorded where a designer will meet it.** Given
-      `agents/architecture/decisions/multi-tenancy-and-region.md`, When the architect updates it, Then it
-      carries the constraint, the nine-index inventory, the three legitimate shapes, and the rule *"a
-      nullable-`TenantId` unique index may not be a design's sole arbiter"*. **Evidence:** the doc diff.
-- [ ] **AC2 — the two corrections are on the record.** Given the corrections above, When the doc is
-      updated, Then both are stated: nine indexes carry `TenantId` (not zero), and `NULLS NOT DISTINCT`
-      already ships twice (so it is not a novel construct). **Evidence:** the doc diff naming the
-      file:line citations.
-- [ ] **AC3 — the misleading in-code comment is corrected.** Given
-      `UserMembershipEntityConfiguration.cs:106-109`'s *"rather than introduce a one-off NULLS NOT
-      DISTINCT"*, When the change lands, Then that clause is corrected to reflect that the construct is
-      already used at `FiscalCounterEntityConfiguration.cs:28` and `LiveActivityTokenConfiguration.cs:28`.
-      **The index itself does not change** — only the sentence that would talk the next reader out of a
-      shipped option. (Same rule as T-0530: a comment asserting something untrue stops the reviewer.)
-- [ ] **AC4 — ADR-0028's activation list gains it.** Given the multi-tenancy activation work, When AC1
-      lands, Then the doc states that switching multi-tenancy on **changes the enforcement status of eight
-      of the nine indexes** — invariants that are today guaranteed by app-level code start being guaranteed
-      by the database, and any place where the app-level guard was *removed* on the strength of the index
-      breaks in the other direction. This is a pre-activation checklist item, not a today item.
-- [ ] **AC5 — nothing is fixed.** Given the diff, When it is reviewed, Then it contains **no** entity
-      configuration change other than AC3's comment, **no** migration, and **no** behaviour change. If the
-      architect concludes an index genuinely needs `AreNullsDistinct(false)` today, that is a **separate
-      ticket with an `ef-migration` manual step** — file it, do not do it here.
+**Verified at HEAD, against the tree rather than against this ticket's text.** Most of what this ticket
+was written to record **has since been written down**, in a better place than the one it named — the loop
+worked, and the ticket had not noticed. What is left is **one** item, and it is the one nobody wrote.
+
+| Original AC | State at HEAD | Evidence |
+|---|---|---|
+| **AC1** — record the constraint + the three shapes | ✅ **DONE, elsewhere.** `agents/knowledge/consistency.md` §*"Tenant-scoped unique indexes: `NULLS NOT DISTINCT` is decided by the index's JOB, not by a majority"* carries the constraint, the sole-arbiter vs backstop split, the live instances on both sides, and *"the reviewer checks the emitted DDL, not the C# builder call"*. `patterns-backend.md` points at it from the metered-benefit archetype. It is **catalog law**, not a design note — a stronger home than the one AC1 named. | `consistency.md` §"Judgment calls"; `patterns-backend.md` (metered-benefit §, "Sole arbiter of a concurrent claim ⇒ `NULLS NOT DISTINCT`") |
+| **AC2** correction #2 — *"`NULLS NOT DISTINCT` is not a novel construct"* | ✅ **DONE, twice over.** Stated as catalog law (*"`AreNullsDistinct(false)` has shipped in the committed `Initial` migration since day one, so 'we don't do that here' is a false invariant"*) **and** as a named deviating form. | `consistency.md`, same § |
+| **AC2** correction #1 — *"nine indexes carry `TenantId`, not zero"* | ❌ **WITHDRAWN, deliberately.** It corrects `adr/challenges/0034-db.md`, a **challenge document of an ADR that is now `accepted`**. Per `adr/README.md` + the ADR-0031 erratum precedent, a `## Challenge` records *what was in front of the panel*; editing it after the verdict falsifies the record. The finding's conclusion was right and survived into the verdict, which is where it belongs. **Do not "fix" the challenge doc.** | `adr/README.md` §"erratum exception"; ADR-0031 §A *"leave citations that pin what was ruled on"* |
+| **AC3** — correct the misleading in-code comment | ✅ **DONE.** `UserMembershipEntityConfiguration.cs:111-119` now reads *"…An index that is the SOLE ARBITER of a concurrent claim (FiscalCounters, MembershipBenefitUsages, PromoCodeRedemptions) must be NULLS NOT DISTINCT instead, because no read can arbitrate a race. `AreNullsDistinct(false)` is a shipped construct on this database, **not a one-off to be avoided**."* `LoyaltyTransactionEntityConfiguration.cs:88` carries the same correction. | both files, at HEAD |
+| **AC4** — the **activation** consequence | 🔴 **STILL UNWRITTEN — the whole of what is left.** See the rewritten AC below. | `multi-tenancy-and-region.md` (89 lines) has **no** occurrence of "unique index", "NULLS", "DISTINCT" or "AreNullsDistinct" |
+| **AC5** — nothing is fixed | ✅ moot — AC3 was the only code touch and it has landed. | — |
+
+**And the frozen inventory AC1 asked for would now be WRONG.** The nine-row table in §Context above was
+true on 2026-08-02 and is stale on 2026-08-04: the regenerated `Initial` (`7e1cf7f5`) moved **five**
+indexes onto `.AreNullsDistinct(false)` — `FiscalCounters`, `LiveActivityTokens`,
+`MembershipBenefitUsages`, `PromoCodeRedemptions`, `EmployeePayoutDetails` (verified by grep at HEAD).
+Copying a counted table into a living doc would bake in a number that decays every sprint. **State the
+rule and how to re-derive the list, never the list** — the same lesson ADR-0031 §D1 learned about
+coverage claims ("state coverage structurally, never empirically").
+
+## Acceptance criteria (rewritten — one item)
+
+- [ ] **AC1′ — the ACTIVATION consequence is recorded, in the living doc that owns the tenancy axis.**
+      Given `agents/architecture/decisions/multi-tenancy-and-region.md` — whose §"Axis (a)" already
+      establishes that single-tenant mode **is** `TenantId == null` — When the architect updates it, Then
+      it carries a short section stating that **turning multi-tenancy on changes which unique indexes
+      enforce anything**, specifically:
+      1. Under a **non-null** tenant, every `TenantId`-bearing unique index starts firing, including the
+         ones that are inert today. An invariant guaranteed today by app-level code becomes guaranteed by
+         the database — and a race that today produces two rows starts producing a `DbUpdateException` on
+         a path that may not expect one.
+      2. **The reverse is the dangerous direction:** anywhere an app-level guard was *removed* on the
+         strength of an index, activation does not help — that invariant is unguarded **now**, in the mode
+         the platform actually runs in. ADR-0035 D3 proposed exactly this shape (an index as the sole
+         arbiter after explicitly removing the app-level pre-check) and it is why the rule exists.
+      3. **A pointer, not a copy**, to `agents/knowledge/consistency.md` §"Tenant-scoped unique indexes"
+         for the rule itself — the catalog is the law; this doc states the *activation* consequence only.
+      4. **How to re-derive the current list** (`grep -rn "AreNullsDistinct" src/Cleansia.Infra.Database/EntityConfigurations/`
+         and cross-check `.IsUnique()` sites whose key includes `TenantId`) — **and no frozen table**, for
+         the reason stated above.
+      **Evidence:** the doc diff. **Size: XS.**
+- [ ] **AC2′ — nothing else changes.** No entity configuration, no migration, no behaviour, no catalog
+      edit (the catalog already says it), no touch to any `adr/challenges/*.md`. If the architect concludes
+      an index genuinely needs `AreNullsDistinct(false)` today, that is a **separate ticket with an
+      `ef-migration` manual step**.
 
 ## Out of scope
 
-- Changing any index. See AC5. Any index change needs an owner-run EF migration and does not belong in a
+- Changing any index. See AC2′. Any index change needs an owner-run EF migration and does not belong in a
   note ticket.
+- **Editing `adr/challenges/0034-db.md` to correct CH-D2's "not one includes `TenantId`" claim.**
+  Withdrawn 2026-08-04 — see the rescope table. A challenge document records what the panel saw.
+- **Copying the nine-index inventory anywhere.** It is already stale. Record the re-derivation, not the
+  list.
+- **ADR-0028's activation pack.** It is `**DECLINED (owner, 2026-07-19)**` and is an `accepted`-status
+  immutable artifact besides — it cannot gain a checklist item. The original AC4 pointed at it; AC1′
+  points at the living doc instead, which is the correct home and is not blocked by the decline.
 - Adjudicating ADR-0035's D3 (whether *its* index needs `NULLS NOT DISTINCT`, a `COALESCE` key, or an
   advisory lock). That is the live panel's call; this ticket supplies the ground truth it needs and nothing
   more.
@@ -151,6 +181,28 @@ ADR. `agents/knowledge/security-rules.md` S8 is the rule this constraint qualifi
   both reason from the nullable-`TenantId` fact. Two entity-config comments still call `NULLS NOT DISTINCT`
   "a one-off" when it already ships **five** times in the committed migration — correcting those comments
   is in this ticket's lane. **AC5 stands: nothing is fixed, no migration, no index change.**
+- 2026-08-04 — **ARCHITECT DISPOSITION: RESCOPED, `ready`, size `S` → `XS`. It is still needed, but for
+  one AC out of five.** The previous status-log line (immediately above) is now itself partly stale and
+  is the reason this pass was worth running: it claims *"two entity-config comments still call `NULLS NOT
+  DISTINCT` a one-off"*. **They no longer do** — `UserMembershipEntityConfiguration.cs:111-119` and
+  `LoyaltyTransactionEntityConfiguration.cs:88` both now say the opposite, in so many words. The AC3
+  work landed without this ticket, which is the normal and good outcome of a catalog rule doing its job;
+  the ticket had simply not been re-verified.
+  - **Already written down (so: withdrawn from this ticket)** — the constraint, the sole-arbiter-vs-
+    backstop shapes, the live instances on both sides, the "check the emitted DDL" reviewer rule and the
+    "false invariant" deviating form are all **catalog law** in `agents/knowledge/consistency.md`
+    §"Tenant-scoped unique indexes", cited from `patterns-backend.md`. That is a *stronger* home than
+    the living doc AC1 asked for.
+  - **Withdrawn on principle** — the correction to `adr/challenges/0034-db.md`. ADR-0034 is `accepted`;
+    its challenge doc records what the panel saw.
+  - **Withdrawn as decayed** — the nine-row inventory. Five indexes moved since it was counted.
+  - **What survives** — AC1′: the **activation** consequence, which is written **nowhere**
+    (`multi-tenancy-and-region.md` has zero occurrences of "unique index"/"NULLS"/"DISTINCT"), and which
+    is the one part of the original finding that is genuinely about multi-tenancy rather than about
+    indexes. Note its original home, ADR-0028, is **owner-DECLINED and immutable**, so AC1′ retargets it
+    at the living doc.
+  - **Not a duplicate of T-0530** (the "two false mirrors" comment ticket) — that one is about comments
+    asserting a mirror that does not hold; this is about a doc that has never stated a consequence.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

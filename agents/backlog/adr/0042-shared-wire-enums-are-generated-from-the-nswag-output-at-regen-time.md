@@ -1,4 +1,4 @@
-# ADR-0041 — The shared wire-enum declaration is **generated from the NSwag output, inside the owner's regen command**, and the hand-written mirror is deleted; the three per-host clients keep emitting their own copies, because that multiplicity is the per-host seam and not the defect
+# ADR-0042 — The shared wire-enum declaration is **generated from the NSwag output, inside the owner's regen command**, and the hand-written mirror is deleted; the three per-host clients keep emitting their own copies, because that multiplicity is the per-host seam and not the defect
 
 - **Status:** `proposed` — 2026-08-04, **author mode**. The **owner has ruled the WHAT** (see §0); that
   half is not open to challenge. **The HOW is the architect's and is open** — one challenger round is
@@ -494,7 +494,7 @@ beginning **"The fix, and the general rule: a wire enum a shared lib needs is de
 That paragraph states the rule this ADR replaces. It is **replaced in full** by:
 
 > **The fix, and the general rule: a wire enum a shared lib needs is GENERATED into `@cleansia/models`
-> by the regen command — never hand-written (ADR-0041, answering `Q-ENUM-01`).** Shared code may not
+> by the regen command — never hand-written (ADR-0042, answering `Q-ENUM-01`).** Shared code may not
 > import any `*-services` client, so the symbol has to exist somewhere a `scope:shared` lib can read.
 > It is **not** re-typed by a human. `tools/generate-wire-enums.mjs` runs inside every
 > `npm run generate-*-client`, reads the client files named by the `nswag-*.json` `output` keys, keeps
@@ -502,16 +502,16 @@ That paragraph states the rule this ADR replaces. It is **replaced in full** by:
 > `libs/shared/models/src/lib/models/wire-enums.generated.ts`. Import wire enums from
 > `@cleansia/models` in shared code exactly as before; **never** add a hand-written `export enum` to that
 > lib for something a client already emits — the three-copies-plus-a-mirror scheme produced a silently
-> renumbered `OrderStatus` that sat in the tree undetected (ADR-0041 §1.1). The three per-host clients
+> renumbered `OrderStatus` that sat in the tree undetected (ADR-0042 §1.1). The three per-host clients
 > keep emitting their own copies **deliberately**: they are three contracts, and one shared symbol would
-> hide a host that had fallen behind (ADR-0041 D3). Note the shared symbol is a **constant table, not a
+> hide a host that had fallen behind (ADR-0042 D3). Note the shared symbol is a **constant table, not a
 > type** — TS numeric enums are nominal across declarations, so a pipe takes `… | number` and the
 > generator's agreement check is the only thing verifying the integers.
 >
 > **Enforced by:** `tools/generate-wire-enums.mjs` (runs inside every regen entry point) — **T1-CI at the
 > regen**, plus `wire-enums.generated.spec.ts` in `nx test models` as a committed-state backstop
 > (**T2-ADVISORY on a regen-only commit** — `models` is not Nx-affected by a client change; see
-> ADR-0041 §1.4).
+> ADR-0042 §1.4).
 
 ---
 

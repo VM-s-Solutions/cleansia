@@ -4,7 +4,7 @@
 > `agents/backlog/adr/0031-nswag-regen-drift-is-guarded-at-regen-time.md` (**ADR-0031**, accepted
 > 2026-07-30 — *call sites* vs a regen) and
 > `agents/backlog/adr/0041-shared-wire-enums-are-generated-from-the-nswag-output-at-regen-time.md`
-> (**ADR-0041**, `proposed` 2026-08-04 — the *shared enum declaration*, answering `Q-ENUM-01`). The ADRs
+> (**ADR-0042**, `proposed` 2026-08-04 — the *shared enum declaration*, answering `Q-ENUM-01`). The ADRs
 > are the frozen decisions with their defended alternatives; this file is the *evolving* design notes,
 > trade-off space, and current shape. Update this when the design evolves; supersede an ADR for a real
 > decision change.
@@ -16,8 +16,8 @@
 
 The **web** generated clients only — the three NSwag-generated TypeScript clients under
 `src/Cleansia.App/libs/core/*/src/lib/client/`, **and the shared wire-enum artifact derived from them**
-(ADR-0041). The Android/iOS generated clients come from the separate owner-only `mobile-spec-regen` and
-are **not** covered by anything on this page (ADR-0031 residue #4; restated as ADR-0041 residue 3, which
+(ADR-0042). The Android/iOS generated clients come from the separate owner-only `mobile-spec-regen` and
+are **not** covered by anything on this page (ADR-0031 residue #4; restated as ADR-0042 residue 3, which
 adds the consequence that the same 12 enums exist a third and fourth time on mobile with nothing
 comparing them to the web ones).
 
@@ -37,7 +37,7 @@ comparing them to the web ones).
 (`quality-gates.md` §"Owner-only steps"); agents flag it as a `manual_steps` entry and block dependent
 work until the owner confirms.
 
-> 🔴 **Stale duplicate — RECLASSIFIED 2026-08-04 (ADR-0041 §1.1): not dead code, a WRONG WIRE CONTRACT.**
+> 🔴 **Stale duplicate — RECLASSIFIED 2026-08-04 (ADR-0042 §1.1): not dead code, a WRONG WIRE CONTRACT.**
 > `libs/core/services/src/lib/client/admin-client.ts` is written by **no** `nswag-*.json`, exported by no
 > barrel, imported by nothing, and typechecked by neither the regen guard nor the three production
 > builds — yet `CLAUDE.md`'s repo map still advertises `core/services/` as "NSwag-generated API clients".
@@ -52,7 +52,7 @@ work until the owner confirms.
 >
 > **The general lesson, worth more than the instance:** *"written by no `nswag-*.json` `output` key"* is
 > the only sound definition of "not a generated client". Any tool that reasons about the client set must
-> derive it from those keys (ADR-0041 D1.1), or this file re-appears as a fourth "client" to whoever is
+> derive it from those keys (ADR-0042 D1.1), or this file re-appears as a fourth "client" to whoever is
 > globbing.
 
 ### The emission rule that makes a backend field a compile break
@@ -118,7 +118,7 @@ therefore the build's compilation unit **by construction**:
 
 ---
 
-## The second surface: shared **wire enums** (ADR-0041, `proposed` 2026-08-04 — answers `Q-ENUM-01`)
+## The second surface: shared **wire enums** (ADR-0042, `proposed` 2026-08-04 — answers `Q-ENUM-01`)
 
 ADR-0031 guards *call sites* against a regen. Nothing guarded *two generated clients against each
 other*, or the hand-written copy a `scope:shared` lib was forced to keep. That is this section.
@@ -132,7 +132,7 @@ first answer was to **type it by hand** in `libs/shared/models`. The owner ruled
 *"better to use the one that is generated from nswag… consider using backend enums on frontend instead
 of generating your own."*
 
-### Current shape (as ADR-0041 decides it)
+### Current shape (as ADR-0042 decides it)
 
 ```
 Cleansia.Core.Domain.Enums.OrderStatus        ← the source of truth (C#, [SwaggerEnumAsInt])
@@ -208,21 +208,21 @@ artifact becoming an input to the artifact it derives from).
 
 | # | Gap | Bound |
 |---|---|---|
-| E1 | The pipes keep `\| number` in their signatures — nominal enums make assignability impossible across declarations | inherent to TS; it is *why* invariant 12 is load-bearing. Do not "fix" the widening without reading ADR-0041 §1.3 |
+| E1 | The pipes keep `\| number` in their signatures — nominal enums make assignability impossible across declarations | inherent to TS; it is *why* invariant 12 is load-bearing. Do not "fix" the widening without reading ADR-0042 §1.3 |
 | E2 | A client regenerated **outside** the wrapper still skips the generator | ADR-0031 M1's residue, inherited; `wire-enums.generated.spec.ts` is the committed-state backstop |
 | E3 | An enum only *some* hosts expose is not emitted; if a host stops exposing one that shared code uses, it silently leaves the file | the shared consumer then **fails to compile during the owner's regen**, by name — the correct loud failure. The generator *prints* the non-intersecting names so nobody hand-types a mirror |
 | E4 | Mobile clients declare the same 12 enums a third and fourth time; **nothing compares them to the web ones** | ADR-0019 / `mobile-spec-regen`; its own ADR if ever wanted, not a widening of this generator |
 
-### Rollout state (ADR-0041)
+### Rollout state (ADR-0042)
 
 | Step | Where | State (2026-08-04) |
 |---|---|---|
-| ADR (the placement decision + rejected options) | ADR-0041 | **`proposed`** — challenger round is **T-0546** |
+| ADR (the placement decision + rejected options) | ADR-0042 | **`proposed`** — challenger round is **T-0546** |
 | `tools/generate-wire-enums.mjs` + its `os.tmpdir()` fixture suite | `src/Cleansia.App/tools/` | **T-0547**, blocked on the ADR |
 | `wire-enums.generated.ts` committed; `order-status.models.ts` deleted; three pipes re-pointed | `libs/shared/models`, `libs/shared/pipes` | T-0547 — **needs no regen** (derived from the already-committed clients) |
 | `SortDirection` folded in (`sort-types.models.ts` imports, does **not** re-export) | `libs/shared/models` | T-0547 |
 | Stale `libs/core/services/.../admin-client.ts` deleted | `libs/core/services` | T-0547 (closes ADR-0031 residue #5a) |
-| `patterns-frontend.md` §"Module boundaries" replacement paragraph | `agents/knowledge/` | **bound to ADR-0041 `accepted`**; literal text in ADR-0041 §7 |
+| `patterns-frontend.md` §"Module boundaries" replacement paragraph | `agents/knowledge/` | **bound to ADR-0042 `accepted`**; literal text in ADR-0042 §7 |
 | `CLAUDE.md` repo-map correction | `CLAUDE.md` | **owner `MANUAL_STEP`** — the ticket proposes, the owner edits |
 
 ---
@@ -317,7 +317,7 @@ But the rejection is **bounded**, for two recorded reasons:
       run it (owner-only), so this remains an open unknown, not a claim. The next owner regen can observe
       it for free alongside the ADR-0031 Option-D experiment.
     - **Unchanged and still true:** a green regen chain proves *the tree compiles*, not *the client
-      regenerated correctly*. The typecheck, the three builds **and** the ADR-0041 wire-enum generator all
+      regenerated correctly*. The typecheck, the three builds **and** the ADR-0042 wire-enum generator all
       only see what is on disk.
 
     What the typecheck *does* prove is exact and still worth having: whatever client file is on disk now
@@ -344,8 +344,8 @@ But the rejection is **bounded**, for two recorded reasons:
 | 3 | `strictTemplates` can be flipped off silently in an app's `tsconfig.json` | weakens the guard **and** the production build together → a `check-consistency.mjs` rule (ADR-0031 M3) |
 | 4 | Android/iOS generated clients are a parallel, separately-governed drift surface | `mobile-spec-regen` + ADR-0019; deliberately out of scope |
 | 4b | **The regen chain can report success over a bad client.** ~~formatters always exit 0~~ **half-CLOSED 2026-08-04:** all three formatters now carry `set -euo pipefail` + an output-exists check, so a failed `sed`/missing output breaks the chain. `nswag run`'s failure exit code **remains unverified** | invariant 10; the `nswag` half rides free on the next owner regen |
-| 5 | **Code no gate can see** — (a) the stale duplicate `libs/core/services/src/lib/client/admin-client.ts` + a `CLAUDE.md` map that points at it — **RECLASSIFIED 2026-08-04: not dead code, a drifted wire contract (renumbered `OrderStatus`), see the box above**; (b) app-unreachable lib files (e.g. `libs/cleansia-admin-features/template-management/.../email-template-form.facade.ts`) | (a) **deleted by T-0547** under ADR-0041 D5 — it is no longer a someday-item, because ADR-0041's "the clients agree" claim is false comfort while it exists. (b) still a dead-export sweep, not a wider guard. `CLAUDE.md` edits stay owner-gated |
-| 6 | **A wire enum a `scope:shared` lib needs has no importable home**, so a copy must exist there | ADR-0041: the copy is **generated** by `tools/generate-wire-enums.mjs` inside the regen, never hand-written. See §"The second surface" and gaps E1–E4 |
+| 5 | **Code no gate can see** — (a) the stale duplicate `libs/core/services/src/lib/client/admin-client.ts` + a `CLAUDE.md` map that points at it — **RECLASSIFIED 2026-08-04: not dead code, a drifted wire contract (renumbered `OrderStatus`), see the box above**; (b) app-unreachable lib files (e.g. `libs/cleansia-admin-features/template-management/.../email-template-form.facade.ts`) | (a) **deleted by T-0547** under ADR-0042 D5 — it is no longer a someday-item, because ADR-0042's "the clients agree" claim is false comfort while it exists. (b) still a dead-export sweep, not a wider guard. `CLAUDE.md` edits stay owner-gated |
+| 6 | **A wire enum a `scope:shared` lib needs has no importable home**, so a copy must exist there | ADR-0042: the copy is **generated** by `tools/generate-wire-enums.mjs` inside the regen, never hand-written. See §"The second surface" and gaps E1–E4 |
 
 ## Rollout state
 

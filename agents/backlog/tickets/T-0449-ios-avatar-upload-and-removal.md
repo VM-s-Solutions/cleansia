@@ -1,11 +1,11 @@
 ---
 id: T-0449
 title: iOS — avatar upload, render and removal on the customer profile
-status: ready
+status: done
 size: M
 owner: ios
 created: 2026-07-30
-updated: 2026-08-01
+updated: 2026-08-05
 depends_on: [T-0446, T-0451, T-0450]
 blocks: []
 stories: [US-user-avatar]
@@ -295,6 +295,31 @@ construction and `AvatarDiscBindingTests` covers the ink).
 **No new Info.plist key needed** — `NSCameraUsageDescription`/`NSPhotoLibraryUsageDescription` already
 ship in the customer target (T-0314's dispute-evidence capture); the avatar reuses the same picker.
 Please have the PM confirm against `project.yml`, which this agent may not read.
+
+## Follow-up pass (ios, 2026-08-05) — parity against the now-landed Android and web legs
+
+The feature was already merged (`0e4ede1b`, #184) when this pass started; it re-verified it against a
+regenerated client and against the sibling platforms, which had not landed when the evidence above was
+written. Two defects closed, three reported.
+
+**Closed — the single retry was never re-armed.** `avatarRetriedFor` was set on the first failed load
+of a blob name and never cleared, so a session that outlives a *second* SAS expiry fell back to the
+initials permanently. Android clears it in `onAvatarLoadSucceeded`; iOS had no success path at all.
+Added `CachedRemoteImage.onLoadSuccess` (Core), `ProfileAvatar.onLoadSuccess`,
+`ProfileViewModel.avatarLoadSucceeded()`, wired through both surfaces that draw the disc.
+Tests: `testAnImageThatLoadsAfterTheRetryEarnsAnotherOne`, `testARenderedPhotoReportsItsSuccess`.
+
+**Closed — copy divergence with Android.** `profile_photo_error` was a different sentence from
+Android's `profile_avatar_encode_failed` in all five locales, and `profile_photo_label` sk read
+"Profilová fotografia" where both Android and web read "Profilová fotka". Taken from Android verbatim.
+
+**Harvested** into `patterns-mobile.md` ("A re-rendered SAS-backed image"): the guard is released by a
+successful render, and the pair is plumbed through every surface that draws the image.
+
+**Reported, not actioned** — see the handover: iOS has no post-save confirmation while web ships
+`avatar.upload_success`/`remove_success` and Android was mid-flight adding the same pair; web sends the
+user's own filename + MIME + a full `data:` URI where both mobile clients re-encode to a bounded JPEG;
+and T-0465 needs no iOS work.
 
 ## Review
 <!-- reviewer + security verdicts here -->

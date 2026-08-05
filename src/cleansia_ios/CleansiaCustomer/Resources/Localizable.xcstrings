@@ -22372,31 +22372,31 @@
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tuto fotku nelze použít. Vyberte prosím jinou."
+            "value" : "Tento obrázek se nepodařilo použít. Zkuste jinou fotku."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "That photo could not be used. Please pick another one."
+            "value" : "Couldn't use that image. Try another photo."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Это фото не удалось использовать. Выберите другое."
+            "value" : "Не удалось использовать это изображение. Попробуйте другое фото."
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Túto fotku sa nepodarilo použiť. Vyberte prosím inú."
+            "value" : "Tento obrázok sa nepodarilo použiť. Skúste inú fotku."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Це фото не вдалося використати. Виберіть інше."
+            "value" : "Не вдалося використати це зображення. Спробуйте інше фото."
           }
         }
       }
@@ -22425,7 +22425,7 @@
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Profilová fotografia"
+            "value" : "Profilová fotka"
           }
         },
         "uk" : {

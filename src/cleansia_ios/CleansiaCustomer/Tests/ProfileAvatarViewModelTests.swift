@@ -223,6 +223,22 @@ final class ProfileAvatarViewModelTests: XCTestCase {
         XCTAssertEqual(client.currentUserCallCount, fetchesAfterLoad + 2)
     }
 
+    /// The retry a refetch buys is spent, not forfeited: once the fresh signature has rendered, the
+    /// next expiry of the same blob is a new failure and earns its own refetch. Without this the disc
+    /// falls back to initials for the rest of the session on the second expiry.
+    func testAnImageThatLoadsAfterTheRetryEarnsAnotherOne() async {
+        client.currentUserResult = .success(ProfileFixtures.user(profilePhoto: ProfileFixtures.photo()))
+        let vm = makeVM()
+        await vm.refresh()
+        let fetchesAfterLoad = client.currentUserCallCount
+
+        await vm.avatarLoadFailed(fileName: "blob-1")
+        vm.avatarLoadSucceeded()
+        await vm.avatarLoadFailed(fileName: "blob-1")
+
+        XCTAssertEqual(client.currentUserCallCount, fetchesAfterLoad + 2)
+    }
+
     private func save(_ vm: ProfileViewModel) async {
         await vm.save(
             firstName: "Jane",

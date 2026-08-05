@@ -316,6 +316,17 @@ raw components one-off; never duplicate a `:core` component.
 > a load failure **re-fetch the owning DTO once, guarded per key** — an image view cannot tell an
 > expired signature (403) from a deleted blob (404), so branching on the status is not implementable;
 > the second failure falls through to the placeholder instead of looping.
+>
+> **And the guard is released by a successful render, not held for the session.** A signature expires
+> *again*: a session that outlives two expiries hits the second one with its one retry already spent, so
+> a "once per key" guard that is never re-armed drops the avatar to initials permanently — and every
+> suite stays green, because the first expiry is the only one anybody tests. So the component reports
+> **success as well as failure** (`CachedRemoteImage.onLoadSuccess`, Coil's `onSuccess`) and the owner
+> clears the watermark on it (`ProfileViewModel.avatarLoadSucceeded` / Android
+> `onAvatarLoadSucceeded`) — the retry is *spent*, not forfeited. Both platforms plumb the pair through
+> **every** surface that draws the disc, not just the one the bug was found on; a call site wired for
+> failure only re-arms nothing. Mutation to prove it: empty the success handler — a test that fails a
+> key, succeeds it, then fails it again must go red.
 
 > **A sheet over a live backdrop — the ONE way (Android `SnapSheet`):** a panel layered over a
 > full-bleed map is **not** a `BottomSheetScaffold`. That scaffold has exactly two resting states —

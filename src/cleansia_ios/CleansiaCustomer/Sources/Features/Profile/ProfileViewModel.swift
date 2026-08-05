@@ -75,6 +75,12 @@ final class ProfileViewModel: ViewModel {
         await refresh()
     }
 
+    /// The signature the refetch bought expires too, so a rendered image releases the guard: the next
+    /// failure of the same blob is a fresh expiry, not the loop the guard exists to stop.
+    func avatarLoadSucceeded() {
+        avatarRetriedFor = nil
+    }
+
     func refresh() async {
         guard !refreshState.isSubmitting else { return }
         refreshState = .submitting

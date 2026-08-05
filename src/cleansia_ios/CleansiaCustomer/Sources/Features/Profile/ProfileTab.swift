@@ -40,7 +40,8 @@ struct ProfileTab: View {
                             onEdit: { onOpen(.editProfile(showBookingHint: false)) },
                             onAvatarLoadFailure: { photo in
                                 Task { await profileVM.avatarLoadFailed(fileName: photo.fileName) }
-                            }
+                            },
+                            onAvatarLoadSuccess: profileVM.avatarLoadSucceeded
                         )
 
                         MembershipManagementCard(vm: membershipVM, onSubscribeClick: { onOpen(Self.subscribeRoute) })
@@ -200,6 +201,7 @@ private struct ProfileHeader: View {
     var topInset: CGFloat = 0
     let onEdit: () -> Void
     let onAvatarLoadFailure: (ProfilePhoto) -> Void
+    let onAvatarLoadSuccess: () -> Void
 
     @Environment(\.locale) private var locale
 
@@ -214,7 +216,8 @@ private struct ProfileHeader: View {
                 avatarCache: avatarCache,
                 topInset: topInset,
                 onEdit: onEdit,
-                onAvatarLoadFailure: onAvatarLoadFailure
+                onAvatarLoadFailure: onAvatarLoadFailure,
+                onAvatarLoadSuccess: onAvatarLoadSuccess
             )
             ProfileStatsCard(
                 bookings: user?.totalBookings ?? 0,
@@ -285,6 +288,7 @@ private struct HeroGradient: View {
     var topInset: CGFloat = 0
     let onEdit: () -> Void
     let onAvatarLoadFailure: (ProfilePhoto) -> Void
+    let onAvatarLoadSuccess: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
@@ -292,7 +296,8 @@ private struct HeroGradient: View {
                 display: user?.profilePhoto.map(AvatarDisplay.remote) ?? .initials,
                 initials: user?.initials ?? "",
                 cache: avatarCache,
-                onLoadFailure: onAvatarLoadFailure
+                onLoadFailure: onAvatarLoadFailure,
+                onLoadSuccess: onAvatarLoadSuccess
             )
             VStack(alignment: .leading, spacing: 2) {
                 Text(user?.fullName ?? "")
@@ -387,7 +392,8 @@ struct EditProfileChip: View {
                 tier: "Regular",
                 avatarCache: RemoteImageCache(),
                 onEdit: {},
-                onAvatarLoadFailure: { _ in }
+                onAvatarLoadFailure: { _ in },
+                onAvatarLoadSuccess: {}
             )
             .background(CleansiaColors.background)
         }

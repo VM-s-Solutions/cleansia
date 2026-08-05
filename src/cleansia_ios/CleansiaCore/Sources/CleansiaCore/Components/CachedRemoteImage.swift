@@ -8,10 +8,13 @@
     /// `onLoadFailure` fires once per failed attempt so the owner can re-fetch the DTO that carries the
     /// URL. The loader cannot tell an expired signature from a deleted blob, so the caller retries
     /// blind and guards the retry itself; a cancelled load (the view left the screen) is not a failure.
+    /// `onLoadSuccess` is what lets that owner re-arm the guard — a signature expires again, and a
+    /// retry spent on the first expiry must not be forfeited for the rest of the session.
     public struct CachedRemoteImage<Placeholder: View>: View {
         private let cacheKey: String
         private let url: URL
         private let onLoadFailure: () -> Void
+        private let onLoadSuccess: () -> Void
         private let placeholder: () -> Placeholder
 
         @ObservedObject private var cache: RemoteImageCache
@@ -22,12 +25,14 @@
             url: URL,
             cache: RemoteImageCache,
             onLoadFailure: @escaping () -> Void = {},
+            onLoadSuccess: @escaping () -> Void = {},
             @ViewBuilder placeholder: @escaping () -> Placeholder
         ) {
             self.cacheKey = cacheKey
             self.url = url
             self.cache = cache
             self.onLoadFailure = onLoadFailure
+            self.onLoadSuccess = onLoadSuccess
             self.placeholder = placeholder
         }
 
@@ -47,11 +52,13 @@
         private func load() async {
             if let hit = cache.image(forKey: cacheKey) {
                 image = hit
+                onLoadSuccess()
                 return
             }
             image = nil
             do {
                 image = try await cache.image(forKey: cacheKey, url: url)
+                onLoadSuccess()
             } catch {
                 guard !Task.isCancelled else { return }
                 onLoadFailure()

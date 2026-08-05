@@ -17,6 +17,7 @@ struct ProfileAvatar: View {
     /// so the card call site passes an outline token instead.
     var strokeColor: Color = .white.opacity(0.35)
     var onLoadFailure: (ProfilePhoto) -> Void = { _ in }
+    var onLoadSuccess: () -> Void = {}
 
     var body: some View {
         ZStack {
@@ -49,6 +50,7 @@ struct ProfileAvatar: View {
                 url: stored.blobURL,
                 cache: cache,
                 onLoadFailure: { onLoadFailure(stored) },
+                onLoadSuccess: onLoadSuccess,
                 placeholder: { Color.clear }
             )
         case let .picked(image):

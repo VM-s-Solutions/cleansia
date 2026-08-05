@@ -8,6 +8,11 @@
   defined. **D3 is UNBEATEN, NOT SETTLED.** **D4 / Block C′ is SUSTAINED and SEVERED** to its own round,
   with the D1 paragraph excised. **This file stays on disk as the record of what was tried and why it
   failed** — the next author starts from §Verdict's R-1…R-7, not from a blank page.
+  > 📌 **Superseding note (2026-08-05, round-2 lead).** The second author round ran, was challenged, and
+  > is also **`rejected`** (`NNNN-what-makes-a-catalog-sentence-govern-round-2.md`) — and its lead
+  > **closed L1 as a definition project** on marginal value (V-2), so **no next author is owed**.
+  > R-1…R-7 stand unchanged as the bar for anyone who reopens it, and the reopen path is one author
+  > **Defense pass on the round-2 draft**, on two named triggers only. **D2 is HELD for a third time.**
 - **Date:** 2026-08-05 (drafted; challenged; **ruled 2026-08-05 by an independent fifth instance**)
 - **Number:** **not allocated on purpose.** ADR-0033's independent lead pass left allocation to the PM,
   and two architects collided on 0041 this sprint by both grepping `adr/` correctly at the same moment.

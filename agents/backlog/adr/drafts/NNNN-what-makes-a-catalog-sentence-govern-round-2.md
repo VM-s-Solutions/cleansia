@@ -1,9 +1,13 @@
 # ADR-NNNN (DRAFT — round 2, number NOT allocated) — What makes a catalog sentence *govern* an entry: reach, read at the narrowest scope the sentence's own words support, against the entry's written exhibit
 
-- **Status:** `proposed` — **author's draft only. Nothing here is ratified; no ticket may cite it**
-  (`deliberation.md` §6). A fresh challenger and then a lead rule on it. **This is the second author
-  round on L1**; the first draft is `rejected` and stays on disk at
-  `agents/backlog/adr/drafts/NNNN-what-makes-a-catalog-sentence-govern.md` as the record of what failed.
+- **Status:** 🔴 **`rejected` — 2026-08-05, lead pass, panel CLOSED. This is not an ADR and no ticket
+  may cite it.** It stays on disk as the record of what was tried, alongside round 1's. **The operative
+  rule is unchanged: accepted ADR-0033 D1 + M1/M2, and `conventions.md:161-169`'s standing warning that
+  *"governs"* is undefined.** See `## Verdict` for the ruling and for the one carve-out the lead
+  routed as work (**G3**). The lead also ruled **L1 closed as a definition project** — the re-open path
+  is named in §Verdict and is deliberately cheap, but it is not open by default.
+  *(Filed `proposed` as the second author round on L1; the first draft is `rejected` at
+  `agents/backlog/adr/drafts/NNNN-what-makes-a-catalog-sentence-govern.md`.)*
 - **Date:** 2026-08-05 (drafted)
 - **Number:** **not allocated on purpose.** Highest on disk today is **0042** (verified by `Glob` over
   `agents/backlog/adr/00*.md` immediately before writing this file). The PM allocates when the panel
@@ -499,6 +503,13 @@ and what it proposes.
 
 ## Follow-up tickets — specs, not files
 
+> 🔴 **Lead ruling (2026-08-05): this draft is `rejected`, so N-A and N-B are DEAD — they land text from
+> a rejected decision and no ticket may be filed from them.** Of this table, exactly one item survives
+> and it was promoted: **N-C (G3)**, now the lane's one deliverable, at **twice** the size recorded here
+> — §"Shared UI & theme" runs `:247`–`:500` and hosts **eight** iOS entries, and iOS proper starts at
+> `:615`. **N-D, N-E and N-F are unchanged and unfiled**; N-F is the only thing that could reopen L1 on
+> evidence. See §Verdict.
+
 | # | Title | Layers / size | Sequencing |
 |---|---|---|---|
 | **N-A** | **Block A into `conventions.md`** — REPLACE the `:161-169` standing warning with the definition. Nothing else on the page changes | architect + docs, **XS** | on acceptance |
@@ -559,12 +570,379 @@ L3 and the limb-1 reversal (closed and applied).
 
 ## Defense
 
-*Empty — awaiting the challenger round.*
+*Empty. **No `## Defense` was filed** — the author round did not run before this ruling, for the third
+consecutive panel in this lane (`deliberation.md` step 3 has never executed here; ADR-0032, round 1 and
+round 2 all closed on undefended artifacts). Recorded as a process finding in §Verdict, because it is
+part of what the lane's cost is being measured against. It is **not** the ground of the ruling: no
+defense restores a citation that does not say what it is quoted for, and none makes a phase commit
+carry a per-ticket diff.*
 
 ## Verdict
 
-*Empty — awaiting the lead round. Consensus is recorded here as "zero blocking challenges remain", or
-the disagreement is escalated.*
+> **Lead: a seventh instance.** Did not write ADR-0032 or ADR-0033, did not challenge either, did not
+> write ADR-0033's independent lead pass, **did not write the round-1 draft, its challenge or its
+> verdict, and did not write this round's draft or its challenge.** `deliberation.md` §"The roles".
+> **T-0553 AC1 SATISFIED on composition** (author ≠ challenger ≠ lead, for the second round running).
+>
+> **Method.** No `Bash`. Evidence: the live tree (`agents/knowledge/patterns-mobile.md`,
+> `patterns-backend.md`, `conventions.md`, `.claude/agents/reviewer.md`,
+> `adr/challenges/0033-floor.md`, `adr/0033-…md`, `adr/challenges/0041-schema.md`, the ticket
+> directory) and the coordinator-generated catalog-edit corpus. **I re-derived every load-bearing claim
+> I rule on and I ran five checks neither party ran.** Three of them changed a finding's shape; two
+> corrected the challenger. All are named below rather than folded in silently.
+
+**Consensus: NOT reached. The draft is `rejected` as filed.** Two blocking findings stand (**CH-A**,
+**CH-B**), a third is sustained on substance with its remedy refused (**CH-C**), and four more are
+sustained as drafting or weight.
+
+**And a second ruling, which is the one that matters more: L1 is CLOSED as a definition project.** Not
+because the draft is bad — it is materially better than round 1 and the challenger is right about that
+— but because **this round's own evidence dissolved the case for continuing.** The finding is **V-2**
+below. A cheap, named re-open path is recorded at the end; it is not open by default.
+
+| # | Disposition | One line |
+|---|---|---|
+| **V-2** *(new, this pass)* | **DECIDES THE LANE** | After CH-D, **the record contains no evidenced case in which a defined `governs` would have changed a routing outcome.** Case β dissolves three independent ways; G1/T-0527 routes under the **accepted** floor; the one live indeterminacy left is **G3**, a defect in a catalog file with an XS fix in the ios lane. |
+| **CH-A** | **SUSTAINED — BLOCKING** | The subject question moved from `S` to `E`; it did not dissolve. And `"the ticket's diff"` is not mechanically recoverable here — I confirmed the second half of this myself. |
+| **CH-B** | **SUSTAINED — BLOCKING on the citation. Its substantive alarm CORRECTED as overstated.** | The warrant is a mis-citation and must not ship. But nothing was smuggled: accepted ADR-0033 declares test 2 **semantic** on its face, and the disjunct has four determinate applications in the record. |
+| **CH-C** | **SUSTAINED on substance — worse than filed. REMEDY REFUSED.** | Verified and enlarged: **eight** iOS entries under that preamble, not four. But the mechanism is misdiagnosed, the error direction is permissive both ways, and the position rule **carries no row** — so this is a defect *in the rule*, not something to fence with a condition on another lane's ticket. |
+| **CH-D** | **SUSTAINED on limb 2** (limb 1 falls with CH-C) | Verified independently. Its consequence — not its finding — is **V-2**. |
+| **CH-E** | **SUSTAINED as to weight; arithmetic stands** | ~3 discriminating rows, not 9. The R7/R11 clustering error is real, from the draft's own row labels. |
+| **CH-F** | **SUSTAINED** | Verified `reviewer.md:114-118`. |
+| **CH-G** | **SUSTAINED, and sharpened against the draft's premise** | `conventions.md:153-154` is not "M1's negative" — it is a **positive** limb of `governs` already on the operative page. |
+| **G5** (the composition defect) | **SUSTAINED as an instance of CH-A, not as an independent defect — and corrected on evidence** | The mismatch is real and worked from the corpus. It is not a demonstrated pathology: the one case in the record resolved by **widening the enforcer** one ticket later. |
+| **F4** (§F4, no fourth test) | **MOOT — not ruled** | It is offered as a consequence of D1. D1 is rejected, so the consequence has no premise. F4's disposition stays exactly where the round-1 verdict left it: **UNBEATEN, NOT SETTLED**. The eleventh trigger, built and killed here, is banked in the record. |
+
+---
+
+### V-2 — the finding that decides the lane: **the motivating evidence dissolved during this round**
+
+L1 exists because ADR-0033's operative predicate has an undefined term. That is a true structural
+observation and it has never been in dispute. What *was* in dispute is what it costs — and the panel's
+own work has now answered that, in the direction nobody was arguing for.
+
+**The two cases T-0553 AC2 names are the whole evidenced case for L1.** Track what happened to them:
+
+| Case | State entering this round | State leaving it |
+|---|---|---|
+| **T-0473 / Case β** — the founding indeterminacy (`catalog-governance.md:104-113`, ADR-0033 §Ruling 1) | already dissolving twice over: the candidate sentence **post-dates** the entry by a day (`2012b014` vs `0e4ede1b`), and its paragraph **cites *"(the T-0473 rule)"* by name** | **dissolved a third time, on the sentence's own words.** I read it in the live file: `patterns-mobile.md:563-571` names **`${…}`** (Kotlin string templates; Swift interpolates `\(…)`) and **`R`**, and at `:569` the sentence *itself* — not merely its paragraph — reads *"because a resolver test does not cover the call site **(the T-0473 rule)**"*. It names the rule it is alleged to narrow, as a rule it composes with. |
+| **T-0432 / R10** — the `:core` case | contested on scope (round-1 CH-C) | **still live, and it is now the only one.** But it is **G3**: a section preamble whose scope is undefined. Its fix is one clause of scope in `patterns-mobile.md`, in the ios lane, size XS. |
+
+**And the strongest case in the whole record for this lane does not need a definition.** `G1`/T-0527
+(`ab077504`) — a harvest that deleted a named canonical form, deleted a shipped Swift file and rewrote
+a committed suite, `owner: qa`, inline. Three separate documents say the accepted floor already routes
+it: `catalog-governance.md:428` (*"**No new definition is needed to catch it.**"*), the round-1 verdict,
+and **this draft's own R8 row** (*"the **accepted** floor routes it too"*). What failed on G1 was that
+nothing was watching — **L2**, which landed 2026-08-05.
+
+**So the ledger, stated plainly.** In a corpus of 13 scored edits plus every case four prior passes
+put in the record, there is **not one** where a defined `governs` would have changed a routing outcome.
+On a *disputed* case, D1 and the status quo produce the same operative result — route — because M2's
+route-by-default is accepted and D1's own Block A ends *"Unresolved either way ⇒ route."* On an
+*undisputed-but-wrong* case, the only evidenced instance is Case β, and Case β answers itself three
+ways.
+
+**I want to state the counter-argument at full strength rather than as a footnote**, because it is
+good: absence of evidence over 13 of 94 commits is not evidence of absence (**N-F**), and a rule in
+force with an undefined operative term will eventually bite whether or not it has bitten. Both true.
+What decides it against another cycle is the **direction** of the residual, which both parties agree
+on: a missed governing sentence can only *add* firings, and an unresolved reading routes. The
+undefined term therefore costs **argument-time and over-routing**, not safety — and `conventions.md`
+says so on the page, honestly, today. That is a state a platform going to production can carry
+indefinitely; three architect-rounds against it is not.
+
+**This is a ruling about marginal value, and I am making it as one, not as a verdict on the draft's
+quality.** The draft's own Alternative H says a lead who rules this way *"is not making an error"*; the
+challenger says the exit should not be taken and gives one reason — *"the definition catches R8/G1 on
+test 2"*. **That reason does not hold, and the draft it is defending is where I checked it.** An honest
+refusal of the cheap exit is evidence and I weighed it as such; it is not load-bearing when its single
+stated ground is contradicted by its own target.
+
+---
+
+### CH-A — SUSTAINED, BLOCKING. And one correction *in the author's favour* that changes what the repair is
+
+**The finding stands, on two independent legs.**
+
+*Leg 1 — limb (a)'s filter is a subject judgement.* D1 says the exhibit is *"every file this ticket
+changed **that `E` declares canonical or withdraws a form from**"*. Answering that requires deciding
+what form `E` declares canonical and which changed files carry it. That is *"what is this entry
+about?"* — `E`'s subject, one level over from `S`'s. The draft asserts the opposite twice (*"the exhibit
+**is** the diff"*, *"a fact about the change, not a characterization of it"*, *"No interpretation"*),
+and both are true only of the **unfiltered** diff, which is not what D1 says. Drop the filter and ∃
+ranges over the whole commit and D1 over-fires into C5's reductio; keep it and it is load-bearing.
+The challenger is right, and its own concession is right too: the relocated question is **materially
+cheaper** than round 1's, because it ranges over a written finite list rather than over nameable
+artifacts.
+
+*Leg 2 — the mechanical fallback is unavailable in this repo.* Verified, and **I ran the check the
+challenger declared it had not** (its §"What I could not verify" item 4): `T-0548-…md`'s front matter
+carries `owner`, `adrs`, `layers`, `security_touching`, `manual_steps` — **no file list**. So neither
+end supplies the diff mechanically: the commit is a phase (`6bd3b0c6` carries T-0447 + T-0535 +
+T-0546; `04f98937`, `365fd221`, `f0e39d7e` are phase branches), and the ticket carries prose. The
+draft's own Gate 0.5 leg 3 item 6 concedes the consequence — *"Exhibit membership is derived from **the
+ticket's stated scope** … not from reading the files"* — which means **every one of the 13 rows was
+scored with exactly the input the definition says it does not use.**
+
+**The correction, and it matters for what happens next.** R-2 was written as a **disjunction**:
+*"Define scope without the word 'subject', **or concede it uses it and say who decides**."* The
+draft claimed the first limb and did not meet it. **The second limb is open, sanctioned by the
+previous lead, and cheap** — and both parties talked past it. So CH-A is a fatal **overclaim**, not a
+fatal **rule**: the reach test survives the concession; what does not survive is the draft's headline
+claim over Alternative A. An ADR that claims a closure it did not achieve is the specific thing this
+panel rejected once already, so it cannot be accepted while the claim stands — but the distance
+between "rejected" and "acceptable" here is a paragraph of honesty, not a new mechanism.
+
+**I did not write that paragraph, and I will not.** Inventing the repair and then ratifying it is what
+bound six consecutive instances in this lane, and it binds a second lead exactly as it bound the first.
+
+---
+
+### CH-B — SUSTAINED as to the citation (BLOCKING). Its substantive alarm is **overstated**, and I correct it on evidence
+
+**The mis-citation is real and I verified it myself.** `challenges/0033-floor.md:32-34` reads *"Of the
+two remaining disjuncts, one is decidable and one is not. **"Replacing a named canonical form"** is
+checkable … "Withdrawing a form the catalog previously permitted" is not"*. The phrase **"carves an
+exception out of it"** first occurs at `:73` — inside CH-1's own **repair text** — and CH-1 never
+analyses it. The draft says CH-1 *"explicitly cleared"* it. It did not. In a decision whose entire
+subject is not settling a reading by whoever quotes first, a load-bearing warrant that misreports its
+source is disqualifying on its own. **Blocking.**
+
+**Now the correction, and it runs against the challenger.** Its framing — that D1 *"inherits an
+untested conjunct 2"* whose semantic character is a hidden import — does not survive the record:
+
+- **Accepted ADR-0033 declares test 2 semantic on its face.** `adr/0033-…md:161` and `:538`: *"**Test 2
+  is semantic.** A hunk with no imperative wording that nonetheless carves an exception out of a
+  governing sentence fires test 2 all the same."* Both operative pages repeat it —
+  `conventions.md:158` (*"The test is **semantic**"*) and `reviewer.md:115` (*"Semantic, not
+  lexical"*). Nothing was smuggled; the draft inherited a property its parent ADR advertises.
+- **The disjunct has four determinate applications in the record and one live one.** CH-1's own
+  re-derivations at `:80-84` (T-0451 → Architect ✅, T-0441 → inline ✅); ADR-0033 retro rows `:118`
+  and `:185`; the **T-0349** row at `:881`, which four passes across three rounds have attacked and
+  none has dented; and — today, in another lane — `adr/challenges/0041-schema.md:124` uses
+  *"carves an exception out of a sentence that already governs"* as an operative test. **What is
+  missing is an argument for decidability, not a record of determinate application.**
+- **And the load-transfer claim is measured against the wrong baseline.** *"Conjunct 1 now fires far
+  more often"* is true relative to **round 1**. Relative to the **operative** baseline — a reviewer's
+  paraphrase, unconstrained — D1's widening rule constrains conjunct 1 in the **restrictive**
+  direction. Three of the draft's rows (R4′, R9, R10) turn on refusing a widened reading, which is
+  precisely a *reduction* in firing.
+
+**Ruled:** strike the citation; the claim *"decidable end to end"* falls with it and must be restated
+as *"conjunct 1 decidable; conjunct 2 is accepted content carried forward untested."* The challenger's
+own Ask says exactly this and it is the right one — its reasoning for why it matters is what I am
+correcting, not its remedy.
+
+---
+
+### CH-C — SUSTAINED, and **worse than filed**. The mechanism is misdiagnosed, the direction is misstated, and the remedy is **REFUSED**
+
+**Ground (i) of Alternative F is void.** Verified independently: no `T-0432-*.md` exists. A row the
+table itself excludes for having no establishable history cannot be *"flipped against history"*. The
+author's least-comfortable rejection rests on two grounds, not three.
+
+**The section is worse than the challenger filed it.** I read the live heading structure myself:
+`## Shared UI & theme` `:247` → `## Navigation — typed routes` `:501`, so the section runs `:247`–`:500`
+(the challenger's range; the living doc's `:247`–`:455` and *"iOS starts at `:569`"* are both stale —
+iOS proper starts at **`:615`**). Inside it I count **eight** iOS entries, not four: `:255`, `:366`,
+`:386`, `:456`, `:463`, `:470` say **iOS** in their own titles, and `:292` (T-0451) and `:306` (T-0449)
+are iOS by content (`Color.dynamic`, `AsyncImage`). **G3 is roughly twice the size the record carries.**
+
+**But the mechanism is misdiagnosed, and that changes the remedy.** D1's rule is *"a sentence under a
+heading carries **that heading's scope**"*. The heading is **`## Shared UI & theme`** — platform-neutral.
+So is `## Strings & states` (`:507`), `## Navigation — typed routes` (`:501`) and `## Picking an image…`
+(`:580`); the file's own title (`:1`) frames it as *"Mobile Patterns (Android … — iOS …) … The catalog
+for **both** mobile platforms"*. **The Android-ness of `:249-253` is carried by the sentence's own
+words** — `cz.cleansia.core.ui.components.*`, `` `:core` `` — **not by any heading.** Two consequences:
+
+1. **The position rule as drafted is not merely unsound; it is inoperative.** It never says what *"a
+   heading's scope"* is, and the only reading under which CH-C's unsoundness bites — heading *plus its
+   preamble paragraph* — is a reading D1 does not state.
+2. **Both halves of the rule err in the same, permissive direction.** Narrowing shrinks `S`'s
+   condition, and reach is monotone in the condition, so wrongly narrowing can only **reduce** firing —
+   exactly like refusing to widen. *"Unsound, not merely permissive"* is right as a soundness claim and
+   **wrong as a consequence claim**, and the draft's G3 pricing is not as incomplete as the challenge
+   says.
+
+**And the finding that decides the remedy: the position rule carries no row.** R10 — the row Alternative
+F is defended on — is decided by the **word-level** rule: reaching a Swift file from
+`cz.cleansia.core.ui.components.*` requires substituting a broader term for one `S` names, which D1
+forbids without any appeal to position. So the position clause is a rule that (a) decides nothing in
+the corpus, (b) is undefined as written, and (c) returns wrong answers in the section supplying most of
+the corpus.
+
+**Remedy refused, on the challenger's own precedent.** Making acceptance conditional on **N-C/G3** — a
+ticket in the **ios** lane, unfiled — is structurally the same move as ADR-0033 naming Block D as its
+condition of acceptance and shipping at `(guidance — no gate)` for the whole of its acceptance
+(`catalog-governance.md:61-66`). The challenger cites that precedent to argue *"do not do it twice on
+the same clause"*, and it is right — which is an argument against conditions, not for one. **A rule
+that returns wrong answers is fixed in the rule.** The author owes an answer here and there are at
+least three (define *"a heading's scope"*; restrict the clause to headings whose own words carry the
+scope; drop the clause, since no row needs it). **I name the option space; I do not choose from it.**
+
+**G3 itself is real, live, and independent of this ADR** — it is the one surviving evidenced
+indeterminacy in the record (**V-2**). It is routed as work below, at its true size.
+
+---
+
+### CH-D — SUSTAINED on limb 2. Limb 1 falls with CH-C, and I do not rest on it
+
+Verified in the live file: `S` = `patterns-mobile.md:563-571` names **`${…}`** and **`R`**; its
+immediate neighbours name `@Composable`, `BuildConfig.DEBUG`, `CleansiaNavHost`, `ProfileRowRoutingTest`
+and `res/values/strings.xml`. Reaching `OrderDetailFooterStyle.swift` requires the **term substitution**
+D1 forbids — which is the draft's own §Context table row 2 applied to row 1, and the draft does not
+apply it. **The R4′ verdict holds; the clause-count reasoning offered for it does not carry it**, and
+the author invited attack on the only ground that could have lost.
+
+Limb 1 (*`S` is under `## Strings & states`, therefore Android*) is subject to CH-C exactly: that
+heading is platform-neutral and the Android framing sits in its preamble. **Sustained on limb 2 alone**,
+which needs no position rule and is the stronger ground the challenger itself identifies.
+
+**One strengthening I add from my own read**, because it is sharper than either party's version:
+dissolution #2 lives in **the candidate sentence itself**, not merely its paragraph — `:569` reads
+*"**plus a call-site pin**, because a resolver test does not cover the call site **(the T-0473 rule)**"*.
+The sentence alleged to narrow T-0473 names the T-0473 rule as a rule it composes with, in the same
+breath. That is what feeds **V-2**.
+
+---
+
+### CH-E — SUSTAINED as to weight. The arithmetic is clean and the draft's discounting is a real advance
+
+The draft is materially more honest than round 1 — it prints *"Do not read 13 as 13"*, discounts per
+row **in the direction each cut**, and claims no rate anywhere. That is R-6 discharged and it should be
+banked. What it does not license is the headline.
+
+| Row | Why it does not discriminate | Ruled |
+|---|---|---|
+| **R1** | the pre-image **names its own routing** — *"a duplicated **VM** is a harvest-to-Core candidate — flag, **an Architect call**"*. The draft's own C-1 finding is the refutation of its own row | sustained |
+| **R11** | routed by an **owner supersede of ADR-0022** + an architect sweep. **The round-1 lead already classified this exact commit as a *method* datum and expressly declined to book it as a routing datum.** Re-presenting it as a new agreement is the more serious half of this finding | sustained |
+| **R2, R3** | **R-5 *requires* them.** Passing a required constraint is not nothing — round 1 failed it — but it is not evidence of discriminating power | sustained |
+| **R4** | chronology alone | sustained |
+| **R13** | *"inline under **BOTH** readings"*, by the draft's own scoring | sustained |
+
+That leaves **R5, R9, R12** as rows where D1's own machinery does work a rival might get wrong (R4′
+too, as a hypothetical, and on CH-D's ground rather than the draft's). **~3 discriminating agreements,
+not 9.** And the clustering discount is short by one under the draft's own rule: **R7 and R11 are both
+T-0379** — visible in the draft's own row labels — so ~10 routing events, not ~11, and the merged pair
+straddles the agree/diverge line. Non-blocking; it is presentation, and it would have been a one-line
+fix.
+
+---
+
+### CH-F, CH-G — SUSTAINED. CH-G corrects a premise of the draft, not just its Block A
+
+**CH-F verified** at `reviewer.md:114-118`: the test-2 bullet states *"A sentence already governs this
+subject at any level of generality"* with `governs` undefined, and the `:161-169` warning lives only on
+the author's page. Block B appends a burden and no predicate. *"One commit"* fixes when they land, not
+what they say — the **L5** finding one turn later.
+
+**CH-G verified** at `conventions.md:153-154`, and it is sharper than filed. That sentence reads *"A
+rule stated about the general case **governs** its sub-cases; carving out a sub-case narrows it whether
+or not the sub-case was ever named."* **That is a *positive* limb of `governs`, on the operative page,
+today.** So the draft's founding premise — *"M1 defined the **negative** … and never defined the
+positive"* — is not accurate: M1 states one positive **sufficient condition**. D1 is compatible with it
+(a sub-case of `S`'s condition-as-worded falls under that condition), but Block A would land *"widening
+is not available"* a few lines under *"governs its sub-cases … whether or not the sub-case was ever
+named"* **with nothing on the page saying how they compose** — and `catalog-governance.md:97-103`
+records M1 being applied by re-describing a subject at a different level. Sustained.
+
+---
+
+### G5 / the composition defect — SUSTAINED as an instance of CH-A, and corrected on evidence
+
+The mismatch is real and it is worth stating precisely, because the challenger's framing (*"two rules
+pulling opposite ways"*) is not quite what is wrong. ADR-0032 D3 and D1 do not contradict each other.
+The defect is a **measurement mismatch**: an entry's *constraining force* is keyed to **its sentence's
+scope**, while its exhibit under D1 is keyed to **the files it converted**. So an entry can assert
+broadly and exhibit narrowly, and D1 measures reach against the narrow one. That is the draft's own
+named cheapest attack — and the challenger's contribution is that it is **not hypothetical**: T-0548 as
+it landed (`97bb7265`) states *"size first, then anything that decodes, parses, hashes, or round-trips
+the bytes"* and scopes itself *"Closed roster: it gates `ImageFileValidator` and `FileValidator` … The
+other base64 intake paths … are **not** covered by it."* I verified that text in the corpus.
+
+**Correction, from the live tree.** `patterns-backend.md:1229-1234` shows the same entry one ticket
+later: **`Enforced by: … over the surface `Base64UploadIntakeRosterTests` enumerates — `T1-CI`**, and
+*"Every base64 intake on every host runs the shared `BlobFileSize` predicate."* The author took ADR-0032
+D3's **widen-the-enforcer** branch, not the narrow-the-claim one. **So the incentive gradient exists in
+the text and the one worked case in the record resolved against it.** G5 is a seam to examine, not a
+demonstrated pathology — and it belongs in the ADR, whose header says *"Consumes: ADR-0032"* and never
+looks in this direction.
+
+---
+
+### What I tried to break, and could not
+
+`deliberation.md`: silence is not assent. Round 1's credibility problem was overruling only its own
+framings, so this is named for checking.
+
+1. **The coverage lemma.** I attacked it where the challenger did not: on **R12**, whose hunk deletes
+   and re-adds the sentence it cites, and on the asymmetry claim (*"the blind spot is the audit's, not
+   the developer's"*). Both hold. An author searching the catalog they are editing **is** searching the
+   pre-edit catalog, and where their hunk deletes a sentence they are holding it. **This is the best
+   idea in the draft and nothing in this round touched it.**
+2. **∃ over a finite written list.** R-1 is met and the negation is a bounded check. My attack was on
+   the list's *objectivity* (CH-A), never on its finiteness, and the challenger's termination tests
+   hold.
+3. **The widening rule.** I tried to find a row where refusing to widen gives the wrong answer and
+   could not — and it is the rule CH-D used to dissolve Case β, which is the single most consequential
+   analytic result of this round. **It is independent of the exhibit (it constrains `S`, not `E`) and
+   independent of the position clause.** Recorded as an asset, unratified.
+4. **The challenger's reason for declining Alternative H.** I tried to make *"the definition catches
+   R8/G1 on test 2, which is the case this whole lane exists for"* stand, and it does not — the
+   draft's own R8 row, the living doc `:428` and the round-1 verdict all say the **accepted** floor
+   routes it. Corrected against the party that filed it, against its own interest.
+5. **CH-B's substantive alarm.** I went looking for evidence that *"carves an exception"* is
+   undecidable in practice and found the opposite: four determinate applications plus a live one in
+   `challenges/0041-schema.md:124`. Corrected against the challenger.
+6. **CH-C's "unsound, not merely permissive".** I checked the monotonicity and it fails — both halves
+   err permissively. Corrected against the challenger, and then found the section is twice the size it
+   filed, which cuts the other way.
+7. **My own ruling.** I built the case for *return to author* — the Defense step has never run in this
+   lane, the challenger recommends acceptance-after-answers, and the repairs are two concessions and a
+   clause — and it is a genuinely close call. What kills it is **V-2**, and V-2 is not my framing: it
+   is the challenger's CH-D composed with the draft's own R8 row. **I am recording that I nearly ruled
+   the other way.**
+
+---
+
+### Routing — what happens to the lane
+
+**L1 is CLOSED as a definition project.** The operative rule is unchanged and stated on the operative
+page: accepted ADR-0033 D1 + M1/M2, with `conventions.md:161-169`'s standing warning. Under it, a hard
+case yields a recorded disagreement and **routes** (M2, accepted) — the safe direction, and the same
+operative outcome D1 would have produced on a disputed case.
+
+| What | Where it goes |
+|---|---|
+| **G3 — `patterns-mobile.md` §"Shared UI & theme" (`:247`–`:500`) hosts EIGHT iOS entries under an Android-worded preamble** | **PM → ios lane, XS, promoted from "any time" to the lane's one real deliverable.** This is the only surviving evidenced indeterminacy in the record. One clause of scope on `:249-253`, or a heading, retires it — and retires R10 with it. The living doc's `:247`–`:455` range and *"iOS starts at `:569`"* are stale; correct ranges are `:247`–`:500` and `:615` |
+| **The firing-side burden (D2 / Block B)** — quote the sentence, name a file it reaches, name the disjunct | **Recorded as an available, UNRATIFIED asset. Nothing may cite it.** Held twice now, for a currency it may not actually need. It is **not** landed here: CH-F is sustained (a burden without its predicate is a paraphrase generator), and it is not accepted-ADR content, so it cannot ride a charter edit the way T-0549/T-0551 did |
+| **The widening rule** — *a reading that drops a clause of `S`, or swaps a broader term for one `S` names, has widened it* | **Recorded as an available, UNRATIFIED asset. Nothing may cite it.** It proved itself as an analytic tool this round (CH-D). It is folklore until an ADR carries it, and this lane knows what folklore-with-a-citation costs |
+| **F4** | Unchanged: **UNBEATEN, NOT SETTLED**. Its round-2 answer is a consequence of a rejected premise. The eleventh trigger is banked |
+| **N-D, N-E, N-F** | Unchanged and unfiled. N-F remains the only thing that could reopen this on evidence |
+
+**The re-open path, named so the door is not welded shut.** L1 reopens on **either** of two triggers,
+and on nothing else: (1) **a real routing disagreement that route-by-default resolves wrongly** — one
+recorded case where a reviewer fired test 2 on a widened reading and the author had no answer, or the
+reverse; or (2) **N-F run to completion**, if it surfaces such a case. On either trigger the cheapest
+next step is **not** a third author round from scratch: it is **one author Defense pass on this draft**,
+which must (a) take R-2's second limb explicitly — concede that the exhibit is a written
+characterization and say who decides when it is disputed; (b) strike the CH-1 citation and restate
+*"decidable end to end"* as *"conjunct 1 decidable, conjunct 2 carried forward untested"*; (c) answer
+CH-C on the position clause; (d) restate the headline per CH-E; (e) fix Block A/Block B per CH-G/CH-F.
+Everything else in the draft survives on its merits.
+
+**Escalation to the owner: none blocking.** No disagreement here carries lasting business impact and
+every one was resolved on in-repo evidence. The one thing the owner or PM may want to overrule is the
+**appetite** judgment in V-2 — three architect-rounds have gone into a predicate that has never changed
+a routing outcome in the record, and I am ruling that a fourth is not owed. If the PM disagrees, the
+Defense-pass path above is one instance, not three.
+
+**Process finding, for the record.** `deliberation.md` step 3 — *the author defends* — has **never run
+in this lane**: ADR-0032, round 1 and round 2 all closed on undefended artifacts, each time recorded
+and each time immaterial to the ruling. Three occurrences is a pattern, not an accident, and it is
+worth the PM knowing that this panel's shape in practice is *draft → attack → adjudicate*, with the
+step that is supposed to convert an attack into a revision missing. That is why "return to author" was
+a live option here and why the re-open path above is written as a Defense pass rather than a new draft.
 
 ---
 

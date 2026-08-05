@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
+using Cleansia.Config.Abstractions;
 
 namespace Cleansia.Web.Admin.Middleware;
 
@@ -130,13 +131,15 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     {
         if (!request.Body.CanSeek)
         {
-            request.EnableBuffering();
+            request.EnableBuffering(
+                CleansiaStartupBase.RequestBufferThresholdBytes,
+                CleansiaStartupBase.RequestBufferLimitBytes);
         }
 
         request.Body.Position = 0;
 
         using var reader = new StreamReader(request.Body, Encoding.UTF8, leaveOpen: true);
-        var body = await reader.ReadToEndAsync();
+        var body = await ReadBoundedAsync(reader);
 
         request.Body.Position = 0;
 
@@ -148,11 +151,36 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
         response.Body.Seek(0, SeekOrigin.Begin);
 
         using var reader = new StreamReader(response.Body, Encoding.UTF8, leaveOpen: true);
-        var body = await reader.ReadToEndAsync();
+        var body = await ReadBoundedAsync(reader);
 
         response.Body.Seek(0, SeekOrigin.Begin);
 
         return body;
+    }
+
+    /// <summary>
+    /// Reads at most <see cref="RedactionScanLimit"/> + 1 characters, never the whole body. This
+    /// middleware runs before authentication and before the rate limiter, so reading to the end made an
+    /// anonymous request of Kestrel's maximum size a ~121 MB allocation that <see cref="SafeBody"/> then
+    /// discarded — 423x the body, with nothing upstream to throttle it.
+    ///
+    /// The bound is in CHARACTERS because SafeBody's verdict is <c>string.Length</c>: one character past
+    /// the cap decides it exactly as the whole body would, so every log line is unchanged. A byte bound
+    /// would put a multi-byte body under the cap and log what must be suppressed.
+    /// </summary>
+    private static async Task<string> ReadBoundedAsync(StreamReader reader)
+    {
+        var buffer = new char[RedactionScanLimit + 1];
+        var total = 0;
+
+        while (total < buffer.Length)
+        {
+            var read = await reader.ReadAsync(buffer.AsMemory(total));
+            if (read == 0) break;
+            total += read;
+        }
+
+        return new string(buffer, 0, total);
     }
 
     /// <summary>

@@ -28,15 +28,22 @@ public class UpdateRecurringBooking
     public class Validator : AbstractValidator<Command>
     {
         private readonly IRecurringBookingTemplateRepository _templateRepository;
+        private readonly IUserMembershipRepository _userMembershipRepository;
         private readonly IUserSessionProvider _userSessionProvider;
 
         public Validator(
             IRecurringBookingTemplateRepository templateRepository,
+            IUserMembershipRepository userMembershipRepository,
             IUserSessionProvider userSessionProvider)
         {
             _templateRepository = templateRepository;
+            _userMembershipRepository = userMembershipRepository;
             _userSessionProvider = userSessionProvider;
 
+            // The entitlement link is the LAST link of THIS chain, never a second RuleFor: the
+            // class-level default is Continue, so a parallel chain would answer "you need Plus" for a
+            // template that does not exist or belongs to someone else, leaking entitlement state onto a
+            // path the ownership rule must resolve as not-found.
             RuleFor(x => x.TemplateId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
@@ -44,7 +51,9 @@ public class UpdateRecurringBooking
                 .MustAsync(_templateRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.RecurringTemplateNotFound)
                 .MustAsync(BeOwnedByCallerAsync)
-                .WithMessage(BusinessErrorMessage.RecurringTemplateNotOwnedByUser);
+                .WithMessage(BusinessErrorMessage.RecurringTemplateNotOwnedByUser)
+                .MustAsync(CallerHasActiveMembershipAsync)
+                .WithMessage(BusinessErrorMessage.RecurringTemplateMembershipRequired);
 
             RuleFor(x => x.Frequency)
                 .Must(f => Enum.IsDefined(typeof(RecurrenceFrequency), f))
@@ -87,6 +96,26 @@ public class UpdateRecurringBooking
             if (string.IsNullOrEmpty(userId)) return false;
             var template = await _templateRepository.GetByIdAsync(id, cancellationToken);
             return template != null && template.UserId == userId;
+        }
+
+        /// <summary>
+        /// <c>UpdateSchedule</c> rewrites every schedule field and clears the materialisation watermark,
+        /// so an update is authoring a schedule — the same paid Cleansia Plus capability
+        /// <c>CreateRecurringBooking</c> gates. Without this, one paid month buys a permanently
+        /// re-specifiable scheduling engine: subscribe, create, cancel, then update forever.
+        /// <para>The owner ruling that a lapsed membership does not stop a schedule (Q-PLUS-04)
+        /// PRESERVES an existing schedule; it does not license writing a new one. Pause, resume and
+        /// delete stay ungated so a lapsed subscriber can always stop what is still generating.</para>
+        /// <para>The predicate is the shared one — <c>Status == Active &amp;&amp; CurrentPeriodEnd &gt;
+        /// UtcNow</c> — so a trialing member (Stripe's <c>trialing</c> collapses to Active) keeps this
+        /// perk; only the metered express waiver is withheld during a trial.</para>
+        /// </summary>
+        private async Task<bool> CallerHasActiveMembershipAsync(string id, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            if (string.IsNullOrEmpty(userId)) return false;
+            return await _userMembershipRepository
+                .GetActiveForUserNoTrackingAsync(userId, cancellationToken) is not null;
         }
     }
 

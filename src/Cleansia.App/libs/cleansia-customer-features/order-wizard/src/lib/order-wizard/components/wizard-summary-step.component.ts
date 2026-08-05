@@ -95,9 +95,8 @@ export class WizardSummaryStepComponent {
   });
 
   /**
-   * Final price — the server-quoted total (express surcharge already folded
-   * in) minus the best-of-three discount. Wrapped in computed because `facade`
-   * is an @Input and isn't bound at field-init time.
+   * The price the customer is charged, as the quote composed it. Wrapped in computed because
+   * `facade` is an @Input and isn't bound at field-init time.
    */
   protected readonly grandTotal = computed(() => this.facade.displayedTotalPrice());
 
@@ -124,12 +123,16 @@ export class WizardSummaryStepComponent {
     return this.facade.effectivePromoDiscount() <= combined;
   });
 
-  /** "Loyalty discount needs orders above X" hint when the floor wasn't met. */
+  /**
+   * "Loyalty discount needs orders above X" hint when the floor wasn't met. Judged on the
+   * pre-surcharge subtotal, the base `ResolveTierDiscountForOrderAsync` is given — against the gross
+   * an express basket straddling the floor reads as qualifying and then loses the discount at submit.
+   */
   protected readonly showTierFloorHint = computed(() => {
     const floor = this.facade.tierDiscountMinOrderAmount();
     if (floor == null || floor <= 0) return false;
     if (this.facade.effectiveDiscount() > 0) return false;
-    return this.facade.totalPrice() < floor;
+    return this.facade.preSurchargeSubtotal() < floor;
   });
 
   protected readonly tierFloorAmount = computed(() => {

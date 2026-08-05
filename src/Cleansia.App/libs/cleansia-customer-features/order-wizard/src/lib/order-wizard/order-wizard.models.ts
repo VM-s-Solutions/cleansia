@@ -250,6 +250,28 @@ export function formatPrice(price: number): string {
   return CZK_FORMATTER.format(price);
 }
 
+/**
+ * Final charge for a discount `/Order/Quote` could not price for us.
+ *
+ * `QuoteOrderResponse.finalPriceAfterDiscount` is the charged figure for the tier/membership pair and
+ * is read verbatim. `QuoteOrderCommand` carries no promo code, so a promo that beats that pair has no
+ * quoted price and only this reproduces how the server composes one: `BookingPolicy` discounts the RAW
+ * pre-surcharge subtotal and grosses the remainder up — `(raw - d) * 1.2`, never `raw * 1.2 - d`.
+ *
+ * The gross-up factor is read back out of the quote's own two totals so no copy of the express rate
+ * lives on the client; with no surcharge `grossSubtotal === rawSubtotal` and the factor is 1. Multiply
+ * before dividing, and round to cents, so the ratio cannot surface as binary dust in the price.
+ */
+export function composeFinalPriceForUnquotedDiscount(
+  rawSubtotal: number,
+  grossSubtotal: number,
+  discount: number,
+): number {
+  if (rawSubtotal <= 0) return 0;
+  const discountedSubtotal = Math.max(0, rawSubtotal - discount);
+  return Math.round((discountedSubtotal * grossSubtotal * 100) / rawSubtotal) / 100;
+}
+
 // ── Translation helpers ─────────────────────────────────────
 
 export function getItemTranslation(

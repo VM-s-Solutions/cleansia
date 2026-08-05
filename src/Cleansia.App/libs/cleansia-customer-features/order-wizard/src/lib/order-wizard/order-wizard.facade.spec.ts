@@ -24,6 +24,11 @@ import { OrderSavedAddressFacade } from './order-saved-address.facade';
 import { OrderServiceAreaFacade } from './order-service-area.facade';
 import { OrderWizardFacade } from './order-wizard.facade';
 import { createAddressDto } from './order-wizard.models';
+import {
+  EXPRESS_DISCOUNTED_QUOTE,
+  EXPRESS_QUOTE,
+  PLAIN_QUOTE,
+} from './order-quote.fixtures';
 
 describe('OrderWizardFacade', () => {
   let facade: OrderWizardFacade;
@@ -48,12 +53,7 @@ describe('OrderWizardFacade', () => {
     add: jest.Mock;
   };
 
-  const quoteResponse = {
-    totalPrice: 1000,
-    expressSurchargeApplied: false,
-    expressSurchargeAmount: 0,
-    currencyId: 'czk',
-  };
+  const quoteResponse = PLAIN_QUOTE;
 
   const savedAddress = {
     id: 'addr-1',
@@ -192,11 +192,14 @@ describe('OrderWizardFacade', () => {
       expect(facade.formData().promoCode).toBe('SAVE10');
     });
 
-    it('validates the promo against the displayed total (post-surcharge subtotal)', async () => {
+    it('validates the promo against the pre-surcharge subtotal the submit will use', async () => {
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.refreshQuoteNow();
+
       await facade.validatePromoCodeNow('save10');
 
       const command = promoCodeClient.validate.mock.calls[0][0];
-      expect(command.orderSubtotal).toBe(facade.displayedTotalPrice() ?? 0);
+      expect(command.orderSubtotal).toBe(1000);
     });
 
     it('clearPromoCode resets the state and wipes the form value', async () => {
@@ -746,14 +749,7 @@ describe('OrderWizardFacade', () => {
     });
 
     it('renders the express quote verbatim — server total, no client gross-up', async () => {
-      orderClient.quote.mockReturnValue(
-        of({
-          totalPrice: 1200,
-          expressSurchargeApplied: true,
-          expressSurchargeAmount: 200,
-          currencyId: 'czk',
-        }),
-      );
+      orderClient.quote.mockReturnValue(of(EXPRESS_QUOTE));
       facade.updateFormData({ selectedServiceIds: ['s1'] });
       await facade.refreshQuoteNow();
 
@@ -761,6 +757,16 @@ describe('OrderWizardFacade', () => {
       expect(facade.expressSurcharge()).toBe(200);
       expect(facade.preSurchargeSubtotal()).toBe(1000);
       expect(facade.displayedTotalPrice()).toBe(1200);
+    });
+
+    it('shows the charged price, not the gross minus the discount, on a discounted express quote', async () => {
+      orderClient.quote.mockReturnValue(of(EXPRESS_DISCOUNTED_QUOTE));
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.refreshQuoteNow();
+
+      expect(facade.displayedTotalPrice()).toBe(1080);
+      expect(facade.effectiveDiscount()).toBe(100);
+      expect(facade.totalPrice()).toBe(1200);
     });
 
     it('charges no surcharge and shows the bare total for a standard quote', async () => {

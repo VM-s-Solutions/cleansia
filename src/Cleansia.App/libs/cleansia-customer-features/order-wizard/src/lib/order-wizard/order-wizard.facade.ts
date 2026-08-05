@@ -150,6 +150,9 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly expressSurchargeWaived = this.pricing.expressSurchargeWaived;
   readonly expressSurcharge = this.pricing.expressSurcharge;
   readonly displayedTotalPrice = this.pricing.displayedTotalPrice;
+  readonly tierDiscount = this.pricing.tierDiscount;
+  readonly membershipDiscount = this.pricing.membershipDiscount;
+  readonly effectiveDiscount = this.pricing.effectiveDiscount;
 
   // ─── Membership (free-cancellation window + express waiver) ─────
   //
@@ -172,10 +175,10 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     super();
     this.pricing.connect({
       formData: this.formData,
-      effectiveDiscount: this.effectiveDiscount,
+      promoDiscount: this.promo.effectivePromoDiscount,
     });
     this.promo.connect({
-      displayedTotalPrice: this.displayedTotalPrice,
+      preSurchargeSubtotal: this.preSurchargeSubtotal,
       persistPromoCode: (value) => this.updateFormData({ promoCode: value }),
     });
     this.serviceArea.connect({
@@ -202,16 +205,6 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly promoCodeState = this.promo.promoCodeState;
 
   /**
-   * Server-resolved tier discount preview from the live quote (anonymous quotes return 0).
-   */
-  tierDiscount = computed(() => this.quote()?.tierDiscountAmount ?? 0);
-
-  /**
-   * Server-resolved Cleansia Plus membership discount preview from the live quote.
-   */
-  membershipDiscount = computed(() => this.quote()?.membershipDiscountAmount ?? 0);
-
-  /**
    * Floor at which the tier discount kicks in (e.g. Silver = 1000 CZK). Used to
    * render a "needs orders above X" hint when the customer's tier discount didn't
    * apply because the subtotal is below it.
@@ -222,17 +215,6 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
 
   /** Promo discount the user just applied via the dialog — see OrderPromoFacade. */
   readonly effectivePromoDiscount = this.promo.effectivePromoDiscount;
-
-  /**
-   * LOY-003 — effective discount displayed to the user. Plus + tier are
-   * additive (server already returns both amounts on the same quote,
-   * capped at 12% combined). Promo replaces the combined pair when larger.
-   * Mirrors backend `OrderFactory.ResolveLoy003Discount`.
-   */
-  effectiveDiscount = computed(() => {
-    const combined = this.membershipDiscount() + this.tierDiscount();
-    return Math.max(combined, this.effectivePromoDiscount());
-  });
 
   /**
    * Which discount source(s) apply right now. `'combined'` appears when

@@ -409,9 +409,10 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   nothing kept it true. Two rules:
   - **EXPLAIN the captured statement, never a hand-written copy of it.** A `DbCommandInterceptor` that
     re-runs `"EXPLAIN " + command.CommandText` on the *same* connection, transaction and parameters
-    pins the plan the query gets; SQL retyped into the test pins the plan of the retyping
-    (`OrderStatusSetPredicatePlanTests`, the shape to copy; the older
-    `UserMembershipCancellationSweepIndexPlanTests` hand-writes its SQL and is the weaker form).
+    pins the plan the query gets; SQL retyped into the test pins the plan of the retyping. Drive the
+    real production entry point — a handler, repository method or specification — so the statement is
+    one production actually issues (`OrderStatusSetPredicatePlanTests`,
+    `UserMembershipCancellationSweepIndexPlanTests`).
   - **"No Seq Scan" is not the assertion.** Pushing the status term inside an `OR` leaves the planner
     on the same index and merely **demotes the term out of the `Index Cond` into a residual filter** —
     green under a seq-scan check, and exactly the ADR-0040 fail-open regression. Assert that the term
@@ -419,6 +420,14 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
     PostgreSQL against a **golden literal** (reading it off the private field under test cannot detect
     that field being widened). Deviating forms: a plan assertion on an empty or uniform table; a
     seq-scan-only assertion; an expectation derived from the code under test.
+  - **A PARTIAL index needs the seed populated inside its filter, or only the filter is under test.**
+    Measured twice: the same `OR` demotion costs 2.4× against five rows inside
+    `IX_UserMemberships_Status_CurrentPeriodEnd_Cancellation` and **55×** against eight thousand, and is
+    a seq scan in neither. With a handful of rows inside the filter, an index keyed on *anything* passes
+    and the key columns are never exercised — so seed thousands INSIDE the partial filter but OUTSIDE
+    the sargable band, and assert that population as its own test. State the selectivity as an assertion
+    too: a predicate that matches most of the table makes a seq scan the **correct** plan and the whole
+    pin meaningless.
 
 These judgment calls are **Architect-owned**; changing one is an ADR, not an ad-hoc reversal.
 

@@ -2,6 +2,10 @@ import Foundation
 
 extension L10n {
     enum Profile {
+        static var saveSuccess: String {
+            localized("profile_save_success")
+        }
+
         static var groupAccount: String {
             localized("profile_group_account")
         }
@@ -188,6 +192,14 @@ extension L10n {
 
         static var photoUnreadable: String {
             localized("profile_photo_error")
+        }
+
+        static var photoUploadSuccess: String {
+            localized("profile_photo_upload_success")
+        }
+
+        static var photoRemoveSuccess: String {
+            localized("profile_photo_remove_success")
         }
 
         static var cameraPermissionTitle: String {

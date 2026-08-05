@@ -6,9 +6,12 @@ import Foundation
 /// on every upload — so it is the image's identity and its cache key. `blobURL` is a SAS link that is
 /// re-signed on every fetch and expires within the hour: it is a credential, never persisted and
 /// never used to key anything.
+///
+/// The URL is optional because it is only how the image is fetched, never whether it exists: a fetch
+/// that returns the name without a signature still describes a photo the account holds and can delete.
 struct ProfilePhoto: Equatable {
     let fileName: String
-    let blobURL: URL
+    let blobURL: URL?
 }
 
 struct ProfilePhotoUpload: Equatable {
@@ -135,12 +138,8 @@ extension MyProfileDto {
 
 extension BlobFileDto {
     func toDomain() -> ProfilePhoto? {
-        guard let fileName = fileName?.nilIfBlank,
-              let blobURL = blobUrl?.nilIfBlank.flatMap(URL.init(string:))
-        else {
-            return nil
-        }
-        return ProfilePhoto(fileName: fileName, blobURL: blobURL)
+        guard let fileName = fileName?.nilIfBlank else { return nil }
+        return ProfilePhoto(fileName: fileName, blobURL: blobUrl?.nilIfBlank.flatMap(URL.init(string:)))
     }
 }
 

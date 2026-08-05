@@ -22506,6 +22506,41 @@
         }
       }
     },
+    "profile_photo_remove_success" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profilová fotka byla odstraněna"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile photo removed"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото профиля удалено"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profilová fotka bola odstránená"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото профілю видалено"
+          }
+        }
+      }
+    },
     "profile_photo_take" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22537,6 +22572,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Зробити фото"
+          }
+        }
+      }
+    },
+    "profile_photo_upload_success" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profilová fotka byla aktualizována"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile photo updated"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото профиля обновлено"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profilová fotka bola aktualizovaná"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото профілю оновлено"
           }
         }
       }
@@ -22992,6 +23062,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Оновити пароль"
+          }
+        }
+      }
+    },
+    "profile_save_success" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil úspěšně uložen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile saved successfully"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Профиль успешно сохранён"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil úspešne uložený"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Профіль успішно збережено"
           }
         }
       }

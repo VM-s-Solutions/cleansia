@@ -1,5 +1,6 @@
 import CleansiaCore
 import CleansiaCustomerApi
+import Combine
 import UIKit
 import XCTest
 @testable import CleansiaCustomer
@@ -237,6 +238,225 @@ final class ProfileAvatarViewModelTests: XCTestCase {
         await vm.avatarLoadFailed(fileName: "blob-1")
 
         XCTAssertEqual(client.currentUserCallCount, fetchesAfterLoad + 2)
+    }
+
+    // MARK: - What a saved change confirms
+
+    func testASavedPickConfirmsTheUpload() async {
+        client.currentUserResult = .success(ProfileFixtures.user())
+        client.updateResult = .success(())
+        let vm = makeVM()
+        await vm.refresh()
+        let log = record()
+        vm.pickAvatar(ProfileFixtures.image())
+
+        await save(vm)
+
+        XCTAssertEqual(log.successes.map(\.text), [L10n.EditProfile.photoUploadSuccess])
+    }
+
+    func testASavedRemovalConfirmsTheRemoval() async {
+        client.currentUserResult = .success(ProfileFixtures.user(profilePhoto: ProfileFixtures.photo()))
+        client.updateResult = .success(())
+        let vm = makeVM()
+        await vm.refresh()
+        let log = record()
+        vm.removeAvatar()
+
+        await save(vm)
+
+        XCTAssertEqual(log.successes.map(\.text), [L10n.EditProfile.photoRemoveSuccess])
+    }
+
+    /// A rejected save leaves the stored photo exactly as it was, so claiming otherwise is a lie —
+    /// and this is the only test that separates "a photo was chosen" from "a photo was saved". The
+    /// positive tests above see one emit either way.
+    func testAFailedSaveClaimsNothingAboutThePhoto() async {
+        client.currentUserResult = .success(ProfileFixtures.user())
+        client.updateResult = .failure(ApiError(httpStatus: 500))
+        let vm = makeVM()
+        await vm.refresh()
+        let log = record()
+        vm.pickAvatar(ProfileFixtures.image())
+
+        await save(vm)
+
+        XCTAssertTrue(log.successes.isEmpty)
+    }
+
+    /// Remove is offered for a pick that has never been saved, because it is also how a pick is undone.
+    /// The server has nothing to delete then, so the edit goes back to `unchanged` and the save says
+    /// nothing rather than confirming a removal that never happened.
+    func testRemovingAPickWithNoStoredPhotoDiscardsItAndClaimsNoRemoval() async {
+        client.currentUserResult = .success(ProfileFixtures.user())
+        client.updateResult = .success(())
+        let vm = makeVM()
+        await vm.refresh()
+        vm.pickAvatar(ProfileFixtures.image())
+        let log = record()
+
+        vm.removeAvatar()
+        XCTAssertEqual(vm.avatarEdit, .unchanged)
+        XCTAssertEqual(vm.editorAvatar, .initials)
+
+        await save(vm)
+
+        XCTAssertEqual(client.lastUpdate?.removePhoto, false)
+        XCTAssertNil(client.lastUpdate?.photo)
+        XCTAssertEqual(log.successes.map(\.text), [L10n.Profile.saveSuccess])
+    }
+
+    /// One expression at the call site, so exactly one message: the specific claim beats the general
+    /// one and they are never both emitted for the same save.
+    func testASaveThatLeavesTheAvatarAloneConfirmsTheProfileInstead() async {
+        client.currentUserResult = .success(ProfileFixtures.user(profilePhoto: ProfileFixtures.photo()))
+        client.updateResult = .success(())
+        let vm = makeVM()
+        await vm.refresh()
+        let log = record()
+
+        await save(vm)
+
+        XCTAssertEqual(log.successes.map(\.text), [L10n.Profile.saveSuccess])
+    }
+
+    func testAnAvatarSaveConfirmsTheAvatarAndNotAlsoTheProfile() async {
+        client.currentUserResult = .success(ProfileFixtures.user())
+        client.updateResult = .success(())
+        let vm = makeVM()
+        await vm.refresh()
+        let log = record()
+        vm.pickAvatar(ProfileFixtures.image())
+
+        await save(vm)
+
+        XCTAssertEqual(log.successes.map(\.text), [L10n.EditProfile.photoUploadSuccess])
+    }
+
+    /// First-run completion is also a profile save, and it deliberately stays silent: a toast while the
+    /// user is being handed back to what they were doing reads as friction. Android does the same.
+    func testCompletingOnboardingConfirmsNothingAtAll() async {
+        client.currentUserResult = .success(ProfileFixtures.user(phoneNumber: nil))
+        client.updateResult = .success(())
+        let vm = makeVM()
+        await vm.refresh()
+        let log = record()
+
+        await vm.completeOnboarding(firstName: "Ada", lastName: "Lovelace", phoneNumber: "+420111", birthDate: nil)
+
+        XCTAssertTrue(log.successes.isEmpty)
+    }
+
+    /// The stored NAME is what says a photo exists, not the URL beside it: that URL is a per-fetch SAS
+    /// and a blank one would otherwise hide a photo the user is entitled to delete.
+    func testAPhotoWhoseSignedUrlIsMissingIsStillRemovable() async {
+        let unsigned = ProfilePhoto(fileName: "blob-1", blobURL: nil)
+        client.currentUserResult = .success(ProfileFixtures.user(profilePhoto: unsigned))
+        client.updateResult = .success(())
+        let vm = makeVM()
+        await vm.refresh()
+        XCTAssertEqual(vm.editorAvatar, .initials, "an unsigned photo cannot be drawn this fetch")
+        XCTAssertTrue(vm.canRemoveAvatar, "but it is still there to delete")
+        let log = record()
+
+        vm.removeAvatar()
+        XCTAssertEqual(vm.avatarEdit, .removed)
+
+        await save(vm)
+
+        XCTAssertEqual(client.lastUpdate?.removePhoto, true)
+        XCTAssertEqual(log.successes.map(\.text), [L10n.EditProfile.photoRemoveSuccess])
+    }
+
+    func testTheConfirmationIsAPureFunctionOfTheEdit() {
+        XCTAssertEqual(AvatarSaveConfirmation.forEdit(.unchanged), nil)
+        XCTAssertEqual(AvatarSaveConfirmation.forEdit(.removed), .removed)
+        XCTAssertEqual(
+            AvatarSaveConfirmation.forEdit(.picked(image: ProfileFixtures.image(), upload: Self.upload)),
+            .uploaded
+        )
+    }
+
+    private static let upload = ProfilePhotoUpload(base64: "QUJD", contentType: "image/jpeg", fileName: "photo.jpg")
+
+    // MARK: - The confirmation copy, read out of the compiled bundle
+
+    private static let uploadedCopy = [
+        "en": "Profile photo updated",
+        "cs": "Profilová fotka byla aktualizována",
+        "sk": "Profilová fotka bola aktualizovaná",
+        "uk": "Фото профілю оновлено",
+        "ru": "Фото профиля обновлено"
+    ]
+
+    private static let removedCopy = [
+        "en": "Profile photo removed",
+        "cs": "Profilová fotka byla odstraněna",
+        "sk": "Profilová fotka bola odstránená",
+        "uk": "Фото профілю видалено",
+        "ru": "Фото профиля удалено"
+    ]
+
+    /// Android's `profile_avatar_upload_success`/`_remove_success` and web's `pages.profile.avatar.*`
+    /// verbatim, so all three platforms confirm the same save in the same words. Reads the COMPILED
+    /// bundle: a value that survives the catalog but not the build fails here.
+    func testBothConfirmationsCarryTheSharedWordingInEveryLocale() throws {
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+
+        for (tag, expected) in Self.uploadedCopy {
+            L10n.bundle = try localeBundle(tag)
+            XCTAssertEqual(AvatarSaveConfirmation.uploaded.message, expected, "the upload confirmation in \(tag)")
+        }
+        for (tag, expected) in Self.removedCopy {
+            L10n.bundle = try localeBundle(tag)
+            XCTAssertEqual(AvatarSaveConfirmation.removed.message, expected, "the removal confirmation in \(tag)")
+        }
+    }
+
+    /// Two outcomes of one tap: a single sentence for both tells the user nothing, and an untranslated
+    /// key echoes back as the key.
+    func testTheTwoConfirmationsStayDistinctAndTranslatedInEveryLocale() throws {
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+
+        for tag in Self.uploadedCopy.keys {
+            L10n.bundle = try localeBundle(tag)
+            let uploaded = AvatarSaveConfirmation.uploaded.message
+            let removed = AvatarSaveConfirmation.removed.message
+
+            XCTAssertNotEqual(uploaded, removed, "one sentence serves both avatar outcomes in \(tag)")
+            for message in [uploaded, removed] {
+                XCTAssertFalse(message.isEmpty, "an empty avatar confirmation in \(tag)")
+                XCTAssertFalse(message.hasPrefix("profile_photo_"), "\(message) is the key, not a translation (\(tag))")
+            }
+        }
+    }
+
+    private func localeBundle(_ tag: String) throws -> Bundle {
+        let hosts = [Bundle.main, Bundle(for: Self.self)]
+        let path = hosts.lazy.compactMap { $0.path(forResource: tag, ofType: "lproj") }.first
+        let resolved = try XCTUnwrap(path, "no \(tag).lproj in the built bundle")
+        return try XCTUnwrap(Bundle(path: resolved), "\(tag).lproj at \(resolved) is not a bundle")
+    }
+
+    /// Every snackbar the controller publishes, not just the one left standing: an optimistic success
+    /// fired at pick time is overwritten by the save's error, so reading `current` alone would miss it.
+    private func record() -> MessageLog {
+        let log = MessageLog()
+        log.cancellable = snackbar.$current.sink { message in
+            if let message { log.messages.append(message) }
+        }
+        return log
+    }
+
+    private final class MessageLog {
+        var cancellable: AnyCancellable?
+        var messages: [SnackbarMessage] = []
+
+        var successes: [SnackbarMessage] {
+            messages.filter { $0.severity == .success }
+        }
     }
 
     private func save(_ vm: ProfileViewModel) async {

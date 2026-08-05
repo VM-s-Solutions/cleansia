@@ -124,15 +124,25 @@ final class UserProfileClientMappingTests: XCTestCase {
         let photo = dto.toDomain(id: "user-1").profilePhoto
 
         XCTAssertEqual(photo?.fileName, "blob-1")
-        XCTAssertEqual(photo?.blobURL.absoluteString, "https://blobs.example/blob-1?sig=abc")
+        XCTAssertEqual(photo?.blobURL?.absoluteString, "https://blobs.example/blob-1?sig=abc")
     }
 
-    func testMyProfileHasNoPhotoWithoutBothANameAndAUrl() {
-        let noUrl = MyProfileDto(email: "a@b.c", profilePhoto: BlobFileDto(fileName: "blob-1"))
+    /// The name is the photo's identity and the URL is only how to fetch it, so a stored photo whose
+    /// SAS came back blank is still a stored photo — it simply cannot be drawn this fetch. Dropping it
+    /// here would tell the profile there is nothing to delete.
+    func testMyProfileKeepsAStoredPhotoWhoseSignedUrlIsMissing() {
+        let dto = MyProfileDto(email: "a@b.c", profilePhoto: BlobFileDto(fileName: "blob-1"))
+
+        let photo = dto.toDomain(id: "user-1").profilePhoto
+
+        XCTAssertEqual(photo?.fileName, "blob-1")
+        XCTAssertNil(photo?.blobURL)
+    }
+
+    func testMyProfileHasNoPhotoWithoutAName() {
         let noName = MyProfileDto(email: "a@b.c", profilePhoto: BlobFileDto(blobUrl: "https://blobs.example/x"))
         let blank = MyProfileDto(email: "a@b.c", profilePhoto: BlobFileDto(fileName: " ", blobUrl: " "))
 
-        XCTAssertNil(noUrl.toDomain(id: "user-1").profilePhoto)
         XCTAssertNil(noName.toDomain(id: "user-1").profilePhoto)
         XCTAssertNil(blank.toDomain(id: "user-1").profilePhoto)
     }

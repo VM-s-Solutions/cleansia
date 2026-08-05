@@ -45,14 +45,16 @@ struct ProfileAvatar: View {
         case .initials:
             EmptyView()
         case let .remote(stored):
-            CachedRemoteImage(
-                cacheKey: stored.fileName,
-                url: stored.blobURL,
-                cache: cache,
-                onLoadFailure: { onLoadFailure(stored) },
-                onLoadSuccess: onLoadSuccess,
-                placeholder: { Color.clear }
-            )
+            if let url = stored.blobURL {
+                CachedRemoteImage(
+                    cacheKey: stored.fileName,
+                    url: url,
+                    cache: cache,
+                    onLoadFailure: { onLoadFailure(stored) },
+                    onLoadSuccess: onLoadSuccess,
+                    placeholder: { Color.clear }
+                )
+            }
         case let .picked(image):
             Image(uiImage: image)
                 .resizable()

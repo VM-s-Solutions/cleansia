@@ -327,6 +327,25 @@ raw components one-off; never duplicate a `:core` component.
 > **every** surface that draws the disc, not just the one the bug was found on; a call site wired for
 > failure only re-arms nothing. Mutation to prove it: empty the success handler — a test that fails a
 > key, succeeds it, then fails it again must go red.
+>
+> **The credential is not the existence check.** "Does this resource exist" is answered by the
+> content-addressed **`fileName`**, never by the SAS URL beside it and never by "is something currently
+> drawn". A fetch can return the name with a blank signature: the disc then draws the initials while a
+> stored blob genuinely exists, so anything gated on the URL — or on what is rendered — silently
+> refuses a **deletion the user is entitled to make**, and refuses it invisibly, because the screen
+> looks exactly like "there is no photo". So the domain model keeps the URL **optional** beside a
+> required name (iOS `ProfilePhoto`, Android's separate `avatarUrl`/`avatarFileName`), rendering asks
+> "is it drawable", destructive affordances ask "does it exist". Mutation: key the removal on the URL —
+> a test for a stored photo whose signature is missing must go red. Generalizes past avatars to every
+> SAS-backed blob (order photos, dispute evidence).
+>
+> **A save that reports outcomes reports exactly one.** The specific claim beats the general one at a
+> **single call site** — `showSuccess(avatarConfirmation?.message ?? profileSaved)` — so "photo updated"
+> and "profile saved" can never both fire for one save, and the mapping stays a pure function of the
+> pending edit (`nil` = nothing specific to say), resolved from the value captured **before** the
+> await. Fire it **only in the success branch**: firing at the tap still passes every positive test,
+> because they see one emit either way, so the test that earns its place is **a failed save claiming
+> nothing** — the difference between "a photo was chosen" and "a photo was saved".
 
 > **A sheet over a live backdrop — the ONE way (Android `SnapSheet`):** a panel layered over a
 > full-bleed map is **not** a `BottomSheetScaffold`. That scaffold has exactly two resting states —

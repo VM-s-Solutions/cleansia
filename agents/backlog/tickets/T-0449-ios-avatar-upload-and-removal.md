@@ -316,10 +316,31 @@ Android's `profile_avatar_encode_failed` in all five locales, and `profile_photo
 **Harvested** into `patterns-mobile.md` ("A re-rendered SAS-backed image"): the guard is released by a
 successful render, and the pair is plumbed through every surface that draws the image.
 
-**Reported, not actioned** — see the handover: iOS has no post-save confirmation while web ships
-`avatar.upload_success`/`remove_success` and Android was mid-flight adding the same pair; web sends the
-user's own filename + MIME + a full `data:` URI where both mobile clients re-encode to a bounded JPEG;
-and T-0465 needs no iOS work.
+**Reported, not actioned** — see the handover: web sends the user's own filename + MIME + a full
+`data:` URI where both mobile clients re-encode to a bounded JPEG; and T-0465 needs no iOS work.
+
+## Save confirmations (ios, 2026-08-05) — mirroring Android `3fb62955` + `26881f12`
+
+Closes the gap left open above, taking all three sentences verbatim from Android (which took them from
+web), so the three platforms confirm the same save in the same words in all five locales.
+
+- **`AvatarSaveConfirmation.forEdit`** — a pure function of the pending edit (`picked → uploaded`,
+  `removed → removed`, `unchanged → nil`), resolved from the edit captured **before** the await and
+  fired **only** in the success branch, on the `SnackbarController` the save path already uses for
+  errors. One call site, `confirmation?.message ?? L10n.Profile.saveSuccess`, so exactly one message:
+  the specific claim beats the general one and they are never both emitted.
+- **Remove keys on the stored file name**, not the SAS URL and not what is drawn. That required the
+  domain to stop discarding a photo whose signature came back blank: `ProfilePhoto.blobURL` is now
+  optional, `AvatarDisplay.resolve` decides *drawable*, and `canRemoveAvatar` decides *exists*.
+  Without it a blank SAS silently swallowed a removal the user was entitled to make.
+- **`completeOnboarding` stays silent**, matching Android: a toast while first-run hands the user back
+  to what they were doing reads as friction. Pinned by `testCompletingOnboardingConfirmsNothingAtAll`.
+- **Three tests whose premise the new rules invalidated were repaired, not deleted** — two success-log
+  assertions that meant "confirms nothing" now mean "confirms the profile, not the photo", and
+  `canRemoveAvatar` after a staged removal. One redundant test was dropped in favour of a strictly
+  stronger exact-message assertion.
+- **Harvested** into `patterns-mobile.md`: the credential is not the existence check, and a save that
+  reports outcomes reports exactly one.
 
 ## Review
 <!-- reviewer + security verdicts here -->

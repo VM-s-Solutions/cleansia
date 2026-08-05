@@ -293,7 +293,7 @@ private struct HeroGradient: View {
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
             ProfileAvatar(
-                display: user?.profilePhoto.map(AvatarDisplay.remote) ?? .initials,
+                display: AvatarDisplay.resolve(photo: user?.profilePhoto, edit: .unchanged),
                 initials: user?.initials ?? "",
                 cache: avatarCache,
                 onLoadFailure: onAvatarLoadFailure,

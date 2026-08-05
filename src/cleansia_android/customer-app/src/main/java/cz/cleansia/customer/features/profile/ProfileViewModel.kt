@@ -46,9 +46,12 @@ sealed interface AvatarDraft {
 }
 
 /**
- * What to confirm once the server has accepted a save carrying this draft. Null
- * for [AvatarDraft.Unchanged]: that save touched no photo, so a photo message
- * would claim something that never happened.
+ * What to confirm once the server has accepted a save carrying this draft.
+ *
+ * A save confirms exactly once, and a photo message wins over the general one
+ * when there is a photo message: it is the more specific claim, about the change
+ * the user can actually see. Null for [AvatarDraft.Unchanged] hands the save back
+ * to that general confirmation.
  */
 @StringRes
 private fun avatarSaveMessageRes(draft: AvatarDraft): Int? = when (draft) {
@@ -141,8 +144,15 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    /**
+     * A removal is only meaningful against a photo the server actually holds. The
+     * options sheet also opens over a pick that has never been uploaded, and there
+     * the tap can only mean "drop what I just chose" — recording a removal instead
+     * would have the app report deleting a photo that never existed.
+     */
     fun removeAvatar() {
-        _avatarDraft.value = AvatarDraft.Removed
+        val hasSavedPhoto = userRepository.currentUser.value?.avatarFileName != null
+        _avatarDraft.value = if (hasSavedPhoto) AvatarDraft.Removed else AvatarDraft.Unchanged
     }
 
     /** Leaving the edit screen without saving must not carry the pick into the next visit. */
@@ -197,7 +207,9 @@ class ProfileViewModel @Inject constructor(
             )
             result
                 .onSuccess {
-                    avatarSaveMessageRes(draft)?.let(snackbar::showSuccessKey)
+                    snackbar.showSuccessKey(
+                        avatarSaveMessageRes(draft) ?: R.string.profile_save_success,
+                    )
                     _avatarDraft.value = AvatarDraft.Unchanged
                     _saveState.value = ActionState.Idle
                     onSaved()

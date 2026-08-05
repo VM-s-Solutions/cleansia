@@ -1,6 +1,7 @@
 package cz.cleansia.customer.features.profile
 
 import java.io.File
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -23,6 +24,14 @@ class ProfileAvatarStringsTest {
         "profile_avatar_picker_unavailable_message",
         "profile_avatar_upload_success",
         "profile_avatar_remove_success",
+        "profile_save_success",
+    )
+
+    /** Every sentence a successful save can produce. One save shows exactly one of them. */
+    private val saveConfirmations = listOf(
+        "profile_avatar_upload_success",
+        "profile_avatar_remove_success",
+        "profile_save_success",
     )
 
     private val resDir: File = sequenceOf(
@@ -59,18 +68,20 @@ class ProfileAvatarStringsTest {
     }
 
     /**
-     * "Updated" and "removed" are the two outcomes of the same tap, so a copy-paste
-     * that leaves both reading the same sentence tells the user nothing at all — and
-     * every locale is a fresh chance to make it.
+     * Photo updated, photo removed and profile saved are three different outcomes of
+     * the same button, and only one of them is ever shown — so a copy-paste that
+     * leaves two of them reading alike is invisible until a user hits the other path.
+     * Every locale is a fresh chance to make it.
      */
     @Test
-    fun `the two save confirmations say different things in every locale`() {
+    fun `no two save confirmations say the same thing in any locale`() {
         locales.forEach { locale ->
             val xml = stringsXml(locale)
-            assertTrue(
-                "$locale/strings.xml uses one sentence for both avatar outcomes",
-                valueOf(xml, "profile_avatar_upload_success") !=
-                    valueOf(xml, "profile_avatar_remove_success"),
+            val sentences = saveConfirmations.map { valueOf(xml, it) }
+            assertEquals(
+                "$locale/strings.xml reuses one sentence for two different save outcomes",
+                saveConfirmations.size,
+                sentences.toSet().size,
             )
         }
     }

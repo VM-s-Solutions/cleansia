@@ -420,6 +420,7 @@
     <string name="profile_avatar_picker_unavailable_message">На этом устройстве нет приложения для выбора фото.</string>
     <string name="profile_avatar_upload_success">Фото профиля обновлено</string>
     <string name="profile_avatar_remove_success">Фото профиля удалено</string>
+    <string name="profile_save_success">Профиль успешно сохранён</string>
 
     <!-- Profile — addresses -->
     <string name="profile_addresses_title">Сохранённые адреса</string>

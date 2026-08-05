@@ -427,6 +427,7 @@
     <string name="profile_avatar_picker_unavailable_message">This device has no app that can pick a photo.</string>
     <string name="profile_avatar_upload_success">Profile photo updated</string>
     <string name="profile_avatar_remove_success">Profile photo removed</string>
+    <string name="profile_save_success">Profile saved successfully</string>
 
     <!-- Profile — addresses -->
     <string name="profile_addresses_title">Saved addresses</string>

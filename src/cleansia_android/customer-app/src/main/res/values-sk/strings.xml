@@ -420,6 +420,7 @@
     <string name="profile_avatar_picker_unavailable_message">V tomto zariadení nie je žiadna aplikácia na výber fotky.</string>
     <string name="profile_avatar_upload_success">Profilová fotka bola aktualizovaná</string>
     <string name="profile_avatar_remove_success">Profilová fotka bola odstránená</string>
+    <string name="profile_save_success">Profil úspešne uložený</string>
 
     <!-- Profile — addresses -->
     <string name="profile_addresses_title">Uložené adresy</string>

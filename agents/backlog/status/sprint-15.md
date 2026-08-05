@@ -1037,3 +1037,249 @@ becomes unnecessary — **so tell us which comes first rather than letting us as
 **Explicitly NOT on your list, though earlier documents said otherwise:** the NSwag regens (done,
 `37440bbc`), the `.AreNullsDistinct(false)` migration (folded into `Initial`), and the
 `mobile-spec-redump` markers on T-0526/T-0527 — those are *created by* future work, not owed by you today.
+
+---
+
+# ADDENDUM D — reconciliation pass 4 (2026-08-05), and the mechanism that should make it the last one
+
+**Supersedes ADDENDUM C** for the tickets named below; C stands for everything else.
+
+## D0. What this pass was asked to do, and where it disagreed with its brief
+
+The brief listed eleven `ready` tickets as shipped and asked for them to be verified against the tree
+and closed. **Nine were. Two were not, and one ticket the brief did not name was.**
+
+Every verdict below was established by reading the **tree at HEAD**. `git log master..HEAD` (72 commits)
+was used to *locate* each change; a commit message saying a thing shipped is a lead, not evidence. That
+distinction is the whole reason two rows survived this pass.
+
+## D1. Closed — nine, each with the fact that closed it
+
+| Ticket | Closed as | The fact at HEAD |
+|---|---|---|
+| **T-0457** | `done` | `ContactIdentityFieldRegex` on **all five** hosts (four-of-five would have been the hole). The DTO-walking guard reads the token list out of the **live compiled regex** — `WireSurface.ReadTokens()` reflects the private static member and parses `regex.ToString()` — so a token added to the middleware widens every guard and none can hold a stale copy. `RequestLogPiiSurfaceGuardTests` carries an `InRange(1000, 20000)` anti-vacuity floor |
+| **T-0464** | `done` | `Core.Blobs.Abstractions/ServedContentType.cs` — a closed value type, 26 cases pinned. The ticket's trap held: the decoy was **load-bearing** and the naive fix was **stored XSS**, so it went through the SAS `rsct`/`rscc` override instead. Known gap recorded, not hidden: the avatar has no stored content type, so it gets `private` caching but no typed `Content-Type` — that needs a column, i.e. **T-0465** |
+| **T-0509** | `done` | The sweep ran and found a hole the ticket had not predicted: `Contains("/gdpr")` never matched `/api/v1/AdminGdpr/...` because no slash precedes "gdpr" there. All five hosts now test `Contains("gdpr/")`. The **derived** guard found it; the hand-written `[InlineData]` list could not have |
+| **T-0520** | `done` | Partner web `profile-bank.*` **and** admin `employee-payout-section.*`. The facade spec pins the two properties that matter: *"nothing unmasked until a reveal happens"* and *"goes through the POST reveal command, never a second read"*. The PM-added label AC landed too — `profile_fields_iban` reads **"Bank details"** on all three clients in one change |
+| **T-0526** | `done` | One `CancellationAssessor`, called from `CancelOrder.cs:81` and `:91` — the preview and the cancel cannot disagree because they are not two computations. Both customer hosts expose it at `OrderController.cs:174` |
+| **T-0538** | `done` | `EnableDefaultContentItems=false` on all five `.csproj`, plus `WebSdkContentGlobTests.cs`, which goes red on a **new** host that reintroduces the glob |
+| **T-0539** | `done` | `MaterializeRecurringBookings.cs:87` opens a scope **inside** the loop, so a failed template's entries die with its scope — the `Added → Unchanged is NOT Detached` phantom-row trap is avoided by construction, not by cleanup |
+| **T-0545** | **`retired`** | **Obsolete, not done.** The owner drops the DEV database before any repair would run; DEV is the only environment the drift exists in, and the cause is already fixed (`da88b695` + `d78b816b`). ⚠️ One consequence for the architect lane: **ADR-0038 §D6.4 now names a repair with no ticket behind it** |
+| **T-0508** | **`superseded`** by T-0522 | The spec's questions were answered by the build shipping first. AC3 → `InvoicePdfData.Supplier` is the cleaner; AC4 → `IsVatPayer` reaches `QuestPdfService.cs:80`, so a registered cleaner stays a data change; AC6 (*"the single largest piece of design"*) → `InvoiceLineItem` now has `Quantity`/`UnitPrice`/`LineTotal`; AC7 → `DueDate` + `ConstantSymbol`. **AC11's boundary survives outside the ticket**: `Q-PAYOUT-01` is still open for **SK**, so nobody may read the shipped document as a CZ/SK one |
+
+## D2. Not closed — and this is why the pass was worth running
+
+**T-0537 stays `ready`.** The brief described it as *"the dashboard lib registered in Nx"*. **That is the
+ticket's own out-of-scope half.** The registration did land — `project.json` with tags and a jest target
+— but **AC1–AC5 are the guard**, and no guard exists: `grep -rln "src/index.ts"` across `*.mjs`/`*.ts`/`*.yml`
+returns nothing, and `agents/tools/` holds only the two `check-*` pairs. The silent state is still
+reachable. AC5's sweep was re-run as AC5 requires: **64 lib roots, 0 missing.**
+
+**T-0514 and T-0544 move `ready` → `in_progress`.** The **web leg shipped** (`4984c2eb`); Android and iOS
+did not. Android `strings.xml:568` still reads *"Express +20%"* with no waived variant, and `:852-855`
+still carries the comment *"No express perk anywhere… Restore this perk only together with the code that
+waives the surcharge"* — **that code shipped in T-0493.** iOS `MembershipPerks.swift:6-9` says the same and
+its enum still has three cases, so **Plus advertises four perks on mobile and five on web.** They are out
+of `ready` so nobody rebuilds the web leg, and both comments must be corrected in the same change that
+adds the perk — leaving a stale comment that forbids the thing you just did is how this became needed twice.
+
+**T-0527, which the brief did not name, moved `draft` → `in_review`.** Both halves had shipped
+(`ab077504`): `OrderApi.kt:70`, `OrderClient.swift:92`, **`CancellationFeePreview.swift` deleted**, and
+the committed iOS suite that pinned the *wrong* ladder **corrected rather than weakened**. Not `done` —
+AC10 (parity QA) is open and the customer Android app has no `androidTest` source set.
+
+**Three architect dispositions from 2026-08-04 are accepted and now reflected in the INDEX:** T-0531
+rescoped to `XS`/AC1′-only, T-0532 stands with sharper criteria (**now the highest-value unshipped
+`ready` ticket**), T-0471 stands unchanged (**now the oldest**).
+
+---
+
+## D3. THE MECHANISM — three candidates, measured, and only one of them is worth building
+
+This is the third pass in a sprint and all three found the same failure: **work ships, the ticket stays
+`ready`.** So the question is not "which idea sounds good" but "which one would have caught these
+thirteen rows". I measured all three against the ticket corpus **as it stood at HEAD before this pass**.
+Numbers below are counts I ran, not estimates.
+
+### Candidate 1 — a frontmatter field checked against `git log`. ❌ **Rejected as stated; ✅ a variant of it is the answer.**
+
+The ticket format carries **no** field naming the commit that shipped it. Adding one (`shipped_in: [sha]`)
+fails for the reason the current process fails: **it is a field somebody must remember to write, and the
+thing that goes unwritten today is a one-word `status:` line.** Adding a second thing to forget does not
+fix forgetting the first.
+
+**But there is a field that is already being written, and it already contradicts `status:`.** On every one
+of the nine tickets closed above, the implementing lane had **already written its evidence into `## Review`**
+— mutation proofs, suite counts, file:line citations. The only thing nobody did was change one word in the
+frontmatter. That contradiction is mechanically detectable with **no new field, no new discipline, and no
+git at all**:
+
+> **A ticket whose `status:` is `draft` or `ready` must have an empty `## Review` section and zero
+> `- [x]` acceptance boxes.** Anything else is a ticket that reviewed work it claims has not started.
+
+**Measured at HEAD before this pass: 8 hits out of 74 `draft`/`ready` tickets. All 8 were real. Zero false
+positives.** Four were tickets from this brief (T-0457, T-0464, T-0526, T-0527); the other four
+(**T-0473, T-0479, T-0490** and T-0532) are *also* stale — I spot-checked T-0490 and its fix is in the
+tree at `InvoiceDetailScreen.kt:94` while the row says `draft`. **So this check just found the next batch,
+which is exactly the population ADDENDUM C declined to reconcile.**
+
+Recall is its weakness: **8 of the ~13** stale rows, because a lane that shipped without writing a review
+block leaves no trace here.
+
+### Candidate 2 — a commit trailer naming the ticket. ⚠️ **Real, but it would have caught 3 of 11, and only helps the next sprint.**
+
+Greppability is not the problem — **the commits are not naming tickets at all.** Measured over the 72
+commits on this branch: **22 mention any `T-NNNN`; 50 mention none.** Worse, the ones that matter are the
+misses: the commits that actually shipped T-0514, T-0520, T-0537, T-0538, T-0539 and T-0544
+(`4984c2eb`, `cf24a74c`, `0c76f94a`) name **no ticket whatsoever**. Only `b9753e85` named its three
+(T-0457/T-0464/T-0509). **A grep-the-log check would have found 3 of the 11 rows the brief listed.**
+
+A `Ticket: T-NNNN` trailer would fix that going forward — the trailer slot is already in active use
+(65 of 72 commits carry `Co-Authored-By`), so this is a one-line addition to the commit convention plus a
+line in `agents/process/`. But it is **prospective only** (it says nothing about the 357 tickets already on
+disk), it depends on the **same memory that is already failing**, and with no commit-msg hook (there are
+none in `.git/hooks/`) nothing enforces it. **Worth adopting as a convention. Not worth relying on as the
+mechanism.**
+
+### Candidate 3 — a script in the existing house style. ✅ **This is the one. Highest recall, and it is self-clearing.**
+
+**The rule:** a `ready`/`draft` ticket is **stale on its face** if a source file it names by path has been
+committed **on or after** the ticket's own `updated:` date. It doesn't try to decide whether the ticket
+shipped — it decides whether the ticket is still describing a repository that exists, which is the
+question the PM must answer before dispatch anyway.
+
+It works here because **this backlog is unusually file:line-heavy**: tickets name real paths in Context and
+Implementation notes. Paths are extracted as tokens and resolved by **suffix match against `git ls-files`**,
+so `Cleansia.Web.Partner/Middleware/RequestLoggingMiddleware.cs`, `libs/…/profile-bank.facade.ts` and
+`values/strings.xml` all resolve without the ticket having to write a repo-root path.
+
+**Measured, both directions:**
+
+| | Result |
+|---|---|
+| Against the corpus **before** this pass | **16 of 23 `ready` rows flagged**, catching **10 of the 12** genuinely-stale tickets (T-0457, T-0464, T-0508, T-0509, T-0514, T-0526, T-0527, T-0537, T-0539, T-0544) |
+| Missed | T-0520 and T-0538 — T-0520's targets were files that **did not exist yet**, so no path could be named. **T-0545 was correctly not flagged**: it was obsolete for an unrelated reason, which is the right answer |
+| Against the corpus **after** this pass | **5 of 12 `ready` rows flagged** — and all five are **true positives pointing at the next thing to check**: T-0447/0448/0449/0450 are the avatar lane, and `85c453f1` touched `UpdateCurrentUser.cs`, which is the very file `Q-PROFILE-01` blocks T-0447 on |
+
+**That last row is the important one.** The flag rate looks high (70% before) only because the queue really
+was that wrong — 13 of 23 `ready` rows. **The signal falls as the queue is reconciled**, because closing a
+ticket moves its `updated:` past the commits that touched it. It measures staleness rather than accusing
+anyone of it.
+
+**Best combination:** run candidates 1 and 3 in one script. Candidate 1 supplies **precision** (8 hits,
+0 false positives), candidate 3 supplies **recall** (10 of 12). Together they would have caught **12 of the
+13** rows this pass fixed by hand.
+
+### What it would cost, honestly
+
+- **`agents/tools/check-ticket-staleness.mjs`** — **~200 lines** plus a **~120-line `.test.mjs`**, matching
+  the house shape of `check-available-status-parity.mjs`: dependency-free Node, a header comment stating
+  *why* it lives outside the Nx workspace, `--warn` / `--root=DIR` flags, and an **anti-false-green anchor**
+  — if it resolves **zero** ticket files or **zero** paths, that is a hard failure, never a silent pass
+  (ADR-0032 D3). About **half a day** including the self-test. It is not "genuinely small", which is why
+  **this pass specified it rather than building it** — and building it would also have written outside this
+  pass's `agents/backlog/**` boundary.
+- **Where it runs — and the one trap to avoid.** ⚠️ **Do not attach it to the frontend lint step:** that
+  step is `continue-on-error: true` (`frontend-ci.yml:73`), so a check placed there can never fail a build.
+  And do not repeat `check-consistency.mjs`'s mistake: it appears in **zero** workflow files, so it can
+  never set an exit code at all (the defect ADR-0038 CH-P6 found). **Copy `check-available-status-parity.mjs`
+  instead** — it took its own repo-root workflow (`.github/workflows/offerability-parity.yml`) precisely so
+  it could go red. This one wants the same, plus a run at the **top of every PM dispatch**, which is where
+  it pays for itself.
+- **It is advisory, not blocking.** A flag means *"re-verify this ticket against the tree before you
+  dispatch it"*, not *"this ticket is wrong"*. Making it blocking would fail PRs for touching a file some
+  open ticket happens to mention.
+- **The zero-cost half is available today:** candidate 1's rule needs no script to be useful as a **PM
+  checklist item** — *a `ready` ticket with a written `## Review` is a lie; check it before dispatching* —
+  and it caught 8 rows here with no false positives.
+- **Adopt candidate 2 as a convention anyway** (`Ticket: T-NNNN` in the commit trailer). It costs one line
+  in `agents/process/` and it is what makes candidate 3 unnecessary a year from now.
+
+**One thing this proposal does NOT claim:** none of these catch a ticket that shipped in a commit naming no
+ticket, touching only files the ticket never named, with no review block written. **T-0520 was exactly
+that**, and it took a human-directed grep to find. The mechanism reduces the manual pass; it does not
+delete it.
+
+---
+
+## D4. 🔴 OWNER — the current list, in plain English
+
+Two ADRs landed on 2026-08-04 and both put something new on your desk. **The list got one item shorter and
+two items longer.**
+
+**One thing blocks real work, and it is the same one as last time:**
+
+1. **Drop and reseed the DEV database.** Six accepted ADRs' schema changes were folded into a *regenerated*
+   `Initial` whose timestamp was preserved, so a migrated environment already has that id in its history and
+   the new columns are **skipped silently** — the migration service prints "up to date" and exits 0. It is
+   now also holding up the invoice: **T-0522 declares a `konstantní symbol` column the database does not
+   have, so the payout-invoice path is down until this runs.** Your reseed is the window for everything
+   below. One query tells you which world DEV is in:
+   `SELECT count(*) FROM "Orders" WHERE "CurrentStatus" IS NULL;`
+
+**Three decisions only you can make:**
+
+2. **Is Stripe already enforcing one free trial per customer?** One look at the dashboard. We cannot tell
+   from the code, and the two possible defects have **opposite** fixes, so we would be guessing. This is the
+   only thing holding the Plus trial ticket.
+
+3. **Customer web cannot save a profile — and the fix is a backend decision, not a frontend workaround.**
+   The update endpoint demands a user id the customer web app has no way to obtain, so every save fails. We
+   can make the server use the caller's own identity, but that changes an endpoint's contract and we are not
+   deciding that for you.
+
+4. **The self-billing agreement text — and who reviewed it, you or a lawyer.** This is new
+   (ADR-0041). You asked for a checkbox saying we issue invoices on the cleaner's behalf, and the design is
+   built so the schema and the screens can ship **inert** until you supply words. Until you do, **nothing is
+   shown to anyone** — which is safe and visibly incomplete rather than quietly wrong. Six things the text
+   has to say are listed for whoever drafts it. **Four smaller questions ride along with it** and each has a
+   safe default we will use if you say nothing: whether we may keep self-billing the cleaners who signed the
+   *old* contract while we ask them (default: yes, on the contract's basis, and we stamp every invoice with
+   the acceptance behind it so the unasked group stays countable); whether the invoice itself must say it was
+   issued on the supplier's behalf (default: it says nothing); whether a cleaner may withdraw the arrangement
+   in the app (default: not in v1, and the schema already allows adding it later for free); and whether an
+   operator recording your countersigned contract counts as agreement (default: yes, recorded distinctly from
+   a self-service tick, forever).
+
+**One thing is a run, not a decision — and it is new (ADR-0042):**
+
+5. **The next time you regenerate the API clients, tell us what happened.** You ruled that the shared
+   frontend enums should come out of the generated clients instead of being typed by hand. The design puts a
+   small generator **inside the command you already run** (`npm run generate-*-client`) — your command line
+   does not change — and **the first regen after it lands is the proof it works.** No agent can test a
+   command only you run. Nothing is waiting on this today; the refactor itself is still behind one
+   architect review round.
+
+**What came OFF your list since last time:**
+
+- **The promo counter-repair run is gone.** You are dropping the database before it would have run, so the
+  corrupt counters go with it. The ticket is retired with that reason on the record, and the bug that caused
+  the drift is already fixed.
+- **The two invoice questions are answered** (a cleaner is a self-employed supplier we self-bill; cleaners
+  are not VAT payers) and the code that acts on both is already written and reviewed.
+- **Still not on your list, though older documents said otherwise:** the NSwag regens (done), the
+  nulls-distinct migration (folded into `Initial`), and the mobile spec redump (created by work we do, not
+  owed by you).
+
+---
+
+## D5. What this pass deliberately did NOT do
+
+- **Did not touch git.** No add, commit, branch, stash or checkout. `git log` / `git show` / `git ls-files`
+  were read-only and are what the verification is built on. (The repo-global stash hazard across worktrees
+  makes this rule load-bearing, not ceremonial.)
+- **Did not write outside `agents/backlog/**`.** Not `agents/knowledge/**`, not `agents/backlog/adr/**`, not
+  `agents/tools/**` — **which is why the proposed script in D3 was specified and not built.** No production
+  code, no tests, no `CLAUDE.md`.
+- **Did not open** `.env`, `.p8`, `Info.plist`, `project.yml` or anything under `src/cleansia_ios/Config/`.
+- **Did not close T-0522.** It is `in_review` with a real `manual_steps: ef-migration`. Its AC are all
+  checked, but a ticket whose code path is down pending a migration is not `done`.
+- **Did not reconcile T-0473 / T-0479 / T-0490** — the three rows candidate 1 surfaced. They are `draft`
+  with written review verdicts and at least one (T-0490) is verifiably shipped. They were **out of this
+  pass's brief**, and claiming coverage this pass does not have would reproduce the defect it exists to fix.
+  **They are the obvious next pass, and they are now named rather than latent.**
+- **Did not create T-0546 / T-0547** (the ADR-0042 challenger round and refactor). ADR-0042 is `proposed`,
+  and `deliberation.md` says only a finalized decision becomes a ticket. The ADR proposes those ids; the PM
+  allocates them when the round is convened.
+- **Did not move `Q-PAYOUT-02` / `Q-PAYOUT-03` to `answered.md`.** They are answered (T-0522 AC0 records the
+  owner's verbatim words) but `questions/open.md` is a shared file with live lanes.

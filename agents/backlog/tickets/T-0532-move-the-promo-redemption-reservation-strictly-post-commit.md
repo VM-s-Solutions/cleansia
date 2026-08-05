@@ -5,7 +5,7 @@ status: ready
 size: M
 owner: architect
 created: 2026-08-03
-updated: 2026-08-04
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []
@@ -216,6 +216,17 @@ Both sections are marked **PROPOSED** and flip to law with the ADR.
      enforcer that has never been built — a live ADR-0032 D3 gap on a rule written eight days ago.
   **Retirement conditions: PENDING, not met.** Nothing about the interim has been retired; what changed
   is that every precondition to retiring it is now satisfied, so the work is unblocked in full.
+
+- 2026-08-05 — **PM reconciliation pass 4: the architect's disposition is ACCEPTED; the row is correct as
+  it stands.** `ready`, `M`, unblocked, `owner: architect`. Re-verified the one fact that would have
+  changed it: `src/Cleansia.Infra.Database/Repositories/PromoCodeRedemptionRepository.cs:22` **still**
+  carries `// INTERIM(ADR-0038 §D3 → T-0532)`, so the interim is live, the marker is non-orphan (§D4) and
+  the ticket is neither shipped nor stale. **This is the highest-value unshipped `ready` ticket in the
+  queue** — everything ahead of it in this pass turned out to be already shipped. Its AC11 finding stands
+  and is worth restating for whoever picks it up: `consistency.md` declares an enforcer
+  (`InterimMarkerTripwireTests`) that **has never been built** — the name occurs in seven files, all
+  documentation. Note **T-0545 retired** in this pass, which removes the §D6.4 counter-repair from this
+  ticket's neighbourhood but changes nothing about its own scope.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

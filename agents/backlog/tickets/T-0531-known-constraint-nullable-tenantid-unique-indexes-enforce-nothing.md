@@ -5,7 +5,7 @@ status: ready
 size: XS
 owner: architect
 created: 2026-08-02
-updated: 2026-08-04
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []
@@ -203,6 +203,14 @@ ADR. `agents/knowledge/security-rules.md` S8 is the rule this constraint qualifi
     at the living doc.
   - **Not a duplicate of T-0530** (the "two false mirrors" comment ticket) — that one is about comments
     asserting a mirror that does not hold; this is about a doc that has never stated a consequence.
+
+- 2026-08-05 — **PM reconciliation pass 4: the architect's disposition is ACCEPTED and the INDEX row now
+  matches it.** `status: ready`, `size: XS`, `owner: architect`, `depends_on: []`. **Scope is AC1′ only** —
+  write the *activation* consequence into `agents/architecture/decisions/multi-tenancy-and-region.md`.
+  Re-verified at HEAD that the deliverable is still absent: that file contains no occurrence of
+  "unique index", "NULLS" or "DISTINCT". AC2/AC3/AC4 are withdrawn (landed elsewhere, or withdrawn on
+  principle/decay — see the disposition above). **AC5 stands: nothing is fixed, no migration, no index
+  change.** No re-derivation needed; this line exists so the fifth reconciliation does not re-run the fourth.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

@@ -1,11 +1,11 @@
 ---
 id: T-0464
 title: MetadataName.ContentType is a decoy — every order photo and dispute-evidence file is served as application/octet-stream; fix via SAS response-header override
-status: ready
+status: done
 size: M
 owner: backend
 created: 2026-07-30
-updated: 2026-08-01
+updated: 2026-08-05
 depends_on: [T-0446]
 blocks: []
 stories: []
@@ -228,6 +228,18 @@ avoidable.
   **The seam signature.** Kept the 2-arg overload (so AC4's test compiles unchanged) and added the 3-arg
   one. Unlike the defaulted-parameter case in `patterns-backend.md`, forgetting the new overload degrades
   to `application/octet-stream` — the behaviour that shipped for years — so the omission **fails closed**.
+
+- 2026-08-05 — **`ready` → `done` (PM reconciliation pass 4).** **Verified at HEAD.**
+  `src/Cleansia.Core.Blobs.Abstractions/ServedContentType.cs` exists as the closed value type, pinned by
+  `Cleansia.Tests/Infrastructure/ServedContentTypeTests.cs` (26 cases, including `text/html` /
+  `image/svg+xml` / `application/javascript` → opaque, and that no public constructor lets a caller name
+  its own type). The trap this ticket was written around held: the "decoy" was found **load-bearing** and
+  the naive `MetadataName → BlobHttpHeaders` mapping was found to be **stored XSS**, so the fix went
+  through the SAS response-header override (`rsct`/`rscc`) instead — `SasResponseHeaderOverrideTests`
+  pins the token, `SaveOrderPhotosContentTypeTests` pins the write side. Shipped in `b9753e85`.
+  **The known gap is recorded, not hidden:** the avatar has no stored content type and no extension, so
+  it takes the opaque overload — it gets `private` caching but not a typed `Content-Type`. Recording one
+  needs a column, i.e. a migration this ticket could not add. **T-0465 remains the lane's next writer.**
 
 ## Review
 <!-- reviewer + security verdicts here; AC6 must name the mutation-proving test -->

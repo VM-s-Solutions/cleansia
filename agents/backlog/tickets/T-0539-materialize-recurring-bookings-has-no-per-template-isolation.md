@@ -1,11 +1,11 @@
 ---
 id: T-0539
 title: MaterializeRecurringBookings has no per-template isolation — and the naive fix ships a phantom order
-status: ready
+status: done
 size: M
 owner: architect
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []
@@ -127,6 +127,17 @@ exception and must say so).
 - 2026-08-04 — created `ready` by pm during the sprint-15 reconciliation. Passes DoR: AC observable with
   a named mutation proof, `M`, no dependencies, no owner-only steps, archetype named, and **step 1 is an
   architect ruling** because the durable fix changes a DI lifetime rather than adding a `catch`.
+
+- 2026-08-05 — **`ready` → `done` (PM reconciliation pass 4).** **Verified at HEAD.** The durable answer
+  shipped, not the naive one: `Cleansia.Core.AppServices/Features/Bookings/MaterializeRecurringBookings.cs:87`
+  opens `using var scope = serviceScopeFactory.CreateScope()` **inside** the per-template loop and resolves a
+  fresh `IMediator` from it, so a failed template's tracked entries die with its scope instead of being
+  `Rollback()`-ed to `Unchanged` — the `Added → Unchanged is NOT Detached` phantom-row trap the ticket
+  named is avoided by construction rather than by cleanup. The loop's failure branch logs and continues,
+  leaving the template's previous marker for the next tick. Pinned by
+  `Cleansia.Tests/Features/Bookings/RecurringSweepPerTemplateIsolationTests.cs` and
+  `MaterializeRecurringBookingsTenantStampingTests.cs`, both of which build a real provider and rely on
+  `CreateScope()` being what produces isolation. Shipped in `0c76f94a`.
 
 ## Review
 <!-- reviewer writes the verdict here; PM reconciles before advancing state -->

@@ -1,11 +1,11 @@
 ---
 id: T-0526
 title: Server-side cancellation-fee preview — contract and backend
-status: ready
+status: done
 size: M
 owner: architect
 created: 2026-08-02
-updated: 2026-08-04
+updated: 2026-08-05
 depends_on: [T-0525]
 blocks: [T-0527]
 stories: []
@@ -138,6 +138,20 @@ handler shape; `CancelOrder` for the inputs.
   server-side fee rule and **T-0527**, where Android and iOS still show 50% where the backend charges 25%
   and 100%/"no refund available" where it charges 50%. Every day this sits, both mobile clients lie about
   real money.
+
+- 2026-08-05 — **`ready` → `done` (PM reconciliation pass 4).** **Verified at HEAD.** AC3's one-arbiter rule
+  holds: `Cleansia.Core.AppServices/Features/Orders/CancellationAssessor.cs` is the single assessor, and
+  `CancelOrder.cs:81` (`BlockedReason`) and `:91` (`Assess`) call it — the preview and the cancel cannot
+  disagree because they are not two computations. `GetCancellationFeePreview.cs` is a `Query`, so AC5's
+  "does not ride the UoW commit" holds by request-type naming. AC8: **both** customer hosts expose it —
+  `Cleansia.Web.Customer/Controllers/OrderController.cs:174` and
+  `Cleansia.Web.Mobile.Customer/Controllers/OrderController.cs:174`, same `[HttpGet("CancellationPreview")]`
+  route shape. Pinned by `CancellationFeePreviewAgreementTests` (the preview-equals-cancel property),
+  `GetCancellationFeePreviewHandlerTests` (the boundaries), `CancellationPreviewEndpointParityTests` (the two
+  hosts) and `HostTests/CancellationFeePreviewRouteTests` (authz). Shipped in `03c3ba43` + `20a0c592`.
+  **AC9's manual steps are discharged, not owed:** the regen and the mobile spec redump both happened — the
+  Android and iOS clients call the endpoint at HEAD (`OrderApi.kt:70`, `OrderClient.swift:92`), which is
+  what released **T-0527**.
 
 ## Review
 

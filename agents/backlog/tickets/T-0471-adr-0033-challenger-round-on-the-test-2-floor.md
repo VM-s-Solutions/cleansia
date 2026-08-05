@@ -5,7 +5,7 @@ status: ready
 size: S
 owner: architect
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []
@@ -181,6 +181,16 @@ is not limited to these, but must address them:
      the floor's most likely amendment, so ADR-0042 is **not** blocked on this. But it is the second
      catalog edit this sprint routed by an unratified rule, and the next one may not be so clear-cut.
   **No AC changes. No rescope. This ticket was correct when written and is still exactly what it says.**
+
+- 2026-08-05 — **PM reconciliation pass 4: the architect's disposition is ACCEPTED — STANDS UNCHANGED.**
+  `ready`, `S`, `owner: architect`, nothing shipped against it. Re-verified the two facts it turns on:
+  ADR-0033 `:3` still reads `- **Status:** proposed`, and `backlog/adr/challenges/` still holds **no**
+  file for 0033 while every neighbouring ADR in the 0034–0042 range got a real challenger pass.
+  **It is now the oldest `ready` ticket in the queue**, and its deferral cost went up again this sprint:
+  ADR-0042 (filed 2026-08-04) carries a bound `patterns-frontend.md` edit that **replaces a named canonical
+  form** — a test-2 narrowing routed by a floor nobody has ratified. That routing is correct under the floor
+  as written *and* under its most likely amendment, so **ADR-0042 is not blocked on this** — but that is
+  twice now, and the third one may not be so clear-cut.
 
 ## Review
 <!-- challenger + lead write the verdict into ADR-0033; the PM records the outcome here -->

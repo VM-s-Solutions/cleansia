@@ -1,18 +1,18 @@
 ---
 id: T-0514
 title: Show the waived express surcharge and the remaining monthly quota in the booking flow
-status: ready
+status: in_progress
 size: M
-owner: frontend
+owner: android
 created: 2026-08-02
-updated: 2026-08-04
+updated: 2026-08-05
 depends_on: [T-0493, T-0513]
 blocks: []
 stories: []
 adrs: [0035]
 layers: [frontend, android, ios]
 security_touching: false
-manual_steps: [nswag-regen]
+manual_steps: [mobile-spec-redump]
 sprint: 15
 ---
 
@@ -98,5 +98,56 @@ web is independent.
   `src/Cleansia.App/{apps,libs}` (excluding generated clients), `cleansia_android/*/src/main` and
   `src/cleansia_ios` returns **zero** consumers. So the member sees a lower price with no explanation, and
   has no way to learn a quota exists or how much of it is left. This ticket is what closes that.
+
+- 2026-08-04 — **web leg shipped** (frontend). Verified against the regenerated client rather than the
+  ticket text: `QuoteOrderResponse` carries `expressSurchargeWaivedByMembership: boolean` +
+  `expressUpgradesRemaining: number | undefined` (`customer-client.ts:11965-11966`), and
+  `GetMyMembershipResponse` carries `expressUpgradesPerMonth` / `expressUpgradesRemaining` /
+  `trialEndsAtUtc` (`:9450-9452`). **`expressWaiverForfeitedOnCancel` was deliberately NOT consumed** —
+  it belongs to the cancel confirmation (AM-13), not to the booking flow.
+  **AC1** — the sidebar, the mobile price bar and the summary card render a waived row
+  (`pages.order.express_surcharge_waived_label`) at `0 Kč` whenever the server says
+  `expressSurchargeWaivedByMembership`, and the express chip on the slot flips to
+  `slot_express_waived`. The number shown equals the number charged, because the quote reports
+  `expressSurchargeAmount: 0` in that state (`OrderPricingCalculator.cs:72-80`).
+  **AC2 — the disclosure sits at SLOT SELECTION, not at payment**, per D7/AM-16: a note under the time
+  grid renders whenever the grid actually offers an express slot, in three server-decided states —
+  available (with the count), exhausted, and *pending trial*. The trial state exists because
+  `ExpressUpgradesRemaining` is `0` for a trialing member **and** for an exhausted one
+  (`ExpressWaiverResolver.cs:63-66`); `TrialEndsAtUtc` is the only field that separates them, and
+  telling a trial member they "used theirs up" would be a new false claim.
+  **AC4** — the count is bound verbatim (`count: facade.expressUpgradesRemaining()`); the guard spec
+  asserts no template does arithmetic on it.
+  **AC3** — no branch changes for a guest or a non-member: `OrderMembershipFacade` skips the call when
+  unauthenticated and on SSR, and a failed read degrades to the same silence as "no membership".
+  Existing wizard suites stay green (120/120).
+  **AC9** — new specs: `order-membership.facade.spec.ts` (9), `express-waiver-status.spec.ts` (7),
+  `membership.facade.spec.ts` (7), plus 2 added to `order-pricing.facade.spec.ts`.
+  **AC10** — the screenshots (AC1/AC2/AC3 evidence) are QA's; no leg-1 mutation proof was written for
+  them. The mutation proof that WAS run covers the copy guard (see T-0544).
+
+- 2026-08-05 — **`ready` → `in_progress` (PM reconciliation pass 4). PARTLY SHIPPED — the web leg landed,
+  the two mobile legs did NOT. Do not restart this ticket from zero.** Verified at HEAD in both directions:
+  - **SHIPPED (web, `4984c2eb`) — do not rebuild.** `slot_express_waived`, `express_surcharge_waived_label`
+    and the three-state disclosure `express_waiver_available` / `express_waiver_used` / `express_waiver_trial`
+    are present in **all five** `apps/cleansia.app/src/assets/i18n/*.json` (en:763-769 and the four
+    translations at the same keys). The disclosure sits at **slot selection**, not at payment, and it makes
+    the distinction the resolver forces: `ExpressUpgradesRemaining` is `0` for a **trialing** member *and*
+    for an **exhausted** one, so `TrialEndsAtUtc` is the only field that separates them and telling a trial
+    member they "used theirs up" would have been a new false claim. AC4's binding is literal
+    (`count: facade.expressUpgradesRemaining()`) and `membership-express-claim.spec.ts:266-267` asserts no
+    template does arithmetic on it. Support lib: `libs/core/customer-services/src/lib/services/express-waiver-status.ts`.
+  - **OWED (android + ios).** `cleansia_android/customer-app/src/main/res/values/strings.xml:568` still reads
+    `booking_slot_express` = *"Express +20%"* and `:685` `booking_summary_express_surcharge` =
+    *"Express surcharge (+20%)"* with **no waived variant and no quota string anywhere** — grep for
+    `slot_express_waived` / `express_waiver_available` in the Android catalog returns nothing. iOS is the
+    same: no such keys in `CleansiaCustomer/Resources/Localizable.xcstrings`. So a Plus member on either
+    mobile client still sees +20% on a booking the server charges nothing extra for — **which is the exact
+    defect this ticket was opened for, still live on two of three clients.**
+  - **`manual_steps: nswag-regen` is DISCHARGED** for web (the fields are on the customer client). The mobile
+    legs need the **mobile spec redump**, not a fresh regen; flag it before dispatching them.
+  - `owner` moves `frontend` → `android`; the iOS leg runs in parallel under the same ticket. Both touch
+    their own shared catalogs (`values*/strings.xml`, `Localizable.xcstrings`) — **separate lanes, no
+    concurrent writers on either file.**
 
 ## Review

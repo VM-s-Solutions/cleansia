@@ -1,11 +1,11 @@
 ---
 id: T-0509
 title: The cleaner's bank account is a T-0470-class value — sweep its exposure in logs, exports and list DTOs
-status: ready
+status: done
 size: S
 owner: security
 created: 2026-08-02
-updated: 2026-08-04
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []
@@ -194,5 +194,16 @@ field set, because a sweep of one column is cheaper than a sweep of five.
 
   **AC8 — `Cleansia.Tests` 3017/3017, `Cleansia.IntegrationTests` 132/132, `Cleansia.HostTests` 120/120**,
   all local. Not an empty diff after all.
+
+- 2026-08-05 — **`ready` → `done` (PM reconciliation pass 4).** **Verified at HEAD.** The sweep ran and
+  the live hole it found was **not** the one the ticket predicted: `IsSensitivePath`'s `Contains("/gdpr")`
+  never matched `/api/v1/AdminGdpr/export/{userId}`, because no slash precedes "gdpr" inside "AdminGdpr" —
+  the same shape as `/auth/` missing `/api/AdminAuth/…`. All five hosts now test `Contains("gdpr/")`, which
+  matches both routes. `Cleansia.Tests/Logging/RequestLogPayoutPathSuppressionTests.cs:19-22` records the
+  finding and `EveryRouteCarryingAPayoutIdentifier_IsSuppressedOnEveryHost` **derives** the route list from
+  the wire surface, so a new payout route joins the rule by existing — that derived guard is what found the
+  hole; the hand-written `[InlineData]` list could not have. AC3 also landed: `EmployeeListItem` no longer
+  carries `Iban` (grep for `Iban` under `Features/Employees/` returns only `UpdateBankDetails` and
+  `PayoutDetailsDtos`). Shipped in `b9753e85`.
 
 ## Review

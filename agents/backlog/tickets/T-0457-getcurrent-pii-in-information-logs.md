@@ -1,11 +1,11 @@
 ---
 id: T-0457
 title: S6 — GET /api/User/GetCurrent writes the caller's email, name, phone and birth date to Information-level logs on all five hosts
-status: ready
+status: done
 size: S
 owner: backend
 created: 2026-07-30
-updated: 2026-08-01
+updated: 2026-08-05
 depends_on: [T-0446]
 blocks: []
 stories: []
@@ -197,6 +197,19 @@ posed as AC1 and belongs to the implementer + reviewer, not to a panel.
   reach (`Notes`, `Description`, `Reason`, `ApprovalNotes`, `MissingFields`, `LegalEntityName`, address
   lines) is untouched by this ticket and is only covered where a route is suppressed. That is the
   `/audit` sweep the ticket anticipated.
+
+- 2026-08-05 — **`ready` → `done` (PM reconciliation pass 4).** **Verified at HEAD, not from the commit
+  message.** All five `Cleansia.Web.{Admin,Customer,Mobile.Customer,Mobile.Partner,Partner}/Middleware/RequestLoggingMiddleware.cs`
+  carry `ContactIdentityFieldRegex` (2 references each — the declaration and the call in
+  `RedactSensitiveFields`); four-of-five would have been the hole and it is not. The DTO-walking guard is
+  real and it reads the token list out of the **live compiled regex** rather than restating it:
+  `Cleansia.Tests/Logging/WireSurface.cs` `ReadTokens("ContactIdentityFieldRegex")` reflects the private
+  static member off the middleware type and parses the alternation out of `regex.ToString()`, so a token
+  added to the middleware widens every guard that reads it and no guard can hold a stale copy.
+  `RequestLogPiiSurfaceGuardTests` walks the wire surface with an `Assert.InRange(membersWalked, 1000, 20000)`
+  anti-vacuity floor and an `Assert.NotEmpty(WireSurface.ReadContactIdentityTokens())`, so it cannot go
+  green over an empty scan. Shipped in `b9753e85`. AC evidence and the both-ways mutation proof were
+  already written into `## Review` by the implementing lane — the only thing missing was this transition.
 
 ## Review
 <!-- reviewer + security verdicts here; AC3 must name the assertion that flips -->

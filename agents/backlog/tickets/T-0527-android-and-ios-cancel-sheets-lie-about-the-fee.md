@@ -1,11 +1,11 @@
 ---
 id: T-0527
 title: Android and iOS cancel sheets lie about the fee — consume the server preview
-status: draft
+status: in_review
 size: M
-owner: android
+owner: qa
 created: 2026-08-02
-updated: 2026-08-04
+updated: 2026-08-05
 depends_on: [T-0525, T-0526]
 blocks: []
 stories: []
@@ -170,6 +170,21 @@ renders state; test-first (viewmodel test → screen).
 - 2026-08-04 — **the committed iOS suite that pins the WRONG ladder is still in scope**
   (`OrderStatusLogicTests.swift:175-225`). It goes red on the fix. It must be corrected, never deleted or
   weakened to accommodate one.
+
+- 2026-08-05 — **`draft` → `in_review` (PM reconciliation pass 4). Found by this pass; it was not on the
+  brief.** The row said `draft` while **both** halves had shipped — the same failure this pass was called to
+  fix, one ticket further down the queue. Verified at HEAD:
+  - **Android** — `core/orders/OrderApi.kt:70` `getCancellationPreview` → `orderCancellationPreview`, and
+    `OrderRepository.kt:147`; the sheet renders a `CancellationPreviewUiState` and holds no ladder.
+  - **iOS** — `Features/Orders/Data/OrderClient.swift:92` calls `CustomerOrderAPI.orderCancellationPreview`;
+    **`CancellationFeePreview.swift` is gone** (the file that mirrored the Kotlin ladder), and
+    `CancelOrderSheet.swift` now documents *"A fee-preview outage degrades to the neutral prompt — never to a
+    computed number"* (`:231`, `:315`). The committed suite that **pinned the wrong ladder** was corrected
+    rather than deleted — `OrderStatusLogicTests.swift:182` now reads against what the preview endpoint
+    returns.
+  Shipped in `ab077504`. **Not `done`:** its own log leaves **AC10 (cross-platform parity QA)** open, and it
+  records that the customer Android app has no `androidTest` source set, so AC1's render is QA's to confirm.
+  `owner` → `qa`. Its dependency **T-0526 is now `done`** and its `mobile-spec-redump` is discharged.
 
 ## Review
 

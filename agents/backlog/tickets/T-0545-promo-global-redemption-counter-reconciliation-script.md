@@ -1,18 +1,18 @@
 ---
 id: T-0545
 title: Write the promo global-redemption reconciliation script — campaigns may already be dead on DEV
-status: ready
+status: retired
 size: S
-owner: backend
+owner: pm
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []
 adrs: [0038]
 layers: [backend]
 security_touching: false
-manual_steps: [db-seed]
+manual_steps: []
 sprint: 15
 source: ADR-0038 §D6.4, carried in `8cdf548f` and `da88b695` as *"STILL OWED, owner-gated"*. It has been
   named in three commit messages and `INDEX.md` and has never been a ticket. Filed by the PM in the
@@ -110,6 +110,25 @@ the broken code. **Ask the owner which comes first before scheduling the run; do
 - 2026-08-04 — created `ready` by pm during the sprint-15 reconciliation. Named as owed in `8cdf548f`,
   `da88b695` and `INDEX.md` and never ticketed. Passes DoR: AC observable, `S`, no dependencies, and the
   owner-only step (**running** it) is declared.
+
+- 2026-08-05 — **`ready` → `retired` (PM reconciliation pass 4). Retired as OBSOLETE, not as done, and not
+  as a failure.** The ticket's own body already carried the condition that decides it: *"⚠️ The DEV database
+  is being dropped… If the drop happens first, the corrupt DEV state disappears with it and the **run**
+  becomes unnecessary — but the script is still worth having."* **The owner has settled the ordering: the
+  drop comes first.** The drift this script repairs exists in exactly one place — the DEV
+  `PromoCodes.CurrentRedemptionsCount` column — and a drop-and-reseed removes the rows the drift lives in.
+  There is no other environment: PROD does not exist, and both test fixtures build fresh schemas.
+  **What is retired is the WORK, and the reason is on the record**, per `ticket-lifecycle.md`'s definition
+  of `retired` ("the WORK is no longer wanted… the ticket records why"). Retiring it also removes the last
+  *run*-shaped item from the owner's list.
+  **Two things deliberately NOT retired with it, because they are not this ticket:**
+  1. **The cause is already fixed and stays fixed** — `da88b695` closed the outage and `d78b816b` fixed the
+     defect in that fix (an `await` inside `finally` let a throwing compensation **replace** the in-flight
+     failure). No *new* slot is burned, so no successor script is owed.
+  2. **ADR-0038 §D6.4 still names a counter repair as owed.** With this ticket retired, that reference has
+     no ticket behind it. That is a documentation fact for the ADR's own lane to settle — **the PM does not
+     edit `backlog/adr/`** — and it is listed for the architect in `status/sprint-15.md § ADDENDUM D`.
+     If a second environment ever runs the broken code, this ticket is the specification to re-file from.
 
 ## Review
 <!-- reviewer writes the verdict here; PM reconciles before advancing state -->

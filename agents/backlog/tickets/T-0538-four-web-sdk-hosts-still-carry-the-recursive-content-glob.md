@@ -1,11 +1,11 @@
 ---
 id: T-0538
 title: Four Web SDK hosts still carry the recursive content glob that caused the build-output nesting
-status: ready
+status: done
 size: S
 owner: backend
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []
@@ -98,6 +98,15 @@ a known fix to four more instances. No panel.
 - 2026-08-04 — created `ready` by pm during the sprint-15 reconciliation. Passes DoR: five hosts
   enumerated and their state verified at HEAD, AC observable with mutation evidence, `S`, no
   dependencies, no owner-only steps, archetype named.
+
+- 2026-08-05 — **`ready` → `done` (PM reconciliation pass 4).** **Verified at HEAD, host by host.** All
+  five Web SDK projects set `<EnableDefaultContentItems>false</EnableDefaultContentItems>`:
+  `Cleansia.Web.Customer.csproj:34`, `Cleansia.Web.Admin.csproj:33`, `Cleansia.Web.Mobile.Partner.csproj:34`,
+  `Cleansia.Web.Mobile.Customer.csproj:36`, `Cleansia.Web.Partner.csproj:35`. The regression guard AC1
+  implied is real and is a test, not a comment: `Cleansia.Tests/Configuration/WebSdkContentGlobTests.cs`
+  matches `Sdk="Microsoft.NET.Sdk.Web"` and asserts the opt-out on every project it finds, so a **new** Web
+  host added from scratch reintroduces the glob and goes red — which is the failure mode that cost four
+  agents a build. Shipped in `0c76f94a`.
 
 ## Review
 <!-- reviewer writes the verdict here; PM reconciles before advancing state -->

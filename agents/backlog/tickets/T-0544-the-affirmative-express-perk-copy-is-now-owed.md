@@ -1,11 +1,11 @@
 ---
 id: T-0544
 title: Plus advertises four perks instead of five — the affirmative express copy is now owed and belongs to nobody
-status: ready
+status: in_progress
 size: S
-owner: analyst
+owner: android
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-05
 depends_on: [T-0493, T-0513]
 blocks: []
 stories: []
@@ -98,6 +98,54 @@ same test that killed the last one.
 - 2026-08-04 — created `ready` by pm during the sprint-15 reconciliation. Both dependencies are `done`.
   This is a gap **created by closing T-0493**, not a pre-existing one: the mechanism shipped and the
   promise did not follow it. Passes DoR: AC observable, `S`, deps satisfied, no owner-only steps.
+- 2026-08-04 — **web leg shipped** (frontend). Copy applied to the three web render sites, ×5 locales.
+  The sentence is grounded on `ExpressWaiverResolver` rather than on the ADR anchor: it says *"while
+  your paid membership is active"* (which is the only clause that is simultaneously true for a trial
+  member — the resolver returns `noWaiver` on `IsInTrial` — and for `PastDue`, whom
+  `GetActiveForUserNoTrackingAsync` excludes so the whole perk list disappears), *"2 to 4 hours after
+  you book"* (`BookingPolicy.ExpressLeadTimeHours`→`StandardLeadTimeHours`, never "same-day"), *"each
+  calendar month"* (D2), *"unused ones don't carry over"* (AM-16), and **no count** — AC2 over the
+  ADR's §Copy constraint 3, which predates `e4dd27f5` making the quota admin-editable.
+  **Guard narrowed, not deleted** (AC4): `membership-express-claim.spec.ts` kept its shape and its
+  five-locale walk over VALUES, and swapped "no express string exists" for four content properties —
+  (a) the perk keys are present and non-empty in all five locales, (b) **no locale** matches a
+  same-day regex, (c) **no express string carries a digit** once `{{placeholders}}`, the `20 %` rate
+  and the `2…4` window are erased **by shape** (a plain allow-list of the digits 2/4/20 was tried
+  first and passed *"2 free express bookings a month"* — mutation M3 — so it was replaced), and
+  (d) every screen gates the claim on a server field. Mutation-proven: **10/10 mutations red,
+  baseline restored green** (M1/M2 same-day incl. a single non-English locale, M3/M3b/M4 a hardcoded
+  quota as numeral/inside the window string/as a word, M5 a locale dropping the perk, M6 the window
+  dropped from the selling copy, M7 the gate removed, M7b Plus back to four perks, M8 the client
+  adjusting the server count).
+  **Android/iOS have NOT been touched** — the shipped English strings are listed for verbatim port in
+  the handover; both mobile guards and both source comments (`values/strings.xml:844`,
+  `MembershipPerks.swift:6-9`) are still owed by their own legs.
+
+- 2026-08-05 — **`ready` → `in_progress` (PM reconciliation pass 4). PARTLY SHIPPED — web only.** The
+  status-log entry above already said *"Android/iOS have NOT been touched"*; this pass confirms it at HEAD
+  and moves the row out of the `ready` queue so nobody rebuilds the web leg.
+  - **SHIPPED (web, `4984c2eb`) — do not rebuild.** `benefit_express_title` / `benefit_express_body` /
+    `perk_express` / `perk_express_used` / `perk_express_trial` / `welcome_perk_express` in all five
+    customer-app locales, and the guard was **narrowed rather than deleted**. The guard is the part worth
+    preserving: `apps/cleansia.app/src/app/i18n/membership-express-claim.spec.ts:53-67` erases the two
+    numbers the copy MAY name **by shape** (`SURCHARGE_RATE = /\b20\s?%/g`, `LEAD_TIME_WINDOW = /\b2\D{1,6}4\b/g`)
+    and then rejects any surviving digit — because a bare allow-list of the digits 2/4/20 also permits
+    *"2 free express bookings a month"*, which is precisely the hardcoded quota the rule exists to stop
+    (recorded as mutation M3). It also walks **values, not key names**, across all five locales, and asserts
+    every screen gates the claim on a server field.
+  - **OWED (android + ios), and both still carry a comment that is now false.**
+    `cleansia_android/customer-app/src/main/res/values/strings.xml:852-855` still says *"No express perk
+    anywhere — not on the subscribe screen, the success screen or the management pills… Restore this perk
+    only together with the code that waives the surcharge."* **The code that waives the surcharge shipped in
+    T-0493.** `cleansia_ios/CleansiaCustomer/Sources/Features/Membership/MembershipPerks.swift:6-9` carries
+    the same claim (*"Express upgrade is deliberately absent"*) and the enum still has only
+    `discount` / `freeCancellation` / `recurring`, so **Plus advertises four perks on mobile and five on
+    web** — AC6 fails on two clients. Both comments must be corrected in the same change that adds the perk;
+    leaving a stale comment that forbids the thing you just did is how this ticket was needed twice.
+  - AC5's seven render sites: **three are done (web), four are owed** (Android subscribe + success, iOS
+    subscribe + success). Re-derive rather than trusting that count.
+  - `owner` moves `analyst` → `android`; the copy decision is made and attributed, so what remains is a
+    verbatim port plus the two per-platform guards. iOS runs in parallel.
 
 ## Review
 <!-- reviewer writes the verdict here; PM reconciles before advancing state -->

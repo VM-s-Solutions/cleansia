@@ -5,7 +5,7 @@ status: ready
 size: S
 owner: frontend
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-05
 depends_on: []
 blocks: []
 stories: []
@@ -90,6 +90,26 @@ it. No panel.
   recommended is DONE and reported above: 64 lib roots, 0 missing** — the dashboard lib was the only
   one. Scope narrowed accordingly from "find the others" to "make it unreachable", which is why this is
   `S` rather than `M`.
+
+- 2026-08-05 — **STAYS `ready` (PM reconciliation pass 4) — and this is the one row in this pass that the
+  brief got wrong.** The reconciliation brief listed T-0537 as shipped, described as *"the dashboard lib
+  registered in Nx (it had no project file at all)"*. **That is this ticket's OUT-OF-SCOPE half.** The
+  registration did land — `libs/cleansia-partner-features/dashboard/project.json` exists at HEAD with
+  `name: cleansia-partner-dashboard`, `tags: [scope:partner, type:feature]` and a jest target, plus
+  `jest.config.ts` and three tsconfigs — but **AC1–AC5 are the guard, and the guard does not exist.**
+  Verified by search, not by assumption: nothing under `agents/tools/`, `src/Cleansia.App/tools/`, any
+  `*.spec.ts` or any workflow enumerates lib roots or asserts a sibling `project.json`
+  (`grep -rln "src/index.ts" --include=*.mjs --include=*.ts --include=*.yml` returns **nothing**;
+  `agents/tools/` holds only the two `check-*` pairs). So the silent state this ticket exists to make
+  unreachable is **still reachable**, and closing the row would have deleted the only record of that.
+- 2026-08-05 — **AC5 re-run, as AC5 itself requires.** `find libs -name index.ts -path "*/src/index.ts"` with a
+  sibling-`project.json` test: **64 lib roots, 0 missing** at HEAD — unchanged from 2026-08-04. The zero is
+  evidence for today; the guard is what makes it a guarantee.
+- 2026-08-05 — **AC2's warning is now sharper, and it is the same warning this pass's mechanism proposal
+  rests on.** `agents/tools/check-consistency.mjs` still appears in **zero** workflow files, so it can never
+  set an exit code — the defect ADR-0038 CH-P6 found. `check-available-status-parity.mjs` avoided it by
+  taking its own repo-root workflow (`.github/workflows/offerability-parity.yml`). **Copy that shape, not
+  the other one.**
 
 ## Review
 <!-- reviewer writes the verdict here; PM reconciles before advancing state -->

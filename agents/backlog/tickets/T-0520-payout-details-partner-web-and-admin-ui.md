@@ -1,11 +1,11 @@
 ---
 id: T-0520
 title: Payout details UI — partner web and admin
-status: ready
+status: done
 size: M
 owner: frontend
 created: 2026-08-02
-updated: 2026-08-04
+updated: 2026-08-05
 depends_on: [T-0519]
 blocks: []
 stories: []
@@ -104,5 +104,17 @@ on per-client error namespaces.
   (`8ff9dfb4`) but **admin can only receive 1 of the 13 today** — there is no admin payout write endpoint,
   so the 12 validation keys are unreachable until an admin bank-details editor lands. Do not assert them as
   admin contract.
+
+- 2026-08-05 — **`ready` → `done` (PM reconciliation pass 4).** **Verified at HEAD.** Both surfaces exist:
+  partner web `libs/cleansia-partner-features/profile/src/lib/components/profile-bank/` + `profile-bank.facade.ts`
+  / `.models.ts` with specs, on `libs/core/partner-services/.../partner-payout-details.service.ts`; admin
+  `libs/cleansia-admin-features/employee-management/src/lib/employee-detail/employee-payout-section.component.{ts,html}`
+  + `employee-payout.facade.ts`, whose spec pins **"has nothing unmasked until a reveal happens"** and that the
+  reveal **"goes through the POST reveal command, never a second read"** — i.e. the masked read and the audited
+  reveal are two different operations, which is the property AC5/AC6 asked for. The live regression this ticket
+  was re-filed for is closed: partner web has bank capture again. The PM-added AC also landed —
+  `profile_fields_iban` now reads **"Bank details"** (en) / **"Bankovní údaje"** (cs) on partner web, Android
+  and iOS, all in one change, so no client tells a cleaner "IBAN" is missing and then shows them a different
+  form. Shipped in `cf24a74c` (+ `3a4c18a9` for the web bank capture).
 
 ## Review

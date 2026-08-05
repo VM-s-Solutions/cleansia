@@ -539,6 +539,17 @@ it across 28 untagged projects — the 3 apps and 25 of the 26 admin feature lib
 missing tags rather than violating anything, and all now tagged. So: **when you add a lib or an app,
 tag it (`scope` + `type`) in its `project.json`**, or its very first import fails lint.
 
+**…and a lib with no `project.json` at all is not a project, so it is outside test, outside lint AND
+outside this constraint simultaneously — with no output from any of the three.** That is how
+`cleansia-partner-features/dashboard` sat unregistered for months. Registration alone does not close
+it either: an untagged project is unconstrained, i.e. the same hole with a project file on top.
+**Enforced by:** `agents/tools/check-nx-project-registration.mjs` + its self-test — it walks `libs/`
+for three independent witnesses (`src/index.ts`, `project.json`, the `tsconfig.base.json` alias) and
+requires them to agree, and treats **any enumeration coming back empty as a hard failure** rather
+than a pass — **T1-CI** (`.github/workflows/nx-project-registration.yml`, its own repo-root workflow:
+`frontend-ci`'s lint step is `continue-on-error: true`, and `nx affected` can never select a project
+that does not exist). Tags are asserted by **presence**; the vocabulary is T-0534's.
+
 Two shapes of report the rule folds together, worth knowing before you read a red run: **when an import
 is both a cycle and a scope break, only the cycle is printed.** `libs/shared/pipes`' three
 `order-status/*.pipe.ts` files imported `@cleansia/partner-services` — a real `scope:shared →

@@ -118,6 +118,14 @@ claimant** (PM-checked against the lane list). Neither is in the `ProfileTab.kt`
 - 2026-08-02 — **implemented (android)** on `fix/PR-B-android-nav-and-invoice-back` (shared with
   T-0490; disjoint files). Red→green recorded below. **The ticket's premise needed one correction:
   `maxLines`/`overflow` alone would have shipped a worse bug than the wrap** — see AC1.
+- 2026-08-05 — **merged in `bd520b15` (#186) and independently re-verified by a second android
+  instance.** Both mutations re-run from scratch: deleting `maxLines = 1` from `MainShell.kt` reddens
+  only *the nav label renders on one line with a tail ellipsis* (3 tests, 1 failed); replacing
+  `Modifier.weight(1f)` with `Modifier` in `FloatingIslandBottomBar.kt` reddens only *every nav slot
+  takes an equal share of the pill* (3 tests, 1 failed). Both restored byte-exact, and the md5s match
+  the ones this ticket recorded three days ago (`18fb28e318c8ccd0638e1ec4981aab99`,
+  `cd4d97833535bfcc82a0b92e86c29f85`) — so the files have not drifted since. **AC1/AC2/AC3 remain
+  open on their screenshot/TalkBack evidence**, which still needs a device.
 
 ## Review — android (2026-08-02)
 

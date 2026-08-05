@@ -117,5 +117,57 @@ both app dirs (**T-0474**).
   **`depends_on: [T-0491]` is not optional:** three of the five perks this card advertises are
   currently unenforced, and shipping a better-looking card for them makes the misrepresentation more
   prominent. Findings marked RELAYED, not PM-verified; AC1 re-establishes them.
+- 2026-08-05 — **AC1 re-established and BOTH relayed Android findings are REFUTED at head.** Both were
+  fixed by `248ee566` / `24af741e`. The Android leg needs no code change; verified and mutation-proved
+  below. The iOS leg (AC4) was not touched — a separate lane owns that tree.
 
-## Review
+## Review — android (2026-08-05)
+
+**AC1 — the two Android findings are re-established, and both are FALSE at head.** The audit was
+relayed, not PM-verified, and it has since been overtaken by shipped work.
+
+| Relayed finding | Verdict at head | Evidence |
+|---|---|---|
+| "the perk pills are hardcoded English" | **Refuted.** Every pill label is a `stringResource`. | `MembershipManagementCard.kt:472-487` — all six arms |
+| "the Recurring pill renders unconditionally, i.e. shown to customers who do not have Plus" | **Refuted, twice over.** | see below |
+
+The unconditional-pill claim fails on two independent gates. `MembershipPerks.resolve` returns
+`emptyList()` when `!membership.hasMembership` (`MembershipPerks.kt:34`), so the perk list is empty for
+a non-member; and the row that draws it is inside the **active** card behind
+`if (perks.isNotEmpty())` (`MembershipManagementCard.kt:366-377`). The concrete case AC1 asks for —
+*"a customer with no active membership sees pill X"* — **cannot occur**: there is no pill, and no perk
+row. `MembershipPerksTest:17` already pins the first gate.
+
+**AC2 — five-way parity, before and after.** The six `membership_perk_pill_*` keys are present in all
+five locales. Counts: `values` / `-cs` / `-sk` / `-uk` / `-ru` = **1089 each before, 1090 each after**
+— the +1 is the unrelated `error_recurring_booking_membership_required` row this batch adds, applied to
+all five. Zero drift in either direction.
+
+**AC3 — the visibility condition, stated.** **Members only**, and deliberately so. The pills describe
+what an active membership has *already* unlocked, so they are an entitlement list and not an upsell;
+the non-member surface is the separate inactive card / `SubscribePlusScreen`. Nothing changed here —
+this is a statement of the shipped condition, which is the correct one.
+
+**The perk wording is a recorded, intentional divergence — NOT fixed.** Android's pills are terse
+native variants (`Recurring` / `Pravidelně` / `Регулярно`; `Express waived · %1$d left`) because they
+are chips in a `FlowRow` whose siblings are two words long, while the prose surfaces carry web's copy
+verbatim. Flagged explicitly because "make the pills match web" looks like a parity fix and is a
+regression.
+
+**AC4 (iOS), AC5 (T-0491's ruling), AC6 (diff confined to client trees), AC8 (iOS half) — NOT DONE.**
+AC4 is out of this lane: an iOS lane is live and `src/cleansia_ios/` was not opened. AC5 cannot be
+closed here — **T-0491 has not ruled**, and this ticket `depends_on` it; what can be said is that the
+Android card's content did not change, so no new claim was added to it. **The dependency's substance is
+unaffected by this verdict:** the pills still advertise perks whose enforcement is tracked by T-0492 /
+T-0493 / T-0495, and the card is only as true as T-0491 makes it.
+
+**Web (Out-of-scope asks for a record, not a widening):** not inspected.
+
+**AC7/AC8 (Gate 0.5) — Android half, un-cached.** `:customer-app` compile + `testDebugUnitTest`,
+`--rerun-tasks --no-build-cache`: **BUILD SUCCESSFUL, exit 0, 53 actionable tasks: 53 executed**, zero
+`FROM-CACHE`. **508 tests / 57 classes / 0 failures**, from the JUnit XML. Named mutation: replacing
+`stringResource(R.string.membership_perk_pill_recurring)` with the literal `"Recurring"` reddens
+**exactly one** test — `MembershipPerkPillBindingTest.the card spells no perk label itself` (6 tests,
+1 failed) — and nothing else moved, so the guard that would have caught the original defect is proved
+live rather than assumed. Restored byte-exact by md5 (`0da8bd71c9df672f07b4d3d070a76253` before and
+after; `git status` shows the file unmodified).

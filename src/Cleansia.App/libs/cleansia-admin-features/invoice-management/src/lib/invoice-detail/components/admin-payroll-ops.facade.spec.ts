@@ -1,8 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import {
   AdminClient,
+  DisputeInvoiceCommand,
   DisputeInvoiceResponse,
+  RejectInvoiceCommand,
   RejectInvoiceResponse,
+  UpdateInvoiceAmountsCommand,
   UpdateInvoiceAmountsResponse,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
@@ -105,11 +108,15 @@ describe('AdminPayrollOpsFacade', () => {
 
     facade.adjustAmounts('invoice-1', jest.fn());
 
-    const command = payrollClient.updateInvoiceAmounts.mock.calls[0][0];
-    expect(command.invoiceId).toBe('invoice-1');
-    expect(command.bonusAmount).toBe(150);
-    expect(command.deductionAmount).toBe(25.5);
-    expect(command.adminNotes).toBe('weekend bonus');
+    const command: UpdateInvoiceAmountsCommand =
+      payrollClient.updateInvoiceAmounts.mock.calls[0][0];
+    expect(command).toBeInstanceOf(UpdateInvoiceAmountsCommand);
+    expect(command.toJSON()).toEqual({
+      invoiceId: 'invoice-1',
+      bonusAmount: 150,
+      deductionAmount: 25.5,
+      adminNotes: 'weekend bonus',
+    });
   });
 
   it('omits empty adjust notes from the command', () => {
@@ -118,8 +125,14 @@ describe('AdminPayrollOpsFacade', () => {
 
     facade.adjustAmounts('invoice-1', jest.fn());
 
-    const command = payrollClient.updateInvoiceAmounts.mock.calls[0][0];
-    expect(command.adminNotes).toBeUndefined();
+    const command: UpdateInvoiceAmountsCommand =
+      payrollClient.updateInvoiceAmounts.mock.calls[0][0];
+    expect(command.toJSON()).toEqual({
+      invoiceId: 'invoice-1',
+      bonusAmount: 10,
+      deductionAmount: 0,
+      adminNotes: undefined,
+    });
   });
 
   it('does not call update-amounts when an amount is invalid', () => {
@@ -147,9 +160,13 @@ describe('AdminPayrollOpsFacade', () => {
 
     facade.disputeInvoice('invoice-1', jest.fn());
 
-    const command = payrollClient.disputeInvoice.mock.calls[0][0];
-    expect(command.invoiceId).toBe('invoice-1');
-    expect(command.adminNotes).toBe('amounts contested');
+    const command: DisputeInvoiceCommand =
+      payrollClient.disputeInvoice.mock.calls[0][0];
+    expect(command).toBeInstanceOf(DisputeInvoiceCommand);
+    expect(command.toJSON()).toEqual({
+      invoiceId: 'invoice-1',
+      adminNotes: 'amounts contested',
+    });
   });
 
   it('requires reject notes and builds a typed reject command', () => {
@@ -162,9 +179,13 @@ describe('AdminPayrollOpsFacade', () => {
     facade.setRejectNotes('  duplicate invoice  ');
     facade.rejectInvoice('invoice-1', jest.fn());
 
-    const command = payrollClient.rejectInvoice.mock.calls[0][0];
-    expect(command.invoiceId).toBe('invoice-1');
-    expect(command.adminNotes).toBe('duplicate invoice');
+    const command: RejectInvoiceCommand =
+      payrollClient.rejectInvoice.mock.calls[0][0];
+    expect(command).toBeInstanceOf(RejectInvoiceCommand);
+    expect(command.toJSON()).toEqual({
+      invoiceId: 'invoice-1',
+      adminNotes: 'duplicate invoice',
+    });
   });
 
   it('shows a success toast, closes the panel and re-loads on success', () => {

@@ -39,19 +39,15 @@ export class EmployeeDocumentsFacade extends UnsubscribeControlDirective {
     filter.latestVersionOnly = true;
     filter.isActive = true;
 
-    const sort = [
-      new SortDefinition({
-        field: 'CreatedOn',
-        direction: SortDirection.Descending,
-      }),
-    ];
+    const createdOnDescending = new SortDefinition();
+    createdOnDescending.field = 'CreatedOn';
+    createdOnDescending.direction = SortDirection.Descending;
 
-    const request = new GetEmployeeDocumentsRequest({
-      filter,
-      sort,
-      offset: 0,
-      limit: 100,
-    });
+    const request = new GetEmployeeDocumentsRequest();
+    request.filter = filter;
+    request.sort = [createdOnDescending];
+    request.offset = 0;
+    request.limit = 100;
 
     this.adminClient.adminEmployeeDocumentClient
       .getPaged(request)
@@ -89,10 +85,9 @@ export class EmployeeDocumentsFacade extends UnsubscribeControlDirective {
   }
 
   rejectDocument(documentId: string, reason: string, employeeId: string | undefined): void {
-    const command = new RejectDocumentCommand({
-      documentId,
-      notes: reason,
-    });
+    const command = new RejectDocumentCommand();
+    command.documentId = documentId;
+    command.notes = reason;
 
     this.adminClient.adminEmployeeDocumentClient
       .reject(documentId, command)

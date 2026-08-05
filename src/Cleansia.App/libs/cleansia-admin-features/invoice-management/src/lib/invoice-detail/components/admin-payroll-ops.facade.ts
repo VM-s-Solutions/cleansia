@@ -107,12 +107,11 @@ export class AdminPayrollOpsFacade extends UnsubscribeControlDirective {
     if (!invoiceId || bonusAmount === null || deductionAmount === null) {
       return;
     }
-    const command = new UpdateInvoiceAmountsCommand({
-      invoiceId,
-      bonusAmount,
-      deductionAmount,
-      adminNotes: this.adjustNotes().trim() || undefined,
-    });
+    const command = new UpdateInvoiceAmountsCommand();
+    command.invoiceId = invoiceId;
+    command.bonusAmount = bonusAmount;
+    command.deductionAmount = deductionAmount;
+    command.adminNotes = this.adjustNotes().trim() || undefined;
     this.run(
       this.adminClient.adminPayrollClient.updateInvoiceAmounts(command),
       'pages.invoice_detail.ops.adjust.success',
@@ -125,7 +124,9 @@ export class AdminPayrollOpsFacade extends UnsubscribeControlDirective {
     if (!invoiceId || !adminNotes) {
       return;
     }
-    const command = new DisputeInvoiceCommand({ invoiceId, adminNotes });
+    const command = new DisputeInvoiceCommand();
+    command.invoiceId = invoiceId;
+    command.adminNotes = adminNotes;
     this.run(
       this.adminClient.adminPayrollClient.disputeInvoice(command),
       'pages.invoice_detail.ops.dispute.success',
@@ -138,7 +139,9 @@ export class AdminPayrollOpsFacade extends UnsubscribeControlDirective {
     if (!invoiceId || !adminNotes) {
       return;
     }
-    const command = new RejectInvoiceCommand({ invoiceId, adminNotes });
+    const command = new RejectInvoiceCommand();
+    command.invoiceId = invoiceId;
+    command.adminNotes = adminNotes;
     this.run(
       this.adminClient.adminPayrollClient.rejectInvoice(command),
       'pages.invoice_detail.ops.reject.success',

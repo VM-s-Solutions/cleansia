@@ -102,7 +102,9 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
     const employeeId = this.employee()?.id;
     if (!employeeId) return;
 
-    const request = new ApproveEmployeeRequest({ workCountryId, notes });
+    const request = new ApproveEmployeeRequest();
+    request.workCountryId = workCountryId;
+    request.notes = notes;
     this.adminClient.adminEmployeeClient
       .approve(employeeId, request)
       .pipe(
@@ -162,7 +164,8 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
     const employeeId = this.employee()?.id;
     if (!employeeId) return;
 
-    const request = new RejectEmployeeRequest({ reason });
+    const request = new RejectEmployeeRequest();
+    request.reason = reason;
     this.adminClient.adminEmployeeClient
       .reject(employeeId, request)
       .pipe(
@@ -224,7 +227,8 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
 
     this.savingAvailability.set(true);
 
-    const request = new AdminUpdateEmployeeAvailabilityRequest({ availability });
+    const request = new AdminUpdateEmployeeAvailabilityRequest();
+    request.availability = availability;
 
     this.adminClient.adminEmployeeClient
       .updateAvailability(employeeId, request)
@@ -358,12 +362,11 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
 
     this.bulkApplyingGrade.set(true);
 
-    const command = new BulkCreateEmployeePayConfigsCommand({
-      employeeId,
-      grade,
-      currencyId,
-      overwriteExisting,
-    });
+    const command = new BulkCreateEmployeePayConfigsCommand();
+    command.employeeId = employeeId;
+    command.grade = grade;
+    command.currencyId = currencyId;
+    command.overwriteExisting = overwriteExisting;
 
     this.adminClient.adminPayConfigClient
       .bulkCreateForEmployee(command)
@@ -406,16 +409,15 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
 
     this.savingPayConfig.set(true);
 
-    const command = new UpdatePayConfigCommand({
-      payConfigId,
-      basePay: data.basePay,
-      extraPerRoom: data.extraPerRoom,
-      extraPerBathroom: data.extraPerBathroom,
-      distanceRatePerKm: data.distanceRatePerKm,
-      minimumPay: data.minimumPay,
-      maximumPay: data.maximumPay,
-      description: undefined,
-    });
+    const command = new UpdatePayConfigCommand();
+    command.payConfigId = payConfigId;
+    command.basePay = data.basePay;
+    command.extraPerRoom = data.extraPerRoom;
+    command.extraPerBathroom = data.extraPerBathroom;
+    command.distanceRatePerKm = data.distanceRatePerKm;
+    command.minimumPay = data.minimumPay;
+    command.maximumPay = data.maximumPay;
+    command.description = undefined;
 
     this.adminClient.adminPayConfigClient
       .update(payConfigId, command)
@@ -477,19 +479,18 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
 
     this.savingPayConfig.set(true);
 
-    const command = new CreatePayConfigCommand({
-      employeeId,
-      serviceId: data['serviceId'] || undefined,
-      packageId: data['packageId'] || undefined,
-      basePay: data['basePay'] ?? 0,
-      extraPerRoom: data['extraPerRoom'] ?? 0,
-      extraPerBathroom: data['extraPerBathroom'] ?? 0,
-      distanceRatePerKm: data['distanceRatePerKm'] ?? 0,
-      minimumPay: data['minimumPay'] ?? 0,
-      maximumPay: data['maximumPay'] ?? 0,
-      currencyId: data['currencyId'],
-      description: data['description'] || undefined,
-    });
+    const command = new CreatePayConfigCommand();
+    command.employeeId = employeeId;
+    command.serviceId = data['serviceId'] || undefined;
+    command.packageId = data['packageId'] || undefined;
+    command.basePay = data['basePay'] ?? 0;
+    command.extraPerRoom = data['extraPerRoom'] ?? 0;
+    command.extraPerBathroom = data['extraPerBathroom'] ?? 0;
+    command.distanceRatePerKm = data['distanceRatePerKm'] ?? 0;
+    command.minimumPay = data['minimumPay'] ?? 0;
+    command.maximumPay = data['maximumPay'] ?? 0;
+    command.currencyId = data['currencyId'];
+    command.description = data['description'] || undefined;
 
     this.adminClient.adminPayConfigClient
       .create(command)

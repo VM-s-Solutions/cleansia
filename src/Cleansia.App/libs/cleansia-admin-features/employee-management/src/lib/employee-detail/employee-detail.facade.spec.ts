@@ -77,12 +77,21 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
       description: 'note',
     });
 
-    const command = createMock.mock.calls[0][0];
+    const command: CreatePayConfigCommand = createMock.mock.calls[0][0];
     expect(command).toBeInstanceOf(CreatePayConfigCommand);
-    expect(command.serviceId).toBe('svc-1');
-    expect(command.packageId).toBeUndefined();
-    expect(command.currencyId).toBe('cur-1');
-    expect(command.basePay).toBe(500);
+    expect(command.toJSON()).toEqual({
+      employeeId: 'emp-1',
+      serviceId: 'svc-1',
+      packageId: undefined,
+      basePay: 500,
+      extraPerRoom: 50,
+      extraPerBathroom: 30,
+      distanceRatePerKm: 10,
+      minimumPay: 300,
+      maximumPay: 2000,
+      currencyId: 'cur-1',
+      description: 'note',
+    });
     expect(facade.payConfigDialogOpen()).toBe(false);
     expect(facade.savingPayConfig()).toBe(false);
     expect(employeeSummaryMock).toHaveBeenCalledWith('emp-1');
@@ -112,10 +121,18 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
     facade.updateSinglePayConfig('pc-1', rateData);
 
     expect(updateMock.mock.calls[0][0]).toBe('pc-1');
-    const command = updateMock.mock.calls[0][1];
+    const command: UpdatePayConfigCommand = updateMock.mock.calls[0][1];
     expect(command).toBeInstanceOf(UpdatePayConfigCommand);
-    expect(command.payConfigId).toBe('pc-1');
-    expect(command.basePay).toBe(500);
+    expect(command.toJSON()).toEqual({
+      payConfigId: 'pc-1',
+      basePay: 500,
+      extraPerRoom: 50,
+      extraPerBathroom: 30,
+      distanceRatePerKm: 10,
+      minimumPay: 300,
+      maximumPay: 2000,
+      description: undefined,
+    });
     expect(facade.payConfigDialogOpen()).toBe(false);
     expect(facade.savingPayConfig()).toBe(false);
     expect(employeeSummaryMock).toHaveBeenCalledWith('emp-1');

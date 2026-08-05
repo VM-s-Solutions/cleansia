@@ -4,32 +4,18 @@ import {
   AdminClient,
   CompanyInfoDetailDto,
   CountryListItem,
-  CreateCompanyInfoCommand,
-  UpdateCompanyInfoCommand,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
+import {
+  buildCreateCompanyInfoCommand,
+  buildUpdateCompanyInfoCommand,
+  CompanyInfoFormData,
+} from '../company-info.models';
 
-export interface CompanyInfoFormData {
-  legalName: string;
-  tradingName: string;
-  tagline: string | null;
-  registrationNumber: string;
-  vatNumber: string | null;
-  street: string;
-  city: string;
-  zipCode: string;
-  countryId: string;
-  phone: string | null;
-  email: string | null;
-  website: string | null;
-  bankName: string | null;
-  bankAccountNumber: string | null;
-  iban: string | null;
-  swift: string | null;
-}
+export type { CompanyInfoFormData };
 
 @Injectable()
 export class CompanyInfoFormFacade extends UnsubscribeControlDirective {
@@ -73,24 +59,7 @@ export class CompanyInfoFormFacade extends UnsubscribeControlDirective {
   createCompanyInfo(data: CompanyInfoFormData): void {
     this.saving.set(true);
 
-    const command = new CreateCompanyInfoCommand({
-      legalName: data.legalName,
-      tradingName: data.tradingName,
-      tagline: data.tagline ?? undefined,
-      registrationNumber: data.registrationNumber,
-      vatNumber: data.vatNumber ?? undefined,
-      street: data.street,
-      city: data.city,
-      zipCode: data.zipCode,
-      countryId: data.countryId,
-      phone: data.phone ?? undefined,
-      email: data.email ?? undefined,
-      website: data.website ?? undefined,
-      bankName: data.bankName ?? undefined,
-      bankAccountNumber: data.bankAccountNumber ?? undefined,
-      iban: data.iban ?? undefined,
-      swift: data.swift ?? undefined,
-    });
+    const command = buildCreateCompanyInfoCommand(data);
 
     this.adminClient.adminCompanyClient
       .create(command)
@@ -112,25 +81,7 @@ export class CompanyInfoFormFacade extends UnsubscribeControlDirective {
   updateCompanyInfo(companyInfoId: string, data: CompanyInfoFormData): void {
     this.saving.set(true);
 
-    const command = new UpdateCompanyInfoCommand({
-      companyInfoId: companyInfoId,
-      legalName: data.legalName,
-      tradingName: data.tradingName,
-      tagline: data.tagline ?? undefined,
-      registrationNumber: data.registrationNumber,
-      vatNumber: data.vatNumber ?? undefined,
-      street: data.street,
-      city: data.city,
-      zipCode: data.zipCode,
-      countryId: data.countryId,
-      phone: data.phone ?? undefined,
-      email: data.email ?? undefined,
-      website: data.website ?? undefined,
-      bankName: data.bankName ?? undefined,
-      bankAccountNumber: data.bankAccountNumber ?? undefined,
-      iban: data.iban ?? undefined,
-      swift: data.swift ?? undefined,
-    });
+    const command = buildUpdateCompanyInfoCommand(companyInfoId, data);
 
     this.adminClient.adminCompanyClient
       .update(companyInfoId, command)

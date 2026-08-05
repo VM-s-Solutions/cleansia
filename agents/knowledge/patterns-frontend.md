@@ -467,10 +467,12 @@ lint with `continue-on-error: true`; promotes to `T1-CI` with the rest of the li
 count is zero, and it is added by spreading `generatedDtoLiteralRules()` into that lib's own
 `eslint.config.mjs` (flat-config `files` globs resolve against the loaded config's directory, so a
 per-lib config passes no argument) or, for a lib with no local config, by adding a workspace-relative
-glob to the call in `src/Cleansia.App/eslint.config.mjs`. Cleared so far: all of `libs/core`,
-`libs/data-access`, **all of `libs/cleansia-customer-features`, all of `libs/cleansia-partner-features`,
-and 17 of the 26 `libs/cleansia-admin-features`**. **Never delete a scope from that list to make a new
-literal compile** — convert the call site instead.
+glob to the call in `src/Cleansia.App/eslint.config.mjs`. **Every scope is now opted in and the count
+under the selector is zero across `libs/` and `apps/`** — `libs/core`, `libs/data-access`, all of
+`libs/cleansia-customer-features`, all of `libs/cleansia-partner-features`, and all 26
+`libs/cleansia-admin-features` (T-0559 closed the last 46 in 9 admin libs). The ratchet is therefore
+strict rather than partial: the next literal anyone writes is a violation on the spot. **Never delete a
+scope from that list to make a new literal compile** — convert the call site instead.
 
 **The unit of progress is a lint scope, not a file.** Each `libs/cleansia-*-features/<lib>` owns its
 `eslint.config.mjs` and is therefore its own scope, so a converted lib opts in on its own; the customer
@@ -500,9 +502,22 @@ TestBed, and the component stops holding construction logic.
 
 **The selector's suffix set is narrower than the hazard.** It matches
 `(Command|Request|Dto|Query)$` only, so `new SaveOrderPhotosPhotoToSave({…})`,
-`new SaveMyDocumentsDocumentToSave({…})` and `new CreateServiceTranslationInput({…})` are the *same*
-regen-fragile literal and the rule is silent on them. Convert them when you are in the file anyway;
-widening the selector is an Architect call (a broader regex risks matching hand-written classes).
+`new SaveMyDocumentsDocumentToSave({…})`, `new CreateServiceTranslationInput({…})` and
+`new IssuePartialRefundRefundLineSelection({…})` are the *same* regen-fragile literal and the rule is
+silent on them. Convert them when you are in the file anyway; widening the selector is an Architect
+call (a broader regex risks matching hand-written classes).
+
+Two measurements from T-0559's sweep, recorded as **evidence for that ruling, not as a rule**. The
+largest invisible surface is `SortDefinition`: 16 of its 17 object-literal call sites construct the
+**generated** class (11 admin + 5 partner — e.g.
+`libs/cleansia-admin-features/audit-log/src/lib/audit-log/audit-log.component.ts:209`,
+`libs/cleansia-partner-features/orders/src/lib/orders/orders.facade.ts:191`). And the 17th
+(`libs/shared/models/src/lib/models/sort.models.ts:244`) constructs a **hand-written** `SortDefinition`
+declared in `libs/shared/models/src/lib/models/sort-types.models.ts:6`. So the same identifier names a
+generated DTO and a hand-written class in one workspace, which is the concrete reason a name-only
+discriminator cannot be made both complete and false-positive-free. `OrderFilter`
+(`libs/shared/models/src/lib/models/filter.models.ts:196`, 4 literal call sites) is entirely
+hand-written, so a `Filter$` widening would be 100 % false positives there.
 
 **Removal is the same rule, mirrored.** When the backend *drops* a field, a literal stops compiling
 against the still-stale client (`TS2345`, "property X is missing") — construct-then-assign simply

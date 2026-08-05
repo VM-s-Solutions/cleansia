@@ -50,7 +50,8 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
     if (!payPeriodId) {
       return;
     }
-    const command = new MarkPayPeriodPaidCommand({ payPeriodId });
+    const command = new MarkPayPeriodPaidCommand();
+    command.payPeriodId = payPeriodId;
     this.run(
       this.adminClient.adminPayPeriodClient.markPaid(command),
       'pay_periods.detail.ops.mark_paid.success',
@@ -62,10 +63,9 @@ export class AdminPayPeriodOpsFacade extends UnsubscribeControlDirective {
     if (!payPeriodId) {
       return;
     }
-    const command = new ReopenPayPeriodCommand({
-      payPeriodId,
-      notes: this.reopenNotes().trim() || undefined,
-    });
+    const command = new ReopenPayPeriodCommand();
+    command.payPeriodId = payPeriodId;
+    command.notes = this.reopenNotes().trim() || undefined;
     this.run(
       this.adminClient.adminPayPeriodClient.reopen(command),
       'pay_periods.detail.ops.reopen.success',

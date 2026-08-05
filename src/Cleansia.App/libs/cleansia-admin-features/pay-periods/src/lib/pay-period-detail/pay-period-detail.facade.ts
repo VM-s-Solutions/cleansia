@@ -36,10 +36,9 @@ export class PayPeriodDetailFacade extends UnsubscribeControlDirective {
   }
 
   closePayPeriod(payPeriodId: string, notes?: string): void {
-    const command = new ClosePayPeriodCommand({
-      payPeriodId,
-      notes,
-    });
+    const command = new ClosePayPeriodCommand();
+    command.payPeriodId = payPeriodId;
+    command.notes = notes;
 
     this.adminClient.adminPayPeriodClient
       .close(command)

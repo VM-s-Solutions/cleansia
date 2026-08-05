@@ -80,10 +80,9 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
     if (!orderId) {
       return;
     }
-    const command = new AdminCancelOrderCommand({
-      orderId,
-      reason: this.cancelReason().trim() || undefined,
-    });
+    const command = new AdminCancelOrderCommand();
+    command.orderId = orderId;
+    command.reason = this.cancelReason().trim() || undefined;
     this.run(
       this.adminClient.adminOrderClient.cancel(command),
       'pages.order_management.ops.cancel.success',
@@ -96,10 +95,9 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
     if (!orderId || targetStatus === null) {
       return;
     }
-    const command = new AdminOverrideOrderStatusCommand({
-      orderId,
-      targetStatus,
-    });
+    const command = new AdminOverrideOrderStatusCommand();
+    command.orderId = orderId;
+    command.targetStatus = targetStatus;
     this.run(
       this.adminClient.adminOrderClient.overrideStatus(command),
       'pages.order_management.ops.override_status.success',
@@ -113,11 +111,10 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
     if (!orderId || fromEmployeeId === null || !toEmployeeId) {
       return;
     }
-    const command = new AdminReassignOrderCommand({
-      orderId,
-      fromEmployeeId,
-      toEmployeeId,
-    });
+    const command = new AdminReassignOrderCommand();
+    command.orderId = orderId;
+    command.fromEmployeeId = fromEmployeeId;
+    command.toEmployeeId = toEmployeeId;
     this.run(
       this.adminClient.adminOrderClient.reassign(command),
       'pages.order_management.ops.reassign.success',
@@ -129,7 +126,8 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
     if (!orderId) {
       return;
     }
-    const command = new AdminRefundOrderCommand({ orderId });
+    const command = new AdminRefundOrderCommand();
+    command.orderId = orderId;
     this.run(
       this.adminClient.adminOrderClient.refund(command),
       'pages.order_management.ops.refund.success',

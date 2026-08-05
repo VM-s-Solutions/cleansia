@@ -45,10 +45,9 @@ export class EmailTemplateFormFacade extends UnsubscribeControlDirective {
   updateTemplate(templateId: string, data: EmailTemplateFormData): void {
     this.saving.set(true);
 
-    const command = new UpdateEmailTemplateCommand({
-      emailTemplateId: templateId,
-      value: data.value,
-    });
+    const command = new UpdateEmailTemplateCommand();
+    command.emailTemplateId = templateId;
+    command.value = data.value;
 
     this.adminClient.adminEmailTemplateClient
       .update(templateId, command)
@@ -70,10 +69,9 @@ export class EmailTemplateFormFacade extends UnsubscribeControlDirective {
   sendTestEmail(templateId: string, recipientEmail: string): void {
     this.sendingTestEmail.set(true);
 
-    const command = new SendTestEmailCommand({
-      emailTemplateId: templateId,
-      recipientEmail: recipientEmail,
-    });
+    const command = new SendTestEmailCommand();
+    command.emailTemplateId = templateId;
+    command.recipientEmail = recipientEmail;
 
     this.adminClient.adminEmailTemplateClient
       .sendTest(templateId, command)

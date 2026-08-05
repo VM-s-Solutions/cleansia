@@ -53,10 +53,9 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
 
     this.actionLoading.set(true);
 
-    const command = new ApproveInvoiceCommand({
-      invoiceId: inv.id,
-      adminNotes: undefined,
-    });
+    const command = new ApproveInvoiceCommand();
+    command.invoiceId = inv.id;
+    command.adminNotes = undefined;
 
     this.adminClient.adminInvoiceClient
       .approve(command)
@@ -83,11 +82,10 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
 
     this.actionLoading.set(true);
 
-    const command = new MarkInvoicePaidCommand({
-      invoiceId: inv.id,
-      bankTransferNote,
-      adminNotes: undefined,
-    });
+    const command = new MarkInvoicePaidCommand();
+    command.invoiceId = inv.id;
+    command.bankTransferNote = bankTransferNote;
+    command.adminNotes = undefined;
 
     this.adminClient.adminInvoiceClient
       .markPaid(command)
@@ -144,10 +142,9 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
 
     this.actionLoading.set(true);
 
-    const command = new CancelInvoiceCommand({
-      invoiceId: inv.id,
-      reason,
-    });
+    const command = new CancelInvoiceCommand();
+    command.invoiceId = inv.id;
+    command.reason = reason;
 
     this.adminClient.adminInvoiceClient
       .cancel(command)
@@ -198,10 +195,9 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
 
     this.actionLoading.set(true);
 
-    const command = new RegenerateInvoicePdfCommand({
-      invoiceId: inv.id,
-      languageCode: this.translate.currentLang || 'en',
-    });
+    const command = new RegenerateInvoicePdfCommand();
+    command.invoiceId = inv.id;
+    command.languageCode = this.translate.currentLang || 'en';
 
     this.adminClient.adminInvoiceClient
       .regeneratePdf(command)

@@ -1,8 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import {
+  AddDisputeMessageCommand,
   AdminDisputeClient,
   DisputeDetails,
   DisputeStatus,
+  ResolveDisputeCommand,
+  UpdateDisputeStatusCommand,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
@@ -76,10 +79,13 @@ describe('DisputeDetailFacade', () => {
     facade.resolve('dispute-1', 250, '  refund issued  ');
 
     expect(disputeClient.resolve).toHaveBeenCalledTimes(1);
-    const command = disputeClient.resolve.mock.calls[0][0];
-    expect(command.disputeId).toBe('dispute-1');
-    expect(command.refundAmount).toBe(250);
-    expect(command.resolutionNotes).toBe('refund issued');
+    const command: ResolveDisputeCommand = disputeClient.resolve.mock.calls[0][0];
+    expect(command).toBeInstanceOf(ResolveDisputeCommand);
+    expect(command.toJSON()).toEqual({
+      disputeId: 'dispute-1',
+      refundAmount: 250,
+      resolutionNotes: 'refund issued',
+    });
     expect(snackbar.showSuccess).toHaveBeenCalledWith(
       'pages.disputes_management.resolve.submitted'
     );
@@ -91,9 +97,12 @@ describe('DisputeDetailFacade', () => {
 
     facade.resolve('dispute-1', null, '   ');
 
-    const command = disputeClient.resolve.mock.calls[0][0];
-    expect(command.refundAmount).toBeUndefined();
-    expect(command.resolutionNotes).toBeUndefined();
+    const command: ResolveDisputeCommand = disputeClient.resolve.mock.calls[0][0];
+    expect(command.toJSON()).toEqual({
+      disputeId: 'dispute-1',
+      refundAmount: undefined,
+      resolutionNotes: undefined,
+    });
   });
 
   it('clears the resolving flag after a successful resolve', () => {
@@ -158,9 +167,13 @@ describe('DisputeDetailFacade', () => {
 
     facade.updateStatus('dispute-1', DisputeStatus.UnderReview);
 
-    const command = disputeClient.updateStatus.mock.calls[0][0];
-    expect(command.disputeId).toBe('dispute-1');
-    expect(command.newStatus).toBe(DisputeStatus.UnderReview);
+    const command: UpdateDisputeStatusCommand =
+      disputeClient.updateStatus.mock.calls[0][0];
+    expect(command).toBeInstanceOf(UpdateDisputeStatusCommand);
+    expect(command.toJSON()).toEqual({
+      disputeId: 'dispute-1',
+      newStatus: DisputeStatus.UnderReview,
+    });
     expect(snackbar.showSuccess).toHaveBeenCalledWith(
       'pages.disputes_management.status_update.success'
     );
@@ -188,10 +201,14 @@ describe('DisputeDetailFacade', () => {
 
     facade.addMessage('dispute-1', '  hello team  ', onSuccess);
 
-    const command = disputeClient.addMessage.mock.calls[0][0];
-    expect(command.disputeId).toBe('dispute-1');
-    expect(command.message).toBe('hello team');
-    expect(command.isStaffMessage).toBe(true);
+    const command: AddDisputeMessageCommand =
+      disputeClient.addMessage.mock.calls[0][0];
+    expect(command).toBeInstanceOf(AddDisputeMessageCommand);
+    expect(command.toJSON()).toEqual({
+      disputeId: 'dispute-1',
+      message: 'hello team',
+      isStaffMessage: true,
+    });
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(snackbar.showSuccess).toHaveBeenCalledWith(
       'pages.disputes_management.message.sent'

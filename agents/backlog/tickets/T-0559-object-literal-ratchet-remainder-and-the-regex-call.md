@@ -120,6 +120,140 @@ AC6/AC7 half is invisible to it and must be re-checked by hand.
   answered), and AC1/AC2 must re-derive the count and the spec-less lib list before anyone is dispatched
   into nine libraries. Filed as T-0535's remainder rather than as an edit to T-0535, whose file is held
   by a live lane.
+- 2026-08-05 — **AC1–AC4, AC6, AC7 done** by frontend. All 9 libs converted, all 9 scopes opted in, count
+  is **zero** across `libs/` and `apps/`. **AC5 remains open — it is the Architect's, and this lane did
+  not touch the selector**; the measured evidence it asked for is in `## Review` below and in
+  `patterns-frontend.md`.
 
 ## Review
-<!-- reviewer / architect write verdicts here; PM reconciles before advancing state -->
+
+### AC1 — the count, re-run rather than inherited
+
+Re-derived on this tree with an AST scan running the rule's **exact** selector through the ESLint API
+(a `grep` was run as a cross-check and under-counts by 11, because it misses multi-line
+`new X(\n  {…})` forms — do not use grep for this):
+
+```js
+// ESLint 9 API, overrideConfig, @typescript-eslint/parser, filtered to ruleId === 'no-restricted-syntax'
+"NewExpression[callee.name=/(Command|Request|Dto|Query)$/][arguments.0.type='ObjectExpression']"
+```
+
+**46 literals in 9 admin libs** — the reported figure reconciles exactly:
+`employee-management` 10 · `invoice-management` 8 · `country-management` 5 · `order-management` 5 ·
+`template-management` 5 · `pay-periods` 4 · `company-management` 3 · `disputes-management` 3 ·
+`loyalty-tier-configs` 3. After the work: **0** in `libs/` and **0** in `apps/`.
+
+### AC2 — the spec-less libs: the inherited figure was wrong
+
+The ticket said **three** spec-less libs, 13 literals. The tree says **four**, 16 literals —
+`loyalty-tier-configs` was miscounted as having specs and has none:
+
+| Lib | Spec files before | Literals |
+|---|---|---|
+| `libs/cleansia-admin-features/template-management` | 0 | 5 |
+| `libs/cleansia-admin-features/country-management` | 0 | 5 |
+| `libs/cleansia-admin-features/loyalty-tier-configs` | **0** (not named in the ticket) | 3 |
+| `libs/cleansia-admin-features/company-management` | 0 | 3 |
+
+Two of those four could not have run a spec even if one had been written: **`company-management` and
+`loyalty-tier-configs` had no `jest.config.ts`, no `tsconfig.json`/`.lib.json`/`.spec.json`, no
+`src/test-setup.ts` and no `test` target** — the T-0546 family of defect, in admin rather than customer.
+`loyalty-tier-configs` had `"targets": {}` outright; its `lint` target only existed because
+`@nx/eslint/plugin` infers one. Both were scaffolded from `country-management`'s working configs and now
+run in the suite.
+
+### AC3/AC4 — pinned before changed, and mutation-proven
+
+Sequence per lib: write/upgrade the spec → run it **against the literal** (green = the body is pinned,
+and the run is what tells you the real body — the `updateCountry` case sends **no** `isoCode`, which a
+guessed assertion would have got wrong) → convert → re-run → **drop one field assignment and confirm
+RED** → restore byte-exact → confirm GREEN.
+
+Per-field assertions were upgraded to whole-body `toJSON()` equality wherever they existed
+(`disputes-management`, `pay-periods`, `order-management`, `invoice-management`, `employee-management`),
+because a per-field check reads as coverage and passes when a *different* field is dropped. Two prior
+assertions were of the shape `expect(Object.keys(command.toJSON())).toEqual([...])`, which pins the key
+set but **not one value** — also replaced.
+
+| Lib | Field dropped | Result | Restore |
+|---|---|---|---|
+| `country-management` | `command.countryId = countryId;` | **RED** 2/18 | byte-exact |
+| `template-management` | `command.languageId = languageId;` | **RED** 1/17 | byte-exact |
+| `company-management` | `command.companyInfoId = companyInfoId;` | **RED** 3/17 | byte-exact |
+| `loyalty-tier-configs` | `command.discountPercent = t.discountPercent;` | **RED** 1/12 | byte-exact |
+| `disputes-management` | `command.isStaffMessage = true;` | **RED** 1/27 | byte-exact |
+| `pay-periods` | `command.notes = notes;` | **RED** 1/33 | byte-exact |
+| `order-management` | `command.reason = reason;` | **RED** 4/43 | byte-exact |
+| `invoice-management` | `command.bankTransferNote = bankTransferNote;` | **RED** 1/48 | byte-exact |
+| `employee-management` | `command.maximumPay = data['maximumPay'] ?? 0;` | **RED** 1/56 | byte-exact |
+
+All nine scopes joined the ratchet by spreading `generatedDtoLiteralRules()` into their own
+`eslint.config.mjs`. **The root `src/Cleansia.App/eslint.config.mjs` was not edited** — every one of the
+nine owns a local config, so no workspace-relative glob was needed and the shared file stayed out of the
+diff entirely.
+
+`company-management` built the same 16-field body in three places across two files, each with its own
+copy of an identical `CompanyInfoFormData`. Per ADR-0031's several-call-sites guidance that became one
+`company-info.models.ts` with `buildCreateCompanyInfoCommand` / `buildUpdateCompanyInfoCommand` and one
+owner for the interface (both facades re-export the type, so no importer changed), pinned by a
+TestBed-free `company-info.models.spec.ts`.
+
+### AC5 — NOT done, and deliberately not attempted
+
+The selector is unchanged. Evidence gathered for the Architect, measured rather than assumed:
+
+- **`SortDefinition` is the largest invisible surface — 17 object-literal call sites.** 16 construct the
+  **generated** class (11 admin, 5 partner). The 17th
+  (`libs/shared/models/src/lib/models/sort.models.ts:244`) constructs a **hand-written** `SortDefinition`
+  declared at `libs/shared/models/src/lib/models/sort-types.models.ts:6`. **The same identifier is both a
+  generated DTO and a hand-written class in this workspace**, so no name-only discriminator can be both
+  complete and false-positive-free — which is a direct argument for AC5 option (c), import provenance.
+- **`OrderFilter`** (`libs/shared/models/src/lib/models/filter.models.ts:196`) — 4 literal call sites,
+  **entirely hand-written**. A `Filter$` widening is 100 % false positives there.
+- **`IssuePartialRefundRefundLineSelection`** — generated, one nested literal inside
+  `admin-order-refund.facade.ts`. Converted anyway (it was in a file this ticket was editing) and now
+  pinned by whole-body equality including the serialized `lines` array.
+- **`SendSitewidePromoResponse`** — generated, one literal, in a `.spec.ts`. A `Response$` widening
+  would catch it.
+
+### AC6/AC7 — catalog edit routing: **inline**, by the ADR-0033 test
+
+Two edits to `agents/knowledge/patterns-frontend.md` §"Building a generated DTO": the opt-in progress
+list (now "every scope, count zero" instead of "17 of 26"), and four sentences of the AC5 evidence above
+appended to the existing *"The selector's suffix set is narrower than the hazard"* paragraph, explicitly
+labelled **evidence, not a rule**.
+
+- **Test 1 — does it put existing code in violation?** No. **Sweep run:** the AST scan above over the
+  whole of `libs/` and of `apps/` returns **0**, and `nx run-many -t lint --all` reports **0**
+  `no-restricted-syntax` violations. Zero baseline by construction.
+- **Test 2 — does it narrow latitude?** No. **Search run:** `patterns-frontend.md` for `opt-in`,
+  `Cleared so far`, `unit of progress` → the governing sentences are `:466` (*"a scope may only be added
+  once its own count is zero"*) and `:475` (*"the unit of progress is a lint scope"*); `consistency.md`
+  for `construct-then-assign` / `object literal` / `ADR-0031` → `:153` (D1a, which delegates to this
+  section); `conventions.md` for the same four terms → **no hits**. Both edits *obey* those sentences and
+  record state under them; neither carves an exception, replaces them, or forbids a form they named. The
+  blind-spot addition sits inside a paragraph that already governs the subject and already routes the
+  widening to the Architect — it adds file:line facts and changes no obligation.
+- **Test 3 — prescriptive about an unrun stack?** No. This ticket built and ran this stack: 64 Jest
+  projects, `nx run-many -t lint --all`, and all three production builds.
+- → **Test 4, inline.**
+
+**Enforced by:** unchanged — `no-restricted-syntax` in `src/Cleansia.App/eslint.generated-dto.config.mjs`
+— **T2-ADVISORY**, because `frontend-ci.yml:72-74` runs lint with `continue-on-error: true`; promotes to
+`T1-CI` with the rest of the lint baseline. The edits do not alter the enforcer or the tier.
+
+### Verification
+
+- **Tests:** `npx nx run-many -t test --all` → **64 projects, all green**. The ticket brief's baseline of
+  61 is stale by one: HEAD carries **62** projects with a `test` target (`git grep -l '"test"' HEAD --
+  'src/Cleansia.App/**/project.json' | wc -l` → 62). 62 + the 2 targets this ticket created
+  (`company-management`, `loyalty-tier-configs`) = 64.
+- **Lint:** 24 failing projects before, 24 after, and the two sorted sets **diff clean — byte-identical**.
+  **Zero** `no-restricted-syntax` violations in the whole run. Per-lib before/after comparisons show the
+  same rules at the same counts throughout; only line numbers moved, in the files whose line counts the
+  conversion changed.
+- **Builds:** `build:cleansia-admin` (fresh, 40.5 s), `build:cleansia-partner`, `build:cleansia-customer`
+  — all succeed. Partner and customer were Nx cache hits, which is itself the expected result: nothing
+  outside the admin libs changed.
+- **Not run:** `npm run generate-*-client` (owner-only). No generated client was read for anything but
+  its type shapes, and none was edited.

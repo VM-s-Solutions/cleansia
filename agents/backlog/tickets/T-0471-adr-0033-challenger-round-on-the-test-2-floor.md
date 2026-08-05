@@ -1,7 +1,7 @@
 ---
 id: T-0471
 title: ADR-0033 — run the one challenger round on the test-2 floor, then accept or amend
-status: ready
+status: in_review
 size: S
 owner: architect
 created: 2026-08-01
@@ -192,5 +192,92 @@ is not limited to these, but must address them:
   as written *and* under its most likely amendment, so **ADR-0042 is not blocked on this** — but that is
   twice now, and the third one may not be so clear-cut.
 
+- 2026-08-05 — **ROUND RUN. ADR-0033 is `accepted` as amended (M1–M6); one AC needs the PM's call, so
+  this is `in_review`, not `done`.** Artifacts: the challenger pass
+  `agents/backlog/adr/challenges/0033-floor.md` (six findings, two blocking, every claim cited to a
+  file read in the tree under Gate 0 REFUTED-by-default); ADR-0033's `## Challenge` / `## Defense` /
+  `## Verdict` filled; `agents/architecture/decisions/catalog-governance.md` updated in parallel per
+  `deliberation.md` §"Parallel documentation". **No `agents/knowledge/*.md` file was edited** — Blocks
+  C and D are specifications, per §Out of scope. **The floor survives in direction and is amended in
+  wording and in enforcement**; the headline is that it was enforced by a mechanism that could not
+  fire.
+
 ## Review
-<!-- challenger + lead write the verdict into ADR-0033; the PM records the outcome here -->
+
+**ARCHITECT — round verdict, 2026-08-05. The PM reconciles; AC1 is explicitly left for the PM.**
+
+**Outcome: ADR-0033 `proposed` → `accepted`, amended M1–M6.** The floor was **not** accepted as
+written and was **not** rejected. What changed, in one line each:
+
+- **M1** — the trigger moves from *"a form the catalog previously **permitted**"* to *"a catalog
+  **sentence** already governs this subject at any level of generality"*, and **silence is defined**.
+  The old wording was undecidable: the catalog prescribes rather than permits, so "permitted" collapsed
+  into "was silent", which is the floor's own *inline* condition. It split the ADR's own retro row 3 —
+  `patterns-mobile.md:577` (the sentence that supposedly "permitted" `Color.dynamic` ink) is a
+  descriptive mapping row that never mentions theme-invariant surfaces.
+- **M2** — claiming the floor now costs a **catalog sweep** in `## Review`, symmetric with test 1's
+  code sweep, and **missing evidence routes to the Architect** instead of falling through to inline.
+- **M3** — **the headline finding, and the condition of acceptance.** The floor's enforcer was prose
+  inside an ADR. The only *named* standing item governing a catalog hunk —
+  `.claude/agents/reviewer.md:105-110` — still instructs the **superseded** axis. So the floor shipped
+  at `(guidance — no gate)` by ADR-0032's own definition, and its enforcer asserted the rule it
+  replaces (ADR-0032 **D3**, applied to ADR-0033). **Block D + FT-11**, with **FT-8 sequenced behind
+  it**.
+- **M4** — the ADR-0032 composition, which was missing and which AC6 required: a floor-qualifying entry
+  has a **zero baseline by construction**, so a mechanizable rule owes `T1-CI` in the same ticket, and
+  **a mechanism that cannot fail a build is `T2-ADVISORY` however it is labelled**.
+- **M5** — retro-validation 4 rows → **7**, including the two the floor routes **against** history.
+- **M6** — the stale Number note corrected in place (legitimate: the ADR was `proposed`); ADR-0032's
+  identical stale note routed to the PM as **F1** because it is `accepted` and needs a signed erratum.
+
+**AC ledger:**
+
+- [x] **AC2 (scope held)** — only the floor was re-opened. The one out-of-scope idea the challenger
+      found (a "carries a trade-off ⇒ ADR" limb, the ground three reviewers actually used on T-0397) was
+      filed as **F4** for the PM, not folded in.
+- [x] **AC3 (each nominated line ruled)** — all three carry an explicit disposition with reasoning in
+      ADR-0033 §Verdict: **1 SUSTAINED** (and *no*, the "name the withdrawn form" check was not enough —
+      it asked the reviewer to disprove silence); **2 SUSTAINED IN PART** (contradiction framing
+      overruled; the retrospective-only consequence sustained); **3 SUSTAINED IN PART** ("fitted"
+      overruled — rows 2 and 3 re-derived independently from the catalog files; thinness sustained).
+- [x] **AC4 (a CASE, not an argument)** — searched: all **60** tickets mentioning a `patterns-*.md`
+      file, every backlog file matching the harvest self-classification phrases, and the two tickets
+      that *are* architect ratifications of a dev harvest (**T-0397**, **T-0379**). Three further real
+      cases produced; **two route against history** (T-0397's header idiom, T-0379's `format: date`
+      row). **No case exists where the floor routes inline something plainly wrong** — stated plainly,
+      with the search named, per this AC's own terms. What the floor costs is visible in one of them:
+      the T-0397 ratification **added content the row lacked** (the fix-round-8
+      `.animation(nil, value: topInset)` settle pin) and corrected its verified call-site count.
+- [x] **AC5 (terminal state)** — ADR-0033 `:3` now reads `- **Status:** accepted`.
+- [x] **AC6 (consistent with ADR-0032)** — discharged twice over: reviewer check **7** keeps the
+      enforcer + tier obligation on inline entries, **M4** states the composition, and ADR-0033's own
+      Block C now carries `**Enforced by:** reviewer-check 5 — T3-HUMAN`. ADR-0032 is **consumed, not
+      amended by side effect**; the two ADR-0032 defects found (F1, F2) are routed to the PM rather than
+      fixed from inside this ticket.
+- [x] **AC7 (Gate 0.5 leg 3)** — ADR-0033 §Verdict states leg 1 **DOES NOT APPLY** (the evidence is not
+      an executable assertion — `quality-gates.md:67-70` scopes leg 1 by the evidence, not the ticket
+      type) and leg 2 **DOES NOT APPLY** (no suite, build or checker was run), then names four things
+      this round could not verify — including that **F3 is deliberately unresolved**.
+- [ ] **AC1 (a real panel) — SATISFIED IN PART; PM'S CALL, and deliberately not self-certified.** The
+      floor's **author** was the ADR-0032 panel lead (a different instance, 2026-08-01). The
+      **challenger** and the **lead** in this round were the **same T-0471 architect instance** — the
+      invocation carried no capability to spawn a separate lead. **The defect this ticket exists to
+      repair is repaired** (the floor was not ratified by whoever invented it, and two blocking
+      findings changed the decision text). **The literal three-instance requirement is not met.**
+      Mitigations used: the challenger pass was written **first**, as a standalone filed artifact,
+      before any defense existed; and the ruling **overrules the challenger in part twice** on stated
+      evidence. **PM: either accept AC1 as satisfied-in-part on that record, or dispatch a
+      second-instance re-check — the surface is narrow, because every amendment is a concession to the
+      challenger's own proposal.**
+
+**Findings for the PM to file (none are fixed here):** **F1** ADR-0032's Number note is false and needs
+a **signed erratum** (it is `accepted`; `adr/README.md:16-26`) · **F2** ADR-0032's Block A was never
+applied — `**Enforced by:**` has **0** instances in `patterns-mobile.md` (8 repo-wide in
+`agents/knowledge/`), so FT-4 has nothing to build on · **F3** `patterns-mobile.md:265-276` (T-0473)
+constrains call sites with no enforcer + tier, and its test-1 sweep was never run — **recorded, not
+re-opened**, on the T-0274 precedent · **F4** the missing "carries a trade-off ⇒ ADR" limb · **F5**
+`patterns-mobile.md:1230` still grants the `.medium` detent that the T-0397-ratified `:985-990`
+withdrew. Full detail in `agents/backlog/adr/challenges/0033-floor.md` §Findings.
+
+**New follow-ups on ADR-0033:** **FT-11** (Block D — the named reviewer-check; **blocks FT-8**) and
+**FT-12** (record the check id in `enforcement.md` so dropping it is a visible regression).

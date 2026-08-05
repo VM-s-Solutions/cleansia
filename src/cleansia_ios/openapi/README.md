@@ -54,16 +54,22 @@ step is fragile, and the first gen is owner-gated anyway). Instead:
 
 1. Run `scripts/generate-api-clients.sh` once after a spec change → it emits the `Cleansia{Partner,Customer}Api`
    local SPM package(s) (gitignored).
-2. Each app's `project.yml` declares that package as a local SPM dependency (currently commented out, since
-   the package does not exist until the first gen). After the first generation, uncomment the
-   `Cleansia{Partner,Customer}Api` entry under `packages:` **and** under the target's `dependencies:`, then
-   run `xcodegen generate`.
+2. Each app's `project.yml` **already declares** that package as a local SPM dependency — the first
+   generation happened and the entries are live, so there is nothing left to uncomment. `ios-ci.yml`
+   states the consequence directly: it runs `generate-api-clients.sh` **before** `xcodegen`, "since both
+   project.yml files now depend on it."
 3. SPM resolves the local package and the app target links the generated models + APIs. The app-side
    `MobileApiClient` adapter (`Sources/PartnerClients.swift` / `CustomerClients.swift`) then wraps the
    generated APIs behind the `CleansiaCore` `MobileApiClient` seam.
 
 Net effect matches Android: a spec change → regenerate → the app compiles against the fresh typed surface,
 and any backend shape drift becomes a compile error instead of a silent runtime mismatch.
+
+> ⚠️ **Order matters on a fresh checkout, and the failure is misleading.** The generated packages are
+> **gitignored**, but `project.yml` depends on them — so `xcodegen generate` on a clean clone resolves a
+> package that is not on disk. Run `scripts/generate-api-clients.sh` **first**, then `xcodegen generate`,
+> in both app directories. This is exactly the order `ios-ci.yml` uses, and it is why CI passes on a
+> machine where a naive local setup fails.
 
 ## First real generation is owner-gated
 

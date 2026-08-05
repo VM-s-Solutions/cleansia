@@ -112,19 +112,18 @@ export class PromoCodeFormFacade extends UnsubscribeControlDirective {
         ? input.discountPercentUi / 100
         : undefined;
 
-    const command = new CreatePromoCodeCommand({
-      code: input.code,
-      type: input.type,
-      discountPercent: discountPercent,
-      discountAmount: !isPercent ? input.discountAmount : undefined,
-      currencyId: !isPercent ? input.currencyId : undefined,
-      minimumOrderAmount: input.minimumOrderAmount,
-      maxRedemptionsPerUser: input.maxRedemptionsPerUser,
-      globalMaxRedemptions: input.globalMaxRedemptions,
-      validFrom: input.validFrom,
-      validUntil: input.validUntil,
-      description: input.description,
-    });
+    const command = new CreatePromoCodeCommand();
+    command.code = input.code;
+    command.type = input.type;
+    command.discountPercent = discountPercent;
+    command.discountAmount = !isPercent ? input.discountAmount : undefined;
+    command.currencyId = !isPercent ? input.currencyId : undefined;
+    command.minimumOrderAmount = input.minimumOrderAmount;
+    command.maxRedemptionsPerUser = input.maxRedemptionsPerUser;
+    command.globalMaxRedemptions = input.globalMaxRedemptions;
+    command.validFrom = input.validFrom;
+    command.validUntil = input.validUntil;
+    command.description = input.description;
 
     this.adminClient.adminPromoCodeClient
       .create(command)
@@ -153,16 +152,15 @@ export class PromoCodeFormFacade extends UnsubscribeControlDirective {
   update(id: string, input: PromoCodeUpdateInput): void {
     this.saving.set(true);
 
-    const command = new UpdatePromoCodeCommand({
-      promoCodeId: id,
-      isActive: input.isActive,
-      validFrom: input.validFrom,
-      validUntil: input.validUntil,
-      minimumOrderAmount: input.minimumOrderAmount,
-      maxRedemptionsPerUser: input.maxRedemptionsPerUser,
-      globalMaxRedemptions: input.globalMaxRedemptions,
-      description: input.description,
-    });
+    const command = new UpdatePromoCodeCommand();
+    command.promoCodeId = id;
+    command.isActive = input.isActive;
+    command.validFrom = input.validFrom;
+    command.validUntil = input.validUntil;
+    command.minimumOrderAmount = input.minimumOrderAmount;
+    command.maxRedemptionsPerUser = input.maxRedemptionsPerUser;
+    command.globalMaxRedemptions = input.globalMaxRedemptions;
+    command.description = input.description;
 
     this.adminClient.adminPromoCodeClient
       .update(id, command)

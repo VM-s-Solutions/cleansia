@@ -160,8 +160,11 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
 
     this.loading.set(true);
 
+    const command = new StartOrderCommand();
+    command.orderId = orderId;
+
     this.partnerClient.orderClient
-      .startOrder(new StartOrderCommand({ orderId }))
+      .startOrder(command)
       .pipe(
         takeUntil(this.destroyed$),
         tap(() => {
@@ -192,8 +195,11 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     this.takeInFlight.set(true);
     this.loading.set(true);
 
+    const command = new TakeOrderCommand();
+    command.orderId = orderId;
+
     this.partnerClient.orderClient
-      .takeOrder(new TakeOrderCommand({ orderId }))
+      .takeOrder(command)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null)),
@@ -310,11 +316,13 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     ref.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: ReportIssueDialogResult) => {
       if (result) {
         this.loading.set(true);
+
+        const command = new ReportOrderIssueCommand();
+        command.orderId = order.id;
+        command.description = result.description;
+
         this.partnerClient.orderClient
-          .reportIssue(new ReportOrderIssueCommand({
-            orderId: order.id,
-            description: result.description,
-          }))
+          .reportIssue(command)
           .pipe(
             takeUntil(this.destroyed$),
             tap(() => {
@@ -363,11 +371,13 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     ref.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: AddNoteDialogResult) => {
       if (result) {
         this.loading.set(true);
+
+        const command = new AddOrderNoteCommand();
+        command.orderId = order.id;
+        command.content = result.content;
+
         this.partnerClient.orderClient
-          .addNote(new AddOrderNoteCommand({
-            orderId: order.id,
-            content: result.content,
-          }))
+          .addNote(command)
           .pipe(
             takeUntil(this.destroyed$),
             tap(() => {
@@ -448,8 +458,11 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
 
     this.loading.set(true);
 
+    const command = new MarkCashCollectedCommand();
+    command.orderId = orderId;
+
     this.partnerClient.orderClient
-      .markCashCollected(new MarkCashCollectedCommand({ orderId }))
+      .markCashCollected(command)
       .pipe(
         takeUntil(this.destroyed$),
         tap(() => {

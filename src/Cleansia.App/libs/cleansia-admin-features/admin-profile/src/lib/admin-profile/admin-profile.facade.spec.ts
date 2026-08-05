@@ -1,5 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { AdminClient, ChangeOwnPasswordResponse } from '@cleansia/admin-services';
+import {
+  AdminClient,
+  ChangeOwnPasswordCommand,
+  ChangeOwnPasswordResponse,
+} from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
@@ -39,9 +43,16 @@ describe('AdminProfileFacade', () => {
       newPassword: 'NewPass456',
     });
 
+    // Every member of a generated command is optional, so a dropped assignment
+    // type-checks — pin the serialized body instead (ADR-0031).
     const command = changePasswordMock.mock.calls[0][0];
-    expect(command.currentPassword).toBe('OldPass123');
-    expect(command.newPassword).toBe('NewPass456');
+    expect(command).toBeInstanceOf(ChangeOwnPasswordCommand);
+    expect(command.toJSON()).toEqual({
+      currentPassword: 'OldPass123',
+      newPassword: 'NewPass456',
+      // Server-enriched from the refresh cookie; the blank is what satisfies the required member.
+      currentRefreshToken: '',
+    });
   });
 
   it('shows success, bumps the changed counter and clears saving on success', () => {

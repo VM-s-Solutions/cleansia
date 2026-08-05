@@ -789,7 +789,16 @@ _No open Wave-1 *planning* questions remain._
   same `id: undefined` the profile save has always sent, so nothing regresses) and its facade-level
   ACs are proven by unit tests. AC2/AC3's **manual round-trip evidence cannot be produced** until
   this is answered.
-- Answer: _(owner/architect fills in — (a), (b) or (c), then a backend ticket)_
+- Answer: **shape (a), and it has already shipped** — recorded by frontend 2026-08-05, verified
+  first-hand on `master`, not assumed. `85c453f1` ("the caller's identity is server-truth on all
+  seven self-service commands") rewrote `AllowedToUpdateUser` to *"No longer an ownership comparison
+  — the subject is server-resolved, so there is nothing for a client to get wrong"*
+  (`UpdateCurrentUser.cs:75-83`); the handler now loads
+  `userRepository.GetByIdAsync(userSessionProvider.GetUserId()!)`. `Command.Id` survives on the wire
+  as a nullable no-op solely so Android/iOS keep deserializing, and carries the
+  `[OWN-DATA] (S1)` annotation saying it is never read. **The customer web save is therefore live
+  again and T-0447's AC2/AC3 round-trip is unblocked** — the web client still sends no id, which is
+  now correct rather than fatal. Nothing to change on the frontend. Ready for the PM to close.
 
 ---
 

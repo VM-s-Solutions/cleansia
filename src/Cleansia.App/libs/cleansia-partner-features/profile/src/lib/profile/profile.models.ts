@@ -200,10 +200,12 @@ export class ProfileFormFactory {
         ? Object.fromEntries(
             Object.entries(formData.availability).map(([day, ranges]) => [
               day,
-              ranges.map(
-                (r) =>
-                  new UpdateEmployeeTimeRangeDto({ start: r.start, end: r.end })
-              ),
+              ranges.map((r) => {
+                const range = new UpdateEmployeeTimeRangeDto();
+                range.start = r.start;
+                range.end = r.end;
+                return range;
+              }),
             ])
           )
         : undefined;

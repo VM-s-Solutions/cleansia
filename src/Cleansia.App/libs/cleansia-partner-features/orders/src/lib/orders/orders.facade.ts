@@ -221,8 +221,11 @@ export class OrdersFacade extends UnsubscribeControlDirective {
 
     this.takeInFlightOrderId.set(orderId);
 
+    const command = new TakeOrderCommand();
+    command.orderId = orderId;
+
     this.partnerClient.orderClient
-      .takeOrder(new TakeOrderCommand({ orderId }))
+      .takeOrder(command)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null)),
@@ -243,8 +246,11 @@ export class OrdersFacade extends UnsubscribeControlDirective {
   }
 
   startOrder(orderId: string): void {
+    const command = new StartOrderCommand();
+    command.orderId = orderId;
+
     this.partnerClient.orderClient
-      .startOrder(new StartOrderCommand({ orderId }))
+      .startOrder(command)
       .pipe(takeUntil(this.destroyed$))
       .subscribe((response) => {
         if (response) {

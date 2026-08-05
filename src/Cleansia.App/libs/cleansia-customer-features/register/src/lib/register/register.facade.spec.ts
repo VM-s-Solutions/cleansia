@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import {
   CustomerAuthService,
   CustomerClient,
+  ValidateReferralQuery,
   ValidateReferralResponse,
 } from '@cleansia/customer-services';
 import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
@@ -79,7 +80,11 @@ describe('RegisterFacade — referral landing capture (/r/{code})', () => {
     await facade.applyReferralCodeFromUrl('abc12');
 
     expect(referralClient.validate).toHaveBeenCalledTimes(1);
-    expect(referralClient.validate.mock.calls[0][0].code).toBe('ABC12');
+    // Every member of a generated query is optional, so a dropped assignment
+    // type-checks — pin the serialized body instead (ADR-0031).
+    const query = referralClient.validate.mock.calls[0][0];
+    expect(query).toBeInstanceOf(ValidateReferralQuery);
+    expect(query.toJSON()).toEqual({ code: 'ABC12' });
     expect(facade.referralState()).toEqual({
       kind: 'valid',
       referrerFirstName: 'Petra',

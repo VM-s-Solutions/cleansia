@@ -274,5 +274,71 @@ same state** — this is not an Azurite artifact.
   - **Not verified by me:** the three screenshot ACs (AC1 both states, AC2, AC3) and the AC3 manual
     round-trip — no running app/DEV session here, and AC2/AC3 are blocked by `Q-PROFILE-01` regardless.
 
+- 2026-08-05 — **re-verified against the two backend changes that landed after implementation, plus
+  one client-side narrowing.** Nothing in the shipped design had to be undone.
+  - **`Q-PROFILE-01` is RESOLVED, as shape (a), and the AC2/AC3 round-trip is unblocked.**
+    `85c453f1` made the caller's identity server-truth: `AllowedToUpdateUser` no longer compares
+    `Command.Id` (`UpdateCurrentUser.cs:75-83`) and the handler resolves the row from
+    `IUserSessionProvider`. `Command.Id` stays on the wire as a nullable, never-read no-op for the
+    mobile clients and carries the `[OWN-DATA] (S1)` annotation. The web client sends no id, which is
+    now correct rather than fatal. Recorded under the question; **the manual round-trip is now
+    executable and still owed by whoever has a DEV session.**
+  - **AC4 does not regress, and the backend now agrees in the same shape.** `UpdateProfilePhoto`
+    (`UpdateCurrentUser.cs:148-157`) returns early when there is neither a photo nor `RemovePhoto`,
+    and `UpdateUserAndOrders` states the general rule — *"Every optional field here means 'nothing to
+    say about it', never 'delete it'"*. The client's half is `command.removePhoto = intent.kind ===
+    'remove'` with `photo` assigned only on an upload, still mutation-proved (5 tests red on
+    `= true`).
+  - **The content-type column: my implementation does NOT need it.** The avatar renders through a
+    plain `<img [src]>` and browsers sniff image bytes regardless of `application/octet-stream`
+    (which is what `ServedContentType.Opaque` serves and what T-0464 proved against Azurite). Nothing
+    in this feature fetches, canvases or downloads the blob — CORS/C2 forbids all of that anyway. So
+    the column is a nice-to-have here, **not a blocker**. Two things worth the owner knowing while
+    the reseed window is open: (1) the avatar blob name is a bare GUID with **no extension**, so
+    `ServedContentType.ForFileName` can never rescue it either — without a recorded type the avatar
+    stays permanently opaque, which costs a correct `Content-Disposition`/save-as and any future
+    non-`<img>` read; (2) if the column is added, **derive its value from the magic bytes
+    `ImageFileValidator` already sniffs (`Constants.ImageSignatures:95-104`), never from
+    `command.Photo.ContentType`** — that member is client-declared and is exactly the input
+    `ServedContentType` exists to distrust. The client keeps sending `contentType` on `BlobFileDto`
+    (the backend ignores it for the avatar today) purely for parity with the order-photo DTO.
+  - **AC5 allowlist narrowed, and this is a real defect fixed, not tidying.** The client list was
+    the backend's magic-byte set, which includes **bmp and tiff**. `ServedContentType.ServableTypes`
+    will only ever serve jpeg/png/webp/gif as an image, and **no desktop browser renders a tiff in an
+    `<img>`** — so a tiff avatar uploaded successfully, then never appeared, and the C1 single-retry
+    guard burned its one re-read before falling back to initials. `AVATAR_ALLOWED_CONTENT_TYPES` is
+    now the intersection (jpeg/jpg/png/webp/gif); the backend still accepts everything the client can
+    send, so nothing new can 400. Pinned by three added cases in `profile.models.spec.ts`, including
+    an explicit svg rejection.
+  - **T-0465 (avatar not cached) — the client half is done and the remaining half is not ours.**
+    Cause 1 is fixed upstream: `BlobContainerClient.GenerateSasUri` now sets
+    `CacheControl = "private, max-age=3600"` on every mint (`private`, per the binding condition).
+    Cause 2 — the SAS query changes per read, so the HTTP cache key changes — is inherent to the
+    per-read-SAS design and is **not fixable from the web**: `<img [src]>` is the only sanctioned
+    read (C2) and the URL is the cache key. `applyAvatar` already holds the rendered URL steady while
+    `fileName` is unchanged, so within a session a re-read (save, avatar change, error retry) does
+    **not** re-download. Across page loads it still will. That is option **A** in T-0465 and should
+    be recorded there as accepted; option **B** (bucketed expiry) remains a backend + security
+    re-gate call.
+  - **Gate 8 re-run at this commit:** `nx test cleansia-customer-profile` **67/67** (5 suites); all
+    three production builds exit 0; `npm run typecheck` OK 3/3; `nx run-many -t lint --all` failing
+    set **byte-identical to the 24-project baseline**.
+  - Unchanged and re-checked: no render-mode change (profile stays `RenderMode.Client`), no logging
+    of the profile response or the SAS, cache key is `fileName`, T-0446 AC10 still mints a fresh blob
+    name per replace.
+  - **Heads-up for the reviewer, from a live parallel lane — the AC5 size caveat is about to
+    disappear.** A backend agent has `ImageFileValidator.cs` + a new `BlobFileSize.cs` open in the
+    working tree adding `Must(BlobFileSize.HasContentWithinLimit)` with `MaxFileSizeInMB = 10`.
+    That is **the same 10 MB this client already enforces**, so the note above ("a client-only
+    floor") retires the moment it lands and the two sides agree. They also agree numerically: the
+    server derives the size from the **encoded** base64 length (`len * 3 / 4`, rounding up by ≤ 2
+    bytes) while the client measures `file.size` (decoded), so a file at exactly the cap passes both.
+    Its error is `BusinessErrorMessage.FileSizeExceeded` → `api.file.size_exceeded`, which is
+    **already present and non-empty in all five customer locales** (verified) — so no i18n work is
+    owed here and the interceptor will not fall back to the generic message. I did not touch that
+    lane's files.
+  - **Still not verified by me:** AC1/AC2/AC3 screenshots and the manual round-trip — no running app
+    here. The `Q-PROFILE-01` obstacle to them is gone.
+
 ## Review
 <!-- reviewer + security verdicts here -->

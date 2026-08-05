@@ -127,7 +127,11 @@ describe('PartnerGdprFacade', () => {
 
       const command = gdprClient.consentsPost.mock
         .calls[0][0] as GrantConsentCommand;
-      expect(command.consentType).toBe(ConsentType.MarketingEmails);
+      expect(command).toBeInstanceOf(GrantConsentCommand);
+      // IP and user agent are captured server-side — the body carries the type alone.
+      expect(command.toJSON()).toEqual({
+        consentType: ConsentType.MarketingEmails,
+      });
       expect(consentsClient.withdraw).not.toHaveBeenCalled();
       expect(snackbar.showSuccess).toHaveBeenCalledWith(
         'pages.gdpr.consent_updated'
@@ -144,7 +148,10 @@ describe('PartnerGdprFacade', () => {
 
       const command = consentsClient.withdraw.mock
         .calls[0][0] as WithdrawConsentCommand;
-      expect(command.consentType).toBe(ConsentType.MarketingEmails);
+      expect(command).toBeInstanceOf(WithdrawConsentCommand);
+      expect(command.toJSON()).toEqual({
+        consentType: ConsentType.MarketingEmails,
+      });
       expect(gdprClient.consentsPost).not.toHaveBeenCalled();
       expect(gdprClient.consentsGet).toHaveBeenCalledTimes(1);
     });

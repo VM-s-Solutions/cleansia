@@ -79,4 +79,59 @@ describe('ProfileFormFactory', () => {
     expect('iban' in command.toJSON()).toBe(false);
     expect(command.toJSON()).not.toHaveProperty('iban');
   });
+
+  // Every member of a generated command is optional, so a dropped assignment type-checks.
+  // These pin the serialized body instead (ADR-0031).
+  describe('command bodies on the wire', () => {
+    it('serializes every profile field the form collects', () => {
+      const command = ProfileFormFactory.createUpdateCommand(
+        completeFormValue,
+        []
+      );
+
+      expect(command.toJSON()).toEqual({
+        employeeId: 'emp-1',
+        firstName: 'Jana',
+        lastName: 'Novakova',
+        phone: '+420111222333',
+        birthDate: '1990-04-17',
+        street: 'Vodickova 12',
+        city: 'Praha',
+        zipCode: '11000',
+        countryId: 'cz',
+        nationalityId: 'cz',
+        passportId: 'AB1234567',
+        entityType: EmployeeEntityType.NaturalPerson,
+        registrationNumber: '12345678',
+        emergencyName: 'Petr Novak',
+        emergencyPhone: '+420333222111',
+        documents: [],
+        consent: true,
+      });
+    });
+
+    it('serializes each availability slot as a start/end pair under its day', () => {
+      const command = ProfileFormFactory.createUpdateCommand(
+        {
+          ...completeFormValue,
+          availability: {
+            Monday: [{ start: '08:00', end: '12:00' }],
+            Friday: [
+              { start: '09:00', end: '11:00' },
+              { start: '13:00', end: '17:30' },
+            ],
+          },
+        },
+        []
+      );
+
+      expect(command.toJSON().availability).toEqual({
+        Monday: [{ start: '08:00', end: '12:00' }],
+        Friday: [
+          { start: '09:00', end: '11:00' },
+          { start: '13:00', end: '17:30' },
+        ],
+      });
+    });
+  });
 });

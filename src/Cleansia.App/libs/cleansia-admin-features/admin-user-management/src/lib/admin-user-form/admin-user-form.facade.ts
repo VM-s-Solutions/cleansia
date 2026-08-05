@@ -75,15 +75,14 @@ export class AdminUserFormFacade extends UnsubscribeControlDirective {
   createUser(data: AdminUserFormData): void {
     this.saving.set(true);
 
-    const command = new CreateAdminUserCommand({
-      email: data.email,
-      password: data.password,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      phoneNumber: data.phoneNumber || undefined,
-      birthDate: data.birthDate,
-      preferredLanguageCode: data.preferredLanguageCode || undefined,
-    });
+    const command = new CreateAdminUserCommand();
+    command.email = data.email;
+    command.password = data.password;
+    command.firstName = data.firstName;
+    command.lastName = data.lastName;
+    command.phoneNumber = data.phoneNumber || undefined;
+    command.birthDate = data.birthDate;
+    command.preferredLanguageCode = data.preferredLanguageCode || undefined;
 
     this.adminClient.adminUserClient
       .create(command)
@@ -112,14 +111,13 @@ export class AdminUserFormFacade extends UnsubscribeControlDirective {
   updateUser(userId: string, data: AdminUserFormData): void {
     this.saving.set(true);
 
-    const command = new UpdateAdminUserCommand({
-      userId,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      phoneNumber: data.phoneNumber || undefined,
-      birthDate: data.birthDate,
-      preferredLanguageCode: data.preferredLanguageCode || undefined,
-    });
+    const command = new UpdateAdminUserCommand();
+    command.userId = userId;
+    command.firstName = data.firstName;
+    command.lastName = data.lastName;
+    command.phoneNumber = data.phoneNumber || undefined;
+    command.birthDate = data.birthDate;
+    command.preferredLanguageCode = data.preferredLanguageCode || undefined;
 
     this.adminClient.adminUserClient
       .update(userId, command)

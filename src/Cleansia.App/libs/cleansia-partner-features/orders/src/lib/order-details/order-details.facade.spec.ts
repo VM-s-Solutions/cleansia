@@ -1,11 +1,16 @@
 import { TestBed } from '@angular/core/testing';
 import {
+  AddOrderNoteCommand,
+  MarkCashCollectedCommand,
   MarkCashCollectedResponse,
   OrderItem,
   OrderStatus,
   PartnerClient,
   PaymentStatus,
   PaymentType,
+  ReportOrderIssueCommand,
+  StartOrderCommand,
+  TakeOrderCommand,
   TakeOrderResponse,
 } from '@cleansia/partner-services';
 import { SnackbarService } from '@cleansia/services';
@@ -53,6 +58,9 @@ describe('OrderDetailsFacade', () => {
   let orderClient: {
     markCashCollected: jest.Mock;
     takeOrder: jest.Mock;
+    startOrder: jest.Mock;
+    reportIssue: jest.Mock;
+    addNote: jest.Mock;
     getById: jest.Mock;
   };
   let employeeClient: { getCurrentEmployee: jest.Mock };
@@ -84,6 +92,9 @@ describe('OrderDetailsFacade', () => {
     orderClient = {
       markCashCollected: jest.fn(),
       takeOrder: jest.fn(),
+      startOrder: jest.fn(),
+      reportIssue: jest.fn(),
+      addNote: jest.fn(),
       getById: jest.fn().mockReturnValue(of(buildOrder())),
     };
     employeeClient = { getCurrentEmployee: jest.fn().mockReturnValue(of(null)) };
@@ -295,6 +306,90 @@ describe('OrderDetailsFacade', () => {
       expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
         'pages.order_details.mark_cash_collected_gating_error'
       );
+    });
+  });
+
+  // Every member of a generated command is optional, so a dropped assignment type-checks.
+  // These pin the serialized body instead (ADR-0031).
+  describe('command bodies on the wire', () => {
+    it('serializes a start with the order id', () => {
+      const facade = createFacade();
+      orderClient.startOrder.mockReturnValue(of({}));
+
+      facade.startOrder(ORDER_ID);
+
+      const command: StartOrderCommand = orderClient.startOrder.mock.calls[0][0];
+      expect(command).toBeInstanceOf(StartOrderCommand);
+      expect(command.toJSON()).toEqual({ orderId: ORDER_ID });
+    });
+
+    it('serializes a take with the order id', () => {
+      const facade = createFacade();
+      orderClient.takeOrder.mockReturnValue(
+        of(TakeOrderResponse.fromJS({ orderId: ORDER_ID, employeeId: EMPLOYEE_ID }))
+      );
+
+      facade.takeOrder(ORDER_ID);
+
+      const command: TakeOrderCommand = orderClient.takeOrder.mock.calls[0][0];
+      expect(command).toBeInstanceOf(TakeOrderCommand);
+      expect(command.toJSON()).toEqual({ orderId: ORDER_ID });
+    });
+
+    it('serializes a cash collection with the order id', () => {
+      const facade = createFacade();
+      orderClient.markCashCollected.mockReturnValue(
+        of(
+          MarkCashCollectedResponse.fromJS({
+            orderId: ORDER_ID,
+            paymentStatus: PaymentStatus.Paid,
+          })
+        )
+      );
+
+      facade.markCashCollected(ORDER_ID);
+
+      const command: MarkCashCollectedCommand =
+        orderClient.markCashCollected.mock.calls[0][0];
+      expect(command).toBeInstanceOf(MarkCashCollectedCommand);
+      expect(command.toJSON()).toEqual({ orderId: ORDER_ID });
+    });
+
+    it('serializes a reported issue with the order id and the description', () => {
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder());
+      dialogService.open.mockReturnValue({
+        onClose: of({ description: 'Front door was locked' }),
+      });
+      orderClient.reportIssue.mockReturnValue(of({}));
+
+      facade.openReportIssueDialog();
+
+      const command: ReportOrderIssueCommand =
+        orderClient.reportIssue.mock.calls[0][0];
+      expect(command).toBeInstanceOf(ReportOrderIssueCommand);
+      expect(command.toJSON()).toEqual({
+        orderId: ORDER_ID,
+        description: 'Front door was locked',
+      });
+    });
+
+    it('serializes an added note with the order id and the content', () => {
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder());
+      dialogService.open.mockReturnValue({
+        onClose: of({ content: 'Customer asked us to start upstairs' }),
+      });
+      orderClient.addNote.mockReturnValue(of({}));
+
+      facade.openAddNoteDialog();
+
+      const command: AddOrderNoteCommand = orderClient.addNote.mock.calls[0][0];
+      expect(command).toBeInstanceOf(AddOrderNoteCommand);
+      expect(command.toJSON()).toEqual({
+        orderId: ORDER_ID,
+        content: 'Customer asked us to start upstairs',
+      });
     });
   });
 });

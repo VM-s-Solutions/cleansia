@@ -19,12 +19,7 @@ import {
   CleansiaSelectComponent,
 } from '@cleansia/components';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
-import {
-  AddSavedAddressCommand,
-  ChangePasswordCommand,
-  SavedAddressDto,
-  UpdateSavedAddressCommand,
-} from '@cleansia/customer-services';
+import { SavedAddressDto } from '@cleansia/customer-services';
 import { persistPreferredLanguage, ThemeService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InputTextModule } from 'primeng/inputtext';
@@ -35,7 +30,13 @@ import { RewardsCardComponent } from '@cleansia-customer/rewards';
 import { NotificationPreferencesComponent } from '../notification-preferences/notification-preferences.component';
 import { PROFILE_SECTIONS, SectionDef, setupScrollSpy } from './profile.helpers';
 import { ProfileFacade } from './profile.facade';
-import { AVATAR_ACCEPT_ATTRIBUTE } from './profile.models';
+import {
+  AVATAR_ACCEPT_ATTRIBUTE,
+  SavedAddressFields,
+  buildAddSavedAddressCommand,
+  buildChangePasswordCommand,
+  buildUpdateSavedAddressCommand,
+} from './profile.models';
 
 @Component({
   selector: 'cleansia-customer-profile',
@@ -262,11 +263,10 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   changePassword(): void {
     if (this.passwordForm.invalid || this.passwordMismatch) return;
 
-    const cmd = new ChangePasswordCommand({
-      email: this.user()?.email,
-      code: '',
-      newPassword: this.passwordForm.value.newPassword || undefined,
-    });
+    const cmd = buildChangePasswordCommand(
+      this.user()?.email,
+      this.passwordForm.value.newPassword || undefined,
+    );
 
     this.facade.changePassword(cmd, () => this.passwordForm.reset());
   }
@@ -371,39 +371,26 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     const editingId = this.editingAddressId();
+    const fields: SavedAddressFields = {
+      label: v.label,
+      street: v.street,
+      city: v.city,
+      zipCode: v.zip,
+      countryId: v.country || undefined,
+      latitude: lat,
+      longitude: lng,
+    };
 
-    if (editingId) {
-      const ok = await this.facade.updateSavedAddress(
-        new UpdateSavedAddressCommand({
-          savedAddressId: editingId,
-          label: v.label,
-          street: v.street,
-          city: v.city,
-          zipCode: v.zip,
-          countryId: v.country || undefined,
-          latitude: lat,
-          longitude: lng,
-        }),
-      );
-      if (ok) {
-        this.closeAddressDialog();
-      }
-    } else {
-      const ok = await this.facade.addSavedAddress(
-        new AddSavedAddressCommand({
-          label: v.label,
-          street: v.street,
-          city: v.city,
-          zipCode: v.zip,
-          countryId: v.country || undefined,
-          setAsDefault: v.isDefault,
-          latitude: lat,
-          longitude: lng,
-        }),
-      );
-      if (ok) {
-        this.closeAddressDialog();
-      }
+    const ok = editingId
+      ? await this.facade.updateSavedAddress(
+          buildUpdateSavedAddressCommand(editingId, fields),
+        )
+      : await this.facade.addSavedAddress(
+          buildAddSavedAddressCommand(fields, v.isDefault),
+        );
+
+    if (ok) {
+      this.closeAddressDialog();
     }
   }
 

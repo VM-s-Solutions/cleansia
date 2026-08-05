@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import {
   CustomerClient,
   NotificationPreferencesDto,
+  UpdateNotificationPreferencesCommand,
 } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
 import { Subject, of, throwError } from 'rxjs';
@@ -160,5 +161,28 @@ describe('NotificationPreferencesFacade', () => {
   it('does not call update before the preferences are loaded', () => {
     facade.save();
     expect(preferencesClient.update).not.toHaveBeenCalled();
+  });
+
+  // Every member of a generated command is optional, so a dropped assignment type-checks.
+  // These pin the serialized body instead (ADR-0031).
+  describe('command bodies on the wire', () => {
+    it('serializes every rendered category, and only those', () => {
+      preferencesClient.getMine.mockReturnValue(of(allOn));
+      preferencesClient.update.mockReturnValue(of(allOn));
+      facade.load();
+      facade.setPreference('promo', false);
+
+      facade.save();
+
+      const command: UpdateNotificationPreferencesCommand =
+        preferencesClient.update.mock.calls[0][0];
+      expect(command).toBeInstanceOf(UpdateNotificationPreferencesCommand);
+      // A category the user can toggle but the command never assigns would ship as
+      // `false` and silently switch the notification off.
+      expect(Object.keys(command.toJSON()).sort()).toEqual(
+        NOTIFICATION_PREFERENCE_CATEGORIES.map((c) => c.field).sort()
+      );
+      expect(command.toJSON()).toEqual({ ...allOn.toJSON(), promo: false });
+    });
   });
 });

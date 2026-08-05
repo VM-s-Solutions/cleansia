@@ -1,5 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { CustomerClient, GetMyMembershipResponse } from '@cleansia/customer-services';
+import {
+  CreateMembershipCheckoutSessionCommand,
+  CustomerClient,
+  GetMyMembershipResponse,
+  SwapMembershipPlanCommand,
+} from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
 import { of, throwError } from 'rxjs';
 import { MembershipFacade } from './membership.facade';
@@ -20,12 +25,28 @@ function buildMembership(fields: {
 
 describe('MembershipFacade — express waiver state', () => {
   let facade: MembershipFacade;
-  let membershipClient: { getMine: jest.Mock };
-  let snackbar: { showApiError: jest.Mock };
+  let membershipClient: {
+    getMine: jest.Mock;
+    swapPlan: jest.Mock;
+    createCheckoutSession: jest.Mock;
+  };
+  let snackbar: {
+    showApiError: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   beforeEach(() => {
-    membershipClient = { getMine: jest.fn() };
-    snackbar = { showApiError: jest.fn() };
+    membershipClient = {
+      getMine: jest.fn(),
+      swapPlan: jest.fn(),
+      createCheckoutSession: jest.fn(),
+    };
+    snackbar = {
+      showApiError: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -113,5 +134,40 @@ describe('MembershipFacade — express waiver state', () => {
     expect(facade.expressWaiverAdvertised()).toBe(false);
     expect(facade.loading()).toBe(false);
     expect(snackbar.showApiError).toHaveBeenCalledTimes(1);
+  });
+
+  // Every member of a generated command is optional, so a dropped assignment type-checks.
+  // These pin the serialized body instead (ADR-0031).
+  describe('command bodies on the wire', () => {
+    it('serializes a plan swap with the target plan code', () => {
+      membershipClient.swapPlan.mockReturnValue(of(undefined));
+      membershipClient.getMine.mockReturnValue(of(buildMembership({})));
+
+      facade.swapPlan('plus-yearly');
+
+      const command: SwapMembershipPlanCommand =
+        membershipClient.swapPlan.mock.calls[0][0];
+      expect(command).toBeInstanceOf(SwapMembershipPlanCommand);
+      expect(command.toJSON()).toEqual({ newPlanCode: 'plus-yearly' });
+    });
+
+    it('serializes a checkout session with the plan code and both return urls', () => {
+      membershipClient.createCheckoutSession.mockReturnValue(of(null));
+
+      facade.createCheckoutSession(
+        'plus-monthly',
+        'https://app.test/success',
+        'https://app.test/cancel',
+      );
+
+      const command: CreateMembershipCheckoutSessionCommand =
+        membershipClient.createCheckoutSession.mock.calls[0][0];
+      expect(command).toBeInstanceOf(CreateMembershipCheckoutSessionCommand);
+      expect(command.toJSON()).toEqual({
+        planCode: 'plus-monthly',
+        successUrl: 'https://app.test/success',
+        cancelUrl: 'https://app.test/cancel',
+      });
+    });
   });
 });

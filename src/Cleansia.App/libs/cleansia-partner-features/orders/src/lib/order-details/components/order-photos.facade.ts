@@ -40,15 +40,12 @@ export class OrderPhotosFacade extends UnsubscribeControlDirective {
 
     this.saving.set(true);
 
-    const photosToSave = buildPhotosToSave(staged);
+    const command = new SaveOrderPhotosCommand();
+    command.orderId = orderId;
+    command.photos = buildPhotosToSave(staged);
 
     this.partnerClient.orderClient
-      .savePhotos(
-        new SaveOrderPhotosCommand({
-          orderId,
-          photos: photosToSave,
-        })
-      )
+      .savePhotos(command)
       .pipe(
         takeUntil(this.destroyed$),
         tap(() => {

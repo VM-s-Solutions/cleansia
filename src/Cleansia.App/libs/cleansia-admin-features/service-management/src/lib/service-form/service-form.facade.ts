@@ -117,22 +117,21 @@ export class ServiceFormFacade extends UnsubscribeControlDirective {
     const translations: { [key: string]: CreateServiceTranslationInput } = {};
     for (const [lang, trans] of Object.entries(data.translations)) {
       if (trans.name || trans.description) {
-        translations[lang] = new CreateServiceTranslationInput({
-          name: trans.name,
-          description: trans.description,
-        });
+        const translation = new CreateServiceTranslationInput();
+        translation.name = trans.name;
+        translation.description = trans.description;
+        translations[lang] = translation;
       }
     }
 
-    const command = new CreateServiceCommand({
-      name: data.name,
-      description: data.description,
-      basePrice: data.basePrice,
-      perRoomPrice: data.perRoomPrice,
-      estimatedTime: data.estimatedTime,
-      translations,
-      categoryId: data.categoryId,
-    });
+    const command = new CreateServiceCommand();
+    command.name = data.name;
+    command.description = data.description;
+    command.basePrice = data.basePrice;
+    command.perRoomPrice = data.perRoomPrice;
+    command.estimatedTime = data.estimatedTime;
+    command.translations = translations;
+    command.categoryId = data.categoryId;
 
     this.adminClient.adminServiceClient
       .create(command)
@@ -157,23 +156,22 @@ export class ServiceFormFacade extends UnsubscribeControlDirective {
     const translations: { [key: string]: CreateServiceTranslationInput } = {};
     for (const [lang, trans] of Object.entries(data.translations)) {
       if (trans.name || trans.description) {
-        translations[lang] = new CreateServiceTranslationInput({
-          name: trans.name,
-          description: trans.description,
-        });
+        const translation = new CreateServiceTranslationInput();
+        translation.name = trans.name;
+        translation.description = trans.description;
+        translations[lang] = translation;
       }
     }
 
-    const command = new UpdateServiceCommand({
-      serviceId,
-      name: data.name,
-      description: data.description,
-      basePrice: data.basePrice,
-      perRoomPrice: data.perRoomPrice,
-      estimatedTime: data.estimatedTime,
-      translations,
-      categoryId: data.categoryId,
-    });
+    const command = new UpdateServiceCommand();
+    command.serviceId = serviceId;
+    command.name = data.name;
+    command.description = data.description;
+    command.basePrice = data.basePrice;
+    command.perRoomPrice = data.perRoomPrice;
+    command.estimatedTime = data.estimatedTime;
+    command.translations = translations;
+    command.categoryId = data.categoryId;
 
     this.adminClient.adminServiceClient
       .update(serviceId, command)

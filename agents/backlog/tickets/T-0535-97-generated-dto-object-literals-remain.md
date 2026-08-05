@@ -94,6 +94,85 @@ the number in the log is the number the rule sees.
 ## Status log
 - 2026-08-04 — created `ready` by pm during the sprint-15 reconciliation. Passes DoR: AC observable,
   sized `M` with an explicit stop-if-`L` instruction, no dependencies, no manual steps, archetype named.
+- 2026-08-05 — **first pass landed: 97 → 46.** Counted with the ticket's own command against the
+  working tree (`libs/` + `apps/`, generated clients excluded):
+  `grep -rE "new [A-Za-z0-9_]*(Command|Request|Dto|Query)\(\{" <scope> --include="*.ts" | wc -l`.
+
+  | scope | before | after |
+  |---|---|---|
+  | `libs/cleansia-partner-features` | 14 | **0** |
+  | `libs/cleansia-customer-features` | 17 | **0** |
+  | `libs/cleansia-admin-features` | 66 | **46** |
+  | `libs/core`, `libs/data-access`, `libs/shared`, `apps` | 0 | 0 |
+  | **total** | **97** | **46** |
+
+  (The customer scope measured 17, not the quoted 18 — counting method, not drift; partner measured
+  14 and admin 66, so the population at HEAD was 97.)
+
+  **AC1 — 26 scopes joined the opt-in list**, which is the deliverable. The unit is a lint scope, and
+  each `libs/cleansia-*-features/<lib>` owns its own `eslint.config.mjs`, so a converted lib opts in
+  alone: all 8 partner libs with local configs spread `generatedDtoLiteralRules()`; the partner
+  `dashboard` (no local config) and **all** customer feature libs are covered by workspace-relative
+  globs in `src/Cleansia.App/eslint.config.mjs` — the `order-wizard` glob widened to
+  `libs/cleansia-customer-features/**/*.ts`. **17 of 26 admin libs** opted in: 11 converted here
+  (`admin-profile`, `admin-user-management`, `currency-management`, `language-management`, `marketing`,
+  `loyalty-promo-codes`, `loyalty-referrals`, `loyalty-user-detail`, `package-management`,
+  `pay-config-management`, `service-management`) and 6 that were already at zero and were simply never
+  opted in (`admin-login`, `audit-log`, `data-protection`, `fiscal-failures`,
+  `membership-plan-management`, `reports`).
+
+  **AC4 — no scope removed, rule text unchanged.**
+
+  **AC2 — coverage, and the call sites that had none.** Every converted site got a `.toJSON()` body
+  assertion **before** the conversion. Six facades were converted with **zero prior test coverage**
+  and were red-first covered by new spec files: partner `order-photos.facade` and
+  `profile-documents.facade`, partner `forgot-password.facade` (only a models spec existed), customer
+  `gdpr.facade`, customer `order-detail.facade` and `track-order.facade`. Four admin libs had a spec
+  for a *sibling* facade but none for the one holding the literals, and got new specs:
+  `currency-form`, `language-form`, `promo-code-form`, `service-form`. Everywhere else the existing
+  per-field assertions were upgraded to whole-body `toEqual(command.toJSON())` — a per-field check
+  passes when a *different* field is dropped, so it is not a guard.
+
+  **Two infrastructure defects found on the way, both blocking coverage rather than caused by it:**
+  1. **Six customer libs cannot run Jest at all.** `libs/cleansia-customer-features/{checkout, gdpr,
+     home, legal-pages, orders, services-catalog}/tsconfig.json` extend
+     `../../../../tsconfig.base.json` — one level too many, resolving to `src/tsconfig.base.json`.
+     Any spec in them dies with `TS5083`; with no spec they report "No tests found, exiting with code
+     0", i.e. **a green test target that has never compiled a test**. Fixed in `gdpr` and `orders`
+     because this ticket needed coverage there; **`checkout`, `home`, `legal-pages` and
+     `services-catalog` are still broken** and should be filed (same one-token fix, plus
+     `legal-pages` has no `test` target at all).
+  2. `partner-stores` still has no `test` target (already known — T-0463).
+
+  **Gate 8.** `npm run typecheck` OK (3/3). All three production builds exit 0. Jest green on every
+  touched project. `nx run-many -t lint --all`: **24 failing projects before and 24 after, and the
+  two failing sets are byte-identical** (diff empty); zero `no-restricted-syntax` violations
+  anywhere; per-project problem counts unchanged on every lib touched.
+
+  **Mutation-proved, three ways, all restored byte-exact (sha256-verified):**
+  - *the rule fires in the newly opted-in scopes* — reintroducing `new GrantConsentCommand({
+    consentType })` in partner `gdpr.facade.ts` and `new SubmitOrderReviewCommand({ … })` in customer
+    `order-detail.facade.ts` each produced the ADR-0031 `no-restricted-syntax` error;
+  - *a conversion drops a field* — deleting `command.description = result.description;` from partner
+    `order-details.facade.ts` turned **1 test red**, named `OrderDetailsFacade › command bodies on
+    the wire › serializes a reported issue with the order id and the description` (1 failed / 0 after
+    restore);
+  - *the key-parity guard* — deleting `command.tierUpgrade = values.tierUpgrade;` from customer
+    `notification-preferences.models.ts` turned **2 tests red**, including `… › serializes every
+    rendered category, and only those`.
+
+  **What remains — 46 literals in 9 admin libs, none of which can opt in yet:**
+  `employee-management` 10 · `invoice-management` 8 · `template-management` 5 · `order-management` 5 ·
+  `country-management` 5 · `pay-periods` 4 · `loyalty-tier-configs` 3 · `disputes-management` 3 ·
+  `company-management` 3. Three of those (`template-management`, `country-management`,
+  `company-management` — 13 literals) have **no spec files at all**, so each needs its command bodies
+  pinned from scratch first; that is the next instance's largest cost, not the conversion.
+
+  **Out of the rule's reach but the identical hazard** (the selector matches
+  `(Command|Request|Dto|Query)$` only): `SaveOrderPhotosPhotoToSave`, `SaveMyDocumentsDocumentToSave`
+  and `CreateServiceTranslationInput` were converted opportunistically in files already being
+  touched. Widening the selector is an **Architect call** — a broader regex starts matching
+  hand-written classes — and is not attempted here.
 
 ## Review
 <!-- reviewer writes the verdict here; PM reconciles before advancing state -->

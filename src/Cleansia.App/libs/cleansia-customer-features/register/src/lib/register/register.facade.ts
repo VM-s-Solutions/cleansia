@@ -60,13 +60,13 @@ export class RegisterFacade extends UnsubscribeControlDirective {
       return { kind: 'idle' };
     }
     this.referralState.set({ kind: 'validating' });
+
+    const query = new ValidateReferralQuery();
+    query.code = normalized;
+
     try {
       const resp = await firstValueFrom(
-        this.customerClient.referralClient.validate(
-          new ValidateReferralQuery({
-            code: normalized,
-          }),
-        ),
+        this.customerClient.referralClient.validate(query),
       );
       const newState: ReferralUiState = resp.isValid
         ? { kind: 'valid', referrerFirstName: resp.referrerFirstName ?? null }

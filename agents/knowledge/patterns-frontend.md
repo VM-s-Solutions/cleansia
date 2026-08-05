@@ -468,8 +468,41 @@ count is zero, and it is added by spreading `generatedDtoLiteralRules()` into th
 `eslint.config.mjs` (flat-config `files` globs resolve against the loaded config's directory, so a
 per-lib config passes no argument) or, for a lib with no local config, by adding a workspace-relative
 glob to the call in `src/Cleansia.App/eslint.config.mjs`. Cleared so far: all of `libs/core`,
-`libs/data-access`, and `libs/cleansia-customer-features/order-wizard`. **Never delete a scope from
-that list to make a new literal compile** — convert the call site instead.
+`libs/data-access`, **all of `libs/cleansia-customer-features`, all of `libs/cleansia-partner-features`,
+and 17 of the 26 `libs/cleansia-admin-features`**. **Never delete a scope from that list to make a new
+literal compile** — convert the call site instead.
+
+**The unit of progress is a lint scope, not a file.** Each `libs/cleansia-*-features/<lib>` owns its
+`eslint.config.mjs` and is therefore its own scope, so a converted lib opts in on its own; the customer
+feature libs have no local configs and are covered by one workspace-relative glob. A half-converted lib
+earns nothing, so take libs whole and say which remain.
+
+**Pin the wire body BEFORE you convert, with `.toJSON()`, not property-by-property.** Every generated
+member is declared `field!: T`, so a dropped assignment type-checks and no build catches it — the
+conversion is only safe if a test already asserts the *serialized* body:
+
+```ts
+const command: TakeOrderCommand = orderClient.takeOrder.mock.calls[0][0];
+expect(command).toBeInstanceOf(TakeOrderCommand);
+expect(command.toJSON()).toEqual({ orderId: ORDER_ID });
+```
+
+`toEqual` on the whole object is what makes it a guard: a per-field `expect(command.orderId).toBe(…)`
+passes happily when a *different* field is dropped. Write the test first, watch it pass against the
+literal, convert, watch it pass again — then mutation-prove by deleting one assignment. Two details
+that bite: `toJSON()` emits a `Date` as the serializer's own string (`'1990-05-15'` for a date-only
+member, ISO for a date-time), and an unset optional appears as a present key with value `undefined`,
+so assert `body.phoneNumber` is `undefined` rather than `not.toHaveProperty`.
+
+Where a command is built from a whole form, put a `buildXxxCommand(data)` factory in the feature's
+`*.models.ts` and call it from the component/facade — the assignments become unit-testable without a
+TestBed, and the component stops holding construction logic.
+
+**The selector's suffix set is narrower than the hazard.** It matches
+`(Command|Request|Dto|Query)$` only, so `new SaveOrderPhotosPhotoToSave({…})`,
+`new SaveMyDocumentsDocumentToSave({…})` and `new CreateServiceTranslationInput({…})` are the *same*
+regen-fragile literal and the rule is silent on them. Convert them when you are in the file anyway;
+widening the selector is an Architect call (a broader regex risks matching hand-written classes).
 
 **Removal is the same rule, mirrored.** When the backend *drops* a field, a literal stops compiling
 against the still-stale client (`TS2345`, "property X is missing") — construct-then-assign simply

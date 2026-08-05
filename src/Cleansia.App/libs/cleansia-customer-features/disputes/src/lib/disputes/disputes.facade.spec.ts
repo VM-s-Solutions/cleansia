@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import {
+  AddDisputeMessageCommand,
+  CreateDisputeCommand,
   CustomerClient,
   DisputeDetails,
   DisputeListItem,
@@ -258,10 +260,15 @@ describe('DisputesFacade', () => {
       facade.createDispute('order-1', 1, 'description text', onSuccess);
 
       expect(disputeClient.create).toHaveBeenCalledTimes(1);
+      // Every member of a generated command is optional, so a dropped assignment
+      // type-checks — pin the serialized body instead (ADR-0031).
       const command = disputeClient.create.mock.calls[0][0];
-      expect(command.orderId).toBe('order-1');
-      expect(command.reason).toBe(1);
-      expect(command.description).toBe('description text');
+      expect(command).toBeInstanceOf(CreateDisputeCommand);
+      expect(command.toJSON()).toEqual({
+        orderId: 'order-1',
+        reason: 1,
+        description: 'description text',
+      });
       expect(anySuccessSnackbarShown()).toBe(true);
       expect(onSuccess).toHaveBeenCalledTimes(1);
     });
@@ -289,9 +296,12 @@ describe('DisputesFacade', () => {
 
       expect(disputeClient.addMessage).toHaveBeenCalledTimes(1);
       const command = disputeClient.addMessage.mock.calls[0][0];
-      expect(command.disputeId).toBe('dispute-1');
-      expect(command.message).toBe('hello there');
-      expect(command.isStaffMessage).toBe(false);
+      expect(command).toBeInstanceOf(AddDisputeMessageCommand);
+      expect(command.toJSON()).toEqual({
+        disputeId: 'dispute-1',
+        message: 'hello there',
+        isStaffMessage: false,
+      });
       expect(onSuccess).toHaveBeenCalledTimes(1);
       expect(dispatchSpy).toHaveBeenCalledWith(
         loadCustomerDisputeDetail({ disputeId: 'dispute-1' })

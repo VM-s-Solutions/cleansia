@@ -129,19 +129,18 @@ export class PayConfigFormFacade extends UnsubscribeControlDirective {
   createPayConfig(data: PayConfigFormData): void {
     this.saving.set(true);
 
-    const command = new CreatePayConfigCommand({
-      employeeId: undefined,
-      serviceId: data.serviceId || undefined,
-      packageId: data.packageId || undefined,
-      basePay: data.basePay,
-      extraPerRoom: data.extraPerRoom,
-      extraPerBathroom: data.extraPerBathroom,
-      distanceRatePerKm: data.distanceRatePerKm,
-      minimumPay: data.minimumPay,
-      maximumPay: data.maximumPay,
-      currencyId: data.currencyId,
-      description: data.description || undefined,
-    });
+    const command = new CreatePayConfigCommand();
+    command.employeeId = undefined;
+    command.serviceId = data.serviceId || undefined;
+    command.packageId = data.packageId || undefined;
+    command.basePay = data.basePay;
+    command.extraPerRoom = data.extraPerRoom;
+    command.extraPerBathroom = data.extraPerBathroom;
+    command.distanceRatePerKm = data.distanceRatePerKm;
+    command.minimumPay = data.minimumPay;
+    command.maximumPay = data.maximumPay;
+    command.currencyId = data.currencyId;
+    command.description = data.description || undefined;
 
     this.adminClient.adminPayConfigClient
       .create(command)
@@ -163,16 +162,15 @@ export class PayConfigFormFacade extends UnsubscribeControlDirective {
   updatePayConfig(payConfigId: string, data: PayConfigFormData): void {
     this.saving.set(true);
 
-    const command = new UpdatePayConfigCommand({
-      payConfigId,
-      basePay: data.basePay,
-      extraPerRoom: data.extraPerRoom,
-      extraPerBathroom: data.extraPerBathroom,
-      distanceRatePerKm: data.distanceRatePerKm,
-      minimumPay: data.minimumPay,
-      maximumPay: data.maximumPay,
-      description: data.description || undefined,
-    });
+    const command = new UpdatePayConfigCommand();
+    command.payConfigId = payConfigId;
+    command.basePay = data.basePay;
+    command.extraPerRoom = data.extraPerRoom;
+    command.extraPerBathroom = data.extraPerBathroom;
+    command.distanceRatePerKm = data.distanceRatePerKm;
+    command.minimumPay = data.minimumPay;
+    command.maximumPay = data.maximumPay;
+    command.description = data.description || undefined;
 
     this.adminClient.adminPayConfigClient
       .update(payConfigId, command)

@@ -173,13 +173,12 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
     this.saving.set(true);
     this.errorKey.set(null);
 
-    const command = new CreatePackageCommand({
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      serviceIds: data.serviceIds,
-      translations: this.buildTranslations(data.translations),
-    });
+    const command = new CreatePackageCommand();
+    command.name = data.name;
+    command.description = data.description;
+    command.price = data.price;
+    command.serviceIds = data.serviceIds;
+    command.translations = this.buildTranslations(data.translations);
 
     this.adminClient.adminPackageClient
       .create(command)
@@ -209,15 +208,14 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
     this.saving.set(true);
     this.errorKey.set(null);
 
-    const command = new UpdatePackageCommand({
-      packageId,
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      serviceIds: data.serviceIds,
-      serviceWeights: this.buildServiceWeights(),
-      translations: this.buildTranslations(data.translations),
-    });
+    const command = new UpdatePackageCommand();
+    command.packageId = packageId;
+    command.name = data.name;
+    command.description = data.description;
+    command.price = data.price;
+    command.serviceIds = data.serviceIds;
+    command.serviceWeights = this.buildServiceWeights();
+    command.translations = this.buildTranslations(data.translations);
 
     this.adminClient.adminPackageClient
       .update(packageId, command)
@@ -253,10 +251,10 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
     const translations: { [key: string]: CreateServiceTranslationInput } = {};
     for (const [lang, trans] of Object.entries(source)) {
       if (trans.name || trans.description) {
-        translations[lang] = new CreateServiceTranslationInput({
-          name: trans.name,
-          description: trans.description,
-        });
+        const translation = new CreateServiceTranslationInput();
+        translation.name = trans.name;
+        translation.description = trans.description;
+        translations[lang] = translation;
       }
     }
     return translations;

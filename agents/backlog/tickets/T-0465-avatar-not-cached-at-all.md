@@ -108,6 +108,24 @@ chosen, **the security reviewer must re-gate**, because a predictable, longer-li
   codebase-wide correctness fix on every blob read path (`security_touching: true`), this is a Gate 5
   design acceptance on one. Merging them would let the accepted-limitation half ride in unexamined
   under a correctness banner.
+- 2026-08-05 — **note from frontend (T-0447 re-verification), not a state change. Cause 1 is now
+  fixed on `master` and the web client half of option A is already implemented.**
+  - **Cause 1 — done.** `BlobContainerClient.GenerateSasUri` sets `CacheControl = "private,
+    max-age=3600"` on the one mint (`b9753e85`, T-0464), and it takes no parameter, so no caller can
+    weaken it. **AC5 (`private`, never `public`) is satisfied by construction.**
+  - **Cause 2 — still true, and confirmed unfixable from the web.** `<img [src]>` is the only read
+    C2 permits and the URL *is* the browser's cache key, so a fresh `se`/`sig` per read is a fresh
+    entry. The web client mitigates it as far as it can: `ProfileFacade.applyAvatar` holds the
+    rendered URL steady while the blob name is unchanged, so **within a session** a re-read (profile
+    save, avatar change, the C1 error retry) does not re-download. **Across page loads it still
+    does.** That is exactly option **A**, and the client-side half of AC4 is therefore already
+    consistent — "cache on `fileName`, never on `blobUrl`" is right and should be reinforced.
+  - **AC1's measurement is still owed and is still the gate on choosing.** Not measurable from here.
+    What can be said cheaply for it: the avatar is one small image on one screen, and the SPA session
+    already collapses the repeats; the residual is one download per full page load per session.
+  - Dependencies: **T-0464 is `done`** (merged in `b9753e85`), so the lane
+    **T-0446 ✅ → T-0464 ✅ → T-0465** is clear and this ticket is now unblocked for the architect
+    call between A and B.
 
 ## Review
 <!-- reviewer verdict here -->

@@ -120,15 +120,14 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
     if (!this.currentUserId) return;
     this.submitting.set(true);
 
-    const command = new GrantPointsManuallyCommand({
-      userId: this.currentUserId,
-      points: input.points,
-      reason: input.reason,
-      // Client-stable idempotency key: one id per submission attempt — a
-      // network-layer retry reuses this same command (same id → server collapses the
-      // duplicate), while a fresh user click generates a new id.
-      requestId: crypto.randomUUID(),
-    });
+    const command = new GrantPointsManuallyCommand();
+    command.userId = this.currentUserId;
+    command.points = input.points;
+    command.reason = input.reason;
+    // Client-stable idempotency key: one id per submission attempt — a
+    // network-layer retry reuses this same command (same id → server collapses the
+    // duplicate), while a fresh user click generates a new id.
+    command.requestId = crypto.randomUUID();
 
     this.adminClient.adminLoyaltyClient
       .grantPoints(command)
@@ -161,13 +160,12 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
     if (!this.currentUserId) return;
     this.submitting.set(true);
 
-    const command = new RevokePointsManuallyCommand({
-      userId: this.currentUserId,
-      points: input.points,
-      reason: input.reason,
-      // Client-stable idempotency key — see grantPoints above.
-      requestId: crypto.randomUUID(),
-    });
+    const command = new RevokePointsManuallyCommand();
+    command.userId = this.currentUserId;
+    command.points = input.points;
+    command.reason = input.reason;
+    // Client-stable idempotency key — see grantPoints above.
+    command.requestId = crypto.randomUUID();
 
     this.adminClient.adminLoyaltyClient
       .revokePoints(command)

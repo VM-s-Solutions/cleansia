@@ -1,6 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { AdminClient } from '@cleansia/admin-services';
+import {
+  AdminClient,
+  CreatePackageCommand,
+  UpdatePackageCommand,
+} from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
@@ -182,5 +186,56 @@ describe('PackageFormFacade', () => {
     expect(snackbar.showError).toHaveBeenCalledWith(
       'errors.package.update_failed'
     );
+  });
+
+  // Every member of a generated command is optional, so a dropped assignment type-checks.
+  // These pin the serialized body instead (ADR-0031).
+  describe('command bodies on the wire', () => {
+    const translatedData: PackageFormData = {
+      ...formData,
+      translations: {
+        cs: { name: 'Balíček', description: 'Popis' },
+        en: { name: '', description: '' },
+      },
+    };
+
+    it('serializes a create with the price, the services and only the filled translations', () => {
+      createMock.mockReturnValue(of({ id: 'pkg-1' }));
+
+      facade.createPackage(translatedData);
+
+      const command: CreatePackageCommand = createMock.mock.calls[0][0];
+      expect(command).toBeInstanceOf(CreatePackageCommand);
+      expect(command.toJSON()).toEqual({
+        name: 'Move-out bundle',
+        description: 'desc',
+        price: 100,
+        serviceIds: ['svc-a', 'svc-b'],
+        translations: { cs: { name: 'Balíček', description: 'Popis' } },
+      });
+    });
+
+    it('serializes an update with the package id and the per-service weights', () => {
+      updateMock.mockReturnValue(of({ id: 'pkg-1' }));
+      facade.syncWeightRows([
+        { id: 'svc-a', name: 'A' },
+        { id: 'svc-b', name: 'B' },
+      ]);
+      facade.setWeight('svc-a', 3);
+
+      facade.updatePackage('pkg-1', formData);
+
+      const command: UpdatePackageCommand = updateMock.mock.calls[0][1];
+      expect(command).toBeInstanceOf(UpdatePackageCommand);
+      expect(command.toJSON()).toEqual({
+        packageId: 'pkg-1',
+        name: 'Move-out bundle',
+        description: 'desc',
+        price: 100,
+        serviceIds: ['svc-a', 'svc-b'],
+        serviceWeights: { 'svc-a': 3, 'svc-b': 1 },
+        translations: {},
+      });
+    });
   });
 });

@@ -123,9 +123,9 @@ export class MembershipFacade extends UnsubscribeControlDirective {
    */
   swapPlan(planCode: string): void {
     this.switching.set(true);
-    const command = new SwapMembershipPlanCommand({
-      newPlanCode: planCode,
-    });
+    const command = new SwapMembershipPlanCommand();
+    command.newPlanCode = planCode;
+
     this.client
       .swapPlan(command)
       .pipe(takeUntil(this.destroyed$))
@@ -155,11 +155,10 @@ export class MembershipFacade extends UnsubscribeControlDirective {
     if (this.submitting()) return;
     this.submitting.set(true);
 
-    const command = new CreateMembershipCheckoutSessionCommand({
-      planCode,
-      successUrl,
-      cancelUrl,
-    });
+    const command = new CreateMembershipCheckoutSessionCommand();
+    command.planCode = planCode;
+    command.successUrl = successUrl;
+    command.cancelUrl = cancelUrl;
 
     this.client
       .createCheckoutSession(command)

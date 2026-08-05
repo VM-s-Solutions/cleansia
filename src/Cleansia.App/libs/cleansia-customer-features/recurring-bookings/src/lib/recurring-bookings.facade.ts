@@ -272,10 +272,9 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     if (!template.id || this.mutatingId()) return;
     this.mutatingId.set(template.id);
     try {
-      const command = new SetRecurringBookingActiveCommand({
-        templateId: template.id,
-        isActive: !template.isActive,
-      });
+      const command = new SetRecurringBookingActiveCommand();
+      command.templateId = template.id;
+      command.isActive = !template.isActive;
       await firstValueFrom(this.client.setActive(command).pipe(takeUntil(this.destroyed$)));
       // Optimistic flip — saves a refresh round trip.
       this.templates.update((list) =>
@@ -296,9 +295,8 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     if (this.mutatingId()) return;
     this.mutatingId.set(templateId);
     try {
-      const command = new DeleteRecurringBookingCommand({
-        templateId,
-      });
+      const command = new DeleteRecurringBookingCommand();
+      command.templateId = templateId;
       await firstValueFrom(this.client.delete(command).pipe(takeUntil(this.destroyed$)));
       this.templates.update((list) => list.filter((t) => t.id !== templateId));
       this.snackbar.showSuccess(this.translate.instant('recurring_booking.delete_success'));

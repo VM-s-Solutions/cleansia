@@ -2,6 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import {
   OrderStatus,
   PartnerClient,
+  StartOrderCommand,
+  TakeOrderCommand,
   TakeOrderResponse,
 } from '@cleansia/partner-services';
 import * as OrderActions from '@cleansia/partner-stores';
@@ -178,6 +180,34 @@ describe('OrdersFacade — take order', () => {
       facade.loadAvailableOrders();
 
       expect(availableStatuses()).not.toContain(OrderStatus.Pending);
+    });
+  });
+
+  // Every member of a generated command is optional, so a dropped assignment type-checks.
+  // These pin the serialized body instead (ADR-0031).
+  describe('command bodies on the wire', () => {
+    it('serializes a take with the order id', () => {
+      const facade = createFacade();
+      orderClient.takeOrder.mockReturnValue(
+        of(TakeOrderResponse.fromJS({ orderId: ORDER_ID, employeeId: EMPLOYEE_ID }))
+      );
+
+      facade.takeOrder(ORDER_ID);
+
+      const command: TakeOrderCommand = orderClient.takeOrder.mock.calls[0][0];
+      expect(command).toBeInstanceOf(TakeOrderCommand);
+      expect(command.toJSON()).toEqual({ orderId: ORDER_ID });
+    });
+
+    it('serializes a start with the order id', () => {
+      const facade = createFacade();
+      orderClient.startOrder.mockReturnValue(of({}));
+
+      facade.startOrder(ORDER_ID);
+
+      const command: StartOrderCommand = orderClient.startOrder.mock.calls[0][0];
+      expect(command).toBeInstanceOf(StartOrderCommand);
+      expect(command.toJSON()).toEqual({ orderId: ORDER_ID });
     });
   });
 });

@@ -97,7 +97,9 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
     if (!referralId || !trimmed || this.intervening()) return;
 
     this.intervening.set(true);
-    const command = new ReverseReferralCommand({ referralId, reason: trimmed });
+    const command = new ReverseReferralCommand();
+    command.referralId = referralId;
+    command.reason = trimmed;
 
     this.adminClient.adminReferralClient
       .reverse(referralId, command)
@@ -133,10 +135,9 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
     if (!referralId || !trimmed || this.intervening()) return;
 
     this.intervening.set(true);
-    const command = new ForceQualifyReferralCommand({
-      referralId,
-      reason: trimmed,
-    });
+    const command = new ForceQualifyReferralCommand();
+    command.referralId = referralId;
+    command.reason = trimmed;
 
     this.adminClient.adminReferralClient
       .forceQualify(referralId, command)

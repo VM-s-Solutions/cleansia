@@ -2,8 +2,10 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   CustomerClient,
+  DeleteRecurringBookingCommand,
   RecurringBookingTemplateDto,
   SavedAddressDto,
+  SetRecurringBookingActiveCommand,
 } from '@cleansia/customer-services';
 import {
   SavedAddressStore,
@@ -230,5 +232,31 @@ describe('RecurringBookingsFacade', () => {
     store.refreshState();
 
     expect(facade.services().length).toBe(1);
+  });
+
+  // Every member of a generated command is optional, so a dropped assignment type-checks.
+  // These pin the serialized body instead (ADR-0031).
+  describe('command bodies on the wire', () => {
+    it('serializes a toggle with the template id and the flipped flag', async () => {
+      facade.templates.set([template({ id: 't1', isActive: true })]);
+
+      await facade.toggleActive(template({ id: 't1', isActive: true }));
+
+      const command: SetRecurringBookingActiveCommand =
+        client.setActive.mock.calls[0][0];
+      expect(command).toBeInstanceOf(SetRecurringBookingActiveCommand);
+      expect(command.toJSON()).toEqual({ templateId: 't1', isActive: false });
+    });
+
+    it('serializes a delete with the template id', async () => {
+      facade.templates.set([template({ id: 't1' })]);
+
+      await facade.deleteTemplate('t1');
+
+      const command: DeleteRecurringBookingCommand =
+        client.delete.mock.calls[0][0];
+      expect(command).toBeInstanceOf(DeleteRecurringBookingCommand);
+      expect(command.toJSON()).toEqual({ templateId: 't1' });
+    });
   });
 });

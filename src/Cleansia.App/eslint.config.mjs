@@ -12,7 +12,8 @@ export default [
   ...generatedDtoLiteralRules([
     'libs/core/customer-services/**/*.ts',
     'libs/data-access/**/*.ts',
-    'libs/cleansia-customer-features/order-wizard/**/*.ts',
+    'libs/cleansia-customer-features/**/*.ts',
+    'libs/cleansia-partner-features/dashboard/**/*.ts',
   ]),
   ...moduleBoundariesRules(),
   {

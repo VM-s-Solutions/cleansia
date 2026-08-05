@@ -61,7 +61,7 @@ jobs:
       # Runs FIRST and unconditionally. T-0537 AC1 states the acceptance test behaviourally —
       # "temporarily rename one project.json, show the failure, restore" — so the self-test performs
       # exactly that, plus AC3's empty-corpus cases, against throwaway fixture trees. Stub the checker
-      # to exit 0 and this step goes red on 23 of its 24 scenarios: the guard cannot rot into
+      # to exit 0 and this step goes red on 25 of its 26 scenarios: the guard cannot rot into
       # scaffolding.
       - name: Registration guard self-test
         run: node agents/tools/check-nx-project-registration.test.mjs

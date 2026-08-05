@@ -92,21 +92,17 @@ const SOURCE_EXT = [".ts", ".tsx", ".html", ".scss", ".css"];
 // change that closes it. Nothing here is ever printed as "OK": the summary always states the count.
 //
 // They exist because `agents/process/enforcement.md` forbids making a check blocking while its
-// baseline is non-zero — "add enforcement behind the cleanup, never in front of it". These two rules
-// have a non-zero baseline; the other three have a baseline of zero and gate strictly.
+// baseline is non-zero — "add enforcement behind the cleanup, never in front of it". BOTH are now
+// EMPTY: T-0554 deleted the three dangling aliases and T-0555 deleted the orphan tree, so all five
+// rules gate strictly. The machinery stays for the next gap that has to ship behind its own cleanup —
+// record it here, then delete the entry in the same change that closes it.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** `tsconfig.base.json` aliases whose target file does not exist. Reported to the PM by T-0537. */
-const KNOWN_DANGLING_ALIASES = {
-    "@cleansia.app/order-details": "cleansia-partner-features/order-details/src/index.ts",
-    "@cleansia/cleansia-services": "libs/cleansia-services/src/index.ts",
-    "@cleansia/stores": "libs/data-access/stores/src/index.ts",
-};
+/** `tsconfig.base.json` aliases whose target file does not exist. Emptied by T-0554. */
+const KNOWN_DANGLING_ALIASES = {};
 
-/** Source trees under `libs/` with no project root anywhere beneath them. Reported by T-0537. */
-const KNOWN_ORPHAN_SOURCE_ROOTS = {
-    "libs/cleansia": "orphaned generator scaffold — no index.ts, no project.json, no alias",
-};
+/** Source trees under `libs/` with no project root anywhere beneath them. Emptied by T-0555. */
+const KNOWN_ORPHAN_SOURCE_ROOTS = {};
 
 // ── plumbing ────────────────────────────────────────────────────────────────
 const findings = []; // hard: sets the exit code

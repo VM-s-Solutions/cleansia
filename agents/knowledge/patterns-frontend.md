@@ -583,6 +583,24 @@ than a pass — **T1-CI** (`.github/workflows/nx-project-registration.yml`, its 
 `frontend-ci`'s lint step is `continue-on-error: true`, and `nx affected` can never select a project
 that does not exist). Tags are asserted by **presence**; the vocabulary is T-0534's.
 
+Both of its recorded sets are **empty** since T-0554/T-0555, so all five of its rules gate strictly:
+the first dangling alias or unregistered source tree you add is red. A recorded set was never a
+suppression list — it is exact-match in **both** directions, so closing a recorded gap means deleting
+its entry in the **same** change, and the self-test covers that ratchet by injecting entries into a
+throwaway copy of the checker rather than by giving the shipped tool a suppression flag.
+
+**A dangling `tsconfig.base.json` alias is deleted, not repointed — decide per alias, by grep.** An
+alias with live importers and a typo'd path is a *repair*; an alias with **zero** importers whose lib
+is gone is a *deletion*, and getting that backwards breaks the build. All three that shipped
+(`@cleansia.app/order-details`, `@cleansia/cleansia-services`, `@cleansia/stores`) were predecessors
+of aliases later split per app and left behind by the split. Do not repoint a zero-importer alias at
+the nearest surviving code even when something plausible is next door: `@cleansia.app/order-details`'s
+code is a *folder inside* `libs/cleansia-partner-features/orders`, already reachable through that
+lib's barrel, so repointing would have declared a second entry point into one lib's internals — a deep
+import that `@nx/enforce-module-boundaries` exists to refuse. Leaving one declared is not free either:
+the editor offers the completion, the import resolves in `tsconfig` terms, and the failure surfaces as
+a confusing build error attributed to whoever wrote the import.
+
 Two shapes of report the rule folds together, worth knowing before you read a red run: **when an import
 is both a cycle and a scope break, only the cycle is printed.** `libs/shared/pipes`' three
 `order-status/*.pipe.ts` files imported `@cleansia/partner-services` — a real `scope:shared →

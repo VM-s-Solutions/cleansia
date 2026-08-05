@@ -1,7 +1,7 @@
 ---
 id: T-0555
 title: `libs/cleansia` is invisible to Nx — and it is not a generator scaffold, it is a superseded copy of the live landing page
-status: ready
+status: done
 size: XS
 owner: frontend
 created: 2026-08-05
@@ -125,6 +125,42 @@ that routes it to a decision if any premise fails.
   during filing**: the tree is a superseded copy of the live landing page and has ten unresolved
   imports. That correction is what makes deletion the safe disposition rather than a guess, and AC3
   requires the stale description to leave the guard with the entry.
+- 2026-08-05 — implemented by frontend. The three files deleted (`git status` shows exactly three `D`
+  entries under `libs/`, no sibling touched); `KNOWN_ORPHAN_SOURCE_ROOTS` emptied in the same change.
+  **AC2, all three premises re-verified at HEAD before deleting:**
+  - **(a) Zero importers.** `lib/cleansia/cleansia`, `CleansiaComponent`, `libs/cleansia/`,
+    `cleansia.html`, `cleansia.scss` → no hit anywhere in `apps/`+`libs/` outside the tree itself;
+    `cleansia-home` matches only `home.component.ts:31`, the **live** component's selector (so
+    registering the orphan would have duplicated a shipped selector). No `project.json`, `tsconfig`,
+    route or app config references it. The single config-level mention is
+    `src/Cleansia.App/graph.json` — a **stale committed Nx graph dump** from `2e37a799` (30 nodes vs.
+    71 projects today) that **nothing reads** (grep for `graph.json` across the workspace: no
+    consumer). It records the tree as it was *before* `d7ade53b`, and is not a live reference.
+  - **(b) It could not have been building.** The tree is exactly three files; all ten
+    `./components/{floating-bg,hero,features,process,benefits,services,gallery,testimonials,faq,cta}/…`
+    imports resolve to nothing under `libs/cleansia/`. `d7ade53b` deleted its `project.json`,
+    `jest.config.ts`, `src/index.ts`, tsconfigs, eslint config, README and spec and left these three.
+  - **(c) The successor is registered and routed.** `libs/cleansia-customer-features/home` has
+    `project.json` (`cleansia-customer-home`, tags `scope:customer` + `type:feature`), the barrel
+    exporting `lib.routes` + `HomeComponent`, the alias `@cleansia-customer/home`, and is routed at
+    `apps/cleansia.app/src/app/app.routes.ts:13`.
+
+  **Nothing in the dead copy is newer or better** (checked, since deleting a merge would be wrong):
+  `home.component.ts` is strictly ahead — `OnPush`, `CleansiaScrollTopComponent`, `TranslatePipe`, and
+  the SSR above-the-fold fix in `observeAll()` (`:not(.anim-pending)` + viewport test) that the orphan
+  lacks; `2b9164c0`'s scroll-animation fix was applied to **both** copies, so the orphan is not ahead
+  even there. `cleansia.html` is behind by `<cleansia-scroll-top>` and still renders the dropped
+  `<cleansia-floating-bg />`. `cleansia.scss` is a two-line comment pointing at
+  `libs/shared/assets/src/styles/pages/cleansia-customer/`, which exists and is untouched (including
+  `_home-floating-bg.scss`) — and neither component declares `styleUrls`, so it was dead inside the
+  dead tree.
+
+  Evidence: guard `0 violation(s), 0 known` exit 0; self-test all scenarios pass exit 0;
+  `npx nx show projects` 71 before / 71 after, list byte-identical (the orphan was never a project —
+  the point of the ticket); `npm run build:cleansia-customer` (`nx build cleansia.app --configuration=production
+  --skip-nx-cache`) exit 0. Mutation-proved: re-creating a source file under `libs/cleansia` →
+  `NX-5 NEW orphan source under libs/`, exit 1; restoring the recorded entry after the deletion →
+  `NX-5 STALE RECORD … delete its entry`, exit 1.
 
 ## Review
 <!-- reviewer verdict here; PM reconciles before advancing state -->

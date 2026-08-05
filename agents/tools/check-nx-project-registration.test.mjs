@@ -9,9 +9,13 @@
  *
  * It never touches the working tree. Each scenario builds a throwaway workspace with the same SHAPE
  * as the real one (libs with barrels + project.json, the app roster, a tsconfig alias map) and
- * mutates exactly one thing. The fixture deliberately reproduces the checker's recorded sets — the
- * three dangling aliases and the one orphan source root — so the exact-match ratchet is exercised
- * against its real recorded values rather than against injected stand-ins.
+ * mutates exactly one thing.
+ *
+ * The recorded sets ship EMPTY (T-0554 and T-0555 closed the two gaps T-0537 found), so the
+ * exact-match ratchet has no live subject of its own. The scenarios that exercise it therefore run a
+ * throwaway COPY of the checker with entries injected — `checkerWithRecorded` below. That keeps the
+ * ratchet covered in BOTH directions without the shipped tool growing a pass-me-a-suppression flag,
+ * which is the one thing a recorded set must never become.
  *
  * The AC3 scenarios are the point of the file: a corpus that has gone EMPTY must be RED. A guard
  * that goes green because it looked at nothing is the failure this ticket exists to prevent.
@@ -36,13 +40,10 @@ const LIBS = [
 
 const APPS = ["cleansia.app", "cleansia-partner.app", "cleansia-admin.app"];
 
-/** The checker's recorded sets, reproduced so the exact-match ratchet has its real subject. */
-const RECORDED_DANGLING = {
-    "@cleansia.app/order-details": "cleansia-partner-features/order-details/src/index.ts",
-    "@cleansia/cleansia-services": "libs/cleansia-services/src/index.ts",
-    "@cleansia/stores": "libs/data-access/stores/src/index.ts",
-};
-const RECORDED_ORPHAN = "libs/cleansia/src/lib/cleansia/cleansia.ts";
+/** The stand-ins the ratchet scenarios inject; no alias or tree in the real workspace is recorded. */
+const GHOST_ALIAS = "@cleansia/ghost";
+const GHOST_TARGET = "libs/ghost/src/index.ts";
+const SCRATCH_ROOT = "libs/scratch";
 
 const write = (root, p, body) => {
     const abs = join(root, p);
@@ -72,10 +73,7 @@ function freshRoot() {
         });
         paths[alias] = [`${dir}/src/index.ts`];
     }
-    for (const [alias, target] of Object.entries(RECORDED_DANGLING)) paths[alias] = [target];
     writeJson(root, `${WS}/tsconfig.base.json`, { compilerOptions: { paths } });
-
-    write(root, `${WS}/${RECORDED_ORPHAN}`, "export class Cleansia {}\n");
 
     for (const app of APPS) {
         writeJson(root, `${WS}/apps/${app}/project.json`, {
@@ -87,14 +85,38 @@ function freshRoot() {
     return root;
 }
 
-const run = (root) => spawnSync(process.execPath, [TOOL, `--root=${root}`], { encoding: "utf8" });
+const run = (root, tool) => spawnSync(process.execPath, [tool, `--root=${root}`], { encoding: "utf8" });
+
+const CHECKER_SOURCE = readFileSync(TOOL, "utf8");
+
+/**
+ * A copy of the checker with recorded entries injected, so the both-directions ratchet keeps its
+ * coverage now that both real sets are empty. The declaration must still be the empty literal — if it
+ * is not, the injection point moved and this throws rather than silently testing the shipped tool.
+ */
+function checkerWithRecorded(root, recorded) {
+    let source = CHECKER_SOURCE;
+    for (const [name, value] of Object.entries(recorded)) {
+        const declaration = `const ${name} = {};`;
+        if (!source.includes(declaration)) {
+            throw new Error(
+                `cannot inject ${name}: '${declaration}' is not in check-nx-project-registration.mjs — ` +
+                    "the recorded set was renamed or is no longer empty; fix this self-test.",
+            );
+        }
+        source = source.replace(declaration, `const ${name} = ${JSON.stringify(value)};`);
+    }
+    const copy = join(root, "checker-with-recorded.mjs");
+    writeFileSync(copy, source);
+    return copy;
+}
 
 let failed = 0;
-function scenario(name, { mutate, expectExit, expectText = [], rejectText = [] }) {
+function scenario(name, { mutate, tool, expectExit, expectText = [], rejectText = [] }) {
     const root = freshRoot();
     try {
         if (mutate) mutate(root);
-        const r = run(root);
+        const r = run(root, tool ? tool(root) : TOOL);
         const out = `${r.stdout}${r.stderr}`;
         const okExit = r.status === expectExit;
         const okText = expectText.every((t) => out.includes(t));
@@ -121,11 +143,11 @@ console.log("check-nx-project-registration self-test (T-0537 AC1/AC3/AC4):");
 
 scenario("an unmutated workspace is clean and states what it read", {
     expectExit: 0,
-    // 6 aliases into libs/: the 4 real ones plus the 2 recorded dangling targets that are also
-    // libs/-prefixed. The count is what the tool READ, not what it approved.
+    // The count is what the tool READ, not what it approved — and with both recorded sets empty a
+    // clean fixture must report ZERO known, not a quiet pass over something it tolerated.
     expectText: [
-        "read 4 lib root(s), 4 registered project(s), 6 alias(es) into libs/, 3 rostered app(s)",
-        "0 violation(s), 4 known",
+        "read 4 lib root(s), 4 registered project(s), 4 alias(es) into libs/, 3 rostered app(s)",
+        "0 violation(s), 0 known",
     ],
 });
 
@@ -261,38 +283,57 @@ scenario("an aliased directory with no barrel and no project.json -> RED via NX-
 });
 
 // ── the exact-match ratchet, in BOTH directions ─────────────────────────────
-scenario("a FOURTH dangling alias -> RED (the recorded set is not a suppression list)", {
-    mutate: (r) => {
-        const p = `${WS}/tsconfig.base.json`;
-        const j = readJson(r, p);
-        j.compilerOptions.paths["@cleansia/ghost"] = ["libs/ghost/src/index.ts"];
-        writeJson(r, p, j);
-    },
+// Nothing is recorded any more, so the FIRST dangling alias / orphan tree is already a violation.
+// The recorded-set directions run against an injected copy (see checkerWithRecorded).
+const addGhostAlias = (r) => {
+    const p = `${WS}/tsconfig.base.json`;
+    const j = readJson(r, p);
+    j.compilerOptions.paths[GHOST_ALIAS] = [GHOST_TARGET];
+    writeJson(r, p, j);
+};
+const recordGhost = (r) =>
+    checkerWithRecorded(r, { KNOWN_DANGLING_ALIASES: { [GHOST_ALIAS]: GHOST_TARGET } });
+const recordScratch = (r) =>
+    checkerWithRecorded(r, { KNOWN_ORPHAN_SOURCE_ROOTS: { [SCRATCH_ROOT]: "recorded by a self-test" } });
+
+scenario("a dangling alias -> RED with nothing recorded (the set is not a suppression list)", {
+    mutate: addGhostAlias,
     expectExit: 1,
-    expectText: ["NX-4", "NEW dangling alias", "@cleansia/ghost"],
+    expectText: ["NX-4", "NEW dangling alias", GHOST_ALIAS],
+});
+
+scenario("a recorded dangling alias that still dangles is KNOWN, not a violation", {
+    mutate: addGhostAlias,
+    tool: recordGhost,
+    expectExit: 0,
+    expectText: ["KNOWN, exactly recorded", "NX-4", GHOST_ALIAS, "0 violation(s), 1 known"],
 });
 
 scenario("a recorded dangling alias that is FIXED -> RED until its entry is deleted", {
-    mutate: (r) => {
-        const p = `${WS}/tsconfig.base.json`;
-        const j = readJson(r, p);
-        delete j.compilerOptions.paths["@cleansia/stores"];
-        writeJson(r, p, j);
-    },
+    tool: recordGhost,
     expectExit: 1,
-    expectText: ["NX-4", "STALE RECORD", "@cleansia/stores", "delete its entry"],
+    expectText: ["NX-4", "STALE RECORD", GHOST_ALIAS, "delete its entry"],
 });
 
+const addScratchOrphan = (r) => write(r, `${WS}/${SCRATCH_ROOT}/src/lib/scratch.ts`, "export const s = 1;\n");
+
 scenario("a NEW orphan source tree under libs/ -> RED", {
-    mutate: (r) => write(r, `${WS}/libs/scratch/src/lib/scratch.ts`, "export const s = 1;\n"),
+    mutate: addScratchOrphan,
     expectExit: 1,
-    expectText: ["NX-5", "NEW orphan source under libs/", "libs/scratch"],
+    expectText: ["NX-5", "NEW orphan source under libs/", SCRATCH_ROOT],
+});
+
+scenario("a recorded orphan source tree that is still there is KNOWN, not a violation", {
+    mutate: addScratchOrphan,
+    tool: recordScratch,
+    expectExit: 0,
+    expectText: ["KNOWN, exactly recorded", "NX-5", SCRATCH_ROOT, "0 violation(s), 1 known"],
 });
 
 scenario("the recorded orphan source tree being cleaned up -> RED until its entry is deleted", {
-    mutate: (r) => rm(r, `${WS}/libs/cleansia`),
+    tool: recordScratch,
     expectExit: 1,
-    expectText: ["NX-5", "STALE RECORD", "libs/cleansia", "delete its entry"],
+    expectText: ["NX-5", "STALE RECORD", SCRATCH_ROOT, "delete its entry"],
 });
 
 // ── the app roster: the concrete floor under the corpus anchors ─────────────

@@ -1,7 +1,7 @@
 ---
 id: T-0554
 title: Three dangling `tsconfig.base.json` aliases resolve to files that do not exist — close the Nx guard's NX-4 recorded set
-status: ready
+status: done
 size: XS
 owner: frontend
 created: 2026-08-05
@@ -111,6 +111,33 @@ is the tripwire that converts it into a routed decision if any assumption fails.
   are absent, and the three aliases have zero importers outside their own declaration. Filed as its own
   ticket rather than folded into T-0537, whose guard is the *detector* and explicitly lists the sweep as
   out of scope.
+- 2026-08-05 — implemented by frontend. All three deleted from `tsconfig.base.json`;
+  `KNOWN_DANGLING_ALIASES` emptied in the same change. **AC2, argued per alias** (importers re-grepped
+  at HEAD across `apps/`+`libs/` and the whole repo — one hit each, its own declaration; targets
+  re-checked on disk):
+  - `@cleansia.app/order-details` — **delete, not repair.** `libs/cleansia-partner-features/order-details`
+    has never existed (`git log --all` on that path: no commits), so adding the missing `libs/` prefix
+    repairs nothing. The only `order-details` in the workspace is
+    `libs/cleansia-partner-features/orders/src/lib/order-details`, a folder **inside** the registered
+    `orders` lib, already reachable via `@cleansia-partner/orders` (barrel `export * from './lib/lib.routes'`,
+    imported at `apps/cleansia-partner.app/src/app/app.routes.ts:49`). Repointing would declare a second
+    entry point into one lib's internals — a deep import `@nx/enforce-module-boundaries` exists to refuse.
+  - `@cleansia/cleansia-services` — **delete.** `libs/cleansia-services` was real (last touched
+    `360c1ab4`) and is gone at HEAD, split into the per-app `@cleansia/{admin,partner,customer}-services`
+    plus shared `@cleansia/services` — all four registered with barrels. Repointing at `libs/core/services`
+    would give one lib two aliases.
+  - `@cleansia/stores` — **delete.** `libs/data-access/stores` was real (through `2e37a799`) and is gone,
+    split into `@cleansia/{admin,customer,partner}-stores` — all three registered. A repair would have to
+    *pick* one of the three, which is a module-boundary change (a shared `stores` alias lets any app
+    import any app's store), not a cleanup.
+
+  No alias turned out to have a live intended target, so the AC2 stop condition did not trigger.
+  Evidence: guard `0 violation(s), 0 known` exit 0; self-test all scenarios pass exit 0;
+  `npx nx show projects` 71 before / 71 after, list byte-identical; three production builds exit 0
+  with `--skip-nx-cache` (`nx.json` `sharedGlobals` is `[]`, so a `tsconfig.base.json` edit invalidates
+  no cache — a cached green would have been false). Mutation-proved: re-adding `@cleansia/stores` →
+  `NX-4 NEW dangling alias`, exit 1; restoring the recorded entry after the fix →
+  `NX-4 STALE RECORD … delete its entry`, exit 1.
 
 ## Review
 <!-- reviewer verdict here; PM reconciles before advancing state -->

@@ -1,7 +1,14 @@
 # ADR-NNNN (DRAFT — number NOT allocated) — What makes a catalog sentence *govern* an entry: the conflicting-instance test, and the corrected `conventions.md` edit
 
-- **Status:** `proposed` — **author's draft, not ratified.** Written to be attacked.
-- **Date:** 2026-08-05
+- **Status:** ⛔ **`rejected` as a single decision — panel closed 2026-08-05. NOT an ADR; no number
+  allocated; nothing here may be cited by a ticket.** **D1 (the conflicting-instance test) is REJECTED**
+  on a blocking defect the panel found in it (§Verdict, **V-1**: the definition is an existential and its
+  own retro table scores six of ten rows with a *compose* test — there is no single reading of D1 under
+  which its ten rows come out as recorded). **D2 is HELD** — sound, and meaningless until its currency is
+  defined. **D3 is UNBEATEN, NOT SETTLED.** **D4 / Block C′ is SUSTAINED and SEVERED** to its own round,
+  with the D1 paragraph excised. **This file stays on disk as the record of what was tried and why it
+  failed** — the next author starts from §Verdict's R-1…R-7, not from a blank page.
+- **Date:** 2026-08-05 (drafted; challenged; **ruled 2026-08-05 by an independent fifth instance**)
 - **Number:** **not allocated on purpose.** ADR-0033's independent lead pass left allocation to the PM,
   and two architects collided on 0041 this sprint by both grepping `adr/` correctly at the same moment.
   Highest on disk today is **0042**. The PM allocates when the panel closes; the file is renamed then.
@@ -621,8 +628,447 @@ the rejection of a wording-only trigger; the rejection of the topic-level readin
 
 ## Verdict
 
-*Empty — the lead instance rules here. **This author does not ratify its own draft**, which is the
-defect T-0471 exists to repair and which binds a third round exactly as it bound the first two.*
+> **Lead: a fifth instance** — did not write ADR-0033, did not run its challenger round, did not write
+> its independent lead pass, did not author this draft, did not write the challenge ruled on below.
+> `deliberation.md` §"The roles". **AC1 (T-0553) is SATISFIED on composition: author ≠ challenger ≠ lead.**
+>
+> **Method.** No `Bash` (charter limitation). The substitute is the coordinator-generated
+> **catalog-edit corpus** — every commit touching `agents/knowledge/*.md` with full diffs — which is the
+> evidence all four prior instances declared they lacked. **Every commit, hunk header and diff line cited
+> below I read in that corpus myself**; I did not take the challenger's attributions on trust, and one of
+> them is corrected against the challenger (CH-D).
+>
+> **No `## Defense` was filed** — the author round did not run before this ruling. That is recorded, not
+> smoothed over (the ADR-0032 panel has the same precedent). It changes nothing for CH-A and CH-B: a
+> defense cannot restore a sentence a diff shows deleted, nor conjure an artifact a shipped test excludes.
+> It *does* mean the author is entitled to answer the **new** finding below (V-1) in its own round.
+
+**Consensus: NOT reached. Three blocking challenges stand, and a fourth defect — worse than any of
+them — was found by this pass. D1 is REJECTED. The draft does not become an ADR as filed.**
+
+| # | Disposition | One line |
+|---|---|---|
+| **V-1** *(new, this pass)* | **BLOCKING — decisive** | D1 is an **existential** over artifacts; the retro table scores six of ten rows with a **compose** (universal) test. There is **no single reading of D1 under which its own ten rows come out as recorded.** |
+| **CH-A** | **SUSTAINED — blocking** | Row 8 falsified from the diff. The method searched the **post-edit** tree; **six** of ten rows (not four) return a negative produced that way. |
+| **CH-B** | **SUSTAINED — blocking, in a stronger form than filed** | Row 9, D1's only claimed catch, is a false positive — *and* it is the row that proves the two readings of D1 give opposite answers. |
+| **CH-C** | **SUSTAINED — blocking** | "Reach" is the subject question. Verified from the diff that placed the row-10 entry under the Android preamble. |
+| **CH-D** | **SUSTAINED IN PART; one claim corrected against the challenger** | Clustering is real (rows 3/9 = one commit, verified). *"Rows 6 and 7 are one architect sitting"* is **wrong**: two tickets, and row 7 was routed **2026-07-04**, sixteen days before it was ratified. |
+| **CH-E** | **SUSTAINED** | Verified: `2012b014`'s added paragraph names *"(the T-0473 rule)"* and `OrderDetailCardStringsTest` in one breath. Row 3 is non-historical **and** non-discriminating. |
+| **CH-F** | **SUSTAINED** (correction) | N1/N-E re-scoped to the *"every surface that draws the disc"* clause. |
+| **CH-G** | **SUSTAINED** (drafting) | Verified against `conventions.md:120-130`: today the action sits **inside** each branch; Block C′ hoists it out. |
+| **D3** | **UNBEATEN, NOT SETTLED** | Eight triggers built and killed (two by the author, six by the challenger, two more by me). Ground (a) struck as a censored-sample inference. It re-opens automatically when the corpus is rebuilt. |
+| **D4 / Block C′** | **FINDING SUSTAINED — SEVERED and carried forward; the drafted text BLOCKED** | Every fact re-verified in this tree. It does not depend on D1 and must not die with it. |
+
+---
+
+### V-1 — the finding that decides this round: **D1 and its retro-validation are not the same test**
+
+D1 states an **existential**:
+
+> *"`S` governs `E` **iff a reader can name ONE CONCRETE ARTIFACT** … such that `S` and `E` both reach
+> it, and `S`'s verdict on it **differs** from `E`'s. … **If no such artifact can be named**, `S` does not
+> govern `E`."*
+
+Its negation is universal: *every* artifact both reach is ruled the same. Exhibiting **one** artifact that
+satisfies both does not establish it. Now read how the table discharges its negatives:
+
+- **Row 1** — *"none — `UserRepositoryTest` is reached by both and **satisfies both**"*
+- **Row 3** — *"none — `OrderDetailCardStringsTest` … carries a file-scoped literal scan **and** a
+  call-site pin in one file; **they compose**"*
+
+Both answer *"∃ an artifact satisfying both"*. That is not the negation of *"∃ an artifact ruled
+differently"*; the two are compatible. **Rows 1 and 3 are scored under a test D1 does not state.** And the
+substitution is not cosmetic — it flips them:
+
+> On **row 1**, a repository test that normalizes a business-key 400 at the repository (`:167-175`
+> satisfied) *and* asserts the **app** command on the request side (T-0441's `:181-191` violated) is
+> nameable in one line. Verdicts differ ⇒ under D1 as written, `:167-175` **governs** ⇒ **Architect**.
+> **Accepted ADR-0033's retro row 2 rules that same edit `inline` and calls it a ✅ match with history.**
+
+So D1 as written contradicts an accepted ADR's own worked case, on the row this draft reproduces as
+agreeing with it. That is not thin evidence. That is a wrong predicate.
+
+**And the escape is closed on both sides.** Suppose we rescue D1 by reading "reach" narrowly — `:167-175`
+prescribes about *repository error normalization*, so it does not reach a *request-side assertion* even in
+a file it also reaches. Then rows 1 and 3 hold — and **row 9 dies**, because on the conduct the T-0448
+sentence actually summarizes, `ProfileViewModel.kt` both retries-guarded and releases, so the two
+prescriptions compose and nothing is carved. Row 9 is the draft's **only** claimed catch.
+
+| Reading of D1 | Rows 1, 3 (the negatives that agree with history) | Row 9 (the only new catch) | Cost |
+|---|---|---|---|
+| **Existential + file-scoped** (D1's literal text) | **flip to Architect** — contradicts accepted ADR-0033 | fires | C5's reductio: any summary sentence yields a differing instance |
+| **Compose + conduct-scoped** (the table's actual practice) | hold | **does not fire** | the draft's sole positive result disappears |
+
+**Ruled: this is the same defect M1 removed from the word "permitted", relocated onto the word "governs"
+— a predicate that is true and false of the same edit.** The T-0471 challenger's CH-1 killed the floor's
+first wording for exactly this ("the predicate was true and false of the same edit"). A repair that
+reproduces it one word to the right cannot be accepted.
+
+**This finding is independent of CH-A and CH-B.** It survives a perfect corpus. Even if every row had
+been derived from the pre-edit catalog and row 9's artifact existed, the ten rows would still not be
+evidence *for D1*, because they were not produced *by* D1.
+
+---
+
+### The question the panel was convened to answer: **is the definition wrong, or was only its evidence bad?**
+
+Two readings were put to me. **The first is right, and the second is refuted — but neither is quite the
+diagnosis.**
+
+**Reading 2 ("sound definition, bad evidence") is refuted by V-1.** Losing a false positive would leave a
+rule under-evidenced. Discovering that the rule, applied literally, returns *the opposite verdict* on
+rows the author scored as matches — on a row whose commit is a clean insertion with a genuinely
+predating candidate sentence, i.e. a row **CH-A's blindness does not touch** — is a refutation of the
+rule, not of its sampling. More corpus cannot fix a predicate that has two readings and needs both.
+
+**Reading 1 ("it fires on every precision-adding refinement") is correct and incomplete.** CH-B's
+mechanism is real: catalog sentences are summaries, summaries under-specify, so a refinement always has a
+nameable differing instance. But CH-B's remedy — carve out refinements — would not save D1, because
+**row 1 is not a refinement of anything.** `:167-175` and T-0441's entry are different subjects; the flip
+there comes from the quantifier and the scope of "reach", not from refinement. Excluding refinements
+would leave D1 firing on unrelated sentences that happen to share a file.
+
+**The third reading, which is the one I rule:** the failure is neither the evidence nor the refinement
+case. It is that **D1 replaced a semantic judgement with a syntactic-sounding one and did not close either
+of the two degrees of freedom it introduced** — the quantifier (∃ vs ∀) and the granularity of "reach"
+(file vs conduct). The draft's central claim over Alternative A is *"an artifact has no granularity
+problem"*. True, and irrelevant: **the artifact is not the thing being judged — the reach relation is**,
+and reach is defined as *"inside the scope `S` prescribes for"*, which is `S`'s subject with a new name.
+CH-C proved that inside the draft's own table; V-1 proves the quantifier half. Alternative A was rejected
+for relocating the indeterminacy; **D1 relocates it twice and hides it in a clause that reads like
+plumbing.**
+
+**What would have distinguished the two readings, stated so the next round does not re-derive it:** run
+the definition *as written* against the rows scored negative. If D1's literal text reproduces the table,
+the rule is sound and the corpus is thin. If it does not, the rule is wrong. I ran it. It does not.
+
+---
+
+### CH-A — SUSTAINED. And the corpus question, answered from the diffs.
+
+**Verified myself**, not taken from the challenge: `ab077504` (2026-08-04) carries **three** hunks in
+`patterns-mobile.md`. The third, `@@ -1272,9 +1315,9 @@`, deletes
+
+```diff
+-  Cancel is a modal `.sheet` previewing the fee/refund via a pure TDD'd
+-  `CancellationFeePreview` (oops≤15m/free≥24h/half 4–24h/full<4h, the `CancelOrderSheet.kt` tiers; server recomputes
+-  authoritatively).
++  Cancel is a modal `.sheet` rendering the **server's** quote … the client-side tier ladder both platforms shipped is deleted
+```
+
+The edit's **own replacement text** says the shipped ladder *"is deleted"*. Under the **accepted** floor's
+decidable disjunct — *"replaces it, or forbids a form it named"* — this fires without needing D1 at all.
+Routing in fact: `owner: qa`, `adrs: []`, harvested inline. **Row 8 is an Architect ⇄ inline divergence,
+not a ✅ match.**
+
+**I tried to break it.** The best available defense is that the deleted clause is a *Gate-DP inventory
+line* describing what the customer read cluster shipped, not a prescription — descriptive text does not
+govern. It fails three ways: (i) it **names a canonical form** (`CancellationFeePreview`) and its tier
+ladder, which is the disjunct's exact trigger; (ii) the replacement characterizes the change as a
+deletion of a shipped form, in the author's own words; (iii) T-0527 deleted `CancellationFeePreview.swift`
+and **rewrote a committed test suite that pinned the old schedule**. A sentence whose withdrawal requires
+deleting a file and rewriting its tests is not a description.
+
+**How many of the ten rows are affected — the number the brief asked for.** The challenger said four
+(rows 6, 7, 8, 10, quoting the draft's own Gate-0.5 item 5). **It is six.** Rows **1** and **3** also
+return "does not govern", and they were located by the identical grep of today's tree; the draft excluded
+them from its own list because it named a candidate sentence, which is not the same as having searched the
+right snapshot. Verified per row, from the diffs:
+
+| Row | Entry / commit | Hunk shape | Negative? | State after this pass |
+|---|---|---|---|---|
+| 1 | T-0441 · `1d85b35f` 2026-08-01 | pure insertion, one hunk | **yes** (compose) | **flips under D1's literal text** (V-1). Not falsified by CH-A; falsified by the definition |
+| 2 | T-0451 · `1c8fdd00` 2026-08-01 | pure insertion | no (positive) | **stands** — grep can only miss, never invent |
+| 3 | T-0473 · `0e4ede1b` 2026-08-01 | pure insertion | **yes** (compose) | **vacuous as history** — the candidate `:520-522` landed `2012b014` 2026-08-02, a day later (CH-E) |
+| 4 | T-0349 · `04f98937` 2026-06-30 | insertion; `:990` from `76fc48ab` 2026-06-27 | no (positive) | **stands.** The strongest row in the corpus; I did not dent it either |
+| 5 | T-0397 `.medium` · added `365fd221` 2026-07-11, ratified `f0e39d7e` 2026-07-20 | insertion + append | no (positive) | **stands** |
+| 6 | T-0397 header · added `365fd221` 2026-07-11, ratified `f0e39d7e` | **modification** of a pre-existing cell | **yes** | **unfalsified, unreliable** — see below |
+| 7 | T-0379 `format: date` · `e97b14e7` 2026-07-05 | insertion, **never touched since** | **yes** | **unfalsified, unreliable** |
+| 8 | T-0527 · `ab077504` 2026-08-04 | **insert ×2 + REPLACE** | **yes** | **FALSIFIED** |
+| 9 | T-0449 · `0e4ede1b` + `4f81dce7` 2026-08-05 | pure insertions | no (positive) | **FALSIFIED** (CH-B), and it is V-1's proof case |
+| 10 | T-0432 · `4d8b3978` 2026-07-22 | insertion under the Android preamble | **yes** | **contested** (CH-C) |
+
+**And the blindness is wider than "deletions".** `f0e39d7e`'s `@@ -313,12 +313,12 @@` shows that row 6's
+"entry" is a **modification**: the developer's cell landed 2026-07-11 (`365fd221`) and the T-0397
+ratification **appended** the fix-round-8 settle pin plus its signature. Today's tree shows only the
+merged result, so the draft read a two-party, two-date artifact as one entry. Grepping the post-edit tree
+cannot see **the pre-edit text of any modified sentence**, not merely deleted ones. That is a strictly
+larger hole than CH-A filed, and it is the hole rows 6 and 7 sit in.
+
+**A second, independent instance of CH-A's class, found in the same commit as rows 5/6/7.** `f0e39d7e`
+`@@ -342,20 +354,24 @@` **replaces the whole** *"iOS shell navigation — the ONE way (ADR-0022)"* entry,
+deleting a *"Deviations a reviewer rejects"* clause that named **"a shell bar built as a stock
+`TabView`/`.tabItem` bar"** as a rejection, and installing the opposite mandate. Invisible to any grep of
+today's tree. **I am not booking this as a mis-routing** — `T-0379-…md:94-100` shows it was an
+architect-run sweep following an *owner* supersede of ADR-0022, which is correctly routed. It is a
+**method** datum: the highest-signal instances of test 2 are exactly the ones this procedure erases.
+
+**Ruled: the corpus must be REBUILT, not repaired.** Three reasons, in order of force:
+1. **V-1** — the scoring test was not D1. Every row must be re-scored under whatever predicate replaces
+   it, so no row's verdict transfers.
+2. **CH-A** — the search step ran against the wrong snapshot. Six of ten negatives must be re-derived
+   against the catalog **as of each hunk's parent commit**.
+3. **The modified-hunk hole** — the *entry text* itself is wrong for any row whose hunk was a
+   modification. That is a change to the generating procedure, not a correction to an output.
+
+What survives verification and may be carried into the rebuild without re-derivation: **rows 2, 4, 5** as
+positives (grep's error is one-sided), and CH-D's chronologies, which I re-checked and confirm.
+
+**The pattern worth naming, because the brief asked for it.** The draft's Gate-0.5 leg 3 item 5 states
+this limitation *verbatim* — *"A sentence deleted since would not appear"* — and then the table prints
+*"10 cases run, 10 determinate"* with no discount. **Declaring a limitation is not weighting it.** This is
+now the third round in a row where a declared blind spot was allowed to stand next to an undiscounted
+headline number (T-0471's four-row table; the lead pass's two reconstructed cases; this table's ten). A
+declaration that does not move the conclusion is a disclaimer, not a method. **I am adding it to the
+repair's acceptance bar (R-6 below): a stated limitation must appear in the score, or the score is not
+reported.**
+
+---
+
+### CH-B — SUSTAINED, and enlarged into V-1's proof case
+
+The coordinator verified `ProfileViewModel.kt:179-180` (`fun onAvatarLoadSucceeded() { avatarRetriedFor =
+null }`) and `ProfileViewModelTest.kt:635` (*"a successful load restores the retry budget"*); I take those
+as established and did not re-run them. **What I add from the diffs:** `4f81dce7`'s appended text cites
+Android's method **as an existing model** — *"(`ProfileViewModel.avatarLoadSucceeded` / Android
+`onAvatarLoadSucceeded`)"* — so the entry itself asserts that nothing was withdrawn from Android. And
+`4f81dce7` is a **single hunk** that never touches `:562-565`, confirming the challenger's G2: the Android
+paragraph is a stale summary of its own shipped code, not a rule the iOS entry narrowed.
+
+**I tried to break it** with the draft's own Alternative D reasoning: the artifact *need not exist*, so a
+never-clearing VM is nameable whether or not Android shipped one, and row 9 fires regardless. That defense
+is available — **and it is precisely the existential reading**, which V-1 shows flips rows 1 and 3 against
+accepted ADR-0033. It saves row 9 only by paying C5's price in full. Not a defense; a demonstration.
+
+**Row 9's real value is diagnostic, and the draft had it exactly backwards.** §Consequences says *"Row 9
+is D1 working, not D1 failing."* Ruled: **row 9 is D1 being two tests at once.** It is the one row where
+the existential and compose readings give opposite answers, on evidence both readings can cite. That is
+what makes it the best row in the corpus — as a counter-example.
+
+---
+
+### CH-C — SUSTAINED
+
+Verified from the diff rather than from the challenge: `4d8b3978` (2026-07-22) inserted the T-0432
+blockquote **immediately below** the context line *"Never style raw components one-off; **never duplicate
+a `:core` component**"*, and the same entry names its own conflicting artifact — *"partner
+`ProfileHubContent`'s hand-rolled copy is the **remaining convergence target**"* — which
+`catalog-governance.md:264` already books as `(gate pending: FT-5)`.
+
+**I tried to break it.** The narrow reading is genuinely available: `:249-253` opens *"Use
+`cz.cleansia.core.ui.components.*`"* and names Android packages, so a reader can scope it to Android and
+name nothing. **That does not defeat the finding**, because the finding is that **two competent readings
+exist on today's text** — which is the identical standard ADR-0033's independent lead pass used to
+establish L1 (Case β: *"Reviewer B is right, and the ADR does not compel it"*). A draft may not claim that
+standard for the defect it repairs and refuse it for the defect it introduces.
+
+The second instance the challenger flagged as *"arguable, not established"* (`:468-475` vs T-0527's
+resolver) I leave **unruled** — it is not needed, and it is arguable in the way the challenger says.
+
+---
+
+### CH-D — SUSTAINED IN PART; **one claim corrected against the challenger**
+
+**Confirmed from the corpus:** rows 3 and 9 **and** row 9's governing sentence (T-0448's `:562-565`) are
+**one commit**, `0e4ede1b` 2026-08-01, three tickets' harvests in one hunk set. Rows 1, 2, 4 chronologies
+sound, as the challenger reported.
+
+**Corrected — the challenger overstated, and it happens to be in the draft's favour:** *"both 'unmoved
+divergences' come from one architect sitting"* is **wrong**. Rows 6 and 7 are **two tickets**, and row 7's
+routing decision was taken **2026-07-04**, at a fix-round-3 review — *"Scope addition (2026-07-04) — the
+`format: date` row"*, `T-0379-…md:115-118`, `:124-129` — sixteen days before the 2026-07-19 ruling that
+`:135-136` records as *"ratified as-is"*. The catalog cell itself landed **2026-07-05** (`e97b14e7`) and
+**no commit touching `agents/knowledge/` has modified it since** — which is what "ratified as-is" looks
+like in a diff. Rows 6 and 7 are therefore **two independent routing decisions ruled on one day**, not one
+event.
+
+**Defensible count:** the ten rows are **at most eight** independent routing decisions across seven
+commits, and plausibly seven (rows 5+6 are one ticket; rows 3+9 are one commit). CH-D's *"about six"* is
+directionally right and slightly overstated. Both figures are far below ten, and the draft should stop
+presenting ten rows as ten cases.
+
+---
+
+### CH-E, CH-F, CH-G
+
+**CH-E — SUSTAINED.** Verified in the corpus: `2012b014`'s added paragraph reads *"…**plus a call-site
+pin, because a resolver test does not cover the call site (the T-0473 rule)**… `OrderDetailCardStringsTest`
+is the model"*. The candidate governing sentence and the entry it allegedly conflicts with were written by
+one hand, in one paragraph, with the earlier rule cited **by name as one it composes with**, and the
+composing artifact named in the same sentence. So D1's headline consequence — *"the one recorded
+indeterminacy becomes determinate"* — is carried by a case that is not historical, is self-answering on
+its own text, and **does not discriminate D1 from Alternative A**. Ruled: the draft may not count row 3 as
+a result.
+
+**CH-F — SUSTAINED.** N1/N-E is re-scoped to the *"Both platforms plumb the pair through **every** surface
+that draws the disc"* clause. The `Android onAvatarLoadSucceeded` citation is structural and
+verifiable-by-reading under accepted ADR-0033 D2 — it needs a file:line (Block B's two-line repair), not a
+routing. **PM: N-E's spec changes; the finding does not disappear.**
+
+**CH-G — SUSTAINED.** Verified against `conventions.md:120-130` in this tree: bullet 1 (`:122-124`) puts
+the action *inside* the branch (*"the developer edits the relevant `patterns-*.md` … in the same change"*)
+and bullet 2 (`:125-127`) puts the opposite action inside its own (*"Raise it via the ticket; don't
+unilaterally redefine the standard"*). Block C′ hoists *"Write it into the catalog"* to an unconditional
+step 3. A developer whose edit fires test 1 still arrives there. **This is L3's disease one nesting level
+down, inside the block written to cure L3** — it must be fixed before the block lands.
+
+---
+
+### D3 (no fourth test) — **UNBEATEN, NOT SETTLED**
+
+The challenger built six triggers (T-α…T-η) and killed all six, on top of the author's two. **I tried two
+more, and both died:**
+
+| Trigger | Row 6 | Row 7 | `:559-561` | Why dead |
+|---|---|---|---|---|
+| *the entry ratifies a form the **owner** directed* | fires (*"owner-directed edge-to-edge deviation"*) | **no** | no | misses row 7; and an owner ruling already routes by existing machinery — it is an authority trigger, not a trade-off one |
+| *the entry states a cost borne by someone other than the codebase* (cold start, wire bytes, build time) | no | no | **fires** (*"one small refetch per cold start"*) | fails the negative control immediately — the same way the author's own second trigger did |
+
+**Eight constructions, eight failures.** That is a real result and I record it so the next round does not
+re-derive them.
+
+**But it does not settle the limb, and the draft should not claim it does.** The target every one of the
+eight was tested against is *"fires on rows 6 and 7, not on `:559-561`"* — and rows 6 and 7 are now known
+to be (a) two decisions ruled by the same architect on one day, and (b) rows whose "governs?" column was
+produced by a procedure this pass has invalidated. **A trigger tested against a corpus that has been
+falsified cannot settle anything.** D3 survives as the presumption — *no fourth test today* — and
+**re-opens automatically when the corpus is rebuilt**, against a target re-derived from it.
+
+**Two riders, both against the draft:**
+1. **Ground (a) is STRUCK as evidence.** The challenger is right that *"`T-0397-…md:70` shows the
+   Architect asking the question after routing"* is a censored-sample inference: Architect rulings are
+   the only place a routed decision gets written down at all, so the absence of a developer asking it
+   proves nothing. The conclusion may hold; **(b) is what carries it**, and (b) now rests on a corpus
+   under rebuild.
+2. **The prize is mis-specified.** The challenger is right that the case a fourth test should be measured
+   against is **CH-A/row 8** — an `owner: qa` ticket that deleted a named canonical form from the catalog,
+   deleted a shipped file on one platform and rewrote a committed test suite, inline. A fourth test does
+   not reach it; **the accepted floor already routes it and nothing ran.** That is L2's evidence, not
+   F4's.
+
+---
+
+### D4 / Block C′ — **the finding SUSTAINED and SEVERED; the drafted text BLOCKED**
+
+Every fact re-verified in this tree, independently of the challenger: `conventions.md:120-130` are items
+1–3; `:122-124` scopes the inline lane to *"a **small** clarification/addition to an **existing** rule"*;
+`:125-127` is the disjunction whose **first limb the accepted floor reverses**; `:128-130` is the
+supersession step and is consistent with test 1; `:132-134` is the "earns its place" bar. **REPLACE, not
+append, is correct.** The three findings the L3 filing did not carry are all real, including that ADR-0033
+D1 test 4 mis-cites itself as *"unchanged from `conventions.md` step 2, first bullet"* — which is exactly
+why a good-faith editor would append. And the erratum-lane ruling is right: *"Refines … does not reverse"*
+is an **argued** claim, so it rides a dated appended section, not `adr/README.md:16-26`'s digits lane.
+**I pressed the erratum question, as the draft invited, and I concede it.**
+
+**Ruled: D4 does not depend on D1 and must not die with it.** `adr/README.md`'s *"one decision per ADR"*
+points at the split, and the draft's **Alternative F** — which contemplated it and rejected it *narrowly*,
+solely on the argument that F4 belongs with D1 — loses its only ground now that D1 falls. The draft's own
+words: *"If the lead disagrees, the clean split is: D1+D2+D4 here, D3 to its own round … this draft is
+written so that excision costs one section."* **I disagree, and the split is the other way.**
+
+**The severance, precisely:**
+- **D4's finding + Block C′'s skeleton go forward** as their own small ADR, in a fresh author round.
+- **The `**What "governs" means — the conflicting-instance test**` paragraph inside Block C′ routing test
+  2 is EXCISED.** In its place stands **accepted ADR-0033's own floor wording, verbatim and unaltered** —
+  which the draft already reproduces two paragraphs later. That is a **deletion**, not new text: I am not
+  writing the repair, and I may not.
+- **The block carries a visible pointer** that *"governs"* is under repair and cite the successor panel,
+  so the page does not present an undecided predicate as settled. An undefined term in an accepted rule is
+  survivable; an undefined term dressed as a definition is what this round rejected.
+- **CH-G is fixed** in the same pass: step 3's action goes back inside its branch.
+- **The Block D addendum (N-B)** — the reviewer's firing-side burden — **is HELD.** It is the operative
+  half of D2, it is the best thing in the draft, and the challenger could not break it. But *"name the
+  artifact"* is only meaningful once "artifact ruled differently" has one reading. **It ships with the
+  repair, not before it.** One rider the challenger is right about and I adopt: whatever search that
+  burden obliges must be run against the catalog **as it stood before the edit**.
+
+**Operational consequence, stated because two tickets hang on it.** `T-0553` AC3 asks for literal
+insertable text and blocks **T-0549 AC3** and **T-0551**. This severance is what unblocks them: the
+`conventions.md` repair proceeds on ADR-0033's accepted content; only the *definition* waits.
+**T-0549 AC1/AC2 were never blocked and should not wait for any of this.**
+
+---
+
+### What a repair must satisfy — routed, not written
+
+**I do not write the replacement.** That rule bound both my predecessors, it is the whole reason this
+panel exists, and it binds me. What I am entitled to do is set the bar the next author must clear:
+
+| # | The repair must… | Why, in one line |
+|---|---|---|
+| **R-1** | **Declare its quantifier** — ∃ (some artifact is ruled differently ⇒ governs) or ∀ (all artifacts both reach are ruled alike ⇒ does not govern) — and **use the same one in every worked row** | V-1: the draft used both and got opposite answers |
+| **R-2** | **Define scope without the word "subject"**, or concede it uses it and say **who decides**. It must return a determinate verdict on **CH-C's row-10 artifact** (`ProfileHubContent.swift:298` under `:249-253`) from the definition, not from the reader's choice of reading | CH-C: "reach" is the subject question wearing plumbing |
+| **R-3** | **Discriminate the pair the corpus now supplies**: **T-0449/T-0448** (a refinement completing a summary of already-shipped, already-tested behaviour — must NOT route) vs **T-0527** (a withdrawal of a named canonical form that deleted a file and rewrote its tests — must route). Both are in the record **with diffs**. A definition that treats them alike must say so and defend it | CH-B + CH-A: these are the two poles, and they are now evidenced rather than hypothesized |
+| **R-4** | **Give the author an answer logically capable of defeating the trigger.** D2's *"compose or concede"* cannot refute an existential | otherwise the burden is a one-way ratchet toward the reviewer — the mirror of the defect D2 was written to cure |
+| **R-5** | **Reproduce accepted ADR-0033's retro rows 2 and 3** (T-0441 inline ✅, T-0451 Architect ✅). A definition that flips a ✅ row of the ADR it refines has superseded that ADR and must say so | V-1: D1 flips row 2 silently |
+| **R-6** | **Rebuild the corpus**, not patch it: search the catalog **as of each hunk's parent commit**; classify every hunk **insertion / modification / deletion** and quote the **pre-edit** text of modifications; source the "actual" column from the **routing event** (ticket owner + ratification date), not from the entry's present text. **Every declared limitation is discounted in the reported score, or no score is reported** | CH-A, the modified-hunk hole, and three rounds of undiscounted headlines |
+| **R-7** | **Not be ratified by its author**, and its challenger must have the corpus | `deliberation.md`; and this round is the proof that diffs change verdicts |
+
+**Routing.** L1 returns to **T-0553** for a **second author round** — a new author instance, this draft
+retained on disk as the record of what was tried and why it failed. It is not a new ticket: T-0553's AC2
+is unmet and its AC3/AC4 are answered by this ruling. **L3 becomes its own small ADR** with the severed
+Block C″. **F4 stays open** and re-opens against the rebuilt corpus.
+
+**Escalation to the owner: none.** Every disagreement resolved on in-repo evidence; nothing here carries
+lasting business impact. The one thing the owner may care about is **schedule**: this is the second panel
+on the same clause, and the operative state below says plainly that ADR-0033's routing test still binds
+nothing while it runs.
+
+---
+
+### What I tried to break, and could not
+
+`deliberation.md`: silence is not assent, and the first round's credibility problem was overruling its own
+framings. Named, so a reader can check whether I did the same.
+
+1. **D2's reviewer-side burden (firing test 2 costs an artifact, not a sentence).** I looked for a way to
+   make it cost more than it buys and could not. It is M2 completed on the other side and it converts a
+   plausible-but-adjacent assertion into something an author can answer. **It is the best thing in the
+   draft and it is held only because its currency is undefined**, not because it is wrong.
+2. **Alternative D's rejection (the artifact need not exist in the tree).** I argued for requiring
+   existence and the draft's reasoning survives: row 8's artifact was converted **in the same change**, so
+   an exists-in-tree requirement would make test 2 a strict subset of test 1 and miss the very case that
+   falsifies row 8.
+3. **Alternative C's re-rejection (the lexical/topic reading).** Re-tested on row 2 and it re-fails:
+   T-0451 escapes as *"theme-invariant surfaces"*, and its governing sentence predates it by five weeks
+   (`c1009c63` 2026-06-25 → `1c8fdd00` 2026-08-01). Not re-litigated.
+4. **Row 4 (T-0349).** I attacked the strongest row and did not dent it: `:990` from `76fc48ab`
+   2026-06-27, the entry from `04f98937` 2026-06-30, ticket `owner: architect`. It remains the one case
+   where a *general* sentence carries a determinate verdict, and any repair should keep it.
+5. **CH-D's clustering, in the challenger's favour.** I tried to confirm *"rows 6 and 7 are one architect
+   sitting"* and **could not** — the ticket shows row 7 routed sixteen days earlier. Corrected against the
+   party that filed it.
+6. **A ninth and tenth trigger for F4.** Both died (table above). I am not manufacturing a survivor to
+   avoid ruling D3 unbeaten.
+7. **Row 6.** I built an argument that it flips under D1 (the fix-round-8 pin narrows the pre-existing
+   cell) and then **killed my own argument**: the diff shows the append was written **by the architect, in
+   the ratification** (`f0e39d7e` carries the pin and the signature in one hunk), so no routing question
+   arises. **Recorded because I nearly filed it** — that is the exact failure mode this panel was warned
+   about, and the diff is what stopped it.
+
+### Gate 0.5, applied to this adjudication — what I could NOT verify
+
+**Legs 1 and 2 do not apply** (no executable assertion; no suite, build or checker run) — same scoping as
+`quality-gates.md:67-70`. **Leg 3, named:**
+
+1. **No `Bash`.** I read a coordinator-generated corpus, not `git` directly. Commit hashes, dates and hunk
+   headers are read off its diff blocks; I did not re-derive them. **This is the first round in this
+   sequence with diffs at all, and it changed two verdicts — treat that as the finding.**
+2. **CH-B's Kotlin/Swift file citations I took as established** (coordinator-verified) rather than
+   re-opening `ProfileViewModel.kt` / `ProfileViewModelTest.kt`. My independent grounding for CH-B is the
+   `4f81dce7` diff, which is weaker but sufficient: the entry names Android's method as an existing model.
+3. **Row 5's chronology remains open**, as the challenger declared: I did not establish when
+   `patterns-mobile.md:1241`'s `.medium` grant was introduced relative to the `:996-1001` withdrawal. It
+   is a positive row, so the blindness does not touch it, but its date relation is unestablished by
+   anybody across three rounds.
+4. **I did not re-score the rebuilt corpus.** V-1 is demonstrated on rows 1, 3 and 9; I did not run a
+   corrected definition over all ten, because there is no corrected definition and writing one is not
+   mine. **R-6 is the work, and it is the next author's.**
+5. **The rate is still unmeasured.** 41 commits touch `patterns-mobile.md`; I read the diffs of eight. What
+   CH-A establishes and I confirm is a **direction** — the draft's negatives are one-sided under-estimates
+   — not a number.
+6. **Line numbers are this worktree's**, and `patterns-mobile.md` is a live shared-file lane. Every
+   load-bearing citation quotes its text or its hunk header.
 
 ---
 

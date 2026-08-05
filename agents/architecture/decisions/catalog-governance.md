@@ -69,11 +69,18 @@ ADR-0033 addresses (1). ADR-0032 addresses (2). They compose on the same hunk an
 > | `.claude/agents/reviewer.md:105-110` — what a **reviewer** runs | still the **superseded** axis, verbatim |
 > | `agents/knowledge/conventions.md:122-127` — what an **author** applies | still the **superseded** axis |
 > | ADR-0033 Block C in `conventions.md` | **absent** (the next section is `## Naming (canonical)`) |
-> | FT-11 / FT-12 / FT-8 as `INDEX.md` rows | **none exist** |
+> | FT-11 / FT-12 / FT-8 as `INDEX.md` rows | **filed 2026-08-05** — `T-0549` / `T-0550` / `T-0551`; none landed |
 >
 > By ADR-0032 D2's own line (*"T3-HUMAN requires a **named** checklist item"*), **ADR-0033 is
 > `(guidance — no gate)` today.** Its three tests bind nothing. **FT-11 is not a follow-up — it is the
 > remainder of the decision.** Until it lands, `conventions.md:125-127` is the operative routing rule.
+>
+> ⛔ **And the floor's own predicate is still undefined.** The first attempt to define *"governs"* was
+> `rejected` by its panel on 2026-08-05 (see **L1** in Open items). So even once T-0549 lands, test 2
+> routes on the reviewer's **paraphrase** of a general sentence. **`ab077504` is what that costs**: a
+> harvest that deleted a named canonical form, deleted a shipped Swift file and rewrote a committed test
+> suite went inline under `owner: qa`, one day after this ADR was accepted, and **the accepted floor
+> already routed it** — nothing was watching.
 
 Three ordered tests; first to fire routes: **(1)** does it put shipped code in violation? **(2)** does
 it *narrow* latitude the catalog previously left open? **(3)** does it make a *prescriptive* claim
@@ -102,24 +109,34 @@ about a stack the ticket never built and ran? Otherwise: inline, flagged in `## 
    > that yields nothing here. Until L1 lands, routing on a general sentence rests on the reviewer's
    > **paraphrase** of it — the same defect CH-1 removed from the other half of the clause.
    >
-   > 🟡 **A repair is in flight and NOT ratified** — `backlog/adr/drafts/NNNN-what-makes-a-catalog-sentence-govern.md`
-   > (author's draft, 2026-08-05; number deliberately unallocated; challenger + lead rounds pending).
-   > It proposes the **conflicting-instance test** — *a sentence `S` governs entry `E` iff a reader can
-   > name one concrete artifact both reach on which their verdicts differ* — in preference to the lead's
-   > nominated *"applied to this entry's subject"* wording, on the ground that the latter relocates the
-   > indeterminacy from the sentence's meaning to the entry's **subject granularity**, which is the thing
-   > the two Case-β reviewers actually differ on. Ten real entries were run against it, ten determinate,
-   > including T-0473. **Nothing here changes until that panel closes.**
+   > 🔴 **The first repair was DRAFTED, CHALLENGED and REJECTED — 2026-08-05, panel closed.**
+   > `backlog/adr/drafts/NNNN-what-makes-a-catalog-sentence-govern.md` proposed the **conflicting-instance
+   > test** (*`S` governs `E` iff a reader can name one concrete artifact both reach on which their
+   > verdicts differ*). **It is `rejected` and is not an ADR.** The blocking defect, found by the lead
+   > pass on the draft's own table: the definition is an **existential** (*some* artifact ruled
+   > differently) and six of its ten rows were scored with a **compose** test (*an* artifact satisfying
+   > both). Read existentially it flips **accepted ADR-0033's own retro row 2** (T-0441, `inline` ✅) to
+   > *Architect*; read compositionally its single new catch (T-0449) disappears. **There is no reading of
+   > it under which its own validation table comes out as recorded** — which is CH-1's defect (*a
+   > predicate true and false of the same edit*) relocated from the word "permitted" onto the word
+   > "governs". Two supporting falsifications, both from diffs: its only claimed catch is a **false
+   > positive** (the Android artifact it names is excluded by `ProfileViewModel.kt:179-180` +
+   > `ProfileViewModelTest.kt:635`, shipped by the governing sentence's **own** ticket), and its
+   > corpus method **greps the post-edit tree**, so a sentence an edit **deletes** — the highest-signal
+   > instance of test 2 there is — is structurally invisible to it.
    >
-   > ⚠️ **A caveat on Case β's evidence, found by that draft and worth knowing now.**
-   > `patterns-mobile.md:517-525` — the entry holding the candidate governing sentence `:520-522` —
-   > **cites T-0473 inside itself** (`:522-524`, *"because a resolver test does not cover the call site
-   > (the T-0473 rule)"*). So at least part of it post-dates T-0473, and if **all** of it does, `:520-522`
-   > was never a candidate governing sentence for that entry and Case β is a live *hypothetical* about
-   > today's catalog rather than a historical mis-routing. L1 stands either way — one reproducible
-   > indeterminacy on the current text is a counter-example — but the evidence is weaker than
-   > §Ruling 1 presents it. Neither the lead pass nor the draft had a shell; **`git log -p --
-   > agents/knowledge/patterns-mobile.md` settles it in one command** and nobody has run it.
+   > **So L1 is OPEN and unrepaired.** Routing on a general sentence still rests on the reviewer's
+   > paraphrase. What the next author must clear is recorded as **R-1…R-7** in that draft's §Verdict; the
+   > file stays on disk as the record of what was tried.
+   >
+   > ✅ **Case β's chronology is SETTLED (2026-08-05, from diffs).** `:520-522` was introduced by
+   > **`2012b014`, 2026-08-02**; the T-0473 entry by **`0e4ede1b`, 2026-08-01**. **The candidate sentence
+   > post-dates the entry by one day**, so Case β is **not** a historical mis-routing — it is a live
+   > hypothetical about today's text. L1 stands anyway (one reproducible indeterminacy on the current
+   > text is a counter-example), but the evidence is weaker than §Ruling 1 presents it, **and worse:
+   > `2012b014`'s added paragraph cites *"(the T-0473 rule)"* by name and names `OrderDetailCardStringsTest`
+   > in the same sentence.** Reading the *entry* rather than the *sentence* answers Case β, so **it does
+   > not discriminate between any two candidate definitions** and must not be used as one's validation.
 3. **Claiming the floor costs one grep, and the default is route.** The author records the catalog
    file(s) + term searched in `## Review`, symmetric with test 1's code sweep. **A floor claimed with
    no search is not claimed.**
@@ -192,13 +209,22 @@ inline; both were ratified in substance, but one of those rounds **added content
 holds the line is not the routing test — it is ADR-0032's price attaching to the inline lane, plus a
 reviewer who is actually told to look.
 
+> ⚠️ **Read those two cases with the 2026-08-05 caveat.** Their *"no sentence governed"* column was
+> produced by grepping the **post-edit** tree, which is the error that falsified retro row 8 — so it is a
+> one-sided under-estimate in both. And they are **two routing decisions, ruled on one day by one
+> architect** (T-0397 on 2026-07-19; T-0379's `format: date` item routed **2026-07-04** at a fix-round-3
+> review and ratified *as-is* on 07-19), landed by one commit, `f0e39d7e` 2026-07-20. They remain the
+> best-known cases of the floor's backward-looking trade **and they are not two independent
+> confirmations of it.**
+
 | Position on the floor | What it costs | Why not |
 |---|---|---|
 | No floor (C5's unfloored test 2) | everything routes | the inline lane dies; `conventions.md`'s harvest loop closes |
 | Floor on "previously **permitted**" | nothing | undecidable — the catalog prescribes, so "permitted" collapses into "silent" |
 | Floor on the **topic** ("has the catalog discussed X?") | nothing | every sub-case is a fresh topic if you pick the vocabulary; T-0451 escapes as "theme-invariant surfaces" |
-| **Floor on a governing *sentence* at any level of generality** ← **chosen** | one grep, recorded | **two** residuals: the author may search at the wrong level of generality (mitigated by route-by-default), and **"governs" is itself undefined** (finding L1 — repair drafted 2026-08-05, **not ratified**) |
-| …with **"governs" = a nameable conflicting artifact** ← **PROPOSED, in panel** | one grep **+ one artifact when a reviewer objects** | residual moves from *"what is the subject?"* (ungrounded, and what the two Case-β reviewers actually differ on) to *"can an artifact be named?"* — narrower, checkable, and a reviewer can supply the artifact an author missed. Not zero: an author who cannot imagine the conflicting file still writes "none nameable". Untested against very broad sentences (*"never duplicate a `:core` component"*), where conflicts are easy to find and test 2 may over-fire |
+| **Floor on a governing *sentence* at any level of generality** ← **chosen, and still the operative rule** | one grep, recorded | **two** residuals: the author may search at the wrong level of generality (mitigated by route-by-default), and **"governs" is itself undefined** (finding **L1 — OPEN**; the first repair was rejected 2026-08-05) |
+| …with **"governs" = a nameable conflicting artifact** ← **REJECTED 2026-08-05** | one grep **+ one artifact when a reviewer objects** | It moves the residual from *"what is the subject?"* to *"can an artifact be named?"* — narrower and checkable, **and it does not close either degree of freedom it opens.** (1) **Quantifier:** stated as an existential (*one* artifact ruled differently ⇒ governs), scored as a universal (*an* artifact satisfying both ⇒ does not govern). Read as stated it flips ADR-0033's retro row 2 (T-0441 `inline` ✅) to *Architect*; read as scored, its only new catch vanishes. (2) **Granularity:** "reach" is defined as *"inside the scope `S` prescribes for"* — which **is** `S`'s subject, the very thing Alternative A was rejected for relocating. Demonstrated inside its own table (`patterns-mobile.md:249-253` read as an Android rule vs as the `## Shared UI & theme` preamble it was inserted under, `4d8b3978`) |
+| …with **"governs" defined so that R-1…R-7 are met** ← **the open question** | unknown | Nobody has proposed one. The bar is in the rejected draft's §Verdict: declare the quantifier, define scope without the word "subject", **discriminate T-0449 (refinement — must not route) from T-0527 (withdrawal — must route)**, give the author an answer that can defeat the trigger, reproduce ADR-0033's rows 2 and 3, and **rebuild the corpus against the pre-edit catalog** |
 | Route every first statement (Alternative B) | the harvest loop | rejected in the original panel; nobody argued for it in the re-check |
 
 **The eighth retro case, produced by the lead pass — the first one where the "any level of generality"
@@ -219,27 +245,68 @@ carried by an assertion. It is also the counterweight to L1: the limb works when
 applied to the entry's subject, yields a prescription the entry contradicts. When it does not (T-0473),
 the limb goes indeterminate. Same test, two outcomes, and the ADR does not name the difference.
 
-**The corpus is now ten cases (L1 draft, 2026-08-05) — the first pass to run a candidate definition
-rather than re-read the record.** Rows 1–8 reproduce ADR-0033's table and the lead pass's Cases α/β;
-rows 9–10 are new. Under the draft's conflicting-instance test **all ten are determinate**, seven agree
-with history, ADR-0033's two owned divergences (T-0397 row 1, T-0379 `format: date`) are unmoved, and
-**one new divergence appears — and it is the interesting one:**
+> ✅ **Chronology confirmed from diffs (2026-08-05), and this is now the only load-bearing row in the
+> corpus nobody has dented.** `:990` was introduced by **`76fc48ab` 2026-06-27**; the T-0349 entry by
+> **`04f98937` 2026-06-30** — the governing sentence predates the entry by three days, so the row is
+> immune to the post-edit-tree error. Two challenger passes and two lead passes attacked it and none
+> moved it. **Any candidate definition of "governs" must keep this row firing**, and it is the natural
+> positive control for the rebuilt corpus.
 
-| | **T-0449** `patterns-mobile.md:320-329` — *"the guard is released by a successful render"* |
+**The ten-case corpus (L1 draft, 2026-08-05) is WITHDRAWN — it must be rebuilt, not patched.** It was the
+first pass to run a candidate definition rather than re-read the record, and that was the right move. It
+does not survive the diffs, for three reasons in ascending order of force:
+
+1. **It was not scored under the definition it validates.** Six of ten rows return *"does not govern"*,
+   and rows 1 and 3 establish that by naming an artifact that **satisfies both** sentences — which is not
+   the negation of *"some artifact is ruled differently"*. Every row must be re-scored under whatever
+   predicate replaces D1; **no verdict transfers.**
+2. **The search ran against the wrong snapshot.** Candidate sentences were located by `Grep` over
+   `agents/knowledge/` **as the tree stands today** — i.e. *after* each entry landed. That error is
+   one-sided: it can only *miss* governing sentences, never invent them, so every *"none nameable ⇒
+   inline"* is an under-estimate of test 2's firing rate. **Row 8 (T-0527) is falsified by it**:
+   `ab077504` carries **three** hunks, and the third (`@@ -1272,9 +1315,9 @@`) *deletes* the sentence
+   that named `CancellationFeePreview` and the client-side tier ladder as the shipped canonical form. The
+   accepted floor's decidable disjunct — *"replaces it, or forbids a form it named"* — fires on it
+   without needing any new definition. It shipped **inline**, `owner: qa`, `adrs: []`, and it deleted a
+   shipped Swift file and rewrote a committed test suite on the way.
+3. **The blindness is wider than deletions: it hides the pre-edit text of any *modified* sentence.**
+   `f0e39d7e`'s `@@ -313,12 +313,12 @@` shows retro row 6's "entry" is a **modification** — the
+   developer's cell landed `365fd221` 2026-07-11 and the T-0397 ratification **appended** the
+   fix-round-8 settle pin plus its signature. Today's tree shows only the merged result, so a
+   two-party, two-date artifact reads as one entry.
+
+**Per-row state after the diff audit** (rows 2, 4, 5 are positives and survive — grep's error is
+one-sided; they may be carried into the rebuild without re-derivation):
+
+| Row | Landing commit(s) | Hunk shape | State |
+|---|---|---|---|
+| 1 T-0441 | `1d85b35f` 2026-08-01 | insertion | **flips** under D1's literal text |
+| 2 T-0451 | `1c8fdd00` 2026-08-01 | insertion | **stands** (positive) |
+| 3 T-0473 | `0e4ede1b` 2026-08-01 | insertion | **vacuous as history** — candidate post-dates it (`2012b014`) |
+| 4 T-0349 | `04f98937` 2026-06-30 (`:990` from `76fc48ab` 2026-06-27) | insertion | **stands** — the strongest row; unattacked successfully by anyone |
+| 5 T-0397 `.medium` | `365fd221` → `f0e39d7e` | insertion + append | **stands**; its date relation to `:1241` is still unestablished |
+| 6 T-0397 header | `365fd221` 2026-07-11 → `f0e39d7e` 2026-07-20 | **modification** | unfalsified, **unreliable** |
+| 7 T-0379 `format: date` | `e97b14e7` 2026-07-05, **never modified since** | insertion | unfalsified, **unreliable** |
+| 8 T-0527 | `ab077504` 2026-08-04 | insert ×2 + **REPLACE** | **FALSIFIED** |
+| 9 T-0449 | `0e4ede1b` + `4f81dce7` | insertions | **FALSIFIED** — see below |
+| 10 T-0432 | `4d8b3978` 2026-07-22 | insertion under the Android preamble | **contested** (scope) |
+
+**Row 9 — the one new divergence the draft claimed to have found — is a FALSE POSITIVE, and it is the
+most useful row in the corpus for the opposite reason.**
+
+| | **T-0449** `patterns-mobile.md:319-329` — *"the guard is released by a successful render"* |
 |---|---|
-| Governing sentence | `:562-565` (T-0448, **Android**) — *"refetch the profile once, **guarded by the `fileName` already retried**"* |
-| Conflicting artifact | an Android `ProfileViewModel` whose retry watermark is set once and **never cleared**: `:562-565` rules it compliant; the entry rules it *"drops the avatar to initials permanently"* |
-| Routes to | **Architect** |
-| Actual | **inline** (`T-0449-…md:316`) |
+| Claimed governing sentence | `:562-565` (T-0448, **Android**) — *"refetch the profile once, **guarded by the `fileName` already retried**"* |
+| Claimed artifact | an Android `ProfileViewModel` whose retry watermark is set once and **never cleared** |
+| Why it fails | **That artifact was shipped against and tested against by the sentence's own ticket.** `ProfileViewModel.kt:179-180` — `fun onAvatarLoadSucceeded() { avatarRetriedFor = null }`; pinned by `ProfileViewModelTest.kt:635` *"a successful load restores the retry budget"*. `4f81dce7`'s own text cites Android's method **as the existing model**. Nothing was withdrawn from Android; `:562-565` is an **incomplete summary** of shipped behaviour and the 2026-08-05 append **completed the description** |
+| What it actually proves | The two readings of D1 give **opposite answers on this row**: existential ⇒ fires (the hypothetical VM is nameable) ⇒ diverges from history; compose ⇒ does not fire (`ProfileViewModel.kt` satisfies both) ⇒ agrees. **Same row, same evidence, opposite verdicts** — the quantifier is doing all the work |
 
-That is a **narrowing that shipped inline** — an entry withdrawing a form the catalog described, on the
-*other* platform, with no Architect. Neither the accepted floor nor the lead's nominated disambiguator
-catches it, because both turn on whether `:562-565` "governs the subject", and the subject paraphrases
-either way (*iOS avatar caching* vs *SAS-backed image retry*). Two caveats stated with it: its **test-1
-column is unknown** (if Android lacked `onAvatarLoadSucceeded` at the time, test 1 fires first and the
-question is moot), and the same entry **independently fires test 3** — filed as **N1**. Whether row 9's
-shape is a *case* or a *rate* is the number that decides whether the draft is a repair or a tax on the
-stack that harvests most, and no round so far has had a shell to measure it.
+**Two things that survive from it.** `:562-565` really is a **stale summary of its own shipped code** —
+`4f81dce7` corrected the iOS paragraph and left the Android one standing, which is F5's disease (two
+forms on one page) live today; and the same entry independently fires **test 3** — filed as **N1**,
+re-scoped (see Open items). **Whether the class is a *case* or a *rate* is still unmeasured**: 41 commits
+touch `patterns-mobile.md` and the 2026-08-05 pass read the diffs of eight. What is established is a
+**direction**, not a number.
 
 ---
 
@@ -313,17 +380,19 @@ ADR-0033 replaces.
 |---|---|---|
 | ~~The floor on ADR-0033's test 2 needs one adversarial round~~ — **CLOSED 2026-08-05** (T-0471): challenged, amended M1–M6, `accepted` | architect panel | ADR-0033 §Verdict · `adr/challenges/0033-floor.md` |
 | ~~AC1 — the round needs a lead distinct from the challenger~~ — **CLOSED 2026-08-05**: third instance ran it; ADR-0033 §"Independent lead adjudication" | architect | ADR-0033, appended section |
-| 🟡 **L1 — M1 defines *silence* but never defines *governs*.** **AUTHOR'S DRAFT FILED 2026-08-05, NOT RATIFIED** — `adr/drafts/NNNN-what-makes-a-catalog-sentence-govern.md`. It proposes the **conflicting-instance test** (name one artifact both sentences reach on which their verdicts differ) and **rejects** the lead's nominated *"applied to this entry's subject"* wording as relocating rather than removing the indeterminacy. Retro-validated on **10** real entries, **10 determinate** (T-0473 included), **1 new divergence found** (T-0449 — a cross-platform harvest that narrows the other platform's shipped entry and shipped inline). **Challenger + lead rounds pending; number unallocated on purpose.** | architect panel (in progress) | the draft · ADR-0033 §Ruling 1 |
-| 🔴 **L2 — FT-11 is the remainder of the decision and has no ticket.** File FT-11/FT-12/FT-8 as `INDEX.md` rows, FT-8 behind FT-11, **and widen FT-11 to `conventions.md:122-127`** — the author's page teaches the superseded axis too | PM → architect + docs | this doc, "not in force" box |
-| 🟡 **L3 — Block C as specified installs a contradiction into `conventions.md`** (appends the new test, leaves `:122-127`'s reversed limb standing). **FT-8 must not be applied as specified.** **Draft repair filed (Block C′): REPLACE `conventions.md:120-130` in full — not append — and state the reversal in the page itself.** The draft adds two findings L3 did not carry: **bullet 1 (`:122-124`) is wrong too** (it scopes the inline lane to *"a small clarification/addition to an **existing** rule"*, which excludes the first statement the floor sends inline — the floor opens a third category neither bullet describes), and **ADR-0033 D1 test 4 mis-cites itself** as *"unchanged from step 2, first bullet"*, which is why an editor in good faith would append. The *"does not reverse"* header claim is confirmed false and **does not qualify for the erratum lane** (`adr/README.md:16-26` — meaning, not digits): it rides a dated appended section on ADR-0033 | architect panel (in progress) | the draft §D4 / §Block C′ |
+| 🔴 **L1 — M1 defines *silence* but never defines *governs*. STILL OPEN; the first repair was REJECTED 2026-08-05.** The conflicting-instance test (`adr/drafts/NNNN-what-makes-a-catalog-sentence-govern.md`, now `rejected`) fell on a defect in its own validation table: it **states an existential** and **scores six of ten rows with a compose test**, so read as stated it flips ADR-0033's retro row 2 (T-0441 `inline` ✅) to *Architect*, and read as scored its only new catch (T-0449) is a **false positive**. Two supporting falsifications from diffs: the T-0449 artifact is excluded by `ProfileViewModel.kt:179-180` + `ProfileViewModelTest.kt:635`, and the corpus greps the **post-edit** tree so a **deleted** governing sentence is invisible (row 8 / `ab077504`). **A second author round is owed on T-0553 AC2** — new author instance, corpus rebuilt per **R-6**. The bar the repair must clear is **R-1…R-7** in that draft's §Verdict; do not start from a blank page. | architect panel (round 2 owed) | the rejected draft §Verdict · ADR-0033 §Ruling 1 |
+| 🟠 **L2 — FT-11 is the remainder of the decision. TICKETS NOW FILED (T-0549…T-0553); the rule still binds nothing.** `T-0549` (FT-11, scope widened to **both** pages) `ready` · `T-0550` (FT-12) `ready` · `T-0551` (FT-8) `blocked` on purpose · `T-0552` (F1 erratum) `ready` · `T-0553` (this panel) `in_progress`. **Re-verified at HEAD 2026-08-05: `.claude/agents/reviewer.md:105-110` and `conventions.md:122-127` BOTH still teach the superseded axis**, so ADR-0033 remains `(guidance — no gate)`. **T-0549 AC1/AC2 were never blocked by this panel and should not wait for it** — only AC3 (`conventions.md`) does | PM → architect + docs | `INDEX.md` §"The ADR-0033 remainder" |
+| 🔴 **G1 — a catalog harvest deleted a named canonical form INLINE, under `owner: qa`, with no Architect (T-0527, `ab077504` `@@ -1272,9 +1315,9 @@`).** It removed the sentence naming `CancellationFeePreview` + the client-side tier ladder as the shipped form, deleted `CancellationFeePreview.swift`, deleted `CancelOrderSheet.kt`'s ladder and **rewrote a committed test suite that pinned the old schedule**. Under the **accepted** floor this fires test 2's *decidable* disjunct — *"replaces it, or forbids a form it named"* — the half `challenges/0033-floor.md` CH-1 explicitly cleared as checkable. **No new definition is needed to catch it.** **Recorded, not re-opened** (T-0274/T-0473 precedent — the substance is right, only the routing was not taken); it post-dates ADR-0033's acceptance by a day, **which is the point: this is the sharpest evidence in the record for L2** | PM (record) → the L2 lane | corpus `ab077504` · challenge CH-A |
+| 🟡 **G3 — `patterns-mobile.md` §"Shared UI & theme" (`:247`–`:455`) hosts four iOS entries under an Android-worded preamble** (`:249-253`, ending *"never duplicate a `:core` component"*). `4d8b3978` inserted the first iOS blockquote **immediately below** that line, and T-0473 / T-0451 / T-0449 followed. The iOS section proper does not start until `:569`. So one sentence has two defensible scopes, in the file the routing test is applied to most — and **CH-C turns on exactly that**: read as the section preamble it rules `ProfileHubContent.swift:298` (`LogoutRow`) a flat defect, while the T-0432 entry tolerates it as a *"remaining convergence target"* with `(gate pending: FT-5)`. **Whatever replaces D1, this ambiguity should not survive it**: a heading, or one clause of scope, retires it | PM → ios lane (structural catalog edit) | challenge CH-C, G3 |
+| 🟢 **L3 — SUSTAINED and SEVERED 2026-08-05. It does not depend on L1 and must not wait for it.** Every fact re-verified in tree by two independent instances: `conventions.md:120-130` are items 1–3; `:122-124` scopes the inline lane to *"a **small** clarification/addition to an **existing** rule"* (**bullet 1 is wrong too** — the floor opens a third category neither bullet describes); `:125-127` is the disjunction whose first limb the floor reverses; `:128-130` survives untouched; `:132-134` is the "earns its place" bar. **REPLACE `:120-130` in full — do not append.** **ADR-0033 D1 test 4 mis-cites itself** as *"unchanged from step 2, first bullet"*, which is why a good-faith editor would append. The *"does not reverse"* header claim is confirmed false and **does not qualify for the erratum lane** (`adr/README.md:16-26` — meaning, not digits): a dated appended section on ADR-0033. **Carried to its own small ADR** with three changes ruled by the panel: (a) the D1 *"what governs means"* paragraph is **EXCISED** and **accepted ADR-0033's floor wording stands verbatim** in its place; (b) a visible pointer that *"governs"* is under repair; (c) **CH-G fixed** — step 3's *"write it into the catalog"* goes back **inside** its branch, or a developer whose edit routes still arrives at it (L3's disease one nesting level down). **The Block D reviewer-side addendum is HELD until L1 lands** — *"name the artifact"* is empty while "artifact ruled differently" has two readings | architect (new author round) | the rejected draft §D4 / §Block C′ · T-0551 |
 | **FT-11 — land the named enforcer (Block D):** reviewer-check 5 "Catalog-edit routing" in `.claude/agents/reviewer.md` + a Gate 1 pointer. **Blocks FT-8.** Until it lands, ADR-0033 is `(guidance — no gate)` in fact | architect + docs | ADR-0033 §Block D / §Follow-ups |
 | **FT-12 — record the check id in `enforcement.md`** so dropping reviewer-check 5 is a visible regression | architect + docs | ADR-0033 §Follow-ups |
-| **FT-8 — Block C into `conventions.md`** — **blocked twice**: behind FT-11, and behind L3's ruling on `:122-127` | architect + docs | ADR-0033 §Block C |
+| **FT-8 — Block C into `conventions.md`** (`T-0551`) — **blocked twice**: behind FT-11, and behind L3's ruling on `:122-127`. **L3's ruling now exists (2026-08-05) and severs it from L1** — apply the corrected block *minus* the rejected D1 paragraph, with ADR-0033's accepted floor wording verbatim in its place. **It no longer waits on the "governs" panel** | architect + docs | ADR-0033 §Block C · L3 row above |
 | **F1 — ADR-0032 carries TWO stale statements**, not one: `:23-25` (0031 *is* on `master`, `acf2f0bc`/PR #175) **and `:14`** (*"ADR-0033 is `proposed`, not accepted"*, made stale by the T-0471 round itself). `accepted` ⇒ one **signed erratum** covering both (`adr/README.md:16-26`) | PM → architect | ADR-0032 `:14`, `:23-25` |
 | **F2 — ADR-0032's Block A was never applied**; `**Enforced by:**` has 0 instances in `patterns-mobile.md`, so FT-4 has nothing to build on | PM → ios lane | ADR-0032 §Block A |
-| **F3 — `patterns-mobile.md:265-276` (T-0473)** carries no enforcer + tier. **Its test-1/test-2 question is now answered in part** by the lead pass: the candidate governing sentence is `:520-522` and the entry **routes inline**, so the suspected mis-routing is *not* established; what stands is the missing enforcer + tier and the unrun sweep. **Recorded, not re-opened** — T-0274 precedent | PM | ADR-0033 §Ruling 1, Case β |
-| 🟡 **F4 — no "carries a trade-off ⇒ ADR" limb** in the routing test. Folded into L1's panel as asked. **The draft ACCEPTS the framing (same decision) and REJECTS the substance: no fourth test.** Three grounds, all evidenced: (a) `T-0397-…md:70` shows the **Architect** asking the question **after** routing — it is a *catalog-row-vs-ADR* question, not a *who-ratifies* one; (b) both constructible triggers fail — *"two live forms"* is **subsumed by test 1**, and *"the entry states a cost of the form it chooses"* is **contradicted in both directions** (it fires on `patterns-mobile.md:559-561`, harvested inline; it does not fire on either of ADR-0033's Architect-routed divergences); (c) it does **not** close the greenfield residual, because a first statement on a new stack has no competitor to price. F4 gets **one line in the Architect's routed-edit procedure** instead of a test. **Flagged by the author as the draft's weakest limb — a challenger who builds a surviving trigger closes retro rows 6 and 7** | architect panel (in progress) | the draft §D3 |
-| 🔴 **N1 — `patterns-mobile.md:320-329` (T-0449) carries a PRESCRIPTIVE cross-stack claim with no file:line.** *"**Both platforms** plumb the pair through **every** surface that draws the disc"* is an obligation on Android, written from an **iOS** ticket (`T-0449-…md:316` records the harvest as inline), and `Android onAvatarLoadSucceeded` is cited with no file:line. That is ADR-0033 **D2** — the exact defect Block B/FT-9 fixes on the T-0441 sentence, **second live instance**, and evidence that D2 is as unenforced today as ADR-0032's `Enforced by:` label was. **Recorded, not re-opened** (T-0274/T-0473 precedent) | PM → ios/android lane, with FT-9 | the draft §Retro row 9 / N-E |
+| **F3 — `patterns-mobile.md:265-276` (T-0473)** carries no enforcer + tier. **Its test-2 question is now closed on a stronger ground than the lead pass had:** the candidate governing sentence `:520-522` **did not exist** when the entry landed (`2012b014` 2026-08-02 vs `0e4ede1b` 2026-08-01), so nothing governed the subject and the entry **routes inline** — the suspected mis-routing is not merely unestablished, it is refuted. What stands is the **missing enforcer + tier** and the **unrun test-1 sweep** (14 in-tree guard tests read source as a fixture and none was opened for the withdrawn shape). **Recorded, not re-opened** — T-0274 precedent | PM | ADR-0033 §Ruling 1, Case β · corpus `2012b014` |
+| 🟡 **F4 — no "carries a trade-off ⇒ ADR" limb** in the routing test. **Ruled 2026-08-05: UNBEATEN, NOT SETTLED — no fourth test today, and the question re-opens automatically when the corpus is rebuilt.** **Eight triggers built and killed** and the record must keep them so nobody re-derives them: *two by the author* (*"two live forms that both ship"* — subsumed by test 1; *"the entry states a cost of the form it chooses"* — fires on `:559-561`, harvested inline); *six by the challenger* (T-α correct-but-rejected-form · T-β build/tooling config · T-γ ≥2 recorded fix-rounds · T-δ closed set of ≥2 lockstep call sites · T-ε deviates from the other platform's shipped form · **T-η adds an iOS-obligation cell to the parity table** — the only one that hits the stated target, and still a **location** trigger, i.e. the wording trigger accepted ADR-0033 already closed, over-firing on most of `:578`–`:715`); *two by the lead* (*"the entry ratifies an **owner**-directed form"* — misses row 7, and an owner ruling routes by existing machinery; *"the cost is borne by someone other than the codebase"* — fires on the negative control immediately). **Two riders, both against the draft:** ground **(a)** (`T-0397-…md:70` shows the Architect asking it *after* routing) is **STRUCK** — a censored-sample inference, since Architect rulings are the only place a routed decision is written down at all; and **the prize is mis-specified** — rows 6 and 7 are two decisions ruled by one architect on one day and their "governs?" column came from the invalidated procedure. **The case a fourth test should be measured against is row 8** (T-0527: a named canonical form deleted from the catalog, a shipped file deleted, a committed suite rewritten, `owner: qa`, inline) — **and a fourth test does not reach it; the accepted floor already routes it and nothing ran.** That is **L2**'s evidence, not F4's | architect (re-opens with the rebuilt corpus) | the rejected draft §D3 · challenge §D3 |
+| 🟡 **N1 — RE-SCOPED 2026-08-05 (it was filed too wide).** Two claims, two different repairs. The `Android onAvatarLoadSucceeded` citation is **structural and verifiable by reading** (`ProfileViewModel.kt:179-181`, wired at `CleansiaNavHost.kt:430` / `MainShell.kt:302` / `EditProfileScreen.kt:148`, pinned by `ProfileViewModelTest.kt:635`) — under ADR-0033 D2's own line (*can the next reader verify this by reading what is in the repo?*) that is **descriptive**, missing only its file:line, i.e. **Block B's two-line shape**, not a routing failure. What survives as **prescriptive** is the narrower clause *"**Both platforms** plumb the pair through **every** surface that draws the disc"* — a forward obligation on Android written from an iOS ticket. **N1 = that clause only.** Riding with it: **G2 — `patterns-mobile.md:562-565` (Android, T-0448) is a stale summary of its own shipped code.** `4f81dce7` corrected the **iOS** paragraph (`:319-329`) and left the Android one standing, so the page carries two descriptions of one behaviour — F5's disease, current. **Both recorded, not re-opened** (T-0274/T-0473 precedent) | PM → ios/android lane, with FT-9 | the rejected draft §Retro row 9 / N-E · challenge CH-F, G2 |
 | ~~**F5 — `patterns-mobile.md` still grants the `.medium` detent**~~ — **FIXED 2026-08-05** by the lead pass. Confirmed real at `:1241` (cited `:1230` before drift) against the withdrawal at `:996-1001` (cited `:985-990`), **and factually stale**: shipped is `CodeSheetShell.swift:29` `.fixedSize(horizontal:false, vertical:true)` + `:36` `.presentationDetents([.height(contentHeight)])` + `:78` `CodeSheetHeightKey: PreferenceKey`. The withdrawal survives; the grant is retracted with a dated in-place erratum note | closed | `patterns-mobile.md:1241` |
 | FT-1 verify the `NOT RUN` banner on merge of `fix/tooling-false-green-and-broken-docs` | tooling | ADR-0032 §Follow-ups |
 | FT-2 `custom_rules` bootstrap + `CleansiaWeb` overclaim + widen `included:` | ios | ADR-0032 §Follow-ups |
@@ -397,3 +466,36 @@ ADR-0033 replaces.
   grep. Follow-up **N-F** is the one-command measurement (`git log -p` over the catalog files) that
   converts ten cases into a rate **and** settles whether Case β is historical or hypothetical. Challenger
   and lead rounds pending; **`deliberation.md` §6 — nothing is finalized and no ticket may cite this yet.**
+- **2026-08-05 (T-0553) — the challenger and lead rounds ran, WITH the diffs, and the draft is `rejected`.**
+  N-F was run for the panel: a corpus of every commit touching `agents/knowledge/*.md`, with full diffs.
+  It is the evidence four prior instances declared they lacked, and **it changed verdicts** — which is the
+  meta-finding of this whole sequence. **Composition: five distinct instances**, author ≠ challenger ≠
+  lead (**T-0553 AC1 SATISFIED**). **No `## Defense` was filed** — the author round did not run before the
+  ruling; recorded, and immaterial to the two falsifications, since no defense restores a deleted sentence
+  or conjures an absent artifact.
+  **Three blocking findings from the challenger, all SUSTAINED:** **CH-A** — retro row 8 is wrong and the
+  method is blind in one direction (`ab077504`'s third hunk deletes the governing sentence; the draft
+  scored one hunk); **CH-B** — row 9, the only claimed catch, is a **false positive**
+  (`ProfileViewModel.kt:179-180` + `ProfileViewModelTest.kt:635`, shipped by the governing sentence's own
+  ticket); **CH-C** — *"reach"* re-imports the subject-granularity problem Alternative A was rejected for,
+  demonstrated on the draft's own row 10. **CH-D** sustained in part and **corrected against the
+  challenger** on evidence (rows 6 and 7 are **two** routing decisions — row 7 was routed 2026-07-04 as a
+  fix-round-3 scope addition, `T-0379-…md:115-118`, and ratified *as-is* on 07-19 — not one sitting).
+  **CH-E**, **CH-F**, **CH-G** sustained.
+  **The ruling turns on a fourth defect the lead found in the draft's own table (V-1): D1 states an
+  existential and scores six of ten rows with a compose test.** Read as stated it flips accepted
+  ADR-0033's retro row 2 (T-0441 `inline` ✅) to *Architect*; read as scored, row 9 disappears. **No
+  reading of D1 produces the table it is validated by** — CH-1's defect (*a predicate true and false of
+  the same edit*) relocated from "permitted" onto "governs". **That settles the question the panel was
+  convened on: the definition is WRONG, not merely under-evidenced** — the flip lands on a row whose
+  commit is a clean insertion with a genuinely predating candidate sentence, i.e. a row CH-A's blindness
+  does not touch, so more corpus cannot fix it.
+  **Dispositions:** **D1 REJECTED** · **D2 HELD** (sound, and empty until its currency is defined; the
+  challenger tried to break it and could not) · **D3 UNBEATEN, NOT SETTLED** (eight triggers built and
+  killed; ground (a) struck as a censored-sample inference; re-opens with the rebuilt corpus) ·
+  **D4/Block C′ SUSTAINED and SEVERED** to its own round with the D1 paragraph excised, CH-G fixed, and
+  the Block D addendum held. **The corpus must be REBUILT, not repaired** — the search step ran against
+  the post-edit tree and the scoring step used a different predicate; rows 2, 4, 5 survive as positives.
+  **The bar for the next author is R-1…R-7** in the rejected draft's §Verdict. **A pattern named rather
+  than repeated: three rounds running have declared a limitation and then printed an undiscounted headline
+  number** — R-6 makes discounting a condition of reporting a score.

@@ -122,4 +122,56 @@ final class BookingPriceSummaryTests: XCTestCase {
         let summary = BookingPriceSummary.resolve(quote: quote(total: 100), discount: 500)
         XCTAssertEqual(summary.total, 0, accuracy: 0.0001)
     }
+
+    /// `CreateOrder.Handler`'s own base: `calc.TotalPrice - calc.ExpressSurchargeAmount`.
+    func testThePreSurchargeSubtotalIsTheGrossLessTheServersOwnSurchargeAmount() {
+        XCTAssertEqual(
+            quote(total: 1200, surcharge: 200, applied: true).preSurchargeSubtotal,
+            1000,
+            accuracy: 0.0001
+        )
+    }
+
+    func testWithoutASurchargeThePreSurchargeSubtotalIsTheWholeQuote() {
+        XCTAssertEqual(quote(total: 1000).preSurchargeSubtotal, 1000, accuracy: 0.0001)
+    }
+
+    /// The surcharge here is deliberately not 20 % of anything: only the quote's own ratio takes 100 to
+    /// 115, so a restatement hardcoding the express rate fails this and a passing one owns no rate.
+    func testRestatingADiscountUsesTheQuotesOwnRatioNeverTheExpressRate() {
+        XCTAssertEqual(
+            quote(total: 1150, surcharge: 150, applied: true).discountAsCharged(100),
+            115,
+            accuracy: 0.0001
+        )
+    }
+
+    /// The customer would have paid 1200 and pays (1000 - 100) * 1.2 = 1080, so they saved 120.
+    func testADiscountResolvedOnTheExpressBaseIsRestatedAgainstTheChargedPrice() {
+        let quoted = quote(total: 1200, surcharge: 200, applied: true)
+
+        XCTAssertEqual(quoted.discountAsCharged(100), 120, accuracy: 0.0001)
+        XCTAssertEqual(
+            BookingPriceSummary.resolve(quote: quoted, discount: quoted.discountAsCharged(100)).total,
+            1080,
+            accuracy: 0.0001
+        )
+    }
+
+    func testWithoutASurchargeADiscountIsAlreadyStatedAgainstTheChargedPrice() {
+        XCTAssertEqual(quote(total: 1000).discountAsCharged(100), 100, accuracy: 0.0001)
+    }
+
+    /// A waived slot is charged no surcharge, so it is the plain case however express the hour is.
+    func testAWaivedExpressSlotLeavesTheDiscountAlone() {
+        XCTAssertEqual(
+            quote(total: 1000, surcharge: 0, applied: true, waived: true).discountAsCharged(100),
+            100,
+            accuracy: 0.0001
+        )
+    }
+
+    func testAnEmptyBaseCannotScaleAnythingAndReturnsTheDiscountUnchanged() {
+        XCTAssertEqual(quote(total: 0).discountAsCharged(50), 50, accuracy: 0.0001)
+    }
 }

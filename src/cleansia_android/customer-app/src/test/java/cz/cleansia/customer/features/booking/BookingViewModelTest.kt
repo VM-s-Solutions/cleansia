@@ -16,6 +16,7 @@ import cz.cleansia.customer.core.payments.CreatePaymentIntentResponse
 import cz.cleansia.customer.core.payments.PaymentRepository
 import cz.cleansia.customer.core.promo.PromoCodeApi
 import cz.cleansia.customer.core.promo.PromoCodeError
+import cz.cleansia.customer.core.promo.ValidatePromoCodeRequest
 import cz.cleansia.customer.core.promo.ValidatePromoCodeResponse
 import cz.cleansia.customer.core.referral.ReferralRepository
 import cz.cleansia.customer.core.referral.ValidateReferralResponse
@@ -629,6 +630,95 @@ class BookingViewModelTest {
         assertNull((state as PromoCodeUiState.Invalid).error)
     }
 
+    /**
+     * `CreateOrder.Handler` previews the promo against `calc.TotalPrice - calc.ExpressSurchargeAmount`
+     * and applies the surcharge afterwards, so the gross is a base the submit never reproduces: a
+     * percentage previews a fifth too much and a minimum-order floor clears that the submit refuses.
+     */
+    @Test
+    fun validatePromoCodeNow_onAnExpressQuote_validatesAgainstThePreSurchargeSubtotal() = runTest {
+        coEvery { bookingApi.quote(any()) } returns Response.success(
+            quoteWith(totalPrice = 1200.0, surcharge = 200.0),
+        )
+        val request = slot<ValidatePromoCodeRequest>()
+        coEvery { promoCodeApi.validate(capture(request)) } returns Response.success(
+            ValidatePromoCodeResponse(isValid = true, discountAmount = 100.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+        vm.validatePromoCodeNow("CODE")
+
+        assertEquals(1000.0, request.captured.orderSubtotal, 0.001)
+    }
+
+    /**
+     * The validator answers on the pre-surcharge base while the price it comes off carries the
+     * surcharge. Left as it arrives, the summary reads 1100 against a charged 1080.
+     */
+    @Test
+    fun validatePromoCodeNow_onAnExpressQuote_restatesTheDiscountAgainstThePriceItComesOff() = runTest {
+        val quote = quoteWith(totalPrice = 1200.0, surcharge = 200.0)
+        coEvery { bookingApi.quote(any()) } returns Response.success(quote)
+        coEvery { promoCodeApi.validate(any()) } returns Response.success(
+            ValidatePromoCodeResponse(isValid = true, discountAmount = 100.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+        val state = vm.validatePromoCodeNow("CODE")
+        advanceUntilIdle()
+
+        assertEquals(120.0, (state as PromoCodeUiState.Valid).discountAmount, 0.001)
+        assertEquals(1080.0, BookingPriceSummary.resolve(quote, vm.effectiveDiscount.value).total, 0.001)
+    }
+
+    /**
+     * No surcharge, no delta — the base is the whole quote and the answer is already stated against the
+     * price it comes off. A fix that moves either number here has over-corrected.
+     */
+    @Test
+    fun validatePromoCodeNow_withoutAnExpressSurcharge_sendsTheQuoteWholeAndLeavesTheAnswerAlone() = runTest {
+        val quote = quoteWith(totalPrice = 1000.0, surcharge = 0.0, surchargeApplied = false)
+        coEvery { bookingApi.quote(any()) } returns Response.success(quote)
+        val request = slot<ValidatePromoCodeRequest>()
+        coEvery { promoCodeApi.validate(capture(request)) } returns Response.success(
+            ValidatePromoCodeResponse(isValid = true, discountAmount = 100.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+        val state = vm.validatePromoCodeNow("CODE")
+        advanceUntilIdle()
+
+        assertEquals(1000.0, request.captured.orderSubtotal, 0.001)
+        assertEquals(100.0, (state as PromoCodeUiState.Valid).discountAmount, 0.001)
+        assertEquals(900.0, BookingPriceSummary.resolve(quote, vm.effectiveDiscount.value).total, 0.001)
+    }
+
+    /** A membership waiver leaves an express hour charging no surcharge, so it is the plain case. */
+    @Test
+    fun validatePromoCodeNow_onAWaivedExpressQuote_sendsTheQuoteWholeAndLeavesTheAnswerAlone() = runTest {
+        coEvery { bookingApi.quote(any()) } returns Response.success(
+            quoteWith(totalPrice = 1000.0, surcharge = 0.0, surchargeApplied = true, waived = true),
+        )
+        val request = slot<ValidatePromoCodeRequest>()
+        coEvery { promoCodeApi.validate(capture(request)) } returns Response.success(
+            ValidatePromoCodeResponse(isValid = true, discountAmount = 100.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+        val state = vm.validatePromoCodeNow("CODE")
+
+        assertEquals(1000.0, request.captured.orderSubtotal, 0.001)
+        assertEquals(100.0, (state as PromoCodeUiState.Valid).discountAmount, 0.001)
+    }
+
     @Test
     fun clearPromoCode_resetsStateAndBookingPayload() = runTest {
         coEvery { promoCodeApi.validate(any()) } returns Response.success(
@@ -810,14 +900,24 @@ class BookingViewModelTest {
         assertEquals(0.0, vm.effectiveDiscount.value, 0.001)
     }
 
-    private fun quoteWith(tierDiscount: Double, membershipDiscount: Double) = QuoteOrderResponse(
-        totalPrice = 1000.0,
+    private fun quoteWith(
+        tierDiscount: Double = 0.0,
+        membershipDiscount: Double = 0.0,
+        totalPrice: Double = 1000.0,
+        surcharge: Double = 0.0,
+        surchargeApplied: Boolean = surcharge > 0.0,
+        waived: Boolean = false,
+    ) = QuoteOrderResponse(
+        totalPrice = totalPrice,
         tierDiscountAmount = tierDiscount,
         membershipDiscountAmount = membershipDiscount,
         currencyId = "cur-1",
         currencyCode = "CZK",
-        servicesSubtotal = 1000.0,
+        servicesSubtotal = totalPrice,
         packagesSubtotal = 0.0,
+        expressSurchargeApplied = surchargeApplied,
+        expressSurchargeAmount = surcharge,
+        expressSurchargeWaivedByMembership = waived,
         exchangeRate = 1.0,
     )
 }

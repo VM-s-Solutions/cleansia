@@ -98,6 +98,64 @@ class BookingPriceSummaryTest {
         )
     }
 
+    /** `CreateOrder.Handler`'s own base: `calc.TotalPrice - calc.ExpressSurchargeAmount`. */
+    @Test
+    fun `the pre-surcharge subtotal is the gross less the server's own surcharge amount`() {
+        assertEquals(
+            1000.0,
+            quote(totalPrice = 1200.0, surchargeApplied = true, surcharge = 200.0).preSurchargeSubtotal,
+            0.001,
+        )
+    }
+
+    @Test
+    fun `without a surcharge the pre-surcharge subtotal is the whole quote`() {
+        assertEquals(1000.0, quote(totalPrice = 1000.0).preSurchargeSubtotal, 0.001)
+    }
+
+    /**
+     * The surcharge here is deliberately not 20 % of anything: only the quote's own ratio takes 100 to
+     * 115, so a restatement hardcoding the express rate fails this and a passing one owns no rate.
+     */
+    @Test
+    fun `restating a discount uses the quote's own ratio, never the express rate`() {
+        assertEquals(
+            115.0,
+            quote(totalPrice = 1150.0, surchargeApplied = true, surcharge = 150.0).discountAsCharged(100.0),
+            0.001,
+        )
+    }
+
+    /** The customer would have paid 1200 and pays (1000 - 100) * 1.2 = 1080, so they saved 120. */
+    @Test
+    fun `a discount resolved on the express base is restated against the charged price`() {
+        val quote = quote(totalPrice = 1200.0, surchargeApplied = true, surcharge = 200.0)
+
+        assertEquals(120.0, quote.discountAsCharged(100.0), 0.001)
+        assertEquals(1080.0, BookingPriceSummary.resolve(quote, quote.discountAsCharged(100.0)).total, 0.001)
+    }
+
+    @Test
+    fun `without a surcharge a discount is already stated against the charged price`() {
+        assertEquals(100.0, quote(totalPrice = 1000.0).discountAsCharged(100.0), 0.001)
+    }
+
+    /** A waived slot is charged no surcharge, so it is the plain case however express the hour is. */
+    @Test
+    fun `a waived express slot leaves the discount alone`() {
+        assertEquals(
+            100.0,
+            quote(totalPrice = 1000.0, surchargeApplied = true, surcharge = 0.0, waived = true)
+                .discountAsCharged(100.0),
+            0.001,
+        )
+    }
+
+    @Test
+    fun `an empty base cannot scale anything and returns the discount unchanged`() {
+        assertEquals(50.0, quote(totalPrice = 0.0).discountAsCharged(50.0), 0.001)
+    }
+
     private fun quote(
         totalPrice: Double,
         surchargeApplied: Boolean = false,

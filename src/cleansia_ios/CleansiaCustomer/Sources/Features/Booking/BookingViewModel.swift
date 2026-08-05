@@ -275,11 +275,12 @@ final class BookingViewModel: ViewModel {
             return .idle
         }
         promoState = .validating
-        let subtotal = quoteState.quote?.totalPrice ?? 0
+        let quote = quoteState.quote
+        let subtotal = quote?.preSurchargeSubtotal ?? 0
         let resolved: PromoCodeState = switch await promoClient.validate(code: normalized, orderSubtotal: subtotal) {
         case let .success(validation):
             if validation.isValid, let discount = validation.discountAmount {
-                .valid(discountAmount: discount)
+                .valid(discountAmount: quote?.discountAsCharged(discount) ?? discount)
             } else {
                 .invalid(PromoCodeError.from(validation.errorCode))
             }

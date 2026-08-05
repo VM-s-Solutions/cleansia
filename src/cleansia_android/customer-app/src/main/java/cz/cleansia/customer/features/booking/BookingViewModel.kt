@@ -89,6 +89,7 @@ data class PaymentSheetParams(
 sealed interface PromoCodeUiState {
     data object Idle : PromoCodeUiState
     data object Validating : PromoCodeUiState
+    /** [discountAmount] is stated against the charged price, like every other discount on this screen. */
     data class Valid(val discountAmount: Double) : PromoCodeUiState
     /** [error] is null when the failure is generic (network/HTTP/unknown enum value). */
     data class Invalid(val error: PromoCodeError?) : PromoCodeUiState
@@ -241,7 +242,8 @@ class BookingViewModel @Inject constructor(
             return PromoCodeUiState.Idle
         }
         _promoCodeState.value = PromoCodeUiState.Validating
-        val subtotal = (_quoteState.value as? QuoteState.Quoted)?.response?.totalPrice ?: 0.0
+        val quote = (_quoteState.value as? QuoteState.Quoted)?.response
+        val subtotal = quote?.preSurchargeSubtotal ?: 0.0
         val newState = try {
             val resp = promoCodeApi.validate(ValidatePromoCodeRequest(normalized, subtotal))
             if (!resp.isSuccessful) {
@@ -250,7 +252,8 @@ class BookingViewModel @Inject constructor(
                 val body = resp.body()
                 when {
                     body == null -> PromoCodeUiState.Invalid(null)
-                    body.isValid && body.discountAmount != null -> PromoCodeUiState.Valid(body.discountAmount)
+                    body.isValid && body.discountAmount != null ->
+                        PromoCodeUiState.Valid(quote?.discountAsCharged(body.discountAmount) ?: body.discountAmount)
                     else -> PromoCodeUiState.Invalid(PromoCodeError.fromString(body.errorCode))
                 }
             }

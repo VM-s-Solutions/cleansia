@@ -85,6 +85,7 @@ enum BookingQuoteState: Equatable {
 enum PromoCodeState: Equatable {
     case idle
     case validating
+    /// `discountAmount` is stated against the charged price, like every other discount on this screen.
     case valid(discountAmount: Double)
     case invalid(PromoCodeError?)
 

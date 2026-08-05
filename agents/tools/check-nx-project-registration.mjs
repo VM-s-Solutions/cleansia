@@ -34,6 +34,20 @@
  * disk (the registration), and `tsconfig.base.json` (the import path). Breaking one glob still
  * leaves the other two firing, which is what a single-witness grep cannot offer.
  *
+ * REGISTRATION IS NECESSARY BUT NOT SUFFICIENT — NX-6 and NX-7 (T-0546). A project can be registered,
+ * tagged and aliased and STILL have a test target that has never compiled a single test, in two ways
+ * that both report success:
+ *   - NX-6, a `tsconfig` whose `extends` names a file that is not there. Four customer feature libs
+ *     shipped with one `../` too many, resolving outside the workspace. With no spec present Jest
+ *     prints "No tests found, exiting with code 0" and Nx reports `Successfully ran target test`; the
+ *     first person to add a spec gets `TS5083` and reads it as their own mistake. The wrong depth and
+ *     the right depth are one character apart and neither is visible in any build output.
+ *   - NX-7, a jest config with no `test` target to select it (or a target whose `jestConfig` path does
+ *     not resolve). `legal-pages` had a jest-shaped lib and no target, so `run-many -t test --all`
+ *     simply did not list it — an absence no run can print.
+ * Both are the same failure mode as an unregistered lib, one layer in: the corpus is smaller than it
+ * looks and nothing says so.
+ *
  * TAGS ARE ASSERTED BY PRESENCE, NOT BY VALUE. A `project.json` with no `tags` puts the lib straight
  * back outside `@nx/enforce-module-boundaries` — half of the original hole — so an empty or missing
  * array fails here. The tag VOCABULARY (`scope:*` / `type:*`) is T-0534's, which is `in_progress`;
@@ -46,7 +60,7 @@
  *                                                                   #   (used by the self-test)
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative, resolve, sep } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const args = process.argv.slice(2);
@@ -80,6 +94,10 @@ const SKIP_DIRS = new Set([
 ]);
 
 const SOURCE_EXT = [".ts", ".tsx", ".html", ".scss", ".css"];
+
+const JEST_CONFIG_NAMES = ["jest.config.ts", "jest.config.js", "jest.config.mjs"];
+
+const isTsconfigName = (name) => /^tsconfig(\..+)?\.json$/.test(name);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The KNOWN, EXACT-MATCH sets.
@@ -192,6 +210,47 @@ function readJson(file) {
     }
 }
 
+/**
+ * tsconfigs are JSONC. Block comments and line comments are stripped before parsing; the line form is
+ * ANCHORED to the start of a line so that the `//` inside `"$schema": "https://…"` survives.
+ */
+function readTsconfig(file) {
+    try {
+        const raw = readFileSync(file, "utf8")
+            .replace(/\/\*[\s\S]*?\*\//g, "")
+            .replace(/^\s*\/\/.*$/gm, "");
+        return { value: JSON.parse(raw) };
+    } catch (e) {
+        return { error: e.message };
+    }
+}
+
+/** TypeScript accepts `./x`, `./x.json`, and a DIRECTORY holding `tsconfig.json`. All three resolve. */
+function tsconfigTargetExists(from, target) {
+    const abs = resolve(dirname(from), target);
+    if (existsSync(abs) && !isDir(abs)) return true;
+    if (existsSync(`${abs}.json`)) return true;
+    return existsSync(join(abs, "tsconfig.json"));
+}
+
+const jestConfigOf = (dir) => JEST_CONFIG_NAMES.map((n) => join(dir, n)).find(existsSync);
+
+/** Every file under `dir` matching `match`, skipping the same directories the project walk does. */
+function walkFiles(dir, match) {
+    const out = [];
+    const stack = [dir];
+    while (stack.length) {
+        const d = stack.pop();
+        for (const e of children(d)) {
+            if (SKIP_DIRS.has(e.name)) continue;
+            const p = join(d, e.name);
+            if (e.isDirectory()) stack.push(p);
+            else if (match(e.name)) out.push(p);
+        }
+    }
+    return out;
+}
+
 /** Exact-match reconciliation against a recorded set. Deviation in EITHER direction is a finding. */
 function reconcile(observed, recorded, { rule, label, file, staleFile, describe }) {
     for (const [key, value] of observed) {
@@ -217,6 +276,9 @@ function reconcile(observed, recorded, { rule, label, file, staleFile, describe 
 let libRoots = 0;
 let registered = 0;
 let aliases = 0;
+let tsconfigs = 0;
+let jestConfigs = 0;
+let libProjects = [];
 
 if (!isDir(WORKSPACE)) {
     add(WORKSPACE, "P0", "the Nx workspace directory is missing — nothing could be checked");
@@ -224,6 +286,7 @@ if (!isDir(WORKSPACE)) {
     add(LIBS, "P0", "libs/ is missing — the corpus is EMPTY, which is a failure, not a pass");
 } else {
     const { projects, orphans } = walkLibs();
+    libProjects = projects;
     libRoots = projects.filter((p) => p.libRoot).length;
     registered = projects.filter((p) => p.registered).length;
 
@@ -388,10 +451,130 @@ for (const app of APP_ROSTER) {
     }
 }
 
+// ── NX-6 / NX-7: a registered, tagged project whose TEST TARGET still runs nothing ──
+//
+// Neither rule gets a recorded set. Both baselines are zero as of T-0546 and each instance is a
+// one-token fix, so there is nothing to ship enforcement behind (`agents/process/enforcement.md`).
+// If a future gap genuinely has to land ahead of its cleanup, record it the way NX-4/NX-5 do — an
+// exact-match set that goes red in both directions — never a suppression flag.
+if (isDir(WORKSPACE)) {
+    const tsconfigFiles = walkFiles(WORKSPACE, isTsconfigName);
+    tsconfigs = tsconfigFiles.length;
+    if (tsconfigs === 0) {
+        add(
+            WORKSPACE,
+            "P0",
+            "the walk found ZERO tsconfig files — the enumeration is broken or the tree moved; " +
+                "this is a HARD FAILURE, never a silent pass",
+        );
+    }
+
+    // NX-6 — a tsconfig that cannot resolve its own base or one of its references.
+    for (const file of tsconfigFiles) {
+        const { value, error } = readTsconfig(file);
+        if (error) {
+            add(file, "NX-6", `tsconfig does not parse as JSON(C) — ${error}`);
+            continue;
+        }
+        const bases = Array.isArray(value?.extends)
+            ? value.extends
+            : value?.extends
+              ? [value.extends]
+              : [];
+        for (const base of bases) {
+            if (typeof base !== "string") {
+                add(file, "NX-6", `\`extends\` holds ${typeof base}, not a path string`);
+                continue;
+            }
+            // A bare specifier (`@tsconfig/strictest`) resolves through node_modules — out of scope.
+            if (!base.startsWith(".")) continue;
+            if (!tsconfigTargetExists(file, base)) {
+                add(
+                    file,
+                    "NX-6",
+                    `\`extends\`: '${base}' is not on disk (resolves to ` +
+                        `${rel(resolve(dirname(file), base))}). A dangling base is SILENT until a ` +
+                        "spec exists: Jest then dies with TS5083 and ZERO tests run, while a lib " +
+                        "with no spec prints 'No tests found' and Nx reports success. Count the " +
+                        "'../' segments against a sibling lib at the same depth.",
+                );
+            }
+        }
+        for (const ref of Array.isArray(value?.references) ? value.references : []) {
+            const path = ref?.path;
+            if (typeof path !== "string") {
+                add(file, "NX-6", "a `references` entry has no `path` string");
+                continue;
+            }
+            if (!tsconfigTargetExists(file, path)) {
+                add(
+                    file,
+                    "NX-6",
+                    `\`references\`: '${path}' is not on disk (resolves to ` +
+                        `${rel(resolve(dirname(file), path))})`,
+                );
+            }
+        }
+    }
+
+    // NX-7 — the jest config and the `test` target must both exist, and the target's paths resolve.
+    const testable = [
+        ...libProjects.filter((p) => p.registered).map((p) => p.dir),
+        ...APP_ROSTER.map((a) => join(APPS, a)).filter((d) => existsSync(join(d, "project.json"))),
+    ];
+    for (const dir of testable) {
+        const file = join(dir, "project.json");
+        const { value, error } = readJson(file);
+        if (error) continue; // already reported by NX-2
+        const jestConfig = jestConfigOf(dir);
+        if (jestConfig) jestConfigs++;
+        const target = value?.targets?.test;
+
+        if (jestConfig && !target) {
+            add(
+                dir,
+                "NX-7",
+                `has ${relWs(jestConfig)} but its project.json declares NO \`test\` target — ` +
+                    "`nx run-many -t test` cannot select the project, so the whole suite is absent " +
+                    "from every run and nothing prints its absence",
+            );
+        }
+        if (target && !jestConfig && String(target.executor ?? "").includes("jest")) {
+            add(
+                file,
+                "NX-7",
+                `declares a jest \`test\` target but no ${JEST_CONFIG_NAMES.join("/")} is on disk`,
+            );
+        }
+        for (const key of ["jestConfig", "tsConfig"]) {
+            const option = target?.options?.[key];
+            if (typeof option === "string" && !existsSync(join(WORKSPACE, option))) {
+                add(
+                    file,
+                    "NX-7",
+                    `\`test\` target option \`${key}\` -> '${option}' is not on disk (paths here are ` +
+                        "workspace-relative, not project-relative)",
+                );
+            }
+        }
+    }
+
+    // Anchored on `registered` so the corpus anchors above own the empty cases and report them once.
+    if (registered > 0 && jestConfigs === 0) {
+        add(
+            WORKSPACE,
+            "P0",
+            `read ${registered} registered lib project(s) and ZERO jest configs — the jest-config ` +
+                "probe is stale; this is a HARD FAILURE, never a silent pass",
+        );
+    }
+}
+
 // ── report ──────────────────────────────────────────────────────────────────
 console.log(
     `nx-project-registration: read ${libRoots} lib root(s), ${registered} registered project(s), ` +
-        `${aliases} alias(es) into libs/, ${APP_ROSTER.length} rostered app(s)`,
+        `${aliases} alias(es) into libs/, ${APP_ROSTER.length} rostered app(s), ` +
+        `${tsconfigs} tsconfig(s), ${jestConfigs} jest config(s)`,
 );
 
 if (known.length) {

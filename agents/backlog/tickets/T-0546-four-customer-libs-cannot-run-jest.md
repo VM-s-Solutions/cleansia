@@ -106,4 +106,37 @@ live in the lib rather than in `apps/cleansia.app`, it currently could not run.
   target. **Status unchanged (`draft`) and no AC was altered** — the open AC3 decision still gates it.
 
 ## Review
-<!-- reviewer verdict here -->
+
+### Catalog-edit routing (ADR-0033) — verdict: **inline**
+
+One entry added to `agents/knowledge/patterns-frontend.md`, appended to the existing
+`check-nx-project-registration.mjs` block: *"A registered lib is not yet a runnable one — two ways a
+green `test` target compiles nothing"*.
+
+- **Test 1 — does it put shipped code in violation?** No. **Sweep:**
+  `node agents/tools/check-nx-project-registration.mjs` over the whole workspace — 205 tsconfigs,
+  64 jest configs, 64 registered lib projects, 3 rostered apps → **0 violations, 0 known**. The six
+  dangling `extends` and the one missing `test` target are fixed in this same change, so the entry's
+  baseline is zero by construction.
+- **Test 2 — does it narrow open latitude? Floor claimed.** **Searched** `patterns-frontend.md` and
+  `consistency.md` for `extends`, `tsconfig`, `jest.config`, `test target`, `No tests found`, `TS5083`.
+  Returned: `extends` matches only `extends UnsubscribeControlDirective` (the facade base, a different
+  subject); `tsconfig` matches only the `tsconfig.base.json` **alias** rule (an import path naming a
+  missing lib) and `tsconfig.app.json` excluding specs from `npm run typecheck`; `jest.config`,
+  `test target`, `No tests found` and `TS5083` return **nothing in either file**. No sentence covers
+  tsconfig `extends` resolution or the jest-config ⇔ test-target pairing at any level of generality, and
+  the entry carves no exception out of the registration rule — it extends it in the same direction.
+- **Test 3 — prescriptive claim about an unbuilt stack?** No. Frontend only, built and run here
+  (`nx run-many -t test --all`, the three production builds, the checker + its self-test).
+- **Price paid:** the entry constrains call sites, so it ships its gate — **Enforced by:**
+  `check-nx-project-registration.mjs` NX-6/NX-7 — **T1-CI**.
+
+### Evidence
+
+- **Mutation proof of the `extends` fix:** re-broke `checkout/tsconfig.json` back to `../../../../` →
+  `TS5083`, `Tests: 0 total`, suite failed to run. Restored → `8 passed`.
+- **Mutation proof of the guard:** the checker stubbed to `process.exit(0)` fails **36 of 40**
+  self-test scenarios (the 4 survivors are the must-NOT-fire cases a no-op passes by construction).
+- **AC4 counts:** before — `run-many -t test --all` green over **61** projects, of which **12** had a
+  `test` target and **zero** spec files (3 of the 4 libs in this ticket; `legal-pages` was not in the run
+  at all). After — **62** projects, and the zero-spec list is down to **8**.

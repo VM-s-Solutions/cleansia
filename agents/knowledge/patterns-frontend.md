@@ -583,11 +583,39 @@ than a pass — **T1-CI** (`.github/workflows/nx-project-registration.yml`, its 
 `frontend-ci`'s lint step is `continue-on-error: true`, and `nx affected` can never select a project
 that does not exist). Tags are asserted by **presence**; the vocabulary is T-0534's.
 
-Both of its recorded sets are **empty** since T-0554/T-0555, so all five of its rules gate strictly:
+Both of its recorded sets are **empty** since T-0554/T-0555, so all seven of its rules gate strictly:
 the first dangling alias or unregistered source tree you add is red. A recorded set was never a
 suppression list — it is exact-match in **both** directions, so closing a recorded gap means deleting
 its entry in the **same** change, and the self-test covers that ratchet by injecting entries into a
 throwaway copy of the checker rather than by giving the shipped tool a suppression flag.
+
+### A registered lib is not yet a *runnable* one — two ways a green `test` target compiles nothing
+
+Registration, tags and an alias get a lib into `nx run-many -t test --all`. They do not get a single
+test compiled, and both ways of failing that print **success**:
+
+- **The lib's `tsconfig.json` `extends` a path that is not there.** Count the `../` segments against a
+  sibling at the same depth — a feature lib under `libs/<area>/<lib>/` is **three** up
+  (`../../../tsconfig.base.json`), a `libs/data-access/<lib>/` is three as well. With a spec present the
+  suite dies at `TS5083` before a single test runs; with **no** spec — which is the state a fresh lib is
+  in — Jest prints `No tests found, exiting with code 0` and Nx prints `Successfully ran target test`.
+  Four customer libs and two `data-access` libs shipped that way (T-0546); the wrong depth and the right
+  one are one character apart and no build output shows either.
+- **The lib has a `jest.config.ts` and no `test` target.** Then it is not in the run at all, and an
+  absent project is the one failure no log can print — `legal-pages` had the whole jest shape and no
+  target.
+
+So the number to look at after adding a lib is **how many projects ran a test**, not whether the run was
+green: `run-many` was green over 61 projects while three of them compiled nothing and a fourth was not
+listed. When you add a lib, add the spec that proves its target works in the same change — a corrected
+`extends` with zero specs is byte-for-byte as green as the broken one.
+
+**Enforced by:** `agents/tools/check-nx-project-registration.mjs` rules **NX-6** (every `tsconfig*.json`
+resolves its `extends` and its `references`) and **NX-7** (`jest.config.*` ⇔ a `test` target, and the
+target's `jestConfig`/`tsConfig` options resolve — they are **workspace**-relative, not project-relative)
+— **T1-CI**, same repo-root workflow, same anti-vacuity anchor: zero tsconfigs read, or zero jest configs
+across a non-empty project set, is a hard failure. Neither rule has a recorded set; both baselines are
+zero and each instance is a one-token fix.
 
 **A dangling `tsconfig.base.json` alias is deleted, not repointed — decide per alias, by grep.** An
 alias with live importers and a typo'd path is a *repair*; an alias with **zero** importers whose lib

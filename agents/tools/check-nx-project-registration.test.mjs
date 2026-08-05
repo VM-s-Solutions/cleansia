@@ -18,7 +18,13 @@
  * which is the one thing a recorded set must never become.
  *
  * The AC3 scenarios are the point of the file: a corpus that has gone EMPTY must be RED. A guard
- * that goes green because it looked at nothing is the failure this ticket exists to prevent.
+ * that goes green because it looked at nothing is the failure this ticket exists to prevent. The
+ * NX-6/NX-7 scenarios (T-0546) replay the same thing one layer in — a registered, tagged lib whose
+ * test target compiles nothing — so the fixture carries real tsconfigs and jest configs.
+ *
+ * Stub the checker to exit 0 and 36 of the 40 scenarios go red. The 4 survivors are the must-NOT-fire
+ * ones (a tag value the guard has no opinion on, a JSONC comment, a bare `extends` specifier, an
+ * extensionless `extends`), which a no-op passes by construction.
  *
  *   node agents/tools/check-nx-project-registration.test.mjs
  */
@@ -59,6 +65,9 @@ const rm = (root, p) => rmSync(join(root, p), { recursive: true, force: true });
 
 const WS = "src/Cleansia.App";
 
+/** `libs/core/partner-services` sits three segments deep, so its base is three `../` up. */
+const toBase = (dir) => `${"../".repeat(dir.split("/").length)}tsconfig.base.json`;
+
 function freshRoot() {
     const root = mkdtempSync(join(tmpdir(), "nx-project-registration-"));
     const paths = {};
@@ -70,7 +79,34 @@ function freshRoot() {
             sourceRoot: `${dir}/src`,
             projectType: "library",
             tags,
+            targets: {
+                test: {
+                    executor: "@nx/jest:jest",
+                    options: {
+                        jestConfig: `${dir}/jest.config.ts`,
+                        tsConfig: `${dir}/tsconfig.spec.json`,
+                    },
+                },
+                lint: { executor: "@nx/eslint:lint" },
+            },
         });
+        // The fixture carries the real shape — a solution tsconfig referencing a lib and a spec
+        // config, plus the jest config the test target names — so NX-6/NX-7 read a real corpus.
+        writeJson(root, `${WS}/${dir}/tsconfig.json`, {
+            extends: toBase(dir),
+            files: [],
+            include: [],
+            references: [{ path: "./tsconfig.lib.json" }, { path: "./tsconfig.spec.json" }],
+        });
+        writeJson(root, `${WS}/${dir}/tsconfig.lib.json`, {
+            extends: "./tsconfig.json",
+            include: ["src/**/*.ts"],
+        });
+        writeJson(root, `${WS}/${dir}/tsconfig.spec.json`, {
+            extends: "./tsconfig.json",
+            include: ["src/**/*.spec.ts"],
+        });
+        write(root, `${WS}/${dir}/jest.config.ts`, `export default { displayName: '${name}' };\n`);
         paths[alias] = [`${dir}/src/index.ts`];
     }
     writeJson(root, `${WS}/tsconfig.base.json`, { compilerOptions: { paths } });
@@ -146,7 +182,8 @@ scenario("an unmutated workspace is clean and states what it read", {
     // The count is what the tool READ, not what it approved — and with both recorded sets empty a
     // clean fixture must report ZERO known, not a quiet pass over something it tolerated.
     expectText: [
-        "read 4 lib root(s), 4 registered project(s), 4 alias(es) into libs/, 3 rostered app(s)",
+        "read 4 lib root(s), 4 registered project(s), 4 alias(es) into libs/, 3 rostered app(s), " +
+            "13 tsconfig(s), 4 jest config(s)",
         "0 violation(s), 0 known",
     ],
 });
@@ -334,6 +371,145 @@ scenario("the recorded orphan source tree being cleaned up -> RED until its entr
     tool: recordScratch,
     expectExit: 1,
     expectText: ["NX-5", "STALE RECORD", SCRATCH_ROOT, "delete its entry"],
+});
+
+// ── NX-6 — a tsconfig that cannot resolve its own base (T-0546) ─────────────
+// The defect this replays: four customer libs extended `../../../../tsconfig.base.json`, one `../`
+// too many, resolving to a path outside the workspace. With no spec in the lib, Jest printed
+// "No tests found, exiting with code 0" and Nx reported success for years.
+const BROKEN_LIB = "libs/cleansia-customer-features/orders";
+
+scenario("NX-6: one `../` too many in `extends` -> RED, naming the path it resolved to", {
+    mutate: (r) => {
+        const p = `${WS}/${BROKEN_LIB}/tsconfig.json`;
+        writeJson(r, p, { ...readJson(r, p), extends: `../${toBase(BROKEN_LIB)}` });
+    },
+    expectExit: 1,
+    expectText: ["NX-6", `${BROKEN_LIB}/tsconfig.json`, "is not on disk", "TS5083"],
+});
+
+scenario("NX-6: every broken tsconfig is named, not just the first", {
+    mutate: (r) => {
+        for (const dir of [BROKEN_LIB, "libs/shared/components"]) {
+            const p = `${WS}/${dir}/tsconfig.json`;
+            writeJson(r, p, { ...readJson(r, p), extends: `../${toBase(dir)}` });
+        }
+    },
+    expectExit: 1,
+    expectText: [BROKEN_LIB, "libs/shared/components", "2 violation(s)"],
+});
+
+scenario("NX-6: a `references` entry naming a tsconfig that is not there -> RED", {
+    mutate: (r) => rm(r, `${WS}/${BROKEN_LIB}/tsconfig.spec.json`),
+    expectExit: 1,
+    expectText: ["NX-6", "`references`: './tsconfig.spec.json' is not on disk"],
+});
+
+scenario("NX-6: a tsconfig that does not parse -> RED, never skipped", {
+    mutate: (r) => write(r, `${WS}/${BROKEN_LIB}/tsconfig.lib.json`, "{ not json"),
+    expectExit: 1,
+    expectText: ["NX-6", "does not parse as JSON(C)"],
+});
+
+scenario("NX-6: comments and a $schema URL do not read as a parse failure", {
+    mutate: (r) =>
+        write(
+            r,
+            `${WS}/${BROKEN_LIB}/tsconfig.lib.json`,
+            '// the lib compilation unit\n{\n  "$schema": "https://json.schemastore.org/tsconfig",\n' +
+                '  /* inherits the solution config */\n  "extends": "./tsconfig.json"\n}\n',
+        ),
+    expectExit: 0,
+    rejectText: ["NX-6"],
+});
+
+scenario("NX-6: a bare package specifier in `extends` is left to node resolution", {
+    mutate: (r) => {
+        const p = `${WS}/${BROKEN_LIB}/tsconfig.lib.json`;
+        writeJson(r, p, { ...readJson(r, p), extends: "@tsconfig/strictest/tsconfig.json" });
+    },
+    expectExit: 0,
+    rejectText: ["NX-6"],
+});
+
+scenario("NX-6: `extends` written without the .json extension still resolves", {
+    mutate: (r) => {
+        const p = `${WS}/${BROKEN_LIB}/tsconfig.lib.json`;
+        writeJson(r, p, { ...readJson(r, p), extends: "./tsconfig" });
+    },
+    expectExit: 0,
+    rejectText: ["NX-6"],
+});
+
+// ── NX-7 — a suite no run can select (T-0546) ───────────────────────────────
+// `legal-pages` had a jest-shaped lib and no `test` target, so `run-many -t test --all` never listed
+// it. An absent project prints nothing at all — the one failure mode no log can show you.
+scenario("NX-7: a jest config with NO `test` target -> RED", {
+    mutate: (r) => {
+        const p = `${WS}/${BROKEN_LIB}/project.json`;
+        const j = readJson(r, p);
+        delete j.targets.test;
+        writeJson(r, p, j);
+    },
+    expectExit: 1,
+    expectText: ["NX-7", BROKEN_LIB, "declares NO `test` target"],
+});
+
+scenario("NX-7: a `test` target whose jestConfig option is not on disk -> RED", {
+    mutate: (r) => {
+        const p = `${WS}/${BROKEN_LIB}/project.json`;
+        const j = readJson(r, p);
+        j.targets.test.options.jestConfig = `${BROKEN_LIB}/jest.config.js`;
+        writeJson(r, p, j);
+    },
+    expectExit: 1,
+    expectText: ["NX-7", "`jestConfig`", "is not on disk"],
+});
+
+scenario("NX-7: a project-relative jestConfig is caught — the option is workspace-relative", {
+    mutate: (r) => {
+        const p = `${WS}/${BROKEN_LIB}/project.json`;
+        const j = readJson(r, p);
+        j.targets.test.options.jestConfig = "jest.config.ts";
+        writeJson(r, p, j);
+    },
+    expectExit: 1,
+    expectText: ["NX-7", "workspace-relative, not project-relative"],
+});
+
+scenario("NX-7: a jest `test` target with no jest config on disk -> RED", {
+    mutate: (r) => rm(r, `${WS}/${BROKEN_LIB}/jest.config.ts`),
+    expectExit: 1,
+    expectText: ["NX-7", "declares a jest `test` target but no"],
+});
+
+scenario("NX-7: an UNREGISTERED lib's jest config is NX-1's business, not NX-7's", {
+    mutate: (r) => rm(r, `${WS}/${BROKEN_LIB}/project.json`),
+    expectExit: 1,
+    expectText: ["NX-1"],
+    rejectText: ["NX-7"],
+});
+
+// ── the new corpora are anchored too: an empty SCAN is illegal ──────────────
+scenario("AC3: ZERO tsconfig files -> RED, not a pass over an unread corpus", {
+    mutate: (r) => {
+        rm(r, `${WS}/tsconfig.base.json`);
+        for (const [dir] of LIBS) {
+            for (const name of ["tsconfig.json", "tsconfig.lib.json", "tsconfig.spec.json"]) {
+                rm(r, `${WS}/${dir}/${name}`);
+            }
+        }
+    },
+    expectExit: 1,
+    expectText: ["P0", "ZERO tsconfig files", "HARD FAILURE, never a silent pass"],
+});
+
+scenario("AC3: registered projects but ZERO jest configs -> RED (the probe went stale)", {
+    mutate: (r) => {
+        for (const [dir] of LIBS) rm(r, `${WS}/${dir}/jest.config.ts`);
+    },
+    expectExit: 1,
+    expectText: ["P0", "ZERO jest configs", "HARD FAILURE, never a silent pass"],
 });
 
 // ── the app roster: the concrete floor under the corpus anchors ─────────────

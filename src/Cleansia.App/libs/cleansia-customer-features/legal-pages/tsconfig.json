@@ -1,5 +1,5 @@
 {
-  "extends": "../../../../tsconfig.base.json",
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "target": "es2022",
     "moduleResolution": "bundler",
@@ -19,6 +19,7 @@
   "files": [],
   "include": [],
   "references": [
-    { "path": "./tsconfig.lib.json" }
+    { "path": "./tsconfig.lib.json" },
+    { "path": "./tsconfig.spec.json" }
   ]
 }

@@ -1,7 +1,7 @@
 ---
 id: T-0556
 title: SaveMyDocuments accepts an unbounded upload with no content check — the validator asserts the same predicate twice and nothing else
-status: ready
+status: done
 size: S
 owner: backend
 created: 2026-08-05

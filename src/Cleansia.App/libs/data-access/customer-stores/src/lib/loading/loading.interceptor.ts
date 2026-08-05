@@ -5,8 +5,14 @@ import { finalize } from 'rxjs';
 import {
   setCustomerLoadingOffAction,
   setCustomerLoadingOnAction,
-} from '@cleansia/customer-stores';
+} from './loading.actions';
 
+/**
+ * Lives beside the actions it dispatches, not in `customer-services`: an
+ * interceptor that drives the store sits ABOVE the store, and the store already
+ * reads the generated client. Registering it from `customer-services` was one
+ * of the two arrows that made the pair circular.
+ */
 export const CustomerLoadingInterceptorFn: HttpInterceptorFn = (req, next) => {
   const store = inject(Store);
 
@@ -17,3 +23,5 @@ export const CustomerLoadingInterceptorFn: HttpInterceptorFn = (req, next) => {
     })
   );
 };
+
+export const CUSTOMER_STORE_INTERCEPTORS_FN = [CustomerLoadingInterceptorFn];

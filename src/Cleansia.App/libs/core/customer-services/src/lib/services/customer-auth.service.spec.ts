@@ -1,11 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { SavedAddressStore } from '@cleansia/customer-stores';
 import { AUTH_COOKIE_KEYS } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of } from 'rxjs';
 import { CustomerClient } from '../client/customer-base-client';
 import { CustomerAuthService } from './customer-auth.service';
+import { SESSION_LIFECYCLE_LISTENERS } from './session-lifecycle';
 
 describe('CustomerAuthService command payloads', () => {
   let service: CustomerAuthService;
@@ -30,8 +30,9 @@ describe('CustomerAuthService command payloads', () => {
           useValue: { currentLang, getDefaultLang: () => 'en' },
         },
         {
-          provide: SavedAddressStore,
-          useValue: { refresh: jest.fn(), clear: jest.fn() },
+          provide: SESSION_LIFECYCLE_LISTENERS,
+          useValue: { onSessionStarted: jest.fn(), onSessionEnded: jest.fn() },
+          multi: true,
         },
         {
           provide: AUTH_COOKIE_KEYS,

@@ -24,14 +24,10 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, Router, withInMemoryScrolling } from '@angular/router';
 import { CleansiaPreset } from '@cleansia/assets';
-import {
-  APIBASEURL,
-  PARTNER_INTERCEPTORS_FN,
-} from '@cleansia/partner-services';
+import { APIBASEURL } from '@cleansia/partner-services';
 import { partnerEffects, partnerReducers } from '@cleansia/partner-stores';
 import {
   AUTH_COOKIE_KEYS,
-  COMMON_INTERCEPTORS_FN,
   initializeTranslations,
   JsonTranslationLoader,
   MAPBOX_AUTOCOMPLETE_ENABLED,
@@ -47,6 +43,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 import { environment } from '../environments/environment';
 import { appRoutes } from './app.routes';
+import { APP_INTERCEPTORS_FN } from './http-interceptors';
 
 registerLocaleData(localeCs);
 registerLocaleData(localeEn);
@@ -84,7 +81,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withFetch(),
       withJsonpSupport(),
-      withInterceptors([...COMMON_INTERCEPTORS_FN, ...PARTNER_INTERCEPTORS_FN])
+      withInterceptors(APP_INTERCEPTORS_FN)
     ),
     { provide: ErrorHandler, useValue: Sentry.createErrorHandler({ showDialog: false }) },
     { provide: Sentry.TraceService, deps: [Router] },

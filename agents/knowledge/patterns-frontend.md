@@ -427,6 +427,79 @@ reuse the interceptor `api.*` path instead (EP-3 root cause was the proliferatio
   `RetryAfterInterceptorFn` sits after `HttpErrorInterceptorFn` so the snackbar fires only once the
   back-off retry is exhausted). Customer is SSR — guard wait/retry logic with `isPlatformServer`.
 
+### An interceptor that dispatches to the store lives in the STORE lib, and the app composes the chain
+
+Three tiers, and the tier decides the file's home:
+
+| Interceptor | Home | Joins |
+|---|---|---|
+| cross-app, no store (`HttpErrorInterceptorFn`, `RetryAfterInterceptorFn`, `ContentDisposition…`) | `libs/core/services/src/lib/interceptors/` | `COMMON_INTERCEPTORS_FN` |
+| per-app, client concern (auth header, 401 refresh, per-app error map) | `libs/core/<app>-services/src/lib/interceptors/` | `<APP>_INTERCEPTORS_FN` |
+| per-app, **dispatches NgRx** (`LoadingInterceptorFn`) | `libs/data-access/<app>-stores/src/lib/<slice>/` | `<APP>_STORE_INTERCEPTORS_FN` |
+
+The third row is the one that is easy to get wrong, because the interceptor *feels* like HTTP wiring.
+It is not: `*-stores` already reads `*-services` for the generated client, so an interceptor that
+`inject(Store).dispatch(...)` from inside `*-services` is the arrow that closes the loop. All three
+apps shipped exactly that, and it cost **47 of the workspace's 66 module-boundary errors** in three
+cycles. Put the file beside the actions it dispatches and the arrow simply is not there.
+
+The cost is that `<APP>_INTERCEPTORS_FN` can no longer be the whole chain, because no lib can see
+both sides. **The app composes it, in `apps/<app>/src/app/http-interceptors.ts`, and a spec pins the
+composed array by identity and in order** — an interceptor that is moved but not re-registered is
+silent at runtime and green in every other check, which is precisely the failure this move risks:
+
+```ts
+export const APP_INTERCEPTORS_FN: HttpInterceptorFn[] = [
+  ...COMMON_INTERCEPTORS_FN,
+  ...PARTNER_INTERCEPTORS_FN,
+  ...PARTNER_STORE_INTERCEPTORS_FN,
+];
+```
+
+`app.config.ts` then passes that one symbol to `withInterceptors`. Keep the concatenation order —
+common, then client, then store — because array order is chain order (above).
+
+**Enforced by:** `agents/tools/check-module-boundaries.mjs` for the placement (a store-dispatching
+interceptor back inside `*-services` re-creates the cycle, and the gate refuses it — measured: one
+restored import took the gate from 0 drifts to 18) — **T1-CI**; and
+`apps/*/src/app/http-interceptors.spec.ts` for the registration — **T1-CI** (`nx affected -t test`
+selects the app whenever the chain file changes, and the step is not `continue-on-error`).
+
+### A lower lib calls a higher one through a token, never by injecting it
+
+`CustomerAuthService` (in `customer-services`) has to warm the saved-address cache on sign-in and
+blank it on sign-out, and `SavedAddressStore` lives in `customer-stores` — the lib that reads
+`customer-services`. `inject(SavedAddressStore)` there was the second half of the customer cycle.
+
+Do **not** solve it by moving the state down into the client lib: cross-feature state belongs in
+`data-access`, and `*-services` is the generated client plus its guards and interceptors. Declare the
+seam where the *caller* lives and let the app join the two ends:
+
+```ts
+// libs/core/customer-services/src/lib/services/session-lifecycle.ts
+export interface SessionLifecycleListener { onSessionStarted(): void; onSessionEnded(): void }
+export const SESSION_LIFECYCLE_LISTENERS =
+  new InjectionToken<readonly SessionLifecycleListener[]>('SESSION_LIFECYCLE_LISTENERS');
+
+// apps/cleansia.app/src/app/session-listeners.ts
+{ provide: SESSION_LIFECYCLE_LISTENERS, useExisting: SavedAddressStore, multi: true }
+```
+
+Same shape as `AUTH_COOKIE_KEYS` / `MAPBOX_PROXY_PATH`: shared or lower lib declares the token, the
+app config provides the concrete. Two rules that are not optional. **Inject it `{ optional: true }`
+and default to `[]`** — every existing spec of the caller would otherwise need the provider, and a
+listener really is optional (partner and admin register none). And **pin the wiring with a spec in
+the app**, because a `multi` provider that is never registered is a no-op with no error anywhere:
+here, dropping it leaves user B looking at user A's addresses after a sign-out on a shared device.
+
+Prefer this to inverting with an `effect()` on the auth signal. That reads cleaner and quietly
+changes behaviour twice: a `providedIn: 'root'` store only observes once something injects it, and a
+`setSession` on an already-true signal stops re-firing.
+
+**Enforced by:** `apps/cleansia.app/src/app/session-listeners.spec.ts` (resolves the store through
+the token, and asserts the sign-out path blanks it) — **T1-CI**; the cycle it prevents is
+`check-module-boundaries.mjs`'s — **T1-CI**.
+
 ## Building a generated DTO — construct-then-assign, never an object literal (ADR-0031)
 
 **ADR-0031 is the source of truth** for why: the derivation, the `markOptionalProperties: false`
@@ -570,7 +643,43 @@ carries a `scope:*` and a `type:*` tag; the apps carry `scope:<app>` + `type:app
 The constraints read: `scope:customer → [scope:customer, scope:shared]` (and the same for partner/admin),
 plus the orthogonal `type:*` rules. A cross-app client import is therefore a **lint error**
 ("A project tagged with `scope:customer` can only depend on libs tagged with `scope:customer`,
-`scope:shared`"), caught by `nx lint` in CI.
+`scope:shared`").
+
+**`nx lint` is where you SEE it; it is not what STOPS it — read the next paragraph before you rely on
+either.** `frontend-ci.yml`'s only lint step is `continue-on-error: true` (:73), so a boundary
+violation reported there sets no exit code, and that step is `nx affected -t lint`, which cannot
+select a project the change did not touch — a boundary violation is a statement about a *pair* of
+projects and the half that reports it is often not the half that was edited. That combination is how
+a customer lib importing the **partner** client shipped and stayed shipped.
+
+**The gate is `agents/tools/check-module-boundaries.mjs`, and it lints from the WORKSPACE ROOT with
+the root config rather than through the per-project ones.** That is not a shortcut, it is the point:
+the defect this whole scheme was repaired from is that a per-project `eslint.config.mjs` can quietly
+opt out, so a gate assembled out of those same per-project configs inherits the hole it exists to
+close. ESLint 9 flat config resolves ONE config from the cwd and applies it to every file it walks,
+so a single `npx eslint .` at `src/Cleansia.App` measures all 1340 files through the table above.
+Verified equal to the 70-project `nx run-many -t lint --all --skip-nx-cache` run: same 19 violations,
+same 19 files. It is an **exact-match ratchet in both directions** — a new violation is red, and so is
+a recorded one that has been fixed without its entry being deleted.
+
+**`cross-scope`, `untagged-project` and `circular-dependency` are held at ZERO.** The three classes
+still recorded are older and each needs its own decision: `buildable-from-non-buildable` ×14
+(`libs/shared/components` carries a `package.json`, so Nx refuses its imports of non-buildable shared
+libs — a publishable-or-not decision about that one lib), `static-import-of-lazy` ×4 (each app shell
+statically imports `@cleansia/components` while its own `app.routes.ts` lazy-loads it), and
+`deep-relative-import` ×1 (`invoice-management` reaches into `employee-management`'s source through
+`../../../../` for a dialog that lib's barrel does not export).
+
+**A mistyped scope tag cannot hide, and this was measured rather than assumed.** Renaming
+`libs/core/customer-services`'s tag to `scope:cusomer` does **not** simply switch that lib's scope
+rule off — every consumer's allow-list stops containing the target's tag, so the gate goes from 19
+violations to 117 (91 `cross-scope` + 7 `untagged-project`). That is why there is no separate
+tag-vocabulary list to maintain: the vocabulary is enforced by the constraint table itself, through
+the consumers, and a hand-kept list of legal tags would only be a second thing to keep in sync.
+
+**Enforced by:** `agents/tools/check-module-boundaries.mjs` + its 21-scenario self-test —
+**T1-CI** (`.github/workflows/module-boundaries.yml`, its own repo-root workflow with no
+`continue-on-error`; an empty or partial eslint walk is a hard failure, not a pass).
 
 **The table lives in exactly one file — `src/Cleansia.App/eslint.module-boundaries.config.mjs` —
 because it has to be spread from two.** The root `eslint.config.mjs` lints only the projects that have
@@ -596,7 +705,9 @@ for three independent witnesses (`src/index.ts`, `project.json`, the `tsconfig.b
 requires them to agree, and treats **any enumeration coming back empty as a hard failure** rather
 than a pass — **T1-CI** (`.github/workflows/nx-project-registration.yml`, its own repo-root workflow:
 `frontend-ci`'s lint step is `continue-on-error: true`, and `nx affected` can never select a project
-that does not exist). Tags are asserted by **presence**; the vocabulary is T-0534's.
+that does not exist). Tags are asserted by **presence** only, and deliberately: the tag *vocabulary*
+needs no list of its own, because a mistyped `scope:` is caught by every consumer of the mistyped lib
+(measured — see "A mistyped scope tag cannot hide" above).
 
 Both of its recorded sets are **empty** since T-0554/T-0555, so all seven of its rules gate strictly:
 the first dangling alias or unregistered source tree you add is red. A recorded set was never a
@@ -662,6 +773,12 @@ partner chain does **not** reach (`assets`) prints *"A project tagged with `scop
 on libs tagged with `scope:shared`"* immediately. So a scope break can hide behind a cycle indefinitely,
 and **the scope-violation count staying at zero after you fix a cycle is the expected outcome, not
 evidence there was nothing underneath** — one fix retires both.
+
+Which is why a cycle is worth retiring even when it reads as pure tidiness: while one stands, the rule
+is **not measuring** the pair it spans. The last three (`partner-services ↔ partner-stores` 18,
+`customer-services ↔ customer-stores` 18, `admin-services ↔ admin-stores` 11 — 47 of the workspace's
+66 boundary errors) went together; the scope count came back zero, exactly as the paragraph above
+predicts, and only then was there a baseline worth ratcheting.
 
 **The fix, and the general rule: a wire enum a shared lib needs is declared in `@cleansia/models`,
 pinned to every generated client by an off-disk parity spec, and the clients are declared `inputs` of

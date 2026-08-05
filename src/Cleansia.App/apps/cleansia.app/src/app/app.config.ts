@@ -25,15 +25,11 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, Router, withInMemoryScrolling } from '@angular/router';
 import { CleansiaPreset } from '@cleansia/assets';
-import {
-  CUSTOMER_API_BASE_URL,
-  CUSTOMER_INTERCEPTORS_FN,
-} from '@cleansia/customer-services';
+import { CUSTOMER_API_BASE_URL } from '@cleansia/customer-services';
 import { customerEffects, customerReducers } from '@cleansia/customer-stores';
 import {
   APPLE_CLIENT_ID,
   AUTH_COOKIE_KEYS,
-  COMMON_INTERCEPTORS_FN,
   GOOGLE_CLIENT_ID,
   initializeTranslations,
   JsonTranslationLoader,
@@ -48,6 +44,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 import { environment } from '../environments/environment';
 import { appRoutes } from './app.routes';
+import { APP_INTERCEPTORS_FN } from './http-interceptors';
+import { SESSION_LIFECYCLE_PROVIDERS } from './session-listeners';
 
 registerLocaleData(localeCs);
 registerLocaleData(localeEn);
@@ -57,6 +55,7 @@ registerLocaleData(localeRu);
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    SESSION_LIFECYCLE_PROVIDERS,
     provideZoneChangeDetection({ eventCoalescing: true }),
     // Reuse the server-rendered DOM instead of destroying and re-rendering it
     // on bootstrap — without this every SSR page repaints from scratch (huge
@@ -88,10 +87,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withFetch(),
       withJsonpSupport(),
-      withInterceptors([
-        ...COMMON_INTERCEPTORS_FN,
-        ...CUSTOMER_INTERCEPTORS_FN,
-      ])
+      withInterceptors(APP_INTERCEPTORS_FN)
     ),
     {
       provide: ErrorHandler,

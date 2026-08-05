@@ -1,7 +1,6 @@
 import { Injectable, PLATFORM_ID, Signal, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { SavedAddressStore } from '@cleansia/customer-stores';
 import { AUTH_COOKIE_KEYS, CleansiaCustomerRoute } from '@cleansia/services';
 import {
   AppleAuthCommand,
@@ -19,6 +18,7 @@ import { setLocalStorageValueByKey } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable, catchError, map, of, tap } from 'rxjs';
 import { CustomerClient } from '../client/customer-base-client';
+import { SESSION_LIFECYCLE_LISTENERS } from './session-lifecycle';
 
 @Injectable({
   providedIn: 'root',
@@ -27,7 +27,8 @@ export class CustomerAuthService {
   private readonly customerClient = inject(CustomerClient);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
-  private readonly savedAddressStore = inject(SavedAddressStore);
+  private readonly sessionListeners =
+    inject(SESSION_LIFECYCLE_LISTENERS, { optional: true }) ?? [];
   private readonly cookieKeys = inject(AUTH_COOKIE_KEYS);
   // Guard storage access by platform, not `typeof localStorage` — Node 22+
   // exposes a global localStorage whose methods throw during SSR.
@@ -263,7 +264,7 @@ export class CustomerAuthService {
     // Preload saved addresses so the order wizard finds them warm, even when
     // the user lands there without visiting profile first. Fire-and-forget —
     // refresh() already snackbars on failure and must not block sign-in.
-    void this.savedAddressStore.refresh();
+    this.sessionListeners.forEach((listener) => listener.onSessionStarted());
   }
 
   removeSession(): void {
@@ -276,7 +277,7 @@ export class CustomerAuthService {
     // Logout endpoint's Set-Cookie deletes — JS can't touch them directly.
     // Blank the cached addresses so user B doesn't see user A's list on the
     // same device between sign-out and the next post-signin refresh().
-    this.savedAddressStore.clear();
+    this.sessionListeners.forEach((listener) => listener.onSessionEnded());
     this._isLoggedIn.set(false);
   }
 }

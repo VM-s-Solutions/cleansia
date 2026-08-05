@@ -57,8 +57,10 @@
  *
  * TAGS ARE ASSERTED BY PRESENCE, NOT BY VALUE. A `project.json` with no `tags` puts the lib straight
  * back outside `@nx/enforce-module-boundaries` — half of the original hole — so an empty or missing
- * array fails here. The tag VOCABULARY (`scope:*` / `type:*`) is T-0534's, which is `in_progress`;
- * this guard deliberately asserts nothing about which tags are legal.
+ * array fails here. The VALUES need no list of their own and this guard deliberately keeps none:
+ * `agents/tools/check-module-boundaries.mjs` catches a mistyped `scope:` through every CONSUMER of
+ * the mistyped lib (measured — one typo took that gate from 19 violations to 117), so a hand-kept
+ * vocabulary here would only be a second source of truth for the constraint table.
  *
  * Usage:
  *   node agents/tools/check-nx-project-registration.mjs           # strict: any violation -> exit 1
@@ -348,7 +350,8 @@ if (!isDir(WORKSPACE)) {
                 "NX-2",
                 "project.json has no non-empty `tags` array — @nx/enforce-module-boundaries cannot " +
                     "constrain an untagged project, so the lib is registered but still unguarded. " +
-                    "(Presence only; the tag vocabulary is T-0534's.)",
+                    "(Presence only; the VALUES are checked by check-module-boundaries.mjs, through " +
+                    "every consumer of the lib.)",
             );
         }
     }

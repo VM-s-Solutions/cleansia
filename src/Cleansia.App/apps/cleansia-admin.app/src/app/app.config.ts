@@ -23,15 +23,11 @@ import {
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, Router, withInMemoryScrolling } from '@angular/router';
-import {
-  ADMIN_INTERCEPTORS_FN,
-  ADMINAPIBASEURL,
-} from '@cleansia/admin-services';
+import { ADMINAPIBASEURL } from '@cleansia/admin-services';
 import { adminEffects, adminReducers } from '@cleansia/admin-stores';
 import { CleansiaPreset } from '@cleansia/assets';
 import {
   AUTH_COOKIE_KEYS,
-  COMMON_INTERCEPTORS_FN,
   initializeTranslations,
   JsonTranslationLoader,
 } from '@cleansia/services';
@@ -44,6 +40,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 import { environment } from '../environments/environment';
 import { appRoutes } from './app.routes';
+import { APP_INTERCEPTORS_FN } from './http-interceptors';
 
 registerLocaleData(localeCs);
 registerLocaleData(localeEn);
@@ -95,7 +92,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withFetch(),
       withJsonpSupport(),
-      withInterceptors([...COMMON_INTERCEPTORS_FN, ...ADMIN_INTERCEPTORS_FN])
+      withInterceptors(APP_INTERCEPTORS_FN)
     ),
     { provide: ErrorHandler, useValue: Sentry.createErrorHandler({ showDialog: false }) },
     { provide: Sentry.TraceService, deps: [Router] },

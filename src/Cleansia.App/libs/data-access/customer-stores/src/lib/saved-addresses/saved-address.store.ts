@@ -3,6 +3,7 @@ import {
   AddSavedAddressCommand,
   CustomerClient,
   SavedAddressDto,
+  SessionLifecycleListener,
   SetDefaultSavedAddressCommand,
   UpdateSavedAddressCommand,
 } from '@cleansia/customer-services';
@@ -10,7 +11,7 @@ import { SnackbarService } from '@cleansia/services';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
-export class SavedAddressStore {
+export class SavedAddressStore implements SessionLifecycleListener {
   private readonly customerClient = inject(CustomerClient);
   private readonly snackbar = inject(SnackbarService);
 
@@ -115,5 +116,13 @@ export class SavedAddressStore {
   clear(): void {
     this.addresses.set([]);
     this.loaded.set(false);
+  }
+
+  onSessionStarted(): void {
+    void this.refresh();
+  }
+
+  onSessionEnded(): void {
+    this.clear();
   }
 }
